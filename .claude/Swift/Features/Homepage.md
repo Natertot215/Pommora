@@ -28,7 +28,7 @@ Seeded on first launch with empty `blocks`; not user-deletable (regenerates if r
 }
 ```
 
-No `id` / `tier` / `parents` (the file location is the identity), and no `title` — the Homepage surfaces under the **Nexus header** (the nexus folder name). See [[Sidebar]].
+No `id` / `tier` / `parents` (the file location is the identity), and no `title` — the Homepage surfaces under the **Nexus header** (the nexus folder name). See [[Resources/II. Pommora/II. Swift/II. Features/Sidebar]].
 
 ---
 
@@ -58,7 +58,7 @@ Every widget is a **live, fully-editable view of its source**, never a read-only
 
 #### Sidebar integration
 
-The **Nexus header** at the top of the sidebar — per-Nexus avatar, folder-name title, and subtitle — is the Homepage's entry point: selecting it opens this file in the main pane (saved-key `homepage`, fixed). The former Homepage / Calendar / Recents pinned leaves were retired in its favor. Sidebar structure is canonical in [[Sidebar]].
+The **Nexus header** at the top of the sidebar — per-Nexus avatar, folder-name title, and subtitle — is the Homepage's entry point: selecting it opens this file in the main pane (saved-key `homepage`, fixed). The former Homepage / Calendar / Recents pinned leaves were retired in its favor. Sidebar structure is canonical in [[Resources/II. Pommora/II. Swift/II. Features/Sidebar]].
 
 ---
 
@@ -77,4 +77,3 @@ The **Nexus header** at the top of the sidebar — per-Nexus avatar, folder-name
 2. Schema-version respected on load; future migrations handled additively
 
 ---
-

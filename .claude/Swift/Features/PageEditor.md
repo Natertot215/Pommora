@@ -1,6 +1,6 @@
 ### Page Editor
 
-Pommora's body editor for Pages — what the user sees and types into when they open a Page. Data-model concerns (on-disk shape, frontmatter, opening behavior, sidebar disclosure) live in [[Pages]]; this file covers the editor surface. The construct-level contract — dynamic-syntax architecture, detection rules, state-mutation guards, anti-patterns, engine quirks, and every locked editor decision — lives in [[Atlas/II. Projects/Pommora/II. React/II. Rules/MarkdownPM]]; read it first when implementing any construct. This spec records WHAT the editor ships and its visible surface.
+Pommora's body editor for Pages — what the user sees and types into when they open a Page. Data-model concerns (on-disk shape, frontmatter, opening behavior, sidebar disclosure) live in [[Resources/II. Pommora/II. Swift/II. Features/Pages]]; this file covers the editor surface. The construct-level contract — dynamic-syntax architecture, detection rules, state-mutation guards, anti-patterns, engine quirks, and every locked editor decision — lives in [[Atlas/II. Projects/Pommora/II. React/II. Rules/MarkdownPM]]; read it first when implementing any construct. This spec records WHAT the editor ships and its visible surface.
 
 ---
 
@@ -45,7 +45,7 @@ Keystroke → body change → short debounce → content-manager update path →
 
 #### Current editor surface
 
-**Inline marks** (emphasis locates on the AST, other constructs on regex; caret-aware marker-shrink): bold, italic, bold-italic, inline code; standard Markdown links; image embeds (render hook present, image provider deferred). Connections (`[[Name]]` / `{{Name}}`) are a **body construct** — inline styled colored text in the Markdown stream, click resolution pending the Pommora-side resolver; distinct from context-link properties (see [[Pages]]).
+**Inline marks** (emphasis locates on the AST, other constructs on regex; caret-aware marker-shrink): bold, italic, bold-italic, inline code; standard Markdown links; image embeds (render hook present, image provider deferred). Connections (`[[Name]]` / `{{Name}}`) are a **body construct** — inline styled colored text in the Markdown stream, click resolution pending the Pommora-side resolver; distinct from context-link properties (see [[Resources/II. Pommora/II. Swift/II. Features/Pages]]).
 
 **Block constructs** (engine + supplemental):
 - **Headings** on a Pommora scale descending from a large H1 to body size at H6 (nothing renders below body size); only H1–H4 are offered in the right-click menu. **Foldable** — hovering a heading reveals a gutter chevron that collapses the section to the next equal-or-higher heading (or document end); fold state persists per-Page in frontmatter.

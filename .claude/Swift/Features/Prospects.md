@@ -53,7 +53,7 @@ The full Settings UI brings:
 **Description:** Planned post-v1.0 feature. Board view (kanban) ships as the visual layout — cards grouped by a property's options; moving a card between columns is done by editing the card's property via the card UI. Drag-to-rewrite-frontmatter (dragging a card across kanban columns to mutate the source's property value directly) is the higher-fidelity UX, but it requires the property edit / atomic write loop to be hardened first. Deferred until those foundations stabilize.
 
 #### Quick-capture (menu-bar / web clipper)
-**Description:** Now committed roadmap, not a post-v1 prospect — full concept + architecture in [[QuickCapture]] (roadmap slot → `Framework.md`). A menu-bar capture pane (and an optional browser / Share-sheet web-clip route) adds Pages / Tasks / Events directly to the nexus as another in-process entry point. Kept here only as a redirect.
+**Description:** Now committed roadmap, not a post-v1 prospect — full concept + architecture in [[Resources/II. Pommora/II. Swift/II. Features/QuickCapture]] (roadmap slot → `Framework.md`). A menu-bar capture pane (and an optional browser / Share-sheet web-clip route) adds Pages / Tasks / Events directly to the nexus as another in-process entry point. Kept here only as a redirect.
 
 #### Pinned-page user pinning (the "Saved" section's real role)
 **Description:** The Saved section currently ships heading-less with three fixed entries (Homepage / Calendar / Recents). Post-v1: users pin arbitrary Pages / Tasks / Events / Contexts; section gets "Saved" heading + "+" affordance; defaults become movable. `saved-config.json` already accommodates arbitrary saved entries.
@@ -64,5 +64,3 @@ The full Settings UI brings:
 - **Tier property icon overrides** at the nexus-default level (IconConfig effort). `BuiltInContextLinkProperties` falls back sidecar-override → hardcoded SF Symbol today; when IconConfig ships, the chain extends to sidecar override → IconConfig default → hardcoded fallback.
 
 (Two former entries here — the "linked from" real surface and context-link sort/filter — are now committed roadmap work, promoted to `Framework.md` under the Context-views surface + per-view sort/group, not post-v1 prospects.)
-
-

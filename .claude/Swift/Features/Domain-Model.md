@@ -44,7 +44,7 @@ On-disk shape, sidebar, validation, and tier config → `Contexts.md`.
 | **Page Set** | Recursive sub-folder inside a Collection (any depth); schema-less, inherits everything. Depth-1 carries its own views; deeper is plain | "Set" / "Sub-Set" |
 | **Page** | Markdown document with prose + frontmatter | "Page" |
 
-The Collection's property schema applies to every Page inside it (at any depth) — all Sets inherit it. Only a depth-1 Set owns its saved `views`; deeper Sub-Sets carry none. On-disk shapes → [[Architecture]]; the top tier + schema → [[PageCollections]]; recursive Set mechanics → [[PageSets]]; the page document → [[Pages]].
+The Collection's property schema applies to every Page inside it (at any depth) — all Sets inherit it. Only a depth-1 Set owns its saved `views`; deeper Sub-Sets carry none. On-disk shapes → [[Resources/II. Pommora/II. Swift/II. Features/Architecture]]; the top tier + schema → [[PageCollections]]; recursive Set mechanics → [[Resources/II. Pommora/II. Swift/II. Features/PageSets]]; the page document → [[Resources/II. Pommora/II. Swift/II. Features/Pages]].
 
 #### Operational layer — Agenda
 
@@ -55,7 +55,7 @@ Agenda is the parent schema holding two separate kinds, each with its own proper
 | **Task** | EKReminder-shaped: due date, completion, priority | "Task" |
 | **Event** | EKEvent-shaped: start + end, location | "Event" |
 
-Detail → [[Agenda]]; the property catalog across all kinds → [[Properties]].
+Detail → [[Resources/II. Pommora/II. Swift/II. Features/Agenda]]; the property catalog across all kinds → [[Resources/II. Pommora/II. Swift/II. Features/Properties]].
 
 #### Naming convention — three layers
 
@@ -77,7 +77,7 @@ Detail → `Homepage.md`.
 
 #### Cross-layer relations
 
-Operational entities (Pages, Tasks, Events) tag Contexts via **per-tier multi-relation fields** (`tier1` / `tier2` / `tier3`) at the frontmatter / JSON root, each a bare ULID array filled independently. The three tiers are the **only** relation-type connection — one-way, since Contexts carry no `properties[]` schema and reverse lookups resolve through the index. On-disk shape, rendering, and catalog → [[Properties]] (tier mechanics also in [[Contexts]]).
+Operational entities (Pages, Tasks, Events) tag Contexts via **per-tier multi-relation fields** (`tier1` / `tier2` / `tier3`) at the frontmatter / JSON root, each a bare ULID array filled independently. The three tiers are the **only** relation-type connection — one-way, since Contexts carry no `properties[]` schema and reverse lookups resolve through the index. On-disk shape, rendering, and catalog → [[Resources/II. Pommora/II. Swift/II. Features/Properties]] (tier mechanics also in [[Resources/II. Pommora/II. Swift/II. Features/Contexts]]).
 
 ---
 
@@ -88,7 +88,7 @@ Operational entities (Pages, Tasks, Events) tag Contexts via **per-tier multi-re
 
 **Duplicate titles are rejected within the same container** (case-insensitive) — refused, not auto-renamed. The rejection guards only the on-disk filename slot (`filename = title`); the same title in *different* containers is fine, and recasing an entity's own title is allowed.
 
-`[[ ]]` connection mechanic → [[Connections]].
+`[[ ]]` connection mechanic → [[Resources/II. Pommora/II. Swift/II. Features/Connections]].
 
 ---
 
@@ -96,12 +96,12 @@ Operational entities (Pages, Tasks, Events) tag Contexts via **per-tier multi-re
 
 | Link | Stored as | Purpose |
 |---|---|---|
-| Page → Page (`[[ ]]` connection) | plain `[[Title]]` in body, resolved by globally-unique title — see [[Connections]] | Inline reference |
+| Page → Page (`[[ ]]` connection) | plain `[[Title]]` in body, resolved by globally-unique title — see [[Resources/II. Pommora/II. Swift/II. Features/Connections]] | Inline reference |
 | Operational entity → Context (tier N) | `tierN: [<id>, ...]` at the frontmatter / JSON root | Categorical assignment |
 | Context → Context | None — tiers are free-standing; context→context relations are deferred | — |
 | Page → Page Collection / Page Set | Implicit by file location | Membership |
 
-Tier relations are stored by ID (rename-safe); body connections are plain `[[Title]]` on disk, rename-safe via cascade — full rules in [[Connections]].
+Tier relations are stored by ID (rename-safe); body connections are plain `[[Title]]` on disk, rename-safe via cascade — full rules in [[Resources/II. Pommora/II. Swift/II. Features/Connections]].
 
 ---
 
@@ -122,7 +122,7 @@ No always-visible "+ New" — creation via **right-click context menus, scoped b
 
 ---
 
-#### Inline editing principle
+#### Inline Editing principle
 
 Every embedded view inside a composed-blocks surface (Context, Homepage) is **a live, fully-editable view of its source** — never a read-only snapshot. Edits flow through via the file watcher + atomic-write loop. Full-body inline Page editing (Notion-style synced blocks) is post-v1 → `Prospects.md`. Detail → `Architecture.md`.
 
@@ -130,4 +130,4 @@ Every embedded view inside a composed-blocks surface (Context, Homepage) is **a 
 
 #### Properties
 
-Property schemas live in per-kind sidecars on each typed container; the same catalog applies across Pages, Tasks, and Events, with the three context-tier relations as the only relation-type connection. Full catalog, sidecar map, and Status semantics → [[Properties]].
+Property schemas live in per-kind sidecars on each typed container; the same catalog applies across Pages, Tasks, and Events, with the three context-tier relations as the only relation-type connection. Full catalog, sidecar map, and Status semantics → [[Resources/II. Pommora/II. Swift/II. Features/Properties]].
