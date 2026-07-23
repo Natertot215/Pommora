@@ -307,20 +307,21 @@
   background: var(--state-hover);
 }
 
-/* New Context — the sidebar's bottom-left, on the glass beside the ribbon (holds position while
-   the list scrolls); revealed on sidebar hover like the collapse button. */
+/* New Context — top-left on the glass, next to the traffic lights (the collapse button's row);
+   revealed on sidebar hover like the collapse button. */
 .contexts-create {
   position: absolute;
-  left: calc(var(--ribbon-w) + 10px);
-  bottom: 8px;
-  z-index: 2;
+  top: 1px;
+  left: 78px;
+  z-index: 3;
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
 }
 .surface-glass:hover .contexts-create,
 .contexts-create:focus-visible {
   opacity: 1;
-}
-.shell.ribbon-hidden .contexts-create {
-  left: calc(var(--ribbon-hidden-inset) + 4px);
 }
 
 /* Type (control / semibold) comes from the text.control.semibold alias composed in SectionHeader —
