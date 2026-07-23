@@ -18,16 +18,22 @@ export function InlineEditHeader({
   iconRef,
   onCommit,
   onIconClick,
+  outline,
 }: {
   value: string
   icon?: string
   iconRef?: Ref<HTMLButtonElement>
   onCommit: (next: string) => void
   onIconClick: () => void
+  /** OutlineTint — rings the icon button + title field in a resolved color; unset = ringless. */
+  outline?: string
 }): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   return (
-    <div className={s.header}>
+    <div
+      className={s.header}
+      style={outline ? ({ '--field-ring': outline } as React.CSSProperties) : undefined}
+    >
       <button
         ref={iconRef}
         type="button"
