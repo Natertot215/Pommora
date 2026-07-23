@@ -70,6 +70,12 @@ describe('createContextGroup', () => {
     const bad = await createContextGroup(root, 'No[pe]')
     expect(bad.ok).toBe(false)
   })
+
+  it('uniqueness folds case — a case-variant twin would share one folder', async () => {
+    const dup = await createContextGroup(root, 'projects')
+    expect(dup.ok).toBe(true)
+    if (dup.ok) expect(dup.value.path).toBe('.nexus/contexts/projects 2')
+  })
 })
 
 describe('createSpace', () => {
