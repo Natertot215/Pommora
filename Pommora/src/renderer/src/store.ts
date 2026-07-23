@@ -21,6 +21,7 @@ import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/
 import { buildReconcileIndex, reconcileSelection, reconcileWith } from './selection'
 import {
   insertCreatedInTree,
+  patchContextGroupsInTree,
   patchNodeInTree,
   relocateNodeInTree,
   removeNodeInTree,
@@ -1490,6 +1491,15 @@ export const useSession = create<SessionState>((set, get) => {
             pageError: undefined,
           })
           return
+        case 'space':
+          // A Space renders its block surface from the loaded tree — no fetch.
+          set({
+            selection: { kind: 'space', id: target.id },
+            pageStatus: 'idle',
+            pageDetail: null,
+            pageError: undefined,
+          })
+          return
         case 'collection': {
           // Collection detail renders from the loaded tree (banner + its pages) — no fetch.
           set({
@@ -1690,6 +1700,14 @@ export const useSession = create<SessionState>((set, get) => {
                   ? null
                   : patchNodeInTree(cur, req.path, { headingIconHidden: req.hidden })
             break
+          case 'renameContext':
+          case 'renameSpace':
+          case 'setSpaceColor':
+          case 'setContextSingular':
+          case 'reorderContexts':
+          case 'reorderSpaces':
+            patched = patchContextGroupsInTree(cur, req)
+            break
         }
         if (patched) await get().applyTree(patched)
       }
@@ -1710,7 +1728,8 @@ export const useSession = create<SessionState>((set, get) => {
       // echo-suppressed; only an external edit walks), so the full-nexus re-walk is skipped for
       // them (it's THE "reload the entire Y" on a hot path). Structural ops still refetch
       // immediately; reconcileSelection refreshes a moved/renamed path.
-      if (req.op !== 'setProperty' && req.op !== 'setTier') await get().load()
+      if (req.op !== 'setProperty' && req.op !== 'setTier' && req.op !== 'setContext')
+        await get().load()
       if (!createdShown && res.created && onCreated) await onCreated(res.created)
       return true
     },

@@ -3,6 +3,7 @@ import type { CollectionNode, NexusTree } from '@shared/types'
 import { DEFAULT_LABELS } from '@shared/types'
 import {
   insertCreatedInTree,
+  patchContextGroupsInTree,
   patchNodeInTree,
   relocateNodeInTree,
   removeNodeInTree,
@@ -150,6 +151,119 @@ describe('insertCreatedInTree', () => {
         { op: 'createPage', parentPath: 'Nowhere', name: 'New' },
         { id: 'x5', path: 'Nowhere/D.md' },
       ),
+    ).toBeNull()
+  })
+
+  it('appends a created Context group and a created Space under it', () => {
+    const withGroup = insertCreatedInTree(
+      tree(),
+      { op: 'createContextGroup', name: 'Realms' },
+      { id: 'g1', path: '.nexus/contexts/Realms' },
+    )
+    expect(withGroup?.contextGroups?.at(-1)?.def).toEqual({
+      id: 'g1',
+      title: 'Realms',
+      singular: 'Realms',
+    })
+    const withSpace = insertCreatedInTree(
+      withGroup as NexusTree,
+      { op: 'createSpace', contextId: 'g1', name: 'Astral' },
+      { id: 'sp1', path: '.nexus/contexts/Realms/Astral' },
+    )
+    const space = withSpace?.contextGroups?.at(-1)?.spaces.at(-1)
+    expect(space).toEqual({
+      kind: 'space',
+      id: 'sp1',
+      title: 'Astral',
+      path: '.nexus/contexts/Realms/Astral',
+      contextId: 'g1',
+    })
+  })
+
+  it('skips Space optimism when the owning group is unknown', () => {
+    expect(
+      insertCreatedInTree(
+        tree(),
+        { op: 'createSpace', contextId: 'ghost', name: 'X' },
+        { id: 'sp2', path: '.nexus/contexts/Ghost/X' },
+      ),
+    ).toBeNull()
+  })
+})
+
+describe('patchContextGroupsInTree', () => {
+  const groupedTree = (): NexusTree => ({
+    ...tree(),
+    contextGroups: [
+      {
+        def: { id: 'g1', title: 'Realms', singular: 'Realm' },
+        spaces: [
+          {
+            kind: 'space',
+            id: 'sp1',
+            title: 'Astral',
+            path: '.nexus/contexts/Realms/Astral',
+            contextId: 'g1',
+          },
+          {
+            kind: 'space',
+            id: 'sp2',
+            title: 'Umbral',
+            path: '.nexus/contexts/Realms/Umbral',
+            contextId: 'g1',
+          },
+        ],
+      },
+      { def: { id: 'g2', title: 'Moods', singular: 'Mood' }, spaces: [] },
+    ],
+  })
+
+  it('renames a Context group and a Space in place', () => {
+    const t1 = patchContextGroupsInTree(groupedTree(), {
+      op: 'renameContext',
+      contextId: 'g1',
+      newName: 'Planes',
+    })
+    expect(t1?.contextGroups?.[0].def.title).toBe('Planes')
+    const t2 = patchContextGroupsInTree(groupedTree(), {
+      op: 'renameSpace',
+      spaceId: 'sp2',
+      newName: 'Shade',
+    })
+    expect(t2?.contextGroups?.[0].spaces[1].title).toBe('Shade')
+  })
+
+  it('sets and clears a Space color', () => {
+    const set = patchContextGroupsInTree(groupedTree(), {
+      op: 'setSpaceColor',
+      spaceId: 'sp1',
+      color: 'mint',
+    })
+    expect(set?.contextGroups?.[0].spaces[0].color).toBe('mint')
+    const cleared = patchContextGroupsInTree(set as NexusTree, {
+      op: 'setSpaceColor',
+      spaceId: 'sp1',
+    })
+    expect('color' in (cleared?.contextGroups?.[0].spaces[0] ?? {})).toBe(false)
+  })
+
+  it('reorders groups and spaces, keeping unlisted items at the tail', () => {
+    const t1 = patchContextGroupsInTree(groupedTree(), { op: 'reorderContexts', ids: ['g2'] })
+    expect(t1?.contextGroups?.map((g) => g.def.id)).toEqual(['g2', 'g1'])
+    const t2 = patchContextGroupsInTree(groupedTree(), {
+      op: 'reorderSpaces',
+      contextId: 'g1',
+      ids: ['sp2', 'sp1'],
+    })
+    expect(t2?.contextGroups?.[0].spaces.map((s) => s.id)).toEqual(['sp2', 'sp1'])
+  })
+
+  it('returns null on a tree without groups or an unowned op', () => {
+    expect(
+      patchContextGroupsInTree(tree(), { op: 'renameContext', contextId: 'g1', newName: 'X' }),
+    ).toBeNull()
+    expect(
+      patchContextGroupsInTree(groupedTree(), { op: 'setProfileSubtitle', subtitle: 'x' }),
     ).toBeNull()
   })
 })
