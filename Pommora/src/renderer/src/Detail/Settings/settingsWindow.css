@@ -12,7 +12,7 @@
 
 /* The preview's toolbar strip: the title rides IN the strip with the close × beside it;
    presses on the bare strip arm the window move. */
-/* One horizontal row: (Icon)(Title) heading leading, × trailing — all centered on the strip. */
+/* The strip carries the lone × at the right; the main view's heading rides the same line. */
 .settingswindow-toolbar {
   position: absolute;
   top: 0;
@@ -21,41 +21,9 @@
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
   height: var(--pgpreview-toolbar-h);
   padding: 0 calc(var(--glass-inset) + 6px);
-}
-.settingswindow-heading {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  /* The preview title's ramp — this is window chrome, not the settings-pane heading. */
-  font-size: var(--text-caption-size);
-}
-/* The InlineEditHeader re-dressed for the strip: no block padding, chrome-flat icon button,
-   and a title that sizes to its text (the filled-field look appears only while editing). */
-.settingswindow-heading > div {
-  flex: 1;
-  min-width: 0;
-  padding: 0;
-  gap: 6px;
-}
-.settingswindow-heading > div > button {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: none;
-}
-.settingswindow-heading > div > button:hover {
-  background: var(--state-hover);
-}
-.settingswindow-heading > div > :not(button) {
-  flex: 0 1 auto;
-  background: none;
-}
-.settingswindow-heading > div > :not(button):hover {
-  background: var(--state-hover);
 }
 /* The × lives in the toolbar next to the title (chassis default placement overridden). */
 .settingswindow-close {
@@ -104,11 +72,13 @@
   padding: 3px 5px;
 }
 
+/* The heading row aligns horizontally with the × — the main column starts at the strip line,
+   not under it. */
 .settingswindow-main {
   flex: 1;
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--pgpreview-toolbar-h) var(--glass-inset, 12px) 8px;
+  padding: 3px var(--glass-inset, 12px) 8px;
 }
