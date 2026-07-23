@@ -70,6 +70,7 @@ function toRow(
     path: page.path,
     ...(parentSetId !== undefined ? { parentSetId } : {}),
     frontmatter: values[page.id] ?? { id: page.id },
+    ...(page.contextValues !== undefined ? { contextValues: page.contextValues } : {}),
   }
 }
 

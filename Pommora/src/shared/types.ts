@@ -106,7 +106,15 @@ export type TimeFormatSetting = 'twelveHour' | 'twentyFourHour'
 export const DEFAULT_TIME_FORMAT: TimeFormatSetting = 'twelveHour'
 
 /** Entity kinds that carry a nexus-wide default icon; an entity's own `icon` still overrides it. */
-export const ENTITY_ICON_KINDS = ['collection', 'set', 'area', 'topic', 'project', 'page'] as const
+export const ENTITY_ICON_KINDS = [
+  'collection',
+  'set',
+  'area',
+  'topic',
+  'project',
+  'space',
+  'page',
+] as const
 export type EntityIconKind = (typeof ENTITY_ICON_KINDS)[number]
 
 /** Where a container's child folders sit relative to its loose pages in the sidebar. `top` (default)
@@ -551,6 +559,9 @@ export interface ViewRow {
   path: string
   parentSetId?: string
   frontmatter: PageFrontmatter
+  /** The tree node's resolved context links (contextId → Space ids) — the pipeline's
+   *  context-column value source; the optimistic write layer overrides per commit. */
+  contextValues?: Record<string, string[]>
 }
 
 /** What a resolved column renders from. `title`/`tier`/`modified` are reserved columns;

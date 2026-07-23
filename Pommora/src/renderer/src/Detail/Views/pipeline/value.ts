@@ -21,12 +21,14 @@ import {
 import { type PropertyValue, parsePropertyValue } from '@shared/propertyValue'
 
 /** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
- *  a synthetic sentinel: `_title`→'title', `_tier1/2/3`→'tier', `_modified_at`→'last_edited_time'
- *  (Swift treats it as a date for both filter and sort). `_status`/`_id`/`_created_at`/`_type`
- *  carry no special branch — they resolve through the schema (undefined when absent). */
+ *  a synthetic sentinel: `_title`→'title', any registry Context id→'tier', `_modified_at`→
+ *  'last_edited_time' (Swift treats it as a date for both filter and sort). `contextIds` callers
+ *  that never meet a context column (schema-only pickers) may omit it — the reserved `_tierN`
+ *  three classify regardless. */
 export function declaredType(
   propertyId: string,
   schema: PropertyDefinition[],
+  contextIds: readonly string[] = [],
 ): PropertyType | 'title' | 'tier' | undefined {
   switch (propertyId) {
     case RESERVED_PROPERTY_ID.title:
@@ -38,6 +40,7 @@ export function declaredType(
     case RESERVED_PROPERTY_ID.tier3:
       return 'tier'
     default:
+      if (contextIds.includes(propertyId)) return 'tier'
       return schema.find((d) => d.id === propertyId)?.type
   }
 }
@@ -69,21 +72,15 @@ function coerceToDeclaredType(
   return v
 }
 
-/** Reserved tier id → its bare frontmatter array field, stated once so the three tier cases
- *  share one value-access expression (the field names are literal-typed, so `fm[field]` stays
- *  type-checked as `string[] | undefined`). */
-type TierField = 'tier1' | 'tier2' | 'tier3'
-const TIER_FIELD: Record<string, TierField> = {
-  [RESERVED_PROPERTY_ID.tier1]: 'tier1',
-  [RESERVED_PROPERTY_ID.tier2]: 'tier2',
-  [RESERVED_PROPERTY_ID.tier3]: 'tier3',
-}
-
 /** The row's value for a column, as a PropertyValue. Reserved columns read intrinsic/frontmatter
  *  fields; user `prop_*` columns route through the on-disk codec (`parsePropertyValue`). The shape
  *  parse is cached (the measured grouped-view hot spot); the declared-type coercion rides on top,
  *  fresh + O(1), so the cache stays schema-free and a schema type-change reflects at once. Absent OR
- *  malformed ⇒ `{ kind: 'null' }` — a single bad cell never poisons a view. */
+ *  malformed ⇒ `{ kind: 'null' }` — a single bad cell never poisons a view.
+ *
+ *  A CONTEXT column bypasses the cache: its ids resolve at walk assembly onto the row's own
+ *  `contextValues` (the tree node's field), with the optimistic write layer's `contextValues`
+ *  rider on the patched frontmatter winning while a commit is in flight. */
 export function resolveFieldValue(
   row: ViewRow,
   propertyId: string,
@@ -92,6 +89,15 @@ export function resolveFieldValue(
   // `_title` bypasses the cache — it reads `row.title`, which a rename changes without touching
   // the frontmatter object the cache is keyed on.
   if (propertyId === RESERVED_PROPERTY_ID.title) return { kind: 'select', value: row.title }
+  {
+    const patched = (row.frontmatter as Record<string, unknown>).contextValues
+    const fromPatch =
+      patched != null && typeof patched === 'object'
+        ? (patched as Record<string, string[] | undefined>)[propertyId]
+        : undefined
+    const ids = fromPatch ?? row.contextValues?.[propertyId]
+    if (ids !== undefined) return ids.length ? { kind: 'context', value: ids } : { kind: 'null' }
+  }
   let m = resolvedByFm.get(row.frontmatter)
   if (!m) {
     m = new Map()
@@ -117,10 +123,6 @@ function computeFieldValue(fm: PageFrontmatter, propertyId: string): PropertyVal
       return typeof fm.modified_at === 'string' && fm.modified_at
         ? { kind: 'datetime', value: fm.modified_at }
         : { kind: 'null' }
-    case RESERVED_PROPERTY_ID.tier1:
-    case RESERVED_PROPERTY_ID.tier2:
-    case RESERVED_PROPERTY_ID.tier3:
-      return { kind: 'context', value: fm[TIER_FIELD[propertyId]] ?? [] }
     default:
       try {
         return parsePropertyValue(fm.properties?.[propertyId])

@@ -23,8 +23,10 @@ export function resolveView(input: {
   /** Cards flatten each top-level set's subtree into one band (E-2), so structural grouping resolves
    *  flat — one group per top set, its whole subtree in items — and a manual reorder spans the band. */
   flattenStructural?: boolean
+  /** Registry Context ids (display order) — context columns + their filter typing. */
+  contextIds?: readonly string[]
 }): { columns: ResolvedColumn[]; groups: ResolvedGroup[] } {
-  const { rows, setTree, view, schema, manualOrder, flattenStructural } = input
+  const { rows, setTree, view, schema, manualOrder, flattenStructural, contextIds = [] } = input
   // Sort By: Location (cards) is a reserved sort primary the sorter can't rank; on its Location order
   // mode it flattens the structural walk into one band (locationFlat). Its Custom order mode falls to
   // the manual sorter (flat() + viewOrders). Gated on flattenStructural so it can't affect a table.
@@ -33,8 +35,8 @@ export function resolveView(input: {
     sortByLocation && (view.structural_order_mode ?? 'location') === 'location'
   const useLocationFlat =
     (flattenStructural && view.group?.kind === 'flat' && locationFsOrder) ?? false
-  const columns = resolveColumns(view, schema)
-  const filtered = applyFilter(rows, view.filter, schema, setTree)
+  const columns = resolveColumns(view, schema, contextIds)
+  const filtered = applyFilter(rows, view.filter, schema, setTree, contextIds)
   const sorter = makeSorter(view.sort, schema, manualOrder)
   // Location order mirrors the filesystem: group_order is preserved on the view but ignored (C-1a).
   // The mode is structural-only — and "structural" is the EFFECTIVE mode (a dead-property grouping

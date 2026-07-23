@@ -75,11 +75,12 @@ export function applyFilter(
   filter: FilterGroup | undefined,
   schema: PropertyDefinition[],
   setTree: SetTreeNode[] = [],
+  contextIds: readonly string[] = [],
 ): ViewRow[] {
   // 'none' = the pane's disable state (root-only): rules persist untouched, filtering skips.
   if (!filter || filter.match === 'none') return rows
   const locate = makeLocationIndex(setTree)
-  return rows.filter((row) => matchesGroup(row, filter, schema, locate))
+  return rows.filter((row) => matchesGroup(row, filter, schema, locate, contextIds))
 }
 
 /** A child is a nested group iff it carries `rules`; otherwise it's a leaf FilterRule. */
@@ -92,13 +93,14 @@ function matchesGroup(
   group: FilterGroup,
   schema: PropertyDefinition[],
   locate: LocationIndex,
+  contextIds: readonly string[],
 ): boolean {
   if (group.match === 'none') return true // never pane-authored nested; a hand-authored one passes
   if (group.rules.length === 0) return true
   const results = group.rules.map((node) =>
     isGroup(node)
-      ? matchesGroup(row, node, schema, locate)
-      : evaluateRule(row, node, schema, locate),
+      ? matchesGroup(row, node, schema, locate, contextIds)
+      : evaluateRule(row, node, schema, locate, contextIds),
   )
   return group.match === 'all' ? results.every(Boolean) : results.some(Boolean)
 }
@@ -108,6 +110,7 @@ function evaluateRule(
   rule: FilterRule,
   schema: PropertyDefinition[],
   locate: LocationIndex,
+  contextIds: readonly string[],
 ): boolean {
   if (!FILTER_OP_SET.has(rule.op)) return true // unknown op → no-op pass
 
@@ -126,8 +129,8 @@ function evaluateRule(
     return rule.op === FILTER_OPS.isInside ? hit : !hit
   }
 
-  const t = declaredType(rule.property_id, schema)
-  if (t === undefined) return true // property absent from schema → no-op pass
+  const t = declaredType(rule.property_id, schema, contextIds)
+  if (t === undefined) return true // property absent from schema/registry → no-op pass
   return evaluateByType(
     resolveFieldValue(row, rule.property_id, schema),
     rule.op,
