@@ -15,6 +15,8 @@ import { InspectorPanel } from './Detail/InspectorPanel/InspectorPanel'
 import { NavWindow } from './NavWindow/NavWindow'
 import { PreviewWindow } from './PagePreview/PreviewWindow'
 import { FloatingPane } from './design-system/components/FloatingPane/FloatingPane'
+import { ContextSettings } from './Detail/Settings/ContextSettings'
+import { SpaceSettings } from './Detail/Settings/SpaceSettings'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
 import { Icon } from '@renderer/design-system/symbols'
@@ -116,12 +118,24 @@ export function App(): React.JSX.Element {
     })
   }, [openPreview])
 
-  // Context-menu "Settings" (Context/Space) → the floating settings chassis (blank until its
-  // content panes land).
-  const [entitySettingsOpen, setEntitySettingsOpen] = useState(false)
+  // Context-menu "Settings" (Context/Space) → the floating settings window. A Space target
+  // carries its id; a Context group's resolves here by folder title (its menu has no id).
+  const openEntitySettings = useSession((s) => s.openEntitySettings)
   useEffect(() => {
-    return window.nexus.onOpenEntitySettings(() => setEntitySettingsOpen(true))
-  }, [])
+    return window.nexus.onOpenEntitySettings((target) => {
+      if (target.kind === 'space' && target.id) {
+        openEntitySettings({ kind: 'space', id: target.id })
+        return
+      }
+      const title = target.path.split('/').pop()
+      const group = (useSession.getState().tree?.contextGroups ?? []).find(
+        (g) => g.def.title === title,
+      )
+      if (group) openEntitySettings({ kind: 'context', id: group.def.id })
+    })
+  }, [openEntitySettings])
+  const settingsTarget = useSession((s) => s.settingsTarget)
+  const closeEntitySettings = useSession((s) => s.closeEntitySettings)
 
   // The live filesystem watcher pushed a fresh tree (external change) → swap it in place.
   // Single-window v1: main guards stale pushes by session root; on an in-window nexus
@@ -298,17 +312,21 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <NavWindow />}
       {/* Page Preview — the B-1-routed floating page window; one floating window total (D-8). */}
       {status === 'ready' && <PreviewWindow />}
-      {/* The Context/Space settings window — the shared floating chassis, blank until its
-          content panes land. */}
+      {/* The Context/Space settings window — the shared floating chassis over the entity's
+          settings content, reachable without selecting the entity. */}
       {status === 'ready' && (
         <FloatingPane
           id="entity-settings"
-          open={entitySettingsOpen}
-          onClose={() => setEntitySettingsOpen(false)}
+          open={settingsTarget !== null}
+          onClose={closeEntitySettings}
           bounds={{ minW: 320, minH: 260, defW: 420, defH: 420 }}
           ariaLabel="Settings"
         >
-          <div style={{ width: '100%', height: '100%' }} />
+          {settingsTarget?.kind === 'space' ? (
+            <SpaceSettings id={settingsTarget.id} />
+          ) : settingsTarget ? (
+            <ContextSettings id={settingsTarget.id} />
+          ) : null}
         </FloatingPane>
       )}
       {/* Invisible edge-drag resize strip at the inspector's left edge (only while open). */}

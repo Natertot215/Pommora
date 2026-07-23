@@ -6,7 +6,7 @@ import { Icon, iconNameOr, defaultEntityIcon } from '../../design-system/symbols
 import { InteractionField } from '../../design-system/components/InteractionField'
 import { MenuBottomRow, MenuScrollFrame } from '../../design-system/components/menu'
 import { footerLockAction, lockIcon } from '../../Blocks/handleMenu.css'
-import { findContext, findSpace } from '../../Detail/Scope'
+import { findContext } from '../../Detail/Scope'
 import { IconPicker } from '../IconPicker'
 import { PhotoCropModal } from '../PhotoCropModal'
 import { InlineEditHeader } from './InlineEditHeader'
@@ -96,36 +96,6 @@ export function SettingsScaffold(): React.JSX.Element | null {
             onConfirm={confirmCrop}
           />
         )}
-      </>
-    )
-  }
-
-  if (selection.kind === 'space') {
-    const node = findSpace(tree, selection.id)
-    if (!node) return null
-    return (
-      <>
-        <InlineEditHeader
-          value={node.name}
-          icon={iconNameOr(node.icon, defaultEntityIcon('space', defaultIcons))}
-          iconRef={ctxIconRef}
-          onIconClick={() => setCtxPickerOpen(true)}
-          onCommit={(next) => {
-            // A Space rename is the journaled title cascade, never the bare folder rename.
-            if (next && next !== node.name)
-              void mutate({ op: 'renameSpace', spaceId: selection.id, newName: next })
-          }}
-        />
-        <IconPicker
-          open={ctxPickerOpen}
-          onClose={() => setCtxPickerOpen(false)}
-          triggerRef={ctxIconRef}
-          value={node.icon}
-          onSelect={(id) => {
-            setCtxPickerOpen(false)
-            void mutate({ op: 'setIcon', path: node.path, kind: 'space', icon: id })
-          }}
-        />
       </>
     )
   }
