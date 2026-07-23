@@ -42,7 +42,7 @@ export type MutableContainerKind = 'collection' | 'set'
 /** Top-level order groups, persisted in `.nexus/state.json` — top Collections + the three
  *  context tiers. Single source for the union spelled across the engine, store, and IPC
  *  (and re-used in main). */
-export type StateOrderKey = 'collection_order' | 'area_order' | 'topic_order' | 'project_order'
+export type StateOrderKey = 'collection_order'
 /** Within-container child-order keys carried by reorderChildren — collections on a vault, sets on a collection. */
 export type ChildOrderKey = 'collection_order' | 'set_order'
 
@@ -50,7 +50,6 @@ export type ChildOrderKey = 'collection_order' | 'set_order'
 export type MutateRequest =
   | { op: 'createPage'; parentPath: string; name: string }
   | { op: 'createContainer'; parentPath: string; kind: MutableContainerKind; name: string }
-  | { op: 'createContext'; tier: 1 | 2 | 3; name: string }
   | { op: 'rename'; path: string; kind: MutableKind; newName: string }
   | { op: 'delete'; path: string; kind: MutableKind }
   // Set/clear the nexus profile image (sidebar header avatar). dataUrl set ⇒ decode + copy
@@ -80,9 +79,6 @@ export type MutateRequest =
   // `null` clears the key. Foreign frontmatter + body survive. Drives table cross-group reassignment
   // + later inline edits — the single typed property write.
   | { op: 'setProperty'; path: string; propertyId: string; value: PropertyValue | null }
-  // Set a page's tier-N context links — the BARE ULID array at the frontmatter root
-  // (`tier1`/`tier2`/`tier3`), never a `$ctx` property. Written whole; empty = clear.
-  | { op: 'setTier'; path: string; tier: number; contextIds: string[] }
   // `order`: the destination container's full page-id order after the drop (renderer-
   // computed). Absent = legacy append (order falls back to title/creation). Same parent +
   // order = a pure reorder. Stale ids in a source container self-drop on the next read.

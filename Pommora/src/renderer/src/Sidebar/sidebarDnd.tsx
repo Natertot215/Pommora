@@ -502,12 +502,6 @@ function siblingGroup(dragged: Entry, idx: Index): string[] {
   switch (dragged.kind) {
     case 'collection':
       return idx.collectionIds
-    case 'area':
-      return idx.areaIds
-    case 'topic':
-      return idx.topicIds
-    case 'project':
-      return idx.projectIds
     case 'space':
       return dragged.parentId ? (idx.spaceIdsByContext.get(dragged.parentId) ?? []) : []
     case 'contextGroup':
@@ -523,12 +517,6 @@ function reorderCommit(dragged: Entry, _idx: Index, order: string[]): MutateRequ
   switch (dragged.kind) {
     case 'collection':
       return { op: 'reorderTop', key: 'collection_order', order }
-    case 'area':
-      return { op: 'reorderTop', key: 'area_order', order }
-    case 'topic':
-      return { op: 'reorderTop', key: 'topic_order', order }
-    case 'project':
-      return { op: 'reorderTop', key: 'project_order', order }
     case 'space':
       // A Space reorders within its Context group — `space_orders[contextId]` in state.json.
       return dragged.parentId
