@@ -12,6 +12,7 @@
 
 /* The preview's toolbar strip: the title rides IN the strip with the close × beside it;
    presses on the bare strip arm the window move. */
+/* One horizontal row: (Icon)(Title) heading leading, × trailing — all centered on the strip. */
 .settingswindow-toolbar {
   position: absolute;
   top: 0;
@@ -20,20 +21,21 @@
   z-index: 3;
   display: flex;
   align-items: center;
-  /* NavWindow's × home: the right corner — the title rides just left of it. */
-  justify-content: flex-end;
   gap: 6px;
   height: var(--pgpreview-toolbar-h);
   padding: 0 calc(var(--glass-inset) + 6px);
 }
-.settingswindow-title {
+.settingswindow-heading {
+  flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--label-secondary);
-  /* Inert: presses fall through to the strip beneath and arm the window move. */
-  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+/* The heading composes on the strip's centerline — its own block spacing zeroes here. */
+.settingswindow-heading > * {
+  margin: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 /* The × lives in the toolbar next to the title (chassis default placement overridden). */
 .settingswindow-close {
