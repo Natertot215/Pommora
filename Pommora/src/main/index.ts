@@ -53,6 +53,7 @@ import {
   blockPatchProblem,
   coerceBlockHost,
   type BlockDocPatch,
+  type BlockHostRef,
   type BlocksGetResult,
   type BlocksSaveResult,
 } from '@shared/blocks'
@@ -1533,7 +1534,7 @@ ipcMain.handle(
 const blockHostAnd = (
   host: unknown,
   tileId?: unknown,
-): { root: string; h: { kind: 'homepage' } } | string => {
+): { root: string; h: BlockHostRef } | string => {
   const root = sessionRoot()
   if (root === null) return 'No nexus is open.'
   const h = coerceBlockHost(host)
