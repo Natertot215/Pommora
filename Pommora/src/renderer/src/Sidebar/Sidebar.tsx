@@ -13,7 +13,6 @@ import { MenuItem } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { slideScrollBack } from '@renderer/design-system/components/OverflowScroll'
 import { EditableInput } from '../Components/EditableInput'
-import { HoverCreate } from '../Components/HoverCreate'
 import type {
   AreaNode,
   CollectionNode,
@@ -675,20 +674,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     >
       <div className="section">
         {tree.contextGroups ? (
-          <>
-            {tree.contextGroups.map((g) => (
-              <ContextGroupDisclosure key={g.def.id} group={g} />
-            ))}
-            <HoverCreate
-              label="New Context"
-              className="contexts-create"
-              onClick={() =>
-                void mutate({ op: 'createContextGroup', name: 'New Context' }, (created) =>
-                  useSession.getState().beginRename(created.path),
-                )
-              }
-            />
-          </>
+          tree.contextGroups.map((g) => <ContextGroupDisclosure key={g.def.id} group={g} />)
         ) : (
           <>
             <TierDisclosure
