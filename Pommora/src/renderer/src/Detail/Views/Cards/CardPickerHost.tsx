@@ -11,6 +11,7 @@ import { parseLink, urlValueFromEdit } from '../Table/linkValue'
 import { solidColorCss } from '../Table/solidColor'
 import type { ResolveContext } from '../Table/resolveContext'
 import { PropertyPicker, syntheticContextDef } from '../PropertyEditing/PropertyPicker'
+import { useSession } from '../../../store'
 import { DatetimeValuePicker } from '../PropertyEditing/DatetimeValuePicker'
 import { CardAddPicker } from './CardAddPicker'
 import { addColumn, addEntriesFor, type AddEntry } from './cardValueInput'
@@ -70,6 +71,7 @@ export function CardPickerHost({
   onDismissValue: () => void
   onDismissAdd: () => void
 }): React.JSX.Element {
+  const tree = useSession((s) => s.tree)
   // The last non-null requests render through the closing frames (exit presence keeps the pane
   // mounted after dismiss); the anchor rides a plain ref object PickerMenu can track.
   const lastValue = useRef(value)
@@ -114,7 +116,7 @@ export function CardPickerHost({
   const aReq = add ?? lastAdd.current
   const aRow = aReq ? rowById.get(aReq.rowId) : undefined
   const aEntries =
-    aRow && labels ? addEntriesFor(aRow, view, ctx, labels, columns) : ([] as AddEntry[])
+    aRow && labels ? addEntriesFor(aRow, view, ctx, labels, columns, tree) : ([] as AddEntry[])
 
   // One commit gate for every value-picker surface: an add-originated open reveals on the first
   // real commit (revealProperty is idempotent + in-flight-deduped, so repeat commits no-op).
@@ -130,7 +132,7 @@ export function CardPickerHost({
     onDismissAdd()
     onOpenValue({
       rowId: aReq.rowId,
-      column: addColumn(entry.id),
+      column: addColumn(entry.id, tree),
       kind: entry.type === 'datetime' ? 'datetime' : 'link',
       anchor: aReq.anchor,
       revealOnCommit: true,
@@ -183,13 +185,13 @@ export function CardPickerHost({
       <CardAddPicker
         entries={aEntries}
         currentOf={(e) => (aRow ? resolveFieldValue(aRow, e.id, ctx.schema) : null)}
-        contextOptionsOf={(e) => contextOptionsFor(addColumn(e.id))}
+        contextOptionsOf={(e) => contextOptionsFor(addColumn(e.id, tree))}
         open={add !== null}
         anchorRef={addAnchorRef}
         initialEntry={aReq?.initialEntry ?? null}
         onCommit={(e, v) => {
           onReveal(e.id)
-          if (aRow) commitValue(aRow, addColumn(e.id), v)
+          if (aRow) commitValue(aRow, addColumn(e.id, tree), v)
         }}
         onReveal={(e) => onReveal(e.id)}
         onPickDependent={pickDependent}

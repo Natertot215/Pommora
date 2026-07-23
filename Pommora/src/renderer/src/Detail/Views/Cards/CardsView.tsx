@@ -300,7 +300,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (req.initialEntry && !req.initialEntry.revealOnly && (t === 'datetime' || t === 'url')) {
       setValuePicker({
         rowId: req.rowId,
-        column: addColumn(req.initialEntry.id),
+        column: addColumn(req.initialEntry.id, tree),
         kind: t === 'datetime' ? 'datetime' : 'link',
         anchor: req.anchor,
         revealOnCommit: true,
@@ -940,6 +940,7 @@ const PageCard = memo(function PageCard({
   const gdrag = useGroupedDragItem(row.id)
   const drag = draggable ? gdrag : null
   const version = useSession((s) => s.thumbVersions[`page:${row.id}`] ?? 0)
+  const tree = useSession((s) => s.tree)
   const [failed, setFailed] = useState(false)
   // A broken image latches `failed` — a cover change must retry the NEW src, not keep the placeholder.
   const lastSrc = useRef<string | undefined>(undefined)
@@ -956,8 +957,8 @@ const PageCard = memo(function PageCard({
   // The add menu (addEntriesFor): everything NOT currently shown — the native menu lists it, and the
   // grid-level host recomputes the same entries when its picker opens for this row.
   const addable = useMemo<AddEntry[]>(
-    () => (ctx && labels ? addEntriesFor(row, view, ctx, labels, columns) : []),
-    [ctx, view, row, labels, columns],
+    () => (ctx && labels ? addEntriesFor(row, view, ctx, labels, columns, tree) : []),
+    [ctx, view, row, labels, columns, tree],
   )
   const mutate = useSession((s) => s.mutate)
   const [renameOpen, setRenameOpen] = useState(false)
