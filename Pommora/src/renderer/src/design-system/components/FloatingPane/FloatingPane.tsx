@@ -2,7 +2,6 @@ import { useEffect, type CSSProperties } from 'react'
 import { GlassPane } from '@renderer/design-system/materials'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
-import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import {
   FloatingResizeCorners,
   useFloatingWindow,
@@ -27,7 +26,6 @@ export interface FloatingPaneShellProps {
   bounds: FloatingBounds
   /** The bare-background selectors a window-move may start from; default = the glass itself. */
   dragSurfaces?: string
-  title?: React.ReactNode
   className?: string
   style?: CSSProperties
   ariaLabel: string
@@ -44,7 +42,6 @@ export function FloatingPaneShell({
   onEscape,
   bounds,
   dragSurfaces,
-  title,
   className,
   style,
   ariaLabel,
@@ -91,19 +88,8 @@ export function FloatingPaneShell({
       >
         <Icon name="x" size={14} />
       </button>
-      {title != null && <div className={s.title}>{title}</div>}
       {children}
       <FloatingResizeCorners startDrag={startDrag} />
     </GlassPane>
   )
-}
-
-/** The full assembly: the shell behind its own exit presence. */
-export function FloatingPane({
-  open,
-  ...shell
-}: Omit<FloatingPaneShellProps, 'closing'> & { open: boolean }): React.JSX.Element | null {
-  const { mounted, closing } = useExitPresence(open)
-  if (!mounted) return null
-  return <FloatingPaneShell {...shell} closing={closing} />
 }
