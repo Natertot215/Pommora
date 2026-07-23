@@ -481,7 +481,7 @@ ipcMain.handle('tabs:save', (_e, set: unknown): { ok: true } | { ok: false; erro
   return { ok: true }
 })
 
-// The preview tab sets — a synced sidecar (`page-previews.json`, H-3/H-10): the NavWindow set,
+// The preview tab sets — a synced sidecar (`page-previews.json`): the NavWindow set,
 // per-origin page sets, the open pointer. Saves debounce main-side; drained with the nav/tab writes.
 ipcMain.handle('previews:load', async (): Promise<PreviewsResult> => {
   const root = sessionRoot()
@@ -589,7 +589,7 @@ async function adoptNexusInner(path: string): Promise<void> {
   await openSession(path)
   // openSession canonicalized the root (realpath); thread THAT everywhere below so the watcher's
   // session-match guard (watcher.ts) and the index/persistence key off the same string sessionRoot()
-  // returns — a raw path here would make the watcher treat every event as a session switch (F1 root fix).
+  // returns — a raw path here would make the watcher treat every event as a session switch.
   const root = sessionRoot() ?? path
   await prepareOpenedNexus(root)
   // One-time mutation-side work that may block open (not part of best-effort prepare):
@@ -703,7 +703,7 @@ ipcMain.handle(
       const resolved = await resolveUnderRoot(root, relPath)
       if (!resolved.ok) return { ok: false, error: resolved.error.message }
       // Under the page's file lock — the editor autosave and a link-rename cascade both rewrite
-      // this page's body, so they must serialize (F1) rather than clobber each other.
+      // this page's body, so they must serialize rather than clobber each other.
       const r = await serializeOnFile(resolved.value, () => updatePageBody(resolved.value, body))
       return r.ok ? { ok: true } : { ok: false, error: r.error.message }
     } catch (e) {
@@ -1031,7 +1031,7 @@ ipcMain.handle(
       const c = await resolveSchemaFolder(containerPath)
       if (!c.ok) return c
       if (typeof propertyId !== 'string') return { ok: false, error: 'A property id is required.' }
-      // One chain slot covers a drag-assign: append + restore + slot placement land atomically (E-2).
+      // One chain slot covers a drag-assign: append + restore + slot placement land atomically.
       const r = await assignPropertyAt(
         c.root,
         c.folder,
@@ -1495,8 +1495,8 @@ ipcMain.handle(
   },
 )
 
-// The block document (D-3) — a targeted per-host load + locked partial writes on the host's
-// config (homepage.json for the dev host), never woven into the tree walk (E-3).
+// The block document — a targeted per-host load + locked partial writes on the host's
+// config (homepage.json for the dev host), never woven into the tree walk.
 ipcMain.handle('blocks:get', async (_e, host: unknown): Promise<BlocksGetResult> => {
   try {
     const root = sessionRoot()
@@ -1983,7 +1983,7 @@ ipcMain.handle(
 )
 
 // Pop a native detail-title menu. Rename is always offered; Change Icon unless `noEditIcon` (the homepage
-// sets its icon from the settings pane, not here); `toggleIcon` adds the Hide/Show Icon item (G-4).
+// sets its icon from the settings pane, not here); `toggleIcon` adds the Hide/Show Icon item.
 type TitleMenuAction = 'rename' | 'editIcon' | 'toggleIcon'
 ipcMain.handle('nexus:titleMenu', async (e, arg: unknown): Promise<TitleMenuAction | null> => {
   const win = BrowserWindow.fromWebContents(e.sender)
@@ -2047,7 +2047,7 @@ ipcMain.handle('tab-menu', async (e, ctx: TabMenuContext) => {
   return win && isPlainObject(ctx) ? popTabMenu(win, ctx as unknown as TabMenuContext) : null
 })
 
-// Pop a NavWindow row/card's native right-click menu (D-3) → the chosen action.
+// Pop a NavWindow row/card's native right-click menu → the chosen action.
 ipcMain.handle('nav-row-menu', async (e, ctx: NavRowMenuContext) => {
   const win = BrowserWindow.fromWebContents(e.sender)
   return win && isPlainObject(ctx) ? popNavRowMenu(win, ctx as unknown as NavRowMenuContext) : null

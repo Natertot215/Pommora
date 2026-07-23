@@ -68,7 +68,7 @@ export type MutateRequest =
   // banner.<ext>` + record that path in the owner's config (folder sidecar, homepage.json, or — for
   // a page — the `cover` key in its `.md` frontmatter); null ⇒ clear the field + delete the file.
   | { op: 'setBanner'; path: string; kind: BannerOwnerKind; dataUrl: string | null }
-  // Hide or show an entity's banner-heading icon (G-4 chrome) — a `heading_icon_hidden` boolean in the
+  // Hide or show an entity's banner-heading icon — a `heading_icon_hidden` boolean in the
   // owner's config (folder sidecar or homepage.json; absent = shown). `true` hides, `false` clears it.
   | { op: 'setHeadingIconHidden'; path: string; kind: BannerOwnerKind; hidden: boolean }
   // Set or clear an entity's icon — a bare symbol id (any Lucide id). A page carries it in its `.md`
@@ -78,7 +78,7 @@ export type MutateRequest =
   | { op: 'setIcon'; path: string; kind: MutableKind; icon: string | null }
   // Set or clear one property in a page's `.md` frontmatter `properties` map (id-keyed PropertyValue);
   // `null` clears the key. Foreign frontmatter + body survive. Drives table cross-group reassignment
-  // (D-4) + later inline edits — the single typed property write.
+  // + later inline edits — the single typed property write.
   | { op: 'setProperty'; path: string; propertyId: string; value: PropertyValue | null }
   // Set a page's tier-N context links — the BARE ULID array at the frontmatter root
   // (`tier1`/`tier2`/`tier3`), never a `$ctx` property. Written whole; empty = clear.
@@ -131,6 +131,6 @@ export interface ContextTarget {
   /** Entity id — lets the menu offer "Open in New Tab" (the push-back forms a real tab target).
    *  Surfaces without one simply don't get the item. */
   id?: string
-  /** Whether the entity is already open in a tab — flips the item label to "Open" (focus, I-1). */
+  /** Whether the entity is already open in a tab — flips the item label to "Open" (focus). */
   alreadyOpen?: boolean
 }

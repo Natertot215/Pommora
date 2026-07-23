@@ -1,8 +1,8 @@
 // Pure tab-list logic for the Multi-Tab Nexus — no store, no IPC, no DOM (unit-tested in isolation).
-// `tabs` is the UNPINNED set (what tabs.json persists, C-6); pinned tabs are derived live from the
+// `tabs` is the UNPINNED set (what tabs.json persists); pinned tabs are derived live from the
 // pins slice (derivePinnedTabs) and passed in wherever an open/dedup/cycle decision must see them. Each
-// Tab owns its own Back/Forward history (D-7); every open funnels through openTab's one dedup-then-
-// predicate path (D-3b).
+// Tab owns its own Back/Forward history; every open funnels through openTab's one dedup-then-
+// predicate path.
 
 import type { PinEntry, SelectTarget, Tab, TabTarget } from '@shared/types'
 import type { MutableKind } from '@shared/mutate'
@@ -13,7 +13,7 @@ import { byOrder, cleanPinTarget } from '../Navigation/navPins'
 export const NEWTAB: TabTarget = { kind: 'newtab' }
 
 /** Identity key for a tab target — reuses navKey; the newtab sentinel collapses to a single 'newtab'
- *  key so I-1 keeps at most one NavView tab. */
+ *  key so dedup keeps at most one NavView tab. */
 export function tabKey(target: TabTarget): string {
   return target.kind === 'newtab' ? 'newtab' : navKey(target)
 }
@@ -26,7 +26,7 @@ export function pinTabId(target: SelectTarget): string {
 
 /** The pinned tabs, derived from the pins slice (sorted by fractional order). Agenda pins (a legacy
  *  migration can hold them) are skipped — `select` can't drive task/event, so they'd be unrenderable
- *  tabs. A pinned tab never navigates in place (D-2), so its history is just the pin target. */
+ *  tabs. A pinned tab never navigates in place, so its history is just the pin target. */
 export function derivePinnedTabs(pins: PinEntry[]): Tab[] {
   return [...pins]
     .sort(byOrder)
@@ -36,7 +36,7 @@ export function derivePinnedTabs(pins: PinEntry[]): Tab[] {
 }
 
 /** Whether an entity is already open — as an unpinned tab or a pin (a derived pinned tab). Drives
- *  the stateful "Open" vs "Open in New Tab" menu labels (I-1). */
+ *  the stateful "Open" vs "Open in New Tab" menu labels. */
 export function isOpenInTabs(tabs: Tab[], pins: PinEntry[], target: SelectTarget): boolean {
   const key = navKey(target)
   return (
@@ -71,7 +71,7 @@ export function activeUnpinnedTab(tabs: Tab[], activeTabId: string): Tab | undef
   return tabs.find((t) => t.id === activeTabId)
 }
 
-/** Whether a tab is pinned — derived from the pins set, never stored (C-6). The newtab sentinel is
+/** Whether a tab is pinned — derived from the pins set, never stored. The newtab sentinel is
  *  never pinned. */
 export function isPinned(target: TabTarget, pins: PinEntry[]): boolean {
   if (target.kind === 'newtab') return false
@@ -94,8 +94,8 @@ export interface OpenResult {
   activeTabId: string
 }
 
-/** openTab (D-3b): dedup first (I-1 — an already-open entity just focuses its tab), else one predicate
- *  decides spawn-vs-replace. Spawns append RIGHT and hold order (D-12); a replace overwrites the active
+/** openTab: dedup first (an already-open entity just focuses its tab), else one predicate
+ *  decides spawn-vs-replace. Spawns append RIGHT and hold order; a replace overwrites the active
  *  UNPINNED tab in place and pushes onto its Back/Forward stack. `pinned` is the derived pinned set
  *  (read-only context — pinning/unpinning is a separate op). */
 export function openTab(
@@ -113,8 +113,8 @@ export function openTab(
 
   const active = all.find((t) => t.id === activeTabId)
   const activeIsPinned = active ? pinned.some((p) => p.id === active.id) : false
-  // Spawn when the open is explicit, the active tab is pinned (protected, D-2), or there's no active
-  // tab; otherwise reuse the active unpinned tab (D-1) — which includes replacing a NavView scratch (E-2).
+  // Spawn when the open is explicit, the active tab is pinned (protected), or there's no active
+  // tab; otherwise reuse the active unpinned tab — which includes replacing a NavView scratch.
   if (opts.newTab || activeIsPinned || !active) {
     return { tabs: [...tabs, tabFor(newId, target)], activeTabId: newId }
   }
@@ -131,7 +131,7 @@ export function openTab(
   return { tabs: nextTabs, activeTabId: active.id }
 }
 
-/** openNewTab (E-1): the `+` / ⌘N — focus the existing NavView if one is open (I-1, no duplicate),
+/** openNewTab: the `+` / ⌘N — focus the existing NavView if one is open (no duplicate),
  *  else append one. So pressing ⌘N while already in a new tab is a no-op (you're there). */
 export function openNewTab(tabs: Tab[], newId: string): OpenResult {
   const existing = tabs.find((t) => t.target.kind === 'newtab')
@@ -139,7 +139,7 @@ export function openNewTab(tabs: Tab[], newId: string): OpenResult {
   return { tabs: [...tabs, newTabTab(newId)], activeTabId: newId }
 }
 
-/** Push a tab id to the front of the MRU stack (deduped) — every activation records here (D-9). */
+/** Push a tab id to the front of the MRU stack (deduped) — every activation records here. */
 export function pushMru(mru: string[], id: string): string[] {
   return [id, ...mru.filter((m) => m !== id)]
 }
@@ -150,9 +150,9 @@ export interface CloseResult {
   mru: string[]
 }
 
-/** closeTab: drop an unpinned tab. Closing the active tab focuses the MRU top still open (D-9), falling
+/** closeTab: drop an unpinned tab. Closing the active tab focuses the MRU top still open, falling
  *  back to the spatial neighbor when the MRU is empty (a cold relaunch). Closing the very last tab —
- *  no pinned, no unpinned left — reseeds a lone NavView (I-5). Pinned tabs aren't closable here (their
+ *  no pinned, no unpinned left — reseeds a lone NavView. Pinned tabs aren't closable here (their
  *  `×` is gated off; unpin first), so a pinned id is a no-op. */
 export function closeTab(
   tabs: Tab[],
@@ -179,7 +179,7 @@ export function closeTab(
   return { tabs: nextTabs, activeTabId: mruTop ?? spatial, mru: nextMru }
 }
 
-/** reorderWithinZone: a plain move inside the unpinned strip (D-4b). Pinned reorder is the pins slice's
+/** reorderWithinZone: a plain move inside the unpinned strip. Pinned reorder is the pins slice's
  *  reorderPin, handled at the store layer. */
 export function reorderWithinZone(tabs: Tab[], fromId: string, toIndex: number): Tab[] {
   const from = tabs.findIndex((t) => t.id === fromId)
@@ -206,10 +206,10 @@ export interface ReconcileTabsResult {
   changed: boolean
 }
 
-/** I-2a: reconcile EVERY tab against a fresh tree, not just the active selection. A rename/move
+/** Reconcile EVERY tab against a fresh tree, not just the active selection. A rename/move
  *  refreshes targets + history entries in place; a deleted entity closes its unpinned tab (active →
- *  MRU focus, D-9) and drops its dead history entries; everything gone with no pins reseeds a lone
- *  NavView (I-5). Reference-preserving: untouched tabs keep their identity and `changed: false`
+ *  MRU focus) and drops its dead history entries; everything gone with no pins reseeds a lone
+ *  NavView. Reference-preserving: untouched tabs keep their identity and `changed: false`
  *  means the caller can skip the state write entirely. `reconcile` returns the live target
  *  (possibly re-pathed) or null when the entity is gone — built off a one-shot tree index, never a
  *  per-tab walk. */
@@ -230,7 +230,7 @@ export function reconcileTabs(
     }
     const target = reconcile(t.target)
     if (target === null) {
-      changed = true // deleted entity — the unpinned tab closes (I-2)
+      changed = true // deleted entity — the unpinned tab closes
       continue
     }
     const stack: SelectTarget[] = []
@@ -266,7 +266,7 @@ export function reconcileTabs(
   return { tabs: [seeded], activeTabId: seeded.id, mru: [seeded.id], changed: true }
 }
 
-/** Ctrl+Tab cycling over the full visual order (pinned then unpinned), wrapping both ways (I-11). */
+/** Ctrl+Tab cycling over the full visual order (pinned then unpinned), wrapping both ways. */
 export function cycle(orderedIds: string[], activeTabId: string, dir: 1 | -1): string {
   if (orderedIds.length === 0) return activeTabId
   const i = orderedIds.indexOf(activeTabId)

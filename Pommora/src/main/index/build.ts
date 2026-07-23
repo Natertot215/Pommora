@@ -100,7 +100,7 @@ interface NexusData {
   collections: CollectionData[]
   sets: SetData[]
   pages: PageData[]
-  /** Space-source link rows (G-2) — a Space's own outbound tags, off its tree node. */
+  /** Space-source link rows — a Space's own outbound tags, off its tree node. */
   spaces: { id: string; links: Record<string, string[]> }[]
   /** Resolve a raw entity root's context keys (bracketed + legacy tierN) to id links —
    *  the agenda collector shares the builder's one resolution. */
@@ -296,7 +296,7 @@ function contextLinks(
 /** Read agenda items. Agenda folders are discovered at the nexus root by the presence of
  *  `_taskconfig.json` / `_eventconfig.json` (readNexus discovers but does not surface them,
  *  so the index walks them directly). Their config schemas are NOT indexed — agenda defs
- *  live in the config sidecars, outside the nexus-wide registry (D-1). */
+ *  live in the config sidecars, outside the nexus-wide registry. */
 async function collectAgenda(
   nexusRoot: string,
   resolveRoot: (raw: Record<string, unknown>) => Record<string, string[]>,
@@ -382,7 +382,7 @@ export async function buildIndex(db: Db, nexusRoot: string): Promise<void> {
       }),
     )
     for (const s of data.sets) upsertSet(db, s)
-    // Space sources (G-2): a Space's own outbound tags, cross-Context included.
+    // Space sources: a Space's own outbound tags, cross-Context included.
     for (const s of data.spaces) {
       replaceContextLinks(db, s.id, contextLinks(s.id, 'space', s.links, nowIso()))
     }
@@ -404,7 +404,7 @@ export async function buildIndex(db: Db, nexusRoot: string): Promise<void> {
       replaceConnections(db, p.id, conns)
     }
 
-    // Markdown-block [[links]] are block-source edges (D-11 bodies carry no title, so no self-link
+    // Markdown-block [[links]] are block-source edges (bodies carry no title, so no self-link
     // to skip). Keyed by the block's ulid, resolved against the same page link index.
     for (const blk of blockBodies) {
       const conns = connectionEdges(blk.id, blk.body, linkIndex).map((e) => ({

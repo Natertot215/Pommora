@@ -205,7 +205,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         const pid = await parentContainerId(parent.value)
         if (pid) extra.parent_id = pid
       }
-      // Creation-seed (G-1): an app-made container is born with its default view on disk, so no
+      // Creation-seed: an app-made container is born with its default view on disk, so no
       // surface ever meets an empty views[]. The ULID mints here in main (the sentinel can't).
       extra.views = [{ ...mintDefaultView([]), id: `${VIEW_ID_PREFIX}${newId()}` }]
       const r = await createDisambiguated(req.name, (name) =>
@@ -350,7 +350,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         const resolved = await resolveUnderRoot(root, req.path)
         if (!resolved.ok) return relay(resolved)
         // Under the page's file lock — a banner (cover) write and a property cascade both rewrite
-        // this page's frontmatter, so they must serialize (F1) rather than clobber from a stale read.
+        // this page's frontmatter, so they must serialize rather than clobber from a stale read.
         return serializeOnFile(resolved.value, async () => {
           let existing: string
           try {
@@ -436,7 +436,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setHeadingIconHidden': {
-      // The banner-heading icon show/hide flag (G-4) → `heading_icon_hidden` in the owner's config
+      // The banner-heading icon show/hide flag → `heading_icon_hidden` in the owner's config
       // (homepage.json for the singleton, the folder sidecar otherwise). Locked on the config path —
       // homepage.json is shared with the block-doc writers. Absent = shown.
       let cfgPath: string
@@ -527,7 +527,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     case 'setProperty': {
       // One typed property write into a page's `.md` frontmatter `properties` map; foreign frontmatter
       // + body survive (same shape as the page-banner cover write). applyPropertyValue is the shared
-      // set/clear rule — a null value deletes the key. Drives table cross-group reassignment (D-4).
+      // set/clear rule — a null value deletes the key. Drives table cross-group reassignment.
       const resolved = await resolveUnderRoot(root, req.path)
       if (!resolved.ok) return relay(resolved)
       return serializeOnFile(resolved.value, async () => {
