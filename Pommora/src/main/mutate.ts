@@ -620,6 +620,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     case 'setContext': {
       const resolved = await resolveUnderRoot(root, req.path)
       if (!resolved.ok) return relay(resolved)
+      if (await isReserved(root, resolved.value)) return fault('That item can’t take contexts.')
       const world = await loadContextWorld(root)
       if (!world.ok) return relay(world)
       return relay(

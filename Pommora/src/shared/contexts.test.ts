@@ -62,6 +62,14 @@ describe('seededRegistry', () => {
     expect(reg.contexts.map((c) => c.title)).toEqual(['Areas', 'Topics', 'Projects'])
     expect(reg.contexts.map((c) => c.singular)).toEqual(['Area', 'Topic', 'Project'])
   })
+
+  it('disambiguates colliding custom plurals — titles are nexus-wide identity', () => {
+    const reg = seededRegistry({
+      ...DEFAULT_LABELS,
+      topic: { singular: 'Area', plural: 'Areas' },
+    })
+    expect(reg.contexts.map((c) => c.title)).toEqual(['Areas', 'Areas 2', 'Projects'])
+  })
 })
 
 describe('contextsRegistry schema', () => {
