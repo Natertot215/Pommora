@@ -28,8 +28,7 @@ const collection = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): C
 // Only the slices existingNavKeys reads; the rest of NexusTree is irrelevant to this unit.
 const tree = (over: Partial<NexusTree>): NexusTree =>
   ({
-    contexts: { areas: [], topics: [], projects: [] },
-    collections: [],
+        collections: [],
     userSections: [],
     contexts: [],
     ...over,
