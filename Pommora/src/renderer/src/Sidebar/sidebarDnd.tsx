@@ -30,7 +30,7 @@ import {
 // LINE marks the exact drop, the picked-up row stays muted in place, and a ghost rides the cursor.
 // No row displacement. EVERY sidebar entity is draggable and reorders within its parent heading —
 // pages (within a folder; also reparent across folders), Sets (reorder/reparent across Collections
-// and Sets), top-level Collections, and the three context tiers. The commit routes to the right
+// and Sets), top-level Collections, Context groups, and Spaces. The commit routes to the right
 // order store.
 
 const LINE_INSET_RIGHT = 12

@@ -23,8 +23,7 @@ export interface ResolveContext {
   labels: NexusLabels
 }
 
-/** Space id → {title, color, icon} across every registry Context (the legacy fixed-three
- *  struct feeds the same map on a tree without groups). */
+/** Space id → {title, color, icon} across every registry Context. */
 export function buildContextsById(tree: NexusTree): Map<string, ContextRef> {
   const m = new Map<string, ContextRef>()
   for (const g of tree.contexts ?? []) {
