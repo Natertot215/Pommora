@@ -1738,7 +1738,6 @@ export const useSession = create<SessionState>((set, get) => {
           case 'renameContext':
           case 'renameSpace':
           case 'setSpaceColor':
-          case 'setContextSingular':
           case 'reorderContexts':
           case 'reorderSpaces':
             patched = patchContextGroupsInTree(cur, req)

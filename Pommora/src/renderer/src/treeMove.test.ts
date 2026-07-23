@@ -164,6 +164,7 @@ describe('insertCreatedInTree', () => {
       id: 'g1',
       title: 'Realms',
       singular: 'Realms',
+      icon: 'layout-grid',
     })
     const withSpace = insertCreatedInTree(
       withGroup as NexusTree,
