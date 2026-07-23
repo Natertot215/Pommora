@@ -18,7 +18,8 @@ import { applyPropertyValue, isBlankValue, type PropertyValue } from '@shared/pr
 import { isValidLink } from '@shared/links'
 import { flattenContainer, groupsStructurally } from '../pipeline/group'
 import { resolveView } from '../pipeline/resolveView'
-import { contextOptionsFor as contextOptionsForTier } from '../pipeline/contextOptions'
+import { contextOptionsFor as contextOptionsForSpaces } from '../pipeline/contextOptions'
+import { contextIdsOf } from '../pipeline/contextIdentity'
 import { declaredType, resolveFieldValue } from '../pipeline/value'
 import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
 import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
@@ -32,7 +33,7 @@ import { useActiveView } from '../useActiveView'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import type { SetTreeNode } from '../pipeline/group'
 import { buildResolveContext, type ResolveContext } from './resolveContext'
-import { writeTierValue } from '../tierWrite'
+import { writeContextValue } from '../contextCellWrite'
 import { buildSetIcons, buildSetNames, buildSetPaths } from './cellResolve'
 import { BandDnd, type BandDrop } from './bandDnd'
 import {
@@ -302,10 +303,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     () => (valueOverride ? { ...values, ...valueOverride } : values),
     [values, valueOverride],
   )
+  const contextIds = contextIdsOf(tree)
   const { columns, groups, setTree } = useMemo(() => {
     const { rows, setTree } = flattenContainer(source, effectiveValues)
-    return { ...resolveView({ rows, setTree, view: liveView, schema, manualOrder }), setTree }
-  }, [source, effectiveValues, liveView, schema, manualOrder])
+    return {
+      ...resolveView({ rows, setTree, view: liveView, schema, manualOrder, contextIds }),
+      setTree,
+    }
+  }, [source, effectiveValues, liveView, schema, manualOrder, contextIds])
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema) : null),
     // biome-ignore lint/correctness/useExhaustiveDependencies: buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
@@ -615,22 +620,18 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
     void mutate({ op: 'setProperty', path: row.path, propertyId, value })
   }
-  // A context column's pickable list — the NEXUS's contexts for its tier (reserved tier columns
-  // read their fixed level; a user context prop reads its def's target tier). Null for anything else.
+  // A context column's pickable list — its Context's Spaces off the live tree. Null for
+  // anything else.
   const contextOptionsFor = (
     col: ResolvedColumn,
-  ): Array<{ value: string; label: string; color?: string }> | null => {
-    const level =
-      col.kind === 'tier'
-        ? TIER_LEVEL_BY_ID[col.id]
-        : schema.find((d) => d.id === col.id)?.context_target?.tier
-    if (!level || !tree) return null
-    return contextOptionsForTier(level, tree)
+  ): Array<{ value: string; label: string; color?: string; icon?: string }> | null => {
+    if (col.kind !== 'tier' || !tree) return null
+    return contextOptionsForSpaces(col.id, tree)
   }
-  // A reserved tier column writes the BARE frontmatter array (`tier1/2/3`) through its own op;
-  // a user context prop writes through setProperty like every other property value.
+  // A context column writes its full Space-id list through the setContext op (ids out;
+  // main serializes titles); everything else is a property write.
   const commitTierValue = (row: ViewRow, colId: string, ids: string[]): void => {
-    writeTierValue(row, colId, ids, row.frontmatter, setValueOverride, mutate)
+    writeContextValue(row, colId, ids, row.frontmatter, setValueOverride, mutate)
   }
   // A chip's hover × commits whatever remains after that chip (Phase 3): the picker's exact
   // routing — a reserved tier column through setTier, everything else through setProperty.

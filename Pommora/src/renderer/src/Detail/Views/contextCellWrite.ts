@@ -2,27 +2,33 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { MutateRequest } from '@shared/mutate'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ViewRow } from '@shared/types'
-import { TIER_LEVEL_BY_ID } from './Table/columnLabel'
 
 type ValueOverride = Record<string, PageFrontmatter> | null
 
 /**
- * The optimistic tier write both container views share (cards + table): patch the row's `tierN`
- * frontmatter array into the value-override layer — loadValues never re-reads mid-session, so the
- * pipeline only re-groups because this patch feeds it — then fire the setTier op. `base` is the
- * frontmatter to patch over, so each caller keeps its own resolved shape (the override entry vs the
- * loaded row's frontmatter).
+ * The optimistic context write both container views share (cards + table): patch the row's
+ * resolved ids into the `contextValues` rider on the value-override layer — loadValues never
+ * re-reads mid-session, so the pipeline only re-groups because this patch feeds it (the rider
+ * wins over the tree node's own resolution while the commit is in flight) — then fire the
+ * setContext op (ids out; main resolves titles at the write boundary). `base` is the
+ * frontmatter to patch over, so each caller keeps its own resolved shape.
  */
-export function writeTierValue(
-  row: Pick<ViewRow, 'id' | 'path'>,
-  colId: string,
+export function writeContextValue(
+  row: Pick<ViewRow, 'id' | 'path' | 'contextValues'>,
+  contextId: string,
   ids: string[],
   base: PageFrontmatter,
   setValueOverride: Dispatch<SetStateAction<ValueOverride>>,
   mutate: (req: MutateRequest) => Promise<boolean>,
 ): void {
-  const tier = TIER_LEVEL_BY_ID[colId]
-  const patched = { ...base, [`tier${tier}`]: ids } as PageFrontmatter
+  const current =
+    ((base as Record<string, unknown>).contextValues as Record<string, string[]> | undefined) ??
+    row.contextValues ??
+    {}
+  const patched = {
+    ...base,
+    contextValues: { ...current, [contextId]: ids },
+  } as PageFrontmatter
   setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
-  void mutate({ op: 'setTier', path: row.path, tier, contextIds: ids })
+  void mutate({ op: 'setContext', path: row.path, contextId, spaceIds: ids })
 }

@@ -152,6 +152,28 @@ beforeEach(() => {
         topics: [],
         projects: [],
       },
+      contextGroups: [
+        {
+          def: { id: '_tier1', title: 'Areas', singular: 'Area' },
+          spaces: [
+            {
+              kind: 'space',
+              id: 'area_work',
+              title: 'Work',
+              path: '.nexus/contexts/Areas/Work',
+              contextId: '_tier1',
+              color: 'blue',
+            },
+            {
+              kind: 'space',
+              id: 'area_life',
+              title: 'Personal',
+              path: '.nexus/contexts/Areas/Personal',
+              contextId: '_tier1',
+            },
+          ],
+        },
+      ],
       collections: [],
       userSections: [],
       labels: {
@@ -327,7 +349,7 @@ describe('optimistic value persistence', () => {
 describe('context tier cells', () => {
   const tierCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[6] // _tier1 last
 
-  it("click opens the context picker listing the tier's contexts; toggling writes setTier", async () => {
+  it("click opens the context picker listing the Context's Spaces; toggling writes setContext", async () => {
     await mountTable(sourceWith())
     await act(async () => {
       tierCell().click()
@@ -340,10 +362,10 @@ describe('context tier cells', () => {
       work?.click()
     })
     expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setTier',
+      op: 'setContext',
       path: 'Col/Page One.md',
-      tier: 1,
-      contextIds: ['area_work'],
+      contextId: '_tier1',
+      spaceIds: ['area_work'],
     })
   })
 })
@@ -569,7 +591,15 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
       title: 'Col',
       path: 'Col',
       sets: [],
-      pages: [{ kind: 'page', id: 'p1', title: 'Page One', path: 'Col/Page One.md' }],
+      pages: [
+        {
+          kind: 'page',
+          id: 'p1',
+          title: 'Page One',
+          path: 'Col/Page One.md',
+          contextValues: { _tier1: ['area_work', 'area_life'] },
+        },
+      ],
       properties: [statusDef, multiDef],
       views: [
         {
@@ -646,7 +676,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     })
   })
 
-  it('a tier context chip × writes setTier with the remaining ids', async () => {
+  it('a context chip × writes setContext with the remaining ids', async () => {
     await mountChips()
     const removes = removesIn(cell(3))
     expect(removes.length).toBe(2)
@@ -654,10 +684,10 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
       removes[0].click()
     })
     expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setTier',
+      op: 'setContext',
       path: 'Col/Page One.md',
-      tier: 1,
-      contextIds: ['area_life'],
+      contextId: '_tier1',
+      spaceIds: ['area_life'],
     })
   })
 

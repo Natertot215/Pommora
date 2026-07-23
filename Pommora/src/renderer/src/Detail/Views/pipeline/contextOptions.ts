@@ -1,32 +1,37 @@
-// The one context-tier → pickable-options mapping (table cell pickers, the FilterPane's chip
-// fields). Pure: no fs, no React.
+// The one Context → pickable-Spaces mapping (table cell pickers, the FilterPane's chip
+// fields). Spaces list in their per-Context sidebar order; every option carries the Space's
+// color + icon so a picker chip renders identically to a cell chip. Pure: no fs, no React.
 import type { NexusTree } from '@shared/types'
+import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
 
 export interface ContextOption {
   value: string
   label: string
   color?: string
+  icon?: string
 }
 
-// The card grid calls this per tier/context value per render, so cache a STABLE array per (tree, level)
-// instead of remapping every call — keyed on the tree object, so a tree push naturally invalidates it.
-const tierOptionsCache = new WeakMap<NexusTree, Map<number, ContextOption[]>>()
+// The card grid calls this per context value per render, so cache a STABLE array per
+// (tree, contextId) instead of remapping every call — keyed on the tree object, so a tree
+// push naturally invalidates it.
+const optionsCache = new WeakMap<NexusTree, Map<string, ContextOption[]>>()
 
-/** A tier level's pickable contexts — id/title(/color) off the live tree, memoized per tree. */
-export function contextOptionsFor(level: number, tree: NexusTree): ContextOption[] {
-  let byLevel = tierOptionsCache.get(tree)
-  if (!byLevel) tierOptionsCache.set(tree, (byLevel = new Map()))
-  let opts = byLevel.get(level)
-  if (!opts) byLevel.set(level, (opts = buildTierOptions(level, tree)))
+/** A Context's pickable Spaces — id/title/color/icon off the live tree, memoized per tree. */
+export function contextOptionsFor(contextId: string, tree: NexusTree): ContextOption[] {
+  let byContext = optionsCache.get(tree)
+  if (!byContext) optionsCache.set(tree, (byContext = new Map()))
+  let opts = byContext.get(contextId)
+  if (!opts) byContext.set(contextId, (opts = buildOptions(contextId, tree)))
   return opts
 }
 
-function buildTierOptions(level: number, tree: NexusTree): ContextOption[] {
-  const list =
-    level === 1 ? tree.contexts.areas : level === 2 ? tree.contexts.topics : tree.contexts.projects
-  return list.map((c) => ({
-    value: c.id,
-    label: c.title,
-    ...('color' in c && c.color ? { color: c.color } : {}),
+function buildOptions(contextId: string, tree: NexusTree): ContextOption[] {
+  const group = tree.contextGroups?.find((g) => g.def.id === contextId)
+  const fallback = defaultEntityIcon('space')
+  return (group?.spaces ?? []).map((s) => ({
+    value: s.id,
+    label: s.title,
+    icon: iconNameOr(s.icon, fallback),
+    ...(s.color ? { color: s.color } : {}),
   }))
 }

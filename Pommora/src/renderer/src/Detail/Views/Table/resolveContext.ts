@@ -1,15 +1,19 @@
 // The resolution context threaded into table cells + group headers so they turn ids into human values
-// at render (Part 2 A-4): the container schema (property names + option labels), a ULID→Context lookup
-// (tier values → title + color), and the per-Nexus labels (tier headers). Built once per table render
+// at render (Part 2 A-4): the container schema (property names + option labels), a Space-id lookup
+// (context values → title + color + icon), and the per-Nexus labels. Built once per table render
 // from the tree; pure — no fs, no React.
 
-import type { AreaColor, NexusLabels, NexusTree } from '@shared/types'
+import type { NexusLabels, NexusTree } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
+import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
 
-/** A resolved Context reference for a tier cell — its title and (Areas only) color. */
+/** A resolved Space reference for a context cell — its title, chip color, and the icon its
+ *  chip wears (the Space's own override, else the contexts default — always a renderable id). */
 export interface ContextRef {
   title: string
-  color?: AreaColor
+  /** Chip-solid key (open string; chipColorFor normalizes at render). */
+  color?: string
+  icon: string
 }
 
 /** Everything a table cell / group header needs to resolve ids → human values at render. */
@@ -19,13 +23,32 @@ export interface ResolveContext {
   labels: NexusLabels
 }
 
-/** ULID → {title, color} across all three context tiers. Only Areas carry a color today; Topics and
- *  Projects resolve title-only (their ContextChips fall back to a neutral tint). */
+/** Space id → {title, color, icon} across every registry Context (the legacy fixed-three
+ *  struct feeds the same map on a tree without groups). */
 export function buildContextsById(tree: NexusTree): Map<string, ContextRef> {
   const m = new Map<string, ContextRef>()
-  for (const a of tree.contexts.areas) m.set(a.id, { title: a.title, color: a.color })
-  for (const t of tree.contexts.topics) m.set(t.id, { title: t.title })
-  for (const p of tree.contexts.projects) m.set(p.id, { title: p.title })
+  if (tree.contextGroups) {
+    for (const g of tree.contextGroups) {
+      for (const s of g.spaces) {
+        m.set(s.id, {
+          title: s.title,
+          color: s.color,
+          icon: iconNameOr(s.icon, defaultEntityIcon('space')),
+        })
+      }
+    }
+    return m
+  }
+  for (const a of tree.contexts.areas)
+    m.set(a.id, {
+      title: a.title,
+      color: a.color,
+      icon: iconNameOr(a.icon, defaultEntityIcon('area')),
+    })
+  for (const t of tree.contexts.topics)
+    m.set(t.id, { title: t.title, icon: iconNameOr(t.icon, defaultEntityIcon('topic')) })
+  for (const p of tree.contexts.projects)
+    m.set(p.id, { title: p.title, icon: iconNameOr(p.icon, defaultEntityIcon('project')) })
   return m
 }
 
