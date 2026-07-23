@@ -8,22 +8,10 @@
 // `import type` keeps this module runtime-pure (the vanilla-extract `chip.css` is never loaded here),
 // so it stays unit-testable while the name list still single-sources from the chip palette.
 
-import { CHIP_SOLID_COLORS } from '@shared/types'
+import { CHIP_SOLID_COLORS, LEGACY_CHIP_COLOR_MAP } from '@shared/types'
 import type { ChipColorName } from './chip.css'
 
-const MAP: Record<string, ChipColorName> = {
-  gray: 'grey',
-  brown: 'orange',
-  orange: 'orange',
-  yellow: 'yellow',
-  green: 'green',
-  blue: 'blue',
-  purple: 'purple',
-  pink: 'lavender',
-  red: 'red',
-  teal: 'cyan',
-  indigo: 'purple',
-}
+const MAP: Record<string, ChipColorName> = LEGACY_CHIP_COLOR_MAP
 
 // The render-palette keys (ChipColorName minus 'default') — the shared CHIP_SOLID_COLORS
 // list, so this module stays runtime-pure (chip.css is never loaded here). An option's
