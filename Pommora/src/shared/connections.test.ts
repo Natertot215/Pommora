@@ -10,4 +10,8 @@ describe('normalizeTitle', () => {
   it('collapses titles that differ only by case/whitespace to one key', () => {
     expect(normalizeTitle(' Notes')).toBe(normalizeTitle('notes '))
   })
+
+  it('NFC-normalizes so NFD and NFC spellings collapse to one key', () => {
+    expect(normalizeTitle('Café')).toBe(normalizeTitle('Café'))
+  })
 })
