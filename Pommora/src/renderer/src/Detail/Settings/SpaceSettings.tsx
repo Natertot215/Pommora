@@ -1,11 +1,10 @@
-import { useRef, useState, type CSSProperties } from 'react'
+import { useRef, useState } from 'react'
 import { CHIP_SOLID_COLORS, type ChipSolidColor } from '@shared/types'
 import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import { MenuBottomRow, MenuScrollFrame } from '@renderer/design-system/components/menu'
 import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
-import * as s from './spaceSettings.css'
 import { footerLockAction, lockIcon } from '../../Blocks/handleMenu.css'
 import { useSession } from '../../store'
 import { findSpace } from '../Scope'
@@ -37,10 +36,6 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
   const solid = (CHIP_SOLID_COLORS as readonly string[]).includes(resolved)
     ? colorVars.color.solid[resolved as ChipSolidColor]
     : null
-  // The title field outlines in the Space color — the house input ring at the secondary step.
-  const headerTint = solid
-    ? ({ '--space-ring': tintAt(solid, TINT_STEPS.secondary) } as CSSProperties)
-    : undefined
 
   return (
     <div style={{ minWidth: 225, minHeight: 245, display: 'flex', flexDirection: 'column' }}>
@@ -68,8 +63,6 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
       >
         <div
           ref={headerRef}
-          className={s.headerRing}
-          style={headerTint}
           onContextMenu={(e) => {
             e.preventDefault()
             void window.nexus.spaceHeaderMenu().then((action) => {
@@ -81,6 +74,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
             value={node.name}
             icon={iconNameOr(node.icon, defaultEntityIcon('space', defaultIcons))}
             iconRef={iconRef}
+            outline={solid ? tintAt(solid, TINT_STEPS.secondary) : undefined}
             onIconClick={() => setPickerOpen(true)}
             onCommit={(next) => {
               if (next && next !== node.name)

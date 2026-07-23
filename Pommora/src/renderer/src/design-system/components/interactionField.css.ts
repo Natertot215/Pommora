@@ -4,7 +4,9 @@ import { text } from '../tokens/typography.css'
 
 const c = colorVars.color
 
-/** The fill-quinary, rounded input surface. */
+/** The fill-quinary, rounded input surface. The OutlineTint channel: any ancestor (or the
+ *  component's `outline` prop) sets `--field-ring` and the field paints the house inset ring
+ *  in that color — unset stays ringless. */
 export const field = style([
   text.body.standard,
   {
@@ -17,17 +19,24 @@ export const field = style([
     color: c.label.primary,
     width: '100%',
     boxSizing: 'border-box',
+    boxShadow: 'inset 0 0 0 1px var(--field-ring, transparent)',
   },
 ])
 
 /** The bare <input> variant — identical chrome, no native border/outline, no focus ring (Nathan:
- *  no focus animation). */
+ *  no focus animation). Focus keeps the SEMANTIC ring (`--field-ring` is color, not focus state)
+ *  while still killing the native outline. */
 export const input = style([
   field,
   {
     border: 'none',
     outline: 'none',
     font: 'inherit',
-    selectors: { '&:focus, &:focus-visible': { outline: 'none', boxShadow: 'none' } },
+    selectors: {
+      '&:focus, &:focus-visible': {
+        outline: 'none',
+        boxShadow: 'inset 0 0 0 1px var(--field-ring, transparent)',
+      },
+    },
   },
 ])
