@@ -6,6 +6,7 @@ import { findCollection, findSet } from './Scope'
 import { ContainerView } from './ContainerView'
 import { HomepageView } from './HomepageView'
 import { ContextView } from './ContextView'
+import { SpaceView } from './SpaceView'
 import { PageView } from './PageView'
 import { NavView } from '../Tabs/NavView'
 import { Subfield } from './Subfield/Subfield'
@@ -34,11 +35,7 @@ function DetailView(): React.JSX.Element {
     case 'context':
       return <ContextView tree={tree} id={selection.id} />
     case 'space':
-      return (
-        <div className="detail">
-          <div className="detail-placeholder">Space</div>
-        </div>
-      )
+      return <SpaceView tree={tree} id={selection.id} />
     case 'collection': {
       const col = findCollection(tree, selection.id)
       return col ? (
