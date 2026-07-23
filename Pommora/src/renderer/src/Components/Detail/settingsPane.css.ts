@@ -87,7 +87,8 @@ export const header = style({
   padding: '2px 0 6px 2px',
 })
 
-/** Square icon button — opens the icon picker. */
+/** Square icon button — opens the icon picker. Paints the shared OutlineTint channel so a
+ *  header carrying `--field-ring` rings the icon and title as one. */
 export const iconButton = style({
   flex: '0 0 auto',
   width: `${SIZE.iconPickerButton}px`,
@@ -100,6 +101,7 @@ export const iconButton = style({
   background: inputFieldVar,
   cursor: 'default',
   color: COLOR.actionLabel,
+  boxShadow: 'inset 0 0 0 1px var(--field-ring, transparent)',
   selectors: { '&:hover': { background: c.fill.quaternary } },
 })
 

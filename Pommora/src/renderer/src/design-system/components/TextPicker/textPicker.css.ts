@@ -31,11 +31,11 @@ export const suffixField = style([
     gap: '6px',
     width: '140px',
     overflow: 'hidden',
-    boxShadow: 'inset 0 0 0 1px transparent',
+    // The ring paints via the field's --field-ring channel; focus lights it accent.
     transition: `box-shadow ${duration.fast} ${easing.standard}`,
     selectors: {
       '&:focus-within': {
-        boxShadow: `inset 0 0 0 1px ${tintAt('var(--accent)', TINT_STEPS.secondary)}`,
+        vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
       },
     },
   },
@@ -95,12 +95,12 @@ export const input = style([
     fontSize: font.scale.control.size,
     fontWeight: font.weight.emphasized,
     color: c.label.primary,
-    boxShadow: 'inset 0 0 0 1px transparent',
+    // The ring paints via the field's --field-ring channel; focus lights it accent.
     transition: `box-shadow ${duration.fast} ${easing.standard}`,
     selectors: {
       '&:focus, &:focus-visible': {
         outline: 'none',
-        boxShadow: `inset 0 0 0 1px ${tintAt('var(--accent)', TINT_STEPS.secondary)}`,
+        vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
       },
     },
   },

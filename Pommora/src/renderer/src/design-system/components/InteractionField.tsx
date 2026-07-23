@@ -11,13 +11,21 @@ export function InteractionField({
   children,
   className,
   onClick,
+  outline,
 }: {
   children: ReactNode
   className?: string
   onClick?: () => void
+  /** OutlineTint — an already-resolved ring color (e.g. `tintAt(color, TINT_STEPS.secondary)`);
+   *  unset stays ringless. */
+  outline?: string
 }): React.JSX.Element {
   return (
-    <div className={className ? `${s.field} ${className}` : s.field} onClick={onClick}>
+    <div
+      className={className ? `${s.field} ${className}` : s.field}
+      style={outline ? ({ '--field-ring': outline } as React.CSSProperties) : undefined}
+      onClick={onClick}
+    >
       {children}
     </div>
   )
