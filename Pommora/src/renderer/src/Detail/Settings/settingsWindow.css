@@ -30,12 +30,32 @@
   min-width: 0;
   display: flex;
   align-items: center;
+  /* The preview title's ramp — this is window chrome, not the settings-pane heading. */
+  font-size: var(--text-caption-size);
 }
-/* The heading composes on the strip's centerline — its own block spacing zeroes here. */
-.settingswindow-heading > * {
-  margin: 0;
-  padding-top: 0;
-  padding-bottom: 0;
+/* The InlineEditHeader re-dressed for the strip: no block padding, chrome-flat icon button,
+   and a title that sizes to its text (the filled-field look appears only while editing). */
+.settingswindow-heading > div {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  gap: 6px;
+}
+.settingswindow-heading > div > button {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: none;
+}
+.settingswindow-heading > div > button:hover {
+  background: var(--state-hover);
+}
+.settingswindow-heading > div > :not(button) {
+  flex: 0 1 auto;
+  background: none;
+}
+.settingswindow-heading > div > :not(button):hover {
+  background: var(--state-hover);
 }
 /* The × lives in the toolbar next to the title (chassis default placement overridden). */
 .settingswindow-close {
