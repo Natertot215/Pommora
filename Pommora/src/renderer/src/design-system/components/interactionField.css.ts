@@ -32,11 +32,5 @@ export const input = style([
     border: 'none',
     outline: 'none',
     font: 'inherit',
-    selectors: {
-      '&:focus, &:focus-visible': {
-        outline: 'none',
-        boxShadow: 'inset 0 0 0 1px var(--field-ring, transparent)',
-      },
-    },
   },
 ])
