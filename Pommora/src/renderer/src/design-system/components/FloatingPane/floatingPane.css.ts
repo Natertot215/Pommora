@@ -45,15 +45,3 @@ export const close = style({
   },
 })
 
-/** The optional title area — leading text in the chassis's top strip, clear of the `×`. */
-export const title = style({
-  position: 'absolute',
-  top: 'calc(var(--glass-inset) + 6px)',
-  left: 'calc(var(--glass-inset) + 12px)',
-  right: 'calc(var(--glass-inset) + 32px)',
-  zIndex: 2,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-  color: 'var(--label-primary)',
-})
