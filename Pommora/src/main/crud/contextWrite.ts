@@ -10,6 +10,7 @@ import {
   contextKey,
   invalidContextTitle,
   isGovernedContextKey,
+  normalizeContextValue,
   type ContextDef,
   type ContextsRegistry,
 } from '@shared/contexts'
@@ -268,10 +269,12 @@ export async function createContextGroup(
   if (invalidContextTitle(name)) return fail('invalid-name', `"${name}" is not a valid name.`)
   const reg = await readRegistryStrict(root)
   if (!reg.ok) return reg
-  const taken = new Set(reg.value.contexts.map((c) => c.title))
+  // Case-insensitive uniqueness: the filesystem is — a case-variant twin would silently
+  // share one folder with the existing group.
+  const taken = new Set(reg.value.contexts.map((c) => normalizeContextValue(c.title)))
   let title = name
-  for (let n = 2; taken.has(title) && n <= 50; n++) title = `${name} ${n}`
-  if (taken.has(title)) return fail('exists', `"${name}" already exists.`)
+  for (let n = 2; taken.has(normalizeContextValue(title)) && n <= 50; n++) title = `${name} ${n}`
+  if (taken.has(normalizeContextValue(title))) return fail('exists', `"${name}" already exists.`)
   const id = newId()
   const written = await mutateRegistryFile(root, (cur) => {
     if (cur.contexts.some((c) => c.title === title)) return cur
