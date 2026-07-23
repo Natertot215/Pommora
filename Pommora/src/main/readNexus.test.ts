@@ -217,6 +217,102 @@ describe('readNexus — agenda is config-driven, never name-reserved', () => {
   })
 })
 
+describe('readNexus — registry-backed contexts', () => {
+  let reg: string
+  beforeAll(() => {
+    reg = mkdtempSync(join(tmpdir(), 'pom-reg-'))
+    d(join(reg, '.nexus'))
+    w(
+      join(reg, '.nexus', 'nexus.json'),
+      JSON.stringify({ schemaVersion: 1, id: 'nxr', createdAt: '2026' }),
+    )
+    w(
+      join(reg, '.nexus', 'contexts.json'),
+      JSON.stringify({
+        contexts: [
+          { id: '_tier1', title: 'Areas', singular: 'Area' },
+          { id: '_tier2', title: 'Topics', singular: 'Topic' },
+          { id: '_tier3', title: 'Projects', singular: 'Project' },
+          { id: 'ctxC', title: 'Classes', singular: 'Class', icon: 'book' },
+        ],
+      }),
+    )
+    w(
+      join(reg, '.nexus', 'state.json'),
+      JSON.stringify({ space_orders: { _tier3: ['sp-cs-proj', 'sp-pom'] } }),
+    )
+    d(join(reg, '.nexus', 'contexts', 'Areas', 'Work'))
+    w(
+      join(reg, '.nexus', 'contexts', 'Areas', 'Work', '_space.json'),
+      JSON.stringify({ id: 'sp-work', color: 'blue' }),
+    )
+    d(join(reg, '.nexus', 'contexts', 'Projects', 'Pommora'))
+    w(
+      join(reg, '.nexus', 'contexts', 'Projects', 'Pommora', '_space.json'),
+      JSON.stringify({ id: 'sp-pom', color: 'cyan', '[Classes]': ['CS 161'] }),
+    )
+    d(join(reg, '.nexus', 'contexts', 'Projects', 'CS Project'))
+    w(
+      join(reg, '.nexus', 'contexts', 'Projects', 'CS Project', '_space.json'),
+      JSON.stringify({ id: 'sp-cs-proj' }),
+    )
+    d(join(reg, '.nexus', 'contexts', 'Classes', 'CS 161'))
+    w(
+      join(reg, '.nexus', 'contexts', 'Classes', 'CS 161', '_space.json'),
+      JSON.stringify({ id: 'sp-cs' }),
+    )
+    d(join(reg, 'Notes'))
+    w(join(reg, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
+    w(join(reg, 'Notes', 'Linked.md'), '---\nid: pg-linked\n"[Projects]":\n  - Pommora\n---\nbody')
+    w(join(reg, 'Notes', 'Legacy.md'), '---\nid: pg-legacy\ntier3:\n  - sp-pom\n---\nbody')
+    w(join(reg, 'Notes', 'Plain.md'), '---\nid: pg-plain\n---\nbody')
+  })
+  afterAll(() => rmSync(reg, { recursive: true, force: true }))
+
+  it('builds contextGroups in registry order with ordered spaces', async () => {
+    const t = await readNexus(reg)
+    expect(t.contextGroups?.map((g) => g.def.id)).toEqual(['_tier1', '_tier2', '_tier3', 'ctxC'])
+    const projects = t.contextGroups?.find((g) => g.def.id === '_tier3')
+    expect(projects?.spaces.map((s) => s.id)).toEqual(['sp-cs-proj', 'sp-pom'])
+    const pom = projects?.spaces.find((s) => s.id === 'sp-pom')
+    expect(pom?.kind).toBe('space')
+    expect(pom?.contextId).toBe('_tier3')
+    expect(pom?.color).toBe('cyan')
+    expect(pom?.path).toBe('.nexus/contexts/Projects/Pommora')
+  })
+
+  it('derives the legacy contexts struct from the reserved groups', async () => {
+    const t = await readNexus(reg)
+    expect(t.contexts.areas.map((a) => a.id)).toEqual(['sp-work'])
+    expect(t.contexts.areas[0].kind).toBe('area')
+    expect(t.contexts.areas[0].color).toBe('blue')
+    expect(t.contexts.projects.map((p) => p.id)).toEqual(['sp-cs-proj', 'sp-pom'])
+    expect(t.contexts.projects[0].kind).toBe('project')
+  })
+
+  it('resolves bracketed page keys onto the node contextValues', async () => {
+    const t = await readNexus(reg)
+    const page = t.collections![0].pages.find((p) => p.id === 'pg-linked')
+    expect(page?.contextValues).toEqual({ _tier3: ['sp-pom'] })
+    const plain = t.collections![0].pages.find((p) => p.id === 'pg-plain')
+    expect(plain?.contextValues).toBeUndefined()
+  })
+
+  it('resolves legacy tierN ULIDs through the reserved registry ids', async () => {
+    const t = await readNexus(reg)
+    const page = t.collections![0].pages.find((p) => p.id === 'pg-legacy')
+    expect(page?.contextValues).toEqual({ _tier3: ['sp-pom'] })
+  })
+
+  it('resolves a space sidecar own bracketed keys (space-to-space, cross-context)', async () => {
+    const t = await readNexus(reg)
+    const pom = t.contextGroups
+      ?.find((g) => g.def.id === '_tier3')
+      ?.spaces.find((s) => s.id === 'sp-pom')
+    expect(pom?.contextValues).toEqual({ ctxC: ['sp-cs'] })
+  })
+})
+
 describe('readNexus — real test nexus (optional smoke)', () => {
   const real = process.env.TEST_NEXUS_PATH || join(homedir(), 'test')
   it.runIf(existsSync(real))('reads the real nexus without throwing', async () => {
