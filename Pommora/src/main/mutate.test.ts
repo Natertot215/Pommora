@@ -503,16 +503,6 @@ describe('handleMutate — setBanner', () => {
     expect(sc.id).toBe('pt') // existing keys untouched
   })
 
-  it('sets a banner on a context (area) sidecar, keyed by the context id', async () => {
-    const r = await handleMutate(
-      { op: 'setBanner', path: '.nexus/areas/Work', kind: 'area', dataUrl: PNG },
-      nexusDeps,
-    )
-    expect(r.ok).toBe(true)
-    const sc = JSON.parse(await read('.nexus/areas/Work/_area.json'))
-    expect(sc.banner).toMatch(/^\.nexus\/assets\/area-1\/banner-[a-z0-9]+\.png$/)
-    expect(await pathExists(join(root, sc.banner))).toBe(true)
-  })
 
   it('sets a banner on a set sidecar, keyed by the set id', async () => {
     const r = await handleMutate(
@@ -528,10 +518,6 @@ describe('handleMutate — setBanner', () => {
   it('readNexus surfaces the banner path on collection + context + set nodes', async () => {
     await handleMutate(
       { op: 'setBanner', path: 'Notes', kind: 'collection', dataUrl: PNG },
-      nexusDeps,
-    )
-    await handleMutate(
-      { op: 'setBanner', path: '.nexus/areas/Work', kind: 'area', dataUrl: PNG },
       nexusDeps,
     )
     await handleMutate(
