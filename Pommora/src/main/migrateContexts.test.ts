@@ -135,6 +135,56 @@ describe('migrateContexts', () => {
     expect((await readNx()).schemaVersion).toBe(CONTEXTS_SCHEMA_VERSION)
   })
 
+  it('resumes when EVERY tier dir is already gone (version alone re-triggers)', async () => {
+    // The worst crash window: registry minted + all folders moved + tier dirs removed,
+    // but no sidecar transformed and no member file rewritten.
+    const { seededRegistry } = await import('@shared/contexts')
+    const { DEFAULT_LABELS } = await import('@shared/types')
+    await writeFile(contextsRegistryFile(root), JSON.stringify(seededRegistry(DEFAULT_LABELS)))
+    await mkdir(join(contextsDir(root), 'Areas', 'Work'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Areas', 'Work', '_area.json'),
+      JSON.stringify({ id: 'a-work', tier: 1 }),
+    )
+    await mkdir(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Pommora', '_project.json'),
+      JSON.stringify({ id: 'p-pom', tier: 3 }),
+    )
+    await rm(join(nexusDir(root), 'areas'), { recursive: true })
+    await rm(join(nexusDir(root), 'projects'), { recursive: true })
+
+    await migrateContexts(root)
+    expect(await pathExists(join(contextsDir(root), 'Areas', 'Work', '_space.json'))).toBe(true)
+    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))).toBe(
+      true,
+    )
+    const fm = splitFrontmatter(await readFile(join(root, 'Notes', 'A.md'), 'utf8'))
+    expect(fm['[Areas]']).toEqual(['Work'])
+    expect((await readNx()).schemaVersion).toBe(CONTEXTS_SCHEMA_VERSION)
+  })
+
+  it('leaves an unreadable tier sidecar in place and withholds the version bump', async () => {
+    await writeFile(join(nexusDir(root), 'areas', 'Work', '_area.json'), 'not-json{')
+
+    await migrateContexts(root)
+    // The corrupt sidecar survives untransformed for a later retry; the healthy one converts.
+    const moved = join(contextsDir(root), 'Areas', 'Work', '_area.json')
+    expect(await pathExists(moved)).toBe(true)
+    expect(await pathExists(join(contextsDir(root), 'Areas', 'Work', '_space.json'))).toBe(false)
+    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))).toBe(
+      true,
+    )
+    expect((await readNx()).schemaVersion).toBe(1)
+
+    // Healed on disk → the next open completes the remainder and seals.
+    await writeFile(moved, JSON.stringify({ id: 'a-work', tier: 1 }))
+    await migrateContexts(root)
+    expect(await pathExists(join(contextsDir(root), 'Areas', 'Work', '_space.json'))).toBe(true)
+    expect(await pathExists(moved)).toBe(false)
+    expect((await readNx()).schemaVersion).toBe(CONTEXTS_SCHEMA_VERSION)
+  })
+
   it('skips a raw nexus (no nexus.json) and a current-version nexus', async () => {
     await rm(nx())
     await migrateContexts(root)
