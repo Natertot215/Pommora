@@ -1754,7 +1754,7 @@ export const useSession = create<SessionState>((set, get) => {
       // echo-suppressed; only an external edit walks), so the full-nexus re-walk is skipped for
       // them (it's THE "reload the entire Y" on a hot path). Structural ops still refetch
       // immediately; reconcileSelection refreshes a moved/renamed path.
-      if (req.op !== 'setProperty' && req.op !== 'setTier' && req.op !== 'setContext')
+      if (req.op !== 'setProperty' && req.op !== 'setContext')
         await get().load()
       if (!createdShown && res.created && onCreated) await onCreated(res.created)
       return true

@@ -14,7 +14,6 @@ import { Reveal } from '@renderer/design-system/components/Reveal'
 import { slideScrollBack } from '@renderer/design-system/components/OverflowScroll'
 import { EditableInput } from '../Components/EditableInput'
 import type {
-  AreaNode,
   CollectionNode,
   ContextGroup,
   EntityIconKind,
@@ -25,8 +24,6 @@ import type {
   SetNode,
   SidebarMode,
   SpaceNode,
-  TopicNode,
-  ProjectNode,
 } from '@shared/types'
 import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/mutate'
 import { RESERVED_CONTEXT_IDS } from '@shared/contexts'
@@ -455,31 +452,6 @@ function CollectionRow({
   )
 }
 
-// A context leaf (Area / Topic / Project) — a draggable row reordered within its tier disclosure
-// (depth 1, under the tier header). Every tier uses the grid icon.
-function ContextRow({
-  node,
-}: {
-  node: { id: string; title: string; path: string; kind: MutableKind; icon?: string }
-}): React.JSX.Element {
-  const select = useSession((s) => s.select)
-  const selected = useSession((s) => s.selection.kind === 'context' && s.selection.id === node.id)
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  return (
-    <DragRow id={node.id}>
-      <Leaf
-        icon={iconNameOr(node.icon, defaultEntityIcon(node.kind as EntityIconKind, defaultIcons))}
-        title={node.title}
-        depth={1}
-        selected={selected}
-        onSelect={() => void select({ kind: 'context', id: node.id })}
-        onContextMenu={() => showContextFor(node)}
-        rename={{ path: node.path, kind: node.kind }}
-      />
-    </DragRow>
-  )
-}
-
 // A registry Space — a draggable row reordered within its Context group's disclosure.
 function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
   const select = useSession((s) => s.select)
@@ -535,55 +507,6 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       {group.spaces.map((s) => (
         <SpaceRow key={s.id} node={s} />
       ))}
-    </Disclosure>
-  )
-}
-
-// A context tier group (Areas / Topics / Projects) — a non-draggable disclosure under the
-// Contexts heading holding that tier's leaves. Grid icon, open by default. The tiers are
-// free-standing (no containment), so the header is a pure expand/collapse toggle.
-const TIER_ICON_KIND: Record<'areas' | 'topics' | 'projects', EntityIconKind> = {
-  areas: 'area',
-  topics: 'topic',
-  projects: 'project',
-}
-const TIER_NUM: Record<'areas' | 'topics' | 'projects', 1 | 2 | 3> = {
-  areas: 1,
-  topics: 2,
-  projects: 3,
-}
-function TierDisclosure({
-  tierKey,
-  label,
-  singular,
-  children,
-}: {
-  tierKey: 'areas' | 'topics' | 'projects'
-  label: string
-  singular: string
-  children: React.ReactNode
-}): React.JSX.Element {
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  // Right-click the tier → create into THAT tier (the collection/set row's own right-click idiom),
-  // instead of the global three-way menu that never scoped to a tier.
-  const onCreate = (): void => {
-    void useSession.getState().createFromMenu([
-      {
-        label: `New ${singular}`,
-        req: { op: 'createContext', tier: TIER_NUM[tierKey], name: DEFAULT_NEW_NAME },
-      },
-    ])
-  }
-  return (
-    <Disclosure
-      icon={defaultEntityIcon(TIER_ICON_KIND[tierKey], defaultIcons)}
-      title={label}
-      depth={0}
-      defaultOpen
-      persistKey={`tier:${tierKey}`}
-      onContextMenu={onCreate}
-    >
-      {children}
     </Disclosure>
   )
 }
@@ -676,8 +599,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   }, [])
 
   // Contexts mode — every registry Context as its own disclosure of Spaces, one drag zone.
-  // LEGACY fallback: a tree without groups renders the fixed three tiers (stripped with the
-  // legacy contract).
   const contextsLayer = (
     <SidebarDnd
       tree={tree}
@@ -686,39 +607,9 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       subSetPlacement={subSetPlacement}
     >
       <div className="section">
-        {tree.contextGroups ? (
-          tree.contextGroups.map((g) => <ContextGroupDisclosure key={g.def.id} group={g} />)
-        ) : (
-          <>
-            <TierDisclosure
-              tierKey="areas"
-              label={tree.labels.area.plural}
-              singular={tree.labels.area.singular}
-            >
-              {tree.contexts.areas.map((a: AreaNode) => (
-                <ContextRow key={a.id} node={a} />
-              ))}
-            </TierDisclosure>
-            <TierDisclosure
-              tierKey="topics"
-              label={tree.labels.topic.plural}
-              singular={tree.labels.topic.singular}
-            >
-              {tree.contexts.topics.map((t: TopicNode) => (
-                <ContextRow key={t.id} node={t} />
-              ))}
-            </TierDisclosure>
-            <TierDisclosure
-              tierKey="projects"
-              label={tree.labels.project.plural}
-              singular={tree.labels.project.singular}
-            >
-              {tree.contexts.projects.map((p: ProjectNode) => (
-                <ContextRow key={p.id} node={p} />
-              ))}
-            </TierDisclosure>
-          </>
-        )}
+        {(tree.contextGroups ?? []).map((g) => (
+          <ContextGroupDisclosure key={g.def.id} group={g} />
+        ))}
       </div>
     </SidebarDnd>
   )

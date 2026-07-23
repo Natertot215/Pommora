@@ -27,11 +27,11 @@ describe('setStateOrder', () => {
   })
 
   it('does not clobber other state keys (read-modify-write)', async () => {
+    await setSpaceOrder(root, '_tier1', ['x', 'y'])
     await setStateOrder(root, 'collection_order', ['a'])
-    await setStateOrder(root, 'area_order', ['x', 'y'])
     const state = await readState()
     expect(state.collection_order).toEqual(['a'])
-    expect(state.area_order).toEqual(['x', 'y'])
+    expect((state.space_orders as Record<string, unknown>)._tier1).toEqual(['x', 'y'])
   })
 
   it('never persists adopted- placeholder ids', async () => {
