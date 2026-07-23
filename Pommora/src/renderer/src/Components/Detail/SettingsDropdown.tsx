@@ -3,7 +3,7 @@ import { viewSettingsScope } from '../../Detail/ViewSettingsScope'
 import { MenuSurface } from '../../design-system/components/menu'
 import { SettingsPane } from './SettingsPane'
 import { SettingsScaffold } from './SettingsScaffold'
-import { SpacePanel } from '../../Detail/Settings/SpacePanel'
+import { SpaceSettingsContent } from '../../Detail/Settings/SpaceSettings'
 import * as s from './settingsPane.css'
 
 /**
@@ -29,7 +29,7 @@ export function SettingsDropdown({
         {scope === 'view' ? (
           <SettingsPane />
         ) : scope === 'space' && selection.kind === 'space' ? (
-          <SpacePanel id={selection.id} />
+          <SpaceSettingsContent id={selection.id} />
         ) : scope === 'homepage' || scope === 'context' ? (
           <SettingsScaffold />
         ) : (
