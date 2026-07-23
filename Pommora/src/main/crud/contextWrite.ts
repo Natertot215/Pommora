@@ -275,7 +275,8 @@ export async function createContextGroup(
   const id = newId()
   const written = await mutateRegistryFile(root, (cur) => {
     if (cur.contexts.some((c) => c.title === title)) return cur
-    return { contexts: [...cur.contexts, { id, title, singular: title }] }
+    // Minted with the contexts default glyph so a fresh group renders an icon everywhere at once.
+    return { contexts: [...cur.contexts, { id, title, singular: title, icon: 'layout-grid' }] }
   })
   if (!written.ok) return written
   if (!written.value.contexts.some((c) => c.id === id))
@@ -343,15 +344,3 @@ export async function setSpaceColor(
 }
 
 /** Set a Context's singular label in the registry. */
-export async function setContextSingular(
-  root: string,
-  contextId: string,
-  singular: string,
-): Promise<Result<null>> {
-  const trimmed = singular.trim()
-  if (!trimmed) return fail('invalid-name', 'A singular label can’t be empty.', 'contexts')
-  const written = await mutateRegistryFile(root, (cur) => ({
-    contexts: cur.contexts.map((c) => (c.id === contextId ? { ...c, singular: trimmed } : c)),
-  }))
-  return written.ok ? ok(null) : written
-}
