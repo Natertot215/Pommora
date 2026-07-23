@@ -3,11 +3,22 @@ import { buildContextsById, buildResolveContext } from './resolveContext'
 import { DEFAULT_LABELS, type NexusTree } from '@shared/types'
 
 const tree = {
-  contexts: {
-    areas: [{ id: 'a1', kind: 'area', title: 'Personal', path: 'Personal', color: 'blue' }],
-    topics: [{ id: 't1', kind: 'topic', title: 'Reading', path: 'Reading' }],
-    projects: [{ id: 'p1', kind: 'project', title: 'Pommora', path: 'Pommora' }],
-  },
+  contextGroups: [
+    {
+      def: { id: '_tier1', title: 'Areas', singular: 'Area' },
+      spaces: [
+        { id: 'a1', kind: 'space', title: 'Personal', path: 'P', contextId: '_tier1', color: 'blue' },
+      ],
+    },
+    {
+      def: { id: '_tier2', title: 'Topics', singular: 'Topic' },
+      spaces: [{ id: 't1', kind: 'space', title: 'Reading', path: 'R', contextId: '_tier2' }],
+    },
+    {
+      def: { id: '_tier3', title: 'Projects', singular: 'Project' },
+      spaces: [{ id: 'p1', kind: 'space', title: 'Pommora', path: 'Po', contextId: '_tier3' }],
+    },
+  ],
   labels: DEFAULT_LABELS,
 } as unknown as NexusTree
 
@@ -15,8 +26,8 @@ describe('buildContextsById', () => {
   it('maps each context ULID to its title, icon, and color (Areas only)', () => {
     const m = buildContextsById(tree)
     expect(m.get('a1')).toEqual({ title: 'Personal', color: 'blue', icon: 'layout-grid' })
-    expect(m.get('t1')).toEqual({ title: 'Reading', icon: 'layout-grid' })
-    expect(m.get('p1')).toEqual({ title: 'Pommora', icon: 'layout-grid' })
+    expect(m.get('t1')).toEqual({ title: 'Reading', color: undefined, icon: 'layout-grid' })
+    expect(m.get('p1')).toEqual({ title: 'Pommora', color: undefined, icon: 'layout-grid' })
   })
 
   it('returns undefined for an unknown id', () => {

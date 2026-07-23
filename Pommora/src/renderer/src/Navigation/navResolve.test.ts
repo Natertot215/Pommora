@@ -26,12 +26,6 @@ describe('resolveNavEntry', () => {
     expect(pathTitles(r)).toEqual(['Notes'])
   })
 
-  it('resolves a context to its tier label as the path', () => {
-    const r = resolveNavEntry(makeTree(), { kind: 'context', id: 't1' })
-    expect(r).toMatchObject({ kind: 'context', title: 'Reading' })
-    expect(pathTitles(r)).toEqual(['Topic'])
-  })
-
   it('resolves a Space to its title with the owning Context as the path', () => {
     const t = {
       ...makeTree(),
@@ -149,7 +143,6 @@ describe('resolveFavorites', () => {
     ]
     expect(resolveFavorites(buildResolveIndex(makeTree()), favorites).map((r) => r.key)).toEqual([
       'collection:c1',
-      'context:a1',
     ])
   })
 })
@@ -162,7 +155,7 @@ describe('resolvePins', () => {
       { kind: 'context', id: 'a1', order: 2 },
     ]
     const out = resolvePins(buildResolveIndex(makeTree()), pins)
-    expect(out.map((r) => r.key)).toEqual(['collection:c1', 'context:a1'])
+    expect(out.map((r) => r.key)).toEqual(['collection:c1'])
     expect(out.every((r) => r.pinned === true)).toBe(true)
   })
 })

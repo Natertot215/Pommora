@@ -9,7 +9,7 @@ import {
   updateFolderSidecar,
 } from './folderEntity'
 import { readSidecar } from '../sidecarIO'
-import { areaSidecar, pageCollectionSidecar } from '@shared/schemas'
+import { spaceSidecar, pageCollectionSidecar } from '@shared/schemas'
 import { isUlid } from '../ids'
 
 let root: string
@@ -26,7 +26,7 @@ describe('createFolderEntity', () => {
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(isUlid(r.value.id)).toBe(true)
-    expect(await readSidecar(r.value.path, 'area', areaSidecar)).toMatchObject({
+    expect(await readSidecar(r.value.path, 'area', spaceSidecar)).toMatchObject({
       id: r.value.id,
       tier: 1,
       color: 'green',
@@ -93,9 +93,9 @@ describe('updateFolderSidecar', () => {
     })
     if (!c.ok) throw new Error('setup failed')
     expect(
-      (await updateFolderSidecar(c.value.path, 'area', areaSidecar, { color: 'red' })).ok,
+      (await updateFolderSidecar(c.value.path, 'area', spaceSidecar, { color: 'red' })).ok,
     ).toBe(true)
-    expect(await readSidecar(c.value.path, 'area', areaSidecar)).toMatchObject({
+    expect(await readSidecar(c.value.path, 'area', spaceSidecar)).toMatchObject({
       id: c.value.id,
       tier: 1,
       color: 'red',
@@ -104,7 +104,7 @@ describe('updateFolderSidecar', () => {
   })
 
   it('errors when the sidecar is missing', async () => {
-    const r = await updateFolderSidecar(join(root, 'nope'), 'area', areaSidecar, { color: 'red' })
+    const r = await updateFolderSidecar(join(root, 'nope'), 'area', spaceSidecar, { color: 'red' })
     expect(r.ok).toBe(false)
   })
 })

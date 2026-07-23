@@ -5,15 +5,12 @@
 
 import type { MutateRequest, StateOrderKey } from '@shared/mutate'
 import type {
-  AreaNode,
   CollectionNode,
   ContextGroup,
   NexusTree,
   PageNode,
-  ProjectNode,
   SetNode,
   SpaceNode,
-  TopicNode,
 } from '@shared/types'
 
 const basename = (path: string): string => path.slice(path.lastIndexOf('/') + 1)
@@ -268,9 +265,6 @@ type TreeEntity =
   | PageNode
   | SetNode
   | CollectionNode
-  | AreaNode
-  | TopicNode
-  | ProjectNode
   | SpaceNode
 
 /** Apply `fn` to the entity at `path`, wherever it lives (a context tier, a top collection, a
@@ -280,16 +274,6 @@ export function updateNodeInTree(
   path: string,
   fn: (node: TreeEntity) => TreeEntity | null,
 ): NexusTree | null {
-  const c = tree.contexts
-  for (const tier of ['areas', 'topics', 'projects'] as const) {
-    const i = c[tier].findIndex((n) => n.path === path)
-    if (i === -1) continue
-    const next = fn(c[tier][i])
-    const arr = [...c[tier]]
-    if (next === null) arr.splice(i, 1)
-    else arr[i] = next as (typeof arr)[number]
-    return { ...tree, contexts: { ...c, [tier]: arr } }
-  }
   for (const [gi, g] of (tree.contextGroups ?? []).entries()) {
     const i = g.spaces.findIndex((s) => s.path === path)
     if (i === -1) continue

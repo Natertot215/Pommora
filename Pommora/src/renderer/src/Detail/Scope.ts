@@ -84,42 +84,6 @@ export function isDepth1Set(tree: NexusTree | null, setId: string): boolean {
   return !!col && col.sets.some((s) => s.id === setId)
 }
 
-/** Resolve a context id to its banner owner, scanning the three tiers (the kind is whichever holds it). */
-export function findContext(tree: NexusTree | null, id: string): BannerOwner | null {
-  if (!tree) return null
-  const area = tree.contexts.areas.find((n) => n.id === id)
-  if (area)
-    return {
-      path: area.path,
-      kind: 'area',
-      name: area.title,
-      banner: area.banner,
-      icon: area.icon,
-      headingIconHidden: area.headingIconHidden,
-    }
-  const topic = tree.contexts.topics.find((n) => n.id === id)
-  if (topic)
-    return {
-      path: topic.path,
-      kind: 'topic',
-      name: topic.title,
-      banner: topic.banner,
-      icon: topic.icon,
-      headingIconHidden: topic.headingIconHidden,
-    }
-  const project = tree.contexts.projects.find((n) => n.id === id)
-  if (project)
-    return {
-      path: project.path,
-      kind: 'project',
-      name: project.title,
-      banner: project.banner,
-      icon: project.icon,
-      headingIconHidden: project.headingIconHidden,
-    }
-  return null
-}
-
 /** Resolve a Space id to its banner owner across the registry groups. */
 export function findSpace(tree: NexusTree | null, id: string): BannerOwner | null {
   if (!tree) return null
