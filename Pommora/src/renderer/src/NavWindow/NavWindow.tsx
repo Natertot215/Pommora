@@ -1,13 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { GlassPane } from '@renderer/design-system/materials'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import { duration, easing, text } from '@renderer/design-system/tokens'
 import { SidePane, sidePaneWidth } from '@renderer/design-system/components/SidePane/SidePane'
-import {
-  FloatingResizeCorners,
-  useFloatingWindow,
-} from '../design-system/interactions/FloatingWindow'
+import { FloatingPaneShell } from '@renderer/design-system/components/FloatingPane/FloatingPane'
 import type { NavTarget } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
@@ -98,30 +94,11 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       { duration: Number.parseInt(duration.base, 10), easing: easing.standard },
     )
   }, [])
-  const {
-    style: winStyle,
-    onWindowDown,
-    startDrag,
-  } = useFloatingWindow('navwindow', WIN, DRAG_SURFACES)
-
   // The inspector — PAGE TABS ONLY (Nathan's call): its button lives in the sliding page-tab
   // chrome, its pane shares the preview's SidePane + width slot, and it dies on the map return.
   const [inspectorOpen, setInspectorOpen] = useState(false)
   const [inspW, setInspW] = useState(INSPECTOR.def)
   const [inspResizing, setInspResizing] = useState(false)
-  useEffect(() => {
-    // Skip an Escape a focused surface already handled (mirrors App.tsx's command handler).
-    const onKey = (e: KeyboardEvent): void => {
-      // Bail unless this is the LIVE surface — during the 380ms flavor-swap exit both windows'
-      // handlers coexist, and a stale one must never eat the press (D-4: one press, one layer).
-      if (e.key !== 'Escape' || e.defaultPrevented || !useSession.getState().navOpen) return
-      if (inspectorOpen)
-        setInspectorOpen(false) // I-21: the pane first, then the window
-      else closeNav()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [closeNav, inspectorOpen])
 
   const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
   // Selecting from the pane closes it, unless `navCloseOnSelect` is explicitly off (keep it open to browse).
@@ -194,33 +171,33 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   // from the same store so a reopen's first frame already paints the restored width.
   const [railW, setRailW] = useState(() => sidePaneWidth('navwindow', RAIL.def))
   const style = {
-    ...winStyle,
     '--navwindow-rail': `${railW}px`,
     '--navwindow-inspector-w': `${inspW}px`,
+    // The preview window's tint verbatim — the flavor swap keeps ONE background, no opacity
+    // jump (inline because GlassPane's frost sets its own background).
+    background: 'color-mix(in srgb, var(--pgpreview-bg) var(--pgpreview-bg-a), transparent)',
   } as CSSProperties
 
   return (
-    <GlassPane
+    <FloatingPaneShell
+      id="navwindow"
+      closing={closing}
+      onClose={closeNav}
+      // The pane first, then the window; an Escape during the flavor-swap exit is the shell's
+      // own closing gate (one press, one layer).
+      onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closeNav())}
+      bounds={WIN}
+      dragSurfaces={DRAG_SURFACES}
       className={cx(
         'navwindow',
-        closing && 'closing',
         pageTarget !== null && 'is-page-tab',
         inspectorOpen && 'is-inspector-open',
         inspResizing && 'is-inspector-resizing',
       )}
-      // The preview window's tint verbatim — the flavor swap keeps ONE background, no opacity
-      // jump (inline because GlassPane's frost sets its own background).
-      style={{
-        ...style,
-        background: 'color-mix(in srgb, var(--pgpreview-bg) var(--pgpreview-bg-a), transparent)',
-      }}
-      role="dialog"
-      aria-label="Navigation"
-      onPointerDown={onWindowDown}
+      style={style}
+      ariaLabel="Navigation"
+      closeClassName="navwindow-close"
     >
-      <button type="button" className="navwindow-close" aria-label="Close" onClick={closeNav}>
-        <Icon name="x" size={14} />
-      </button>
       {/* The preview chrome (H-2 shared toolbar): the buttons slide in with an active page tab and
           out on the map return; the settings+inspector pair rides the pane edge (the --io swallow). */}
       <div className="navwindow-actions navwindow-actions-lead">
@@ -343,7 +320,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         </div>
       </SidePane>
       {hoverCard}
-      <FloatingResizeCorners startDrag={startDrag} />
-    </GlassPane>
+    </FloatingPaneShell>
   )
 }
