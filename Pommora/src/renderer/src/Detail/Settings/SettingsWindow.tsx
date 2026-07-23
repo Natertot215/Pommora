@@ -1,13 +1,12 @@
-import { useState, type CSSProperties } from 'react'
-import { Icon } from '@renderer/design-system/symbols'
-import { text } from '@renderer/design-system/tokens'
+import { useRef, useState, type CSSProperties } from 'react'
+import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import { SidePane, sidePaneWidth } from '@renderer/design-system/components/SidePane/SidePane'
 import { FloatingPaneShell } from '@renderer/design-system/components/FloatingPane/FloatingPane'
 import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import { useSession } from '../../store'
 import { CurrentColorIcon } from '../../Components/Detail/CurrentColorIcon'
-import { ContextSettings } from './ContextSettings'
-import { SpaceSettings } from './SpaceSettings'
+import { IconPicker } from '../../Components/IconPicker'
+import { InlineEditHeader } from '../../Components/Detail/InlineEditHeader'
 import './settingsWindow.css'
 
 // The unified floating-chrome opening size (the NavWindow/PreviewWindow WIN block) and the
@@ -21,8 +20,8 @@ const DRAG_SURFACES =
 
 /**
  * The entity Settings window — the NavWindow/PreviewWindow floating chrome (the shared
- * shell + a left SidePane), the preview's glass tint, its toolbar strip carrying the ×
- * beside the entity title, and the color icon seated at the rail's bottom-left.
+ * shell + a left SidePane), the preview's glass tint, and one toolbar row holding
+ * (Icon)(Title) with the × at its right. The color icon seats at the rail's bottom-left.
  */
 export function SettingsWindow(): React.JSX.Element | null {
   const target = useSession((s) => s.settingsTarget)
@@ -40,10 +39,13 @@ function SettingsWindowBody({
 }: {
   closing: boolean
   target: { kind: 'context' | 'space'; id: string }
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   const close = useSession((s) => s.closeEntitySettings)
   const mutate = useSession((s) => s.mutate)
   const groups = useSession((s) => s.tree?.contextGroups ?? [])
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const iconRef = useRef<HTMLButtonElement>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [railW, setRailW] = useState(() => sidePaneWidth('settingswindow', RAIL.def))
   const style = {
     '--settingswindow-rail': `${railW}px`,
@@ -55,8 +57,14 @@ function SettingsWindowBody({
     target.kind === 'space'
       ? groups.flatMap((g) => g.spaces).find((s) => s.id === target.id)
       : undefined
-  const title =
-    target.kind === 'space' ? space?.title : groups.find((g) => g.def.id === target.id)?.def.title
+  const group = target.kind === 'context' ? groups.find((g) => g.def.id === target.id) : undefined
+  if (!space && !group) return null
+  const title = space ? space.title : (group?.def.title ?? '')
+  const icon = iconNameOr(
+    space ? space.icon : group?.def.icon,
+    defaultEntityIcon('space', defaultIcons),
+  )
+  const entityPath = space ? space.path : `.nexus/contexts/${group?.def.title}`
 
   return (
     <FloatingPaneShell
@@ -70,13 +78,43 @@ function SettingsWindowBody({
       ariaLabel="Settings"
       closeClassName="settingswindow-close-slot"
     >
-      {/* The toolbar strip owns the × + title (the chassis's default × is re-seated here). */}
+      {/* One row: (Icon)(Title) editable heading with the × at its right. */}
       <div className="settingswindow-toolbar">
-        <span className={`settingswindow-title ${text.footnote.emphasized}`}>{title}</span>
+        <div className="settingswindow-heading">
+          <InlineEditHeader
+            value={title}
+            icon={icon}
+            iconRef={iconRef}
+            onIconClick={() => setPickerOpen(true)}
+            onCommit={(next) => {
+              if (!next || next === title) return
+              void mutate(
+                space
+                  ? { op: 'renameSpace', spaceId: target.id, newName: next }
+                  : { op: 'renameContext', contextId: target.id, newName: next },
+              )
+            }}
+          />
+        </div>
         <button type="button" className="settingswindow-close" aria-label="Close" onClick={close}>
           <Icon name="x" size={14} />
         </button>
       </div>
+      <IconPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        triggerRef={iconRef}
+        value={space ? space.icon : group?.def.icon}
+        onSelect={(picked) => {
+          setPickerOpen(false)
+          void mutate({
+            op: 'setIcon',
+            path: entityPath,
+            kind: space ? 'space' : 'context',
+            icon: picked,
+          })
+        }}
+      />
       <div className="settingswindow-body">
         <SidePane
           windowId="settingswindow"
@@ -97,13 +135,7 @@ function SettingsWindowBody({
             </div>
           )}
         </SidePane>
-        <div className="settingswindow-main">
-          {target.kind === 'space' ? (
-            <SpaceSettings id={target.id} />
-          ) : (
-            <ContextSettings id={target.id} />
-          )}
-        </div>
+        <div className="settingswindow-main" />
       </div>
     </FloatingPaneShell>
   )
