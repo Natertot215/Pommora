@@ -9,6 +9,7 @@ export type SidecarKind =
   | 'area'
   | 'topic'
   | 'project'
+  | 'space'
   | 'collection'
   | 'set'
   | 'taskConfig'
@@ -19,6 +20,7 @@ export const SIDECAR_FILENAME: Record<SidecarKind, string> = {
   area: '_area.json',
   topic: '_topic.json',
   project: '_project.json',
+  space: '_space.json',
   collection: '_pagecollection.json',
   set: '_pageset.json',
   taskConfig: '_taskconfig.json',

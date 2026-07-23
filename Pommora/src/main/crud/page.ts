@@ -18,8 +18,9 @@ import { pathExists, invalidName, nowIso } from './util'
 
 const MD = '.md'
 
-/** Create a `.md` page in `parentDir` with a fresh ULID, empty tiers/properties, and
- *  created/modified timestamps. Optional icon + initial body. */
+/** Create a `.md` page in `parentDir` with a fresh ULID, an empty properties map, and
+ *  created/modified timestamps (no context keys — presence is value-driven). Optional
+ *  icon + initial body. */
 export async function createPage(
   parentDir: string,
   name: string,
@@ -32,9 +33,6 @@ export async function createPage(
   const now = nowIso()
   const modeled: Record<string, unknown> = {
     id,
-    tier1: [],
-    tier2: [],
-    tier3: [],
     properties: {},
     created_at: now,
     modified_at: now,
@@ -129,10 +127,9 @@ export async function updatePageProperty(
 }
 
 /**
- * Set a page's tier-N context links — a **bare** ULID array at the frontmatter root
- * (`tier1`/`tier2`/`tier3`, NOT a `$ctx`-tagged property). Governs only that tier field +
- * `modified_at`, so all other frontmatter survives. The array is always written (even
- * empty). `tier` must be 1–3. Ids are stored as given (existence is not checked here).
+ * LEGACY — migration-era only; live context writes go through setPageContext. Set a
+ * page's tier-N links as a bare ULID array at the frontmatter root. Governs only that
+ * tier field + `modified_at`. `tier` must be 1–3; ids are stored as given.
  */
 export async function setPageTier(
   absFile: string,
