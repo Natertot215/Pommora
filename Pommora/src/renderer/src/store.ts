@@ -1637,6 +1637,19 @@ export const useSession = create<SessionState>((set, get) => {
     cancelRename: () => set({ renamingPath: null }),
     submitRename: async (path, kind, newName) => {
       set({ renamingPath: null }) // exit edit mode immediately, regardless of outcome
+      // Registry entities rename by id through their journaled cascade ops — the bare folder
+      // rename would strand every member file's title key.
+      if (kind === 'space' || kind === 'context') {
+        const groups = get().tree?.contextGroups ?? []
+        if (kind === 'space') {
+          const sp = groups.flatMap((g) => g.spaces).find((s) => s.path === path)
+          return sp ? get().mutate({ op: 'renameSpace', spaceId: sp.id, newName }) : false
+        }
+        const group = groups.find((g) => `.nexus/contexts/${g.def.title}` === path)
+        return group
+          ? get().mutate({ op: 'renameContext', contextId: group.def.id, newName })
+          : false
+      }
       return get().mutate({ op: 'rename', path, kind, newName })
     },
 
