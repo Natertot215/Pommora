@@ -27,7 +27,7 @@ import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
 import { useSession, type PreviewTarget } from '../store'
 
-// The front-matter inspector (G-1/I-13/I-14): the preview page's title, banner, context tiers, and
+// The front-matter inspector: the preview page's title, banner, context tiers, and
 // schema properties — listed and editable through the SAME primitives the table views edit with
 // (Cell render, PropertyPicker/CalendarPicker portals, the inline PropertyEditor). Writes go through
 // mutate with the table's optimistic-patch pattern; the D-6 reconcile re-paths the open tab on rename.
@@ -104,7 +104,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     [fm, title, target, contextValues],
   )
 
-  // The assign-reveal flow (F-1), one behavior for contexts AND properties: a row shows when
+  // The assign-reveal flow, one behavior for contexts AND properties: a row shows when
   // it holds a real value OR was assigned this session via + Add Property (session-only —
   // disk never carries an empty key).
   const isAssigned = (id: string): boolean => {
@@ -323,10 +323,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             .map((t) => (
               <PickerOption key={t.id} onClick={() => revealAndEdit(t.id)}>
                 <span className={iconOption}>
-                  <Icon
-                    name={asRenderableIcon(t.icon) ?? defaultEntityIcon('space')}
-                    size={13}
-                  />
+                  <Icon name={asRenderableIcon(t.icon) ?? defaultEntityIcon('space')} size={13} />
                   {t.label}
                 </span>
               </PickerOption>

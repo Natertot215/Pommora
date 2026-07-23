@@ -5,7 +5,7 @@ import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { ColorPicker } from './ColorPicker'
 
-/** The palette glyph that IS the current color (C-2): tinted with the selected chip solid,
+/** The palette glyph that IS the current color: tinted with the selected chip solid,
  *  Label Secondary when unset. Click mounts the shared ColorPicker (the OptionEditor's
  *  ref+toggle pattern); picking the selected swatch again clears to Default. */
 export function CurrentColorIcon({

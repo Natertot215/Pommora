@@ -501,7 +501,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
       ? (settings.personalization as Record<string, unknown>)
       : {}
   // Accent's new home is personalization.accent; the legacy top-level accent_color is the back-compat
-  // fallback for un-migrated nexuses (G-4). resolveAccent normalizes either into an AccentSetting.
+  // fallback for un-migrated nexuses. resolveAccent normalizes either into an AccentSetting.
   const accent = resolveAccent(
     asString(rawPersonalization.accent) ?? asString(settings.accent_color),
   )

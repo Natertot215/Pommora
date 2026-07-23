@@ -21,7 +21,7 @@ import { solidColorCss } from './solidColor'
 import { checkboxBoxStyle } from './checkboxLook'
 import type { ResolveContext } from './resolveContext'
 
-/** Type-aware cell render (Part 2 G-1/G-2): the title with its page icon; chips for select/status;
+/** Type-aware cell render: the title with its page icon; chips for select/status;
  *  several chips for multi-select; a checkbox glyph; ContextChips for tiers; an inline link for url;
  *  per-file chips; formatted date/number text. The per-view `style` picks each type's look + formats.
  *  Every value routes through the resolution context so no raw id ever shows; an empty/unknown value
@@ -49,7 +49,7 @@ export function Cell({
 }): React.JSX.Element | null {
   if (column.kind === 'title') {
     // The page's frontmatter icon, else the file-text default (the sidebar's page glyph) — so every page
-    // reads with an icon (E-3). Hide Page Icons drops it entirely.
+    // reads with an icon. Hide Page Icons drops it entirely.
     const iconName = hideIcon ? undefined : iconNameOr(row.icon, defaultEntityIcon('page'))
     return (
       <OverflowScroll className="cell-title">
@@ -198,7 +198,7 @@ export function Cell({
       )
     }
     case 'file':
-      // Each chip opens its own file (A-9) — the click stays on the chip, not the cell/row.
+      // Each chip opens its own file — the click stays on the chip, not the cell/row.
       return (
         <OverflowScroll className="cell-chips">
           {v.value.map((f) => (

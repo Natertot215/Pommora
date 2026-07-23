@@ -1,4 +1,4 @@
-// Phase 4 — live filesystem watcher. The watcher ONLY reads: on a debounced
+// Live filesystem watcher. The watcher ONLY reads: on a debounced
 // settle it re-reads the tree and pushes it to the renderer over 'nexus:changed'.
 // No pause flag — an in-app write that echoes back is a harmless redundant
 // re-read (a read-only watcher can't loop; re-rendering an identical tree is a
@@ -56,7 +56,7 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
           seg.startsWith('index.db') || // SQLite index + its WAL/SHM — churns on every mutation
           (seg.startsWith('.') && seg !== '.nexus'), // dotfile cruft, but .nexus holds contexts + settings
       ) ||
-      // Block-host content loads through blocks:get, never the tree walk (E-3) —
+      // Block-host content loads through blocks:get, never the tree walk —
       // a debounced block-body write must not cost a full re-walk. The
       // homepage.json config FILE stays watched (the tree reads its banner).
       (segs[0] === '.nexus' && segs[1] === HOMEPAGE_HOST_DIRNAME) ||
