@@ -6,5 +6,5 @@ import { SpaceSettingsContent } from './SpaceSettings'
  * icon sits at the pane's bottom-left instead of the footer's right.
  */
 export function SpacePanel({ id }: { id: string }): React.JSX.Element | null {
-  return <SpaceSettingsContent id={id} color="inline" />
+  return <SpaceSettingsContent id={id} />
 }

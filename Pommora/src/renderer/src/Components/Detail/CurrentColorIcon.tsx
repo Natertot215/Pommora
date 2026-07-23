@@ -23,7 +23,7 @@ export function CurrentColorIcon({
   const resolved = chipColorFor(color)
   const tint = (CHIP_SOLID_COLORS as readonly string[]).includes(resolved)
     ? colorVars.color.solid[resolved as ChipSolidColor]
-    : colorVars.color.label.secondary
+    : colorVars.color.label.tertiary
   return (
     <>
       <button

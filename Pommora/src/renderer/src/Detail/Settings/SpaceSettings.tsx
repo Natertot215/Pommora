@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
-import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
-import { MenuBottomRow, MenuScrollFrame } from '@renderer/design-system/components/menu'
-import { footerLockAction, lockIcon } from '../../Blocks/handleMenu.css'
+import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { MenuScrollFrame } from '@renderer/design-system/components/menu'
 import { useSession } from '../../store'
 import { findSpace } from '../Scope'
 import { IconPicker } from '../../Components/IconPicker'
@@ -9,24 +8,13 @@ import { InlineEditHeader } from '../../Components/Detail/InlineEditHeader'
 import { CurrentColorIcon } from '../../Components/Detail/CurrentColorIcon'
 
 /**
- * The Space settings content — the (Icon)(Title) heading over a divider, shared by the
- * Settings window and the toolbar SpacePanel. The window puts the color icon in the
- * BottomRow's right and the lock in its left (the Homepage footer treatment); the panel
- * puts the color at its own bottom-left.
+ * The Space settings content for the toolbar SpacePanel — the (Icon)(Title) heading over a
+ * divider with the color icon below it. (The Settings window composes its own chrome.)
  */
-export function SpaceSettingsContent({
-  id,
-  color: colorMode,
-}: {
-  id: string
-  /** Where this surface seats the color icon: its footer, inline, or its own chrome ('none'). */
-  color: 'footer' | 'inline' | 'none'
-}): React.JSX.Element | null {
+export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const locked = useSession((s) => s.spaceLocks[id] ?? false)
-  const setSpaceLocked = useSession((s) => s.setSpaceLocked)
   const iconRef = useRef<HTMLButtonElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const node = findSpace(tree, id)
@@ -40,24 +28,7 @@ export function SpaceSettingsContent({
   )
   return (
     <>
-      <MenuScrollFrame
-        footer={
-          <MenuBottomRow
-            leading={
-              <button
-                type="button"
-                aria-label={locked ? 'Unlock board' : 'Lock board'}
-                className={footerLockAction}
-                onClick={() => void setSpaceLocked(id, !locked)}
-              >
-                <Icon name="lock" size={12} className={lockIcon} />
-                {locked ? 'Unlock' : 'Lock'}
-              </button>
-            }
-            trailing={colorMode === 'footer' ? colorIcon : undefined}
-          />
-        }
-      >
+      <MenuScrollFrame>
         <InlineEditHeader
           value={node.name}
           icon={iconNameOr(node.icon, defaultEntityIcon('space', defaultIcons))}
@@ -68,7 +39,7 @@ export function SpaceSettingsContent({
               void mutate({ op: 'renameSpace', spaceId: id, newName: next })
           }}
         />
-        {colorMode === 'inline' && <div style={{ padding: '4px 8px' }}>{colorIcon}</div>}
+        <div style={{ padding: '4px 8px' }}>{colorIcon}</div>
       </MenuScrollFrame>
       <IconPicker
         open={pickerOpen}
@@ -94,9 +65,4 @@ function findSpaceColor(
     if (sp) return sp.color
   }
   return undefined
-}
-
-/** The Settings-window body — the window's rail seats the color icon, so none here. */
-export function SpaceSettings({ id }: { id: string }): React.JSX.Element | null {
-  return <SpaceSettingsContent id={id} color="none" />
 }
