@@ -149,6 +149,7 @@ export function Cell({
                 key={id}
                 color={chipColorFor(c?.color)}
                 title={c?.title ?? id}
+                icon={c?.icon}
                 {...(remove
                   ? {
                       onRemove: () =>

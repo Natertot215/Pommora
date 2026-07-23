@@ -53,15 +53,17 @@ export const chipLabel = style([
   },
 ])
 
-/** chip-context — the Context reference chip: chip-label's EXACT geometry (composed, so a
- *  label retune carries over — Nathan's call) with the Context color on border + text (via
- *  chipColor) over a NEUTRAL quaternary fill, so it reads as a reference you can open,
- *  distinct from the saturated value chips. The doubled selector outguns chipColor's tint
- *  background (emitted later in the sheet); `--chip-fill` follows the fill so a removable
- *  context chip's melt smears into the neutral, not the tint. */
+/** chip-context — the Context reference chip: chip-label's geometry with a touch more room (its
+ *  own `--chip-pad-x` and a taller box), so the neutral outline breathes instead of hugging the
+ *  label. Context color on border + text (via chipColor) over a NEUTRAL quaternary fill, so it
+ *  reads as a reference you can open, distinct from the saturated value chips. The doubled
+ *  selector outguns chipColor's tint background (emitted later in the sheet); `--chip-fill`
+ *  follows the fill so a removable context chip's melt smears into the neutral, not the tint. */
 export const chipContext = style([
   chipLabel,
   {
+    height: '22px',
+    vars: { '--chip-pad-x': '8px' },
     selectors: {
       '&&': {
         background: colorVars.color.fill.quaternary,

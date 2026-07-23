@@ -14,7 +14,7 @@ import { StatusCapsule } from './StatusCapsule'
  *  value); the groups themselves are containers, never pickable chips. */
 const optionsOf = (
   def: PropertyDefinition,
-): Array<{ value: string; label: string; color?: string }> => {
+): Array<{ value: string; label: string; color?: string; icon?: string }> => {
   return def.type === 'status' ? statusOptions(def) : (def.select_options ?? [])
 }
 
@@ -70,7 +70,7 @@ export function PropertyPicker({
   look?: ColumnLook
   /** Context columns (the reserved tiers + user context props) pick from the NEXUS's contexts,
    *  not the def — the caller supplies the tier's list. Toggles like multi; commits `context`. */
-  contextOptions?: Array<{ value: string; label: string; color?: string }>
+  contextOptions?: Array<{ value: string; label: string; color?: string; icon?: string }>
   onCommit: (value: PropertyValue | null) => void
   onDismiss: () => void
 }): React.JSX.Element | null {
@@ -115,8 +115,8 @@ export function PropertyOptionRows({
 }: {
   def: PropertyDefinition
   look?: ColumnLook
-  contextOptions?: Array<{ value: string; label: string; color?: string }>
-  options: Array<{ value: string; label: string; color?: string }>
+  contextOptions?: Array<{ value: string; label: string; color?: string; icon?: string }>
+  options: Array<{ value: string; label: string; color?: string; icon?: string }>
   selected: string[]
   onPick: (value: string) => void
 }): React.JSX.Element {
@@ -138,7 +138,7 @@ export function PropertyOptionRows({
             {capsule ? (
               <StatusCapsule color={o.color} group={group} />
             ) : contextOptions ? (
-              <ContextChip color={chipColorFor(o.color)} title={o.label} />
+              <ContextChip color={chipColorFor(o.color)} title={o.label} icon={o.icon} />
             ) : (
               <Chip
                 color={chipColorFor(o.color)}
@@ -162,9 +162,9 @@ export function pickSemantics(
   current: PropertyValue | null,
   onCommit: (value: PropertyValue | null) => void,
   onSinglePicked: () => void,
-  contextOptions?: Array<{ value: string; label: string; color?: string }>,
+  contextOptions?: Array<{ value: string; label: string; color?: string; icon?: string }>,
 ): {
-  options: Array<{ value: string; label: string; color?: string }>
+  options: Array<{ value: string; label: string; color?: string; icon?: string }>
   selected: string[]
   pick: (value: string) => void
 } {
