@@ -13,9 +13,11 @@ import { MenuItem } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { slideScrollBack } from '@renderer/design-system/components/OverflowScroll'
 import { EditableInput } from '../Components/EditableInput'
+import { HoverCreate } from '../Components/HoverCreate'
 import type {
   AreaNode,
   CollectionNode,
+  ContextGroup,
   EntityIconKind,
   FolderPlacement,
   NexusTree,
@@ -23,6 +25,7 @@ import type {
   SelectionState,
   SetNode,
   SidebarMode,
+  SpaceNode,
   TopicNode,
   ProjectNode,
 } from '@shared/types'
@@ -185,6 +188,7 @@ function Disclosure({
   onContextMenu,
   rename,
   dragId,
+  onBodyContextMenu,
   children,
 }: {
   icon: string
@@ -204,6 +208,8 @@ function Disclosure({
   // stays outside it. Omitted for structural disclosures (the context tiers), which aren't
   // entities and so are never draggable or drop targets.
   dragId?: string
+  /** Right-click on the body's empty space (a row's own menu wins — it preventDefaults first). */
+  onBodyContextMenu?: () => void
   children: React.ReactNode
 }): React.JSX.Element {
   const [open, setOpen] = useState(() =>
@@ -243,7 +249,20 @@ function Disclosure({
     <>
       {dragId ? <DragRow id={dragId}>{header}</DragRow> : header}
       <Reveal open={open} fill>
-        <div className="children">{children}</div>
+        <div
+          className="children"
+          onContextMenu={
+            onBodyContextMenu
+              ? (e) => {
+                  if (e.defaultPrevented) return
+                  e.preventDefault()
+                  onBodyContextMenu()
+                }
+              : undefined
+          }
+        >
+          {children}
+        </div>
       </Reveal>
     </>
   )
@@ -461,6 +480,60 @@ function ContextRow({
   )
 }
 
+// A registry Space — a draggable row reordered within its Context group's disclosure.
+function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
+  const select = useSession((s) => s.select)
+  const selected = useSession((s) => s.selection.kind === 'space' && s.selection.id === node.id)
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  return (
+    <DragRow id={node.id}>
+      <Leaf
+        icon={iconNameOr(node.icon, defaultEntityIcon('space', defaultIcons))}
+        title={node.title}
+        depth={1}
+        selected={selected}
+        onSelect={() => void select({ kind: 'space', id: node.id })}
+        onContextMenu={() => showContextFor({ ...node, kind: 'space' })}
+        rename={{ path: node.path, kind: 'space' }}
+      />
+    </DragRow>
+  )
+}
+
+// A registry Context group — a non-draggable disclosure holding its Spaces. Free-standing (no
+// containment), so the header is a pure expand/collapse toggle; its right-click pops the native
+// group menu (New <Singular> · Settings · Rename · Delete) built main-side from the registry.
+function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.Element {
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const path = `.nexus/contexts/${group.def.title}`
+  return (
+    <Disclosure
+      icon={iconNameOr(group.def.icon, defaultEntityIcon('space', defaultIcons))}
+      title={group.def.title}
+      depth={0}
+      defaultOpen
+      persistKey={`context:${group.def.id}`}
+      onContextMenu={() =>
+        // No id → no Open item: a group has no destination view (Spaces do).
+        void window.nexus.contextMenu({ kind: 'context', path, title: group.def.title })
+      }
+      rename={{ path, kind: 'context' }}
+      onBodyContextMenu={() => {
+        void useSession.getState().createFromMenu([
+          {
+            label: `New ${group.def.singular}`,
+            req: { op: 'createSpace', contextId: group.def.id, name: `New ${group.def.singular}` },
+          },
+        ])
+      }}
+    >
+      {group.spaces.map((s) => (
+        <SpaceRow key={s.id} node={s} />
+      ))}
+    </Disclosure>
+  )
+}
+
 // A context tier group (Areas / Topics / Projects) — a non-draggable disclosure under the
 // Contexts heading holding that tier's leaves. Grid icon, open by default. The tiers are
 // free-standing (no containment), so the header is a pure expand/collapse toggle.
@@ -561,15 +634,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   // A drop resolves to a MutateRequest; the store's one write path applies it (refetch on ok).
   const onCommit = (req: MutateRequest): void => void mutate(req)
 
-  // Right-click a mode's empty area → a native create menu (never auto-create). Contexts offers the
-  // three tiers; Collections a single "New Collection" (Add Heading joins it with User Sections CRUD).
-  const newContext = (): void => {
-    void useSession.getState().createFromMenu([
-      { label: 'New Area', req: { op: 'createContext', tier: 1, name: DEFAULT_NEW_NAME } },
-      { label: 'New Topic', req: { op: 'createContext', tier: 2, name: DEFAULT_NEW_NAME } },
-      { label: 'New Project', req: { op: 'createContext', tier: 3, name: DEFAULT_NEW_NAME } },
-    ])
-  }
+  // Right-click a mode's empty area → a native create menu (never auto-create). Contexts offers
+  // nothing there — creation is scoped: in-group right-click for a Space, HoverCreate for a group.
   const newCollectionMenu = (): void => {
     void useSession.getState().createFromMenu([
       {
@@ -597,7 +663,9 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     return () => nav.removeEventListener('scroll', onScroll, { capture: true })
   }, [])
 
-  // Contexts mode — the three free-standing tiers (Areas → Topics → Projects), its own drag zone.
+  // Contexts mode — every registry Context as its own disclosure of Spaces, one drag zone.
+  // LEGACY fallback: a tree without groups renders the fixed three tiers (stripped with the
+  // legacy contract).
   const contextsLayer = (
     <SidebarDnd
       tree={tree}
@@ -606,33 +674,52 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       subSetPlacement={subSetPlacement}
     >
       <div className="section">
-        <TierDisclosure
-          tierKey="areas"
-          label={tree.labels.area.plural}
-          singular={tree.labels.area.singular}
-        >
-          {tree.contexts.areas.map((a: AreaNode) => (
-            <ContextRow key={a.id} node={a} />
-          ))}
-        </TierDisclosure>
-        <TierDisclosure
-          tierKey="topics"
-          label={tree.labels.topic.plural}
-          singular={tree.labels.topic.singular}
-        >
-          {tree.contexts.topics.map((t: TopicNode) => (
-            <ContextRow key={t.id} node={t} />
-          ))}
-        </TierDisclosure>
-        <TierDisclosure
-          tierKey="projects"
-          label={tree.labels.project.plural}
-          singular={tree.labels.project.singular}
-        >
-          {tree.contexts.projects.map((p: ProjectNode) => (
-            <ContextRow key={p.id} node={p} />
-          ))}
-        </TierDisclosure>
+        {tree.contextGroups ? (
+          <>
+            {tree.contextGroups.map((g) => (
+              <ContextGroupDisclosure key={g.def.id} group={g} />
+            ))}
+            <HoverCreate
+              label="New Context"
+              className="contexts-create"
+              onClick={() =>
+                void mutate({ op: 'createContextGroup', name: 'New Context' }, (created) =>
+                  useSession.getState().beginRename(created.path),
+                )
+              }
+            />
+          </>
+        ) : (
+          <>
+            <TierDisclosure
+              tierKey="areas"
+              label={tree.labels.area.plural}
+              singular={tree.labels.area.singular}
+            >
+              {tree.contexts.areas.map((a: AreaNode) => (
+                <ContextRow key={a.id} node={a} />
+              ))}
+            </TierDisclosure>
+            <TierDisclosure
+              tierKey="topics"
+              label={tree.labels.topic.plural}
+              singular={tree.labels.topic.singular}
+            >
+              {tree.contexts.topics.map((t: TopicNode) => (
+                <ContextRow key={t.id} node={t} />
+              ))}
+            </TierDisclosure>
+            <TierDisclosure
+              tierKey="projects"
+              label={tree.labels.project.plural}
+              singular={tree.labels.project.singular}
+            >
+              {tree.contexts.projects.map((p: ProjectNode) => (
+                <ContextRow key={p.id} node={p} />
+              ))}
+            </TierDisclosure>
+          </>
+        )}
       </div>
     </SidebarDnd>
   )
@@ -690,8 +777,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const layerFor = (m: SidebarMode): React.ReactNode =>
     m === 'contexts' ? contextsLayer : m === 'agenda' ? <AgendaMode /> : collectionsLayer
   const activeNode = layerFor(mode)
-  const onCreate =
-    mode === 'contexts' ? newContext : mode === 'agenda' ? undefined : newCollectionMenu
+  const onCreate = mode === 'contexts' || mode === 'agenda' ? undefined : newCollectionMenu
 
   // Ribbon-mode switch: hold the outgoing mode as a clipped exit overlay while the incoming sweeps
   // over it (Sidebar.css). The nav snaps to the top for the incoming; the exit layer counter-
