@@ -122,6 +122,27 @@ describe('skip-aware journal (D-7b)', () => {
   })
 })
 
+describe('unlink cascades (D-3)', () => {
+  it('unlinkContextKey strips the bracketed key from all three scopes', async () => {
+    const { unlinkContextKey } = await import('./contextCascade')
+    const r = await unlinkContextKey(root, 'Projects')
+    expect(r.ok).toBe(true)
+    expect('[Projects]' in splitFrontmatter(await readFile(page(), 'utf8'))).toBe(false)
+    expect('[Projects]' in JSON.parse(await readFile(task(), 'utf8'))).toBe(false)
+    expect('[Projects]' in JSON.parse(await readFile(csSidecar(), 'utf8'))).toBe(false)
+  })
+
+  it('unlinkSpaceValue strips only the exact title, dropping an emptied key', async () => {
+    const { unlinkSpaceValue } = await import('./contextCascade')
+    const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')
+    expect(r.ok).toBe(true)
+    const fm = splitFrontmatter(await readFile(page(), 'utf8'))
+    expect(fm['[Projects]']).toEqual(['pommora']) // the near-miss survives (reconcile owns it)
+    const t = JSON.parse(await readFile(task(), 'utf8'))
+    expect('[Projects]' in t).toBe(false) // emptied → key removed
+  })
+})
+
 describe('replayPendingRename (D-7a crash windows)', () => {
   it('completes a rename crashed before the registry commit', async () => {
     // Crash simulation: journal written, folder renamed, files NOT yet cascaded,

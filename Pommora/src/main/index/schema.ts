@@ -14,7 +14,7 @@
 import type { Db } from './db'
 
 /** Regeneratable index version. A mismatch ⇒ drop + rebuild. Distinct from Swift's by design. */
-export const SCHEMA_VERSION = 16
+export const SCHEMA_VERSION = 17
 
 const META_DDL = `
   CREATE TABLE IF NOT EXISTS meta (
@@ -68,7 +68,7 @@ const TABLE_DDL: string[] = [
   );`,
   `CREATE TABLE IF NOT EXISTS contexts (
     id TEXT PRIMARY KEY,
-    tier INTEGER NOT NULL,
+    context_id TEXT NOT NULL,
     title TEXT NOT NULL,
     icon TEXT
   );`,
@@ -78,7 +78,7 @@ const TABLE_DDL: string[] = [
     source_kind TEXT NOT NULL,
     target_id TEXT NOT NULL,
     target_kind TEXT NOT NULL,
-    property_id TEXT NOT NULL,
+    context_id TEXT NOT NULL,
     modified_at TEXT NOT NULL
   );`,
   `CREATE TABLE IF NOT EXISTS connections (
@@ -111,8 +111,8 @@ const INDEX_DDL = `
   CREATE INDEX IF NOT EXISTS idx_page_sets_parent_set_id ON page_sets(parent_set_id);
   CREATE INDEX IF NOT EXISTS idx_context_links_source_id ON context_links(source_id);
   CREATE INDEX IF NOT EXISTS idx_context_links_target_id ON context_links(target_id);
-  CREATE INDEX IF NOT EXISTS idx_context_links_property_id ON context_links(property_id);
-  CREATE INDEX IF NOT EXISTS idx_contexts_tier ON contexts(tier);
+  CREATE INDEX IF NOT EXISTS idx_context_links_context_id ON context_links(context_id);
+  CREATE INDEX IF NOT EXISTS idx_contexts_context_id ON contexts(context_id);
   CREATE INDEX IF NOT EXISTS idx_connections_source_id ON connections(source_id);
   CREATE INDEX IF NOT EXISTS idx_connections_target_id ON connections(target_id);
   CREATE INDEX IF NOT EXISTS idx_connections_target_title ON connections(target_kind, target_title);

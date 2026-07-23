@@ -132,9 +132,9 @@ describe('rebuildIndex (cold build)', () => {
     const def = get(db, 'SELECT name, type FROM property_definitions WHERE id = ?', ids.score)
     expect(def).toMatchObject({ name: 'Score', type: 'number' })
 
-    // Context (tier 1)
-    expect(get(db, 'SELECT tier, title FROM contexts WHERE id = ?', ids.work)).toMatchObject({
-      tier: 1,
+    // Context member (legacy tier-1 dir resolves through the reserved id)
+    expect(get(db, 'SELECT context_id, title FROM contexts WHERE id = ?', ids.work)).toMatchObject({
+      context_id: '_tier1',
       title: 'Work',
     })
 
@@ -146,9 +146,9 @@ describe('rebuildIndex (cold build)', () => {
     expect(conns).toHaveLength(1)
     expect(conns[0]).toMatchObject({ target_title: 'pageb', target_id: ids.b, resolved: 1 })
 
-    // Tier context link PageA → Work (target_kind is the tier entity, "area", per RelationTargetKind)
+    // Context link PageA → Work (legacy tierN resolved through the reserved context id)
     const link = get(db, 'SELECT * FROM context_links WHERE source_id = ?', ids.a)
-    expect(link).toMatchObject({ target_id: ids.work, property_id: '_tier1', target_kind: 'area' })
+    expect(link).toMatchObject({ target_id: ids.work, context_id: '_tier1', target_kind: 'space' })
 
     // Agenda: the task row + its status property + tier link + schema def
     const task = get(db, 'SELECT * FROM agenda_tasks WHERE id = ?', ids.task)
@@ -159,6 +159,38 @@ describe('rebuildIndex (cold build)', () => {
     // property_definitions mirrors the nexus-wide registry only — agenda config defs stay out (D-1)
     expect(get(db, "SELECT * FROM property_definitions WHERE id = '_status'")).toBeUndefined()
 
+    db.close()
+  })
+
+  it('carries registry-mode space rows + space-source links (G-2)', async () => {
+    await writeJson(nexusConfig(root, 'contexts.json'), {
+      contexts: [
+        { id: '_tier3', title: 'Projects', singular: 'Project' },
+        { id: 'ctxC', title: 'Classes', singular: 'Class' },
+      ],
+    })
+    const ctxDir = join(nexusDir(root), 'contexts')
+    await mkdir(join(ctxDir, 'Projects', 'Pommora'), { recursive: true })
+    await writeJson(join(ctxDir, 'Projects', 'Pommora', '_space.json'), {
+      id: 'sp-pom',
+      '[Classes]': ['CS 161'],
+    })
+    await mkdir(join(ctxDir, 'Classes', 'CS 161'), { recursive: true })
+    await writeJson(join(ctxDir, 'Classes', 'CS 161', '_space.json'), { id: 'sp-cs' })
+
+    const db = await rebuildIndex(root)
+    expect(db).not.toBeNull()
+    if (!db) return
+    expect(get(db, 'SELECT context_id FROM contexts WHERE id = ?', 'sp-pom')).toMatchObject({
+      context_id: '_tier3',
+    })
+    const link = get(db, 'SELECT * FROM context_links WHERE source_id = ?', 'sp-pom')
+    expect(link).toMatchObject({
+      source_kind: 'space',
+      target_id: 'sp-cs',
+      context_id: 'ctxC',
+      target_kind: 'space',
+    })
     db.close()
   })
 
