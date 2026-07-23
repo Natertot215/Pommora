@@ -14,7 +14,6 @@ import { Toolbar } from './Toolbar/Toolbar'
 import { InspectorPanel } from './Detail/InspectorPanel/InspectorPanel'
 import { NavWindow } from './NavWindow/NavWindow'
 import { PreviewWindow } from './PagePreview/PreviewWindow'
-import { SettingsWindow } from './Detail/Settings/SettingsWindow'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
 import { Icon } from '@renderer/design-system/symbols'
@@ -115,23 +114,6 @@ export function App(): React.JSX.Element {
       if (target.id) openPreview({ id: target.id, path: target.path })
     })
   }, [openPreview])
-
-  // Context-menu "Settings" (Context/Space) → the floating settings window. A Space target
-  // carries its id; a Context group's resolves here by folder title (its menu has no id).
-  const openEntitySettings = useSession((s) => s.openEntitySettings)
-  useEffect(() => {
-    return window.nexus.onOpenEntitySettings((target) => {
-      if (target.kind === 'space' && target.id) {
-        openEntitySettings({ kind: 'space', id: target.id })
-        return
-      }
-      const title = target.path.split('/').pop()
-      const group = (useSession.getState().tree?.contextGroups ?? []).find(
-        (g) => g.def.title === title,
-      )
-      if (group) openEntitySettings({ kind: 'context', id: group.def.id })
-    })
-  }, [openEntitySettings])
 
   // The live filesystem watcher pushed a fresh tree (external change) → swap it in place.
   // Single-window v1: main guards stale pushes by session root; on an in-window nexus
@@ -308,9 +290,6 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <NavWindow />}
       {/* Page Preview — the B-1-routed floating page window; one floating window total (D-8). */}
       {status === 'ready' && <PreviewWindow />}
-      {/* The Context/Space Settings window — the NavWindow floating chrome (shell + rail),
-          reachable from right-click without selecting the entity. */}
-      {status === 'ready' && <SettingsWindow />}
       {/* Invisible edge-drag resize strip at the inspector's left edge (only while open). */}
       {status === 'ready' && inspectorOpen && (
         <div

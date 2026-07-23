@@ -100,16 +100,6 @@ export async function showContextMenu(
   for (const c of creators) items.push({ label: c.label, click: () => void run(c.req) })
   if (creators.length) items.push({ type: 'separator' })
 
-  // Context/Space Settings — opens the floating settings chassis renderer-side (its content
-  // panes land separately; until then it opens blank).
-  if (target.kind === 'context' || target.kind === 'space') {
-    items.push({
-      label: 'Settings',
-      click: () => {
-        if (!win.isDestroyed()) win.webContents.send('open-entity-settings', target)
-      },
-    })
-  }
 
   // Rename is inline in the renderer (native menus can't take text), so this only signals
   // the renderer to put the matching row into edit mode; the commit goes through mutate.

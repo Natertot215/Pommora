@@ -1,34 +1,52 @@
 import { useRef, useState } from 'react'
-import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
-import { MenuScrollFrame } from '@renderer/design-system/components/menu'
+import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { MenuBottomRow, MenuScrollFrame } from '@renderer/design-system/components/menu'
+import { footerLockAction, lockIcon } from '../../Blocks/handleMenu.css'
 import { useSession } from '../../store'
 import { findSpace } from '../Scope'
 import { IconPicker } from '../../Components/IconPicker'
 import { InlineEditHeader } from '../../Components/Detail/InlineEditHeader'
-import { CurrentColorIcon } from '../../Components/Detail/CurrentColorIcon'
 
 /**
- * The Space settings content for the toolbar SpacePanel — the (Icon)(Title) heading over a
- * divider with the color icon below it. (The Settings window composes its own chrome.)
+ * The Space settings pane for the toolbar dropdown — the (Icon)(Title) heading over the
+ * BottomRow footer: the board lock leading, the actions ellipsis trailing (its menu is a
+ * later arrival).
  */
 export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const locked = useSession((s) => s.spaceLocks[id] ?? false)
+  const setSpaceLocked = useSession((s) => s.setSpaceLocked)
   const iconRef = useRef<HTMLButtonElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const node = findSpace(tree, id)
   if (!node) return null
 
-  const colorIcon = (
-    <CurrentColorIcon
-      color={findSpaceColor(tree, id)}
-      onPick={(color) => void mutate({ op: 'setSpaceColor', spaceId: id, color })}
-    />
-  )
   return (
     <>
-      <MenuScrollFrame>
+      <MenuScrollFrame
+        footer={
+          <MenuBottomRow
+            leading={
+              <button
+                type="button"
+                aria-label={locked ? 'Unlock board' : 'Lock board'}
+                className={footerLockAction}
+                onClick={() => void setSpaceLocked(id, !locked)}
+              >
+                <Icon name="lock" size={12} className={lockIcon} />
+                {locked ? 'Unlock' : 'Lock'}
+              </button>
+            }
+            trailing={
+              <button type="button" aria-label="More actions" className={footerLockAction} disabled>
+                <Icon name="ellipsis" size={13} />
+              </button>
+            }
+          />
+        }
+      >
         <InlineEditHeader
           value={node.name}
           icon={iconNameOr(node.icon, defaultEntityIcon('space', defaultIcons))}
@@ -39,7 +57,6 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
               void mutate({ op: 'renameSpace', spaceId: id, newName: next })
           }}
         />
-        <div style={{ padding: '4px 8px' }}>{colorIcon}</div>
       </MenuScrollFrame>
       <IconPicker
         open={pickerOpen}
@@ -53,16 +70,4 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
       />
     </>
   )
-}
-
-/** The Space's live chip color off the tree (BannerOwner doesn't carry it). */
-function findSpaceColor(
-  tree: ReturnType<typeof useSession.getState>['tree'],
-  id: string,
-): string | undefined {
-  for (const g of tree?.contextGroups ?? []) {
-    const sp = g.spaces.find((s) => s.id === id)
-    if (sp) return sp.color
-  }
-  return undefined
 }
