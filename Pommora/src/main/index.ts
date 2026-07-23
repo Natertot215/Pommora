@@ -75,6 +75,7 @@ import {
 import { startWatcher, stopWatcher } from './watcher'
 import { resolveUnderRoot } from './pathSafety'
 import { updatePageBody } from './crud/page'
+import { replayPendingRename } from './crud/contextCascade'
 import { readFolds, writeFolds, type FoldState } from './io/folds'
 import { readActiveViews, writeActiveViews, type ActiveViews } from './io/activeViews'
 import {
@@ -590,6 +591,9 @@ async function adoptNexusInner(path: string): Promise<void> {
   // returns — a raw path here would make the watcher treat every event as a session switch (F1 root fix).
   const root = sessionRoot() ?? path
   await prepareOpenedNexus(root)
+  // Forward-complete a crashed Context/Space rename BEFORE anything reads contexts —
+  // one-time mutation-side work that may block open (not part of best-effort prepare).
+  await replayPendingRename(root)
   // Open (cold-build if needed) the index for the new session. Best-effort + off the read
   // path — the renderer's tree comes from readNexus, so a null index just means no live
   // query acceleration until the next rebuild. Replaces any prior session's handle.
@@ -2121,6 +2125,7 @@ app
         await openSession(restore)
         const root = sessionRoot() ?? restore // the canonicalized root (see adoptNexus)
         await prepareOpenedNexus(root) // same ensure+stamp prep as an explicit open
+        await replayPendingRename(root) // forward-complete a crashed rename before reads
         await openSessionIndex(root)
       }
     } catch (e) {
