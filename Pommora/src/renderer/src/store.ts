@@ -194,6 +194,11 @@ interface SessionState {
    *  BlockSurface reads it to freeze the board (a React scope can't bridge the two subtrees). */
   homepageLocked: boolean
   setHomepageLocked: (v: boolean) => Promise<void>
+  /** Per-Space board locks (`blocks_locked` in each `_space.json`), keyed by Space id — the
+   *  same cross-subtree seam as the homepage lock. Seeded from each Space's doc load. */
+  spaceLocks: Record<string, boolean>
+  seedSpaceLock: (id: string, locked: boolean) => void
+  setSpaceLocked: (id: string, v: boolean) => Promise<void>
   load: () => Promise<void>
   /** Swap in a freshly-read tree (from load() or the live watcher): set it, reconcile the selection, re-apply accent. */
   applyTree: (tree: NexusTree) => Promise<void>
@@ -679,6 +684,15 @@ export const useSession = create<SessionState>((set, get) => {
       } finally {
         homepageLockWritesInFlight--
       }
+    },
+    spaceLocks: {},
+    seedSpaceLock: (id, locked) =>
+      set((s) =>
+        s.spaceLocks[id] === locked ? {} : { spaceLocks: { ...s.spaceLocks, [id]: locked } },
+      ),
+    setSpaceLocked: async (id, v) => {
+      set((s) => ({ spaceLocks: { ...s.spaceLocks, [id]: v } }))
+      await window.nexus.blocks.save({ kind: 'space', id }, { locked: v })
     },
     load: async () => {
       // Only show the full-screen loading state on the FIRST load (nothing on screen yet).

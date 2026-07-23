@@ -6,6 +6,7 @@ import {
 import { useDismiss } from '@renderer/design-system/components/useDismiss'
 import { ToolbarTrio } from './ToolbarTrio'
 import { ViewDropdown } from './ViewDropdown'
+import { SpaceDropdown } from './SpaceDropdown'
 import { NavPane } from './NavPane'
 import { TabBar } from '../Tabs/TabBar'
 import { activeUnpinnedTab } from '../Tabs/tabsModel'
@@ -99,6 +100,7 @@ export function Toolbar({
       <TabBar />
       <div className="app-toolbar-right">
         <ViewDropdown />
+        <SpaceDropdown />
         <div className="app-toolbar-cluster app-toolbar-cluster--trio" ref={trioRef}>
           <ToolbarTrio segments={trio} />
           {/* Beak aim: the dropdowns hang right-aligned under the trio, so each notch is measured from

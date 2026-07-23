@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BlockHostRef } from '@shared/blocks'
+import { useSession } from '@renderer/store'
 import { decodeLayout, encodeLayout } from '@renderer/SurfacePM/core/codec'
 import { emptyLayout, type SurfaceLayout } from '@renderer/SurfacePM/core/model'
 
@@ -44,6 +45,10 @@ export function useBlockDoc(host: BlockHostRef): BlockDocSession {
   // silently overwritten.
   const liveLayout = useRef<SurfaceLayout>(state.layout)
 
+  // Host IDENTITY keys the load — two Spaces share a kind, so kind alone would serve one
+  // Space's doc to another after an in-place host swap.
+  const hostKey = host.kind === 'space' ? `space:${host.id}` : host.kind
+  const seedSpaceLock = useSession((s) => s.seedSpaceLock)
   useEffect(() => {
     let cancelled = false
     void window.nexus.blocks.get(hostRef.current).then((r) => {
@@ -51,11 +56,13 @@ export function useBlockDoc(host: BlockHostRef): BlockDocSession {
       const layout = decodeLayout(r.doc.layout) ?? emptyLayout()
       liveLayout.current = layout
       setState({ layout, blocks: r.doc.blocks, ready: true })
+      const h = hostRef.current
+      if (h.kind === 'space') seedSpaceLock(h.id, r.doc.locked)
     })
     return () => {
       cancelled = true
     }
-  }, [host.kind])
+  }, [hostKey, seedSpaceLock])
 
   const flush = useCallback(() => {
     const p = pending.current

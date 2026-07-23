@@ -106,9 +106,11 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   const tree = useSession((s) => s.tree)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const select = useSession((s) => s.select)
-  // The host board lock — the store is the cross-subtree source (the SettingsPane toggles it
-  // from a different subtree). Homepage is the only host today; real hosts would key this by host.
-  const hostLocked = useSession((s) => s.homepageLocked)
+  // The host board lock — the store is the cross-subtree source (the settings surfaces toggle
+  // it from a different subtree): the homepage's own flag, or the per-Space lock map.
+  const hostLocked = useSession((s) =>
+    host.kind === 'homepage' ? s.homepageLocked : (s.spaceLocks[host.id] ?? false),
+  )
 
   const entries = useMemo(() => {
     const map = new Map<string, BlockEntry>()
