@@ -12,6 +12,7 @@ import type {
   AreaColor,
   AreaNode,
   CollectionNode,
+  ContextGroup,
   LabelPair,
   NexusLabels,
   NexusTree,
@@ -19,6 +20,7 @@ import type {
   ProjectNode,
   SavedNode,
   SetNode,
+  SpaceNode,
   ConnectionColorSetting,
   EntityIconKind,
   FolderPlacement,
@@ -27,6 +29,12 @@ import type {
   TopicNode,
   UserSection,
 } from '@shared/types'
+import {
+  contextsRegistry as contextsRegistrySchema,
+  parseContextKey,
+  type ContextsRegistry,
+} from '@shared/contexts'
+import { legacyTierLinks, resolveContextKeys } from '@shared/contextResolve'
 import {
   ACCENT_COLORS,
   AREA_COLORS,
@@ -49,10 +57,13 @@ import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from './walkCache'
 import {
   contextTierDir,
+  contextsDir,
+  contextsRegistryFile,
   NEXUS_CONFIG_FILES,
   nexusConfig,
   nexusDir,
   SIDECAR_FILENAME,
+  SPACE_SIDECAR,
 } from './paths'
 
 type Json = Record<string, unknown>
@@ -197,16 +208,34 @@ const readSidecar = (absPath: string): Promise<Json | null> =>
 
 // ---------- page reads ----------
 
+/** Raw context keys retained off the parse each entity read already does — bracketed root
+ *  keys plus the legacy tierN arrays, keyed by the cached node object. Registry-INDEPENDENT
+ *  data, so the parse cache never needs busting for registry changes; resolution runs at
+ *  tree assembly each walk. */
+const rawContextByNode = new WeakMap<object, Json>()
+
+function retainContextKeys(node: object, raw: Json): void {
+  let kept: Json | null = null
+  for (const [k, v] of Object.entries(raw)) {
+    if (parseContextKey(k) !== null || k === 'tier1' || k === 'tier2' || k === 'tier3') {
+      ;(kept ??= {})[k] = v
+    }
+  }
+  if (kept) rawContextByNode.set(node, kept)
+}
+
 async function readPage(absFile: string, relFile: string): Promise<PageNode> {
   return cachedParse(absFile, async () => {
     const fm = splitFrontmatter(await readFile(absFile, 'utf8'))
-    return {
+    const node: PageNode = {
       kind: 'page',
       id: asString(fm.id) ?? adoptedId(relFile),
       title: basenameNoMd(basename(absFile)),
       icon: asString(fm.icon),
       path: relFile,
     }
+    retainContextKeys(node, fm)
+    return node
   })
 }
 
@@ -372,6 +401,78 @@ async function readTier<T extends AreaNode | TopicNode | ProjectNode>(
   return resolveOrder(nodes, order, fb)
 }
 
+/** The registry-backed Space tree: one group per registry entry (registry order), spaces
+ *  from `.nexus/contexts/<Title>/` gated on `_space.json`, ordered by `space_orders`. */
+async function readContextGroups(
+  root: string,
+  registry: ContextsRegistry,
+  spaceOrders: Json,
+  excluded: string[],
+  fb: Fallback,
+): Promise<ContextGroup[]> {
+  const groups: ContextGroup[] = []
+  for (const def of registry.contexts) {
+    const dir = join(contextsDir(root), def.title)
+    const spaces: SpaceNode[] = []
+    for (const e of await listEntries(dir)) {
+      if (!e.isDirectory()) continue
+      const rel = `.nexus/contexts/${def.title}/${e.name}`
+      if (shouldSkipDir(e.name, rel, excluded)) continue
+      const sc = await readSidecar(join(dir, e.name, SPACE_SIDECAR))
+      if (!sc) continue // a Space IS its sidecar
+      const node: SpaceNode = {
+        kind: 'space',
+        id: asString(sc.id) ?? adoptedId(rel),
+        title: e.name,
+        icon: asString(sc.icon),
+        path: rel,
+        banner: asString(sc.banner),
+        headingIconHidden: sc.heading_icon_hidden === true,
+        color: asString(sc.color),
+        contextId: def.id,
+      }
+      retainContextKeys(node, sc)
+      spaces.push(node)
+    }
+    groups.push({ def, spaces: resolveOrder(spaces, asStringArray(spaceOrders[def.id]), fb) })
+  }
+  return groups
+}
+
+/** The fixed-three struct derived from the reserved groups — keeps every fixed-three
+ *  consumer (sidebar, index builder, selection) working off the registry data. */
+const LEGACY_KIND_BY_ID = { _tier1: 'area', _tier2: 'topic', _tier3: 'project' } as const
+
+function deriveLegacyContexts(groups: ContextGroup[]): NexusTree['contexts'] {
+  const out: NexusTree['contexts'] = { projects: [], topics: [], areas: [] }
+  for (const g of groups) {
+    const kind = LEGACY_KIND_BY_ID[g.def.id as keyof typeof LEGACY_KIND_BY_ID]
+    if (!kind) continue
+    for (const s of g.spaces) {
+      const base = {
+        id: s.id,
+        title: s.title,
+        icon: s.icon,
+        path: s.path,
+        banner: s.banner,
+        headingIconHidden: s.headingIconHidden,
+      }
+      if (kind === 'area') {
+        out.areas.push({
+          ...base,
+          kind,
+          color:
+            s.color !== undefined && AREA_COLOR_SET.has(s.color as AreaColor)
+              ? (s.color as AreaColor)
+              : undefined,
+        })
+      } else if (kind === 'topic') out.topics.push({ ...base, kind })
+      else out.projects.push({ ...base, kind })
+    }
+  }
+  return out
+}
+
 // ---------- top level ----------
 
 export async function readNexus(root: string): Promise<NexusTree> {
@@ -447,36 +548,52 @@ async function walkNexus(root: string): Promise<NexusTree> {
     icon: s.icon,
   }))
 
-  // Contexts (sidecar mode only; absent for raw folders like ~/test).
-  const contexts = {
-    projects: await readTier<ProjectNode>(
-      root,
-      'projects',
-      'project',
-      sidecarMode,
-      excluded,
-      asStringArray(state.project_order),
-      fb,
-    ),
-    topics: await readTier<TopicNode>(
-      root,
-      'topics',
-      'topic',
-      sidecarMode,
-      excluded,
-      asStringArray(state.topic_order),
-      fb,
-    ),
-    areas: await readTier<AreaNode>(
-      root,
-      'areas',
-      'area',
-      sidecarMode,
-      excluded,
-      asStringArray(state.area_order),
-      fb,
-    ),
-  }
+  // Contexts. Registry-backed when `.nexus/contexts.json` parses (the walk never writes —
+  // seeding/migration are open-path mutations); the legacy fixed-three struct then derives
+  // from the reserved groups. Without a registry (unmigrated/raw), the legacy tier dirs
+  // read directly, as before.
+  const ctxRegistryRaw = await readSidecar(contextsRegistryFile(root))
+  const ctxParsed = ctxRegistryRaw ? contextsRegistrySchema.safeParse(ctxRegistryRaw) : null
+  const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null
+  const spaceOrders =
+    state.space_orders != null && typeof state.space_orders === 'object'
+      ? (state.space_orders as Json)
+      : {}
+  const contextGroups = ctxRegistry
+    ? await readContextGroups(root, ctxRegistry, spaceOrders, excluded, fb)
+    : undefined
+  const contexts =
+    contextGroups !== undefined
+      ? deriveLegacyContexts(contextGroups)
+      : {
+          projects: await readTier<ProjectNode>(
+            root,
+            'projects',
+            'project',
+            sidecarMode,
+            excluded,
+            asStringArray(state.project_order),
+            fb,
+          ),
+          topics: await readTier<TopicNode>(
+            root,
+            'topics',
+            'topic',
+            sidecarMode,
+            excluded,
+            asStringArray(state.topic_order),
+            fb,
+          ),
+          areas: await readTier<AreaNode>(
+            root,
+            'areas',
+            'area',
+            sidecarMode,
+            excluded,
+            asStringArray(state.area_order),
+            fb,
+          ),
+        }
 
   // Top-level Collections (gated by `_pagecollection.json`; raw mode treats every root folder
   // as a Collection). Agenda singletons are identified ONLY by their config sidecar
@@ -513,6 +630,35 @@ async function walkNexus(root: string): Promise<NexusTree> {
   })
   const collections = orderedCollections.filter((c) => !claimed.has(c.id))
 
+  // Resolve each entity's retained raw context keys onto its own node — a cheap in-memory
+  // pass over already-parsed data (a pre-existing inert key lights up on the first walk
+  // after its Space registers; bracketed keys override a legacy tierN for the same Context).
+  if (ctxRegistry && contextGroups) {
+    const spacesByContext = new Map(contextGroups.map((g) => [g.def.id, g.spaces]))
+    const attach = (node: PageNode | SpaceNode): void => {
+      const raw = rawContextByNode.get(node)
+      const links = raw
+        ? new Map([
+            ...legacyTierLinks(raw, ctxRegistry),
+            ...resolveContextKeys(raw, ctxRegistry, spacesByContext),
+          ])
+        : null
+      if (links?.size) node.contextValues = Object.fromEntries(links)
+      else delete node.contextValues
+    }
+    for (const g of contextGroups) for (const s of g.spaces) attach(s)
+    const visitSets = (sets: SetNode[] | undefined): void => {
+      for (const s of sets ?? []) {
+        s.pages.forEach(attach)
+        visitSets(s.sets)
+      }
+    }
+    for (const c of orderedCollections) {
+      c.pages.forEach(attach)
+      visitSets(c.sets)
+    }
+  }
+
   return {
     nexus: { id, rootPath: root, name: basename(root), profileImage, profileIcon, profileSubtitle },
     homepage: {
@@ -523,6 +669,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     navView: { banner: asString(navviewConfig.banner) },
     saved,
     contexts,
+    contextGroups,
     collections,
     userSections,
     labels,
