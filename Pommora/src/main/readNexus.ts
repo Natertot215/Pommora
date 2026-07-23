@@ -151,7 +151,7 @@ export function readCommands(raw: unknown): Record<string, string> {
 
 // Parse Swift's nested snake_case `settings.labels` into the structured camelCase
 // NexusLabels, defaulting per-field so a partial/absent blob still yields full labels.
-function readLabels(raw: unknown): NexusLabels {
+export function readLabels(raw: unknown): NexusLabels {
   const obj = (v: unknown): Record<string, unknown> =>
     v != null && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {}
   const pair = (v: unknown, fallback: LabelPair): LabelPair => {
