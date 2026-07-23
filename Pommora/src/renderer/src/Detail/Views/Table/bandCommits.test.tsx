@@ -157,8 +157,7 @@ beforeEach(() => {
   })
   useSession.setState({
     tree: {
-      contexts: { areas: [], topics: [], projects: [] },
-      collections: [],
+            collections: [],
       userSections: [],
       contexts: [],
       labels: {
