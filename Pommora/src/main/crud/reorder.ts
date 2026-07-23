@@ -45,6 +45,29 @@ export async function setStateOrder(
   return ok(clean)
 }
 
+/** Persist one Context's Space order into the state.json `space_orders` map (keyed by
+ *  context id), preserving every sibling context's order. */
+export async function setSpaceOrder(
+  nexusRoot: string,
+  contextId: string,
+  ids: string[],
+): Promise<Result<string[]>> {
+  const clean = persistable(ids)
+  await mkdir(nexusDir(nexusRoot), { recursive: true })
+  await mutateJson<Record<string, unknown>>(
+    nexusConfig(nexusRoot, NEXUS_CONFIG_FILES.state),
+    () => ({}),
+    (state) => {
+      const orders =
+        state.space_orders != null && typeof state.space_orders === 'object'
+          ? (state.space_orders as Record<string, unknown>)
+          : {}
+      return { ...state, space_orders: { ...orders, [contextId]: clean } }
+    },
+  )
+  return ok(clean)
+}
+
 /** Persist a within-container order (collections/sets/pages) to the container sidecar,
  *  preserving its other (incl. foreign) keys. */
 export async function setContainerOrder<S extends z.ZodType>(

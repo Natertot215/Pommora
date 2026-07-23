@@ -16,6 +16,12 @@ describe('ignoredUnder', () => {
     expect(ignored('/nexus/.nexus/state.json')).toBe(false)
   })
 
+  it('ignores space-host tile bodies but watches the space sidecar (H-8)', () => {
+    expect(ignored('/nexus/.nexus/contexts/Projects/Pommora/01TILE.md')).toBe(true)
+    expect(ignored('/nexus/.nexus/contexts/Projects/Pommora/_space.json')).toBe(false)
+    expect(ignored('/nexus/.nexus/contexts/Projects/Pommora')).toBe(false)
+  })
+
   it('ignores the churning index, the trash, and dotfile cruft', () => {
     expect(ignored('/nexus/.nexus/index.db')).toBe(true)
     expect(ignored('/nexus/.nexus/index.db-wal')).toBe(true)

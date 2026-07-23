@@ -51,18 +51,13 @@ function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | nu
   return { ...raw, [key]: next }
 }
 
-/** Run the three-scope cascade for a journal record. `contextTitle` is the owning
- *  Context's CURRENT registry title (the key Space values live under). */
-export async function cascadeTitle(
+/** Sweep every root in the three scopes (`.md` frontmatter, agenda JSON, `_space.json`)
+ *  through `rewrite` (null = untouched), each under its file lock; unreadable files are
+ *  recorded and never fatal. The one walk every key/value cascade and unlink shares. */
+async function sweepContextRoots(
   root: string,
-  registry: ContextsRegistry,
-  j: RenameJournal,
-): Promise<Result<{ touched: string[]; skipped: string[] }>> {
-  const def = registry.contexts.find((c) => c.id === j.contextId)
-  if (!def) return fail('not-found', 'Unknown Context.', 'contexts')
-  // A context rename's own registry title may already read old or new — the key being
-  // rewritten comes from the journal, never the registry.
-  const contextTitle = def.title
+  rewrite: (raw: Raw) => Raw | null,
+): Promise<{ touched: string[]; skipped: string[] }> {
   const touched: string[] = []
   const skipped: string[] = []
 
@@ -76,7 +71,7 @@ export async function cascadeTitle(
         return
       }
       const raw = splitFrontmatter(content)
-      const next = rewriteRoot(raw, contextTitle, j)
+      const next = rewrite(raw)
       if (next === null) return
       const keys = new Set([...Object.keys(raw), ...Object.keys(next)])
       const governed = [...keys].filter((k) => k.startsWith('['))
@@ -103,13 +98,64 @@ export async function cascadeTitle(
         skipped.push(file)
         return
       }
-      const next = rewriteRoot(raw, contextTitle, j)
+      const next = rewrite(raw)
       if (next === null) return
       await writeJson(file, next)
       touched.push(file)
     })
   }
-  return ok({ touched, skipped })
+  return { touched, skipped }
+}
+
+/** Run the three-scope cascade for a journal record. `contextTitle` is the owning
+ *  Context's CURRENT registry title (the key Space values live under). */
+export async function cascadeTitle(
+  root: string,
+  registry: ContextsRegistry,
+  j: RenameJournal,
+): Promise<Result<{ touched: string[]; skipped: string[] }>> {
+  const def = registry.contexts.find((c) => c.id === j.contextId)
+  if (!def) return fail('not-found', 'Unknown Context.', 'contexts')
+  // A context rename's own registry title may already read old or new — the key being
+  // rewritten comes from the journal, never the registry.
+  return ok(await sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j)))
+}
+
+/** Strip a deleted Context's bracketed KEY from every root in all three scopes. */
+export async function unlinkContextKey(
+  root: string,
+  contextTitle: string,
+): Promise<Result<{ touched: string[]; skipped: string[] }>> {
+  const key = contextKey(contextTitle)
+  return ok(
+    await sweepContextRoots(root, (raw) => {
+      if (!(key in raw)) return null
+      const next = { ...raw }
+      delete next[key]
+      return next
+    }),
+  )
+}
+
+/** Strip a deleted Space's exact title as a VALUE under its Context's key in all three
+ *  scopes; a key left empty drops with it (no empties). Silent, like today's id-strip. */
+export async function unlinkSpaceValue(
+  root: string,
+  contextTitle: string,
+  spaceTitle: string,
+): Promise<Result<{ touched: string[]; skipped: string[] }>> {
+  const key = contextKey(contextTitle)
+  return ok(
+    await sweepContextRoots(root, (raw) => {
+      const arr = raw[key]
+      if (!Array.isArray(arr) || !arr.includes(spaceTitle)) return null
+      const kept = arr.filter((v) => v !== spaceTitle)
+      const next = { ...raw }
+      if (kept.length) next[key] = kept
+      else delete next[key]
+      return next
+    }),
+  )
 }
 
 /** Finish a rename after its cascade: persist the skip list (the journal survives for

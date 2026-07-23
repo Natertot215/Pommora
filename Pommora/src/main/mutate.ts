@@ -29,7 +29,14 @@ import {
   setContextSingular,
   setSpaceColor,
 } from './crud/contextWrite'
-import { renameContextOp, renameSpaceOp } from './crud/contextCascade'
+import {
+  renameContextOp,
+  renameSpaceOp,
+  unlinkContextKey,
+  unlinkSpaceValue,
+} from './crud/contextCascade'
+import { mutateRegistryFile } from './contextsRegistry'
+import { setSpaceOrder } from './crud/reorder'
 import { renameCascade, unlinkTier } from './crud/cascade'
 import { rewriteBlockConnections } from './blocks'
 import {
@@ -273,6 +280,19 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         const id = typeof sidecar?.id === 'string' ? sidecar.id : null
         if (id) await unlinkTier(root, id, CONTEXT_TIER[req.kind])
       }
+      if (req.kind === 'space') {
+        // Unlink the Space's title as a value everywhere BEFORE the folder trashes.
+        await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
+      }
+      if (req.kind === 'context') {
+        // Unlink the bracketed key everywhere, then drop the registry entry; the folder
+        // tree (its Spaces included) trashes recoverably below.
+        const title = basename(abs)
+        await unlinkContextKey(root, title)
+        await mutateRegistryFile(root, (cur) => ({
+          contexts: cur.contexts.filter((c) => c.title !== title),
+        }))
+      }
       const removed = await removeViaMode(root, abs, deps)
       if (!removed.ok) return relay(removed)
       return { ok: true }
@@ -472,6 +492,21 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const resolved = await resolveUnderRoot(root, req.path)
       if (!resolved.ok) return relay(resolved)
       if (await isReserved(root, resolved.value)) return fault('That item can’t take an icon.')
+      if (req.kind === 'context') {
+        // A Context's icon lives on its registry entry, not a folder sidecar.
+        const title = basename(resolved.value)
+        return relay(
+          await mutateRegistryFile(root, (cur) => ({
+            contexts: cur.contexts.map((c) => {
+              if (c.title !== title) return c
+              const next = { ...c }
+              if (req.icon) next.icon = req.icon
+              else delete next.icon
+              return next
+            }),
+          })),
+        )
+      }
       const cfgPath = `${resolved.value}/${SIDECAR_FILENAME[req.kind]}`
       const existing = await readJsonObject(cfgPath)
       const id = typeof existing?.id === 'string' ? existing.id : null
@@ -604,9 +639,20 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     case 'renameSpace':
       return relay(await renameSpaceOp(root, req.spaceId, req.newName))
 
-    case 'reorderContexts':
+    case 'reorderContexts': {
+      // Registry array position IS the order; ids the renderer missed keep their
+      // relative order at the end (a concurrent create must never vanish).
+      const r = await mutateRegistryFile(root, (cur) => {
+        const byId = new Map(cur.contexts.map((c) => [c.id, c]))
+        const ordered = req.ids.map((id) => byId.get(id)).filter((c) => c !== undefined)
+        const rest = cur.contexts.filter((c) => !req.ids.includes(c.id))
+        return { contexts: [...ordered, ...rest] }
+      })
+      return relay(r)
+    }
+
     case 'reorderSpaces':
-      return fault('Not implemented.')
+      return relay(await setSpaceOrder(root, req.contextId, req.ids))
 
     default: {
       const _exhaustive: never = req

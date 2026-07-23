@@ -78,9 +78,14 @@ export function upsertPage(
 
 export function upsertContext(
   db: Db,
-  r: { id: string; tier: number; title: string; icon?: string },
+  r: { id: string; contextId: string; title: string; icon?: string },
 ): void {
-  upsertRow(db, 'contexts', { id: r.id, tier: r.tier, title: r.title, icon: r.icon ?? null })
+  upsertRow(db, 'contexts', {
+    id: r.id,
+    context_id: r.contextId,
+    title: r.title,
+    icon: r.icon ?? null,
+  })
 }
 
 export function upsertAgendaTask(
@@ -148,7 +153,7 @@ export function upsertPropertyDefinition(
   })
 }
 
-/** Replace all context-tier links for one source (delete then insert) — Swift's reconcile. */
+/** Replace all context links for one source (delete then insert) — the reconcile. */
 export function replaceContextLinks(
   db: Db,
   sourceId: string,
@@ -157,7 +162,7 @@ export function replaceContextLinks(
     sourceKind: string
     targetId: string
     targetKind: string
-    propertyId: string
+    contextId: string
     modifiedAt: string
   }[],
 ): void {
@@ -169,7 +174,7 @@ export function replaceContextLinks(
       source_kind: l.sourceKind,
       target_id: l.targetId,
       target_kind: l.targetKind,
-      property_id: l.propertyId,
+      context_id: l.contextId,
       modified_at: l.modifiedAt,
     })
   }

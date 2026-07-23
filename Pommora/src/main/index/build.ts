@@ -15,13 +15,14 @@ import { SIDECAR_FILENAME } from '../paths'
 import { agendaTask, agendaEvent, AGENDA_SUFFIX } from '@shared/agenda'
 import { orderedDefs, readRegistry } from '../io/propertiesRegistry'
 import { nowIso } from '../crud/util'
-import { TIER_LEVELS, tierFieldName, tierPropertyId } from '@shared/properties'
+import { seededRegistry, type ContextsRegistry } from '@shared/contexts'
+import { legacyTierLinks, resolveContextKeys } from '@shared/contextResolve'
 import { buildLinkIndex } from '../connections/resolve'
 import { connectionEdges } from '../connections/edges'
 import { normalizeTitle } from '@shared/connections'
 import { pathExists } from './../crud/util'
 import type { PropertyDefinition } from '@shared/properties'
-import type { CollectionNode, SetNode } from '@shared/types'
+import type { CollectionNode, SetNode, SpaceNode } from '@shared/types'
 import { openIndex } from './open'
 import { stampSchemaVersion } from './schema'
 import { transact, type Db } from './db'
@@ -63,7 +64,7 @@ const strArr = (v: unknown): string[] =>
 
 interface ContextData {
   id: string
-  tier: number
+  contextId: string
   title: string
   icon?: string
 }
@@ -91,7 +92,7 @@ interface PageData {
   icon?: string
   properties: unknown
   modifiedAt: string
-  tiers: Record<number, string[]>
+  links: Record<string, string[]>
   body: string
 }
 interface NexusData {
@@ -99,6 +100,11 @@ interface NexusData {
   collections: CollectionData[]
   sets: SetData[]
   pages: PageData[]
+  /** Space-source link rows (G-2) — a Space's own outbound tags, off its tree node. */
+  spaces: { id: string; links: Record<string, string[]> }[]
+  /** Resolve a raw entity root's context keys (bracketed + legacy tierN) to id links —
+   *  the agenda collector shares the builder's one resolution. */
+  resolveRoot: (raw: Record<string, unknown>) => Record<string, string[]>
 }
 
 /** Read every canonical file the index needs (async). Folder paths are reconstructed from
@@ -107,11 +113,49 @@ interface NexusData {
 async function collectNexusData(nexusRoot: string): Promise<NexusData> {
   const tree = await readNexus(nexusRoot)
 
-  const contexts: ContextData[] = [
-    ...tree.contexts.areas.map((a) => ({ id: a.id, tier: 1, title: a.title, icon: a.icon })),
-    ...tree.contexts.topics.map((t) => ({ id: t.id, tier: 2, title: t.title, icon: t.icon })),
-    ...tree.contexts.projects.map((p) => ({ id: p.id, tier: 3, title: p.title, icon: p.icon })),
-  ]
+  // Registry-backed when the tree carries groups; a legacy nexus resolves through the
+  // seeded reserved ids so its bare-ULID tierN links keep indexing.
+  const ctxRegistry: ContextsRegistry = tree.contextGroups
+    ? { contexts: tree.contextGroups.map((g) => g.def) }
+    : seededRegistry(tree.labels)
+  const spacesByContext = new Map<string, SpaceNode[]>(
+    (tree.contextGroups ?? []).map((g) => [g.def.id, g.spaces]),
+  )
+  const resolveRoot = (raw: Record<string, unknown>): Record<string, string[]> =>
+    Object.fromEntries(
+      new Map([
+        ...legacyTierLinks(raw, ctxRegistry),
+        ...resolveContextKeys(raw, ctxRegistry, spacesByContext),
+      ]),
+    )
+
+  const contexts: ContextData[] = tree.contextGroups
+    ? tree.contextGroups.flatMap((g) =>
+        g.spaces.map((s) => ({ id: s.id, contextId: g.def.id, title: s.title, icon: s.icon })),
+      )
+    : [
+        ...tree.contexts.areas.map((a) => ({
+          id: a.id,
+          contextId: '_tier1',
+          title: a.title,
+          icon: a.icon,
+        })),
+        ...tree.contexts.topics.map((t) => ({
+          id: t.id,
+          contextId: '_tier2',
+          title: t.title,
+          icon: t.icon,
+        })),
+        ...tree.contexts.projects.map((p) => ({
+          id: p.id,
+          contextId: '_tier3',
+          title: p.title,
+          icon: p.icon,
+        })),
+      ]
+  const spaces = (tree.contextGroups ?? []).flatMap((g) =>
+    g.spaces.map((s) => ({ id: s.id, links: s.contextValues ?? {} })),
+  )
 
   const allCollections: CollectionNode[] = [
     ...(tree.collections ?? []),
@@ -143,7 +187,7 @@ async function collectNexusData(nexusRoot: string): Promise<NexusData> {
       schemaVersion: ssc?.schema_version,
     })
     for (const page of node.pages)
-      pages.push(await readPageData(nexusRoot, page, topCollectionId, node.id))
+      pages.push(await readPageData(nexusRoot, page, resolveRoot, topCollectionId, node.id))
     for (const child of node.sets ?? []) await walkSet(child, topCollectionId, { setId: node.id })
   }
 
@@ -159,16 +203,18 @@ async function collectNexusData(nexusRoot: string): Promise<NexusData> {
       ),
       schemaVersion: csc?.schema_version,
     })
-    for (const page of coll.pages) pages.push(await readPageData(nexusRoot, page, coll.id))
+    for (const page of coll.pages)
+      pages.push(await readPageData(nexusRoot, page, resolveRoot, coll.id))
     for (const set of coll.sets) await walkSet(set, coll.id, { collectionId: coll.id })
   }
 
-  return { contexts, collections, sets, pages }
+  return { contexts, collections, sets, pages, spaces, resolveRoot }
 }
 
 async function readPageData(
   nexusRoot: string,
   page: { id: string; title: string; icon?: string; path: string },
+  resolveRoot: (raw: Record<string, unknown>) => Record<string, string[]>,
   collectionId: string,
   setId?: string,
 ): Promise<PageData> {
@@ -188,7 +234,7 @@ async function readPageData(
     icon: page.icon,
     properties: fm.properties ?? {},
     modifiedAt: await resolveModifiedAt(fm.modified_at, abs, fm.created_at),
-    tiers: readTiers(fm),
+    links: resolveRoot(fm),
     body: splitEnvelope(content).body,
   }
 }
@@ -220,39 +266,28 @@ interface AgendaItemData {
   endAt?: string
   properties: unknown
   modifiedAt: string
-  tiers: Record<number, string[]>
+  links: Record<string, string[]>
 }
 interface AgendaData {
   tasks: AgendaItemData[]
   events: AgendaItemData[]
 }
 
-/** tier level → the coarse entity-kind string stored in context_links.target_kind, matching
- *  Swift's RelationTargetKind.string(from: .contextTier(n)). NOTE: "context_tier" is the
- *  context_target *config* discriminant, NOT this column — the column is the tier entity. */
-const TIER_TARGET_KIND: Record<number, string> = { 1: 'area', 2: 'topic', 3: 'project' }
-
-/** A page/agenda item's tier links read off its frontmatter as `{ level: ids }`. */
-function readTiers(fm: Record<string, unknown>): Record<number, string[]> {
-  const tiers: Record<number, string[]> = {}
-  for (const level of TIER_LEVELS) tiers[level] = strArr(fm[tierFieldName(level)])
-  return tiers
-}
-
-/** One context_links row per tier value — shared by pages + agenda items. */
-function tierLinks(
+/** One context_links row per resolved link — shared by pages, agenda items, and Space
+ *  sources. Targets are always Spaces. */
+function contextLinks(
   sourceId: string,
   sourceKind: string,
-  tiers: Record<number, string[]>,
+  links: Record<string, string[]>,
   modifiedAt: string,
 ) {
-  return TIER_LEVELS.flatMap((tier) =>
-    tiers[tier].map((targetId) => ({
-      id: `${sourceId}:${tierPropertyId(tier)}:${targetId}`,
+  return Object.entries(links).flatMap(([contextId, targetIds]) =>
+    targetIds.map((targetId) => ({
+      id: `${sourceId}:${contextId}:${targetId}`,
       sourceKind,
       targetId,
-      targetKind: TIER_TARGET_KIND[tier] ?? 'context',
-      propertyId: tierPropertyId(tier),
+      targetKind: 'space',
+      contextId,
       modifiedAt,
     })),
   )
@@ -262,7 +297,10 @@ function tierLinks(
  *  `_taskconfig.json` / `_eventconfig.json` (readNexus discovers but does not surface them,
  *  so the index walks them directly). Their config schemas are NOT indexed — agenda defs
  *  live in the config sidecars, outside the nexus-wide registry (D-1). */
-async function collectAgenda(nexusRoot: string): Promise<AgendaData> {
+async function collectAgenda(
+  nexusRoot: string,
+  resolveRoot: (raw: Record<string, unknown>) => Record<string, string[]>,
+): Promise<AgendaData> {
   const tasks: AgendaItemData[] = []
   const events: AgendaItemData[] = []
   let dirs: string[]
@@ -302,7 +340,7 @@ async function collectAgenda(nexusRoot: string): Promise<AgendaData> {
         icon: typeof item.icon === 'string' ? item.icon : undefined,
         properties: item.properties ?? {},
         modifiedAt: await resolveModifiedAt(item.modified_at, join(folder, f), item.created_at),
-        tiers: readTiers(item),
+        links: resolveRoot(item),
       }
       if (isTask)
         tasks.push({ ...common, dueAt: typeof item.due_at === 'string' ? item.due_at : undefined })
@@ -321,7 +359,7 @@ async function collectAgenda(nexusRoot: string): Promise<AgendaData> {
  *  this resolves successfully, so a failed build never marks the index current). */
 export async function buildIndex(db: Db, nexusRoot: string): Promise<void> {
   const data = await collectNexusData(nexusRoot)
-  const agenda = await collectAgenda(nexusRoot)
+  const agenda = await collectAgenda(nexusRoot, data.resolveRoot)
   const registry = await readRegistry(nexusRoot)
   const linkIndex = buildLinkIndex(data.pages.map((p) => ({ id: p.id, title: p.title })))
   // Block bodies are read async (off the sync transaction), then their edges upserted inside it.
@@ -344,9 +382,13 @@ export async function buildIndex(db: Db, nexusRoot: string): Promise<void> {
       }),
     )
     for (const s of data.sets) upsertSet(db, s)
+    // Space sources (G-2): a Space's own outbound tags, cross-Context included.
+    for (const s of data.spaces) {
+      replaceContextLinks(db, s.id, contextLinks(s.id, 'space', s.links, nowIso()))
+    }
     for (const p of data.pages) {
       upsertPage(db, p)
-      replaceContextLinks(db, p.id, tierLinks(p.id, 'page', p.tiers, p.modifiedAt))
+      replaceContextLinks(db, p.id, contextLinks(p.id, 'page', p.links, p.modifiedAt))
       // Skip self-links (a page linking its own title) — matches Swift's insertConnections.
       const selfKey = normalizeTitle(p.title)
       const conns = connectionEdges(p.id, p.body, linkIndex)
@@ -378,11 +420,11 @@ export async function buildIndex(db: Db, nexusRoot: string): Promise<void> {
 
     for (const t of agenda.tasks) {
       upsertAgendaTask(db, t)
-      replaceContextLinks(db, t.id, tierLinks(t.id, 'agenda_task', t.tiers, t.modifiedAt))
+      replaceContextLinks(db, t.id, contextLinks(t.id, 'agenda_task', t.links, t.modifiedAt))
     }
     for (const ev of agenda.events) {
       upsertAgendaEvent(db, { ...ev, startAt: ev.startAt ?? EPOCH, endAt: ev.endAt ?? EPOCH })
-      replaceContextLinks(db, ev.id, tierLinks(ev.id, 'agenda_event', ev.tiers, ev.modifiedAt))
+      replaceContextLinks(db, ev.id, contextLinks(ev.id, 'agenda_event', ev.links, ev.modifiedAt))
     }
   })
 }
