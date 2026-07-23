@@ -199,11 +199,6 @@ interface SessionState {
   spaceLocks: Record<string, boolean>
   seedSpaceLock: (id: string, locked: boolean) => void
   setSpaceLocked: (id: string, v: boolean) => Promise<void>
-  /** The entity the floating settings window targets — opened from right-click without
-   *  selecting, so it can't ride the selection. Null = closed. */
-  settingsTarget: { kind: 'context' | 'space'; id: string } | null
-  openEntitySettings: (target: { kind: 'context' | 'space'; id: string }) => void
-  closeEntitySettings: () => void
   load: () => Promise<void>
   /** Swap in a freshly-read tree (from load() or the live watcher): set it, reconcile the selection, re-apply accent. */
   applyTree: (tree: NexusTree) => Promise<void>
@@ -699,9 +694,6 @@ export const useSession = create<SessionState>((set, get) => {
       set((s) => ({ spaceLocks: { ...s.spaceLocks, [id]: v } }))
       await window.nexus.blocks.save({ kind: 'space', id }, { locked: v })
     },
-    settingsTarget: null,
-    openEntitySettings: (target) => set({ settingsTarget: target }),
-    closeEntitySettings: () => set({ settingsTarget: null }),
     load: async () => {
       // Only show the full-screen loading state on the FIRST load (nothing on screen yet).
       // A refetch after a mutation keeps the tree mounted, so the sidebar's expand/collapse
