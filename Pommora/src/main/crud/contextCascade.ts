@@ -28,13 +28,22 @@ type Raw = Record<string, unknown>
 /** The key/value rewrite one root undergoes, or null when untouched. */
 function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | null {
   if (j.spaceId === undefined) {
-    // Context rename: [oldTitle] → [newTitle], value untouched.
+    // Context rename: [oldTitle] → [newTitle]. A pre-existing (inert, hand-authored)
+    // [newTitle] key merges + dedupes into the renamed one — overwriting would silently
+    // drop one of the two value sets.
     const oldKey = contextKey(j.oldTitle)
+    const newKey = contextKey(j.newTitle)
     if (!(oldKey in raw)) return null
+    const oldV = raw[oldKey]
+    const existing = raw[newKey]
+    const moved =
+      Array.isArray(oldV) && Array.isArray(existing)
+        ? [...existing, ...oldV.filter((v) => !existing.includes(v))]
+        : oldV
     const out: Raw = {}
     for (const [k, v] of Object.entries(raw)) {
-      if (k === oldKey) out[contextKey(j.newTitle)] = v
-      else out[k] = v
+      if (k === oldKey) out[newKey] = moved
+      else if (k !== newKey) out[k] = v
     }
     return out
   }

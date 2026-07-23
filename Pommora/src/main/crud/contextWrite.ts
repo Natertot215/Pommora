@@ -18,11 +18,12 @@ import { agendaKindOf } from '@shared/agenda'
 import { CHIP_SOLID_COLORS, type SpaceNode } from '@shared/types'
 import { ok, fail, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
-import { newId } from '../ids'
+import { adoptedId, newId } from '../ids'
 import {
   atomicWriteFile,
   pathExists,
   readJsonObject,
+  readJsonStrict,
   rmwJsonStrict,
   writeJson,
 } from '../io/atomicWrite'
@@ -63,12 +64,21 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
     if (await pathExists(dir)) {
       for (const e of await readdir(dir, { withFileTypes: true })) {
         if (!e.isDirectory()) continue
-        const sc = await readJsonObject(join(dir, e.name, SPACE_SIDECAR))
-        if (!sc || typeof sc.id !== 'string') continue
+        // STRICT per sidecar: a folder without one simply isn't a Space, but an
+        // unreadable/corrupt sidecar (an evicted cloud placeholder) fails the whole load —
+        // a world missing a real Space would make the reconcile silently strip that
+        // Space's valid tags from every file it touches.
+        const sc = await readJsonStrict(join(dir, e.name, SPACE_SIDECAR))
+        if (!sc.ok) {
+          if (sc.error.code === 'not-found') continue
+          return fail('operation-failed', `Unreadable Space sidecar: ${e.name}`, 'contexts')
+        }
         const rel = `.nexus/contexts/${def.title}/${e.name}`
-        spaces.push({ kind: 'space', id: sc.id, title: e.name, path: rel, contextId: def.id })
-        spaceById.set(sc.id, {
-          id: sc.id,
+        // Mirror the walk's id adoption so an id-less sidecar resolves identically here.
+        const id = typeof sc.value.id === 'string' ? sc.value.id : adoptedId(rel)
+        spaces.push({ kind: 'space', id, title: e.name, path: rel, contextId: def.id })
+        spaceById.set(id, {
+          id,
           title: e.name,
           contextId: def.id,
           contextTitle: def.title,
