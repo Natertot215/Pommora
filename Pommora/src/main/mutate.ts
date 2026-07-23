@@ -29,6 +29,7 @@ import {
   setContextSingular,
   setSpaceColor,
 } from './crud/contextWrite'
+import { renameContextOp, renameSpaceOp } from './crud/contextCascade'
 import { renameCascade, unlinkTier } from './crud/cascade'
 import { rewriteBlockConnections } from './blocks'
 import {
@@ -598,7 +599,11 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       return relay(await setContextSingular(root, req.contextId, req.singular))
 
     case 'renameContext':
+      return relay(await renameContextOp(root, req.contextId, req.newName))
+
     case 'renameSpace':
+      return relay(await renameSpaceOp(root, req.spaceId, req.newName))
+
     case 'reorderContexts':
     case 'reorderSpaces':
       return fault('Not implemented.')
