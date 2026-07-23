@@ -39,7 +39,7 @@ export function allPages(tree: NexusTree): PageNode[] {
 
 /** Every Space across every registry Context, in display order. */
 export function allSpaces(tree: NexusTree): SpaceNode[] {
-  return (tree.contextGroups ?? []).flatMap((g) => g.spaces)
+  return (tree.contexts ?? []).flatMap((g) => g.spaces)
 }
 
 /** One tree flatten, reusable across many reconciles — the shape `applyTree` builds ONCE per push to

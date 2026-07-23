@@ -18,7 +18,7 @@ describe('columnLabel', () => {
 
   it('resolves context columns through the registry tree', () => {
     const tree = {
-      contextGroups: [
+      contexts: [
         { def: { id: RESERVED_PROPERTY_ID.tier1, title: 'Areas', singular: 'Area' }, spaces: [] },
       ],
     } as unknown as import('@shared/types').NexusTree

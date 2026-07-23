@@ -29,7 +29,7 @@ describe('resolveNavEntry', () => {
   it('resolves a Space to its title with the owning Context as the path', () => {
     const t = {
       ...makeTree(),
-      contextGroups: [
+      contexts: [
         {
           def: { id: 'g1', title: 'Realms', singular: 'Realm' },
           spaces: [

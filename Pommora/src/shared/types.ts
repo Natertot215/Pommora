@@ -319,8 +319,9 @@ export interface NexusTree {
    *  the homepage's. */
   navView: { banner?: string }
   saved: SavedNode[]
-  /** Registry-backed Context groups in registry order, each with its Spaces. */
-  contextGroups?: ContextGroup[]
+  /** Registry-backed Context groups in registry order, each with its Spaces ([] on a
+   *  raw/unmigrated tree — the open path migrates + seeds before anything renders). */
+  contexts: ContextGroup[]
   /** Ungrouped top-tier Collections (those not assigned to a user section). */
   collections: CollectionNode[]
   userSections: UserSection[]

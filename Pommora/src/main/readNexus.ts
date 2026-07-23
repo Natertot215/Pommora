@@ -68,7 +68,6 @@ const ACCENT_COLOR_SET = new Set<string>(ACCENT_COLORS)
 
 // ---------- low-level helpers ----------
 
-
 // Swift `accent_color` values that aren't in React's own palette → nearest React token.
 // React's own values (including the 6 that overlap Swift) pass through unchanged; React
 // keeps its own accent vocabulary, this only maps Swift's extras on read.
@@ -357,7 +356,6 @@ async function readPageCollection(
 
 // ---------- contexts ----------
 
-
 /** The registry-backed Space tree: one group per registry entry (registry order), spaces
  *  from `.nexus/contexts/<Title>/` gated on `_space.json`, ordered by `space_orders`. */
 async function readContextGroups(
@@ -482,7 +480,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     state.space_orders != null && typeof state.space_orders === 'object'
       ? (state.space_orders as Json)
       : {}
-  const contextGroups = ctxRegistry
+  const contexts = ctxRegistry
     ? await readContextGroups(root, ctxRegistry, spaceOrders, excluded, fb)
     : undefined
 
@@ -524,8 +522,8 @@ async function walkNexus(root: string): Promise<NexusTree> {
   // Resolve each entity's retained raw context keys onto its own node — a cheap in-memory
   // pass over already-parsed data (a pre-existing inert key lights up on the first walk
   // after its Space registers; bracketed keys override a legacy tierN for the same Context).
-  if (ctxRegistry && contextGroups) {
-    const spacesByContext = new Map(contextGroups.map((g) => [g.def.id, g.spaces]))
+  if (ctxRegistry && contexts) {
+    const spacesByContext = new Map(contexts.map((g) => [g.def.id, g.spaces]))
     const attach = (node: PageNode | SpaceNode): void => {
       const raw = rawContextByNode.get(node)
       const links = raw
@@ -537,7 +535,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
       if (links?.size) node.contextValues = Object.fromEntries(links)
       else delete node.contextValues
     }
-    for (const g of contextGroups) for (const s of g.spaces) attach(s)
+    for (const g of contexts) for (const s of g.spaces) attach(s)
     const visitSets = (sets: SetNode[] | undefined): void => {
       for (const s of sets ?? []) {
         s.pages.forEach(attach)
@@ -559,7 +557,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     },
     navView: { banner: asString(navviewConfig.banner) },
     saved,
-    contextGroups,
+    contexts: contexts ?? [],
     collections,
     userSections,
     labels,

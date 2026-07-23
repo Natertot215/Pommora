@@ -32,6 +32,7 @@ const tree = {
     },
   ],
   userSections: [],
+  contexts: [],
 } as unknown as NexusTree
 
 function Row({ id }: { id: string }): React.JSX.Element {
@@ -149,6 +150,7 @@ describe('sidebar drag — page↔Set seam', () => {
       },
     ],
     userSections: [],
+    contexts: [],
   } as unknown as NexusTree
 
   const renderSeam = async (
@@ -228,6 +230,8 @@ describe('sidebar drag — page↔Set seam', () => {
         },
       ],
       userSections: [],
+      contexts: [],
+    contexts: [],
     } as unknown as NexusTree
     await act(async () => {
       root.render(
