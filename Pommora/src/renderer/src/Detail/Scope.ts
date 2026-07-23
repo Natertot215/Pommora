@@ -63,17 +63,11 @@ export function findCollectionForSet(
   return allCollections(tree).find((c) => has(c.sets))
 }
 
-/** Block-based surface kinds (homepage + Spaces, plus the legacy tier kinds): their detail body runs
- *  tight tile gutters (--surface-inset) instead of the page/table content inset + fold-gutter — the
- *  tile handles supply the grip/chevron actions, so no reserved lane is needed. Drives `is-surface`. */
+/** Block-based surface kinds (homepage + Spaces): their detail body runs tight tile gutters
+ *  (--surface-inset) instead of the page/table content inset + fold-gutter — the tile handles
+ *  supply the grip/chevron actions, so no reserved lane is needed. Drives `is-surface`. */
 export function isSurfaceKind(kind: BannerOwnerKind): boolean {
-  return (
-    kind === 'homepage' ||
-    kind === 'space' ||
-    kind === 'area' ||
-    kind === 'topic' ||
-    kind === 'project'
-  )
+  return kind === 'homepage' || kind === 'space'
 }
 
 /** Whether a Set is depth-1 — a DIRECT child of a Collection (so it carries + renders views). A
