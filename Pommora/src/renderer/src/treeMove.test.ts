@@ -90,20 +90,6 @@ describe('relocateNodeInTree', () => {
 })
 
 describe('insertCreatedInTree', () => {
-  it('appends a created context to its tier', () => {
-    const t = insertCreatedInTree(
-      tree(),
-      { op: 'createContext', tier: 2, name: 'New' },
-      { id: 'x1', path: 'Topics/Reading' },
-    )
-    expect(t?.contexts.topics.at(-1)).toEqual({
-      id: 'x1',
-      kind: 'topic',
-      title: 'Reading',
-      path: 'Topics/Reading',
-    })
-  })
-
   it('appends a created top-level collection', () => {
     const t = insertCreatedInTree(
       tree(),
@@ -336,15 +322,6 @@ describe('reorder transforms', () => {
     expect(t.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
   })
 
-  it('reorderTop reorders a context tier', () => {
-    const base = tree()
-    base.contexts.projects.push(
-      { id: 'p10', kind: 'project', title: 'One', path: '.nexus/3/One' },
-      { id: 'p11', kind: 'project', title: 'Two', path: '.nexus/3/Two' },
-    )
-    const t = reorderTopInTree(base, 'project_order', ['p11', 'p10'])
-    expect(t.contexts.projects.map((p) => p.id)).toEqual(['p11', 'p10'])
-  })
 
   it("reorderChildren reorders a collection's sets", () => {
     const base = tree()

@@ -145,35 +145,6 @@ export function insertCreatedInTree(
   req: MutateRequest,
   created: { id: string; path: string },
 ): NexusTree | null {
-  if (req.op === 'createContext') {
-    const title = basename(created.path)
-    const c = tree.contexts
-    const contexts =
-      req.tier === 1
-        ? {
-            ...c,
-            areas: [
-              ...c.areas,
-              { id: created.id, kind: 'area' as const, title, path: created.path },
-            ],
-          }
-        : req.tier === 2
-          ? {
-              ...c,
-              topics: [
-                ...c.topics,
-                { id: created.id, kind: 'topic' as const, title, path: created.path },
-              ],
-            }
-          : {
-              ...c,
-              projects: [
-                ...c.projects,
-                { id: created.id, kind: 'project' as const, title, path: created.path },
-              ],
-            }
-    return { ...tree, contexts }
-  }
   if (req.op === 'createContextGroup') {
     const title = basename(created.path)
     const group: ContextGroup = {
@@ -422,19 +393,9 @@ function byOrder<T extends { id: string }>(arr: T[], order: string[]): T[] {
   )
 }
 
-/** Reorder a top-level group (top Collections or a context tier) to the given id order. */
-export function reorderTopInTree(tree: NexusTree, key: StateOrderKey, order: string[]): NexusTree {
-  const c = tree.contexts
-  switch (key) {
-    case 'collection_order':
-      return { ...tree, collections: byOrder(tree.collections, order) }
-    case 'area_order':
-      return { ...tree, contexts: { ...c, areas: byOrder(c.areas, order) } }
-    case 'topic_order':
-      return { ...tree, contexts: { ...c, topics: byOrder(c.topics, order) } }
-    case 'project_order':
-      return { ...tree, contexts: { ...c, projects: byOrder(c.projects, order) } }
-  }
+/** Reorder a top-level group (top Collections) to the given id order. */
+export function reorderTopInTree(tree: NexusTree, _key: StateOrderKey, order: string[]): NexusTree {
+  return { ...tree, collections: byOrder(tree.collections, order) }
 }
 
 /** Reorder a container's child containers ('' = the vault's top collections). */
