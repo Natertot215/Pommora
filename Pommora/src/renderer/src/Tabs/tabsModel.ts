@@ -58,6 +58,8 @@ export function contextTargetToSelect(t: {
       return { kind: 'set', id: t.id, path: t.path }
     case 'collection':
       return { kind: 'collection', id: t.id }
+    case 'space':
+      return { kind: 'space', id: t.id }
     default:
       return { kind: 'context', id: t.id }
   }
