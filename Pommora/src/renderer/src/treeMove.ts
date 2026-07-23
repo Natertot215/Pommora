@@ -7,10 +7,12 @@ import type { MutateRequest, StateOrderKey } from '@shared/mutate'
 import type {
   AreaNode,
   CollectionNode,
+  ContextGroup,
   NexusTree,
   PageNode,
   ProjectNode,
   SetNode,
+  SpaceNode,
   TopicNode,
 } from '@shared/types'
 
@@ -172,6 +174,27 @@ export function insertCreatedInTree(
             }
     return { ...tree, contexts }
   }
+  if (req.op === 'createContextGroup') {
+    const title = basename(created.path)
+    const group: ContextGroup = { def: { id: created.id, title, singular: title }, spaces: [] }
+    return { ...tree, contextGroups: [...(tree.contextGroups ?? []), group] }
+  }
+  if (req.op === 'createSpace') {
+    if (!tree.contextGroups?.some((g) => g.def.id === req.contextId)) return null
+    const node: SpaceNode = {
+      kind: 'space',
+      id: created.id,
+      title: basename(created.path),
+      path: created.path,
+      contextId: req.contextId,
+    }
+    return {
+      ...tree,
+      contextGroups: tree.contextGroups.map((g) =>
+        g.def.id === req.contextId ? { ...g, spaces: [...g.spaces, node] } : g,
+      ),
+    }
+  }
   if (req.op === 'createContainer' && req.kind === 'collection') {
     // Only top-level collections are walked as CollectionNodes — a nested one gets no optimism
     // (returning a set-shaped node here would render the wrong kind for a beat).
@@ -212,7 +235,75 @@ export function insertCreatedInTree(
   return null
 }
 
-type TreeEntity = PageNode | SetNode | CollectionNode | AreaNode | TopicNode | ProjectNode
+/** Optimistic contextGroups patch for the registry ops — titles/colors/order land instantly;
+ *  a renamed folder's stale child paths settle on the confirming reload. null → no groups (or
+ *  an op this fn doesn't own) → skip optimism. */
+export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): NexusTree | null {
+  const groups = tree.contextGroups
+  if (!groups) return null
+  const withGroups = (next: ContextGroup[]): NexusTree => ({ ...tree, contextGroups: next })
+  switch (req.op) {
+    case 'renameContext':
+      return withGroups(
+        groups.map((g) =>
+          g.def.id === req.contextId ? { ...g, def: { ...g.def, title: req.newName } } : g,
+        ),
+      )
+    case 'renameSpace':
+      return withGroups(
+        groups.map((g) => ({
+          ...g,
+          spaces: g.spaces.map((s) => (s.id === req.spaceId ? { ...s, title: req.newName } : s)),
+        })),
+      )
+    case 'setSpaceColor':
+      return withGroups(
+        groups.map((g) => ({
+          ...g,
+          spaces: g.spaces.map((s) => {
+            if (s.id !== req.spaceId) return s
+            const { color: _color, ...rest } = s
+            return req.color ? { ...rest, color: req.color } : rest
+          }),
+        })),
+      )
+    case 'setContextSingular':
+      return withGroups(
+        groups.map((g) =>
+          g.def.id === req.contextId ? { ...g, def: { ...g.def, singular: req.singular } } : g,
+        ),
+      )
+    case 'reorderContexts':
+      return withGroups(reorderById(groups, req.ids, (g) => g.def.id))
+    case 'reorderSpaces':
+      return withGroups(
+        groups.map((g) =>
+          g.def.id === req.contextId
+            ? { ...g, spaces: reorderById(g.spaces, req.ids, (s) => s.id) }
+            : g,
+        ),
+      )
+    default:
+      return null
+  }
+}
+
+/** Reorder `items` to follow `ids`; unlisted items keep their relative order at the tail. */
+function reorderById<T>(items: T[], ids: string[], idOf: (item: T) => string): T[] {
+  const rank = new Map(ids.map((id, i) => [id, i]))
+  return [...items].sort(
+    (a, b) => (rank.get(idOf(a)) ?? ids.length) - (rank.get(idOf(b)) ?? ids.length),
+  )
+}
+
+type TreeEntity =
+  | PageNode
+  | SetNode
+  | CollectionNode
+  | AreaNode
+  | TopicNode
+  | ProjectNode
+  | SpaceNode
 
 /** Apply `fn` to the entity at `path`, wherever it lives (a context tier, a top collection, a
  *  user section, a nested set, a page). `fn` returns the replacement — or null to remove it. */
@@ -230,6 +321,17 @@ export function updateNodeInTree(
     if (next === null) arr.splice(i, 1)
     else arr[i] = next as (typeof arr)[number]
     return { ...tree, contexts: { ...c, [tier]: arr } }
+  }
+  for (const [gi, g] of (tree.contextGroups ?? []).entries()) {
+    const i = g.spaces.findIndex((s) => s.path === path)
+    if (i === -1) continue
+    const next = fn(g.spaces[i])
+    const spaces = [...g.spaces]
+    if (next === null) spaces.splice(i, 1)
+    else spaces[i] = next as SpaceNode
+    const groups = [...(tree.contextGroups ?? [])]
+    groups[gi] = { ...g, spaces }
+    return { ...tree, contextGroups: groups }
   }
   for (const root of rootsOf(tree)) {
     const r = updateInContainers(root.collections, path, fn)
