@@ -9,8 +9,8 @@
 // re-invents it):
 //   • page rename  → renameCascade rewrites inbound [[links]]; the file rename is reverted
 //                    if the cascade fails (Result error OR throw).
-//   • context delete → unlinkTier strips the context id from every page's tier array BEFORE
-//                    the folder is removed, so no page keeps a dangling tier ref.
+//   • context/space delete → the bracketed key/value unlinks everywhere BEFORE the folder
+//                    is removed, so no member file keeps a dangling reference.
 // System-trash is injected (deps.trashToSystem) so this module stays Electron-free + testable.
 
 import { basename, dirname, join, relative, sep } from 'node:path'
@@ -18,7 +18,7 @@ import { mkdir, readFile, realpath, rm } from 'node:fs/promises'
 import { sessionRoot } from './session'
 import { refreshSessionIndex } from './sessionIndex'
 import { resolveUnderRoot } from './pathSafety'
-import { createPage, renamePage, movePage, setPageTier } from './crud/page'
+import { createPage, renamePage, movePage } from './crud/page'
 import { setChildOrder, setStateOrder } from './crud/reorder'
 import { createFolderEntity, renameFolderEntity, moveFolderEntity } from './crud/folderEntity'
 import {
@@ -36,7 +36,7 @@ import {
 } from './crud/contextCascade'
 import { mutateRegistryFile } from './contextsRegistry'
 import { setSpaceOrder } from './crud/reorder'
-import { renameCascade, unlinkTier } from './crud/cascade'
+import { renameCascade } from './crud/cascade'
 import { rewriteBlockConnections } from './blocks'
 import {
   trashWithTimestamp,
@@ -50,14 +50,7 @@ import { recordWrite } from './io/writeEcho'
 import { serializeOnFile } from './io/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { basenameNoMd } from './coerce'
-import {
-  contextTierDir,
-  nexusConfig,
-  SIDECAR_FILENAME,
-  NEXUS_CONFIG_FILES,
-  type ContextTier,
-  type SidecarKind,
-} from './paths'
+import { nexusConfig, SIDECAR_FILENAME, NEXUS_CONFIG_FILES } from './paths'
 import { ensureIdentity } from './identity'
 import { updateSettings } from './settings'
 import { newId } from './ids'
@@ -73,14 +66,6 @@ export interface MutateDeps {
   /** Move a path to the OS trash (shell.trashItem). Only the 'system' trashMode uses it. */
   trashToSystem: (absPath: string) => Promise<void>
 }
-
-const CONTEXT_TIER: Record<'area' | 'topic' | 'project', 1 | 2 | 3> = {
-  area: 1,
-  topic: 2,
-  project: 3,
-}
-const CONTEXT_KIND_BY_TIER: Record<1 | 2 | 3, SidecarKind> = { 1: 'area', 2: 'topic', 3: 'project' }
-const TIER_DIR: Record<1 | 2 | 3, ContextTier> = { 1: 'areas', 2: 'topics', 3: 'projects' }
 
 /** A nested Set's `parent_id` = its parent container's sidecar id (a Collection at depth-1,
  *  a Set deeper). Position is authoritative (both builds heal parent_id from it), so a missing
@@ -217,19 +202,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       }
     }
 
-    case 'createContext': {
-      // The tier dir is main-derived (under root by construction), so it bypasses the
-      // renderer-path guard; createFolderEntity mkdir's it (recursive) if absent.
-      const dir = contextTierDir(root, TIER_DIR[req.tier])
-      const r = await createDisambiguated(req.name, (name) =>
-        createFolderEntity(dir, CONTEXT_KIND_BY_TIER[req.tier], name),
-      )
-      if (!r.ok) return relay(r)
-      return {
-        ok: true,
-        created: { id: r.value.id, path: `.nexus/${TIER_DIR[req.tier]}/${basename(r.value.path)}` },
-      }
-    }
 
     case 'rename': {
       const resolved = await resolveUnderRoot(root, req.path)
@@ -273,12 +245,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!resolved.ok) return relay(resolved)
       const abs = resolved.value
       if (await isReserved(root, abs)) return fault('That item can’t be deleted.')
-      if (req.kind === 'area' || req.kind === 'topic' || req.kind === 'project') {
-        // Strip this context's id from every page's tier array before removing the folder.
-        const sidecar = await readJsonObject(`${abs}/${SIDECAR_FILENAME[req.kind]}`)
-        const id = typeof sidecar?.id === 'string' ? sidecar.id : null
-        if (id) await unlinkTier(root, id, CONTEXT_TIER[req.kind])
-      }
       if (req.kind === 'space') {
         // Unlink the Space's title as a value everywhere BEFORE the folder trashes.
         await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
@@ -547,14 +513,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       })
     }
 
-    case 'setTier': {
-      const resolved = await resolveUnderRoot(root, req.path)
-      if (!resolved.ok) return relay(resolved)
-      return serializeOnFile(resolved.value, async () => {
-        const r = await setPageTier(resolved.value, req.tier, req.contextIds)
-        return r.ok ? { ok: true } : relay(r)
-      })
-    }
 
     case 'movePage': {
       const src = await resolveUnderRoot(root, req.path)

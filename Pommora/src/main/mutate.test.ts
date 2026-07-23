@@ -64,13 +64,6 @@ describe('handleMutate — create', () => {
     expect(await pathExists(join(root, 'Notes/Weekly/_pageset.json'))).toBe(true)
   })
 
-  it('createContext makes a tier folder under .nexus + returns its path', async () => {
-    const r = await handleMutate({ op: 'createContext', tier: 1, name: 'Personal' }, nexusDeps)
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.created?.path).toBe('.nexus/areas/Personal')
-    expect(await pathExists(join(root, '.nexus/areas/Personal/_area.json'))).toBe(true)
-  })
 
   it('disambiguates a colliding create name (Untitled → Untitled 2)', async () => {
     const first = await handleMutate(
@@ -143,15 +136,6 @@ describe('handleMutate — delete', () => {
     expect(trashToSystem.mock.calls[0][0]).toContain('Beta.md')
   })
 
-  it('context delete strips its id from page tiers (unlinkTier) before removing the folder', async () => {
-    const r = await handleMutate(
-      { op: 'delete', path: '.nexus/areas/Work', kind: 'area' },
-      nexusDeps,
-    )
-    expect(r.ok).toBe(true)
-    expect(await pathExists(join(root, '.nexus/areas/Work'))).toBe(false)
-    expect(splitFrontmatter(await read('Notes/Daily/Alpha.md')).tier1).toEqual([])
-  })
 })
 
 describe('handleMutate — move + guards', () => {
@@ -319,14 +303,6 @@ describe('handleMutate — move + guards', () => {
 })
 
 describe('handleMutate — review-round hardening', () => {
-  it('createContext supports tiers 2 and 3 (topics / projects)', async () => {
-    const t = await handleMutate({ op: 'createContext', tier: 2, name: 'Fitness' }, nexusDeps)
-    const p = await handleMutate({ op: 'createContext', tier: 3, name: 'Launch' }, nexusDeps)
-    expect(t.ok && t.created?.path).toBe('.nexus/topics/Fitness')
-    expect(p.ok && p.created?.path).toBe('.nexus/projects/Launch')
-    expect(await pathExists(join(root, '.nexus/topics/Fitness/_topic.json'))).toBe(true)
-    expect(await pathExists(join(root, '.nexus/projects/Launch/_project.json'))).toBe(true)
-  })
 
   it('creates a collection at the nexus root (parentPath "")', async () => {
     const r = await handleMutate(
@@ -487,17 +463,6 @@ describe('handleMutate — review-round hardening', () => {
     expect(r.error.code).toBe('operation-failed')
   })
 
-  it('system-trash delete of a context strips tiers (unlinkTier) then delegates to the OS trash', async () => {
-    const trashToSystem = vi.fn(async (_p: string) => {})
-    const r = await handleMutate(
-      { op: 'delete', path: '.nexus/areas/Work', kind: 'area' },
-      { trashMode: 'system', trashToSystem },
-    )
-    expect(r.ok).toBe(true)
-    expect(trashToSystem).toHaveBeenCalledOnce()
-    expect(trashToSystem.mock.calls[0][0]).toContain('Work')
-    expect(splitFrontmatter(await read('Notes/Daily/Alpha.md')).tier1).toEqual([])
-  })
 
   it('reverts the page rename when the link cascade fails', async () => {
     // A page linking [[Beta]] in a read-only dir → the cascade's rewrite commit throws.
