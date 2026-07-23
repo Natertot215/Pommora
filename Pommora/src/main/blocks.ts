@@ -17,43 +17,74 @@ import {
   mutateJson,
   pathExists,
   readJsonObject,
+  rmwJsonStrict,
   trashWithTimestamp,
 } from './io/atomicWrite'
 import { serializeOnFile } from './io/fileLock'
-import { blockHostDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
-
-// The block hosts to walk for the link graph + rename heal. The dev host is the only one today
-// (G-12); this list grows in lockstep with the BlockHostRef union when real hosts land.
-const BLOCK_HOSTS: BlockHostRef[] = [{ kind: 'homepage' }]
+import { loadContextWorld } from './crud/contextWrite'
+import { blockHostDir, nexusConfig, NEXUS_CONFIG_FILES, SPACE_SIDECAR } from './paths'
 
 const EPOCH = '1970-01-01T00:00:00.000Z'
 
-/** The host's own config carries the block document (D-2/D-3 — one file, one
- *  entity). Its writes don't cost a re-walk: the app's own writes are echo-
- *  suppressed at the watcher (io/writeEcho). */
-export function blockHostConfig(root: string, _host: BlockHostRef): string {
-  return nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
+/** A Space host's folder, resolved through the write-side world load (registry + sidecars —
+ *  the same strictness every context write rides). Unknown or unresolvable ids throw; the IPC
+ *  envelope catches. */
+async function spaceHostDir(root: string, id: string): Promise<string> {
+  const world = await loadContextWorld(root)
+  if (!world.ok) throw new Error(world.error.message)
+  const ref = world.value.spaceById.get(id)
+  if (!ref) throw new Error('Unknown Space.')
+  return ref.dir
 }
 
-/** A markdown block's backing file: `<tile-ulid>.md` in the host's own folder (D-11). */
-export function blockFilePath(root: string, host: BlockHostRef, tileId: string): string {
-  return join(blockHostDir(root, host), `${tileId}.md`)
+/** The host's own folder — homepage's fixed dir, or the Space's folder. */
+async function hostDir(root: string, host: BlockHostRef): Promise<string> {
+  return host.kind === 'homepage' ? blockHostDir(root, host) : spaceHostDir(root, host.id)
 }
 
-/** The one locked read-merge-write every doc mutation goes through. */
+/** The host's own config carries the block document (one file, one entity):
+ *  homepage.json, or the Space's `_space.json`. Its writes don't cost a re-walk:
+ *  the app's own writes are echo-suppressed at the watcher (io/writeEcho). */
+export async function blockHostConfig(root: string, host: BlockHostRef): Promise<string> {
+  return host.kind === 'homepage'
+    ? nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
+    : join(await spaceHostDir(root, host.id), SPACE_SIDECAR)
+}
+
+/** A markdown block's backing file: `<tile-ulid>.md` in the host's own folder. */
+export async function blockFilePath(
+  root: string,
+  host: BlockHostRef,
+  tileId: string,
+): Promise<string> {
+  return join(await hostDir(root, host), `${tileId}.md`)
+}
+
+/** The one locked read-merge-write every doc mutation goes through. A Space's sidecar
+ *  carries identity + relations other writers own, so its RMW is STRICT — a transiently
+ *  unreadable `_space.json` fails the save rather than clobbering down to a near-empty
+ *  object. Homepage keeps the from-nothing fallback (the config legitimately starts absent). */
 async function mutateDoc(
   root: string,
   host: BlockHostRef,
   fn: (cur: Record<string, unknown>) => Record<string, unknown>,
 ): Promise<void> {
-  const path = blockHostConfig(root, host)
+  const path = await blockHostConfig(root, host)
+  if (host.kind === 'space') {
+    await serializeOnFile(path, async () => {
+      const r = await rmwJsonStrict(path, fn)
+      if (!r.ok) throw new Error(r.error.message)
+    })
+    return
+  }
   await serializeOnFile(path, () => mutateJson<Record<string, unknown>>(path, () => ({}), fn))
 }
 
-/** One-time healing: a brief interim build split the doc into a `_blocks.json`
+/** One-time healing: a brief interim build split the homepage doc into a `_blocks.json`
  *  sidecar — fold it back onto the host config (one file, one entity) and remove
- *  it. No-op when no sidecar exists. */
+ *  it. No-op when no sidecar exists; Space hosts never had the split. */
 async function healSplitDoc(root: string, host: BlockHostRef): Promise<void> {
+  if (host.kind !== 'homepage') return
   const sidecarPath = join(blockHostDir(root, host), '_blocks.json')
   const sidecar = await readJsonObject(sidecarPath)
   if (!sidecar) return
@@ -68,7 +99,7 @@ async function healSplitDoc(root: string, host: BlockHostRef): Promise<void> {
 
 export async function readBlockDoc(root: string, host: BlockHostRef): Promise<BlockDoc> {
   await healSplitDoc(root, host)
-  const raw = await readJsonObject(blockHostConfig(root, host))
+  const raw = await readJsonObject(await blockHostConfig(root, host))
   return {
     layout: raw?.layout,
     blocks: Array.isArray(raw?.blocks) ? raw.blocks : [],
@@ -98,8 +129,8 @@ export async function writeBlockDoc(
  *  The renderer splices the layout leaf afterward. */
 export async function createMarkdownBlock(root: string, host: BlockHostRef): Promise<string> {
   const id = newId()
-  await mkdir(blockHostDir(root, host), { recursive: true })
-  await atomicWriteFile(blockFilePath(root, host, id), '')
+  await mkdir(await hostDir(root, host), { recursive: true })
+  await atomicWriteFile(await blockFilePath(root, host, id), '')
   await mutateDoc(root, host, (cur) => {
     const blocks = Array.isArray(cur.blocks) ? cur.blocks : []
     return { ...cur, blocks: [...blocks, { id, type: 'markdown' }] }
@@ -132,7 +163,7 @@ export async function removeBlockTile(
 /** Trash a markdown tile's backing file on ITS lock — ordered against a still-pending
  *  editor flush, so a late body write can never land after the trash and resurrect it. */
 async function trashTileFile(root: string, host: BlockHostRef, tileId: string): Promise<void> {
-  const file = blockFilePath(root, host, tileId)
+  const file = await blockFilePath(root, host, tileId)
   await serializeOnFile(file, async () => {
     if (await pathExists(file)) await trashWithTimestamp(root, file)
   })
@@ -208,8 +239,8 @@ export async function duplicateBlockTile(
   const id = newId()
   if (entry.type === 'markdown') {
     const body = (await readMarkdownBlock(root, host, tileId)) ?? ''
-    await mkdir(blockHostDir(root, host), { recursive: true })
-    await atomicWriteFile(blockFilePath(root, host, id), body)
+    await mkdir(await hostDir(root, host), { recursive: true })
+    await atomicWriteFile(await blockFilePath(root, host, id), body)
   }
   let copy: Record<string, unknown> = { ...(src as Record<string, unknown>), id }
   if (entry.type === 'view' && Array.isArray(copy.views)) {
@@ -228,7 +259,7 @@ export async function readMarkdownBlock(
   tileId: string,
 ): Promise<string | null> {
   try {
-    return await readFile(blockFilePath(root, host, tileId), 'utf8')
+    return await readFile(await blockFilePath(root, host, tileId), 'utf8')
   } catch {
     return null
   }
@@ -242,7 +273,7 @@ export async function writeMarkdownBlock(
   tileId: string,
   body: string,
 ): Promise<void> {
-  const file = blockFilePath(root, host, tileId)
+  const file = await blockFilePath(root, host, tileId)
   await serializeOnFile(file, () => atomicWriteFile(file, body))
 }
 
@@ -250,18 +281,40 @@ export async function writeMarkdownBlock(
  *  link-index read and the rename heal (a block id is globally unique, so the host isn't threaded
  *  out past the file path). Non-markdown tiles are filtered here; a missing backing file is left
  *  to each caller to tolerate. */
+/** Every block host with its resolved folder: the homepage singleton plus one per Space.
+ *  A read-path walk, so it tolerates a failed world load (those hosts just skip this pass)
+ *  and never writes. */
+async function listBlockHosts(root: string): Promise<{ config: string; dir: string }[]> {
+  const homepage: BlockHostRef = { kind: 'homepage' }
+  const hosts = [
+    {
+      config: nexusConfig(root, NEXUS_CONFIG_FILES.homepage),
+      dir: blockHostDir(root, homepage),
+    },
+  ]
+  try {
+    const world = await loadContextWorld(root)
+    if (world.ok)
+      for (const ref of world.value.spaceById.values())
+        hosts.push({ config: join(ref.dir, SPACE_SIDECAR), dir: ref.dir })
+  } catch {
+    // registry unreadable — homepage only this pass
+  }
+  return hosts
+}
+
 async function markdownBlockFiles(root: string): Promise<{ id: string; file: string }[]> {
   const out: { id: string; file: string }[] = []
-  for (const host of BLOCK_HOSTS) {
+  for (const host of await listBlockHosts(root)) {
     // Read the config DIRECTLY, not via readBlockDoc — its healSplitDoc fold is a WRITE, and the index
     // build (a read path) must stay read-only by construction. A nexus still carrying the legacy
     // `_blocks.json` sidecar gets folded by the renderer's normal load and indexed on the next rebuild.
-    const raw = await readJsonObject(blockHostConfig(root, host))
+    const raw = await readJsonObject(host.config)
     const blocks = Array.isArray(raw?.blocks) ? raw.blocks : []
     for (const b of blocks) {
       const entry = knownBlock(b)
       if (entry?.type !== 'markdown') continue
-      out.push({ id: entry.id, file: blockFilePath(root, host, entry.id) })
+      out.push({ id: entry.id, file: join(host.dir, `${entry.id}.md`) })
     }
   }
   return out

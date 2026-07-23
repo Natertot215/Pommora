@@ -199,7 +199,7 @@ describe('rebuildIndex (cold build)', () => {
     const host = { kind: 'homepage' } as const
     const blockId = '01BLOCKTILE0000000000000A'
     await mkdir(blockHostDir(root, host), { recursive: true })
-    await writeFile(blockFilePath(root, host, blockId), 'see [[PageB]]', 'utf8')
+    await writeFile(await blockFilePath(root, host, blockId), 'see [[PageB]]', 'utf8')
     await writeJson(nexusConfig(root, NEXUS_CONFIG_FILES.homepage), {
       blocks: [{ id: blockId, type: 'markdown' }],
     })

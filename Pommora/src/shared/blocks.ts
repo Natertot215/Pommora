@@ -56,14 +56,16 @@ export const rawLayoutSchema = z.object({
  *  Space 2×2 seed share this one value. */
 export const NEW_TILE_H = 160
 
-/** The BlockHost seam: which entity's sidecar holds the doc. The homepage
- *  singleton is the dev host; real hosts extend this union. */
-export type BlockHostRef = { kind: 'homepage' }
+/** The BlockHost seam: which entity's sidecar holds the doc — the homepage singleton
+ *  (homepage.json) or a Space (its `_space.json`). */
+export type BlockHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
 
 export function coerceBlockHost(raw: unknown): BlockHostRef | null {
-  return typeof raw === 'object' && raw !== null && (raw as { kind?: unknown }).kind === 'homepage'
-    ? { kind: 'homepage' }
-    : null
+  if (typeof raw !== 'object' || raw === null) return null
+  const { kind, id } = raw as { kind?: unknown; id?: unknown }
+  if (kind === 'homepage') return { kind: 'homepage' }
+  if (kind === 'space' && typeof id === 'string' && id.length > 0) return { kind: 'space', id }
+  return null
 }
 
 /** Per-tile chassis style: borderless hides the border until you reach for
