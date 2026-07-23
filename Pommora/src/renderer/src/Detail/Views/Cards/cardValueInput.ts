@@ -1,11 +1,12 @@
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
 import type { PropertyDefinition, PropertyType } from '@shared/properties'
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import type { NexusLabels, ResolvedColumn, ViewRow } from '@shared/types'
+import type { NexusLabels, NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { isCompact, type SavedView } from '@shared/views'
 import { hiddenListIds } from '@renderer/Components/Detail/hiddenPaneModel'
+import { contextIdsOf } from '../pipeline/contextIdentity'
 import { resolveFieldValue } from '../pipeline/value'
-import { columnLabel, TIER_LEVEL_BY_ID } from '../Table/columnLabel'
+import { columnLabel } from '../Table/columnLabel'
 import type { ResolveContext } from '../Table/resolveContext'
 import { serializeLink } from '../Table/linkValue'
 
@@ -49,12 +50,14 @@ export function addEntriesFor(
   ctx: ResolveContext,
   labels: NexusLabels,
   columns: ResolvedColumn[],
+  tree: NexusTree | null = null,
 ): AddEntry[] {
+  const contextIds = contextIdsOf(tree)
   const shownIds = new Set(shownColumnsFor(row, columns, ctx, isCompact(view)).map((c) => c.id))
   const bySchema = new Map(ctx.schema.map((d) => [d.id, d]))
   const ids = [
     ...new Set([
-      ...hiddenListIds(view, ctx.schema),
+      ...hiddenListIds(view, ctx.schema, contextIds),
       ...ctx.schema.map((d) => d.id),
       ...columns.filter((c) => c.kind === 'tier').map((c) => c.id),
     ]),
@@ -65,19 +68,19 @@ export function addEntriesFor(
       const def = bySchema.get(id) ?? null
       const type = def?.type ?? 'context'
       const blank = isBlankValue(resolveFieldValue(row, id, ctx.schema))
-      const contextShaped = TIER_LEVEL_BY_ID[id] !== undefined || type === 'context'
+      const contextShaped = contextIds.includes(id) || type === 'context'
       const revealOnly = contextShaped
         ? !blank
         : !def || !ADDABLE_TYPES.has(type) || type === 'checkbox' || !blank
-      return { id, name: columnLabel(id, ctx.schema, labels), type, def, revealOnly }
+      return { id, name: columnLabel(id, ctx.schema, labels, tree), type, def, revealOnly }
     })
 }
 
-/** An add-menu entry's column ref: a reserved tier id routes as a TIER (writeTierValue), everything
- *  else as a property — the same split commitValue makes for on-card values. */
-export const addColumn = (id: string): ResolvedColumn => ({
+/** An add-menu entry's column ref: a registry Context id routes as a TIER (writeContextValue),
+ *  everything else as a property — the same split commitValue makes for on-card values. */
+export const addColumn = (id: string, tree: NexusTree | null = null): ResolvedColumn => ({
   id,
-  kind: TIER_LEVEL_BY_ID[id] !== undefined ? 'tier' : 'property',
+  kind: contextIdsOf(tree).includes(id) ? 'tier' : 'property',
 })
 
 /** One row of the card add-property menu (something NOT currently shown). A `pane` entry (a blank
