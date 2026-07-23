@@ -634,7 +634,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     writeContextValue(row, colId, ids, row.frontmatter, setValueOverride, mutate)
   }
   // A chip's hover × commits whatever remains after that chip: the picker's exact
-  // routing — a reserved tier column through setTier, everything else through setProperty.
+  // routing — a context column through setContext, everything else through setProperty.
   const removeCellValue = (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null): void => {
     if (col.kind === 'tier' && next?.kind === 'context') commitTierValue(row, col.id, next.value)
     else commitCellValue(row, col.id, next)
