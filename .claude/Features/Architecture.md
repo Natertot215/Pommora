@@ -43,13 +43,11 @@ A Nexus is a single folder. Pommora opens it via picker (security-scoped bookmar
     state.json                          ← session state (open tabs, sidebar UI, Recents)
     settings.json                       ← per-Nexus UI labels + accent color + excluded_folders + profile image/subtitle
     properties.json                     ← nexus-wide property registry (propId → definition; Collections assign by id)
-    tier-config.json                    ← Contexts tier labels (singular + plural)
     saved-config.json                   ← Saved-section entry labels
     homepage.json                       ← singleton Homepage entity (composed blocks)
     index.db                            ← SQLite index (regeneratable, schema-versioned)
-    areas/<Title>/_area.json            ← tier-1 Contexts (free-standing folder + sidecar)
-    topics/<Title>/_topic.json          ← tier-2 Contexts (free-standing folder + sidecar)
-    projects/<Title>/_project.json      ← tier-3 Contexts (free-standing folder + sidecar)
+    contexts.json                       ← the Context registry (id, title, singular, icon; order = display)
+    contexts/<Context>/<Space>/_space.json ← one Space per folder (id, color, banner, block doc, relations)
     attachments/<entity-id>/            ← copy-on-attach files (file/attachment properties)
 
   .trash/                               ← deleted entities (nexus-local trash; v1+ surface)
@@ -75,7 +73,7 @@ A Nexus is a single folder. Pommora opens it via picker (security-scoped bookmar
 
 #### Manager + cache layer
 
-One per-entity manager per kind owns the in-memory cache for that kind: it loads files at app start, mirrors to the SQLite index, and writes atomically on every mutation. There is a manager for each operational + organization kind (Page Collections, Page Sets, Page content, Tasks, Events, the three Context tiers) plus the Homepage and Settings singletons; each is sourced from its corresponding files/sidecars on disk.
+One per-entity manager per kind owns the in-memory cache for that kind: it loads files at app start, mirrors to the SQLite index, and writes atomically on every mutation. There is a manager for each operational + organization kind (Page Collections, Page Sets, Page content, Tasks, Events, the Context registry's Spaces) plus the Homepage and Settings singletons; each is sourced from its corresponding files/sidecars on disk.
 
 Managers are `@MainActor` `@Observable`; SwiftUI views observe them directly via `@Environment`. Heavy services (the SQLite index, parsers) stay in DI to avoid re-init on view rebuild. Manager ownership + injection is centralized — see CLAUDE.md branch quirk #15.
 
@@ -93,7 +91,7 @@ The index lives at `<nexus>/.nexus/index.db`, travelling with the Nexus so a mov
 
 **Query surface.** The query facade composes Notion-style filter/sort/group/broken-links SQL — reaching the `properties` JSON column via JSON1, and `context_links` for tier lookups. Embedded views in Contexts / Homepage flow through it. The UI is therefore one hop removed from the canonical file (file → index → query → view); a wrong, empty, or `(missing)` surface localizes to the query/render hop, not by itself to the file — see CLAUDE.md branch quirk #17.
 
-**Reverse query (Context Linked-from).** Reads `context_links` for every row whose `target_id` equals a Context ID, resolving each source's current title from its owning table — powering a Context's Linked-from surface. Each `tier1` / `tier2` / `tier3` value emits one row (`target_kind` = `area` / `topic` / `project`).
+**Reverse query (Space Linked-from).** Reads `context_links` for every row whose `target_id` equals a Space id, resolving each source's current title from its owning table — powering a Space's Linked-from surface. Each membership value emits one row across page, agenda, and space sources (`target_kind` = `space`).
 
 **Update path.** Every manager mutation upserts to the DB immediately after its atomic file write succeeds — mid-session changes never wait for a restart.
 

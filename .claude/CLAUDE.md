@@ -2,13 +2,13 @@
 
 Pommora is a personal management app based on Nathan’s frustration with modern productivity apps that excel in one aspect but are absolutely terrible in others. Pommora’s main leverage is taking the extremely flexible, properties-based categorization of Notion and the inherently agentic-legible, local-first approach used by Obsidian, aiming to create a true local-first, all-in-one productivity and organizational platform. Pommora’s structure is based on relating **Content** ↔ **Content** through *Connections*, with their attributes given through their **Collection’s** schema-based **Properties,** and linking them all together through relationships to **Contexts.** 
 
-**Contexts:** The organization layer — three free-standing tiers that Content relates *to*. None contains or parents another; an entity tags whichever tiers fit.
+**Contexts:** The organization layer — user-defined **Context** groups (a registry seeds Areas, Topics, and Projects as ordinary entries) holding **Spaces**, the individual members Content relates *to*. No Context contains or parents another; an entity tags whichever Spaces fit.
 
 - **Areas:** broad life domains — Personal, Academics, Work.
 - **Topics:** the subject areas within them — Productivity, Side Projects, Reading List. 
 - **Projects:** specific efforts — CS 161, Pommora, "Atomic Habits." 
 
-**Content:** The operational layer — what you actually make, linked to each other through **Connections** for content ↔ content relations, and with **Front-matter** for content ↔ tier relations. 
+**Content:** The operational layer — what you actually make, linked to each other through **Connections** for content ↔ content relations, and with **Front-matter** for content ↔ Space relations. 
 
 - **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views; it nests Sets to any depth as organizing subfolders that inherit that schema.
 - **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection’s properties. Pages use MarkdownPM for its editor surface, which includes in-line connections to other pages. 
@@ -63,7 +63,7 @@ The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set
 ### Important Information 
 
 - **Formatting is Biome's** (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align or run Biome yourself — an Edit failing on whitespace means Biome reformatted, so re-read and retry. `npm run typecheck` stays the *only* type gate (the build strips types unchecked). 
-- **Connections** are in-line `[[Title]]`, resolved via SQLite, and **aren’t** displayed in any container views *(tables, galleries, lists…)*. **Contexts** are properties resolved via front-matter; content ↔ content relational properties **don’t** exist. 
+- **Connections** are in-line `[[Title]]`, resolved via SQLite, and **aren’t** displayed in any container views *(tables, galleries, lists…)*. **Contexts** resolve via bracketed title keys in front-matter through the registry; content ↔ content relational properties **don’t** exist. 
 - **Swift Origins:** Pommora was first built as a native SwiftUI app — that build was active for around one month and designed and versioned the entire paradigm; React was initially scoped as an alternative contingency. The decision to switch to React mostly came down to frustrations and limitations with SwiftUI, and to Claude's greater competency with TypeScript. The Swift build is archived at `// The Studio // Archive // Pommora` — source, External packages, and `.claude/` docs; its git history lives on the `swift` branch.
 
 #### II. Project Sapphire
