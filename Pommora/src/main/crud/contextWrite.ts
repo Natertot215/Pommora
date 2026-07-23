@@ -9,6 +9,7 @@ import { join } from 'node:path'
 import {
   contextKey,
   invalidContextTitle,
+  isGovernedContextKey,
   type ContextDef,
   type ContextsRegistry,
 } from '@shared/contexts'
@@ -91,7 +92,7 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
   return ok({ registry: reg.value, spacesByContext, spaceById })
 }
 
-/** Reconcile a root being rewritten anyway (D-9a): migrate legacy `tierN` ULID arrays to
+/** Reconcile a root being rewritten anyway: migrate legacy `tierN` ULID arrays to
  *  bracketed title keys (unresolvable ids drop), then run the per-value repair pass. */
 export function reconcileWriteRoot(world: ContextWorld, raw: Raw): { root: Raw; changed: boolean } {
   const out: Raw = { ...raw }
@@ -123,7 +124,7 @@ function defById(world: ContextWorld, contextId: string): ContextDef | undefined
   return world.registry.contexts.find((c) => c.id === contextId)
 }
 
-/** Resolve target Space ids → titles through the live registry (H-1). Unknown ids fail —
+/** Resolve target Space ids → titles through the live registry. Unknown ids fail —
  *  a stale renderer id must never serialize as a guess. */
 function targetTitles(world: ContextWorld, spaceIds: string[]): Result<string[]> {
   const titles: string[] = []
@@ -158,7 +159,7 @@ function governedContextKeys(raw: Raw, next: Raw, targetKey: string): string[] {
   const keys = new Set<string>([targetKey])
   for (const source of [raw, next]) {
     for (const k of Object.keys(source)) {
-      if (k.startsWith('[') || /^tier[123]$/.test(k)) keys.add(k)
+      if (isGovernedContextKey(k)) keys.add(k)
     }
   }
   return [...keys]
@@ -217,7 +218,7 @@ export async function setAgendaContext(
   })
 }
 
-/** setContext on a Space's own `_space.json` (G-1, cross-Context allowed) — strict RMW,
+/** setContext on a Space's own `_space.json` (cross-Context allowed) — strict RMW,
  *  never fallback-to-empty. */
 export async function setSpaceContext(
   root: string,

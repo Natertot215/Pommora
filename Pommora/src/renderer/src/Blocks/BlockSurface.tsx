@@ -57,8 +57,8 @@ function pagePickerItems(
   )
 }
 
-/** The view-source drill (G-9): Collections → Sets chevron above that container's
- *  views, a + Custom footer per drill (D-5a: the source is picked here, always).
+/** The view-source drill: Collections → Sets chevron above that container's
+ *  views, a + Custom footer per drill (the source is picked here, always).
  *  Sub-Sets carry no views, so only depth-1 Sets drill. */
 function viewPickerItems(
   tree: NexusTree,
@@ -90,10 +90,10 @@ function viewPickerItems(
   )
 }
 
-// The host-facing block surface (G-2): the SurfacePM engine over a persisted
+// The host-facing block surface: the SurfacePM engine over a persisted
 // block document. Tile content resolves per typed entry; a leaf whose id has no
 // entry — or an entry this build doesn't know — renders inert and keeps its
-// space (E-1/E-2), never crashes the host. One live editor at a time (E-4);
+// space, never crashes the host. One live editor at a time;
 // click-out or Esc exits it.
 
 export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Element | null {
@@ -106,7 +106,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   const tree = useSession((s) => s.tree)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const select = useSession((s) => s.select)
-  // The host board lock (G-3) — the store is the cross-subtree source (the SettingsPane toggles it
+  // The host board lock — the store is the cross-subtree source (the SettingsPane toggles it
   // from a different subtree). Homepage is the only host today; real hosts would key this by host.
   const hostLocked = useSession((s) => s.homepageLocked)
 
@@ -144,11 +144,11 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
     return map
   }, [tree])
 
-  // Markdown blocks are link SOURCES (D-8) — the tile editor gets the same
+  // Markdown blocks are link SOURCES — the tile editor gets the same
   // [[connection]] autocomplete + click-through the page editor has.
   const openPreview = useSession((s) => s.openPreview)
   const { hover, card: hoverCard } = useConnectionHover()
-  // B-6 reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
+  // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
   const openInPreview = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
@@ -202,7 +202,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   )
   const suppressFlush = useCallback((id: string) => removing.current.has(id), [])
 
-  // Link Page (G-7): the handle menu's drill pane resolved the page; main
+  // Link Page: the handle menu's drill pane resolved the page; main
   // rewrites the entry and trashes a markdown tile's file.
   const applyPagePick = useCallback(
     (id: string, pageId: string) => {
@@ -214,7 +214,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
 
   // Link View: the drill pane resolved a view to COPY (or + Custom → the blank default
   // against that source's schema); main re-mints the config id payload-local and flips
-  // the entry (D-12: copied, never synced).
+  // the entry (copied, never synced).
   const applyViewPick = useCallback(
     (id: string, pick: ViewPick) => {
       if (!tree) return
@@ -235,9 +235,9 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
     [tree, refreshEntries, host],
   )
 
-  // The handle menu is the in-app PickerMenu (G-16), anchored to the clicked handle;
+  // The handle menu is the in-app PickerMenu, anchored to the clicked handle;
   // Delete still confirms natively in main first. Style edits spread the RAW entry so
-  // foreign fields survive (E-1); Duplicate lands directly below via the attach logic.
+  // foreign fields survive; Duplicate lands directly below via the attach logic.
   const [handleMenu, setHandleMenu] = useState<{ id: string; el: HTMLElement } | null>(null)
   const onHandleMenu = useCallback((id: string, e: React.MouseEvent) => {
     setHandleMenu({ id, el: e.currentTarget as HTMLElement })
@@ -252,7 +252,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
     },
     [saveBlocks],
   )
-  // Per-tile content lock (B-5) — the raw entry spreads so foreign fields survive (E-1); absent = unlocked.
+  // Per-tile content lock — the raw entry spreads so foreign fields survive; absent = unlocked.
   const toggleLock = useCallback(
     (id: string) => {
       saveBlocks((cur) =>
@@ -296,7 +296,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
         editingId === id ? 'is-editing-tile' : null,
         entries.get(id)?.locked ? 'is-locked' : null, // frozen gestures (SurfaceView) + a resting cursor
         handleMenu?.id === id ? 'handle-pinned' : null, // the open picker's anchor stays shown
-        zoomStep(entries.get(id)?.zoom).cls || null, // per-block Scale (G-10); 1.0 has no class
+        zoomStep(entries.get(id)?.zoom).cls || null, // per-block Scale; 1.0 has no class
       ].filter(Boolean)
       return classes.length ? classes.join(' ') : undefined
     },
@@ -305,7 +305,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
 
   // The view-entry payload writer: hands the embed the RAW entry to transform — updater
   // form + raw spreads inside the transforms, so foreign keys on the entry AND its
-  // elements survive (E-1). Config swaps, chrome toggles, and view CRUD all ride it.
+  // elements survive. Config swaps, chrome toggles, and view CRUD all ride it.
   const mutateViewEntry = useCallback(
     (entryId: string, fn: (raw: Record<string, unknown>) => Record<string, unknown>) => {
       saveBlocks((cur) =>
@@ -319,7 +319,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
     [saveBlocks],
   )
 
-  // Per-block Scale writer (G-10): patches the RAW entry so foreign keys survive (E-1); clears `zoom`
+  // Per-block Scale writer: patches the RAW entry so foreign keys survive; clears `zoom`
   // at 1.0 so the default stays an absent key. Mirrors setStyle/toggleLock.
   const setBlockZoom = useCallback(
     (id: string, factor: number) => {
@@ -353,7 +353,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
         )
       if (entry?.type === 'page') {
         const page = pagesById.get(entry.page_id)
-        if (!page) return <div className="blk-inert" /> // dead reference — inert, space holds (E-2)
+        if (!page) return <div className="blk-inert" /> // dead reference — inert, space holds
         return (
           <PageEmbedBlock
             page={page}
@@ -378,8 +378,8 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
     [entries, editingId, connections, suppressFlush, pagesById, host, mutateViewEntry],
   )
 
-  // Right-click on the surface background creates a block (G-9's Block default,
-  // menu-less until Task 6): a wedge target fits flush inside the ragged gap, an
+  // Right-click on the surface background creates a block (the Block default,
+  // menu-less for now): a wedge target fits flush inside the ragged gap, an
   // append lands as a new full-width band. Updater form — a gesture committing
   // during the IPC await must not be overwritten by a render-captured layout.
   const onBackdrop = useCallback(

@@ -1,5 +1,5 @@
 // The resolution context threaded into table cells + group headers so they turn ids into human values
-// at render (Part 2 A-4): the container schema (property names + option labels), a Space-id lookup
+// at render: the container schema (property names + option labels), a Space-id lookup
 // (context values → title + color + icon), and the per-Nexus labels. Built once per table render
 // from the tree; pure — no fs, no React.
 
