@@ -54,7 +54,7 @@ function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | nu
 /** Sweep every root in the three scopes (`.md` frontmatter, agenda JSON, `_space.json`)
  *  through `rewrite` (null = untouched), each under its file lock; unreadable files are
  *  recorded and never fatal. The one walk every key/value cascade and unlink shares. */
-async function sweepContextRoots(
+export async function sweepContextRoots(
   root: string,
   rewrite: (raw: Raw) => Raw | null,
 ): Promise<{ touched: string[]; skipped: string[] }> {
@@ -74,7 +74,7 @@ async function sweepContextRoots(
       const next = rewrite(raw)
       if (next === null) return
       const keys = new Set([...Object.keys(raw), ...Object.keys(next)])
-      const governed = [...keys].filter((k) => k.startsWith('['))
+      const governed = [...keys].filter((k) => k.startsWith('[') || /^tier[123]$/.test(k))
       const modeled: Raw = {}
       for (const k of governed) if (k in next) modeled[k] = next[k]
       await atomicWriteFile(
