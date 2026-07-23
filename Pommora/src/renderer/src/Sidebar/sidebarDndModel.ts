@@ -27,9 +27,6 @@ export type Index = {
   byId: Map<string, Entry>
   // Top-level reorder groups (ordered ids), persisted in `.nexus/state.json`.
   collectionIds: string[]
-  areaIds: string[]
-  topicIds: string[]
-  projectIds: string[]
   // Registry Spaces per Context group (ordered ids) — a Space reorders within its group only.
   spaceIdsByContext: Map<string, string[]>
   // Context groups in display order — a group header reorders among its siblings.
@@ -94,28 +91,6 @@ export function buildIndex(tree: NexusTree): Index {
   ]
   for (const c of collections) walkCollection(c)
 
-  const addContexts = (
-    nodes: ReadonlyArray<{ id: string; path: string }>,
-    kind: Kind,
-  ): string[] => {
-    for (const n of nodes)
-      byId.set(n.id, {
-        id: n.id,
-        kind,
-        path: n.path,
-        depth: 1,
-        parentId: null,
-        parentPath: null,
-        pageIds: [],
-        containerIds: [],
-      })
-    return nodes.map((n) => n.id)
-  }
-  const areaIds = addContexts(tree.contexts.areas, 'area')
-  const topicIds = addContexts(tree.contexts.topics, 'topic')
-  const projectIds = addContexts(tree.contexts.projects, 'project')
-  // After the legacy tiers: a reserved group's Spaces share ids with the derived tier leaves,
-  // and the rendered rows are Spaces — their 'space' entries must win in byId.
   const spaceIdsByContext = new Map<string, string[]>()
   const contextGroupIds: string[] = []
   for (const g of tree.contextGroups ?? []) {
@@ -149,9 +124,6 @@ export function buildIndex(tree: NexusTree): Index {
   return {
     byId,
     collectionIds: collections.map((c) => c.id),
-    areaIds,
-    topicIds,
-    projectIds,
     spaceIdsByContext,
     contextGroupIds,
   }

@@ -542,9 +542,6 @@ describe('handleMutate — setBanner', () => {
     expect(tree.collections.find((c) => c.id === 'pt')?.banner).toMatch(
       /^\.nexus\/assets\/pt\/banner-/,
     )
-    expect(tree.contexts.areas.find((a) => a.id === 'area-1')?.banner).toMatch(
-      /^\.nexus\/assets\/area-1\/banner-/,
-    )
     expect(
       tree.collections.find((c) => c.id === 'pt')?.sets.find((s) => s.id === 'col')?.banner,
     ).toMatch(/^\.nexus\/assets\/col\/banner-/)

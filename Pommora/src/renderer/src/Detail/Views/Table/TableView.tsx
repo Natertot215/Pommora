@@ -48,7 +48,7 @@ import { Cell } from './Cell'
 import { PropertyTypeIcon } from '@renderer/Components/Detail/PropertyTypes'
 import { TableGroupBand } from './TableGroupBand'
 import { resolveBandHead } from '../GroupBand'
-import { columnLabel, TIER_LEVEL_BY_ID } from './columnLabel'
+import { columnLabel } from './columnLabel'
 import { clampWidth, widthFor } from './columnWidths'
 import { alignFor } from './columnAlign'
 import { styleFor } from './columnStyles'
@@ -314,7 +314,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema) : null),
     // biome-ignore lint/correctness/useExhaustiveDependencies: buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
-    [tree?.contexts, tree?.labels, schema],
+    [tree?.contextGroups, tree?.labels, schema],
   )
   // One mounted observer, two targets, one job (the overflowing flag): the view (pane resizes) and
   // the grid (min-width sizes its box only while the columns overflow the pane — in the fit regime

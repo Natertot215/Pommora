@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { columnLabel, tierLabel } from './columnLabel'
+import { columnLabel } from './columnLabel'
 import { DEFAULT_LABELS } from '@shared/types'
 import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@shared/properties'
 
@@ -9,24 +9,6 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_due', name: 'Due', type: 'datetime' },
 ]
 
-describe('tierLabel', () => {
-  it('maps tier levels to the per-Nexus plurals', () => {
-    expect(tierLabel(1, labels)).toBe('Areas')
-    expect(tierLabel(2, labels)).toBe('Topics')
-    expect(tierLabel(3, labels)).toBe('Projects')
-  })
-
-  it('honors a custom tier label', () => {
-    const custom = { ...labels, project: { singular: 'Initiative', plural: 'Initiatives' } }
-    expect(tierLabel(3, custom)).toBe('Initiatives')
-  })
-
-  it('falls back to "Tier N" for an out-of-range level', () => {
-    expect(tierLabel(0, labels)).toBe('Tier 0')
-    expect(tierLabel(4, labels)).toBe('Tier 4')
-  })
-})
-
 describe('columnLabel', () => {
   it('resolves reserved built-in columns', () => {
     expect(columnLabel(RESERVED_PROPERTY_ID.title, schema, labels)).toBe('Title')
@@ -34,10 +16,14 @@ describe('columnLabel', () => {
     expect(columnLabel(RESERVED_PROPERTY_ID.modifiedAt, schema, labels)).toBe('Modified')
   })
 
-  it('resolves tier columns through the labels', () => {
-    expect(columnLabel(RESERVED_PROPERTY_ID.tier1, schema, labels)).toBe('Areas')
-    expect(columnLabel(RESERVED_PROPERTY_ID.tier2, schema, labels)).toBe('Topics')
-    expect(columnLabel(RESERVED_PROPERTY_ID.tier3, schema, labels)).toBe('Projects')
+  it('resolves context columns through the registry tree', () => {
+    const tree = {
+      contextGroups: [
+        { def: { id: RESERVED_PROPERTY_ID.tier1, title: 'Areas', singular: 'Area' }, spaces: [] },
+      ],
+    } as unknown as import('@shared/types').NexusTree
+    expect(columnLabel(RESERVED_PROPERTY_ID.tier1, schema, labels, tree)).toBe('Areas')
+    expect(columnLabel(RESERVED_PROPERTY_ID.tier2, schema, labels)).toBe(RESERVED_PROPERTY_ID.tier2)
   })
 
   it('resolves a user property through the schema name', () => {

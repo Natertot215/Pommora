@@ -129,30 +129,9 @@ async function collectNexusData(nexusRoot: string): Promise<NexusData> {
       ]),
     )
 
-  const contexts: ContextData[] = tree.contextGroups
-    ? tree.contextGroups.flatMap((g) =>
-        g.spaces.map((s) => ({ id: s.id, contextId: g.def.id, title: s.title, icon: s.icon })),
-      )
-    : [
-        ...tree.contexts.areas.map((a) => ({
-          id: a.id,
-          contextId: '_tier1',
-          title: a.title,
-          icon: a.icon,
-        })),
-        ...tree.contexts.topics.map((t) => ({
-          id: t.id,
-          contextId: '_tier2',
-          title: t.title,
-          icon: t.icon,
-        })),
-        ...tree.contexts.projects.map((p) => ({
-          id: p.id,
-          contextId: '_tier3',
-          title: p.title,
-          icon: p.icon,
-        })),
-      ]
+  const contexts: ContextData[] = (tree.contextGroups ?? []).flatMap((g) =>
+    g.spaces.map((s) => ({ id: s.id, contextId: g.def.id, title: s.title, icon: s.icon })),
+  )
   const spaces = (tree.contextGroups ?? []).flatMap((g) =>
     g.spaces.map((s) => ({ id: s.id, links: s.contextValues ?? {} })),
   )
