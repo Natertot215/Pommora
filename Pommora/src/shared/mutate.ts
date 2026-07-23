@@ -30,6 +30,7 @@ export type BannerOwnerKind =
   | 'area'
   | 'topic'
   | 'project'
+  | 'space'
   | 'homepage'
   | 'navview'
   | 'page'
