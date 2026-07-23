@@ -1,0 +1,62 @@
+// IO for the Contexts registry (`.nexus/contexts.json`) — the one identity source for
+// Contexts & Spaces. Reads seed a true-fresh nexus and refuse an unmigrated legacy
+// layout; mutations serialize on the registry file (its own per-file lock, NOT the
+// global schema-op chain — nesting a schema op there would deadlock).
+
+import { contextsRegistry, seededRegistry, type ContextsRegistry } from '@shared/contexts'
+import { fail, ok, type Result } from '@shared/result'
+import type { NexusLabels } from '@shared/types'
+import { pathExists, readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
+import { serializeOnFile } from './io/fileLock'
+import { contextTierDir, contextsRegistryFile } from './paths'
+
+/** Parse a raw registry object leniently — zod loose keeps unknown fields at both the
+ *  registry and entry level, so foreign data round-trips every rewrite. */
+function parseRegistry(raw: Record<string, unknown>): Result<ContextsRegistry> {
+  const parsed = contextsRegistry.safeParse(raw)
+  return parsed.success
+    ? ok(parsed.data)
+    : fail('operation-failed', 'Invalid contexts registry.', 'contexts')
+}
+
+/** Read the registry. Missing file: a legacy tier dir present means an unmigrated nexus
+ *  (`unmigrated` — the open path runs the migration first, never blind-seeds); no tier
+ *  dirs means a true fresh nexus, seeded from the labels and written. */
+export async function readRegistry(
+  root: string,
+  labels: NexusLabels,
+): Promise<Result<ContextsRegistry>> {
+  const raw = await readJsonStrict(contextsRegistryFile(root))
+  if (raw.ok) return parseRegistry(raw.value)
+  if (raw.error.code !== 'not-found') return raw
+
+  for (const tier of ['areas', 'topics', 'projects'] as const) {
+    if (await pathExists(contextTierDir(root, tier))) {
+      return fail('unmigrated', 'Legacy tier layout awaits migration.', 'contexts')
+    }
+  }
+  const seeded = seededRegistry(labels)
+  await writeJson(contextsRegistryFile(root), seeded)
+  return ok(seeded)
+}
+
+/** Serialized registry RMW — `fn` maps the current registry to the next; a read failure
+ *  fails the mutation without writing (strict, never fallback-to-empty). */
+export async function mutateRegistryFile(
+  root: string,
+  fn: (current: ContextsRegistry) => ContextsRegistry,
+): Promise<Result<ContextsRegistry>> {
+  const file = contextsRegistryFile(root)
+  return serializeOnFile(file, async () => {
+    const written = await rmwJsonStrict(file, (raw) => {
+      const parsed = parseRegistry(raw)
+      // An invalid shape throws inside the RMW so nothing is written; caught below.
+      if (!parsed.ok) throw new Error(parsed.error.message)
+      // Overlay onto the raw object so registry-level foreign fields survive even a
+      // mutator that rebuilds `{ contexts }` from scratch.
+      return { ...raw, ...(fn(parsed.value) as unknown as Record<string, unknown>) }
+    }).catch(() => fail('operation-failed', 'Invalid contexts registry.', 'contexts'))
+    if (!written.ok) return written
+    return parseRegistry(written.value)
+  })
+}
