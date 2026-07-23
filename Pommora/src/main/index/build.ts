@@ -115,11 +115,11 @@ async function collectNexusData(nexusRoot: string): Promise<NexusData> {
 
   // Registry-backed when the tree carries groups; a legacy nexus resolves through the
   // seeded reserved ids so its bare-ULID tierN links keep indexing.
-  const ctxRegistry: ContextsRegistry = tree.contextGroups
-    ? { contexts: tree.contextGroups.map((g) => g.def) }
+  const ctxRegistry: ContextsRegistry = tree.contexts.length
+    ? { contexts: tree.contexts.map((g) => g.def) }
     : seededRegistry(tree.labels)
   const spacesByContext = new Map<string, SpaceNode[]>(
-    (tree.contextGroups ?? []).map((g) => [g.def.id, g.spaces]),
+    tree.contexts.map((g) => [g.def.id, g.spaces]),
   )
   const resolveRoot = (raw: Record<string, unknown>): Record<string, string[]> =>
     Object.fromEntries(
@@ -129,10 +129,10 @@ async function collectNexusData(nexusRoot: string): Promise<NexusData> {
       ]),
     )
 
-  const contexts: ContextData[] = (tree.contextGroups ?? []).flatMap((g) =>
+  const contexts: ContextData[] = tree.contexts.flatMap((g) =>
     g.spaces.map((s) => ({ id: s.id, contextId: g.def.id, title: s.title, icon: s.icon })),
   )
-  const spaces = (tree.contextGroups ?? []).flatMap((g) =>
+  const spaces = tree.contexts.flatMap((g) =>
     g.spaces.map((s) => ({ id: s.id, links: s.contextValues ?? {} })),
   )
 

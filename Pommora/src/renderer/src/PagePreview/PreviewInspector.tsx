@@ -79,7 +79,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   // keys resolve to Space ids against the live tree.
   const contextRows = useMemo(
     () =>
-      (tree?.contextGroups ?? []).map((g) => ({
+      (tree?.contexts ?? []).map((g) => ({
         id: g.def.id,
         label: g.def.title,
         icon: g.def.icon,
@@ -87,12 +87,12 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     [tree],
   )
   const ctxRegistry = useMemo<ContextsRegistry | null>(
-    () => (tree?.contextGroups ? { contexts: tree.contextGroups.map((g) => g.def) } : null),
+    () => (tree?.contexts ? { contexts: tree.contexts.map((g) => g.def) } : null),
     [tree],
   )
   const contextValues = useMemo(() => {
-    if (!fm || !ctxRegistry || !tree?.contextGroups) return undefined
-    const spacesByContext = new Map(tree.contextGroups.map((g) => [g.def.id, g.spaces]))
+    if (!fm || !ctxRegistry || !tree?.contexts) return undefined
+    const spacesByContext = new Map(tree.contexts.map((g) => [g.def.id, g.spaces]))
     const links = resolveContextKeys(fm as Record<string, unknown>, ctxRegistry, spacesByContext)
     return links.size ? Object.fromEntries(links) : undefined
   }, [fm, ctxRegistry, tree])

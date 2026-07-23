@@ -26,7 +26,7 @@ export function contextOptionsFor(contextId: string, tree: NexusTree): ContextOp
 }
 
 function buildOptions(contextId: string, tree: NexusTree): ContextOption[] {
-  const group = tree.contextGroups?.find((g) => g.def.id === contextId)
+  const group = tree.contexts?.find((g) => g.def.id === contextId)
   const fallback = defaultEntityIcon('space')
   return (group?.spaces ?? []).map((s) => ({
     value: s.id,

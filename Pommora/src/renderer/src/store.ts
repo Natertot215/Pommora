@@ -1654,7 +1654,7 @@ export const useSession = create<SessionState>((set, get) => {
       // Registry entities rename by id through their journaled cascade ops — the bare folder
       // rename would strand every member file's title key.
       if (kind === 'space' || kind === 'context') {
-        const groups = get().tree?.contextGroups ?? []
+        const groups = get().tree?.contexts ?? []
         if (kind === 'space') {
           const sp = groups.flatMap((g) => g.spaces).find((s) => s.path === path)
           return sp ? get().mutate({ op: 'renameSpace', spaceId: sp.id, newName }) : false
