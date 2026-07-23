@@ -34,7 +34,7 @@ function mapsFor(tree: NexusTree): IdentityMaps {
   if (!maps) {
     const contexts = new Map<string, ContextIdentity>()
     const spaces = new Map<string, SpaceIdentity>()
-    for (const g of tree.contextGroups ?? []) {
+    for (const g of tree.contexts ?? []) {
       contexts.set(g.def.id, { title: g.def.title, singular: g.def.singular, icon: g.def.icon })
       for (const s of g.spaces) {
         spaces.set(s.id, { title: s.title, icon: s.icon, color: s.color, contextId: g.def.id })

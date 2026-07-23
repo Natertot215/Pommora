@@ -52,7 +52,7 @@ export function buildResolveIndex(tree: NexusTree): ResolveIndex {
     title: tree.nexus.name,
     path: [],
   })
-  for (const g of tree.contextGroups ?? []) {
+  for (const g of tree.contexts ?? []) {
     const groupCrumb: PathCrumb = {
       icon: iconNameOr(g.def.icon, defaultEntityIcon('space', di)),
       title: g.def.title,

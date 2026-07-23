@@ -27,7 +27,7 @@ export function buildNavIndex(
   agenda?: { tasks: AgendaEntry[]; events: AgendaEntry[] },
 ): SearchEntry[] {
   const out: SearchEntry[] = [entry({ kind: 'homepage' }, tree.nexus.name)]
-  if (tree.contextGroups)
+  if (tree.contexts)
     for (const s of allSpaces(tree)) out.push(entry({ kind: 'space', id: s.id }, s.title))
   for (const c of allCollections(tree)) out.push(entry({ kind: 'collection', id: c.id }, c.title))
   for (const s of allSets(tree)) out.push(entry({ kind: 'set', id: s.id, path: s.path }, s.title))

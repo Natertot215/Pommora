@@ -27,7 +27,7 @@ export interface ResolveContext {
  *  struct feeds the same map on a tree without groups). */
 export function buildContextsById(tree: NexusTree): Map<string, ContextRef> {
   const m = new Map<string, ContextRef>()
-  for (const g of tree.contextGroups ?? []) {
+  for (const g of tree.contexts ?? []) {
     for (const s of g.spaces) {
       m.set(s.id, {
         title: s.title,
