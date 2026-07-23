@@ -37,6 +37,24 @@ export function contextTierDir(root: string, tier: ContextTier): string {
   return join(nexusDir(root), tier)
 }
 
+/** The Contexts registry — `.nexus/contexts.json` (per-Context id, title, singular, icon;
+ *  array position is the order). */
+export function contextsRegistryFile(root: string): string {
+  return join(nexusDir(root), 'contexts.json')
+}
+
+/** The Space tree root — `.nexus/contexts/<Context Title>/<Space Title>/`. */
+export function contextsDir(root: string): string {
+  return join(nexusDir(root), 'contexts')
+}
+
+export function spaceDir(root: string, contextTitle: string, spaceTitle: string): string {
+  return join(contextsDir(root), contextTitle, spaceTitle)
+}
+
+/** A Space folder's sidecar filename (membership comes from the parent folder). */
+export const SPACE_SIDECAR = '_space.json'
+
 /** The homepage block host's content folder — its markdown-block `.md` files live here
  *  (distinct from the `homepage.json` config file). Real hosts use their own folders. */
 export const HOMEPAGE_HOST_DIRNAME = 'homepage'
