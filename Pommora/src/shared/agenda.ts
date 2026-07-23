@@ -12,6 +12,8 @@ const agendaBase = z.looseObject({
   id: z.string(),
   icon: z.string().optional(),
   description: z.string().optional(),
+  // LEGACY migration-era reads — bracketed title keys are the live context shape; these
+  // bare-ULID arrays stay read-recognized and heal on each file's next governed write.
   tier1: z.array(z.string()).optional(),
   tier2: z.array(z.string()).optional(),
   tier3: z.array(z.string()).optional(),

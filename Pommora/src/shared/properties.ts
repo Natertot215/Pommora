@@ -22,7 +22,7 @@ export const propertyType = z.enum([
   'multi_select',
   'status',
   'url',
-  'context', // the three context-tier links (_tier1/2/3); not user-creatable
+  'context', // a registry Context's synthesized relation (one per entry); minted by the registry, not the schema editor
   'last_edited_time',
   'file',
 ])
@@ -67,11 +67,13 @@ const statusGroup = z.looseObject({
 })
 export type StatusGroup = z.infer<typeof statusGroup>
 
-/** Context picker constraint. On-disk: `{ kind: "context_tier", tier: N }`. Lenient
- *  `kind` so an unknown target survives parse. */
+/** Context picker constraint — which registry Context a `context` property draws from
+ *  (`{ context_id }`; the legacy `{ kind: "context_tier", tier: N }` shape reads through).
+ *  Lenient `kind` so an unknown target survives parse. */
 const contextTarget = z.looseObject({
-  kind: z.string(),
+  kind: z.string().optional(),
   tier: z.number().optional(),
+  context_id: z.string().optional(),
 })
 
 /** One property schema entry. Loose ⇒ display config + any foreign keys ride through. */
@@ -154,17 +156,19 @@ export function isReservedPropertyId(id: string): boolean {
   return RESERVED_SET.has(id)
 }
 
-/** The context tier levels. The one source for iterating tiers (1 = Area, 2 = Topic,
- *  3 = Project). Callers validate the 1–3 bound at the CRUD boundary. */
+/** LEGACY — migration/legacy-read only. The fixed context tier levels (1 = Area,
+ *  2 = Topic, 3 = Project) the registry model replaces; live iteration goes through
+ *  `.nexus/contexts.json`. */
 export const TIER_LEVELS = [1, 2, 3] as const
 
-/** Tier level → the BARE frontmatter-root array field (`tier1`/`tier2`/`tier3`). */
+/** LEGACY — migration/legacy-read only. Tier level → the bare frontmatter-root ULID-array
+ *  field (`tier1`/`tier2`/`tier3`) the bracketed title keys replace. */
 export function tierFieldName(level: number): string {
   return `tier${level}`
 }
 
-/** Tier level → the RESERVED property id (`_tier1`/`_tier2`/`_tier3`) used in the schema +
- *  context_links.property_id. Distinct from the bare root field (tierFieldName). */
+/** LEGACY — migration/legacy-read only. Tier level → the reserved property id
+ *  (`_tier1`/`_tier2`/`_tier3`), which the seeded three keep as their registry ids. */
 export function tierPropertyId(level: number): string {
   return `_tier${level}`
 }

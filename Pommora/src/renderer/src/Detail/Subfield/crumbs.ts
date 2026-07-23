@@ -67,6 +67,8 @@ export function subfieldCrumbs(
       const ctx = findContext(tree, selection.id)
       return ctx ? [{ key: selection.id, title: ctx.name }] : []
     }
+    case 'space':
+      return []
     case 'collection':
     case 'set': {
       const chain = chainOf(tree, selection.id)

@@ -33,6 +33,7 @@ export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
   none: ['viewType'],
   homepage: [],
   context: [],
+  space: [],
   collection: ['addMenu'],
   set: ['addMenu'],
   page: ['pageStats'],
