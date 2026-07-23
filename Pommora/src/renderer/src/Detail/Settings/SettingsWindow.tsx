@@ -72,10 +72,10 @@ function SettingsWindowBody({
     >
       {/* The toolbar strip owns the × + title (the chassis's default × is re-seated here). */}
       <div className="settingswindow-toolbar">
+        <span className={`settingswindow-title ${text.footnote.emphasized}`}>{title}</span>
         <button type="button" className="settingswindow-close" aria-label="Close" onClick={close}>
           <Icon name="x" size={14} />
         </button>
-        <span className={`settingswindow-title ${text.footnote.emphasized}`}>{title}</span>
       </div>
       <div className="settingswindow-body">
         <SidePane

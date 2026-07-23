@@ -20,6 +20,8 @@
   z-index: 3;
   display: flex;
   align-items: center;
+  /* NavWindow's × home: the right corner — the title rides just left of it. */
+  justify-content: flex-end;
   gap: 6px;
   height: var(--pgpreview-toolbar-h);
   padding: 0 calc(var(--glass-inset) + 6px);
@@ -51,11 +53,12 @@
   display: none;
 }
 
+/* Full top-to-bottom, the NavWindow rail treatment — the toolbar floats OVER the body, so the
+   rail's glass runs the window's whole height and only the main column clears the strip. */
 .settingswindow-body {
   display: flex;
   flex: 1;
   min-height: 0;
-  margin-top: var(--pgpreview-toolbar-h);
 }
 
 .settingswindow-rail {
@@ -85,5 +88,5 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 4px var(--glass-inset, 12px) 8px;
+  padding: var(--pgpreview-toolbar-h) var(--glass-inset, 12px) 8px;
 }
