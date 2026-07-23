@@ -1,0 +1,76 @@
+// The Contexts registry contract — `.nexus/contexts.json` is the one identity source
+// (id, title, singular, icon per Context); member files speak bracketed TITLE keys only.
+// Pure: no fs, no React — both processes import it.
+
+import { z } from 'zod'
+import type { NexusLabels } from './types'
+
+export type ContextDef = { id: string; title: string; singular: string; icon?: string }
+
+/** Array position IS the display order — no ordinal semantics anywhere. */
+export type ContextsRegistry = { contexts: ContextDef[] }
+
+/** The seeded three keep these reserved ids on BOTH fresh-create and migration, anchoring
+ *  legacy bare-ULID `tierN` resolution; user-created Contexts mint ULIDs. */
+export const RESERVED_CONTEXT_IDS = ['_tier1', '_tier2', '_tier3'] as const
+
+export const contextsRegistry: z.ZodType<ContextsRegistry> = z.looseObject({
+  contexts: z.array(
+    z.looseObject({
+      id: z.string().min(1),
+      title: z.string().min(1),
+      singular: z.string().min(1),
+      icon: z.string().optional(),
+    }),
+  ),
+})
+
+/** A Context title → its bracketed frontmatter/JSON root key. Always written quoted on disk
+ *  (unquoted `[…]:` parses as a YAML flow-sequence complex key and never registers). */
+export function contextKey(title: string): string {
+  return `[${title}]`
+}
+
+/** '[Projects]' → 'Projects'; anything unbracketed, empty, or with interior brackets → null. */
+export function parseContextKey(key: string): string | null {
+  if (key.length < 3 || !key.startsWith('[') || !key.endsWith(']')) return null
+  const inner = key.slice(1, -1)
+  return inner.includes('[') || inner.includes(']') ? null : inner
+}
+
+/** Context titles follow the shared file-basename rules (titles name folders under
+ *  `.nexus/contexts/`) plus the bracket ban — brackets are the key sigil (registry-side
+ *  enforcement only; Page/Space titles may still contain them). */
+export function invalidContextTitle(title: string): boolean {
+  const trimmed = title.trim()
+  return (
+    !trimmed ||
+    title.includes('[') ||
+    title.includes(']') ||
+    title.includes('/') ||
+    title.includes('\\') ||
+    title.includes('\0') ||
+    trimmed === '.' ||
+    trimmed === '..'
+  )
+}
+
+/** Read-side value coercion before any registry match: an outside write of `- 2024` / `- true`
+ *  parses as number/boolean and must still match a Space titled "2024"; NFD input must match
+ *  NFC titles. Both sides of every comparison pass through here. */
+export function normalizeContextValue(raw: unknown): string {
+  return String(raw).trim().toLowerCase().normalize('NFC')
+}
+
+/** The fresh-nexus registry: titles from the tier LabelPairs' plurals, singulars from their
+ *  singular halves, reserved ids in tier order. */
+export function seededRegistry(labels: NexusLabels): ContextsRegistry {
+  const pairs = [labels.area, labels.topic, labels.project]
+  return {
+    contexts: pairs.map((pair, i) => ({
+      id: RESERVED_CONTEXT_IDS[i],
+      title: pair.plural,
+      singular: pair.singular,
+    })),
+  }
+}
