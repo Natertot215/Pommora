@@ -254,7 +254,7 @@ function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
   }
 }
 
-/** Calendar-day truncation for date `is` (B-7): both sides compared by their ISO date component —
+/** Calendar-day truncation for date `is`: both sides compared by their ISO date component —
  *  never exact-ms equality (a stored T14:30 must match its picked bare day). String truncation, not
  *  Date math: the stored day IS the authored day regardless of the viewer's timezone. */
 const dayOf = (iso: string): string => iso.slice(0, 10)
@@ -311,7 +311,7 @@ function evaluateCheckbox(v: PropertyValue, op: Op, expected: Expected): boolean
 }
 
 /** The one set-membership core for multi_select AND id-lists (tiers/context). An empty `want` on
- *  the any-shaped op passes — a mid-authoring empty chip set never blanks the table (B-6);
+ *  the any-shaped op passes — a mid-authoring empty chip set never blanks the table;
  *  contains_all passes empty for free ([].every()). Returns undefined for ops it doesn't own, so
  *  each caller keeps its own single-operand/presence branches. */
 function matchesSet(xs: string[], op: Op, want: string[]): boolean | undefined {
@@ -333,7 +333,7 @@ function evaluateText(v: PropertyValue, op: Op, expected: Expected, values?: str
     case FILTER_OPS.isNotEmpty:
       return !(s === null || s === '')
     case FILTER_OPS.is:
-      if (values?.length) return s === null ? true : values.includes(s) // any-of (B-5)
+      if (values?.length) return s === null ? true : values.includes(s) // any-of
       return s === null || expected == null ? true : s === expected
     case FILTER_OPS.isNot:
       if (values?.length) return s === null ? true : !values.includes(s) // none-of

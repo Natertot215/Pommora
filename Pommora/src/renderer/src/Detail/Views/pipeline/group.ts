@@ -280,7 +280,7 @@ function structural(
   )
 }
 
-/** Cards variant (E-2: cards never indent): each TOP-LEVEL set is ONE flat band — its whole subtree's
+/** Cards variant (cards never indent): each TOP-LEVEL set is ONE flat band — its whole subtree's
  *  pages roll into a single sorted items list with no nested children, so a manual reorder spans the
  *  whole band instead of snapping back within a sub-set. Loose root pages stay the ungrouped tail. */
 function structuralFlat(
@@ -314,7 +314,7 @@ function structuralFlat(
   )
 }
 
-/** Sort by Location (E-4): resolve structurally-flat, then concatenate every band's items — set
+/** Sort by Location: resolve structurally-flat, then concatenate every band's items — set
  *  bands in tree order plus the root tail per `placement` — into ONE headerless, force-open
  *  UNGROUPED band. Location order without the bands; the sorter still ranks within. */
 function locationFlat(
@@ -330,7 +330,7 @@ function locationFlat(
 }
 
 /** Composite collapse key for a sub-group region — set ids are ULIDs, never containing `/`, so
- *  one set's collapse never bleeds into its twin bucket in another set (D-11a). */
+ *  one set's collapse never bleeds into its twin bucket in another set. */
 export const subGroupKey = (setId: string, bucket: string): string => `${setId}/${bucket}`
 
 /** Location + property Sub-Group: each TOP-LEVEL set stays a band, its whole subtree's pages
@@ -448,13 +448,13 @@ export function resolveGroups(
   locationFlatten = false,
 ): ResolvedGroup[] {
   const collapsedSet = new Set(collapsed)
-  // Sort by Location (E-4) forces structural resolution and flattens every band into one — it wins
+  // Sort by Location forces structural resolution and flattens every band into one — it wins
   // over a property group (mutually exclusive) and over collapse state (force-open).
   if (locationFlatten) return locationFlat(rows, setTree, sorter, placement)
   if (group?.kind === 'flat') return flat(rows, sorter, collapsedSet)
   if (!groupsStructurally(group, schema))
     return property(rows, group as PropertyGroup, schema, sorter, collapsedSet, placement)
-  // Cards flatten each top-level set's subtree into one band (E-2), so their manual order spans it.
+  // Cards flatten each top-level set's subtree into one band, so their manual order spans it.
   if (flattenStructural) return structuralFlat(rows, setTree, sorter, collapsedSet, placement)
   const t = subGroup ? declaredType(subGroup.property_id, schema) : undefined
   if (subGroup && t !== undefined && GROUPABLE.has(t))

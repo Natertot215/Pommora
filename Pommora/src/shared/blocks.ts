@@ -1,8 +1,8 @@
-// The block document — the host-agnostic contract a BlockHost carries (D-2/D-3):
+// The block document — the host-agnostic contract a BlockHost carries:
 // a SurfacePM layout tree under `layout`, tagged-union tile payloads under
 // `blocks` (the Swift-reserved key, now modeled), and the host lock under
-// `blocks_locked` (G-3). Entries ride RAW through reads and writes so foreign or
-// future tile types survive rewrites (E-1); `knownBlock` is the read lens typing
+// `blocks_locked`. Entries ride RAW through reads and writes so foreign or
+// future tile types survive rewrites; `knownBlock` is the read lens typing
 // the entries this build understands. The layout's raw wire schemas live here so
 // main and the renderer validate one shape; the renderer's SurfacePM codec owns
 // the repair pass on top.
@@ -56,8 +56,8 @@ export const rawLayoutSchema = z.object({
  *  Space 2×2 seed share this one value. */
 export const NEW_TILE_H = 160
 
-/** The BlockHost seam (D-2): which entity's sidecar holds the doc. The homepage
- *  singleton is the dev host (G-12); real hosts extend this union. */
+/** The BlockHost seam: which entity's sidecar holds the doc. The homepage
+ *  singleton is the dev host; real hosts extend this union. */
 export type BlockHostRef = { kind: 'homepage' }
 
 export function coerceBlockHost(raw: unknown): BlockHostRef | null {
@@ -66,24 +66,24 @@ export function coerceBlockHost(raw: unknown): BlockHostRef | null {
     : null
 }
 
-/** Per-tile chassis style (G-14): borderless hides the border until you reach for
+/** Per-tile chassis style: borderless hides the border until you reach for
  *  it — border/handle hover, drag, resize — and a locked host pins it hidden. */
 export type BlockStyle = 'bordered' | 'borderless'
 const styleField = z.enum(['bordered', 'borderless']).optional().catch(undefined)
 
-/** Markdown block: body lives in `<id>.md` inside the host's own folder (D-11). */
+/** Markdown block: body lives in `<id>.md` inside the host's own folder. */
 export interface MarkdownBlockEntry {
   id: string
   type: 'markdown'
   style?: BlockStyle
-  /** Per-tile content lock (B-5): frozen prose can't be entered for editing. Absent = unlocked. */
+  /** Per-tile content lock: frozen prose can't be entered for editing. Absent = unlocked. */
   locked?: boolean
-  /** Per-tile Scale (G-10): a discrete zoom factor over the tile's natural size. Absent = 1.0. */
+  /** Per-tile Scale: a discrete zoom factor over the tile's natural size. Absent = 1.0. */
   zoom?: number
 }
 
-/** Page embed (H-2): a scrollable, editable window onto the real page. `banner` /
- *  `title` are the chrome toggles (absent = shown, per G-4). */
+/** Page embed: a scrollable, editable window onto the real page. `banner` /
+ *  `title` are the chrome toggles (absent = shown). */
 export interface PageBlockEntry {
   id: string
   type: 'page'
@@ -91,14 +91,14 @@ export interface PageBlockEntry {
   style?: BlockStyle
   banner?: boolean
   title?: boolean
-  /** Per-tile content lock (B-5): a frozen page embed can't be entered for editing. Absent = unlocked. */
+  /** Per-tile content lock: a frozen page embed can't be entered for editing. Absent = unlocked. */
   locked?: boolean
-  /** Per-tile Scale (G-10): a discrete zoom factor over the tile's natural size. Absent = 1.0. */
+  /** Per-tile Scale: a discrete zoom factor over the tile's natural size. Absent = 1.0. */
   zoom?: number
 }
 
-/** One view a view-embed tile carries (D-5a): its own source container + the copied
- *  config (D-12: snapshotted at pick time, never synced). The config's `id` is
+/** One view a view-embed tile carries: its own source container + the copied
+ *  config (snapshotted at pick time, never synced). The config's `id` is
  *  payload-local, minted at copy — never the source view's id and never the
  *  DEFAULT_VIEW_ID mint sentinel; both are live keys outside the payload. */
 export interface EmbeddedView {
@@ -106,8 +106,8 @@ export interface EmbeddedView {
   config?: unknown
 }
 
-/** View embed (H-4/H-5): `views` is the switcher's list; `active` indexes into it. The header
- *  chrome follows the page embed's absent-=-shown convention (G-4) — `title` hides the title row,
+/** View embed: `views` is the switcher's list; `active` indexes into it. The header
+ *  chrome follows the page embed's absent-=-shown convention — `title` hides the title row,
  *  `icon` the view icon beside it — and the switcher reuses the container presentation vocabulary
  *  (`view_button` icon/labeled pills, `view_style` toolbar/dropdown), defaulting labeled + toolbar. */
 export interface ViewBlockEntry {
@@ -123,10 +123,10 @@ export interface ViewBlockEntry {
   title_level?: number
   view_button?: ViewButton
   view_style?: ViewStyle
-  /** B-5 per-tile config lock: freezes this embed's view config + view CRUD (data interaction stays
+  /** Per-tile config lock: freezes this embed's view config + view CRUD (data interaction stays
    *  live). The SettingsPane footer lock writes it; absent = unlocked. */
   locked?: boolean
-  /** Per-tile Scale (G-10): keeps the `BlockEntry` union uniform so `.zoom` reads typecheck at
+  /** Per-tile Scale: keeps the `BlockEntry` union uniform so `.zoom` reads typecheck at
    *  un-narrowed sites — view tiles don't surface Scale yet (the row is `type !== 'view'` gated). */
   zoom?: number
 }
@@ -152,7 +152,7 @@ const pageEntry = z.looseObject({
   locked: lockedField,
   zoom: zoomField,
 })
-// Elements are looseObjects too — a strict element shape would strip nested foreign keys (E-1).
+// Elements are looseObjects too — a strict element shape would strip nested foreign keys.
 const embeddedView = z.looseObject({
   source_id: z.string().min(1),
   config: z.unknown().optional(), // zod 4 treats a bare unknown() key as required
@@ -189,7 +189,7 @@ export interface DrillPickItem<T> {
 /** The Link Page drill resolves a page id. */
 export type PagePickerItem = DrillPickItem<string>
 
-/** The Link View drill resolves a source view to copy, or + Custom on a container (G-9/D-5a). */
+/** The Link View drill resolves a source view to copy, or + Custom on a container. */
 export interface ViewPick {
   source_id: string
   view_id?: string
@@ -198,7 +198,7 @@ export interface ViewPick {
 export type ViewPickerItem = DrillPickItem<ViewPick>
 
 /** Type one raw `blocks[]` entry, or null for shapes this build doesn't know —
- *  the caller keeps the raw value either way (E-1: never strip, render inert). */
+ *  the caller keeps the raw value either way (never strip, render inert). */
 export function knownBlock(raw: unknown): BlockEntry | null {
   const parsed = knownEntry.safeParse(raw)
   return parsed.success ? (parsed.data as BlockEntry) : null
@@ -224,7 +224,7 @@ export type BlocksSaveResult = { ok: true } | { ok: false; error: string }
 
 /** Main-side gate for a blocks:save patch (the views:save convention) — a shape CHECK
  *  only: the ORIGINAL values are what get written, since zod's parse output strips
- *  unknown keys and foreign keys must survive (E-1). Returns the problem, or null. */
+ *  unknown keys and foreign keys must survive. Returns the problem, or null. */
 export function blockPatchProblem(patch: BlockDocPatch): string | null {
   if ('layout' in patch && !rawLayoutSchema.safeParse(patch.layout).success)
     return 'Malformed layout.'

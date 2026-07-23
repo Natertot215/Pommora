@@ -17,10 +17,10 @@ export function resolveView(input: {
   setTree: SetTreeNode[]
   view: SavedView
   schema: PropertyDefinition[]
-  /** Per-machine manual row order (viewOrders cache) — the lowest-priority sort tiebreaker (D-5/D-6).
+  /** Per-machine manual row order (viewOrders cache) — the lowest-priority sort tiebreaker.
    *  Pass it only when the view is sorted or grouped; an unsorted, ungrouped view uses page_order. */
   manualOrder?: string[]
-  /** Cards flatten each top-level set's subtree into one band (E-2), so structural grouping resolves
+  /** Cards flatten each top-level set's subtree into one band, so structural grouping resolves
    *  flat — one group per top set, its whole subtree in items — and a manual reorder spans the band. */
   flattenStructural?: boolean
   /** Registry Context ids (display order) — context columns + their filter typing. */
@@ -38,7 +38,7 @@ export function resolveView(input: {
   const columns = resolveColumns(view, schema, contextIds)
   const filtered = applyFilter(rows, view.filter, schema, setTree, contextIds)
   const sorter = makeSorter(view.sort, schema, manualOrder)
-  // Location order mirrors the filesystem: group_order is preserved on the view but ignored (C-1a).
+  // Location order mirrors the filesystem: group_order is preserved on the view but ignored.
   // The mode is structural-only — and "structural" is the EFFECTIVE mode (a dead-property grouping
   // renders structurally), so the location gate + sub-group thread whenever the table draws sets.
   const structuralGrouping = groupsStructurally(view.group, schema)

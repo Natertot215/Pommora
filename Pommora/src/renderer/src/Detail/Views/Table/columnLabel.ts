@@ -1,4 +1,4 @@
-// Renderer-side resolution of a column id → its human header label (Part 2 A-2). User properties
+// Renderer-side resolution of a column id → its human header label. User properties
 // resolve through the stored schema; context columns through the registry (the contextIdentity
 // seam); built-in reserved columns carry fixed labels. An unknown id (a stale prop_* reference)
 // falls back to the id itself, never throwing — a single bad column never breaks the header row.

@@ -13,7 +13,7 @@ export interface BannerOwner {
   name: string
   banner?: string
   icon?: string
-  /** The banner-heading icon is hidden (G-4 show/hide). Absent/false = shown. */
+  /** The banner-heading icon is hidden (show/hide). Absent/false = shown. */
   headingIconHidden?: boolean
 }
 

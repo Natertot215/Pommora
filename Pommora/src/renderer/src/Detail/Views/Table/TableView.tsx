@@ -132,7 +132,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const load = useSession((s) => s.load)
   const saveView = useSaveView(source, load)
   const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
-  // Optimistic property patches keyed by page id (cross-group reassignment, D-4): the loaded values
+  // Optimistic property patches keyed by page id (cross-group reassignment): the loaded values
   // never re-read on a write, so a reassigned row re-groups only because this patch feeds the pipeline.
   const [valueOverride, setValueOverride] = useState<Record<string, PageFrontmatter> | null>(null)
   const [viewOrders, setViewOrders] = useState<Record<string, string[]>>({})
@@ -165,21 +165,21 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const [hiddenOverride, setHiddenOverride] = useState<string[] | null>(null)
   // The optimistic band-order patch from a band drop — { group_order } (structural) or { group }
   // (property). Rides liveView so a sibling persist can't fold the stale on-disk order back over a
-  // fresh drag (F1), and deliberately does NOT reset on [source]: the reparent-triggered load()
-  // swaps source identity mid-flight (HIGH-3); key={source.id} already remounts real switches.
+  // fresh drag, and deliberately does NOT reset on [source]: the reparent-triggered load()
+  // swaps source identity mid-flight; key={source.id} already remounts real switches.
   const [bandOverride, setBandOverride] = useState<Partial<SavedView> | null>(null)
   const [manualOverride, setManualOverride] = useState<string[] | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(
     () => new Set(view.collapsed_groups ?? []),
   )
   const [collapsing, setCollapsing] = useState<string | null>(null)
-  // Columns whose tracks are sliding to a wider per-style min after a look change (E-13): enables the
+  // Columns whose tracks are sliding to a wider per-style min after a look change: enables the
   // same grid-template-columns transition as Hide for one beat, cleared on transitionend. Populated by
   // a render-phase detection (below) so it fires for EVERY look-write path — the column menu AND the
   // property pane — through one mechanism, not a per-call-site trigger.
   const [sliding, setSliding] = useState<ReadonlySet<string>>(() => new Set())
   const prevLooks = useRef<Record<string, string | undefined>>({})
-  // Live column smooth-shift (A-4): the dragged column index + the slot it's over. Deliberately
+  // Live column smooth-shift: the dragged column index + the slot it's over. Deliberately
   // NOT the cursor delta — that changes per pointermove and rides a grid-level CSS var instead
   // (--col-drag-x), so a drag frame never re-renders the unmemoized row/cell tree. Transient —
   // set on grab + slot flips, cleared on drop; column indices into the resolved `columns`.
@@ -198,7 +198,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // check compares THIS against the box — a scrollWidth read floors at clientWidth, so any
   // is-content-bigger comparison built on it can latch.
   const reflowRef = useRef(0)
-  // The one in-cell editing surface (A-2/A-6 picker · A-8/A-12 editor). Cleared on dismiss; the
+  // The one in-cell editing surface (picker · editor). Cleared on dismiss; the
   // exit presence keeps a PICKER mounted through its Bloom-out (reading the last target from the
   // ref while `editing` is already null) — the editor unmounts instantly.
   const [editing, setEditing] = useState<{
@@ -262,7 +262,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       ...bandOverride,
     }
   }, [view, orderOverride, hiddenOverride, bandOverride])
-  // Manual row order (viewOrders cache) is the sort tiebreaker (D-5/D-6) — passed to the pipeline when
+  // Manual row order (viewOrders cache) is the sort tiebreaker — passed to the pipeline when
   // the view is sorted or grouped (an unsorted, ungrouped view otherwise reads canonical page_order). A
   // live `manualOverride` also feeds it so an unsorted-flat reorder shows instantly (before its page_order
   // write round-trips the fs) rather than snapping back.
@@ -271,7 +271,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const sortKeys = useMemo(() => resolvedSortCount(liveView.sort, schema), [liveView.sort, schema])
   const sortedOrGrouped = sortKeys > 0 || liveView.group != null
   const manualOrder = resolveManualOrder(sortedOrGrouped, manualOverride, viewOrders[view.id])
-  // The grouped property + whether a cross-group drop can reassign it (D-4): status/select/checkbox map
+  // The grouped property + whether a cross-group drop can reassign it: status/select/checkbox map
   // a group key straight to a value; a date bucket doesn't, so date grouping isn't reassignable.
   // The property lives in TWO homes: top-level property grouping, or the view-level sub-group
   // bucketing inside structural bands.
@@ -289,7 +289,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
   const canReassign = groupPropType !== undefined && REASSIGNABLE_GROUP_TYPES.has(groupPropType)
   // Within-group reorder is possible whenever the order is manually meaningful — anything but a multi-key
-  // sort (D-3). Unsorted structural/flat views write the canonical on-disk page_order (reorderTo → movePage);
+  // sort. Unsorted structural/flat views write the canonical on-disk page_order (reorderTo → movePage);
   // single-sorted / property-grouped views write the per-view manual tiebreaker (viewOrders). Cross-group
   // reassignment is independent of the sort count.
   const canReorderWithin = sortKeys < 2
@@ -360,7 +360,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // The band drop router (already classified by BandDnd): structural reorder → the view-level
   // group_order (merged over the FULL tree so collapsed siblings survive) · property reorder →
   // group.order + manual (its first UI writer) · reparent → moveSet with the destination's CURRENT
-  // fs children + the moved id appended (C-4 — the visual slot persists only in group_order).
+  // fs children + the moved id appended (the visual slot persists only in group_order).
   const commitBand = (patch: Partial<SavedView>): void => {
     setBandOverride((prev) => ({ ...prev, ...patch }))
     persistView(patch)
@@ -471,7 +471,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
 
   // Persist the saved view + every live override (order + collapse) + a patch, so no one mutation
   // clobbers another's unsaved state — the exact Swift reorder/resize data-loss H-2 guards against.
-  // Adopt-only (G-1): if this fires while the entry-mint is still in flight, it awaits the minted id and
+  // Adopt-only: if this fires while the entry-mint is still in flight, it awaits the minted id and
   // saves against it — never mints a rival default from its own sentinel. skipRefetch defaults true:
   // order/width/align/collapse/style all show through a live override, so a refetch would only repaint
   // redundantly. A patch with NO optimistic layer (hide_column_icons) passes false so it actually reflects.
@@ -515,7 +515,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       },
     })
   }
-  // Hide animates the column shut on the disclosure token (E-11): setCollapsing drives its grid track to
+  // Hide animates the column shut on the disclosure token: setCollapsing drives its grid track to
   // 0 (colWidth → 0, animated via .col-hiding); commitHide fires on the header's grid-template-columns
   // transitionend, dropping the column from the pipeline + persisting.
   const hideColumn = (id: string): void => {
@@ -528,7 +528,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     setHiddenOverride(hidden)
     persistView({ hidden_properties: hidden })
   }
-  // A column's resolved alignment (E-5..E-7): the live override, else the saved value / E-6 type default.
+  // A column's resolved alignment: the live override, else the saved value / type default.
   const colAlign = (id: string): ColumnAlign => alignOverride[id] ?? alignFor(id, schema, liveView)
   // A column header's type glyph, gated by the per-view Column Icons toggle (`hide_column_icons`),
   // which defaults ON (icons hidden). Tier columns wear the context glyph; a schema-less column
@@ -552,7 +552,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       </span>
     )
   }
-  // A column's resolved display style (B-1..B-5): the live override keys, over the saved per-view
+  // A column's resolved display style: the live override keys, over the saved per-view
   // entry, over the type default.
   const colStyle = (id: string): ColumnStyle => ({
     ...styleFor(id, schema, liveView),
@@ -578,7 +578,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // cell render, the cell menu, and the header menu share so all three agree on when Bar is offered.
   const numberBarCapable = (colId: string, type: ReturnType<typeof declaredType>): boolean =>
     type === 'number' && numberDivisor(schema.find((d) => d.id === colId)) !== undefined
-  // Right-click a header → native column menu (E-1/E-5): Align + Style + Hide. Title is the primary
+  // Right-click a header → native column menu: Align + Style + Hide. Title is the primary
   // column — fixed left, not hideable, no style — so it pops nothing. The style ctx rides only for a
   // schema-declared property type; the shared builder decides which types actually get items.
   const openHeaderMenu = async (
@@ -610,7 +610,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       if (parsed) setColumnStyle(id, parsed.key, parsed.value)
     }
   }
-  // One typed property write (A-12's commit path): patch the row's loaded frontmatter optimistically
+  // One typed property write: patch the row's loaded frontmatter optimistically
   // (loadValues never re-runs mid-session), then setProperty — the reassignRow pattern.
   const commitCellValue = (row: ViewRow, propertyId: string, value: PropertyValue | null): void => {
     const patched: PageFrontmatter = {
@@ -633,13 +633,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const commitTierValue = (row: ViewRow, colId: string, ids: string[]): void => {
     writeContextValue(row, colId, ids, row.frontmatter, setValueOverride, mutate)
   }
-  // A chip's hover × commits whatever remains after that chip (Phase 3): the picker's exact
+  // A chip's hover × commits whatever remains after that chip: the picker's exact
   // routing — a reserved tier column through setTier, everything else through setProperty.
   const removeCellValue = (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null): void => {
     if (col.kind === 'tier' && next?.kind === 'context') commitTierValue(row, col.id, next.value)
     else commitCellValue(row, col.id, next)
   }
-  // Single-click acts per the cell's type (A-2/A-4/A-6): checkbox-look status cycles its group,
+  // Single-click acts per the cell's type: checkbox-look status cycles its group,
   // checkbox toggles, status/select/multi/context open the picker. Acting stops propagation so the
   // row's select doesn't also fire; anything else bubbles.
   const onCellClick = (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent): void => {
@@ -649,9 +649,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     // Capture the clicked cell for the table-level picker's placement (harmless on non-picker clicks).
     triggerElRef.current = e.currentTarget as HTMLElement
     if (col.kind === 'title') {
-      // The ONLY navigate (A-7): row-click narrowed to the title cell; row background is a no-op.
-      // A page-preview Collection routes to the floating preview instead (B-1); ⌘-click is always
-      // the explicit full-page bypass, to a new tab (I-19).
+      // The ONLY navigate: row-click narrowed to the title cell; row background is a no-op.
+      // A page-preview Collection routes to the floating preview instead; ⌘-click is always
+      // the explicit full-page bypass, to a new tab.
       e.stopPropagation()
       const owner =
         source.kind === 'collection'
@@ -710,7 +710,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (v.kind === 'file') return v.value[0]?.path ?? ''
     return ''
   }
-  // Map the editor's raw text to its typed write (A-12): number parses (a lone '-'/'.' reverts),
+  // Map the editor's raw text to its typed write: number parses (a lone '-'/'.' reverts),
   // url validates + normalizes, file edits the FIRST ref's path (multi-file editing is the picker
   // Prospect), title renames. Empty input clears the value.
   const commitEditorText = (row: ViewRow, col: ResolvedColumn, raw: string): void => {
@@ -886,7 +886,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       />
     )
   }
-  // Right-click a cell → its native menu (A-13: always a menu, never an action). Title = page meta;
+  // Right-click a cell → its native menu (always a menu, never an action). Title = page meta;
   // style-bearing types = the COLUMN's Style radios; link/file add Edit; picker-based cells add
   // Clear (status gets Style + Clear; select/multi/context/tier get Clear alone).
   const openCellMenu = async (
@@ -935,7 +935,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
   }
 
-  // Saved widths are clamped to the type's [min, max] (Q-4) — a stale/out-of-range saved value can't
+  // Saved widths are clamped to the type's [min, max] — a stale/out-of-range saved value can't
   // squash a column below legibility or stretch it past its cap.
   const colWidth = (id: string): number =>
     collapsing === id
@@ -962,7 +962,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }),
     [columns, schema, liveView, alignOverride, styleOverride],
   )
-  // Slide detection (E-13): mark any column whose look just changed to one whose rendered width grows,
+  // Slide detection: mark any column whose look just changed to one whose rendered width grows,
   // so its track eases to the new per-style min. Render-phase + a prev-look ref, so it catches EVERY
   // look-write path — the column menu's live override AND the property pane's persisted view — through
   // this one point (the setState is guarded, so it settles in a single extra render, no loop).
@@ -1010,8 +1010,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // The cell being edited in ANY mode (picker/editor/rename) — flows to rows as a primitive for the faint
   // active-cell reveal under Hide Borders; only the editing row re-renders on open/close.
   const activeCell = editing ? { rowId: editing.rowId, colId: editing.colId } : null
-  // Row drag (E-3): the flat data-row order + each row's group key + path, feeding the drop-line DnD
-  // (tableDnd). Where you drop disambiguates (D-8) — same group reorders, a different group reassigns.
+  // Row drag: the flat data-row order + each row's group key + path, feeding the drop-line DnD
+  // (tableDnd). Where you drop disambiguates — same group reorders, a different group reassigns.
   // Memoized so a selection / resize / drag-frame render doesn't re-walk every group and rebuild both
   // Maps. Lives ABOVE the empty/loading returns — a hook after a conditional return crashes React the
   // moment the condition flips (an empty collection gaining its first page).
@@ -1029,7 +1029,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
   }, [groups])
 
-  // The sub-group drop targets: composite band key -> its set + bucket dimensions (F-2). Above the
+  // The sub-group drop targets: composite band key -> its set + bucket dimensions. Above the
   // early returns like every hook in this component (see dataRows).
   const subTargets = useMemo(() => {
     const m = new Map<string, { setId: string | null; bucket: string | null }>()
@@ -1051,7 +1051,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   reflowRef.current = reflowWidth
   const cols = `${columns.map((c) => `${colWidth(c.id)}px`).join(' ')} 1fr`
   // Lead-cell left padding for ungrouped/loose rows: --loose-inset tucks the title a touch left of the
-  // cell-padding-x column inset; each nesting layer adds one --row-indent step (J-3). The grip + chevron
+  // cell-padding-x column inset; each nesting layer adds one --row-indent step. The grip + chevron
   // live in the views gutter via absolute CSS, independent of this.
   const indent = (depth: number): string =>
     depth > 0 ? `calc(var(--loose-inset) + var(--row-indent) * ${depth})` : 'var(--loose-inset)'
@@ -1060,7 +1060,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // text inset). Its members keep the normal indent, one --row-indent step inside the header.
   const groupIndent = (depth: number): string => `calc(var(--row-indent) * ${depth})`
 
-  // Column smooth-shift (A-4): grab a header → the whole column (header + every body cell + divider)
+  // Column smooth-shift: grab a header → the whole column (header + every body cell + divider)
   // slides with the cursor, neighbours shifting by the dragged column's width to open the gap, the track
   // order committing on drop. Pointer-captured to the header; move/up on window (the header re-renders
   // mid-drag, so a node-bound listener would drop). `zoom` divides the screen delta back into the grid's
@@ -1170,11 +1170,11 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // the grid-level --col-drag-x var on the .col-dragging cells (per-move, no state).
   const colTransform = (ci: number): string | undefined => gapShift(dragShift, ci)
 
-  // Cross-group drop (D-4): write the dragged page's grouped property to the destination group's value
+  // Cross-group drop: write the dragged page's grouped property to the destination group's value
   // (the no-value band clears it), patching the loaded values now so the row re-groups before the write
   // round-trips (loadValues never re-runs mid-session).
   // Under sub-grouping the destination key is COMPOSITE (set/bucket), so the drop carries two
-  // dimensions (F-2): a bucket change writes the property; a set change is a REAL movePage into
+  // dimensions: a bucket change writes the property; a set change is a REAL movePage into
   // that set — the property write lands first, while the page still has its current path.
   const reassignRow = (pageId: string, destGroupKey: string): void => {
     const path = rowPath.get(pageId)
@@ -1299,7 +1299,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     // Headered group: the head stays put; its members live in a Reveal so collapse/expand animates the
     // rows (grid-rows 0fr↔1fr) on the same --disclosure motion as the chevron, and collapsed rows leave
     // the DOM. Each row keeps its own grid reading the inherited --cols, so wrapping never breaks the
-    // column alignment (A-2).
+    // column alignment.
     return [
       <TableGroupBand
         key={`gb-${g.key}`}
@@ -1364,9 +1364,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
             )}
             style={{ minWidth: reflowWidth, ['--cols']: cols } as React.CSSProperties}
           >
-            {/* Header band — each header grabs to smooth-shift its whole column (A-4); the filler sits
+            {/* Header band — each header grabs to smooth-shift its whole column; the filler sits
               outside the columns, inert. The transitionend on the animated track set commits a column
-              hide (E-11) — transform transitions (the drag) carry a different propertyName, so they pass. */}
+              hide — transform transitions (the drag) carry a different propertyName, so they pass. */}
             <div
               className="table-head"
               onTransitionEnd={(e) => {
@@ -1396,7 +1396,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
                 column's right divider (Table.css). Empty but load-bearing; don't remove. */}
               <div className="cell-filler" aria-hidden="true" />
             </div>
-            {/* Rows (E-3) — the drop-line DnD (tableDnd) wraps the whole grid; band heads aren't row
+            {/* Rows — the drop-line DnD (tableDnd) wraps the whole grid; band heads aren't row
               drag items. */}
             {groups.flatMap((g) => renderRows(g, 0, true))}
           </div>
@@ -1408,9 +1408,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   )
 }
 
-/** One column header: the whole cell is the grab surface for the smooth-shift reorder (A-4 — `dragging`
+/** One column header: the whole cell is the grab surface for the smooth-shift reorder (`dragging`
  *  applies the ghost veil + solid band, `transform` slides it with the cursor) plus a right-edge resize
- *  strip (H-2). The strip stops propagation so a resize never starts a reorder; the resize pointer delta
+ *  strip. The strip stops propagation so a resize never starts a reorder; the resize pointer delta
  *  is divided by the live zoom so a screen drag maps onto the grid's pre-zoom track width. */
 function ColumnHeader({
   id,
@@ -1476,7 +1476,7 @@ function ColumnHeader({
   )
 }
 
-/** One data row + its hover-revealed drag grip (E-3 / H-5). The grip sits in the lead cell's gutter
+/** One data row + its hover-revealed drag grip. The grip sits in the lead cell's gutter
  *  lane — the same slot the group disclosure chevron occupies — so handles align with the chevrons and
  *  the row content lines up with the group headers. useTableRowDrag mutes the row while it's lifted. */
 /** One stable per-table handler set for the memoized rows — identities never change; calls read
@@ -1548,7 +1548,7 @@ const DataRow = memo(function DataRow({
       )}
       // The whole row is a drag surface, not just the gutter grip — grabbing ANY cell arms the reorder, so a
       // horizontal scroll that pushes the grip out of reach can't block it. A press-release (no move past
-      // ACTIVATION) is each CELL's gesture (A-7: only the title navigates; the row background is a no-op);
+      // ACTIVATION) is each CELL's gesture (only the title navigates; the row background is a no-op);
       // only a real drag reorders. Gated with the grip when reorder is disabled.
       {...(dragDisabled ? {} : handle)}
     >
