@@ -63,6 +63,18 @@ describe('renameContextOp', () => {
     expect(await readJournal(root)).toBeNull()
   })
 
+  it('merges + dedupes into a pre-existing inert key wearing the new title', async () => {
+    await writeFile(
+      task(),
+      JSON.stringify({ id: 't1', '[Projects]': ['Pommora'], '[Ventures]': ['Other', 'Pommora'] }),
+    )
+    const r = await renameContextOp(root, '_tier3', 'Ventures')
+    expect(r.ok).toBe(true)
+    const t = JSON.parse(await readFile(task(), 'utf8'))
+    expect(t['[Ventures]']).toEqual(['Other', 'Pommora'])
+    expect('[Projects]' in t).toBe(false)
+  })
+
   it('rejects a taken or bracketed title without journaling', async () => {
     expect((await renameContextOp(root, '_tier3', 'Classes')).ok).toBe(false)
     expect((await renameContextOp(root, '_tier3', 'No[pe')).ok).toBe(false)
