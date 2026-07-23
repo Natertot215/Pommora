@@ -60,8 +60,11 @@ export async function showContextMenu(
 
   const run = async (req: MutateRequest): Promise<void> => {
     const res = await handleMutate(req, deps)
-    if (res.ok) onChanged()
-    else
+    if (res.ok) {
+      onChanged()
+      // A create lands in its rename field — same contract as the renderer's own create menus.
+      if (res.created && !win.isDestroyed()) win.webContents.send('begin-rename', res.created.path)
+    } else
       await dialog.showMessageBox(win, {
         type: 'error',
         message: 'Couldn’t complete that action.',

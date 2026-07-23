@@ -17,6 +17,7 @@ import { PreviewWindow } from './PagePreview/PreviewWindow'
 import { FloatingPane } from './design-system/components/FloatingPane/FloatingPane'
 import { ContextSettings } from './Detail/Settings/ContextSettings'
 import { SpaceSettings } from './Detail/Settings/SpaceSettings'
+import { HoverCreate } from './Components/HoverCreate'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
 import { Icon } from '@renderer/design-system/symbols'
@@ -28,6 +29,7 @@ export function App(): React.JSX.Element {
   // once at store creation), so selecting them individually is safe.
   const status = useSession((s) => s.status)
   const tree = useSession((s) => s.tree)
+  const sidebarMode = useSession((s) => s.personalization.sidebarMode ?? 'collections')
   const error = useSession((s) => s.error)
   const sidebarVisible = useSession((s) => s.sidebarVisible)
   const sidebarWidth = useSession((s) => s.sidebarWidth)
@@ -258,6 +260,21 @@ export function App(): React.JSX.Element {
         >
           <Icon name="log-out" size={18} className="flip-x" />
         </button>
+        {/* New Context — the sidebar's bottom-left hover affordance, Contexts mode only. It sits
+            on the glass (outside the scrolling nav) so it holds position while the list scrolls. */}
+        {status === 'ready' && tree && sidebarMode === 'contexts' && (
+          <HoverCreate
+            label="New Context"
+            className="contexts-create"
+            onClick={() =>
+              void useSession
+                .getState()
+                .mutate({ op: 'createContextGroup', name: 'New Context' }, (created) =>
+                  useSession.getState().beginRename(created.path),
+                )
+            }
+          />
+        )}
         {status === 'loading' && <div className="state">Loading Nexus…</div>}
         {status === 'empty' && (
           <div className="state">
