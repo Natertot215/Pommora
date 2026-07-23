@@ -31,6 +31,13 @@ export function contextKey(title: string): string {
   return `[${title}]`
 }
 
+/** A frontmatter/JSON root key the Contexts layer governs when it rewrites a root: any
+ *  bracketed key (context-shaped — malformed ones included, so a rewrite still sweeps them)
+ *  or a legacy bare `tierN`. */
+export function isGovernedContextKey(key: string): boolean {
+  return key.startsWith('[') || /^tier[123]$/.test(key)
+}
+
 /** '[Projects]' → 'Projects'; anything unbracketed, empty, or with interior brackets → null. */
 export function parseContextKey(key: string): string | null {
   if (key.length < 3 || !key.startsWith('[') || !key.endsWith(']')) return null

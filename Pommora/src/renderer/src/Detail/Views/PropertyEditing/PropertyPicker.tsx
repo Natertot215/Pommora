@@ -38,7 +38,7 @@ export const syntheticContextDef = (id: string): PropertyDefinition => ({
 })
 
 /**
- * The value dropdown every container view's status/select/multi cells share (F-2: PickerMenu for
+ * The value dropdown every container view's status/select/multi cells share (PickerMenu for
  * values, native menus for meta). Table-agnostic and stateless: props in, `onCommit(PropertyValue)`
  * out — the caller owns the write + the optimistic patch. Self-managed: PickerMenu portals to a body
  * top layer off `triggerRef` (escaping the table's overflow clip), owns its Bloom-in/out off `open`,

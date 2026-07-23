@@ -7,7 +7,12 @@
 
 import { readFile, rename } from 'node:fs/promises'
 import { join } from 'node:path'
-import { contextKey, invalidContextTitle, type ContextsRegistry } from '@shared/contexts'
+import {
+  contextKey,
+  invalidContextTitle,
+  isGovernedContextKey,
+  type ContextsRegistry,
+} from '@shared/contexts'
 import { AGENDA_SUFFIX } from '@shared/agenda'
 import { ok, fail, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
@@ -83,7 +88,7 @@ export async function sweepContextRoots(
       const next = rewrite(raw)
       if (next === null) return
       const keys = new Set([...Object.keys(raw), ...Object.keys(next)])
-      const governed = [...keys].filter((k) => k.startsWith('[') || /^tier[123]$/.test(k))
+      const governed = [...keys].filter(isGovernedContextKey)
       const modeled: Raw = {}
       for (const k of governed) if (k in next) modeled[k] = next[k]
       await atomicWriteFile(
@@ -175,7 +180,7 @@ async function settleJournal(root: string, j: RenameJournal, skipped: string[]):
 }
 
 /** Rename a Context: journal → folder rename → three-scope KEY cascade → registry title
- *  commit → journal settle (D-7a's order exactly). A live failure aborts: best-effort
+ *  commit → journal settle, in that exact order. A live failure aborts: best-effort
  *  reverse, journal cleared. */
 export async function renameContextOp(
   root: string,
@@ -274,7 +279,7 @@ export async function renameSpaceOp(
   return ok(null)
 }
 
-/** On-open replay of a crashed rename. Re-verifies before touching anything (D-7b):
+/** On-open replay of a crashed rename. Re-verifies before touching anything:
  *  the registry/folders must still map the journal's exact old→new record, and a freed,
  *  re-minted old title discards the journal rather than hijacking the new owner.
  *  Idempotent — replaying twice equals once. */

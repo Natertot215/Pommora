@@ -161,10 +161,10 @@ export interface Personalization {
   subSetPlacement?: FolderPlacement
   /** The sidebar ribbon's active mode (which content the column shows). Absent = 'collections'. */
   sidebarMode?: SidebarMode
-  /** Hide the toolbar tab bar until hovered (F-1). Absent = always shown. */
+  /** Hide the toolbar tab bar until hovered. Absent = always shown. */
   revealTabBarOnHover?: boolean
-  /** Wiki-link clicks open the Page Preview window instead of navigating (B-6). ⌘-click takes
-   *  the other route (I-19). Absent = navigate. */
+  /** Wiki-link clicks open the Page Preview window instead of navigating. ⌘-click takes
+   *  the other route. Absent = navigate. */
   connectionsOpenInPreview?: boolean
   /** Ribbon icon order below the pinned Homepage — bare icon keys, in display order. */
   ribbonOrder?: string[]
@@ -214,7 +214,7 @@ export interface PathNode extends BaseNode {
    *  owners (Collections/Sets + contexts) populate it, surfaced from the sidecar `banner` field
    *  (a page's future banner rides here too — distinct from the page-level `cover`). */
   banner?: string
-  /** The banner-heading icon is hidden (G-4 show/hide chrome), from the sidecar `heading_icon_hidden`.
+  /** The banner-heading icon is hidden (show/hide chrome), from the sidecar `heading_icon_hidden`.
    *  Absent/false = shown. */
   headingIconHidden?: boolean
 }
@@ -340,7 +340,7 @@ export interface NexusTree {
     profileSubtitle: string
   }
   /** Homepage singleton (`.nexus/homepage.json`) — its optional banner plus the board
-   *  lock (G-3): the block doc's heavy layout/blocks stay off the walk (loaded lazily by
+   *  lock: the block doc's heavy layout/blocks stay off the walk (loaded lazily by
    *  useBlockDoc), but the single `blocks_locked` boolean rides here like `banner` so the
    *  store can seed the freeze without a second read. Absent = unlocked. */
   homepage: { banner?: string; locked: boolean; headingIconHidden: boolean }
@@ -374,7 +374,7 @@ export interface NexusTree {
    *  the user's on-disk overrides, so every id always resolves to a spec. */
   commands: Record<string, string>
   /** Every registry definition, in the nexus-wide cosmetic order (order-listed first,
-   *  unlisted appended) — reserved ids included; consumers filter (E-1/E-5). */
+   *  unlisted appended) — reserved ids included; consumers filter. */
   registry: PropertyDefinition[]
 }
 
@@ -438,7 +438,7 @@ export type TabTarget = SelectTarget | NewTabSentinel
  *  no id/path, never warmed. */
 export type PreviewTabTarget = SelectTarget | { kind: 'navwindow' }
 
-/** One toolbar tab. Carries its OWN Back/Forward history (`navStack`/`navIndex`, D-7). `isPinned` is
+/** One toolbar tab. Carries its OWN Back/Forward history (`navStack`/`navIndex`). `isPinned` is
  *  never stored — it's derived from the pins set (a tab's navKey ∈ pins). Only unpinned tabs are
  *  persisted; pinned tabs are derived live from `.nexus/pins/`. */
 export interface Tab {
@@ -457,7 +457,7 @@ export interface TabSet {
 /** The `tabs:load` IPC envelope — `set` is null when no sidecar exists yet (the store seeds fresh). */
 export type TabsResult = { ok: true; set: TabSet | null } | { ok: false; error: string }
 
-/** A persisted preview tab set (H-3/H-10): targets only — ids are session-local and re-minted at
+/** A persisted preview tab set: targets only — ids are session-local and re-minted at
  *  restore; `activeIndex` points into `tabs` by strip order. */
 export interface PreviewSetRecord {
   tabs: { target: PreviewTabTarget }[]
@@ -465,8 +465,8 @@ export interface PreviewSetRecord {
 }
 
 /** The `page-previews.json` sidecar: the NavWindow flavor's one set, the per-origin page-preview
- *  sets keyed by origin page id (re-keyed on re-parent, H-6), and which preview was open (recorded
- *  for the map; launch never auto-summons, H-10). */
+ *  sets keyed by origin page id (re-keyed on re-parent), and which preview was open (recorded
+ *  for the map; launch never auto-summons). */
 export interface PreviewsFile {
   navSet: PreviewSetRecord | null
   origins: Record<string, PreviewSetRecord>
