@@ -35,10 +35,11 @@ async function creatorsFor(
         ? reg.value.contexts.find((c) => c.title === basename(parentPath))
         : undefined
       if (!def) return []
+      // "New Space" flat until the singulars rework — the per-Context singular is parked.
       return [
         {
-          label: `New ${def.singular}`,
-          req: { op: 'createSpace', contextId: def.id, name: `New ${def.singular}` },
+          label: 'New Space',
+          req: { op: 'createSpace', contextId: def.id, name: 'New Space' },
         },
       ]
     }
