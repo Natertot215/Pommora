@@ -470,9 +470,9 @@ async function walkNexus(root: string): Promise<NexusTree> {
   }))
 
   // Contexts. Registry-backed when `.nexus/contexts.json` parses (the walk never writes —
-  // seeding/migration are open-path mutations); the legacy fixed-three struct then derives
-  // from the reserved groups. Without a registry (unmigrated/raw), the legacy tier dirs
-  // read directly, as before.
+  // seeding/migration are open-path mutations). No registry (raw/unmigrated) → `contexts`
+  // is [] — the open path migrates + seeds BEFORE anything renders, so the walk never
+  // reads tier dirs itself.
   const ctxRegistryRaw = await readSidecar(contextsRegistryFile(root))
   const ctxParsed = ctxRegistryRaw ? contextsRegistrySchema.safeParse(ctxRegistryRaw) : null
   const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null

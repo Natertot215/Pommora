@@ -11,25 +11,14 @@ export const DEFAULT_NEW_NAME = 'Untitled'
 
 /** Entity kinds a mutation can target — every NodeKind except the code-keyed `saved`,
  *  plus `context` (a registry group — folder + registry entry, not a NodeKind). */
-export type MutableKind =
-  | 'page'
-  | 'collection'
-  | 'set'
-  | 'area'
-  | 'topic'
-  | 'project'
-  | 'space'
-  | 'context'
+export type MutableKind = 'page' | 'collection' | 'set' | 'space' | 'context'
 
-/** The entities that can own a banner image: Collections + Sets + the three context tiers
- *  (folder sidecars), the homepage + NavView singletons (`.nexus/homepage.json` / `.nexus/navview.json`),
- *  and a page (whose banner is the Swift-compatible `cover` field in its `.md` frontmatter). */
+/** The entities that can own a banner image: Collections + Sets + Spaces (folder sidecars),
+ *  the homepage + NavView singletons (`.nexus/homepage.json` / `.nexus/navview.json`), and a
+ *  page (whose banner is the Swift-compatible `cover` field in its `.md` frontmatter). */
 export type BannerOwnerKind =
   | 'collection'
   | 'set'
-  | 'area'
-  | 'topic'
-  | 'project'
   | 'space'
   | 'homepage'
   | 'navview'
