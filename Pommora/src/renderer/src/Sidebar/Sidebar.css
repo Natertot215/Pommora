@@ -283,6 +283,39 @@
 
 .section {
   margin-bottom: 14px;
+  /* Anchors the absolutely-positioned hover-create "+". */
+  position: relative;
+}
+
+/* Hover-create "+" — the .section-add recipe as a free-floating affordance, revealed on section
+   hover. The Contexts mount sits bottom-left, under the last group. */
+.hover-create {
+  -webkit-app-region: no-drag;
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--label-tertiary);
+  font-size: 15px;
+  line-height: 1;
+  cursor: default;
+  padding: 0 2px;
+  border-radius: 5px;
+  opacity: 0;
+  transition:
+    opacity 0.12s ease,
+    background 0.12s ease;
+}
+.section:hover .hover-create,
+.hover-create:focus-visible {
+  opacity: 1;
+}
+.hover-create:hover {
+  background: var(--state-hover);
+}
+.contexts-create {
+  position: absolute;
+  left: 8px;
+  bottom: -12px;
 }
 
 /* Type (control / semibold) comes from the text.control.semibold alias composed in SectionHeader —
