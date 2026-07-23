@@ -1,91 +1,57 @@
-### Contexts Overview
+### Contexts & Spaces Overview
 
-The organization layer. Three **free-standing** tiers — Areas (1), Topics (2), Projects (3) — that the operational entities (Pages, Tasks, Events) tag. Per-tier labels are user-configurable; tier *numbers* are fixed.
+The organization layer. A **Context** is a user-defined group — the registry seeds three (Areas, Topics, Projects) as ordinary, fully manageable entries — and a **Space** is an individual member inside one Context. Content relates *to* Spaces; no Context contains or parents another, and an entity tags whichever Spaces fit, independently.
 
-The tiers are independent: none contains, parents, or is restricted to another. A Project isn't "inside" a Topic; a Topic doesn't belong to an Area. Operational entities tag any tiers independently — a Page can relate to a Topic without relating to an Area.
-
-| Tier | Default label | Role |
-|---|---|---|
-| 1 | Areas | Broad life domains — Personal, Academics, Work |
-| 2 | Topics | Subject areas — Productivity, Side Projects, Reading List |
-| 3 | Projects | Specifics — CS 161, Pommora, "Atomic Habits" |
-
-Each tier is a **folder with a config sidecar** under `.nexus/` — the same folder-plus-sidecar idiom as Page Collections. A Context holds no pages and no property schema; it's a place things point at, not a container. Context-to-context relations are a deferred design pass (see Prospects).
+| Seeded Context | Role |
+|---|---|
+| Areas | Broad life domains — Personal, Academics, Work |
+| Topics | Subject areas — Productivity, Side Projects, Reading List |
+| Projects | Specifics — CS 161, Pommora, "Atomic Habits" |
 
 ### Features
 
-#### II. Shared Shape
+#### II. The Registry Model
 
-All three tiers share one sidecar shape: `id` (ULID), `tier` (1 / 2 / 3), an optional `icon`, an optional `banner` (a Nexus-relative image path), `modified_at`, and any foreign keys preserved by value. **Areas additionally carry an optional `color`** drawn from a fixed ten-value palette (gray, brown, orange, yellow, green, blue, purple, pink, red, accent); an unrecognized value degrades to no color rather than failing the sidecar. Topics and Projects carry no color.
+- **`.nexus/contexts.json` owns Context identity** — id, title, singular, icon; array position IS the display order. The seeded three keep reserved ids that anchor legacy resolution; user-created Contexts mint ULIDs. Title uniqueness folds case at create/rename — the filesystem is case-insensitive, so a case-variant twin would silently share one folder — while a case-only rename of an entity itself passes.
 
-There's no `parents` field and no containment. The folder name is the title — there's no `title` field on disk, and renaming in the UI renames the folder. A `blocks` field, if present, rides through as a preserved foreign key — the block-surface system it's reserved for is built ([[SurfacePM]]); whether Contexts host it rides the contexts-architecture pass.
+- **Spaces are folders** at `.nexus/contexts/<Context>/<Space>/`, gated by their `_space.json` sidecar (id, chip-solid color, banner, the block doc, and the Space's own relation keys). A folder without the sidecar isn't a Space. Banner bytes live under `.nexus/assets/<id>/`, served over the read-only asset scheme.
 
-#### II. Sidebar
+- **Membership lives in member files as quoted bracketed title keys** at the root — `"[Projects]": [Pommora]` — identical in page frontmatter, agenda JSON, and `_space.json`. Values are always arrays of Space titles; an emptied key is removed, never written empty. No ULIDs in member files: the registry resolves titles to ids at read, and ids resolve back to titles only at main's write boundary.
 
-In the sidebar's **Contexts mode** (opened from the ribbon), the three tiers surface as three disclosure rows, top to bottom Areas → Topics → Projects. A tier row is a structural disclosure — never selectable, open by default, and clicking it toggles its own disclosure only. Each tier's entities render as flat, draggable leaf rows inside it, reordered within the tier. All three tiers' entities default to the grid icon; a per-entity icon overrides it.
+- **Validation is registry membership at read**: keys exact-match a registry title; values match through one normalizer (trim → lowercase → NFC), so scalar and case/width drift still resolve. A drifted-but-resolvable value displays fine and repairs on that file's next context write; an unknown value sits inert — never guessed, never dropped on read.
 
-Tier labels read from the per-Nexus label settings. Creation is a right-click in the Contexts mode area — a native picker offering New Area / Topic / Project, each scoped to its own tier. The picker returns the choice to the store, which writes and optimistically inserts the new row with a focused rename input — instant, one walk. Full sidebar layout → `Sidebar.md`.
+- **Legacy healing is permanent**: bare `tierN` ULID arrays from the pre-registry era (or a stale synced device) stay read-recognized through the reserved ids and migrate to bracketed keys on that file's next governed write.
 
-#### II. Cross-Layer Relations
+#### II. Writes
 
-Pages, Tasks, and Events tag Contexts through per-tier multi-relation fields at the frontmatter or JSON root:
+- **`setContext`** is the one membership write per entity kind (page / agenda / space), under per-file locks, reconciling the whole root it rewrites — healing legacy keys in place. Space-to-Space links use the same shape: a Space tags Spaces in *other* Contexts via its own sidecar keys.
 
-```yaml
-tier1: [<area-id>, ...]
-tier2: [<topic-id>, ...]
-tier3: [<project-id>, ...]
-```
+- **Renames are journaled**: a rename writes the pending-rename journal first, cascades the title across all three file scopes, commits the registry, then settles — a crash replays forward on the next open (with re-mint guards), and a live registry-commit failure reverses the cascade. Renames are id-keyed; ids never change.
 
-Each is a multi-value relation, filled independently and stored as **bare ULID arrays** — not the `$rel`-tagged shape, which is reserved for user and Agenda properties. These tier links are the **only** relation-type connection in the product.
+- **Deletes unlink first**: a Space's title value (or a Context's whole bracketed key plus registry entry) strips from every member file before the folder moves to the recoverable trash.
 
-A tier relation is a dual surface:
+- **Creates**: a new Context appends to the registry (minted with the contexts glyph) and opens straight into inline rename; a new Space seeds the 2×2 block board — four empty markdown tiles, files written first. Seeded Contexts keep their given singulars in create entries ("New Area"); user-minted Contexts read flat "New Space".
 
-- **Outbound (entity → Context)** — the writable side: the operational entity holds the Context's ID in its `tierN` array. Contexts carry no reverse field.
+- **The migration** (nexus schemaVersion below the registry version) is idempotent and resumable — the version bump commits strictly last and is withheld if any sidecar was unreadable — and records each view's visible context columns into its `property_order`, so default-OFF never changes what an existing view shows.
 
-- **Inbound (Context → entities)** — every tier value emits one edge into the index's `context_links` table, so "every entity tagging this Context" resolves as a pure index query with no stored inbound list.
+#### II. Surfaces
 
-The effective per-Type schema merges three pre-configured tier relation properties (`_tier1` / `_tier2` / `_tier3`) after the user-defined ones, each adopting the per-Nexus tier label and icon. The index builds tier links directly from the raw `tierN` arrays, independent of that merge.
+- **Sidebar (Contexts mode)**: every Context renders as a disclosure of Space rows. Group headers drag to reorder the registry; Spaces drag within their group (`space_orders` in state.json); in-group right-click creates a Space, background right-click creates a Context, and the group header's native menu carries New / Rename / Delete. A Context is a disclosure, not a destination — selecting one renders nothing.
 
-### Architecture
+- **SpaceView**: a Space selection renders its banner scaffold over its block surface — `_space.json` is the second BlockHost beside the homepage, with a per-Space board lock — plus its Subfield breadcrumb.
 
-#### II. On-Disk Layout
+- **The Space settings pane** rides the toolbar trio's settings button: the (Icon)(Title) heading over the Lock/ellipsis footer, with the icon button and title field outlined in the Space's color through the input-field OutlineTint channel. Right-clicking the heading offers Change Color (the shared ColorPicker). There is no floating settings window — Contexts and Spaces manage via their panes.
 
-```
-.nexus/
-  areas/<Title>/_area.json        id, tier 1, icon?, color?, banner?, modified_at
-  topics/<Title>/_topic.json      id, tier 2, icon?, banner?, modified_at
-  projects/<Title>/_project.json  id, tier 3, icon?, banner?, modified_at
-```
-
-Contexts live entirely under `.nexus/`, never at the Nexus root. The sidecar filename is the kind authority. Banner image bytes live under `.nexus/assets/<context-id>/` and are served to the renderer over the read-only `nexus-asset://` scheme; the sidecar holds only the Nexus-relative path. Sibling order persists per Nexus in `.nexus/state.json` (`area_order` / `topic_order` / `project_order`).
-
-#### II. CRUD + Validation
-
-All three tiers run through one generic folder-entity CRUD — no per-tier managers:
-
-- **Create** writes the folder plus its sidecar with a fresh ULID and the tier number; Areas also seed `color`.
-- **Rename** is a folder rename (filename = title), refused on a sibling collision.
-- **Delete** unlinks the Context's ID out of every entity's `tierN` arrays first, then moves the folder to the in-Nexus `.trash` (recoverable).
-- **Update** is a read-modify-write that merges the patch and retains foreign keys.
-
-Validation at every write: the title is non-empty and free of path separators, NUL, `.`/`..`, and managed extensions, and can't collide with a same-tier sibling. There's no parent or containment validation — the tiers are free-standing.
+- **Pipeline**: context columns are default-OFF — absence from a view's `property_order` IS hidden, so creating a Context never changes an existing view. Cells read each row's walk-resolved context values with an optimistic rider on the override layer, and chips everywhere wear the Space's icon + chip-solid color from one identity seam.
 
 #### II. Index
 
-The SQLite index — a regeneratable accelerator off the read path — holds a `contexts` row per tier entity (keyed by tier) and a `context_links` row per tier reference, indexed by source, target, and property. The reverse query reads `context_links` by target. Losing the index loses nothing: it rebuilds from the sidecars and the entities' tier arrays.
+The SQLite index — a regeneratable accelerator off the read path — holds a `contexts` row per Space (keyed by its Context id) and a `context_links` row per membership value across page, agenda, and space sources. The reverse query reads `context_links` by target; losing the index loses nothing.
 
 ### Pending
 
-**Context Block Surfaces:** The Context detail view is a placeholder — a blank surface under the banner. The block-surface system is built host-agnostic ([[SurfacePM]] — live on the Homepage dev host); whether and how Contexts host it rides the contexts-architecture pass. The reserved `blocks` field rides through as a preserved foreign key until then.
+**Space-to-Space Relation Rows:** the settings pane's assign-reveal rows for a Space's own memberships — the write path and index are live, the UI isn't.
 
-**Linked-From:** The inbound reverse query (`context_links` by target) is indexed, but the surface that lists every entity tagging a Context — grouped by kind — isn't built.
+**Singular Editing:** per-Context singular labels for user-minted Contexts (the seeded three keep theirs).
 
-**Tier Label Configuration:** Tier labels resolve from the per-Nexus settings labels. A dedicated tier-config singleton (separate singular and plural per tier, plus a hide-tier toggle) is planned; once it lands, the synthesized tier-property names read from it rather than falling back.
-
-### Prospects
-
-**Context-to-Context Relations:** Topics relating to Areas, Projects to Topics and Areas, edited from each Context's settings surface. Out of scope until its own design pass.
-
-**Transitive Roll-Up:** Page → Project → Topic → Area aggregation, so a higher tier can surface everything its lower tiers gather.
-
-**Empty Tier Keys:** Clearing a tier leaves its frontmatter key holding an empty array rather than removing it (the established indexing reads the key's presence); dropping the empty key to match the properties no-empties rule is a possible future alignment.
+**ContextView + Linked-From:** a Context's own aggregate surface, and the inbound list of every entity tagging a Space — both ride the indexed reverse query.
