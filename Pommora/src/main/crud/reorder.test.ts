@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, readFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { setStateOrder, setContainerOrder, setChildOrder } from './reorder'
+import { setStateOrder, setSpaceOrder, setContainerOrder, setChildOrder } from './reorder'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
@@ -37,6 +37,14 @@ describe('setStateOrder', () => {
   it('never persists adopted- placeholder ids', async () => {
     await setStateOrder(root, 'collection_order', ['01ABC', 'adopted-deadbeef', '01XYZ'])
     expect((await readState()).collection_order).toEqual(['01ABC', '01XYZ'])
+  })
+
+  it('setSpaceOrder writes per-context entries in the space_orders map', async () => {
+    await setSpaceOrder(root, '_tier3', ['s2', 's1'])
+    await setSpaceOrder(root, 'ctxC', ['x'])
+    const orders = (await readState()).space_orders as Record<string, unknown>
+    expect(orders._tier3).toEqual(['s2', 's1'])
+    expect(orders.ctxC).toEqual(['x'])
   })
 })
 
