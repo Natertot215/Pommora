@@ -27,7 +27,7 @@ afterEach(async () => {
 })
 
 describe('createPage', () => {
-  it('writes a .md with a fresh ULID, empty tiers, timestamps, and the body', async () => {
+  it('writes a .md with a fresh ULID, timestamps, no context keys, and the body', async () => {
     const r = await createPage(typeDir, 'My Page', { body: 'Hello' })
     expect(r.ok).toBe(true)
     if (!r.ok) return
@@ -35,7 +35,7 @@ describe('createPage', () => {
     const content = await readFile(r.value.path, 'utf8')
     const fm = splitFrontmatter(content)
     expect(isUlid(fm.id as string)).toBe(true)
-    expect(fm.tier1).toEqual([])
+    expect('tier1' in fm).toBe(false)
     expect(fm.created_at).toBeTruthy()
     expect(fm.modified_at).toBeTruthy()
     expect(splitEnvelope(content).body).toBe('Hello')
@@ -184,13 +184,12 @@ describe('updatePageProperty', () => {
 })
 
 describe('setPageTier', () => {
-  it('writes a bare ULID array to the tier root field, preserving the other tiers + id', async () => {
+  it('writes a bare ULID array to the tier root field, preserving the id', async () => {
     const c = await createPage(typeDir, 'Tiered', { body: 'x' })
     if (!c.ok) throw new Error('setup failed')
     expect((await setPageTier(c.value.path, 1, ['ctxA', 'ctxB'])).ok).toBe(true)
     const fm = splitFrontmatter(await readFile(c.value.path, 'utf8'))
     expect(fm.tier1).toEqual(['ctxA', 'ctxB'])
-    expect(fm.tier2).toEqual([])
     expect(fm.id).toBe(c.value.id)
   })
 

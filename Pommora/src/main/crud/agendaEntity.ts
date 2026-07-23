@@ -10,6 +10,7 @@ import { join, dirname } from 'node:path'
 import { rename } from 'node:fs/promises'
 import { newId } from '../ids'
 import { writeJson, trashWithTimestamp, readJsonObject } from '../io/atomicWrite'
+import { serializeOnFile } from '../io/fileLock'
 import { applyPropertyValue, type PropertyValue } from '@shared/propertyValue'
 import { tierFieldName } from '@shared/properties'
 import { AGENDA_SUFFIX, agendaKindOf, type AgendaKind } from '@shared/agenda'
@@ -34,9 +35,6 @@ export async function createAgendaItem(
   const base: Raw = {
     id,
     description: '',
-    tier1: [],
-    tier2: [],
-    tier3: [],
     properties: {},
     alarm_offsets: [],
     created_at: now,
@@ -74,8 +72,10 @@ export async function renameAgendaItem(
   if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`, 'agenda')
   await rename(absFile, target)
   // A rename is an edit (filename = title) — bump modified_at, preserving all else.
-  const raw = await readJsonObject(target)
-  if (raw) await writeJson(target, { ...raw, modified_at: nowIso() })
+  await serializeOnFile(target, async () => {
+    const raw = await readJsonObject(target)
+    if (raw) await writeJson(target, { ...raw, modified_at: nowIso() })
+  })
   return ok({ path: target })
 }
 
@@ -89,12 +89,16 @@ export async function deleteAgendaItem(
 }
 
 /** Merge `patch` over the item's governed fields, preserving foreign keys + bumping
- *  modified_at. Additive (a patched field is set; it never deletes other fields). */
+ *  modified_at. Additive (a patched field is set; it never deletes other fields).
+ *  Under the item's file lock, like every agenda RMW — an unlocked JSON writer racing a
+ *  cascade rewrite would be a whole-file lost update. */
 export async function updateAgendaItem(absFile: string, patch: Raw): Promise<Result<null>> {
-  const raw = await readJsonObject(absFile)
-  if (!raw) return fail('not-found', 'Agenda item not found.', 'agenda')
-  await writeJson(absFile, { ...raw, ...patch, modified_at: nowIso() })
-  return ok(null)
+  return serializeOnFile(absFile, async () => {
+    const raw = await readJsonObject(absFile)
+    if (!raw) return fail('not-found', 'Agenda item not found.', 'agenda')
+    await writeJson(absFile, { ...raw, ...patch, modified_at: nowIso() })
+    return ok(null)
+  })
 }
 
 /** Set or clear one property value on an agenda item (encoded via the codec). A null
@@ -104,22 +108,27 @@ export async function updateAgendaProperty(
   propertyId: string,
   value: PropertyValue | null,
 ): Promise<Result<null>> {
-  const raw = await readJsonObject(absFile)
-  if (!raw) return fail('not-found', 'Agenda item not found.', 'agenda')
-  const props = applyPropertyValue(raw.properties, propertyId, value)
-  await writeJson(absFile, { ...raw, properties: props, modified_at: nowIso() })
-  return ok(null)
+  return serializeOnFile(absFile, async () => {
+    const raw = await readJsonObject(absFile)
+    if (!raw) return fail('not-found', 'Agenda item not found.', 'agenda')
+    const props = applyPropertyValue(raw.properties, propertyId, value)
+    await writeJson(absFile, { ...raw, properties: props, modified_at: nowIso() })
+    return ok(null)
+  })
 }
 
-/** Set an agenda item's tier-N context links (bare ULID array at the root). tier 1–3. */
+/** LEGACY — migration-era only. Set an agenda item's tier-N links (bare ULID array at the
+ *  root); live context writes go through setAgendaContext. tier 1–3. */
 export async function setAgendaTier(
   absFile: string,
   tier: number,
   contextIds: string[],
 ): Promise<Result<null>> {
   if (tier < 1 || tier > 3) return fail('invalid-tier', `Tier ${tier} is not 1–3.`, 'agenda')
-  const raw = await readJsonObject(absFile)
-  if (!raw) return fail('not-found', 'Agenda item not found.', 'agenda')
-  await writeJson(absFile, { ...raw, [tierFieldName(tier)]: contextIds, modified_at: nowIso() })
-  return ok(null)
+  return serializeOnFile(absFile, async () => {
+    const raw = await readJsonObject(absFile)
+    if (!raw) return fail('not-found', 'Agenda item not found.', 'agenda')
+    await writeJson(absFile, { ...raw, [tierFieldName(tier)]: contextIds, modified_at: nowIso() })
+    return ok(null)
+  })
 }
