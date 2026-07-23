@@ -520,8 +520,8 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       onBodyContextMenu={() => {
         void useSession.getState().createFromMenu([
           {
-            label: `New ${group.def.singular}`,
-            req: { op: 'createSpace', contextId: group.def.id, name: `New ${group.def.singular}` },
+            label: 'New Space',
+            req: { op: 'createSpace', contextId: group.def.id, name: 'New Space' },
           },
         ])
       }}
