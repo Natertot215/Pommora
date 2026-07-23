@@ -1,11 +1,20 @@
 // Single source of truth for the cross-process contract.
 // Imported by main, preload, and renderer — NO fs, NO React here.
 
+import type { ContextDef } from './contexts'
 import type { PropertyDefinition } from './properties'
 import type { PageFrontmatter } from './schemas'
 import type { SavedView } from './views'
 
-export type NodeKind = 'saved' | 'area' | 'topic' | 'project' | 'collection' | 'set' | 'page'
+export type NodeKind =
+  | 'saved'
+  | 'area'
+  | 'topic'
+  | 'project'
+  | 'space'
+  | 'collection'
+  | 'set'
+  | 'page'
 
 // Contexts tier-1 (Area) color palette — 10 cases, written once as the single source for
 // both the type and the runtime membership check (the reader + the areaSidecar schema both
@@ -189,6 +198,27 @@ export interface ProjectNode extends PathNode {
 
 export interface PageNode extends PathNode {
   kind: 'page'
+  /** Resolved context links — contextId → the member's Space ids, attached at walk
+   *  assembly from the raw bracketed keys the parse retains. Absent = no links. */
+  contextValues?: Record<string, string[]>
+}
+
+/** One Space — a member of a Context, backed by `.nexus/contexts/<Context>/<Space>/`. */
+export interface SpaceNode extends PathNode {
+  kind: 'space'
+  /** The owning Context's registry id (derived from the parent folder at walk). */
+  contextId: string
+  /** Chip-solid palette key (open string, validated through the chip map at render);
+   *  absent = the neutral grey Default. */
+  color?: string
+  /** Space-to-Space links — same shape and attachment as PageNode's. */
+  contextValues?: Record<string, string[]>
+}
+
+/** One registry Context with its resolved member Spaces, in display order. */
+export interface ContextGroup {
+  def: ContextDef
+  spaces: SpaceNode[]
 }
 
 /** How a page opens from its collection — full-view or a hovering preview window. Collection-owned;
@@ -281,6 +311,10 @@ export interface NexusTree {
     topics: TopicNode[]
     areas: AreaNode[]
   }
+  /** Registry-backed Context groups in registry order, each with its Spaces. Optional
+   *  during the legacy window — this becomes the one `contexts` shape once every
+   *  consumer of the fixed-three struct above migrates. */
+  contextGroups?: ContextGroup[]
   /** Ungrouped top-tier Collections (those not assigned to a user section). */
   collections: CollectionNode[]
   userSections: UserSection[]
@@ -319,7 +353,10 @@ export type PageResult = { ok: true; page: PageDetail } | { ok: false; error: st
 export type SelectionState =
   | { kind: 'none' }
   | { kind: 'homepage' }
+  /** The group level (a Context) — reserved for ContextView; member selection is `space`. */
   | { kind: 'context'; id: string }
+  /** One Space (a Context's member) — the selectable context-layer entity. */
+  | { kind: 'space'; id: string }
   | { kind: 'collection'; id: string }
   /** A depth-1 Set (direct child of a Collection) — the only selectable Set; deeper
    *  Sub-Sets are expand-only. Carries `path` for rename-safe reconciliation, like a page. */

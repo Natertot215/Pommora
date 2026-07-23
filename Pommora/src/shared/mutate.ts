@@ -86,6 +86,23 @@ export type MutateRequest =
   | { op: 'reorderChildren'; parentPath: string; key: ChildOrderKey; order: string[] }
   // Reorder a top-level group (held in `.nexus/state.json`): top Collections or a context tier.
   | { op: 'reorderTop'; key: StateOrderKey; order: string[] }
+  // — Registry-backed Contexts & Spaces (ids in memory; main resolves titles at the write) —
+  // Append a new Context to `.nexus/contexts.json` (ULID id) + mkdir its folder.
+  | { op: 'createContextGroup'; name: string }
+  // Create a Space folder + `_space.json` under its Context, seeded with the 2×2 block doc.
+  | { op: 'createSpace'; contextId: string; name: string }
+  // Rename a Context/Space — the journaled three-scope title cascade (frontmatter keys,
+  // agenda JSON roots, `_space.json` roots) plus the registry/folder rename.
+  | { op: 'renameContext'; contextId: string; newName: string }
+  | { op: 'renameSpace'; spaceId: string; newName: string }
+  // Set an entity's links for ONE Context: the full Space-id list (empty = key removed).
+  | { op: 'setContext'; path: string; contextId: string; spaceIds: string[] }
+  // Chip-solid palette key on the Space's `_space.json`; absent clears to the neutral Default.
+  | { op: 'setSpaceColor'; spaceId: string; color?: string }
+  | { op: 'setContextSingular'; contextId: string; singular: string }
+  // Registry array order IS the display order; `space_orders[contextId]` lives in state.json.
+  | { op: 'reorderContexts'; ids: string[] }
+  | { op: 'reorderSpaces'; contextId: string; ids: string[] }
 
 /**
  * The mutate result envelope (never throws across IPC). On a create, returns the new

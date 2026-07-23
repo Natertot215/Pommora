@@ -559,6 +559,17 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       return { ok: true }
     }
 
+    case 'createContextGroup':
+    case 'createSpace':
+    case 'renameContext':
+    case 'renameSpace':
+    case 'setContext':
+    case 'setSpaceColor':
+    case 'setContextSingular':
+    case 'reorderContexts':
+    case 'reorderSpaces':
+      return fault('Not implemented.')
+
     default: {
       const _exhaustive: never = req
       void _exhaustive

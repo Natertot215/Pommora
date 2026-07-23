@@ -33,6 +33,12 @@ function DetailView(): React.JSX.Element {
       return <HomepageView tree={tree} />
     case 'context':
       return <ContextView tree={tree} id={selection.id} />
+    case 'space':
+      return (
+        <div className="detail">
+          <div className="detail-placeholder">Space</div>
+        </div>
+      )
     case 'collection': {
       const col = findCollection(tree, selection.id)
       return col ? (

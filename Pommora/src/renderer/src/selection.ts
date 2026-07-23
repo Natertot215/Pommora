@@ -75,6 +75,7 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
       // Homepage is a singleton (always present) — never reconciled away.
       return selection
     case 'context':
+    case 'space':
       return index.contexts.has(selection.id) ? selection : { kind: 'none' }
     case 'collection':
       return index.collections.has(selection.id) ? selection : { kind: 'none' }
