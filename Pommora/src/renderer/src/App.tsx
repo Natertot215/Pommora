@@ -14,10 +14,7 @@ import { Toolbar } from './Toolbar/Toolbar'
 import { InspectorPanel } from './Detail/InspectorPanel/InspectorPanel'
 import { NavWindow } from './NavWindow/NavWindow'
 import { PreviewWindow } from './PagePreview/PreviewWindow'
-import { FloatingPane } from './design-system/components/FloatingPane/FloatingPane'
-import { ContextSettings } from './Detail/Settings/ContextSettings'
-import { SpaceSettings } from './Detail/Settings/SpaceSettings'
-import { HoverCreate } from './Components/HoverCreate'
+import { SettingsWindow } from './Detail/Settings/SettingsWindow'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
 import { Icon } from '@renderer/design-system/symbols'
@@ -29,7 +26,6 @@ export function App(): React.JSX.Element {
   // once at store creation), so selecting them individually is safe.
   const status = useSession((s) => s.status)
   const tree = useSession((s) => s.tree)
-  const sidebarMode = useSession((s) => s.personalization.sidebarMode ?? 'collections')
   const error = useSession((s) => s.error)
   const sidebarVisible = useSession((s) => s.sidebarVisible)
   const sidebarWidth = useSession((s) => s.sidebarWidth)
@@ -136,8 +132,6 @@ export function App(): React.JSX.Element {
       if (group) openEntitySettings({ kind: 'context', id: group.def.id })
     })
   }, [openEntitySettings])
-  const settingsTarget = useSession((s) => s.settingsTarget)
-  const closeEntitySettings = useSession((s) => s.closeEntitySettings)
 
   // The live filesystem watcher pushed a fresh tree (external change) → swap it in place.
   // Single-window v1: main guards stale pushes by session root; on an in-window nexus
@@ -260,21 +254,6 @@ export function App(): React.JSX.Element {
         >
           <Icon name="log-out" size={18} className="flip-x" />
         </button>
-        {/* New Context — the sidebar's bottom-left hover affordance, Contexts mode only. It sits
-            on the glass (outside the scrolling nav) so it holds position while the list scrolls. */}
-        {status === 'ready' && tree && sidebarMode === 'contexts' && (
-          <HoverCreate
-            label="New Context"
-            className="contexts-create"
-            onClick={() =>
-              void useSession
-                .getState()
-                .mutate({ op: 'createContextGroup', name: 'New Context' }, (created) =>
-                  useSession.getState().beginRename(created.path),
-                )
-            }
-          />
-        )}
         {status === 'loading' && <div className="state">Loading Nexus…</div>}
         {status === 'empty' && (
           <div className="state">
@@ -329,23 +308,9 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <NavWindow />}
       {/* Page Preview — the B-1-routed floating page window; one floating window total (D-8). */}
       {status === 'ready' && <PreviewWindow />}
-      {/* The Context/Space settings window — the shared floating chassis over the entity's
-          settings content, reachable without selecting the entity. */}
-      {status === 'ready' && (
-        <FloatingPane
-          id="entity-settings"
-          open={settingsTarget !== null}
-          onClose={closeEntitySettings}
-          bounds={{ minW: 320, minH: 260, defW: 420, defH: 420 }}
-          ariaLabel="Settings"
-        >
-          {settingsTarget?.kind === 'space' ? (
-            <SpaceSettings id={settingsTarget.id} />
-          ) : settingsTarget ? (
-            <ContextSettings id={settingsTarget.id} />
-          ) : null}
-        </FloatingPane>
-      )}
+      {/* The Context/Space Settings window — the NavWindow floating chrome (shell + rail),
+          reachable from right-click without selecting the entity. */}
+      {status === 'ready' && <SettingsWindow />}
       {/* Invisible edge-drag resize strip at the inspector's left edge (only while open). */}
       {status === 'ready' && inspectorOpen && (
         <div
