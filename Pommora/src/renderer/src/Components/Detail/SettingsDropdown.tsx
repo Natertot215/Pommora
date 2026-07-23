@@ -27,7 +27,7 @@ export function SettingsDropdown({
       <MenuSurface closing={closing} notchInsetRight={notchInsetRight}>
         {scope === 'view' ? (
           <SettingsPane />
-        ) : scope === 'homepage' || scope === 'context' ? (
+        ) : scope === 'homepage' || scope === 'context' || scope === 'space' ? (
           <SettingsScaffold />
         ) : (
           <div style={{ minHeight: 24 }} />
