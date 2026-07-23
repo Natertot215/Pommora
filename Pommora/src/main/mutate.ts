@@ -21,6 +21,14 @@ import { resolveUnderRoot } from './pathSafety'
 import { createPage, renamePage, movePage, setPageTier } from './crud/page'
 import { setChildOrder, setStateOrder } from './crud/reorder'
 import { createFolderEntity, renameFolderEntity, moveFolderEntity } from './crud/folderEntity'
+import {
+  createContextGroup,
+  createSpace,
+  loadContextWorld,
+  setContextOnPath,
+  setContextSingular,
+  setSpaceColor,
+} from './crud/contextWrite'
 import { renameCascade, unlinkTier } from './crud/cascade'
 import { rewriteBlockConnections } from './blocks'
 import {
@@ -559,13 +567,38 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       return { ok: true }
     }
 
-    case 'createContextGroup':
-    case 'createSpace':
+    case 'createContextGroup': {
+      const r = await createContextGroup(root, req.name)
+      if (!r.ok) return relay(r)
+      return { ok: true, created: r.value }
+    }
+
+    case 'createSpace': {
+      const r = await createDisambiguated(req.name, (name) =>
+        createSpace(root, req.contextId, name),
+      )
+      if (!r.ok) return relay(r)
+      return { ok: true, created: r.value }
+    }
+
+    case 'setContext': {
+      const resolved = await resolveUnderRoot(root, req.path)
+      if (!resolved.ok) return relay(resolved)
+      const world = await loadContextWorld(root)
+      if (!world.ok) return relay(world)
+      return relay(
+        await setContextOnPath(root, resolved.value, world.value, req.contextId, req.spaceIds),
+      )
+    }
+
+    case 'setSpaceColor':
+      return relay(await setSpaceColor(root, req.spaceId, req.color))
+
+    case 'setContextSingular':
+      return relay(await setContextSingular(root, req.contextId, req.singular))
+
     case 'renameContext':
     case 'renameSpace':
-    case 'setContext':
-    case 'setSpaceColor':
-    case 'setContextSingular':
     case 'reorderContexts':
     case 'reorderSpaces':
       return fault('Not implemented.')

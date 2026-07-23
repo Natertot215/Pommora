@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   knownBlock,
+  NEW_TILE_H,
   type BlockEntry,
   type BlockHostRef,
   type BlockStyle,
@@ -29,8 +30,6 @@ import { ViewEmbedBlock } from './ViewEmbedBlock'
 import { PageEmbedBlock } from './PageEmbedBlock'
 import { useBlockDoc } from './useBlockDoc'
 import './blocks.css'
-
-const NEW_TILE_H = 160
 
 /** The page-picker drill tree: Collections → their pages, Sets nesting inside — every
  *  row wearing its entity icon (custom, else the kind default). */

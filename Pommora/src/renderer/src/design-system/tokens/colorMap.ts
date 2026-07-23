@@ -8,6 +8,7 @@
 // `import type` keeps this module runtime-pure (the vanilla-extract `chip.css` is never loaded here),
 // so it stays unit-testable while the name list still single-sources from the chip palette.
 
+import { CHIP_SOLID_COLORS } from '@shared/types'
 import type { ChipColorName } from './chip.css'
 
 const MAP: Record<string, ChipColorName> = {
@@ -24,22 +25,12 @@ const MAP: Record<string, ChipColorName> = {
   indigo: 'purple',
 }
 
-// The render-palette keys (ChipColorName minus 'default'), inlined so this module stays runtime-pure
-// (chip.css is never loaded here). An option's stored color IS a solid key now, so a key already in
-// the palette is its own render key — pass it through before consulting the legacy Notion map, which
-// only covers old on-disk names (and never reached lightBlue/cyan/grey/lavender).
-const PALETTE: ReadonlySet<string> = new Set([
-  'red',
-  'orange',
-  'yellow',
-  'green',
-  'lightBlue',
-  'cyan',
-  'blue',
-  'purple',
-  'lavender',
-  'grey',
-])
+// The render-palette keys (ChipColorName minus 'default') — the shared CHIP_SOLID_COLORS
+// list, so this module stays runtime-pure (chip.css is never loaded here). An option's
+// stored color IS a solid key now, so a key already in the palette is its own render key —
+// pass it through before consulting the legacy Notion map, which only covers old on-disk
+// names (and never reached lightBlue/cyan/grey/lavender).
+const PALETTE: ReadonlySet<string> = new Set(CHIP_SOLID_COLORS)
 
 /** A stored option / area color → its chip palette key. A solid key passes straight through; a legacy
  *  Notion name maps; absent or unrecognized → the neutral default. */

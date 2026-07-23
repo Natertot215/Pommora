@@ -54,6 +54,23 @@ export type AccentColor = (typeof ACCENT_COLORS)[number]
 /** The `accent` value in .nexus/settings.json: a spectrum solid, or follow-the-OS. */
 export type AccentSetting = AccentColor | 'system'
 
+// The chip palette's ten solid keys — the render-palette vocabulary (ChipColorName minus
+// the neutral 'default') shared by option colors and Space colors. Main validates Space
+// color writes against it; the renderer's chip palette accessor keys off the same list.
+export const CHIP_SOLID_COLORS = [
+  'red',
+  'orange',
+  'yellow',
+  'green',
+  'lightBlue',
+  'cyan',
+  'blue',
+  'purple',
+  'lavender',
+  'grey',
+] as const
+export type ChipSolidColor = (typeof CHIP_SOLID_COLORS)[number]
+
 /**
  * Default accent when settings.json omits or has an invalid `accent`. A concrete
  * spectrum color (never `system`) so it always resolves to a hex and can seed the

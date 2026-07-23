@@ -52,6 +52,10 @@ export const rawLayoutSchema = z.object({
   bands: z.array(z.object({ node: z.union([rawTileSchema, rawRowSchema, rawColumnSchema]) })),
 })
 
+/** The height a freshly-minted tile gets — the renderer's new-tile drops and main's
+ *  Space 2×2 seed share this one value. */
+export const NEW_TILE_H = 160
+
 /** The BlockHost seam (D-2): which entity's sidecar holds the doc. The homepage
  *  singleton is the dev host (G-12); real hosts extend this union. */
 export type BlockHostRef = { kind: 'homepage' }
