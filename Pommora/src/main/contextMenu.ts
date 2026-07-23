@@ -10,6 +10,7 @@ import { sessionRoot } from './session'
 import { resolveUnderRoot } from './pathSafety'
 import { handleMutate, type MutateDeps } from './mutate'
 import { readRegistryStrict } from './contextsRegistry'
+import { RESERVED_CONTEXT_IDS } from '@shared/contexts'
 import { DEFAULT_NEW_NAME } from '@shared/mutate'
 import type { ContextTarget, MutableKind, MutateRequest } from '@shared/mutate'
 
@@ -35,13 +36,12 @@ async function creatorsFor(
         ? reg.value.contexts.find((c) => c.title === basename(parentPath))
         : undefined
       if (!def) return []
-      // "New Space" flat until the singulars rework — the per-Context singular is parked.
-      return [
-        {
-          label: 'New Space',
-          req: { op: 'createSpace', contextId: def.id, name: 'New Space' },
-        },
-      ]
+      // The seeded three keep their given singulars ("New Area"); user-minted Contexts
+      // read flat "New Space" until the singulars rework.
+      const label = (RESERVED_CONTEXT_IDS as readonly string[]).includes(def.id)
+        ? `New ${def.singular}`
+        : 'New Space'
+      return [{ label, req: { op: 'createSpace', contextId: def.id, name: label } }]
     }
     default:
       return [] // page, space, area, topic, project
@@ -99,7 +99,6 @@ export async function showContextMenu(
   const creators = await creatorsFor(root, target.kind, target.path)
   for (const c of creators) items.push({ label: c.label, click: () => void run(c.req) })
   if (creators.length) items.push({ type: 'separator' })
-
 
   // Rename is inline in the renderer (native menus can't take text), so this only signals
   // the renderer to put the matching row into edit mode; the commit goes through mutate.
