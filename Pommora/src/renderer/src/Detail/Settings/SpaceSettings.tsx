@@ -24,7 +24,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
   if (!node) return null
 
   return (
-    <>
+    <div style={{ minWidth: 225, minHeight: 245, display: 'flex', flexDirection: 'column' }}>
       <MenuScrollFrame
         footer={
           <MenuBottomRow
@@ -68,6 +68,6 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
           void mutate({ op: 'setIcon', path: node.path, kind: 'space', icon: picked })
         }}
       />
-    </>
+    </div>
   )
 }
