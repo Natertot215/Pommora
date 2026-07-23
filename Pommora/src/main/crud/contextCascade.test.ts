@@ -46,6 +46,23 @@ const regTitle = async (id: string): Promise<string | undefined> => {
   return reg.contexts.find((c: { id: string }) => c.id === id)?.title
 }
 
+describe('case folding on renames', () => {
+  it('a case-only Context rename of itself passes; a case-variant of ANOTHER fails', async () => {
+    expect((await renameContextOp(root, '_tier3', 'classes')).ok).toBe(false)
+    const self = await renameContextOp(root, '_tier3', 'PROJECTS')
+    expect(self.ok).toBe(true)
+    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    expect(reg.contexts.find((c: { id: string }) => c.id === '_tier3').title).toBe('PROJECTS')
+  })
+
+  it('a case-only Space rename passes (its own folder is not a collision)', async () => {
+    const r = await renameSpaceOp(root, 'sp-pom', 'POMMORA')
+    expect(r.ok).toBe(true)
+    const fm = splitFrontmatter(await readFile(page(), 'utf8'))
+    expect(fm['[Projects]']).toEqual(['POMMORA', 'pommora'])
+  })
+})
+
 describe('renameContextOp', () => {
   it('rewrites the KEY in all three scopes, commits the registry, clears the journal', async () => {
     const r = await renameContextOp(root, '_tier3', 'Ventures')
