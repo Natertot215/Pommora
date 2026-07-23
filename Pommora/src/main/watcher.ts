@@ -60,6 +60,13 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
       // a debounced block-body write must not cost a full re-walk. The
       // homepage.json config FILE stays watched (the tree reads its banner).
       (segs[0] === '.nexus' && segs[1] === HOMEPAGE_HOST_DIRNAME) ||
+      // Space hosts get the same treatment file-granularly: a tile `.md` inside
+      // `.nexus/contexts/<C>/<S>/` never walks, while `_space.json` (banner/color/tags
+      // the tree reads) stays watched.
+      (segs[0] === '.nexus' &&
+        segs[1] === 'contexts' &&
+        segs.length >= 5 &&
+        segs[segs.length - 1].endsWith('.md')) ||
       isExcluded(segs)
     )
   }
