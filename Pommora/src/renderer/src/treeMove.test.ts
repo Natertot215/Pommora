@@ -44,7 +44,6 @@ function tree(): NexusTree {
     homepage: { locked: false, headingIconHidden: false },
     navView: {},
     saved: [],
-    contexts: { projects: [], topics: [], areas: [] },
     collections: [notes, work],
     userSections: [],
     labels: DEFAULT_LABELS,
@@ -271,12 +270,6 @@ describe('renameNodeInTree', () => {
     expect(set?.pages[0].path).toBe('Notes/Nested/B.md')
   })
 
-  it('renames a context in its tier', () => {
-    const base = tree()
-    base.contexts.topics.push({ id: 't1', kind: 'topic', title: 'Old', path: '.nexus/2/Old' })
-    const t = renameNodeInTree(base, '.nexus/2/Old', 'Fresh')
-    expect(t?.contexts.topics[0]).toMatchObject({ title: 'Fresh', path: '.nexus/2/Fresh' })
-  })
 
   it('returns null for an unknown path', () => {
     expect(renameNodeInTree(tree(), 'Ghost', 'X')).toBeNull()
@@ -294,12 +287,6 @@ describe('removeNodeInTree', () => {
     expect(t?.collections.map((c) => c.id)).toEqual(['c1'])
   })
 
-  it('removes a context from its tier', () => {
-    const base = tree()
-    base.contexts.areas.push({ id: 'a1', kind: 'area', title: 'Life', path: '.nexus/1/Life' })
-    const t = removeNodeInTree(base, '.nexus/1/Life')
-    expect(t?.contexts.areas).toHaveLength(0)
-  })
 })
 
 describe('patchNodeInTree', () => {

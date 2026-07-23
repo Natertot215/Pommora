@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { pageCollectionSidecar, pageSetSidecar, areaSidecar, topicSidecar } from './schemas'
+import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 
 describe('folder sidecar schemas', () => {
   it('parses a minimal page collection (only id required)', () => {
@@ -41,22 +41,3 @@ describe('folder sidecar schemas', () => {
   })
 })
 
-describe('context sidecar schemas', () => {
-  it('requires tier; area adds optional color', () => {
-    expect(areaSidecar.parse({ id: 'A1', tier: 1, color: 'blue' })).toMatchObject({
-      id: 'A1',
-      tier: 1,
-      color: 'blue',
-    })
-    expect(topicSidecar.parse({ id: 'TP1', tier: 2 })).toMatchObject({ id: 'TP1', tier: 2 })
-  })
-
-  it('rejects a context with no tier', () => {
-    expect(topicSidecar.safeParse({ id: 'X' }).success).toBe(false)
-  })
-
-  it('preserves the reserved blocks[] as a foreign key (not modeled)', () => {
-    const parsed = areaSidecar.parse({ id: 'A1', tier: 1, blocks: [] })
-    expect(parsed).toMatchObject({ id: 'A1', tier: 1, blocks: [] })
-  })
-})

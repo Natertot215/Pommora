@@ -3,15 +3,12 @@
 // survives but its path changed). Pure + dependency-free so it's unit-tested without a DOM.
 
 import type {
-  AreaNode,
   CollectionNode,
   NexusTree,
   PageNode,
-  ProjectNode,
   SelectionState,
   SetNode,
   SpaceNode,
-  TopicNode,
 } from '@shared/types'
 
 /** Every top Collection across ungrouped + user sections. */
@@ -40,11 +37,6 @@ export function allPages(tree: NexusTree): PageNode[] {
   return pages
 }
 
-/** LEGACY — every context leaf across the fixed three tiers; live enumeration is allSpaces. */
-export function allContexts(tree: NexusTree): (AreaNode | TopicNode | ProjectNode)[] {
-  return [...tree.contexts.areas, ...tree.contexts.topics, ...tree.contexts.projects]
-}
-
 /** Every Space across every registry Context, in display order. */
 export function allSpaces(tree: NexusTree): SpaceNode[] {
   return (tree.contextGroups ?? []).flatMap((g) => g.spaces)
@@ -61,7 +53,7 @@ export interface ReconcileIndex {
 
 export function buildReconcileIndex(tree: NexusTree): ReconcileIndex {
   return {
-    contexts: new Set([...allContexts(tree), ...allSpaces(tree)].map((c) => c.id)),
+    contexts: new Set(allSpaces(tree).map((c) => c.id)),
     collections: new Set(allCollections(tree).map((c) => c.id)),
     sets: new Map(allSets(tree).map((s) => [s.id, s.path])),
     pages: new Map(allPages(tree).map((p) => [p.id, p.path])),

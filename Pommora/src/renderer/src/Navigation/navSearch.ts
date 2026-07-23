@@ -5,7 +5,7 @@
 // memoizes buildNavIndex over (tree, agenda) and re-runs filterNav per keystroke.
 
 import type { AgendaEntry, NavTarget, NexusTree } from '@shared/types'
-import { allCollections, allContexts, allPages, allSets, allSpaces } from '../selection'
+import { allCollections, allPages, allSets, allSpaces } from '../selection'
 import { navKey } from './navRecents'
 
 export interface SearchEntry {
@@ -29,7 +29,6 @@ export function buildNavIndex(
   const out: SearchEntry[] = [entry({ kind: 'homepage' }, tree.nexus.name)]
   if (tree.contextGroups)
     for (const s of allSpaces(tree)) out.push(entry({ kind: 'space', id: s.id }, s.title))
-  else for (const c of allContexts(tree)) out.push(entry({ kind: 'context', id: c.id }, c.title))
   for (const c of allCollections(tree)) out.push(entry({ kind: 'collection', id: c.id }, c.title))
   for (const s of allSets(tree)) out.push(entry({ kind: 'set', id: s.id, path: s.path }, s.title))
   for (const p of allPages(tree)) out.push(entry({ kind: 'page', id: p.id, path: p.path }, p.title))

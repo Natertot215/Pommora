@@ -8,7 +8,7 @@ import {
   type Entry,
   type MeasuredRow,
 } from './sidebarDndModel'
-import type { AreaNode, CollectionNode, NexusTree } from '@shared/types'
+import type { CollectionNode, NexusTree } from '@shared/types'
 
 // 1 Collection → (loose page P3) + Set s1 [P1, P2] → Sub-Set s2 [P5], plus two Areas (contexts).
 const collections: CollectionNode[] = [
@@ -41,14 +41,9 @@ const collections: CollectionNode[] = [
     ],
   },
 ]
-const areas: AreaNode[] = [
-  { id: 'a1', kind: 'area', title: 'Work', path: '.nexus/areas/Work' },
-  { id: 'a2', kind: 'area', title: 'Home', path: '.nexus/areas/Home' },
-]
 const tree = {
   collections,
   userSections: [],
-  contexts: { areas, topics: [], projects: [] },
   contextGroups: [
     {
       def: { id: 'g1', title: 'Realms', singular: 'Realm' },
@@ -114,10 +109,8 @@ describe('buildIndex', () => {
       parentPath: 'Col/Set/Sub',
     })
   })
-  it('exposes top-level groups + indexes contexts as depth-1 leaves (nested under their tier)', () => {
+  it('exposes the top-level collection group', () => {
     expect(idx.collectionIds).toEqual(['c1'])
-    expect(idx.areaIds).toEqual(['a1', 'a2'])
-    expect(idx.byId.get('a1')).toMatchObject({ kind: 'area', depth: 1, parentId: null })
   })
   it('indexes registry Spaces as depth-1 leaves under their Context group', () => {
     expect(idx.spaceIdsByContext.get('g1')).toEqual(['sp1', 'sp2'])
@@ -157,9 +150,6 @@ describe('setContainerOf — the container a dragged Set resolves into', () => {
     expect(setContainerOf(get('s2'), idx)?.path).toBe('Col/Set') // a Sub-Set → its parent Set
     expect(setContainerOf(get('p3'), idx)?.path).toBe('Col') // a Collection-loose page → the Collection
     expect(setContainerOf(get('p1'), idx)?.path).toBe('Col/Set') // a page in a Set → that Set
-  })
-  it('returns null for a context row (a Set may not live there)', () => {
-    expect(setContainerOf(get('a1'), idx)).toBeNull()
   })
 })
 

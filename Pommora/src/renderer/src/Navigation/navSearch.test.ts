@@ -12,7 +12,7 @@ describe('buildNavIndex', () => {
     const byKind = (k: string): string[] =>
       index.filter((e) => e.target.kind === k).map((e) => e.title)
     expect(byKind('homepage')).toEqual(['TestNexus'])
-    expect(byKind('context').sort()).toEqual(['Pommora', 'Reading', 'Work'])
+    expect(byKind('space').sort()).toEqual(['Pommora', 'Reading', 'Work'])
     expect(byKind('collection')).toEqual(['Notes'])
     expect(byKind('set')).toEqual(['Ideas'])
     expect(byKind('page').sort()).toEqual(['Alpha', 'Nested Beta'])
