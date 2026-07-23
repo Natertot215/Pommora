@@ -11,6 +11,7 @@ import {
   contextKey,
   invalidContextTitle,
   isGovernedContextKey,
+  normalizeContextValue,
   type ContextsRegistry,
 } from '@shared/contexts'
 import { AGENDA_SUFFIX } from '@shared/agenda'
@@ -193,7 +194,13 @@ export async function renameContextOp(
   const entry = reg.value.contexts.find((c) => c.id === contextId)
   if (!entry) return fail('not-found', 'Unknown Context.', 'contexts')
   if (entry.title === newName) return ok(null)
-  if (reg.value.contexts.some((c) => c.title === newName))
+  // Case-insensitive vs OTHER groups (the filesystem is); a case-only rename of itself passes.
+  if (
+    reg.value.contexts.some(
+      (c) =>
+        c.id !== contextId && normalizeContextValue(c.title) === normalizeContextValue(newName),
+    )
+  )
     return fail('exists', `"${newName}" already exists.`)
 
   const j: RenameJournal = { contextId, oldTitle: entry.title, newTitle: newName, skipped: [] }
@@ -251,7 +258,10 @@ export async function renameSpaceOp(
   if (!ref) return fail('not-found', 'Unknown Space.', 'contexts')
   if (ref.title === newName) return ok(null)
   const target = join(contextsDir(root), ref.contextTitle, newName)
-  if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`)
+  // A case-only rename of ITSELF hits its own folder on a case-insensitive filesystem —
+  // that's the rename, not a collision.
+  const caseOnly = normalizeContextValue(ref.title) === normalizeContextValue(newName)
+  if (!caseOnly && (await pathExists(target))) return fail('exists', `"${newName}" already exists.`)
 
   const j: RenameJournal = {
     contextId: ref.contextId,
