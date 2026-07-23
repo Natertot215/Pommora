@@ -5,17 +5,21 @@
 
 import { Menu, dialog, shell } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
+import { basename } from 'node:path'
 import { sessionRoot } from './session'
 import { resolveUnderRoot } from './pathSafety'
 import { handleMutate, type MutateDeps } from './mutate'
+import { readRegistryStrict } from './contextsRegistry'
 import { DEFAULT_NEW_NAME } from '@shared/mutate'
 import type { ContextTarget, MutableKind, MutateRequest } from '@shared/mutate'
 
-/** The "New …" creators a container offers; pages + free-standing contexts offer none. */
-function creatorsFor(
+/** The "New …" creators a container offers; pages + Spaces + the legacy tiers offer none. A
+ *  Context group offers "New <Singular>" — resolved from the registry by the folder's title. */
+async function creatorsFor(
+  root: string,
   kind: MutableKind,
   parentPath: string,
-): { label: string; req: MutateRequest }[] {
+): Promise<{ label: string; req: MutateRequest }[]> {
   const name = DEFAULT_NEW_NAME
   switch (kind) {
     case 'collection':
@@ -25,8 +29,21 @@ function creatorsFor(
       ]
     case 'set':
       return [{ label: 'New Page', req: { op: 'createPage', parentPath, name } }]
+    case 'context': {
+      const reg = await readRegistryStrict(root)
+      const def = reg.ok
+        ? reg.value.contexts.find((c) => c.title === basename(parentPath))
+        : undefined
+      if (!def) return []
+      return [
+        {
+          label: `New ${def.singular}`,
+          req: { op: 'createSpace', contextId: def.id, name: `New ${def.singular}` },
+        },
+      ]
+    }
     default:
-      return [] // page, area, topic, project
+      return [] // page, space, area, topic, project
   }
 }
 
@@ -75,9 +92,12 @@ export async function showContextMenu(
     items.push({ type: 'separator' })
   }
 
-  const creators = creatorsFor(target.kind, target.path)
+  const creators = await creatorsFor(root, target.kind, target.path)
   for (const c of creators) items.push({ label: c.label, click: () => void run(c.req) })
   if (creators.length) items.push({ type: 'separator' })
+
+  // A Context group's Settings window arrives with the floating-pane chassis; inert until then.
+  if (target.kind === 'context') items.push({ label: 'Settings', enabled: false })
 
   // Rename is inline in the renderer (native menus can't take text), so this only signals
   // the renderer to put the matching row into edit mode; the commit goes through mutate.
