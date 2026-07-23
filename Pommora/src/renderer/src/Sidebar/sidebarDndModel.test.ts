@@ -49,6 +49,27 @@ const tree = {
   collections,
   userSections: [],
   contexts: { areas, topics: [], projects: [] },
+  contextGroups: [
+    {
+      def: { id: 'g1', title: 'Realms', singular: 'Realm' },
+      spaces: [
+        {
+          kind: 'space',
+          id: 'sp1',
+          title: 'Astral',
+          path: '.nexus/contexts/Realms/Astral',
+          contextId: 'g1',
+        },
+        {
+          kind: 'space',
+          id: 'sp2',
+          title: 'Umbral',
+          path: '.nexus/contexts/Realms/Umbral',
+          contextId: 'g1',
+        },
+      ],
+    },
+  ],
 } as unknown as NexusTree
 
 describe('buildIndex', () => {
@@ -97,6 +118,11 @@ describe('buildIndex', () => {
     expect(idx.collectionIds).toEqual(['c1'])
     expect(idx.areaIds).toEqual(['a1', 'a2'])
     expect(idx.byId.get('a1')).toMatchObject({ kind: 'area', depth: 1, parentId: null })
+  })
+  it('indexes registry Spaces as depth-1 leaves under their Context group', () => {
+    expect(idx.spaceIdsByContext.get('g1')).toEqual(['sp1', 'sp2'])
+    expect(idx.byId.get('sp1')).toMatchObject({ kind: 'space', depth: 1, parentId: 'g1' })
+    expect(setContainerOf(idx.byId.get('sp1') as Entry, idx)).toBeNull()
   })
 })
 

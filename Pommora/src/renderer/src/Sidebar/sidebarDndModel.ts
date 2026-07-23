@@ -4,7 +4,7 @@
 
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@shared/types'
 
-export type Kind = 'collection' | 'set' | 'page' | 'area' | 'topic' | 'project'
+export type Kind = 'collection' | 'set' | 'page' | 'area' | 'topic' | 'project' | 'space'
 export type Entry = {
   id: string // the entry's own id (also its key in `byId`) — lets a row identify itself
   kind: Kind
@@ -22,6 +22,8 @@ export type Index = {
   areaIds: string[]
   topicIds: string[]
   projectIds: string[]
+  // Registry Spaces per Context group (ordered ids) — a Space reorders within its group only.
+  spaceIdsByContext: Map<string, string[]>
 }
 
 /** Id-keyed index + top-level groups. Depths match the sidebar's rendered indent (Collection 0 →
@@ -99,12 +101,36 @@ export function buildIndex(tree: NexusTree): Index {
       })
     return nodes.map((n) => n.id)
   }
+  const areaIds = addContexts(tree.contexts.areas, 'area')
+  const topicIds = addContexts(tree.contexts.topics, 'topic')
+  const projectIds = addContexts(tree.contexts.projects, 'project')
+  // After the legacy tiers: a reserved group's Spaces share ids with the derived tier leaves,
+  // and the rendered rows are Spaces — their 'space' entries must win in byId.
+  const spaceIdsByContext = new Map<string, string[]>()
+  for (const g of tree.contextGroups ?? []) {
+    for (const s of g.spaces)
+      byId.set(s.id, {
+        id: s.id,
+        kind: 'space',
+        path: s.path,
+        depth: 1,
+        parentId: g.def.id,
+        parentPath: null,
+        pageIds: [],
+        containerIds: [],
+      })
+    spaceIdsByContext.set(
+      g.def.id,
+      g.spaces.map((s) => s.id),
+    )
+  }
   return {
     byId,
     collectionIds: collections.map((c) => c.id),
-    areaIds: addContexts(tree.contexts.areas, 'area'),
-    topicIds: addContexts(tree.contexts.topics, 'topic'),
-    projectIds: addContexts(tree.contexts.projects, 'project'),
+    areaIds,
+    topicIds,
+    projectIds,
+    spaceIdsByContext,
   }
 }
 
