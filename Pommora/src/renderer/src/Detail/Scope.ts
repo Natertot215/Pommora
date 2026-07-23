@@ -63,11 +63,17 @@ export function findCollectionForSet(
   return allCollections(tree).find((c) => has(c.sets))
 }
 
-/** Block-based surface kinds (homepage + the three context tiers): their detail body runs tight tile
- *  gutters (--surface-inset) instead of the page/table content inset + fold-gutter — the tile handles
- *  supply the grip/chevron actions, so no reserved lane is needed. Drives the `is-surface` layout class. */
+/** Block-based surface kinds (homepage + Spaces, plus the legacy tier kinds): their detail body runs
+ *  tight tile gutters (--surface-inset) instead of the page/table content inset + fold-gutter — the
+ *  tile handles supply the grip/chevron actions, so no reserved lane is needed. Drives `is-surface`. */
 export function isSurfaceKind(kind: BannerOwnerKind): boolean {
-  return kind === 'homepage' || kind === 'area' || kind === 'topic' || kind === 'project'
+  return (
+    kind === 'homepage' ||
+    kind === 'space' ||
+    kind === 'area' ||
+    kind === 'topic' ||
+    kind === 'project'
+  )
 }
 
 /** Whether a Set is depth-1 — a DIRECT child of a Collection (so it carries + renders views). A
@@ -111,6 +117,24 @@ export function findContext(tree: NexusTree | null, id: string): BannerOwner | n
       icon: project.icon,
       headingIconHidden: project.headingIconHidden,
     }
+  return null
+}
+
+/** Resolve a Space id to its banner owner across the registry groups. */
+export function findSpace(tree: NexusTree | null, id: string): BannerOwner | null {
+  if (!tree) return null
+  for (const g of tree.contextGroups ?? []) {
+    const sp = g.spaces.find((s) => s.id === id)
+    if (sp)
+      return {
+        path: sp.path,
+        kind: 'space',
+        name: sp.title,
+        banner: sp.banner,
+        icon: sp.icon,
+        headingIconHidden: sp.headingIconHidden,
+      }
+  }
   return null
 }
 

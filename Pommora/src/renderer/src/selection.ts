@@ -10,6 +10,7 @@ import type {
   ProjectNode,
   SelectionState,
   SetNode,
+  SpaceNode,
   TopicNode,
 } from '@shared/types'
 
@@ -39,9 +40,14 @@ export function allPages(tree: NexusTree): PageNode[] {
   return pages
 }
 
-/** Every context leaf across the three free-standing tiers (Areas + Topics + Projects). */
+/** LEGACY — every context leaf across the fixed three tiers; live enumeration is allSpaces. */
 export function allContexts(tree: NexusTree): (AreaNode | TopicNode | ProjectNode)[] {
   return [...tree.contexts.areas, ...tree.contexts.topics, ...tree.contexts.projects]
+}
+
+/** Every Space across every registry Context, in display order. */
+export function allSpaces(tree: NexusTree): SpaceNode[] {
+  return (tree.contextGroups ?? []).flatMap((g) => g.spaces)
 }
 
 /** One tree flatten, reusable across many reconciles — the shape `applyTree` builds ONCE per push to
@@ -55,7 +61,7 @@ export interface ReconcileIndex {
 
 export function buildReconcileIndex(tree: NexusTree): ReconcileIndex {
   return {
-    contexts: new Set(allContexts(tree).map((c) => c.id)),
+    contexts: new Set([...allContexts(tree), ...allSpaces(tree)].map((c) => c.id)),
     collections: new Set(allCollections(tree).map((c) => c.id)),
     sets: new Map(allSets(tree).map((s) => [s.id, s.path])),
     pages: new Map(allPages(tree).map((p) => [p.id, p.path])),
