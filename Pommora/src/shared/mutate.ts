@@ -9,8 +9,17 @@ import type { PropertyValue } from './propertyValue'
 /** The base name a "New …" action gives a fresh entity (main disambiguates collisions). */
 export const DEFAULT_NEW_NAME = 'Untitled'
 
-/** Entity kinds a mutation can target — every NodeKind except the code-keyed `saved`. */
-export type MutableKind = 'page' | 'collection' | 'set' | 'area' | 'topic' | 'project'
+/** Entity kinds a mutation can target — every NodeKind except the code-keyed `saved`,
+ *  plus `context` (a registry group — folder + registry entry, not a NodeKind). */
+export type MutableKind =
+  | 'page'
+  | 'collection'
+  | 'set'
+  | 'area'
+  | 'topic'
+  | 'project'
+  | 'space'
+  | 'context'
 
 /** The entities that can own a banner image: Collections + Sets + the three context tiers
  *  (folder sidecars), the homepage + NavView singletons (`.nexus/homepage.json` / `.nexus/navview.json`),
