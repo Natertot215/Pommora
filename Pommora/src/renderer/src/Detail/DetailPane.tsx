@@ -5,7 +5,6 @@ import { Icon } from '@renderer/design-system/symbols'
 import { findCollection, findSet } from './Scope'
 import { ContainerView } from './ContainerView'
 import { HomepageView } from './HomepageView'
-import { ContextView } from './ContextView'
 import { SpaceView } from './SpaceView'
 import { PageView } from './PageView'
 import { NavView } from '../Tabs/NavView'
@@ -33,7 +32,8 @@ function DetailView(): React.JSX.Element {
     case 'homepage':
       return <HomepageView tree={tree} />
     case 'context':
-      return <ContextView tree={tree} id={selection.id} />
+      // A Context is a disclosure, not a destination — nothing renders for it.
+      return <div className="detail" />
     case 'space':
       return <SpaceView tree={tree} id={selection.id} />
     case 'collection': {
@@ -120,6 +120,7 @@ export function DetailPane(): React.JSX.Element {
     selectionKind === 'collection' ||
     selectionKind === 'set' ||
     selectionKind === 'page' ||
+    selectionKind === 'space' ||
     (selectionKind === 'none' && !!tree)
 
   const paneClass =
