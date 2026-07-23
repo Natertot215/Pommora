@@ -230,7 +230,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema) : null),
     // biome-ignore lint/correctness/useExhaustiveDependencies: buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
-    [tree?.contextGroups, tree?.labels, schema],
+    [tree?.contexts, tree?.labels, schema],
   )
   const columns = useMemo(() => resolveColumns(view, schema, contextIds), [view, schema, contextIds])
   const labels = tree?.labels

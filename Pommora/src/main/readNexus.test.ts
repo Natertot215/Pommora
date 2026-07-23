@@ -139,7 +139,7 @@ describe('readNexus — structure mode (raw, like ~/test)', () => {
     expect(setA.sets![0].pages.map((p) => p.title)).toEqual(['Deep'])
     expect(collections.find((c) => c.title === 'Tasks')).toBeUndefined()
     expect(collections.find((c) => c.title === '_internal')).toBeUndefined()
-    expect(t.contextGroups).toBeUndefined()
+    expect(t.contexts).toEqual([])
   })
 
   it('synthesizes stable adopted ids across reads', async () => {
@@ -268,10 +268,10 @@ describe('readNexus — registry-backed contexts', () => {
   })
   afterAll(() => rmSync(reg, { recursive: true, force: true }))
 
-  it('builds contextGroups in registry order with ordered spaces', async () => {
+  it('builds contexts in registry order with ordered spaces', async () => {
     const t = await readNexus(reg)
-    expect(t.contextGroups?.map((g) => g.def.id)).toEqual(['_tier1', '_tier2', '_tier3', 'ctxC'])
-    const projects = t.contextGroups?.find((g) => g.def.id === '_tier3')
+    expect(t.contexts?.map((g) => g.def.id)).toEqual(['_tier1', '_tier2', '_tier3', 'ctxC'])
+    const projects = t.contexts?.find((g) => g.def.id === '_tier3')
     expect(projects?.spaces.map((s) => s.id)).toEqual(['sp-cs-proj', 'sp-pom'])
     const pom = projects?.spaces.find((s) => s.id === 'sp-pom')
     expect(pom?.kind).toBe('space')
@@ -296,7 +296,7 @@ describe('readNexus — registry-backed contexts', () => {
 
   it('resolves a space sidecar own bracketed keys (space-to-space, cross-context)', async () => {
     const t = await readNexus(reg)
-    const pom = t.contextGroups
+    const pom = t.contexts
       ?.find((g) => g.def.id === '_tier3')
       ?.spaces.find((s) => s.id === 'sp-pom')
     expect(pom?.contextValues).toEqual({ ctxC: ['sp-cs'] })

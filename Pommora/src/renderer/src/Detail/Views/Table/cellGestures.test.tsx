@@ -144,15 +144,7 @@ beforeEach(() => {
   })
   useSession.setState({
     tree: {
-      contexts: {
-        areas: [
-          { kind: 'area', id: 'area_work', title: 'Work', path: 'Contexts/Work', color: 'blue' },
-          { kind: 'area', id: 'area_life', title: 'Personal', path: 'Contexts/Personal' },
-        ],
-        topics: [],
-        projects: [],
-      },
-      contextGroups: [
+      contexts: [
         {
           def: { id: '_tier1', title: 'Areas', singular: 'Area' },
           spaces: [

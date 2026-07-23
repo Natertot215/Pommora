@@ -44,7 +44,7 @@ const collections: CollectionNode[] = [
 const tree = {
   collections,
   userSections: [],
-  contextGroups: [
+  contexts: [
     {
       def: { id: 'g1', title: 'Realms', singular: 'Realm' },
       spaces: [
