@@ -18,25 +18,21 @@ import { nexusReorderIndex, type PaneRow, type PaneSlot, type Region } from './p
 
 type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
 
-/** The context tiers in fixed Areas · Topics · Projects order — the shown zone orders them by the
- *  view like any property; this fixed order only sequences any tiers that land in the hidden zone. */
-const CONTEXT_TIERS = [
-  RESERVED_PROPERTY_ID.tier1,
-  RESERVED_PROPERTY_ID.tier2,
-  RESERVED_PROPERTY_ID.tier3,
-]
-
-/** The hidden group's display order: hidden tiers (fixed tier order), then every non-shown schema
- *  prop in COLLECTION order (never the view's) — explicitly hidden OR unaccounted (not in
+/** The hidden group's display order: non-shown contexts (registry order), then every non-shown
+ *  schema prop in COLLECTION order (never the view's) — explicitly hidden OR unaccounted (not in
  *  property_order, so the allowlist keeps it off the table), which is what makes a collection prop
- *  added after the view revealable rather than invisible — then Modified. A stale hidden id displays
- *  nowhere but stays in the array (writes only ever filter the toggled id, so foreign keys survive —
- *  the loose-sidecar contract). Title is never here — it can't hide. */
-export function hiddenListIds(view: SavedView, schema: PropertyDefinition[]): string[] {
+ *  OR a Context created after the view revealable rather than invisible — then Modified. A stale
+ *  hidden id displays nowhere but stays in the array (writes only ever filter the toggled id, so
+ *  foreign keys survive — the loose-sidecar contract). Title is never here — it can't hide. */
+export function hiddenListIds(
+  view: SavedView,
+  schema: PropertyDefinition[],
+  contextIds: readonly string[] = [],
+): string[] {
   const set = new Set(view.hidden_properties)
   const shown = new Set(view.property_order)
   return [
-    ...CONTEXT_TIERS.filter((id) => set.has(id)),
+    ...contextIds.filter((id) => set.has(id) || !shown.has(id)),
     ...schema
       .filter((d) => !isReservedPropertyId(d.id) && (set.has(d.id) || !shown.has(d.id)))
       .map((d) => d.id),

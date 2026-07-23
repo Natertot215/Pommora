@@ -29,7 +29,7 @@ import { findCollectionForSet } from '@renderer/Detail/Scope'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { resolveColumns } from '../pipeline/columns'
 import {
-  contextOptionsFor as contextOptionsForTier,
+  contextOptionsFor as contextOptionsForSpaces,
   type ContextOption,
 } from '../pipeline/contextOptions'
 import { flattenContainer, groupsStructurally } from '../pipeline/group'
@@ -37,10 +37,11 @@ import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
 import { declaredType, resolveFieldValue } from '../pipeline/value'
 import { resolveView } from '../pipeline/resolveView'
 import { useActiveView } from '../useActiveView'
-import { columnLabel, TIER_LEVEL_BY_ID } from '../Table/columnLabel'
+import { columnLabel } from '../Table/columnLabel'
+import { contextIdsOf } from '../pipeline/contextIdentity'
 import { resolveContainerSchema } from '../Table/TableView'
 import { styleFor } from '../Table/columnStyles'
-import { writeTierValue } from '../tierWrite'
+import { writeContextValue } from '../contextCellWrite'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from '../Table/reassign'
 import { buildSetIcons, buildSetNames, buildSetPaths } from '../Table/cellResolve'
 import { GroupBand, resolveBandHead } from '../GroupBand'
@@ -121,12 +122,12 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
     void mutate({ op: 'setProperty', path: row.path, propertyId, value })
   }
-  // The commit router (the table's cell-write split): a reserved tier column writes the bare
-  // `tierN` frontmatter array through setTier; everything else is a property write.
+  // The commit router (the table's cell-write split): a context column writes its full
+  // Space-id list through the setContext op; everything else is a property write.
   const commitValue = (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null): void => {
     if (column.kind === 'tier') {
       const ids = value?.kind === 'context' ? value.value : []
-      writeTierValue(
+      writeContextValue(
         row,
         column.id,
         ids,
@@ -139,12 +140,8 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     setProperty(row, column.id, value)
   }
   const contextOptionsFor = (column: ResolvedColumn): ContextOption[] | null => {
-    const level =
-      column.kind === 'tier'
-        ? TIER_LEVEL_BY_ID[column.id]
-        : schema.find((d) => d.id === column.id)?.context_target?.tier
-    if (!level || !tree) return null
-    return contextOptionsForTier(level, tree)
+    if (column.kind !== 'tier' || !tree) return null
+    return contextOptionsForSpaces(column.id, tree)
   }
   // One card-value Style key — persists per-key into the view's column_styles (the table's writer
   // minus its live override, so a style change flashes through a load() round-trip: v1-acceptable).
@@ -201,10 +198,19 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     ? undefined
     : resolveManualOrder(sortedOrGrouped, manualOverride, viewOrders[view.id])
 
+  const contextIds = contextIdsOf(tree)
   const groups = useMemo(() => {
     const { rows, setTree } = flattenContainer(source, effectiveValues)
-    return resolveView({ rows, setTree, view, schema, manualOrder, flattenStructural: true }).groups
-  }, [source, effectiveValues, view, schema, manualOrder])
+    return resolveView({
+      rows,
+      setTree,
+      view,
+      schema,
+      manualOrder,
+      flattenStructural: true,
+      contextIds,
+    }).groups
+  }, [source, effectiveValues, view, schema, manualOrder, contextIds])
 
   // Set-Card reorder — writes the container's set_order via moveSet (the sidebar's mechanism); the
   // dragged set stays under the same parent (a pure reorder, not a reparent). No optimistic reorder,
@@ -226,7 +232,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     // biome-ignore lint/correctness/useExhaustiveDependencies: buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
     [tree?.contexts, tree?.labels, schema],
   )
-  const columns = useMemo(() => resolveColumns(view, schema), [view, schema])
+  const columns = useMemo(() => resolveColumns(view, schema, contextIds), [view, schema, contextIds])
   const labels = tree?.labels
   // Set id → its within-container location trail (Set › Sub-set crumbs) — one walk, read per card.
   const setChains = useMemo(() => {

@@ -10,6 +10,8 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_b', name: 'B', type: 'number' },
 ]
 
+const CONTEXT_IDS = ['_tier1', '_tier2', '_tier3', 'ctxC']
+
 function view(over: Partial<SavedView>): SavedView {
   return { id: 'v', name: 'V', type: 'table', property_order: [], hidden_properties: [], ...over }
 }
@@ -22,7 +24,7 @@ describe('resolveColumns — fixture', () => {
     const fixtureSchema = fixture.properties.map((id) =>
       propertyDefinition.parse((registry as Record<string, unknown>)[id]),
     )
-    const cols = resolveColumns(v, fixtureSchema)
+    const cols = resolveColumns(v, fixtureSchema, CONTEXT_IDS)
     expect(ids(cols)).toEqual(['prop_status', '_title', '_tier3', '_tier2', '_tier1'])
     expect(cols.map((c) => c.kind)).toEqual(['property', 'title', 'tier', 'tier', 'tier'])
     // prop_when is in the schema but in neither list → the allowlist keeps it off the table
@@ -33,50 +35,74 @@ describe('resolveColumns — fixture', () => {
 })
 
 describe('resolveColumns — rules', () => {
-  it('shows default-on tiers but not a schema prop absent from propertyOrder; _modified_at not default-on', () => {
-    const cols = resolveColumns(view({ property_order: ['_title'] }), schema)
-    expect(ids(cols)).toEqual(['_title', '_tier3', '_tier2', '_tier1'])
-    expect(cols.some((c) => c.id === '_modified_at')).toBe(false)
+  it('context columns are default-OFF — absent from propertyOrder means absent, period', () => {
+    const cols = resolveColumns(view({ property_order: ['_title'] }), schema, CONTEXT_IDS)
+    expect(ids(cols)).toEqual(['_title'])
+  })
+
+  it('a context column renders when propertyOrder explicitly reveals it', () => {
+    const cols = resolveColumns(
+      view({ property_order: ['_title', 'ctxC', '_tier1'] }),
+      schema,
+      CONTEXT_IDS,
+    )
+    expect(ids(cols)).toEqual(['_title', 'ctxC', '_tier1'])
+    expect(cols.map((c) => c.kind)).toEqual(['title', 'tier', 'tier'])
   })
 
   it('never auto-shows a schema prop absent from propertyOrder (added-after-view stays hidden)', () => {
-    const cols = resolveColumns(view({ property_order: ['_title', 'prop_a'] }), schema)
-    expect(ids(cols)).toEqual(['_title', 'prop_a', '_tier3', '_tier2', '_tier1'])
+    const cols = resolveColumns(view({ property_order: ['_title', 'prop_a'] }), schema, CONTEXT_IDS)
+    expect(ids(cols)).toEqual(['_title', 'prop_a'])
     expect(cols.some((c) => c.id === 'prop_b')).toBe(false)
   })
 
   it('renders _modified_at only when explicitly placed (def-less, kind modified)', () => {
-    const cols = resolveColumns(view({ property_order: ['_title', '_modified_at'] }), schema)
-    expect(ids(cols)).toEqual(['_title', '_modified_at', '_tier3', '_tier2', '_tier1'])
+    const cols = resolveColumns(
+      view({ property_order: ['_title', '_modified_at'] }),
+      schema,
+      CONTEXT_IDS,
+    )
+    expect(ids(cols)).toEqual(['_title', '_modified_at'])
     expect(cols.find((c) => c.id === '_modified_at')?.kind).toBe('modified')
   })
 
   it('excludes a hidden property, but never hides _title (front-inserted)', () => {
     const cols = resolveColumns(
-      view({ property_order: ['_title', 'prop_a'], hidden_properties: ['prop_a', '_title'] }),
+      view({
+        property_order: ['_title', 'prop_a', 'ctxC'],
+        hidden_properties: ['prop_a', 'ctxC', '_title'],
+      }),
       schema,
+      CONTEXT_IDS,
     )
-    expect(ids(cols)).toEqual(['_title', '_tier3', '_tier2', '_tier1'])
+    expect(ids(cols)).toEqual(['_title'])
   })
 
   it('front-inserts Title when propertyOrder omits it', () => {
-    const cols = resolveColumns(view({ property_order: ['prop_a'] }), schema)
+    const cols = resolveColumns(view({ property_order: ['prop_a'] }), schema, CONTEXT_IDS)
     expect(cols[0]).toEqual({ id: '_title', kind: 'title' })
   })
 
-  it('skips a stale propertyOrder id absent from the schema', () => {
-    const cols = resolveColumns(view({ property_order: ['_title', 'prop_ghost'] }), schema)
+  it('skips a stale propertyOrder id absent from schema AND registry', () => {
+    const cols = resolveColumns(
+      view({ property_order: ['_title', 'prop_ghost', 'ctx_gone'] }),
+      schema,
+      CONTEXT_IDS,
+    )
     expect(cols.some((c) => c.id === 'prop_ghost')).toBe(false)
+    expect(cols.some((c) => c.id === 'ctx_gone')).toBe(false)
   })
 
   it('maps each column id to its kind', () => {
     const cols = resolveColumns(
-      view({ property_order: ['_title', '_tier1', 'prop_a', '_modified_at'] }),
+      view({ property_order: ['_title', '_tier1', 'ctxC', 'prop_a', '_modified_at'] }),
       schema,
+      CONTEXT_IDS,
     )
     const kindOf = (id: string): string | undefined => cols.find((c) => c.id === id)?.kind
     expect(kindOf('_title')).toBe('title')
     expect(kindOf('_tier1')).toBe('tier')
+    expect(kindOf('ctxC')).toBe('tier')
     expect(kindOf('prop_a')).toBe('property')
     expect(kindOf('_modified_at')).toBe('modified')
   })
