@@ -7,6 +7,7 @@ import writeFileAtomic from 'write-file-atomic'
 import { readFile, rename, mkdir, stat } from 'node:fs/promises'
 import { join, basename } from 'node:path'
 import { isPlainObject } from '@shared/propertyValue'
+import { fail, ok, type Result } from '@shared/result'
 import { recordWrite } from './writeEcho'
 
 /** Atomically write a UTF-8 string to `filePath`. Recorded for watcher echo
@@ -54,6 +55,43 @@ export async function mutateJson<T>(
   const next = mutate(current)
   await writeJson(filePath, next)
   return next
+}
+
+/** STRICT JSON read: a missing file is `not-found`, anything else unreadable/non-object is
+ *  `operation-failed` — never a fallback. The read half of `rmwJsonStrict`, exposed for
+ *  callers that branch on the failure kind (the registry's seed-vs-unmigrated split). */
+export async function readJsonStrict(absPath: string): Promise<Result<Record<string, unknown>>> {
+  let raw: string
+  try {
+    raw = await readFile(absPath, 'utf8')
+  } catch (e) {
+    const missing = (e as NodeJS.ErrnoException).code === 'ENOENT'
+    return fail(missing ? 'not-found' : 'operation-failed', `Unreadable file: ${basename(absPath)}`)
+  }
+  try {
+    const v: unknown = JSON.parse(raw)
+    if (!isPlainObject(v))
+      return fail('operation-failed', `Not a JSON object: ${basename(absPath)}`)
+    return ok(v)
+  } catch {
+    return fail('operation-failed', `Corrupt JSON: ${basename(absPath)}`)
+  }
+}
+
+/** STRICT read-modify-write: a read failure is a `fail` and NO write happens — never a
+ *  fallback-to-empty (a transiently-unreadable file, e.g. an evicted iCloud placeholder,
+ *  must fail the save rather than be clobbered down to a near-empty object). The one
+ *  chokepoint for every sidecar whose fields other writers own concurrently; callers
+ *  needing serialization wrap this in their own `serializeOnFile`. */
+export async function rmwJsonStrict(
+  absPath: string,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown>,
+): Promise<Result<Record<string, unknown>>> {
+  const current = await readJsonStrict(absPath)
+  if (!current.ok) return current
+  const next = mutate(current.value)
+  await writeJson(absPath, next)
+  return ok(next)
 }
 
 /** Read + JSON-parse a file to a plain object, or null if missing / unreadable / not an
