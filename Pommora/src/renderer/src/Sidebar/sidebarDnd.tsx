@@ -510,6 +510,8 @@ function siblingGroup(dragged: Entry, idx: Index): string[] {
       return idx.projectIds
     case 'space':
       return dragged.parentId ? (idx.spaceIdsByContext.get(dragged.parentId) ?? []) : []
+    case 'contextGroup':
+      return idx.contextGroupIds
     default:
       return []
   }
@@ -532,6 +534,9 @@ function reorderCommit(dragged: Entry, _idx: Index, order: string[]): MutateRequ
       return dragged.parentId
         ? { op: 'reorderSpaces', contextId: dragged.parentId, ids: order }
         : null
+    case 'contextGroup':
+      // Registry array position IS the display order.
+      return { op: 'reorderContexts', ids: order }
     default:
       return null
   }
