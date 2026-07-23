@@ -81,7 +81,13 @@ function ValuePane({
   return (
     <>
       {topRow}
-      <PropertyOptionRows def={def} options={options} selected={selected} onPick={pick} />
+      <PropertyOptionRows
+        def={def}
+        contextOptions={contextOptions ?? undefined}
+        options={options}
+        selected={selected}
+        onPick={pick}
+      />
     </>
   )
 }
