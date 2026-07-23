@@ -16,10 +16,11 @@ import { CurrentColorIcon } from '../../Components/Detail/CurrentColorIcon'
  */
 export function SpaceSettingsContent({
   id,
-  colorInFooter,
+  color: colorMode,
 }: {
   id: string
-  colorInFooter: boolean
+  /** Where this surface seats the color icon: its footer, inline, or its own chrome ('none'). */
+  color: 'footer' | 'inline' | 'none'
 }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
@@ -53,7 +54,7 @@ export function SpaceSettingsContent({
                 {locked ? 'Unlock' : 'Lock'}
               </button>
             }
-            trailing={colorInFooter ? colorIcon : undefined}
+            trailing={colorMode === 'footer' ? colorIcon : undefined}
           />
         }
       >
@@ -67,7 +68,7 @@ export function SpaceSettingsContent({
               void mutate({ op: 'renameSpace', spaceId: id, newName: next })
           }}
         />
-        {!colorInFooter && <div style={{ padding: '4px 8px' }}>{colorIcon}</div>}
+        {colorMode === 'inline' && <div style={{ padding: '4px 8px' }}>{colorIcon}</div>}
       </MenuScrollFrame>
       <IconPicker
         open={pickerOpen}
@@ -95,7 +96,7 @@ function findSpaceColor(
   return undefined
 }
 
-/** The Settings-window body: color at BottomRow-right. */
+/** The Settings-window body — the window's rail seats the color icon, so none here. */
 export function SpaceSettings({ id }: { id: string }): React.JSX.Element | null {
-  return <SpaceSettingsContent id={id} colorInFooter />
+  return <SpaceSettingsContent id={id} color="none" />
 }

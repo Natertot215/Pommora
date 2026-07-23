@@ -1,55 +1,82 @@
-/* The Settings window — the NavWindow layout verbatim, one column narrower: a left rail
-   (every Context and its Spaces) beside the targeted entity's settings content. The window
-   contract (fixed, glass inset/radius, clip, scale in/out) comes from the FloatingPane base. */
+/* The Settings window — the NavWindow/PreviewWindow floating chrome: the preview's glass
+   tint verbatim, its toolbar strip, and a left SidePane rail whose bottom-left carries the
+   color icon (the navwindow-style-toggle spot). The window contract (fixed, glass inset/
+   radius, clip, scale in/out) comes from the FloatingPane base. */
 
 .settingswindow {
-  --settingswindow-inset: 12px;
+  /* The preview window's tint knobs verbatim (previewWindow.css) — one shared darkness. */
+  --pgpreview-bg: var(--bg-window);
+  --pgpreview-bg-a: 85%;
+  --pgpreview-toolbar-h: 34px;
+}
+
+/* The preview's toolbar strip: the title rides IN the strip with the close × beside it;
+   presses on the bare strip arm the window move. */
+.settingswindow-toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--pgpreview-toolbar-h);
+  padding: 0 calc(var(--glass-inset) + 6px);
+}
+.settingswindow-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--label-secondary);
+  /* Inert: presses fall through to the strip beneath and arm the window move. */
+  pointer-events: none;
+}
+/* The × lives in the toolbar next to the title (chassis default placement overridden). */
+.settingswindow-close {
+  display: flex;
+  padding: 3px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--label-secondary);
+  cursor: pointer;
+}
+.settingswindow-close:hover {
+  background: var(--state-hover);
+}
+/* The chassis's own × is re-seated into the toolbar above — the default slot stays empty. */
+.settingswindow-close-slot {
+  display: none;
 }
 
 .settingswindow-body {
   display: flex;
   flex: 1;
   min-height: 0;
+  margin-top: var(--pgpreview-toolbar-h);
 }
 
 .settingswindow-rail {
   width: var(--settingswindow-rail, 200px);
   flex-shrink: 0;
-  transition: width var(--duration-base) var(--ease-standard);
-}
-
-.settingswindow-rail-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: none;
-  padding: 28px 4px 8px;
   display: flex;
   flex-direction: column;
-  gap: 1px;
 }
-
-.settingswindow-rail-row {
-  -webkit-app-region: no-drag;
+.settingswindow-rail-fill {
+  flex: 1;
+  min-height: 0;
+}
+/* The color icon's seat — the navwindow-style-toggle recipe at the rail's bottom-left. */
+.settingswindow-color {
+  position: relative;
+  z-index: 3;
+  align-self: flex-start;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border: none;
-  border-radius: 6px;
-  background: none;
-  color: var(--label-primary);
-  cursor: default;
-  text-align: left;
-}
-.settingswindow-rail-row.is-space {
-  margin-left: 14px;
-}
-.settingswindow-rail-row:hover {
-  background: var(--state-hover);
-}
-.settingswindow-rail-row.is-active {
-  background: var(--state-selected, var(--state-hover));
+  margin-top: 4px;
+  padding: 3px 5px;
 }
 
 .settingswindow-main {
@@ -58,5 +85,5 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 28px var(--settingswindow-inset) 8px;
+  padding: 4px var(--glass-inset, 12px) 8px;
 }
