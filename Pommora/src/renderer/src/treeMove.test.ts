@@ -44,6 +44,7 @@ function tree(): NexusTree {
     homepage: { locked: false, headingIconHidden: false },
     navView: {},
     saved: [],
+    contexts: [],
     collections: [notes, work],
     userSections: [],
     labels: DEFAULT_LABELS,
@@ -145,7 +146,7 @@ describe('insertCreatedInTree', () => {
       { op: 'createContextGroup', name: 'Realms' },
       { id: 'g1', path: '.nexus/contexts/Realms' },
     )
-    expect(withGroup?.contextGroups?.at(-1)?.def).toEqual({
+    expect(withGroup?.contexts?.at(-1)?.def).toEqual({
       id: 'g1',
       title: 'Realms',
       singular: 'Realms',
@@ -156,7 +157,7 @@ describe('insertCreatedInTree', () => {
       { op: 'createSpace', contextId: 'g1', name: 'Astral' },
       { id: 'sp1', path: '.nexus/contexts/Realms/Astral' },
     )
-    const space = withSpace?.contextGroups?.at(-1)?.spaces.at(-1)
+    const space = withSpace?.contexts?.at(-1)?.spaces.at(-1)
     expect(space).toEqual({
       kind: 'space',
       id: 'sp1',
@@ -180,7 +181,7 @@ describe('insertCreatedInTree', () => {
 describe('patchContextGroupsInTree', () => {
   const groupedTree = (): NexusTree => ({
     ...tree(),
-    contextGroups: [
+    contexts: [
       {
         def: { id: 'g1', title: 'Realms', singular: 'Realm' },
         spaces: [
@@ -210,13 +211,13 @@ describe('patchContextGroupsInTree', () => {
       contextId: 'g1',
       newName: 'Planes',
     })
-    expect(t1?.contextGroups?.[0].def.title).toBe('Planes')
+    expect(t1?.contexts?.[0].def.title).toBe('Planes')
     const t2 = patchContextGroupsInTree(groupedTree(), {
       op: 'renameSpace',
       spaceId: 'sp2',
       newName: 'Shade',
     })
-    expect(t2?.contextGroups?.[0].spaces[1].title).toBe('Shade')
+    expect(t2?.contexts?.[0].spaces[1].title).toBe('Shade')
   })
 
   it('sets and clears a Space color', () => {
@@ -225,23 +226,23 @@ describe('patchContextGroupsInTree', () => {
       spaceId: 'sp1',
       color: 'mint',
     })
-    expect(set?.contextGroups?.[0].spaces[0].color).toBe('mint')
+    expect(set?.contexts?.[0].spaces[0].color).toBe('mint')
     const cleared = patchContextGroupsInTree(set as NexusTree, {
       op: 'setSpaceColor',
       spaceId: 'sp1',
     })
-    expect('color' in (cleared?.contextGroups?.[0].spaces[0] ?? {})).toBe(false)
+    expect('color' in (cleared?.contexts?.[0].spaces[0] ?? {})).toBe(false)
   })
 
   it('reorders groups and spaces, keeping unlisted items at the tail', () => {
     const t1 = patchContextGroupsInTree(groupedTree(), { op: 'reorderContexts', ids: ['g2'] })
-    expect(t1?.contextGroups?.map((g) => g.def.id)).toEqual(['g2', 'g1'])
+    expect(t1?.contexts?.map((g) => g.def.id)).toEqual(['g2', 'g1'])
     const t2 = patchContextGroupsInTree(groupedTree(), {
       op: 'reorderSpaces',
       contextId: 'g1',
       ids: ['sp2', 'sp1'],
     })
-    expect(t2?.contextGroups?.[0].spaces.map((s) => s.id)).toEqual(['sp2', 'sp1'])
+    expect(t2?.contexts?.[0].spaces.map((s) => s.id)).toEqual(['sp2', 'sp1'])
   })
 
   it('returns null on a tree without groups or an unowned op', () => {

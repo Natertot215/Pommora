@@ -31,6 +31,7 @@ const tree = (over: Partial<NexusTree>): NexusTree =>
     contexts: { areas: [], topics: [], projects: [] },
     collections: [],
     userSections: [],
+    contexts: [],
     ...over,
   }) as unknown as NexusTree
 

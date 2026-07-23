@@ -3,7 +3,7 @@ import { buildContextsById, buildResolveContext } from './resolveContext'
 import { DEFAULT_LABELS, type NexusTree } from '@shared/types'
 
 const tree = {
-  contextGroups: [
+  contexts: [
     {
       def: { id: '_tier1', title: 'Areas', singular: 'Area' },
       spaces: [

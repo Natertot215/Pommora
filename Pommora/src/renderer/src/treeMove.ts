@@ -148,10 +148,10 @@ export function insertCreatedInTree(
       def: { id: created.id, title, singular: title, icon: 'layout-grid' },
       spaces: [],
     }
-    return { ...tree, contextGroups: [...(tree.contextGroups ?? []), group] }
+    return { ...tree, contexts: [...(tree.contexts ?? []), group] }
   }
   if (req.op === 'createSpace') {
-    if (!tree.contextGroups?.some((g) => g.def.id === req.contextId)) return null
+    if (!tree.contexts?.some((g) => g.def.id === req.contextId)) return null
     const node: SpaceNode = {
       kind: 'space',
       id: created.id,
@@ -161,7 +161,7 @@ export function insertCreatedInTree(
     }
     return {
       ...tree,
-      contextGroups: tree.contextGroups.map((g) =>
+      contexts: tree.contexts.map((g) =>
         g.def.id === req.contextId ? { ...g, spaces: [...g.spaces, node] } : g,
       ),
     }
@@ -206,13 +206,13 @@ export function insertCreatedInTree(
   return null
 }
 
-/** Optimistic contextGroups patch for the registry ops — titles/colors/order land instantly;
+/** Optimistic contexts patch for the registry ops — titles/colors/order land instantly;
  *  a renamed folder's stale child paths settle on the confirming reload. null → no groups (or
  *  an op this fn doesn't own) → skip optimism. */
 export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): NexusTree | null {
-  const groups = tree.contextGroups
-  if (!groups) return null
-  const withGroups = (next: ContextGroup[]): NexusTree => ({ ...tree, contextGroups: next })
+  const groups = tree.contexts
+  if (!groups.length) return null
+  const withGroups = (next: ContextGroup[]): NexusTree => ({ ...tree, contexts: next })
   switch (req.op) {
     case 'renameContext':
       return withGroups(
@@ -274,16 +274,16 @@ export function updateNodeInTree(
   path: string,
   fn: (node: TreeEntity) => TreeEntity | null,
 ): NexusTree | null {
-  for (const [gi, g] of (tree.contextGroups ?? []).entries()) {
+  for (const [gi, g] of (tree.contexts ?? []).entries()) {
     const i = g.spaces.findIndex((s) => s.path === path)
     if (i === -1) continue
     const next = fn(g.spaces[i])
     const spaces = [...g.spaces]
     if (next === null) spaces.splice(i, 1)
     else spaces[i] = next as SpaceNode
-    const groups = [...(tree.contextGroups ?? [])]
+    const groups = [...(tree.contexts ?? [])]
     groups[gi] = { ...g, spaces }
-    return { ...tree, contextGroups: groups }
+    return { ...tree, contexts: groups }
   }
   for (const root of rootsOf(tree)) {
     const r = updateInContainers(root.collections, path, fn)

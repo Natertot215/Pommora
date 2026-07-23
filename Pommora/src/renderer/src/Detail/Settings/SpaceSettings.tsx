@@ -112,7 +112,7 @@ function spaceColor(
   tree: ReturnType<typeof useSession.getState>['tree'],
   id: string,
 ): string | undefined {
-  for (const g of tree?.contextGroups ?? []) {
+  for (const g of tree?.contexts ?? []) {
     const sp = g.spaces.find((s) => s.id === id)
     if (sp) return sp.color
   }

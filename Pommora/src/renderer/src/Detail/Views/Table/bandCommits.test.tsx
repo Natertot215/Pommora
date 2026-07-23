@@ -160,6 +160,7 @@ beforeEach(() => {
       contexts: { areas: [], topics: [], projects: [] },
       collections: [],
       userSections: [],
+      contexts: [],
       labels: {
         area: pair('Area', 'Areas'),
         topic: pair('Topic', 'Topics'),

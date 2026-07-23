@@ -314,7 +314,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema) : null),
     // biome-ignore lint/correctness/useExhaustiveDependencies: buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
-    [tree?.contextGroups, tree?.labels, schema],
+    [tree?.contexts, tree?.labels, schema],
   )
   // One mounted observer, two targets, one job (the overflowing flag): the view (pane resizes) and
   // the grid (min-width sizes its box only while the columns overflow the pane — in the fit regime

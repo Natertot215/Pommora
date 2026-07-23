@@ -9,7 +9,7 @@ export function makeTree(): NexusTree {
     homepage: { locked: false, headingIconHidden: false },
     navView: {},
     saved: [],
-    contextGroups: [
+    contexts: [
       {
         def: { id: 'g1', title: 'Realms', singular: 'Realm' },
         spaces: [

@@ -607,7 +607,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       subSetPlacement={subSetPlacement}
     >
       <div className="section">
-        {(tree.contextGroups ?? []).map((g) => (
+        {(tree.contexts ?? []).map((g) => (
           <ContextGroupDisclosure key={g.def.id} group={g} />
         ))}
       </div>

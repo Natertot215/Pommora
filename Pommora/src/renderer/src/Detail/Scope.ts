@@ -87,7 +87,7 @@ export function isDepth1Set(tree: NexusTree | null, setId: string): boolean {
 /** Resolve a Space id to its banner owner across the registry groups. */
 export function findSpace(tree: NexusTree | null, id: string): BannerOwner | null {
   if (!tree) return null
-  for (const g of tree.contextGroups ?? []) {
+  for (const g of tree.contexts ?? []) {
     const sp = g.spaces.find((s) => s.id === id)
     if (sp)
       return {
