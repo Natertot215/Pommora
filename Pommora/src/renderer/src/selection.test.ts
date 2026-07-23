@@ -10,7 +10,6 @@ function tree(pages: { id: string; path: string }[]): NexusTree {
     homepage: { locked: false, headingIconHidden: false },
     navView: {},
     saved: [],
-    contexts: { projects: [], topics: [], areas: [] },
     collections: [
       {
         kind: 'collection',

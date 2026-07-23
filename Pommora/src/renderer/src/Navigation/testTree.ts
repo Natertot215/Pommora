@@ -9,11 +9,16 @@ export function makeTree(): NexusTree {
     homepage: { locked: false, headingIconHidden: false },
     navView: {},
     saved: [],
-    contexts: {
-      areas: [{ kind: 'area', id: 'a1', title: 'Work', path: 'Work' }],
-      topics: [{ kind: 'topic', id: 't1', title: 'Reading', path: 'Reading' }],
-      projects: [{ kind: 'project', id: 'pr1', title: 'Pommora', path: 'Pommora' }],
-    },
+    contextGroups: [
+      {
+        def: { id: 'g1', title: 'Realms', singular: 'Realm' },
+        spaces: [
+          { kind: 'space', id: 'a1', title: 'Work', path: '.nexus/contexts/Realms/Work', contextId: 'g1' },
+          { kind: 'space', id: 't1', title: 'Reading', path: '.nexus/contexts/Realms/Reading', contextId: 'g1' },
+          { kind: 'space', id: 'pr1', title: 'Pommora', path: '.nexus/contexts/Realms/Pommora', contextId: 'g1' },
+        ],
+      },
+    ],
     collections: [
       {
         kind: 'collection',

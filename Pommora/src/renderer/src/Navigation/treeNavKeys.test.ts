@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type {
-  AreaNode,
   CollectionNode,
   NexusTree,
   PageNode,
-  ProjectNode,
   SetNode,
-  TopicNode,
 } from '@shared/types'
 import { existingNavKeys } from './treeNavKeys'
 
@@ -27,9 +24,6 @@ const collection = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): C
   pages,
   sets,
 })
-const area = (id: string): AreaNode => ({ id, kind: 'area', title: id, path: id })
-const topic = (id: string): TopicNode => ({ id, kind: 'topic', title: id, path: id })
-const project = (id: string): ProjectNode => ({ id, kind: 'project', title: id, path: id })
 
 // Only the slices existingNavKeys reads; the rest of NexusTree is irrelevant to this unit.
 const tree = (over: Partial<NexusTree>): NexusTree =>
@@ -50,17 +44,6 @@ describe('existingNavKeys', () => {
     const keys = new Set(existingNavKeys(t))
     for (const k of ['collection:c1', 'page:p1', 'set:s1', 'page:p2', 'set:s2', 'page:p3'])
       expect(keys.has(k)).toBe(true)
-  })
-
-  it('keys contexts as context:<id>, never their node kind', () => {
-    const t = tree({
-      contexts: { areas: [area('a1')], topics: [topic('t1')], projects: [project('pr1')] },
-    })
-    const keys = new Set(existingNavKeys(t))
-    expect(keys.has('context:a1')).toBe(true)
-    expect(keys.has('context:t1')).toBe(true)
-    expect(keys.has('context:pr1')).toBe(true)
-    expect(keys.has('area:a1')).toBe(false) // the trap: node kind is 'area', selection key is 'context'
   })
 
   it('includes collections nested under user sections', () => {

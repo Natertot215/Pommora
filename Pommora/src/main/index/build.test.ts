@@ -132,11 +132,8 @@ describe('rebuildIndex (cold build)', () => {
     const def = get(db, 'SELECT name, type FROM property_definitions WHERE id = ?', ids.score)
     expect(def).toMatchObject({ name: 'Score', type: 'number' })
 
-    // Context member (legacy tier-1 dir resolves through the reserved id)
-    expect(get(db, 'SELECT context_id, title FROM contexts WHERE id = ?', ids.work)).toMatchObject({
-      context_id: '_tier1',
-      title: 'Work',
-    })
+    // An unmigrated tree indexes no context rows (migration runs before the index in the app);
+    // its pages' bare tierN LINKS still resolve through the seeded registry below.
 
     // Resolved connection PageA → PageB; the self-link [[PageA]] is skipped (Swift parity)
     const conns = db.prepare('SELECT * FROM connections WHERE source_id = ?').all(ids.a) as Record<

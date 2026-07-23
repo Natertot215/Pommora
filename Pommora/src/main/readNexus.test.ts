@@ -139,7 +139,7 @@ describe('readNexus — structure mode (raw, like ~/test)', () => {
     expect(setA.sets![0].pages.map((p) => p.title)).toEqual(['Deep'])
     expect(collections.find((c) => c.title === 'Tasks')).toBeUndefined()
     expect(collections.find((c) => c.title === '_internal')).toBeUndefined()
-    expect(t.contexts.areas.length).toBe(0)
+    expect(t.contextGroups).toBeUndefined()
   })
 
   it('synthesizes stable adopted ids across reads', async () => {
@@ -173,7 +173,6 @@ describe('readNexus — sidecar mode', () => {
     expect(notes.sets[0].pages.map((p) => p.title)).toEqual(['Entry'])
     expect(notes.properties?.length).toBe(1)
     expect((notes.properties?.[0] as { name?: string })?.name).toBe('Status')
-    expect(t.contexts.areas[0]?.color).toBe('blue')
   })
 })
 
@@ -279,15 +278,6 @@ describe('readNexus — registry-backed contexts', () => {
     expect(pom?.contextId).toBe('_tier3')
     expect(pom?.color).toBe('cyan')
     expect(pom?.path).toBe('.nexus/contexts/Projects/Pommora')
-  })
-
-  it('derives the legacy contexts struct from the reserved groups', async () => {
-    const t = await readNexus(reg)
-    expect(t.contexts.areas.map((a) => a.id)).toEqual(['sp-work'])
-    expect(t.contexts.areas[0].kind).toBe('area')
-    expect(t.contexts.areas[0].color).toBe('blue')
-    expect(t.contexts.projects.map((p) => p.id)).toEqual(['sp-cs-proj', 'sp-pom'])
-    expect(t.contexts.projects[0].kind).toBe('project')
   })
 
   it('resolves bracketed page keys onto the node contextValues', async () => {
@@ -571,9 +561,6 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
 
   it('carries each container + context path, POSIX-relative to the root', async () => {
     const t = await readNexus(root)
-    expect(t.contexts.areas[0].path).toBe('.nexus/areas/Work')
-    expect(t.contexts.topics[0].path).toBe('.nexus/topics/Health')
-    expect(t.contexts.projects[0].path).toBe('.nexus/projects/Launch')
     const notes = t.collections![0]
     expect(notes.path).toBe('Notes')
     expect(notes.sets[0].path).toBe('Notes/Daily')

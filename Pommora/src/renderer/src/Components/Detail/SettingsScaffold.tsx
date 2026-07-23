@@ -6,7 +6,6 @@ import { Icon, iconNameOr, defaultEntityIcon } from '../../design-system/symbols
 import { InteractionField } from '../../design-system/components/InteractionField'
 import { MenuBottomRow, MenuScrollFrame } from '../../design-system/components/menu'
 import { footerLockAction, lockIcon } from '../../Blocks/handleMenu.css'
-import { findContext } from '../../Detail/Scope'
 import { IconPicker } from '../IconPicker'
 import { PhotoCropModal } from '../PhotoCropModal'
 import { InlineEditHeader } from './InlineEditHeader'
@@ -100,38 +99,5 @@ export function SettingsScaffold(): React.JSX.Element | null {
     )
   }
 
-  if (selection.kind === 'context') {
-    const node = findContext(tree, selection.id)
-    if (!node) return null
-    return (
-      <>
-        <InlineEditHeader
-          value={node.name}
-          icon={iconNameOr(node.icon, defaultEntityIcon(node.kind as EntityIconKind, defaultIcons))}
-          iconRef={ctxIconRef}
-          onIconClick={() => setCtxPickerOpen(true)}
-          onCommit={(next) => {
-            if (next && next !== node.name)
-              void submitRename(node.path, node.kind as MutableKind, next)
-          }}
-        />
-        <IconPicker
-          open={ctxPickerOpen}
-          onClose={() => setCtxPickerOpen(false)}
-          triggerRef={ctxIconRef}
-          value={node.icon}
-          onSelect={(id) => {
-            setCtxPickerOpen(false)
-            void mutate({
-              op: 'setIcon',
-              path: node.path,
-              kind: node.kind as MutableKind,
-              icon: id,
-            })
-          }}
-        />
-      </>
-    )
-  }
   return null
 }
