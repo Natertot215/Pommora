@@ -521,14 +521,6 @@ const api = {
       ipcRenderer.removeListener('open-in-new-tab', listener)
     }
   },
-  // The context-menu "Settings" push-back on a Context/Space — same contract as onOpenInNewTab.
-  onOpenEntitySettings: (cb: (target: ContextTarget) => void): (() => void) => {
-    const listener = (_e: IpcRendererEvent, target: ContextTarget): void => cb(target)
-    ipcRenderer.on('open-entity-settings', listener)
-    return () => {
-      ipcRenderer.removeListener('open-entity-settings', listener)
-    }
-  },
   // The context-menu "Open in Preview" push-back — same contract as onOpenInNewTab.
   onOpenInPreview: (cb: (target: ContextTarget) => void): (() => void) => {
     const listener = (_e: IpcRendererEvent, target: ContextTarget): void => cb(target)
