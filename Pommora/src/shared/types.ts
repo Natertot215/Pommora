@@ -71,6 +71,23 @@ export const CHIP_SOLID_COLORS = [
 ] as const
 export type ChipSolidColor = (typeof CHIP_SOLID_COLORS)[number]
 
+/** Legacy external color names (Notion select colors / the Swift Area palette) → their
+ *  chip solid. The 7 shared hues map 1:1; brown/pink/indigo take a nearest color;
+ *  teal→cyan; gray→grey. `accent` and unknowns are deliberately absent (→ unset). */
+export const LEGACY_CHIP_COLOR_MAP: Record<string, ChipSolidColor> = {
+  gray: 'grey',
+  brown: 'orange',
+  orange: 'orange',
+  yellow: 'yellow',
+  green: 'green',
+  blue: 'blue',
+  purple: 'purple',
+  pink: 'lavender',
+  red: 'red',
+  teal: 'cyan',
+  indigo: 'purple',
+}
+
 /**
  * Default accent when settings.json omits or has an invalid `accent`. A concrete
  * spectrum color (never `system`) so it always resolves to a hex and can seed the
