@@ -283,12 +283,10 @@
 
 .section {
   margin-bottom: 14px;
-  /* Anchors the absolutely-positioned hover-create "+". */
-  position: relative;
 }
 
-/* Hover-create "+" — the .section-add recipe as a free-floating affordance, revealed on section
-   hover. The Contexts mount sits bottom-left, under the last group. */
+/* Hover-create "+" — the .section-add recipe as a free-floating affordance; each mount's own
+   class supplies position + reveal trigger. */
 .hover-create {
   -webkit-app-region: no-drag;
   appearance: none;
@@ -305,17 +303,24 @@
     opacity 0.12s ease,
     background 0.12s ease;
 }
-.section:hover .hover-create,
-.hover-create:focus-visible {
-  opacity: 1;
-}
 .hover-create:hover {
   background: var(--state-hover);
 }
+
+/* New Context — the sidebar's bottom-left, on the glass beside the ribbon (holds position while
+   the list scrolls); revealed on sidebar hover like the collapse button. */
 .contexts-create {
   position: absolute;
-  left: 8px;
-  bottom: -12px;
+  left: calc(var(--ribbon-w) + 10px);
+  bottom: 8px;
+  z-index: 2;
+}
+.surface-glass:hover .contexts-create,
+.contexts-create:focus-visible {
+  opacity: 1;
+}
+.shell.ribbon-hidden .contexts-create {
+  left: calc(var(--ribbon-hidden-inset) + 4px);
 }
 
 /* Type (control / semibold) comes from the text.control.semibold alias composed in SectionHeader —
