@@ -134,6 +134,18 @@ describe('setPageContext', () => {
     expect(fm['[Classes]']).toEqual(['CS 161'])
   })
 
+  it('fails without writing when ANY space sidecar is unreadable (never strips siblings)', async () => {
+    // An unreadable sibling sidecar (evicted cloud placeholder) must fail the world load —
+    // a world missing that Space would make the reconcile drop its valid tags.
+    await rm(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
+    await mkdir(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
+    await writeFile(page(), '---\nid: p1\n"[Projects]":\n  - Pommora\n---\nbody')
+    const before = await readFile(page(), 'utf8')
+    const w = await loadContextWorld(root)
+    expect(w.ok).toBe(false)
+    expect(await readFile(page(), 'utf8')).toBe(before)
+  })
+
   it('fails on an unknown space id without writing', async () => {
     await writeFile(page(), '---\nid: p1\n---\nbody')
     const before = await readFile(page(), 'utf8')

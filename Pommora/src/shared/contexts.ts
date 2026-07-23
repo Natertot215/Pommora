@@ -63,14 +63,17 @@ export function normalizeContextValue(raw: unknown): string {
 }
 
 /** The fresh-nexus registry: titles from the tier LabelPairs' plurals, singulars from their
- *  singular halves, reserved ids in tier order. */
+ *  singular halves, reserved ids in tier order. Colliding custom plurals disambiguate
+ *  ("Title 2") — titles are nexus-wide identity, so two entries can never share one. */
 export function seededRegistry(labels: NexusLabels): ContextsRegistry {
   const pairs = [labels.area, labels.topic, labels.project]
+  const taken = new Set<string>()
   return {
-    contexts: pairs.map((pair, i) => ({
-      id: RESERVED_CONTEXT_IDS[i],
-      title: pair.plural,
-      singular: pair.singular,
-    })),
+    contexts: pairs.map((pair, i) => {
+      let title = pair.plural
+      for (let n = 2; taken.has(title); n++) title = `${pair.plural} ${n}`
+      taken.add(title)
+      return { id: RESERVED_CONTEXT_IDS[i], title, singular: pair.singular }
+    }),
   }
 }
