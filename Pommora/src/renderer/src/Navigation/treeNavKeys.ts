@@ -20,7 +20,11 @@ export function existingNavKeys(tree: NexusTree): string[] {
   }
   for (const c of tree.collections) walk(c)
   for (const u of tree.userSections) for (const c of u.collections) walk(c)
-  for (const ctx of [...tree.contexts.areas, ...tree.contexts.topics, ...tree.contexts.projects])
-    keys.push(navKey({ kind: 'context', id: ctx.id }))
+  if (tree.contextGroups)
+    for (const g of tree.contextGroups)
+      for (const sp of g.spaces) keys.push(navKey({ kind: 'space', id: sp.id }))
+  else
+    for (const ctx of [...tree.contexts.areas, ...tree.contexts.topics, ...tree.contexts.projects])
+      keys.push(navKey({ kind: 'context', id: ctx.id }))
   return keys
 }
