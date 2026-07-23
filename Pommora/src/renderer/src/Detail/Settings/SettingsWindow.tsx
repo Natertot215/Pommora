@@ -1,28 +1,28 @@
 import { useState, type CSSProperties } from 'react'
-import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
-import { cx } from '@renderer/design-system/cx'
+import { Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
 import { SidePane, sidePaneWidth } from '@renderer/design-system/components/SidePane/SidePane'
 import { FloatingPaneShell } from '@renderer/design-system/components/FloatingPane/FloatingPane'
 import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import { useSession } from '../../store'
+import { CurrentColorIcon } from '../../Components/Detail/CurrentColorIcon'
 import { ContextSettings } from './ContextSettings'
 import { SpaceSettings } from './SpaceSettings'
 import './settingsWindow.css'
 
-// The unified floating-chrome opening size (NavWindow/PreviewWindow's WIN block) and the
-// NavWindow rail bounds — the same chrome, one column narrower.
+// The unified floating-chrome opening size (the NavWindow/PreviewWindow WIN block) and the
+// NavWindow rail bounds.
 const WIN = { minW: 360, minH: 280, defW: 700, defH: 500 }
 const RAIL = { min: 120, def: 200, max: 320 }
 
 // The bare backgrounds a window-move may start from (the NavWindow allow-list pattern).
 const DRAG_SURFACES =
-  '.settingswindow, .settingswindow-body, .settingswindow-rail, .settingswindow-rail-list, .settingswindow-main'
+  '.settingswindow, .settingswindow-toolbar, .settingswindow-body, .settingswindow-rail, .settingswindow-rail-fill, .settingswindow-main'
 
 /**
- * The entity Settings window — the same floating chrome as NavWindow (one shell:
- * FloatingPaneShell + a left SidePane rail), listing every Context and its Spaces on the
- * rail with the targeted entity's settings content beside it.
+ * The entity Settings window — the NavWindow/PreviewWindow floating chrome (the shared
+ * shell + a left SidePane), the preview's glass tint, its toolbar strip carrying the ×
+ * beside the entity title, and the color icon seated at the rail's bottom-left.
  */
 export function SettingsWindow(): React.JSX.Element | null {
   const target = useSession((s) => s.settingsTarget)
@@ -42,11 +42,21 @@ function SettingsWindowBody({
   target: { kind: 'context' | 'space'; id: string }
 }): React.JSX.Element {
   const close = useSession((s) => s.closeEntitySettings)
-  const retarget = useSession((s) => s.openEntitySettings)
+  const mutate = useSession((s) => s.mutate)
   const groups = useSession((s) => s.tree?.contextGroups ?? [])
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const [railW, setRailW] = useState(() => sidePaneWidth('settingswindow', RAIL.def))
-  const style = { '--settingswindow-rail': `${railW}px` } as CSSProperties
+  const style = {
+    '--settingswindow-rail': `${railW}px`,
+    // The preview's one-background compose (inline because GlassPane's frost sets its own).
+    background: 'color-mix(in srgb, var(--pgpreview-bg) var(--pgpreview-bg-a), transparent)',
+  } as CSSProperties
+
+  const space =
+    target.kind === 'space'
+      ? groups.flatMap((g) => g.spaces).find((s) => s.id === target.id)
+      : undefined
+  const title =
+    target.kind === 'space' ? space?.title : groups.find((g) => g.def.id === target.id)?.def.title
 
   return (
     <FloatingPaneShell
@@ -58,7 +68,15 @@ function SettingsWindowBody({
       className="settingswindow"
       style={style}
       ariaLabel="Settings"
+      closeClassName="settingswindow-close-slot"
     >
+      {/* The toolbar strip owns the × + title (the chassis's default × is re-seated here). */}
+      <div className="settingswindow-toolbar">
+        <button type="button" className="settingswindow-close" aria-label="Close" onClick={close}>
+          <Icon name="x" size={14} />
+        </button>
+        <span className={`settingswindow-title ${text.footnote.emphasized}`}>{title}</span>
+      </div>
       <div className="settingswindow-body">
         <SidePane
           windowId="settingswindow"
@@ -66,49 +84,18 @@ function SettingsWindowBody({
           bounds={RAIL}
           className="settingswindow-rail"
           resizeClassName="settingswindow-rail-resize"
-          resizeLabel="Resize list"
+          resizeLabel="Resize pane"
           onWidthChange={setRailW}
         >
-          <div className="settingswindow-rail-list edge-fade">
-            {groups.map((g) => (
-              <div key={g.def.id}>
-                <button
-                  type="button"
-                  className={cx(
-                    'settingswindow-rail-row',
-                    text.footnote.emphasized,
-                    target.kind === 'context' && target.id === g.def.id && 'is-active',
-                  )}
-                  onClick={() => retarget({ kind: 'context', id: g.def.id })}
-                >
-                  <Icon
-                    name={iconNameOr(g.def.icon, defaultEntityIcon('space', defaultIcons))}
-                    size={14}
-                  />
-                  <span>{g.def.title}</span>
-                </button>
-                {g.spaces.map((sp) => (
-                  <button
-                    key={sp.id}
-                    type="button"
-                    className={cx(
-                      'settingswindow-rail-row',
-                      'is-space',
-                      text.footnote.emphasized,
-                      target.kind === 'space' && target.id === sp.id && 'is-active',
-                    )}
-                    onClick={() => retarget({ kind: 'space', id: sp.id })}
-                  >
-                    <Icon
-                      name={iconNameOr(sp.icon, defaultEntityIcon('space', defaultIcons))}
-                      size={14}
-                    />
-                    <span>{sp.title}</span>
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
+          <div className="settingswindow-rail-fill" />
+          {space && (
+            <div className="settingswindow-color">
+              <CurrentColorIcon
+                color={space.color}
+                onPick={(color) => void mutate({ op: 'setSpaceColor', spaceId: space.id, color })}
+              />
+            </div>
+          )}
         </SidePane>
         <div className="settingswindow-main">
           {target.kind === 'space' ? (
