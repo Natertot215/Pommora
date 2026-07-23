@@ -14,7 +14,7 @@ import { iconOption } from '../Components/Detail/pickerControl.css'
 import { Cell } from '../Detail/Views/Table/Cell'
 import { buildContextsById, type ResolveContext } from '../Detail/Views/Table/resolveContext'
 import { contextOptionsFor } from '../Detail/Views/pipeline/contextOptions'
-import { TIER_LEVEL_BY_ID } from '../Detail/Views/Table/columnLabel'
+import { contextIdentityOf, spaceIdentityOf } from '../Detail/Views/pipeline/contextIdentity'
 import { PropertyEditor } from '../Detail/Views/PropertyEditing/PropertyEditor'
 import { sharedValueClickAction } from '../Detail/Views/PropertyEditing/valueClick'
 import { parseEditorValue } from '../Detail/Views/Cards/cardValueInput'
@@ -23,7 +23,8 @@ import { PropertyPicker, syntheticContextDef } from '../Detail/Views/PropertyEdi
 import { DatetimeValuePicker } from '../Detail/Views/PropertyEditing/DatetimeValuePicker'
 import { resolveFieldValue } from '../Detail/Views/pipeline/value'
 import { isValidLink } from '@shared/links'
-import { RESERVED_PROPERTY_ID } from '@shared/properties'
+import { contextKey, type ContextsRegistry } from '@shared/contexts'
+import { resolveContextKeys } from '@shared/contextResolve'
 import { useSession, type PreviewTarget } from '../store'
 
 // The front-matter inspector (G-1/I-13/I-14): the preview page's title, banner, context tiers, and
@@ -74,18 +75,41 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     () => (tree ? { schema, contextsById: buildContextsById(tree), labels: tree.labels } : null),
     [tree, schema],
   )
+  // The registry rows + the same shared resolution the walk runs — bracketed frontmatter
+  // keys resolve to Space ids against the live tree.
+  const contextRows = useMemo(
+    () =>
+      (tree?.contextGroups ?? []).map((g) => ({
+        id: g.def.id,
+        label: g.def.title,
+        icon: g.def.icon,
+      })),
+    [tree],
+  )
+  const ctxRegistry = useMemo<ContextsRegistry | null>(
+    () => (tree?.contextGroups ? { contexts: tree.contextGroups.map((g) => g.def) } : null),
+    [tree],
+  )
+  const contextValues = useMemo(() => {
+    if (!fm || !ctxRegistry || !tree?.contextGroups) return undefined
+    const spacesByContext = new Map(tree.contextGroups.map((g) => [g.def.id, g.spaces]))
+    const links = resolveContextKeys(fm as Record<string, unknown>, ctxRegistry, spacesByContext)
+    return links.size ? Object.fromEntries(links) : undefined
+  }, [fm, ctxRegistry, tree])
   const row = useMemo<ViewRow | null>(
-    () => (fm ? { id: target.id, title, icon: fm.icon, path: target.path, frontmatter: fm } : null),
-    [fm, title, target],
+    () =>
+      fm
+        ? { id: target.id, title, icon: fm.icon, path: target.path, frontmatter: fm, contextValues }
+        : null,
+    [fm, title, target, contextValues],
   )
 
-  // Everything is ASSIGNED (Nathan's model) — context tiers included: a row shows when its key
-  // exists in the page's frontmatter (an empty tier array counts) OR was assigned this session via
-  // + Add Property. Assigned-but-empty is valid and stays; the unassigned live behind the Add picker.
+  // The assign-reveal flow (F-1), one behavior for contexts AND properties: a row shows when
+  // it holds a real value OR was assigned this session via + Add Property (session-only —
+  // disk never carries an empty key).
   const isAssigned = (id: string): boolean => {
     if (revealed.has(id)) return true
-    const tier = TIER_LEVEL_BY_ID[id]
-    if (tier) return fm?.[`tier${tier}` as 'tier1' | 'tier2' | 'tier3'] !== undefined
+    if (contextRows.some((c) => c.id === id)) return (contextValues?.[id]?.length ?? 0) > 0
     return fm?.properties?.[id] !== undefined
   }
 
@@ -97,10 +121,22 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     )
     void mutate({ op: 'setProperty', path: target.path, propertyId, value })
   }
-  const commitTier = (tierId: string, ids: string[]): void => {
-    const tier = TIER_LEVEL_BY_ID[tierId]
-    setFm((prev) => (prev ? ({ ...prev, [`tier${tier}`]: ids } as PageFrontmatter) : prev))
-    void mutate({ op: 'setTier', path: target.path, tier, contextIds: ids })
+  const commitContext = (contextId: string, ids: string[]): void => {
+    // Optimistic: patch the bracketed key with titles off the live tree (main re-resolves
+    // authoritatively at the write boundary).
+    const ctxTitle = contextIdentityOf(tree, contextId)?.title
+    if (ctxTitle === undefined) return
+    const titles = ids
+      .map((sid) => spaceIdentityOf(tree, sid)?.title)
+      .filter((t): t is string => t !== undefined)
+    setFm((prev) => {
+      if (!prev) return prev
+      const next = { ...prev } as Record<string, unknown>
+      if (titles.length) next[contextKey(ctxTitle)] = titles
+      else delete next[contextKey(ctxTitle)]
+      return next as PageFrontmatter
+    })
+    void mutate({ op: 'setContext', path: target.path, contextId, spaceIds: ids })
   }
 
   const editRow = (def: PropertyDefinition, el: HTMLElement): void => {
@@ -147,20 +183,11 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
 
   if (!ctx || !row || !fm) return <div className="pgpreview-insp" />
 
+  const isContextRow = (id: string): boolean => contextRows.some((c) => c.id === id)
   const editingDef =
     editing &&
     (schema.find((d) => d.id === editing.id) ??
-      (TIER_LEVEL_BY_ID[editing.id] ? syntheticContextDef(editing.id) : undefined))
-  const TIER_ENTITY: Record<string, 'area' | 'topic' | 'project'> = {
-    [RESERVED_PROPERTY_ID.tier1]: 'area',
-    [RESERVED_PROPERTY_ID.tier2]: 'topic',
-    [RESERVED_PROPERTY_ID.tier3]: 'project',
-  }
-  const tierRows: Array<{ id: string; label: string }> = [
-    { id: RESERVED_PROPERTY_ID.tier1, label: ctx.labels.area.plural },
-    { id: RESERVED_PROPERTY_ID.tier2, label: ctx.labels.topic.plural },
-    { id: RESERVED_PROPERTY_ID.tier3, label: ctx.labels.project.plural },
-  ]
+      (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined))
 
   return (
     <div className="pgpreview-insp">
@@ -169,7 +196,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             only once something's assigned into it. Nothing pre-shows: on an empty page the Add
             affordance alone sits at the top (the Obsidian read). */}
         {[
-          tierRows.filter((t) => isAssigned(t.id)).map((t) => ({ def: null, ...t })),
+          contextRows.filter((t) => isAssigned(t.id)).map((t) => ({ def: null, ...t })),
           schema.filter((d) => isAssigned(d.id)).map((d) => ({ def: d, id: d.id, label: d.name })),
         ].map((group, gi) =>
           group.length === 0 ? null : (
@@ -181,14 +208,10 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                     key={id}
                     className="pgpreview-insp-row"
                     data-insp-id={id}
-                    onContextMenu={
-                      def
-                        ? (e) => {
-                            e.preventDefault()
-                            setRowMenu({ id, x: e.clientX, y: e.clientY })
-                          }
-                        : undefined
-                    }
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      setRowMenu({ id, x: e.clientX, y: e.clientY })
+                    }}
                   >
                     <span className={cx('pgpreview-insp-label', text.caption.standard)}>
                       <Icon
@@ -197,7 +220,8 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                             ? (asRenderableIcon(def.icon) ??
                               propertyTypeIconName(def.type) ??
                               'tag')
-                            : defaultEntityIcon(TIER_ENTITY[id] ?? 'area')
+                            : (asRenderableIcon(contextRows.find((c) => c.id === id)?.icon) ??
+                              defaultEntityIcon('space'))
                         }
                         size={12}
                       />
@@ -245,7 +269,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                           ctx,
                           hideIcon: false,
                           style: { look: 'pill' },
-                        }) ?? <span className="pgpreview-insp-empty">Empty</span>)
+                        }) ?? <span className="pgpreview-insp-empty">—</span>)
                       )}
                     </span>
                   </div>
@@ -254,7 +278,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             </div>
           ),
         )}
-        {(tierRows.some((t) => !isAssigned(t.id)) || schema.some((d) => !isAssigned(d.id))) && (
+        {(contextRows.some((t) => !isAssigned(t.id)) || schema.some((d) => !isAssigned(d.id))) && (
           <button
             type="button"
             ref={addRef}
@@ -278,12 +302,13 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
               <MenuItem
                 leading={<Icon name="x" size={13} />}
                 onClick={() => {
-                  commitValue(rowMenu.id, null)
+                  if (isContextRow(rowMenu.id)) commitContext(rowMenu.id, [])
+                  else commitValue(rowMenu.id, null)
                   setRevealed((prev) => new Set([...prev].filter((r) => r !== rowMenu.id)))
                   setRowMenu(null)
                 }}
               >
-                Remove Property
+                {isContextRow(rowMenu.id) ? 'Remove Context' : 'Remove Property'}
               </MenuItem>
             </div>
           </PickerMenu>
@@ -293,12 +318,15 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
         <PickerMenu solid open onDismiss={() => setAddOpen(false)} triggerRef={addRef} center>
           {/* The grouping pane's picker verbatim — PickerOption rows with the icon treatment.
               Unassigned tiers lead (contexts add from here too), unassigned properties follow. */}
-          {tierRows
+          {contextRows
             .filter((t) => !isAssigned(t.id))
             .map((t) => (
               <PickerOption key={t.id} onClick={() => revealAndEdit(t.id)}>
                 <span className={iconOption}>
-                  <Icon name={defaultEntityIcon(TIER_ENTITY[t.id] ?? 'area')} size={13} />
+                  <Icon
+                    name={asRenderableIcon(t.icon) ?? defaultEntityIcon('space')}
+                    size={13}
+                  />
                   {t.label}
                 </span>
               </PickerOption>
@@ -325,17 +353,11 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           open
           triggerRef={triggerRef}
           {...(editingDef.type === 'context' && tree
-            ? {
-                contextOptions: contextOptionsFor(
-                  TIER_LEVEL_BY_ID[editing.id] ??
-                    schema.find((d) => d.id === editing.id)?.context_target?.tier,
-                  tree,
-                ),
-              }
+            ? { contextOptions: contextOptionsFor(editing.id, tree) }
             : {})}
           onCommit={(v) => {
-            if (TIER_LEVEL_BY_ID[editing.id])
-              commitTier(editing.id, v?.kind === 'context' ? v.value : [])
+            if (isContextRow(editing.id))
+              commitContext(editing.id, v?.kind === 'context' ? v.value : [])
             else commitValue(editing.id, v)
           }}
           onDismiss={closeEditing}

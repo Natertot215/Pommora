@@ -41,16 +41,16 @@ function row(
     path: `${id}.md`,
     frontmatter: {
       id,
-      ...(opts.tier1 ? { tier1: opts.tier1 } : {}),
       ...(opts.modified_at ? { modified_at: opts.modified_at } : {}),
       ...(opts.created_at ? { created_at: opts.created_at } : {}),
       properties: opts.props ?? {},
     },
+    ...(opts.tier1 ? { contextValues: { _tier1: opts.tier1 } } : {}),
   }
 }
 
 const ids = (rows: ViewRow[], filter: FilterGroup | undefined): string[] =>
-  applyFilter(rows, filter, schema).map((r) => r.id)
+  applyFilter(rows, filter, schema, [], ['_tier1']).map((r) => r.id)
 
 describe('applyFilter — match mode + recursion', () => {
   const rows = [

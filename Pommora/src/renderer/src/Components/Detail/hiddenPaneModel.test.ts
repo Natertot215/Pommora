@@ -24,13 +24,15 @@ describe('hiddenListIds', () => {
     expect(hiddenListIds(view(['b'], ['c', 'a']), schema)).toEqual(['a', 'c'])
   })
 
-  it('lists hidden tiers first (fixed order), then props, trails Modified, drops stale ids', () => {
+  it('lists non-shown contexts first (registry order), then props, trails Modified, drops stale ids', () => {
     const schema = [def('a')]
-    expect(hiddenListIds(view([], [tier1, modifiedAt, 'stale', 'a']), schema)).toEqual([
-      tier1,
-      'a',
-      modifiedAt,
-    ])
+    expect(
+      hiddenListIds(view([], [tier1, modifiedAt, 'stale', 'a']), schema, [tier1, tier3]),
+    ).toEqual([tier1, tier3, 'a', modifiedAt])
+  })
+
+  it('a context in neither list sits in the hidden zone (default-OFF reveal path)', () => {
+    expect(hiddenListIds(view(['ctxA'], []), [], ['ctxA', 'ctxB'])).toEqual(['ctxB'])
   })
 
   it('surfaces an unaccounted prop (in schema, in neither list) so it stays revealable', () => {

@@ -94,7 +94,13 @@ describe('resolveView — full pipeline over the fixture', () => {
       collection([page('p1'), page('p2'), page('p3'), page('p4')]),
       values,
     )
-    const { columns, groups } = resolveView({ rows, setTree, view, schema })
+    const { columns, groups } = resolveView({
+      rows,
+      setTree,
+      view,
+      schema,
+      contextIds: ['_tier1', '_tier2', '_tier3'],
+    })
 
     expect(columns[0].id).toBe('prop_status')
     // prop_when is in the schema but in neither list → the allowlist keeps it off the table

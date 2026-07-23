@@ -12,11 +12,11 @@ const tree = {
 } as unknown as NexusTree
 
 describe('buildContextsById', () => {
-  it('maps each context ULID to its title (+ color for Areas)', () => {
+  it('maps each context ULID to its title, icon, and color (Areas only)', () => {
     const m = buildContextsById(tree)
-    expect(m.get('a1')).toEqual({ title: 'Personal', color: 'blue' })
-    expect(m.get('t1')).toEqual({ title: 'Reading' })
-    expect(m.get('p1')).toEqual({ title: 'Pommora' })
+    expect(m.get('a1')).toEqual({ title: 'Personal', color: 'blue', icon: 'layout-grid' })
+    expect(m.get('t1')).toEqual({ title: 'Reading', icon: 'layout-grid' })
+    expect(m.get('p1')).toEqual({ title: 'Pommora', icon: 'layout-grid' })
   })
 
   it('returns undefined for an unknown id', () => {
