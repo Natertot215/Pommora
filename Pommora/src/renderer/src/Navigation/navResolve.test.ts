@@ -32,6 +32,30 @@ describe('resolveNavEntry', () => {
     expect(pathTitles(r)).toEqual(['Topic'])
   })
 
+  it('resolves a Space to its title with the owning Context as the path', () => {
+    const t = {
+      ...makeTree(),
+      contextGroups: [
+        {
+          def: { id: 'g1', title: 'Realms', singular: 'Realm' },
+          spaces: [
+            {
+              kind: 'space' as const,
+              id: 'sp1',
+              title: 'Astral',
+              path: '.nexus/contexts/Realms/Astral',
+              contextId: 'g1',
+            },
+          ],
+        },
+      ],
+    }
+    const r = resolveNavEntry(t, { kind: 'space', id: 'sp1' })
+    expect(r).toMatchObject({ kind: 'space', title: 'Astral' })
+    expect(pathTitles(r)).toEqual(['Realms'])
+    expect(r?.icon).toBeTruthy()
+  })
+
   it('resolves a collection (no path) and homepage', () => {
     const t = makeTree()
     const col = resolveNavEntry(t, { kind: 'collection', id: 'c1' })

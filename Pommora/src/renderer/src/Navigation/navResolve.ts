@@ -67,6 +67,18 @@ export function buildResolveIndex(tree: NexusTree): ResolveIndex {
         path: [tierCrumb],
       })
   }
+  for (const g of tree.contextGroups ?? []) {
+    const groupCrumb: PathCrumb = {
+      icon: iconNameOr(g.def.icon, defaultEntityIcon('space', di)),
+      title: g.def.title,
+    }
+    for (const s of g.spaces)
+      ix.set(`space:${s.id}`, {
+        icon: iconNameOr(s.icon, defaultEntityIcon('space', di)),
+        title: s.title,
+        path: [groupCrumb],
+      })
+  }
   const walkSets = (
     sets: NexusTree['collections'][number]['sets'] | undefined,
     parents: PathCrumb[],
