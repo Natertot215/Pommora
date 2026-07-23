@@ -71,7 +71,13 @@ export function FloatingPaneShell({
 
   return (
     <GlassPane
-      className={cx('floating-pane', className, closing && 'closing')}
+      className={cx(
+        'floating-pane',
+        s.pane,
+        className,
+        closing && 'closing',
+        closing && s.paneClosing,
+      )}
       style={{ ...winStyle, ...style }}
       role="dialog"
       aria-label={ariaLabel}
