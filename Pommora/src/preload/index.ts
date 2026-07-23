@@ -122,6 +122,8 @@ const api = {
     viewStyle: ViewStyle
   }): Promise<'toggle-title' | 'style-dropdown' | 'style-toolbar' | null> =>
     ipcRenderer.invoke('view-button-menu', current),
+  // The Space settings pane's (Icon)(Title) row right-click menu.
+  spaceHeaderMenu: (): Promise<'change-color' | null> => ipcRenderer.invoke('space-header-menu'),
   // The view embed's title-row right-click menu (Hide/Show Icon · Title Size · Hide Title).
   viewEmbedTitleMenu: (arg: {
     iconShown: boolean
