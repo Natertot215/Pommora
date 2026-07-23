@@ -512,6 +512,7 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       depth={0}
       defaultOpen
       persistKey={`context:${group.def.id}`}
+      dragId={group.def.id}
       onContextMenu={() =>
         // No id → no Open item: a group has no destination view (Spaces do).
         void window.nexus.contextMenu({ kind: 'context', path, title: group.def.title })
