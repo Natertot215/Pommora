@@ -18,10 +18,10 @@ const row: ViewRow = {
   id: '01ROW',
   title: 'My Page',
   path: 'Col/my-page.md',
+  contextValues: { _tier1: ['01AREA'] },
   frontmatter: {
     id: '01ROW',
     modified_at: '2026-06-20T10:00:00Z',
-    tier1: ['01AREA'],
     properties: {
       prop_status: { $status: 'in_progress' },
       prop_sel: 'opt_a',
@@ -61,7 +61,7 @@ describe('resolveFieldValue', () => {
       value: '2026-06-20T10:00:00Z',
     })
     expect(rfv(row, '_tier1')).toEqual({ kind: 'context', value: ['01AREA'] })
-    expect(rfv(row, '_tier2')).toEqual({ kind: 'context', value: [] })
+    expect(rfv(row, '_tier2')).toEqual({ kind: 'null' })
   })
 
   it('routes user properties through the on-disk codec, trusting its kind', () => {

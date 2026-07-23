@@ -177,6 +177,7 @@ export const DEFAULT_ENTITY_ICONS: Record<EntityIconKind, IconName> = {
   area: 'layout-grid',
   topic: 'layout-grid',
   project: 'layout-grid',
+  space: 'layout-grid',
   page: 'file-text',
 }
 
