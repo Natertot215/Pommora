@@ -18,16 +18,25 @@ import {
 } from './blocks'
 
 const HOST = { kind: 'homepage' } as const
+const SPACE_HOST = { kind: 'space', id: 'sp1' } as const
 
 let root: string
 const configPath = (): string => join(root, '.nexus', 'homepage.json')
 const sidecarPath = (): string => join(root, '.nexus', 'homepage', '_blocks.json')
+const spaceDir = (): string => join(root, '.nexus', 'contexts', 'Realms', 'Astral')
+const spaceSidecar = (): string => join(spaceDir(), '_space.json')
 const readConfig = async (): Promise<Record<string, unknown>> =>
   JSON.parse(await readFile(configPath(), 'utf8'))
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'blocks-'))
   await mkdir(join(root, '.nexus', 'homepage'), { recursive: true })
+  await mkdir(spaceDir(), { recursive: true })
+  await writeFile(
+    join(root, '.nexus', 'contexts.json'),
+    JSON.stringify({ contexts: [{ id: 'g1', title: 'Realms', singular: 'Realm' }] }),
+  )
+  await writeFile(spaceSidecar(), JSON.stringify({ id: 'sp1', color: 'mint' }))
 })
 
 describe('readBlockDoc', () => {
@@ -49,6 +58,41 @@ describe('readBlockDoc', () => {
     expect(doc.layout).toEqual({ bands: [] })
     expect(doc.blocks).toEqual([{ id: 'a', type: 'markdown' }])
     expect(doc.locked).toBe(true)
+  })
+})
+
+describe('space block host', () => {
+  it('reads and writes the doc on the Space sidecar — id and color survive', async () => {
+    await writeBlockDoc(root, SPACE_HOST, { blocks: [{ id: 'a', type: 'markdown' }] })
+    const doc = await readBlockDoc(root, SPACE_HOST)
+    expect(doc.blocks).toEqual([{ id: 'a', type: 'markdown' }])
+    const raw = JSON.parse(await readFile(spaceSidecar(), 'utf8'))
+    expect(raw.id).toBe('sp1')
+    expect(raw.color).toBe('mint')
+  })
+
+  it('a markdown tile mints its file inside the Space folder', async () => {
+    const id = await createMarkdownBlock(root, SPACE_HOST)
+    expect(await pathExists(join(spaceDir(), `${id}.md`))).toBe(true)
+    await writeMarkdownBlock(root, SPACE_HOST, id, 'body')
+    expect(await readMarkdownBlock(root, SPACE_HOST, id)).toBe('body')
+  })
+
+  it('a layout save against an unreadable sidecar FAILS — never clobbers to empty', async () => {
+    await writeFile(spaceSidecar(), 'not-json{')
+    await expect(writeBlockDoc(root, SPACE_HOST, { locked: true })).rejects.toThrow()
+    expect(await readFile(spaceSidecar(), 'utf8')).toBe('not-json{')
+  })
+
+  it('an unknown Space id fails the op', async () => {
+    await expect(writeBlockDoc(root, { kind: 'space', id: 'ghost' }, {})).rejects.toThrow()
+  })
+
+  it('listBlockBodies walks space hosts too', async () => {
+    const id = await createMarkdownBlock(root, SPACE_HOST)
+    await writeMarkdownBlock(root, SPACE_HOST, id, 'space body')
+    const bodies = await listBlockBodies(root)
+    expect(bodies.find((b) => b.id === id)?.body).toBe('space body')
   })
 })
 
@@ -116,12 +160,12 @@ describe('writeBlockDoc', () => {
 describe('markdown block lifecycle', () => {
   it('create mints the dir + empty file + entry; the body round-trips pure (no frontmatter)', async () => {
     const id = await createMarkdownBlock(root, HOST)
-    expect(await pathExists(blockFilePath(root, HOST, id))).toBe(true)
+    expect(await pathExists(await blockFilePath(root, HOST, id))).toBe(true)
     expect((await readConfig()).blocks).toEqual([{ id, type: 'markdown' }])
 
     await writeMarkdownBlock(root, HOST, id, '# Hi\n\n[[Some Page]]\n')
     expect(await readMarkdownBlock(root, HOST, id)).toBe('# Hi\n\n[[Some Page]]\n')
-    expect(await readFile(blockFilePath(root, HOST, id), 'utf8')).not.toContain('---')
+    expect(await readFile(await blockFilePath(root, HOST, id), 'utf8')).not.toContain('---')
   })
 
   it('remove drops the entry and trashes the file; foreign entries survive', async () => {
@@ -129,7 +173,7 @@ describe('markdown block lifecycle', () => {
     const id = await createMarkdownBlock(root, HOST)
     await removeBlockTile(root, HOST, id)
     expect((await readConfig()).blocks).toEqual([{ id: 'alien', type: 'widget', keep: true }])
-    expect(await pathExists(blockFilePath(root, HOST, id))).toBe(false)
+    expect(await pathExists(await blockFilePath(root, HOST, id))).toBe(false)
     const trashed = await readdir(join(root, '.trash'))
     expect(trashed.some((f) => f.includes(id))).toBe(true)
   })
@@ -155,7 +199,7 @@ describe('markdown block lifecycle', () => {
     expect(config.foreign).toBe(true)
     expect(config.id).not.toBe('source-view-id')
     expect(typeof config.id).toBe('string')
-    expect(await pathExists(blockFilePath(root, HOST, id))).toBe(false)
+    expect(await pathExists(await blockFilePath(root, HOST, id))).toBe(false)
     const trashed = await readdir(join(root, '.trash'))
     expect(trashed.some((f) => f.includes(id))).toBe(true)
   })
