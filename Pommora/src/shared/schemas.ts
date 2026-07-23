@@ -91,6 +91,16 @@ export type TopicSidecar = z.infer<typeof topicSidecar>
 export type ProjectSidecar = z.infer<typeof projectSidecar>
 export type AreaSidecar = z.infer<typeof areaSidecar>
 
+/** `_space.json` — one Space under `.nexus/contexts/<Context>/<Space>/`. Membership comes
+ *  from the parent folder, never a field. `color` is an open chip-solid key validated
+ *  through the chip map at read (an unknown value degrades to the neutral Default). Loose
+ *  ⇒ blocks/layout/blocks_locked and the Space's own bracketed relation keys ride through. */
+export const spaceSidecar = baseSidecar.extend({
+  banner: z.string().optional(),
+  color: z.string().optional().catch(undefined),
+})
+export type SpaceSidecar = z.infer<typeof spaceSidecar>
+
 /** Agenda config sidecar (`_taskconfig.json` / `_eventconfig.json`) — a property schema
  *  for its agenda items. property_definitions stay loose (per-def codec is parseDefinitions);
  *  views + default_sort ride through untouched. */
@@ -101,9 +111,13 @@ export const agendaConfigSidecar = baseSidecar.extend({
 })
 export type AgendaConfigSidecar = z.infer<typeof agendaConfigSidecar>
 
-/** Page (.md) frontmatter. tier1/2/3 are BARE ULID arrays at the root (NOT $ctx-tagged
- *  — that shape is only for user/agenda properties); `properties` maps property-id to
- *  an encoded PropertyValue. Loose ⇒ foreign keys ride through. */
+/** Page (.md) frontmatter. Context links are bracketed TITLE keys (`"[Projects]": [...]`)
+ *  riding the loose object as retained raw keys — resolved against the registry at walk
+ *  assembly, never modeled here (per-nexus dynamic keys can't be schema fields). tier1/2/3
+ *  are the LEGACY bare-ULID arrays, read-recognized for the migration-era window (a stale
+ *  device may still write them) and healed to bracketed keys on each file's next governed
+ *  write. `properties` maps property-id to an encoded PropertyValue. Loose ⇒ foreign keys
+ *  ride through. */
 export const pageFrontmatter = z.looseObject({
   id: z.string(),
   icon: z.string().optional(),

@@ -8,9 +8,10 @@
 // fs, no React. normalizeTitle is the SINGLE normalization the scanner, the phantom key,
 // resolution, and uniqueness all share, so they can never disagree.
 
-/** Trim + case-fold — the one normalization for connection titles. */
+/** Trim + case-fold + NFC — the one normalization for connection titles (NFC so an
+ *  NFD-composed outside write still matches the NFC title it names). */
 export function normalizeTitle(raw: string): string {
-  return raw.trim().toLowerCase()
+  return raw.trim().toLowerCase().normalize('NFC')
 }
 
 /** A fresh global regex matching `[[Title]]` / `[[Title|legacy]]` (pipe segment dropped),
