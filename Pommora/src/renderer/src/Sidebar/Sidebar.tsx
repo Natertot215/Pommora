@@ -634,7 +634,14 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const onCommit = (req: MutateRequest): void => void mutate(req)
 
   // Right-click a mode's empty area → a native create menu (never auto-create). Contexts offers
-  // nothing there — creation is scoped: in-group right-click for a Space, HoverCreate for a group.
+  // a new group; in-group right-click scopes to a Space.
+  const newContextMenu = (): void => {
+    void useSession
+      .getState()
+      .createFromMenu([
+        { label: 'New Context', req: { op: 'createContextGroup', name: 'New Context' } },
+      ])
+  }
   const newCollectionMenu = (): void => {
     void useSession.getState().createFromMenu([
       {
@@ -763,7 +770,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const layerFor = (m: SidebarMode): React.ReactNode =>
     m === 'contexts' ? contextsLayer : m === 'agenda' ? <AgendaMode /> : collectionsLayer
   const activeNode = layerFor(mode)
-  const onCreate = mode === 'contexts' || mode === 'agenda' ? undefined : newCollectionMenu
+  const onCreate =
+    mode === 'contexts' ? newContextMenu : mode === 'agenda' ? undefined : newCollectionMenu
 
   // Ribbon-mode switch: hold the outgoing mode as a clipped exit overlay while the incoming sweeps
   // over it (Sidebar.css). The nav snaps to the top for the incoming; the exit layer counter-

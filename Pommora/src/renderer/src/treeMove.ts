@@ -176,7 +176,10 @@ export function insertCreatedInTree(
   }
   if (req.op === 'createContextGroup') {
     const title = basename(created.path)
-    const group: ContextGroup = { def: { id: created.id, title, singular: title }, spaces: [] }
+    const group: ContextGroup = {
+      def: { id: created.id, title, singular: title, icon: 'layout-grid' },
+      spaces: [],
+    }
     return { ...tree, contextGroups: [...(tree.contextGroups ?? []), group] }
   }
   if (req.op === 'createSpace') {
@@ -266,12 +269,6 @@ export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): N
             return req.color ? { ...rest, color: req.color } : rest
           }),
         })),
-      )
-    case 'setContextSingular':
-      return withGroups(
-        groups.map((g) =>
-          g.def.id === req.contextId ? { ...g, def: { ...g.def, singular: req.singular } } : g,
-        ),
       )
     case 'reorderContexts':
       return withGroups(reorderById(groups, req.ids, (g) => g.def.id))

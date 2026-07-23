@@ -109,7 +109,6 @@ export type MutateRequest =
   | { op: 'setContext'; path: string; contextId: string; spaceIds: string[] }
   // Chip-solid palette key on the Space's `_space.json`; absent clears to the neutral Default.
   | { op: 'setSpaceColor'; spaceId: string; color?: string }
-  | { op: 'setContextSingular'; contextId: string; singular: string }
   // Registry array order IS the display order; `space_orders[contextId]` lives in state.json.
   | { op: 'reorderContexts'; ids: string[] }
   | { op: 'reorderSpaces'; contextId: string; ids: string[] }

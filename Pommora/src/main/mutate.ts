@@ -26,7 +26,6 @@ import {
   createSpace,
   loadContextWorld,
   setContextOnPath,
-  setContextSingular,
   setSpaceColor,
 } from './crud/contextWrite'
 import {
@@ -630,9 +629,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
 
     case 'setSpaceColor':
       return relay(await setSpaceColor(root, req.spaceId, req.color))
-
-    case 'setContextSingular':
-      return relay(await setContextSingular(root, req.contextId, req.singular))
 
     case 'renameContext':
       return relay(await renameContextOp(root, req.contextId, req.newName))

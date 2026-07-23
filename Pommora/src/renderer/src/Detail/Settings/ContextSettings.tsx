@@ -1,16 +1,11 @@
 import { useRef, useState } from 'react'
 import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
-import { MenuScrollFrame, MenuSeparator } from '@renderer/design-system/components/menu'
-import { text } from '@renderer/design-system/tokens'
+import { MenuScrollFrame } from '@renderer/design-system/components/menu'
 import { useSession } from '../../store'
 import { IconPicker } from '../../Components/IconPicker'
 import { InlineEditHeader } from '../../Components/Detail/InlineEditHeader'
-import { EditableInput } from '../../Components/EditableInput'
 
-/**
- * A Context group's Settings-window content: the (Icon)(Title) heading over a divider,
- * plus the singular label the group's create entries and chips wear ("New Project").
- */
+/** A Context group's Settings-window content: the (Icon)(Title) heading over a divider. */
 export function ContextSettings({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
@@ -34,24 +29,6 @@ export function ContextSettings({ id }: { id: string }): React.JSX.Element | nul
               void mutate({ op: 'renameContext', contextId: id, newName: next })
           }}
         />
-        <MenuSeparator />
-        <div
-          className={text.footnote.emphasized}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px' }}
-        >
-          <span style={{ color: 'var(--label-secondary)' }}>Singular</span>
-          <EditableInput
-            value={group.def.singular}
-            className={text.footnote.emphasized}
-            caretAtEnd
-            onCommit={(next) => {
-              const trimmed = next.trim()
-              if (trimmed && trimmed !== group.def.singular)
-                void mutate({ op: 'setContextSingular', contextId: id, singular: trimmed })
-            }}
-            onCancel={() => {}}
-          />
-        </div>
       </MenuScrollFrame>
       <IconPicker
         open={pickerOpen}
