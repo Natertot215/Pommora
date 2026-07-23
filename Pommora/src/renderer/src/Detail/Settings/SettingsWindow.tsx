@@ -78,24 +78,8 @@ function SettingsWindowBody({
       ariaLabel="Settings"
       closeClassName="settingswindow-close-slot"
     >
-      {/* One row: (Icon)(Title) editable heading with the × at its right. */}
+      {/* The strip carries the lone × — the heading lives in the main view on the same line. */}
       <div className="settingswindow-toolbar">
-        <div className="settingswindow-heading">
-          <InlineEditHeader
-            value={title}
-            icon={icon}
-            iconRef={iconRef}
-            onIconClick={() => setPickerOpen(true)}
-            onCommit={(next) => {
-              if (!next || next === title) return
-              void mutate(
-                space
-                  ? { op: 'renameSpace', spaceId: target.id, newName: next }
-                  : { op: 'renameContext', contextId: target.id, newName: next },
-              )
-            }}
-          />
-        </div>
         <button type="button" className="settingswindow-close" aria-label="Close" onClick={close}>
           <Icon name="x" size={14} />
         </button>
@@ -135,7 +119,22 @@ function SettingsWindowBody({
             </div>
           )}
         </SidePane>
-        <div className="settingswindow-main" />
+        <div className="settingswindow-main">
+          <InlineEditHeader
+            value={title}
+            icon={icon}
+            iconRef={iconRef}
+            onIconClick={() => setPickerOpen(true)}
+            onCommit={(next) => {
+              if (!next || next === title) return
+              void mutate(
+                space
+                  ? { op: 'renameSpace', spaceId: target.id, newName: next }
+                  : { op: 'renameContext', contextId: target.id, newName: next },
+              )
+            }}
+          />
+        </div>
       </div>
     </FloatingPaneShell>
   )
