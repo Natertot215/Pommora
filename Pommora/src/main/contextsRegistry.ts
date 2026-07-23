@@ -40,6 +40,13 @@ export async function readRegistry(
   return ok(seeded)
 }
 
+/** Read the registry for a lookup — strict, no seeding, no writes. Mutation-side use
+ *  (the walk has its own lenient cached read). */
+export async function readRegistryStrict(root: string): Promise<Result<ContextsRegistry>> {
+  const raw = await readJsonStrict(contextsRegistryFile(root))
+  return raw.ok ? parseRegistry(raw.value) : raw
+}
+
 /** Serialized registry RMW — `fn` maps the current registry to the next; a read failure
  *  fails the mutation without writing (strict, never fallback-to-empty). */
 export async function mutateRegistryFile(

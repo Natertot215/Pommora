@@ -38,9 +38,9 @@ describe('createAgendaItem', () => {
       due_floating: false,
       completed: false,
       priority: 0,
-      tier1: [],
       properties: {},
     })
+    expect('tier1' in t).toBe(false)
     expect(t.created_at).toBeTruthy()
   })
 
