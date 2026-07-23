@@ -158,6 +158,7 @@ import { popPropertyMenu } from './propertyMenu'
 import { popOptionMenu } from './optionMenu'
 import { popIconFavoriteMenu } from './iconFavoriteMenu'
 import { popViewButtonMenu, type ViewButtonMenuAction } from './viewButtonMenu'
+import { popReturningMenu } from './returningMenu'
 import {
   popEmbedTitleMenu,
   popEmbedAreaMenu,
@@ -1850,6 +1851,15 @@ ipcMain.handle(
     return popViewButtonMenu(win, { viewButton, viewStyle })
   },
 )
+
+// The Space settings pane's (Icon)(Title) row right-click menu.
+ipcMain.handle('space-header-menu', async (e): Promise<'change-color' | null> => {
+  const win = BrowserWindow.fromWebContents(e.sender)
+  if (!win) return null
+  return popReturningMenu<'change-color'>(win, (pick) => [
+    { label: 'Change Color', click: pick('change-color') },
+  ])
+})
 
 // The view embed's title-row right-click menu (Hide/Show Icon · Title Size · Hide Title).
 ipcMain.handle(
