@@ -12,7 +12,6 @@
 //    can never drift (Swift maintained the struct and the Codable impl separately).
 
 import { z } from 'zod'
-import { AREA_COLORS } from './types'
 import { savedView } from './views'
 
 const ulidList = z.array(z.string()).optional()
@@ -72,24 +71,6 @@ export const pageSetSidecar = baseSidecar.extend({
   view_style: viewStyleField,
 })
 export type PageSetSidecar = z.infer<typeof pageSetSidecar>
-
-/** Areas/Topics/Projects share tier + the reserved `blocks` array (which rides as a
- *  foreign key — not modeled, per "catch up to Swift, don't go ahead"). */
-const contextBase = baseSidecar.extend({
-  tier: z.number(),
-  // Nexus-relative POSIX path to this context's banner image (a per-entity assets file).
-  banner: z.string().optional(),
-})
-export const topicSidecar = contextBase
-export const projectSidecar = contextBase
-// color validates against the shared AreaColor palette but degrades to undefined on an
-// unknown value (lenient — an unrecognized color never fails the whole sidecar).
-export const areaSidecar = contextBase.extend({
-  color: z.enum(AREA_COLORS).optional().catch(undefined),
-})
-export type TopicSidecar = z.infer<typeof topicSidecar>
-export type ProjectSidecar = z.infer<typeof projectSidecar>
-export type AreaSidecar = z.infer<typeof areaSidecar>
 
 /** `_space.json` — one Space under `.nexus/contexts/<Context>/<Space>/`. Membership comes
  *  from the parent folder, never a field. `color` is an open chip-solid key validated

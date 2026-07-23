@@ -17,22 +17,6 @@ export type NodeKind =
   | 'page'
 
 // Contexts tier-1 (Area) color palette — 10 cases, written once as the single source for
-// both the type and the runtime membership check (the reader + the areaSidecar schema both
-// derive from this). KEEP DISTINCT from the Settings accent palette (ACCENT_COLORS below).
-export const AREA_COLORS = [
-  'gray',
-  'brown',
-  'orange',
-  'yellow',
-  'green',
-  'blue',
-  'purple',
-  'pink',
-  'red',
-  'accent',
-] as const
-export type AreaColor = (typeof AREA_COLORS)[number]
-
 // Settings accent palette — the spectrum solids usable as the app accent, plus
 // `system` (follow the OS accent). Names mirror the renderer's vars.color.solid
 // keys (color.css.ts); greyDefault is excluded (it's the chip "Default" neutral,
@@ -225,19 +209,6 @@ export interface SavedNode extends BaseNode {
   key: 'homepage' | 'calendar' | 'recents'
 }
 
-export interface AreaNode extends PathNode {
-  kind: 'area'
-  color?: AreaColor
-}
-
-export interface TopicNode extends PathNode {
-  kind: 'topic'
-}
-
-export interface ProjectNode extends PathNode {
-  kind: 'project'
-}
-
 export interface PageNode extends PathNode {
   kind: 'page'
   /** Resolved context links — contextId → the member's Space ids, attached at walk
@@ -348,14 +319,7 @@ export interface NexusTree {
    *  the homepage's. */
   navView: { banner?: string }
   saved: SavedNode[]
-  contexts: {
-    projects: ProjectNode[]
-    topics: TopicNode[]
-    areas: AreaNode[]
-  }
-  /** Registry-backed Context groups in registry order, each with its Spaces. Optional
-   *  during the legacy window — this becomes the one `contexts` shape once every
-   *  consumer of the fixed-three struct above migrates. */
+  /** Registry-backed Context groups in registry order, each with its Spaces. */
   contextGroups?: ContextGroup[]
   /** Ungrouped top-tier Collections (those not assigned to a user section). */
   collections: CollectionNode[]

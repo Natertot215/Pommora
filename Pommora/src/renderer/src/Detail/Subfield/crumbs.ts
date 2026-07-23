@@ -1,6 +1,6 @@
 import type { CollectionNode, NexusTree, SelectionState, SetNode } from '@shared/types'
 import type { SelectTarget, TrailEntry } from '../../store'
-import { findContext, findSpace } from '../Scope'
+import { findSpace } from '../Scope'
 
 /** One breadcrumb segment. `onClick` absent ⇒ the current/non-navigable segment; `ghost` ⇒ the
  *  dimmed last-visited-page "forward" crumb you can click to jump back into. */
@@ -63,10 +63,8 @@ export function subfieldCrumbs(
       return []
     case 'homepage':
       return [{ key: 'home', title: tree.nexus.name }]
-    case 'context': {
-      const ctx = findContext(tree, selection.id)
-      return ctx ? [{ key: selection.id, title: ctx.name }] : []
-    }
+    case 'context':
+      return []
     case 'space': {
       const sp = findSpace(tree, selection.id)
       return sp ? [{ key: selection.id, title: sp.name }] : []

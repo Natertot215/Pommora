@@ -9,15 +9,12 @@ import { parse as parseYaml } from 'yaml'
 import type {
   AccentColor,
   AccentSetting,
-  AreaColor,
-  AreaNode,
   CollectionNode,
   ContextGroup,
   LabelPair,
   NexusLabels,
   NexusTree,
   PageNode,
-  ProjectNode,
   SavedNode,
   SetNode,
   SpaceNode,
@@ -26,7 +23,6 @@ import type {
   FolderPlacement,
   Personalization,
   SidebarMode,
-  TopicNode,
   UserSection,
 } from '@shared/types'
 import {
@@ -37,7 +33,6 @@ import {
 import { legacyTierLinks, resolveContextKeys } from '@shared/contextResolve'
 import {
   ACCENT_COLORS,
-  AREA_COLORS,
   DEFAULT_ACCENT,
   DEFAULT_COMMANDS,
   DEFAULT_LABELS,
@@ -73,7 +68,6 @@ const ACCENT_COLOR_SET = new Set<string>(ACCENT_COLORS)
 
 // ---------- low-level helpers ----------
 
-const AREA_COLOR_SET = new Set<AreaColor>(AREA_COLORS)
 
 // Swift `accent_color` values that aren't in React's own palette → nearest React token.
 // React's own values (including the 6 that overlap Swift) pass through unchanged; React
@@ -363,43 +357,6 @@ async function readPageCollection(
 
 // ---------- contexts ----------
 
-async function readTier<T extends AreaNode | TopicNode | ProjectNode>(
-  root: string,
-  tier: 'areas' | 'topics' | 'projects',
-  kind: T['kind'],
-  sidecarMode: boolean,
-  excluded: string[],
-  order: string[] | undefined,
-  fb: Fallback,
-): Promise<T[]> {
-  const dir = contextTierDir(root, tier)
-  const sidecar = SIDECAR_FILENAME[kind]
-  const nodes: T[] = []
-  for (const e of await listEntries(dir)) {
-    if (!e.isDirectory()) continue
-    if (shouldSkipDir(e.name, e.name, excluded)) continue
-    const sc = await readSidecar(join(dir, e.name, sidecar))
-    if (sidecarMode && !sc) continue // tier entry must carry its sidecar
-    const node = {
-      kind,
-      id: asString(sc?.id) ?? adoptedId(`${tier}/${e.name}`),
-      title: e.name,
-      icon: asString(sc?.icon),
-      // Contexts live under .nexus/<tier>/ — the real on-disk path a mutation resolves
-      // (distinct from the adoptedId seed above, which is layout-agnostic by design).
-      path: `.nexus/${tier}/${e.name}`,
-      banner: asString(sc?.banner),
-      headingIconHidden: sc?.heading_icon_hidden === true,
-    } as T
-    if (kind === 'area') {
-      const c = sc?.color
-      ;(node as AreaNode).color =
-        typeof c === 'string' && AREA_COLOR_SET.has(c as AreaColor) ? (c as AreaColor) : undefined
-    }
-    nodes.push(node)
-  }
-  return resolveOrder(nodes, order, fb)
-}
 
 /** The registry-backed Space tree: one group per registry entry (registry order), spaces
  *  from `.nexus/contexts/<Title>/` gated on `_space.json`, ordered by `space_orders`. */
@@ -437,40 +394,6 @@ async function readContextGroups(
     groups.push({ def, spaces: resolveOrder(spaces, asStringArray(spaceOrders[def.id]), fb) })
   }
   return groups
-}
-
-/** The fixed-three struct derived from the reserved groups — keeps every fixed-three
- *  consumer (sidebar, index builder, selection) working off the registry data. */
-const LEGACY_KIND_BY_ID = { _tier1: 'area', _tier2: 'topic', _tier3: 'project' } as const
-
-function deriveLegacyContexts(groups: ContextGroup[]): NexusTree['contexts'] {
-  const out: NexusTree['contexts'] = { projects: [], topics: [], areas: [] }
-  for (const g of groups) {
-    const kind = LEGACY_KIND_BY_ID[g.def.id as keyof typeof LEGACY_KIND_BY_ID]
-    if (!kind) continue
-    for (const s of g.spaces) {
-      const base = {
-        id: s.id,
-        title: s.title,
-        icon: s.icon,
-        path: s.path,
-        banner: s.banner,
-        headingIconHidden: s.headingIconHidden,
-      }
-      if (kind === 'area') {
-        out.areas.push({
-          ...base,
-          kind,
-          color:
-            s.color !== undefined && AREA_COLOR_SET.has(s.color as AreaColor)
-              ? (s.color as AreaColor)
-              : undefined,
-        })
-      } else if (kind === 'topic') out.topics.push({ ...base, kind })
-      else out.projects.push({ ...base, kind })
-    }
-  }
-  return out
 }
 
 // ---------- top level ----------
@@ -562,38 +485,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const contextGroups = ctxRegistry
     ? await readContextGroups(root, ctxRegistry, spaceOrders, excluded, fb)
     : undefined
-  const contexts =
-    contextGroups !== undefined
-      ? deriveLegacyContexts(contextGroups)
-      : {
-          projects: await readTier<ProjectNode>(
-            root,
-            'projects',
-            'project',
-            sidecarMode,
-            excluded,
-            asStringArray(state.project_order),
-            fb,
-          ),
-          topics: await readTier<TopicNode>(
-            root,
-            'topics',
-            'topic',
-            sidecarMode,
-            excluded,
-            asStringArray(state.topic_order),
-            fb,
-          ),
-          areas: await readTier<AreaNode>(
-            root,
-            'areas',
-            'area',
-            sidecarMode,
-            excluded,
-            asStringArray(state.area_order),
-            fb,
-          ),
-        }
 
   // Top-level Collections (gated by `_pagecollection.json`; raw mode treats every root folder
   // as a Collection). Agenda singletons are identified ONLY by their config sidecar
@@ -668,7 +559,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
     },
     navView: { banner: asString(navviewConfig.banner) },
     saved,
-    contexts,
     contextGroups,
     collections,
     userSections,

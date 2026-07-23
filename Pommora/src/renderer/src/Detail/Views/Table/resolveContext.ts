@@ -27,28 +27,15 @@ export interface ResolveContext {
  *  struct feeds the same map on a tree without groups). */
 export function buildContextsById(tree: NexusTree): Map<string, ContextRef> {
   const m = new Map<string, ContextRef>()
-  if (tree.contextGroups) {
-    for (const g of tree.contextGroups) {
-      for (const s of g.spaces) {
-        m.set(s.id, {
-          title: s.title,
-          color: s.color,
-          icon: iconNameOr(s.icon, defaultEntityIcon('space')),
-        })
-      }
+  for (const g of tree.contextGroups ?? []) {
+    for (const s of g.spaces) {
+      m.set(s.id, {
+        title: s.title,
+        color: s.color,
+        icon: iconNameOr(s.icon, defaultEntityIcon('space')),
+      })
     }
-    return m
   }
-  for (const a of tree.contexts.areas)
-    m.set(a.id, {
-      title: a.title,
-      color: a.color,
-      icon: iconNameOr(a.icon, defaultEntityIcon('area')),
-    })
-  for (const t of tree.contexts.topics)
-    m.set(t.id, { title: t.title, icon: iconNameOr(t.icon, defaultEntityIcon('topic')) })
-  for (const p of tree.contexts.projects)
-    m.set(p.id, { title: p.title, icon: iconNameOr(p.icon, defaultEntityIcon('project')) })
   return m
 }
 
