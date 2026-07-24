@@ -34,7 +34,7 @@ The type glyphs, shown in the type picker and on each property row. Label + icon
 | Status       | `progress-check` (Tabler — the first opt-in)|
 | Link         | `link`                                    |
 | File         | `import`                                  |
-| Context      | `layout-grid` (matches the sidebar tiers) |
+| Context      | `layout-grid` (matches the sidebar Contexts) |
 | Select       | `send`                                    |
 | Multi-Select | `tags`                                    |
 
@@ -63,7 +63,7 @@ The saved-view type roster and its grid glyphs (the ViewSettings 3×2 picker):
 | ----------- | -------- |
 | Connections | `link-2` |
 
-`link-2` is the connections glyph — reserved for the `[[Title]]` connections surface. The Context property type wears `layout-grid` (matching the sidebar tiers), not `link-2`.
+`link-2` is the connections glyph — reserved for the `[[Title]]` connections surface. The Context property type wears `layout-grid` (matching the sidebar Contexts), not `link-2`.
 
 ### The Picker
 

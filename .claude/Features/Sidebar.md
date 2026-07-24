@@ -18,12 +18,14 @@ The ribbon is vertically pinned — it never scrolls with the content — and it
 The content column renders one mode at a time. A ribbon switch plays the **overtake sweep**: the incoming mode slides in rightward from the ribbon edge and covers the sitting content — two complementary clip-path sweeps tile the width at every frame (the glass layers are transparent, so a plain overlay would double the text) while the outgoing layer holds still, counter-translated so its visible window doesn't jump when the scroll snaps to the incoming's top. Shell-move tokens, same as the sidebar's own collapse. The ribbon tab is the label, so no mode carries an in-content heading:
 
 - **Collections** — each Collection's root Pages and depth-1 Sets, recursively, plus any user-created sibling sections (whose headings stay). A depth-1 Set is selectable and opens its scoped view; a Sub-Set is expand-only; Pages are leaf rows. Full container behaviour → `Collections.md` + `PageSets.md`.
-- **Contexts** — the three free-standing tiers as disclosure rows, top to bottom Areas → Topics → Projects, each holding its draggable leaf rows. Full tier behaviour → `Contexts.md`.
+- **Contexts** — every registry Context as a disclosure of its draggable Space rows, in registry order; group headers drag to reorder the registry itself. A Context header is a pure expand/collapse toggle (a Context has no destination view — Spaces do). Full behaviour → `Contexts.md`.
 - **Agenda** — a read-only list of Tasks then Events, read on demand (a lazy path kept off the tree walk). Rows are display-only for now; selecting or opening an agenda entity is future work → `Agenda.md`.
 
 #### II. Creation
 
-Creation is right-click-first: right-click a mode's empty area for its native "New" menu — a single **New Collection** in Collections mode, the three-tier **New Area / Topic / Project** picker in Contexts mode. Right-clicking a row instead pops that row's own menu, and ⌘N makes a new Page. The native menu only *picks* — it hands the chosen request back to the renderer, and the store executes it with an **optimistic tree insert**: the new row lands instantly, icon settled and rename input focused, while the confirming re-walk follows behind (one walk per create, no keystroke lost to it).
+Creation is right-click-first: right-click a mode's empty area for its native "New" menu — a single **New Collection** in Collections mode, a single **New Context** in Contexts mode; right-clicking inside a Context group creates a Space there (the seeded three keep their given singulars as labels, user-minted Contexts read flat "New Space"). Right-clicking a row instead pops that row's own menu, and ⌘N makes a new Page. The native menu only *picks* — it hands the chosen request back to the renderer, and the store executes it with an **optimistic tree insert**: the new row lands instantly, icon settled and rename input focused, while the confirming re-walk follows behind (one walk per create, no keystroke lost to it).
+
+A create always lands **visible**: the new row's inline rename forces its collapsed ancestor disclosures open, and a click that settles a header's own rename never doubles as that header's disclosure toggle.
 
 #### II. Drag and Drop
 
@@ -36,6 +38,8 @@ Selection routes the whole detail pane and reads as a Finder-style quaternary-fi
 #### II. Row Labels
 
 A row's label truncates to an ellipsis at rest; hovering reveals the full name by scrolling the label — icon included, the whole label rides one scroll box — within the row, bounded by the sidebar's trailing edge. Content sliding off the left **eclipses** into the glass through a soft mask rather than hard-clipping, but *only once a row is actually scrolled off its start* — a bare hover never dims the icon. Un-hovering slides the label back to the start on the sidebar's shared panel-slide timing. The ellipsis-at-rest → scroll-on-hover primitive (`truncateHoverScroll`) is shared with chips and menu rows; the left-edge eclipse is the sidebar's opt-in.
+
+The inline rename field is the menu system's flush `titleInput` — dimensionally identical to the title text it replaces, the caret alone marking edit mode, so the icon and row never shift. While the input is mounted, its scroll box lays out as a flex row with the ellipsis off: an atomic-inline input that overflows an ellipsizing box is elided from paint entirely, so the field must take the remaining track instead of a full-width slot.
 
 ### Pending
 

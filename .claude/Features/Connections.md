@@ -1,8 +1,8 @@
 ### Connections
 
-A **Connection** is an inline `[[Title]]` link in a Page's Markdown body that points to another Page. `[[` is the sole connection syntax — distinct from the `tier1` / `tier2` / `tier3` context-link properties that bind entities to Contexts.
+A **Connection** is an inline `[[Title]]` link in a Page's Markdown body that points to another Page. `[[` is the sole connection syntax — distinct from the bracketed Context keys that bind entities to Spaces.
 
-A connection lives in exactly two places: the body (`[[Title]]`, canonical and Obsidian-readable) and a derived index edge rebuilt by scanning bodies. There's no frontmatter mirror, and resolution runs on an in-memory map, so the SQLite index is an accelerator the feature never depends on. A `[[Title]]` targets a Page. Contexts are reached only through tier relations; Tasks and Events are never connection targets.
+A connection lives in exactly two places: the body (`[[Title]]`, canonical and Obsidian-readable) and a derived index edge rebuilt by scanning bodies. There's no frontmatter mirror, and resolution runs on an in-memory map, so the SQLite index is an accelerator the feature never depends on. A `[[Title]]` targets a Page. Spaces are reached only through Context links; Tasks and Events are never connection targets.
 
 ### Features
 
