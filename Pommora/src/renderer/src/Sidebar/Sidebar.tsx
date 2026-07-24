@@ -9,7 +9,7 @@ import {
 import { lucideGlyph } from '@renderer/design-system/symbols/AllSymbols'
 import { text } from '@renderer/design-system/tokens'
 import { cx } from '@renderer/design-system/cx'
-import { MenuItem } from '@renderer/design-system/components/menu'
+import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { slideScrollBack } from '@renderer/design-system/components/OverflowScroll'
 import { EditableInput } from '../Components/EditableInput'
@@ -79,7 +79,14 @@ function RowTitle({
   kind: MutableKind
   title: string
 }): React.JSX.Element {
-  return <RenamableTitle path={path} kind={kind} title={title} className="row-title-input" />
+  return (
+    <RenamableTitle
+      path={path}
+      kind={kind}
+      title={title}
+      className={cx(titleInput, 'row-title-input')}
+    />
+  )
 }
 
 // --- selection helpers ----------------------------------------------------
@@ -212,12 +219,34 @@ function Disclosure({
   const [open, setOpen] = useState(() =>
     persistKey ? loadOpen(window.localStorage, persistKey, defaultOpen) : defaultOpen,
   )
-  const toggle = (): void =>
-    setOpen((o) => {
-      const next = !o
-      if (persistKey) saveOpen(window.localStorage, persistKey, next)
-      return next
-    })
+  const setAndSave = (next: boolean): void => {
+    setOpen(next)
+    if (persistKey) saveOpen(window.localStorage, persistKey, next)
+  }
+  // A click that settles this row's own inline rename (blur-commit) must not also toggle the
+  // disclosure. The commit clears renamingPath before the click event lands, so the renaming
+  // state is captured at pointerdown and consumed by the toggle.
+  const settleClick = useRef(false)
+  const onHeaderPointerDown = rename
+    ? (): void => {
+        settleClick.current = useSession.getState().renamingPath === rename.path
+      }
+    : undefined
+  const toggle = (): void => {
+    if (settleClick.current) {
+      settleClick.current = false
+      return
+    }
+    setAndSave(!open)
+  }
+  // Every create flow begin-renames the new row — a child entering rename reveals it by forcing
+  // this (possibly collapsed) ancestor open, so a fresh entity never lands invisible.
+  const renamingChild = useSession((s) =>
+    rename ? s.renamingPath?.startsWith(`${rename.path}/`) === true : false,
+  )
+  useEffect(() => {
+    if (renamingChild && !open) setAndSave(true)
+  }, [renamingChild, open])
   // Storage containers (vault/collection) carry an onSelect: clicking the icon or title opens the
   // view, while the rest of the row (chevron, empty space) toggles. Rows with no onSelect (tiers,
   // sets) have no select zone, so a click anywhere toggles.
@@ -233,6 +262,7 @@ function Disclosure({
       selected={selected}
       indent={depth}
       onClick={toggle}
+      onPointerDown={onHeaderPointerDown}
       onContextMenu={ctxHandler(onContextMenu)}
       leading={<Icon name="chevron-right" size={12} className={`twisty${open ? ' open' : ''}`} />}
     >
