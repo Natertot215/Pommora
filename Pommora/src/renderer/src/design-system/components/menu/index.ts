@@ -11,5 +11,5 @@ export {
   MenuBottomRow,
   MenuScrollFrame,
 } from './Menu'
-export { MENU_MAX_HEIGHT } from './menu.css'
+export { MENU_MAX_HEIGHT, titleInput } from './menu.css'
 export { MenuSurface } from './MenuSurface'

@@ -144,6 +144,17 @@
 .banner-empty-title {
   line-height: 1.2;
 }
+/* The banner-less header hosts the same DetailTitleHeader as the banner overlay — re-skin it to
+   the shared container-title size (no shadow/pointer tricks: there's no image underneath). */
+.banner-empty-title .detail-title {
+  --detail-title-size: 20px;
+  min-width: 0;
+}
+.banner-empty-title .detail-title-text,
+.banner-empty-title .detail-title-input {
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+}
 
 /* The hover-revealed Add-Banner button (mirrors Swift's opacity-on-hover affordance). The strip is a
    fixed-height zone between the floating toolbar and the title; the button sits centered within it so
