@@ -5,7 +5,7 @@ The operational layer's calendar-anchored side. Agenda is the parent schema hold
 - **Tasks** (`.task.json`) — reminder-shaped: an optional due date, an optional "not before" start, completion, and priority.
 - **Events** (`.event.json`) — calendar-event-shaped: a required start and end, a location, and an all-day flag.
 
-Both carry the shared property catalog and `tier1` / `tier2` / `tier3` relations, with the same property mechanics as Pages. The only differences are the on-disk shape and the EventKit target.
+Both carry the shared property catalog and the same bracketed Context keys as Pages, with the same property mechanics. The only differences are the on-disk shape and the EventKit target.
 
 Each kind lives in its own singleton folder, discovered by a config sidecar (`_taskconfig.json` / `_eventconfig.json`); the folder name is a renameable default. EventKit's reminder and event APIs are separate, so the two kinds stay separate singletons rather than sharing one `Agenda/` wrapper. UI labels default to "Task" and "Event."
 
@@ -21,7 +21,7 @@ An `.event.json` file carries `start_at` and `end_at` (required on write, lenien
 
 #### II. Shared Fields
 
-Both kinds carry `id`, an optional `icon`, a plain-text `description`, the `tier1` / `tier2` / `tier3` relations (bare ULID arrays), a `properties` object (values keyed by property ID), `created_at` / `modified_at`, a `recurrence` object (round-tripped, not yet edited), `alarm_offsets` (seconds; negative is before), and `calendar_id` + `eventkit_uuid` for sync state. Foreign keys are preserved by value on every write.
+Both kinds carry `id`, an optional `icon`, a plain-text `description`, the bracketed Context keys at the JSON root (Space titles, registry-resolved; legacy bare-ULID `tierN` arrays read-heal), a `properties` object (values keyed by property ID), `created_at` / `modified_at`, a `recurrence` object (round-tripped, not yet edited), `alarm_offsets` (seconds; negative is before), and `calendar_id` + `eventkit_uuid` for sync state. Foreign keys are preserved by value on every write.
 
 #### II. Schema + Status
 
@@ -45,7 +45,7 @@ The `config` suffix on the sidecar avoids clashing with the `.task.json` / `.eve
 
 #### II. CRUD
 
-Tasks and Events run through one generic agenda CRUD: create mints a ULID and writes the JSON with kind defaults; rename is a file rename preserving the `.task.json` / `.event.json` suffix; update merges over the JSON, retaining foreign keys; and set-property and set-tier each have their own path. The filename is the title, and an Event's `end_at` can't precede its `start_at`.
+Tasks and Events run through one generic agenda CRUD: create mints a ULID and writes the JSON with kind defaults; rename is a file rename preserving the `.task.json` / `.event.json` suffix; update merges over the JSON, retaining foreign keys; and set-property and set-context each have their own path. The filename is the title, and an Event's `end_at` can't precede its `start_at`.
 
 #### II. EventKit Sync
 

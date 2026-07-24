@@ -1,26 +1,26 @@
 ### Structure (Domain Model)
 
-Pommora is organized as **two layers** with PARA-aligned naming. The organization layer (Contexts) holds categorical anchors; the operational layer (Pages + Agenda) holds the data. Operational entities relate to organization entities through per-tier multi-relation fields. Per-entity detail lives in the dedicated feature docs.
+Pommora is organized as **two layers** with PARA-aligned naming. The organization layer (Contexts) holds categorical anchors; the operational layer (Pages + Agenda) holds the data. Operational entities relate to organization entities through bracketed Context keys in their frontmatter or JSON root. Per-entity detail lives in the dedicated feature docs.
 
-The organization layer is a single kind in three tiers; the operational layer is two kinds (Pages and Agenda); two singletons sit beside them. A **Nexus** is the root — one folder holding everything.
+The organization layer is user-defined **Context** groups holding **Spaces** (the registry seeds Areas, Topics, and Projects as ordinary entries); the operational layer is two kinds (Pages and Agenda); two singletons sit beside them. A **Nexus** is the root — one folder holding everything.
 
 | PARA term | Pommora term | Layer |
 |---|---|---|
 | (workspace) | **Nexus** | Root |
-| Areas | **Areas** (tier 1) | Organization |
-| Topics | **Topics** (tier 2) | Organization |
-| Projects | **Projects** (tier 3) | Organization |
+| Areas | **Areas** (seeded Context) | Organization |
+| Topics | **Topics** (seeded Context) | Organization |
+| Projects | **Projects** (seeded Context) | Organization |
 | Resources | **Pages + Agenda** | Operational |
 | (dashboard) | **Homepage** | Singleton |
 | Archive | `.trash/` | (system) |
 
-PARA's "Projects" maps to Pommora's tier-3 Projects by design.
+PARA's "Projects" maps to Pommora's seeded Projects Context by design.
 
 ### Organization Layer
 
 #### II. Contexts
 
-Three **free-standing** tiers — Areas (1), Topics (2), Projects (3) — each a folder with a config sidecar under `.nexus/`. None contains, parents, or is restricted to another; operational entities tag any tiers independently. Contexts carry no pages and no schema — they're categorical anchors things point at. Full spec → `Contexts.md`.
+A **Context** is a user-defined, free-standing group of **Spaces** — `.nexus/contexts.json` owns Context identity, and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar. No Context contains, parents, or is restricted to another; operational entities tag whichever Spaces fit, independently. Contexts carry no pages and no schema — Spaces are categorical anchors things point at (each with its own block surface). Full spec → `Contexts.md`.
 
 ### Operational Layer
 
@@ -36,7 +36,7 @@ Property definitions live in the nexus-wide registry (`.nexus/properties.json`);
 
 #### II. Agenda
 
-The parent schema holding two peer kinds, each with its own config sidecar and the shared property catalog plus tier relations:
+The parent schema holding two peer kinds, each with its own config sidecar and the shared property catalog plus Context links:
 
 - **Task** (`.task.json`) — reminder-shaped: due date, completion, priority.
 - **Event** (`.event.json`) — calendar-event-shaped: start, end, location.
@@ -47,7 +47,7 @@ Full spec → `Agenda.md`; the property catalog across all kinds → `Properties
 
 #### II. Homepage
 
-One per Nexus at `.nexus/homepage.json` — a block-host singleton (the block system's live dev host, → [[SurfacePM]]; its final surface shape is its own pending design pass), with no `id`, `tier`, or `parents` (the file location is its identity). The **Homepage ribbon icon** (the Nexus's identity icon — a photo or a glyph — pinned at the top of the sidebar ribbon) is its entry point: selecting it opens the Homepage in the main pane, where its title doubles as the nexus rename affordance. Seeded on first launch and not user-deletable.
+One per Nexus at `.nexus/homepage.json` — a block-host singleton (the block system's live dev host, → [[SurfacePM]]; its final surface shape is its own pending design pass), with no `id`, Context links, or `parents` (the file location is its identity). The **Homepage ribbon icon** (the Nexus's identity icon — a photo or a glyph — pinned at the top of the sidebar ribbon) is its entry point: selecting it opens the Homepage in the main pane, where its title doubles as the nexus rename affordance. Seeded on first launch and not user-deletable.
 
 #### II. Settings
 
@@ -57,7 +57,7 @@ Per-Nexus config at `.nexus/settings.json` — UI labels, a profile image and su
 
 #### II. Entity Identity vs Title
 
-- **`id`** — a stable ULID assigned at creation, never changing. Every cross-reference (connections, tier links, the index) is ID-keyed. An adopted entity with no stored id gets a stable id hashed from its Nexus-relative path.
+- **`id`** — a stable ULID assigned at creation, never changing. Connections and the index are ID-keyed; Context links are the deliberate exception, stored as registry-resolved titles whose renames cascade. An adopted entity with no stored id gets a stable id hashed from its Nexus-relative path.
 
 - **Title** — the display name, carried as the filename minus extension, freely renameable. Renames are filesystem renames; ID-keyed references resolve to the current title at render time, never rewritten.
 
@@ -68,11 +68,11 @@ Names are unique within a folder (filename = title): a colliding Page create aut
 | Link | Stored as | Purpose |
 |---|---|---|
 | Page → Page (connection) | plain `[[Title]]` in the body, resolved by unique title | Inline reference |
-| Operational entity → Context (tier N) | `tierN: [<id>, ...]` at the frontmatter / JSON root | Categorical assignment |
-| Context → Context | None — tiers are free-standing (deferred) | — |
+| Operational entity → Space | `"[<Context>]": [<Space titles>]` at the frontmatter / JSON root | Categorical assignment |
+| Space → Space | The same bracketed keys in the Space's own `_space.json` | Cross-Context links |
 | Page → Collection / Set | Implicit by file location | Membership |
 
-Tier relations are the **only** relation-type connection, stored as bare ULID arrays (rename-safe by ID). Body connections are plain `[[Title]]`, rename-safe by cascade. Full rules → `Connections.md` + `Properties.md`.
+Context links are the **only** relation-type connection, stored as bracketed title keys resolved through the registry — rename-safe by journaled cascade across every member file. Body connections are plain `[[Title]]`, rename-safe by resolution. Full rules → `Contexts.md` + `Connections.md`.
 
 ### Architecture
 
@@ -82,10 +82,10 @@ Files are canonical: Pages are `.md` (YAML frontmatter + body); Contexts, Agenda
 
 #### II. The NexusTree Contract
 
-The read side is one eager, read-only walk producing a pre-ordered `NexusTree` — Nexus identity, the Homepage banner, the three context tiers, ungrouped top-level Collections (each nesting its Sets then Pages), user-grouped Collection sections, the label set, and the resolved accent — consumed by the renderer without re-sorting. Agenda singletons are discovered but not surfaced. Full shape → `Architecture.md`.
+The read side is one eager, read-only walk producing a pre-ordered `NexusTree` — Nexus identity, the Homepage banner, the registry Contexts with their Spaces, ungrouped top-level Collections (each nesting its Sets then Pages), user-grouped Collection sections, the label set, and the resolved accent — consumed by the renderer without re-sorting. Agenda singletons are discovered but not surfaced. Full shape → `Architecture.md`.
 
 ### Pending
 
 **Homepage's Final Shape:** Deferred to its own design pass (a graph-view host with custom widgets is the current direction). Until then the Homepage serves as the block system's removable dev host ([[SurfacePM]]) — it renders a live block surface under its banner.
 
-**Settings Editing UI:** The `personalization` block has a write path — a generic setter plus a live apply-map — but no UI yet, so accent, connection color, and the interface toggles are set in `.nexus/settings.json` directly for now; labels and profile are likewise hand-edited. A real settings surface — accent picker, toggle rows, label rename forms, tier-label configuration — is planned. Full config model + the planned editor → `Configuration.md`.
+**Settings Editing UI:** The `personalization` block has a write path — a generic setter plus a live apply-map — but no UI yet, so accent, connection color, and the interface toggles are set in `.nexus/settings.json` directly for now; labels and profile are likewise hand-edited. A real settings surface — accent picker, toggle rows, label rename forms — is planned. Full config model + the planned editor → `Configuration.md`.
