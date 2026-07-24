@@ -46,7 +46,7 @@ The organization layer. A **Context** is a user-defined group — the registry s
 
 #### II. Index
 
-The SQLite index — a regeneratable accelerator off the read path — holds a `contexts` row per Space (keyed by its Context id) and a `context_links` row per membership value across page, agenda, and space sources. The reverse query reads `context_links` by target; losing the index loses nothing.
+The SQLite index holds a `contexts` row per Space (keyed by its Context id) and a `context_links` row per membership value across page, agenda, and space sources, with a target-keyed index ready for a reverse lookup. Nothing reads any of it yet — resolution runs at walk assembly off the registry, so losing the index loses nothing. The reverse query that Linked-From and ContextView both need is unwritten, and it's the single dependency blocking them.
 
 ### Pending
 

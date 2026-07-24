@@ -104,8 +104,8 @@ A Page is a Markdown document — one continuous stream, not a stack of blocks. 
 
 Pages support everything in standard Markdown — paragraphs, headings, bulleted / numbered / task lists, fenced and inline code, images, GFM tables, blockquotes, and horizontal rules — all of which round-trip natively to any external tool. **Headings fold**, with the fold state held in a per-machine file rather than the portable `.md`. On top of that, Pages support two Pommora rendering directives, each degrading to plain Markdown for external tools:
 
-- **Columns** — a section rendered in evenly-divided horizontal columns; visual layout only.
 - **Callouts** — content rendered as an outlined box, distinct from a blockquote's filled left-bar emphasis.
+- **Columns** — a section rendered in evenly-divided horizontal columns; visual layout only. Specified, not built.
 
 Each Collection decides where its Pages open — the main detail pane, or the floating Page Preview window (`Features/PagePreview.md`). Editor architecture → `Features/MarkdownPM.md`; the page entity → `Features/Pages.md`.
 
@@ -144,7 +144,7 @@ There is no free-form text type — the filename is the title, and text-shaped v
 
 A view is a saved presentation of a Collection's (or depth-1 Set's) Pages — it never modifies its source. Each container's sidecar holds an ordered list of saved views; the active view is tracked per-machine so switching it doesn't churn the synced file. A view records its renderer type, property layout (column order plus a hidden set), and its sort / filter / group config, fed by one pure pipeline: **fetch → filter → group → sort**.
 
-V1 view types are **Table**, **Board**, **List**, **Gallery**, and **Cards**. Views also embed as tiles in block-host surfaces — a **Linked View** referencing a saved view, or a **Custom View** with embed-owned, nexus-wide config (→ `Planning/7-10 - Block Surfaces — Decision Log.md`). Two capabilities go beyond the baseline: multi-key sort, and recursive AND/OR filter groups. Full detail → `Features/Views.md`.
+The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — Table and Cards render today; the other four are registered but unbuilt. Views also embed as tiles in block-host surfaces — a **Linked View** referencing a saved view, or a **Custom View** with embed-owned, nexus-wide config. Two capabilities go beyond the baseline: multi-key sort, and recursive AND/OR filter groups. Full detail → `Features/Views.md`.
 
 #### The Local-End Translation Principle
 
@@ -154,13 +154,13 @@ V1 view types are **Table**, **Board**, **List**, **Gallery**, and **Cards**. Vi
 
 Connections are body `[[Title]]` links — the sole connection syntax, rendered as styled colored inline text (Obsidian-style), never as Notion-style chips. The disk format stays plain and Obsidian-compatible: just the bracketed title, no embedded id or alias.
 
-In v1, connections resolve by title. A uniquely-held title is live and navigable; a title held by two Pages is ambiguous; an unmatched one renders as inert literal text with the brackets visible, going live the moment a single matching Page exists. Renaming a target **cascades** atomically — every referencing body is rewritten to the new title, or the whole rename rolls back. Resolution and cascade run on an in-memory map, so the SQLite index stays a pure accelerator the feature never depends on. Typing `[[` opens an autocomplete listing Pages Nexus-wide. Canonical spec → `Features/Connections.md`.
+In v1, connections resolve by title. A uniquely-held title is live and navigable; a title held by two Pages is ambiguous; an unmatched one renders as inert literal text with the brackets visible, going live the moment a single matching Page exists. Renaming a target **cascades** — every referencing body is rewritten to the new title, per-file atomic and re-runnable rather than transactional. Resolution runs on an in-memory map and the cascade scans the page tree, so the SQLite index is a pure accelerator the feature never depends on. Typing `[[` plus at least one character opens an autocomplete over prefix-matching Pages Nexus-wide. Canonical spec → `Features/Connections.md`.
 
 #### Sidebar Navigation
 
-The sidebar surfaces curated, app-relevant navigation — not a raw filesystem view. Top to bottom: a **Nexus header** (profile image, title, subtitle) whose selection opens the Homepage; then **Contexts** (Areas / Topics / Projects as disclosure rows); then **Collections** (each disclosing its root Pages, its Sets, and recursively its Sub-Sets and Pages); then any user-created Collection sections that group Collections for navigation only. Agenda surfaces through a Calendar entry rather than its own rows.
+The sidebar surfaces curated, app-relevant navigation — not a raw filesystem view. It is a fixed **ribbon** (an icon strip pinned to the left edge, the Nexus's identity icon at its top opening the Homepage) beside a **content column** that shows one mode at a time: **Collections**, **Contexts**, or **Agenda**. There is no header row and no all-at-once stack; switching modes plays the overtake sweep. Agenda rows are read-only today.
 
-Every entity reorders by drag-and-drop, and Pages reparent across the tree. Creation is right-click-first — a context menu offers "New X" options scoped to the cursor location — complemented by a hover "+" on headings. Full spec → `Features/Sidebar.md`.
+Every entity reorders by drag-and-drop, and Pages reparent across the tree. Creation is right-click-first — a context menu offers "New X" options scoped to the cursor location. Full spec → `Features/Sidebar.md`.
 
 #### App Shell + Property Surfaces
 
@@ -174,15 +174,15 @@ The main pane is single-pane. **Back / Forward** step a navigation history, and 
 
 #### First-Launch Experience
 
-On launch Pommora restores the last opened Nexus or opens empty — never a launch modal. ⌘O picks a Nexus folder, and a dropped folder opens the same way. The Nexus's singletons — Homepage, the Contexts registry and label config, Settings, and the Tasks and Events folders — auto-seed on first sight. Opening a folder that isn't yet a Nexus runs an idempotent adoption pass that classifies each folder by position and leaves existing notes untouched until edited. No tutorial, no walkthrough wizard.
+On launch Pommora restores the last opened Nexus or opens empty — never a launch modal. The File menu's Open Nexus picks a folder, and a dropped folder opens the same way. The Nexus's singletons — Homepage, the Contexts registry and label config, Settings, and the Tasks and Events folders — auto-seed on first sight. Opening a folder that isn't yet a Nexus runs an idempotent adoption pass that classifies each folder by position and leaves existing notes untouched until edited. No tutorial, no walkthrough wizard.
 
 #### Design System
 
-A two-tier token system — primitives (one neutral base at opacities, accent, tints, the type ramp) feeding semantic aliases — authored in code and sourced from a Figma library. Colors are authored as hex; the token layer is the single source. Glass uses two materials: a CSS **frost** for Window and Surface, and Apple **"Liquid Glass"** for Controls. Motion is tokenized, with a canonical bloom-and-retract for panes and menus. V1 ships one scheme plus in-app accent customization. Full philosophy → `Features/Design.md`; type → `Features/Typography.md`; motion → `Features/Interaction.md`.
+A two-tier token system — primitives (one neutral base at opacities, accent, tints, the type ramp) feeding semantic aliases — authored in code and sourced from a Figma library. Colors are authored as hex; the token layer is the single source. Glass uses two materials: a CSS **frost** for Window and Surface, and Apple **"Liquid Glass"** for Controls. Motion is tokenized, with a canonical bloom-and-retract for panes and menus. V1 ships one scheme plus in-app accent customization. Full philosophy → `Features/DesignPM.md`; type → `Features/Typography.md`; motion → `Features/Interaction.md`.
 
 #### macOS Integration
 
-First-party where Electron reaches it — the native menu bar, `pommora://` deep links, notifications, dark mode, and a tray icon. QuickLook previews, a Share Extension, and deep Spotlight indexing require a companion Swift bundle shipped alongside. Finder file-promise drag-out, true sidebar vibrancy, and Spaces-aware window restoration are Electron ceilings to ship a companion for or accept. Detail → `Resources/Mac-Integration.md`.
+First-party where Electron reaches it — the native menu bar and dark mode ship today; `pommora://` deep links, notifications, and a tray icon are targets, not built. QuickLook previews, a Share Extension, and deep Spotlight indexing require a companion Swift bundle shipped alongside. Finder file-promise drag-out, true sidebar vibrancy, and Spaces-aware window restoration are Electron ceilings to ship a companion for or accept. Detail → `Resources/Mac-Integration.md`.
 
 #### Distribution
 

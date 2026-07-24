@@ -22,7 +22,7 @@ Titles match through one shared normalization — trimmed, case-insensitive — 
 
 #### II. Rename Cascade
 
-Because identity is the title and the body carries no id, a rename **cascades**: renaming a target rewrites every body that references its old title, Nexus-wide, in one atomic pass. If the cascade fails, the file rename reverts. The index drives it, so it's targeted rather than a full scan.
+Because identity is the title and the body carries no id, a rename **cascades**: renaming a target rewrites every body that references its old title, Nexus-wide. The inbound set is found by scanning every markdown file in the nexus — the index plays no part. The cascade is per-file atomic, not cross-file: a partly-applied cascade leaves the remaining bodies pointing at the old title and is recoverable by re-running, rather than rolling back.
 
 #### II. Rendering
 
