@@ -26,7 +26,7 @@ import {
   MenuSeparator,
   AccessoryButton,
 } from '../../design-system/components/menu'
-import { flushTrailing } from '../../design-system/components/menu/menu.css'
+import { flushTrailing, titleInput } from '../../design-system/components/menu/menu.css'
 import { Reveal } from '../../design-system/components/Reveal'
 import { duration } from '../../design-system/tokens/motion'
 import { IconPicker } from '../IconPicker'
@@ -78,7 +78,7 @@ function ListGroups({
     renamingId === d.id ? (
       <EditableInput
         value={d.name}
-        className="row-title-input"
+        className={cx(titleInput, 'row-title-input')}
         onCommit={(next) => {
           if (next && next !== d.name) onRenameCommit(next, d.name)
           else onRenameCancel()
