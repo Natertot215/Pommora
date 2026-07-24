@@ -6,12 +6,30 @@ Pommora's path to v1.0.0. The React + Electron build rebuilt the Swift paradigm 
 
 `major.minor.patch` semver. **Minor (`v0.X.0`)** = a completed feature cluster. **Patch (`v0.X.y`)** = a touch-up or additive extension on a shipped feature. **Major (`vX.0.0`)** is reserved for `v1.0.0` (stabilization) and onward. **v0.5.0 is the rebuild-complete baseline.** The upcoming line is version-targeted, never date-bound; order and grouping firm up as each cluster lands.
 
-### The Rebuild Arc
+### Completed
 
-The React build rebuilt the Swift paradigm from the ground up and closed at **v0.5.0** — the rebuild-complete baseline. The milestone-by-milestone record, with the locked decisions behind each, lives in `History.md`; it isn't restated here.
+The rebuild arc to **v0.5.0** — locked decisions and full detail per milestone in `History.md`.
+
+- Genesis → walking skeleton — one nexus walk over IPC into a Zustand store
+- Headless data layer + the desktop write path
+- Glass, drag, and the design system
+- The MarkdownPM editor
+- Chrome, footer, and inspector
+- Tables, views + Properties V2
+- The view-settings suite + property editors
+- SurfacePM — block surfaces
+- Auto-scroll + the navigation surface
+- Multi-tab nexus
+- Page previews
+- Unified Subfield + scan-promote — **closed the rebuild at v0.5.0**
+
+Since the baseline:
+
+- Cards — the second renderer, interaction hardening, the picker-host architecture
+- The certified cleanup campaign — one-walk mutations + shared interaction primitives
+- Contexts & Spaces — the registry model replacing the fixed three tiers *(in flight)*
 
 ### II. Upcoming (v0.5.0 → v1.0.0)
-
 
 #### The prerequisite — a query consumer
 
