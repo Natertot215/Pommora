@@ -14,9 +14,9 @@ Pommora is a personal management app based on Nathan’s frustration with modern
 - **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection’s properties. Pages use MarkdownPM for its editor surface, which includes in-line connections to other pages. 
 - **Agenda:** the calendar layer — **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each with a built-in Status.
 - **Properties:** the nexus-wide typed attributes that collections inherit, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use. 
-- **Connections:** inline `[[Title]]` colored-text links that live in a Page's Markdown body (the canonical source) and **resolve via SQLite** — a regeneratable index off the read path, never the store — connecting to another Page as the Content ↔ Content matrix.
+- **Connections:** inline `[[Title]]` colored-text links that live in a Page's Markdown body (the canonical source) and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix.
 
-**Files are canonical.** Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, and all config are JSON sidecars; an entity's kind comes from its folder's sidecar, not the extension. Foreign keys are preserved on every write, and the SQLite index is a regeneratable accelerator off the read path. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development.
+**Files are canonical for content.** Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, and container sidecars are JSON; an entity's kind comes from its folder's sidecar, not the extension. Foreign keys are preserved on every write. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development — but legibility is a claim about *content*, not about every byte the app stores: derived indexes and device-local caches belong in SQLite, not in hand-readable JSON. The index is currently built and maintained with **no query consumer** — writing that facade is the open architectural task.
 
 ### Stack
 
@@ -63,7 +63,7 @@ The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set
 ### Important Information 
 
 - **Formatting is Biome's** (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align or run Biome yourself — an Edit failing on whitespace means Biome reformatted, so re-read and retry. `npm run typecheck` stays the *only* type gate (the build strips types unchecked). 
-- **Connections** are in-line `[[Title]]`, resolved via SQLite, and **aren’t** displayed in any container views *(tables, galleries, lists…)*. **Contexts** resolve via bracketed title keys in front-matter through the registry; content ↔ content relational properties **don’t** exist. 
+- **Connections** are in-line `[[Title]]`, resolved against an in-memory title map built from the page tree, and **aren’t** displayed in any container views *(tables, galleries, lists…)*. **Contexts** resolve via bracketed title keys in front-matter through the registry; content ↔ content relational properties **don’t** exist. 
 - **Swift Origins:** Pommora was first built as a native SwiftUI app — that build was active for around one month and designed and versioned the entire paradigm; React was initially scoped as an alternative contingency. The decision to switch to React mostly came down to frustrations and limitations with SwiftUI, and to Claude's greater competency with TypeScript. The Swift build is archived at `// The Studio // Archive // Pommora` — source, External packages, and `.claude/` docs; its git history lives on the `swift` branch.
 
 #### II. Project Sapphire
