@@ -322,20 +322,30 @@
   background: var(--state-hover);
 }
 
-/* Inline rename field — replaces the title text while a row is being renamed. Inherits the row
-   font; a subtle accent ring marks edit mode. no-drag so it stays clickable in the glass sidebar. */
-.row-title-input {
-  width: 100%;
+/* Inline rename styling is the menu system's flush titleInput (dimensionally identical to the
+   title text it replaces — the caret alone marks edit mode); `.row-title-input` remains as the
+   query hook only. While the input is mounted, its title box must lay out as a flex row with the
+   ellipsis off: an atomic inline input that overflows an ellipsizing box is elided from paint
+   entirely (the invisible-rename-field bug), so the input takes the remaining track instead. */
+.row [class*="titleText"]:has(.row-title-input),
+.row [class*="titleText"] > span:has(.row-title-input) {
+  display: flex;
+  align-items: center;
   min-width: 0;
-  font: inherit;
-  color: var(--text);
-  background: var(--input-field);
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  padding: 0 4px;
-  margin: 0;
-  outline: none;
-  -webkit-app-region: no-drag;
+  text-overflow: clip;
+}
+/* The Disclosure variant nests icon + input one span deeper; that span is a row-flex child and
+   takes the full track. (titleText itself sits in titleWrap's COLUMN flex — a basis there is a
+   height, so it keeps its default flex.) */
+.row [class*="titleText"] > span:has(.row-title-input) {
+  flex: 1 1 0;
+}
+.row .row-title-input {
+  flex: 1 1 0;
+  width: auto;
+}
+.row [class*="titleText"] .row-icon {
+  flex: none;
 }
 
 /* --- Sidebar drag: a page reorders / reparents; the row dims in place while a ghost rides the
