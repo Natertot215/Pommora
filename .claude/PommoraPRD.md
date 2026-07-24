@@ -30,17 +30,17 @@ Pommora's bet: a Markdown-canonical foundation with a fast property and query en
 
 ### Domain Model
 
-Two layers, PARA-aligned. The organization layer holds categorical anchors; the operational layer holds the actual data. Operational entities relate to organization entities through per-tier multi-relation fields.
+Two layers, PARA-aligned. The organization layer holds categorical anchors; the operational layer holds the actual data. Operational entities relate to organization entities through bracketed Context keys at their frontmatter or JSON root.
 
 #### Organization layer — Contexts
 
-Three **free-standing** tiers. None contains, parents, or is restricted to another — a Project is not "inside" a Topic; a Topic does not belong to an Area. Each operational entity tags any tiers independently. Per-tier labels are user-configurable; tier *numbers* are load-bearing in code.
+User-defined, **free-standing** Context groups holding Spaces — the registry seeds three as ordinary, fully manageable entries. No Context contains, parents, or is restricted to another — a Project is not "inside" a Topic; a Topic does not belong to an Area. Each operational entity tags whichever Spaces fit, independently.
 
-| Tier | Default label | Role |
-|---|---|---|
-| 1 | Areas | Broad life domains — Personal, Academics, Work |
-| 2 | Topics | Subject areas — Productivity, Side Projects, Reading List |
-| 3 | Projects | Specifics — CS 161, Pommora, "Atomic Habits" |
+| Seeded Context | Role |
+|---|---|
+| Areas | Broad life domains — Personal, Academics, Work |
+| Topics | Subject areas — Productivity, Side Projects, Reading List |
+| Projects | Specifics — CS 161, Pommora, "Atomic Habits" |
 
 #### Operational layer
 
@@ -61,10 +61,10 @@ Tasks and Events sit under the **Agenda** parent schema. The Page Collection's p
 
 #### Identity and linking
 
-- **`id`** — a stable ULID assigned at creation, never changing. Every cross-reference (connections, tier links, the index) is ID-keyed.
+- **`id`** — a stable ULID assigned at creation, never changing. Connections and the index are ID-keyed; Context links are the deliberate exception, stored as registry-resolved titles whose renames cascade.
 - **Title** — the display name, carried as the filename (minus extension), freely renameable. Renames are filesystem renames; ID-keyed references resolve to the current title at render time. Within a container, a colliding Page create auto-disambiguates and a rename is rejected. Titles aren't unique Nexus-wide — a connection to a title shared by two Pages resolves as ambiguous.
 
-Operational entities tag Contexts through `tier1` / `tier2` / `tier3` multi-relation fields — bare ULID arrays at the frontmatter or JSON root, the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections. Full model and the linking catalog → `Features/Structure.md` plus the per-entity docs.
+Operational entities tag Spaces through quoted bracketed Context keys — `"[Projects]": [Pommora]`, arrays of Space titles at the frontmatter or JSON root, the **only** relation-type connection (legacy bare-ULID `tierN` arrays stay read-recognized and heal on the next governed write). Page-to-Page links are body `[[Title]]` connections. Full model and the linking catalog → `Features/Structure.md` plus the per-entity docs.
 
 ---
 
@@ -117,11 +117,11 @@ A Collection nests **Page Sets** to any depth — schema-less sub-folders that i
 
 Moving a Page **across Collections** never strips — its values ride along, the destination shows only the properties it assigns, and the rest sit inert in frontmatter until assigned there; moving **within** a Collection (between its Sets and root, at any depth) changes nothing, since the schema is shared. The schema is edited from a Collection Settings surface; per-view configuration (sort / filter / group / layout) is a separate per-view surface. Full detail → `Features/Collections.md` + `Features/PageSets.md`.
 
-#### Contexts (Areas / Topics / Projects)
+#### Contexts & Spaces
 
-Three free-standing tiers, each a folder with a config sidecar carrying `id`, `tier`, an optional `icon`, an optional `banner`, and a `blocks` array reserved for the future composed-blocks surface. There is no `parents` field and no containment. The folder name is the title; renaming in the UI renames the folder.
+`.nexus/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, chip-solid color, banner, its block doc, and its own relation keys). There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
 
-A tier relation is a **dual surface**: an operational entity tags a Context by holding its ID in `tier1` / `tier2` / `tier3`, and the Context reads back every entity that tags it through a reverse index query — Contexts carry no schema and store no inbound list. Context-to-context relations are a deferred design pass. Full detail → `Features/Contexts.md`.
+A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's bracketed key, and the Space reads back every entity that tags it through a reverse index query — Spaces carry no schema and store no inbound list. Space-to-Space links ride the same bracketed keys in a Space's own sidecar. Full detail → `Features/Contexts.md`.
 
 #### Agenda (Tasks + Events)
 
@@ -130,15 +130,15 @@ The calendar layer, split into two distinct entities mirroring EventKit, each st
 - **Tasks** (`.task.json`) — optional due date, an optional "not before" start, completion, priority, recurrence, and alarms.
 - **Events** (`.event.json`) — required start and end, optional location, all-day, recurrence, and alarms.
 
-Both carry the shared property catalog and `tier1` / `tier2` / `tier3` relations, plus a built-in, non-deletable **Status** whose three groups (Upcoming / In Progress / Done) map cleanly onto reminder/calendar semantics. EventKit sync is opt-in. Full detail → `Features/Agenda.md`.
+Both carry the shared property catalog and the same bracketed Context keys as Pages, plus a built-in, non-deletable **Status** whose three groups (Upcoming / In Progress / Done) map cleanly onto reminder/calendar semantics. EventKit sync is opt-in. Full detail → `Features/Agenda.md`.
 
 #### Properties
 
 Property **definitions** live in one nexus-wide registry (`.nexus/properties.json`) — defined once, assigned by any Collection, one shared definition and option set everywhere; an Agenda config keeps its own definitions. Property **values** live in each entity's frontmatter or JSON. A property's identity is a stable ULID, so renaming its display label never touches member files. The v1 catalog:
 
-- **Number**, **Checkbox**, **Date** (date-only or with-time), **Select**, **Multi-select**, **Status**, **URL**, **Relation** (tier-only), **Last Edited Time** (derived), and **File / Attachment**.
+- **Number**, **Checkbox**, **Date** (date-only or with-time), **Select**, **Multi-select**, **Status**, **URL**, **Context** (registry-minted, one per Context), **Last Edited Time** (derived), and **File / Attachment**.
 
-There is no free-form text type — the filename is the title, and text-shaped values use creatable Select options. **Status** uses three fixed structural groups for calendar compatibility, with user-editable options inside each. There are no user-creatable relation properties — the context-tier link is the sole relation — and option lists are managed through the schema editor, never typed inline. Status and Relation values use a tagged on-disk shape (`$status` / `$rel`) so an agent can identify them from any single file without the schema. Full catalog → `Features/Properties.md`.
+There is no free-form text type — the filename is the title, and text-shaped values use creatable Select options. **Status** uses three fixed structural groups for calendar compatibility, with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, never typed inline. Status values use a tagged on-disk shape (`$status`) so an agent can identify them from any single file without the schema; Context values are the bracketed title keys at the entity root. Full catalog → `Features/Properties.md`.
 
 #### Views
 
@@ -174,7 +174,7 @@ The main pane is single-pane. **Back / Forward** step a navigation history, and 
 
 #### First-Launch Experience
 
-On launch Pommora restores the last opened Nexus or opens empty — never a launch modal. ⌘O picks a Nexus folder, and a dropped folder opens the same way. The Nexus's singletons — Homepage, tier and label config, Settings, and the Tasks and Events folders — auto-seed on first sight. Opening a folder that isn't yet a Nexus runs an idempotent adoption pass that classifies each folder by position and leaves existing notes untouched until edited. No tutorial, no walkthrough wizard.
+On launch Pommora restores the last opened Nexus or opens empty — never a launch modal. ⌘O picks a Nexus folder, and a dropped folder opens the same way. The Nexus's singletons — Homepage, the Contexts registry and label config, Settings, and the Tasks and Events folders — auto-seed on first sight. Opening a folder that isn't yet a Nexus runs an idempotent adoption pass that classifies each folder by position and leaves existing notes untouched until edited. No tutorial, no walkthrough wizard.
 
 #### Design System
 
@@ -192,9 +192,9 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 
 ### v1 Scope
 
-- **Contexts** (Areas / Topics / Projects) — free-standing organization surfaces with per-Nexus configurable labels, all three in one sidebar section. No containment, no parents, no cross-tier links.
+- **Contexts & Spaces** — free-standing, user-manageable Context groups holding Spaces (the registry seeds Areas / Topics / Projects), each group a sidebar disclosure. No containment, no parents.
 - **Page Collections + Sets + Pages** — schema-bearing Collections, schema-less recursive Sets, and Markdown Pages. UI labels renameable. Each Collection chooses preview-window vs. main-pane opening.
-- **Pages** — Markdown + frontmatter (including per-tier multi-relations), the MarkdownPM editor, Columns and Callouts.
+- **Pages** — Markdown + frontmatter (including the bracketed Context keys), the MarkdownPM editor, Columns and Callouts.
 - **Agenda** — Tasks and Events with a required built-in Status on each; sync opt-in; reached through a Calendar entry, no sidebar section.
 - **Homepage** — singleton dashboard, seeded on first launch.
 - **Settings** — storage, label wiring across renameable surfaces, and accent-color reading now; full editing UI planned.

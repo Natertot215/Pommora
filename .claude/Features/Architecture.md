@@ -83,13 +83,13 @@ Managers are `@MainActor` `@Observable`; SwiftUI views observe them directly via
 
 #### SQLite index — regeneratable scaffolding
 
-The index lives at `<nexus>/.nexus/index.db`, travelling with the Nexus so a moved or renamed Nexus keeps it without re-pathing. It holds titles / properties / links / relations — **never** Page bodies; full-text search reads files directly. DDL is canonical in PRD § SQLite Schema. Tier relations live in the `context_links` table (no separate tier table); body connections in a page-only `connections` table.
+The index lives at `<nexus>/.nexus/index.db`, travelling with the Nexus so a moved or renamed Nexus keeps it without re-pathing. It holds titles / properties / links / relations — **never** Page bodies; full-text search reads files directly. DDL is canonical in PRD § SQLite Schema. Context links live in the `context_links` table; body connections in a page-only `connections` table.
 
 **Fully regeneratable.** The index is stamped with a `schema_version`; on open a mismatch force-deletes + rebuilds the whole DB — no per-user data migration. Losing the file just means a rebuild on next open.
 
 **Launch-tail indexing contract.** On launch the index rebuilds **only** when the schema-version mismatch flags it — there is no unconditional launch scan. The version is stamped only *after* a rebuild succeeds, so a failed rebuild retries next launch instead of locking in an empty index. Consequence: a page Finder-dropped after the index is current-stamped enters via CRUD upserts (or a forced rebuild), not via the launch path.
 
-**Query surface.** The query facade composes Notion-style filter/sort/group/broken-links SQL — reaching the `properties` JSON column via JSON1, and `context_links` for tier lookups. Embedded views in Contexts / Homepage flow through it. The UI is therefore one hop removed from the canonical file (file → index → query → view); a wrong, empty, or `(missing)` surface localizes to the query/render hop, not by itself to the file — see CLAUDE.md branch quirk #17.
+**Query surface.** The query facade composes Notion-style filter/sort/group/broken-links SQL — reaching the `properties` JSON column via JSON1, and `context_links` for Context lookups. Embedded views in Contexts / Homepage flow through it. The UI is therefore one hop removed from the canonical file (file → index → query → view); a wrong, empty, or `(missing)` surface localizes to the query/render hop, not by itself to the file — see CLAUDE.md branch quirk #17.
 
 **Reverse query (Space Linked-from).** Reads `context_links` for every row whose `target_id` equals a Space id, resolving each source's current title from its owning table — powering a Space's Linked-from surface. Each membership value emits one row across page, agenda, and space sources (`target_kind` = `space`).
 
@@ -148,5 +148,5 @@ Deliberately *not* built:
 
 - `PommoraPRD.md` — high-altitude product spec; storage model; SQLite DDL.
 - `// Features//Domain-Model.md` — 2-layer model + PARA mapping + linking model.
-- `// Features//Properties.md` — property catalog; tier-relation properties; the nexus-wide registry + assignment model.
+- `// Features//Properties.md` — property catalog; the synthesized context properties; the nexus-wide registry + assignment model.
 - `// rules//MarkdownPM.md` — editor architecture + save pipeline.

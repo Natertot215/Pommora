@@ -26,11 +26,11 @@ Page values live in `.md` frontmatter; Task and Event values live in a `properti
 | **Multi-select**      | `["<value>", ...]`                                                      | Bare array; tag-style multi-pick.               |
 | **Status**            | `{"$status": "<value>"}`                                                | Tagged object; grouped by workflow phase.       |
 | **URL**               | `"https://..."`                                                         | A string with a scheme.                         |
-| **Context**           | `[{"$rel": "<id>"}, ...]`                                               | Tagged array; tier-only, not user-creatable.    |
+| **Context**           | `"[<Context>]": [<Space titles>]` at the entity ROOT                    | Not under `properties`; registry-minted, one per Context. |
 | **Last Edited Time**  | *(derived from `modified_at`)*                                          | Virtual — never persisted.                      |
 | **File / Attachment** | `[{ "path", "original_name", "added_at", "mime_type" }, ...]`           | Array; files copy into the Nexus.               |
 
-There's no free-form text type — the filename is the title, and text-shaped values use creatable Select options. **Relation** is reserved for the three context-tier links and isn't offered in the type picker; any user-relation definition is dropped on read.
+There's no free-form text type — the filename is the title, and text-shaped values use creatable Select options. The **context** type is reserved for registry Context links and isn't offered in the type picker; any user-relation definition is dropped on read — content ↔ content relational properties don't exist.
 
 #### II. Identity vs Name
 
@@ -40,11 +40,11 @@ Every property carries two independent identifiers:
 
 - **`name`** — the user-facing display label, renameable freely. A rename is registry-only — member files are keyed by ID, so nothing cascades; every assigning Collection sees the new name.
 
-Reserved property IDs (`_id`, `_title`, `_created_at`, `_modified_at`, `_status`, `_type`, `_tier1`, `_tier2`, `_tier3`) are blocked from user properties. The page `cover` is a root frontmatter field, not a property, and never appears in any properties UI.
+Reserved property IDs (`_id`, `_title`, `_created_at`, `_modified_at`, `_status`, `_type`, `_tier1`, `_tier2`, `_tier3` — the last three doubling as the seeded Contexts' registry ids) are blocked from user properties. The page `cover` is a root frontmatter field, not a property, and never appears in any properties UI.
 
 #### II. On-Disk Value Shapes
 
-A value is recovered from raw JSON by **shape**, in a fixed precedence — the declared type lives in the schema, and the on-disk value is type-erased. Status and Relation use a tagged object (`$status` / `$rel`) so an agent can identify the value type from any single file without the schema; Select stays a bare string and Multi-select a bare array because their shapes don't collide. **No value, no key:** setting a property to null — or to any empty value (an empty array or empty string) — clears its key from the member file; a member without a value never carries a null / `[]` / `''` placeholder. Checkbox false and number zero are real values and stay. (Tier keys are the exception — see the Contexts spec.)
+A value is recovered from raw JSON by **shape**, in a fixed precedence — the declared type lives in the schema, and the on-disk value is type-erased. Status uses a tagged object (`$status`) so an agent can identify the value type from any single file without the schema; Select stays a bare string and Multi-select a bare array because their shapes don't collide. **No value, no key:** setting a property to null — or to any empty value (an empty array or empty string) — clears its key from the member file; a member without a value never carries a null / `[]` / `''` placeholder. Checkbox false and number zero are real values and stay. Context keys follow the same rule — an emptied bracketed key leaves the root entirely.
 
 #### II. Status
 
@@ -90,9 +90,9 @@ A URL property renders each value as a clickable link (opened through the sancti
 
 A per-value **alias** (right-click → Rename, stored markdown-native as `[alias](url)`) overrides the display for a single link. In the title look, the page `<title>` is fetched once per URL and cached in `.nexus/linkTitles.json` (device-local, regeneratable), falling back to the bare domain while loading or on failure. *(A separate palette icon beside the colour chip once offered a second recolor source — removed; clicking the chip is the one affordance.)*
 
-#### II. Tier Relations
+#### II. Context Links
 
-The three context-tier links (`tier1` / `tier2` / `tier3`) are the only relation-type connection. They store as **bare ULID arrays at the entity root**, not under `properties`, and the schema exposes them as three synthesized relation properties (`_tier1` / `_tier2` / `_tier3`) merged after the user-defined ones. Full cross-layer behavior → `Contexts.md`.
+Context links are the only relation-type connection. They store as **quoted bracketed title keys at the entity root** (`"[Projects]": [Pommora]`), not under `properties`, and the schema exposes one synthesized context property per registry Context, merged after the user-defined ones — the seeded three keep the reserved `_tier1` / `_tier2` / `_tier3` ids, user-minted Contexts ride their ULIDs. Legacy bare-ULID `tierN` arrays stay read-recognized and heal to bracketed keys on the file's next governed write. Full cross-layer behavior → `Contexts.md`.
 
 #### II. Auto-Managed Properties
 
