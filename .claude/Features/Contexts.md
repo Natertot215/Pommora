@@ -36,7 +36,9 @@ The organization layer. A **Context** is a user-defined group — the registry s
 
 #### II. Surfaces
 
-- **Sidebar (Contexts mode)**: every Context renders as a disclosure of Space rows. Group headers drag to reorder the registry; Spaces drag within their group (`space_orders` in state.json); in-group right-click creates a Space, background right-click creates a Context, and the group header's native menu carries New / Rename / Delete. A Context is a disclosure, not a destination — selecting one renders nothing.
+- **Sidebar (Contexts mode)**: every Context renders as a disclosure of Space rows. Group headers drag to reorder the registry; Spaces drag within their group (`space_orders` in state.json); in-group right-click creates a Space, background right-click creates a Context, and the group header's native menu carries New / Rename / Delete. A Context is a disclosure, not a destination — selecting one renders nothing. A create always lands visible: the new row's inline rename forces its collapsed ancestor disclosures open, and a click that settles a header's own rename never doubles as a disclosure toggle.
+
+- **SpaceView heading**: a Space's main view wears its icon through the shared banner title header — the same hide/reveal slide, right-click menu, and inline rename as Collection and Set views, banner or no banner.
 
 - **SpaceView**: a Space selection renders its banner scaffold over its block surface — `_space.json` is the second BlockHost beside the homepage, with a per-Space board lock — plus its Subfield breadcrumb.
 
