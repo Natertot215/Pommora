@@ -1,6 +1,6 @@
 ### Architecture — Data Layer + Nexus
 
-The dynamics of Pommora's data layer — the on-disk Nexus, the manager + cache surface, the SQLite index, the atomic-write contract, the adopter, and the external-edit watcher. PRD carries the high-altitude storage model + SQLite DDL.
+The dynamics of Pommora's data layer — the on-disk Nexus, the read + state layer, the SQLite index, the atomic-write contract, the adopter, and the external-edit watcher. PRD carries the high-altitude storage model + SQLite DDL.
 
 ---
 
@@ -48,7 +48,6 @@ A Nexus is a single folder. Pommora opens it via picker (security-scoped bookmar
     index.db                            ← SQLite index (regeneratable, schema-versioned)
     contexts.json                       ← the Context registry (id, title, singular, icon; order = display)
     contexts/<Context>/<Space>/_space.json ← one Space per folder (id, color, banner, block doc, relations)
-    attachments/<entity-id>/            ← copy-on-attach files (file/attachment properties)
 
   .trash/                               ← deleted entities (nexus-local trash; v1+ surface)
     <Type>/<Page>.md                    ← preserves original relative path under the source Type
@@ -57,13 +56,13 @@ A Nexus is a single folder. Pommora opens it via picker (security-scoped bookmar
   state.json                            ← security-scoped bookmark + recent-nexuses
 ```
 
-**Classification by sidecar + folder position.** A root folder carrying a Pages sidecar IS a Page Collection — regardless of folder name; folders rename freely via Finder. The per-kind sidecar filenames (`_pagecollection.json` / `_pageset.json` / `_taskconfig.json` / `_eventconfig.json`) are the kind discriminators (the retired `_pagetype.json` is converted to `_pagecollection.json` by a one-shot migration on first open → [[PageCollections]]). A Collection nests Page Sets to **any depth** — every sidecar-bearing sub-folder is a Set (tier = folder depth, not filename); there is no depth cap and no roll-up (→ `// Features//PageSets.md`).
+**Classification by sidecar + folder position.** A root folder carrying a Pages sidecar IS a Page Collection — regardless of folder name; folders rename freely via Finder. The per-kind sidecar filenames (`_pagecollection.json` / `_pageset.json` / `_taskconfig.json` / `_eventconfig.json`) are the kind discriminators (the retired `_pagetype.json` is converted to `_pagecollection.json` by a one-shot migration on first open). A Collection nests Page Sets to **any depth** — every sidecar-bearing sub-folder is a Set (tier = folder depth, not filename); there is no depth cap and no roll-up (→ `// Features//PageSets.md`).
 
 **No wrapper folders.** Page Collections and the Tasks / Events singletons all live as siblings at the nexus root — there is no `Pages/` or `Agenda/` container folder.
 
 **Agenda is discriminated by config sidecar, never by name.** A Tasks / Events singleton is *only* the folder carrying `_taskconfig.json` / `_eventconfig.json`; folder names (`Tasks` / `Events`) are renameable defaults, not reserved. Every collection-discovery path — adoption, the read walk, on-creation — skips a folder *iff* it carries an agenda config sidecar, so a user could even name a Page Collection "Tasks" or "Events" and it's correctly a Collection (it carries `_pagecollection.json`, not the agenda config). No name is ever reserved.
 
-> **Deferred — per-file kind discrimination.** Classification today is *folder-level* (by sidecar). It does **not** yet discriminate individual *files* within a folder by kind: an un-configured folder's loose files are content-sniffed as Pages, and the agenda entity files (`.task.json` / `.event.json`) are only distinguished by extension at the manager layer, not at adoption. When Tasks / Events are fully implemented, adoption MUST gain an explicit per-file discriminator — extension, filename prefix, or frontmatter key — so each file's kind (task / event / page) is unambiguous rather than inferred from its parent folder. Not built now; the on-disk discriminator choice is open.
+> **Deferred — per-file kind discrimination.** Classification today is *folder-level* (by sidecar). It does **not** yet discriminate individual *files* within a folder by kind: an un-configured folder's loose files are content-sniffed as Pages, and the agenda entity files (`.task.json` / `.event.json`) are only distinguished by extension at read time, not at adoption. When Tasks / Events are fully implemented, adoption MUST gain an explicit per-file discriminator — extension, filename prefix, or frontmatter key — so each file's kind (task / event / page) is unambiguous rather than inferred from its parent folder. Not built now; the on-disk discriminator choice is open.
 
 **Hidden + private.** `.nexus/` and `.trash/` are hidden from the sidebar and from non-Pommora tools by convention (matches `.obsidian/`).
 
@@ -71,13 +70,13 @@ A Nexus is a single folder. Pommora opens it via picker (security-scoped bookmar
 
 ---
 
-#### Manager + cache layer
+#### Read + state layer
 
-One per-entity manager per kind owns the in-memory cache for that kind: it loads files at app start, mirrors to the SQLite index, and writes atomically on every mutation. There is a manager for each operational + organization kind (Page Collections, Page Sets, Page content, Tasks, Events, the Context registry's Spaces) plus the Homepage and Settings singletons; each is sourced from its corresponding files/sidecars on disk.
+There is no per-kind manager layer. The read side is **one eager, read-only walk** in main (`readNexus`) producing a pre-ordered `NexusTree` — the whole tree in a single pass, consumed by the renderer without re-sorting. The renderer holds it in a Zustand store; there is no per-entity cache and no dependency-injection graph.
 
-Managers are `@MainActor` `@Observable`; SwiftUI views observe them directly via `@Environment`. Heavy services (the SQLite index, parsers) stay in DI to avoid re-init on view rebuild. Manager ownership + injection is centralized — see CLAUDE.md branch quirk #15.
+Three seams keep that single walk cheap. A **mtime-gated parse cache** reuses decoded sidecars and frontmatter for files that haven't changed. **Self-write suppression** makes the watcher ignore the app's own writes, so a mutation costs exactly one walk instead of two. A **structural-sharing stabilize pass** in the renderer collapses an unchanged subtree back to its previous object identity, so a refetch re-renders only what actually moved.
 
-**Full load mirrors parents to the SQLite index.** Invariant: after a full disk-load, every in-memory parent (Page Collection / Page Set) is also present in its SQLite table. The manager defensively re-upserts parents after load (idempotent; failures swallowed since the index is regeneratable). Without this, page CRUD into a Collection that arrived outside CRUD (adoption / external Finder folders) triggers an FK-constraint failure.
+Mutations are separate by construction: the write path never runs inside a read, and every write is followed by one refetch.
 
 ---
 
@@ -89,11 +88,9 @@ The index lives at `<nexus>/.nexus/index.db`, travelling with the Nexus so a mov
 
 **Launch-tail indexing contract.** On launch the index rebuilds **only** when the schema-version mismatch flags it — there is no unconditional launch scan. The version is stamped only *after* a rebuild succeeds, so a failed rebuild retries next launch instead of locking in an empty index. Consequence: a page Finder-dropped after the index is current-stamped enters via CRUD upserts (or a forced rebuild), not via the launch path.
 
-**Query surface.** The query facade composes Notion-style filter/sort/group/broken-links SQL — reaching the `properties` JSON column via JSON1, and `context_links` for Context lookups. Embedded views in Contexts / Homepage flow through it. The UI is therefore one hop removed from the canonical file (file → index → query → view); a wrong, empty, or `(missing)` surface localizes to the query/render hop, not by itself to the file — see CLAUDE.md branch quirk #17.
+**No query consumer — the index is write-only today.** Nothing in the app reads the index: there is no query facade, and the only statements issued against it outside the write layer are the schema-version handshake. Everything the product currently needs is answered off the in-memory tree instead — Connections resolve against a title map built from the page tree, and Context links resolve at walk assembly. Writing the query facade is the open architectural task, and it gates the features that have no other route: Linked-from, backlinks, and full-text search.
 
-**Reverse query (Space Linked-from).** Reads `context_links` for every row whose `target_id` equals a Space id, resolving each source's current title from its owning table — powering a Space's Linked-from surface. Each membership value emits one row across page, agenda, and space sources (`target_kind` = `space`).
-
-**Update path.** Every manager mutation upserts to the DB immediately after its atomic file write succeeds — mid-session changes never wait for a restart.
+**Update path — full rebuild per mutation.** There is no incremental updater. Every successful mutation drops `index.db` and cold-rebuilds it from the files, which re-walks the nexus and re-reads every page body. This is a known violation of the never-rebuild-the-whole-Y rule, currently paid for no benefit; it resolves either by writing the query consumer that justifies it, or by suspending the refresh until one exists.
 
 **Delete behavior.** Deleting a parent cascades its descendants in the index, except that deleting a Collection or Set does **not** delete its child Pages — they move up a level until the next full reconcile.
 
@@ -119,7 +116,7 @@ External + out-of-band on-disk changes (Obsidian / vim / Finder / cloud-sync) pr
 
 #### Adoption — opening any folder as a Nexus
 
-When a folder is first opened as a Nexus, the adopter classifies each root folder independently: fresh (no recognized sidecar → content-sniff picks a Page Collection), unrecognized sidecar (auto-tagged as a Page Collection, the foreign sidecar staying **inert on disk**), or already flat (no-op). Idempotent, per-folder atomic, safe to re-run on partial state; hidden folders skipped. Preview-before-commit shows per-Collection counts + warnings; fully-flat Nexuses skip the sheet silently. Full per-shape detail → `// Features//PageCollections.md` § "Adopting existing folders".
+When a folder is first opened as a Nexus, the adopter classifies each root folder independently: fresh (no recognized sidecar → content-sniff picks a Page Collection), unrecognized sidecar (auto-tagged as a Page Collection, the foreign sidecar staying **inert on disk**), or already flat (no-op). Idempotent, per-folder atomic, safe to re-run on partial state; hidden folders skipped. Preview-before-commit shows per-Collection counts + warnings; fully-flat Nexuses skip the sheet silently. Full per-shape detail → `// Features//Collections.md`.
 
 **Kind authority = the folder sidecar, not the extension.** A `.md` file's kind comes from its parent folder's sidecar (`_pagecollection.json` / `_pageset.json` → Page), never from frontmatter. Any kind-like frontmatter key is treated as preserved foreign frontmatter — carried by value, never written by Pommora.
 
@@ -147,6 +144,6 @@ Deliberately *not* built:
 #### Reference
 
 - `PommoraPRD.md` — high-altitude product spec; storage model; SQLite DDL.
-- `// Features//Domain-Model.md` — 2-layer model + PARA mapping + linking model.
+- `// Features//Structure.md` — 2-layer model + PARA mapping + linking model.
 - `// Features//Properties.md` — property catalog; the synthesized context properties; the nexus-wide registry + assignment model.
 - `// rules//MarkdownPM.md` — editor architecture + save pipeline.

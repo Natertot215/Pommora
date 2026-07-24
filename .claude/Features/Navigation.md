@@ -34,7 +34,7 @@ The navigation model: a tab bar in the toolbar holding your open working set, ea
 - **Interaction:** within-zone drag reorders (pinned among pinned, unpinned among unpinned); `Ctrl`+`Tab` / `Ctrl`+`Shift`+`Tab` cycles all tabs; a tab's right-click menu offers Pin/Unpin · Close. A reveal-on-hover setting can hide the bar when idle.
 - **Iconography:** tab icons resolve live like every nav surface — the Homepage tab wears the nexus photo (the home glyph only when none is set), and a NavView tab reads "New Tab" under the copy glyph.
 
-The model + interaction spec, the warm-state mechanism, and the visual knobs → `Planning/Multi-Tab Nexus — Decision Log.md` + `— Implementation Plan.md`.
+The engine internals live with the code; this doc is the durable spec.
 
 #### II. Back and Forward
 

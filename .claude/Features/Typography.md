@@ -44,7 +44,7 @@ Four Inter weights on a ladder — **Standard 400 · Emphasized 500 · Semibold 
 
 ### Label Colors
 
-Text color is separate from the type ramp. Three label tones on one near-white base at descending opacities — **primary · secondary · tertiary**. Catalogued in `Design.md` → Color.
+Text color is separate from the type ramp. Three label tones on one near-white base at descending opacities — **primary · secondary · tertiary**. Catalogued in `DesignPM.md` → Color.
 
 ### In Code
 

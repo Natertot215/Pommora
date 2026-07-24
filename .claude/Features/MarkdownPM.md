@@ -68,13 +68,13 @@ Each fires as one atomic transaction with a re-entry guard; all are **prefix-awa
 
 Right-click pops the **OS-native** menu, built in the Electron main process (`Menu.buildFromTemplate`, `frame`-wired so system items — Look Up, Services, spelling, Writing Tools — surface), with Pommora submenus (Format / Heading / Lists / Block) whose active state is computed from the live `EditorState`, not a static snapshot. Shortcuts: ⌘B / I / K, ⌘⇧X (strike), ⌘⇧K (connection) — Inline Code carries no keybinding (⌘E belongs to the ribbon toggle).
 
-### Service Seams (Host-Injected)
+### Host Services
 
-Wikilink resolver — **wired** to `@shared/connections`: resolution, styling, click-routing, and rename-cascade all ride the connections layer. Image provider, latex renderer, syntax highlighter — no-op defaults today; real implementations slot in behind the same seams later.
+The wikilink resolver is **wired** to `@shared/connections`: resolution, styling, click-routing, and rename-cascade all ride the connections layer. Images, LaTeX, and syntax highlighting are **detected and styled only** — there is no renderer and no injection seam for them yet; building one is part of the work, not a slot waiting to be filled.
 
 ### Module Shape
 
-`MarkdownPM/` — one folder per concern: `parser/` · `detect/` · `tokens/` · `decorations/` · `input/` · `callouts/` · `widgets/` · `editor/` (CM6 wiring) · `services.ts` · `Styles.css`. `Styles.css` is the single appearance file; every value resolves from the root design-system tokens via the `--var` bridge (the lone exception is link / connection coloring, which renders off-page too and lives in the global style layer). The behavior layer — everything but `widgets/`, `editor/`, and `Styles.css` — is framework-free and unit-tested against a dedicated corpus.
+`MarkdownPM/` — one folder per concern: `parser/` · `detect/` · `tokens/` · `decorations/` · `input/` · `connections/` · `Tables/` · `editor/` (CM6 wiring, which also holds the callout and widget code) · `Styles.css`. `Styles.css` is the single appearance file; every value resolves from the root design-system tokens via the `--var` bridge (the lone exception is link / connection coloring, which renders off-page too and lives in the global style layer). The behavior layer — everything but `widgets/`, `editor/`, and `Styles.css` — is framework-free and unit-tested against a dedicated corpus.
 
 ### Non-Obvious
 
