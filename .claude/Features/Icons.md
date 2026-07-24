@@ -4,8 +4,8 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 
 ### Sizing
 
-- **Content / leading icons** (pane rows, property-type rows) render at **16px** — a touch larger than their label, matching the row-icon convention.
-- **Affordance icons on subline rows** (the back-row `‹` chevron, the footer `+`) render at **12px**, sized down to sit with the 10px subline type.
+- **Content / leading icons** (pane rows, property-type rows) render a touch larger than their label, matching the row-icon convention.
+- **Affordance icons on subline rows** (the back-row `‹` chevron, the footer `+`) render a step down, sized to sit with the subline type.
 
 ### View Settings Panes
 
