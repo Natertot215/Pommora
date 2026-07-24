@@ -22,11 +22,11 @@ Warmth is session-only and per-tab (`previewWarm.ts` + the shared `usePreviewWar
 
 ### Routing In
 
-- **Container views** (B-1): a `page-preview` Collection's title clicks open the preview; ⌘-click is always the explicit full-page bypass to a new tab.
-- **Sidebar rows** (B-2): the same owner-resolution branch, resolved by tree position.
-- **Connections** (B-6): the nexus-wide `connectionsOpenInPreview` Personalization key routes wiki-link clicks to the preview. It's per-nexus, so it has no place in the SettingsPane configuration leaf (a collection-config surface) — no UI control yet; its home is Nathan's call. ⌘-click always takes the other route (the one modifier branch in the CM6 handler); from inside a preview it's additive — a new app tab opens behind, the preview stays.
+- **Container views**: a `page-preview` Collection's title clicks open the preview; ⌘-click is always the explicit full-page bypass to a new tab.
+- **Sidebar rows**: the same owner-resolution branch, resolved by tree position.
+- **Connections**: the nexus-wide `connectionsOpenInPreview` Personalization key routes wiki-link clicks to the preview. It's per-nexus, so it has no place in the SettingsPane configuration leaf (a collection-config surface) — no UI control yet; its home is Nathan's call. ⌘-click always takes the other route (the one modifier branch in the CM6 handler); from inside a preview it's additive — a new app tab opens behind, the preview stays.
 - **⌘N while a preview is open** promotes the active tab to a new app tab and closes it (the window when it was the last) — routed through the native menu's new-tab message, since a renderer keydown can't beat a native accelerator.
-- **Hover** (B-7): resting on a resolved connection past the intent delay blooms the hover card — a backdrop-free pane anchored to the link, dismissed by grace-timed pointer-leave or Escape. The card's page content is post-plan; the trigger + chassis are live.
+- **Hover**: resting on a resolved connection past the intent delay blooms the hover card — a backdrop-free pane anchored to the link, dismissed by grace-timed pointer-leave or Escape. The card's page content is post-plan; the trigger + chassis are live.
 
 ### The NavWindow Flavor
 

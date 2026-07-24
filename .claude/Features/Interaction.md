@@ -62,44 +62,21 @@ Owned by the in-house engine — see [[PommoraDND]]. In brief: a live "feel" (du
 
 ### Per-Surface Catalog
 
-- **Sidebar** (`Sidebar/Sidebar.css`): row hover + section "+" reveal + the collapse/expand button (fade + `translateX`); twisty rotate on `--duration-fast`. Row/section hovers run a faster hardcoded `120ms` (see inconsistencies).
+- **Sidebar** (`Sidebar/Sidebar.css`): row hover + section "+" reveal + the collapse/expand button (fade + `translateX`); twisty rotate on `--duration-fast`. Row and section hovers run a step faster than the rest of the sidebar's chrome.
 - **Editor** (`MarkdownPM/Styles.css`): fold chevron rotate + fade and the block/blockquote **grip reveal** (hover opacity) on `--duration-fast`; fold body via the Reveal pattern; banner/editor padding reflow on `--duration-base`.
 - **Subfield** (`Detail/Subfield/subfield.css`): the footer bar height-reveal + its toggle chevron ride on `--duration-base`.
 - **Banner** (`Detail/Banner/Banner.css`): title inset slide on `--duration-base`; "Add Banner" hover reveal.
 - **Menus** (`menu.css.ts` / `menuSurface.css.ts`): row hover is an instant state swap (no transition); the surface **opens** with the Bloom (`dropdown-menu` keyframes on the `slow` token) and **retracts** with `dropdown-menu-out` on click-off.
 - **Modals / pickers:** `PhotoCropModal` is imperative (pointer-tracked, no timed motion); the `IconPicker` rides the shared `PickerMenu` (the Dropdown motion) — a beaked, trigger-anchored pane, no bespoke chrome.
-- **Floating windows** (`previewWindow.css` / `navWindow.css`): both open/close on the shared **floating-window in/out** — a scale-fade on `--disclosure`, exit held by `useExitPresence`. The Page Preview's promote plays the **engulf** instead: a WAAPI FLIP from the window's live rect onto the detail pane's (translate to center, scale to box, fade) on `base`/`easing.standard` — runtime rects, so no CSS keyframes. Tab switches slide content on the preview's own stamp (the DetailPane view-slide values), and an open side pane rides the same keyframes — one motion (G-4). The title↔tab morph rides the tab-open `@starting-style` growth (`tabStrip.css`) with the title fading/sliding on the base tokens.
+- **Floating windows** (`previewWindow.css` / `navWindow.css`): both open/close on the shared **floating-window in/out** — a scale-fade on `--disclosure`, exit held by `useExitPresence`. The Page Preview's promote plays the **engulf** instead: a WAAPI FLIP from the window's live rect onto the detail pane's (translate to center, scale to box, fade) on `base`/`easing.standard` — runtime rects, so no CSS keyframes. Tab switches slide content on the preview's own stamp (the DetailPane view-slide values), and an open side pane rides the same keyframes — one motion. The title↔tab morph rides the tab-open `@starting-style` growth (`tabStrip.css`) with the title fading/sliding on the base tokens.
 
-### Duration Inventory & DRY Backlog
+### Timing Sources
 
-Every motion-timing value in the app — CSS `ms`/`s` strings (grepped) **and** the JS-driven timing a string-grep misses (numeric durations, `transitionend` fallbacks, rAF ramps; deep-audited). The **canonical** sources stay; the **hardcoded CSS** ones should migrate to the `motion.ts` tokens (or a justified new token) in a dedicated DRY pass. The `transition: none` on `.shell.is-resizing` is intentional, not a gap.
+Motion timing has one canonical home: the duration scale and easings in the motion tokens, which every CSS surface reads through its `--duration-*` / `--ease-*` vars. The shared dropdown keyframes and the Bloom curve live in the animations layer and take their durations from those same tokens.
 
-**Canonical (keep — these ARE the sources):**
-- `tokens/motion.ts` — the duration scale (`fast` / `disclosure` / `dropdown` / `base` / `slow`) + easings; the menu Bloom runs `slow`, the inline Dropdown runs `dropdown`.
-- `interactions/feel.tsx:13-15` — the drag feel presets (Glide 340 / Smooth 230 / Snappy 130) — numeric, the engine's source.
-- `design-system/animations.css.ts` — the shared `dropdown-menu` / `dropdown-menu-out` keyframes + the Bloom curve; durations come from `motion.ts` tokens (no literal ms here — the Bloom curve is the one special-cased literal).
+Two kinds of timing deliberately stay in code rather than tokens, and neither is a DRY gap. The **drag feel presets** are numeric because the engine interpolates them, not CSS. The **engine's settle timing** is a fallback, not a duration: a drag commit fires on the overlay's `transitionend` and only falls back to a computed deadline if that event never arrives — decide-then-animate, never a blind timer. Auto-scroll's tunables are likewise motion *tuning* (edge band, speed ramp, acceleration bounds), read as root vars off the drag element.
 
-**Engine timing (JS-driven, intentional — keep local, not a DRY gap):**
-- `interactions/shared.ts:28` — `SETTLE_FALLBACK = 80` (ms slack); the drag commit fires on the overlay's `transitionend`, falling back to `feel.duration + SETTLE_FALLBACK` (`engine.tsx:284`, `group.tsx:216`) — decide-then-animate, not a blind timer.
-- `interactions/autoscroll.css` — the auto-scroll tunables (edge band, base speed px/sec, proximity-ramp exponent, and the distance-acceleration floor / ceiling / distance) as `:root` tokens read off the drag element. Motion *tuning*, not a duration; see [[PommoraDND]] §II. Autoscroll.
-- `transitionend` commits (no literal duration): `engine.tsx:283`, `group.tsx:201`, and the fold reveal `MarkdownPM/editor/folding.ts:164`.
-- No other WAAPI/spring anywhere (the temporary `DropdownAnimationLab` + ⌘D `GlassTuner` were removed once the Bloom curve was chosen).
-
-**Hardcoded CSS — migrate (permanent surfaces):**
-- `Sidebar/Sidebar.css:55` (row hover) + `:141` (section "+" reveal) — the `120ms` snappy-hover pair; no matching token (decide: adopt `--duration-fast` or add a `snappy` token). (`:93` expand-button hover already hoisted to `--duration-fast`.)
-- `Detail/Banner/Banner.css:88` ("Add Banner" hover — also a literal `ease`, not the token)
-- `MarkdownPM/Styles.css:676`
-- `MarkdownPM/Tables/widget.css:50` + `:70` (widget opacity/transform)
-- `MarkdownPM/editor/folding.ts:89`
-- `design-system/components/switch.css.ts:20` + `:34` (the Switch toggle)
-- `interactions/interactions.css:255` + `:267` (the `--ix-dur` fallback literal)
-- `Carets.css:12` (the caret-cycle default — arguably a tunable knob, low priority)
-
-**Showcase / demo only (lowest priority — not app chrome):**
-- `design-system/showcase/showcase.css:185` · `:245` · `:279` · `:359`
-- `design-system/interactions/Surfaces.tsx:163` (+ `:166`, a 300ms async-reject *demo* promise)
-
-**Not motion (exclude):** `Detail/pageFlush.ts` (the path-keyed autosave **debounce**) + `Detail/PageView.tsx` (the live-stats debounce — neither is a transition); `Sidebar/sidebarDnd.tsx:209` (`setTimeout 0` event-cleanup); `interactions/autoscroll.ts:1` (a comment).
+A hardcoded duration in a permanent surface is a bug — it should read a token, or justify a new one. Debounces (autosave, live stats) and zero-delay event cleanups are not motion and never migrate.
 
 ### Principles
 

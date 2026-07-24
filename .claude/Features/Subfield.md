@@ -15,7 +15,7 @@ The Subfield takes one optional **`scope`** prop (`{ target, body }`). Unscoped 
 
 ### Look
 
-- Type is the **Subline** scale (8/10 by 1.25 — the app's smallest), bound to `subline.emphasized`. Text is the single **`label.control`** token; the glyphs (breadcrumb `›`, stats `·`, the `+`) are **`label.secondary`** and a step larger + bolder. Fixed bar height (`--subline-h`) so switching to a view with fewer items never janks it. The top divider is the 1.25px title-divider hairline. Left/right indent sits at the gutter midpoint (full gutter read wonky at this size).
+- Type is the **Subline** scale (8/10 by 1.25 — the app's smallest), bound to `subline.emphasized`. Text is the single **`label.control`** token; the glyphs (breadcrumb `›`, stats `·`, the `+`) are **`label.secondary`** and a step larger + bolder. Fixed bar height (`--subline-h`) so switching to a view with fewer items never janks it. The top divider is the shared title-divider hairline. Left/right indent sits at the gutter midpoint (full gutter read wonky at this size).
 - **App-level collapse** — one `store.subfieldExpanded` flag shared across every detail-pane view. A hover-revealed chevron rides directly above the bar (mirrors its height, bounces with the slide); the reveal zone is a large bottom-right region tracked in `DetailPane` (`.subfield-near`) so it never blocks clicks beneath. The scoped preview footer carries **its own session-only collapse** (a transient floating surface — not the shared flag) with the same chevron behavior, its reveal inset past the window's corner resize handle.
 
 ### Persistence
