@@ -84,6 +84,36 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
 
   const homeClass = owner.kind === 'homepage' ? ' is-homepage' : ''
   const surfaceClass = isSurfaceKind(owner.kind) ? ' is-surface' : ''
+  // The one non-homepage title header — bannered and banner-less views share it, so the icon,
+  // its hide/show slide, and the Rename / Change Icon menu behave identically on both.
+  const titleHeader = owner.kind !== 'homepage' && (
+    <DetailTitleHeader
+      title={owner.name}
+      icon={iconNameOr(owner.icon, defaultEntityIcon(owner.kind, defaultIcons))}
+      iconHidden={iconHidden}
+      iconRef={iconRef}
+      onRename={(newName) => submitRename(owner.path, owner.kind as MutableKind, newName)}
+      requestMenu={() => window.nexus.titleMenu({ toggleIcon: true, iconHidden })}
+      onEditIcon={() => setIconPickerOpen(true)}
+      onToggleIcon={() => void toggleHeadingIcon()}
+    />
+  )
+  const iconPicker = owner.kind !== 'homepage' && (
+    <IconPicker
+      open={iconPickerOpen}
+      onClose={() => setIconPickerOpen(false)}
+      triggerRef={iconRef}
+      value={owner.icon}
+      onSelect={(id) =>
+        void mutate({
+          op: 'setIcon',
+          path: owner.path,
+          kind: owner.kind as MutableKind,
+          icon: id,
+        })
+      }
+    />
+  )
   if (!owner.banner) {
     return (
       <div className={`banner-empty${homeClass}${surfaceClass}`}>
@@ -91,8 +121,9 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
         {owner.kind === 'homepage' ? (
           homeTitle('banner-empty-title')
         ) : (
-          <div className="banner-empty-title">{owner.name}</div>
+          <div className="banner-empty-title">{titleHeader}</div>
         )}
+        {iconPicker}
       </div>
     )
   }
@@ -114,33 +145,9 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
           {homeTitle('banner-title-text')}
         </span>
       ) : (
-        <div className="banner-title">
-          <DetailTitleHeader
-            title={owner.name}
-            icon={iconNameOr(owner.icon, defaultEntityIcon(owner.kind, defaultIcons))}
-            iconHidden={iconHidden}
-            iconRef={iconRef}
-            onRename={(newName) => submitRename(owner.path, owner.kind as MutableKind, newName)}
-            requestMenu={() => window.nexus.titleMenu({ toggleIcon: true, iconHidden })}
-            onEditIcon={() => setIconPickerOpen(true)}
-            onToggleIcon={() => void toggleHeadingIcon()}
-          />
-        </div>
+        <div className="banner-title">{titleHeader}</div>
       )}
-      <IconPicker
-        open={iconPickerOpen}
-        onClose={() => setIconPickerOpen(false)}
-        triggerRef={iconRef}
-        value={owner.icon}
-        onSelect={(id) =>
-          void mutate({
-            op: 'setIcon',
-            path: owner.path,
-            kind: owner.kind as MutableKind,
-            icon: id,
-          })
-        }
-      />
+      {iconPicker}
     </div>
   )
 }
