@@ -78,8 +78,14 @@ export interface PreviewPaneProps {
   actions?: ReactNode
   left?: PreviewPaneSide
   right?: PreviewPaneSide
+  /** Optional footer, pinned at the window bottom behind a collapse chevron. */
+  footer?: ReactNode
   children: ReactNode
 }
+
+/** The bottom-right region that reveals the footer chevron, measured from the pane's own corner. */
+const NEAR_W = 260
+const NEAR_H = 120
 
 export function PreviewPane({
   id,
@@ -100,6 +106,7 @@ export function PreviewPane({
   actions,
   left,
   right,
+  footer,
   children,
 }: PreviewPaneProps): React.JSX.Element {
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
@@ -117,6 +124,18 @@ export function PreviewPane({
 
   const leftOpen = left ? left.open !== false : false
   const rightOpen = right ? right.open !== false : false
+
+  const hasFooter = footer !== undefined && footer !== null && footer !== false
+  // Footer collapse is session-only — a floating surface never persists it.
+  const [footerOpen, setFooterOpen] = useState(true)
+  const [footerNear, setFooterNear] = useState(false)
+  // The near-zone hit-test's rect, measured lazily and cached: a getBoundingClientRect per
+  // mousemove forces a layout on every pointer travel across the pane. Anything that can move or
+  // resize the pane drops the cache; the next move re-measures.
+  const paneRect = useRef<DOMRect | null>(null)
+  useEffect(() => {
+    paneRect.current = null
+  }, [winStyle, leftOpen, rightOpen, leftW, rightW])
 
   // Escape dismisses the LIVE window only — while the exit animation runs, or when a focused
   // surface already handled the press, this stays out of the way.
@@ -171,6 +190,8 @@ export function PreviewPane({
         leftOpen && 'is-side-left-open',
         rightOpen && 'is-side-right-open',
         resizing && 'is-resizing',
+        hasFooter && footerOpen && 'is-footer-open',
+        hasFooter && footerNear && 'is-footer-near',
         closing && 'closing',
       )}
       // GlassPane's frost hard-sets a transparent background, so the tint composes here rather
@@ -189,6 +210,22 @@ export function PreviewPane({
       role="dialog"
       aria-label={ariaLabel}
       onPointerDown={onWindowDown}
+      onMouseMove={
+        hasFooter
+          ? (e) => {
+              const r = (paneRect.current ??= e.currentTarget.getBoundingClientRect())
+              setFooterNear(e.clientX > r.right - NEAR_W && e.clientY > r.bottom - NEAR_H)
+            }
+          : undefined
+      }
+      onMouseLeave={
+        hasFooter
+          ? () => {
+              paneRect.current = null
+              setFooterNear(false)
+            }
+          : undefined
+      }
     >
       <div className="ppane-toolbar">
         <div className="ppane-actions ppane-actions-lead">
@@ -209,6 +246,22 @@ export function PreviewPane({
         </div>
       </div>
       {body}
+      {hasFooter && (
+        <>
+          {/* The chevron rides above the bar when open and reveals on the bottom-right approach,
+              inset past the corner resize handle. */}
+          <button
+            type="button"
+            className="ppane-footer-toggle"
+            onClick={() => setFooterOpen((v) => !v)}
+            aria-label={footerOpen ? 'Hide footer' : 'Show footer'}
+            title={footerOpen ? 'Hide footer' : 'Show footer'}
+          >
+            <Icon name={footerOpen ? 'chevron-down' : 'chevron-up'} size="md" />
+          </button>
+          <div className="ppane-footer">{footer}</div>
+        </>
+      )}
       {left?.mode === 'overlay' && pane(left, 'left')}
       {right?.mode === 'overlay' && pane(right, 'right')}
       <FloatingResizeCorners startDrag={startDrag} />
