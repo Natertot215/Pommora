@@ -1,0 +1,137 @@
+/* The floating-window surface every in-app window mounts: glass shell + geometry, the toolbar and
+   its dismissal contract, side panes, and the footer. Hosts own their interior and their padding —
+   a window that runs edge-to-edge and one that rings on the glass inset are both consumers here. */
+
+.ppane {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--glass-radius);
+  /* The window CLIPS: a parked side pane must never peek past the glass edge. */
+  overflow: hidden;
+  animation: ppane-in var(--disclosure) var(--ease-standard);
+
+  --ppane-toolbar-h: 34px; /* KNOB — toolbar strip height */
+  /* KNOB — the ring side panes hold from the window edges. */
+  --ppane-side-inset: var(--glass-inset);
+  --ppane-side-l-w: 200px;
+  --ppane-side-r-w: 260px;
+  --ppane-footer-h: 24px;
+  /* KNOB — the gap between the trailing button pair and the × that holds home. */
+  --ppane-trail-gap: 2px;
+
+  /* The side-pane open/close drivers, declared HERE so the app-level --io (styles.css, an
+     inheriting registered property driving the main inspector) can never leak into a floating
+     window. One var carries the pane slide, the button ride, and the body squeeze. */
+  --io: 0;
+  --io-l: 0;
+  transition:
+    --io var(--duration-base) var(--ease-standard),
+    --io-l var(--duration-base) var(--ease-standard);
+}
+.ppane.is-side-right-open {
+  --io: 1;
+}
+.ppane.is-side-left-open {
+  --io-l: 1;
+}
+.ppane.closing {
+  animation: ppane-out var(--disclosure) var(--ease-standard) forwards;
+  pointer-events: none;
+}
+@keyframes ppane-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+@keyframes ppane-out {
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* ---- toolbar. A floating layer WITHIN the content — the body runs the full window and content
+   scrolls beneath the strip; no seam, no bleed. ---- */
+.ppane-toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Above a side pane (z2): the buttons ride ON its glass, never under it. */
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--ppane-toolbar-h);
+  /* The glyphs align to the side pane's box: the × sits over the pane's inner corner, and the
+     leading glyph mirrors the same inset. */
+  padding: 0 calc(var(--ppane-side-inset) + 6px);
+}
+
+/* Floating mode: no strip. The clusters pin to the top corners and everything between them stays
+   clickable, so a window whose own content reaches the top edge is never covered. */
+.ppane-toolbar-floating .ppane-toolbar {
+  height: 0;
+  padding: 0;
+  pointer-events: none;
+}
+.ppane-toolbar-floating .ppane-actions {
+  position: absolute;
+  top: calc(var(--ppane-side-inset) + 4px);
+  pointer-events: auto;
+}
+.ppane-toolbar-floating .ppane-actions-lead {
+  left: calc(var(--ppane-side-inset) + 4px);
+}
+.ppane-toolbar-floating .ppane-actions-trail {
+  right: calc(var(--ppane-side-inset) + 4px);
+}
+
+.ppane-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ppane-trail-gap);
+  z-index: 3;
+}
+.ppane-action {
+  display: flex;
+  padding: 3px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  /* Always secondary — an active state never brightens the glyph. */
+  color: var(--label-secondary);
+  cursor: pointer;
+}
+.ppane-action:hover {
+  background: var(--state-hover);
+}
+
+/* The trailing pair rides the right pane's edge: it holds at home until the pane's leading edge
+   makes contact (the max() gate), then lands flush inside its corner. The × holds home. */
+.ppane-actions-flow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  --ppane-flow-w: 46px; /* KNOB — the pair's width (two buttons + gap) */
+  /* KNOB — the pair's home gap from the window's right edge (× + gap + the toolbar's pane-aligned
+     padding; tracks the inset so the landing math stays true at any ring). */
+  --ppane-flow-home: calc(var(--ppane-side-inset) + 28px);
+  --ppane-flow-inset: 4px; /* KNOB — breathing room off the pane's seam after the swallow */
+  transform: translateX(
+    calc(
+      -1 *
+      max(
+        0px,
+        var(--io) *
+        (var(--ppane-side-r-w) + var(--ppane-side-inset)) -
+        var(--ppane-flow-home) -
+        var(--ppane-flow-w) -
+        var(--ppane-flow-inset)
+      )
+    )
+  );
+}
