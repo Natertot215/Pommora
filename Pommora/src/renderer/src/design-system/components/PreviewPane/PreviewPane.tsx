@@ -271,4 +271,4 @@ export function PreviewPane({
 
 // The bare backgrounds a window-move may start from. The title is pointer-inert, so a press on it
 // lands on the toolbar beneath and arms the move.
-const DRAG_SURFACES = '.ppane, .ppane-toolbar'
+const DRAG_SURFACES = '.ppane, .ppane-toolbar, .ppane-row'

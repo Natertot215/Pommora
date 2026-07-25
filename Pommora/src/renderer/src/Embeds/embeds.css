@@ -37,3 +37,24 @@
 :is(.pgembed, .blk-md) .md-checkbox {
   zoom: var(--glyph-scale);
 }
+
+/* A host that owns the scroll itself: the editor chain GROWS to its content (height:auto down to
+   the CM6 editor) so the HOST is the one scroller and content can ride under floating chrome. In a
+   tile the host caps the embed and CM6 scrolls internally; here nothing caps it. */
+.pgembed-grows .pgembed,
+.pgembed-grows .pgembed .mdpm-shell,
+.pgembed-grows .mdpm-editor,
+.pgembed-grows .mdpm-editor .cm-editor {
+  height: auto;
+}
+.pgembed-grows .pgembed,
+.pgembed-grows .pgembed .mdpm-shell {
+  overflow: visible;
+}
+/* The editor's scroller keeps `overscroll-behavior: none` app-wide (the parked-header steady rule) —
+   but here it never overflows, and a non-overflowing scroll container with `none` EATS the wheel
+   instead of chaining it to the host scroller. Restore chaining where the host grows. */
+.pgembed-grows .mdpm-editor .cm-scroller {
+  overscroll-behavior: auto;
+  overflow: visible;
+}

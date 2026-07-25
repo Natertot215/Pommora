@@ -9,6 +9,7 @@ import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
 import type { PreviewTab } from './previewTabs'
 import '../Tabs/tabStrip.css'
+import './previewTabStrip.css'
 
 const BASE_MS = Number.parseInt(duration.base, 10)
 /** The tab close/open width window — the toolbar strip's EXIT_MS twin (base + the segment's
