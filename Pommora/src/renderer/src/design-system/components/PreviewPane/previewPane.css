@@ -17,7 +17,8 @@
   --ppane-side-inset: var(--glass-inset);
   --ppane-side-l-w: 200px;
   --ppane-side-r-w: 260px;
-  --ppane-footer-h: 24px;
+  /* Follows the host's subline bar when it declares one, so the footer and its content agree. */
+  --ppane-footer-h: var(--subline-h, 24px);
   /* KNOB — the gap between the trailing button pair and the × that holds home. */
   --ppane-trail-gap: 2px;
 
@@ -192,8 +193,62 @@
 /* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it. */
 .ppane.is-resizing .ppane-side-left-inflow,
 .ppane.is-resizing .ppane-side-right-inflow,
-.ppane.is-resizing .ppane-actions-flow {
+.ppane.is-resizing .ppane-actions-flow,
+.ppane.is-resizing .ppane-footer,
+.ppane.is-resizing .ppane-footer-toggle {
   transition: none;
+}
+
+/* ---- footer: a bar pinned at the window bottom, squeezing left of an open right pane exactly
+   as the body does. Its own border-top is the flush body/footer divider. ---- */
+.ppane-footer {
+  flex-shrink: 0;
+  height: 0;
+  overflow: hidden;
+  transition:
+    height var(--duration-base) var(--ease-standard),
+    padding-right var(--duration-base) var(--ease-standard);
+}
+.ppane.is-footer-open .ppane-footer {
+  height: var(--ppane-footer-h);
+}
+.ppane.is-side-right-open .ppane-footer {
+  padding-right: calc(var(--ppane-side-r-w) + var(--ppane-side-inset));
+}
+.ppane-footer-toggle {
+  position: absolute;
+  right: 16px; /* KNOB — clears the se resize corner */
+  bottom: 0;
+  z-index: 4;
+  width: 40px;
+  height: var(--ppane-footer-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0 6px 0 0;
+  border-radius: 5px;
+  color: var(--label-secondary);
+  cursor: default;
+  opacity: 0;
+  -webkit-app-region: no-drag;
+  transition:
+    bottom var(--duration-base) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+.ppane.is-footer-open .ppane-footer-toggle {
+  bottom: var(--ppane-footer-h);
+}
+.ppane.is-footer-near .ppane-footer-toggle,
+.ppane-footer-toggle:hover,
+.ppane-footer-toggle:focus-visible {
+  opacity: 1;
+}
+.ppane-footer-toggle:hover {
+  background: var(--state-hover);
 }
 
 /* The trailing pair rides the right pane's edge: it holds at home until the pane's leading edge
