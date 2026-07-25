@@ -1,4 +1,4 @@
-import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
+import type { CSSProperties, HTMLAttributes, ReactNode, Ref } from 'react'
 import { shadowStandardVar } from '../tokens/color.css'
 
 /**
@@ -67,7 +67,10 @@ export function GlassPane({
   children,
   style,
   ...rest
-}: { children?: ReactNode } & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
+}: {
+  children?: ReactNode
+  ref?: Ref<HTMLDivElement>
+} & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
   return (
     <div style={{ ...frostStyle(PANE_FROST), ...style }} {...rest}>
       {children}
