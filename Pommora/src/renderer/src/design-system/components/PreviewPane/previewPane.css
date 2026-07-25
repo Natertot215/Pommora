@@ -110,6 +110,92 @@
   background: var(--state-hover);
 }
 
+/* ---- side panes. Material and inner geometry come from the SidePane shell; only positioning and
+   the slide live here. An OVERLAY pane rides the inset ring and is carried by its driver with no
+   transition of its own; an IN-FLOW pane takes a column in the body row. ---- */
+.ppane-row {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.ppane-side-right-overlay,
+.ppane-side-left-overlay {
+  position: absolute;
+  top: var(--ppane-side-inset);
+  bottom: var(--ppane-side-inset);
+  z-index: 2;
+  pointer-events: none;
+}
+.ppane-side-right-overlay {
+  right: var(--ppane-side-inset);
+  width: var(--ppane-side-r-w);
+  transform: translateX(calc((1 - var(--io)) * (100% + var(--ppane-side-inset) + 14px)));
+}
+.ppane.is-side-right-open .ppane-side-right-overlay {
+  pointer-events: auto;
+}
+.ppane-side-left-overlay {
+  left: var(--ppane-side-inset);
+  width: var(--ppane-side-l-w);
+  transform: translateX(calc((1 - var(--io-l)) * -1 * (100% + var(--ppane-side-inset) + 14px)));
+}
+.ppane.is-side-left-open .ppane-side-left-overlay {
+  pointer-events: auto;
+}
+
+/* The overlay resize twin: an edge-drag strip at the pane's inner seam. */
+.ppane-side-right-overlay-resize,
+.ppane-side-left-overlay-resize {
+  position: absolute;
+  top: var(--ppane-side-inset);
+  bottom: var(--ppane-side-inset);
+  width: 9px;
+  z-index: 4;
+  cursor: col-resize;
+}
+.ppane-side-right-overlay-resize {
+  right: calc(var(--ppane-side-inset) + var(--ppane-side-r-w) - 3px);
+}
+.ppane-side-left-overlay-resize {
+  left: calc(var(--ppane-side-inset) + var(--ppane-side-l-w) - 3px);
+}
+
+/* In-flow: a column in the body row. Closing FADES as it collapses — the glass material's 1px
+   borders would otherwise survive the zero-width collapse as a doubled hairline at the edge. */
+.ppane-side-left-inflow,
+.ppane-side-right-inflow {
+  flex-shrink: 0;
+  transition:
+    width var(--duration-base) var(--ease-standard),
+    opacity var(--duration-base) var(--ease-standard);
+}
+.ppane-side-left-inflow {
+  width: var(--ppane-side-l-w);
+}
+.ppane-side-right-inflow {
+  width: var(--ppane-side-r-w);
+}
+.ppane:not(.is-side-left-open) .ppane-side-left-inflow,
+.ppane:not(.is-side-right-open) .ppane-side-right-inflow {
+  width: 0;
+  padding: 0;
+  opacity: 0;
+}
+.ppane-side-left-inflow-resize,
+.ppane-side-right-inflow-resize {
+  width: var(--ppane-side-inset);
+  flex-shrink: 0;
+  cursor: ew-resize;
+}
+
+/* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it. */
+.ppane.is-resizing .ppane-side-left-inflow,
+.ppane.is-resizing .ppane-side-right-inflow,
+.ppane.is-resizing .ppane-actions-flow {
+  transition: none;
+}
+
 /* The trailing pair rides the right pane's edge: it holds at home until the pane's leading edge
    makes contact (the max() gate), then lands flush inside its corner. The × holds home. */
 .ppane-actions-flow {
