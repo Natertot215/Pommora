@@ -1,0 +1,81 @@
+/* The preview toolbar's centre region: the single-tab breadcrumb title and the multi-tab strip it
+   morphs into. Shared by every window that hosts preview tabs, so it lives with its component
+   rather than in any one window's shell. Motion classes come from Tabs/tabStrip.css; geometry
+   re-knobs here at caption scale. */
+
+.pgpreview-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  max-width: 55%;
+  min-width: 0;
+  /* Inert: presses fall through to the toolbar beneath and arm the window move. */
+  pointer-events: none;
+  /* KNOB — the title/tab area sizes on the caption ramp, independent of the toolbar glyphs. */
+  font-size: var(--text-caption-size);
+  /* KNOB — the title's collapse-left travel as the strip grows in. */
+  --pgpreview-morph-slide: -12px;
+  /* The morph: the title fades/slides LEFT toward the strip as tab #2 grows in, and returns the
+     same way — the strip's own motion is the tab-open @starting-style growth. */
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-standard);
+}
+@starting-style {
+  .pgpreview-title {
+    opacity: 0;
+    transform: translateX(-50%) translateX(var(--pgpreview-morph-slide));
+  }
+}
+.pgpreview-title.is-collapsing {
+  opacity: 0;
+  transform: translateX(-50%) translateX(var(--pgpreview-morph-slide));
+}
+
+.pgpreview-tabwrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+.pgpreview-tabscroll {
+  --edge-fade: 16px; /* KNOB — the strip's overflow edge dissolve */
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.pgpreview-tabstrip {
+  /* KNOBS — preview tab geometry: the caption-scale counterpart of the toolbar's .tab-bar block. */
+  --tab-min: 70px;
+  --tab-pref: 150px;
+  --tab-max: 200px;
+  --tab-pad-x: 10px;
+  --tab-gap: 5px;
+  display: flex;
+  align-items: center;
+  width: max-content;
+  min-width: 100%;
+  height: 100%;
+}
+.pgpreview-crumbs {
+  min-width: 0;
+  --edge-fade: 16px;
+  --scroll-fade: 16px;
+}
+/* The trail reads tertiary; the page itself (the last crumb, icon + name) reads control. */
+.pgpreview-crumbs .nav-path-name {
+  color: var(--label-tertiary);
+}
+.pgpreview-crumbs .nav-path-name:last-of-type {
+  color: var(--label-control);
+}
+.pgpreview-crumbs .nav-path-icon:last-of-type {
+  color: var(--label-control);
+}
