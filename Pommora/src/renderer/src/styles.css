@@ -90,6 +90,13 @@ textarea,
   initial-value: 0;
 }
 
+/* The left-side twin, for a floating window that parks a pane on its leading edge. */
+@property --io-l {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 .shell {
   position: relative;
   height: 100dvh;
