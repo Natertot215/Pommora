@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { GlassPane } from '@renderer/design-system/materials'
 import { Icon } from '@renderer/design-system/symbols'
 import { duration, easing } from '@renderer/design-system/tokens'
-import { SidePane } from '@renderer/design-system/components/SidePane/SidePane'
 import {
-  FloatingResizeCorners,
-  useFloatingWindow,
-} from '../design-system/interactions/FloatingWindow'
+  PREVIEW_PANE_INSPECTOR,
+  PreviewPane,
+} from '@renderer/design-system/components/PreviewPane/PreviewPane'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import { EMBED_SCALE } from '../Embeds/embedScale'
@@ -24,18 +22,10 @@ import { PreviewTabStrip } from './PreviewTabStrip'
 import { usePreviewWarm } from './usePreviewWarm'
 import './previewWindow.css'
 
-// KNOB — D-7: the unified floating-chrome opening size (shared with NavWindow's WIN block).
-const WIN = { minW: 360, minH: 280, defW: 850, defH: 600 }
-
-// KNOB — inspector pane resize bounds; the width slot is SHARED across both flavors'
-// inspectors (one pane, one remembered width).
-export const INSPECTOR = { min: 180, def: 260, max: 420 }
-
-// The bare surfaces a window-move may start from. The breadcrumb title is pointer-inert (I-16), so a
-// press on it lands on the toolbar beneath and arms the move; the tab wrap's bare space moves too
-// (a press on a .tab is not the wrap and never arms).
+// The bare surfaces a window-move may start from, beyond the pane's own. The tab wrap's bare space
+// moves too (a press on a .tab is not the wrap and never arms).
 const DRAG_SURFACES =
-  '.pgpreview, .pgpreview-toolbar, .pgpreview-body, .pgpreview-tabwrap, .pgpreview-tabscroll, .pgpreview-tabstrip'
+  '.pgpreview-body, .pgpreview-tabwrap, .pgpreview-tabscroll, .pgpreview-tabstrip'
 
 // The tab-switch content slide (H-11): the DetailPane's view-slide values on the preview's own stamp.
 const SLIDE_PX = 14
@@ -68,7 +58,8 @@ function PreviewWindowBody({
   const closePreview = useSession((s) => s.closePreview)
   const select = useSession((s) => s.select)
   const tree = useSession((s) => s.tree)
-  const { style, onWindowDown, startDrag } = useFloatingWindow('page-preview', WIN, DRAG_SURFACES)
+  // The window root — the engulf FLIP and the tab-slide's pane push both measure from here.
+  const rootRef = useRef<HTMLDivElement>(null)
 
   // Fully editable (C-2) via the seam's edit flip; a new target starts back at the read-only portal.
   const [editing, setEditing] = useState(false)
@@ -105,36 +96,8 @@ function PreviewWindowBody({
     () => ({ target: { id: target.id, path: target.path }, body: previewBody }),
     [target.id, target.path, previewBody],
   )
-  // Collapse (session-only) + the detail-pane reveal pattern: the chevron hides until the cursor
-  // nears the footer's bottom-right region (tracked here, not a blocking element) or hovers it.
-  const [subfieldOpen, setSubfieldOpen] = useState(true)
-  const [subfieldNear, setSubfieldNear] = useState(false)
-
-  // Inspector (G-1/G-3): the shared SidePane shell, overlay-mounted right; Escape closes it FIRST,
-  // then the window (I-21).
+  // Inspector (G-1/G-3): overlay-mounted right; Escape closes it FIRST, then the window (I-21).
   const [inspectorOpen, setInspectorOpen] = useState(false)
-  const [inspW, setInspW] = useState(INSPECTOR.def)
-  const [inspResizing, setInspResizing] = useState(false)
-
-  // The corner hit-test's rect, measured lazily and cached — a getBoundingClientRect per mousemove
-  // forces a layout on every pointer travel across the pane. Anything that can move or resize the
-  // pane (a window drag via `style`, the inspector) drops the cache; the next move re-measures.
-  const paneRect = useRef<DOMRect | null>(null)
-  useEffect(() => {
-    paneRect.current = null
-  }, [style, inspectorOpen, inspW])
-  useEffect(() => {
-    // Skip an Escape a focused surface already handled (mirrors NavWindow / App.tsx).
-    const onKey = (e: KeyboardEvent): void => {
-      // The liveness guard mirrors NavWindow's — a stale exiting window must never eat the press.
-      if (e.key !== 'Escape' || e.defaultPrevented) return
-      if (useSession.getState().preview?.flavor !== 'page') return
-      if (inspectorOpen) setInspectorOpen(false)
-      else closePreview()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [closePreview, inspectorOpen])
 
   // Wiki-links inside the preview stay inside it — a click opens (or dedup-focuses) a tab (H-1).
   // ⌘-click is ADDITIVE (I-19): a new app tab opens behind, the preview stays.
@@ -184,7 +147,7 @@ function PreviewWindowBody({
       timing,
     )
     if (inspectorOpen)
-      bodyRef.current?.parentElement
+      rootRef.current
         ?.querySelector('.pgpreview-inspector')
         ?.animate([{ transform: `translateX(${x}px)` }, { transform: 'translateX(0)' }], timing)
   }, [target.path, previewSlide, inspectorOpen])
@@ -204,7 +167,7 @@ function PreviewWindowBody({
   const exitReason = useSession((s) => s.previewExit)
   useEffect(() => {
     if (!closing || useSession.getState().previewExit !== 'engulf') return
-    const el = bodyRef.current?.parentElement
+    const el = rootRef.current
     const to = getDetailPaneRect()
     if (!el || !to) return
     const from = el.getBoundingClientRect()
@@ -222,82 +185,69 @@ function PreviewWindowBody({
     )
   }, [closing])
 
-  const closingClass = !closing
+  // The promote and nav-swap exits are WAAPI/CSS-driven; the class tells the stylesheet to
+  // suppress the shell's default scale-out so one motion owns the window.
+  const exitClass = !closing
     ? ''
     : exitReason === 'engulf'
-      ? ' engulfing'
+      ? 'engulfing'
       : exitReason === 'morph'
-        ? ' morphing'
-        : ' closing'
+        ? 'morphing'
+        : ''
 
   return (
-    <GlassPane
-      className={`pgpreview${closingClass}${inspectorOpen ? ' is-inspector-open' : ''}${inspResizing ? ' is-inspector-resizing' : ''}${subfieldOpen ? ' subfield-open' : ''}${subfieldNear ? ' subfield-near' : ''}`}
-      // The glass tint knobs (previewWindow.css) compose here — inline because GlassPane's frost
-      // sets its own background. --mdpm-scale mirrors the embed's so the footer aligns to its column.
-      style={
-        {
-          ...style,
-          background: 'color-mix(in srgb, var(--pgpreview-bg) var(--pgpreview-bg-a), transparent)',
-          '--pgpreview-inspector-w': `${inspW}px`,
-          '--mdpm-scale': EMBED_SCALE,
-        } as React.CSSProperties
-      }
-      role="dialog"
-      aria-label="Page Preview"
-      onPointerDown={onWindowDown}
-      onMouseMove={(e) => {
-        const r = (paneRect.current ??= e.currentTarget.getBoundingClientRect())
-        setSubfieldNear(e.clientX > r.right - 260 && e.clientY > r.bottom - 120)
-      }}
-      onMouseLeave={() => {
-        paneRect.current = null
-        setSubfieldNear(false)
-      }}
-    >
-      <div className="pgpreview-toolbar">
-        <div className="pgpreview-actions">
-          <button
-            type="button"
-            className="pgpreview-action"
-            title="Open Full Page"
-            onClick={promote}
-          >
-            <Icon name="scan" size={13} />
-          </button>
-        </div>
+    <PreviewPane
+      id="page-preview"
+      rootRef={rootRef}
+      className={`pgpreview ${exitClass}`}
+      closing={closing}
+      onClose={() => closePreview()}
+      onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closePreview())}
+      dragSurfaces={DRAG_SURFACES}
+      ariaLabel="Page Preview"
+      tint={{ opacity: 85 }}
+      // --mdpm-scale mirrors the embed's so the footer aligns to its text column.
+      style={{ '--mdpm-scale': EMBED_SCALE } as React.CSSProperties}
+      onScan={promote}
+      title={
         <PreviewTabStrip
           index={resolveIndex}
           title={<NavCrumbs path={crumbs} className="pgpreview-crumbs" iconSize={11} />}
         />
-        <div className="pgpreview-actions">
-          {/* The flow pair rides the inspector's edge (the main toolbar's --io swallow); the X
-              holds home. */}
-          <div className="pgpreview-actions-flow">
-            <button type="button" className="pgpreview-action" title="Settings">
-              <Icon name="sliders-horizontal" size={13} />
-            </button>
-            <button
-              type="button"
-              className="pgpreview-action"
-              title="Inspector"
-              aria-pressed={inspectorOpen}
-              onClick={() => setInspectorOpen((v) => !v)}
-            >
-              <Icon name="panel-right" size={13} />
-            </button>
-          </div>
+      }
+      actions={
+        <>
+          <button type="button" className="ppane-action" title="Settings">
+            <Icon name="sliders-horizontal" size={13} />
+          </button>
           <button
             type="button"
-            className="pgpreview-action"
-            title="Close"
-            onClick={() => closePreview()}
+            className="ppane-action"
+            title="Inspector"
+            aria-pressed={inspectorOpen}
+            onClick={() => setInspectorOpen((v) => !v)}
           >
-            <Icon name="x" size={14} />
+            <Icon name="panel-right" size={13} />
           </button>
-        </div>
-      </div>
-      <div className="pgpreview-body edge-fade" ref={bodyRef}>
+        </>
+      }
+      right={{
+        windowId: 'preview-inspector',
+        bounds: PREVIEW_PANE_INSPECTOR,
+        mode: 'overlay',
+        open: inspectorOpen,
+        className: 'pgpreview-inspector',
+        resizeLabel: 'Resize inspector',
+        children: (
+          <div className="pgpreview-inspector-body">
+            {inspectorOpen && <PreviewInspector target={target} />}
+          </div>
+        ),
+      }}
+      // Scoped to THIS page and counting the window's own body — never the app-wide live count.
+      footer={<Subfield scope={scope} />}
+    >
+      <div className="pgpreview-body edge-fade pgembed-grows" ref={bodyRef}>
         <PageEmbed
           key={target.path}
           path={target.path}
@@ -308,38 +258,7 @@ function PreviewWindowBody({
           warm={warmSeam}
         />
       </div>
-      {/* The preview's own Subfield footer (P1): scoped to THIS page, counting the local body. The
-          reveal collapses via CSS height (mirrors the detail footer); the toggle rides above the bar
-          when open, inset from the corner resize handle. */}
-      <button
-        type="button"
-        className="pgpreview-subfield-toggle"
-        onClick={() => setSubfieldOpen((v) => !v)}
-        aria-label={subfieldOpen ? 'Hide footer' : 'Show footer'}
-        title={subfieldOpen ? 'Hide footer' : 'Show footer'}
-      >
-        <Icon name={subfieldOpen ? 'chevron-down' : 'chevron-up'} size="md" />
-      </button>
-      <div className="pgpreview-subfield">
-        <Subfield scope={scope} />
-      </div>
-      <SidePane
-        windowId="preview-inspector"
-        side="right"
-        bounds={INSPECTOR}
-        open={inspectorOpen}
-        className="pgpreview-inspector"
-        resizeClassName="pgpreview-inspector-resize"
-        resizeLabel="Resize inspector"
-        onWidthChange={setInspW}
-        onResizingChange={setInspResizing}
-      >
-        <div className="pgpreview-inspector-body">
-          {inspectorOpen && <PreviewInspector target={target} />}
-        </div>
-      </SidePane>
       {hoverCard}
-      <FloatingResizeCorners startDrag={startDrag} />
-    </GlassPane>
+    </PreviewPane>
   )
 }

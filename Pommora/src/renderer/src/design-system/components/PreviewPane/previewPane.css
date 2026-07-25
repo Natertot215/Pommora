@@ -83,6 +83,9 @@
   position: absolute;
   top: calc(var(--ppane-side-inset) + 4px);
   pointer-events: auto;
+  /* Corner-pinned: children hang from the cluster's top edge, so a taller × never nudges its
+     neighbours off that line. */
+  align-items: flex-start;
 }
 .ppane-toolbar-floating .ppane-actions-lead {
   left: calc(var(--ppane-side-inset) + 4px);
@@ -262,17 +265,20 @@
      padding; tracks the inset so the landing math stays true at any ring). */
   --ppane-flow-home: calc(var(--ppane-side-inset) + 28px);
   --ppane-flow-inset: 4px; /* KNOB — breathing room off the pane's seam after the swallow */
-  transform: translateX(
-    calc(
-      -1 *
-      max(
-        0px,
-        var(--io) *
-        (var(--ppane-side-r-w) + var(--ppane-side-inset)) -
-        var(--ppane-flow-home) -
-        var(--ppane-flow-w) -
-        var(--ppane-flow-inset)
+  /* A host that reveals the pair (rather than showing it always) drives --ppane-flow-reveal rather
+     than the transform itself, so its entry nudge and the swallow compose instead of clobbering. */
+  transform: translateX(var(--ppane-flow-reveal, 0px))
+    translateX(
+      calc(
+        -1 *
+        max(
+          0px,
+          var(--io) *
+          (var(--ppane-side-r-w) + var(--ppane-side-inset)) -
+          var(--ppane-flow-home) -
+          var(--ppane-flow-w) -
+          var(--ppane-flow-inset)
+        )
       )
-    )
-  );
+    );
 }

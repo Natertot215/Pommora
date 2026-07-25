@@ -1,160 +1,34 @@
+/* The NavWindow. Shell, toolbar, and side panes come from the PreviewPane surface; what remains
+   here is this window's own interior — the rail's contents, the tab row, and the search list. */
+
 .navwindow {
-  position: fixed;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
+  /* The window rings on the glass inset rather than running edge-to-edge. */
   padding: var(--glass-inset);
-  border-radius: var(--glass-radius);
-  /* The window CLIPS: a parked (closed) side pane must never peek past the glass edge. */
-  overflow: hidden;
-  animation: navwindow-in var(--disclosure) var(--ease-standard);
+  /* KNOB — the pair sits further off the × here than in a toolbar band. */
+  --ppane-trail-gap: 6px;
   /* KNOB — the shared content inset (search divider + rows align to this). */
   --navwindow-inset: 12px;
   /* KNOB — list ROWS get a wider leading inset than the chrome so the pin marker has a gutter it
      doesn't share with the lead glyph (at --navwindow-inset the 12px pin fills the gutter and touches
      the icon). Only the rows shift; the search + divider stay on --navwindow-inset. */
   --nav-list-lead: 20px;
-  /* The preview window's tint knobs verbatim (previewWindow.css) — both flavors paint ONE
-     background, so the nav ⇄ preview swap never jumps opacity. Consumed inline in NavWindow.tsx. */
-  --pgpreview-bg: var(--bg-window);
-  --pgpreview-bg-a: 90%;
-  /* The shared inspector chrome contract — its rows clear this strip (previewWindow.css). */
-  --pgpreview-toolbar-h: 34px;
-  /* KNOB — the inspector pane's ring from the window edges (the preview's identical treatment). */
-  --navwindow-inspector-inset: var(--glass-inset);
-  /* The inspector open/close driver — the preview's --io contract, shielded to this subtree. */
-  --io: 0;
-  transition: --io var(--duration-base) var(--ease-standard);
-}
-.navwindow.is-inspector-open {
-  --io: 1;
-}
-.navwindow.closing {
-  animation: navwindow-out var(--disclosure) var(--ease-standard) forwards;
-  pointer-events: none;
-}
-@keyframes navwindow-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
-@keyframes navwindow-out {
-  to {
-    opacity: 0;
-    transform: scale(0.95);
-  }
 }
 
-.navwindow-close {
-  position: absolute;
-  top: calc(var(--glass-inset) + 4px);
-  right: calc(var(--glass-inset) + 4px);
-  z-index: 3;
-  display: flex;
-  padding: 3px;
-  border-radius: 6px;
-  border: none;
-  background: none;
-  color: var(--label-secondary);
-  cursor: pointer;
-}
-.navwindow-close:hover {
-  background: var(--state-hover);
-}
-
-/* ---- the preview chrome (H-2 shared toolbar): the buttons live only in the page-tab state —
-   they slide in as a page tab activates and out on the map return; the X holds home. ---- */
-.navwindow-actions {
-  position: absolute;
-  top: calc(var(--glass-inset) + 4px);
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  gap: 2px;
+/* The corner clusters exist only in the page-tab state — they fade in as a page tab activates and
+   out on the map return. The scan/Open shows on BOTH flavors (a page tab promotes that page, the
+   map flavor promotes the window into NavView), so only the trailing pair is page-tab-only. */
+.navwindow .ppane-actions-flow {
   opacity: 0;
   pointer-events: none;
+  --ppane-flow-reveal: 6px;
   transition:
     opacity var(--duration-base) var(--ease-standard),
     transform var(--duration-base) var(--ease-standard);
 }
-.navwindow-actions-lead {
-  left: calc(var(--glass-inset) + 4px);
-  /* The scan/Open shows on BOTH flavors — a page tab promotes that page, the map flavor promotes the
-     NavWindow into NavView — so the lead is always visible; only the trail (settings/inspector) is
-     page-tab-only (the `.is-page-tab .navwindow-actions` rule still reveals it there). */
+.navwindow.is-page-tab .ppane-actions-flow {
   opacity: 1;
   pointer-events: auto;
-  transform: translateX(0);
-}
-.navwindow-actions-trail {
-  /* Home = left of the holding X (its box + a breath). */
-  right: calc(var(--glass-inset) + 4px + 26px);
-  transform: translateX(6px);
-}
-.navwindow.is-page-tab .navwindow-actions {
-  opacity: 1;
-  transform: translateX(0);
-  pointer-events: auto;
-}
-/* The settings+inspector pair rides the pane's edge (the preview toolbar's swallow): holds at home
-   until the pane's leading edge makes contact (the max() gate), then lands inside its corner. */
-.navwindow-actions-flow {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  --navwindow-flow-w: 46px; /* KNOB — the pair's width (two 19px buttons + gap) */
-  --navwindow-flow-home: calc(var(--navwindow-inspector-inset) + 28px);
-  --navwindow-flow-inset: 4px; /* KNOB — breathing room off the pane's seam after the swallow */
-  transform: translateX(
-    calc(
-      -1 *
-      max(
-        0px,
-        var(--io) *
-        (var(--navwindow-inspector-w, 260px) + var(--navwindow-inspector-inset)) -
-        var(--navwindow-flow-home) -
-        var(--navwindow-flow-w) -
-        var(--navwindow-flow-inset)
-      )
-    )
-  );
-}
-
-/* The inspector (page tabs only): the preview's pane verbatim — the SidePane shell, overlay-right
-   on the inset ring, slid by --io with no own transition; the window's clip parks it invisibly. */
-.navwindow-inspector {
-  position: absolute;
-  top: var(--navwindow-inspector-inset);
-  right: var(--navwindow-inspector-inset);
-  bottom: var(--navwindow-inspector-inset);
-  width: var(--navwindow-inspector-w, 260px);
-  z-index: 2;
-  transform: translateX(calc((1 - var(--io)) * (100% + var(--navwindow-inspector-inset) + 14px)));
-  pointer-events: none;
-}
-.navwindow.is-inspector-open .navwindow-inspector {
-  pointer-events: auto;
-}
-.navwindow-inspector-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-.navwindow-inspector-resize {
-  position: absolute;
-  top: var(--navwindow-inspector-inset);
-  bottom: var(--navwindow-inspector-inset);
-  right: calc(var(--navwindow-inspector-inset) + var(--navwindow-inspector-w, 260px) - 3px);
-  width: 9px;
-  z-index: 4;
-  cursor: col-resize;
-}
-.navwindow.is-inspector-resizing,
-.navwindow.is-inspector-resizing .navwindow-page,
-.navwindow.is-inspector-resizing .navwindow-actions-flow {
-  transition: none;
+  --ppane-flow-reveal: 0px;
 }
 
 /* F-7: the strip row exists only past one tab — height grows in on the standard ease, nudging the
@@ -178,18 +52,10 @@
 .navwindow.is-page-tab .navwindow-tabs {
   padding-left: calc(var(--glass-inset) + 22px); /* KNOB — clearance past the scan glyph */
 }
-/* The right column beside the rail: strip row on top, then the map body or the page embed. */
-.navwindow-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-}
 .navwindow-tabs.has-tabs {
   height: var(--navwindow-tabs-h);
 }
-/* The map tab (H-2): icon-only + compact (the app pinned-tab look), the perma-pinned return. */
+/* The map tab: icon-only + compact (the app pinned-tab look), the perma-pinned return. */
 .navwindow-tabs .tab-map {
   flex: 0 0 auto;
   min-width: 34px;
@@ -198,33 +64,17 @@
   padding: 0;
 }
 
-.navwindow-body {
+/* The right column beside the rail: strip row on top, then the map body or the page embed. */
+.navwindow-content {
   display: flex;
+  flex-direction: column;
   flex: 1;
+  min-width: 0;
   min-height: 0;
 }
-/* Positioning only — the pane's inner geometry (padding, radius, flex) is the sidepane shell's.
-   An active page tab slides the rail closed (G-4/F-5) — the map tab's return reopens it. */
-.navwindow-rail {
-  width: var(--navwindow-rail, 200px);
-  flex-shrink: 0;
-  transition:
-    width var(--duration-base) var(--ease-standard),
-    opacity var(--duration-base) var(--ease-standard);
-}
-/* Fades while it slides shut: the glass material's inline 1px borders would otherwise survive
-   the 0-width collapse as a doubled hairline beside the window edge. */
-.navwindow.is-page-tab .navwindow-rail {
-  width: 0;
-  padding: 0;
-  opacity: 0;
-}
-.navwindow.is-page-tab .navwindow-rail-resize {
-  display: none;
-}
 
-/* The page tab's content (H-2): the body-owns-scroll model, same as the floating preview; the
-   open inspector squeezes it aside. */
+/* The page tab's content: the body-owns-scroll model, same as the floating preview; the open
+   inspector squeezes it aside. */
 .navwindow-page {
   flex: 1;
   min-width: 0;
@@ -233,32 +83,24 @@
   scrollbar-width: none;
   transition: padding-right var(--duration-base) var(--ease-standard);
 }
-.navwindow.is-inspector-open .navwindow-page {
-  padding-right: calc(var(--navwindow-inspector-w, 260px) + var(--navwindow-inspector-inset));
+.ppane.is-side-right-open .navwindow-page {
+  padding-right: calc(var(--ppane-side-r-w) + var(--ppane-side-inset));
 }
-.navwindow-page .pgembed,
-.navwindow-page .pgembed .mdpm-shell,
-.navwindow-page .mdpm-editor,
-.navwindow-page .mdpm-editor .cm-editor {
-  height: auto;
+.ppane.is-resizing .navwindow-page {
+  transition: none;
 }
-.navwindow-page .pgembed,
-.navwindow-page .pgembed .mdpm-shell {
-  overflow: visible;
+
+.navwindow-inspector-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
-.navwindow-page .mdpm-editor .cm-scroller {
-  overscroll-behavior: auto;
-  overflow: visible;
-}
+
 .navwindow-rail-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-}
-.navwindow-rail-resize {
-  width: var(--glass-inset);
-  flex-shrink: 0;
-  cursor: ew-resize;
 }
 .navwindow-main {
   display: flex;
