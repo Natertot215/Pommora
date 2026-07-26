@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
+import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
 import { defaultEntityIcon, Icon } from '@renderer/design-system/symbols'
 import { duration, text } from '@renderer/design-system/tokens'
@@ -193,8 +194,9 @@ function PreviewTabItem({
       ) : (
         <Icon name={isMap ? 'map' : 'file'} size={TAB_ICON} className="tab-icon" />
       )}
-      {/* The map tab is icon-only (H-2) — the label is its tooltip. */}
-      {!isMap && <span className="tab-label">{label}</span>}
+      {/* The map tab is icon-only (H-2) — the label is its tooltip. A long title eclipses rather
+          than hard-cutting, on the same box every other truncating surface uses. */}
+      {!isMap && <OverflowScroll className="tab-label">{label}</OverflowScroll>}
       {/* The map tab is perma-pinned (H-2) — no ×; the model refuses the close anyway. */}
       {!isMap && (
         <button

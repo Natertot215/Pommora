@@ -22,6 +22,28 @@
   /* KNOB — the gap between the trailing button pair and the × that holds home. */
   --ppane-trail-gap: 2px;
 
+  --ppane-flow-w: 46px; /* KNOB — the trailing pair's width (two buttons + gap) */
+  /* KNOB — the pair's home gap from the window's right edge (× + gap + the toolbar's pane-aligned
+     padding; tracks the inset so the landing math stays true at any ring). */
+  --ppane-flow-home: calc(var(--ppane-side-inset) + 28px);
+  --ppane-flow-inset: 4px; /* KNOB — breathing room off the pane's seam after the swallow */
+  /* THE distance the trailing pair travels to ride an open right pane's edge. */
+  --ppane-flow-shift: max(
+    0px,
+    var(--io) *
+    (var(--ppane-side-r-w) + var(--ppane-side-inset)) -
+    var(--ppane-flow-home) -
+    var(--ppane-flow-w) -
+    var(--ppane-flow-inset)
+  );
+  /* KNOB — the trailing cluster's rendered width (the pair, its gap, and the ×). */
+  --ppane-trail-w: 62px;
+  /* THE right squeeze a wide title (a tab strip) takes so it stops AT an open pane's leading edge.
+     Not the pair's travel: the pair lands INSIDE the pane's corner, so a title that only cleared
+     the pair would still lay a sliver of itself over the pane. The window insets cancel — the gap
+     is the pane's width less the toolbar's own right padding and the trailing cluster. */
+  --ppane-title-squeeze: max(0px, var(--io) * var(--ppane-side-r-w) - 6px - var(--ppane-trail-w));
+
   /* The side-pane open/close drivers, declared HERE so the app-level --io (styles.css, an
      inheriting registered property driving the main inspector) can never leak into a floating
      window. One var carries the pane slide, the button ride, and the body squeeze. */
@@ -262,25 +284,8 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  --ppane-flow-w: 46px; /* KNOB — the pair's width (two buttons + gap) */
-  /* KNOB — the pair's home gap from the window's right edge (× + gap + the toolbar's pane-aligned
-     padding; tracks the inset so the landing math stays true at any ring). */
-  --ppane-flow-home: calc(var(--ppane-side-inset) + 28px);
-  --ppane-flow-inset: 4px; /* KNOB — breathing room off the pane's seam after the swallow */
   /* A host that reveals the pair (rather than showing it always) drives --ppane-flow-reveal rather
      than the transform itself, so its entry nudge and the swallow compose instead of clobbering. */
   transform: translateX(var(--ppane-flow-reveal, 0px))
-    translateX(
-      calc(
-        -1 *
-        max(
-          0px,
-          var(--io) *
-          (var(--ppane-side-r-w) + var(--ppane-side-inset)) -
-          var(--ppane-flow-home) -
-          var(--ppane-flow-w) -
-          var(--ppane-flow-inset)
-        )
-      )
-    );
+    translateX(calc(-1 * var(--ppane-flow-shift)));
 }
