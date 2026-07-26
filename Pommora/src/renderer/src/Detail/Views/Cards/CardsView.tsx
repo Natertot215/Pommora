@@ -34,7 +34,7 @@ import {
 } from '../pipeline/contextOptions'
 import { flattenContainer, groupsStructurally } from '../pipeline/group'
 import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
-import { declaredType, } from '../pipeline/value'
+import { declaredType } from '../pipeline/value'
 import { resolveView } from '../pipeline/resolveView'
 import { useActiveView } from '../useActiveView'
 import { columnLabel } from '../Table/columnLabel'
@@ -232,7 +232,10 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     // buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
     [tree?.contexts, tree?.labels, schema],
   )
-  const columns = useMemo(() => resolveColumns(view, schema, contextIds), [view, schema, contextIds])
+  const columns = useMemo(
+    () => resolveColumns(view, schema, contextIds),
+    [view, schema, contextIds],
+  )
   const labels = tree?.labels
   // Set id → its within-container location trail (Set › Sub-set crumbs) — one walk, read per card.
   const setChains = useMemo(() => {
@@ -258,7 +261,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const [collapsed, setCollapsed] = useState<Set<string>>(
     () => new Set(view.collapsed_groups ?? []),
   )
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-seed only on a view switch.
+  // Re-seed only on a view switch.
   useEffect(() => {
     setCollapsed(new Set(view.collapsed_groups ?? []))
     // Two cards views on one container share this instance (keyed by source.id), so the [source.path]

@@ -1,7 +1,7 @@
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
 import type { PropertyDefinition, PropertyType } from '@shared/properties'
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
-import type { NexusLabels, NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
+import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { isCompact, type SavedView } from '@shared/views'
 import { hiddenListIds } from '@renderer/Components/Detail/hiddenPaneModel'
 import { contextIdsOf } from '../pipeline/contextIdentity'

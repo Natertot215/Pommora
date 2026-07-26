@@ -76,6 +76,7 @@
   /* Fill the grabbed row/column so it glides as one solid band — without it an empty cell has nothing
      visible to move and the column appears to tear (only populated cells slide). */
   background: var(--fill-tertiary);
+  /* biome-ignore lint/complexity/noImportantStyles: the dragged band follows the pointer 1:1 — no cell transition may lag it. */
   transition: none !important;
 }
 
