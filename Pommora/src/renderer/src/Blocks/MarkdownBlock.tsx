@@ -42,7 +42,6 @@ export function MarkdownBlock({
     return () => {
       live = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tileId])
 
   const flush = (): void => {

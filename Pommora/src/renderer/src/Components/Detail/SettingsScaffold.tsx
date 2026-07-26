@@ -1,32 +1,26 @@
-import { useRef, useState } from 'react'
-import type { MutableKind } from '@shared/mutate'
-import type { EntityIconKind } from '@shared/types'
+import { useRef } from 'react'
 import { useSession } from '../../store'
-import { Icon, iconNameOr, defaultEntityIcon } from '../../design-system/symbols'
+import { Icon } from '../../design-system/symbols'
 import { InteractionField } from '../../design-system/components/InteractionField'
 import { MenuBottomRow, MenuScrollFrame } from '../../design-system/components/menu'
 import { footerLockAction, lockIcon } from '../../Blocks/handleMenu.css'
 import { IconPicker } from '../IconPicker'
 import { PhotoCropModal } from '../PhotoCropModal'
-import { InlineEditHeader } from './InlineEditHeader'
 import { useNexusIcon } from '../useNexusIcon'
 import { assetUrl } from '../../assetUrl'
 import * as s from './settingsPane.css'
 
 /**
- * The stripped settings pane for identity surfaces (homepage, contexts) — an icon+title header with
- * none of SettingsPane's view-config leaves (Layout/Group/Filter/Sort are view concepts). The homepage
- * identity is the nexus itself (photo-or-glyph icon → the native icon menu) plus the board-lock footer
- * (G-3). A context is editable identity: its icon (→ the glyph picker) + title (inline rename), no lock.
+ * The stripped settings pane for the homepage — an icon+title header with none of SettingsPane's
+ * view-config leaves (Layout/Group/Filter/Sort are view concepts). The homepage identity is the
+ * nexus itself: a photo-or-glyph icon opening the native icon menu, plus the board-lock footer.
+ * Every other selection renders nothing; Spaces edit their identity from the Contexts toolbar pane.
  */
 export function SettingsScaffold(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
   const locked = useSession((st) => st.homepageLocked)
   const setLocked = useSession((st) => st.setHomepageLocked)
-  const submitRename = useSession((st) => st.submitRename)
-  const mutate = useSession((st) => st.mutate)
-  const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const {
     profileImage,
     profileIcon,
@@ -39,8 +33,6 @@ export function SettingsScaffold(): React.JSX.Element | null {
     selectGlyph,
   } = useNexusIcon()
   const iconRef = useRef<HTMLButtonElement>(null)
-  const ctxIconRef = useRef<HTMLButtonElement>(null)
-  const [ctxPickerOpen, setCtxPickerOpen] = useState(false)
   if (!tree) return null
 
   if (selection.kind === 'homepage') {

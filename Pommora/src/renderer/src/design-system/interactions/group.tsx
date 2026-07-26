@@ -621,7 +621,6 @@ export function DragGroup({
       itemState,
     }),
     // registration/begin/itemState read refs + current state via closure; identity churn is fine.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [active, overZone, overIndex, dropState],
   )
 

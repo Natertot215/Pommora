@@ -7,11 +7,6 @@ import type { NexusLabels, NexusTree } from '@shared/types'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
 import { contextIdentityOf } from '../pipeline/contextIdentity'
 
-// Tier level (1 = Area, 2 = Topic, 3 = Project) → the NexusLabels key holding its LabelPair.
-const TIER_LABEL_KEY = ['area', 'topic', 'project'] as const
-
-/** LEGACY — the per-Nexus plural label for a fixed tier; live titles come from the registry. */
-/** LEGACY — reserved tier column id → its level; live classification is registry membership. */
 // Built-in reserved columns with fixed English labels (context titles are registry data).
 const RESERVED_LABEL: Record<string, string> = {
   [RESERVED_PROPERTY_ID.title]: 'Title',

@@ -423,7 +423,7 @@ export function SidebarDnd({
 
   useEffect(() => () => detach(), [])
 
-  const value = useMemo<Value>(() => ({ draggingId: drag.id, registerRow, begin }), [drag.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const value = useMemo<Value>(() => ({ draggingId: drag.id, registerRow, begin }), [drag.id])
 
   const draggedLabel = drag.id ? base(index.byId.get(drag.id)?.path ?? '') : ''
 

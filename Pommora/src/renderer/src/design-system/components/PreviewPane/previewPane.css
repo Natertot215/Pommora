@@ -12,6 +12,11 @@
   overflow: hidden;
   animation: ppane-in var(--disclosure) var(--ease-standard);
 
+  /* The window fill beneath the frost: a colour a host may restyle, and the opacity its
+     `tintOpacity` prop overrides. The composed background itself is set inline. */
+  --ppane-bg: var(--bg-window);
+  --ppane-bg-a: 85%;
+
   --ppane-toolbar-h: 34px; /* KNOB — toolbar strip height */
   /* KNOB — the ring side panes hold from the window edges. */
   --ppane-side-inset: var(--glass-inset);

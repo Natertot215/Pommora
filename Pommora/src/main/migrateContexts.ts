@@ -8,7 +8,7 @@
 
 import { mkdir, readdir, rename, rm } from 'node:fs/promises'
 import { join } from 'node:path'
-import { contextKey, seededRegistry } from '@shared/contexts'
+import { seededRegistry } from '@shared/contexts'
 import { LEGACY_CHIP_COLOR_MAP } from '@shared/types'
 import { mutateJson, pathExists, readJsonObject, readJsonStrict, writeJson } from './io/atomicWrite'
 import { listFilesRecursive } from './io/walk'

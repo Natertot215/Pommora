@@ -3,7 +3,7 @@
 // absolute — vertical ops touch exactly one tile (stretch) or one stacked pair
 // (north negotiation), and the page flows.
 
-import type { Band, DividerRef, Edge, LayoutNode, RowNode, SurfaceLayout, TileLeaf } from './model'
+import type { Band, DividerRef, Edge, LayoutNode, SurfaceLayout, TileLeaf } from './model'
 import { cloneLayout, findTile, getTile } from './model'
 
 function renormalize(ratios: number[]): number[] {

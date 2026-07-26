@@ -46,7 +46,7 @@ export function PropertyEditor({
       if (!done.current && textRef.current !== initial)
         finish(() => commitRef.current(textRef.current))
     },
-    // biome-ignore lint/correctness/useExhaustiveDependencies: unmount-only flush; refs carry the latest.
+    // Unmount-only flush; refs carry the latest.
     [],
   )
   return (

@@ -15,7 +15,6 @@ export type Db = DatabaseT.Database
  *  load and crashing the app. Honors "the DB never blocks anything". */
 export function openDb(path: string): Db | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Database: typeof DatabaseT = require('better-sqlite3')
     const db = new Database(path)
     db.pragma('journal_mode = WAL')
