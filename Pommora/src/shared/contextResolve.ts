@@ -87,23 +87,3 @@ export function reconcileContextKeys(
   return { root: out, changed }
 }
 
-/** Legacy bare-ULID `tierN` arrays resolved through the reserved `_tierN` registry ids —
- *  the values already ARE Space ids, so they pass through when the registry still carries
- *  that reserved entry. */
-export function legacyTierLinks(
-  root: Record<string, unknown>,
-  registry: ContextsRegistry,
-): ResolvedLinks {
-  const links: ResolvedLinks = new Map()
-  const known = new Set(registry.contexts.map((c) => c.id))
-  for (const level of [1, 2, 3]) {
-    const id = `_tier${level}`
-    const raw = root[`tier${level}`]
-    if (!known.has(id) || !Array.isArray(raw) || raw.length === 0) continue
-    links.set(
-      id,
-      raw.filter((v): v is string => typeof v === 'string'),
-    )
-  }
-  return links
-}
