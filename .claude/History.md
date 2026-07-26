@@ -4,6 +4,16 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 ### Completion Timeline (Descending)
 
+#### The Lint Gate Becomes Real (2026-07-25)
+
+`npm run lint` had never passed — 215 errors and 332 warnings, and nothing in the workflow invoking it, so a gate that proved nothing sat in `package.json` looking like it did. It now runs clean across every file, and the discipline is that a change adding a diagnostic isn't finished.
+
+Getting there was triage, not silencing. Three rules came off with stated reasons — Biome's dependency-array rule is stricter than React's and this codebase's omissions are deliberate and self-documenting; the non-null assertion is an accepted idiom; and the descending-specificity rule fired only where specificity governs anyway, so reordering would have risked the cascade for nothing. Everything else was fixed. Three findings were the linter being wrong: a local helper Biome read as Jasmine's focused-test, an overflow literal that was really an Infinity test, and a var-driven gradient direction no static parse can resolve. One of its own auto-fixes was wrong and typecheck caught it — rewriting a callback's `void` return to `undefined` breaks assignability, since `() => void` is the permissive form.
+
+**The accessibility slice was the real work, and the call was to hold the full bar.** Both tab strips became proper tablists with roving tabindex, so a strip is one tab stop rather than one per tab. Gallery cards, menu rows, disclosure rows and click-to-edit fields became real controls sharing **one activation primitive**: Enter and Space re-dispatch as a genuine click, so no surface carries a second code path that can drift from its `onClick`.
+
+**Locked — never claim an interaction the code can't honour.** The instructive failure was self-inflicted: giving the resize strips `aria-valuenow` to satisfy the rule upgraded them to focusable-splitter semantics, which then demanded a tab stop and promised keyboard resize that doesn't exist. Over-claiming is worse than claiming nothing, because it puts a control in the accessibility tree that does nothing when reached. Pointer-only affordances now take no role and state what they are. Two gaps are recorded honestly in the code rather than papered over: **grids have no keyboard navigation** (per-cell tab stops are the wrong pattern; roving tabindex across the grid is a feature to design), and **every drag handle is pointer-only**. → [[Lint-And-Accessibility]].
+
 #### The Settings Window, the Tab Eclipse, and a Dangle Sweep (2026-07-25)
 
 `PreviewPane`'s first consumer that isn't a content window: a **Settings window** off the sidebar ribbon's settings glyph, which had been a documented no-op since the ribbon was built. A category rail runs the window's full height, its rows write through the same generic personalization setter every other writer uses, and a default-ON knob stores only its OFF state so an untouched nexus keeps a clean settings file. It is also what justified the two surface props a simplification pass had wanted to delete for having no caller — the bounds override and the in-flow left slot are exactly what a settings sheet needs.
