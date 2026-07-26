@@ -2,7 +2,10 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import { duration, easing, text } from '@renderer/design-system/tokens'
-import { PreviewPane } from '@renderer/design-system/components/PreviewPane/PreviewPane'
+import {
+  PREVIEW_PANE_INSPECTOR,
+  PreviewPane,
+} from '@renderer/design-system/components/PreviewPane/PreviewPane'
 import type { NavTarget } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
@@ -13,7 +16,6 @@ import { buildResolveIndex } from '../Navigation/navResolve'
 import { useSession } from '../store'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavList } from '../Navigation/NavList'
-import { PREVIEW_PANE_INSPECTOR as INSPECTOR } from '@renderer/design-system/components/PreviewPane/PreviewPane'
 import { PreviewInspector } from '../PagePreview/PreviewInspector'
 import { consumeWindowMorph } from '../PagePreview/WindowMorph'
 import { PreviewTabStrip } from '../PagePreview/PreviewTabStrip'
@@ -100,10 +102,10 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
   // Selecting from the pane closes it, unless `navCloseOnSelect` is explicitly off (keep it open to browse).
   const closeOnSelect = useSession((s) => s.tree?.personalization.navCloseOnSelect !== false)
-  const goClose = (target: NavTarget): void => go(target, closeOnSelect ? closeNav : undefined)
+  const onSelected = closeOnSelect ? closeNav : undefined
+  const goClose = (target: NavTarget): void => go(target, onSelected)
   // The row/card menu's "Open in New Tab" (D-3) — same reconcile + close-on-select pipeline as a click.
-  const goNewTab = (target: NavTarget): void =>
-    go(target, closeOnSelect ? closeNav : undefined, { newTab: true })
+  const goNewTab = (target: NavTarget): void => go(target, onSelected, { newTab: true })
   // Rail Style toggle — List ⇄ Gallery. Persisted per nexus in the store's `navWindowMode` slice
   // (separate from NavView's `navViewMode`), so it survives relaunch and re-renders sibling readers.
   const viewMode = useSession((s) => s.navWindowMode)
@@ -122,6 +124,11 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       setInspectorOpen(false)
     }
   }, [pageTarget])
+
+  const openPreviewTab = useSession((s) => s.openPreviewTab)
+  const select = useSession((s) => s.select)
+  const openNewTab = useSession((s) => s.openNewTab)
+  const setNavViewMode = useSession((s) => s.setNavViewMode)
 
   // The shared toolbar's scan/Open targets by the active flavor. On a page tab it promotes that page
   // for real (B-5). On the MAP flavor it promotes the NavWindow itself into NavView — carrying the
@@ -146,10 +153,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   useEffect(() => setEditing(false), [pageTarget?.path])
   const pageScrollRef = useRef<HTMLDivElement>(null)
   const warmSeam = usePreviewWarm(pageScrollRef, pageTarget?.path)
-  const openPreviewTab = useSession((s) => s.openPreviewTab)
-  const select = useSession((s) => s.select)
-  const openNewTab = useSession((s) => s.openNewTab)
-  const setNavViewMode = useSession((s) => s.setNavViewMode)
   const { hover, card: hoverCard } = useConnectionHover()
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
@@ -224,7 +227,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       }}
       right={{
         windowId: 'preview-inspector',
-        bounds: INSPECTOR,
+        bounds: PREVIEW_PANE_INSPECTOR,
         mode: 'overlay',
         open: inspectorOpen && pageTarget !== null,
         className: 'navwindow-inspector',
