@@ -965,10 +965,8 @@ export const useSession = create<SessionState>((set, get) => {
       // (external-link color) reflects it unconditionally. Read from the module cache —
       // applyTree runs on every watcher push, and an awaited IPC hop here would gate the
       // whole reconcile behind a renderer↔main round-trip per push. load() refreshes it.
-      const systemColor =
-        systemAccentCache !== undefined
-          ? systemAccentCache
-          : (systemAccentCache = await window.nexus.systemAccent())
+      if (systemAccentCache === undefined) systemAccentCache = await window.nexus.systemAccent()
+      const systemColor = systemAccentCache
       applyAccent(tree.accent, systemColor)
       applySystemAccent(systemColor)
       set({ personalization: tree.personalization, commands: tree.commands ?? DEFAULT_COMMANDS })

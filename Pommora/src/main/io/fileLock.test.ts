@@ -67,7 +67,7 @@ describe('rewritePageSerialized', () => {
       await atomicWriteFile(file, 'A')
     })
     // Queue a rewrite that appends 'Z' to whatever it reads.
-    const rw = rewritePageSerialized(file, (content) => content + 'Z')
+    const rw = rewritePageSerialized(file, (content) => `${content}Z`)
     await delay(10)
     release()
     await Promise.all([held, rw])
@@ -76,7 +76,7 @@ describe('rewritePageSerialized', () => {
   })
 
   it('returns true and writes when the rewrite yields content', async () => {
-    const wrote = await rewritePageSerialized(file, (c) => c + '!')
+    const wrote = await rewritePageSerialized(file, (c) => `${c}!`)
     expect(wrote).toBe(true)
     expect(await readFile(file, 'utf8')).toBe('base!')
   })

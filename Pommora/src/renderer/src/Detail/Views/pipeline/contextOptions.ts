@@ -19,9 +19,15 @@ const optionsCache = new WeakMap<NexusTree, Map<string, ContextOption[]>>()
 /** A Context's pickable Spaces — id/title/color/icon off the live tree, memoized per tree. */
 export function contextOptionsFor(contextId: string, tree: NexusTree): ContextOption[] {
   let byContext = optionsCache.get(tree)
-  if (!byContext) optionsCache.set(tree, (byContext = new Map()))
+  if (!byContext) {
+    byContext = new Map()
+    optionsCache.set(tree, byContext)
+  }
   let opts = byContext.get(contextId)
-  if (!opts) byContext.set(contextId, (opts = buildOptions(contextId, tree)))
+  if (!opts) {
+    opts = buildOptions(contextId, tree)
+    byContext.set(contextId, opts)
+  }
   return opts
 }
 

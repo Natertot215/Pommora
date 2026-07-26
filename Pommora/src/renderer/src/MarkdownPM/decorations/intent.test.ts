@@ -195,7 +195,7 @@ describe('callout box chrome + nested constructs', () => {
   it('the bullet widget absorbs the prefix (starts at line start, not touching a separate hide)', () => {
     const lineStart = doc.indexOf('> - item')
     const w = intents.find((d) => d.kind === 'widget' && d.spec.type === 'bullet')
-    expect(w && w.from).toBe(lineStart)
+    expect(w?.from).toBe(lineStart)
   })
   it('a heading + HR render inside the box', () => {
     expect(intents.some((d) => d.kind === 'class' && d.className === 'md-h2')).toBe(true)

@@ -82,35 +82,60 @@ export function CellEditor({
               // Tab accepts an open connection candidate (like Enter); otherwise it moves to the next cell.
               {
                 key: 'Tab',
-                run: () => (
-                  acCtl.current.open ? acCtl.current.pick() : onNavigateRef.current('next'), true
-                ),
+                run: () => {
+                  if (acCtl.current.open) acCtl.current.pick()
+                  else onNavigateRef.current('next')
+                  return true
+                },
               },
-              { key: 'Shift-Tab', run: () => (onNavigateRef.current('prev'), true) },
+              {
+                key: 'Shift-Tab',
+                run: () => {
+                  onNavigateRef.current('prev')
+                  return true
+                },
+              },
               // With the connection panel open these keys drive it; otherwise they navigate cells.
               {
                 key: 'Enter',
-                run: () => (
-                  acCtl.current.open ? acCtl.current.pick() : onNavigateRef.current('down'), true
-                ),
+                run: () => {
+                  if (acCtl.current.open) acCtl.current.pick()
+                  else onNavigateRef.current('down')
+                  return true
+                },
               },
               {
                 key: 'ArrowDown',
-                run: () => (acCtl.current.open ? (acCtl.current.move(1), true) : false),
+                run: () => {
+                  if (!acCtl.current.open) return false
+                  acCtl.current.move(1)
+                  return true
+                },
               },
               {
                 key: 'ArrowUp',
-                run: () => (acCtl.current.open ? (acCtl.current.move(-1), true) : false),
+                run: () => {
+                  if (!acCtl.current.open) return false
+                  acCtl.current.move(-1)
+                  return true
+                },
               },
               {
                 key: 'Escape',
-                run: () => (acCtl.current.open ? (acCtl.current.close(), true) : false),
+                run: () => {
+                  if (!acCtl.current.open) return false
+                  acCtl.current.close()
+                  return true
+                },
               },
               // Shift+Enter is the in-cell line break — a real newline (the cell grows taller; the row does
               // NOT split, because cellToSource serializes the newline as <br> on disk).
               {
                 key: 'Shift-Enter',
-                run: (view) => (view.dispatch(view.state.replaceSelection('\n')), true),
+                run: (view) => {
+                  view.dispatch(view.state.replaceSelection('\n'))
+                  return true
+                },
               },
               // Backspace inside an empty auto-pair deletes both halves (the cell otherwise falls to the default
               // single-char delete, which would leave the stray closer); same autoDelete the page editor uses.
@@ -128,9 +153,27 @@ export function CellEditor({
               // Undo/redo scope to the whole page (the main editor's history) like everywhere else — not a
               // per-cell stack. The main editor can't catch these itself (the widget's ignoreEvent), so the
               // cell forwards them.
-              { key: 'Mod-z', run: () => (onUndoRef.current(), true) },
-              { key: 'Mod-Shift-z', run: () => (onRedoRef.current(), true) },
-              { key: 'Mod-y', run: () => (onRedoRef.current(), true) },
+              {
+                key: 'Mod-z',
+                run: () => {
+                  onUndoRef.current()
+                  return true
+                },
+              },
+              {
+                key: 'Mod-Shift-z',
+                run: () => {
+                  onRedoRef.current()
+                  return true
+                },
+              },
+              {
+                key: 'Mod-y',
+                run: () => {
+                  onRedoRef.current()
+                  return true
+                },
+              },
             ]),
           ),
           keymap.of(defaultKeymap),

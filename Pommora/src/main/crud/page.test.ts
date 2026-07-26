@@ -96,7 +96,7 @@ describe('updatePageBody', () => {
     if (!c.ok) throw new Error('setup failed')
     // Inject a foreign frontmatter key to prove it survives a body update.
     const withForeign = assembleEnvelope(
-      splitEnvelope(await readFile(c.value.path, 'utf8')).frontmatter + '\nplugin_key: keep',
+      `${splitEnvelope(await readFile(c.value.path, 'utf8')).frontmatter}\nplugin_key: keep`,
       'one',
     )
     await writeFile(c.value.path, withForeign, 'utf8')

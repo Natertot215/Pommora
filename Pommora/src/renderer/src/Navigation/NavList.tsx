@@ -27,6 +27,7 @@ export function NavCrumbs({
   return (
     <OverflowScroll className={cx(className, text.caption.standard)}>
       {path.map((crumb, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: a breadcrumb is strictly positional and never reorders
         <Fragment key={i}>
           {i > 0 && <span className="nav-path-sep">›</span>}
           <Icon name={crumb.icon} size={iconSize} className="nav-path-icon" />

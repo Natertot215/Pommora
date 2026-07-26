@@ -348,7 +348,10 @@ export function DragGroup({
     // No pointer capture, so a release OUTSIDE the Electron window delivers no pointerup; the first
     // move back in reports no button pressed — cancel the stranded drag rather than leave the ghost
     // glued to the pointer (whose next click would otherwise commit the card wherever it lands).
-    if (d.active && e.buttons === 0) return onCancel()
+    if (d.active && e.buttons === 0) {
+      onCancel()
+      return
+    }
     if (!d.active) {
       const dx = e.clientX - d.startX
       const dy = e.clientY - d.startY

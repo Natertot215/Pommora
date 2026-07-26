@@ -189,7 +189,9 @@ describe('readNexus — agenda is config-driven, never name-reserved', () => {
     build(root)
     return root
   }
-  afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })))
+  afterAll(() => roots.forEach((r) => {
+    rmSync(r, { recursive: true, force: true })
+  }))
 
   it('hides a folder carrying _taskconfig/_eventconfig, whatever its name', async () => {
     const root = mk((r) => {
@@ -324,7 +326,9 @@ describe('readNexus — accent setting', () => {
     w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
     return root
   }
-  afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })))
+  afterAll(() => roots.forEach((r) => {
+    rmSync(r, { recursive: true, force: true })
+  }))
 
   it('reads the shared accent_color key (React-native value passes through)', async () => {
     expect((await readNexus(mk({ accent_color: 'blue' }))).accent).toBe('blue')
@@ -358,7 +362,9 @@ describe('readNexus — personalization', () => {
     w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
     return root
   }
-  afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })))
+  afterAll(() => roots.forEach((r) => {
+    rmSync(r, { recursive: true, force: true })
+  }))
 
   it('reads accent from personalization.accent (the new home)', async () => {
     expect((await readNexus(mk({ personalization: { accent: 'blue' } }))).accent).toBe('blue')
@@ -419,7 +425,9 @@ describe('readNexus — structured labels (Swift SettingsLabels shape)', () => {
     w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
     return root
   }
-  afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })))
+  afterAll(() => roots.forEach((r) => {
+    rmSync(r, { recursive: true, force: true })
+  }))
 
   it('parses a Swift labels blob into the structured shape', async () => {
     const t = await readNexus(
@@ -480,7 +488,9 @@ describe('readNexus — saved-config items[] (Swift shape)', () => {
     w(join(root, '.nexus', 'saved-config.json'), JSON.stringify(savedConfig))
     return root
   }
-  afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })))
+  afterAll(() => roots.forEach((r) => {
+    rmSync(r, { recursive: true, force: true })
+  }))
 
   it('resolves a saved label from items[{key,label}]', async () => {
     const t = await readNexus(mk({ schemaVersion: 1, items: [{ key: 'homepage', label: 'Home' }] }))
@@ -502,7 +512,9 @@ describe('readNexus — homepage lock (blocks_locked → homepage.locked)', () =
     w(join(root, '.nexus', 'homepage.json'), JSON.stringify(homepage))
     return root
   }
-  afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })))
+  afterAll(() => roots.forEach((r) => {
+    rmSync(r, { recursive: true, force: true })
+  }))
 
   it('surfaces blocks_locked:true as homepage.locked', async () => {
     expect((await readNexus(mk({ blocks_locked: true }))).homepage.locked).toBe(true)
@@ -526,7 +538,9 @@ describe('readNexus — profile (from settings, Swift parity)', () => {
     w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
     return root
   }
-  afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })))
+  afterAll(() => roots.forEach((r) => {
+    rmSync(r, { recursive: true, force: true })
+  }))
 
   it('reads profile_image (rel path) + profile_subtitle from settings', async () => {
     const t = await readNexus(

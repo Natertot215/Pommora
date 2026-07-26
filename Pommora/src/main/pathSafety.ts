@@ -14,7 +14,7 @@ import { fail, ok, type Result } from '@shared/result'
 
 /** True when `rel` (a `path.relative` result) climbs out of its base. */
 function escapes(rel: string): boolean {
-  return rel === '..' || rel.startsWith('..' + sep) || isAbsolute(rel)
+  return rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)
 }
 
 /**
