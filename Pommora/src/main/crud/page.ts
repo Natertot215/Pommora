@@ -11,7 +11,6 @@ import { atomicWriteFile, trashWithTimestamp } from '../io/atomicWrite'
 import { recordWrite } from '../io/writeEcho'
 import { splitFrontmatter } from '../readNexus'
 import { applyPropertyValue, type PropertyValue } from '@shared/propertyValue'
-import { tierFieldName } from '@shared/properties'
 import { PAGE_MODELED_KEYS } from '@shared/schemas'
 import { ok, fail, type Result } from '@shared/result'
 import { pathExists, invalidName, nowIso } from './util'
@@ -126,27 +125,3 @@ export async function updatePageProperty(
   return ok(null)
 }
 
-/**
- * LEGACY — migration-era only; live context writes go through setPageContext. Set a
- * page's tier-N links as a bare ULID array at the frontmatter root. Governs only that
- * tier field + `modified_at`. `tier` must be 1–3; ids are stored as given.
- */
-export async function setPageTier(
-  absFile: string,
-  tier: number,
-  contextIds: string[],
-): Promise<Result<null>> {
-  if (tier < 1 || tier > 3) return fail('invalid-tier', `Tier ${tier} is not 1–3.`, 'page')
-  if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.', 'page')
-  const field = tierFieldName(tier)
-  const existing = await readFile(absFile, 'utf8')
-  const body = splitEnvelope(existing).body
-  const content = mergeFrontmatter(
-    existing,
-    { [field]: contextIds, modified_at: nowIso() },
-    [field, 'modified_at'],
-    body,
-  )
-  await atomicWriteFile(absFile, content)
-  return ok(null)
-}

@@ -9,7 +9,6 @@ import {
   updatePageBody,
   movePage,
   updatePageProperty,
-  setPageTier,
 } from './page'
 import { splitEnvelope, assembleEnvelope } from '../io/pageFile'
 import { splitFrontmatter } from '../readNexus'
@@ -183,20 +182,3 @@ describe('updatePageProperty', () => {
   })
 })
 
-describe('setPageTier', () => {
-  it('writes a bare ULID array to the tier root field, preserving the id', async () => {
-    const c = await createPage(typeDir, 'Tiered', { body: 'x' })
-    if (!c.ok) throw new Error('setup failed')
-    expect((await setPageTier(c.value.path, 1, ['ctxA', 'ctxB'])).ok).toBe(true)
-    const fm = splitFrontmatter(await readFile(c.value.path, 'utf8'))
-    expect(fm.tier1).toEqual(['ctxA', 'ctxB'])
-    expect(fm.id).toBe(c.value.id)
-  })
-
-  it('rejects an out-of-range tier and a missing page', async () => {
-    const c = await createPage(typeDir, 'T2')
-    if (!c.ok) throw new Error('setup failed')
-    expect((await setPageTier(c.value.path, 4, [])).ok).toBe(false)
-    expect((await setPageTier(join(typeDir, 'nope.md'), 1, [])).ok).toBe(false)
-  })
-})

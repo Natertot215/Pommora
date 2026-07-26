@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { renameCascade, unlinkTier } from './cascade'
-import { createPage, setPageTier } from './page'
+import { renameCascade } from './cascade'
+import { createPage } from './page'
 import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope } from '../io/pageFile'
 
@@ -55,27 +55,3 @@ describe('renameCascade', () => {
   })
 })
 
-describe('unlinkTier', () => {
-  it('strips the context id from the right tier of every referencing page', async () => {
-    const p1 = await createPage(dir, 'P1')
-    const p2 = await createPage(dir, 'P2')
-    const p3 = await createPage(dir, 'P3')
-    if (!p1.ok || !p2.ok || !p3.ok) throw new Error('setup failed')
-    await setPageTier(p1.value.path, 1, ['ctxA', 'ctxB'])
-    await setPageTier(p2.value.path, 1, ['ctxB'])
-    await setPageTier(p3.value.path, 2, ['ctxA']) // different tier — untouched
-
-    const r = await unlinkTier(root, 'ctxA', 1)
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.touched).toEqual([p1.value.path])
-
-    expect((await fmOf(p1.value.path)).tier1).toEqual(['ctxB'])
-    expect((await fmOf(p2.value.path)).tier1).toEqual(['ctxB'])
-    expect((await fmOf(p3.value.path)).tier2).toEqual(['ctxA'])
-  })
-
-  it('rejects an out-of-range tier', async () => {
-    expect((await unlinkTier(root, 'ctxA', 4)).ok).toBe(false)
-  })
-})
