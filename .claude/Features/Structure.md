@@ -88,4 +88,4 @@ The read side is one eager, read-only walk producing a pre-ordered `NexusTree` �
 
 **Homepage's Final Shape:** Deferred to its own design pass (a graph-view host with custom widgets is the current direction). Until then the Homepage serves as the block system's removable dev host ([[SurfacePM]]) — it renders a live block surface under its banner.
 
-**Settings Editing UI:** The `personalization` block has a write path — a generic setter plus a live apply-map — but no UI yet, so accent, connection color, and the interface toggles are set in `.nexus/settings.json` directly for now; labels and profile are likewise hand-edited. A real settings surface — accent picker, toggle rows, label rename forms — is planned. Full config model + the planned editor → `Configuration.md`.
+**Settings Editing UI:** The `personalization` block resolves through a generic setter plus a live apply-map, and the Settings window ships its boolean toggle rows. Still hand-edited in `.nexus/settings.json`: accent, connection colour, the placement knobs, default icons, and the labels. An accent picker and label rename forms are the next surfaces. Full config model → `Configuration.md`.
