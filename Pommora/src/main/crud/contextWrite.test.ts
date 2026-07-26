@@ -191,7 +191,7 @@ describe('setAgendaContext + the agenda lock', () => {
 
 describe('setSpaceContext (G-1, cross-context)', () => {
   it('tags a Space into a different Context through its own sidecar', async () => {
-    const r = await setSpaceContext(root, await world(), 'sp-pom', 'ctxC', ['sp-cs'])
+    const r = await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
     const sc = JSON.parse(
       await readFile(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), 'utf8'),

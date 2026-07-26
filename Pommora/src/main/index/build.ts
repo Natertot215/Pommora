@@ -59,9 +59,6 @@ async function resolveModifiedAt(
     return str(created) || EPOCH
   }
 }
-const strArr = (v: unknown): string[] =>
-  Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
-
 interface ContextData {
   id: string
   contextId: string

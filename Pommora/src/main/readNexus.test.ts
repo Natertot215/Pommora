@@ -384,6 +384,21 @@ describe('readNexus — personalization', () => {
     expect(t.personalization.outlinerLines).toBeUndefined()
     expect(t.personalization.defaultIcons).toEqual({ collection: 'gallery-vertical-end' })
   })
+  // Every boolean knob at once: a key the writer persists but the reader never parses is silently
+  // dropped, so the toggle appears to work and reverts on relaunch. Adding a knob adds it here.
+  it('every boolean knob survives the round-trip', async () => {
+    const keys = [
+      'hideChevrons',
+      'outlinerLines',
+      'navCloseOnSelect',
+      'revealTabBarOnHover',
+      'connectionsOpenInPreview',
+    ] as const
+    const t = await readNexus(
+      mk({ personalization: Object.fromEntries(keys.map((k) => [k, true])) }),
+    )
+    for (const k of keys) expect(t.personalization[k], k).toBe(true)
+  })
   it('absent personalization → empty block', async () => {
     const t = await readNexus(mk({}))
     expect(t.personalization.connectionColor).toBeUndefined()

@@ -36,13 +36,6 @@ export interface PreviewPaneSide {
   children: ReactNode
 }
 
-export interface PreviewPaneTint {
-  /** The window background beneath the frost. Defaults to the window-bg token. */
-  color?: string
-  /** 0–100. 0 = pure frost, 100 = opaque fill. */
-  opacity?: number
-}
-
 /**
  * How the toolbar occupies the top of the window.
  * - `band` — a full-width strip that is itself a window-move surface, with the title slot
@@ -69,7 +62,9 @@ export interface PreviewPaneProps {
   style?: CSSProperties
   /** The root glass element. Hosts running a FLIP measure their rect from here. */
   rootRef?: Ref<HTMLDivElement>
-  tint?: PreviewPaneTint
+  /** The window fill's opacity over the frost, 0–100. 0 = pure frost, 100 = opaque. The colour
+   *  itself is the `--ppane-bg` var, which a host restyles from its own stylesheet. */
+  tintOpacity?: number
   toolbar?: PreviewPaneToolbar
   /** The leading toolbar glyph. Omitted = no scan button. */
   onScan?: () => void
@@ -107,7 +102,7 @@ export function PreviewPane({
   className,
   style,
   rootRef,
-  tint,
+  tintOpacity,
   toolbar = 'band',
   onScan,
   scanLabel = 'Open Full Page',
@@ -204,14 +199,13 @@ export function PreviewPane({
         hasFooter && footerNear && 'is-footer-near',
         closing && 'closing',
       )}
-      // GlassPane's frost hard-sets a transparent background, so the tint composes here rather
-      // than in the stylesheet — the vars stay readable for host CSS either way.
+      // GlassPane's frost hard-sets a transparent background, so the composed fill has to land
+      // inline to win. Its two inputs stay in the stylesheet, where a host can restyle them.
       style={
         {
           ...winStyle,
-          '--ppane-bg': tint?.color ?? 'var(--bg-window)',
-          '--ppane-bg-a': `${tint?.opacity ?? 85}%`,
           background: 'color-mix(in srgb, var(--ppane-bg) var(--ppane-bg-a), transparent)',
+          ...(tintOpacity !== undefined && { '--ppane-bg-a': `${tintOpacity}%` }),
           ...(left && { '--ppane-side-l-w': `${leftW}px` }),
           ...(right && { '--ppane-side-r-w': `${rightW}px` }),
           ...style,

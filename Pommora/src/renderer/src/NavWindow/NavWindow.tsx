@@ -16,6 +16,7 @@ import { buildResolveIndex } from '../Navigation/navResolve'
 import { useSession } from '../store'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavList } from '../Navigation/NavList'
+import { PreviewActions } from '../PagePreview/PreviewActions'
 import { PreviewInspector } from '../PagePreview/PreviewInspector'
 import { consumeWindowMorph } from '../PagePreview/WindowMorph'
 import { PreviewTabStrip } from '../PagePreview/PreviewTabStrip'
@@ -183,23 +184,13 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       className={cx('navwindow', pageTarget !== null && 'is-page-tab')}
       ariaLabel="Navigation"
       // The preview window's tint verbatim — the flavor swap keeps ONE background, no opacity jump.
-      tint={{ opacity: 90 }}
+      tintOpacity={90}
       onScan={promote}
       actions={
-        <>
-          <button type="button" className="ppane-action" title="Settings">
-            <Icon name="sliders-horizontal" size={13} />
-          </button>
-          <button
-            type="button"
-            className="ppane-action"
-            title="Inspector"
-            aria-pressed={inspectorOpen}
-            onClick={() => setInspectorOpen((v) => !v)}
-          >
-            <Icon name="panel-right" size={13} />
-          </button>
-        </>
+        <PreviewActions
+          inspectorOpen={inspectorOpen}
+          onToggleInspector={() => setInspectorOpen((v) => !v)}
+        />
       }
       left={{
         windowId: 'navwindow',

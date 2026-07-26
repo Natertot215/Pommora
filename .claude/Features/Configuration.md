@@ -19,6 +19,18 @@ Nexus-wide interface config, stored as the React-owned `personalization` object 
 
 - **ribbonOrder** — the ribbon's launcher-icon order below the pinned Homepage, as bare icon keys. Written by drag-to-reorder; a partial or stale value is repaired on read (unknown keys dropped, missing keys appended) so a newly-added icon never vanishes.
 
+- **navCloseOnSelect** — whether picking an entity from the Navigation window dismisses it. This is the one knob whose default is ON, so only the OFF state is ever stored.
+
+- **revealTabBarOnHover** — keep the toolbar's tab bar hidden until the pointer nears it.
+
+- **connectionsOpenInPreview** — a `[[Connection]]` click opens the Page Preview window instead of navigating; ⌘-click takes the other route either way.
+
+- **favoriteIcons** — the icons favorited in the Icon Picker, in display order. Written by the picker itself.
+
+- **defaultViewScale** — the window zoom a nexus opens at, and what ⌘0 resets to. Clamped on read and applied main-side, so a hand-typed value can't push the renderer somewhere unusable.
+
+Every knob resolves through the read path, and a key the writer persists but the reader never parses is silently dropped — the toggle appears to work and reverts on the next open. The boolean knobs are round-trip tested together for exactly that reason; a new one joins that test.
+
 ### Commands (per-Nexus)
 
 Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings.json` maps command ids to shortcut specs (`"toggle-ribbon": "cmd+e"`), and every future rebindable shortcut registers as a row in this map. Defaults live in code (`DEFAULT_COMMANDS`) and are overlaid with the on-disk block on read, so every id always resolves — a malformed or absent entry falls back to its built-in binding rather than losing the shortcut. Specs are `+`-joined modifier chains (`cmd`, `ctrl`, `alt`, `shift`) ending in a key, matched exactly so overlapping bindings can't double-fire. Read-side only: no UI writes these keys yet — rebind by editing `settings.json` directly.
@@ -43,6 +55,14 @@ Seven pairs, defaulting to:
 
 Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the recents list, and the delete target (in-Nexus trash vs the system trash). It is never part of a Nexus, so it never syncs.
 
+### The Settings Window
+
+A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface (→ `PagePreview.md`) — so it inherits the glass shell, geometry, and dismissal contract rather than re-declaring them, and it opens smaller than a content window via that surface's bounds override. A category rail runs the window's full height as an in-flow side pane, leaving only the × above it; the rail is the roster new panels register in.
+
+Rows write through the same generic setter every other personalization writer uses, so a flipped switch applies live through the apply-map with no new IPC. A knob whose default is ON stores only its OFF state — re-enabling removes the key entirely, so an untouched nexus keeps a clean settings file.
+
 ### Pending
 
-**Settings Editing UI:** The personalization block has a setter and a live apply-map but no UI — accent, connection colour, and the toggles are set in `.nexus/settings.json` directly for now. A picker/toggle surface, also covering labels and profile, is planned.
+**Beyond the boolean knobs:** accent and connection colour need pickers rather than switches, the placement knobs are two-value choices, and default icons need the Icon Picker per kind. All of these are wireable through the existing setter — no new plumbing.
+
+**Scopes with no renderer-facing setter:** labels, the nexus profile (image + subtitle), and the per-device app config have no IPC a UI could write through; each needs a handler before any surface can edit it. Command rebinding is data-ready but deliberately unbuilt — shortcuts don't ship without per-shortcut sign-off.

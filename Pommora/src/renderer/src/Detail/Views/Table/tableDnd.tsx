@@ -301,7 +301,7 @@ export function TableRowDnd({
     }
   }
 
-  const value = useMemo<Value>(() => ({ draggingId: drag.id, registerRow, begin }), [drag.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const value = useMemo<Value>(() => ({ draggingId: drag.id, registerRow, begin }), [drag.id])
 
   return (
     <Ctx.Provider value={value}>
