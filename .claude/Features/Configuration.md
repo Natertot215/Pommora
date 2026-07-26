@@ -36,6 +36,7 @@ Every knob resolves through the read path, and a key the writer persists but the
 Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings.json` maps command ids to shortcut specs (`"toggle-ribbon": "cmd+e"`), and every future rebindable shortcut registers as a row in this map. Defaults live in code (`DEFAULT_COMMANDS`) and are overlaid with the on-disk block on read, so every id always resolves — a malformed or absent entry falls back to its built-in binding rather than losing the shortcut. Specs are `+`-joined modifier chains (`cmd`, `ctrl`, `alt`, `shift`) ending in a key, matched exactly so overlapping bindings can't double-fire. Read-side only: no UI writes these keys yet — rebind by editing `settings.json` directly.
 
 - **toggle-ribbon** (`cmd+e`) — slides the sidebar's ribbon strip away and back (→ `Sidebar.md`).
+- **toggle-nav** (`cmd+o`) — summons the Navigation window (→ `Navigation.md`).
 
 #### II. Write Discipline
 
@@ -65,4 +66,4 @@ Rows write through the same generic setter every other personalization writer us
 
 **Beyond the boolean knobs:** accent and connection colour need pickers rather than switches, the placement knobs are two-value choices, and default icons need the Icon Picker per kind. All of these are wireable through the existing setter — no new plumbing.
 
-**Scopes with no renderer-facing setter:** labels, the nexus profile (image + subtitle), and the per-device app config have no IPC a UI could write through; each needs a handler before any surface can edit it. Command rebinding is data-ready but deliberately unbuilt — shortcuts don't ship without per-shortcut sign-off.
+**Scopes with no renderer-facing setter:** labels and the per-device app config have no IPC a UI could write through; each needs a handler before any surface can edit it. The profile is further along — its image and icon are already written from the ribbon's identity menu, and the subtitle has an op and handler waiting on a surface to drive them. Command rebinding is data-ready but deliberately unbuilt — shortcuts don't ship without per-shortcut sign-off.
