@@ -170,7 +170,7 @@ export function CellEditor({
       view.destroy()
       viewRef.current = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once; the cell IS the live editor
+    // Mount once — the cell IS the live editor.
   }, [])
 
   // The model can re-render this positional cell with different text — a reorder moves content between

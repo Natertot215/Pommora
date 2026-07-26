@@ -487,7 +487,6 @@ export function Zone({
     // register reads only refs; begin/liftKeyboard also close over `disabled` (in deps). Recreating
     // them each render with current values is intentional — not memoized, so identity churn is fine.
     // Pointer delta deliberately NOT here — the follow is an imperative style write (see track).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [ids, feel, activeId, overIndex, rects, dropState, keyboard, disabled, swap, itemRole],
   )
   return <ZoneCtx.Provider value={value}>{children}</ZoneCtx.Provider>

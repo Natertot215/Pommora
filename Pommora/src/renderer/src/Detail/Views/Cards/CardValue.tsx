@@ -152,7 +152,7 @@ export function CardValue({
 
   const editing = mode === 'editor' || mode === 'rename'
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: the value is the click surface for its picker.
+    // The value is the click surface for its picker.
     // data-drag-slop: the whole card is a drag handle, so a press that begins on a value gets a larger
     // drag-activation threshold — a tap-wobble opens the picker instead of lifting the card.
     <span

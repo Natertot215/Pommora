@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useSession } from '../store'
 import { MarkdownEditor } from '../MarkdownPM'
 import { buildPageIndex, flattenPages, type ConnectionsApi } from '../MarkdownPM/connections'

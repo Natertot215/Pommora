@@ -456,7 +456,6 @@ describe('handleMutate — review-round hardening', () => {
   })
 
   it('a malformed op returns a clean fault, not a throw', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const r = await handleMutate({ op: 'bogus' } as any, nexusDeps)
     expect(r.ok).toBe(false)
     if (r.ok) return

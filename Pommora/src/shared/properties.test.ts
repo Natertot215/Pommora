@@ -7,7 +7,6 @@ import {
   tierFieldName,
   defaultStatusSeed,
   RESERVED_PROPERTY_ID,
-  type PropertyDefinition,
 } from './properties'
 
 describe('propertyType', () => {

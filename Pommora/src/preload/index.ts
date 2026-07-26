@@ -41,7 +41,6 @@ import type { SavedView } from '@shared/views'
 import type {
   BlockDocPatch,
   BlockHostRef,
-  BlockStyle,
   BlocksGetResult,
   BlocksSaveResult,
   EmbeddedView,

@@ -201,7 +201,7 @@ export function BandDnd({
 
   const value = useMemo<Value>(
     () => ({ draggingId: drag.id, nestTargetId: drag.slot?.nestInto ?? null, registerBand, begin }),
-    [drag.id, drag.slot?.nestInto], // eslint-disable-line react-hooks/exhaustive-deps
+    [drag.id, drag.slot?.nestInto],
   )
 
   return (

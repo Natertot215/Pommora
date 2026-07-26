@@ -80,7 +80,7 @@ function SettingsWindowBody({ closing }: { closing: boolean }): React.JSX.Elemen
       toolbar="floating"
       className="settings-window"
       ariaLabel="Settings"
-      tint={{ opacity: 90 }}
+      tintOpacity={90}
       left={{
         windowId: 'settings-rail',
         bounds: RAIL,

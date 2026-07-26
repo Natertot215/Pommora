@@ -29,7 +29,6 @@ import { AC_MAX } from './autocomplete'
 import { useConnectionAutocomplete, detectConnectionQuery } from './useConnectionAutocomplete'
 import { AutocompletePanel } from './AutocompletePanel'
 import type { ConnectionsApi } from './connections'
-import type { IconName } from '@renderer/design-system/symbols'
 import { PageHeader } from './PageHeader'
 import { ZOOM_DEFAULT, zoomFontSize } from './zoom'
 import './Styles.css'
@@ -300,7 +299,6 @@ export function MarkdownEditor({
       viewRef.current = null
     }
     // Mount once per page — the host keys on path; initialBody is the seed, not a live binding.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // The portal flip: reconfigure the read-only gate on the LIVE view — same doc, same

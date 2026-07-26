@@ -313,7 +313,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }, [source, effectiveValues, liveView, schema, manualOrder, contextIds])
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema) : null),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
+    // buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
     [tree?.contexts, tree?.labels, schema],
   )
   // One mounted observer, two targets, one job (the overflowing flag): the view (pane resizes) and
@@ -337,7 +337,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const grid = el.querySelector('.table-grid')
     if (grid) ro.observe(grid)
     return () => ro.disconnect()
-    // biome-ignore lint/correctness/useExhaustiveDependencies: re-bind when the loading/empty returns give way to the real grid (the nodes remount without ctx changing).
+    // Re-bind when the loading/empty returns give way to the real grid (the nodes remount without ctx changing).
   }, [ctx === null, groups.length === 0])
   const setNames = useMemo(() => buildSetNames(source), [source])
   const setIcons = useMemo(() => buildSetIcons(source), [source])
@@ -985,7 +985,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       colDrag
         ? { from: colDrag.from, to: colDrag.to, width: colWidth(columns[colDrag.from].id) }
         : null,
-    // biome-ignore lint/correctness/useExhaustiveDependencies: colWidth's inputs (widths, collapsing) are static during a drag; keying on colDrag + columns is the change surface.
+    // colWidth's inputs (widths, collapsing) are static during a drag; keying on colDrag + columns is the change surface.
     [colDrag, columns],
   )
   // ONE stable handler identity for every row — calls read the freshest closures through the ref,

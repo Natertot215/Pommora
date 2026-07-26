@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import { duration, easing } from '@renderer/design-system/tokens'
 import {
@@ -18,6 +17,7 @@ import { getDetailPaneRect } from '../Detail/DetailPane'
 import { NavCrumbs } from '../Navigation/NavList'
 import { buildResolveIndex, resolveWith } from '../Navigation/navResolve'
 import { useSession, type PreviewTarget } from '../store'
+import { PreviewActions } from './PreviewActions'
 import { PreviewInspector } from './PreviewInspector'
 import { PreviewTabStrip } from './PreviewTabStrip'
 import { usePreviewWarm } from './usePreviewWarm'
@@ -200,7 +200,7 @@ function PreviewWindowBody({
       onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closePreview())}
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"
-      tint={{ opacity: 85 }}
+      tintOpacity={85}
       // --mdpm-scale mirrors the embed's so the footer aligns to its text column.
       style={{ '--mdpm-scale': EMBED_SCALE } as React.CSSProperties}
       onScan={promote}
@@ -211,20 +211,10 @@ function PreviewWindowBody({
         />
       }
       actions={
-        <>
-          <button type="button" className="ppane-action" title="Settings">
-            <Icon name="sliders-horizontal" size={13} />
-          </button>
-          <button
-            type="button"
-            className="ppane-action"
-            title="Inspector"
-            aria-pressed={inspectorOpen}
-            onClick={() => setInspectorOpen((v) => !v)}
-          >
-            <Icon name="panel-right" size={13} />
-          </button>
-        </>
+        <PreviewActions
+          inspectorOpen={inspectorOpen}
+          onToggleInspector={() => setInspectorOpen((v) => !v)}
+        />
       }
       right={{
         windowId: 'preview-inspector',
