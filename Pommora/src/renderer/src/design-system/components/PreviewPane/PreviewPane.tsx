@@ -217,7 +217,8 @@ export function PreviewPane({
       onMouseMove={
         hasFooter
           ? (e) => {
-              const r = (paneRect.current ??= e.currentTarget.getBoundingClientRect())
+              paneRect.current ??= e.currentTarget.getBoundingClientRect()
+              const r = paneRect.current
               setFooterNear(e.clientX > r.right - NEAR_W && e.clientY > r.bottom - NEAR_H)
             }
           : undefined

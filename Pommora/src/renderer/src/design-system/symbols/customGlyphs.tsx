@@ -1,7 +1,7 @@
 // The custom registry glyphs (List's rounded-circle list, Cards' 2×3 stretch-horizontal bar stack).
 // Registry-conforming forwardRef svgs at Lucide's default 2 stroke weight so they sit evenly beside it.
 import { forwardRef } from 'react'
-import { type LucideIcon, type LucideProps } from 'lucide-react'
+import type { LucideIcon, LucideProps } from 'lucide-react'
 import { IconProgressCheck } from '@tabler/icons-react'
 
 // Tabler glyphs read slightly smaller than Lucide at the same box; this bump sits them at the same

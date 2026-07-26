@@ -37,7 +37,7 @@ describe('table heading-column store (.nexus/tableHeadingColumns.json)', () => {
   it('drops corrupt (non-integer) entries on read', async () => {
     await writeTableHeadingColumns(root, 'good', [0])
     const raw = JSON.parse(await readFile(join(root, '.nexus', 'tableHeadingColumns.json'), 'utf8'))
-    raw['bad'] = ['x', -1]
+    raw.bad = ['x', -1]
     await writeTableHeadingColumns(root, 'good', [0]) // rewrite keeps only good
     expect(await readTableHeadingColumns(root)).toEqual({ good: [0] })
   })

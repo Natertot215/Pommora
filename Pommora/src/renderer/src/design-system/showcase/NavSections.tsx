@@ -22,7 +22,7 @@ export function NavSections({
               <button
                 key={l.id}
                 type="button"
-                className={'sc-row' + (l.id === activeId ? ' selected' : '')}
+                className={`sc-row${l.id === activeId ? ' selected' : ''}`}
                 onClick={() => onSelect(l.id)}
               >
                 <Icon name={l.icon} size={15} className="sc-row-icon" />

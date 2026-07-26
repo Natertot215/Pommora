@@ -27,7 +27,7 @@ export async function atomicWriteBinary(filePath: string, data: Buffer): Promise
  *  source of the sidecar serialization shape — used by writeJson and by SchemaTransaction
  *  when it stages a sidecar alongside member-file rewrites. */
 export function serializeJson(value: unknown): string {
-  return stableStringify(value) + '\n'
+  return `${stableStringify(value)}\n`
 }
 
 /** Atomically write a JSON value with stable, sorted keys + a trailing newline. */

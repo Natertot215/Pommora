@@ -723,7 +723,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     const t = declaredType(col.id, schema)
     if (t === 'number') {
-      if (trimmed === '') return commitCellValue(row, col.id, null)
+      if (trimmed === '') {
+        commitCellValue(row, col.id, null)
+        return
+      }
       const n = Number.parseFloat(trimmed)
       if (!Number.isNaN(n)) commitCellValue(row, col.id, { kind: 'number', value: n })
     } else if (t === 'url') {
@@ -734,12 +737,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     } else if (t === 'file') {
       const v = resolveFieldValue(row, col.id, schema)
       const refs = v.kind === 'file' ? v.value : []
-      if (trimmed === '')
-        return commitCellValue(
+      if (trimmed === '') {
+        commitCellValue(
           row,
           col.id,
           refs.length > 1 ? { kind: 'file', value: refs.slice(1) } : null,
         )
+        return
+      }
       commitCellValue(row, col.id, {
         kind: 'file',
         value: refs.length
@@ -1362,7 +1367,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
               colDrag != null && 'col-dragging-active',
               resizing && 'col-resizing-active',
             )}
-            style={{ minWidth: reflowWidth, ['--cols']: cols } as React.CSSProperties}
+            style={{ minWidth: reflowWidth, '--cols': cols } as React.CSSProperties}
           >
             {/* Header band — each header grabs to smooth-shift its whole column; the filler sits
               outside the columns, inert. The transitionend on the animated track set commits a column
@@ -1379,7 +1384,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
                 <ColumnHeader
                   key={c.id}
                   id={c.id}
-                  label={columnLabel(c.id, schema, ctx.labels)}
+                  label={columnLabel(c.id, schema)}
                   icon={headerIcon(c.id)}
                   width={colWidth(c.id)}
                   align={colAlign(c.id)}

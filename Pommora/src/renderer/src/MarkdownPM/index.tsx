@@ -137,19 +137,35 @@ export function MarkdownEditor({
         keymap.of([
           {
             key: 'ArrowDown',
-            run: () => (acCtl.current.open ? (acCtl.current.move(1), true) : false),
+            run: () => {
+              if (!acCtl.current.open) return false
+              acCtl.current.move(1)
+              return true
+            },
           },
           {
             key: 'ArrowUp',
-            run: () => (acCtl.current.open ? (acCtl.current.move(-1), true) : false),
+            run: () => {
+              if (!acCtl.current.open) return false
+              acCtl.current.move(-1)
+              return true
+            },
           },
           {
             key: 'Enter',
-            run: () => (acCtl.current.open ? (acCtl.current.pick(), true) : false),
+            run: () => {
+              if (!acCtl.current.open) return false
+              acCtl.current.pick()
+              return true
+            },
           },
           {
             key: 'Escape',
-            run: () => (acCtl.current.open ? (acCtl.current.close(), true) : false),
+            run: () => {
+              if (!acCtl.current.open) return false
+              acCtl.current.close()
+              return true
+            },
           },
         ]),
       ),

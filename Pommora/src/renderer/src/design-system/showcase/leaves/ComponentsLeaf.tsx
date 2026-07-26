@@ -21,7 +21,7 @@ function PopupButton({
     <div className="ds-popup">
       <button
         type="button"
-        className={'ds-switcher-btn' + (open ? ' is-active' : '')}
+        className={`ds-switcher-btn${open ? ' is-active' : ''}`}
         onClick={() => setOpen((o) => !o)}
       >
         {label}

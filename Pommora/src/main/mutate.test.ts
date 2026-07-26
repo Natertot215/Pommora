@@ -64,7 +64,6 @@ describe('handleMutate — create', () => {
     expect(await pathExists(join(root, 'Notes/Weekly/_pageset.json'))).toBe(true)
   })
 
-
   it('disambiguates a colliding create name (Untitled → Untitled 2)', async () => {
     const first = await handleMutate(
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
@@ -135,7 +134,6 @@ describe('handleMutate — delete', () => {
     expect(trashToSystem).toHaveBeenCalledOnce()
     expect(trashToSystem.mock.calls[0][0]).toContain('Beta.md')
   })
-
 })
 
 describe('handleMutate — move + guards', () => {
@@ -303,7 +301,6 @@ describe('handleMutate — move + guards', () => {
 })
 
 describe('handleMutate — review-round hardening', () => {
-
   it('creates a collection at the nexus root (parentPath "")', async () => {
     const r = await handleMutate(
       { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Inbox' },
@@ -324,7 +321,7 @@ describe('handleMutate — review-round hardening', () => {
       {
         op: 'createPage',
         parentPath: 'Notes/Daily',
-        name: 'bad' + String.fromCharCode(0) + 'name',
+        name: `bad${String.fromCharCode(0)}name`,
       },
       nexusDeps,
     )
@@ -456,12 +453,12 @@ describe('handleMutate — review-round hardening', () => {
   })
 
   it('a malformed op returns a clean fault, not a throw', async () => {
-    const r = await handleMutate({ op: 'bogus' } as any, nexusDeps)
+    const bogus = { op: 'bogus' } as unknown as Parameters<typeof handleMutate>[0]
+    const r = await handleMutate(bogus, nexusDeps)
     expect(r.ok).toBe(false)
     if (r.ok) return
     expect(r.error.code).toBe('operation-failed')
   })
-
 
   it('reverts the page rename when the link cascade fails', async () => {
     // A page linking [[Beta]] in a read-only dir → the cascade's rewrite commit throws.
@@ -501,7 +498,6 @@ describe('handleMutate — setBanner', () => {
     expect(await pathExists(join(root, sc.banner))).toBe(true)
     expect(sc.id).toBe('pt') // existing keys untouched
   })
-
 
   it('sets a banner on a set sidecar, keyed by the set id', async () => {
     const r = await handleMutate(

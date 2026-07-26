@@ -13,7 +13,7 @@ export const calloutGripMenu = EditorView.domEventHandlers({
     ) as HTMLElement | null
     if (!line || e.clientX >= line.getBoundingClientRect().left) return false // not the grip gutter strip
     const block = blockAt(view.state.doc.toString(), view.posAtDOM(line))
-    if (!block || block.kind !== 'callout') return false
+    if (block?.kind !== 'callout') return false
     e.preventDefault()
     void window.nexus?.calloutMenu?.()?.then((action) => {
       if (action !== 'callout:delete') return
