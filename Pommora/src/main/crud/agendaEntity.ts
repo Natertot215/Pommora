@@ -12,7 +12,6 @@ import { newId } from '../ids'
 import { writeJson, trashWithTimestamp, readJsonObject } from '../io/atomicWrite'
 import { serializeOnFile } from '../io/fileLock'
 import { applyPropertyValue, type PropertyValue } from '@shared/propertyValue'
-import { tierFieldName } from '@shared/properties'
 import { AGENDA_SUFFIX, agendaKindOf, type AgendaKind } from '@shared/agenda'
 import { pathExists, invalidName, nowIso } from './util'
 import { ok, fail, type Result } from '@shared/result'
@@ -117,18 +116,3 @@ export async function updateAgendaProperty(
   })
 }
 
-/** LEGACY — migration-era only. Set an agenda item's tier-N links (bare ULID array at the
- *  root); live context writes go through setAgendaContext. tier 1–3. */
-export async function setAgendaTier(
-  absFile: string,
-  tier: number,
-  contextIds: string[],
-): Promise<Result<null>> {
-  if (tier < 1 || tier > 3) return fail('invalid-tier', `Tier ${tier} is not 1–3.`, 'agenda')
-  return serializeOnFile(absFile, async () => {
-    const raw = await readJsonObject(absFile)
-    if (!raw) return fail('not-found', 'Agenda item not found.', 'agenda')
-    await writeJson(absFile, { ...raw, [tierFieldName(tier)]: contextIds, modified_at: nowIso() })
-    return ok(null)
-  })
-}
