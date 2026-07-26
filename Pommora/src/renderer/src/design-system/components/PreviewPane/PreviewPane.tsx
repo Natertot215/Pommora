@@ -15,7 +15,7 @@ import {
 import './previewPane.css'
 
 /** The unified floating-chrome opening size every in-app window shares. */
-export const PREVIEW_PANE_BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }
+const BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }
 
 /** The shared inspector rail bounds — one remembered width across every window that hosts one. */
 export const PREVIEW_PANE_INSPECTOR: SidePaneBounds = { min: 180, def: 260, max: 420 }
@@ -59,6 +59,8 @@ export interface PreviewPaneProps {
   onClose: () => void
   /** Escape override — defaults to `onClose` (e.g. close an inner pane first). */
   onEscape?: () => void
+  /** Opening size + resize floor. Both windows today share the default; a surface that wants its
+   *  own (a settings sheet, a small popup) overrides it rather than editing this one. */
   bounds?: FloatingBounds
   /** Extra bare-background selectors a window-move may start from, appended to the pane's own. */
   dragSurfaces?: string
@@ -71,8 +73,11 @@ export interface PreviewPaneProps {
   toolbar?: PreviewPaneToolbar
   /** The leading toolbar glyph. Omitted = no scan button. */
   onScan?: () => void
+  /** Its tooltip. Defaults to the promote wording both windows use — a surface that does
+   *  something else with the glyph says so rather than inheriting a lie. */
   scanLabel?: string
-  /** Toolbar centre — a title, a breadcrumb, a tab strip, or nothing. */
+  /** Toolbar centre — a title, a breadcrumb, a tab strip, or nothing. `band` mode only: a
+   *  `floating` toolbar is a zero-height, pointer-inert line, so a title there is clipped away. */
   title?: ReactNode
   /** Trailing buttons, left of the ×. They ride the swallow when a right overlay pane opens. */
   actions?: ReactNode
@@ -87,12 +92,16 @@ export interface PreviewPaneProps {
 const NEAR_W = 260
 const NEAR_H = 120
 
+// The bare backgrounds a window-move may start from. The title is pointer-inert, so a press on it
+// lands on the toolbar beneath and arms the move.
+const DRAG_SURFACES = '.ppane, .ppane-toolbar, .ppane-row'
+
 export function PreviewPane({
   id,
   closing,
   onClose,
   onEscape,
-  bounds = PREVIEW_PANE_BOUNDS,
+  bounds = BOUNDS,
   dragSurfaces,
   ariaLabel,
   className,
@@ -139,12 +148,13 @@ export function PreviewPane({
 
   // Escape dismisses the LIVE window only — while the exit animation runs, or when a focused
   // surface already handled the press, this stays out of the way.
-  const escape = useRef(onEscape ?? onClose)
-  escape.current = onEscape ?? onClose
+  const dismiss = onEscape ?? onClose
+  const escapeRef = useRef(dismiss)
+  escapeRef.current = dismiss
   useEffect(() => {
     if (closing) return
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape' && !e.defaultPrevented) escape.current()
+      if (e.key === 'Escape' && !e.defaultPrevented) escapeRef.current()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -155,7 +165,7 @@ export function PreviewPane({
       windowId={side.windowId}
       side={which}
       bounds={side.bounds}
-      open={which === 'left' ? leftOpen : rightOpen}
+      open={side.open !== false}
       className={cx(`ppane-side ppane-side-${which}-${side.mode}`, side.className)}
       resizeClassName={`ppane-side-resize ppane-side-${which}-${side.mode}-resize`}
       resizeLabel={side.resizeLabel}
@@ -268,7 +278,3 @@ export function PreviewPane({
     </GlassPane>
   )
 }
-
-// The bare backgrounds a window-move may start from. The title is pointer-inert, so a press on it
-// lands on the toolbar beneath and arms the move.
-const DRAG_SURFACES = '.ppane, .ppane-toolbar, .ppane-row'
