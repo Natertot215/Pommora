@@ -93,7 +93,7 @@ export function EdgeLensGlass({
         : '0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0'
   return (
     <>
-      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden>
+      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
         <filter id={fid} x="0%" y="0%" width="100%" height="100%" colorInterpolationFilters="sRGB">
           <feImage
             href={map}
