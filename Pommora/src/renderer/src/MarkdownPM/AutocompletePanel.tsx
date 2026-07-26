@@ -52,6 +52,7 @@ export function AutocompletePanel({
       }
     >
       {v.candidates.map((p, i) => (
+        // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
         <div
           key={p.id}
           className={`mdpm-ac-row${i === v.index ? ' mdpm-ac-selected' : ''}`}

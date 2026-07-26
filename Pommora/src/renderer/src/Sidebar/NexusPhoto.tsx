@@ -29,6 +29,7 @@ export function NexusPhoto({ size }: { size: number }): React.JSX.Element {
   const dim = { width: size, height: size }
   return (
     <>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
       <span
         ref={ref}
         className={photoUrl ? s.photo : `${s.photo} ${s.photoEmpty}`}

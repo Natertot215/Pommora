@@ -76,7 +76,7 @@ function ViewDropdownInner({ node }: { node: CollectionNode | SetNode }): React.
     <div ref={wrapRef} className={s.wrapper}>
       {/* The presentation menu (Show/Hide Title · Style) rides the button chrome ONLY — a display:contents
           slot so a right-click on the open pane (a sibling below) never reaches it. */}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: the interactive control is the Segmented button inside. */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
       <span className={s.buttonSlot} onContextMenu={(e) => void onContextMenu(e)}>
         <SegmentedButton
           segments={[{ ...segment, label: view.name }]}

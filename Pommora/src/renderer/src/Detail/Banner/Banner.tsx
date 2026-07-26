@@ -61,6 +61,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
         onCancel={() => setEditingHome(false)}
       />
     ) : (
+      // biome-ignore lint/a11y/noStaticElementInteractions: a double-click shortcut; the same action has a primary control
       <span
         className={className}
         onDoubleClick={() => setEditingHome(true)}
@@ -128,6 +129,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
     )
   }
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       className={`banner${homeClass}${surfaceClass}`}
       onContextMenu={(e) => {
@@ -140,6 +142,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
         // The homepage IS the nexus: its identity icon (photo/glyph) leads the title, hidden/shown from the
         // title's right-click; the title double-clicks to rename the nexus. Right-click the banner (not the
         // title) still falls through to the Change/Remove-photo menu.
+        // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <span className="banner-title" onContextMenu={(e) => void openHomeTitleMenu(e)}>
           {homeIcon()}
           {homeTitle('banner-title-text')}

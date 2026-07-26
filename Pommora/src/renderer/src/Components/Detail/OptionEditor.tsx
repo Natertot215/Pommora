@@ -93,6 +93,7 @@ export function OptionEditor({
         {options.map((o) => {
           const isColoring = coloring === o.value
           return (
+            // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
             <div
               key={o.value}
               ref={(el) => reorder.registerRow(o.value, el)}

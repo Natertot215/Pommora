@@ -2,6 +2,7 @@ import type { ReactNode, MouseEvent, CSSProperties } from 'react'
 import { Icon, type IconName } from '../../symbols'
 import * as s from './menu.css'
 import { cx } from '../../cx'
+import { onActivateClick } from '../../interactions/activate'
 
 type MenuItemProps = {
   /** Leading glyph cluster — disclosure and/or icon (label-secondary, sized at 1em). */
@@ -41,10 +42,14 @@ export function MenuItem({
   const rowStyle: CSSProperties | undefined = indent ? { paddingLeft: 8 + indent * 14 } : undefined
   const hasTrailing = detail != null || trailing != null
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
       className={cx(s.item, selected && s.itemSelected, className)}
       style={rowStyle}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
+      onKeyDown={onClick ? onActivateClick : undefined}
       onContextMenu={onContextMenu}
       onPointerDown={onPointerDown}
     >

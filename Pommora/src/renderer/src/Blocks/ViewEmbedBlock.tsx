@@ -89,6 +89,7 @@ function EmbedTitle({
   }
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: a rich block surface, not a form control
     <span
       ref={ref}
       className={`${s.titleText} md-h${level}`}
@@ -447,7 +448,7 @@ export function ViewEmbedBlock({
     >
       <div className={s.tile} onPointerDownCapture={onActivate}>
         {titleShown && (
-          // biome-ignore lint/a11y/noStaticElementInteractions: right-click chrome menu on the title row.
+          // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
           <div className={s.titleRow} onContextMenu={(e) => void titleMenu(e)}>
             {/* size omitted → Icon defaults to 1em; the .md-hN class sets the em base, so the icon
                 scales with the title level in lockstep with the text. */}
@@ -460,7 +461,7 @@ export function ViewEmbedBlock({
             {configButton}
           </div>
         )}
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: right-click presentation menu on the switcher area. */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div className={s.switcherRow} onContextMenu={(e) => void areaMenu(e)}>
           {switcher}
           {!titleShown && (
