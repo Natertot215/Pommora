@@ -20,10 +20,12 @@
 .navwindow .ppane-actions-flow {
   opacity: 0;
   pointer-events: none;
+  /* The nudge transitions as a VALUE, never as `transform` — the transform also carries the
+     --io swallow, and transitioning it would retarget on every frame --io advances. */
   --ppane-flow-reveal: 6px;
   transition:
     opacity var(--duration-base) var(--ease-standard),
-    transform var(--duration-base) var(--ease-standard);
+    --ppane-flow-reveal var(--duration-base) var(--ease-standard);
 }
 .navwindow.is-page-tab .ppane-actions-flow {
   opacity: 1;

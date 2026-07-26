@@ -193,7 +193,9 @@
   cursor: ew-resize;
 }
 
-/* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it. */
+/* Edge-drag resize tracks the cursor 1:1 — nothing under the pane may lag behind it, the window
+   root included (its own driver transitions must not re-animate mid-drag). */
+.ppane.is-resizing,
 .ppane.is-resizing .ppane-side-left-inflow,
 .ppane.is-resizing .ppane-side-right-inflow,
 .ppane.is-resizing .ppane-actions-flow,
