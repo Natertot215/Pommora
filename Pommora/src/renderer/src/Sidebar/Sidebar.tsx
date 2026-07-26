@@ -547,6 +547,7 @@ function SectionHeader({ label, onAdd }: { label: string; onAdd?: () => void }):
       <span>{label}</span>
       {onAdd && (
         <button
+          type="button"
           className="section-add"
           title={`New ${label}`}
           aria-label={`New ${label}`}

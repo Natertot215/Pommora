@@ -159,10 +159,11 @@ export function PhotoCropModal({
           />
         )}
         <div className={s.actions}>
-          <button className={s.button} onClick={onCancel} disabled={busy}>
+          <button type="button" className={s.button} onClick={onCancel} disabled={busy}>
             Cancel
           </button>
           <button
+            type="button"
             className={s.buttonPrimary}
             onClick={() => void choose()}
             disabled={busy || !nat || error}

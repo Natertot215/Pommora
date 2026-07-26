@@ -158,7 +158,7 @@ function NavRow({
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
 }): React.JSX.Element {
   return (
-    <li
+    <div
       ref={drag?.ref}
       role="button"
       tabIndex={0}
@@ -182,7 +182,7 @@ function NavRow({
         <OverflowScroll className="nav-item-title">{it.title}</OverflowScroll>
         <NavCrumbs path={it.path} className="nav-item-path" iconSize={12} />
       </div>
-    </li>
+    </div>
   )
 }
 
@@ -243,7 +243,7 @@ export function NavList({
   }
 
   const list = (
-    <ul className="nav-list">
+    <div className="nav-list">
       {(reorderable ? [...pinRows, ...recents] : items).map((it) =>
         reorderable ? (
           <DraggableRow key={it.key} it={it} onSelect={onSelect} onMenu={openMenu} />
@@ -252,16 +252,16 @@ export function NavList({
         ),
       )}
       {extras?.map((e) => (
-        <li
+        <div
           key={e.key}
           className="nav-item nav-item-inert"
           title="Agenda navigation isn't wired yet"
         >
           <span className="nav-item-title">{e.title}</span>
           <span className={cx('nav-item-path', text.caption.standard)}>{e.kind}</span>
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   )
   return (
     <>
