@@ -51,6 +51,7 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
   return (
     <div className={`mdpm-header${cover ? ' has-banner' : ''}`} ref={ref}>
       {cover ? (
+        // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
         <div
           className="mdpm-banner"
           onContextMenu={(e) => {

@@ -10,6 +10,7 @@ import type { ResolvedNav } from '../Navigation/navResolve'
 import { EntityGlyph } from '../Navigation/EntityGlyph'
 import { NavCrumbs, NavPinButton, NavRowMenu } from '../Navigation/NavList'
 import './navGallery.css'
+import { onActivateKey } from '@renderer/design-system/interactions/activate'
 
 // The gallery view over the same nav data as NavList: pinned cards then recents in one flow, no divider,
 // each zone drag-reorderable within itself. A card is the detail-pane thumbnail (3:2, pin overlaid
@@ -118,19 +119,14 @@ function GalleryCard({
   }
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content
     <div
       ref={drag?.setNodeRef}
       style={drag?.style}
-      {...(drag?.handle ?? {
-        role: 'button',
-        tabIndex: 0,
-        onKeyDown: (e: React.KeyboardEvent) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            onSelect(it.target)
-          }
-        },
-      })}
+      {...(drag?.handle ?? {})}
+      role="button"
+      tabIndex={0}
+      onKeyDown={onActivateKey(() => onSelect(it.target))}
       className={cx('nav-gallery-card', active && 'is-active', drag?.isDragging && 'is-dragging')}
       onClick={open}
       onContextMenu={(e) => onMenu(it, e)}

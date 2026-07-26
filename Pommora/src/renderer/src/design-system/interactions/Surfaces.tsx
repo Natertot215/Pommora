@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { SortableZone, useDragItem, reorder, arraySwap, type Row } from './drag'
+import { onActivateKey } from './activate'
 
 const mk = (labels: string[], p = ''): Row[] =>
   labels.map((l, i) => ({ id: `${p}${i}-${l}`, label: l }))
@@ -292,10 +293,14 @@ function TreeNode({
   const kids = node.children
   return (
     <li ref={setNodeRef} style={style} className="ix-tree-node">
+      {/* biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content */}
       <div
         className="ix-tree-row"
         {...handle}
+        role="button"
+        tabIndex={0}
         onClick={() => !isDragging && kids && setOpen((o) => !o)}
+        onKeyDown={onActivateKey(() => kids && setOpen((o) => !o))}
       >
         {kids ? (
           <span className={`ix-caret${open ? ' open' : ''}`}>

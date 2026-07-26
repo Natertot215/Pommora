@@ -56,6 +56,7 @@ export function PropertyEditor({
         validate != null && text.trim() !== '' && !validate(text.trim()) && 'property-editor-ghost',
       )}
       style={color ? { color } : undefined}
+      // biome-ignore lint/a11y/noAutofocus: the surface exists to take focus the moment it opens; that IS the interaction
       autoFocus
       value={text}
       onChange={(e) => {

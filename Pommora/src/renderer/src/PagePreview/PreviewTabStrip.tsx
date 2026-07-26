@@ -11,6 +11,7 @@ import { useSession } from '../store'
 import type { PreviewTab } from './previewTabs'
 import '../Tabs/tabStrip.css'
 import './previewTabStrip.css'
+import { onActivateKey } from '@renderer/design-system/interactions/activate'
 
 const BASE_MS = Number.parseInt(duration.base, 10)
 /** The tab close/open width window — the toolbar strip's EXIT_MS twin (base + the segment's
@@ -117,7 +118,7 @@ export function PreviewTabStrip({
               axis="x"
               onReorder={reorderPreviewTabs}
             >
-              <div className="pgpreview-tabstrip">
+              <div className="pgpreview-tabstrip" role="tablist" aria-label="Preview tabs">
                 {renderEntries.map(({ entry, ghost }, i) => (
                   <Fragment key={entry.tab.id}>
                     {i > 0 && (
@@ -185,9 +186,14 @@ function PreviewTabItem({
         drag.isDragging && 'is-dragging',
       )}
       title={label}
+      role="tab"
+      aria-selected={active}
+      // Roving tabindex: the strip is ONE tab stop, the active tab holds it.
+      tabIndex={active ? 0 : -1}
       onClick={() => {
         if (!drag.isDragging) onActivate()
       }}
+      onKeyDown={onActivateKey(onActivate)}
     >
       {res ? (
         <EntityGlyph item={res} size={TAB_ICON} className="tab-icon" />
