@@ -94,7 +94,7 @@ export function MenuSeparator({
   className?: string
 } = {}): React.JSX.Element {
   return (
-    <div className={cx(s.separator, flush && s.separatorFlush, className)} role="separator">
+    <div className={cx(s.separator, flush && s.separatorFlush, className)} aria-hidden="true">
       <span className={s.separatorLine} />
     </div>
   )

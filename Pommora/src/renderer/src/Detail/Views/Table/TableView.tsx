@@ -1603,7 +1603,7 @@ const DataRow = memo(function DataRow({
                 className="row-grip"
                 {...handle}
                 onClick={(e) => e.stopPropagation()}
-                aria-label="Drag to reorder"
+                title="Drag to reorder"
               >
                 <Icon name="grip-vertical" size={14} />
               </span>
