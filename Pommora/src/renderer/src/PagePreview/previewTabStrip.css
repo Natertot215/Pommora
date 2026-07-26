@@ -42,7 +42,6 @@
   align-items: center;
 }
 .pgpreview-tabscroll {
-  --edge-fade: 16px; /* KNOB — the strip's overflow edge dissolve */
   position: relative;
   flex: 1;
   min-width: 0;
@@ -64,9 +63,15 @@
   min-width: 100%;
   height: 100%;
 }
+/* KNOB — the preview tightens the overflow dissolve on its scrolling chrome; a window that sets
+   nothing keeps the house fade. */
+.pgpreview .pgpreview-tabscroll,
+.pgpreview-crumbs {
+  --edge-fade: 16px;
+}
 .pgpreview-crumbs {
   min-width: 0;
-  --edge-fade: 16px;
+  /* The crumbs also hover-scroll, which reads its own knob. */
   --scroll-fade: 16px;
 }
 /* The trail reads tertiary; the page itself (the last crumb, icon + name) reads control. */
