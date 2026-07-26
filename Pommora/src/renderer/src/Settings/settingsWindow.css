@@ -1,0 +1,84 @@
+/* The Settings window. Shell, rail, and dismissal come from the PreviewPane surface; what remains
+   here is the category rail's rows and the panel's own rhythm. */
+
+.settings-window {
+  /* Rings on the glass inset like the NavWindow rather than running edge-to-edge. */
+  padding: var(--glass-inset);
+  /* KNOB — the panel's content inset. */
+  --settings-inset: 18px;
+}
+
+/* ---- the category rail ---- */
+.settings-rail-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  /* Clear the window's × so the first row never sits under it. */
+  padding-top: 26px;
+}
+.settings-cat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--label-secondary);
+  cursor: pointer;
+  text-align: left;
+}
+.settings-cat:hover {
+  background: var(--state-hover);
+}
+.settings-cat.is-active {
+  background: var(--state-selected);
+  color: var(--label-primary);
+}
+
+/* ---- the panel ---- */
+.settings-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: var(--settings-inset);
+  /* Clear the × at the top-right. */
+  padding-top: 30px;
+}
+.settings-heading {
+  color: var(--label-primary);
+  margin: 0 0 14px;
+}
+.settings-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--separator-segment);
+}
+.settings-row:last-child {
+  border-bottom: none;
+}
+.settings-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.settings-row-label {
+  color: var(--label-primary);
+}
+.settings-row-hint {
+  color: var(--label-tertiary);
+}

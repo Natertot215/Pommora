@@ -14,6 +14,7 @@ import { Toolbar } from './Toolbar/Toolbar'
 import { InspectorPanel } from './Detail/InspectorPanel/InspectorPanel'
 import { NavWindow } from './NavWindow/NavWindow'
 import { PreviewWindow } from './PagePreview/PreviewWindow'
+import { SettingsWindow } from './Settings/SettingsWindow'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
 import { Icon } from '@renderer/design-system/symbols'
@@ -290,6 +291,8 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <NavWindow />}
       {/* Page Preview — the B-1-routed floating page window; one floating window total (D-8). */}
       {status === 'ready' && <PreviewWindow />}
+      {/* Settings — the ribbon-summoned floating panel; a surface onto already-persisted state. */}
+      {status === 'ready' && <SettingsWindow />}
       {/* Invisible edge-drag resize strip at the inspector's left edge (only while open). */}
       {status === 'ready' && inspectorOpen && (
         <div
