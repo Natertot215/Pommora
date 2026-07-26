@@ -110,6 +110,7 @@ function RibbonTab({
       style={style}
       {...handle}
       type="button"
+      role="tab"
       className="ribbon-icon"
       aria-label={tabKey}
       aria-selected={active}

@@ -199,7 +199,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         // An active page tab slides the rail closed; the map tab's return reopens it.
         open: pageTarget === null,
         className: 'navwindow-rail',
-        resizeLabel: 'Resize favorites',
         children: (
           <>
             <div className="navwindow-rail-list edge-fade">
@@ -222,7 +221,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         mode: 'overlay',
         open: inspectorOpen && pageTarget !== null,
         className: 'navwindow-inspector',
-        resizeLabel: 'Resize inspector',
         children: (
           <div className="navwindow-inspector-body">
             {inspectorOpen && pageTarget && <PreviewInspector target={pageTarget} />}

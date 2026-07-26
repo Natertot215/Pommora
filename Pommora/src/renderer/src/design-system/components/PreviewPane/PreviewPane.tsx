@@ -32,7 +32,6 @@ export interface PreviewPaneSide {
   /** Overlay panes toggle. An in-flow pane collapses to nothing when false. */
   open?: boolean
   className?: string
-  resizeLabel?: string
   children: ReactNode
 }
 
@@ -163,7 +162,6 @@ export function PreviewPane({
       open={side.open !== false}
       className={cx(`ppane-side ppane-side-${which}-${side.mode}`, side.className)}
       resizeClassName={`ppane-side-resize ppane-side-${which}-${side.mode}-resize`}
-      resizeLabel={side.resizeLabel}
       onWidthChange={which === 'left' ? setLeftW : setRightW}
       onResizingChange={setResizing}
     >

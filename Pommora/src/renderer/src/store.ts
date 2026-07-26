@@ -67,8 +67,8 @@ import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './De
 import { ensureContainerView } from './Detail/Views/viewMint'
 
 // Sidebar width bounds — Swift's min:180 / ideal:240, max widened +50 past Swift's 330 for extra drag room.
-export const SIDEBAR_MIN = 180
-export const SIDEBAR_MAX = 380
+const SIDEBAR_MIN = 180
+const SIDEBAR_MAX = 380
 const SIDEBAR_DEFAULT = 240
 const SIDEBAR_WIDTH_KEY = 'pommora.sidebarWidth'
 const clampSidebar = (w: number): number =>
@@ -83,8 +83,8 @@ function readStoredSidebarWidth(): number {
 }
 
 // Inspector (right pane) width bounds — its own range, max carrying the same +50 headroom.
-export const INSPECTOR_MIN = 240
-export const INSPECTOR_MAX = 420
+const INSPECTOR_MIN = 240
+const INSPECTOR_MAX = 420
 const INSPECTOR_DEFAULT = 300
 const INSPECTOR_WIDTH_KEY = 'pommora.inspectorWidth'
 const clampInspector = (w: number): number =>
