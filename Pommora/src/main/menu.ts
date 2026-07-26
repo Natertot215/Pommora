@@ -26,16 +26,15 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
     if (!win.isDestroyed()) win.webContents.send('menu:action', action)
   }
 
-  const recentItems: MenuItemConstructorOptions[] =
-    recents?.length
-      ? recents.map((p) => ({
-          label: basename(p),
-          click: async () => {
-            await adopt(p)
-            send('reload-state')
-          },
-        }))
-      : [{ label: 'No Recent Nexuses', enabled: false }]
+  const recentItems: MenuItemConstructorOptions[] = recents?.length
+    ? recents.map((p) => ({
+        label: basename(p),
+        click: async () => {
+          await adopt(p)
+          send('reload-state')
+        },
+      }))
+    : [{ label: 'No Recent Nexuses', enabled: false }]
 
   const template: MenuItemConstructorOptions[] = [
     { role: 'appMenu' },

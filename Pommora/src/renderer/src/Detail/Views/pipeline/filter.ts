@@ -402,10 +402,7 @@ function evaluateList(ids: string[], op: Op, expected: Expected, values?: string
 
 /** File: presence only (is/contains/etc. are no-op passes — Swift evaluatePresence). */
 function evaluatePresence(v: PropertyValue, op: Op): boolean {
-  const empty =
-    v.kind === 'context' || v.kind === 'file'
-      ? v.value.length === 0
-      : v.kind  === 'null'
+  const empty = v.kind === 'context' || v.kind === 'file' ? v.value.length === 0 : v.kind === 'null'
   switch (op) {
     case FILTER_OPS.isEmpty:
       return empty
