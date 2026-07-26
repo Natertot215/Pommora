@@ -23,5 +23,7 @@ graphify-out/
 # Playwright MCP — tool console logs / page traces (regeneratable)
 .playwright-mcp/
 
-# Claude Code — local agent config (machine-specific paths / hooks)
-.claude/settings.json
+# Claude Code — settings.json travels: it carries the ~-relative auto-memory
+# route, which resolves on every machine. Genuinely machine-bound overrides
+# (absolute paths, per-host hooks) belong in the .local overlay instead.
+.claude/settings.local.json
