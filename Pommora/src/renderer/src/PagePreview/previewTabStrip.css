@@ -40,6 +40,11 @@
   align-self: stretch;
   display: flex;
   align-items: center;
+  /* Stop at an open side pane's leading edge — otherwise the tabs run under it and the glyphs
+     land on top of a label. NO transition: the squeeze is derived from --io, which is already
+     interpolating, so transitioning the padding would retarget every frame and the strip would
+     chase the pane instead of moving with it. */
+  padding-right: var(--ppane-title-squeeze, 0px);
 }
 .pgpreview-tabscroll {
   position: relative;
