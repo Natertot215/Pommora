@@ -273,6 +273,8 @@ export function PickerMenu({
       {createPortal(
         <>
           {onDismiss && !closing ? (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: a click-catching backdrop — Escape is the keyboard dismissal
+            // biome-ignore lint/a11y/noStaticElementInteractions: a click-catching backdrop — Escape is the keyboard dismissal
             <div
               className={s.backdrop}
               data-picker-portal
@@ -281,6 +283,7 @@ export function PickerMenu({
               onClick={onDismiss}
             />
           ) : null}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
           <div
             ref={paneRef}
             className={s.layer}

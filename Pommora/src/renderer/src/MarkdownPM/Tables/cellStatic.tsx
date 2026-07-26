@@ -74,6 +74,7 @@ export function StaticCell({
   onActivate: (coords: { x: number; y: number }) => void
 }): React.JSX.Element {
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
     <div
       className="mdpm-tbl-cell-static"
       onMouseDown={(e) => {

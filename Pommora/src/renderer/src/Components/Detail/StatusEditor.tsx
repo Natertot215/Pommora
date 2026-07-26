@@ -103,6 +103,7 @@ export function StatusEditor({
                 />
               </span>
             ) : (
+              // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
               <span className={s.optionsLabel} onDoubleClick={() => setRenamingGroup(g.id)}>
                 {g.label}
               </span>
@@ -120,6 +121,7 @@ export function StatusEditor({
             {g.options.map((o) => {
               const isColoring = coloring === o.value
               return (
+                // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
                 <div
                   key={o.value}
                   ref={(el) => reorder.registerRow(o.value, el)}

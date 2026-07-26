@@ -189,6 +189,7 @@ export function App(): React.JSX.Element {
   const sidebarHidden = status === 'ready' && !sidebarVisible
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a drag-and-drop target, not a control
     <div
       className={
         'shell' +

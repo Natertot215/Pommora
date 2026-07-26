@@ -66,7 +66,8 @@ export function MarkdownBlock({
 
   if (body === null) return <div className="blk-md" />
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: edit entry is pointer-first; keyboard entry rides Task 6 chrome
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a click-to-edit surface over a contenteditable that is already keyboard-reachable
+    // biome-ignore lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
       className={`blk-md${editing ? ' is-editing' : ''}`}
       onClick={() => {

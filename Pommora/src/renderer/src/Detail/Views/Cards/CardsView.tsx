@@ -653,7 +653,8 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
     }
   }
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: the drag handle supplies the interaction role.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+    // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
     <div
       ref={drag?.setNodeRef}
       style={drag?.style}
@@ -665,7 +666,7 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
       }}
     >
       <div className="page-card-body hover-pop">
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: right-click surface for the banner menu. */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div className="page-card-thumb" onContextMenu={(e) => void onThumbContextMenu(e)}>
           {src && !failed ? (
             <img src={src} alt="" onError={() => setFailed(true)} />
@@ -766,14 +767,16 @@ function CardProperties({
     />
   )
   return compact ? (
-    // biome-ignore lint/a11y/noStaticElementInteractions: the flow's empty space adds a property.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+    // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
     <div className="card-props is-flow" onClick={zoneClick}>
       {shown.map((c) => (
         <span key={c.id}>{value(c)}</span>
       ))}
     </div>
   ) : (
-    // biome-ignore lint/a11y/noStaticElementInteractions: the flow's empty space adds a property.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+    // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
     <div className="card-props" onClick={zoneClick}>
       {shown.map((c) => (
         <div key={c.id} className="card-prop-row">
@@ -854,7 +857,7 @@ const CardFace = memo(function CardFace({
   return (
     <>
       {banner !== 'none' && (
-        // biome-ignore lint/a11y/noStaticElementInteractions: right-click surface for the banner menu.
+        // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <div
           className="page-card-thumb"
           onContextMenu={onThumbContextMenu ? (e) => void onThumbContextMenu(e) : undefined}
@@ -868,7 +871,8 @@ const CardFace = memo(function CardFace({
           )}
         </div>
       )}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: empty text-area space is an add surface. */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
       <div
         className="page-card-text"
         ref={textRef}
@@ -903,7 +907,8 @@ const CardFace = memo(function CardFace({
           />
         )}
         {crumbs.length > 0 && (
-          // biome-ignore lint/a11y/noStaticElementInteractions: the breadcrumb is ALWAYS an add-property input.
+          // biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+          // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
           <div className="page-card-loc-zone" onClick={onZoneClick}>
             <NavCrumbs path={crumbs} className="page-card-loc" iconSize={11} />
           </div>
@@ -1037,7 +1042,8 @@ const PageCard = memo(function PageCard({
   // The drag engine fires a synthesized click after a pointer drag — a reorder-drop must not
   // navigate (NavGallery's `!isDragging` guard).
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: the drag handle supplies the interaction role.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+    // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
     <div
       ref={drag?.setNodeRef}
       style={drag?.style}

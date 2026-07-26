@@ -324,6 +324,7 @@ export function TableView({
         </tbody>
       </table>
       {geom.cols.map((c, i) => (
+        // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
         <div
           key={`col-${i}`}
           className="mdpm-tbl-grip-zone mdpm-tbl-grip-col"
@@ -344,6 +345,7 @@ export function TableView({
         </div>
       ))}
       {geom.rows.map((r, j) => (
+        // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
         <div
           key={`row-${j}`}
           className="mdpm-tbl-grip-zone mdpm-tbl-grip-row"
@@ -359,6 +361,7 @@ export function TableView({
         </div>
       ))}
       {geom.cols.slice(0, -1).map((c, i) => (
+        // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
         <div
           key={`resize-${i}`}
           className="mdpm-tbl-resize-zone"
