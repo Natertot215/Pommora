@@ -182,7 +182,7 @@ function Tree({
       layout="list"
       onReorder={(a, o) => onChange(reorder(nodes, a, o))}
     >
-      <ul className={'ix-tree' + (depth > 0 ? ' ix-tree-nested' : '')}>
+      <ul className={`ix-tree${depth > 0 ? ' ix-tree-nested' : ''}`}>
         {nodes.map((n) => (
           <TreeNode
             key={n.id}
@@ -229,7 +229,7 @@ export function ConstraintsSurface(): React.JSX.Element {
           <button
             key={label}
             type="button"
-            className={'ix-toggle' + (on ? ' is-on' : '')}
+            className={`ix-toggle${on ? ' is-on' : ''}`}
             onClick={() => set(!on)}
           >
             {label}
@@ -298,7 +298,7 @@ function TreeNode({
         onClick={() => !isDragging && kids && setOpen((o) => !o)}
       >
         {kids ? (
-          <span className={'ix-caret' + (open ? ' open' : '')}>
+          <span className={`ix-caret${open ? ' open' : ''}`}>
             <Icon name="chevron-right" size={14} />
           </span>
         ) : (
@@ -308,7 +308,7 @@ function TreeNode({
         <span>{node.label}</span>
       </div>
       {kids && (
-        <div className={'ix-collapse' + (open ? '' : ' is-collapsed')}>
+        <div className={`ix-collapse${open ? '' : ' is-collapsed'}`}>
           <div>
             <Tree nodes={kids} onChange={onChildren} depth={depth + 1} />
           </div>

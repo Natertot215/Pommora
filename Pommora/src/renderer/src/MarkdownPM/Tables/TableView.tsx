@@ -1,3 +1,5 @@
+// biome-ignore-all lint/suspicious/noArrayIndexKey: a Markdown table's rows, columns, and cells are
+// plain strings with no identity but their position — the index IS the key.
 import './widget.css'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'

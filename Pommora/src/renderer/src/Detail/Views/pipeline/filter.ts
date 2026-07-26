@@ -405,9 +405,7 @@ function evaluatePresence(v: PropertyValue, op: Op): boolean {
   const empty =
     v.kind === 'context' || v.kind === 'file'
       ? v.value.length === 0
-      : v.kind === 'null'
-        ? true
-        : false
+      : v.kind  === 'null'
   switch (op) {
     case FILTER_OPS.isEmpty:
       return empty

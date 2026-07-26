@@ -21,7 +21,7 @@ export function isUlid(value: string): boolean {
 /** Mint a fresh user-defined property id (`prop_<ulid>`). Built-in property ids are the
  *  reserved `_`-prefixed constants in shared/properties.ts; this mints the user form. */
 export function mintPropertyId(): string {
-  return 'prop_' + newId()
+  return `prop_${newId()}`
 }
 
 /**
@@ -30,5 +30,5 @@ export function mintPropertyId(): string {
  * reads as the same id until adoption mints a real ULID for it.
  */
 export function adoptedId(relPath: string): string {
-  return 'adopted-' + createHash('sha256').update(relPath).digest('hex').slice(0, 16)
+  return `adopted-${createHash('sha256').update(relPath).digest('hex').slice(0, 16)}`
 }

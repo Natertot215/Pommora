@@ -2,7 +2,7 @@
 // relocating its source lines via `blockMoveChanges`. `createBlockDragGesture` parameterizes the lifecycle
 // (pointerdown → ACTIVATION threshold → in-place shade → fixed insertion-line → drop) by the hit-test class,
 // so the rail grips and the heading chevron share ONE gesture.
-import { type Extension } from '@codemirror/state'
+import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { ACTIVATION } from '../../design-system/interactions/shared'
 import { blockAt, blockStarts } from './blockModel'
@@ -163,7 +163,7 @@ export function startBlockDrag(
       view.dispatch({ effects: setShade.of(null) })
       if (commit && g.slot) {
         const changes = blockMoveChanges(view.state.doc.toString(), block, { at: g.slot.at })
-        if (changes && changes.length) view.dispatch({ changes, userEvent: 'input' })
+        if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
       }
     } else if (commit && line) {
       onClick?.(view, line) // a click (sub-threshold release) — e.g. toggle the heading fold

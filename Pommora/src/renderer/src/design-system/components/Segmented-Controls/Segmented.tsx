@@ -55,6 +55,7 @@ function Segmented({
   const buttons = (
     <>
       {segments.map((seg, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: segments are a fixed config array that never reorders
         <Fragment key={`${i}-${seg.icon}`}>
           {i > 0 && <span className={s.divider} style={{ height: g.dividerHeight }} />}
           <button

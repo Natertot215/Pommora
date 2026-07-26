@@ -200,7 +200,7 @@ describe('Shift+Enter closes the construct first, then breaks the line', () => {
 describe('dash + arrow auto-format', () => {
   it('-- then a letter → em-dash', () => {
     const doc = '--'
-    const e = dashArrow(doc + '', 2, 2, 'a')!
+    const e = dashArrow(`${doc}`, 2, 2, 'a')!
     expect(apply('--', e)).toBe('—a')
   })
   it('preserves --- (HR)', () => {

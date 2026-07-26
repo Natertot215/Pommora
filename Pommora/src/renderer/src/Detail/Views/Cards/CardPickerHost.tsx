@@ -116,7 +116,7 @@ export function CardPickerHost({
   const aReq = add ?? lastAdd.current
   const aRow = aReq ? rowById.get(aReq.rowId) : undefined
   const aEntries =
-    aRow && labels ? addEntriesFor(aRow, view, ctx, labels, columns, tree) : ([] as AddEntry[])
+    aRow && labels ? addEntriesFor(aRow, view, ctx, columns, tree) : ([] as AddEntry[])
 
   // One commit gate for every value-picker surface: an add-originated open reveals on the first
   // real commit (revealProperty is idempotent + in-flight-deduped, so repeat commits no-op).

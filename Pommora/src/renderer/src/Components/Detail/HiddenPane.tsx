@@ -170,7 +170,7 @@ export function VisibilityList({
   const shownIds = resolveColumns(view, schema, contextIds).map((c) => c.id)
   const hiddenIds = hiddenListIds(view, schema, contextIds)
   const hiddenSet = new Set(view.hidden_properties)
-  const nameFor = (id: string): string => columnLabel(id, schema, tree.labels, tree)
+  const nameFor = (id: string): string => columnLabel(id, schema, tree)
 
   const save = async (patch: Partial<SavedView>): Promise<void> => {
     const res = await saveView({ ...view, ...patch })

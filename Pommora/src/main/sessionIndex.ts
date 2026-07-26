@@ -44,7 +44,7 @@ export async function refreshSessionIndex(root: string): Promise<void> {
   closeSessionIndex() // release the handle + flush WAL so the file delete is clean
   for (const suffix of ['', '-wal', '-shm']) {
     try {
-      rmSync(join(nexusDir(root), 'index.db' + suffix), { force: true })
+      rmSync(join(nexusDir(root), `index.db${suffix}`), { force: true })
     } catch {
       /* best-effort */
     }
