@@ -35,7 +35,7 @@ export function calloutDeleteVerdict(
         // The delete starts cleanly but may JOIN a following body line up (forward-delete of the newline).
         // A join that leaves the body's `> ` intact splices a literal `>` into content — extend the join
         // to consume the whole prefix, like smartBackspace's join does.
-        const ext = joinExtension(doc, lines, info, from, to)
+        const ext = joinExtension(lines, info, from, to)
         return ext === null ? { kind: 'ok' } : { kind: 'extend', to: ext }
       }
       // Removing the line WITH its newline (or through EOF) keeps the remaining box contiguous.
@@ -51,7 +51,6 @@ export function calloutDeleteVerdict(
 // When [from, to) removes the newline before a callout BODY line but stops inside (or at the start of) its
 // `> ` prefix, return the position the delete must extend to (prefix end) so the join is clean; else null.
 function joinExtension(
-  doc: string,
   lines: string[],
   info: ReturnType<typeof calloutLines>,
   from: number,

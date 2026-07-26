@@ -220,7 +220,7 @@ export function PaneDnd({
       registerRegion,
       begin,
     }),
-    [drag.id, drag.slot?.highlightAll], // eslint-disable-line react-hooks/exhaustive-deps
+    [drag.id, drag.slot?.highlightAll],
   )
 
   return (

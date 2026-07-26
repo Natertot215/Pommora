@@ -51,12 +51,10 @@ import { shouldSkipDir } from './exclusion'
 import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from './walkCache'
 import {
-  contextTierDir,
   contextsDir,
   contextsRegistryFile,
   NEXUS_CONFIG_FILES,
   nexusConfig,
-  nexusDir,
   SIDECAR_FILENAME,
   SPACE_SIDECAR,
 } from './paths'
@@ -123,6 +121,7 @@ export function readPersonalization(raw: unknown): Personalization {
     subSetPlacement: placement(p.subSetPlacement),
     sidebarMode: mode(p.sidebarMode),
     revealTabBarOnHover: bool(p.revealTabBarOnHover),
+    connectionsOpenInPreview: bool(p.connectionsOpenInPreview),
     ribbonOrder: ribbonOrder.length ? ribbonOrder : undefined,
     defaultViewScale: coerceViewScale(p.defaultViewScale),
   }

@@ -222,7 +222,6 @@ export async function setAgendaContext(
 /** setContext on a Space's own `_space.json` (cross-Context allowed) — strict RMW,
  *  never fallback-to-empty. */
 export async function setSpaceContext(
-  root: string,
   world: ContextWorld,
   spaceId: string,
   contextId: string,
@@ -255,7 +254,7 @@ export async function setContextOnPath(
   if (abs.toLowerCase().endsWith('.md')) return setPageContext(abs, world, contextId, spaceIds)
   if (agendaKindOf(abs)) return setAgendaContext(abs, world, contextId, spaceIds)
   const owner = [...world.spaceById.values()].find((ref) => ref.dir === abs)
-  if (owner) return setSpaceContext(root, world, owner.id, contextId, spaceIds)
+  if (owner) return setSpaceContext(world, owner.id, contextId, spaceIds)
   return fail('invalid-path', 'Not a context-taggable entity.', 'contexts')
 }
 

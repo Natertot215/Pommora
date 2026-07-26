@@ -9,7 +9,7 @@ import type {
 } from '@shared/types'
 import { UNGROUPED } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
-import { applyPropertyValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
+import { applyPropertyValue, type PropertyValue } from '@shared/propertyValue'
 import { type CardBanner, isCompact, LOCATION_SORT, type SavedView } from '@shared/views'
 import type { ColumnStyle } from '@shared/columnStyles'
 import { defaultEntityIcon, Icon, iconNameOr } from '@renderer/design-system/symbols'
@@ -34,7 +34,7 @@ import {
 } from '../pipeline/contextOptions'
 import { flattenContainer, groupsStructurally } from '../pipeline/group'
 import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
-import { declaredType, resolveFieldValue } from '../pipeline/value'
+import { declaredType, } from '../pipeline/value'
 import { resolveView } from '../pipeline/resolveView'
 import { useActiveView } from '../useActiveView'
 import { columnLabel } from '../Table/columnLabel'
@@ -60,7 +60,7 @@ import {
   shownColumnsFor,
 } from './cardValueInput'
 import type { MoveTarget } from '@shared/cardMenu'
-import { hiddenListIds, hideShown, unhide } from '@renderer/Components/Detail/hiddenPaneModel'
+import { hideShown, unhide } from '@renderer/Components/Detail/hiddenPaneModel'
 import { IconPicker } from '@renderer/Components/IconPicker'
 import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import { isOpenInTabs } from '../../../Tabs/tabsModel'
@@ -229,7 +229,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const setIcons = useMemo(() => buildSetIcons(source), [source])
   const ctx = useMemo(
     () => (tree ? buildResolveContext(tree, schema) : null),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
+    // buildResolveContext reads only contexts + labels — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized cards hold.
     [tree?.contexts, tree?.labels, schema],
   )
   const columns = useMemo(() => resolveColumns(view, schema, contextIds), [view, schema, contextIds])

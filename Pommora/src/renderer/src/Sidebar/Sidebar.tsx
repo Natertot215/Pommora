@@ -12,11 +12,9 @@ import { cx } from '@renderer/design-system/cx'
 import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { slideScrollBack } from '@renderer/design-system/components/OverflowScroll'
-import { EditableInput } from '../Components/EditableInput'
 import type {
   CollectionNode,
   ContextGroup,
-  EntityIconKind,
   FolderPlacement,
   NexusTree,
   PageNode,

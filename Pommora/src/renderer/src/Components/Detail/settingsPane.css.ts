@@ -3,7 +3,6 @@ import { vars as colorVars, inputFieldVar } from '../../design-system/tokens/col
 import { text } from '../../design-system/tokens/typography.css'
 import { duration, easing } from '../../design-system/tokens/motion'
 import {
-  flushAffordance,
   accessoryButton,
   accessoryGhostRest,
   footingLabel,
