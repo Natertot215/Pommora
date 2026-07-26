@@ -22,7 +22,7 @@ const svgBase = {
 /** List — a solid left rail bar + four lines beside it, sized to the table/gallery glyph height. */
 export const ListRounded = forwardRef<SVGSVGElement, LucideProps>(
   ({ size = 24, color, ...rest }, ref) => (
-    <svg ref={ref} width={size} height={size} {...svgBase} {...rest}>
+    <svg ref={ref} aria-hidden="true" width={size} height={size} {...svgBase} {...rest}>
       <rect x="3.6" y="3.1" width="2.4" height="17.8" rx="1.2" fill="currentColor" stroke="none" />
       <line x1="9" y1="5.1" x2="20" y2="5.1" />
       <line x1="9" y1="9.7" x2="20" y2="9.7" />
@@ -35,7 +35,7 @@ export const ListRounded = forwardRef<SVGSVGElement, LucideProps>(
 /** Cards — two columns of stretch-horizontal bars (three rows), a bar stack read wider-than-tall. */
 export const CardsGrid = forwardRef<SVGSVGElement, LucideProps>(
   ({ size = 24, color, ...rest }, ref) => (
-    <svg ref={ref} width={size} height={size} {...svgBase} {...rest}>
+    <svg ref={ref} aria-hidden="true" width={size} height={size} {...svgBase} {...rest}>
       <rect x="2.8" y="3.1" width="7.5" height="4.6" rx="1.4" />
       <rect x="13.7" y="3.1" width="7.5" height="4.6" rx="1.4" />
       <rect x="2.8" y="9.7" width="7.5" height="4.6" rx="1.4" />
@@ -58,7 +58,7 @@ export const ProgressCheck = forwardRef<SVGSVGElement, LucideProps>(
 // reference image's proportions (body ~15/24 wide, shackle stroke ~2.6). Fill-based.
 export const LockSolid = forwardRef<SVGSVGElement, LucideProps>(
   ({ size = 24, color, ...rest }, ref) => (
-    <svg ref={ref} width={size} height={size} viewBox="0 0 24 24" fill="none" {...rest}>
+    <svg ref={ref} aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" {...rest}>
       <path
         d="M7.2 12 V7.7 a4.8 4.8 0 0 1 9.6 0 V12"
         stroke="currentColor"

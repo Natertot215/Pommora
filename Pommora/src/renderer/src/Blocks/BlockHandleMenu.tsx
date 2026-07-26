@@ -220,7 +220,7 @@ export function BlockHandleMenu({
                 containerLocked ? (
                   <span
                     className={`${s.footerLockAction} ${s.rowDisabled}`}
-                    aria-label="Locked by the board"
+                    title="Locked by the board"
                   >
                     <Icon name="lock" size={GLYPH} className={s.lockIcon} />
                     Locked
