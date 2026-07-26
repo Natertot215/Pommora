@@ -30,7 +30,6 @@ export function SidePane({
   open = true,
   className,
   resizeClassName,
-  resizeLabel = 'Resize pane',
   onWidthChange,
   onResizingChange,
   children,
@@ -46,7 +45,6 @@ export function SidePane({
   className?: string
   /** The host's positioning class for the resize strip. */
   resizeClassName?: string
-  resizeLabel?: string
   /** Mirror the width into the host's CSS var — its layout math (squeeze, swallow, strip
    *  position) reads the var, never this component. Fires on mount and every drag frame. */
   onWidthChange?: (w: number) => void
@@ -99,12 +97,7 @@ export function SidePane({
         <div
           className={cx('sidepane-resize', resizeClassName)}
           onPointerDown={startResize}
-          role="separator"
-          aria-orientation="vertical"
-          aria-label={resizeLabel}
-          aria-valuenow={width}
-          aria-valuemin={bounds.min}
-          aria-valuemax={bounds.max}
+          aria-hidden="true"
         />
       )}
     </>

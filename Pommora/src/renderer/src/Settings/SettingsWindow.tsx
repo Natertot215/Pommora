@@ -86,7 +86,6 @@ function SettingsWindowBody({ closing }: { closing: boolean }): React.JSX.Elemen
         bounds: RAIL,
         mode: 'inflow',
         className: 'settings-rail',
-        resizeLabel: 'Resize categories',
         children: (
           <div
             className="settings-rail-list edge-fade"
