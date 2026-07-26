@@ -26,7 +26,9 @@
   /* Rest-scroll: the CM6 scroller scrolls vertically with default chaining (edge-release), the same
      model as the view embed's body — !important beats CM6's own runtime overflow rule. Horizontal
      stays clipped (prose wraps). */
+  /* biome-ignore lint/complexity/noImportantStyles: must beat CM6's runtime overflow rule. */
   overflow-x: hidden !important;
+  /* biome-ignore lint/complexity/noImportantStyles: as above. */
   overflow-y: auto !important;
 }
 .spm-tile:not(.is-editing-tile) :is(.blk-md, .pgembed) .cm-content {

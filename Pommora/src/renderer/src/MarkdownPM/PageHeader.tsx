@@ -8,6 +8,7 @@ interface Props {
   path: string
   title: string
   cover?: string
+  // biome-ignore lint/suspicious/noConfusingVoidType: the callback's return is ignored; `void` is the permissive form that accepts a sync handler and an async one alike.
   onRename: (newName: string) => void | Promise<boolean | void>
   onEditIcon: () => void
 }

@@ -437,6 +437,7 @@ code {
 @media (max-width: 720px) {
   .sc-sidebar,
   .sc-expand {
+    /* biome-ignore lint/complexity/noImportantStyles: the mobile breakpoint must beat every desktop layout rule. */
     display: none !important;
   }
   .sc-mobile {

@@ -46,6 +46,7 @@ interface Props {
   initialBody: string
   onChange: (body: string) => void
   title?: string
+  // biome-ignore lint/suspicious/noConfusingVoidType: the callback's return is ignored; `void` is the permissive form that accepts a sync handler and an async one alike.
   onRename?: (newName: string) => void | Promise<boolean>
   /** Page identity + chrome for the header (banner cover + Edit Icon). */
   path?: string
