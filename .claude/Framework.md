@@ -45,7 +45,7 @@ Making Agenda reachable. The whole CRUD layer is written, locked, and tested but
 
 #### v0.8.0 — Settings + Quick Capture + LLM Inspector + Search
 
-The Settings editing UI — the single biggest unlock, since 11 of 14 personalization keys are fully wired end-to-end with no control to set them, and the ribbon's Settings icon is a no-op. Plus Quick Capture (specced, zero code), the Claude-chat inspector (the panel ships; its body is empty), and global `⌘K` search over an FTS index.
+The rest of the Settings editing UI — the window ships off the ribbon with its boolean toggles, leaving the pickers (accent, connection colour, default icons) and the placement knobs without controls. Plus Quick Capture (specced, zero code), the Claude-chat inspector (the panel ships; its body is empty), and global `⌘K` search over an FTS index.
 
 #### v0.9.0 — SurfacePM Completion + Contexts
 

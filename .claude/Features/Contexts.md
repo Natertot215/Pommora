@@ -40,7 +40,7 @@ The organization layer. A **Context** is a user-defined group — the registry s
 
 - **SpaceView**: a Space selection renders its banner scaffold over its block surface — `_space.json` is the second BlockHost beside the homepage, with a per-Space board lock — plus its Subfield breadcrumb. Its heading wears the Space's icon through the shared banner title header — the same hide/reveal slide, right-click menu, and inline rename as Collection and Set views, banner or no banner.
 
-- **The Space settings pane** rides the toolbar trio's settings button: the (Icon)(Title) heading over the Lock/ellipsis footer, with the icon button and title field outlined in the Space's color through the input-field OutlineTint channel. Right-clicking the heading offers Change Color (the shared ColorPicker). There is no floating settings window — Contexts and Spaces manage via their panes.
+- **The Space settings pane** rides the toolbar trio's settings button: the (Icon)(Title) heading over the Lock/ellipsis footer, with the icon button and title field outlined in the Space's color through the input-field OutlineTint channel. Right-clicking the heading offers Change Color (the shared ColorPicker). Spaces have no floating settings surface of their own — they manage through this pane; the app-level Settings window is a separate surface (→ `Configuration.md`).
 
 - **Pipeline**: context columns are default-OFF — absence from a view's `property_order` IS hidden, so creating a Context never changes an existing view. Cells read each row's walk-resolved context values with an optimistic rider on the override layer, and chips everywhere wear the Space's icon + chip-solid color from one identity seam.
 
