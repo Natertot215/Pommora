@@ -8,7 +8,6 @@ import {
   deleteAgendaItem,
   updateAgendaItem,
   updateAgendaProperty,
-  setAgendaTier,
 } from './agendaEntity'
 
 let root: string
@@ -135,11 +134,4 @@ describe('updates preserve foreign keys + siblings', () => {
     expect((await read(c.value.path)).properties).toEqual({ prop_rel: [{ $ctx: '01H' }] })
   })
 
-  it('setAgendaTier writes a bare ULID array at the root', async () => {
-    const c = await createAgendaItem(tasks, 'task', 'Tiered')
-    if (!c.ok) throw new Error('setup')
-    expect((await setAgendaTier(c.value.path, 2, ['ctxA'])).ok).toBe(true)
-    expect((await read(c.value.path)).tier2).toEqual(['ctxA'])
-    expect((await setAgendaTier(c.value.path, 4, [])).ok).toBe(false)
-  })
 })

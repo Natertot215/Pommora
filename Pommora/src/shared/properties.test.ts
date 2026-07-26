@@ -4,7 +4,6 @@ import {
   propertyType,
   isReservedPropertyId,
   tierPropertyId,
-  tierFieldName,
   defaultStatusSeed,
   RESERVED_PROPERTY_ID,
 } from './properties'
@@ -125,11 +124,9 @@ describe('reserved property ids', () => {
     expect(isReservedPropertyId('stage')).toBe(false)
   })
 
-  it('maps a tier level to its reserved id and its bare root field', () => {
+  it('maps a tier level to its reserved id', () => {
     expect(tierPropertyId(1)).toBe('_tier1')
     expect(tierPropertyId(3)).toBe('_tier3')
-    expect(tierFieldName(1)).toBe('tier1')
-    expect(tierFieldName(3)).toBe('tier3')
   })
 })
 

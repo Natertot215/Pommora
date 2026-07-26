@@ -13,9 +13,7 @@ import { rewritePageSerialized } from '../io/fileLock'
 import { scanConnections } from '../connections/scan'
 import { rewriteConnections } from '../connections/rewrite'
 import { normalizeTitle } from '@shared/connections'
-import { tierFieldName } from '@shared/properties'
-import { nowIso } from './util'
-import { ok, fail, type Result } from '@shared/result'
+import { ok, type Result } from '@shared/result'
 
 const SKIP_TOP_LEVEL = ['.nexus', '.trash']
 
@@ -45,31 +43,3 @@ export async function renameCascade(
   return ok({ touched })
 }
 
-/** Strip a deleted Context's id from the tier-N array of every page that references it,
- *  nexus-wide, atomically. Bumps each touched page's `modified_at` (the page changed).
- *  `tier` must be 1–3. Returns the touched page paths. */
-export async function unlinkTier(
-  nexusRoot: string,
-  contextId: string,
-  tier: number,
-): Promise<Result<{ touched: string[] }>> {
-  if (tier < 1 || tier > 3) return fail('invalid-tier', `Tier ${tier} is not 1–3.`)
-  const field = tierFieldName(tier)
-  const touched: string[] = []
-  for (const file of await listMarkdownFiles(nexusRoot, { skipTopLevel: SKIP_TOP_LEVEL })) {
-    const wrote = await rewritePageSerialized(file, (content) => {
-      const arr = splitFrontmatter(content)[field]
-      if (!Array.isArray(arr) || !arr.includes(contextId)) return null
-      const next = arr.filter((x) => x !== contextId)
-      const body = splitEnvelope(content).body
-      return mergeFrontmatter(
-        content,
-        { [field]: next, modified_at: nowIso() },
-        [field, 'modified_at'],
-        body,
-      )
-    })
-    if (wrote) touched.push(file)
-  }
-  return ok({ touched })
-}

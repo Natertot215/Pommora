@@ -161,11 +161,6 @@ export function isReservedPropertyId(id: string): boolean {
  *  `.nexus/contexts.json`. */
 export const TIER_LEVELS = [1, 2, 3] as const
 
-/** LEGACY — migration/legacy-read only. Tier level → the bare frontmatter-root ULID-array
- *  field (`tier1`/`tier2`/`tier3`) the bracketed title keys replace. */
-export function tierFieldName(level: number): string {
-  return `tier${level}`
-}
 
 /** LEGACY — migration/legacy-read only. Tier level → the reserved property id
  *  (`_tier1`/`_tier2`/`_tier3`), which the seeded three keep as their registry ids. */
