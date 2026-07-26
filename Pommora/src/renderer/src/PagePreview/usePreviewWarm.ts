@@ -56,7 +56,6 @@ export function usePreviewWarm(
       cancelAnimationFrame(inner)
     }
     // activePath IS the switch signal — the restore fires per content swap, not per tab-id.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   }, [activePath])
 
   return seam
