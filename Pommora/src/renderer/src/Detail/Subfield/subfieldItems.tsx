@@ -51,11 +51,15 @@ function PageStatsItem({ scope }: SubfieldItemProps): React.JSX.Element {
       ? liveBody.body
       : (pageDetail?.body ?? '')
   const stats = useMemo(() => computeStats(body), [body])
-  const parts = [stats.lines, stats.words, stats.characters]
+  const parts = [
+    ['lines', stats.lines],
+    ['words', stats.words],
+    ['characters', stats.characters],
+  ] as const
   return (
     <span className="subfield-stats" title="Lines · Words · Characters">
-      {parts.map((n, i) => (
-        <Fragment key={i}>
+      {parts.map(([name, n], i) => (
+        <Fragment key={name}>
           {i > 0 && <span className="subfield-sep">·</span>}
           {n.toLocaleString()}
         </Fragment>

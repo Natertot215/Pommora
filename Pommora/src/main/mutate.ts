@@ -117,7 +117,7 @@ async function writeImageAsset(
  *  `relative` mismatch and the guard silently passes. */
 async function isReserved(root: string, abs: string): Promise<boolean> {
   const rel = relative(await realpath(root), abs)
-  return rel === '' || rel === '.nexus' || rel === '.trash' || rel.startsWith('.trash' + sep)
+  return rel === '' || rel === '.nexus' || rel === '.trash' || rel.startsWith(`.trash${sep}`)
 }
 
 /** Map a failed data-layer Result onto a MutateResult; pass an ok Result through as a bare ok. */
@@ -201,7 +201,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         created: { id: r.value.id, path: relJoin(req.parentPath, basename(r.value.path)) },
       }
     }
-
 
     case 'rename': {
       const resolved = await resolveUnderRoot(root, req.path)
@@ -513,7 +512,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       })
     }
 
-
     case 'movePage': {
       const src = await resolveUnderRoot(root, req.path)
       if (!src.ok) return relay(src)
@@ -580,9 +578,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (await isReserved(root, resolved.value)) return fault('That item can’t take contexts.')
       const world = await loadContextWorld(root)
       if (!world.ok) return relay(world)
-      return relay(
-        await setContextOnPath(root, resolved.value, world.value, req.contextId, req.spaceIds),
-      )
+      return relay(await setContextOnPath(resolved.value, world.value, req.contextId, req.spaceIds))
     }
 
     case 'setSpaceColor':

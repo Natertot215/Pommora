@@ -15,7 +15,7 @@ export function Showcase(): React.JSX.Element {
   const select = (id: string): void => setHashRoute(id)
 
   return (
-    <div className={'sc-shell' + (collapsed ? ' sidebar-hidden' : '')}>
+    <div className={`sc-shell${collapsed ? ' sidebar-hidden' : ''}`}>
       <ShowcaseSidebar activeId={leaf.id} onSelect={select} onCollapse={() => setCollapsed(true)} />
       <button
         type="button"

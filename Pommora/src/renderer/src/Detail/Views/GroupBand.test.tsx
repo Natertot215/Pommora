@@ -79,7 +79,7 @@ let root: Root
 const textOf = (glyph: ReactNode): string => {
   host = document.createElement('div')
   root = createRoot(host)
-  act(() => root.render(<>{glyph}</>))
+  act(() => root.render(glyph))
   return host.textContent ?? ''
 }
 afterEach(() => {

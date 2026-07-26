@@ -77,9 +77,11 @@ export async function readTabsState(root: string): Promise<TabSet | null> {
   if (!raw || !Array.isArray(raw.tabs)) return null
   // Dedupe by id — closeTab drops by-id, so two tabs sharing one would close together.
   const seen = new Set<string>()
-  const tabs = raw.tabs
-    .map(readTab)
-    .filter((t): t is Tab => t !== null && !seen.has(t.id) && (seen.add(t.id), true))
+  const tabs = raw.tabs.map(readTab).filter((t): t is Tab => {
+    if (t === null || seen.has(t.id)) return false
+    seen.add(t.id)
+    return true
+  })
   return { tabs, activeTabId: typeof raw.activeTabId === 'string' ? raw.activeTabId : '' }
 }
 

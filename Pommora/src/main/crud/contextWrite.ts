@@ -245,7 +245,6 @@ export async function setSpaceContext(
 /** Dispatch setContext by what the path IS: a page file, an agenda file, or a Space
  *  folder (its `_space.json`). */
 export async function setContextOnPath(
-  root: string,
   abs: string,
   world: ContextWorld,
   contextId: string,

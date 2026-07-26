@@ -216,7 +216,9 @@ describe('card_size codec', () => {
     expect(savedView.parse({ ...base, card_size: 'large' }).card_size).toBe(1.25)
   })
   it('drops a non-finite card_size instead of persisting Infinity/NaN', () => {
-    expect(savedView.parse({ ...base, card_size: 1e400 }).card_size).toBeUndefined()
+    expect(
+      savedView.parse({ ...base, card_size: Number.POSITIVE_INFINITY }).card_size,
+    ).toBeUndefined()
     expect(savedView.parse({ ...base, card_size: Number.NaN }).card_size).toBeUndefined()
   })
 })

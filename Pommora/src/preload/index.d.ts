@@ -5,5 +5,3 @@ declare global {
     nexus: NexusApi
   }
 }
-
-export {}

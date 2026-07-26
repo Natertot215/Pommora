@@ -48,7 +48,7 @@ describe('writeJson', () => {
     const text = await readFile(p, 'utf8')
     expect(text.endsWith('\n')).toBe(true)
     expect(JSON.parse(text)).toEqual(value)
-    expect(text).toBe(stableStringify(value) + '\n')
+    expect(text).toBe(`${stableStringify(value)}\n`)
   })
 })
 

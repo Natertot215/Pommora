@@ -326,7 +326,7 @@ function createWindow(): void {
 
   // electron-vite injects ELECTRON_RENDERER_URL in dev; in production load the
   // bundle over the app:// scheme (see registerRendererProtocol).
-  const devUrl = process.env['ELECTRON_RENDERER_URL']
+  const devUrl = process.env.ELECTRON_RENDERER_URL
   if (devUrl) {
     win.loadURL(devUrl)
   } else {

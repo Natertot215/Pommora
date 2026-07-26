@@ -36,7 +36,7 @@ export function readFrontmatterFields(content: string): Record<string, unknown> 
  *  Obsidian's properties panel. splitEnvelope still strips one legacy separator,
  *  so a body can't round-trip a leading blank line; that's the intended shape. */
 export function assembleEnvelope(frontmatterYaml: string, body: string): string {
-  const fm = frontmatterYaml.endsWith('\n') ? frontmatterYaml : frontmatterYaml + '\n'
+  const fm = frontmatterYaml.endsWith('\n') ? frontmatterYaml : `${frontmatterYaml}\n`
   return `---\n${fm}---\n${body}`
 }
 

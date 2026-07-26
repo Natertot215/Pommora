@@ -19,13 +19,13 @@ describe('per-machine view-order cache (.nexus/viewOrders.json)', () => {
 
   it('round-trips a manual order keyed by view id', async () => {
     await writeViewOrders(root, 'view_a', ['p1', 'p2', 'p3'])
-    expect((await readViewOrders(root))['view_a']).toEqual(['p1', 'p2', 'p3'])
+    expect((await readViewOrders(root)).view_a).toEqual(['p1', 'p2', 'p3'])
   })
 
   it('writes to .nexus/viewOrders.json (per-machine, out of the synced sidecar)', async () => {
     await writeViewOrders(root, 'view_a', ['p1'])
     const raw = await readFile(join(root, '.nexus', 'viewOrders.json'), 'utf8')
-    expect(JSON.parse(raw)['view_a']).toEqual(['p1'])
+    expect(JSON.parse(raw).view_a).toEqual(['p1'])
   })
 
   it('clears a view entry when written with an empty array', async () => {
@@ -39,8 +39,8 @@ describe('per-machine view-order cache (.nexus/viewOrders.json)', () => {
     await writeViewOrders(root, 'view_b', ['p2'])
     await writeViewOrders(root, 'view_a', ['p3'])
     const all = await readViewOrders(root)
-    expect(all['view_a']).toEqual(['p3'])
-    expect(all['view_b']).toEqual(['p2'])
+    expect(all.view_a).toEqual(['p3'])
+    expect(all.view_b).toEqual(['p2'])
   })
 
   it('drops non-string members on read (lenient)', async () => {
@@ -49,7 +49,7 @@ describe('per-machine view-order cache (.nexus/viewOrders.json)', () => {
       join(root, '.nexus', 'viewOrders.json'),
       JSON.stringify({ view_a: ['p1', 2, null, 'p2'] }),
     )
-    expect((await readViewOrders(root))['view_a']).toEqual(['p1', 'p2'])
+    expect((await readViewOrders(root)).view_a).toEqual(['p1', 'p2'])
   })
 
   it('serializes overlapping writes so none is lost (no read-merge-write race)', async () => {

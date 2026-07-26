@@ -1,7 +1,7 @@
 // Drag-to-reorder list items by their `.md-li-glyph`: a press past the ACTIVATION threshold becomes a drag, a
 // release-in-place is a click (checkbox → toggle, else caret). The drop moves the source lines (block + nested
 // descendants) in one transaction, renumbering any ordered run it touched.
-import { type Extension } from '@codemirror/state'
+import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { ACTIVATION } from '../../design-system/interactions/shared'
 import { parseListMarkerPrefixed as parseListMarker } from '../detect'
@@ -209,7 +209,7 @@ export const listDragExtension: Extension = [
         }
         if (commit && gesture.slot) {
           const changes = dropChanges(view.state.doc.toString(), block, gesture.slot)
-          if (changes && changes.length) {
+          if (changes?.length) {
             view.dispatch({ changes, userEvent: 'input' })
           }
         }
