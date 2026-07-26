@@ -228,8 +228,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                       />
                       {label}
                     </span>
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
-                    {/* biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
                     <span
                       className="pgpreview-insp-value"
                       onClick={(e) => {

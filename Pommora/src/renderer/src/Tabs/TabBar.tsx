@@ -4,6 +4,7 @@ import { cx } from '@renderer/design-system/cx'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { duration, text } from '@renderer/design-system/tokens'
 import { SortableZone, useDragItem, type DragItem } from '@renderer/design-system/interactions/drag'
+import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { suppressNextClick } from '@renderer/design-system/interactions/shared'
 import type { Tab } from '@shared/types'
 import { useSession } from '../store'
@@ -284,6 +285,7 @@ function PinnedTab({
   const drag = useDragItem(entry.res?.key ?? '')
   if (!entry.res) return null
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
     <div
       ref={drag.setNodeRef}
       style={drag.style}
@@ -297,12 +299,6 @@ function PinnedTab({
       tabIndex={active ? 0 : -1}
       onClick={() => {
         if (!drag.isDragging) onActivate()
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onActivate()
-        }
       }}
       onContextMenu={onMenu}
     >
@@ -355,6 +351,7 @@ function UnpinnedTab({
   )
   const slideClass = slide ? (slide.dir === 'back' ? 'nav-slide-back' : 'nav-slide-fwd') : undefined
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
     <div
       ref={drag?.setNodeRef}
       style={drag?.style}
@@ -374,12 +371,7 @@ function UnpinnedTab({
       onClick={() => {
         if (!drag?.isDragging) onActivate()
       }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onActivate()
-        }
-      }}
+      {...(drag ? {} : { onKeyDown: onActivateKey(onActivate) })}
       onContextMenu={onMenu}
     >
       <Fragment key={slide?.seq ?? 0}>

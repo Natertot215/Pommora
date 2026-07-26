@@ -37,4 +37,10 @@ The bar is real, not decorative. An element that behaves like a control **is** a
 
 #### II. Known Gap
 
-**Grids have no keyboard navigation.** Table cells, card values, and inspector rows are click surfaces without tab stops, because per-cell stops are the wrong pattern — a table of any size would flood the tab order. The correct answer is roving tabindex across the grid with arrow-key movement, which is a feature to design rather than a lint fix. Those sites are suppressed and say exactly this, so the gap is visible in the code instead of buried. The same holds for **keyboard drag-reorder**: every drag handle is pointer-only today.
+**Grids have no keyboard navigation.** Table cells, card values, and inspector rows are click surfaces without tab stops, because per-cell stops are the wrong pattern — a table of any size would flood the tab order. The correct answer is roving tabindex across the grid with arrow-key movement, which is a feature to design rather than a lint fix. Those sites are suppressed and say exactly this, so the gap is visible in the code instead of buried.
+
+#### II. The Drag Handle Already Owns Its Keyboard
+
+The cross-zone drag engine's `handle` is not just a pointer binding: it ships `onKeyDown` (Space or Enter lifts the item), a role, a tab stop, `aria-roledescription="sortable"`, and an `aria-describedby` that announces how to use it. **A surface that spreads `{...handle}` and then declares its own `role`, `tabIndex`, or `onKeyDown` afterwards silently replaces that contract** — JSX takes the last one — and keyboard reordering dies with no error and no failing test.
+
+Where a surface needs its own role, pass `itemRole` to `SortableZone` rather than overriding after the spread; where it needs its own activation, supply it only on the branch that has no drag handle. Biome cannot see a handler arriving through a spread, so these sites carry a suppression saying so — which is also the standing reminder that the handler is really there.

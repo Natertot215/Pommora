@@ -7,12 +7,25 @@ import { customCaret } from '../editor/caret'
 import { markdownDecorations } from '../editor/decorations'
 import { autoPair, autoDelete, type Edit } from '../input'
 import { AC_MAX } from '../autocomplete'
-import { useConnectionAutocomplete, detectConnectionQuery } from '../useConnectionAutocomplete'
+import {
+  useConnectionAutocomplete,
+  detectConnectionQuery,
+  whenAcOpen,
+} from '../useConnectionAutocomplete'
 import { AutocompletePanel } from '../AutocompletePanel'
 import type { ConnectionsApi } from '../connections'
 import type { NavDir } from './navigate'
 
 const noConn = (): undefined => undefined
+
+/** A cell binding that always consumes its key. The cell sits inside the widget's `ignoreEvent` host,
+ *  so every key it claims must stop here rather than fall through to the page editor beneath. */
+const consume =
+  (run: (view: EditorView) => void) =>
+  (view: EditorView): boolean => {
+    run(view)
+    return true
+  }
 
 // Tags a programmatic content sync (the model re-rendered this cell with new text, e.g. after a reorder)
 // so the updateListener doesn't treat it as a user edit and echo it back through onCommit.
@@ -82,60 +95,26 @@ export function CellEditor({
               // Tab accepts an open connection candidate (like Enter); otherwise it moves to the next cell.
               {
                 key: 'Tab',
-                run: () => {
-                  if (acCtl.current.open) acCtl.current.pick()
-                  else onNavigateRef.current('next')
-                  return true
-                },
+                run: consume(() =>
+                  acCtl.current.open ? acCtl.current.pick() : onNavigateRef.current('next'),
+                ),
               },
-              {
-                key: 'Shift-Tab',
-                run: () => {
-                  onNavigateRef.current('prev')
-                  return true
-                },
-              },
+              { key: 'Shift-Tab', run: consume(() => onNavigateRef.current('prev')) },
               // With the connection panel open these keys drive it; otherwise they navigate cells.
               {
                 key: 'Enter',
-                run: () => {
-                  if (acCtl.current.open) acCtl.current.pick()
-                  else onNavigateRef.current('down')
-                  return true
-                },
+                run: consume(() =>
+                  acCtl.current.open ? acCtl.current.pick() : onNavigateRef.current('down'),
+                ),
               },
-              {
-                key: 'ArrowDown',
-                run: () => {
-                  if (!acCtl.current.open) return false
-                  acCtl.current.move(1)
-                  return true
-                },
-              },
-              {
-                key: 'ArrowUp',
-                run: () => {
-                  if (!acCtl.current.open) return false
-                  acCtl.current.move(-1)
-                  return true
-                },
-              },
-              {
-                key: 'Escape',
-                run: () => {
-                  if (!acCtl.current.open) return false
-                  acCtl.current.close()
-                  return true
-                },
-              },
+              { key: 'ArrowDown', run: whenAcOpen(acCtl, (c) => c.move(1)) },
+              { key: 'ArrowUp', run: whenAcOpen(acCtl, (c) => c.move(-1)) },
+              { key: 'Escape', run: whenAcOpen(acCtl, (c) => c.close()) },
               // Shift+Enter is the in-cell line break — a real newline (the cell grows taller; the row does
               // NOT split, because cellToSource serializes the newline as <br> on disk).
               {
                 key: 'Shift-Enter',
-                run: (view) => {
-                  view.dispatch(view.state.replaceSelection('\n'))
-                  return true
-                },
+                run: consume((view) => view.dispatch(view.state.replaceSelection('\n'))),
               },
               // Backspace inside an empty auto-pair deletes both halves (the cell otherwise falls to the default
               // single-char delete, which would leave the stray closer); same autoDelete the page editor uses.
@@ -153,27 +132,9 @@ export function CellEditor({
               // Undo/redo scope to the whole page (the main editor's history) like everywhere else — not a
               // per-cell stack. The main editor can't catch these itself (the widget's ignoreEvent), so the
               // cell forwards them.
-              {
-                key: 'Mod-z',
-                run: () => {
-                  onUndoRef.current()
-                  return true
-                },
-              },
-              {
-                key: 'Mod-Shift-z',
-                run: () => {
-                  onRedoRef.current()
-                  return true
-                },
-              },
-              {
-                key: 'Mod-y',
-                run: () => {
-                  onRedoRef.current()
-                  return true
-                },
-              },
+              { key: 'Mod-z', run: consume(() => onUndoRef.current()) },
+              { key: 'Mod-Shift-z', run: consume(() => onRedoRef.current()) },
+              { key: 'Mod-y', run: consume(() => onRedoRef.current()) },
             ]),
           ),
           keymap.of(defaultKeymap),

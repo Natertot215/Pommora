@@ -170,18 +170,18 @@ function TintScale(): React.JSX.Element {
   const compact = useIsCompact()
   const rows = compact ? (
     colors.map(([name, color]) => (
-        <div className="ds-tint-row" key={name}>
-          <span className="ds-tint-rowlabel">{humanize(name)}</span>
-          {TINT_ORDER.map((k) => (
-            <span
-              key={k}
-              className="ds-tint-swatch"
-              style={{ background: tintAt(color, TINT_STEPS[k]) }}
-              title={`${name} · ${k} ${TINT_STEPS[k]}%`}
-            />
-          ))}
-        </div>
-      ))
+      <div className="ds-tint-row" key={name}>
+        <span className="ds-tint-rowlabel">{humanize(name)}</span>
+        {TINT_ORDER.map((k) => (
+          <span
+            key={k}
+            className="ds-tint-swatch"
+            style={{ background: tintAt(color, TINT_STEPS[k]) }}
+            title={`${name} · ${k} ${TINT_STEPS[k]}%`}
+          />
+        ))}
+      </div>
+    ))
   ) : (
     <SortableZone
       items={colors.map(([n]) => n)}
@@ -198,8 +198,8 @@ function TintScale(): React.JSX.Element {
       }
     >
       {colors.map(([name, color]) => (
-          <TintRow key={name} name={name} color={color} />
-        ))}
+        <TintRow key={name} name={name} color={color} />
+      ))}
     </SortableZone>
   )
   return (

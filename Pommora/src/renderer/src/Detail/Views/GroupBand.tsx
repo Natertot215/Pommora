@@ -211,7 +211,7 @@ export function GroupBand({
           data-disclose={collapsed ? '' : undefined}
           style={indent ? { paddingLeft: indent } : undefined}
         >
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
           <div
             ref={dragHandle?.ref}
             className={cx(

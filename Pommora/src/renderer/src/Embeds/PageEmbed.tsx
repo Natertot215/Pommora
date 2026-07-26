@@ -76,8 +76,7 @@ export function PageEmbed({
 
   if (body === null) return <div className="pgembed" />
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: a click-to-edit surface over a contenteditable that is already keyboard-reachable
-    // biome-ignore lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
+    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
       className={`pgembed${editing ? ' is-editing' : ''}`}
       style={{ '--mdpm-scale': EMBED_SCALE } as React.CSSProperties}
