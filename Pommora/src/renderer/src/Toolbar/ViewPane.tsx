@@ -14,7 +14,7 @@ import { titleInput } from '../design-system/components/menu/menu.css'
 import { PaneSlider } from '../Components/Detail/PaneSlider'
 import { ViewSettings } from '../Components/Detail/ViewSettings'
 import { PaneDnd, RowShell, usePaneRegions } from '../Components/Detail/paneDnd'
-import { type PaneDrop, type PaneRow, paneSlot } from '../Components/Detail/paneDndModel'
+import type { PaneDrop, PaneRow, paneSlot } from '../Components/Detail/paneDndModel'
 import { useSaveView, useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
 import { EditableInput } from '../Components/EditableInput'
 import { IconPicker } from '../Components/IconPicker'
@@ -72,7 +72,7 @@ export function ViewPane({
   node: CollectionNode | SetNode
   schema: PropertyDefinition[]
   onClose: () => void
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   const setActiveView = useSession((s) => s.setActiveView)
   const load = useSession((s) => s.load)
   const saveView = useSaveView(node, load)
@@ -83,7 +83,7 @@ export function ViewPane({
   const scope = useViewEmbedScope()
   // ViewPane never mounts inside a view embed until the payload switcher lands (H-5);
   // its source-CRUD family (create/reorder/delete/switch) must route to the payload first.
-  if (scope) return <></>
+  if (scope) return null
   const views = node.views ?? []
   // The list never renders empty: during the entry-mint beat (a legacy container's first open, before
   // the refetch lands) show the in-memory sentinel default, same as the button + table (G-4).

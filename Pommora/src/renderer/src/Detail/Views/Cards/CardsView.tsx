@@ -48,7 +48,7 @@ import { GroupBand, resolveBandHead } from '../GroupBand'
 import { buildResolveContext, type ResolveContext } from '../Table/resolveContext'
 import { NavCrumbs } from '../../../Navigation/NavList'
 import type { PathCrumb } from '../../../Navigation/navResolve'
-import { AddPickerRequest, CardPickerHost, ValuePickerRequest } from './CardPickerHost'
+import { type AddPickerRequest, CardPickerHost, type ValuePickerRequest } from './CardPickerHost'
 import { CardValue } from './CardValue'
 import { bandShowsAdd } from './cardsBand'
 import { reorderIds } from './cardsOrder'
@@ -775,7 +775,7 @@ function CardProperties({
       {shown.map((c) => (
         <div key={c.id} className="card-prop-row">
           <span className={cx('card-prop-label', text.caption.emphasized)}>
-            {columnLabel(c.id, ctx.schema, labels)}
+            {columnLabel(c.id, ctx.schema)}
           </span>
           {value(c)}
         </div>
@@ -957,7 +957,7 @@ const PageCard = memo(function PageCard({
   // The add menu (addEntriesFor): everything NOT currently shown — the native menu lists it, and the
   // grid-level host recomputes the same entries when its picker opens for this row.
   const addable = useMemo<AddEntry[]>(
-    () => (ctx && labels ? addEntriesFor(row, view, ctx, labels, columns, tree) : []),
+    () => (ctx && labels ? addEntriesFor(row, view, ctx, columns, tree) : []),
     [ctx, view, row, labels, columns, tree],
   )
   const mutate = useSession((s) => s.mutate)

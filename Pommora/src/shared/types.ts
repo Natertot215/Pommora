@@ -576,5 +576,5 @@ export const DEFAULT_LABELS: NexusLabels = {
 
 /** The derived Sub-Set label (deeper Sets); never stored — Swift derives it the same way. */
 export function subSetLabel(labels: NexusLabels): string {
-  return 'Sub-' + labels.pageSet.singular
+  return `Sub-${labels.pageSet.singular}`
 }

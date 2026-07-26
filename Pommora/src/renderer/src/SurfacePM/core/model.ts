@@ -140,9 +140,13 @@ export function validateLayout(layout: SurfaceLayout): string[] {
       const sum = node.ratios.reduce((a, r) => a + r, 0)
       if (Math.abs(sum - 1) > 1e-6) problems.push(`${where}: ratios sum to ${sum}`)
     }
-    node.children.forEach((child, i) => walk(child, `${where}.${i}`))
+    node.children.forEach((child, i) => {
+      walk(child, `${where}.${i}`)
+    })
   }
-  layout.bands.forEach((band, i) => walk(band.node, `band ${i}`))
+  layout.bands.forEach((band, i) => {
+    walk(band.node, `band ${i}`)
+  })
   const ids = tileIds(layout)
   if (new Set(ids).size !== ids.length) problems.push('duplicate tile id')
   return problems

@@ -3,7 +3,7 @@
 // seam); built-in reserved columns carry fixed labels. An unknown id (a stale prop_* reference)
 // falls back to the id itself, never throwing — a single bad column never breaks the header row.
 
-import type { NexusLabels, NexusTree } from '@shared/types'
+import type { NexusTree } from '@shared/types'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
 import { contextIdentityOf } from '../pipeline/contextIdentity'
 
@@ -19,7 +19,6 @@ const RESERVED_LABEL: Record<string, string> = {
 export function columnLabel(
   columnId: string,
   schema: PropertyDefinition[],
-  labels: NexusLabels,
   tree: NexusTree | null = null,
 ): string {
   const ctx = contextIdentityOf(tree, columnId)

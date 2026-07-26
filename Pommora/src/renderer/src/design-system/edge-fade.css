@@ -58,6 +58,8 @@
   animation-duration: auto;
   animation-timing-function: linear;
   mask-image: linear-gradient(
+    /* biome-ignore lint/correctness/noInvalidDirectionInLinearGradient: each class supplies its own
+       axis through this var, which no static parse can resolve. */
     var(--edge-dir, to bottom),
     transparent 0,
     var(--system-black) calc(var(--edge-a) * var(--edge-fade-width)),
@@ -65,6 +67,8 @@
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
+    /* biome-ignore lint/correctness/noInvalidDirectionInLinearGradient: each class supplies its own
+       axis through this var, which no static parse can resolve. */
     var(--edge-dir, to bottom),
     transparent 0,
     var(--system-black) calc(var(--edge-a) * var(--edge-fade-width)),

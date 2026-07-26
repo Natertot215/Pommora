@@ -25,6 +25,6 @@ export function emptyTable(cols: number, rows: number): TableModel {
 
 export function normalize(m: TableModel): TableModel {
   const n = m.columns.length
-  const fit = (r: string[]): string[] => Array.from({ length: n }, (_, i) => r[i] ?? '')
-  return { columns: m.columns, header: fit(m.header), rows: m.rows.map(fit) }
+  const fitRow = (r: string[]): string[] => Array.from({ length: n }, (_, i) => r[i] ?? '')
+  return { columns: m.columns, header: fitRow(m.header), rows: m.rows.map(fitRow) }
 }

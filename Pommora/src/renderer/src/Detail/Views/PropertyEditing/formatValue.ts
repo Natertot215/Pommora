@@ -13,13 +13,19 @@ const dateFmtCache = new Map<string, Intl.DateTimeFormat>()
 function numFmt(opts: Intl.NumberFormatOptions): Intl.NumberFormat {
   const key = JSON.stringify(opts)
   let f = numFmtCache.get(key)
-  if (!f) numFmtCache.set(key, (f = new Intl.NumberFormat('en-US', opts)))
+  if (!f) {
+    f = new Intl.NumberFormat('en-US', opts)
+    numFmtCache.set(key, f)
+  }
   return f
 }
 function dateFmt(opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
   const key = JSON.stringify(opts)
   let f = dateFmtCache.get(key)
-  if (!f) dateFmtCache.set(key, (f = new Intl.DateTimeFormat('en-US', opts)))
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', opts)
+    dateFmtCache.set(key, f)
+  }
   return f
 }
 

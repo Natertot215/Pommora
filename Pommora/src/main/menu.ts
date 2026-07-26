@@ -27,7 +27,7 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
   }
 
   const recentItems: MenuItemConstructorOptions[] =
-    recents && recents.length
+    recents?.length
       ? recents.map((p) => ({
           label: basename(p),
           click: async () => {

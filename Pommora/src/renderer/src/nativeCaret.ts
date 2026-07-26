@@ -141,7 +141,7 @@ function fieldCaret(el: Field): CaretRect | null {
 // Caret position for plain contenteditable: the collapsed selection's own client rect.
 function editableCaret(el: HTMLElement): CaretRect | null {
   const sel = getSelection()
-  if (!sel || !sel.rangeCount) return null
+  if (!sel?.rangeCount) return null
   const r = sel.getRangeAt(0).cloneRange()
   r.collapse(true)
   const rect = r.getClientRects()[0] ?? r.getBoundingClientRect()
@@ -157,7 +157,7 @@ function editableCaret(el: HTMLElement): CaretRect | null {
 function reposition(): void {
   raf = 0
   const b = bar as HTMLDivElement
-  if (!active || !active.isConnected) {
+  if (!active?.isConnected) {
     b.style.display = 'none'
     return
   }

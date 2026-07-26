@@ -38,7 +38,7 @@ function makeBevelMap(w: number, h: number, radius: number, bevel: number): stri
       let ny = 0
       if (dist > 0 && dist < bevel) {
         const t = dist / bevel
-        const slope = Math.pow(1 - t, 1.6)
+        const slope = (1 - t) ** 1.6
         const gx = sdf(x + 1, y) - sdf(x - 1, y)
         const gy = sdf(x, y + 1) - sdf(x, y - 1)
         const len = Math.hypot(gx, gy) || 1
@@ -83,7 +83,7 @@ export function EdgeLensGlass({
     () => makeBevelMap(width, height, radius, bevel),
     [width, height, radius, bevel],
   )
-  const fid = 'el' + useId().replace(/:/g, '')
+  const fid = `el${useId().replace(/:/g, '')}`
   const bf = `blur(${blur}px) saturate(${saturate}%) url(#${fid})`
   const chan = (rgb: 'r' | 'g' | 'b'): string =>
     rgb === 'r'

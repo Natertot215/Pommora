@@ -60,7 +60,7 @@ export function Interactions(): React.JSX.Element {
                 <button
                   key={n}
                   type="button"
-                  className={'ix-preset' + (presetName === n ? ' is-on' : '')}
+                  className={`ix-preset${presetName === n ? ' is-on' : ''}`}
                   onClick={() => {
                     setPresetName(n)
                     setFeel(FEEL_PRESETS[n])
@@ -90,7 +90,7 @@ export function Interactions(): React.JSX.Element {
                 <button
                   key={n}
                   type="button"
-                  className={'ix-preset' + (easingName === n ? ' is-on' : '')}
+                  className={`ix-preset${easingName === n ? ' is-on' : ''}`}
                   onClick={() => {
                     setPresetName('Custom')
                     setFeel((f) => ({ ...f, easing: EASINGS[n] }))

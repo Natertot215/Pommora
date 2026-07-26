@@ -9,7 +9,7 @@ export function clampZoom(z: number): number {
 }
 
 export function zoomMultiplier(z: number): number {
-  return Math.pow(2, clampZoom(z) - 1)
+  return 2 ** (clampZoom(z) - 1)
 }
 
 export function zoomFontSize(z: number): number {

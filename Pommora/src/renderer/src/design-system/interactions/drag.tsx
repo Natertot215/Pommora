@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Zone, useZoneItem } from './engine'
 import { DragGroup, GroupZone, useGroupedDragItem, type DragGroupProps } from './group'
 import type { DragItem, DragNotify, Modifier } from './shared'

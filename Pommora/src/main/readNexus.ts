@@ -210,7 +210,8 @@ function retainContextKeys(node: object, raw: Json): void {
   let kept: Json | null = null
   for (const [k, v] of Object.entries(raw)) {
     if (parseContextKey(k) !== null || k === 'tier1' || k === 'tier2' || k === 'tier3') {
-      ;(kept ??= {})[k] = v
+      kept ??= {}
+      kept[k] = v
     }
   }
   if (kept) rawContextByNode.set(node, kept)
@@ -513,7 +514,9 @@ async function walkNexus(root: string): Promise<NexusTree> {
     const collections = (s.collectionIDs ?? [])
       .map((id) => orderedCollections.find((c) => c.id === id))
       .filter((c): c is CollectionNode => !!c)
-    collections.forEach((c) => claimed.add(c.id))
+    collections.forEach((c) => {
+      claimed.add(c.id)
+    })
     return { id: s.id, label: s.label, collections }
   })
   const collections = orderedCollections.filter((c) => !claimed.has(c.id))

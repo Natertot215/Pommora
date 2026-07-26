@@ -1,4 +1,4 @@
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import { EDITOR_ACTION_PREFIX, type FormatState } from '@shared/editorMenu'
 import {
   toggleInline,

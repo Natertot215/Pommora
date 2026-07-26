@@ -579,7 +579,7 @@ export function CalendarPicker({
               {kind === 'month'
                 ? Array.from({ length: 12 }, (_, m) => (
                     <PickerOption
-                      key={m}
+                      key={monthName(m)}
                       selected={m === cursor.getMonth()}
                       onClick={() => jump(year, m)}
                     >

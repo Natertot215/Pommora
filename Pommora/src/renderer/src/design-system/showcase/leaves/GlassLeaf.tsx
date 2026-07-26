@@ -183,7 +183,7 @@ export function GlassLeaf(): React.JSX.Element {
                 <button
                   key={x.key}
                   type="button"
-                  className={'gl-sw' + (x.key === bg.key ? ' is-on' : '')}
+                  className={`gl-sw${x.key === bg.key ? ' is-on' : ''}`}
                   onClick={() => setBg(x)}
                 >
                   {x.key}
@@ -191,7 +191,7 @@ export function GlassLeaf(): React.JSX.Element {
               ))}
             </div>
             <div
-              className={'gl-preview' + (bg.img === '' ? ' is-dark' : '')}
+              className={`gl-preview${bg.img === '' ? ' is-dark' : ''}`}
               style={bg.img ? { backgroundImage: `url(${bg.img})` } : undefined}
             >
               <div className="gl-glass" style={buildGlassStyle(params)}>

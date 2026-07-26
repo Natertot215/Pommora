@@ -68,7 +68,7 @@ function SwatchGroup({
   )
   const compact = useIsCompact()
   const cells = (
-    <div className={'ds-swatches' + (compact ? '' : ' ds-swatches-drag')}>
+    <div className={`ds-swatches${compact ? '' : ' ds-swatches-drag'}`}>
       {items.map((it) =>
         compact ? (
           <SwatchView key={it.id} name={it.name} color={it.color} />
@@ -169,8 +169,7 @@ function TintScale(): React.JSX.Element {
   const [colors, setColors] = useState(() => Object.entries(vars.color.solid))
   const compact = useIsCompact()
   const rows = compact ? (
-    <>
-      {colors.map(([name, color]) => (
+    colors.map(([name, color]) => (
         <div className="ds-tint-row" key={name}>
           <span className="ds-tint-rowlabel">{humanize(name)}</span>
           {TINT_ORDER.map((k) => (
@@ -182,8 +181,7 @@ function TintScale(): React.JSX.Element {
             />
           ))}
         </div>
-      ))}
-    </>
+      ))
   ) : (
     <SortableZone
       items={colors.map(([n]) => n)}
@@ -199,11 +197,9 @@ function TintScale(): React.JSX.Element {
         )
       }
     >
-      <>
-        {colors.map(([name, color]) => (
+      {colors.map(([name, color]) => (
           <TintRow key={name} name={name} color={color} />
         ))}
-      </>
     </SortableZone>
   )
   return (

@@ -2,7 +2,7 @@
 import {
   Decoration,
   type DecorationSet,
-  EditorView,
+  type EditorView,
   ViewPlugin,
   type ViewUpdate,
   WidgetType,
@@ -255,10 +255,11 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
   const bidirRe = /↔/g
   for (const { from, to } of view.visibleRanges) {
     const seg = text.slice(from, to)
-    let m: RegExpExecArray | null
-    while ((m = bidirRe.exec(seg)) !== null) {
+    let m = bidirRe.exec(seg)
+    while (m !== null) {
       const p = from + m.index
       ranges.push(Decoration.mark({ class: 'md-sym-bidir' }).range(p, p + 1))
+      m = bidirRe.exec(seg)
     }
   }
   return Decoration.set(ranges, true)
