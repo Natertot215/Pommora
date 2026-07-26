@@ -12,14 +12,10 @@ Button/
 
 Variants and states (hover / selected / pressed / disabled / focus) live inside the component's own folder — everything that changes together stays together. `index.ts` barrel-exports the set: `import { Button, Menu } from '@/design'`.
 
-### Planned set (from the Figma library)
-
-Button · Label · Chip · Menu · Menu Header · Separator. Each folder is created when that component is built — not before.
-
 ### Boundary
 
-This folder holds **reusable** primitives. App-specific composite views (Sidebar, DetailPane, the page editor) live under `renderer/src/components` + `renderer/src/views` and *consume* these.
+This folder holds **reusable** primitives. App-specific composite views (Sidebar, DetailPane, the page editor) live under `renderer/src` and *consume* these. Folders are created when a component is built — not before.
 
-### Status
+### PreviewPane
 
-Scaffold only — no component folders yet. Built one at a time, under direction.
+The floating-window surface every in-app window mounts: the glass shell and per-window geometry, the dismissal contract, a toolbar in a full-width **band** or corner-pinned **floating** form, left/right side slots each **overlay** or **in-flow**, an optional collapsing footer, and the glass tint as a property. A window supplies its interior and its own padding; the surface owns every position, transition, and driver var. Side-pane widths persist per slot id, so two windows naming the same id share one remembered width.
