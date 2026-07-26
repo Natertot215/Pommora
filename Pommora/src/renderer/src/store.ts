@@ -308,6 +308,12 @@ interface SessionState {
   closeNav: () => void
   toggleNav: () => void
 
+  /** The Settings floating window, summoned from the sidebar ribbon. Session-only: settings are a
+   *  surface onto already-persisted state, so the window's own openness is never remembered. */
+  settingsOpen: boolean
+  openSettings: () => void
+  closeSettings: () => void
+
   /** The Page Preview floating window (Decision Log H): null = closed. One floating window
    *  total (D-8): opening either the preview or the NavWindow closes the other. */
   preview: PreviewState | null
@@ -1330,6 +1336,9 @@ export const useSession = create<SessionState>((set, get) => {
       if (get().navOpen) get().closeNav()
       else get().openNav()
     },
+    settingsOpen: false,
+    openSettings: () => set({ settingsOpen: true }),
+    closeSettings: () => set({ settingsOpen: false }),
     preview: null,
     previewsFile: EMPTY_PREVIEWS,
     previewTarget: null,
@@ -1754,8 +1763,7 @@ export const useSession = create<SessionState>((set, get) => {
       // echo-suppressed; only an external edit walks), so the full-nexus re-walk is skipped for
       // them (it's THE "reload the entire Y" on a hot path). Structural ops still refetch
       // immediately; reconcileSelection refreshes a moved/renamed path.
-      if (req.op !== 'setProperty' && req.op !== 'setContext')
-        await get().load()
+      if (req.op !== 'setProperty' && req.op !== 'setContext') await get().load()
       if (!createdShown && res.created && onCreated) await onCreated(res.created)
       return true
     },
