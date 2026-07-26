@@ -204,6 +204,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
               {group.map(({ def, id, label }) => {
                 const col: ResolvedColumn = { id, kind: def ? 'property' : 'tier' }
                 return (
+                  // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
                   <div
                     key={id}
                     className="pgpreview-insp-row"
@@ -227,7 +228,8 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                       />
                       {label}
                     </span>
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: pointer-first edit entry, like cells */}
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
                     <span
                       className="pgpreview-insp-value"
                       onClick={(e) => {

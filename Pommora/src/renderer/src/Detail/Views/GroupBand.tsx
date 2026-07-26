@@ -20,6 +20,7 @@ import { checkboxBoxStyle } from './Table/checkboxLook'
 import { formatBucketLabel } from './PropertyEditing/formatValue'
 import type { ResolveContext } from './Table/resolveContext'
 import './GroupBand.css'
+import { onActivateKey } from '@renderer/design-system/interactions/activate'
 
 /** The plain-text label + the rendered head visual for a group band — the single home for the five
  *  glyph cases the table and cards views both show. Structural Set → its icon + name (swapping to the
@@ -210,6 +211,7 @@ export function GroupBand({
           data-disclose={collapsed ? '' : undefined}
           style={indent ? { paddingLeft: indent } : undefined}
         >
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
           <div
             ref={dragHandle?.ref}
             className={cx(
@@ -229,12 +231,16 @@ export function GroupBand({
             >
               <Icon name="chevron-right" size={12} className={cx('twisty', !collapsed && 'open')} />
             </button>
+            {/* biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content */}
             <span
               className="group-band-glyph"
               {...(dragHandle?.handle ?? {})}
+              role="button"
+              tabIndex={0}
               onClick={(e) => {
                 if (outsideRename(e)) onToggle()
               }}
+              onKeyDown={onActivateKey(onToggle)}
               onDoubleClick={
                 onOpen
                   ? (e) => {

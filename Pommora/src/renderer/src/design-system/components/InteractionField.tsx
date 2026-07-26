@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import * as s from './interactionField.css'
+import { onActivateKey } from '../interactions/activate'
 
 /**
  * Interaction Field — the shared fill-quinary, rounded input surface for text + other inputs (the
@@ -21,10 +22,14 @@ export function InteractionField({
   outline?: string
 }): React.JSX.Element {
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
       className={className ? `${s.field} ${className}` : s.field}
       style={outline ? ({ '--field-ring': outline } as React.CSSProperties) : undefined}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
+      onKeyDown={onClick ? onActivateKey(onClick) : undefined}
     >
       {children}
     </div>

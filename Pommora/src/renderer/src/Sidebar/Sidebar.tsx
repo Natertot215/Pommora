@@ -164,6 +164,7 @@ function Leaf({
 function DragRow({ id, children }: { id: string; children: React.ReactNode }): React.JSX.Element {
   const drag = useSidebarDrag(id)
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: hover bookkeeping, not an interaction
     <div
       ref={drag.ref}
       className={`tree-item${drag.isDragging ? ' dragging' : ''}`}
@@ -264,6 +265,8 @@ function Disclosure({
       onContextMenu={ctxHandler(onContextMenu)}
       leading={<Icon name="chevron-right" size={12} className={`twisty${open ? ' open' : ''}`} />}
     >
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: the surrounding row is the control; this narrows its hit area */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: the surrounding row is the control; this narrows its hit area */}
       <span onClick={openView}>
         <Icon name={open && openIcon ? openIcon : icon} size={16} className="row-icon" />
         {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}
@@ -274,6 +277,7 @@ function Disclosure({
     <>
       {dragId ? <DragRow id={dragId}>{header}</DragRow> : header}
       <Reveal open={open} fill>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div
           className="children"
           onContextMenu={
@@ -736,6 +740,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
           {/* The slide wrapper is permanent (class-only toggle) — swapping the element shape at
               animation end would remount the whole mode tree. It fills the mode and carries the
               empty-area create menu (modeCtx gates on target === currentTarget). */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
           <div
             className={cx('mode-body', exit !== null && 'mode-enter-slide')}
             onContextMenu={modeCtx(onCreate)}

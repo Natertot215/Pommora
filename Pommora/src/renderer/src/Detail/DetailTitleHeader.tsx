@@ -104,6 +104,7 @@ export function DetailTitleHeader({
           }}
         />
       ) : (
+        // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <span className="detail-title-text" onContextMenu={openMenu}>
           {title}
         </span>

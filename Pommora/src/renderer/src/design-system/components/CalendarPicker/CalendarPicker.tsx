@@ -431,6 +431,8 @@ export function CalendarPicker({
     }
     return (
       <PortalMenu rect={lastTimeMenu.current.rect}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: a bubble guard, not a control */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
         <span
           className={s.ddWrap}
           style={timeMenuPresence.closing ? { pointerEvents: 'none' } : undefined}
@@ -469,6 +471,7 @@ export function CalendarPicker({
         className={s.timeSegInput}
         value={segEdit.draft}
         placeholder={part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)}
+        // biome-ignore lint/a11y/noAutofocus: the surface exists to take focus the moment it opens; that IS the interaction
         autoFocus
         spellCheck={false}
         onChange={(e) => {
@@ -569,6 +572,8 @@ export function CalendarPicker({
   const selectionMenu = (kind: 'month' | 'year'): React.JSX.Element | null =>
     menuPresence.mounted && lastMenu.current ? (
       <PortalMenu rect={lastMenu.current.rect}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: a bubble guard, not a control */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
         <span
           className={s.ddWrap}
           style={menuPresence.closing ? { pointerEvents: 'none' } : undefined}

@@ -137,7 +137,6 @@ export function FloatingResizeCorners({
           className={`fwin-resize fwin-resize-${c}`}
           aria-hidden="true"
           onPointerDown={(e) => startDrag(c, e)}
-          aria-label="Resize"
         />
       ))}
     </>

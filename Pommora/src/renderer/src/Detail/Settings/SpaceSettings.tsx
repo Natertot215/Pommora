@@ -61,6 +61,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
           />
         }
       >
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div
           ref={headerRef}
           onContextMenu={(e) => {
