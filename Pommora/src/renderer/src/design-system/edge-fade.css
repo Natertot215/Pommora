@@ -50,23 +50,25 @@
 .edge-fade-x,
 .overflow-eclipse.overflow-eclipse,
 .overflow-eclipse-y.overflow-eclipse-y {
+  /* THE house fade width, stated once. A class may re-default it (the eclipses do) and any
+     consumer's own --edge-fade still wins over both. */
+  --edge-fade-default: 22px;
+  --edge-fade-width: var(--edge-fade, var(--edge-fade-default));
   animation-name: edge-fade-lead, edge-fade-trail;
   animation-duration: auto;
   animation-timing-function: linear;
   mask-image: linear-gradient(
     var(--edge-dir, to bottom),
     transparent 0,
-    var(--system-black) calc(var(--edge-a) * var(--edge-fade, var(--edge-fade-default, 22px))),
-    var(--system-black)
-      calc(100% - var(--edge-b) * var(--edge-fade, var(--edge-fade-default, 22px))),
+    var(--system-black) calc(var(--edge-a) * var(--edge-fade-width)),
+    var(--system-black) calc(100% - var(--edge-b) * var(--edge-fade-width)),
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
     var(--edge-dir, to bottom),
     transparent 0,
-    var(--system-black) calc(var(--edge-a) * var(--edge-fade, var(--edge-fade-default, 22px))),
-    var(--system-black)
-      calc(100% - var(--edge-b) * var(--edge-fade, var(--edge-fade-default, 22px))),
+    var(--system-black) calc(var(--edge-a) * var(--edge-fade-width)),
+    var(--system-black) calc(100% - var(--edge-b) * var(--edge-fade-width)),
     transparent 100%
   );
 }
@@ -87,7 +89,7 @@
 .edge-fade.top-gated {
   animation-fill-mode: both;
   animation-range:
-    var(--edge-fade, 22px) 100%,
+    var(--edge-fade-width) 100%,
     normal;
 }
 
