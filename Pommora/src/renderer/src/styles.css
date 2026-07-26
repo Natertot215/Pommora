@@ -97,6 +97,16 @@ textarea,
   initial-value: 0;
 }
 
+/* A floating window's trailing button pair composes two moves into ONE transform: this entry
+   nudge and the side-pane swallow derived from --io. Registered so the nudge interpolates as a
+   value — transitioning the transform itself would restart every frame that --io advances, and
+   the pair would chase the pane instead of tracking it. */
+@property --ppane-flow-reveal {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 .shell {
   position: relative;
   height: 100dvh;
