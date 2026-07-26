@@ -8,7 +8,7 @@ interface Props {
   path: string
   title: string
   cover?: string
-  // biome-ignore lint/suspicious/noConfusingVoidType: the callback's return is ignored; `void` is the permissive form that accepts a sync handler and an async one alike.
+  // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename: (newName: string) => void | Promise<boolean | void>
   onEditIcon: () => void
 }
@@ -51,7 +51,7 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
   return (
     <div className={`mdpm-header${cover ? ' has-banner' : ''}`} ref={ref}>
       {cover ? (
-        // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+        // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <div
           className="mdpm-banner"
           onContextMenu={(e) => {

@@ -20,6 +20,15 @@ export interface AcCtl {
   close: () => void
 }
 
+/** A keymap binding that drives the connection panel only while it's open, and otherwise reports the
+ *  key unhandled so it falls through to the editor's own binding. Both keymaps bind the same arrows +
+ *  Escape this way, so the fall-through rule lives in one place. */
+export const whenAcOpen = (ctl: RefObject<AcCtl>, drive: (c: AcCtl) => void) => (): boolean => {
+  if (!ctl.current.open) return false
+  drive(ctl.current)
+  return true
+}
+
 export interface ConnectionAutocomplete {
   ac: AcState | null
   setAc: (s: AcState | null) => void

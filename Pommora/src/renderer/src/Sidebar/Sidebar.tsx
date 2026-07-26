@@ -265,8 +265,7 @@ function Disclosure({
       onContextMenu={ctxHandler(onContextMenu)}
       leading={<Icon name="chevron-right" size={12} className={`twisty${open ? ' open' : ''}`} />}
     >
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: the surrounding row is the control; this narrows its hit area */}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: the surrounding row is the control; this narrows its hit area */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the surrounding row is the control; this narrows its hit area */}
       <span onClick={openView}>
         <Icon name={open && openIcon ? openIcon : icon} size={16} className="row-icon" />
         {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}

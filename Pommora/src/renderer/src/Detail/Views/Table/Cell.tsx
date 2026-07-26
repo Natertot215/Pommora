@@ -202,8 +202,7 @@ export function Cell({
       return (
         <OverflowScroll className="cell-chips">
           {v.value.map((f) => (
-            // biome-ignore lint/a11y/useKeyWithClickEvents: a bubble guard, not a control
-            // biome-ignore lint/a11y/noStaticElementInteractions: a bubble guard, not a control
+            // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a control inside a grid cell — per-chip tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
             <span
               key={f.path}
               onClick={(e) => {
