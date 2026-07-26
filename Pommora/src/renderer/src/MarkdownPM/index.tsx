@@ -26,7 +26,11 @@ import { formatKeymap } from './editor/formatKeymap'
 import { readFormatState } from './editor/formatState'
 import type { FormatState } from '@shared/editorMenu'
 import { AC_MAX } from './autocomplete'
-import { useConnectionAutocomplete, detectConnectionQuery } from './useConnectionAutocomplete'
+import {
+  useConnectionAutocomplete,
+  detectConnectionQuery,
+  whenAcOpen,
+} from './useConnectionAutocomplete'
 import { AutocompletePanel } from './AutocompletePanel'
 import type { ConnectionsApi } from './connections'
 import { PageHeader } from './PageHeader'
@@ -46,7 +50,7 @@ interface Props {
   initialBody: string
   onChange: (body: string) => void
   title?: string
-  // biome-ignore lint/suspicious/noConfusingVoidType: the callback's return is ignored; `void` is the permissive form that accepts a sync handler and an async one alike.
+  // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename?: (newName: string) => void | Promise<boolean>
   /** Page identity + chrome for the header (banner cover + Edit Icon). */
   path?: string
@@ -136,38 +140,10 @@ export function MarkdownEditor({
       history(),
       Prec.highest(
         keymap.of([
-          {
-            key: 'ArrowDown',
-            run: () => {
-              if (!acCtl.current.open) return false
-              acCtl.current.move(1)
-              return true
-            },
-          },
-          {
-            key: 'ArrowUp',
-            run: () => {
-              if (!acCtl.current.open) return false
-              acCtl.current.move(-1)
-              return true
-            },
-          },
-          {
-            key: 'Enter',
-            run: () => {
-              if (!acCtl.current.open) return false
-              acCtl.current.pick()
-              return true
-            },
-          },
-          {
-            key: 'Escape',
-            run: () => {
-              if (!acCtl.current.open) return false
-              acCtl.current.close()
-              return true
-            },
-          },
+          { key: 'ArrowDown', run: whenAcOpen(acCtl, (c) => c.move(1)) },
+          { key: 'ArrowUp', run: whenAcOpen(acCtl, (c) => c.move(-1)) },
+          { key: 'Enter', run: whenAcOpen(acCtl, (c) => c.pick()) },
+          { key: 'Escape', run: whenAcOpen(acCtl, (c) => c.close()) },
         ]),
       ),
       markdownInput,
