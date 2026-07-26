@@ -158,6 +158,7 @@ function NavRow({
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
 }): React.JSX.Element {
   return (
+    // biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content
     <div
       ref={drag?.ref}
       role="button"

@@ -179,6 +179,8 @@ const TileShell = memo(
       >
         {/* Unarmed clicks pass through the sensor (suppressNextClick fires only on
             armed drags) — click and right-click both open the host's handle menu. */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: a pointer-only drag affordance; keyboard reordering is not implemented */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented */}
         <div
           className="spm-handle"
           onPointerDown={(e) => onHandleDown(id, e)}
@@ -541,6 +543,7 @@ export function SurfaceView({
   }
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       ref={hostRef}
       className={`spm-surface${interacting ? ' is-interacting' : ''}`}

@@ -70,6 +70,7 @@ export function NavView(): React.JSX.Element {
   return (
     <div className="nav-view">
       {banner ? (
+        // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
         <div className="banner nav-view-banner" onContextMenu={(e) => void onBannerMenu(e)}>
           <img className="banner-img" src={assetUrl(banner)} alt="" />
           <div className="banner-title">{searchInput}</div>

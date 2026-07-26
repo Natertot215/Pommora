@@ -155,6 +155,8 @@ export function CardValue({
     // The value is the click surface for its picker.
     // data-drag-slop: the whole card is a drag handle, so a press that begins on a value gets a larger
     // drag-activation threshold — a tap-wobble opens the picker instead of lifting the card.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+    // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
     <span
       ref={anchorRef}
       className="card-value"

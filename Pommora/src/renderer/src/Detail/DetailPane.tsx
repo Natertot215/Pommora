@@ -129,6 +129,7 @@ export function DetailPane(): React.JSX.Element {
     (showSubfield && near ? ' subfield-near' : '')
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       className={paneClass}
       ref={(el) => {
