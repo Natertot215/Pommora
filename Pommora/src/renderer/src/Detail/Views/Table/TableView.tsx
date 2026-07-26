@@ -1585,8 +1585,7 @@ const DataRow = memo(function DataRow({
           />
         )
         return i === 0 ? (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
-          // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+          // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
           <div
             key={c.id}
             className={cx(
@@ -1602,8 +1601,7 @@ const DataRow = memo(function DataRow({
             }}
           >
             {!dragDisabled && (
-              // biome-ignore lint/a11y/useKeyWithClickEvents: a bubble guard, not a control
-              // biome-ignore lint/a11y/noStaticElementInteractions: a bubble guard, not a control
+              // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control
               <span
                 className="row-grip"
                 {...handle}
@@ -1616,8 +1614,7 @@ const DataRow = memo(function DataRow({
             {content}
           </div>
         ) : (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
-          // biome-ignore lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+          // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
           <div
             key={c.id}
             className={cx('data-cell', dragShift?.from === i && 'col-dragging', stateCx)}

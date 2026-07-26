@@ -120,13 +120,14 @@ function GalleryCard({
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
     <div
       ref={drag?.setNodeRef}
       style={drag?.style}
       {...(drag?.handle ?? {})}
       role="button"
       tabIndex={0}
-      onKeyDown={onActivateKey(() => onSelect(it.target))}
+      {...(drag ? {} : { onKeyDown: onActivateKey(() => onSelect(it.target)) })}
       className={cx('nav-gallery-card', active && 'is-active', drag?.isDragging && 'is-dragging')}
       onClick={open}
       onContextMenu={(e) => onMenu(it, e)}

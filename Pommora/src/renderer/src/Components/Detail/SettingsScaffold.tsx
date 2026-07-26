@@ -33,63 +33,59 @@ export function SettingsScaffold(): React.JSX.Element | null {
     selectGlyph,
   } = useNexusIcon()
   const iconRef = useRef<HTMLButtonElement>(null)
-  if (!tree) return null
+  if (!tree || selection.kind !== 'homepage') return null
 
-  if (selection.kind === 'homepage') {
-    const photoUrl = profileImage ? assetUrl(profileImage) : null
-    return (
-      <>
-        <MenuScrollFrame
-          footer={
-            <MenuBottomRow
-              leading={
-                <button
-                  type="button"
-                  aria-label={locked ? 'Unlock board' : 'Lock board'}
-                  className={footerLockAction}
-                  onClick={() => void setLocked(!locked)}
-                >
-                  <Icon name="lock" size={12} className={lockIcon} />
-                  {locked ? 'Unlock' : 'Lock'}
-                </button>
-              }
-            />
-          }
-        >
-          <div className={s.header}>
-            <button
-              ref={iconRef}
-              type="button"
-              className={s.iconButton}
-              onClick={() => void openMenu()}
-              aria-label="Change the nexus icon or photo"
-            >
-              {photoUrl ? (
-                <img className={s.headerPhotoImg} src={photoUrl} alt="" />
-              ) : (
-                <Icon name={profileIcon ?? 'square-dashed'} />
-              )}
-            </button>
-            <InteractionField className={s.titleField}>{tree.nexus.name}</InteractionField>
-          </div>
-        </MenuScrollFrame>
-        <IconPicker
-          open={pickerOpen}
-          onClose={() => setPickerOpen(false)}
-          triggerRef={iconRef}
-          value={profileIcon}
-          onSelect={selectGlyph}
-        />
-        {cropImage && (
-          <PhotoCropModal
-            image={cropImage}
-            onCancel={() => setCropImage(null)}
-            onConfirm={confirmCrop}
+  const photoUrl = profileImage ? assetUrl(profileImage) : null
+  return (
+    <>
+      <MenuScrollFrame
+        footer={
+          <MenuBottomRow
+            leading={
+              <button
+                type="button"
+                aria-label={locked ? 'Unlock board' : 'Lock board'}
+                className={footerLockAction}
+                onClick={() => void setLocked(!locked)}
+              >
+                <Icon name="lock" size={12} className={lockIcon} />
+                {locked ? 'Unlock' : 'Lock'}
+              </button>
+            }
           />
-        )}
-      </>
-    )
-  }
-
-  return null
+        }
+      >
+        <div className={s.header}>
+          <button
+            ref={iconRef}
+            type="button"
+            className={s.iconButton}
+            onClick={() => void openMenu()}
+            aria-label="Change the nexus icon or photo"
+          >
+            {photoUrl ? (
+              <img className={s.headerPhotoImg} src={photoUrl} alt="" />
+            ) : (
+              <Icon name={profileIcon ?? 'square-dashed'} />
+            )}
+          </button>
+          <InteractionField className={s.titleField}>{tree.nexus.name}</InteractionField>
+        </div>
+      </MenuScrollFrame>
+      <IconPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        triggerRef={iconRef}
+        value={profileIcon}
+        onSelect={selectGlyph}
+      />
+      {cropImage && (
+        <PhotoCropModal
+          image={cropImage}
+          onCancel={() => setCropImage(null)}
+          onConfirm={confirmCrop}
+        />
+      )}
+    </>
+  )
 }

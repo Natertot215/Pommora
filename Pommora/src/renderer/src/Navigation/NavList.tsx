@@ -3,6 +3,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { TableRowDnd, useTableRowDrag } from '../Detail/Views/Table/tableDnd'
 import type { NavTarget, SelectTarget } from '@shared/types'
 import { useSession } from '../store'
@@ -163,12 +164,7 @@ function NavRow({
       ref={drag?.ref}
       role="button"
       tabIndex={0}
-      onKeyDown={(e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onSelect(it.target)
-        }
-      }}
+      onKeyDown={onActivateKey(() => onSelect(it.target))}
       {...drag?.handle}
       className={cx('nav-item', drag?.isDragging && 'is-dragging')}
       onClick={() => onSelect(it.target)}

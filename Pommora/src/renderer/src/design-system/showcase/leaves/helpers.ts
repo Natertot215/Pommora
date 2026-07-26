@@ -22,7 +22,7 @@ export function formatColor(css: string): string {
   const srgb = css.startsWith('color(')
   const to255 = (n: string): number => Math.round(Number(n) * (srgb ? 255 : 1))
   const ch = (n: number): string => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0')
-  const hex = (`#${m.slice(0, 3).map(to255).map(ch).join('')}`).toUpperCase()
+  const hex = `#${m.slice(0, 3).map(to255).map(ch).join('')}`.toUpperCase()
   const a = m.length >= 4 ? Number(m[3]) : 1
   return a < 1 ? `${hex} · ${Math.round(a * 100)}%` : hex
 }

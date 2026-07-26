@@ -11,7 +11,6 @@ import { useSession } from '../store'
 import type { PreviewTab } from './previewTabs'
 import '../Tabs/tabStrip.css'
 import './previewTabStrip.css'
-import { onActivateKey } from '@renderer/design-system/interactions/activate'
 
 const BASE_MS = Number.parseInt(duration.base, 10)
 /** The tab close/open width window — the toolbar strip's EXIT_MS twin (base + the segment's
@@ -172,6 +171,7 @@ function PreviewTabItem({
   // Inert unless this id is in the zone's item set (map + ghosts never are).
   const drag = useDragItem(entry.tab.id)
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
     <div
       ref={drag.setNodeRef}
       style={drag.style}
@@ -193,7 +193,6 @@ function PreviewTabItem({
       onClick={() => {
         if (!drag.isDragging) onActivate()
       }}
-      onKeyDown={onActivateKey(onActivate)}
     >
       {res ? (
         <EntityGlyph item={res} size={TAB_ICON} className="tab-icon" />

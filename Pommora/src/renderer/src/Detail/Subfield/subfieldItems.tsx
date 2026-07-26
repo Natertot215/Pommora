@@ -1,4 +1,4 @@
-import { Fragment, useMemo } from 'react'
+import { useMemo } from 'react'
 import type { SelectionState } from '@shared/types'
 import { subSetLabel } from '@shared/types'
 import { DEFAULT_NEW_NAME } from '@shared/mutate'
@@ -51,19 +51,13 @@ function PageStatsItem({ scope }: SubfieldItemProps): React.JSX.Element {
       ? liveBody.body
       : (pageDetail?.body ?? '')
   const stats = useMemo(() => computeStats(body), [body])
-  const parts = [
-    ['lines', stats.lines],
-    ['words', stats.words],
-    ['characters', stats.characters],
-  ] as const
   return (
     <span className="subfield-stats" title="Lines · Words · Characters">
-      {parts.map(([name, n], i) => (
-        <Fragment key={name}>
-          {i > 0 && <span className="subfield-sep">·</span>}
-          {n.toLocaleString()}
-        </Fragment>
-      ))}
+      {stats.lines.toLocaleString()}
+      <span className="subfield-sep">·</span>
+      {stats.words.toLocaleString()}
+      <span className="subfield-sep">·</span>
+      {stats.characters.toLocaleString()}
     </span>
   )
 }

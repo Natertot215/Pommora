@@ -252,14 +252,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
     })
   }
-  const bidirRe = /↔/g
   for (const { from, to } of view.visibleRanges) {
-    const seg = text.slice(from, to)
-    let m = bidirRe.exec(seg)
-    while (m !== null) {
+    for (const m of text.slice(from, to).matchAll(/↔/g)) {
       const p = from + m.index
       ranges.push(Decoration.mark({ class: 'md-sym-bidir' }).range(p, p + 1))
-      m = bidirRe.exec(seg)
     }
   }
   return Decoration.set(ranges, true)

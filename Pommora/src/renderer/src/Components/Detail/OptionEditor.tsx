@@ -88,7 +88,11 @@ export function OptionEditor({
         <DragGhost
           x={reorder.ghost?.x ?? null}
           y={reorder.ghost?.y ?? null}
-          label={reorder.dragging ? (options.find((o) => o.value === reorder.dragging)?.label ?? reorder.dragging) : null}
+          label={
+            reorder.dragging
+              ? (options.find((o) => o.value === reorder.dragging)?.label ?? reorder.dragging)
+              : null
+          }
         />
         {options.map((o) => {
           const isColoring = coloring === o.value
