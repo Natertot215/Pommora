@@ -267,7 +267,6 @@ describe('readNexus — registry-backed contexts', () => {
     d(join(reg, 'Notes'))
     w(join(reg, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
     w(join(reg, 'Notes', 'Linked.md'), '---\nid: pg-linked\n"[Projects]":\n  - Pommora\n---\nbody')
-    w(join(reg, 'Notes', 'Legacy.md'), '---\nid: pg-legacy\ntier3:\n  - sp-pom\n---\nbody')
     w(join(reg, 'Notes', 'Plain.md'), '---\nid: pg-plain\n---\nbody')
   })
   afterAll(() => rmSync(reg, { recursive: true, force: true }))
@@ -292,11 +291,6 @@ describe('readNexus — registry-backed contexts', () => {
     expect(plain?.contextValues).toBeUndefined()
   })
 
-  it('resolves legacy tierN ULIDs through the reserved registry ids', async () => {
-    const t = await readNexus(reg)
-    const page = t.collections![0].pages.find((p) => p.id === 'pg-legacy')
-    expect(page?.contextValues).toEqual({ _tier3: ['sp-pom'] })
-  })
 
   it('resolves a space sidecar own bracketed keys (space-to-space, cross-context)', async () => {
     const t = await readNexus(reg)

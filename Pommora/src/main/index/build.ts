@@ -16,7 +16,7 @@ import { agendaTask, agendaEvent, AGENDA_SUFFIX } from '@shared/agenda'
 import { orderedDefs, readRegistry } from '../io/propertiesRegistry'
 import { nowIso } from '../crud/util'
 import { seededRegistry, type ContextsRegistry } from '@shared/contexts'
-import { legacyTierLinks, resolveContextKeys } from '@shared/contextResolve'
+import { resolveContextKeys } from '@shared/contextResolve'
 import { buildLinkIndex } from '../connections/resolve'
 import { connectionEdges } from '../connections/edges'
 import { normalizeTitle } from '@shared/connections'
@@ -99,8 +99,8 @@ interface NexusData {
   pages: PageData[]
   /** Space-source link rows — a Space's own outbound tags, off its tree node. */
   spaces: { id: string; links: Record<string, string[]> }[]
-  /** Resolve a raw entity root's context keys (bracketed + legacy tierN) to id links —
-   *  the agenda collector shares the builder's one resolution. */
+  /** Resolve a raw entity root's bracketed context keys to id links — the agenda collector
+   *  shares the builder's one resolution. */
   resolveRoot: (raw: Record<string, unknown>) => Record<string, string[]>
 }
 
@@ -110,8 +110,8 @@ interface NexusData {
 async function collectNexusData(nexusRoot: string): Promise<NexusData> {
   const tree = await readNexus(nexusRoot)
 
-  // Registry-backed when the tree carries groups; a legacy nexus resolves through the
-  // seeded reserved ids so its bare-ULID tierN links keep indexing.
+  // Registry-backed when the tree carries groups; a nexus whose registry has not been read
+  // yet falls back to the seeded reserved ids so its links still resolve.
   const ctxRegistry: ContextsRegistry = tree.contexts.length
     ? { contexts: tree.contexts.map((g) => g.def) }
     : seededRegistry(tree.labels)
@@ -119,12 +119,7 @@ async function collectNexusData(nexusRoot: string): Promise<NexusData> {
     tree.contexts.map((g) => [g.def.id, g.spaces]),
   )
   const resolveRoot = (raw: Record<string, unknown>): Record<string, string[]> =>
-    Object.fromEntries(
-      new Map([
-        ...legacyTierLinks(raw, ctxRegistry),
-        ...resolveContextKeys(raw, ctxRegistry, spacesByContext),
-      ]),
-    )
+    Object.fromEntries(resolveContextKeys(raw, ctxRegistry, spacesByContext))
 
   const contexts: ContextData[] = tree.contexts.flatMap((g) =>
     g.spaces.map((s) => ({ id: s.id, contextId: g.def.id, title: s.title, icon: s.icon })),

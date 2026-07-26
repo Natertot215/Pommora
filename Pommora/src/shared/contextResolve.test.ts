@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { legacyTierLinks, reconcileContextKeys, resolveContextKeys } from './contextResolve'
+import { reconcileContextKeys, resolveContextKeys } from './contextResolve'
 import type { ContextsRegistry } from './contexts'
 import type { SpaceNode } from './types'
 
@@ -108,14 +108,3 @@ describe('reconcileContextKeys', () => {
   })
 })
 
-describe('legacyTierLinks', () => {
-  it('resolves bare tierN ULID arrays through the reserved registry ids', () => {
-    const links = legacyTierLinks({ tier3: ['sp1', 'sp2'] }, registry)
-    expect(links.get('_tier3')).toEqual(['sp1', 'sp2'])
-  })
-
-  it('ignores tiers absent from the registry', () => {
-    const links = legacyTierLinks({ tier1: ['x'] }, registry)
-    expect(links.size).toBe(0)
-  })
-})
