@@ -222,7 +222,6 @@ function PreviewWindowBody({
         mode: 'overlay',
         open: inspectorOpen,
         className: 'pgpreview-inspector',
-        resizeLabel: 'Resize inspector',
         children: (
           <div className="pgpreview-inspector-body">
             {inspectorOpen && <PreviewInspector target={target} />}

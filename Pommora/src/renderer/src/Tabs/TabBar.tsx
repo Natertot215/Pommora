@@ -191,6 +191,8 @@ function TabBarBody({
   return (
     <div
       className={cx('tab-bar', revealOnHover && 'reveal-on-hover')}
+      role="tablist"
+      aria-label="Open tabs"
       onPointerDown={onBarDown}
       onDoubleClick={onBarDoubleClick}
     >
@@ -289,8 +291,18 @@ function PinnedTab({
       data-tab-id={entry.tab.id}
       className={cx('tab-pinned', active && 'is-active', drag.isDragging && 'is-dragging')}
       title={entry.res.title}
+      role="tab"
+      aria-selected={active}
+      // Roving tabindex: the strip is ONE tab stop, arrowing/clicking moves the selection.
+      tabIndex={active ? 0 : -1}
       onClick={() => {
         if (!drag.isDragging) onActivate()
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onActivate()
+        }
       }}
       onContextMenu={onMenu}
     >
@@ -356,8 +368,17 @@ function UnpinnedTab({
         drag?.isDragging && 'is-dragging',
       )}
       title={title}
+      role="tab"
+      aria-selected={active}
+      tabIndex={active ? 0 : -1}
       onClick={() => {
         if (!drag?.isDragging) onActivate()
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onActivate()
+        }
       }}
       onContextMenu={onMenu}
     >
