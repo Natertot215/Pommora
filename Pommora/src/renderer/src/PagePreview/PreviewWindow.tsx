@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
+import { cx } from '@renderer/design-system/cx'
 import { duration, easing } from '@renderer/design-system/tokens'
 import {
   PREVIEW_PANE_INSPECTOR,
@@ -32,6 +33,10 @@ const SLIDE_PX = 14
 
 // The live-stats debounce (mirrors PageView) — edits coalesce before the count recomputes.
 const STATS_DEBOUNCE_MS = 120
+
+// The promote and nav-swap exits are WAAPI/CSS-driven; the class tells the stylesheet to suppress
+// the shell's default scale-out so one motion owns the window. A plain dismiss keeps it.
+const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
 
 export function PreviewWindow(): React.JSX.Element | null {
   // The window's existence keys on the PAGE flavor, not the derived target — the nav flavor renders
@@ -70,21 +75,21 @@ function PreviewWindowBody({
   // the body via onBody (load-seed + edits): the first body for a path seeds immediately, edits
   // debounce like PageView's stats buffer. Collapse is session-only (a transient floating surface).
   const [previewBody, setPreviewBody] = useState('')
-  const statsTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const statsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const seededPath = useRef<string | null>(null)
   useEffect(() => {
     setPreviewBody('')
     // Kill any pending debounced write from the outgoing page so it can't land as a stale count.
-    if (statsTimer.current) clearTimeout(statsTimer.current)
+    clearTimeout(statsTimer.current)
   }, [target.path])
   useEffect(
     () => () => {
-      if (statsTimer.current) clearTimeout(statsTimer.current)
+      clearTimeout(statsTimer.current)
     },
     [],
   )
   const onPreviewBody = (b: string): void => {
-    if (statsTimer.current) clearTimeout(statsTimer.current)
+    clearTimeout(statsTimer.current)
     if (seededPath.current !== target.path) {
       seededPath.current = target.path
       setPreviewBody(b)
@@ -185,21 +190,11 @@ function PreviewWindowBody({
     )
   }, [closing])
 
-  // The promote and nav-swap exits are WAAPI/CSS-driven; the class tells the stylesheet to
-  // suppress the shell's default scale-out so one motion owns the window.
-  const exitClass = !closing
-    ? ''
-    : exitReason === 'engulf'
-      ? 'engulfing'
-      : exitReason === 'morph'
-        ? 'morphing'
-        : ''
-
   return (
     <PreviewPane
       id="page-preview"
       rootRef={rootRef}
-      className={`pgpreview ${exitClass}`}
+      className={cx('pgpreview', closing && EXIT_CLASS[exitReason])}
       closing={closing}
       onClose={() => closePreview()}
       onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closePreview())}
