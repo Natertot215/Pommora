@@ -46,7 +46,11 @@
   display: flex;
   align-items: center;
   padding-left: 6px;
-  padding-right: calc(var(--glass-inset) + 56px); /* KNOB — clearance past settings + X */
+  /* KNOB — clearance past settings + X, plus the squeeze that stops the row at an open pane's
+     leading edge; without the second term the tabs run under the pane. The squeeze carries its own
+     motion through --io, so padding-right stays OUT of the transition list — transitioning it would
+     retarget on every frame that --io advances. */
+  padding-right: calc(var(--glass-inset) + 56px + var(--ppane-title-squeeze, 0px));
   transition:
     height var(--duration-base) var(--ease-standard),
     padding-left var(--duration-base) var(--ease-standard);
