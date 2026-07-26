@@ -8,6 +8,7 @@ import {
   type Range,
 } from '@codemirror/state'
 import { headingParts, isHeadingLine, lineOffsets } from '../detect'
+import { docString } from './docCache'
 import { createBlockDragGesture } from './blockDrag'
 import { lineElementAt } from './lineDom'
 
@@ -81,7 +82,7 @@ const sectionCache = new WeakMap<Text, HeadingSection[]>()
 function sectionsOf(doc: Text): HeadingSection[] {
   let s = sectionCache.get(doc)
   if (!s) {
-    s = headingSections(doc.toString())
+    s = headingSections(docString(doc))
     sectionCache.set(doc, s)
   }
   return s

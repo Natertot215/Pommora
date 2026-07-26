@@ -1,4 +1,5 @@
 import { EditorState } from '@codemirror/state'
+import { docString } from '../editor/docCache'
 import { tableRegions } from './regions'
 import { parseDelimiter } from './codec'
 
@@ -31,7 +32,7 @@ export const tableMergeGuard = EditorState.transactionFilter.of((tr) => {
   // build that follows a passing edit reparses newDoc and reuses it.
   if (
     guarded &&
-    fusedTableCount(tr.startState.doc.toString()) < fusedTableCount(tr.newDoc.toString())
+    fusedTableCount(docString(tr.startState.doc)) < fusedTableCount(docString(tr.newDoc))
   ) {
     return [] // cancel — this edit would merge two tables into one
   }
