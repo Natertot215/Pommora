@@ -13,6 +13,7 @@ interface Props {
   icon?: string
   /** Registers the icon glyph as the editable target — the picker's beak anchors to it. */
   iconRef?: Ref<SVGSVGElement>
+  // biome-ignore lint/suspicious/noConfusingVoidType: the callback's return is ignored; `void` is the permissive form that accepts a sync handler and an async one alike.
   onRename: (newName: string) => void | Promise<boolean | void>
   /** Pops the native title menu and resolves the chosen action (Rename / Change Icon / Hide-Show Icon). */
   requestMenu: () => Promise<'rename' | 'editIcon' | 'toggleIcon' | null>

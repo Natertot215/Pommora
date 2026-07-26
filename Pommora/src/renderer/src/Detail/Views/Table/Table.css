@@ -58,6 +58,7 @@
 .table-grid.col-hiding .data-row,
 .table-grid.col-sliding .table-head,
 .table-grid.col-sliding .data-row {
+  /* biome-ignore lint/complexity/noImportantStyles: must beat the base row rule that suppresses column transitions. */
   transition: grid-template-columns var(--disclosure) var(--ease-standard) !important;
 }
 
