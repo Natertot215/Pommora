@@ -17,6 +17,10 @@ export function invalidName(name: string): boolean {
     name.includes('\0') || // a NUL byte throws in fs calls — reject as a clean invalid-name
     name === '.' ||
     name === '..' ||
+    // The walk hides both prefixes, so accepting one would write a real file the tree can never
+    // show again — a rename that reads to the user as a delete.
+    trimmed.startsWith('_') ||
+    trimmed.startsWith('.') ||
     /\.(md|task\.json|event\.json)$/i.test(trimmed)
   )
 }
