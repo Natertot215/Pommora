@@ -5,7 +5,13 @@ import { join } from 'node:path'
 import { rebuildIndex } from './build'
 import { blockFilePath } from '../blocks'
 import { readJsonObject, writeJson } from '../io/atomicWrite'
-import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, contextTierDir, blockHostDir } from '../paths'
+import {
+  nexusDir,
+  nexusConfig,
+  NEXUS_CONFIG_FILES,
+  contextsRegistryFile,
+  blockHostDir,
+} from '../paths'
 import { createFolderEntity } from '../crud/folderEntity'
 import { createProperty } from '../crud/registryProperty'
 import { assignProperty } from '../crud/assignment'
@@ -65,10 +71,17 @@ beforeEach(async () => {
   if (!sp.ok) throw new Error('setup: setpage')
   ids.setPage = sp.value.id
 
-  const work = await createFolderEntity(contextTierDir(root, 'areas'), 'area', 'Work', { tier: 1 })
-  if (!work.ok) throw new Error('setup: area')
-  ids.work = work.value.id
-  await legacyPageTier(a.value.path, 1, [ids.work])
+  // Registry-backed Context + Space: `.nexus/contexts.json` plus the Space's own sidecar
+  // under `.nexus/contexts/<ContextTitle>/<SpaceTitle>/`.
+  ids.work = 'sp-work'
+  await writeJson(contextsRegistryFile(root), {
+    contexts: [{ id: '_tier1', title: 'Areas', singular: 'Area' }],
+  })
+  await mkdir(join(nexusDir(root), 'contexts', 'Areas', 'Work'), { recursive: true })
+  await writeJson(join(nexusDir(root), 'contexts', 'Areas', 'Work', '_space.json'), {
+    id: ids.work,
+  })
+  await tagPage(a.value.path, 'Areas', ['Work'])
 
   // Agenda: a Tasks folder (config seeded with built-in _status) + one task.
   const tasksCfg = await createFolderEntity(root, 'taskConfig', 'Tasks', {
@@ -84,22 +97,22 @@ beforeEach(async () => {
   if (!task.ok) throw new Error('setup: task')
   ids.task = task.value.id
   await updateAgendaProperty(task.value.path, '_status', { kind: 'status', value: 'not_started' })
-  await legacyAgendaTier(task.value.path, 1, [ids.work])
+  await tagAgenda(task.value.path, 'Areas', ['Work'])
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-// The legacy `tierN` array is a DISK contract the index still resolves (legacyTierLinks), not an
-// API — so the fixture writes the shape directly rather than keeping a production writer alive
-// for it. Pages carry it in frontmatter; agenda items carry it at the JSON root.
-const legacyPageTier = async (file: string, tier: number, ids: string[]): Promise<void> => {
+// Context links are bracketed context-title keys holding Space TITLES. Written directly here
+// so the fixture states the on-disk shape the index resolves, without routing through the
+// write path under test.
+const tagPage = async (file: string, context: string, spaces: string[]): Promise<void> => {
   const raw = await readFile(file, 'utf8')
-  const block = `tier${tier}:\n${ids.map((i) => `  - ${i}`).join('\n')}\n`
+  const block = `"[${context}]":\n${spaces.map((s) => `  - ${s}`).join('\n')}\n`
   await writeFile(file, raw.replace(/^---\n/, `---\n${block}`))
 }
-const legacyAgendaTier = async (file: string, tier: number, ids: string[]): Promise<void> => {
-  await writeJson(file, { ...((await readJsonObject(file)) ?? {}), [`tier${tier}`]: ids })
+const tagAgenda = async (file: string, context: string, spaces: string[]): Promise<void> => {
+  await writeJson(file, { ...((await readJsonObject(file)) ?? {}), [`[${context}]`]: spaces })
 }
 
 const get = (db: Db, sql: string, ...a: unknown[]) =>

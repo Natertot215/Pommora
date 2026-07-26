@@ -30,7 +30,7 @@ import {
   parseContextKey,
   type ContextsRegistry,
 } from '@shared/contexts'
-import { legacyTierLinks, resolveContextKeys } from '@shared/contextResolve'
+import { resolveContextKeys } from '@shared/contextResolve'
 import {
   ACCENT_COLORS,
   DEFAULT_ACCENT,
@@ -528,12 +528,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     const spacesByContext = new Map(contexts.map((g) => [g.def.id, g.spaces]))
     const attach = (node: PageNode | SpaceNode): void => {
       const raw = rawContextByNode.get(node)
-      const links = raw
-        ? new Map([
-            ...legacyTierLinks(raw, ctxRegistry),
-            ...resolveContextKeys(raw, ctxRegistry, spacesByContext),
-          ])
-        : null
+      const links = raw ? resolveContextKeys(raw, ctxRegistry, spacesByContext) : null
       if (links?.size) node.contextValues = Object.fromEntries(links)
       else delete node.contextValues
     }
