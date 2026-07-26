@@ -102,6 +102,9 @@ export function SidePane({
           role="separator"
           aria-orientation="vertical"
           aria-label={resizeLabel}
+          aria-valuenow={width}
+          aria-valuemin={bounds.min}
+          aria-valuemax={bounds.max}
         />
       )}
     </>

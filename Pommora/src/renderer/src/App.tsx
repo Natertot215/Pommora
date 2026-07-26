@@ -5,7 +5,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-import { useSession } from './store'
+import { INSPECTOR_MAX, INSPECTOR_MIN, SIDEBAR_MAX, SIDEBAR_MIN, useSession } from './store'
 import { Surface } from './Components/Surface'
 import { Sidebar } from './Sidebar/Sidebar'
 import { Ribbon } from './Sidebar/Ribbon'
@@ -241,7 +241,7 @@ export function App(): React.JSX.Element {
         {status === 'empty' && (
           <div className="state">
             No Nexus Open
-            <button className="open-btn" onClick={() => void choose()}>
+            <button type="button" className="open-btn" onClick={() => void choose()}>
               Open Folder…
             </button>
           </div>
@@ -271,6 +271,9 @@ export function App(): React.JSX.Element {
           role="separator"
           aria-orientation="vertical"
           aria-label="Resize sidebar"
+          aria-valuenow={sidebarWidth}
+          aria-valuemin={SIDEBAR_MIN}
+          aria-valuemax={SIDEBAR_MAX}
         />
       )}
       {/* Expand — always mounted at the top-left toggle spot, layered on top. Hidden behind
@@ -305,6 +308,9 @@ export function App(): React.JSX.Element {
           role="separator"
           aria-orientation="vertical"
           aria-label="Resize inspector"
+          aria-valuenow={inspectorWidth}
+          aria-valuemin={INSPECTOR_MIN}
+          aria-valuemax={INSPECTOR_MAX}
         />
       )}
     </div>

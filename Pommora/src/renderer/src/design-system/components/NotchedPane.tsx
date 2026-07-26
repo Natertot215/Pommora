@@ -220,7 +220,7 @@ export function NotchedPane({
         {children}
       </GlassPane>
       {d && (
-        <svg className={cx(s.frame, animationClass)} width={w} height={h} aria-hidden>
+        <svg className={cx(s.frame, animationClass)} width={w} height={h} aria-hidden="true">
           {/* Default: the white frost stroke. accentOutline (block-surface pickers): accent @ tint-secondary,
               the page-location border signal — set via the CSS `stroke` property, not the SVG attribute, so
               var()/color-mix() resolve (the tokens live on :root/html, which the body portal inherits). */}
