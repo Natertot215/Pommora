@@ -1,4 +1,5 @@
-import { parse, isInsideCode } from '../parser'
+import { parse } from '../parser'
+import { isInsideCode } from '@shared/markdownCode'
 import { normalize, type Column, type TableModel } from './model'
 import { splitRow, parseDelimiter, docLines, type CellSpan } from './codec'
 

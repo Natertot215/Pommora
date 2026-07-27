@@ -1,6 +1,7 @@
 // Emphasis is located on the mdast AST so `_`/`*` mixing/nesting is correct and code spans never emit emphasis.
 import type { Root, RootContent, PhrasingContent } from 'mdast'
-import { parse, isInsideCode } from '../parser'
+import { parse } from '../parser'
+import { isInsideCode } from '@shared/markdownCode'
 import {
   isInlineMathContent,
   imageEmbedRegex,
