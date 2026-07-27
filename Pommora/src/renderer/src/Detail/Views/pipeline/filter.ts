@@ -1,9 +1,13 @@
 // Type-aware view filter. Extends Swift FilterEvaluator's per-rule, per-type operator matrix with
 // nested groups (a rule child may itself be a FilterGroup, expressing mixed AND/OR like
-// `(A AND B) OR C`), title + context + any-depth location matrices, multi-operand `values[]` chip
-// ops, and the root `match: 'none'` disable skip. `op` raw strings are snake_case (on-disk parity).
-// An unknown op, a property absent from the schema, or an op outside a type's matrix is a NO-OP
-// PASS — a filter never excludes on what it can't apply. Pure: no fs, no React.
+// `(A AND B) OR C`), title + context + any-depth location matrices, and multi-operand `values[]`
+// chip ops. `op` raw strings are snake_case (on-disk parity). Match modes are all = AND, any = OR,
+// none = NOR at every depth.
+//
+// A rule that CANNOT be applied — unknown op, dead property or set, an operand not yet supplied —
+// abstains rather than voting, so a filter never excludes on what it can't apply. That has to be a
+// third verdict, not a `true`: under NOR a pass would read as a match and blank the whole view.
+// Pure: no fs, no React.
 
 import type { FilterGroup, FilterRule } from '@shared/views'
 import type { ViewRow } from '@shared/types'
@@ -45,6 +49,14 @@ const FILTER_OP_SET = new Set<string>(Object.values(FILTER_OPS))
 type Op = string
 type Expected = string | undefined
 
+/** A rule that cannot be applied — an unknown op, a dead property or set, or an operand the user
+ *  hasn't supplied yet. Distinct from `false` so it abstains instead of voting either way. */
+const NO_OP = null
+type Verdict = boolean | typeof NO_OP
+
+/** The ops that are complete without an operand; everything else is unauthored until one arrives. */
+const OPERANDLESS_OPS = new Set<string>([FILTER_OPS.isEmpty, FILTER_OPS.isNotEmpty])
+
 /** Per-applyFilter location resolver — a set id to its descendant-id Set (self included), built
  *  ONCE per operand and membership-tested per row (never a per-row ancestor walk). Unknown set
  *  id → undefined → no-op pass. */
@@ -77,8 +89,7 @@ export function applyFilter(
   setTree: SetTreeNode[] = [],
   contextIds: readonly string[] = [],
 ): ViewRow[] {
-  // 'none' = the pane's disable state (root-only): rules persist untouched, filtering skips.
-  if (!filter || filter.match === 'none') return rows
+  if (!filter) return rows
   const locate = makeLocationIndex(setTree)
   return rows.filter((row) => matchesGroup(row, filter, schema, locate, contextIds))
 }
@@ -95,14 +106,25 @@ function matchesGroup(
   locate: LocationIndex,
   contextIds: readonly string[],
 ): boolean {
-  if (group.match === 'none') return true // never pane-authored nested; a hand-authored one passes
   if (group.rules.length === 0) return true
-  const results = group.rules.map((node) =>
-    isGroup(node)
-      ? matchesGroup(row, node, schema, locate, contextIds)
-      : evaluateRule(row, node, schema, locate, contextIds),
-  )
-  return group.match === 'all' ? results.every(Boolean) : results.some(Boolean)
+  // Only rules that can actually be applied get a vote. A no-op verdict must never read as a MATCH:
+  // under `none` that would invert the guarantee and exclude every row on a half-authored rule.
+  const votes = group.rules
+    .map((node) =>
+      isGroup(node)
+        ? matchesGroup(row, node, schema, locate, contextIds)
+        : evaluateRule(row, node, schema, locate, contextIds),
+    )
+    .filter((v): v is boolean => v !== NO_OP)
+  if (votes.length === 0) return true
+  switch (group.match) {
+    case 'all':
+      return votes.every(Boolean)
+    case 'any':
+      return votes.some(Boolean)
+    case 'none':
+      return !votes.some(Boolean)
+  }
 }
 
 function evaluateRule(
@@ -111,8 +133,8 @@ function evaluateRule(
   schema: PropertyDefinition[],
   locate: LocationIndex,
   contextIds: readonly string[],
-): boolean {
-  if (!FILTER_OP_SET.has(rule.op)) return true // unknown op → no-op pass
+): Verdict {
+  if (!FILTER_OP_SET.has(rule.op)) return NO_OP // unknown op
 
   // "Last edited" resolves to the modified∥created stamp (never a stored property) → date matrix.
   if (rule.property_id === RESERVED_PROPERTY_ID.modifiedAt) {
@@ -122,15 +144,32 @@ function evaluateRule(
 
   // Location — not a property: membership of the row's parent set in the operand's subtree.
   if (rule.property_id === RESERVED_PROPERTY_ID.location) {
-    if (rule.op !== FILTER_OPS.isInside && rule.op !== FILTER_OPS.isNotInside) return true
-    const inside = rule.value != null ? locate(rule.value) : undefined
-    if (!inside) return true // dead/missing set id → no-op pass
-    const hit = row.parentSetId != null && inside.has(row.parentSetId)
-    return rule.op === FILTER_OPS.isInside ? hit : !hit
+    // Runs BEFORE the generic unauthored-operand guard, so it owns its own. Every location op is
+    // any-of over the chosen Sets; Is/Isn't test the immediate parent, Contains/Doesn't any depth.
+    const want = rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []
+    if (want.length === 0) return NO_OP
+    const parent = row.parentSetId
+    switch (rule.op) {
+      case FILTER_OPS.is:
+        return parent != null && want.includes(parent)
+      case FILTER_OPS.isNot:
+        return parent == null || !want.includes(parent)
+      case FILTER_OPS.isInside:
+      case FILTER_OPS.isNotInside: {
+        const trees = want.map(locate).filter((t): t is ReadonlySet<string> => t !== undefined)
+        if (trees.length === 0) return NO_OP // every id dead — nothing to apply
+        const hit = parent != null && trees.some((t) => t.has(parent))
+        return rule.op === FILTER_OPS.isInside ? hit : !hit
+      }
+      default:
+        return NO_OP
+    }
   }
 
   const t = declaredType(rule.property_id, schema, contextIds)
-  if (t === undefined) return true // property absent from schema/registry → no-op pass
+  if (t === undefined) return NO_OP // property absent from schema/registry
+  // A rule whose op still wants an operand isn't authored yet — it constrains nothing.
+  if (!OPERANDLESS_OPS.has(rule.op) && rule.value == null && !rule.values?.length) return NO_OP
   return evaluateByType(
     resolveFieldValue(row, rule.property_id, schema),
     rule.op,
@@ -365,7 +404,7 @@ function evaluateMulti(v: PropertyValue, op: Op, expected: Expected, values?: st
       return xs.length > 0
     case FILTER_OPS.is:
     case FILTER_OPS.contains:
-      // Empty set = mid-authoring → pass, NEVER exclude ([].some() would blank the table — B-6).
+      // Empty set = mid-authoring → pass, NEVER exclude ([].some() would blank the table).
       return want.length === 0 ? true : want.some((w) => xs.includes(w))
     case FILTER_OPS.isNot:
     case FILTER_OPS.doesNotContain:

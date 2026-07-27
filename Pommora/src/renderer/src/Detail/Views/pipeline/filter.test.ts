@@ -291,22 +291,53 @@ describe('applyFilter — no-op passes', () => {
 describe('applyFilter — none + registry', () => {
   const rows = [row('r1', { props: { prop_sel: 'a' } }), row('r2', { props: { prop_sel: 'b' } })]
 
-  it('a root match none skips filtering entirely', () => {
+  it('a root none keeps only the rows NO rule matches', () => {
     expect(
-      ids(rows, {
-        match: 'none',
-        rules: [{ match: 'all', rules: [{ property_id: 'prop_sel', op: 'is', value: 'a' }] }],
-      }),
-    ).toEqual(['r1', 'r2'])
+      ids(rows, { match: 'none', rules: [{ property_id: 'prop_sel', op: 'is', value: 'a' }] }),
+    ).toEqual(['r2'])
   })
 
-  it('a NESTED none passes (root-only semantics)', () => {
+  it('none is NOR at every depth, not a root-only special case', () => {
     expect(
       ids(rows, {
         match: 'all',
-        rules: [{ match: 'none', rules: [{ property_id: 'prop_sel', op: 'is', value: 'zzz' }] }],
+        rules: [{ match: 'none', rules: [{ property_id: 'prop_sel', op: 'is', value: 'a' }] }],
       }),
+    ).toEqual(['r2'])
+  })
+
+  it('an empty none group still passes — a half-authored row never blanks the table', () => {
+    expect(ids(rows, { match: 'none', rules: [] })).toEqual(['r1', 'r2'])
+  })
+
+  // A no-op verdict must ABSTAIN, never count as a match: under NOR a "pass" would exclude every
+  // row, so the guarantee that a filter never excludes on what it can't apply would invert.
+  it('an operandless rule under none abstains rather than blanking the view', () => {
+    expect(ids(rows, { match: 'none', rules: [{ property_id: 'prop_sel', op: 'is' }] })).toEqual([
+      'r1',
+      'r2',
+    ])
+  })
+
+  it('an unknown op and an absent property both abstain under none', () => {
+    expect(
+      ids(rows, { match: 'none', rules: [{ property_id: 'prop_sel', op: 'not_a_real_op' }] }),
     ).toEqual(['r1', 'r2'])
+    expect(
+      ids(rows, { match: 'none', rules: [{ property_id: 'prop_gone', op: 'is', value: 'a' }] }),
+    ).toEqual(['r1', 'r2'])
+  })
+
+  it('an abstaining rule beside a real one leaves the real one deciding', () => {
+    expect(
+      ids(rows, {
+        match: 'none',
+        rules: [
+          { property_id: 'prop_sel', op: 'is' },
+          { property_id: 'prop_sel', op: 'is', value: 'a' },
+        ],
+      }),
+    ).toEqual(['r2'])
   })
 
   it('registers every new op raw string', () => {
@@ -319,6 +350,58 @@ describe('applyFilter — none + registry', () => {
     expect(FILTER_OPS.lessOrEqual).toBe('less_or_equal')
     expect(FILTER_OPS.isInside).toBe('is_inside')
     expect(FILTER_OPS.isNotInside).toBe('is_not_inside')
+  })
+})
+
+describe('applyFilter — location presence', () => {
+  // parentSetId isn't part of the shared row() helper — it's set by the container walk, not frontmatter.
+  const rows: ViewRow[] = [row('root'), { ...row('filed'), parentSetId: 'set_a' }]
+  const ids2 = (f: FilterGroup): string[] =>
+    applyFilter(rows, f, [], [{ id: 'set_a', children: [] }]).map((r) => r.id)
+
+  it('Is over several Sets keeps rows parented by ANY of them', () => {
+    const many: ViewRow[] = [
+      { ...row('a'), parentSetId: 'set_a' },
+      { ...row('b'), parentSetId: 'set_b' },
+      { ...row('c'), parentSetId: 'set_c' },
+    ]
+    const run = (op: string): string[] =>
+      applyFilter(
+        many,
+        { match: 'all', rules: [{ property_id: '_location', op, values: ['set_a', 'set_b'] }] },
+        [],
+        [{ id: 'set_a', children: [] }, { id: 'set_b', children: [] }, { id: 'set_c', children: [] }],
+      ).map((r) => r.id)
+    expect(run('is')).toEqual(['a', 'b'])
+    expect(run('is_not')).toEqual(['c'])
+  })
+
+  // Is/Isn't are the EXACT parent; Contains is any-depth. A page in a nested child matches the
+  // ancestor under Contains but NOT under Is — that distinction is the whole reason both exist.
+  it('Is matches only the immediate parent Set, Contains matches any depth', () => {
+    const deep: ViewRow[] = [{ ...row('deep'), parentSetId: 'set_child' }]
+    const tree = [{ id: 'set_a', children: [{ id: 'set_child', children: [] }] }]
+    const run = (op: string): string[] =>
+      applyFilter(deep, { match: 'all', rules: [{ property_id: '_location', op, value: 'set_a' }] }, [], tree).map(
+        (r) => r.id,
+      )
+    expect(run('is')).toEqual([])
+    expect(run('is_inside')).toEqual(['deep'])
+    expect(run('is_not')).toEqual(['deep'])
+    expect(run('is_not_inside')).toEqual([])
+  })
+
+  it('an Is with no Set chosen abstains rather than matching root rows', () => {
+    expect(ids2({ match: 'all', rules: [{ property_id: '_location', op: 'is' }] })).toEqual([
+      'root',
+      'filed',
+    ])
+  })
+
+  it('a location rule with an empty chip set abstains, never blanks the view', () => {
+    expect(
+      ids2({ match: 'all', rules: [{ property_id: '_location', op: 'is', values: [] }] }),
+    ).toEqual(['root', 'filed'])
   })
 })
 

@@ -36,7 +36,14 @@ export function resolveView(input: {
   const useLocationFlat =
     (flattenStructural && view.group?.kind === 'flat' && locationFsOrder) ?? false
   const columns = resolveColumns(view, schema, contextIds)
-  const filtered = applyFilter(rows, view.filter, schema, setTree, contextIds)
+  // Parked filters keep their rules and their mode; only application stops.
+  const filtered = applyFilter(
+    rows,
+    view.filter_enabled === false ? undefined : view.filter,
+    schema,
+    setTree,
+    contextIds,
+  )
   const sorter = makeSorter(view.sort, schema, manualOrder)
   // Location order mirrors the filesystem: group_order is preserved on the view but ignored.
   // The mode is structural-only — and "structural" is the EFFECTIVE mode (a dead-property grouping
