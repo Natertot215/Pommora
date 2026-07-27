@@ -27,6 +27,46 @@ export const item = style([
   },
 ])
 
+/** THE disclosure chevron — a chevron-right glyph that rotates 90° when open, on the shared
+ *  disclosure beat. One definition for every surface that discloses: the sidebar rows, the grouping
+ *  and filter panes, the group bands, the properties pane. Pair it with `data-twisty` on the element:
+ *  the sidebar's Hide-Chevrons layout keys its `:has()` rules on that attribute, because a plain
+ *  stylesheet can't name a hashed class — so the LOOK lives here and the sidebar keeps its own layout. */
+export const twisty = style({
+  // The beat is a CHANNEL, not a constant: a chevron has to land with whatever it discloses, and not
+  // every surface unfolds on the disclosure beat. The Properties pane's All-Properties row runs its
+  // Reveal and its elastic spacer on `base`, so its chevron must too — it sets `--twisty-beat`.
+  transition: 'transform var(--twisty-beat, var(--disclosure)) var(--ease-standard)',
+  flex: '0 0 auto',
+})
+export const twistyOpen = style({ transform: 'rotate(90deg)' })
+
+/** A leaf row's stand-in for the chevron, so its icon lines up under a disclosure row's. */
+export const twistySpacer = style({ width: '12px', flex: '0 0 auto' })
+
+/** KNOB — the rail's x. It rides the parent row's DISCLOSURE column: the row's 6px inset plus half
+ *  the 12px twisty, nudged a hair right. (Not the icon column — a row's icon sits past its chevron,
+ *  at ~28px, which would put the rail through the child titles.) */
+const RAIL_X = '14px'
+
+/** A disclosed child run — rides the shared list-outline rail with rounded caps, children indenting
+ *  past it. Lives here, not in a pane: the rail is what "these rows belong to the one above" looks
+ *  like, and every disclosing surface needs it. */
+export const railRow = style({
+  position: 'relative',
+  paddingLeft: '20px',
+  '::before': {
+    content: '""',
+    position: 'absolute',
+    top: 'var(--list-outline-gap)',
+    bottom: 'var(--list-outline-gap)',
+    left: `calc(${RAIL_X} - var(--list-outline-width) / 2)`,
+    width: 'var(--list-outline-width)',
+    borderRadius: 'var(--list-outline-radius)',
+    background: 'var(--list-outline-color)',
+  },
+})
+
 /** Selected pill — holds under :hover so a selected row doesn't lighten further. */
 export const itemSelected = style({
   background: c.state.selected,

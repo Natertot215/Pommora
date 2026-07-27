@@ -50,6 +50,7 @@ import { PickerControl, type PickerChoice } from './PickerControl'
 import { propertyTypeIconName } from './PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
 import * as gp from './groupingPane.css'
+import { railRow, twisty, twistyOpen } from '../../design-system/components/menu/menu.css'
 
 /** The pane's Group By offering — location + these property types. Checkbox is deliberately absent
  *  (the pipeline still renders it from a foreign sidecar; the pane never authors it). */
@@ -678,7 +679,8 @@ function LocationHierarchy({
                   <Icon
                     name="chevron-right"
                     size={12}
-                    className={isOpen ? 'twisty open' : 'twisty'}
+                    className={cx(twisty, isOpen && twistyOpen)}
+                    data-twisty
                     onClick={(e) => {
                       e.stopPropagation()
                       toggle(s.id)
@@ -696,7 +698,7 @@ function LocationHierarchy({
         </div>
         {disclosable && (
           <Reveal open={isOpen}>
-            <div className={gp.railRow}>
+            <div className={railRow}>
               {flat
                 ? subChips.map((o) => {
                     const id = `sub:${s.id}:${o.value}`

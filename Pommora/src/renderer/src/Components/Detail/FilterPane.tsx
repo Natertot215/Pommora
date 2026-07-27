@@ -1,16 +1,16 @@
 // The Filtering leaf — authors a table view's filter behind both doors (SettingsPane's Filter
 // entry, ViewSettings' Filter leaf). The rule list fills the pane; each row is
 // (connector)(what)(operator)(value)(×), serialized to the nested FilterGroup by filterModel. The
-// footer carries both pane-level controls: how the rules combine (All / Any / None) and whether the
+// footer carries both pane-level controls: how the rules combine (All / Any) and whether the
 // filter runs at all — two independent axes, neither of which touches the rules. The pane owns the
 // filter slot wholesale for shapes it writes; a hand-authored tree it can't represent renders
 // locked behind an explicit Reset (never silently flattened).
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { FilterRule, SavedView } from '@shared/views'
-import { Icon } from '@renderer/design-system/symbols'
-import { Chip, chipShapeForType } from '@renderer/Components/Chip'
+import { defaultEntityIcon, Icon, iconNameOr } from '@renderer/design-system/symbols'
+import { Chip, ChipRemoveButton, chipShapeForType } from '@renderer/Components/Chip'
 import { ContextChip } from '@renderer/Components/ContextChip'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import {
@@ -23,8 +23,18 @@ import {
   flushTrailing,
   footingLabel,
   footingSymbol,
+  railRow,
+  twisty,
+  twistyOpen,
+  twistySpacer,
 } from '../../design-system/components/menu/menu.css'
 import { PickerMenu, PickerOption } from '../../design-system/components/PickerMenu'
+import {
+  optionRing,
+  PICKER_MAX_HEIGHT,
+  PICKER_TREE_WIDTH,
+} from '../../design-system/components/PickerMenu/pickerMenu.css'
+import { OverflowScroll } from '../../design-system/components/OverflowScroll'
 import { Reveal } from '../../design-system/components/Reveal'
 import { duration as motion } from '../../design-system/tokens/motion'
 import { CalendarPicker } from '../../design-system/components/CalendarPicker/CalendarPicker'
@@ -33,17 +43,19 @@ import { styleFor } from '../../Detail/Views/Table/columnStyles'
 import { condensedDate, formatDate } from '../../Detail/Views/PropertyEditing/formatValue'
 import { contextOptionsFor, type ContextOption } from '../../Detail/Views/pipeline/contextOptions'
 import { declaredType } from '../../Detail/Views/pipeline/value'
+import { toggleValue } from '../../Detail/Views/PropertyEditing/PropertyPicker'
 import { CheckboxGlyph } from '../../Detail/Views/Table/checkboxLook'
 import { onActivateKey } from '../../design-system/interactions/activate'
 import { cx } from '../../design-system/cx'
 import { useSaveView } from '../../Embeds/ViewEmbedScope'
 import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
+import { iconOption } from './pickerControl.css'
 import { optionsOf } from './GroupingPane'
 import {
   type Connector,
   type DecodedFilter,
-  type MatchMode,
+  type PaneMode,
   type OperatorChoice,
   type FilterRow,
   decodeFilter,
@@ -55,12 +67,13 @@ import {
 import * as gp from './groupingPane.css'
 import * as fp from './filterPane.css'
 
-/** All (AND) · Any (OR) · None (NOR — matches none of these). Three options, so PickerControl pops
- *  its menu rather than toggling; whether the filter runs at all is the footer switch, not a mode. */
-const MATCH_OPTIONS: PickerChoice<MatchMode>[] = [
+/** All (AND) · Any (OR). Two options, so PickerControl flips in place behind the double-chevron —
+ *  the dual-option design rule, matching the on/off control beside it. NOR isn't offered: it can't
+ *  be reached from the row connectors either, so a `none` tree is hand-authoring only and decodes
+ *  as locked rather than being shown as an All it would silently become. */
+const MATCH_OPTIONS: PickerChoice<PaneMode>[] = [
   { value: 'all', label: 'All' },
   { value: 'any', label: 'Any' },
-  { value: 'none', label: 'None' },
 ]
 
 /** Two options, so PickerControl flips it in place behind the double-chevron — the dual-option
@@ -130,6 +143,11 @@ function FieldPicker({
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLButtonElement>(null)
+  const leadGlyph =
+    lead ??
+    (icon ? (
+      <Icon name={icon} size={13} {...(iconColor ? { style: { color: iconColor } } : {})} />
+    ) : null)
   return (
     <>
       <button
@@ -139,11 +157,8 @@ function FieldPicker({
         aria-label={ariaLabel}
         onClick={() => setOpen(true)}
       >
-        {lead ??
-          (icon ? (
-            <Icon name={icon} size={13} {...(iconColor ? { style: { color: iconColor } } : {})} />
-          ) : null)}
-        <span className={cx('overflow-eclipse', display === null && fp.placeholder)}>
+        {leadGlyph ? <span className={fp.leadGlyph}>{leadGlyph}</span> : null}
+        <span className={cx(fp.fieldLabel, 'overflow-eclipse', display === null && fp.placeholder)}>
           {display ?? placeholder}
         </span>
         {chevron ? <Icon name="chevrons-up-down" size={12} className={fp.chevron} /> : null}
@@ -183,7 +198,14 @@ function ValueInput({
   numeric: boolean
   onCommit: (next: string | undefined) => void
 }): React.JSX.Element {
-  const el = useRef<HTMLInputElement>(null)
+  // The LAST live input, kept through a ref callback that ignores the detach. Two things defeat a
+  // plain ref here: React detaches refs before passive cleanups, and the `key` below remounts the
+  // input on every committed round-trip — so a node captured at mount is a DEAD earlier one whose
+  // value is stale, and the flush then compares stale-to-current, finds them equal, and saves nothing.
+  const node = useRef<HTMLInputElement | null>(null)
+  const keepNode = (n: HTMLInputElement | null): void => {
+    if (n) node.current = n
+  }
   // Read through refs at teardown: the closure that runs then is the FIRST render's.
   const latest = useRef({ value, onCommit })
   latest.current = { value, onCommit }
@@ -193,17 +215,15 @@ function ValueInput({
   }
   // The pane's Back suppresses pointerdown to protect focus, so leaving that way fires no blur and
   // the edit would be lost. Removal fires no blur either — flush whatever the field still holds.
-  // The node is captured on mount, not read from the ref at teardown — React detaches refs before
-  // passive cleanups run, so `el.current` would already be null.
-  useEffect(() => {
-    const node = el.current
-    return () => {
-      if (node) commit(node.value)
-    }
-  }, [])
+  useEffect(
+    () => () => {
+      if (node.current) commit(node.current.value)
+    },
+    [],
+  )
   return (
     <input
-      ref={el}
+      ref={keepNode}
       key={value ?? ''}
       className={fp.cellInput}
       defaultValue={value ?? ''}
@@ -217,6 +237,184 @@ function ValueInput({
   )
 }
 
+/** The multi-value machinery both value fields need. The picker stays open across ASYNC saves, so a
+ *  second pick inside the refetch window must read the just-committed set, never the stale prop — the
+ *  props round-trip alone silently drops rapid picks. `shown` mirrors locally until the prop catches
+ *  up, then releases. */
+function useMultiValue(
+  values: string[],
+  onCommit: (next: string[]) => void,
+): { shown: string[]; toggle: (v: string) => void } {
+  const [local, setLocal] = useState<string[] | null>(null)
+  if (local && local.length === values.length && local.every((v, i) => v === values[i]))
+    setLocal(null)
+  const shown = local ?? values
+  const toggle = (v: string): void => {
+    const next = toggleValue(shown, v)
+    setLocal(next)
+    onCommit(next)
+  }
+  return { shown, toggle }
+}
+
+/** The clickable shell every multi-value field wears. A div, not a button: the values inside carry
+ *  their own remove <button>s, and nesting one native button in another makes those invisible ×s tab
+ *  stops whose Enter lands on this trigger instead of removing the value. Keyboard parity via
+ *  onActivateKey. */
+function ValueFieldShell({
+  hostRef,
+  onOpen,
+  children,
+}: {
+  hostRef: React.RefObject<HTMLDivElement | null>
+  onOpen: () => void
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: see above — a native button breaks the nested removes
+    <div
+      ref={hostRef}
+      role="button"
+      tabIndex={0}
+      className={fp.valueField}
+      aria-label="Filter values"
+      onClick={onOpen}
+      onKeyDown={onActivateKey(onOpen)}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** The Location field — Sets have no colour of their own, so the picked ones read as titles divided
+ *  by the house segment hairline rather than as colourless chips. Its PICKER is the Grouping pane's
+ *  set list: a MenuItem per Set wearing that Set's own icon, children disclosed on the rail behind a
+ *  twisty. The chevron discloses, the row selects. */
+function LocationField({
+  values,
+  sets,
+  onCommit,
+}: {
+  values: string[]
+  sets: SetNode[]
+  onCommit: (next: string[]) => void
+}): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
+  const { shown, toggle } = useMultiValue(values, onCommit)
+  const byId = new Map(flattenSets(sets).map((s) => [s.id, s]))
+  const disclose = (id: string): void =>
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+
+  const renderSet = (s: SetNode): React.JSX.Element => {
+    const kids = s.sets ?? []
+    const isOpen = expanded.has(s.id)
+    return (
+      // A Fragment, not a wrapper div: the rows must be real siblings for the ring's run-merging to
+      // see them. A per-node wrapper makes every row an only-child and no `+` rule can ever match.
+      <Fragment key={s.id}>
+        <MenuItem
+          selected={shown.includes(s.id)}
+          // A Set row carries no colour of its own, so the 5% selected fill alone is easy to lose in
+          // a packed tree — the ring is what makes a pick obvious at a glance.
+          className={shown.includes(s.id) ? optionRing : undefined}
+          leading={
+            <>
+              {/* Always rendered, unlike the Grouping pane's — there the ROW discloses, so its twisty
+                  is decorative and the Hide Chevrons personalization may drop it. Here the row picks
+                  a value, so the chevron is the only way into a child Set. */}
+              {kids.length > 0 ? (
+                <Icon
+                  name="chevron-right"
+                  size={12}
+                  className={cx(twisty, isOpen && twistyOpen)}
+                  data-twisty
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    disclose(s.id)
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                />
+              ) : (
+                // A leaf Set holds the chevron's width so its glyph lines up under a parent's,
+                // instead of stepping 16px left and breaking the list's icon column.
+                <span className={twistySpacer} data-twisty-spacer />
+              )}
+              <Icon name={iconNameOr(s.icon, defaultEntityIcon('set'))} size={13} />
+            </>
+          }
+          onClick={() => toggle(s.id)}
+        >
+          {s.title}
+        </MenuItem>
+        {kids.length > 0 && (
+          <Reveal open={isOpen}>
+            <div className={railRow}>{kids.map(renderSet)}</div>
+          </Reveal>
+        )}
+      </Fragment>
+    )
+  }
+
+  return (
+    <>
+      <ValueFieldShell hostRef={ref} onOpen={() => setOpen(true)}>
+        {shown.length === 0 ? (
+          <span className={fp.placeholder}>Value</span>
+        ) : (
+          <span className={cx(fp.segmentRun, 'overflow-eclipse')}>
+            {shown.map((v, i) => {
+              const set = byId.get(v)
+              return (
+                <Fragment key={v}>
+                  {i > 0 && <span className={fp.segmentDivider} />}
+                  <span className={fp.segment}>
+                    <Icon
+                      name={set ? setGlyph(set) : defaultEntityIcon('set')}
+                      size={13}
+                      className={fp.segmentIcon}
+                    />
+                    {/* The chip's own label + remove, at their defaults: the melt machinery is what
+                        blurs the title tail under the ×, and it only ever needed a `chipRemovable`
+                        host and this label — never a chip's fill. */}
+                    {/* The tab strip's eclipse, not the chip's melt: a label that runs under the ×
+                        fades at its own edge through the shared mask. One box instead of three
+                        stacked copies, and it reads clearer at this size. */}
+                    <OverflowScroll className={fp.segmentLabel}>{set?.title ?? v}</OverflowScroll>
+                    <ChipRemoveButton label="Remove location" onRemove={() => toggle(v)} />
+                  </span>
+                </Fragment>
+              )
+            })}
+          </span>
+        )}
+      </ValueFieldShell>
+      {/* Left-anchored: disclosing a Set widens the pane, and a right-anchored pane would walk every
+          row sideways out from under the cursor mid-click. Capped so a deep tree scrolls instead of
+          running off the screen. */}
+      <PickerMenu
+        open={open}
+        onDismiss={() => setOpen(false)}
+        triggerRef={ref}
+        origin="left"
+        maxHeight={PICKER_MAX_HEIGHT}
+        width={PICKER_TREE_WIDTH}
+      >
+        {!open
+          ? null
+          : sets.length === 0
+            ? emptyPicker('No Sets in this collection.')
+            : sets.map(renderSet)}
+      </PickerMenu>
+    </>
+  )
+}
+
 /** The chips field — the FILTER-OWNED picker host: the same stay-open toggle vocabulary as the
  *  cell pickers, but committing raw option-value strings into the rule's values[] (never a
  *  PropertyValue — the cell pickers' commit shape is a different axis). */
@@ -225,50 +423,25 @@ function ChipsField({
   options,
   isContext,
   chipShape,
-  emptyLabel = 'No options yet.',
   onCommit,
 }: {
   values: string[]
   options: ContextOption[]
   isContext: boolean
   chipShape: 'pill' | 'label'
-  emptyLabel?: string
   onCommit: (next: string[]) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  // Optimistic accumulator: the picker stays open across ASYNC saves, so a second pick inside the
-  // refetch window must read the just-committed set, never the stale prop — the props-round-trip
-  // alone silently drops rapid picks. Local mirrors until the prop catches up, then releases.
-  const [local, setLocal] = useState<string[] | null>(null)
-  if (local && local.length === values.length && local.every((v, i) => v === values[i]))
-    setLocal(null)
-  const shown = local ?? values
+  const { shown, toggle } = useMultiValue(values, onCommit)
   const byValue = new Map(options.map((o) => [o.value, o]))
-  const toggle = (v: string): void => {
-    const next = shown.includes(v) ? shown.filter((x) => x !== v) : [...shown, v]
-    setLocal(next)
-    onCommit(next)
-  }
   return (
     <>
-      {/* biome-ignore lint/a11y/useSemanticElements: a native button is exactly what breaks here — the
-          chips inside carry their own remove <button>, and nesting one native button in another makes
-          those invisible ×s tab stops whose Enter lands on this trigger instead of removing the chip.
-          Keyboard parity is kept via onActivateKey. */}
-      <div
-        ref={ref}
-        role="button"
-        tabIndex={0}
-        className={fp.valueField}
-        aria-label="Filter values"
-        onClick={() => setOpen(true)}
-        onKeyDown={onActivateKey(() => setOpen(true))}
-      >
+      <ValueFieldShell hostRef={ref} onOpen={() => setOpen(true)}>
         {shown.length === 0 ? (
           <span className={fp.placeholder}>Value</span>
         ) : (
-          <span className={cx(fp.chipRun, gp.subChip, 'overflow-eclipse')}>
+          <span className={cx(fp.chipRun, 'overflow-eclipse')}>
             {shown.map((v) => {
               const o = byValue.get(v)
               return isContext ? (
@@ -291,38 +464,40 @@ function ChipsField({
             })}
           </span>
         )}
-      </div>
+      </ValueFieldShell>
       <PickerMenu open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
-        {!open ? null : options.length === 0
-          ? emptyPicker(emptyLabel)
-          : options.map((o) => (
-              <PickerOption
-                key={o.value}
-                selected={shown.includes(o.value)}
-                onClick={() => toggle(o.value)}
-              >
-                {isContext ? (
-                  <ContextChip color={chipColorFor(o.color)} title={o.label} />
-                ) : (
-                  <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShape} />
-                )}
-              </PickerOption>
-            ))}
+        {!open
+          ? null
+          : options.length === 0
+            ? emptyPicker('No options yet.')
+            : options.map((o) => (
+                <PickerOption
+                  key={o.value}
+                  selected={shown.includes(o.value)}
+                  onClick={() => toggle(o.value)}
+                >
+                  {isContext ? (
+                    <ContextChip color={chipColorFor(o.color)} title={o.label} />
+                  ) : (
+                    <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShape} />
+                  )}
+                </PickerOption>
+              ))}
       </PickerMenu>
     </>
   )
 }
 
-/** A Collection/Set's sets flattened depth-first with indentation depth — the Location picker's list. */
-function flattenSets(
-  sets: SetNode[] | undefined,
-  depth = 0,
-): Array<{ id: string; title: string; depth: number }> {
-  return (sets ?? []).flatMap((s) => [
-    { id: s.id, title: s.title, depth },
-    ...flattenSets(s.sets, depth + 1),
-  ])
+/** Every Set under a container, depth-first — the flat id→title map the segment run reads. The
+ *  PICKER walks the tree itself; this is only for naming an already-picked value. */
+function flattenSets(sets: SetNode[] | undefined): SetNode[] {
+  return (sets ?? []).flatMap((s) => [s, ...flattenSets(s.sets)])
 }
+
+/** A Set's glyph, defaulted — a Set without its own icon still shows the entity default rather than
+ *  a bare title, so a segment and its picker row always read the same. */
+const setGlyph = (s: SetNode): React.ComponentProps<typeof Icon>['name'] =>
+  iconNameOr(s.icon, defaultEntityIcon('set'))
 
 export function FilterPane({
   source,
@@ -355,7 +530,7 @@ export function FilterPane({
   const [justAdded, setJustAdded] = useState<number | null>(null)
   // A mode picked before any rule exists has nowhere to persist — an empty filter encodes to
   // `undefined` — so it's held here and applied by the write that mints the first rule.
-  const [pendingMode, setPendingMode] = useState<MatchMode | null>(null)
+  const [pendingMode, setPendingMode] = useState<PaneMode | null>(null)
 
   // Every write derives from the last view this pane WROTE, not from the render prop. A save
   // round-trips through a full tree reload, so two writes in one gesture — a value's blur-commit
@@ -377,14 +552,23 @@ export function FilterPane({
   const decoded: DecodedFilter = decodeFilter(liveView.filter)
   const enabled = liveView.filter_enabled !== false
   const rows: FilterRow[] = decoded.kind === 'rows' ? decoded.rows : []
-  const decodedMode: MatchMode = decoded.kind === 'rows' ? decoded.mode : 'all'
-  const mode: MatchMode = rows.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
+  const decodedMode: PaneMode = decoded.kind === 'rows' ? decoded.mode : 'all'
+  const mode: PaneMode = rows.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
 
   // Both read the ref at CALL time, never the render-time `liveView`: a handler created before an
   // in-gesture write would otherwise still hold the pre-write snapshot, since a write updates the
   // ref without re-rendering.
-  const save = (nextMode: MatchMode, nextRows: FilterRow[]): void =>
+  const save = (nextMode: PaneMode, nextRows: FilterRow[]): void =>
     commit({ ...writtenRef.current, filter: encodeFilter(nextMode, nextRows) })
+
+  /** The rows as last WRITTEN. Every mutation maps over THIS, never the render-time `rows` — the
+   *  base object alone isn't enough. A ref write doesn't re-render and a save round-trips through a
+   *  full tree reload, so two writes in one gesture (a value's blur-commit and the click that caused
+   *  it) would both map the same pre-save snapshot and the second would silently drop the first. */
+  const liveRows = (): FilterRow[] => {
+    const d = decodeFilter(writtenRef.current.filter)
+    return d.kind === 'rows' ? d.rows : []
+  }
 
   /** On/off is its own persisted axis — flipping it never touches the rules or the mode. */
   const setEnabled = (next: boolean): void =>
@@ -397,31 +581,32 @@ export function FilterPane({
   const defById = new Map(schema.map((d) => [d.id, d]))
   const targetById = new Map(targets.map((t) => [t.id, t]))
 
-  const pickMatch = (pick: MatchMode): void => {
+  const pickMatch = (pick: PaneMode): void => {
     if (pick === mode) return
-    if (rows.length === 0) {
+    const current = liveRows()
+    if (current.length === 0) {
       setPendingMode(pick)
       return
     }
-    // Bulk-set: every connector takes the picked mode (deviations reset). Only `any` splits into
-    // runs, so all and none both flatten back to a single And run.
+    // Bulk-set: every connector takes the picked mode (deviations reset). Only `any` splits the
+    // list into runs; All flattens back to a single And run.
     const bulk = connectorFor(pick)
     save(
       pick,
-      rows.map((row, i) => ({ ...row, connector: i === 0 ? null : bulk })),
+      current.map((row, i) => ({ ...row, connector: i === 0 ? null : bulk })),
     )
   }
 
   const replaceRule = (index: number, rule: FilterRule): void =>
     save(
       mode,
-      rows.map((row, i) => (i === index ? { ...row, rule } : row)),
+      liveRows().map((row, i) => (i === index ? { ...row, rule } : row)),
     )
 
   // Removal is instant, with no collapse: rows are index-keyed, so a survivor shifting into the
   // removed index would inherit the outgoing row's animation and re-unfold from zero height.
   const removeRow = (index: number): void => {
-    const next = rows.filter((_, i) => i !== index)
+    const next = liveRows().filter((_, i) => i !== index)
     if (next.length > 0) next[0] = { ...next[0], connector: null }
     save(mode, next)
   }
@@ -429,21 +614,22 @@ export function FilterPane({
   const toggleConnector = (index: number): void =>
     save(
       mode,
-      rows.map((row, i) =>
+      liveRows().map((row, i) =>
         i === index ? { ...row, connector: row.connector === 'and' ? 'or' : 'and' } : row,
       ),
     )
 
   /** The draft's What pick — the one moment a draft becomes a real (written) rule. */
   const completeDraft = (targetId: string): void => {
+    const current = liveRows()
     setDraft(false)
-    setJustAdded(rows.length)
+    setJustAdded(current.length)
     setPendingMode(null)
     window.setTimeout(() => setJustAdded(null), DISCLOSURE_MS)
     save(mode, [
-      ...rows,
+      ...current,
       {
-        connector: rows.length === 0 || draft === false ? null : draft,
+        connector: current.length === 0 || draft === false ? null : draft,
         rule: mintRule(targetId, schema, contextIds),
       },
     ])
@@ -459,7 +645,7 @@ export function FilterPane({
           onPick(t.id)
         }}
       >
-        <span className={fp.pickerOptionRow}>
+        <span className={iconOption}>
           <Icon name={t.icon ?? 'tag'} size={13} />
           {t.label}
         </span>
@@ -471,7 +657,10 @@ export function FilterPane({
     index: number,
     op: OperatorChoice | undefined,
   ): React.ReactNode => {
-    if (!op || op.slot === 'none') return <span className={fp.valueField} />
+    // An operandless operator (Is Empty · Is Checked · Has File) takes no value at all, so the slot
+    // holds the row's width without painting a field — an empty one reads as a control still waiting
+    // to be filled.
+    if (!op || op.slot === 'none') return <span className={fp.valueSpacer} />
     const rule = row.rule
     const def = defById.get(rule.property_id)
     const patch = (next: Partial<Pick<FilterRule, 'value' | 'values'>>): void =>
@@ -540,19 +729,12 @@ export function FilterPane({
       )
     }
 
-    // slot === 'set' (Location) — any-of over Sets, so it shares the chips host with every other
-    // membership operand. Depth is carried into the label since a nested Set's title alone is ambiguous.
+    // slot === 'set' (Location) — any-of over Sets. It takes the tree, not a flat list: the picker
+    // discloses children under their parent, which is the only thing telling two same-titled Sets apart.
     return (
-      <ChipsField
+      <LocationField
         values={rule.values ?? (rule.value != null ? [rule.value] : [])}
-        options={flattenSets(source.sets).map((s) => ({
-          value: s.id,
-          label: s.title,
-          icon: 'folder',
-        }))}
-        isContext={false}
-        chipShape="label"
-        emptyLabel="No Sets in this collection."
+        sets={source.sets ?? []}
         onCommit={(values) => patch({ values })}
       />
     )
@@ -569,12 +751,9 @@ export function FilterPane({
     // checked wears the def's property-wide checkbox_color (absent = accent), empty stays neutral.
     const isCheckbox = declaredType(row.rule.property_id, schema, contextIds) === 'checkbox'
     const checkboxColor = defById.get(row.rule.property_id)?.checkbox_color
-    const checkboxBox = (o: OperatorChoice): React.JSX.Element => {
-      const checked = o.impliedValue === 'true'
-      return (
-        <CheckboxGlyph checked={checked} color={checkboxColor} className={fp.checkBoxScale} />
-      )
-    }
+    const checkboxBox = (o: OperatorChoice): React.JSX.Element => (
+      <CheckboxGlyph checked={o.impliedValue === 'true'} color={checkboxColor} />
+    )
     return (
       <RevealRow key={index} animate={index === justAdded}>
         <div className={fp.ruleRow}>
@@ -620,6 +799,7 @@ export function FilterPane({
                   <PickerOption
                     key={o.label}
                     selected={o === current}
+                    ring
                     onClick={() => {
                       close()
                       // Operands survive only within the same slot; an implied value writes through.
@@ -639,7 +819,7 @@ export function FilterPane({
                     }}
                   >
                     {isCheckbox ? (
-                      <span className={fp.pickerOptionRow}>
+                      <span className={iconOption}>
                         {checkboxBox(o)}
                         {o.label}
                       </span>
@@ -745,7 +925,9 @@ export function FilterPane({
               className={fp.addRow}
               aria-label="Add filter rule"
               // Seeds only a NEW draft — re-seeding an open one would discard a toggled Or.
-                onClick={() => draft === false && setDraft(rows.length === 0 ? null : connectorFor(mode))}
+              onClick={() =>
+                draft === false && setDraft(rows.length === 0 ? null : connectorFor(mode))
+              }
             >
               <Icon name="plus" size={13} />
             </button>
@@ -759,15 +941,12 @@ export function FilterPane({
           // Withheld on a hand-authored tree: the pane holds no rows to re-serialize there, so a
           // stray mode pick would write an empty filter over it. Reset stays the only writer.
           decoded.kind === 'rows' ? (
-            <span className={fp.footerGroup}>
-              <span className={fp.footerLabel}>Matches</span>
-              <PickerControl
-                ariaLabel="Matches"
-                value={mode}
-                options={MATCH_OPTIONS}
-                onPick={pickMatch}
-              />
-            </span>
+            <PickerControl
+              ariaLabel="Matches"
+              value={mode}
+              options={MATCH_OPTIONS}
+              onPick={pickMatch}
+            />
           ) : undefined
         }
         trailing={

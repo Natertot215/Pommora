@@ -1,8 +1,10 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars, inputFieldVar } from '../tokens/color.css'
 import { text } from '../tokens/typography.css'
+import { fieldRing } from './fieldRing'
 
 const c = colorVars.color
+
 
 /** The fill-quinary, rounded input surface. The OutlineTint channel: any ancestor (or the
  *  component's `outline` prop) sets `--field-ring` and the field paints the house inset ring
@@ -19,7 +21,7 @@ export const field = style([
     color: c.label.primary,
     width: '100%',
     boxSizing: 'border-box',
-    boxShadow: 'inset 0 0 0 1px var(--field-ring, transparent)',
+    boxShadow: fieldRing(),
   },
 ])
 

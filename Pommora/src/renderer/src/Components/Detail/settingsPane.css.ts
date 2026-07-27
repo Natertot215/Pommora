@@ -9,6 +9,7 @@ import {
   titleText,
 } from '../../design-system/components/menu/menu.css'
 import { surface } from '../../design-system/components/menu/menuSurface.css'
+import { fieldRing } from '../../design-system/components/fieldRing'
 
 const c = colorVars.color
 
@@ -100,7 +101,7 @@ export const iconButton = style({
   background: inputFieldVar,
   cursor: 'default',
   color: COLOR.actionLabel,
-  boxShadow: 'inset 0 0 0 1px var(--field-ring, transparent)',
+  boxShadow: fieldRing(),
   selectors: { '&:hover': { background: c.fill.quaternary } },
 })
 
@@ -163,6 +164,9 @@ export const allSpacerCollapsed = style({ flexGrow: 0 })
  *  with the "Options"/"Format" section headings), its chevron flush at the gutter edge. It's not a
  *  MenuItem, so its text escapes the surface's primary titleText tone and reads at the heading tier. */
 export const allHeadingRow = style({
+  // The pane's beat, not the disclosure beat: this row's chevron, its Reveal unfold and the elastic
+  // spacer's height-resize all have to land together, and the other two run on `base` (E-8).
+  vars: { '--twisty-beat': 'var(--duration-base)' },
   display: 'flex',
   alignItems: 'center',
   gap: '4px',
@@ -174,14 +178,6 @@ export const allHeadingRow = style({
   background: 'none',
   cursor: 'default',
 })
-
-/** The disclosure chevron — the sidebar's twisty, pinned to the pane's beat so the rotate,
- *  the Reveal unfold, and the height-resize land together (E-8). */
-export const twisty = style({
-  transition: `transform ${duration.base} ${easing.standard}`,
-  flex: '0 0 auto',
-})
-export const twistyOpen = style({ transform: 'rotate(90deg)' })
 
 /** Unassigned registry rows render dimmer than assigned ones (A-3). */
 export const allRow = style({ color: COLOR.allRow })

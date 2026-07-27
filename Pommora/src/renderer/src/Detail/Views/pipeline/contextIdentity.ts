@@ -1,7 +1,8 @@
 // The ONE identity seam between the tree's context data and every surface: memoized
 // per-tree accessors resolving a Context id → its title/singular/icon and a Space id →
-// its title/icon/color. No surface re-derives these from the tree on its own — a
-// Context's icon and a Space's icon+color render identically everywhere by construction.
+// its title/icon/color. Resolve through here rather than walking the tree: a Context's icon and a
+// Space's icon+color then render identically everywhere by construction. (`Table/resolveContext.ts`
+// still builds its own id map — it predates this seam and should move onto it.)
 // Pure: no fs, no React.
 
 import type { NexusTree } from '@shared/types'

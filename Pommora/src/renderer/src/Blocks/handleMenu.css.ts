@@ -33,10 +33,6 @@ export const rowDisabled = style({
   },
 })
 
-// ── KNOB — the picker's height ceiling: a drill list grows to this, then its body
-// scrolls (MenuScrollFrame owns the cap; header + footer stay pinned).
-export const PICKER_MAX_H = 240
-
 /** Header/footer density for this thin menu — the house zoom knob scales the whole bar
  *  (Nathan's call: the scaled bars read right here; tones stay the house classes). */
 export const barScale = style({ zoom: 0.85 })

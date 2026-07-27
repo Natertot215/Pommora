@@ -170,6 +170,9 @@ export const chipRemove = style({
   transition: 'opacity var(--duration-fast) var(--ease-standard)',
   selectors: {
     '&:hover': { opacity: 1 },
+    // Keyboard parity: the reveal gate reads computed opacity, so without this a focused ×
+    // is a tab stop whose Enter can never remove — it falls through and opens the host.
+    '&:focus-visible': { opacity: 1 },
     // On a Context chip (neutral fill), inherit reads the mostly-neutral text mix — paint the × in the
     // context's own saturated color instead, so it reads as part of the colored chip.
     [`${chipContext} &`]: { color: 'var(--chip-accent)' },
