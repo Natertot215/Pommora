@@ -10,7 +10,7 @@ import type {
 import { UNGROUPED } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
 import { applyPropertyValue, type PropertyValue } from '@shared/propertyValue'
-import { type CardBanner, isCompact, LOCATION_SORT, type SavedView } from '@shared/views'
+import { type CardBanner, isCompact, isLocationFsOrder, type SavedView } from '@shared/views'
 import type { ColumnStyle } from '@shared/columnStyles'
 import { defaultEntityIcon, Icon, iconNameOr } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens/typography.css'
@@ -191,9 +191,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // Sort By: Location on its Location order is a computed filesystem order (drag off); Custom falls to
   // the manual order (drag on). In Location order the per-machine manual order must NOT feed the sorter,
   // or a prior Custom drag persists as the shown order and filesystem order never appears.
-  const locationFsOrder =
-    view.sort?.[0]?.property_id === LOCATION_SORT &&
-    (view.structural_order_mode ?? 'location') === 'location'
+  const locationFsOrder = isLocationFsOrder(view)
   const manualOrder = locationFsOrder
     ? undefined
     : resolveManualOrder(sortedOrGrouped, manualOverride, viewOrders[view.id])

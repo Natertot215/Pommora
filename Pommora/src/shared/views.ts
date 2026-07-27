@@ -319,6 +319,16 @@ export const savedView = z.looseObject({
  *  `location_order_mode` (Location = filesystem, Custom = the view's manual order). */
 export const LOCATION_SORT = '__location__'
 
+/** True when a view sorts by Location AND takes the filesystem order — the pipeline flattens
+ *  the structural walk, and the card drag's within-band reorder goes inert. Both must read the
+ *  same predicate: when they disagree, one honours a key the other doesn't. */
+export function isLocationFsOrder(view: SavedView): boolean {
+  return (
+    view.sort?.[0]?.property_id === LOCATION_SORT &&
+    (view.location_order_mode ?? 'location') === 'location'
+  )
+}
+
 /** Shared on-disk prefix for view ids (`view_<ulid>`); single-sourced so the sentinel and the
  *  minted id can't drift. */
 export const VIEW_ID_PREFIX = 'view_'
