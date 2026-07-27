@@ -1,6 +1,6 @@
 ## Branch Handoff — Contexts & Spaces
 
-The pre-merge record for `contexts-spaces`: 84 commits and an uncommitted working tree spanning 48 files, covering the Contexts registry rewrite, two shared-surface extractions, a lint and accessibility campaign, a documentation truing pass, the FilterPane rebuild, and a three-part adversarial verification with its cleanup folded in.
+The pre-merge record for `contexts-spaces`: 89 commits covering the Contexts registry rewrite, two shared-surface extractions, a lint and accessibility campaign, a documentation truing pass, the FilterPane rebuild, a three-part adversarial verification, and the cleanup that closed everything it found.
 
 Read it as standing truth, not as a diary. Where a decision changed mid-branch, only the decision that survived is stated; reversals are recorded once, under their own heading, because the reasoning still governs.
 
@@ -46,6 +46,8 @@ Two rules a future window must respect, both learned the hard way:
 
 **Channels, not shadows.** `--field-ring` (extracted mid-branch from the Space colour work) is the input layer's one outline contract: consumers set the colour, never the shadow. `fieldRing()` and `focusRing()` express its two recipes, and live in a plain module rather than a stylesheet — vanilla-extract permits a `.css.ts` to export only plain values, so a helper that *builds* a declaration must sit beside the stylesheet, not inside it.
 
+**The layer scale.** `stack.ts` names every z-index the app uses, in three ladders — `shell` for the in-flow chrome, `local` for a component's own internal ordering, `top` for the portal and caret layers. Raw layer numbers are gone from the design system; a new surface picks a rung rather than a number.
+
 ### Behaviour Changes A User Would Notice
 
 - Contexts are user-defined. Areas, Topics and Projects are seeded entries, renameable, recolourable, reorderable and deletable like any other.
@@ -55,7 +57,7 @@ Two rules a future window must respect, both learned the hard way:
 - The ribbon's Settings glyph, a documented no-op since the ribbon was built, now summons a real Settings window.
 - The tab strip eclipses an overflowing label instead of hard-cutting it, and compacts out from under an open side pane.
 - Renaming a page to a leading-underscore name is refused instead of silently making it disappear.
-- Every non-button click surface activates on Enter and Space through one shared primitive.
+- Every non-button click surface activates on Enter and Space through one shared primitive, and a keyboard-opened menu paints a house focus ring rather than Chromium's default outline.
 - The filter authoring pane returns: per-row sizing, Location as a disclosable Set tree with a fixed-width picker, an All/Any footing carrying no label, and an on/off switch independent of the rules.
 
 ### Consolidations
@@ -71,6 +73,11 @@ Each replaced two or more implementations with one:
 - Four hand-assembled checkbox boxes → **`CheckboxGlyph`**.
 - Two `twisty` definitions on different motion beats → one in **`menu.css.ts`**, with the beat as a `--twisty-beat` channel so a surface can pin its chevron to its own unfold. The sidebar's Hide-Chevrons layout re-keys on a `data-twisty` attribute, because a plain stylesheet cannot name a hashed class.
 - The disclosure **rail** → `menu.css.ts`, out of the Grouping pane.
+- Three statements of "anchored below its trigger" → **`dropdownAnchor`**, one base taking a placement and a stack rung.
+- Disclosure state and the recursive Set-tree row, written twice → **`useDisclosureSet`** plus **`DisclosureRow`**, which takes the row's action as a seam. It renders a Fragment rather than a wrapper, because the selection ring merges runs across real siblings.
+- Two `ResizeObserver`s over one pane → **`NotchedPane` as the single measurement owner**, publishing its box to whoever needs the same numbers.
+- Raw z-indexes from 1 to 1100 → the **`stack.ts`** ladders.
+- Three hand-rolled Space glyph fallbacks → the **identity seam**.
 - `activeRow` → **`optionRing`**.
 - `PICKER_MAX_HEIGHT` → out of `Blocks/` into the design system.
 - The chip's reveal-gated remove → **`ChipRemoveButton`**, now used by non-chip surfaces.
@@ -87,6 +94,8 @@ Each replaced two or more implementations with one:
 - **Filter writes rebuilt from a render snapshot.** A ref write does not re-render, so the second write in one gesture re-serialised a pre-save row list: a blur-committed value dropped by the click that caused it, a removal resurrected by the next removal. Every mutator now re-reads the last-written rows at call time.
 - **A text field's flush read a dead DOM node.** The input is keyed on its value, so each commit swaps the element; a node captured at mount went stale, and leaving via Back — which suppresses pointerdown to protect focus and fires no blur — silently saved nothing.
 - **A picker could park off-screen.** The collision flip is decided once per open, but the reset was keyed on unmount, and reopening inside the 380ms exit window cancels it. On shared-anchor hosts the pane inherited the previous placement.
+- **A locked embed reported success while dropping the write.** The config seam returned `ok` on a refused write, so the caller's optimistic state stood until remount. It now refuses explicitly.
+- **The Toolbar's dropdown beaks were hard-coded fractions** of a width they did not own, and were already aimed wrong. They measure the trigger now.
 
 ### Reversals
 
@@ -95,6 +104,7 @@ Each replaced two or more implementations with one:
 - **The legacy `tierN` read path was defended, then deleted.** The claim that migration never rewrote page front-matter was wrong — `reconcileWriteRoot` resolves each `tierN` array, writes the bracketed key and deletes the tier field, and migration step 4 runs it over every entity root. The conversion stays, so a stray legacy root still repairs itself on its next governed write.
 - **Resize strips were given `aria-valuenow`, then stripped of all roles** — the values promised keyboard resize that does not exist.
 - **The filter's `none` (NOR) mode was built, then withdrawn from the pane.** It survives on disk and in the evaluator; the pane offers All and Any only, and a hand-authored NOR decodes as `locked`.
+- **The FilterPane's Location chips became segments**, and the segment's × went through an eclipse fade before landing on a collapsing slot: the × occupies a zero-width grid track at rest and the segment elongates on hover. The grid *item* has to zero its own `min-width` — `0fr` resolves to `minmax(auto, 0fr)`, and the `auto` floor is the item's min-content width.
 
 ### Self-Corrections On Record
 
@@ -105,6 +115,7 @@ Kept because the reasoning still guards something:
 - The documentation audit found the docs asserted **an architecture that was never built**: a SwiftUI manager layer with a DI graph, a live SQLite query engine with a facade, and Connections resolving through SQLite. None existed.
 - The `twisty` hoist treated a deliberate override as a duplicate, desyncing the Properties pane's chevron from its own unfold by 100ms and deleting the comment that recorded the constraint. The beat is now a channel and the reasoning is back in the code.
 - Two shared helpers were exported as functions from a `.css.ts`, which typecheck and lint cannot see and only the vanilla-extract plugin rejects.
+- A whole-tree `git stash` run by one implementation agent swept up three siblings' in-flight files mid-write. Nothing was lost, and the hazard is now recorded in `Guidelines/Design-Sources.md` — agents that write share one tree, so whole-tree git operations are forbidden in their briefs and a clean baseline means a worktree.
 
 ### Verification
 
@@ -114,6 +125,8 @@ They produced **six real defects**, four of them introduced by this branch's own
 
 Two shipped tests were found to **certify guarantees they never tested** — a blur-survives test that clicked a different axis, and abstain tests that only ever used flat rules. Both were widened, and each new test was checked by reverting its fix and confirming it fails.
 
+The eight items the passes parked were then closed in three waves, each dispatched to its own agent and each result re-verified against the code rather than taken from the report.
+
 ### Deliberately Parked
 
 Inert by choice, not half-wired:
@@ -122,36 +135,19 @@ Inert by choice, not half-wired:
 - **`tierN` read-healing on write** — a stale device that writes `tierN` is repaired rather than rejected.
 - **NOR filters are hand-authoring only.**
 - **`bounds` and `scanLabel` on PreviewPane** have no caller yet; hard-coding them would force the first new consumer to edit the component instead of configuring it.
-- **Four affordances whose features have not landed** — the Space pane's actions ellipsis, the ViewPane's More menu, the ViewSettings icon picker, and the Page Preview's own Settings button — are now `disabled` rather than live buttons wired to a no-op. `AccessoryButton` gained a real disabled state to make that expressible, and `InlineEditHeader`'s icon handler became optional.
+- **Four affordances whose features have not landed** — the Space pane's actions ellipsis, the ViewPane's More menu, the ViewSettings icon picker, and the Page Preview's own Settings button — are `disabled` rather than live buttons wired to a no-op. `AccessoryButton` gained a real disabled state to make that expressible, and `InlineEditHeader`'s icon handler became optional.
 - **The group-band "+"** is a visual stub awaiting a creation-affordance design.
 - **Grids have no keyboard navigation, and drag handles are pointer-only** — recorded as real gaps, not lint failures.
 
-### Known Gaps
+### Open Rulings
 
-Named, with the survivor already decided where it is a duplication:
+Two items are open because they need a decision, not an implementation:
 
-- **Three statements of "dropdown anchored below its trigger"** (`pickerMenu` · `viewDropdown` · `settingsPane`), differing only in alignment and z-index. One `dropdownAnchor` base with variants.
-- **Disclosure state and the recursive Set-tree row are written twice** (GroupingPane, FilterPane) and genuinely differ in what the row does. Extract the state as a hook and the row as one component taking a `rowAction`.
-- **`PickerMenu` and `NotchedPane` each run their own `ResizeObserver`** on the same pane.
-- **No z-index scale exists** — raw layer numbers from 1 to 1100 across the design system.
-- **A locked embed's BODY still writes silently.** The config panes are frozen and the seam now refuses,
-  but `TableView` and `CardsView` write view config from the table itself — column resize/reorder/align,
-  hide column, card style, group collapse. They carry optimistic overrides, so they look applied until
-  remount. Freezing them needs a ruling on which in-table gestures a config lock owns; group collapse in
-  particular reads as "how I'm looking at it" rather than authoring, yet it persists into view config.
-- **No `:focus-visible` styling on `MenuItem` or `PickerOption`.** With the focus contract in, a
-  KEYBOARD-opened picker now shows Chromium's default UA outline on its first row. Mouse-opened pickers
-  are unaffected. A house focus ring on those rows is a design call.
-- **Three surfaces still resolve a Space's default glyph without the personalization overrides** —
-  `contextOptions.ts` holds the last copy of that derivation, and `PreviewInspector`'s local Context map
-  re-applies the fallback by hand. The identity seam is normalized; these are the stragglers.
+- **A locked embed's BODY still writes silently.** The config panes are frozen and the seam now refuses, but `TableView` and `CardsView` write view config from the table itself — column resize/reorder/align, hide column, card style, group collapse. They carry optimistic overrides, so they look applied until remount. Freezing them needs a ruling on which in-table gestures a config lock owns; group collapse in particular reads as "how I'm looking at it" rather than authoring, yet it persists into view config.
 - **Right-clicking Change Color in the Space settings pane closes the pane.** Not reproduced. Every renderer-side path was eliminated: no blur or focus listener exists, `setPanel(null)` has one caller whose ref contains the dropdown, and the picker's portals are spared by both dismissal checks. The residual mechanism is a pointer event delivered after the native menu returns input. Two guards landed that are correct regardless — `useDismiss` ignores non-primary buttons, and the header yields the gesture over an editable target, which also closes a proven two-native-menu collision. Confirm with a capture-phase `pointerdown` log during one right-click.
 
 ### Merge Closeout
 
-- [ ] **Rebase onto `origin/main`.** The branch is 84 ahead and 0 behind *local* `main`, but local `main` is one commit behind `origin/main` (`9ba2e53e`), and that commit is not an ancestor of this branch. Without the rebase the merge is not a fast-forward. The branch is already pushed, so this needs a force-push and an explicit decision.
-- [ ] Commit the working tree — the FilterPane rebuild, the PickerMenu capabilities, the design-system hoists, and the verification cleanup.
-- [ ] Commit the four Cards View / Thumbnail Cache planning-doc deletions carried in from a parallel session.
-- [ ] Distil this document's decisions into `History.md` as the branch's entry.
+- [ ] **Rebase onto `origin/main`.** The branch is 89 ahead and 0 behind *local* `main`, but local `main` is one commit behind `origin/main` (`9ba2e53e`), and that commit is not an ancestor of this branch. Without the rebase the merge is not a fast-forward. The branch is already pushed, so this needs a force-push and an explicit decision.
 
-**Gates:** `typecheck 0` (both configs) · `lint 0` · `1883 tests / 184 files` · build clean.
+**Gates:** `typecheck 0` (both configs) · `lint 0` · `1904 tests / 187 files` · build clean · working tree clean.
