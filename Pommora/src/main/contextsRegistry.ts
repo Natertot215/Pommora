@@ -1,14 +1,14 @@
 // IO for the Contexts registry (`.nexus/contexts.json`) — the one identity source for
-// Contexts & Spaces. Reads seed a true-fresh nexus and refuse an unmigrated legacy
-// layout; mutations serialize on the registry file (its own per-file lock, NOT the
-// global schema-op chain — nesting a schema op there would deadlock).
+// Contexts & Spaces. Reads seed a nexus that has none; mutations serialize on the registry
+// file (its own per-file lock, NOT the global schema-op chain — nesting a schema op there
+// would deadlock).
 
 import { contextsRegistry, seededRegistry, type ContextsRegistry } from '@shared/contexts'
 import { fail, ok, type Result } from '@shared/result'
 import type { NexusLabels } from '@shared/types'
-import { pathExists, readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
+import { readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
 import { serializeOnFile } from './io/fileLock'
-import { contextTierDir, contextsRegistryFile } from './paths'
+import { contextsRegistryFile } from './paths'
 
 /** Parse a raw registry object leniently — zod loose keeps unknown fields at both the
  *  registry and entry level, so foreign data round-trips every rewrite. */
@@ -19,9 +19,7 @@ function parseRegistry(raw: Record<string, unknown>): Result<ContextsRegistry> {
     : fail('operation-failed', 'Invalid contexts registry.', 'contexts')
 }
 
-/** Read the registry. Missing file: a legacy tier dir present means an unmigrated nexus
- *  (`unmigrated` — the open path runs the migration first, never blind-seeds); no tier
- *  dirs means a true fresh nexus, seeded from the labels and written. */
+/** Read the registry, seeding a nexus that has none from the labels and writing it. */
 export async function readRegistry(
   root: string,
   labels: NexusLabels,
@@ -30,11 +28,6 @@ export async function readRegistry(
   if (raw.ok) return parseRegistry(raw.value)
   if (raw.error.code !== 'not-found') return raw
 
-  for (const tier of ['areas', 'topics', 'projects'] as const) {
-    if (await pathExists(contextTierDir(root, tier))) {
-      return fail('unmigrated', 'Legacy tier layout awaits migration.', 'contexts')
-    }
-  }
   const seeded = seededRegistry(labels)
   await writeJson(contextsRegistryFile(root), seeded)
   return ok(seeded)

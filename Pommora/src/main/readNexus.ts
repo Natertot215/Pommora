@@ -209,7 +209,7 @@ const rawContextByNode = new WeakMap<object, Json>()
 function retainContextKeys(node: object, raw: Json): void {
   let kept: Json | null = null
   for (const [k, v] of Object.entries(raw)) {
-    if (parseContextKey(k) !== null || k === 'tier1' || k === 'tier2' || k === 'tier3') {
+    if (parseContextKey(k) !== null) {
       kept ??= {}
       kept[k] = v
     }
