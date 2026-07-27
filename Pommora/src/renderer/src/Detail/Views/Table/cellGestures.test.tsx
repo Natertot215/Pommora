@@ -338,7 +338,7 @@ describe('optimistic value persistence', () => {
   })
 })
 
-describe('context tier cells', () => {
+describe('Context cells', () => {
   const contextCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[6] // ctx_areas last
 
   it("click opens the context picker listing the Context's Spaces; toggling writes setContext", async () => {
@@ -608,7 +608,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () => ({
       p1: {
         id: 'p1',
-        tier1: ['area_work', 'area_life'],
+        '[Areas]': ['area_work', 'area_life'],
         properties: { prop_status: { $status: 'active' }, prop_tags: ['a', 'b'] },
       },
     })

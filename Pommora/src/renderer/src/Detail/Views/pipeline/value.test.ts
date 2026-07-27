@@ -98,7 +98,7 @@ describe('resolveFieldValue memoization', () => {
       id: 'p1',
       title: 'One',
       path: 'C/One.md',
-      frontmatter: { id: 'p1', properties: { prop_s: { $status: 'open' } }, tier1: ['a'] },
+      frontmatter: { id: 'p1', properties: { prop_s: { $status: 'open' } }, '[Areas]': ['a'] },
     }
     // Identity-stability holds for NON-coerced kinds (the cached parse is returned as-is, tested here).
     // A coerced plain-string kind (url/select/datetime re-tagged to the column) returns a FRESH object

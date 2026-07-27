@@ -19,7 +19,7 @@ describe('reorderColumns', () => {
     ])
   })
 
-  it('writes default-on tier/title columns explicitly even when absent from property_order', () => {
+  it('writes default-on Context/title columns explicitly even when absent from property_order', () => {
     expect(reorderColumns(['_title', 'ctx_areas'], [], 'ctx_areas', '_title')).toEqual([
       'ctx_areas',
       '_title',

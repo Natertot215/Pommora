@@ -17,7 +17,7 @@ describe('loadValues', () => {
     await mkdir(join(root, 'Col', 'SetA'), { recursive: true })
     await writeFile(
       join(root, 'Col', 'p1.md'),
-      '---\nid: p1\ntier1:\n  - area1\nproperties:\n  prop_status:\n    $status: in_progress\n---\n\nbody\n',
+      '---\nid: p1\n"[Areas]":\n  - Work\nproperties:\n  prop_status:\n    $status: in_progress\n---\n\nbody\n',
     )
     await writeFile(
       join(root, 'Col', 'SetA', 'p2.md'),
@@ -26,7 +26,7 @@ describe('loadValues', () => {
 
     const values = await loadValues(root, 'Col')
     expect(Object.keys(values).sort()).toEqual(['p1', 'p2'])
-    expect(values.p1.tier1).toEqual(['area1'])
+    expect(values.p1['[Areas]']).toEqual(['Work'])
     expect(values.p1.properties?.prop_status).toEqual({ $status: 'in_progress' })
     expect(values.p2.properties?.prop_num).toBe(7)
   })

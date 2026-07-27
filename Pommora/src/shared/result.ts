@@ -9,8 +9,6 @@ export type ErrorCode =
   | 'invalid-name'
   | 'invalid-path'
   | 'invalid-property'
-  | 'invalid-tier' // a legacy pre-registry Context layout without a Contexts registry — the open path
-  // migrates before anything reads contexts, so this shouldn't surface today
   | 'invalid-event'
   | 'not-agenda'
   | 'lossy-change-requires-confirmation'

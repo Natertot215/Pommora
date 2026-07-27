@@ -30,7 +30,7 @@ function row(
   id: string,
   opts: {
     props?: Record<string, unknown>
-    tier1?: string[]
+    areas?: string[]
     modified_at?: string
     created_at?: string
   } = {},
@@ -45,7 +45,7 @@ function row(
       ...(opts.created_at ? { created_at: opts.created_at } : {}),
       properties: opts.props ?? {},
     },
-    ...(opts.tier1 ? { contextValues: { ctx_areas: opts.tier1 } } : {}),
+    ...(opts.areas ? { contextValues: { ctx_areas: opts.areas } } : {}),
   }
 }
 
@@ -218,9 +218,9 @@ describe('applyFilter — per-type matrix', () => {
     ).toEqual(['t', 'f', 'n'])
   })
 
-  it('tier AND user relation filter by id-list membership', () => {
-    const rA = row('rA', { tier1: ['area1'] })
-    const rB = row('rB', { tier1: ['area2'] })
+  it('a Context AND a user relation filter by id-list membership', () => {
+    const rA = row('rA', { areas: ['area1'] })
+    const rB = row('rB', { areas: ['area2'] })
     const rRel = row('rRel', { props: { prop_rel: [{ $ctx: 'x' }] } })
     expect(
       ids([rA, rB], {
@@ -476,7 +476,7 @@ describe('applyFilter — multi-operand values[]', () => {
     row('b', { props: { prop_sel: 'b' } }),
     row('ab', { props: { prop_tags: ['a', 'b'] } }),
     row('ac', { props: { prop_tags: ['a', 'c'] } }),
-    row('t1', { tier1: ['area1', 'area2'] }),
+    row('t1', { areas: ['area1', 'area2'] }),
   ]
 
   it('select is with values[] = any-of; is_not = none-of', () => {
@@ -524,7 +524,7 @@ describe('applyFilter — multi-operand values[]', () => {
     ).toEqual(['ab', 'ac'])
   })
 
-  it('tier contains_all / contains_any', () => {
+  it('Context contains_all / contains_any', () => {
     expect(
       ids([rows[4]], {
         match: 'all',
