@@ -5,6 +5,10 @@
 import { duration, easing } from '../tokens/motion'
 import { TINT_STEPS, tintAt } from '../tokens/tint'
 
+/** KNOB — a menu ROW's ring weight. Selection and keyboard focus both paint at this width and differ
+ *  only in tone, so one can never read as heavier than the other. */
+export const ROW_RING = 2
+
 /** THE statement of what `--field-ring` paints, at a given thickness. A surface needing a heavier ring
  *  (a menu row's selection outline) composes this instead of restating the shadow, so the channel and
  *  its geometry can never drift apart. */

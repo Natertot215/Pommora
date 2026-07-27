@@ -108,6 +108,7 @@ export function NotchedPane({
   notchInsetBottom,
   notchSide = 'top',
   accentOutline = false,
+  onResize,
   style,
 }: {
   children: ReactNode
@@ -134,22 +135,33 @@ export function NotchedPane({
   /** Outline the pane in accent @ tint-secondary (the page-location border signal) instead of the
    *  default white frost stroke — opt-in for the block-surface pickers only. */
   accentOutline?: boolean
+  /** Publishes the pane's measured box to a host that needs the SAME numbers for its own reason —
+   *  PickerMenu places off it. The pane is the one measurement owner: a host consumes this instead
+   *  of observing the pane itself, so one resize costs one observer and one layout read. */
+  onResize?: (w: number, h: number) => void
   style?: CSSProperties
 }): React.JSX.Element {
   const popRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
+  const measured = useRef(size)
+  const publish = useRef(onResize)
+  useLayoutEffect(() => {
+    publish.current = onResize
+  })
   useLayoutEffect(() => {
     const el = popRef.current
     if (!el) return
-    // Bail on unchanged sizes: the RO fires every frame while pane content animates its height,
-    // and an unconditional fresh object per callback re-renders (and re-serializes the path) for
-    // frames where nothing moved. offsetWidth/Height are integral, so jitter can't defeat the bail.
-    const measure = (): void =>
-      setSize((prev) => {
-        const w = el.offsetWidth
-        const h = el.offsetHeight
-        return prev.w === w && prev.h === h ? prev : { w, h }
-      })
+    // Bail on unchanged sizes: the RO fires every frame while pane content animates its height, and
+    // everything past this line — a re-render, a re-serialized path, the host's placement pass — is
+    // wasted on frames where nothing moved. offsetWidth/Height are integral, so jitter can't defeat it.
+    const measure = (): void => {
+      const w = el.offsetWidth
+      const h = el.offsetHeight
+      if (measured.current.w === w && measured.current.h === h) return
+      measured.current = { w, h }
+      setSize(measured.current)
+      publish.current?.(w, h)
+    }
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(el)

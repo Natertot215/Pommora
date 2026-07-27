@@ -2,7 +2,8 @@ import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../tokens/color.css'
 import { text } from '../../tokens/typography.css'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
-import { fieldRing } from '../fieldRing'
+import { dropdownAnchor } from '../dropdownAnchor'
+import { fieldRing, ROW_RING } from '../fieldRing'
 
 const c = colorVars.color
 
@@ -16,10 +17,8 @@ export const PICKER_MAX_HEIGHT = 240
  *  sideways mid-click. Fixed here, eclipsed there. */
 export const PICKER_TREE_WIDTH = 210
 
-/** KNOB — the selected-row ring's thickness, in px so the run-merge can build its directional
- *  sides from the same number the full ring uses. */
-const RING_PX = 2
-const OPTION_RING = `${RING_PX}px`
+// Selection paints at the shared row weight; only the TONE separates it from keyboard focus.
+const OPTION_RING = `${ROW_RING}px`
 
 /** The selected-row RING — the tile-selection tone, for lists whose rows carry no colour of their
  *  own (Sets, operators). A chip already signals selection with its fill, so it never gets this:
@@ -27,7 +26,7 @@ const OPTION_RING = `${RING_PX}px`
  *  channel, and INSET, so it rides inside the row's radius and never reflows the list. */
 export const optionRing = style({
   vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.primary) },
-  boxShadow: fieldRing(RING_PX),
+  boxShadow: fieldRing(ROW_RING),
 })
 
 // ── Vertical unification: a RUN of adjacent selected rows reads as ONE outlined region, the way a
@@ -69,21 +68,12 @@ globalStyle(BELOW.flatMap((b) => ABOVE.map((a) => `${b} ${optionRing}:has(${a})`
   ...SQUARE_BOTTOM,
 })
 
-export const anchor = style({
-  position: 'absolute',
-  top: 'calc(100% + 6px)',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  zIndex: 20,
-})
+/** KNOB — an inline picker's layer, above the host chrome it hangs over. */
+const ANCHOR_Z = 20
+
+export const anchor = style(dropdownAnchor('center', ANCHOR_Z))
 /** Upward-opening variant — the pane hangs ABOVE its trigger (beak-down NotchedPane). */
-export const anchorUp = style({
-  position: 'absolute',
-  bottom: 'calc(100% + 6px)',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  zIndex: 20,
-})
+export const anchorUp = style(dropdownAnchor('up', ANCHOR_Z))
 /** The self-managed top layer — a fixed body-portal position (set inline from the measured trigger)
  *  so the pane escapes any clipping ancestor (the settings dropdown's frost clip). */
 export const layer = style({ position: 'fixed', zIndex: 1100 })
@@ -126,7 +116,18 @@ export const option = style([
     borderRadius: '8px',
     color: c.label.control,
     cursor: 'default',
-    selectors: { '&:hover': { background: c.state.hover } },
+    selectors: {
+      '&:hover': { background: c.state.hover },
+    // Keyboard focus only. `:focus-visible` never matches the programmatic focus that follows a
+    // click, so a mouse-opened menu looks untouched and a keyboard-opened one shows where it is.
+    // The tone is the FIELD's focus tone through the same channel — a step lighter than the
+    // selection ring's, so a focused row and a chosen one stay tellable apart at the same weight.
+    '&:focus-visible': {
+      outline: 'none',
+      boxShadow: fieldRing(ROW_RING),
+      vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
+    },
+    },
   },
 ])
 

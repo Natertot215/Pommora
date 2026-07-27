@@ -2,6 +2,8 @@ import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../tokens/color.css'
 import { text, truncateHoverScroll } from '../../tokens/typography.css'
 import { duration, easing } from '../../tokens/motion'
+import { TINT_STEPS, tintAt } from '../../tokens/tint'
+import { fieldRing, ROW_RING } from '../fieldRing'
 
 const c = colorVars.color
 
@@ -23,6 +25,15 @@ export const item = style([
     userSelect: 'none',
     selectors: {
       '&:hover': { background: c.state.hover },
+    // Keyboard focus only. `:focus-visible` never matches the programmatic focus that follows a
+    // click, so a mouse-opened menu looks untouched and a keyboard-opened one shows where it is.
+    // The tone is the FIELD's focus tone through the same channel — a step lighter than the
+    // selection ring's, so a focused row and a chosen one stay tellable apart at the same weight.
+    '&:focus-visible': {
+      outline: 'none',
+      boxShadow: fieldRing(ROW_RING),
+      vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
+    },
     },
   },
 ])

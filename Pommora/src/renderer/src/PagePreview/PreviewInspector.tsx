@@ -14,7 +14,11 @@ import { iconOption } from '../Components/Detail/pickerControl.css'
 import { Cell } from '../Detail/Views/Table/Cell'
 import { buildResolveContext, type ResolveContext } from '../Detail/Views/Table/resolveContext'
 import { contextOptionsFor } from '../Detail/Views/pipeline/contextOptions'
-import { contextIdentityOf, spaceIdentityOf } from '../Detail/Views/pipeline/contextIdentity'
+import {
+  contextIdentityOf,
+  contextIdsOf,
+  spaceIdentityOf,
+} from '../Detail/Views/pipeline/contextIdentity'
 import { PropertyEditor } from '../Detail/Views/PropertyEditing/PropertyEditor'
 import { sharedValueClickAction } from '../Detail/Views/PropertyEditing/valueClick'
 import { parseEditorValue } from '../Detail/Views/Cards/cardValueInput'
@@ -79,11 +83,10 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   // keys resolve to Space ids against the live tree.
   const contextRows = useMemo(
     () =>
-      (tree?.contexts ?? []).map((g) => ({
-        id: g.def.id,
-        label: g.def.title,
-        icon: g.def.icon,
-      })),
+      contextIdsOf(tree).flatMap((id) => {
+        const identity = contextIdentityOf(tree, id)
+        return identity ? [{ id, label: identity.title, icon: identity.icon }] : []
+      }),
     [tree],
   )
   const ctxRegistry = useMemo<ContextsRegistry | null>(
