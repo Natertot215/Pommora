@@ -801,26 +801,24 @@ export function FilterPane({
             }
           </FieldPicker>
           {valueCell(row, index, current)}
-          {/* The pane always keeps one row, so the last one carries no × and runs full width.
-              Clearing its operand is the way out — an unauthored rule abstains and filters nothing. */}
-          {rows.length > 1 && (
-            <button
-              type="button"
-              className={fp.removeButton}
-              aria-label="Remove filter"
-              onClick={() => removeRow(index)}
-            >
-              <Icon name="x" size={11} />
-            </button>
-          )}
+          {/* Every row clears, the last one included: removing it empties the rules, and the pane
+              re-renders its blank lead row — so the × drops the filtering and leaves the fields. */}
+          <button
+            type="button"
+            className={fp.removeButton}
+            aria-label="Remove filter"
+            onClick={() => removeRow(index)}
+          >
+            <Icon name="x" size={11} />
+          </button>
         </div>
       </RevealRow>
     )
   }
 
   // An empty filter always shows one blank row, so the pane opens ready to author rather than
-  // needing the "+" first. That lead row is permanent, so it carries no clear-× and its blank slots
-  // run the row's full width.
+  // needing the "+" first. Nothing is authored yet, so it carries no clear-× and its blank slots
+  // run the row's full width — clearing the last real row is what lands here.
   const lead = rows.length === 0
   const draftRow = (draft !== false || lead) && (
     <RevealRow animate={!lead}>

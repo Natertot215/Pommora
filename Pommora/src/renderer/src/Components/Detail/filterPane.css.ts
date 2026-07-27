@@ -89,7 +89,9 @@ export const cellField = style([
   fieldBase,
   {
     width: 'auto',
-    flex: '0 1 auto',
+    // Rigid by default: a cell naming the rule (What, Operator) must stay whole at any pane
+    // width. Only the value cell opts back into shrinking, so it alone absorbs the overflow.
+    flex: '0 0 auto',
     minWidth: 0,
     padding: '3px 6px',
     border: 'none',
@@ -125,14 +127,13 @@ export const leadGlyph = style({
   flexShrink: 0,
 })
 
-/** The Control (operator) cell — the row's SMALLEST-WIDTH priority. It takes exactly its own
- *  label per row and is never granted spare room, so an `Is` row's operator is visibly narrower
- *  than an `Isn't Inside` row's. It shrinks only after the two cells beside it have given way,
- *  which keeps it from becoming the widest thing in the row once space runs out. */
-export const controlField = style([cellField, { flex: '0 1 auto', flexShrink: 0.2 }])
+/** The Control (operator) cell — takes exactly its own label, so an `Is` row's operator is
+ *  visibly narrower than an `Isn't Inside` row's. Rigid like the What cell it follows. */
+export const controlField = style([cellField, { flex: '0 0 auto' }])
 
 /** The Condition (value) cell — absorbs the row's leftover width so rows end flush at the pane
- *  edge, and is the first to give way under pressure (its full value stays readable in its picker). */
+ *  edge, and is the ONLY cell that gives way: What and Operator name the rule and stay whole at
+ *  any pane width, while the value truncates (its full text stays readable in its picker). */
 export const valueField = style([cellField, { flex: '1 1 auto' }])
 
 /** The And/Or connector — a mini field in the footnote/secondary register (the trailing-option
