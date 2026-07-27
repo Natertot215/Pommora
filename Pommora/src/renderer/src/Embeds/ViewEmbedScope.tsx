@@ -6,7 +6,7 @@
 
 import { createContext, useContext } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
-import type { SavedView } from '@shared/views'
+import { pickViewState, type SavedView, type ViewState } from '@shared/views'
 import { saveViewAdopting } from '@renderer/Detail/Views/viewMint'
 
 /** The refusal a locked scope answers every view-config write with — surfaces report it, never
@@ -19,7 +19,11 @@ export interface ViewEmbedScopeValue {
   /** Persist the tile's copied config — writes the block payload via the saveBlocks updater. Refuses
    *  while `locked` (B-5): every config surface routes through here, so one gate freezes them all. */
   persistConfig: (next: SavedView) => void
-  /** B-5 per-tile config lock. Frozen: view config + view CRUD. Live: data drags + value edits. */
+  /** Persist the tile's view STATE, folded onto the stored view. Never lock-gated, and never a route
+   *  for config: it writes the state keys alone, so a refused override can't ride along with it. */
+  persistState: (next: ViewState) => void
+  /** B-5 per-tile config lock. Frozen: view config + view CRUD. Live: data drags, value edits, and
+   *  view state — collapsing a band says how you're reading the tile, not how it's configured. */
   locked: boolean
   /** Toggle the lock — writes the tile entry directly (never through the frozen persistConfig). */
   setLocked: (locked: boolean) => void
@@ -33,19 +37,26 @@ export const useViewEmbedScope = (): ViewEmbedScopeValue | null => useContext(Ct
  *  (the sentinel/mint/active-slot machinery never runs) — or a refusal envelope while the
  *  tile is locked; outside, the adopt-and-save path unchanged. The scope's `view` may be
  *  stale mid-gesture, so callers still pass the full next view, exactly as they did to
- *  saveViewAdopting. */
+ *  saveViewAdopting. `viewState` marks a write as how-you're-reading-it rather than config:
+ *  it survives the lock, and only then narrows to the state keys — an unlocked write stays whole
+ *  so it keeps folding in every sibling override the way every other persist does. */
 export function useSaveView(
   source: CollectionNode | SetNode,
   refetch: () => Promise<void>,
 ): (
   view: SavedView,
-  opts?: { skipRefetch?: boolean },
+  opts?: { skipRefetch?: boolean; viewState?: boolean },
 ) => Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const scope = useViewEmbedScope()
   if (scope) {
     // An embed re-renders off its own tile payload — persistConfig updates it in place, no refetch path.
-    return (view) => {
-      if (scope.locked) return Promise.resolve({ ok: false as const, error: VIEW_CONFIG_LOCKED })
+    return (view, opts) => {
+      if (scope.locked) {
+        if (!opts?.viewState)
+          return Promise.resolve({ ok: false as const, error: VIEW_CONFIG_LOCKED })
+        scope.persistState(pickViewState(view))
+        return Promise.resolve({ ok: true as const, id: view.id })
+      }
       scope.persistConfig(view)
       return Promise.resolve({ ok: true as const, id: view.id })
     }

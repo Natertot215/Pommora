@@ -275,7 +275,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     else next.add(key)
     setCollapsed(next)
     // The local `collapsed` state already shows the toggle — skip the refetch's redundant full walk.
-    void saveView({ ...view, collapsed_groups: [...next] }, { skipRefetch: true })
+    void saveView({ ...view, collapsed_groups: [...next] }, { skipRefetch: true, viewState: true })
   }
 
   const banner: CardBanner = view.card_banner ?? 'cover'

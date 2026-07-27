@@ -475,10 +475,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // saves against it — never mints a rival default from its own sentinel. skipRefetch defaults true:
   // order/width/align/collapse/style all show through a live override, so a refetch would only repaint
   // redundantly. A patch with NO optimistic layer (hide_column_icons) passes false so it actually reflects.
-  const persistView = (patch: Partial<SavedView>, skipRefetch = true): void => {
+  const persistView = (
+    patch: Partial<SavedView>,
+    opts?: { skipRefetch?: boolean; viewState?: boolean },
+  ): void => {
     void saveView(
       mergeOverrides(liveView, widthOverride, alignOverride, collapsed, patch, styleOverride),
-      { skipRefetch },
+      { skipRefetch: opts?.skipRefetch ?? true, viewState: opts?.viewState },
     )
   }
   const toggleCollapse = (key: string): void => {
@@ -486,7 +489,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (next.has(key)) next.delete(key)
     else next.add(key)
     setCollapsed(next)
-    persistView({ collapsed_groups: [...next] })
+    persistView({ collapsed_groups: [...next] }, { viewState: true })
   }
   const reorderColumn = (activeId: string, overId: string): void => {
     const next = reorderColumns(
@@ -602,7 +605,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     })
     if (action === 'column:hide') hideColumn(id)
     else if (action === 'column:toggle-icons')
-      persistView({ hide_column_icons: !(liveView.hide_column_icons ?? true) }, false)
+      persistView({ hide_column_icons: !(liveView.hide_column_icons ?? true) }, { skipRefetch: false })
     else if (action?.startsWith('align:'))
       setColumnAlign(id, action.slice('align:'.length) as ColumnAlign)
     else if (action?.startsWith('style:')) {

@@ -193,6 +193,18 @@ const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
 const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
 const EMPTY_PLACEMENT_SET = new Set<string>(EMPTY_PLACEMENTS)
 
+/** How you are LOOKING at a view, as opposed to how it is configured. It persists with the view
+ *  like any other field — collapse is remembered across sessions — but a config lock never freezes
+ *  it: collapsing a band is a way of reading the view, not an edit to it. */
+export const VIEW_STATE_KEYS = ['collapsed_groups'] as const
+export type ViewState = Pick<SavedView, (typeof VIEW_STATE_KEYS)[number]>
+
+/** Lift the state fields out of a full view, so a state write can land on a frozen view without
+ *  carrying the config alongside it. */
+export function pickViewState(view: SavedView): ViewState {
+  return { collapsed_groups: view.collapsed_groups }
+}
+
 /** Narrow an unknown to one of `allowed`'s members, else undefined — the single guard the
  *  lenient group decode reuses for every enum field. */
 function asEnum<T extends string>(value: unknown, allowed: ReadonlySet<string>): T | undefined {

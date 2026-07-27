@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import type { ViewBlockEntry } from '@shared/blocks'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
-import { DEFAULT_VIEW_ID, mintDefaultView, mintNewView, type SavedView } from '@shared/views'
+import {
+  DEFAULT_VIEW_ID,
+  mintDefaultView,
+  mintNewView,
+  type SavedView,
+  type ViewState,
+} from '@shared/views'
 import { Icon, iconNameOr } from '@renderer/design-system/symbols'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
 import {
@@ -276,8 +282,7 @@ export function ViewEmbedBlock({
   }
   // The lock toggle rides patchEntry's `locked` exemption above, so you can always unlock.
   const setLocked = (v: boolean): void => patchEntry({ locked: v ? true : undefined })
-  const persistConfig = (i: number, config: SavedView): void => {
-    if (locked) return // B-5: every config surface routes through here, so this one gate freezes them all
+  const writeConfig = (i: number, config: SavedView): void => {
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       const el = arr[i]
@@ -285,6 +290,16 @@ export function ViewEmbedBlock({
       arr[i] = { ...(el as Record<string, unknown>), config }
       return { ...raw, views: arr }
     })
+  }
+  const persistConfig = (i: number, config: SavedView): void => {
+    if (locked) return // B-5: every config surface routes through here, so this one gate freezes them all
+    writeConfig(i, config)
+  }
+  // View state folds onto the STORED view, never the caller's: on a locked tile the live overrides
+  // hold gestures the lock already refused, and folding those in would smuggle them past it.
+  const persistState = (i: number, state: ViewState): void => {
+    const stored = views[i]
+    if (stored) writeConfig(i, { ...stored, ...state })
   }
   // A new view mints blank on the ACTIVE view's source and becomes active. Its payload-local id
   // takes the first free slot in the coerce family — deletes shift indexes, so the next slot
@@ -467,6 +482,7 @@ export function ViewEmbedBlock({
         source,
         view,
         persistConfig: (next) => persistConfig(index, next),
+        persistState: (next) => persistState(index, next),
         locked,
         setLocked,
       }}
