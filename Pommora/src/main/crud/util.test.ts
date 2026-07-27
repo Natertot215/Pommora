@@ -16,6 +16,12 @@ describe('invalidName', () => {
       expect(invalidName(n), JSON.stringify(n)).toBe(true)
   })
 
+  // The filesystem would take a pipe; a connection can't. `[[A|B]]` reads B as the alias, so a page
+  // titled "A|B" could never be linked back to.
+  it('rejects a pipe — it is the connection alias delimiter', () => {
+    for (const n of ['A|B', 'Notes | Drafts', '|lead']) expect(invalidName(n), n).toBe(true)
+  })
+
   it('rejects a trailing managed extension so filename = title holds', () => {
     for (const n of ['Note.md', 'Note.MD', 'Thing.task.json', 'Thing.event.json'])
       expect(invalidName(n), n).toBe(true)

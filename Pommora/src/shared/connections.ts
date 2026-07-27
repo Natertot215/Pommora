@@ -1,8 +1,13 @@
-// Connection model. Connections live ONLY as title-only `[[Title]]` text in a Page's
-// Markdown body (page→page) — no on-disk store, no frontmatter mirror, no id / pipe /
-// alias. Resolution is computed at read time: normalized body-title → the unique page
-// holding that title → its id; the id never touches disk. `![[ ]]` and `{{ }}` are not
-// connections. Obsidian/GitHub-compatible. Mirrors Swift's ConnectionTitle/Scanner.
+// Connection model. Connections live ONLY as `[[Title]]` text in a Page's Markdown body
+// (page→page) — no on-disk store, no frontmatter mirror, no id. Resolution is computed at
+// read time: normalized body-title → the unique page holding that title → its id; the id
+// never touches disk. `![[ ]]` and `{{ }}` are not connections. Obsidian/GitHub-compatible.
+// Mirrors Swift's ConnectionTitle/Scanner.
+//
+// `[[Title|alias]]` parses: the TITLE alone resolves, and the alias is carried through every
+// rewrite rather than dropped. Nothing authors or renders an alias yet — a title is what a
+// connection means — but no code may destroy one, so the syntax stays intact for the pass
+// that gives it a display treatment.
 //
 // This module is shared (renderer-importable: autocomplete + inline styling later) — no
 // fs, no React. normalizeTitle is the SINGLE normalization the scanner, the phantom key,
@@ -14,22 +19,22 @@ export function normalizeTitle(raw: string): string {
   return raw.trim().toLowerCase().normalize('NFC')
 }
 
-/** A fresh global regex matching `[[Title]]` / `[[Title|legacy]]` (pipe segment dropped),
- *  excluding `![[ ]]` image embeds. `[[ ]]` is the only connection syntax. Returned fresh
- *  per call so callers never share `lastIndex`. Capture group 1 = the raw title.
+/** A fresh global regex matching `[[Title]]` / `[[Title|alias]]`, excluding `![[ ]]` image embeds.
+ *  `[[ ]]` is the only connection syntax. Returned fresh per call so callers never share
+ *  `lastIndex`. Capture group 1 = the raw title, group 2 = the alias when one is present.
  *
  *  The title tolerates internal brackets — `[[Notes [WIP] final]]` captures `Notes [WIP] final`
  *  — by treating a `]` as content unless it's the closing `]]` pair (`\](?!\])`). A title ending
  *  in `]` (`[[Notes [WIP]]]`) is the one irreducible ambiguity of the `[[ ]]` grammar (`]]]` could
  *  split either way): it degrades to a recognized phantom, never corrupts the surrounding text. `|`
- *  stays the legacy-alias delimiter, so it can't appear in a title.
+ *  is the alias delimiter, so a title can't hold one — CRUD's invalidName rejects it at the source.
  *
  *  Title + alias are length-capped at 255 (the filesystem name limit — a longer title can't name a
  *  real page anyway). The cap is load-bearing, not cosmetic: allowing `[` in the class made an
  *  unclosed `[`-run backtrack quadratically at every `[[` start, so an unbounded `+` here is a
  *  ReDoS that freezes buildIndex + the live tokenizer on a pathological body. */
 export function pageLinkPattern(): RegExp {
-  return /(?<!!)\[\[((?:[^\]\r\n|]|\](?!\])){1,255})(?:\|[^\]\r\n]{0,255})?\]\]/g
+  return /(?<!!)\[\[((?:[^\]\r\n|]|\](?!\])){1,255})(?:\|([^\]\r\n]{0,255}))?\]\]/g
 }
 
 /** A `[[Title]]` occurrence found in a body, aggregated by normalized title. */

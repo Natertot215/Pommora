@@ -9,10 +9,14 @@ describe('rewriteConnections', () => {
     )
   })
 
-  it('matches case-insensitively and drops a legacy pipe', () => {
-    expect(rewriteConnections('[[old page]] and [[Old Page|01H]]', 'Old Page', 'New')).toBe(
-      '[[New]] and [[New]]',
+  it('matches case-insensitively and carries an alias through', () => {
+    expect(rewriteConnections('[[old page]] and [[Old Page|the old one]]', 'Old Page', 'New')).toBe(
+      '[[New]] and [[New|the old one]]',
     )
+  })
+
+  it('drops an empty alias segment rather than preserving a bare pipe', () => {
+    expect(rewriteConnections('[[Old|]]', 'Old', 'New')).toBe('[[New]]')
   })
 
   it('leaves non-matching links and image embeds untouched', () => {
