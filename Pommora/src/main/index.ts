@@ -64,6 +64,7 @@ import { serializeOnFile } from './io/fileLock'
 import { openSessionIndex, closeSessionIndex } from './sessionIndex'
 import { stampAdopted } from './adopt'
 import { ensureIdentity } from './identity'
+import { ensureContextsRegistry } from './contextsRegistry'
 import {
   ensureSettings,
   readDefaultViewScale,
@@ -556,6 +557,7 @@ async function prepareOpenedNexus(path: string): Promise<void> {
   try {
     await ensureIdentity(path)
     await ensureSettings(path)
+    await ensureContextsRegistry(path)
   } catch (e) {
     console.error('ensure config-on-open failed:', e)
   }
