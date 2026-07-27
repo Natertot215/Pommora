@@ -1,7 +1,7 @@
 // Field-value extraction for the view pipeline. Two functions, two AXES that must NOT be
 // confused (this is the trap the plan calls out):
 //   - declaredType: the column's SCHEMA type — a snake_case PropertyType (e.g. 'multi_select',
-//     'last_edited_time') plus the synthetic 'title'/'tier' sentinels for reserved columns. This
+//     'last_edited_time') plus the synthetic 'title'/'context' sentinels for reserved columns. This
 //     is what sort/group/filter switch on to choose type-aware behavior.
 //   - resolveFieldValue: the row's VALUE as a PropertyValue, whose `.kind` is camelCase (e.g.
 //     'multiSelect', 'lastEditedTime'). The shape-parse is trusted for the unambiguous kinds, but
@@ -21,21 +21,21 @@ import {
 import { type PropertyValue, parsePropertyValue } from '@shared/propertyValue'
 
 /** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
- *  a synthetic sentinel: `_title`→'title', any registry Context id→'tier', `_modified_at`→
+ *  a synthetic sentinel: `_title`→'title', any registry Context id→'context', `_modified_at`→
  *  'last_edited_time' (Swift treats it as a date for both filter and sort). `contextIds` is what
  *  classifies a Context column, so a caller that omits it sees none. */
 export function declaredType(
   propertyId: string,
   schema: PropertyDefinition[],
   contextIds: readonly string[] = [],
-): PropertyType | 'title' | 'tier' | undefined {
+): PropertyType | 'title' | undefined {
   switch (propertyId) {
     case RESERVED_PROPERTY_ID.title:
       return 'title'
     case RESERVED_PROPERTY_ID.modifiedAt:
       return 'last_edited_time'
     default:
-      if (contextIds.includes(propertyId)) return 'tier'
+      if (contextIds.includes(propertyId)) return 'context'
       return schema.find((d) => d.id === propertyId)?.type
   }
 }
@@ -54,9 +54,9 @@ const STRING_KIND_FOR_TYPE: Partial<Record<PropertyType, 'url' | 'select' | 'dat
  *  The value string is unchanged — only the `.kind` tag. */
 function coerceToDeclaredType(
   v: PropertyValue,
-  dt: PropertyType | 'title' | 'tier' | undefined,
+  dt: PropertyType | 'title' | undefined,
 ): PropertyValue {
-  const want = dt && dt !== 'title' && dt !== 'tier' ? STRING_KIND_FOR_TYPE[dt] : undefined
+  const want = dt && dt !== 'title' ? STRING_KIND_FOR_TYPE[dt] : undefined
   if (
     want &&
     (v.kind === 'url' || v.kind === 'select' || v.kind === 'datetime') &&

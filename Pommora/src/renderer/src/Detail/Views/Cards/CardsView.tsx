@@ -125,7 +125,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // The commit router (the table's cell-write split): a context column writes its full
   // Space-id list through the setContext op; everything else is a property write.
   const commitValue = (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null): void => {
-    if (column.kind === 'tier') {
+    if (column.kind === 'context') {
       const ids = value?.kind === 'context' ? value.value : []
       writeContextValue(
         row,
@@ -140,7 +140,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     setProperty(row, column.id, value)
   }
   const contextOptionsFor = (column: ResolvedColumn): ContextOption[] | null => {
-    if (column.kind !== 'tier' || !tree) return null
+    if (column.kind !== 'context' || !tree) return null
     return contextOptionsForSpaces(column.id, tree)
   }
   // One card-value Style key — persists per-key into the view's column_styles (the table's writer

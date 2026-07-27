@@ -17,7 +17,7 @@ function columnKind(id: string, contextIds: readonly string[]): ColumnKind {
     case RESERVED_PROPERTY_ID.modifiedAt:
       return 'modified'
     default:
-      return contextIds.includes(id) ? 'tier' : 'property'
+      return contextIds.includes(id) ? 'context' : 'property'
   }
 }
 

@@ -339,12 +339,12 @@ describe('optimistic value persistence', () => {
 })
 
 describe('context tier cells', () => {
-  const tierCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[6] // ctx_areas last
+  const contextCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[6] // ctx_areas last
 
   it("click opens the context picker listing the Context's Spaces; toggling writes setContext", async () => {
     await mountTable(sourceWith())
     await act(async () => {
-      tierCell().click()
+      contextCell().click()
     })
     expect(pickerText()).toContain('Work')
     expect(pickerText()).toContain('Personal')

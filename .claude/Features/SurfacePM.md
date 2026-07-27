@@ -42,13 +42,13 @@ A per-block **Scale** rides **every** tile type: a fixed ladder of discrete step
 
 Resize is window-style on the tile's edges and corners: south stretches the tile alone (the page flows), north negotiates the stacked pair — including across the seam between two full-width bands — east/west move the row splitter, and boundaries magnetize to other tiles' edges near perfect alignment. Interior holes are impossible by construction; a full-width row always spans the surface. Blocks track pane toggles 1:1 (tile transitions gate off while the surface width animates), reflow on the Glide feel, and drops beside a block land flush at its height.
 
-A **host lock**, set from the host's own settings surface, freezes every tile's position and size while content editing, the grab menu, and background-create stay live. It dims the same mutating rows, and the menu's footer reads a muted **Locked** in place of the per-tile toggle.
+A **host lock**, set from the host's settings surface, freezes every tile's position and size while content editing, the grab menu, and background-create stay live. The handle menu's mutating rows dim inert, and its footer reads a muted **Locked** in place of the per-tile toggle.
 
 An embedded **page** signals itself with an accent border (accent at the secondary tint) under the pointer or while the caret is inside it — non-locked tiles only, yielding to the stronger resize accent at the edges. The border is the ambient cue; the handle menu carries the page's exact location.
 
 ### Storage + Host Rules
 
-Two hosts carry a block document: the Homepage's `homepage.json` and a Space's own `_space.json`, both under `.nexus/` (shielded from other apps). The document loads per-host on open — never in the tree walk — and layout writes debounce on gesture end; the watcher ignores host content folders while the host configs stay watched, so block edits never cost a re-walk. Markdown-block bodies write pure (no frontmatter envelope, no stamp), locked per file.
+Two hosts carry a block document: the Homepage's `homepage.json` and a Space's own `_space.json`, both under `.nexus/` (shielded from other apps). The document loads per-host on open — never in the tree walk — and layout writes debounce on gesture end; the watcher ignores host content folders while host configs stay watched, so block edits never cost a re-walk. Markdown-block bodies write pure (no frontmatter envelope, no stamp), locked per file.
 
 #### Pending
 

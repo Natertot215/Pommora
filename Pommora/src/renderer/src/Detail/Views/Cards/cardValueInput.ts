@@ -58,7 +58,7 @@ export function addEntriesFor(
     ...new Set([
       ...hiddenListIds(view, ctx.schema, contextIds),
       ...ctx.schema.map((d) => d.id),
-      ...columns.filter((c) => c.kind === 'tier').map((c) => c.id),
+      ...columns.filter((c) => c.kind === 'context').map((c) => c.id),
     ]),
   ]
   return ids
@@ -79,7 +79,7 @@ export function addEntriesFor(
  *  everything else as a property — the same split commitValue makes for on-card values. */
 export const addColumn = (id: string, tree: NexusTree | null = null): ResolvedColumn => ({
   id,
-  kind: contextIdsOf(tree).includes(id) ? 'tier' : 'property',
+  kind: contextIdsOf(tree).includes(id) ? 'context' : 'property',
 })
 
 /** One row of the card add-property menu (something NOT currently shown). A `pane` entry (a blank

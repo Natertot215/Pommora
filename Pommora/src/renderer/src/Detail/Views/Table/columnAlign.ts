@@ -8,7 +8,7 @@ import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import type { ColumnAlign, SavedView } from '@shared/views'
 import { declaredType } from '../pipeline/value'
 
-// declaredType outputs that center by default (E-6): the chip/box-shaped values — contexts ('tier' for
+// declaredType outputs that center by default (E-6): the chip/box-shaped values — contexts ('context' for
 // the reserved tier columns, 'context' for a user context prop), checkbox/status/select/multi_select, and
 // the user datetime property, whose formatted value reads centered. The reserved Modified timestamp keeps
 // its left metadata treatment (like Title).
@@ -17,7 +17,7 @@ const CENTERED = new Set([
   'status',
   'select',
   'multi_select',
-  'tier',
+  'context',
   'context',
   'datetime',
 ])

@@ -195,7 +195,6 @@ export function operatorsFor(
     case 'status':
       return OPTION_OPS
     case 'multi_select':
-    case 'tier':
     case 'context':
       return SET_OPS
     case 'number':

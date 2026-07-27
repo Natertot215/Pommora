@@ -205,7 +205,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           group.length === 0 ? null : (
             <div key={gi === 0 ? 'contexts' : 'properties'} className="pgpreview-insp-group">
               {group.map(({ def, id, label }) => {
-                const col: ResolvedColumn = { id, kind: def ? 'property' : 'tier' }
+                const col: ResolvedColumn = { id, kind: def ? 'property' : 'context' }
                 return (
                   // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
                   <div

@@ -681,7 +681,7 @@ export function FilterPane({
       const contextId = isContextColumnId(tree, rule.property_id)
         ? rule.property_id
         : def?.context_target?.context_id
-      const isContext = type === 'tier' || type === 'context'
+      const isContext = type === 'context'
       const options: ContextOption[] = isContext
         ? tree && contextId
           ? contextOptionsFor(contextId, tree)

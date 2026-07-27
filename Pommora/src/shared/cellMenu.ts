@@ -48,7 +48,7 @@ export interface CellMenuModel {
  *  the container views (Table cells, Cards values). */
 export function cellMenuContextFor(
   col: ResolvedColumn,
-  type: PropertyType | 'title' | 'tier' | undefined,
+  type: PropertyType | 'title' | undefined,
   style: ColumnStyle,
   filled: boolean,
   hideable = false,
@@ -64,13 +64,13 @@ export function cellMenuContextFor(
 
 function baseCellMenu(
   col: ResolvedColumn,
-  type: PropertyType | 'title' | 'tier' | undefined,
+  type: PropertyType | 'title' | 'context' | undefined,
   style: ColumnStyle,
   filled: boolean,
   barCapable: boolean,
 ): CellMenuKind | null {
   if (col.kind === 'title') return { kind: 'title' }
-  if (col.kind === 'tier') return filled ? { kind: 'clear-only' } : null
+  if (col.kind === 'context') return filled ? { kind: 'clear-only' } : null
   if (type === 'url') return { kind: 'link', filled }
   if (type === 'file') return { kind: 'style-edit', type: 'file', current: style }
   if (type === 'status' || type === 'datetime')
