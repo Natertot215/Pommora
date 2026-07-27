@@ -34,7 +34,12 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_date', name: 'When', type: 'datetime' },
 ] as PropertyDefinition[]
 
-const ctx: ResolveContext = { schema, contextsById: new Map(), labels: DEFAULT_LABELS }
+const ctx: ResolveContext = {
+  schema,
+  contextsById: new Map(),
+  contexts: new Map(),
+  labels: DEFAULT_LABELS,
+}
 const source = {
   kind: 'collection',
   id: 'c',

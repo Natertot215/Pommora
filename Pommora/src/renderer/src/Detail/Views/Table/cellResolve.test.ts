@@ -41,6 +41,7 @@ const schema: PropertyDefinition[] = [
 
 const ctx: ResolveContext = {
   schema,
+  contexts: new Map(),
   contextsById: new Map([
     ['ctx1', { title: 'Personal', icon: 'layout-grid', contextId: 'ctx_areas' }],
   ]),

@@ -4,7 +4,7 @@ import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { isCompact, type SavedView } from '@shared/views'
 import { hiddenListIds } from '@renderer/Components/Detail/hiddenPaneModel'
-import { contextIdsOf } from '../pipeline/contextIdentity'
+import { contextIdsOf, contextsByIdOf } from '../pipeline/contextIdentity'
 import { resolveFieldValue } from '../pipeline/value'
 import { columnLabel } from '../Table/columnLabel'
 import type { ResolveContext } from '../Table/resolveContext'
@@ -71,7 +71,7 @@ export function addEntriesFor(
       const revealOnly = contextShaped
         ? !blank
         : !def || !ADDABLE_TYPES.has(type) || type === 'checkbox' || !blank
-      return { id, name: columnLabel(id, ctx.schema, tree), type, def, revealOnly }
+      return { id, name: columnLabel(id, ctx.schema, contextsByIdOf(tree)), type, def, revealOnly }
     })
 }
 

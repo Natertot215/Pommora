@@ -5,16 +5,28 @@
 
 import type { NexusLabels, NexusTree } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
-import { type SpaceIdentity, spacesByIdOf } from '../pipeline/contextIdentity'
+import {
+  type ContextIdentity,
+  contextsByIdOf,
+  type SpaceIdentity,
+  spacesByIdOf,
+} from '../pipeline/contextIdentity'
 
 /** Everything a table cell / group header needs to resolve ids → human values at render. */
 export interface ResolveContext {
   schema: PropertyDefinition[]
   contextsById: ReadonlyMap<string, SpaceIdentity>
+  /** Context id → identity, for labelling a Context column without holding the tree. */
+  contexts: ReadonlyMap<string, ContextIdentity>
   labels: NexusLabels
 }
 
 /** Assemble the full resolution context from the tree + the container's (effective) schema. */
 export function buildResolveContext(tree: NexusTree, schema: PropertyDefinition[]): ResolveContext {
-  return { schema, contextsById: spacesByIdOf(tree), labels: tree.labels }
+  return {
+    schema,
+    contextsById: spacesByIdOf(tree),
+    contexts: contextsByIdOf(tree),
+    labels: tree.labels,
+  }
 }

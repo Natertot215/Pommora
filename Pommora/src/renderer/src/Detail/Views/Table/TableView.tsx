@@ -1398,7 +1398,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
                 <ColumnHeader
                   key={c.id}
                   id={c.id}
-                  label={columnLabel(c.id, schema)}
+                  label={columnLabel(c.id, schema, ctx.contexts)}
                   icon={headerIcon(c.id)}
                   width={colWidth(c.id)}
                   align={colAlign(c.id)}
