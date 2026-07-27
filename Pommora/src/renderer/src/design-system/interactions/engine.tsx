@@ -9,6 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
+import { stack } from '../tokens/stack'
 import { useFeel, type Feel } from './feel'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { announce, ensureInstructions, INSTRUCTIONS_ID } from './a11y'
@@ -571,7 +572,7 @@ export function useZoneItem(id: string): DragItem {
     style: {
       transform,
       transition: animate ? `transform ${feel.duration}ms ${feel.easing}` : undefined,
-      zIndex: isDragging ? 10 : undefined,
+      zIndex: isDragging ? stack.local.lifted : undefined,
       position: 'relative',
       touchAction: 'none',
     },

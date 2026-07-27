@@ -31,9 +31,9 @@
   --fold-chevron-size: calc(var(--text-title3-size) * var(--glyph-scale));
   --fold-chevron-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
   position: relative;
-  /* Own stacking context (sits below the sidebar's z-index:1) so the absolutely-positioned banner
-     header can layer above the editor body WITHOUT its z-index escaping to cover the floating sidebar. */
-  z-index: 0;
+  /* Own stacking context, below the sidebar's step, so the absolutely-positioned banner header can
+     layer above the editor body WITHOUT its z-index escaping to cover the floating sidebar. */
+  z-index: var(--z-content);
   height: 100%;
   overflow: hidden;
   /* Hoist the scroll timeline defined on .cm-scroller so the sibling .mdpm-header can bind to it. */
@@ -844,7 +844,7 @@
   --ac-radius: 12px;
   --ac-rows: 4;
   position: fixed;
-  z-index: 10;
+  z-index: var(--z-lifted);
   min-width: 180px;
   max-width: 320px;
   max-height: calc(var(--ac-rows) * 28px + 8px);

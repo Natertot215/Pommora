@@ -2,6 +2,7 @@ import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../tokens/color.css'
 import { text } from '../../tokens/typography.css'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
+import { stack } from '../../tokens/stack'
 import { dropdownAnchor } from '../dropdownAnchor'
 import { fieldRing, ROW_RING } from '../fieldRing'
 
@@ -68,19 +69,16 @@ globalStyle(BELOW.flatMap((b) => ABOVE.map((a) => `${b} ${optionRing}:has(${a})`
   ...SQUARE_BOTTOM,
 })
 
-/** KNOB — an inline picker's layer, above the host chrome it hangs over. */
-const ANCHOR_Z = 20
-
-export const anchor = style(dropdownAnchor('center', ANCHOR_Z))
+export const anchor = style(dropdownAnchor('center', stack.local.overlay))
 /** Upward-opening variant — the pane hangs ABOVE its trigger (beak-down NotchedPane). */
-export const anchorUp = style(dropdownAnchor('up', ANCHOR_Z))
+export const anchorUp = style(dropdownAnchor('up', stack.local.overlay))
 /** The self-managed top layer — a fixed body-portal position (set inline from the measured trigger)
  *  so the pane escapes any clipping ancestor (the settings dropdown's frost clip). */
-export const layer = style({ position: 'fixed', zIndex: 1100 })
+export const layer = style({ position: 'fixed', zIndex: stack.top.menu })
 
 /** A transparent full-viewport catcher one layer BELOW the pane: any outside pointerdown (including
  *  on the trigger itself) lands here and dismisses, so the trigger's own click can't reopen. */
-export const backdrop = style({ position: 'fixed', inset: 0, zIndex: 1099 })
+export const backdrop = style({ position: 'fixed', inset: 0, zIndex: stack.top.menuBackdrop })
 
 // GlassPane's rect border/shadow are suppressed by NotchedPane (can't trace the beak); the top
 // gutter clears the beak band via the shell's published --notch-h.
@@ -118,15 +116,15 @@ export const option = style([
     cursor: 'default',
     selectors: {
       '&:hover': { background: c.state.hover },
-    // Keyboard focus only. `:focus-visible` never matches the programmatic focus that follows a
-    // click, so a mouse-opened menu looks untouched and a keyboard-opened one shows where it is.
-    // The tone is the FIELD's focus tone through the same channel — a step lighter than the
-    // selection ring's, so a focused row and a chosen one stay tellable apart at the same weight.
-    '&:focus-visible': {
-      outline: 'none',
-      boxShadow: fieldRing(ROW_RING),
-      vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
-    },
+      // Keyboard focus only. `:focus-visible` never matches the programmatic focus that follows a
+      // click, so a mouse-opened menu looks untouched and a keyboard-opened one shows where it is.
+      // The tone is the FIELD's focus tone through the same channel — a step lighter than the
+      // selection ring's, so a focused row and a chosen one stay tellable apart at the same weight.
+      '&:focus-visible': {
+        outline: 'none',
+        boxShadow: fieldRing(ROW_RING),
+        vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
+      },
     },
   },
 ])

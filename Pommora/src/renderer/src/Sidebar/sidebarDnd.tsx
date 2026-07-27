@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { text } from '@renderer/design-system/tokens'
+import { stack } from '@renderer/design-system/tokens/stack'
 import { ACTIVATION, suppressNextClick } from '@renderer/design-system/interactions/shared'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
@@ -443,7 +444,7 @@ export function SidebarDnd({
               borderRadius: 2,
               background: 'var(--accent)',
               pointerEvents: 'none',
-              zIndex: 20,
+              zIndex: stack.local.overlay,
             }}
           >
             <span
@@ -477,7 +478,7 @@ export function SidebarDnd({
               WebkitBackdropFilter: 'blur(6px)',
               boxShadow: '0 14px 34px #00000073',
               pointerEvents: 'none',
-              zIndex: 1000,
+              zIndex: stack.top.floating,
             }}
           >
             {draggedLabel}

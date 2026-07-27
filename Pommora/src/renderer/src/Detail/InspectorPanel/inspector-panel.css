@@ -7,7 +7,7 @@
   right: var(--glass-inset);
   bottom: var(--glass-inset);
   width: var(--inspector-width);
-  z-index: 4;
+  z-index: var(--z-inspector);
   border-radius: var(--glass-radius);
   overflow: hidden;
   /* Slide driven by --io (shell): fully off-screen at 0, home at 1. No own transition — --io carries it. */
@@ -30,7 +30,7 @@
   bottom: var(--glass-inset);
   right: calc(var(--glass-inset) + var(--inspector-width) - 3px);
   width: 9px;
-  z-index: 5;
+  z-index: var(--z-inspector-resize);
   cursor: col-resize;
   -webkit-app-region: no-drag;
 }

@@ -65,3 +65,6 @@ export {
 }
 export type { TintStep }
 export { duration, easing } from './motion'
+/** The stacking ladders — `stack.shell.*` (window frame) · `stack.local.*` (over own siblings) ·
+ *  `stack.top.*` (fixed / body-portalled). Plain CSS reads the same steps as `--z-*`. */
+export { stack } from './stack'
