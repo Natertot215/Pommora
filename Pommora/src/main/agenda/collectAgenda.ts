@@ -1,5 +1,5 @@
 // Lazy, on-demand agenda read for the sidebar's Agenda mode — a lean sibling of the index
-// builder's collectAgenda (index/build.ts), which stays richer (properties/tiers/modifiedAt) for
+// builder's collectAgenda (index/build.ts), which stays richer (properties/Contexts/modifiedAt) for
 // the SQLite upserts. This one yields only what a read-only list needs, so it never joins the
 // tree walk (readNexus) — agenda cost is paid only when Agenda mode asks for it.
 

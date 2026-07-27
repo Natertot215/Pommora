@@ -229,9 +229,9 @@ export async function setContextOnPath(
   return fail('invalid-path', 'Not a context-taggable entity.', 'contexts')
 }
 
-/** Append a new Context to the registry (ULID id; singular defaults to the title until
- *  its Settings edits it) + mkdir its folder. Title collisions disambiguate like every
- *  other create ("New Context 2"). */
+/** Append a new Context to the registry (ULID id; no singular until per-Context singular
+ *  editing ships) + mkdir its folder. Title collisions disambiguate like every other
+ *  create ("New Context 2"). */
 export async function createContextGroup(
   root: string,
   name: string,
@@ -315,5 +315,3 @@ export async function setSpaceColor(
   )
   return written.ok ? ok(null) : written
 }
-
-/** Set a Context's singular label in the registry. */

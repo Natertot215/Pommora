@@ -268,7 +268,7 @@ export interface LabelPair {
 }
 
 /** Per-Nexus UI labels (read from `settings.labels.{area,topic,project,page_collection,page_set,agenda_task,agenda_event}`).
- *  All three context tiers are first-class LabelPairs; sidebar section headers derive from the plurals
+ *  All three Contexts are first-class LabelPairs; sidebar section headers derive from the plurals
  *  (Areas ← area.plural, Topics ← topic.plural, Collections ← pageCollection.plural). "Sub-Set" is
  *  derived as `"Sub-" + pageSet.singular`, never stored. */
 export interface NexusLabels {
@@ -508,8 +508,8 @@ export interface ViewRow {
   contextValues?: Record<string, string[]>
 }
 
-/** What a resolved column renders from. `title`/`tier`/`modified` are reserved columns;
- *  `property` is a user-defined schema property. (Width + the group/sort hoist are Part-2
+/** What a resolved column renders from. `title`/`context`/`modified` are reserved columns;
+ *  `property` is a user-defined schema property. (Width + the group/sort hoist are separate
  *  render concerns, not modeled here.) */
 export type ColumnKind = 'title' | 'property' | 'context' | 'modified'
 

@@ -421,7 +421,7 @@ const api = {
   // zooms, the macOS titlebar convention.
   winDragBy: (dx: number, dy: number): void => ipcRenderer.send('win:dragBy', dx, dy),
   winZoom: (): void => ipcRenderer.send('win:zoom'),
-  // Pop a native "New …" menu (e.g. the context tiers); resolves with the picked request, or
+  // Pop a native "New …" menu (e.g. the Context groups); resolves with the picked request, or
   // null if dismissed, for the renderer's store to run.
   popCreateMenu: (items: { label: string; req: MutateRequest }[]): Promise<MutateRequest | null> =>
     ipcRenderer.invoke('create-menu', items),

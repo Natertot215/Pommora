@@ -29,7 +29,7 @@ export type BannerOwnerKind =
 export type MutableContainerKind = 'collection' | 'set'
 
 /** Top-level order groups, persisted in `.nexus/state.json` — top Collections + the three
- *  context tiers. Single source for the union spelled across the engine, store, and IPC
+ *  Contexts. Single source for the union spelled across the engine, store, and IPC
  *  (and re-used in main). */
 export type StateOrderKey = 'collection_order'
 /** Within-container child-order keys carried by reorderChildren — collections on a vault, sets on a collection. */
@@ -61,7 +61,7 @@ export type MutateRequest =
   | { op: 'setHeadingIconHidden'; path: string; kind: BannerOwnerKind; hidden: boolean }
   // Set or clear an entity's icon — a bare symbol id (any Lucide id). A page carries it in its `.md`
   // frontmatter `icon`; a container/context in its JSON sidecar. `null` clears the field. The one write
-  // for every entity kind that has an icon (pages, collections, sets, and the three context tiers);
+  // for every entity kind that has an icon (pages, collections, sets, and the three Contexts);
   // property + view icons ride their own writers (properties.json / views.save). Foreign keys survive.
   | { op: 'setIcon'; path: string; kind: MutableKind; icon: string | null }
   // Set or clear one property in a page's `.md` frontmatter `properties` map (id-keyed PropertyValue);
@@ -79,7 +79,7 @@ export type MutateRequest =
   // Reorder a folder's child containers in place: `collection_order` on a vault, `set_order`
   // on a collection. `order` is the full ordered id list (renderer-computed). No file move.
   | { op: 'reorderChildren'; parentPath: string; key: ChildOrderKey; order: string[] }
-  // Reorder a top-level group (held in `.nexus/state.json`): top Collections or a context tier.
+  // Reorder a top-level group (held in `.nexus/state.json`): top Collections or a Context.
   | { op: 'reorderTop'; key: StateOrderKey; order: string[] }
   // — Registry-backed Contexts & Spaces (ids in memory; main resolves titles at the write) —
   // Append a new Context to `.nexus/contexts.json` (ULID id) + mkdir its folder.

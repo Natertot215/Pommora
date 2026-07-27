@@ -1,5 +1,5 @@
-// Per-type column sizing {min, default, max} (Part 2 I-1). One DRY source; the width key is the
-// column's declared type (reusing the pipeline's declaredType so title/tier/property all resolve
+// Per-type column sizing {min, default, max}. One DRY source; the width key is the
+// column's declared type (reusing the pipeline's declaredType so title/context/property all resolve
 // through one path), with `_created_at` special-cased and a sane fallback. Values are starting
 // points — tunable. Pure: no fs, no React.
 
@@ -14,9 +14,9 @@ export interface ColumnWidth {
 }
 
 // Keyed by declaredType's outputs ('title' | 'context' | a PropertyType) + 'created' (special-cased).
-// Max is UNCAPPED for every type (Nathan): a resize past the pane pushes the table into rightward
-// h-scroll (the overflowing flatten) instead of hitting an immovable per-type wall. Mins stay —
-// a stale saved value still can't squash a column below legibility.
+// Only `title` is UNCAPPED — a resize past the pane h-scrolls instead of hitting a wall; every
+// other type carries a deliberate finite max. Mins stay so a stale saved value can't squash a
+// column below legibility.
 const UNCAPPED = Number.POSITIVE_INFINITY
 const WIDTHS: Record<string, ColumnWidth> = {
   title: { min: 120, default: 280, max: UNCAPPED },

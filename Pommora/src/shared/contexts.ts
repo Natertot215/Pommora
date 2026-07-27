@@ -5,8 +5,9 @@
 import { z } from 'zod'
 import type { NexusLabels } from './types'
 
-/** `singular` is the seeded three's only — it comes from their label pair. A user-minted
- *  Context has none until per-Context singular editing ships. */
+/** `singular` is the seeded three's only (Areas/Topics/Projects) — set once at registry
+ *  creation. Any other Context has none; its Spaces read "New Space" until per-Context
+ *  singular editing ships. */
 export type ContextDef = { id: string; title: string; singular?: string; icon?: string }
 
 /** Array position IS the display order — no ordinal semantics anywhere. */
@@ -67,7 +68,7 @@ export function normalizeContextValue(raw: unknown): string {
   return String(raw).trim().toLowerCase().normalize('NFC')
 }
 
-/** The fresh-nexus registry: titles from the tier LabelPairs' plurals, singulars from their
+/** The fresh-nexus registry: titles from the three LabelPairs' plurals, singulars from their
  *  singular halves, a minted id each. Colliding custom plurals disambiguate ("Title 2") —
  *  titles are nexus-wide identity, so two entries can never share one. */
 export function seededRegistry(labels: NexusLabels, mintId: () => string): ContextsRegistry {

@@ -1,5 +1,5 @@
-// F1 regression: the schema-op page cascades (option rename/remove/clear, [[link]] + tier
-// cascades, property delete/remove) and the cell-write path (mutate's setProperty/setTier) must
+// F1 regression: the schema-op page cascades (option rename/remove/clear, [[link]] + Context
+// cascades, property delete/remove) and the cell-write path (mutate's setProperty/setContext) must
 // serialize on the SAME per-file lock. Before the fix the cascade rode SchemaTransaction (no
 // per-file guard) while cell-writes rode serializeOnFile — two independent locks, so a cascade
 // racing a cell edit on one page could silently clobber a value.

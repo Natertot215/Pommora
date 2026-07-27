@@ -40,7 +40,7 @@ export { text }
 /**
  * Chip primitives — one class per SHAPE, composed with one `chipColor.*`:
  * `${chipPill} ${chipColor.blue}` (status text) · `chipLabel` (select/multi, 6px
- * radius) · `chipContext` (context/tier) · `chipCapsule` (icon-only) · `chipBox`
+ * radius) · `chipContext` (Context references) · `chipCapsule` (icon-only) · `chipBox`
  * (the 17×17 rounded square). The unified tint: fill = base 60% ·
  * stroke = base 40% · text = label-primary + base 15%. `tint(base)` is the
  * raw recipe (e.g. an accent chip via `tint('var(--accent)')`). See chip.css.ts.

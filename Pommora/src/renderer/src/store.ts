@@ -1756,7 +1756,7 @@ export const useSession = create<SessionState>((set, get) => {
           createdShown = true
         }
       }
-      // Value-only writes (a cell edit, a status cycle, a tier pick) never change the TREE —
+      // Value-only writes (a cell edit, a status cycle, a Context pick) never change the TREE —
       // the caller's optimistic patch already shows the change (the app's own write is
       // echo-suppressed; only an external edit walks), so the full-nexus re-walk is skipped for
       // them (it's THE "reload the entire Y" on a hot path). Structural ops still refetch

@@ -139,8 +139,7 @@ export interface SavedView {
   show_banner?: boolean
   hide_page_icons?: boolean
   /** Table Layout "Column Icons" toggle — hide the type-icon in each column header (the title column
-   *  never carries one). Render wiring is a follow-up; the flag persists today. Other view types
-   *  surface this same flag under a different label (see Handoff: Column Icons ↔ Label Icons). */
+   *  never carries one). Other view types surface this same flag under a different label. */
   hide_column_icons?: boolean
   hide_borders?: boolean
   sort?: SortCriterion[]
@@ -148,8 +147,8 @@ export interface SavedView {
   /** Absent = on. Parking a filter keeps its rules and its match mode; only application stops. */
   filter_enabled?: boolean
   group?: GroupConfig
-  /** Table density style — persisted per-view; drives a class on the table root (Compact CSS is a
-   *  later cycle, so this is inert on read today). */
+  /** View density — persisted per-view; Cards reads it via `isCompact` to switch layout. Table's
+   *  `--zoom` Compact step isn't wired to this field yet. */
   format?: ViewFormat
   /** Manual structural band order — ONE flat set-id array covering every nesting level (ids are
    *  unique across the tree). View-level, not on `group`: the structural GroupConfig decoder
@@ -348,8 +347,8 @@ const mintBase = (name: string) => ({
 })
 
 /** Title-only visibility for a `+`-minted view of a given type — the per-ViewType seam (only Table
- *  ships; a future type adds its own case). Table hides every schema id and all three tiers, so the
- *  guaranteed Title is the sole column (verified through resolveColumns). */
+ *  ships; a future type adds its own case). Table hides every schema id and all three Contexts, so
+ *  the guaranteed Title is the sole column (verified through resolveColumns). */
 function mintVisibility(
   type: ViewType,
   schema: PropertyDefinition[],
@@ -365,7 +364,7 @@ function mintVisibility(
 }
 
 /** Mint the seeded/entry-minted default Table view — title-only, every user prop AND the default-on
- *  tiers (contexts) hidden, routed through the same per-type visibility seam as a `+`-created view, so
+ *  Context columns hidden, routed through the same per-type visibility seam as a `+`-created view, so
  *  a view always starts clean and the user reveals what they want. No sort, no `_modified_at` column.
  *  Carries the sentinel id until first save. */
 export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
@@ -375,8 +374,8 @@ export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
   }
 }
 
-/** Mint a `+`-created view: title-only (every assigned property + the default-on tiers hidden), routed
- *  through the per-type visibility seam. Carries the sentinel id until first save. */
+/** Mint a `+`-created view: title-only (every assigned property + the default-on Context columns
+ *  hidden), routed through the per-type visibility seam. Carries the sentinel id until first save. */
 export function mintNewView(name: string, schema: PropertyDefinition[]): SavedView {
   return { ...mintBase(name), ...mintVisibility('table', schema) }
 }

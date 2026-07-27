@@ -4,7 +4,7 @@ import { cx } from '@renderer/design-system/cx'
 import { Icon } from '@renderer/design-system/symbols'
 import { ChipLabel, ChipRemoveButton } from './Chip'
 
-/** A Context reference chip (tier cells). The whole look lives in the chipContext
+/** A Context reference chip (Context cells). The whole look lives in the chipContext
  *  shape (neutral quaternary fill, 8px radius, --chip-fill following the fill) — this component
  *  wires the leading icon + label + remove affordance. The icon reads in the chip's text color
  *  (currentColor); size is the one knob here. */

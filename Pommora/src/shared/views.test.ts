@@ -225,7 +225,7 @@ describe('card_size codec', () => {
 
 describe('mint seam', () => {
   const schema = [{ id: 'prop_a' }, { id: 'prop_b' }] as never[]
-  it('mintNewView is title-only: schema ids and all three tiers hidden', () => {
+  it('mintNewView is title-only: schema ids and all three Contexts hidden', () => {
     const v = mintNewView('Untitled', schema)
     expect(v.name).toBe('Untitled')
     expect(v.type).toBe('table')
@@ -234,7 +234,7 @@ describe('mint seam', () => {
     // Context columns take no entry — absence from property_order is what hides them.
     expect(v.hidden_properties).toEqual(['prop_a', 'prop_b'])
   })
-  it('mintDefaultView mints title-only (every prop + tier hidden) with the table glyph', () => {
+  it('mintDefaultView mints title-only (every prop + Context columns hidden) with the table glyph', () => {
     const v = mintDefaultView(schema)
     // Context columns take no entry — absence from property_order is what hides them.
     expect(v.hidden_properties).toEqual(['prop_a', 'prop_b'])

@@ -68,8 +68,9 @@ export interface MutateDeps {
 }
 
 /** A nested Set's `parent_id` = its parent container's sidecar id (a Collection at depth-1,
- *  a Set deeper). Position is authoritative (both builds heal parent_id from it), so a missing
- *  parent sidecar is non-fatal — the create just omits the field. */
+ *  a Set deeper), set once at create time — a move does not re-heal it. Position (the folder
+ *  nesting) is what the app itself walks, so a missing parent sidecar here is non-fatal; the
+ *  create just omits the field. */
 async function parentContainerId(parentDir: string): Promise<string | undefined> {
   for (const kind of ['collection', 'set'] as const) {
     const sc = await readJsonObject(join(parentDir, SIDECAR_FILENAME[kind]))
@@ -111,10 +112,10 @@ async function writeImageAsset(
 
 /** The nexus's own machinery — never a renderer-mutable entity. The read side skips these,
  *  so the write side refuses to rename/delete them (defense against a buggy/hostile renderer
- *  message). Contexts live UNDER `.nexus/<tier>/` and stay mutable — only the root, `.nexus`
- *  itself, and `.trash` are off-limits. `abs` is canonical (resolveUnderRoot realpaths it), so
- *  the root is canonicalized too — else a symlinked root (e.g. macOS /var→/private/var) makes
- *  `relative` mismatch and the guard silently passes. */
+ *  message). Contexts live UNDER `.nexus/contexts/<Title>/` and stay mutable — only the root,
+ *  `.nexus` itself, and `.trash` are off-limits. `abs` is canonical (resolveUnderRoot realpaths
+ *  it), so the root is canonicalized too — else a symlinked root (e.g. macOS /var→/private/var)
+ *  makes `relative` mismatch and the guard silently passes. */
 async function isReserved(root: string, abs: string): Promise<boolean> {
   const rel = relative(await realpath(root), abs)
   return rel === '' || rel === '.nexus' || rel === '.trash' || rel.startsWith(`.trash${sep}`)
@@ -552,7 +553,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'reorderTop': {
-      // Reorder top Collections / a context tier — persisted to .nexus/state.json.
+      // Reorder top Collections / a Context group — persisted to .nexus/state.json.
       const o = await setStateOrder(root, req.key, req.order)
       if (!o.ok) return relay(o)
       return { ok: true }

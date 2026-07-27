@@ -14,8 +14,9 @@ import { createSpaceLabel } from '@shared/contexts'
 import { DEFAULT_NEW_NAME } from '@shared/mutate'
 import type { ContextTarget, MutableKind, MutateRequest } from '@shared/mutate'
 
-/** The "New …" creators a container offers; pages + Spaces + the legacy tiers offer none. A
- *  Context group offers "New <Singular>" — resolved from the registry by the folder's title. */
+/** The "New …" creators a container offers; pages + Spaces + the legacy area/topic/project
+ *  kinds offer none. A Context group offers "New <Singular>" — resolved from the registry by
+ *  the folder's title. */
 async function creatorsFor(
   root: string,
   kind: MutableKind,

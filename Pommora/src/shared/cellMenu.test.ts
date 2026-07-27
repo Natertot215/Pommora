@@ -41,7 +41,7 @@ describe('cellMenuModel', () => {
     expect(m.style?.find((r) => r.value === 'pill')?.checked).toBe(true)
   })
 
-  it('clear-only (select/multi/context/tier): just Clear', () => {
+  it('clear-only (select/multi/context): just Clear', () => {
     const m = cellMenuModel({ kind: 'clear-only' })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([['Clear', 'cell:clear']])
     expect(m.style).toBeUndefined()
@@ -107,7 +107,7 @@ describe('cellMenuContextFor', () => {
     })
   })
 
-  it('a tier column → clear-only when filled, no menu when empty', () => {
+  it('a context column → clear-only when filled, no menu when empty', () => {
     const tier: ResolvedColumn = { id: 'tier1', kind: 'context' }
     expect(cellMenuContextFor(tier, 'context', {}, true)).toEqual({ kind: 'clear-only' })
     expect(cellMenuContextFor(tier, 'context', {}, false)).toBeNull()

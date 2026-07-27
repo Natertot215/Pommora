@@ -59,7 +59,7 @@ export const pageCollectionSidecar = baseSidecar.extend({
 
 // `_pageset.json` is the RECURSIVE tier at any depth. `parent_id` is the immediate parent
 // (a Collection at depth-1, a Set deeper). `set_order` orders child Sets; `views`/`banner`
-// apply only at depth-1 (ignored deeper — read leniently, never seeded).
+// are read at every depth, not just depth-1.
 export const pageSetSidecar = baseSidecar.extend({
   parent_id: z.string().optional(),
   page_order: ulidList,

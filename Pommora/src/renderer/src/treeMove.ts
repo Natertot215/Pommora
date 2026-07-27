@@ -267,7 +267,7 @@ type TreeEntity =
   | CollectionNode
   | SpaceNode
 
-/** Apply `fn` to the entity at `path`, wherever it lives (a context tier, a top collection, a
+/** Apply `fn` to the entity at `path`, wherever it lives (a Context, a top collection, a
  *  user section, a nested set, a page). `fn` returns the replacement — or null to remove it. */
 export function updateNodeInTree(
   tree: NexusTree,

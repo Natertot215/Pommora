@@ -153,7 +153,7 @@ export function readLabels(raw: unknown): NexusLabels {
     }
   }
   const L = obj(raw)
-  // Migrate a legacy `sidebar_sections.{areas,topics}` blob into the area/topic tier plurals when the
+  // Migrate a legacy `sidebar_sections.{areas,topics}` blob into the area/topic label plurals when the
   // new LabelPairs are absent (singular defaults). The old `pages` header is dropped — the Collections
   // sidebar header now derives from pageCollection.plural.
   const ss = obj(L.sidebar_sections)
@@ -445,7 +445,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   // Contexts. Registry-backed when `.nexus/contexts.json` parses (the walk never writes —
   // seeding/migration are open-path mutations). No registry (raw/unmigrated) → `contexts`
   // is [] — the open path migrates + seeds BEFORE anything renders, so the walk never
-  // reads tier dirs itself.
+  // reads the legacy area/topic/project dirs itself.
   const ctxRegistryRaw = await readSidecar(contextsRegistryFile(root))
   const ctxParsed = ctxRegistryRaw ? contextsRegistrySchema.safeParse(ctxRegistryRaw) : null
   const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null
