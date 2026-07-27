@@ -27,7 +27,7 @@ Since the baseline:
 
 - Cards — the second renderer, interaction hardening, the picker-host architecture
 - The certified cleanup campaign — one-walk mutations + shared interaction primitives
-- Contexts & Spaces — the registry model replacing the fixed three tiers *(in flight)*
+- Contexts & Spaces — the registry model replacing the fixed three tiers, the shared floating-window chassis, and the filter authoring pane
 
 ### II. Upcoming (v0.5.0 → v1.0.0)
 
@@ -37,7 +37,7 @@ The SQLite index is built, schema-versioned, and rebuilt on every mutation, and 
 
 #### v0.6.0 — The View Renderers
 
-The remaining renderers — **List · Gallery · Calendar · Timeline** — over the shipped filter → group → sort pipeline (Table and Cards render today; the other four are registered types with no renderer, and their picker tiles are inert). The **Filter authoring pane** belongs here too: the filter engine ships and has no UI on either door.
+The remaining renderers — **List · Gallery · Calendar · Timeline** — over the shipped filter → group → sort pipeline (Table and Cards render today; the other four are registered types with no renderer, and their picker tiles are inert). Each groups mechanically differently, so each carries its own grouping surface.
 
 #### v0.7.0 — Agenda + Calendar
 
@@ -47,9 +47,9 @@ Making Agenda reachable. The whole CRUD layer is written, locked, and tested but
 
 The rest of the Settings editing UI — the window ships off the ribbon with its boolean toggles, leaving the pickers (accent, connection colour, default icons) and the placement knobs without controls. Plus Quick Capture (specced, zero code), the Claude-chat inspector (the panel ships; its body is empty), and global `⌘K` search over an FTS index.
 
-#### v0.9.0 — SurfacePM Completion + Contexts
+#### v0.9.0 — SurfacePM Completion + Context Surfaces
 
-SurfacePM's remaining reach — bidirectional tile conversion, the background Insert menu, embed banners — plus the Homepage's final shape. The **Linked-From surface** rides here and is gated on the one architectural prerequisite below.
+SurfacePM's remaining reach — bidirectional tile conversion, the background Insert menu, embed banners, the remaining locks — plus the Homepage's final shape. The Contexts registry itself shipped early, so what rides here is its aggregate surfaces: **ContextView**, the **Linked-From** list, and a Space's own relation rows. All three are gated on the query consumer above.
 
 #### v1.0.0 — Stabilization
 

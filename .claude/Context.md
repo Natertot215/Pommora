@@ -4,19 +4,37 @@
 
 The React rebuild of the Swift paradigm reached its finish line at v0.5.0 — Page Previews and the Subfield unification pulled React past where the SwiftUI build ever got. That's the baseline the roadmap counts forward from, not a target still to hit, and it's mostly my own live drive from here.
 
-**Cards is on `main`** — the renderer, the drag rework, and the certified cleanup campaign all merged, so v0.6.0 counts forward from a two-renderer pipeline (Table + Cards; Gallery, List, Calendar, and Timeline are still just names).
+**Contexts & Spaces is on `main`.** The registry model, the shared floating-window chassis, the Settings window, the lint and accessibility campaign and the FilterPane rebuild all merged, so the build counts forward from a user-defined context layer over a two-renderer pipeline. Contexts have never been live-driven against a real nexus, and the first such launch runs the one-way migration — a copy or `~/test` goes first.
 
-**The active build is the Contexts & Spaces redesign**, on `contexts-spaces`. The fixed three tiers become user-manageable **Contexts** (groups) holding **Spaces** (members) — a `contexts.json` registry carries the ids while member files speak quoted bracketed title keys (`"[Projects]": [Pommora]`), because raw-file legibility beat the rename-cascade cost the option-value precedent already pays. Each Space is a SurfacePM block surface with its own color, settings, and cross-Context relations.
+**The active work is the query consumer, with a correctness sweep beside it.** The index is the last place the architecture states one thing and the code does another: it is built, schema-versioned and refreshed on every write, and nothing reads it. That costs a full nexus walk per property edit to fill tables nobody queries, and the refresh is unguarded, so two quick edits race. Stopping the cold rebuild comes first because it is a live defect rather than a missing feature; the facade follows, and it is what Linked-From, backlinks, ContextView and search have all been waiting on.
 
-Where it stands: the whole main-process side and the renderer pipeline are done and committed — registry IO, the walk resolving links onto each entity's own node, the setContext write family with per-file repair, the journaled crash-safe rename cascade, the idempotent migration, and the default-OFF context columns over one identity seam. What remains is the surface work: the tail of the selection/nav sweep, the settings surfaces (now toolbar panes — the floating settings window was cut), the legacy strip, and a surgical doc sweep. Nothing on the branch has been live-driven yet, and the first real-nexus launch runs the one-way migration — a copy or `~/test` goes first.
+The sweep runs alongside because it settles a contract the index work needs. The IPC boundary flattens the structured error into a bare string, so a code the CRUD layer raises to drive a confirmation dialog can't reach the renderer at all — deciding whether that contract is real precedes any further handler work. Behind it sit the affordances that promise more than they do: four view tiles and a group-band "+" that read as live controls and do nothing, a property type-change flow built end-to-end in main with no way in, and three drag surfaces still hand-rolling the skeleton the gesture primitive owns.
 
 ### Recent Work
 
-#### Contexts & Spaces — the registry model, data + pipeline (07-22)
+#### Contexts & Spaces — the registry model (07-22 → 07-27)
 
 The three-tier taxonomy was the last fixed thing in an otherwise user-defined system, so it became a registry: Contexts are entries in `.nexus/contexts.json` (the seeded three keep reserved `_tierN` ids so legacy ULIDs keep resolving), Spaces live as folders under `.nexus/contexts/<Context>/<Space>/`, and membership is a bracketed title key at every entity root. Validation is registry-membership at read — an outside edit with a valid title registers, a typo sits inert until the file's next real write repairs the case-class misses and drops the unknowns, never guessing.
 
-The dangerous parts got their own machinery: renames cascade titles across all three file scopes under a pending-rename journal that replays on open (a crash forward-completes instead of letting the repair pass eat valid tags), the migration bumps its version last so a kill re-runs the remainder, and every sidecar RMW goes through one strict read chokepoint that fails rather than clobbers a transiently-unreadable file. An adversarial pass caught the one real hole — the write-side world load read sidecars leniently, which would've let the repair strip a Space's tags whenever its sidecar was briefly unreadable — now strict. Phases 0–3 are on `contexts-spaces`; the surface phases are next. → [[Contexts & Spaces — Decision Log]] · [[Contexts & Spaces — Implementation Plan]].
+The dangerous parts got their own machinery: renames cascade titles across all three file scopes under a pending-rename journal that replays on open (a crash forward-completes instead of letting the repair pass eat valid tags), the migration bumps its version last so a kill re-runs the remainder, and every sidecar RMW goes through one strict read chokepoint that fails rather than clobbers a transiently-unreadable file. Migration re-entry keys on the **version alone**, never on the presence of tier directories, because an earlier step consumes those.
+
+A Space became the second BlockHost — `_space.json` carries its block document, tiles live in its folder, and the doc load keys on host identity rather than kind. The sidebar renders every registry Context as its own disclosure of Space rows, with scoped creation landing directly in a rename field and group headers dragging to reorder. The legacy `tierN` read *and* write families are deleted; a stray legacy root still repairs itself on its next governed write. → [[Contexts & Spaces — Decision Log]] · [[Contexts & Spaces — Implementation Plan]] · [[Contexts]].
+
+#### PreviewPane — the shared floating-window chassis (07-24 → 07-25)
+
+The app had three near-identical floating windows and no shared chassis. `PreviewPane` is now the one surface every in-app window mounts: glass, geometry, the dismissal contract, a three-slot overlay toolbar, two side-pane slots (overlay *or* in-flow), a collapsing footer, and the glass tint as a prop. The Page Preview and the NavWindow both migrated onto it and `FloatingPane` was retired, verified against a captured pre-refactor baseline at 15/15 states pixel-identical. Standing that chassis up made a real Settings window cheap enough to build, so the ribbon's Settings glyph — a documented no-op since the ribbon was built — now summons one.
+
+Two rules a future window must respect, both learned the hard way: **openness drivers stay declared per-window**, because a driver declared once at app level leaks into every consumer; and **a FLIP measures from the surface root** via a real ref, never by walking `parentElement`. → [[PagePreview]] · [[Configuration]].
+
+#### The lint and accessibility campaign (07-25)
+
+The a11y backlog was closed and lint now runs clean. Every non-button click surface activates on Enter and Space through one shared primitive, and a keyboard-opened menu paints a house focus ring rather than Chromium's default outline. The campaign's own lesson is the durable part: it shipped **three regressions its gates could not see** — Space could not be typed in any inline rename, keyboard drag-reorder was silently killed at four sites by re-declaring `role`/`tabIndex`/`onKeyDown` after a props spread, and several suppression comments asserted things that were not true. Biome's `noConfusingVoidType` autofix was also wrong here: rewriting a callback's `void` return to `undefined` breaks assignability. → [[Lint-And-Accessibility]].
+
+#### The FilterPane rebuild + the picker chassis (07-26 → 07-27)
+
+The filter engine had shipped with no authoring UI on either door. The pane returns with per-row sizing, Location as a disclosable Set tree with a fixed-width picker, an All/Any footing carrying no label, and an on/off switch independent of the rules. Its needs made `PickerMenu` the second shared chassis, which gained four capabilities every picker now has: `origin` (which edge the pane pins to, replacing the old `center` boolean across all seven consumers), `maxHeight` routed through one `MenuScrollFrame`, a fixed content `width`, and `optionRing` with run-merging.
+
+Alongside it the design system gained two contracts. `--field-ring` is the input layer's one outline channel — consumers set the colour, never the shadow — and `stack.ts` names every z-index in three ladders, so a new surface picks a rung rather than a number. → [[Views]] · [[DesignPM]].
 
 #### Cards View — complete renderer + hardening (07-19 → 07-20)
 
@@ -44,7 +62,7 @@ The page window and the NavWindow are the same thing under the hood: one chrome,
 
 The nav model had a fork sitting open for around a month — replace the pane, stack top-bar tabs, or split panes — and it mostly came down to the perf hard-rule: N live tables would wreck scroll, so tabs keep one view mounted and cache the rest per-tab.
 
-Pinned tabs ARE the pin set, never a second stored copy; the whole set travels across devices through a synced `tabs.json`, and every tab carries its own Back/Forward. The empty state became NavView, the full-window recents gallery. It's on `nav-gallery-pins`. → [[Navigation]] §II · `History.md`.
+Pinned tabs ARE the pin set, never a second stored copy; the whole set travels across devices through a synced `tabs.json`, and every tab carries its own Back/Forward. The empty state became NavView, the full-window recents gallery. → [[Navigation]] §II · `History.md`.
 
 #### SurfacePM — Block Surfaces (07-10 → 07-13)
 
@@ -60,22 +78,28 @@ Alongside it, every drag's edge-scroll collapsed onto one shared primitive acros
 
 ### Pending Focuses
 
-- Cards a11y pass — the `noStaticElementInteractions` stubs still want real roles/keyboard. → [[CardView]].
+**The architectural task.** The SQLite index is built, schema-versioned and maintained, and nothing reads it — `sessionDb()` has no production caller and the only `SELECT`s in the tree are the schema handshake's own. Every successful mutation deletes `index.db` and cold-rebuilds it from a full nexus walk, so the highest-frequency ops in the app each pay a whole re-read to populate nine tables no code path queries; the refresh is also unguarded, so two rapid mutations race and the second's delete lands under the first's build. Writing the query facade — or suspending the rebuild until it exists — gates Linked-From, backlinks, ContextView and search, and is the one item every roadmap doc points at.
+
+- The four unimplemented view tiles (List, Gallery, Calendar, Timeline) render at full weight with real glyphs and swallow the click, against the house rule that a landed-less affordance is inert and dimmed rather than a live button wired to nothing. The group-band "+" is the same violation — it carries an `aria-label` and no `onClick`.
+- `schema:changeType` is fully built in main, exposed in preload, and has no renderer call site — only two test mocks, which read as coverage it doesn't have. Its `lossy-change-requires-confirmation` code exists to drive a confirm-then-retry dialog that nothing can reach.
+- The IPC envelope flattens the structured error contract: `PommoraError.code` is dropped at ~47 handler tails into a bare string, and no renderer anywhere reads `.code`. Either propagate it or delete the unreachable `ErrorCode` members — the middle state is what costs.
+- Cards a11y — the grid still wants roving tabindex and real grid semantics; the shared activation primitive and the card-shell roles landed, the grid half didn't. Grids having no keyboard navigation and drag handles being pointer-only are recorded as real gaps, not lint failures. → [[CardView]].
 - The NavPane toolbar dropdown is still a blank placeholder — what a compact nav dropdown holds versus the fuller NavWindow is an open call before building into it.
+- NOR filters are hand-authoring only — the mode lives on disk and in the evaluator; the pane offers All and Any, and a hand-authored NOR decodes as `locked`.
+- `bounds` and `scanLabel` on PreviewPane have no caller yet; hard-coding them would force the first new consumer to edit the component instead of configuring it.
+- Four affordances whose features haven't landed are `disabled` rather than wired to a no-op — the Space pane's actions ellipsis, the ViewPane's More menu, the ViewSettings icon picker, and the Page Preview's own Settings button.
 - User Sections CRUD — collections render user sections but there's no way to actually make one (`mutate.ts` has no section ops); its own brainstorm → plan → build. → `Sidebar.md`.
-- The flattened-mode bundle — "None"/flat grouping plus Flatten and Hide Location — is deferred; the `flat` GroupConfig kind stays reserved. → [[Views]].
+- The flattened-mode bundle is half-landed: `flat` grouping and Hide Location are live for Cards, while the grouping pane offers "None" only under Cards and the pipeline refuses `flat` structurally for tables. The table half plus a separate Flatten control is what remains. → [[Views]].
 - Perf debt: no row virtualization yet (every row mounts, which bites at thousands), and an external value edit doesn't live-refresh an open table. The one-view-mounted multi-tab design deliberately dodges needing table virtualization.
 - Canvas — the spec sits at `Planning/6-26 - Canvas Spec.md`, pending adversarial review → plan → build.
 - iCloud-sync readiness (future) — `serializeOnFile` can't coordinate with the iCloud daemon under LWW, `.nexus/index.db` needs sync-exclusion, and the walk has to skip `.icloud` placeholders.
 - Mobile iOS companion — parked, spec at `.claude/Mobile/MobileSpec.md`, no build commitment.
 - Editor deep cut (post-scan-cache): the per-caret line/rail loop still walks every line — the full StateField split (doc-keyed line chrome mapped through changes + a selection-scoped reveal plugin) is the remaining step; needs live-editor verification.
-- NotchedPane rebuilds its beak path per frame while a pane animates height, and PickerMenu + NotchedPane each run their own ResizeObserver on the same pane — consolidate to one measurement owner passing size down.
 - `useExitPresence`'s default exit window is a raw constant decoupled from the motion tokens — derive it from `duration.slow` + slack or menus flash on close if the tokens are ever retuned.
 - IPC error envelopes come in two shapes (`mutate`'s structured PommoraError vs ~20 handlers' bare `error: string`) — one `Result<T>` envelope everywhere removes a consumer-confusion class, net-negative.
 - `useDismiss` coordinates with picker portals via per-event DOM queries (`closest`/`querySelector` on `[data-picker-portal]`) — a shared open-picker counter removes the DOM handshake.
-- The Toolbar aims its dropdown beaks with hard-coded trio fractions (5/6, center) — any trio change silently misaims them; derive from measured trigger rects like PickerMenu.
 - The preview window fetches the same page twice (PageEmbed's body load + PreviewInspector's frontmatter fetch) — lift one `openPage` result to the window and pass both halves down.
-- PageView and PreviewWindow each rebuild the full connections index (`buildPageIndex(flattenPages(tree))`) per tree change — a shared hook (routing injected) halves the walk and the copy-paste.
+- Four surfaces each rebuild the full connections index (`buildPageIndex(flattenPages(tree))`) per tree change — PageView, PreviewWindow, NavWindow and BlockSurface — where a shared hook with routing injected would collapse the walk and the copy-paste.
 - AutocompletePanel is a hand-rolled body portal that PickerMenu's beak-less surface could host; and when a third boolean-dropdown consumer appears, extract the `useMenuPresence` (open + dismiss + exit-presence) bundle — two consumers today made it indirection, not DRY.
 - `group.tsx`'s `cellAt` rebuilds the zone's column model per item per over-flip — hoist lefts/stride/cols to a per-zone computation.
 - `sidebarDnd`'s collection/context branch re-filters the sibling set per pointermove — snapshot it at activation (invariant mid-drag).
@@ -87,10 +111,14 @@ Alongside it, every drag's edge-scroll collapsed onto one shared primitive acros
 - Latent: `setIcon` on the OPEN page updates the tree node but not `pageDetail.frontmatter.icon` (stale until reselect) — pre-existing; a targeted `pageDetail` patch closes it.
 - The group-band "+" (structural Set bands) is a deliberate visual stub awaiting Nathan's creation-affordance design — `createFromMenu` + the optimistic insert now make wiring it trivial once designed.
 
+### Open Rulings
+
+- **Right-clicking Change Color in the Space settings pane closes the pane.** Not reproduced, and every renderer-side path is eliminated — no blur or focus listener exists, `setPanel(null)` has one caller whose ref contains the dropdown, and the picker's portals are spared by both dismissal checks. The residual mechanism is a pointer event delivered after the native menu returns input; confirm with a capture-phase `pointerdown` log during one right-click. Two guards landed that are correct regardless.
+
 ### Hard Rules
 
 - The dev app runs against the real Nexus, so CDP opens and Escs only unless authorized — and the editor gets driven only on a throwaway page, since typing into a live one autosaves straight to real data.
-- Stage explicit paths, never `git add -A` — parallel sessions and Nathan's own uncommitted edits share the tree.
+- Stage explicit paths, never `git add -A` — parallel sessions and Nathan's own uncommitted edits share the tree. Agents that write share that one tree too, so whole-tree git operations are forbidden in their briefs; a clean baseline means a worktree. → [[Design-Sources]].
 - Never allow planning, brainstorming, or session-specific references to make it into code or documentation. 
 
 ### Lessons
@@ -101,6 +129,7 @@ Alongside it, every drag's edge-scroll collapsed onto one shared primitive acros
 - Where the recent code lives: Multi-Tab under `Tabs/` (`tabsModel.ts` pure with its own tests, `warmCache.ts` for the session LRU, every tab-bar visual knob in `tabBar.css`'s `.tab-bar` block); `select` is the single nav entry point; the New Tab `+` rides a shared `--toolbar-swallow` var on `.app-toolbar`; and the pin toggle shared between list rows and gallery cards is `NavPinButton` in `NavList.tsx`.
 - A whole-surface drag handle steals its own children's clicks: the drag engine `setPointerCapture`s on pointerdown, retargeting the derived click to the drag node, so any interactive descendant (a value picker, an add surface) has to stop pointerdown — a container only on its own empty space, so the title still drags. Two smaller ones from the same run: Zod 4's `z.number()` already rejects Infinity/NaN where Zod 3 didn't (a `.catch` codec defaults them for free), and native Electron menus are OS-level — CDP can't screenshot or drive them, so their pure models get unit-tested and the popup needs a human.
 - The Cards renderer lives in `Detail/Views/Cards/` with its pure seams unit-tested (`cardsOrder`, `cardValueInput`, `cardsBand`); the cell/card right-click model is single-sourced in `@shared/cellMenu.ts` + `@shared/cardMenu.ts` + `@shared/pageMenu.ts`; cards flatten via **Group By: None** (the `flat` kind, rendered headerless) and order via a **Sort By: Location** entry (reserved `LOCATION_SORT`, Order Location/Custom, resolved through `locationFlat` for its filesystem order), gated on `flattenStructural` so neither can touch a table.
+- A vanilla-extract `.css.ts` may export only plain values, so a helper that *builds* a declaration sits beside the stylesheet rather than inside it. Neither typecheck nor lint can see the violation — only the plugin rejects it, which makes it a build-time surprise.
 - The context machinery splits cleanly: pure resolution in `src/shared/contexts.ts` + `contextResolve.ts`, the write family in `src/main/crud/contextWrite.ts`, the cascade/journal/replay in `crud/contextCascade.ts` + `contextJournal.ts`, the migration in `src/main/migrateContexts.ts`, and every renderer surface resolving identity through `Detail/Views/pipeline/contextIdentity.ts` — nothing re-derives icon/color/title from the tree on its own. Context columns are default-OFF: absence from a view's `property_order` IS hidden, which is why creating a Context can never change an existing view.
 
 ### Fix Log
@@ -108,7 +137,7 @@ Alongside it, every drag's edge-scroll collapsed onto one shared primitive acros
 - `.nexus/activeViews.json` and its per-machine siblings (`folds`, `viewOrders`, `tableHeadingColumns`, `linkTitles`) aren't gitignored — using the switcher on a fresh container creates a would-sync file. They need adding to the Nexus `.gitignore`; `tabs.json` does not, since it's synced on purpose.
 - The "File" property icon gets clipped by its vertical row padding on the ViewPane.
 - The link-rename field shows a leading empty space — a visual inset, not a stored character (deprioritized).
-- Blockquotes inside of codeblocks are unstable and need proper debugging.
+- Blockquotes inside of codeblocks are unstable. The cause is an ordering one in `decorations/intent.ts`: the blockquote branch runs before the fence lookup and never consults it, so it sets a prefix length that the fence branch then hides. That stripping is correct for a fenced block nested *inside* a blockquote and wrong for a `>` line that is merely code content, and one `base` serves both with nothing distinguishing them — the line ends up carrying both the blockquote and code-block classes while a literal `>` is erased. → [[MarkdownPM]].
 - Block-math drag corrupts the doc: a multi-line `$$…$$` span with a blank line inside parses as two halves with orphaned `$$`, and block-dragging it corrupts the document (`blockModel.ts`, test-pinned but unguarded).
 - A single-word bullet that wraps drops the word below the marker — only the `line-height` cap made it in so far. → [[MarkdownPM]].
 - The Set-Card drag flash (drop snaps back, then jumps on reload) should now be settled by the optimistic reorder patch in `store.mutate` — needs one live confirmation before the Fix Log drops it. → [[CardView]].
