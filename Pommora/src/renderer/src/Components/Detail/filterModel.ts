@@ -1,0 +1,245 @@
+// The FilterPane's pure model — the flat And/Or row list ↔ the on-disk FilterGroup tree, plus the
+// pane's target + per-type operator vocabularies. The pane owns the filter slot wholesale for the
+// shapes it writes; anything it can't faithfully represent decodes as `locked` and is never
+// silently flattened (a rewrite would change the filter's truth table). Pure: no fs, no React.
+
+import type { PropertyDefinition } from '@shared/properties'
+import { RESERVED_PROPERTY_ID } from '@shared/properties'
+import type { FilterGroup, FilterRule, MatchMode } from '@shared/views'
+
+export type { MatchMode }
+import type { NexusTree } from '@shared/types'
+import type { Icon } from '@renderer/design-system/symbols'
+import { asRenderableIcon } from '@renderer/design-system/symbols'
+import { contextIdentityOf, contextIdsOf } from '../../Detail/Views/pipeline/contextIdentity'
+import { declaredType } from '../../Detail/Views/pipeline/value'
+import { FILTER_OPS } from '../../Detail/Views/pipeline/filter'
+import { propertyTypeIconName, TITLE_META } from './PropertyTypes'
+
+export type Connector = 'and' | 'or'
+
+/** One pane row — `connector` is null on row 0 (nothing to join). */
+export interface PaneRow {
+  connector: Connector | null
+  rule: FilterRule
+}
+
+export type DecodedFilter = { kind: 'rows'; mode: MatchMode; rows: PaneRow[] } | { kind: 'locked' }
+
+const isLeaf = (node: FilterRule | FilterGroup): node is FilterRule => !('rules' in node)
+const isAllOfLeaves = (node: FilterRule | FilterGroup): node is FilterGroup =>
+  !isLeaf(node) && node.match === 'all' && node.rules.every(isLeaf)
+
+/** A mode's default connector — only `any` splits the list into runs, so every other mode flattens
+ *  to one And run. The encoder's structure rule and the pane's row seeding read it from here. */
+export const connectorFor = (mode: MatchMode): Connector => (mode === 'any' ? 'or' : 'and')
+
+/** Rows → tree. Connectors derive the structure: the list splits into AND-runs at each 'or'; one run
+ *  is a flat group in the base mode, several become of-runs (a one-rule run stays a bare leaf).
+ *  The root KEEPS its mode across the split — `none` over runs is NOR over those runs, which is
+ *  De-Morgan-exact. Rewriting it to `any` there would invert the filter's polarity on one connector
+ *  click: "matches neither" would quietly become "matches either". */
+export function encodeFilter(mode: MatchMode, rows: PaneRow[]): FilterGroup | undefined {
+  if (rows.length === 0) return undefined
+  const runs: FilterRule[][] = [[]]
+  for (const row of rows) {
+    if (row.connector === 'or' && runs[runs.length - 1].length > 0) runs.push([])
+    runs[runs.length - 1].push(row.rule)
+  }
+  if (runs.length === 1) return { match: mode, rules: runs[0] }
+  return {
+    match: mode === 'all' ? 'any' : mode,
+    rules: runs.map((run) => (run.length === 1 ? run[0] : { match: 'all', rules: run })),
+  }
+}
+
+/** Tree → rows, or `locked` when the shape isn't one the pane writes (defined by SHAPE, never
+ *  depth — an `any` nested under an `all` root is only 2 deep but inexpressible flat). Mixed
+ *  connectors display mode `all` ("Or" is a valid deviation under All). */
+export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
+  if (!filter) return { kind: 'rows', mode: 'all', rows: [] }
+
+  // A flat all/none is one And-run of leaves — no split, so every connector reads And.
+  if (filter.match !== 'any' && filter.rules.every(isLeaf)) {
+    return {
+      kind: 'rows',
+      mode: filter.match,
+      rows: filter.rules.map((rule, i) => ({ connector: i === 0 ? null : 'and', rule })),
+    }
+  }
+
+  // any / none over runs: every child must be a leaf or an all-of-leaves run.
+  if (!filter.rules.every((n) => isLeaf(n) || isAllOfLeaves(n))) return { kind: 'locked' }
+  const rows: PaneRow[] = []
+  for (const child of filter.rules) {
+    const run = isLeaf(child) ? [child] : (child.rules as FilterRule[])
+    run.forEach((rule, i) => {
+      rows.push({ connector: rows.length === 0 ? null : i === 0 ? 'or' : 'and', rule })
+    })
+  }
+  // A pure-leaf `any` is genuinely Any; one carrying an all-of-leaves run is a mixed tree, which the
+  // pane shows as All with the Or as a deviation. `none` always reports itself.
+  const mode: MatchMode = filter.match === 'none' ? 'none' : filter.rules.every(isLeaf) ? 'any' : 'all'
+  return { kind: 'rows', mode, rows }
+}
+
+// ---- vocabulary ----
+
+export type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'
+
+export interface OperatorChoice {
+  op: string
+  label: string
+  slot: ValueSlot
+  /** Chip ops: the picker toggles values[] and stays open. */
+  multi?: boolean
+  /** Self-contained ops (checkbox) write this into `value` on pick. */
+  impliedValue?: string
+}
+
+const EMPTIES: OperatorChoice[] = [
+  { op: FILTER_OPS.isEmpty, label: 'Is Empty', slot: 'none' },
+  { op: FILTER_OPS.isNotEmpty, label: "Isn't Empty", slot: 'none' },
+]
+
+const TEXT_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is', slot: 'text' },
+  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'text' },
+  { op: FILTER_OPS.startsWith, label: 'Starts With', slot: 'text' },
+  { op: FILTER_OPS.contains, label: 'Contains', slot: 'text' },
+  { op: FILTER_OPS.doesNotContain, label: "Doesn't Contain", slot: 'text' },
+]
+
+/** Before/After are the INCLUSIVE ops (on-or-before / on-or-after) — the boundary date matching is
+ *  the behaviour people expect, so it's the default rather than a second, longer-labelled entry. The
+ *  strict variants stay registered in the evaluator for hand-authored files; the pane doesn't offer
+ *  them, because a second pair of near-identical labels costs more width than the distinction buys. */
+const DATE_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is', slot: 'date' },
+  { op: FILTER_OPS.onOrBefore, label: 'Before', slot: 'date' },
+  { op: FILTER_OPS.onOrAfter, label: 'After', slot: 'date' },
+  ...EMPTIES,
+]
+
+/** Array-valued membership (multi-select, tiers, context relations). */
+const SET_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.containsAny, label: 'Is Any', slot: 'chips', multi: true },
+  { op: FILTER_OPS.containsAll, label: 'Is All', slot: 'chips', multi: true },
+  { op: FILTER_OPS.doesNotContain, label: "Isn't", slot: 'chips', multi: true },
+  ...EMPTIES,
+]
+
+const NUMBER_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is', slot: 'number' },
+  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'number' },
+  { op: FILTER_OPS.greaterThan, label: 'Greater Than', slot: 'number' },
+  { op: FILTER_OPS.greaterOrEqual, label: 'At Least', slot: 'number' },
+  { op: FILTER_OPS.lessThan, label: 'Less Than', slot: 'number' },
+  { op: FILTER_OPS.lessOrEqual, label: 'At Most', slot: 'number' },
+  ...EMPTIES,
+]
+
+/** Single-valued options (select/status): Is/Isn't are chip pickers whose multi-chips mean
+ *  any-of/none-of — never Is All, which is unsatisfiable on a one-value property. */
+const OPTION_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is', slot: 'chips', multi: true },
+  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'chips', multi: true },
+  ...EMPTIES,
+]
+
+const CHECKBOX_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is Checked', slot: 'none', impliedValue: 'true' },
+  { op: FILTER_OPS.is, label: "Isn't Checked", slot: 'none', impliedValue: 'false' },
+]
+
+const FILE_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.isNotEmpty, label: 'Has File', slot: 'none' },
+  { op: FILTER_OPS.isEmpty, label: 'No File', slot: 'none' },
+]
+
+/** Location reads from the SET's side — "Contains" is both shorter than "Is Inside" and the way the
+ *  operand is picked (you choose the set, not the page). Membership is still any-depth. */
+/** Is/Isn't test the IMMEDIATE parent Set; Contains/Doesn't Contain are their any-depth twins. All
+ *  four take a SET of Sets — "in any of these" — so the operand is chips like every other membership
+ *  test, not a single pick. */
+const LOCATION_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is', slot: 'set', multi: true },
+  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'set', multi: true },
+  { op: FILTER_OPS.isInside, label: 'Contains', slot: 'set', multi: true },
+  { op: FILTER_OPS.isNotInside, label: "Doesn't Contain", slot: 'set', multi: true },
+]
+
+/** Title never offers empty ops — a title (the filename basename) is never empty. */
+const TITLE_OPS: OperatorChoice[] = TEXT_OPS
+
+export function operatorsFor(
+  propertyId: string,
+  schema: PropertyDefinition[],
+  contextIds: readonly string[] = [],
+): OperatorChoice[] {
+  if (propertyId === RESERVED_PROPERTY_ID.title) return TITLE_OPS
+  if (propertyId === RESERVED_PROPERTY_ID.location) return LOCATION_OPS
+  switch (declaredType(propertyId, schema, contextIds)) {
+    case 'select':
+    case 'status':
+      return OPTION_OPS
+    case 'multi_select':
+    case 'tier':
+    case 'context':
+      return SET_OPS
+    case 'number':
+      return NUMBER_OPS
+    case 'datetime':
+    case 'last_edited_time':
+      return DATE_OPS
+    case 'checkbox':
+      return CHECKBOX_OPS
+    case 'url':
+      return [...TEXT_OPS, ...EMPTIES]
+    case 'file':
+      return FILE_OPS
+    default:
+      return []
+  }
+}
+
+export interface FilterTarget {
+  id: string
+  label: string
+  icon: React.ComponentProps<typeof Icon>['name'] | undefined
+}
+
+/** The pane's What offering: the reserved targets, then every registry Context in display order,
+ *  then every schema def with a non-empty operator vocabulary (the sortTargets recipe — real def
+ *  icon, else the type glyph). Contexts resolve through the identity seam, so a user-defined one is
+ *  offered on the same footing as the seeded three and wears its own title and icon. */
+export function filterTargets(
+  schema: PropertyDefinition[],
+  tree: NexusTree | null,
+): FilterTarget[] {
+  const contextIds = contextIdsOf(tree)
+  return [
+    { id: RESERVED_PROPERTY_ID.title, label: 'Title', icon: TITLE_META.icon },
+    { id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' },
+    {
+      id: RESERVED_PROPERTY_ID.modifiedAt,
+      label: 'Modified',
+      icon: propertyTypeIconName('last_edited_time'),
+    },
+    ...contextIds.map((id) => {
+      const identity = contextIdentityOf(tree, id)
+      return {
+        id,
+        label: identity?.title ?? id,
+        icon: asRenderableIcon(identity?.icon) ?? 'layout-grid',
+      }
+    }),
+    ...schema
+      .filter((d) => operatorsFor(d.id, schema, contextIds).length > 0)
+      .map((d) => ({
+        id: d.id,
+        label: d.name,
+        icon: asRenderableIcon(d.icon) ?? propertyTypeIconName(d.type),
+      })),
+  ]
+}

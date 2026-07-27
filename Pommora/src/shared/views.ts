@@ -90,11 +90,11 @@ export interface FilterRule {
   values?: string[]
 }
 
-/** A group of filter rules combined by `match` (all = AND, any = OR). RECURSIVE: a child may
- *  itself be a FilterGroup, expressing mixed AND/OR like `(A AND B) OR C` (React-ahead of
- *  Swift's flat rules). `match: 'none'` is the pane's disable state, root-only by authorship —
- *  the pipeline skips filtering when the ROOT is none (rules persist untouched, wrapped as the
- *  root's single child group); a nested none evaluates as a pass. */
+/** A group of filter rules combined by `match`: all = AND, any = OR, none = NOR (no rule may
+ *  match). RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR like
+ *  `(A AND B) OR C` (React-ahead of Swift's flat rules, whose modes are all/any only).
+ *  Whether the filter APPLIES is a separate axis — `SavedView.filter_enabled` — so turning a
+ *  filter off never costs it its authored mode. */
 export interface FilterGroup {
   match: MatchMode
   rules: Array<FilterRule | FilterGroup>
@@ -145,6 +145,8 @@ export interface SavedView {
   hide_borders?: boolean
   sort?: SortCriterion[]
   filter?: FilterGroup
+  /** Absent = on. Parking a filter keeps its rules and its match mode; only application stops. */
+  filter_enabled?: boolean
   group?: GroupConfig
   /** Table density style — persisted per-view; drives a class on the table root (Compact CSS is a
    *  later cycle, so this is inert on read today). */
@@ -279,6 +281,8 @@ export const savedView = z.looseObject({
   hide_borders: z.boolean().optional(),
   sort: z.array(sortCriterion).optional(),
   filter: filterGroup.optional(),
+  // Absent = on. Only an explicit `false` parks the filter, so an un-authored view filters normally.
+  filter_enabled: z.boolean().optional(),
   group: z.unknown().transform(decodeGroupConfig).optional(),
   format: z.enum(VIEW_FORMATS).optional().catch(undefined),
   // Element-filtering, never whole-array catch: one bad entry drops alone, the good ids survive.

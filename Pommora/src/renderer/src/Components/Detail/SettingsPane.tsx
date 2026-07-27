@@ -25,6 +25,7 @@ import { PropertiesPane } from './PropertiesPane'
 import { HiddenPane } from './HiddenPane'
 import { GroupingPane } from './GroupingPane'
 import { SortingPane } from './SortingPane'
+import { FilterPane } from './FilterPane'
 import { ViewSettings } from './ViewSettings'
 import { PaneSlider } from './PaneSlider'
 import {
@@ -283,6 +284,16 @@ export function SettingsPane(): React.JSX.Element | null {
       />
     ) : detailId === 'sort' ? (
       <SortingPane source={node} view={view} schema={schema} label="Settings" onBack={back} />
+    ) : detailId === 'filter' ? (
+      <FilterPane
+        key={view.id}
+        source={node}
+        view={view}
+        schema={schema}
+        tree={tree}
+        label="Settings"
+        onBack={back}
+      />
     ) : (
       blankLeaf
     )
