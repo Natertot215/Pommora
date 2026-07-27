@@ -298,7 +298,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             aria-hidden
             style={{ position: 'fixed', left: rowMenu.x, top: rowMenu.y, width: 0, height: 0 }}
           />
-          <PickerMenu solid open onDismiss={() => setRowMenu(null)} triggerRef={rowMenuRef} center>
+          <PickerMenu solid open onDismiss={() => setRowMenu(null)} triggerRef={rowMenuRef} origin="center">
             <div className="nav-row-menu">
               <MenuItem
                 leading={<Icon name="x" size={13} />}
@@ -316,7 +316,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
         </>
       )}
       {addOpen && (
-        <PickerMenu solid open onDismiss={() => setAddOpen(false)} triggerRef={addRef} center>
+        <PickerMenu solid open onDismiss={() => setAddOpen(false)} triggerRef={addRef} origin="center">
           {/* The grouping pane's picker verbatim — PickerOption rows with the icon treatment.
               Unassigned tiers lead (contexts add from here too), unassigned properties follow. */}
           {contextRows

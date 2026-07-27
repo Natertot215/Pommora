@@ -9,6 +9,7 @@ import type {
 } from '@shared/blocks'
 import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
+import { PICKER_MAX_HEIGHT } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import {
   MenuBottomRow,
   MenuItem,
@@ -51,7 +52,7 @@ function DrillLevel({
   const rows = (
     <div className={s.pane}>
       <MenuScrollFrame
-        maxHeight={s.PICKER_MAX_H}
+        maxHeight={PICKER_MAX_HEIGHT}
         header={
           <MenuPaneTopRow
             label={backLabel}
@@ -383,7 +384,7 @@ export function BlockHandleMenu({
 
   return (
     <>
-      <PickerMenu open onDismiss={onClose} triggerRef={{ current: anchor }} center>
+      <PickerMenu open onDismiss={onClose} triggerRef={{ current: anchor }} origin="center">
         <PaneSlider open={pane !== 'root'} root={root} detail={detail} />
       </PickerMenu>
       {scaleOpen && (

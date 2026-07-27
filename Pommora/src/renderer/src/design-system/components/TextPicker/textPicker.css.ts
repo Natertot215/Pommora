@@ -1,9 +1,8 @@
 import { style } from '@vanilla-extract/css'
 import { vars } from '../../tokens/color.css'
-import { duration, easing } from '../../tokens/motion'
-import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { font } from '../../tokens/typography.css'
 import { field } from '../interactionField.css'
+import { focusRing } from '../fieldRing'
 
 const c = vars.color
 
@@ -31,13 +30,7 @@ export const suffixField = style([
     gap: '6px',
     width: '140px',
     overflow: 'hidden',
-    // The ring paints via the field's --field-ring channel; focus lights it accent.
-    transition: `box-shadow ${duration.fast} ${easing.standard}`,
-    selectors: {
-      '&:focus-within': {
-        vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
-      },
-    },
+    ...focusRing('within'),
   },
 ])
 
@@ -95,13 +88,6 @@ export const input = style([
     fontSize: font.scale.control.size,
     fontWeight: font.weight.emphasized,
     color: c.label.primary,
-    // The ring paints via the field's --field-ring channel; focus lights it accent.
-    transition: `box-shadow ${duration.fast} ${easing.standard}`,
-    selectors: {
-      '&:focus, &:focus-visible': {
-        outline: 'none',
-        vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
-      },
-    },
+    ...focusRing(),
   },
 ])

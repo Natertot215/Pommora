@@ -88,7 +88,7 @@ export function PropertyPicker({
       onDismiss={onDismiss}
       triggerRef={triggerRef}
       solid
-      center={anchorX !== undefined}
+      origin={anchorX !== undefined ? 'center' : 'right'}
       anchorX={anchorX}
     >
       <PropertyOptionRows

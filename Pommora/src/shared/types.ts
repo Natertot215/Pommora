@@ -16,8 +16,7 @@ export type NodeKind =
   | 'set'
   | 'page'
 
-// Contexts tier-1 (Area) color palette — 10 cases, written once as the single source for
-// Settings accent palette — the spectrum solids usable as the app accent, plus
+// The Settings accent palette — 10 cases, written once as the single source for the — the spectrum solids usable as the app accent, plus
 // `system` (follow the OS accent). Names mirror the renderer's vars.color.solid
 // keys (color.css.ts); greyDefault is excluded (it's the chip "Default" neutral,
 // not an accent). resolveAccent (renderer) maps each name to its hex.

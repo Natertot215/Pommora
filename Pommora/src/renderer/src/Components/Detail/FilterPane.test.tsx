@@ -129,9 +129,10 @@ const twoRules = (): SavedView =>
   })
 
 describe('FilterPane', () => {
-  it('renders Matches All + a row per decoded rule', async () => {
+  it('renders the match mode + a row per decoded rule', async () => {
     await mount(twoRules())
-    expect(texts()).toContain('Matches')
+    // The mode control carries no visible label — its value IS the label (All / Any).
+    expect(texts()).not.toContain('Matches')
     expect(texts()).toContain('All')
     expect(texts()).toContain('Status')
     expect(texts()).toContain('Archived')
@@ -174,26 +175,25 @@ describe('FilterPane', () => {
   // persist; it has to survive locally and ride out on the write that mints that rule.
   it('a mode picked on an empty filter sticks and lands on the first rule', async () => {
     await mount(view())
+    // Two options, so the control flips in place — no menu to open.
     await click(byLabel('Matches'))
-    await click(optionWithText('None'))
     expect(saveSpy).not.toHaveBeenCalled()
-    expect(byLabel('Matches')?.textContent).toContain('None')
+    expect(byLabel('Matches')?.textContent).toContain('Any')
     await click(byLabel('Filter property'))
     await click(
       optionWithText('Archived') ??
         [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Archived').at(-1),
     )
     expect(lastSaved().filter).toEqual({
-      match: 'none',
+      match: 'any',
       rules: [{ property_id: 'prop_check', op: 'is', value: 'true' }],
     })
   })
 
-  it('Matches → None writes a real NOR group, not an off state', async () => {
+  it('the match toggle flips the mode without touching whether the filter runs', async () => {
     await mount(twoRules())
     await click(byLabel('Matches'))
-    await click(optionWithText('None'))
-    expect(lastSaved().filter?.match).toBe('none')
+    expect(lastSaved().filter?.match).toBe('any')
     // The mode says nothing about whether the filter runs — that is the switch's job alone.
     expect(lastSaved().filter_enabled).toBeUndefined()
   })
@@ -201,7 +201,6 @@ describe('FilterPane', () => {
   it('picking a mode while parked leaves the filter parked', async () => {
     await mount(view({ ...twoRules(), filter_enabled: false }))
     await click(byLabel('Matches'))
-    await click(optionWithText('Any'))
     expect(lastSaved().filter?.match).toBe('any')
     expect(lastSaved().filter_enabled).toBe(false)
   })
@@ -211,7 +210,10 @@ describe('FilterPane', () => {
   it("the draft's connector toggles, and its Or splits the run on completion", async () => {
     await mount(
       view({
-        filter: { match: 'all', rules: [{ property_id: 'prop_status', op: 'is', values: ['todo'] }] },
+        filter: {
+          match: 'all',
+          rules: [{ property_id: 'prop_status', op: 'is', values: ['todo'] }],
+        },
       }),
     )
     await click(byLabel('Add filter rule'))
@@ -245,9 +247,7 @@ describe('FilterPane', () => {
   // Two writes in one gesture: a value's blur-commit, then the click that caused the blur. Both
   // used to build from the same pre-save render prop, so the second silently dropped the first.
   it('a value committed on blur survives the click that caused the blur', async () => {
-    await mount(
-      view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }),
-    )
+    await mount(view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }))
     const input = host.querySelector('input')
     expect(input).toBeTruthy()
     await act(async () => {
@@ -263,11 +263,67 @@ describe('FilterPane', () => {
     expect(saved.filter?.rules).toEqual([{ property_id: '_title', op: 'is', value: 'urgent' }])
   })
 
+  // The same gesture, but the second write lands on the SAME axis. Sharing `filter` is the harder
+  // case: the base object alone isn't enough, because the second write re-serializes the whole rule
+  // list — from a snapshot that predates the first unless the rows are re-read at call time.
+  it('a blur-committed value survives a second write to the filter itself', async () => {
+    await mount(
+      view({
+        filter: {
+          match: 'all',
+          rules: [
+            { property_id: '_title', op: 'is' },
+            { property_id: 'prop_status', op: 'is', value: 'todo' },
+          ],
+        },
+      }),
+    )
+    const input = host.querySelector('input')
+    await act(async () => {
+      if (input) {
+        input.focus()
+        input.value = 'urgent'
+        input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+      }
+    })
+    // Flipping a connector rewrites `filter` wholesale — the value must still be in it.
+    await click(byLabel('Toggle connector'))
+    expect(lastSaved().filter).toEqual({
+      match: 'any',
+      rules: [
+        { property_id: '_title', op: 'is', value: 'urgent' },
+        { property_id: 'prop_status', op: 'is', value: 'todo' },
+      ],
+    })
+  })
+
+  // Two removals in one beat: the second used to map a snapshot still holding the first-removed row.
+  it('two removals in one beat both stick', async () => {
+    await mount(
+      view({
+        filter: {
+          match: 'all',
+          rules: [
+            { property_id: '_title', op: 'is', value: 'a' },
+            { property_id: 'prop_status', op: 'is', value: 'todo' },
+            { property_id: 'prop_check', op: 'is', value: 'true' },
+          ],
+        },
+      }),
+    )
+    const removes = [...host.querySelectorAll('[aria-label="Remove filter"]')]
+    expect(removes.length).toBe(3)
+    await click(removes[2])
+    await click(removes[1])
+    expect(lastSaved().filter).toEqual({
+      match: 'all',
+      rules: [{ property_id: '_title', op: 'is', value: 'a' }],
+    })
+  })
+
   // Back suppresses pointerdown to protect focus, so leaving that way fires no blur at all.
   it('an uncommitted value flushes when the pane unmounts', async () => {
-    await mount(
-      view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }),
-    )
+    await mount(view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }))
     const input = host.querySelector('input')
     await act(async () => {
       if (input) input.value = 'stranded'
@@ -277,6 +333,34 @@ describe('FilterPane', () => {
       { property_id: '_title', op: 'is', value: 'stranded' },
     ])
     root = createRoot(host) // afterEach unmounts again
+  })
+
+  // The same flush, but AFTER a committed round-trip. The input is keyed on its value, so committing
+  // swaps in a new DOM node — a flush holding the node it captured at mount would read the dead
+  // first one, find its stale text unchanged, and silently save nothing.
+  it('a value edited after an earlier commit still flushes on unmount', async () => {
+    await mount(view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }))
+    await act(async () => {
+      const first = host.querySelector('input')
+      if (first) {
+        first.focus()
+        first.value = 'one'
+        first.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+      }
+    })
+    // The commit re-keys the input; re-query rather than reusing the detached node.
+    await mount(
+      view({
+        filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'one' }] },
+      }),
+    )
+    await act(async () => {
+      const second = host.querySelector('input')
+      if (second) second.value = 'two'
+    })
+    await act(() => root.unmount())
+    expect(lastSaved().filter?.rules).toEqual([{ property_id: '_title', op: 'is', value: 'two' }])
+    root = createRoot(host)
   })
 
   // The pane never drops below one row, so the sole rule carries no × — removing it would leave
@@ -290,7 +374,7 @@ describe('FilterPane', () => {
     expect(host.querySelectorAll('[aria-label="Remove filter"]').length).toBe(2)
   })
 
-  it('removing down to one rule drops that row\'s ×', async () => {
+  it("removing down to one rule drops that row's ×", async () => {
     await mount(twoRules())
     await click(host.querySelector('[aria-label="Remove filter"]'))
     await mount(view({ filter: lastSaved().filter }))
@@ -383,9 +467,7 @@ describe('FilterPane value editors', () => {
     await mount(
       view({ filter: { match: 'all', rules: [{ property_id: 'prop_status', op: 'is' }] } }),
     )
-    await click(
-      host.querySelector('[aria-label="Filter values"]'),
-    )
+    await click(host.querySelector('[aria-label="Filter values"]'))
     await click(
       [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Todo').at(-1),
     )
@@ -394,9 +476,7 @@ describe('FilterPane value editors', () => {
     expect('value' in rule).toBe(false)
     // Stays open: the second option is still clickable without reopening.
     await mount(view({ filter: lastSaved().filter }))
-    await click(
-      host.querySelector('[aria-label="Filter values"]'),
-    )
+    await click(host.querySelector('[aria-label="Filter values"]'))
     await click(
       [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Done').at(-1),
     )
@@ -408,9 +488,7 @@ describe('FilterPane value editors', () => {
     await mount(
       view({ filter: { match: 'all', rules: [{ property_id: 'prop_status', op: 'is' }] } }),
     )
-    await click(
-      host.querySelector('[aria-label="Filter values"]'),
-    )
+    await click(host.querySelector('[aria-label="Filter values"]'))
     // No remount between the two clicks — the stale-prop window the optimistic accumulator covers.
     await click(
       [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Todo').at(-1),

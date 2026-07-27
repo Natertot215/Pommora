@@ -5,17 +5,29 @@
 // value absorbs what's left and yields first, and the pane fills its host before stretching with
 // content toward the max-width knob. Fields wear control typography, and the remove × sits in flow
 // at the row's trailing edge so it can never overlap the value.
-import { globalStyle, style } from '@vanilla-extract/css'
+// A field's glyphs space THEMSELVES: a leading icon and a trailing chevron want different gaps, and
+// one container `gap` can only state one — so each role carries its own margin and the field sets none.
+import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
-import { duration, easing } from '../../design-system/tokens/motion'
-import { TINT_STEPS, tintAt } from '../../design-system/tokens/tint'
 import { text } from '../../design-system/tokens/typography.css'
 import { field as fieldBase } from '../../design-system/components/interactionField.css'
+import { focusRing } from '../../design-system/components/fieldRing'
+import { divider as segmentHairline } from '../../design-system/components/Segmented-Controls/segmented.css'
+import { chipRemovable } from '../../design-system/tokens/chip.css'
 
 const c = colorVars.color
 
 /** KNOB — the pane's content-driven width ceiling. */
 const FILTER_MAX_WIDTH = '420px'
+
+/** KNOB — a leading glyph's distance from its label. The picker option row's gap, so an icon sits
+ *  exactly as far off its label inside a field as it does in the menu that field opens. */
+const LEAD_GAP = '6px'
+
+/** KNOB — the trailing chevron's distance from its label. Tighter than the lead on purpose: the
+ *  Operator cell is the row's compactness priority, and its chevron is all that stands between the
+ *  label and the field's edge. */
+const TRAILING_GAP = '2px'
 
 /** KNOB — the pane's height floor (matches the hosts' leaf slider floor) so the "+" footer pins
  *  to the bottom edge like every other pane's footing. */
@@ -23,10 +35,6 @@ const FILTER_MIN_HEIGHT = '245px'
 
 /** KNOB — the clear-×'s breathing room off the row's trailing edge. */
 const REMOVE_INSET = '2px'
-
-/** KNOB — the checkbox box steps down to the pane's control scale; the shared chipBox is a fixed
- *  17px sized for table cells, which reads oversized beside 12px type and a 12px chevron. */
-export const checkBoxScale = style({ zoom: 0.76 })
 
 export const pane = style({
   // Fill the host leaf first — its floor is the real minimum — then stretch with the longest row up
@@ -74,16 +82,16 @@ export const whatCell = style({
 const restRing = { vars: { '--field-ring': c.separator.line } }
 
 /** The shared input-field recipe in its column: flush to the gutters, STANDARD field height
- *  (the interactionField 28px floor), body-size type, separator-hairline stroke. */
+ *  (the interactionField 28px floor), separator-hairline stroke, and the house field's own BODY
+ *  type — a filter row is content the user reads, not chrome, so it holds the reading size rather
+ *  than the compact control scale (which shrank the chips inside it to match). */
 export const cellField = style([
   fieldBase,
-  text.control.emphasized,
   {
     width: 'auto',
     flex: '0 1 auto',
     minWidth: 0,
     padding: '3px 6px',
-    gap: '2px',
     border: 'none',
     cursor: 'default',
     justifyContent: 'flex-start',
@@ -95,14 +103,26 @@ export const cellField = style([
   },
 ])
 
-// The label span grows to fill the field so a trailing chevron pins to the field's right edge.
-globalStyle(`${cellField} > span`, {
+/** A field's label — grows to fill, so a trailing chevron pins to the field's right edge. Carried
+ *  by the label ITSELF rather than a `> span` descendant rule: a field's other spans are glyphs (the
+ *  checkbox lead) and a rule keyed on tag position hands them the label's grow and clipping. */
+export const fieldLabel = style({
   flex: '1 1 auto',
   minWidth: 0,
   textAlign: 'left',
   overflow: 'hidden',
-  textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+})
+
+/** A field's LEADING glyph slot — the property/type icon or the checkbox box. Holds the picker's
+ *  lead gap so a glyph reads identically in the field and in the menu that field opens, and never
+ *  shrinks (a squeezed row must eat the label, never the glyph). The margin lives on this WRAPPER
+ *  rather than the glyph: the checkbox box carries a `zoom`, which would scale its own margin. */
+export const leadGlyph = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  marginRight: LEAD_GAP,
+  flexShrink: 0,
 })
 
 /** The Control (operator) cell — the row's SMALLEST-WIDTH priority. It takes exactly its own
@@ -119,12 +139,10 @@ export const valueField = style([cellField, { flex: '1 1 auto' }])
  *  tone); never shrinks, so "And"/"Or" + its chevron stay uncramped. */
 export const connector = style([
   fieldBase,
-  text.control.emphasized,
   {
     width: 'auto',
     flex: '0 0 auto',
     padding: '0 6px',
-    gap: '2px',
     border: 'none',
     cursor: 'default',
     color: c.label.secondary,
@@ -140,8 +158,12 @@ export const blankWide = style({ minWidth: '58px' })
 export const blankNarrow = style({ minWidth: '34px', flex: '0 0 auto' })
 
 /** The trailing double-chevron reads a step under its field's text, matching the PickerControl
- *  triggers it shares the pane with. */
-export const chevron = style({ color: c.label.secondary })
+ *  triggers it shares the pane with. Owns its gap off the label, so the field states none. */
+export const chevron = style({
+  color: c.label.secondary,
+  marginLeft: TRAILING_GAP,
+  flexShrink: 0,
+})
 
 /** The row's clear-× — always shown, and in flow so it can never sit over the value field. The row's
  *  own gap is its left padding; REMOVE_INSET holds it off the trailing edge. */
@@ -168,7 +190,6 @@ export const lockedCaption = style([
  *  inset accent stroke (the TextPicker recipe). */
 export const cellInput = style([
   fieldBase,
-  text.control.emphasized,
   {
     // Sizes to its text (an input's intrinsic width otherwise ignores content); small floor for empty.
     fieldSizing: 'content',
@@ -182,14 +203,7 @@ export const cellInput = style([
     fontFamily: 'inherit',
     color: c.label.control,
     ...restRing,
-    transition: `box-shadow ${duration.fast} ${easing.standard}`,
-    selectors: {
-      // Focus lights the same channel accent — the TextPicker recipe, not a second shadow.
-      '&:focus, &:focus-visible': {
-        outline: 'none',
-        vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
-      },
-    },
+    ...focusRing(),
   },
 ])
 
@@ -203,14 +217,84 @@ export const chipRun = style({
   overflow: 'hidden',
 })
 
-/** An icon-bearing picker option row — leading glyph + label, left-aligned. */
-export const pickerOptionRow = style({
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-  width: '100%',
-  justifyContent: 'flex-start',
+/** KNOB — the segment hairline's height inside a field (the control type's cap band), and its
+ *  breathing room either side, and how far the hairline insets from the field's inner edges. */
+const SEGMENT_GAP = '5px'
+const SEGMENT_DIVIDER_INSET = '3px'
+
+/** A Location run — the picked Sets divided by the house segment hairline. A Set carries no colour
+ *  of its own, so a chip would render as a colourless box pretending to be a value; a divided run
+ *  is the honest treatment for a list of plain titles.
+ *  Spacing is the run's GAP, never margins on the pieces — the tab strip's recipe. A divider spaced
+ *  by its own margins sits evenly only while its neighbours are symmetric, and a segment's trailing
+ *  × breaks exactly that. It STRETCHES so the hairline can measure itself against the field. */
+export const segmentRun = style({
+  display: 'inline-flex',
+  alignItems: 'stretch',
+  alignSelf: 'stretch',
+  flex: '1 1 auto',
+  gap: SEGMENT_GAP,
+  minWidth: 0,
+  overflow: 'hidden',
 })
+
+/** KNOB — a segment's glyph gap. Tighter than the field's LEAD_GAP on purpose: a segment is a
+ *  compact unit INSIDE a field, so it reads as one token rather than a second field. */
+const SEGMENT_ICON_GAP = '4px'
+
+/** KNOB — how far a segment's label fades before the ×. Wide enough that the glyph never lands on
+ *  a solid letter; the shared eclipse mask does the rest. */
+const SEGMENT_FADE = '18px'
+
+/** A segment's label — the tab strip's eclipse box, tuned so its trailing fade clears the ×. */
+export const segmentLabel = style({
+  minWidth: 0,
+  vars: { '--edge-fade': SEGMENT_FADE },
+})
+
+/** A segment's leading glyph — the Set's own icon, or the entity default when it has none, so a
+ *  segment and its picker row always read as the same thing. */
+export const segmentIcon = style({ marginRight: SEGMENT_ICON_GAP, flexShrink: 0 })
+
+/** One Set in that run — its glyph and title, and the host for the shared remove-×. It wears
+ *  `chipRemovable`: that class is the melt family's HOST marker, not a chip shape, so composing it
+ *  hands a plain segment the same hover-reveal + label-tail blur without a chip's fill or border. */
+export const segment = style([
+  chipRemovable,
+  {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minWidth: 0,
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    selectors: {
+      // The × is never what sizes a segment. The TRAILING one absorbs the field's slack, so its ×
+      // lands out at the field's edge in empty space instead of sitting on the title's last letters.
+      // An interior segment has no slack to take, so its × falls back to the chip behaviour — over
+      // the tail, with the tail blurring beneath it.
+      '&:last-child': { flex: '1 1 auto' },
+    },
+  },
+])
+
+/** The house segment separator (Segmented-Controls), measured against the FIELD rather than given a
+ *  fixed height: it stretches with the run and insets a few px, so it stays proportional if the
+ *  field's type or padding ever moves. The control in Segmented-Controls sets its height per
+ *  instance for the same reason — a toolbar pill and a field line are different bars. */
+export const segmentDivider = style([
+  segmentHairline,
+  { alignSelf: 'stretch', marginBlock: SEGMENT_DIVIDER_INSET },
+])
+
+// A segment's clear-× has NO skin of its own: it is ChipRemoveButton at its default, so the reveal,
+// the pointer cursor, the reveal-gated click AND the label-tail blur beneath it all come from the one
+// place that owns them. That machinery was never chip-specific — it only ever needed a `chipRemovable`
+// host and a `ChipLabel`, which `segment` and the segment's label now supply.
+
+/** The value slot for an operator that takes NO operand (Is Empty, Is Checked, Has File). It holds
+ *  the row's leftover width so the × stays pinned at the trailing edge like every other row, but
+ *  paints nothing — an empty field would advertise an operand the operator can't accept. */
+export const valueSpacer = style({ flex: '1 1 auto', minWidth: 0 })
 
 /** The add-rule affordance — sits at the foot of the rule list, aligned under the rows themselves
  *  rather than pinned as a footing, so adding reads as extending the list rather than a pane action. */
@@ -233,8 +317,3 @@ export const addRow = style([
     selectors: { '&:hover': { background: 'var(--state-hover)', color: c.label.secondary } },
   },
 ])
-
-/** The footer's leading pair — the match-mode control and its label, opposite the on/off toggle.
- *  Both live down here so the rule region keeps the full height of the pane. */
-export const footerGroup = style({ display: 'inline-flex', alignItems: 'center', gap: '6px' })
-export const footerLabel = style([text.control.standard, { color: c.label.secondary }])

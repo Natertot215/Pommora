@@ -255,7 +255,7 @@ export function ViewSettings({
       <MenuPaneTopRow label="Views" current={LEAF_CURRENT[leaf]} onBack={() => setLeaf(null)} />
     ) : null
 
-  const title = <InlineEditHeader value={view.name} onCommit={rename} onIconClick={() => {}} />
+  const title = <InlineEditHeader value={view.name} onCommit={rename} />
   const grid = (
     <div className={vs.grid}>
       {TYPE_ORDER.map((t) => (

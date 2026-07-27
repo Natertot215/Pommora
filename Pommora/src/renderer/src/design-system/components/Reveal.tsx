@@ -46,6 +46,11 @@ export function Reveal({
 
   return (
     <div
+      // Marked so a sibling rule can tell a COLLAPSED disclosure from a real one. A closed Reveal is
+      // still a box in the DOM, which otherwise breaks any `+` selector between the rows around it —
+      // a zero-height spacer must not read as a separator.
+      data-reveal
+      data-open={mounted || undefined}
       style={{
         display: 'grid',
         transition: `grid-template-rows ${duration} ${easing.standard}`,
@@ -53,6 +58,9 @@ export function Reveal({
         gridTemplateColumns: fill ? 'minmax(0, 1fr)' : undefined,
       }}
       onTransitionEnd={(e) => {
+        // Reveals nest (a disclosed Set tree, sub-bands), and this handler bubbles — a child's
+        // transition would otherwise settle its parent mid-animation and unclip a still-growing box.
+        if (e.target !== e.currentTarget) return
         if (e.propertyName !== 'grid-template-rows') return
         if (open)
           setSettled(true) // open animation done → stop clipping

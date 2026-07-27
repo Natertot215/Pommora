@@ -49,7 +49,7 @@ export function TextPicker({
       onDismiss={onDismiss}
       triggerRef={triggerRef}
       direction="down"
-      center
+      origin="center"
       // Concentric with the input field: its 8px radius + the 4px gutter, so the gap reads uniform.
       radius={12}
       notchWidth={14}

@@ -41,6 +41,7 @@ import { nexusReorderIndex, type PaneDrop, type PaneRow } from './paneDndModel'
 import { CREATABLE_TYPES, PropertyTypeIcon, propertyTypeLabel } from './PropertyTypes'
 import { cx } from '../../design-system/cx'
 import * as s from './settingsPane.css'
+import { twisty, twistyOpen } from '../../design-system/components/menu/menu.css'
 
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
@@ -121,7 +122,8 @@ function ListGroups({
           <Icon
             name="chevron-right"
             size={s.ICON.twisty}
-            className={cx(s.twisty, allOpen && s.twistyOpen)}
+            className={cx(twisty, allOpen && twistyOpen)}
+            data-twisty
           />
           <span className={s.allPropertiesLabel}>All Properties</span>
         </button>
