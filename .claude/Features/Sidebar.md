@@ -1,6 +1,6 @@
 ## Sidebar
 
-Pommora's leading navigation pane in the three-pane shell. It has two regions: a fixed **ribbon** — an icon strip pinned to the left edge — and a **content column** whose contents switch with the ribbon. The ribbon is its own section *outside* the scrolling content, divided from it by a vertical rule, so the content's scroll can neither cross that rule nor move the ribbon. The content column renders the pre-ordered `NexusTree`, not a raw filesystem view; each row's kind comes from its sidecar, not its folder name. Disclosure state persists per entity across sessions. There is no header row — the Nexus's name and its rename affordance live in the Homepage view, not the sidebar.
+Pommora's leading navigation pane in the three-pane shell. It has two regions: a fixed **ribbon** — an icon strip pinned to the left edge — and a **content column** whose contents switch with the ribbon. The ribbon is its own section *outside* the scrolling content, divided from it by a vertical rule, so the content's scroll can neither cross that rule nor move the ribbon. The content column renders the pre-ordered `NexusTree`, not a raw filesystem view. Disclosure state persists per entity, device-local, across sessions. There is no header row — the Nexus's name and its rename affordance live in the Homepage view, not the sidebar.
 
 ### Features
 
@@ -8,32 +8,35 @@ Pommora's leading navigation pane in the three-pane shell. It has two regions: a
 
 The icon strip down the left edge — a **surface launcher** where each icon points at a surface, and surfaces live in different panes:
 
-- **Homepage** — pinned at the top, drawn as the Nexus's identity icon (a photo or a glyph). Selecting it opens the Homepage in the main pane; it does **not** change what the content column shows. Right-click it to change the icon or set a photo.
-- **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage, in that default order, and **drag-to-reorder** (Homepage stays pinned). **Collections · Contexts · Agenda** switch the content column's mode; **Navigation** summons the NavWindow (the floating navigation mini-shell → `Navigation.md`); **Settings** summons the floating Settings window (→ `Configuration.md`). The mode icons reuse each kind's own entity icon, tracking any personalization override.
+- **Homepage** — pinned at the top, drawn as the Nexus's identity icon (a photo, else a glyph). Selecting it opens the Homepage in the main pane; it does **not** change what the content column shows. Right-click it to change the icon or set a photo.
+
+- **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage, in that default order, and **drag-to-reorder** (Homepage stays pinned). **Collections · Contexts · Agenda** switch the content column's mode; **Navigation** summons the NavWindow (the floating navigation mini-shell → `Navigation.md`); **Settings** summons the floating Settings window (→ `Configuration.md`). The Collections and Contexts tabs draw an entity default, so a personalization override moves them; the other three carry fixed glyphs.
 
 The ribbon is vertically pinned — it never scrolls with the content — and it collapses and expands *with* the sidebar. It also toggles on its own inside the open sidebar: the `toggle-ribbon` command (⌘E by default, rebindable via the `commands` map → `Configuration.md`) slides the strip off the panel's left edge with the sidebar's own collapse motion while the content column animates over to reclaim the width. Ribbon visibility is transient window state, like the sidebar's own collapse. The active mode and the ribbon order both persist per-Nexus in `personalization` (→ `Configuration.md`).
 
 #### II. Content Modes
 
-The content column renders one mode at a time. A ribbon switch plays the **overtake sweep**: the incoming mode slides in rightward from the ribbon edge and covers the sitting content — two complementary clip-path sweeps tile the width at every frame (the glass layers are transparent, so a plain overlay would double the text) while the outgoing layer holds still, counter-translated so its visible window doesn't jump when the scroll snaps to the incoming's top. Shell-move tokens, same as the sidebar's own collapse. The ribbon tab is the label, so no mode carries an in-content heading:
+The content column renders one mode at a time. A ribbon switch plays the **overtake sweep**: the incoming mode slides in rightward from the ribbon edge and covers the sitting content. Both layers are transparent glass, so the cover is two complementary clip sweeps tiling the width rather than a plain overlay, which would read as text over text; the outgoing layer holds still, counter-translated so its visible window doesn't jump when the scroll snaps to the incoming's top. Shell-move tokens, same as the sidebar's own collapse. The ribbon tab names the mode, so the column carries no heading of its own:
 
-- **Collections** — each Collection's root Pages and depth-1 Sets, recursively, plus any user-created sibling sections (whose headings stay). A depth-1 Set is selectable and opens its scoped view; a Sub-Set is expand-only; Pages are leaf rows. Full container behaviour → `Collections.md` + `PageSets.md`.
+- **Collections** — the ungrouped top-level Collections, then any user-named sections with their headings. A Collection discloses its Sets and its loose Pages, recursively; a depth-1 Set is selectable and opens its scoped view, a Sub-Set is expand-only here, and Pages are leaf rows. Full container behaviour → `Collections.md` + `PageSets.md`.
+
 - **Contexts** — every registry Context as a disclosure of its draggable Space rows, in registry order; group headers drag to reorder the registry itself. A Context header is a pure expand/collapse toggle (a Context has no destination view — Spaces do). Full behaviour → `Contexts.md`.
-- **Agenda** — a read-only list of Tasks then Events, read on demand (a lazy path kept off the tree walk). Rows are display-only for now; selecting or opening an agenda entity is future work → `Agenda.md`.
+
+- **Agenda** — a read-only list of Tasks then Events, fetched when the mode mounts and kept off the tree walk. Rows are display-only: no selection kind routes an agenda entity, so opening one is future work → `Agenda.md`.
 
 #### II. Creation
 
-Creation is right-click-first: right-click a mode's empty area for its native "New" menu — a single **New Collection** in Collections mode, a single **New Context** in Contexts mode; right-clicking inside a Context group creates a Space there (the seeded three keep their given singulars as labels, user-minted Contexts read flat "New Space"). Right-clicking a row instead pops that row's own menu. The native menu only *picks* — it hands the chosen request back to the renderer, and the store executes it with an **optimistic tree insert**: the new row lands instantly, icon settled and rename input focused, while the confirming re-walk follows behind (one walk per create, no keystroke lost to it).
+Creation is right-click-first: right-click a mode's empty area for its native "New" menu — a single **New Collection** in Collections mode, a single **New Context** in Contexts mode; right-clicking inside a Context group creates a Space there, labelled from that Context's singular where it carries one ("New Area") and flat **New Space** where it doesn't. Right-clicking a row instead pops that row's own menu. The native menu only *picks* — it hands the chosen request back to the renderer, and the store executes it with an **optimistic tree insert**: the new row lands instantly, icon settled and rename input focused, while the confirming re-walk follows behind (one walk per create, no keystroke lost to it).
 
 A create always lands **visible**: the new row's inline rename forces its collapsed ancestor disclosures open, and a click that settles a header's own rename never doubles as that header's disclosure toggle.
 
 #### II. Drag and Drop
 
-Every entity reorders within its parent by drag, and Pages reparent across the tree — between Sets and across Collections. The interaction is the PommoraDND "sidebar" feel: an accent insertion line marks the drop, the picked row stays muted in place, and a ghost rides the cursor. Order persists parent-side — a container's `set_order` / `page_order`, top-level orders in `state.json`. Each content mode is its own drag zone; the ribbon's icon reorder is a separate zone. Engine → `PommoraDND.md`.
+Every entity reorders within its parent by drag, and Pages and Sets both reparent across the tree — into other Sets and across Collections. The interaction is the PommoraDND "sidebar" feel: an accent insertion line marks the drop, the picked row stays muted in place, and a ghost rides the cursor. Order persists parent-side: a container's own sidecar holds its Sets and Pages, the nexus state file holds the top-level Collection order and each Context's Space order, and the registry's array position *is* the order of the Contexts themselves. Each content mode is its own drag zone; the ribbon's icon reorder is a separate zone. Engine → `PommoraDND.md`.
 
 #### II. Selection
 
-Selection routes the whole detail pane and reads as a Finder-style quaternary-fill pill at row level. A row's kind and ID drive the selection, with the path riding along for rename-safe reconciliation. Switching the ribbon mode never changes the current selection — the main pane holds until a row is clicked.
+Selection routes the whole detail pane and reads at row level as the menu row primitive's selected fill. A row's kind and id *are* the selection — a renamed or moved entity keeps it, because the id survives the re-walk and the path is re-derived from the fresh tree. Switching the ribbon mode never changes the current selection — the main pane holds until a row is clicked.
 
 #### II. Row Labels
 
@@ -43,6 +46,8 @@ The inline rename field is the menu system's flush `titleInput` — dimensionall
 
 ### Pending
 
-**User Sections CRUD:** Collections can render user-created sections (named groups above the ungrouped Collections), but there's no way to *make* one — sections are read-only, populated only by hand-editing config. The planned surface adds an **"Add Heading"** entry to the Collections create menu plus rename and drag-a-Collection-into-a-section, so the right-click menu grows past its single New Collection item. Its own spec.
+**User Sections CRUD:** Collections can render user-created sections (named groups following the ungrouped Collections), but there's no way to *make* one — the mutate layer carries no section op, so sections are read-only and populated only by hand-editing config. The planned surface adds an **"Add Heading"** entry to the Collections create menu plus rename and drag-a-Collection-into-a-section, so the right-click menu grows past its single New Collection item.
+
+**Space-Create Label:** The create item a Context offers reads off a stored singular. The ruled behaviour keys off the title instead — a Context titled exactly **Areas**, **Topics**, or **Projects** offers **New Area** / **New Topic** / **New Project**, and every other Context offers flat **New Space**. Per-Context custom singulars are prospective.
 
 **Always-On Ribbon:** A ribbon that survives the sidebar collapsing (toggled independently) — today the ribbon collapses with the sidebar.

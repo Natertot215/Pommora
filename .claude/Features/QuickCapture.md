@@ -1,14 +1,16 @@
 ### Quick Capture
 
-A lightweight surface for adding **Pages, Tasks, and Events** from outside the main window — the menu-bar or global-shortcut entry point in the Things 3 / Drafts idiom. It's another entry point on the existing data layer — it reuses the same create operations and property surfaces as the main app.
+> **Unbuilt — this is a design, not a record.** No capture pane, no entry point, no capture code exists. Everything below describes the intended shape.
 
-Three capture kinds: a **Page** (scoped to a Collection, optionally a Set), a **Task**, and an **Event**. Tasks and Events are top-level with no container to pick. Capture is title-and-properties first, not a body editor — prose continues in the main window.
+A lightweight surface for adding **Pages, Tasks, and Events** from outside the main window, in the Things 3 / Drafts idiom. It's meant to be another entry point onto the existing data layer rather than a parallel one — the same create operations and property surfaces the main app uses.
+
+Capture is title-and-properties first, not a body editor — prose continues in the main window. A **Page** picks its Collection (optionally a Set); a **Task** or **Event** is top-level with no container to pick.
 
 ### Features
 
 #### II. Single-Owner Principle
 
-The app is the **sole owner** of Nexus access — the folder grant, the index, the atomic writes. Quick Capture is therefore a surface inside the app process, not a second binary: it reuses the live data layer and the open index directly, with no second permission grant and no cross-process coordination. Any external source — a browser extension, a system share — acts as a **courier**: it gathers a payload and hands it to the running app, which performs the write. The courier never touches the Nexus.
+Every Pommora write goes through the main process's atomic-write path, alongside the index that process maintains. Quick Capture is therefore a surface inside that process, not a second binary: it reuses the live data layer and the open index directly, with no second writer to coordinate. Any external source — a browser extension, a system share — acts as a **courier**: it gathers a payload and hands it to the running app, which performs the write. The courier never writes to the Nexus itself.
 
 #### II. Capture Flow
 
@@ -18,8 +20,10 @@ The app is the **sole owner** of Nexus access — the folder grant, the index, t
 
 #### II. Web Capture Routes
 
-Capture extends to web clipping — a page's title, URL, description, and selected text into a new Page (a Bookmarks Collection, say) or a Task / Event. The clipper is always a courier handing its payload to the running app. Candidate routes can coexist: a browser extension over native messaging, a system share target, or a `pommora://capture?…` URL.
+Capture is meant to extend to web clipping — a page's title, URL, description, and selected text into a new Page (a Bookmarks Collection, say) or a Task / Event. The clipper is always a courier handing its payload to the running app. Candidate routes can coexist: a browser extension over native messaging, a system share target, or a `pommora://capture?…` URL.
 
 ### Pending
 
-**The Entry Surface:** Quick Capture is unbuilt — there's no capture pane and no global entry point. The Electron entry surface is the open design decision: a global shortcut, a tray-based popover (heavier than a native menu-bar item), or a launch-at-login background agent, paired with the web-capture courier route. Capture while the app is fully quit stays out of scope — a headless writer would reintroduce the multi-process problems the single-owner principle avoids.
+**The Entry Surface:** The Electron entry surface is the open design decision — a global shortcut, a tray-based popover (heavier than a native menu-bar item), or a launch-at-login background agent, paired with the web-capture courier route. Capture while the app is fully quit stays out of scope — a headless writer would reintroduce the multi-process problems the single-owner principle avoids.
+
+**Scope:** Whether Quick Capture ships Page-only or waits on the Agenda write path is unruled. Pages have a create operation; Tasks and Events don't — the agenda IPC channel is read-only — so capturing them is gated on that path being built.

@@ -4,39 +4,44 @@ How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nex
 
 ### Personalization (per-Nexus)
 
-Nexus-wide interface config, stored as the React-owned `personalization` object in `.nexus/settings.json` (canonical, synced). It resolves through one schema, one **apply-map** (each knob → a CSS variable, a root class, or a value the renderer reads), and one generic setter — so a new knob is a schema field plus an apply-map row, nothing more.
+Nexus-wide interface config, stored as the React-owned `personalization` object in `.nexus/settings.json` (canonical, synced). It resolves through one schema, one read-side coercion pass, one **apply-map**, and one generic setter. The coercion pass is what admits a key at all — a key it doesn't parse is dropped on read, so the toggle appears to work and reverts on the next open. The apply-map is narrower: it holds a row only for a knob with a DOM effect (a CSS variable or a root class), and the knobs the renderer simply reads carry none.
 
 #### II. Knobs
 
 - **accent** — the app-wide accent: a spectrum solid, or `system` to follow the OS. Back-compatible with the legacy top-level `accent_color`.
-- **connectionColor** — the inline `[[Title]]` connection colour; defaults to the accent (tracking it live) or pins a specific solid.
-- **hideChevrons** — collapse the sidebar's disclosure-chevron gutter.
-- **outlinerLines** — nested-list indent rails in MarkdownPM.
-- **defaultIcons** — the per-kind default icon (Collection / Set / Space / Page, plus the Area / Topic / Project slots the ribbon's mode glyphs still read), overriding the built-in seed; an entity's own icon still wins over it.
-- **setPlacement / subSetPlacement** — the value names where the FOLDERS sit, never the pages: a Collection's depth-1 Sets (`setPlacement`) and a Set's Sub-Sets (`subSetPlacement`) sit above (`top`, default) or below (`bottom`) their container's loose pages — so "pages on top" is spelled `bottom`. The knobs are independent tiers: `setPlacement` never moves a Set's own pages (a Collection with no loose pages shows no visible change), and set-level pages answer only to `subSetPlacement`. The folder block stays contiguous — a full folder↔page interleave is the eventual model. Read-side only: no UI writes these keys yet — they're set by editing `settings.json` directly, and the watcher applies the change live.
 
-- **sidebarMode** — the sidebar ribbon's active content mode (Collections, Contexts, or Agenda); absent defaults to Collections. Written live by the ribbon and remembered across restarts. Not a DOM effect — the renderer reads it — so it carries no apply-map row.
+- **connectionColor** — the inline `[[Title]]` connection colour; tracks the accent live by default, or pins a specific solid.
+
+- **hideChevrons** — collapse the sidebar's disclosure-chevron gutter.
+
+- **outlinerLines** — nested-list indent rails in MarkdownPM.
+
+- **defaultIcons** — the per-kind default icon (Collection / Set / Space / Page, plus the Area slot the ribbon's Contexts glyph reads), overriding the built-in seed; an entity's own icon still wins over it.
+
+- **setPlacement / subSetPlacement** — where the FOLDERS sit, never the pages: a Collection's depth-1 Sets (`setPlacement`) and a Set's Sub-Sets (`subSetPlacement`) sit above (`top`, default) or below (`bottom`) their container's loose pages — so "pages on top" is spelled `bottom`. The knobs are independent tiers: `setPlacement` never moves a Set's own pages (a Collection with no loose pages shows no visible change), and set-level pages answer only to `subSetPlacement`. The folder block stays contiguous — a full folder↔page interleave is the eventual model.
+
+- **sidebarMode** — the sidebar ribbon's active content mode (Collections, Contexts, or Agenda); absent defaults to Collections. Written live by the ribbon and remembered across restarts.
 
 - **ribbonOrder** — the ribbon's launcher-icon order below the pinned Homepage, as bare icon keys. Written by drag-to-reorder; a partial or stale value is repaired on read (unknown keys dropped, missing keys appended) so a newly-added icon never vanishes.
 
-- **navCloseOnSelect** — whether picking an entity from the Navigation window dismisses it. This is the one knob whose default is ON, so only the OFF state is ever stored.
+- **navCloseOnSelect** — whether picking an entity from the Navigation window dismisses it. Defaults on.
 
 - **revealTabBarOnHover** — keep the toolbar's tab bar hidden until the pointer nears it.
 
-- **connectionsOpenInPreview** — a `[[Connection]]` click opens the Page Preview window instead of navigating; ⌘-click takes the other route either way.
+- **connectionsOpenInPreview** — a `[[Connection]]` click opens the Page Preview window instead of navigating. ⌘-click always takes the full-page route, whichever way this knob is set.
 
 - **favoriteIcons** — the icons favorited in the Icon Picker, in display order. Written by the picker itself.
 
 - **defaultViewScale** — the window zoom a nexus opens at, and what ⌘0 resets to. Clamped on read and applied main-side, so a hand-typed value can't push the renderer somewhere unusable.
 
-Every knob resolves through the read path, and a key the writer persists but the reader never parses is silently dropped — the toggle appears to work and reverts on the next open. The boolean knobs are round-trip tested together for exactly that reason; a new one joins that test.
+Accent, connection colour, default icons, both placement knobs, and the default view scale have no writer — they're hand-set in `settings.json`, and the watcher applies the change live. Every other knob is written by the surface that owns it. The boolean knobs are round-trip tested together against the silent-drop failure; a new one joins that test.
 
 ### Commands (per-Nexus)
 
-Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings.json` maps command ids to shortcut specs (`"toggle-ribbon": "cmd+e"`), and every future rebindable shortcut registers as a row in this map. Defaults live in code (`DEFAULT_COMMANDS`) and are overlaid with the on-disk block on read, so every id always resolves — a malformed or absent entry falls back to its built-in binding rather than losing the shortcut. Specs are `+`-joined modifier chains (`cmd`, `ctrl`, `alt`, `shift`) ending in a key, matched exactly so overlapping bindings can't double-fire. Read-side only: no UI writes these keys yet — rebind by editing `settings.json` directly.
+Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings.json` maps command ids to shortcut specs, and every future rebindable shortcut registers as a row in this map. Defaults live in code (`DEFAULT_COMMANDS`) and are overlaid with the on-disk block on read, so every id always resolves — a malformed or absent entry falls back to its built-in binding rather than losing the shortcut. Specs are `+`-joined modifier chains (`cmd`, `ctrl`, `alt`, `shift`) ending in a key, matched exactly so overlapping bindings can't double-fire. Rebinding is hand-edited.
 
-- **toggle-ribbon** (`cmd+e`) — slides the sidebar's ribbon strip away and back (→ `Sidebar.md`).
-- **toggle-nav** (`cmd+o`) — summons the Navigation window (→ `Navigation.md`).
+- **toggle-ribbon** — slides the sidebar's ribbon strip away and back (→ `Sidebar.md`).
+- **toggle-nav** — summons the Navigation window (→ `Navigation.md`).
 
 #### II. Write Discipline
 
@@ -44,13 +49,7 @@ Every `settings.json` write funnels through one per-file serialize lock (the sam
 
 ### Labels (per-Nexus)
 
-Every entity kind carries a **renameable display label** in `settings.json` (`labels.*`, synced) — the code identity is fixed, the shown name is the user's. Each is a **LabelPair** (singular + plural): the deeper-Set label derives as `"Sub-" + Set.singular`, never stored, and the entity labels seed the Context registry's titles at migration — live Context names read from the registry itself, not from labels. A partial or absent `labels` blob falls back per field, so an unset name still resolves to its default. Each of these pairs can have both their singular and plural identification labels renamed on the user-facing level -- their code-facing names adhere to these defaults regardless. 
-
-Seven pairs, defaulting to:
-
-- **Contexts** — Area -> Areas · Topic -> Topics · Project -> Projects.
-- **Pages** — Collection -> Collections · Set -> Sets.
-- **Agenda** — Task -> Tasks · Event -> Events.
+Every entity kind carries a **renameable display label** in `settings.json` (`labels.*`, synced) — the code identity is fixed, the shown name is the user's. Each is a **LabelPair** (singular + plural); the deeper-Set label derives from the Set singular and is never stored. Seeding a fresh Nexus's Context registry takes its Context titles from the matching label plurals — from then on live Context names read from the registry itself, not from labels. A partial or absent `labels` blob falls back per field, so an unset name still resolves to its default.
 
 ### App Config (per-device)
 
@@ -60,7 +59,7 @@ Cross-session, machine-local state in `pommora.json` under the app's userData di
 
 A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface (→ `PagePreview.md`) — so it inherits the glass shell, geometry, and dismissal contract rather than re-declaring them, and it opens smaller than a content window via that surface's bounds override. A category rail runs the window's full height as an in-flow side pane, leaving only the × above it; the rail is the roster new panels register in.
 
-Rows write through the same generic setter every other personalization writer uses, so a flipped switch applies live through the apply-map with no new IPC. A knob whose default is ON stores only its OFF state — re-enabling removes the key entirely, so an untouched nexus keeps a clean settings file.
+Its rows are the per-Nexus boolean knobs, written through the same generic setter every other personalization writer uses, so a flipped switch applies live with no new IPC. A knob whose default is ON stores only its OFF state — re-enabling removes the key entirely, so an untouched nexus keeps a clean settings file.
 
 ### Pending
 

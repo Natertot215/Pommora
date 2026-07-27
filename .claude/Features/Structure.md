@@ -12,9 +12,6 @@ The organization layer is user-defined **Context** groups holding **Spaces** (th
 | Projects | **Projects** (seeded Context) | Organization |
 | Resources | **Pages + Agenda** | Operational |
 | (dashboard) | **Homepage** | Singleton |
-| Archive | `.trash/` | (system) |
-
-PARA's "Projects" maps to Pommora's seeded Projects Context by design.
 
 ### Organization Layer
 
@@ -29,10 +26,10 @@ A **Context** is a user-defined, free-standing group of **Spaces** — `.nexus/c
 | Entity | Role | Default UI label |
 |---|---|---|
 | **Page Collection** | Top container for Pages; assigns their nexus-wide properties | "Collection" |
-| **Page Set** | Recursive sub-folder inside a Collection (any depth); inherits the schema. Depth-1 carries its own views; deeper is plain | "Set" / "Sub-Set" |
+| **Page Set** | Recursive sub-folder inside a Collection (any depth); inherits the schema | "Set" / "Sub-Set" |
 | **Page** | Markdown document — prose plus frontmatter | "Page" |
 
-Property definitions live in the nexus-wide registry (`.nexus/properties.json`); a Collection assigns which ones its Pages validate, and that assigned schema applies at any depth — all Sets inherit it. On disk: a Collection is `_pagecollection.json`, every Set is `_pageset.json`, a Page is a `.md` file. The code-level names are `PageCollection` (top) and `PageSet` (recursive); UI labels default to "Collection" / "Set" and rename per Nexus. Full spec → `Collections.md` + `PageSets.md` + `Pages.md`.
+Property definitions live in the nexus-wide registry (`.nexus/properties.json`); a Collection assigns which ones its Pages validate, and that assigned schema applies at any depth — all Sets inherit it. On disk: a Collection is `_pagecollection.json`, every Set is `_pageset.json`, a Page is a `.md` file. The code-level names are `PageCollection` (top) and `PageSet` (recursive). Full spec → `Collections.md` + `PageSets.md` + `Pages.md`.
 
 #### II. Agenda
 
@@ -47,7 +44,7 @@ Full spec → `Agenda.md`; the property catalog across all kinds → `Properties
 
 #### II. Homepage
 
-One per Nexus at `.nexus/homepage.json` — a block-host singleton (the block system's live dev host, → [[SurfacePM]]; its final surface shape is its own pending design pass), with no `id`, Context links, or `parents` (the file location is its identity). The **Homepage ribbon icon** (the Nexus's identity icon — a photo or a glyph — pinned at the top of the sidebar ribbon) is its entry point: selecting it opens the Homepage in the main pane, where its title doubles as the nexus rename affordance. Seeded on first launch and not user-deletable.
+One per Nexus — always reachable and never user-deletable, with no `id`, Context links, or `parents` (the file location is its identity). Its `.nexus/homepage.json` config is written on the first block or banner edit. The **Homepage ribbon icon** (the Nexus's identity icon — a photo or a glyph — pinned at the top of the sidebar ribbon) is its entry point: selecting it opens the Homepage in the main pane, where its title doubles as the nexus rename affordance. It hosts a live block surface under its banner (→ [[SurfacePM]]).
 
 #### II. Settings
 
@@ -57,9 +54,9 @@ Per-Nexus config at `.nexus/settings.json` — UI labels, a profile image and su
 
 #### II. Entity Identity vs Title
 
-- **`id`** — a stable ULID assigned at creation, never changing. Connections and the index are ID-keyed; Context links are the deliberate exception, stored as registry-resolved titles whose renames cascade. An adopted entity with no stored id gets a stable id hashed from its Nexus-relative path.
+- **`id`** — a stable ULID assigned at creation, never changing. It identifies the entity itself; no on-disk link form carries it. An entity read from a folder Pommora hasn't adopted yet reads under a stable id hashed from its Nexus-relative path, held until adoption mints a real one.
 
-- **Title** — the display name, carried as the filename minus extension, freely renameable. Renames are filesystem renames; ID-keyed references resolve to the current title at render time, never rewritten.
+- **Title** — the display name, carried as the filename minus extension, freely renameable. Renames are filesystem renames; in-memory references resolve to the current title at render time.
 
 Names are unique within a folder (filename = title): a colliding Page create auto-disambiguates, and a colliding rename is rejected. Titles aren't unique Nexus-wide — Pages in different folders may share one, and a connection to a shared title resolves as ambiguous (→ `Connections.md`).
 
@@ -72,20 +69,18 @@ Names are unique within a folder (filename = title): a colliding Page create aut
 | Space → Space | The same bracketed keys in the Space's own `_space.json` | Cross-Context links |
 | Page → Collection / Set | Implicit by file location | Membership |
 
-Context links are the **only** relation-type connection, stored as bracketed title keys resolved through the registry — rename-safe by journaled cascade across every member file. Body connections are plain `[[Title]]`, rename-safe by resolution. Full rules → `Contexts.md` + `Connections.md`.
+Every link is stored as a title and resolved at read time — an id never reaches disk on either form. Context links are the only relation-type connection, resolved through the registry and held correct across a rename by a journaled cascade over every member file; body connections are held correct by a nexus-wide body rewrite. Full rules → `Contexts.md` + `Connections.md`.
 
 ### Architecture
 
 #### II. On-Disk Model
 
-Files are canonical: Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, sidecars, and all config are JSON. **Kind authority is the parent folder's sidecar filename**, never the extension or a frontmatter field. Foreign keys — and YAML comments on pages — are preserved by value on every write. A SQLite index is a regeneratable accelerator that sits off the read path; losing it costs nothing. Full on-disk spec + the read/IPC engine → `Architecture.md`.
+Files are canonical: Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, sidecars, and all config are JSON. **A container's kind is its folder's sidecar filename**, never a frontmatter field; an **Agenda item's kind is its file extension**. Foreign keys — and YAML comments on pages — are preserved by value on every write. A SQLite index is built and maintained beside the read path as a regeneratable accelerator; nothing queries it yet, so losing it costs nothing. Full on-disk spec + the read/IPC engine → `Architecture.md`.
 
 #### II. The NexusTree Contract
 
-The read side is one eager, read-only walk producing a pre-ordered `NexusTree` — Nexus identity, the Homepage banner, the registry Contexts with their Spaces, ungrouped top-level Collections (each nesting its Sets then Pages), user-grouped Collection sections, the label set, and the resolved accent — consumed by the renderer without re-sorting. Agenda singletons are discovered but not surfaced. Full shape → `Architecture.md`.
+The read side is one eager, read-only walk producing a pre-ordered `NexusTree` — every node, ordering, label, and resolved setting the renderer needs, consumed without re-sorting. Agenda singletons are discovered but not surfaced. Full shape → `Architecture.md`.
 
 ### Pending
 
-**Homepage's Final Shape:** Deferred to its own design pass (a graph-view host with custom widgets is the current direction). Until then the Homepage serves as the block system's removable dev host ([[SurfacePM]]) — it renders a live block surface under its banner.
-
-**Settings Editing UI:** The `personalization` block resolves through a generic setter plus a live apply-map, and the Settings window ships its boolean toggle rows. Still hand-edited in `.nexus/settings.json`: accent, connection colour, the placement knobs, default icons, and the labels. An accent picker and label rename forms are the next surfaces. Full config model → `Configuration.md`.
+**Homepage's Final Shape:** A developer surface for now — its final form is its own design pass (a graph-view host with custom widgets is the current direction).

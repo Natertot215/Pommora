@@ -1,70 +1,68 @@
 ## Icons
 
-Pommora's standard semantic icons — the canonical glyph for each pane, property type, and recurring concept. Icons come from **Lucide** (named here by their lucide.dev id), curated in the registry behind `design-system/symbols` (mirrored by `symbols/Symbols.md`); this doc names the assignment, the code holds the maps. **Tabler (`@tabler/icons-react`) stays installed as a second source we can pull from** — a per-icon opt-in through the same seam (see Symbols.md), not the default. Anything without an assigned glyph falls back to **`DashIcon`** (the dashed-square placeholder) until a symbol is chosen — a placeholder is intentional, not a gap to fill arbitrarily.
-
-### Sizing
-
-- **Content / leading icons** (pane rows, property-type rows) render a touch larger than their label, matching the row-icon convention.
-- **Affordance icons on subline rows** (the back-row `‹` chevron, the footer `+`) render a step down, sized to sit with the subline type.
+Pommora's standard semantic icons — the canonical glyph for each pane, property type, and recurring concept. The curated registry behind `design-system/symbols` (mirrored by `symbols/Symbols.md`) is the primary source and the app's own vocabulary: keys are mostly the lucide.dev name, and only a registered glyph ships in the bundle. Lucide is the default library; Tabler is a per-icon opt-in through the same seam. A caller with no assigned glyph renders `DashIcon`, the dashed-square placeholder, until a symbol is chosen — a placeholder is intentional, not a gap to fill arbitrarily — while an id that resolves in neither source falls back to `square-dashed`.
 
 ### View Settings Panes
 
-The six settings rows (`ViewPane` → `ENTRIES`):
+The settings menu's root rows:
 
-| Pane       | Icon               |
-| ---------- | ------------------ |
-| Properties | `server`           |
-| Visibility | `eye` → `eye-off` when hidden |
-| Layout     | `layout-dashboard` |
-| Group      | `layers`           |
-| Filter     | `list-filter`      |
-| Sort       | `arrow-up-down`    |
+| Pane          | Icon                 |
+| ------------- | -------------------- |
+| Configuration | `sliders-horizontal` |
+| Properties    | `server`             |
+| Visibility    | `eye`                |
+| Layout        | `layout-dashboard`   |
+| Group         | `layers`             |
+| Filter        | `list-filter`        |
+| Sort          | `arrow-up-down`      |
 
-`eye-off` is the hidden-state variant, registered for the Visibility pane's per-property toggles.
+`eye` is the shown state and `eye-off` the hidden one — the pair every visibility toggle wears.
 
 ### Property Types
 
-The type glyphs, shown in the type picker and on each property row. Label + icon + the creatable set are one source — `PropertyTypes.tsx` → `PROPERTY_TYPES` (rendered via `PropertyTypeIcon`):
+The type glyphs, shown in the type picker and on each property row. Label + icon + the creatable set are one source — `PropertyTypes.tsx` (rendered via `PropertyTypeIcon`):
 
-| Type         | Icon                                      |
-| ------------ | ----------------------------------------- |
-| Number       | `hash`                                    |
-| Checkbox     | `square-check`                            |
-| Date & Time  | `calendar` (also the Calendar saved node) |
-| Status       | `progress-check` (Tabler — the first opt-in)|
-| Link         | `link`                                    |
-| File         | `import`                                  |
-| Context      | `layout-grid` (matches the sidebar Contexts) |
-| Select       | `send`                                    |
-| Multi-Select | `tags`                                    |
+| Type         | Icon             |
+| ------------ | ---------------- |
+| Number       | `hash`           |
+| Checkbox     | `square-check`   |
+| Date         | `calendar`       |
+| Status       | `progress-check` |
+| Link         | `link`           |
+| File         | `import`         |
+| Context      | `layout-grid`    |
+| Select       | `send`           |
+| Multi-Select | `tags`           |
 
-**Link is the canonical name for the `url` type** — user-facing label and default new-property name ("New Link"). The on-disk type key stays `url`; only the name changed.
+**Link is the user-facing name for the `url` type** — the label is what the type picker shows and what a new property of that type is named; the on-disk type key stays `url`.
 
-**Title** wears `text-align-justify` — the reserved heading column isn't a user property type, but its glyph lives beside the type map (`PropertyTypes.tsx`) so every surface renders it from one source. The reserved timestamp columns carry their own header glyphs: **Created** → `clock-plus`, **Modified** (`last_edited_time`) → `history`. Created has no PropertyType, so its glyph is set at the table header; Modified's rides the type map.
+**Title** wears `text-align-justify` — the reserved heading column isn't a user property type, but its glyph lives beside the type map (`PropertyTypes.tsx`) so every surface renders it from one source. The reserved timestamp columns carry header glyphs too: **Modified** rides the last-edited type's `history`, and **Created**, which has no property type, gets `clock-plus` at the table header.
 
 ### View Types
 
-The saved-view type roster and its grid glyphs (the ViewSettings 3×2 picker):
+The saved-view type roster and its grid glyphs (the ViewSettings type picker):
 
-| Type     | Icon                                        |
-| -------- | ------------------------------------------- |
-| Table    | `table` — a plain 3×2 grid (also the view icon + button glyph) |
-| Cards    | a custom 2×3 stretch-horizontal bar stack    |
-| List     | a custom left-rail bar + four lines          |
-| Gallery  | `layout-dashboard`                          |
-| Calendar | `calendar-days`                             |
-| Timeline | `chart-gantt`                               |
+| Type     | Icon               |
+| -------- | ------------------ |
+| Table    | `table`            |
+| Cards    | `cards-grid`       |
+| List     | `list-rounded`     |
+| Gallery  | `layout-dashboard` |
+| Calendar | `calendar-days`    |
+| Timeline | `chart-gantt`      |
 
-`table` is THE table glyph everywhere (view icon, view rows, the ViewDropdown button, and the grid's Table tile) — one glyph per concept, now a plain Lucide grid (the old rotated-Table custom caused sub-pixel aliasing). Cards + List are the two customs, registry-conforming SVG components sized to sit at the same height beside the Lucide glyphs.
+`table` is THE table glyph wherever a table view is named — the view icon, the view rows, the dropdown button, and the grid's own tile all read one glyph per concept. `cards-grid` and `list-rounded` are the two customs, registry-conforming SVG components drawn at Lucide's stroke weight so they sit at the same height beside it.
+
+Every type carries a glyph, but only **Table and Cards have renderers** — the other four tiles show their glyph and don't select.
 
 ### Misc
 
-| Concept     | Icon     |
-| ----------- | -------- |
-| Connections | `link-2` |
-
-`link-2` is the connections glyph — reserved for the `[[Title]]` connections surface. The Context property type wears `layout-grid` (matching the sidebar Contexts), not `link-2`.
+`link-2` is the Connections glyph — registered and reserved for the `[[Title]]` connections surface, which doesn't render it yet. The Context property type wears `layout-grid`, matching the sidebar Contexts.
 
 ### The Picker
 
-The curated registry above is the app's own **semantic vocabulary** — the fixed glyphs the UI reaches for by name. The **Icon Picker** (what the user opens to assign an entity's icon) is a separate, wider surface: it exposes the **entire Lucide set** (`design-system/symbols/AllSymbols` — every icon kebab-keyed, searchable), so a user isn't limited to the curated names. Favorited icons persist per-nexus (`personalization.favoriteIcons`). A picked id is stored as its bare Lucide kebab id, the same convention as the curated names, so the two sources render through one path.
+The curated registry above is the app's own **semantic vocabulary** — the fixed glyphs the UI reaches for by name. The **Icon Picker** (what the user opens to assign an entity's icon) is a separate, wider surface: it exposes the **entire Lucide set** (`design-system/symbols/AllSymbols` — every icon kebab-keyed, searchable), so a user isn't limited to the curated names. Favorites persist with the nexus's personalization. A picked id is stored as its bare Lucide kebab id, the same convention the curated keys follow, and resolution reads the curated registry first, then the full set.
+
+### Known Issues
+
+- **Two curated keys shadow real Lucide ids.** `table` and `lock` name Pommora's own glyphs in the registry and are also the ids of different Lucide glyphs, which the picker offers as cells drawn from the full set. Because resolution reads the curated registry first, picking either renders Pommora's glyph instead of the one the picker cell showed. The resolution is open.
