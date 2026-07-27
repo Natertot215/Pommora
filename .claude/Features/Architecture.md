@@ -50,7 +50,7 @@ A Nexus is a single folder. Pommora opens it via picker and treats it as canonic
     contexts/<Context>/<Space>/_space.json ← one Space per folder
 
   .trash/                               ← deleted entities (nexus-local trash)
-    <stamp>__<Page>.md                  ← flat + timestamped, de-collided
+    <Collection>/<Set>/<stamp>__<Page>.md  ← the source chain, mirrored; stamped leaf
 
 <app-support>/                          ← machine-specific; never syncs
   pommora.json                          ← last-opened path + recents + trash mode
@@ -70,7 +70,9 @@ Every sidecar's field shape is canonical in `src//shared//schemas.ts`.
 
 **Hidden + private.** `.nexus/` and `.trash/` are hidden from the sidebar and from non-Pommora tools by convention (matches `.obsidian/`).
 
-> **Pending — trash restore.** There's no browse-or-restore surface, and the flat layout records nothing about where an item came from. A restore surface needs the source path captured at delete time.
+**The trash mirrors the nexus.** A deleted entity keeps the folder chain it came from and takes a timestamp on its leaf, so the layout itself records where the item lived — restoring is dropping the stamp and moving it back up. Collisions within one folder de-collide on the leaf, so the same title deleted twice keeps both.
+
+> **Pending — trash restore surface.** Nothing browses or restores the trash yet; the path record it needs is on disk.
 
 **User folder exclusion.** Beyond the built-in skips (dot/underscore-prefixed + `node_modules`), the user can exclude arbitrary folders via `excluded_folders` on `settings.json` — anchored, nexus-relative paths Pommora ignores *completely* at any depth: never adopted, shown, indexed, walked, or auto-tagged. One subtractive filter (whole-segment, case-insensitive + NFC, root-anchored) loads directly from disk, so it works in the index-rebuild pass that runs before the per-Nexus environment exists. Internal `.nexus/` Context reads run the same filter; root-anchoring is what keeps an ordinary exclusion from reaching them. Editing UI is deferred to Settings.
 

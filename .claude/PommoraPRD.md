@@ -94,7 +94,7 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault leaves notes byte-identical until the user edits them.
 
-**The index is disposable and off the read path.** Reads are a single filesystem walk; nothing user-created depends on a database being present. A SQLite index stands ready as a regeneratable accelerator — it's built and maintained, and rebuilds itself from the files whenever it's missing or stale, but no query consumer reads it yet. Deletions move to a recoverable in-Nexus trash; restoring an item to where it came from is planned, not built.
+**The index is disposable and off the read path.** Reads are a single filesystem walk; nothing user-created depends on a database being present. A SQLite index stands ready as a regeneratable accelerator — it's built and maintained, and rebuilds itself from the files whenever it's missing or stale, but no query consumer reads it yet. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from; the surface for browsing and restoring it is planned, not built.
 
 Full on-disk spec → `Features/Architecture.md`.
 
