@@ -15,7 +15,7 @@ Role is computed from depth at render time and never stored: the same folder bec
 
 #### II. Recursive Nesting
 
-Discovery, rendering, navigation, and the index all recurse on the real folder tree: depth is the literal directory depth, there's no cap, and a folder tree can't cycle.
+Discovery, rendering, navigation, and the index all recurse on the real folder tree: depth is literal directory depth, uncapped, and a folder tree can't cycle.
 
 #### II. Depth-1 View Rule
 
@@ -43,4 +43,4 @@ Each `page_sets` row references exactly one parent — its Collection at depth-1
 
 **Sub-Set Openability:** Whether a Sub-Set should be openable outside the sidebar at all is unresolved — close the hole in the nav and resolve indexes, resolve a Sub-Set hit to its depth-1 ancestor, or keep it openable as the shipped behavior does.
 
-**Delete Set Only (Re-Home Pages):** The current delete removes the folder and everything in it; a second mode would dissolve a Set while re-homing its Pages one level up into the immediate parent.
+**Delete Set Only (Re-Home Pages):** The current delete removes the folder and everything in it; a second mode would dissolve a Set while re-homing its Pages into the immediate parent.
