@@ -1,6 +1,6 @@
 ### Architecture — Data Layer + Nexus
 
-The dynamics of Pommora's data layer — the on-disk Nexus, the read + state layer, the SQLite index, the atomic-write contract, the adopter, and the external-edit watcher. PRD carries the high-altitude storage model + SQLite DDL.
+The dynamics of Pommora's data layer — the on-disk Nexus, the read + state layer, the SQLite index, the atomic-write contract, the adopter, and the external-edit watcher. PRD carries the high-altitude storage model.
 
 ---
 
@@ -8,24 +8,24 @@ The dynamics of Pommora's data layer — the on-disk Nexus, the read + state lay
 
 Every architectural choice below traces back to one of these.
 
-1. **Files are canonical (≠ everything is Markdown).** Only Pages are Markdown; Tasks, Events, sidecars, Contexts, Homepage, and Settings stay JSON. On-disk layout + per-kind sidecars below. SQLite is regeneratable scaffolding, never source of truth — no user data is trapped in it.
+1. **Files are canonical (≠ everything is Markdown).** Only Pages are Markdown; Tasks, Events, sidecars, Contexts, Homepage, and Settings stay JSON. SQLite is regeneratable scaffolding, never source of truth — no user data is trapped in it.
 
-2. **Agent legibility.** External agents (Claude via MCP, any filesystem tool, vim, Obsidian) read Pommora's entire structured graph — Pages, schemas, relations, properties — directly from plain text files. The bar is convention-aware, not stranger-instant: a file that abstracts a resolver, an id reference, or a path lookup still counts as legible once the agent has learned the convention — a `[[wikilink]]` hides a lookup yet reads perfectly to anyone who knows the system (a `.nexus` guide documents the on-disk formats). We strongly prefer formats readable without Pommora's running code; where a feature genuinely needs to relax that, it's an acceptable tradeoff to raise, not a breach. The firm line that never bends: no user data is trapped in a binary blob or held only in the regeneratable index. This differentiates from Notion-via-MCP (tool-mediated, opaque) and Obsidian (locally legible but unstructured).
+2. **Agent legibility.** External agents (Claude via MCP, any filesystem tool, vim, Obsidian) read Pommora's entire structured graph — Pages, schemas, relations, properties — directly from plain text files. The bar is convention-aware, not stranger-instant: a file that abstracts a resolver, an id reference, or a path lookup still counts as legible once the agent has learned the convention. The firm line that never bends: no user data is trapped in a binary blob or held only in the regeneratable index.
 
 ---
 
 #### Nexus layout
 
-A Nexus is a single folder. Pommora opens it via picker (security-scoped bookmark) and treats it as canonical content. The Nexus can sit in iCloud Drive / Dropbox / any synced folder for free device-to-device sync.
+A Nexus is a single folder. Pommora opens it via picker and treats it as canonical content. The Nexus can sit in iCloud Drive / Dropbox / any synced folder for free device-to-device sync.
 
 ```
 <picked nexus folder>/                  ← canonical content; syncs with cloud
   <Collection>/                         ← Page Collection (top folder, identified by sidecar)
-    _pagecollection.json                ← assigned nexus-wide property ids (Collection)
-    <Set>/                              ← Page Set (depth-1; carries its own views[])
-      _pageset.json                     ← set metadata + views[] + set_order (depth-1 Set)
-      <SubSet>/                         ← Sub-Set (deeper; plain, recursive — any depth)
-        _pageset.json                   ← set metadata (id + parent_id + icon + page_order)
+    _pagecollection.json                ← Collection sidecar (schema assignment + order + views)
+    <Set>/                              ← Page Set
+      _pageset.json                     ← Set sidecar (order + views)
+      <SubSet>/                         ← Sub-Set (recursive — any depth)
+        _pageset.json
         <Page>.md                       ← Page nested in a Sub-Set
       <Page>.md                         ← Page at the Set root
     <Page>.md                           ← Page directly in the Collection root
@@ -38,35 +38,41 @@ A Nexus is a single folder. Pommora opens it via picker (security-scoped bookmar
     _eventconfig.json
     <title>.event.json
 
-  .nexus/                               ← app-internal config + index (nexus-portable; syncs)
-    nexus.json                          ← ULID + createdAt
-    state.json                          ← session state (open tabs, sidebar UI, Recents)
-    settings.json                       ← per-Nexus UI labels + accent color + excluded_folders + profile image/subtitle
-    properties.json                     ← nexus-wide property registry (propId → definition; Collections assign by id)
+  .nexus/                               ← app-internal config + index
+    nexus.json                          ← nexus ULID + createdAt + schema version
+    state.json                          ← top-level ordering (Collections, per-Context Space order)
+    settings.json                       ← per-Nexus UI labels + accent + excluded_folders + profile
+    properties.json                     ← nexus-wide property registry (propId → definition)
     saved-config.json                   ← Saved-section entry labels
     homepage.json                       ← singleton Homepage entity (composed blocks)
     index.db                            ← SQLite index (regeneratable, schema-versioned)
-    contexts.json                       ← the Context registry (id, title, singular, icon; order = display)
-    contexts/<Context>/<Space>/_space.json ← one Space per folder (id, color, banner, block doc, relations)
+    contexts.json                       ← the Context registry (order = display)
+    contexts/<Context>/<Space>/_space.json ← one Space per folder
 
-  .trash/                               ← deleted entities (nexus-local trash; v1+ surface)
-    <Type>/<Page>.md                    ← preserves original relative path under the source Type
+  .trash/                               ← deleted entities (nexus-local trash)
+    <stamp>__<Page>.md                  ← flat + timestamped, de-collided
 
 <app-support>/                          ← machine-specific; never syncs
-  state.json                            ← security-scoped bookmark + recent-nexuses
+  pommora.json                          ← last-opened path + recents + trash mode
 ```
 
-**Classification by sidecar + folder position.** A root folder carrying a Pages sidecar IS a Page Collection — regardless of folder name; folders rename freely via Finder. The per-kind sidecar filenames (`_pagecollection.json` / `_pageset.json` / `_taskconfig.json` / `_eventconfig.json`) are the kind discriminators (the retired `_pagetype.json` is converted to `_pagecollection.json` by a one-shot migration on first open). A Collection nests Page Sets to **any depth** — every sidecar-bearing sub-folder is a Set (tier = folder depth, not filename); there is no depth cap and no roll-up (→ `// Features//PageSets.md`).
+Every sidecar's field shape is canonical in `src//shared//schemas.ts`.
+
+**Classification by sidecar + folder position.** A root folder carrying a Pages sidecar IS a Page Collection — regardless of folder name; folders rename freely via Finder. The per-kind sidecar filenames (`_pagecollection.json` / `_taskconfig.json` / `_eventconfig.json`) are the kind discriminators at the root. Below the root, position alone decides: every non-excluded subfolder of a Collection or Set is itself a Set, to any depth, with no cap, and a Set carries its own saved views wherever it sits (→ `// Features//PageSets.md`).
 
 **No wrapper folders.** Page Collections and the Tasks / Events singletons all live as siblings at the nexus root — there is no `Pages/` or `Agenda/` container folder.
 
-**Agenda is discriminated by config sidecar, never by name.** A Tasks / Events singleton is *only* the folder carrying `_taskconfig.json` / `_eventconfig.json`; folder names (`Tasks` / `Events`) are renameable defaults, not reserved. Every collection-discovery path — adoption, the read walk, on-creation — skips a folder *iff* it carries an agenda config sidecar, so a user could even name a Page Collection "Tasks" or "Events" and it's correctly a Collection (it carries `_pagecollection.json`, not the agenda config). No name is ever reserved.
+**Agenda is discriminated by config sidecar, never by name.** A Tasks / Events singleton is *only* the folder carrying `_taskconfig.json` / `_eventconfig.json`; folder names (`Tasks` / `Events`) are renameable defaults, not reserved. Every collection-discovery path — adoption, the read walk, on-creation — skips a folder *iff* it carries an agenda config sidecar, so a user could even name a Page Collection "Tasks" or "Events" and it's correctly a Collection. No name is ever reserved.
 
-> **Deferred — per-file kind discrimination.** Classification today is *folder-level* (by sidecar). It does **not** yet discriminate individual *files* within a folder by kind: an un-configured folder's loose files are content-sniffed as Pages, and the agenda entity files (`.task.json` / `.event.json`) are only distinguished by extension at read time, not at adoption. When Tasks / Events are fully implemented, adoption MUST gain an explicit per-file discriminator — extension, filename prefix, or frontmatter key — so each file's kind (task / event / page) is unambiguous rather than inferred from its parent folder. Not built now; the on-disk discriminator choice is open.
+**An agenda item's own kind is its filename suffix.** `.task.json` and `.event.json` are the on-disk task-vs-event discriminator, deriving both the kind and the title, and load-bearing in the read walk and the index build.
+
+> **Pending — per-file kind at adoption.** Adoption classifies at the folder level and skips agenda folders wholesale, so no individual file is scoped to a kind when a folder is adopted. Applying the existing suffix discriminator per file lands with the Agenda surfaces.
 
 **Hidden + private.** `.nexus/` and `.trash/` are hidden from the sidebar and from non-Pommora tools by convention (matches `.obsidian/`).
 
-**User folder exclusion.** Beyond the built-in skips (dot/underscore-prefixed + `node_modules`), the user can exclude arbitrary folders via `excluded_folders` on `settings.json` — anchored, nexus-relative paths Pommora ignores *completely* at any depth: never adopted, shown, indexed, walked, or auto-tagged. One subtractive filter (case-insensitive + NFC, ancestor-walk subtree match, `..`-escape rejected) loads directly from disk — so it works in the index-rebuild pass that runs before the per-Nexus environment exists. Internal `.nexus/` Context reads never consult it. Editing UI is deferred to Settings.
+> **Pending — trash restore.** There's no browse-or-restore surface, and the flat layout records nothing about where an item came from. A restore surface needs the source path captured at delete time.
+
+**User folder exclusion.** Beyond the built-in skips (dot/underscore-prefixed + `node_modules`), the user can exclude arbitrary folders via `excluded_folders` on `settings.json` — anchored, nexus-relative paths Pommora ignores *completely* at any depth: never adopted, shown, indexed, walked, or auto-tagged. One subtractive filter (whole-segment, case-insensitive + NFC, root-anchored) loads directly from disk, so it works in the index-rebuild pass that runs before the per-Nexus environment exists. Internal `.nexus/` Context reads run the same filter; root-anchoring is what keeps an ordinary exclusion from reaching them. Editing UI is deferred to Settings.
 
 ---
 
@@ -82,29 +88,29 @@ Mutations are separate by construction: the write path never runs inside a read,
 
 #### SQLite index — regeneratable scaffolding
 
-The index lives at `<nexus>/.nexus/index.db`, travelling with the Nexus so a moved or renamed Nexus keeps it without re-pathing. It holds titles / properties / links / relations — **never** Page bodies; full-text search reads files directly. DDL is canonical in PRD § SQLite Schema. Context links live in the `context_links` table; body connections in a page-only `connections` table.
+The index lives at `<nexus>/.nexus/index.db`, travelling with the Nexus so a moved or renamed Nexus keeps it without re-pathing. Context links live in the `context_links` table; `connections` carries body links from both page bodies and markdown blocks. DDL is canonical in `src//main//index//schema.ts`.
 
 **Fully regeneratable.** The index is stamped with a `schema_version`; on open a mismatch force-deletes + rebuilds the whole DB — no per-user data migration. Losing the file just means a rebuild on next open.
 
-**Launch-tail indexing contract.** On launch the index rebuilds **only** when the schema-version mismatch flags it — there is no unconditional launch scan. The version is stamped only *after* a rebuild succeeds, so a failed rebuild retries next launch instead of locking in an empty index. Consequence: a page Finder-dropped after the index is current-stamped enters via CRUD upserts (or a forced rebuild), not via the launch path.
+**Launch-tail indexing contract.** On launch the index rebuilds **only** when the schema-version handshake flags it — there is no unconditional launch scan. The version is stamped only *after* a rebuild succeeds, so a failed rebuild retries next launch instead of locking in an empty index.
 
-**No query consumer — the index is write-only today.** Nothing in the app reads the index: there is no query facade, and the only statements issued against it outside the write layer are the schema-version handshake. Everything the product currently needs is answered off the in-memory tree instead — Connections resolve against a title map built from the page tree, and Context links resolve at walk assembly. Writing the query facade is the open architectural task, and it gates the features that have no other route: Linked-from, backlinks, and full-text search.
+**No query consumer — the index is write-only.** Nothing in the app reads the index: there is no query facade, and the only statements issued against it outside the write layer are the schema-version handshake. Everything the product currently needs is answered off the in-memory tree instead — filter, sort, and group run renderer-side over frontmatter, Connections resolve against a title map built from the page tree, and Context links resolve at walk assembly. Writing the query facade is the open architectural task, and it gates the features that have no other route: Linked-from, backlinks, and full-text search (navigation search is title-and-kind only today).
 
-**Update path — full rebuild per mutation.** There is no incremental updater. Every successful mutation drops `index.db` and cold-rebuilds it from the files, which re-walks the nexus and re-reads every page body. This is a known violation of the never-rebuild-the-whole-Y rule, currently paid for no benefit; it resolves either by writing the query consumer that justifies it, or by suspending the refresh until one exists.
-
-**Delete behavior.** Deleting a parent cascades its descendants in the index, except that deleting a Collection or Set does **not** delete its child Pages — they move up a level until the next full reconcile.
+**Update path — full rebuild per mutation.** There is no incremental updater and no per-entity delete. Every successful `mutate` op drops `index.db` and cold-rebuilds it from the files, which re-walks the nexus and re-reads every page body. The body-autosave channel is outside that contract — it lands on disk without touching the index — so a page Finder-dropped or typed into after a rebuild stays out of the index until the next mutation. This is a known violation of the never-rebuild-the-whole-Y rule, currently paid for no benefit; it resolves either by writing the query consumer that justifies it, or by suspending the refresh until one exists.
 
 ---
 
 #### Atomic-write contract
 
-Every file write goes through one of three atomic paths, all via temp-file + rename (POSIX rename is atomic on the same filesystem, so a crash mid-write leaves either the whole old file or the whole new file — never a half-written one):
+Every file write goes through an atomic path — temp-file + rename, so a crash mid-write leaves either the whole old file or the whole new file, never a half-written one:
 
-- **YAML+Markdown write** — Pages. Composes `---\n<yaml>\n---\n<body>` (the body follows the closing fence directly — no separator blank line, so a note never opens with an empty line under Obsidian's properties panel), re-serializing only modeled keys and preserving every foreign frontmatter key by value. The preserving-merge mechanics are canonical in `// Features//Pages.md` § "Read + Write" and `src//main//io//pageFile.ts`.
+- **YAML+Markdown write** — Pages. The body follows the closing fence directly, with no separator blank line, so a note never opens with an empty line under Obsidian's properties panel. Only modeled keys are re-serialized; every foreign frontmatter key and comment survives by value. The preserving-merge mechanics are canonical in `// Features//Pages.md` § "Read + Write".
+
 - **JSON write** — sidecars, Tasks / Events, Contexts, Settings, Homepage.
-- **Schema transaction** — multi-file commits that must succeed-or-fail as a unit (e.g. a global property delete that scrubs values across every assigning Collection). Validates the full set, then applies in dependency order with rollback on failure.
 
-**Page save contract.** The editor binds only to `body`; frontmatter is held as a typed struct and re-serialized on save, so the editor can't destroy frontmatter. Autosave is owned by one **path-keyed flush registry** shared by every editor host (the page view, preview tabs, embeds): edits schedule a debounced save per page path, any path can be flushed on demand, and everything flushes on navigation and window close — so no host carries its own debounce and a page can never race two savers. Writes are atomic and update the index. Write mechanics → `// Features//Pages.md` § "Read + Write".
+- **Schema transaction** — multi-file commits that must succeed-or-fail as a unit: a Collection-scoped property delete or a lossy type change rewrites the sidecar *and* strips the property from every member page. Two-phase — stage every payload to a temp sibling, then rename each over its target, rolling the filesystem back on any failure. The nexus-wide property delete deliberately opts out: it snapshots every value to `.trash` first and runs per-file, so a partial run re-runs cleanly rather than rolling back.
+
+**Page save contract.** The editor binds only to `body`; frontmatter is held as a typed struct and re-serialized on save, so the editor can't destroy frontmatter. Autosave is owned by one **path-keyed flush registry** shared by every editor host (the page view, previews, embeds): edits schedule a debounced save per page path, any path can be flushed on demand, and everything flushes on host teardown, on a nexus switch, and on window close — so no host carries its own debounce and a page can never race two savers. Write mechanics → `// Features//Pages.md` § "Read + Write".
 
 ---
 
@@ -116,19 +122,19 @@ External + out-of-band on-disk changes (Obsidian / vim / Finder / cloud-sync) pr
 
 #### Adoption — opening any folder as a Nexus
 
-When a folder is first opened as a Nexus, the adopter classifies each root folder independently: fresh (no recognized sidecar → content-sniff picks a Page Collection), unrecognized sidecar (auto-tagged as a Page Collection, the foreign sidecar staying **inert on disk**), or already flat (no-op). Idempotent, per-folder atomic, safe to re-run on partial state; hidden folders skipped. Preview-before-commit shows per-Collection counts + warnings; fully-flat Nexuses skip the sheet silently. Full per-shape detail → `// Features//Collections.md`.
+Opening a folder as a Nexus runs a stamp pass that gives every un-adopted entity a real ULID: a raw folder gets its sidecar, an externally-authored page gets a frontmatter `id`. Parents are stamped before children, so a Set's healed `parent_id` points at its parent's fresh id. Root folders holding content become Page Collections and everything nested becomes a Set; agenda singletons, excluded folders, hidden folders, and empty sidecar-less folders are left alone, and an unrecognized sidecar stays **inert on disk** beside the one Pommora writes. The pass runs silently and best-effort on every open, is idempotent, and is safe to re-run on partial state. Full per-shape detail → `// Features//Collections.md`.
 
-**Kind authority = the folder sidecar, not the extension.** A `.md` file's kind comes from its parent folder's sidecar (`_pagecollection.json` / `_pageset.json` → Page), never from frontmatter. Any kind-like frontmatter key is treated as preserved foreign frontmatter — carried by value, never written by Pommora.
+**Kind authority = the folder sidecar, not the extension.** A `.md` file's kind comes from its parent folder's sidecar (`_pagecollection.json` / `_pageset.json` → Page), never from frontmatter. Any kind-like frontmatter key is treated as preserved foreign frontmatter — carried by value, never written by Pommora. The one extension-borne kind is an agenda item's task-vs-event suffix.
 
 ---
 
 #### Migration — schema versioning
 
-**Index-side** — covered above: a version mismatch deletes + rebuilds the index, no per-user migration.
+**Index-side** — covered above: a version mismatch deletes + rebuilds the index, no per-user data migration.
 
-**File-side** — each Pommora-written Type sidecar carries a `schema_version` (missing = 0). There is no property-ID migration pass: the build is ID-first — values are `prop_<ulid>`-keyed from creation and definitions live in the nexus-wide registry — so entity files never need rewriting.
+**File-side** — `nexus.json` carries the nexus schema version; folder sidecars accept an optional `schema_version` Pommora doesn't write. There is no property-ID migration pass: the build is ID-first — values are `prop_<ulid>`-keyed from creation and definitions live in the nexus-wide registry — so entity files never need rewriting.
 
-**Settings** — carry a `defaultsVersion` + step-function migrate scaffold, applied after decode and re-persisted only on change. Bump the version + add a step when defaults change.
+**Settings** — `settings.json` carries a `defaults_version`, and the open-time ensure backfills only the keys a decoder requires, leaving a complete file byte-identical. Pommora runs no settings migration of its own.
 
 ---
 
@@ -137,13 +143,14 @@ When a folder is first opened as a Nexus, the adopter classifies each root folde
 Deliberately *not* built:
 
 - **Versioning / file history / backup** — left to Time Machine, `git` on the Nexus, filesystem snapshots. No internal version store; in-session undo is free from the editor.
+
 - **Cross-device sync (v1)** — placing the Nexus in a synced folder gives device-to-device sync. Real cloud sync is a long-term Prospect.
 
 ---
 
 #### Reference
 
-- `PommoraPRD.md` — high-altitude product spec; storage model; SQLite DDL.
+- `PommoraPRD.md` — high-altitude product spec; storage model.
 - `// Features//Structure.md` — 2-layer model + PARA mapping + linking model.
 - `// Features//Properties.md` — property catalog; the synthesized context properties; the nexus-wide registry + assignment model.
-- `// rules//MarkdownPM.md` — editor architecture + save pipeline.
+- `// Features//MarkdownPM.md` — editor architecture + save pipeline.

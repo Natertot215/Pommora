@@ -1,6 +1,6 @@
 ## Design System
 
-The Pommora design system — the code mirror of the Figma "Pommora - React" library. Two-tier tokens (raw **primitives** → meaningful **semantic** aliases); components reference semantic tokens only. Typography has its own spec: `Typography.md`.
+The Pommora design system — the code mirror of the Figma "Pommora - React" library. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them. Typography has its own spec: `Typography.md`.
 
 ### Design Philosophy
 
@@ -17,13 +17,11 @@ The Figma library is canonical for design *values*; this repo mirrors them as to
 - **vanilla-extract** — token files are `*.css.ts`; the theme primitives emit real CSS variables **and** a typed `vars` object, so a mistyped token is a compile error. The plugin is wired into the renderer Vite config.
 - **Inter** (variable font) covers the four weights the type ramp uses and is set as the app font.
 
-The design system lives in `src/renderer/src/design-system/`. The `tokens/` folder holds the variables (color, typography, the chip tint, and a bridge that re-exports tokens as stable `var(--…)` names including `--accent`); a runtime accent module applies the per-Nexus accent; `symbols/` is the curated icon registry; `materials/` is the glass material; `showcase/` is the data-driven design-system site; `components/` holds the reusable pieces that mirror the Figma components.
-
-Rule: components reference **semantic tokens only**, never raw values; one folder per component.
+The design system lives in `src/renderer/src/design-system/`. Stacking is named rather than numbered: three separate ladders — the shell frame's in-flow chrome, a component's lift over its own siblings, and the fixed or portalled top layer — so a new surface picks a rung instead of inventing a z-index, and a step only ranks against others in its own ladder.
 
 ### Color
 
-The dark surface system is built from **one neutral base** rendered at descending opacities. Fills, states, and separators are all that same single base at fixed opacities — never separate colors. The relationship is ordered by visual weight: **fills are the heaviest, strokes lighter, text-washes lightest**. Holding one base means the whole interior reads as one consistent material.
+Three primitives carry the dark system: a neutral grey, a near-white, and a black. Fills, separators, and the hover / selected states are that one grey at fixed opacities; the label tones are the near-white at descending opacities; the de-emphasis veil is the black. Surfaces and the spectrum solids are their own opaque values, not derivations.
 
 #### Semantic Surface Roles
 
@@ -31,15 +29,13 @@ Surfaces are addressed by **role**, not by literal shade. The window is the app 
 
 #### Fills, States, Separators
 
-All derived from the single neutral base at fixed opacities:
-
-- **Fills** — overlay fills over a surface, in a five-step ramp from most to least present.
-- **States** — `hover` and `selected` are the same base at low opacities; selection sits slightly above hover.
-- **Separators** — lines, borders, and segment dividers, again the same base, at their own fixed opacities.
+- **Fills** — overlay fills over a surface, in a ramp from most to least present.
+- **States** — `hover` and `selected` are the grey at low opacities, selection sitting just above hover; `muted` is the black veil that dims a surface a step darker.
+- **Separators** — lines, borders, and segment dividers, the same grey at their own fixed opacities.
 
 #### Solid Spectrum
 
-A fixed palette of named solids (red, orange, yellow, green, light-blue, cyan, blue, purple, lavender, grey, plus a neutral default). These are the source colors for accents and chips. The exact values live in the token files / Figma.
+A fixed palette of named solids — the source colors for accents and chips. The names and their values live in the token files / Figma.
 
 #### Accent
 
@@ -47,15 +43,15 @@ The accent is a **single user value**. Components reference one accent token plu
 
 #### Chips
 
-A chip's color is the picked base solid at fixed opacities — a heavier fill, a lighter stroke, and a near-white text wash with a faint tint of the base. No custom colors and no lightening; one tint recipe drives every chip color. **Chips are pills** (text or icon-only); the **checkbox is a small square** holding a checkmark. The opacities and dimensions live in the token files / Figma.
+A chip's color is the picked base solid at fixed opacities — a heavier fill, a lighter stroke, and a near-white text wash with a faint tint of the base. No custom colors and no lightening; one tint recipe drives every chip color, and it composes with any shape. The shapes are a small fixed set: a pill, a squared-off label for select values, a Context reference chip wearing its color on border and text over a neutral fill, an icon-only capsule, and a rounded square holding one glyph (the checkbox look). The opacities and dimensions live in the token files / Figma.
 
 #### Labels
 
-Text color is separate from surface color: three label tones — primary, secondary, tertiary — are one near-white base at descending opacities. A fourth, **control** (primary at a high fixed opacity), is the chrome-glyph tint (toolbar clusters, editor markers) — one global `:root` `--label-control`. (Also in `Typography.md`.)
+Text color is separate from surface color: three label tones — primary, secondary, tertiary — are one near-white base at descending opacities. A fourth, **control** (primary at a high fixed opacity), is the chrome-glyph tint (toolbar clusters, editor markers) — one global `:root` `--label-control`.
 
 ### Glass
 
-Two recipes in `materials/`. **Window** (the sidebar + the inspector frame), **Surface** (panels / popovers), and **Pane** (`GlassPane`, the dropdown shell) share the **frost** recipe — blur plus a slight dimming of what's behind, the drop shadow from the one `--shadow-standard` token. The **liquid** recipe is Apple **"Liquid Glass"** via `@samasante/liquid-glass` (a real `feDisplacementMap` edge-refraction over the live app), in two slots: **`GlassControls`** (the toolbar segmented buttons + the autocomplete panel), tuned as `CONTROL_OPTICS` in `materials/glass-controls.tsx`; and **`GlassSegment`** for small on-controls like the switch knob — the same liquid at full brightness with its depth zeroed, spread from `GlassControls`' optics so the two stay one source. Layout (size / position / radius) is always the consumer's.
+Two recipes in `materials/`. **Frost** is a blur plus a slight dimming of what's behind, carrying the drop shadow from the one `--shadow-standard` token; it dresses the window tier, the panel / popover surfaces, and the dropdown pane, each kept as its own component so a tier can diverge later. The **liquid** recipe is Apple **"Liquid Glass"** via `@samasante/liquid-glass` (a real `feDisplacementMap` edge-refraction over the live app), worn by the in-use button controls and — at full brightness with its depth zeroed — by the small on-control segments, whose optics are spread from the controls' so the two stay one source. Layout (size / position / radius) is always the consumer's.
 
 **Voiding Liquid Glass can't be done in place** — its `backdrop-filter` displacement is a dynamically-generated SVG filter id CSS can neither reconstruct nor interpolate. So the inspector "swallow" (the trio's glass fading as the pane absorbs it) renders the pill as a **two-layer** control — a fading glass layer behind a solid bare-button layer (`Toolbar/ToolbarTrio`), rather than fading one fused control. → `History.md`.
 
@@ -63,16 +59,18 @@ Two recipes in `materials/`. **Window** (the sidebar + the inspector frame), **S
 
 ### Icons
 
-Icons are **Lucide** (`lucide-react`), rendered as `<Icon name="…" />`. The `design-system/symbols` registry is the **curated semantic vocabulary** — the named glyphs the app reaches for by role — while the **Icon Picker** opens the *entire* Lucide set for an arbitrary pick, stored as its bare kebab id and resolved by the same `Icon` component (curated → full set → a dashed-square fallback). `@tabler/icons-react` is a second source, pulled per-glyph where Lucide lacks one. Full spec → `Icons.md`.
+Icons are **Lucide**, resolved through one `Icon` component against the curated `design-system/symbols` registry. Full spec → `Icons.md`.
 
 ### Showcase
 
-A data-driven design-system site (`npm run showcase`): color groups, type, chips, icons, and materials each iterate their registry, so a new token group appears by adding one line. It includes a live accent picker and builds to a static site deployed at https://pommora-design-system.vercel.app.
+A data-driven design-system site (`npm run showcase`): each leaf iterates its own registry, so a new token group appears by adding one line. It includes a live accent picker and builds to a static site deployed at https://pommora-design-system.vercel.app.
 
 ### Components
 
-The reusable pieces mirror the Figma library — one folder per component, each consuming **semantic tokens only**, built one at a time. This doc governs the tokens and materials they consume, not the roster; a component's own behaviour lives in its spec (motion → `Interaction.md`; the editor → `MarkdownPM.md`; the table → `TableView.md`).
+The reusable pieces mirror the Figma library, built one at a time. The shape they're built toward is one folder per component consuming **semantic tokens only** — the intent the set converges on rather than a rule the folder already holds throughout. Shared helpers sit loose beside them by necessity: a vanilla-extract stylesheet may export only plain values, so a helper that *builds* a declaration lives next to the stylesheet rather than inside it — as with `--field-ring`, the input layer's one outline channel, where a consumer sets the ring's color and never its shadow. This doc governs the tokens and materials they consume, not the roster; a component's own behaviour lives in its spec (motion → `Interaction.md`; the editor → `MarkdownPM.md`; the table → `TableView.md`).
 
-### Not Yet Tokenized
+### Pending
 
-**Spacing · radius · z-index** scales are not yet formalized — corners and spacing are ad-hoc literals for now, to be lifted into tokens from Figma. **Motion** IS tokenized (`tokens/motion.ts` duration/easing scale → full system in [[Interaction]]) and the **shadow** standard is one `--shadow-standard` token (`tokens/color.css.ts`), fed to every frost surface. **Light/dark theming** is a future seam (the theme contract is the hook); today the system is dark only. The Settings editing UI for the accent is deferred — for now the control surface is the config file.
+- **Spacing and radius** — no formalized scale; corners and spacing stay ad-hoc literals until they're lifted from Figma.
+- **Light/dark theming** — a future seam; the system is dark only today.
+- **Accent editing UI** — deferred; the control surface is the config file.

@@ -1,47 +1,51 @@
 ### Connections
 
-A **Connection** is an inline `[[Title]]` link in a Page's Markdown body that points to another Page. `[[` is the sole connection syntax — distinct from the bracketed Context keys that bind entities to Spaces.
+A **Connection** is an inline `[[Title]]` link in a Markdown body that points to another Page. `[[` is the sole connection syntax — distinct from the bracketed Context keys that bind entities to Spaces.
 
-A connection lives in exactly two places: the body (`[[Title]]`, canonical and Obsidian-readable) and a derived index edge rebuilt by scanning bodies. There's no frontmatter mirror, and resolution runs on an in-memory map, so the SQLite index is an accelerator the feature never depends on. A `[[Title]]` targets a Page. Spaces are reached only through Context links; Tasks and Events are never connection targets.
+A connection lives in the body and nowhere else: the text is canonical and Obsidian-readable, there's no frontmatter mirror, and resolution is computed at read time against an in-memory title map. Two surfaces author them — a Page's body and a markdown block tile on a block surface. A `[[Title]]` targets a Page. Spaces are reached only through Context links; Tasks and Events are never connection targets.
 
 ### Features
 
 #### II. Syntax + Scope
 
-On disk a connection is just the bracketed title — `[[Title]]` — with no piped form, embedded id, or alias. The source is any Page body. The `![[ ]]` embed form and `{{ }}` are unsupported — both render as plain text — and a Page can't link itself.
+On disk a connection is the bracketed title — `[[Title]]`. The parser tolerates a piped tail and matches on the title alone, so `[[Title|alias]]` resolves to the same Page while its tail renders as plain text beside the styled title. `![[ ]]` isn't a connection — the tokenizer claims it as an image embed and gives it the muted marker treatment; `{{ }}` carries no meaning and renders as written. Nothing offers a Page its own title, and the index drops a self-link, but a hand-typed one resolves and navigates like any other.
 
 #### II. Resolution
 
-Titles match through one shared normalization — trimmed, case-insensitive — used by both resolution and autocomplete. A scanned title resolves to one of three states:
+Titles match through one shared normalization — the same one the scanner, autocomplete, the cascade, and the index all use, so they can never disagree. A scanned title resolves to one of three states:
 
 - **Resolved** — exactly one Page holds the title. The link is live: rendered styled and navigable, with its target's current ULID held in memory.
 
-- **Ambiguous** — more than one Page holds the title. The link can't pick a target and stays inert until one side is renamed.
+- **Ambiguous** — more than one Page holds the title. Nothing can pick a target, so the link renders muted and inert until one side is renamed.
 
-- **Phantom** — no Page holds the title. The link renders as literal bracketed text and goes live the moment a single matching Page appears.
+- **Phantom** — no Page holds the title. The link renders as literal bracketed text, and goes live on the editor's next doc, caret, focus, or scroll update once a single matching Page exists.
 
 #### II. Rename Cascade
 
-Because identity is the title and the body carries no id, a rename **cascades**: renaming a target rewrites every body that references its old title, Nexus-wide. The inbound set is found by scanning every markdown file in the nexus — the index plays no part. The cascade is per-file atomic, not cross-file: a partly-applied cascade leaves the remaining bodies pointing at the old title and is recoverable by re-running, rather than rolling back.
+Because identity is the title and the body carries no id, a rename **cascades**: renaming a target rewrites every body that references its old title. Two passes with different guarantees cover the two sources. Page bodies are found by walking the nexus's markdown outside `.nexus` and `.trash`, skipping any file with no id — the index plays no part. Markdown-block bodies are `.nexus`-resident and out of that walk's reach, so a second best-effort pass heals them after the page pass commits; its failure is swallowed and leaves blocks stale until the next rewrite.
+
+Every file is rewritten under its own lock — the same lock a live edit takes — and frontmatter is preserved untouched, since a derived link edit isn't a user modification. The cascade is per-file, not cross-file atomic: if the page pass fails partway, the target's own rename reverts, leaving the bodies it never reached correct and the ones it already rewrote pointing at a title no Page holds. Re-running the rename heals them.
 
 #### II. Rendering
 
-A resolved connection renders as styled colored inline text — never a chip — and a single click navigates to the Page. Ambiguous and phantom connections render as inert literal text with the brackets visible.
+A resolved connection wears the connection color as inline text — never a chip — with its brackets hidden until the caret enters the link. It carries four gestures: a plain click opens it, routed by the **Open Connections In Preview** personalization knob; ⌘-click opens it in a new tab; resting the pointer on it raises the preview hover card (→ `PagePreview.md`); right-click pops the native menu, whose one action is **Open in Preview**. Ambiguous connections take a muted tone with the same bracket treatment and no gesture attached. Phantom connections render raw — brackets visible, inert.
 
 #### II. Autocomplete
 
-Typing `[[` opens a search-filter panel above the caret listing Pages Nexus-wide; selecting one inserts its title. A bare typed title resolves identically.
+Typing inside `[[ ]]` filters Pages nexus-wide by title prefix; an empty query lists nothing, and the page editor drops the page's own title from its candidates. The panel anchors below the caret and flips above it only when it would overflow the viewport bottom. Arrows move the selection, Return commits, Escape closes — each falling through to the editor's own binding while the panel is closed — and committing inserts a bare `[[Title]]`. One state machine drives the panel for the page editor, block tiles, and markdown table cells alike. A hand-typed title resolves identically.
 
 ### Architecture
 
 #### II. Resolver + Index
 
-The body is the source of truth — a connection exists because `[[ ]]` sits in the text. An in-memory map, from normalized title to the Page IDs holding it, resolves every link and drives the cascade. It's built from the page tree and refreshed on every in-app create, edit, delete, and rename. A `connections` index table mirrors the edges (source, target, normalized title, multiplicity, weight, and a resolved flag); it's regeneratable by re-scanning bodies and never authoritative. Full data layer → `Architecture.md`.
+The body is the source of truth — a connection exists because `[[ ]]` sits in the text. An in-memory map, from normalized title to the Page IDs holding it, resolves every link and drives the cascade; it's built from the page tree and rebuilt whenever that tree reloads. A `connections` table mirrors every scanned edge — page bodies and block bodies alike, distinguished by source kind — staging the shape a query facade would read. It regenerates by re-scanning, refreshes on `mutate` ops only (a body autosave lands on disk without touching it), and has no query consumer. Full data layer → `Architecture.md`.
 
 ### Prospects
 
-**Aliases + Duplicate Disambiguation:** A piped `[[Title|alias]]` form, and id-scoping so a connection to an ambiguous title can pick its target inline.
+**Aliases:** the `|` segment of `[[Title|alias]]` is a display alias. The shared pattern drops it on scan, a rename rewrites the whole link and takes the tail with it, and no surface authors one — honoring the alias end to end, plus an insertion path, is the outstanding work.
 
-**Backlinks Panel:** A surface listing every Page that links to the current one. The edge data is captured in the index; the panel isn't built.
+**Duplicate Disambiguation:** id-scoping so a connection to an ambiguous title can pick its target inline.
 
-**Wider Targets + Embeds:** Connections from Context and Homepage block surfaces, Tasks and Events as targets, heading and block anchors (`#`, `#^`), and transclusion (`![[ ]]`).
+**Backlinks Panel:** a surface listing every Page that links to the current one. The edges are captured in the index; the query facade that would read them isn't built.
+
+**Wider Targets + Embeds:** Tasks and Events as targets, heading and block anchors (`#`, `#^`), and transclusion (`![[ ]]`).
