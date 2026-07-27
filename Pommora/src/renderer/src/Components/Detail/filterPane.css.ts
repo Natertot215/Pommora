@@ -73,7 +73,9 @@ export const whatCell = style({
   display: 'flex',
   alignItems: 'center',
   gap: '6px',
-  minWidth: 0,
+  // Rigid like the fields it holds: a shrinking cell would let its own non-shrinking field spill
+  // over the operator beside it, which is the one thing naming the rule must never do.
+  flex: '0 0 auto',
 })
 
 /** The house ring CHANNEL, not a hand-rolled shadow: interactionField already paints
@@ -107,13 +109,11 @@ export const cellField = style([
 
 /** A field's label — grows to fill, so a trailing chevron pins to the field's right edge. Carried
  *  by the label ITSELF rather than a `> span` descendant rule: a field's other spans are glyphs (the
- *  checkbox lead) and a rule keyed on tag position hands them the label's grow and clipping. */
+ *  checkbox lead) and a rule keyed on tag position hands them the label's grow and clipping.
+ *  Clipping and hover-scroll are the shared OverflowScroll's; this states only the sizing. */
 export const fieldLabel = style({
   flex: '1 1 auto',
-  minWidth: 0,
   textAlign: 'left',
-  overflow: 'hidden',
-  whiteSpace: 'nowrap',
 })
 
 /** A field's LEADING glyph slot — the property/type icon or the checkbox box. Holds the picker's
@@ -214,8 +214,7 @@ export const chipRun = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: '3px',
-  minWidth: 0,
-  overflow: 'hidden',
+  flex: '1 1 auto',
 })
 
 /** KNOB — the segment hairline's height inside a field (the control type's cap band), and its
@@ -239,8 +238,6 @@ export const segmentRun = style({
   alignSelf: 'stretch',
   flex: '1 1 auto',
   gap: SEGMENT_GAP,
-  minWidth: 0,
-  overflow: 'hidden',
   // The FIELD is what runs out of room, so the eclipse belongs here — one fade at the field's
   // trailing edge saying "there is more". Per-segment fades would put a gradient mid-field on every
   // title, which reads as four broken labels rather than one truncated list.
