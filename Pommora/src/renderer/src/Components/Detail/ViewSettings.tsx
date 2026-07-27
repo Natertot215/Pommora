@@ -28,6 +28,7 @@ import { LayoutToggles } from './LayoutToggles'
 import { CardsOptions } from './CardsOptions'
 import { GroupingPane } from './GroupingPane'
 import { SortingPane } from './SortingPane'
+import { FilterPane } from './FilterPane'
 import { PaneSlider } from './PaneSlider'
 import { iconForTypeSwitch } from './viewIcon'
 import { cx } from '../../design-system/cx'
@@ -106,6 +107,7 @@ export function ViewSettings({
   onClose: () => void
 }): React.JSX.Element {
   const load = useSession((s) => s.load)
+  const tree = useSession((s) => s.tree)
   const [leaf, setLeaf] = useState<Leaf | null>(null)
   const views = source.views ?? []
   const canDelete = views.length > 1 && view.id !== DEFAULT_VIEW_ID
@@ -236,6 +238,16 @@ export function ViewSettings({
         source={source}
         view={view}
         schema={schema}
+        label="Views"
+        onBack={() => setLeaf(null)}
+      />
+    ) : leaf === 'filter' ? (
+      <FilterPane
+        key={view.id}
+        source={source}
+        view={view}
+        schema={schema}
+        tree={tree}
         label="Views"
         onBack={() => setLeaf(null)}
       />
