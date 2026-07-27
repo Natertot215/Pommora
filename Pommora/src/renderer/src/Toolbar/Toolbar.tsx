@@ -16,6 +16,9 @@ import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import './toolbar.css'
 
 type TrioPanel = 'navigation' | 'settings'
+/** A trio segment tagged with the panel it opens, so its beak is aimed by identity rather than by
+ *  position — inserting or reordering a button can't silently misaim a dropdown. */
+type TrioSegment = Segment & { panel?: TrioPanel }
 
 /**
  * The two persistent toolbar clusters, floated in the top window strip:
@@ -31,7 +34,7 @@ export function Toolbar({
   onToggleInspector: () => void
 }): React.JSX.Element {
   const [panel, setPanel] = useState<TrioPanel | null>(null)
-  const [trioW, setTrioW] = useState(0)
+  const [beaks, setBeaks] = useState<number[]>([])
   const trioRef = useRef<HTMLDivElement>(null)
   useDismiss(trioRef, () => setPanel(null), panel !== null)
   // Each dropdown stays mounted through its retract animation before leaving the DOM.
@@ -40,6 +43,8 @@ export function Toolbar({
 
   // Publish the pill's measured width so the ride math (toolbar.css) knows where the trio's left edge
   // sits — it lands flush at the inspector's left corner. offsetWidth ignores the ride transform.
+  // The same pass measures each trio button's centre against the pill's right edge: the dropdowns hang
+  // right-aligned under the cluster, so that distance is the button's beak inset.
   useEffect(() => {
     const el = trioRef.current
     if (!el) return
@@ -48,7 +53,19 @@ export function Toolbar({
       // transform and the tab-bar's right-edge condense read one --toolbar-swallow magnitude — the +
       // stays flush against the swallowing cluster. CSS vars inherit downward from the common ancestor.
       el.closest<HTMLElement>('.app-toolbar')?.style.setProperty('--trio-w', `${el.offsetWidth}px`)
-      setTrioW(el.offsetWidth)
+      // Both rects carry the cluster's ride transform, so their difference is free of it. The cover
+      // layer alone — the glass layer behind it holds a hidden duplicate of every button.
+      const right = el.getBoundingClientRect().right
+      const next = Array.from(
+        el.querySelectorAll<HTMLElement>('.toolbar-trio-cover button'),
+        (b) => {
+          const r = b.getBoundingClientRect()
+          return right - (r.left + r.width / 2)
+        },
+      )
+      setBeaks((prev) =>
+        prev.length === next.length && prev.every((v, i) => v === next[i]) ? prev : next,
+      )
     }
     apply()
     const ro = new ResizeObserver(apply)
@@ -76,21 +93,25 @@ export function Toolbar({
     { icon: 'chevron-left', title: 'Back', onClick: goBack, disabled: !canGoBack },
     { icon: 'chevron-right', title: 'Forward', onClick: goForward, disabled: !canGoForward },
   ]
-  const trio: Segment[] = [
+  const trio: TrioSegment[] = [
     {
       icon: 'map',
       title: 'Navigation',
+      panel: 'navigation',
       onClick: () => toggle('navigation'),
       active: panel === 'navigation',
     },
     {
       icon: 'sliders-horizontal',
       title: 'Settings',
+      panel: 'settings',
       onClick: () => toggle('settings'),
       active: panel === 'settings',
     },
     { icon: 'panel-right', title: 'Inspector', onClick: onToggleInspector, active: inspectorOpen },
   ]
+  // Undefined until the trio is measured (and for an untagged segment) — NotchedPane centres the beak.
+  const beakFor = (p: TrioPanel): number | undefined => beaks[trio.findIndex((s) => s.panel === p)]
 
   return (
     <div className="app-toolbar">
@@ -103,17 +124,11 @@ export function Toolbar({
         <SpaceDropdown />
         <div className="app-toolbar-cluster app-toolbar-cluster--trio" ref={trioRef}>
           <ToolbarTrio segments={trio} />
-          {/* Beak aim: the dropdowns hang right-aligned under the trio, so each notch is measured from
-            the pane's right edge to its trigger's center — Navigation at 5/6 of the trio's width,
-            Settings at dead center (3 equal segments). */}
           {navP.mounted && (
-            <NavPane closing={navP.closing} notchInsetRight={trioW ? (trioW * 5) / 6 : undefined} />
+            <NavPane closing={navP.closing} notchInsetRight={beakFor('navigation')} />
           )}
           {settingsP.mounted && (
-            <SettingsDropdown
-              closing={settingsP.closing}
-              notchInsetRight={trioW ? trioW / 2 : undefined}
-            />
+            <SettingsDropdown closing={settingsP.closing} notchInsetRight={beakFor('settings')} />
           )}
         </div>
       </div>

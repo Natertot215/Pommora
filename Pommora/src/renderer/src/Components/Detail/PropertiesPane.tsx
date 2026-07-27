@@ -291,9 +291,15 @@ export function PropertiesPane({
   }
   // The datetime display format is per-VIEW, not schema: it writes the active view's column_styles
   // (through the one view writer), NOT the nexus property def. Merges per-key like the column menu.
-  const saveColumnStyle = (propId: string, patch: Partial<ColumnStyle>): void => {
+  // The refusal surfaces — this pane's other rows write the schema and land, so a silently-dropped
+  // style would read as the same success they give.
+  const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
     const next = { ...activeView.column_styles?.[propId], ...patch }
-    void saveView({ ...activeView, column_styles: { ...activeView.column_styles, [propId]: next } })
+    const res = await saveView({
+      ...activeView,
+      column_styles: { ...activeView.column_styles, [propId]: next },
+    })
+    if (!res.ok) await window.nexus.showError(res.error)
   }
   const renameOption = async (id: string, oldValue: string, newTitle: string): Promise<void> => {
     await commit(await window.nexus.property.renameOption(id, oldValue, newTitle))
@@ -441,7 +447,7 @@ export function PropertiesPane({
         ) : def.type === 'datetime' ? (
           <DateTimeEditor
             style={styleFor(def.id, schema, activeView)}
-            onChange={(patch) => saveColumnStyle(def.id, patch)}
+            onChange={(patch) => void saveColumnStyle(def.id, patch)}
           />
         ) : def.type === 'checkbox' ? (
           <CheckboxEditor
@@ -449,7 +455,7 @@ export function PropertiesPane({
             look={styleFor(def.id, schema, activeView).look === 'switch' ? 'switch' : 'checkbox'}
             accent={accent}
             onSetColor={(next) => void saveCheckboxColor(def.id, next)}
-            onSetStyle={(look) => saveColumnStyle(def.id, { look })}
+            onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
           />
         ) : def.type === 'number' ? (
           <NumberEditor
@@ -463,7 +469,7 @@ export function PropertiesPane({
             }}
             look={styleFor(def.id, schema, activeView).look === 'bar' ? 'bar' : 'number'}
             onSetConfig={(patch) => void saveNumberFormat(def.id, patch)}
-            onSetStyle={(look) => saveColumnStyle(def.id, { look })}
+            onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
           />
         ) : (
           // Blank body until this type's options UI ships (Guidelines/UI-Copy.md).

@@ -15,8 +15,10 @@ import {
   detail as detailText,
   flushTrailing,
   footingSymbol,
+  rowDisabled,
   side,
 } from '../../design-system/components/menu/menu.css'
+import { cx } from '../../design-system/cx'
 import { crumbRow, footerLock, footerLockActive, ICON } from './settingsPane.css'
 import { useSession } from '../../store'
 import { findCollection, findSet, findCollectionForSet } from '../../Detail/Scope'
@@ -109,6 +111,11 @@ export function SettingsPane(): React.JSX.Element | null {
   const entries = scope
     ? ENTRIES.filter((e) => e.id !== 'configuration' && e.id !== 'filter')
     : ENTRIES
+  // A locked tile (B-5) freezes this view's config, so the leaves that write it don't open — shown,
+  // dimmed, inert, the treatment the handle menu already wears. Properties stays live: it writes the
+  // collection's schema, not this view's config (its one per-view control reports the refusal).
+  const configLocked = scope?.locked ?? false
+  const frozen = (id: PaneId): boolean => configLocked && id !== 'properties'
 
   const open = (id: PaneId): void => {
     lastDetail.current = id
@@ -164,6 +171,7 @@ export function SettingsPane(): React.JSX.Element | null {
     <>
       <InlineEditHeader
         value={scope ? view.name : node.title}
+        readOnly={configLocked}
         icon={
           scope
             ? iconNameOr(view.icon, 'table')
@@ -183,10 +191,10 @@ export function SettingsPane(): React.JSX.Element | null {
       {entries.map((e) => (
         <MenuItem
           key={e.id}
-          className={flushTrailing}
+          className={cx(flushTrailing, frozen(e.id) && rowDisabled)}
           leading={<e.Icon size={ICON.rootEntry} />}
           trailing={<Icon name="chevron-right" size={ICON.rowChevron} />}
-          onClick={() => open(e.id)}
+          onClick={frozen(e.id) ? undefined : () => open(e.id)}
         >
           {e.label}
         </MenuItem>
@@ -301,7 +309,7 @@ export function SettingsPane(): React.JSX.Element | null {
   return (
     <>
       <PaneSlider
-        open={pane !== 'root'}
+        open={pane !== 'root' && !frozen(pane)}
         root={scopedRoot || root}
         detail={detail}
         minWidth={225}

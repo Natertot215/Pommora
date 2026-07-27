@@ -73,6 +73,14 @@ export const itemSelected = style({
   selectors: { '&:hover': { background: c.state.selected } },
 })
 
+/** A structurally-present but inert row or affordance — dimmed and unhittable. The one treatment
+ *  every "shown, can't act" state wears (a lock's frozen rows, an unlanded affordance). */
+export const rowDisabled = style({
+  selectors: {
+    '&&': { opacity: 0.4, pointerEvents: 'none' },
+  },
+})
+
 /** Heading row — Headline/Emphasized (13px Semibold), label-secondary; same
  *  geometry as an item, so its icon follows at 1em → 13px. */
 export const heading = style([

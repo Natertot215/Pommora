@@ -9,10 +9,14 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
 import { saveViewAdopting } from '@renderer/Detail/Views/viewMint'
 
+/** The refusal a locked scope answers every view-config write with — surfaces report it, never
+ *  swallow it (a config surface that looked live and dropped the write is the loss this names). */
+export const VIEW_CONFIG_LOCKED = 'The view configuration is locked on this embed.'
+
 export interface ViewEmbedScopeValue {
   source: CollectionNode | SetNode
   view: SavedView
-  /** Persist the tile's copied config — writes the block payload via the saveBlocks updater. A no-op
+  /** Persist the tile's copied config — writes the block payload via the saveBlocks updater. Refuses
    *  while `locked` (B-5): every config surface routes through here, so one gate freezes them all. */
   persistConfig: (next: SavedView) => void
   /** B-5 per-tile config lock. Frozen: view config + view CRUD. Live: data drags + value edits. */
@@ -26,9 +30,10 @@ export const ViewEmbedScopeProvider = Ctx.Provider
 export const useViewEmbedScope = (): ViewEmbedScopeValue | null => useContext(Ctx)
 
 /** The one view-config writer surfaces call: in scope the write is a payload update
- *  (the sentinel/mint/active-slot machinery never runs); outside, the adopt-and-save
- *  path unchanged. The scope's `view` may be stale mid-gesture, so callers still pass
- *  the full next view, exactly as they did to saveViewAdopting. */
+ *  (the sentinel/mint/active-slot machinery never runs) — or a refusal envelope while the
+ *  tile is locked; outside, the adopt-and-save path unchanged. The scope's `view` may be
+ *  stale mid-gesture, so callers still pass the full next view, exactly as they did to
+ *  saveViewAdopting. */
 export function useSaveView(
   source: CollectionNode | SetNode,
   refetch: () => Promise<void>,
@@ -40,6 +45,7 @@ export function useSaveView(
   if (scope) {
     // An embed re-renders off its own tile payload — persistConfig updates it in place, no refetch path.
     return (view) => {
+      if (scope.locked) return Promise.resolve({ ok: false as const, error: VIEW_CONFIG_LOCKED })
       scope.persistConfig(view)
       return Promise.resolve({ ok: true as const, id: view.id })
     }

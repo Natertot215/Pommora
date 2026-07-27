@@ -10,7 +10,7 @@ import type { FilterGroup, FilterRule, MatchMode } from '@shared/views'
 export type { MatchMode }
 import type { NexusTree } from '@shared/types'
 import type { Icon } from '@renderer/design-system/symbols'
-import { asRenderableIcon } from '@renderer/design-system/symbols'
+import { defaultEntityIcon } from '@renderer/design-system/symbols'
 import { contextIdentityOf, contextIdsOf } from '../../Detail/Views/pipeline/contextIdentity'
 import { declaredType } from '../../Detail/Views/pipeline/value'
 import { FILTER_OPS } from '../../Detail/Views/pipeline/filter'
@@ -243,7 +243,7 @@ export function filterTargets(
       return {
         id,
         label: identity?.title ?? id,
-        icon: asRenderableIcon(identity?.icon) ?? 'layout-grid',
+        icon: identity?.icon ?? defaultEntityIcon('space'),
       }
     }),
     ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0),
