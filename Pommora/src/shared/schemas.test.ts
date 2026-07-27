@@ -35,7 +35,7 @@ describe('folder sidecar schemas', () => {
     expect(pageCollectionSidecar.parse(v)).toMatchObject(v)
   })
 
-  it('page set accepts the 2-tier parent_id + set_order', () => {
+  it('page set accepts the nested parent_id + set_order', () => {
     const v = { id: 'S1', parent_id: 'C1', set_order: ['s2'], page_order: ['p1'] }
     expect(pageSetSidecar.parse(v)).toMatchObject(v)
   })

@@ -309,7 +309,7 @@ describe('custom option order', () => {
 })
 
 describe('resolvedSortCount', () => {
-  it('counts only criteria buildCriterion resolves — dead and tier criteria cost nothing', () => {
+  it('counts only criteria buildCriterion resolves — dead and Context criteria cost nothing', () => {
     expect(resolvedSortCount(undefined, schema)).toBe(0)
     expect(resolvedSortCount([{ property_id: 'prop_gone', direction: 'ascending' }], schema)).toBe(
       0,

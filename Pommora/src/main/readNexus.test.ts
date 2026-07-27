@@ -52,7 +52,7 @@ let raw: string
 let sidecar: string
 
 beforeAll(() => {
-  // --- raw / un-adopted nexus (the ~/test shape: no .nexus, no sidecars). 2-tier:
+  // --- raw / un-adopted nexus (the ~/test shape: no .nexus, no sidecars):
   //     root folder = Collection, every subfolder = Set, recursive (no depth cap). ---
   raw = mkdtempSync(join(tmpdir(), 'pom-raw-'))
   d(join(raw, 'Collection A', 'Set A', 'Sub A'))
@@ -68,7 +68,7 @@ beforeAll(() => {
   w(join(raw, 'Tasks', '_taskconfig.json'), '{}')
   w(join(raw, 'Tasks', 'Submit.task.json'), '{}')
 
-  // --- sidecar-driven nexus (2-tier: _pagecollection.json top, recursive _pageset.json) ---
+  // --- sidecar-driven nexus (_pagecollection.json at the top, recursive _pageset.json below) ---
   sidecar = mkdtempSync(join(tmpdir(), 'pom-sc-'))
   d(join(sidecar, '.nexus', 'areas', 'Work'))
   w(
@@ -547,7 +547,7 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
     d(join(root, '.nexus', 'areas', 'Work'))
     d(join(root, '.nexus', 'topics', 'Health'))
     d(join(root, '.nexus', 'projects', 'Launch'))
-    // Collection -> Set -> Sub-Set -> Page (recursive 2-tier).
+    // Collection -> Set -> Sub-Set -> Page.
     d(join(root, 'Notes', 'Daily', 'Morning'))
     w(
       join(root, '.nexus', 'nexus.json'),

@@ -41,7 +41,7 @@ beforeEach(async () => {
     created_at: '2026-01-01T00:00:00.000Z',
   })
 
-  // 2-tier Model A fixture: a Collection (schema-bearing) with two root pages + a depth-1 Set
+  // Model A fixture: a Collection (schema-bearing) with two root pages + a depth-1 Set
   // holding one page (exercises page_sets.parent_collection_id + pages.page_set_id).
   const coll = await createFolderEntity(root, 'collection', 'Notes')
   if (!coll.ok) throw new Error('setup: collection')
@@ -158,7 +158,7 @@ describe('rebuildIndex (cold build)', () => {
     expect(def).toMatchObject({ name: 'Score', type: 'number' })
 
     // An unmigrated tree indexes no context rows (migration runs before the index in the app);
-    // its pages' bare tierN LINKS still resolve through the seeded registry below.
+    // its pages' Context links still resolve through the seeded registry below.
 
     // Resolved connection PageA → PageB; the self-link [[PageA]] is skipped (Swift parity)
     const conns = db.prepare('SELECT * FROM connections WHERE source_id = ?').all(ids.a) as Record<
@@ -168,7 +168,7 @@ describe('rebuildIndex (cold build)', () => {
     expect(conns).toHaveLength(1)
     expect(conns[0]).toMatchObject({ target_title: 'pageb', target_id: ids.b, resolved: 1 })
 
-    // Context link PageA → Work (legacy tierN resolved through the reserved context id)
+    // Context link PageA → Work (resolved through the reserved context id)
     const link = get(db, 'SELECT * FROM context_links WHERE source_id = ?', ids.a)
     expect(link).toMatchObject({ target_id: ids.work, context_id: 'ctx_areas', target_kind: 'space' })
 

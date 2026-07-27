@@ -39,7 +39,7 @@ describe('createAgendaItem', () => {
       priority: 0,
       properties: {},
     })
-    expect('tier1' in t).toBe(false)
+    expect('[Areas]' in t).toBe(false)
     expect(t.created_at).toBeTruthy()
   })
 

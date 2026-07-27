@@ -6,7 +6,7 @@ import type { PaneRow } from './paneDndModel'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenPaneModel'
 
 const { title, modifiedAt } = RESERVED_PROPERTY_ID
-const [tier1, tier3] = ['ctx_areas', 'ctx_projects'] // Context column ids
+const [areas, projects] = ['ctx_areas', 'ctx_projects'] // Context column ids
 
 const def = (id: string): PropertyDefinition => ({ id, name: id, type: 'select' })
 
@@ -28,8 +28,8 @@ describe('hiddenListIds', () => {
   it('lists non-shown contexts first (registry order), then props, trails Modified, drops stale ids', () => {
     const schema = [def('a')]
     expect(
-      hiddenListIds(view([], [tier1, modifiedAt, 'stale', 'a']), schema, [tier1, tier3]),
-    ).toEqual([tier1, tier3, 'a', modifiedAt])
+      hiddenListIds(view([], [areas, modifiedAt, 'stale', 'a']), schema, [areas, projects]),
+    ).toEqual([areas, projects, 'a', modifiedAt])
   })
 
   it('a context in neither list sits in the hidden zone (default-OFF reveal path)', () => {
@@ -58,13 +58,13 @@ describe('placeInShown', () => {
     })
   })
 
-  it('anchors the section slot inside the full order — Title and tiers hold their places', () => {
-    const v = view([title, 'a', tier3, 'b'], [])
-    expect(placeInShown(v, [title, 'a', tier3, 'b'], ['a', 'b'], 'b', 0).property_order).toEqual([
+  it('anchors the section slot inside the full order — Title and Contexts hold their places', () => {
+    const v = view([title, 'a', projects, 'b'], [])
+    expect(placeInShown(v, [title, 'a', projects, 'b'], ['a', 'b'], 'b', 0).property_order).toEqual([
       title,
       'b',
       'a',
-      tier3,
+      projects,
     ])
   })
 
