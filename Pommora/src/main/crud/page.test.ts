@@ -24,6 +24,24 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
+const ANCIENT = '2000-01-01T00:00:00.000Z'
+
+/** Pin an old stamp so a real bump is unmistakable (vs the create-time stamp). */
+async function pinOldStamp(file: string): Promise<void> {
+  const parts = splitEnvelope(await readFile(file, 'utf8'))
+  await writeFile(
+    file,
+    assembleEnvelope(
+      parts.frontmatter.replace(/^modified_at:.*$/m, `modified_at: "${ANCIENT}"`),
+      parts.body,
+    ),
+    'utf8',
+  )
+}
+
+const stampOf = async (file: string): Promise<string> =>
+  splitFrontmatter(await readFile(file, 'utf8')).modified_at as string
+
 describe('createPage', () => {
   it('writes a .md with a fresh ULID, timestamps, no context keys, and the body', async () => {
     const r = await createPage(typeDir, 'My Page', { body: 'Hello' })
@@ -33,9 +51,8 @@ describe('createPage', () => {
     const content = await readFile(r.value.path, 'utf8')
     const fm = splitFrontmatter(content)
     expect(isUlid(fm.id as string)).toBe(true)
-    expect('tier1' in fm).toBe(false)
-    expect(fm.created_at).toBeTruthy()
-    expect(fm.modified_at).toBeTruthy()
+    // Nothing but the modeled keys — Context membership is value-driven, never seeded.
+    expect(Object.keys(fm).sort()).toEqual(['created_at', 'id', 'modified_at', 'properties'])
     expect(splitEnvelope(content).body).toBe('Hello')
   })
 
@@ -62,21 +79,12 @@ describe('renamePage', () => {
   it('bumps modified_at — a rename counts as an edit', async () => {
     const c = await createPage(typeDir, 'Old', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
-    // Pin an old stamp so a real bump is unmistakable (vs the create-time stamp).
-    const parts = splitEnvelope(await readFile(c.value.path, 'utf8'))
-    await writeFile(
-      c.value.path,
-      assembleEnvelope(
-        parts.frontmatter.replace(/^modified_at:.*$/m, 'modified_at: "2000-01-01T00:00:00.000Z"'),
-        parts.body,
-      ),
-      'utf8',
-    )
+    await pinOldStamp(c.value.path)
 
     const r = await renamePage(c.value.path, 'New')
     if (!r.ok) throw new Error('rename failed')
-    const after = splitFrontmatter(await readFile(r.value.path, 'utf8')).modified_at as string
-    expect(after).not.toBe('2000-01-01T00:00:00.000Z') // rename advanced it
+    const after = await stampOf(r.value.path)
+    expect(after).not.toBe(ANCIENT) // rename advanced it
     expect(after >= '2026-01-01').toBe(true) // to a real recent stamp
   })
 
@@ -122,6 +130,28 @@ describe('movePage', () => {
     expect(r.value.path).toBe(join(other, 'Movable.md'))
     await expect(stat(c.value.path)).rejects.toThrow()
     expect(splitEnvelope(await readFile(r.value.path, 'utf8')).body).toBe('x')
+  })
+
+  it('bumps modified_at — a location change counts as an edit', async () => {
+    const other = join(root, 'Journal')
+    await mkdir(other, { recursive: true })
+    const c = await createPage(typeDir, 'Movable', { body: 'x' })
+    if (!c.ok) throw new Error('setup failed')
+    await pinOldStamp(c.value.path)
+
+    const r = await movePage(c.value.path, other)
+    if (!r.ok) throw new Error('move failed')
+    const after = await stampOf(r.value.path)
+    expect(after).not.toBe(ANCIENT)
+    expect(after >= '2026-01-01').toBe(true)
+  })
+
+  it('a no-op move leaves the stamp alone — nothing changed', async () => {
+    const c = await createPage(typeDir, 'Stay', { body: 'x' })
+    if (!c.ok) throw new Error('setup failed')
+    await pinOldStamp(c.value.path)
+    expect((await movePage(c.value.path, typeDir)).ok).toBe(true)
+    expect(await stampOf(c.value.path)).toBe(ANCIENT)
   })
 
   it('refuses to move onto an existing page of the same name', async () => {

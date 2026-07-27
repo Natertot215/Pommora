@@ -41,16 +41,10 @@ export async function createPage(
   return ok({ id, path: file })
 }
 
-/** Rename a page file (filename = title). No-op when unchanged; bumps modified_at
- *  on a real rename — the title changed, which counts as an edit. */
-export async function renamePage(
-  absFile: string,
-  newName: string,
-): Promise<Result<{ path: string }>> {
-  if (invalidName(newName)) return fail('invalid-name', `"${newName}" is not a valid name.`, 'page')
-  const target = join(dirname(absFile), newName + MD)
-  if (target === absFile) return ok({ path: absFile })
-  if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`, 'page')
+/** Relocate a page file and stamp the edit. A rename and a move are the same write to disk and
+ *  both change the page, so they share one primitive; governing only modified_at leaves every
+ *  other frontmatter key untouched. */
+async function relocatePage(absFile: string, target: string): Promise<void> {
   recordWrite(absFile)
   recordWrite(target)
   await rename(absFile, target)
@@ -62,6 +56,19 @@ export async function renamePage(
     splitEnvelope(existing).body,
   )
   await atomicWriteFile(target, content)
+}
+
+/** Rename a page file (filename = title). No-op when unchanged; bumps modified_at
+ *  on a real rename — the title changed, which counts as an edit. */
+export async function renamePage(
+  absFile: string,
+  newName: string,
+): Promise<Result<{ path: string }>> {
+  if (invalidName(newName)) return fail('invalid-name', `"${newName}" is not a valid name.`, 'page')
+  const target = join(dirname(absFile), newName + MD)
+  if (target === absFile) return ok({ path: absFile })
+  if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`, 'page')
+  await relocatePage(absFile, target)
   return ok({ path: target })
 }
 
@@ -73,9 +80,9 @@ export async function updatePageBody(absFile: string, body: string): Promise<Res
   return ok(null)
 }
 
-/** Move a page to a different container folder (same filename) — a pure file rename.
- *  A Page's Collection membership is its folder location, so its prop_<ulid> frontmatter
- *  values re-join the destination schema on next read (unrecognized keys stay as
+/** Move a page to a different container folder (same filename), bumping modified_at — a location
+ *  change is an edit. A Page's Collection membership is its folder location, so its prop_<ulid>
+ *  frontmatter values re-join the destination schema on next read (unrecognized keys stay as
  *  preserved foreign frontmatter); no strip, no schema logic lives in the move. */
 export async function movePage(
   absFile: string,
@@ -85,9 +92,7 @@ export async function movePage(
   if (target === absFile) return ok({ path: absFile })
   if (await pathExists(target))
     return fail('exists', `A page named "${basename(absFile)}" already exists there.`, 'page')
-  recordWrite(absFile)
-  recordWrite(target)
-  await rename(absFile, target)
+  await relocatePage(absFile, target)
   return ok({ path: target })
 }
 
