@@ -1,6 +1,6 @@
 ## Branch Handoff — Contexts & Spaces
 
-The pre-merge record for `contexts-spaces`: 89 commits covering the Contexts registry rewrite, two shared-surface extractions, a lint and accessibility campaign, a documentation truing pass, the FilterPane rebuild, a three-part adversarial verification, and the cleanup that closed everything it found.
+The pre-merge record for `contexts-spaces`: 90 commits covering the Contexts registry rewrite, two shared-surface extractions, a lint and accessibility campaign, a documentation truing pass, the FilterPane rebuild, a three-part adversarial verification, and the cleanup that closed everything it found.
 
 Read it as standing truth, not as a diary. Where a decision changed mid-branch, only the decision that survived is stated; reversals are recorded once, under their own heading, because the reasoning still governs.
 
@@ -146,8 +146,8 @@ Two items are open because they need a decision, not an implementation:
 - **A locked embed's BODY still writes silently.** The config panes are frozen and the seam now refuses, but `TableView` and `CardsView` write view config from the table itself — column resize/reorder/align, hide column, card style, group collapse. They carry optimistic overrides, so they look applied until remount. Freezing them needs a ruling on which in-table gestures a config lock owns; group collapse in particular reads as "how I'm looking at it" rather than authoring, yet it persists into view config.
 - **Right-clicking Change Color in the Space settings pane closes the pane.** Not reproduced. Every renderer-side path was eliminated: no blur or focus listener exists, `setPanel(null)` has one caller whose ref contains the dropdown, and the picker's portals are spared by both dismissal checks. The residual mechanism is a pointer event delivered after the native menu returns input. Two guards landed that are correct regardless — `useDismiss` ignores non-primary buttons, and the header yields the gesture over an editable target, which also closes a proven two-native-menu collision. Confirm with a capture-phase `pointerdown` log during one right-click.
 
-### Merge Closeout
+### Merge
 
-- [ ] **Rebase onto `origin/main`.** The branch is 89 ahead and 0 behind *local* `main`, but local `main` is one commit behind `origin/main` (`9ba2e53e`), and that commit is not an ancestor of this branch. Without the rebase the merge is not a fast-forward. The branch is already pushed, so this needs a force-push and an explicit decision.
+The branch was rebased onto `origin/main`, replaying all 90 commits with no conflicts — the one commit it was behind (`9ba2e53e`) touched `.gitignore` and `.claude/settings.json`, which this branch never opened. `origin/main` is an ancestor, so the merge is a true fast-forward.
 
-**Gates:** `typecheck 0` (both configs) · `lint 0` · `1904 tests / 187 files` · build clean · working tree clean.
+**Gates, re-run on the rebased tip:** `typecheck 0` (both configs) · `lint 0` · `1904 tests / 187 files` · build clean · working tree clean.
