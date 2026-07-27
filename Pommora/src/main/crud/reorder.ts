@@ -19,7 +19,7 @@ import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
 import { ok, type Result } from '@shared/result'
 import type { StateOrderKey, ChildOrderKey } from '@shared/mutate'
 
-// `StateOrderKey` (top Collections + tiers) is the shared IPC type. The within-container keys add
+// `StateOrderKey` (top Collections + Context groups) is the shared IPC type. The within-container keys add
 // `page_order` (written on a page move, never a reorderChildren) onto the shared child keys.
 export type { StateOrderKey }
 export type ContainerOrderKey = ChildOrderKey | 'page_order'
@@ -29,7 +29,7 @@ export type ContainerOrderKey = ChildOrderKey | 'page_order'
 // lands in a persisted order array (and re-stamps to a fresh ULID, breaking continuity).
 const persistable = (ids: string[]): string[] => ids.filter((id) => !id.startsWith('adopted-'))
 
-/** Persist a top-level order (top Collections or a context tier) to .nexus/state.json. */
+/** Persist a top-level order (top Collections or a Context group) to .nexus/state.json. */
 export async function setStateOrder(
   nexusRoot: string,
   key: StateOrderKey,

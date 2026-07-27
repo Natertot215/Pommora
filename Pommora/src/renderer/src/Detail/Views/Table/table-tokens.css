@@ -1,9 +1,8 @@
 /* ============================================================================
    TABLE TOKENS — the single source for every tunable number in the table view.
-   §G (HARD DRY): Table.css carries no raw px / % / hex / ms in any rule; every
-   value routes through one named knob below, aliased to a design-system token
-   wherever one exists. Retune any table dimension by editing ONE line here.
-   Scoped to the table surface so the vars stay table-owned (no global leak).
+   Retune any table dimension by editing ONE line here, aliased to a design-system
+   token wherever one exists. Scoped to the table surface so the vars stay
+   table-owned (no global leak).
    ============================================================================ */
 .table-view,
 .table-empty {

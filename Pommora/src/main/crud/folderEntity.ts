@@ -17,7 +17,7 @@ import type { SidecarKind } from '../paths'
 import { ok, fail, type Result } from '@shared/result'
 
 /** Create a folder entity: make the folder + write its sidecar with a fresh ULID and
- *  `extra` fields (e.g. `{ tier }` for a context, `{ color }` for an area). */
+ *  `extra` fields (e.g. `{ color }` for a Space). */
 export async function createFolderEntity(
   parentDir: string,
   kind: SidecarKind,

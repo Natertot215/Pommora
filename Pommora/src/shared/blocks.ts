@@ -69,7 +69,7 @@ export function coerceBlockHost(raw: unknown): BlockHostRef | null {
 }
 
 /** Per-tile chassis style: borderless hides the border until you reach for
- *  it — border/handle hover, drag, resize — and a locked host pins it hidden. */
+ *  it — border/handle hover, drag, resize. */
 export type BlockStyle = 'bordered' | 'borderless'
 const styleField = z.enum(['bordered', 'borderless']).optional().catch(undefined)
 
@@ -128,8 +128,7 @@ export interface ViewBlockEntry {
   /** Per-tile config lock: freezes this embed's view config + view CRUD (data interaction stays
    *  live). The SettingsPane footer lock writes it; absent = unlocked. */
   locked?: boolean
-  /** Per-tile Scale: keeps the `BlockEntry` union uniform so `.zoom` reads typecheck at
-   *  un-narrowed sites — view tiles don't surface Scale yet (the row is `type !== 'view'` gated). */
+  /** Per-tile Scale: a discrete zoom factor over the tile's natural size. Absent = 1.0. */
   zoom?: number
 }
 

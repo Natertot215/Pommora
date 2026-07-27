@@ -204,8 +204,8 @@ function Disclosure({
   title: string
   depth: number
   defaultOpen?: boolean
-  // Stable identity for persisting open/collapse across sessions (entity id, or a `tier:*` key for
-  // the structural context tiers). Omitted → ephemeral (resets to `defaultOpen` each mount).
+  // Stable identity for persisting open/collapse across sessions (entity id, or a `context:*` key
+  // for the structural Context groups). Omitted → ephemeral (resets to `defaultOpen` each mount).
   persistKey?: string
   selected?: boolean
   onSelect?: () => void
@@ -213,7 +213,7 @@ function Disclosure({
   rename?: RenameTarget
   // The header row's id when this disclosure is a real entity — its OWN rect (not the subtree's)
   // is what the engine hit-tests, so DragRow wraps only the header MenuItem; the <Reveal> body
-  // stays outside it. Omitted for structural disclosures (the context tiers), which aren't
+  // stays outside it. Omitted for structural disclosures (the Context groups), which aren't
   // entities and so are never draggable or drop targets.
   dragId?: string
   /** Right-click on the body's empty space (a row's own menu wins — it preventDefaults first). */
@@ -252,8 +252,8 @@ function Disclosure({
     if (renamingChild && !open) setAndSave(true)
   }, [renamingChild, open])
   // Storage containers (vault/collection) carry an onSelect: clicking the icon or title opens the
-  // view, while the rest of the row (chevron, empty space) toggles. Rows with no onSelect (tiers,
-  // sets) have no select zone, so a click anywhere toggles.
+  // view, while the rest of the row (chevron, empty space) toggles. Rows with no onSelect (Context
+  // groups, sets) have no select zone, so a click anywhere toggles.
   const openView = onSelect
     ? (e: React.MouseEvent): void => {
         e.stopPropagation()
@@ -517,7 +517,7 @@ function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
 
 // A registry Context group — a non-draggable disclosure holding its Spaces. Free-standing (no
 // containment), so the header is a pure expand/collapse toggle; its right-click pops the native
-// group menu (New <Singular> · Settings · Rename · Delete) built main-side from the registry.
+// group menu (New <Singular> · Rename · Delete) built main-side from the registry.
 function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const path = `.nexus/contexts/${group.def.title}`

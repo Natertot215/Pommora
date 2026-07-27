@@ -37,7 +37,7 @@ export function isNavPath(root: string, path: string): boolean {
 
 // Ignore only what ISN'T user-meaningful tree content: the SQLite index (index.db*,
 // which thrashes on every mutation via WAL), the .trash, and OS/editor dotfile cruft.
-// Crucially we DO watch .nexus/ — Contexts (.nexus/<tier>/) and settings/state (accent,
+// Crucially we DO watch .nexus/ — Contexts (.nexus/contexts/) and settings/state (accent,
 // labels, ordering) live there, so external edits to them must auto-refresh. Checks only
 // the path BELOW the root, so a dot-segment in the root's own absolute path (e.g. a nexus
 // under ~/.something) can't blank the whole watch.

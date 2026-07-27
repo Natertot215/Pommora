@@ -15,7 +15,7 @@ describe('sidebar disclosure state', () => {
   it('loadOpen falls back when unset, returns the stored value when set', () => {
     const s = fakeStorage()
     expect(loadOpen(s, 'v1', false)).toBe(false)
-    expect(loadOpen(s, 'tier:areas', true)).toBe(true)
+    expect(loadOpen(s, 'context:areas', true)).toBe(true)
     saveOpen(s, 'v1', true)
     expect(loadOpen(s, 'v1', false)).toBe(true)
   })
@@ -23,9 +23,9 @@ describe('sidebar disclosure state', () => {
   it('saveOpen merges into prior keys rather than clobbering', () => {
     const s = fakeStorage()
     saveOpen(s, 'v1', true)
-    saveOpen(s, 'tier:topics', false)
+    saveOpen(s, 'context:topics', false)
     expect(loadOpen(s, 'v1', false)).toBe(true)
-    expect(loadOpen(s, 'tier:topics', true)).toBe(false)
+    expect(loadOpen(s, 'context:topics', true)).toBe(false)
   })
 
   it('loadOpen tolerates missing or corrupt storage', () => {

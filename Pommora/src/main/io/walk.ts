@@ -1,5 +1,5 @@
 // Recursive `.md` enumeration for mutation cascades (delete-property strips, rename
-// cascades, tier unlinks). This is the simple "find the files to rewrite" walk — distinct
+// cascades, Context unlinks). This is the simple "find the files to rewrite" walk — distinct
 // from readNexus, which builds the typed tree with exclusions, depth caps, and adoption.
 
 import { readdir } from 'node:fs/promises'

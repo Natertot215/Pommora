@@ -1,7 +1,8 @@
 // Per-machine sidebar disclosure (expand/collapse) state. Transient UI chrome — regeneratable, not
 // portable content — so it lives in app-level localStorage (mirrors Swift IconFavorites → UserDefaults),
-// not `.nexus/`. Keyed by entity id (containers) or a `tier:*` string (structural tiers). Storage is a
-// parameter so the behavior is testable without a DOM; callers pass `window.localStorage`.
+// not `.nexus/`. Keyed by entity id (containers) or a `context:*` string (the structural Context
+// groups). Storage is a parameter so the behavior is testable without a DOM; callers pass
+// `window.localStorage`.
 
 type OpenMap = Record<string, boolean>
 

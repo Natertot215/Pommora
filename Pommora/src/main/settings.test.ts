@@ -22,7 +22,7 @@ const write = async (v: object): Promise<void> => {
 }
 
 // The on-disk settings shape our writer must always produce: version + modified_at + full labels,
-// every label a {singular, plural} LabelPair (all three tiers now first-class).
+// every label a {singular, plural} LabelPair (all three Contexts now first-class).
 const assertFullSettings = (s: Record<string, unknown>): void => {
   expect(typeof s.version).toBe('number')
   expect(typeof s.modified_at).toBe('string')

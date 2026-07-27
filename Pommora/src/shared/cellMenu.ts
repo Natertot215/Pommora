@@ -40,9 +40,9 @@ export interface CellMenuModel {
   style?: StyleMenuItem[]
 }
 
-/** The right-click menu context for a value cell (A-13): title = page meta; url/file = the column's
+/** The right-click menu context for a value cell: title = page meta; url/file = the column's
  *  Style radios + Edit; status/datetime (picker-based) = Style + Clear; the inline-clearable style
- *  types (checkbox/number/last_edited_time) = Style alone; tier and select/multi/context = Clear
+ *  types (checkbox/number/last_edited_time) = Style alone; context and select/multi = Clear
  *  alone. Clear is offered ONLY on a `filled` cell — a clear-only cell with no value has no menu at
  *  all, and a styleable one drops just its Clear. Anything else has no menu (null). Portable across
  *  the container views (Table cells, Cards values). */

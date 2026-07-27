@@ -543,7 +543,7 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
   let root: string
   beforeAll(() => {
     root = mkdtempSync(join(tmpdir(), 'pom-paths-'))
-    // Contexts (one per tier, under .nexus/<tier>/).
+    // Contexts (one per area/topic/project, under .nexus/<name>/).
     d(join(root, '.nexus', 'areas', 'Work'))
     d(join(root, '.nexus', 'topics', 'Health'))
     d(join(root, '.nexus', 'projects', 'Launch'))

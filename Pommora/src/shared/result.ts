@@ -9,13 +9,12 @@ export type ErrorCode =
   | 'invalid-name'
   | 'invalid-path'
   | 'invalid-property'
-  | 'invalid-tier'
+  | 'invalid-tier' // a legacy pre-registry Context layout without a Contexts registry — the open path
+  // migrates before anything reads contexts, so this shouldn't surface today
   | 'invalid-event'
   | 'not-agenda'
   | 'lossy-change-requires-confirmation'
   | 'operation-failed'
-  // A legacy tier layout exists without a Contexts registry — the open path must run the
-  // migration before anything reads contexts.
 
 /** A structured, serializable error. `scope` names the entity/kind domain (free-form: an
  *  entity name like "page"/"agenda" or a SidecarKind), used for message context only. */

@@ -172,7 +172,7 @@ describe('rebuildIndex (cold build)', () => {
     const link = get(db, 'SELECT * FROM context_links WHERE source_id = ?', ids.a)
     expect(link).toMatchObject({ target_id: ids.work, context_id: 'ctx_areas', target_kind: 'space' })
 
-    // Agenda: the task row + its status property + tier link + schema def
+    // Agenda: the task row + its status property + Context link + schema def
     const task = get(db, 'SELECT * FROM agenda_tasks WHERE id = ?', ids.task)
     expect(task).toMatchObject({ title: 'Buy milk', due_at: '2026-06-20T00:00:00.000Z' })
     expect(JSON.parse(task?.properties as string)._status).toEqual({ $status: 'not_started' })
