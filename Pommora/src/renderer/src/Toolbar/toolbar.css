@@ -10,9 +10,9 @@
   left: calc(var(--glass-inset) + var(--sidebar-width));
   right: 0;
   height: var(--toolbar-h);
-  /* Above the inspector glass (z-4) + its resize strip (z-5) so the trio rides over the pane and stays
+  /* Tops the frame's ladder so the trio rides over the inspector glass and its resize strip and stays
      clickable; the bar itself is click-through (pointer-events:none) so only the clusters intercept. */
-  z-index: 6;
+  z-index: var(--z-toolbar);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;

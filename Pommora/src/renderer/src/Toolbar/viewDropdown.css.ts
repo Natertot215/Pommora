@@ -1,5 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { dropdownAnchor } from '@renderer/design-system/components/dropdownAnchor'
+import { stack } from '@renderer/design-system/tokens/stack'
 
 // ── KNOBS — the ViewDropdown button geometry (tune here) ──
 const BUTTON = {
@@ -18,7 +19,7 @@ export const wrapper = style({
 
 /** The dropdown anchor — hangs straight down, centred on the button (the beak points up at its
  *  centre via the surface's default centred notch). */
-export const anchor = style(dropdownAnchor('center', 10))
+export const anchor = style(dropdownAnchor('center', stack.local.lifted))
 
 /** The view button — one padding for both states; the segment's own gap is zeroed so the collapsing
  *  label slot (segmented.css) is the sole icon↔title spacing, and the icon-only state sits flush. */

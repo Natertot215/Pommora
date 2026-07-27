@@ -4,7 +4,7 @@
 
 .ppane {
   position: fixed;
-  z-index: 1000;
+  z-index: var(--z-floating);
   display: flex;
   flex-direction: column;
   border-radius: var(--glass-radius);

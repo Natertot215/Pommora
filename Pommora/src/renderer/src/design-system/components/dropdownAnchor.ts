@@ -21,7 +21,8 @@ const PLACEMENT: Record<DropdownPlacement, StyleRule> = {
 }
 
 /** `zIndex` is per-surface, not a house constant: each anchor stacks inside its own context (a picker
- *  over its host's chrome, a toolbar pane over the toolbar), so the layers aren't comparable. */
+ *  over its host's chrome, a toolbar pane over the toolbar), so the layers aren't comparable. Callers
+ *  pass the `stack.local.*` step that names their surface's lift. */
 export const dropdownAnchor = (placement: DropdownPlacement, zIndex: number): StyleRule => ({
   position: 'absolute',
   ...PLACEMENT[placement],

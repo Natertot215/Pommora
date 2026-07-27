@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { stack } from '../tokens/stack'
 import { useFeel } from './feel'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { beginDragDisclose, endDragDisclose } from './dragDisclose'
@@ -642,7 +643,7 @@ export function DragGroup({
           transition:
             dropState === 'dropping' ? `transform ${feel.duration}ms ${feel.easing}` : 'none',
           pointerEvents: 'none',
-          zIndex: 1000,
+          zIndex: stack.top.floating,
         }
       : null
 
@@ -668,7 +669,7 @@ export function DragGroup({
               borderRadius: 12,
               background: 'color-mix(in srgb, var(--accent) var(--tint-secondary), transparent)',
               pointerEvents: 'none',
-              zIndex: 999,
+              zIndex: stack.top.dropPreview,
             }}
           />,
           document.body,

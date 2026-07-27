@@ -1,5 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { text, vars } from '@renderer/design-system/tokens'
+import { stack } from '@renderer/design-system/tokens/stack'
 
 const c = vars.color
 
@@ -7,7 +8,7 @@ const c = vars.color
 export const backdrop = style({
   position: 'fixed',
   inset: 0,
-  zIndex: 1000,
+  zIndex: stack.top.floating,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',

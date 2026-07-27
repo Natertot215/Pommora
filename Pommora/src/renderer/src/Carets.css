@@ -106,6 +106,6 @@ textarea,
   background: var(--caret-color);
   border-radius: 999px;
   pointer-events: none;
-  z-index: 2147483647;
+  z-index: var(--z-caret);
   animation: mdpm-blink var(--caret-gap) ease-in-out infinite;
 }

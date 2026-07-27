@@ -5,6 +5,7 @@ import { font } from './typography.css'
 import { size } from './size.css'
 import { TINT_STEPS } from './tint'
 import { duration, easing } from './motion'
+import { stack } from './stack'
 
 // Bridge: expose the (hashed) vanilla-extract tokens as stable-named CSS custom
 // properties, so plain CSS (the showcase chrome) can reference them via var(--…)
@@ -107,5 +108,19 @@ globalStyle(':root', {
     '--ease-standard': easing.standard,
     '--ease-in-out': easing.inOut,
     '--ease-out': easing.out,
+    // Stacking — the steps plain CSS consumes, single-sourced from stack.ts; add more as consumers appear.
+    '--z-content': `${stack.shell.content}`,
+    '--z-sidebar': `${stack.shell.sidebar}`,
+    '--z-titlebar': `${stack.shell.titlebar}`,
+    '--z-sidebar-toggle': `${stack.shell.sidebarToggle}`,
+    '--z-sidebar-resize': `${stack.shell.sidebarResize}`,
+    '--z-inspector': `${stack.shell.inspector}`,
+    '--z-inspector-resize': `${stack.shell.inspectorResize}`,
+    '--z-toolbar': `${stack.shell.toolbar}`,
+    '--z-lifted': `${stack.local.lifted}`,
+    '--z-overlay': `${stack.local.overlay}`,
+    '--z-anchor-host': `${stack.local.anchorHost}`,
+    '--z-floating': `${stack.top.floating}`,
+    '--z-caret': `${stack.top.caret}`,
   },
 })

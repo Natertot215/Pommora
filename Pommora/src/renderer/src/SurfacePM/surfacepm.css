@@ -55,7 +55,7 @@
    layers over --main-bg so underlying tiles never show through a dragged block.
    No accent tint while dragged — the border stays the separator. */
 .spm-tile.is-lifted {
-  z-index: 10;
+  z-index: var(--z-lifted);
   cursor: grabbing;
   box-shadow: var(--shadow-lift);
   /* The selected tone (5%) — a notch brighter than hover, still opaque over main-bg. */
