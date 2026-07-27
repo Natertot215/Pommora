@@ -6,7 +6,7 @@ The single home for the React build's animation system: the motion token vocabul
 
 The single source is `design-system/tokens/motion.ts`, surfaced as CSS vars through `tokens/theme-vars.css.ts`. Every permanent transition references these, not literals.
 
-- **Durations:** `disclosure` (chevron + disclosure open/close, app-wide — sidebar `.twisty`, the `Reveal` primitive, the editor fold; `--disclosure`) · `fast` (quick hover / affordance feedback — grips, button hovers) · `dropdown` (the inline picker + autocomplete open/close — the Bloom keyframes at a snappier pace) · `base` (the shell slides — sidebar + inspector + the reflow that tracks them) · `slow` (the menu Bloom open/close). CSS: `--disclosure` / `--duration-fast` / `--duration-dropdown` / `--duration-base`.
+- **Durations:** `disclosure` (chevron + disclosure open/close, app-wide — the shared `twisty`, the `Reveal` primitive, the editor fold; `--disclosure`) · `fast` (quick hover / affordance feedback — grips, button hovers) · `dropdown` (the inline picker + autocomplete open/close — the Bloom keyframes at a snappier pace) · `base` (the shell slides — sidebar + inspector + the reflow that tracks them) · `slow` (the menu Bloom open/close). CSS: `--disclosure` / `--duration-fast` / `--duration-dropdown` / `--duration-base`.
 - **Easings:** `standard` (everyday `ease`) · `out` (`cubic-bezier(0.22, 1, 0.36, 1)` — emphatic moves, also the drag "out" curve). CSS: `--ease-standard`.
 - **Bloom curve** (Pommora-native, Apple-inspired) — `cubic-bezier(0.32, 0.72, 0, 1)` — is the open + close curve for both dropdown motions (the menu **Bloom** + the inline **Dropdown**, below), which share one set of keyframes; it's special-cased as the lone literal in `animations.css.ts` rather than living in the everyday token set.
 
@@ -26,6 +26,7 @@ Pommora's canonical pane/menu open — a zoom-from-the-trigger (`scale → 1` + 
 
 The same zoom — the same keyframes + Bloom curve — mounted on the **`dropdown`** token instead: snappier than the menu Bloom, also **symmetric**. The `dropdownOpen` / `dropdownClose` classes (`animations.css.ts`) read the same `--dropdown-origin` and retract through the shared `useExitPresence`. The split is deliberate: menus get the deliberate Bloom, inline surfaces the quicker Dropdown.
 
+- **Placement + caps:** a `PickerMenu` declares which edge it PINS to (`origin`: right — the stable dropdown — center, or left), and therefore which way it grows when its content resizes; a left-anchored pane leaves every row where the cursor found it as a disclosure widens it. The collision flip is decided once per open, never per re-measure, so growing content can't teleport a pane above its trigger mid-gesture. A height cap routes through the shared scroll frame (one overflow region, edge-fade included), and a fixed width removes horizontal resize entirely for a tree picker. Selected rows may wear the shared ring, which merges vertically across an adjacent run so a block of selections reads as one region.
 - **Consumers:** the inline-edit `PickerMenu` (frost `GlassPane` clipped to a notch beak; origin = the notch tip) — mounted by the table's cell value picker (`PropertyPicker`, the status/select/multi dropdown, anchored in the editing cell and retracting through the shared presence hook), the `AutocompletePanel` (wikilink autocomplete, `top left` — grows from the caret; retains its last position/rows so it can retract in place after the query clears), and the `IconPicker` (a searchable full-Lucide grid + right-click favorites; centered beak, opt-in horizontal beak for side triggers, auto-flipping to down when the requested side won't fit the viewport).
 
 - **Note:** liquid `GlassControls` (the autocomplete) re-samples its refraction per frame, so the zoom reads slightly less crisp mid-flight than on the frost panes — timing/scale are identical.
@@ -46,7 +47,7 @@ A single registered `@property --io` (`<number>`, 0 = closed → 1 = open, `styl
 
 ### Reveal — The Expand/Collapse Primitive
 
-`design-system/components/Reveal.tsx` is the canonical body open/close: a `grid-template-rows: 0fr ↔ 1fr` transition on the `disclosure` token / `easing.standard`, mounting at 0fr then flipping on the next frame, and unmounting on `transitionend`. It (or the same `grid-template-rows` pattern) backs the sidebar nested trees and the heading-fold body (`.mdpm-fold-reveal`). Disclosure **chevrons** rotate 90° on `--disclosure` (sidebar `.twisty`, editor fold `::before`); the drag-engine's tree collapse + `.ix-caret` ride the drag feel (`--ix-dur`) instead, separate by design.
+`design-system/components/Reveal.tsx` is the canonical body open/close: a `grid-template-rows: 0fr ↔ 1fr` transition on the `disclosure` token / `easing.standard`, mounting at 0fr then flipping on the next frame, and unmounting on `transitionend`. It (or the same `grid-template-rows` pattern) backs the sidebar nested trees and the heading-fold body (`.mdpm-fold-reveal`). Disclosure **chevrons** rotate 90° through the shared `twisty` (`menu.css.ts`) — one definition for the sidebar, the grouping/filter panes, the group bands and the properties pane. Its beat is a channel, `--twisty-beat`, defaulting to `--disclosure`: a surface whose body unfolds on a different beat pins the chevron to it so rotate and unfold land together. The editor fold rotates its own `::before`; the drag-engine's tree collapse + `.ix-caret` ride the drag feel (`--ix-dur`) instead, separate by design.
 
 ### Pane Slide + Resize
 
@@ -62,7 +63,7 @@ Owned by the in-house engine — see [[PommoraDND]]. In brief: a live "feel" (du
 
 ### Per-Surface Catalog
 
-- **Sidebar** (`Sidebar/Sidebar.css`): row hover + section "+" reveal + the collapse/expand button (fade + `translateX`); twisty rotate on `--duration-fast`. Row and section hovers run a step faster than the rest of the sidebar's chrome.
+- **Sidebar** (`Sidebar/Sidebar.css`): row hover + section "+" reveal + the collapse/expand button (fade + `translateX`); the twisty rotates on `--disclosure` like every other disclosure chevron. Row and section hovers run a step faster than the rest of the sidebar's chrome.
 - **Editor** (`MarkdownPM/Styles.css`): fold chevron rotate + fade and the block/blockquote **grip reveal** (hover opacity) on `--duration-fast`; fold body via the Reveal pattern; banner/editor padding reflow on `--duration-base`.
 - **Subfield** (`Detail/Subfield/subfield.css`): the footer bar height-reveal + its toggle chevron ride on `--duration-base`.
 - **Banner** (`Detail/Banner/Banner.css`): title inset slide on `--duration-base`; "Add Banner" hover reveal.
