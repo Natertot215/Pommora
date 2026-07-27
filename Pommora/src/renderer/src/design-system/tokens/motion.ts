@@ -16,6 +16,3 @@ export const easing = {
   inOut: 'ease-in-out', // symmetric fade — in as fast as out (the NavWindow highlight)
   out: 'cubic-bezier(0.22, 1, 0.36, 1)', // ease-out (quint), no bounce
 } as const
-
-export type Duration = keyof typeof duration
-export type Easing = keyof typeof easing

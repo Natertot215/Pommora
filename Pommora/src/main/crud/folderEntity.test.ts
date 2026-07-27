@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, stat, readdir } from 'node:fs/promises'
+import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   createFolderEntity,
   renameFolderEntity,
-  deleteFolderEntity,
   updateFolderSidecar,
 } from './folderEntity'
 import { readSidecar } from '../sidecarIO'
@@ -70,17 +69,6 @@ describe('renameFolderEntity', () => {
     await createFolderEntity(root, 'collection', 'B')
     if (!a.ok) throw new Error('setup failed')
     expect((await renameFolderEntity(a.value.path, 'B')).ok).toBe(false)
-  })
-})
-
-describe('deleteFolderEntity', () => {
-  it('moves the folder into .trash and removes the original', async () => {
-    const c = await createFolderEntity(root, 'collection', 'Trashme')
-    if (!c.ok) throw new Error('setup failed')
-    expect((await deleteFolderEntity(root, c.value.path)).ok).toBe(true)
-    await expect(stat(c.value.path)).rejects.toThrow()
-    const trashed = await readdir(join(root, '.trash'))
-    expect(trashed.some((n) => n.includes('Trashme'))).toBe(true)
   })
 })
 

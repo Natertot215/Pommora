@@ -11,7 +11,6 @@ import { join, dirname, basename } from 'node:path'
 import type { z } from 'zod'
 import { newId } from '../ids'
 import { readSidecar, writeSidecar } from '../sidecarIO'
-import { trashWithTimestamp } from '../io/atomicWrite'
 import { recordWrite } from '../io/writeEcho'
 import { pathExists, invalidName } from './util'
 import type { SidecarKind } from '../paths'
@@ -70,15 +69,6 @@ export async function moveFolderEntity(
   recordWrite(target)
   await rename(absFolder, target)
   return ok({ path: target })
-}
-
-/** Delete a folder entity by moving it to the nexus-local .trash (recoverable). */
-export async function deleteFolderEntity(
-  nexusRoot: string,
-  absFolder: string,
-): Promise<Result<{ trashedTo: string }>> {
-  if (!(await pathExists(absFolder))) return fail('not-found', 'Nothing to delete.')
-  return ok({ trashedTo: await trashWithTimestamp(nexusRoot, absFolder) })
 }
 
 /** Read-modify-write a folder entity's sidecar, merging `patch` over the current

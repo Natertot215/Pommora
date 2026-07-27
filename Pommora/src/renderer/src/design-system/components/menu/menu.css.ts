@@ -224,18 +224,6 @@ export const accessoryGhostRest = style({
   transition: `opacity ${duration.fast} ${easing.standard}, background ${duration.fast} ${easing.standard}`,
   selectors: { '&:hover': { opacity: 1 } },
 })
-/** Marker on a row whose hover reveals a hidden accessory (the recolor palette). */
-export const accessoryRevealParent = style({})
-/** Hidden-until-parent-hover variant — invisible at rest, ghost on row hover, full on own hover. */
-export const accessoryHiddenRest = style({
-  opacity: 0,
-  transition: `opacity ${duration.fast} ${easing.standard}, background ${duration.fast} ${easing.standard}`,
-  selectors: {
-    [`${accessoryRevealParent}:hover &`]: { opacity: 'var(--state-ghost)' },
-    [`${accessoryRevealParent}:hover &:hover`]: { opacity: 1 },
-  },
-})
-
 // ── TopRow / BottomRow rhythm (the current SettingsPane values, hoisted verbatim) ──
 
 /** A pane TopRow's vertical padding + heading tone — drops the base 24px floor to the caption line. */

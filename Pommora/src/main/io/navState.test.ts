@@ -5,9 +5,7 @@ import { join } from 'node:path'
 import type { NavFavorite, RecentEntry } from '@shared/types'
 import {
   flushNavWrites,
-  flushRecents,
   hasPendingNavWrites,
-  hasPendingRecents,
   readNavState,
   scheduleRecentsWrite,
   writeFavorites,
@@ -19,7 +17,7 @@ beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-navstate-'))
 })
 afterEach(async () => {
-  await flushRecents() // drain the module-level debounce so state never leaks across tests
+  await flushNavWrites() // drain the module-level debounce so state never leaks across tests
   await rm(root, { recursive: true, force: true })
 })
 
@@ -68,33 +66,33 @@ describe('favorites — immediate write', () => {
 describe('recents — debounce + immediate + flush', () => {
   it('a scheduled write is deferred (pending, nothing on disk yet) until flushed', async () => {
     scheduleRecentsWrite(root, [{ kind: 'page', id: 'p1', path: 'a.md' }])
-    expect(hasPendingRecents()).toBe(true)
+    expect(hasPendingNavWrites()).toBe(true)
     await expect(readFile(join(root, '.nexus', 'navRecents.json'), 'utf8')).rejects.toThrow()
-    await flushRecents()
-    expect(hasPendingRecents()).toBe(false)
+    await flushNavWrites()
+    expect(hasPendingNavWrites()).toBe(false)
     expect((await readNavState(root)).recents).toEqual([{ kind: 'page', id: 'p1', path: 'a.md' }])
   })
 
   it('scheduled writes coalesce — only the latest pending payload reaches disk', async () => {
     scheduleRecentsWrite(root, [{ kind: 'page', id: 'p1', path: 'a.md' }])
     scheduleRecentsWrite(root, [{ kind: 'page', id: 'p2', path: 'b.md' }])
-    await flushRecents()
+    await flushNavWrites()
     expect((await readNavState(root)).recents).toEqual([{ kind: 'page', id: 'p2', path: 'b.md' }])
   })
 
   it('writeRecentsNow supersedes a pending scheduled write — the stale payload can never land', async () => {
     scheduleRecentsWrite(root, [{ kind: 'page', id: 'stale', path: 'a.md' }])
     await writeRecentsNow(root, [{ kind: 'page', id: 'fresh', path: 'b.md' }])
-    expect(hasPendingRecents()).toBe(false) // pending cleared, so a later flush is a no-op
-    await flushRecents()
+    expect(hasPendingNavWrites()).toBe(false) // pending cleared, so a later flush is a no-op
+    await flushNavWrites()
     expect((await readNavState(root)).recents).toEqual([
       { kind: 'page', id: 'fresh', path: 'b.md' },
     ])
   })
 
-  it('flushRecents is a no-op when nothing is pending', async () => {
-    await flushRecents()
-    expect(hasPendingRecents()).toBe(false)
+  it('flushNavWrites is a no-op when nothing is pending', async () => {
+    await flushNavWrites()
+    expect(hasPendingNavWrites()).toBe(false)
   })
 })
 

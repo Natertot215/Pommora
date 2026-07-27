@@ -7,7 +7,6 @@ import type { PageFrontmatter } from './schemas'
 import type { SavedView } from './views'
 
 export type NodeKind =
-  | 'saved'
   | 'area'
   | 'topic'
   | 'project'
@@ -81,7 +80,6 @@ export const DEFAULT_ACCENT: AccentColor = 'lavender'
 /** Connection color — the inline [[Title]] connection link color. `'accent'` (the default) tracks
  *  the app accent live via `--connection: var(--accent)`; a spectrum solid pins it to that color. */
 export type ConnectionColorSetting = AccentColor | 'accent'
-export const DEFAULT_CONNECTION_COLOR: ConnectionColorSetting = 'accent'
 
 /** The `time_format` value in .nexus/settings.json — the nexus-wide clock for the datetime
  *  picker (twelveHour = AM/PM segments, the default; twentyFourHour = flat HH:MM). */
@@ -89,15 +87,7 @@ export type TimeFormatSetting = 'twelveHour' | 'twentyFourHour'
 export const DEFAULT_TIME_FORMAT: TimeFormatSetting = 'twelveHour'
 
 /** Entity kinds that carry a nexus-wide default icon; an entity's own `icon` still overrides it. */
-export const ENTITY_ICON_KINDS = [
-  'collection',
-  'set',
-  'area',
-  'topic',
-  'project',
-  'space',
-  'page',
-] as const
+export const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page'] as const
 export type EntityIconKind = (typeof ENTITY_ICON_KINDS)[number]
 
 /** Where a container's child folders sit relative to its loose pages in the sidebar. `top` (default)
@@ -188,7 +178,7 @@ export interface BaseNode {
  * POSIX path so a mutation can address it: the renderer sends `path` back and
  * main resolves it under the session root (the renderer must never reconstruct
  * the on-disk path — that layout is main's to know). Pages + every container are
- * PathNodes; only the code-keyed SavedNode (homepage/calendar/recents) is not.
+ * PathNodes.
  */
 export interface PathNode extends BaseNode {
   /** Nexus-relative POSIX path to the entity on disk (forward slashes). */
@@ -200,12 +190,6 @@ export interface PathNode extends BaseNode {
   /** The banner-heading icon is hidden (show/hide chrome), from the sidecar `heading_icon_hidden`.
    *  Absent/false = shown. */
   headingIconHidden?: boolean
-}
-
-export interface SavedNode extends BaseNode {
-  kind: 'saved'
-  /** Code-fixed identity; label is renameable, key is not. */
-  key: 'homepage' | 'calendar' | 'recents'
 }
 
 export interface PageNode extends PathNode {
@@ -317,7 +301,6 @@ export interface NexusTree {
   /** NavView singleton (`.nexus/navview.json`) — its own banner; absent, the NavView inherits
    *  the homepage's. */
   navView: { banner?: string }
-  saved: SavedNode[]
   /** Registry-backed Context groups in registry order, each with its Spaces ([] on a
    *  raw/unmigrated tree — the open path migrates + seeds before anything renders). */
   contexts: ContextGroup[]
@@ -502,9 +485,6 @@ export interface PageDetail {
   frontmatter: Record<string, unknown>
   body: string
 }
-
-/** How a vault's pages are laid out in the detail pane. */
-export type ViewMode = 'table' | 'gallery'
 
 // ---------- View pipeline seam types (filter → group → sort) ----------
 

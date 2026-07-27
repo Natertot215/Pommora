@@ -107,7 +107,6 @@ export function NotchedPane({
   notchInsetLeft,
   notchInsetBottom,
   notchSide = 'top',
-  accentOutline = false,
   onResize,
   style,
 }: {
@@ -132,9 +131,6 @@ export function NotchedPane({
   /** Which edge the beak hangs off: 'top' (default, downward pane) / 'bottom' (upward) / 'left' /
    *  'right' (sideways panes — the beak points horizontally at the trigger). */
   notchSide?: 'top' | 'bottom' | 'left' | 'right'
-  /** Outline the pane in accent @ tint-secondary (the page-location border signal) instead of the
-   *  default white frost stroke — opt-in for the block-surface pickers only. */
-  accentOutline?: boolean
   /** Publishes the pane's measured box to a host that needs the SAME numbers for its own reason —
    *  PickerMenu places off it. The pane is the one measurement owner: a host consumes this instead
    *  of observing the pane itself, so one resize costs one observer and one layout read. */
@@ -240,21 +236,7 @@ export function NotchedPane({
       </GlassPane>
       {d && (
         <svg className={cx(s.frame, animationClass)} width={w} height={h} aria-hidden="true">
-          {/* Default: the white frost stroke. accentOutline (block-surface pickers): accent @ tint-secondary,
-              the page-location border signal — set via the CSS `stroke` property, not the SVG attribute, so
-              var()/color-mix() resolve (the tokens live on :root/html, which the body portal inherits). */}
-          <path
-            d={d}
-            fill="none"
-            strokeWidth={1}
-            stroke={accentOutline ? undefined : '#FFFFFF'}
-            strokeOpacity={accentOutline ? undefined : PANE_FROST.borderAlpha}
-            style={
-              accentOutline
-                ? { stroke: 'color-mix(in srgb, var(--accent) var(--tint-secondary), transparent)' }
-                : undefined
-            }
-          />
+          <path d={d} fill="none" strokeWidth={1} stroke="#FFFFFF" strokeOpacity={PANE_FROST.borderAlpha} />
         </svg>
       )}
     </div>

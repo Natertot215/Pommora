@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import {
   buildSetIcons,
   buildSetNames,
-  cellText,
   findOption,
   groupLabel,
   optionLabel,
@@ -12,7 +11,6 @@ import {
   UNGROUPED,
   type CollectionNode,
   type ResolvedGroup,
-  type ViewRow,
 } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { ResolveContext } from './resolveContext'
@@ -48,13 +46,6 @@ const ctx: ResolveContext = {
   labels: DEFAULT_LABELS,
 }
 
-const mkRow = (fm: Record<string, unknown>): ViewRow => ({
-  id: 'p1',
-  title: 'Page',
-  path: 'p',
-  frontmatter: { id: 'p1', ...fm } as ViewRow['frontmatter'],
-})
-
 describe('optionLabel', () => {
   it('resolves a select option value to its label', () => {
     expect(optionLabel('prop_tag', 'opt_a', schema)).toBe('Alpha')
@@ -76,16 +67,6 @@ describe('findOption', () => {
   })
   it('returns undefined for an unknown value', () => {
     expect(findOption('prop_tag', 'nope', schema)).toBeUndefined()
-  })
-})
-
-describe('cellText', () => {
-  it('renders the page title for the title column', () => {
-    expect(cellText(mkRow({}), '_title', ctx)).toBe('Page')
-  })
-  it('resolves context Space ids to titles (unknown id falls back to the id)', () => {
-    const r = { ...mkRow({}), contextValues: { ctx_areas: ['ctx1', 'ctx_x'] } }
-    expect(cellText(r, 'ctx_areas', ctx)).toBe('Personal, ctx_x')
   })
 })
 

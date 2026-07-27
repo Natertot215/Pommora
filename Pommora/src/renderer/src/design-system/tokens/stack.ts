@@ -21,7 +21,6 @@ export const stack = {
   local: {
     lifted: 10, // active over its siblings — a dragged item, an open toolbar dropdown, the editor's autocomplete
     overlay: 20, // over the lifted — a drag insertion line, an inline picker over the chrome it hangs on
-    anchorHost: 30, // the host raised so its anchored pane clears everything painted after it
   },
   /** The top layer — fixed or body-portalled surfaces. The one group whose steps genuinely rank
    *  against each other, because they all resolve in the root context. */

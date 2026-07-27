@@ -112,11 +112,6 @@ export function resolveWith(index: ResolveIndex, entry: RecentEntry): ResolvedNa
   }
 }
 
-/** Resolve one entry against the tree (single-entry convenience; builds an index for that one call). */
-export function resolveNavEntry(tree: NexusTree, entry: RecentEntry): ResolvedNav | null {
-  return resolveWith(buildResolveIndex(tree), entry)
-}
-
 /** Resolve the recents stream for render against a prebuilt index: prune gone entries, preserve MRU
  *  order. Pins are their own durable list (resolvePins) — recents no longer float. */
 export function resolveRecents(index: ResolveIndex, recents: RecentEntry[]): ResolvedNav[] {

@@ -169,25 +169,6 @@ async function renameProp(
   return ok(null)
 }
 
-async function reorderProp(
-  target: SchemaTarget,
-  folder: string,
-  propertyId: string,
-  toIndex: number,
-): Promise<Result<null>> {
-  const s = await readSchema(target, folder)
-  if (!s) return fail('not-found', 'Schema not found.', target.kind)
-  const from = s.defs.findIndex((d) => d.id === propertyId)
-  if (from < 0) return fail('not-found', 'Property not found.', target.kind)
-  const clamped = Math.min(Math.max(toIndex, 0), s.defs.length - 1)
-  if (clamped === from) return ok(null)
-  const next = [...s.defs]
-  const [moved] = next.splice(from, 1)
-  next.splice(clamped, 0, moved)
-  await writeSidecar(folder, target.kind, nextSidecar(s.sidecar, next, target.schemaKey))
-  return ok(null)
-}
-
 async function deleteProp(
   target: SchemaTarget,
   folder: string,
@@ -254,12 +235,6 @@ export const renameAgendaProperty = (
   propertyId: string,
   newName: string,
 ) => renameProp(agendaTarget(kind), configFolder, propertyId, newName)
-export const reorderAgendaProperty = (
-  configFolder: string,
-  kind: AgendaKind,
-  propertyId: string,
-  toIndex: number,
-) => reorderProp(agendaTarget(kind), configFolder, propertyId, toIndex)
 export const deleteAgendaProperty = (configFolder: string, kind: AgendaKind, propertyId: string) =>
   deleteProp(agendaTarget(kind), configFolder, propertyId)
 export const changeAgendaPropertyType = (
