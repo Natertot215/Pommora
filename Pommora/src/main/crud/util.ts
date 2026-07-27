@@ -15,6 +15,9 @@ export function invalidName(name: string): boolean {
     name.includes('/') ||
     name.includes('\\') ||
     name.includes('\0') || // a NUL byte throws in fs calls — reject as a clean invalid-name
+    // `|` opens the alias segment of `[[Title|alias]]`, so a title holding one can never be
+    // written as a connection that resolves back to it. The filesystem would take it; we don't.
+    name.includes('|') ||
     name === '.' ||
     name === '..' ||
     // The walk hides both prefixes, so accepting one would write a real file the tree can never
