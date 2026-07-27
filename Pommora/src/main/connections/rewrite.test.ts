@@ -34,3 +34,27 @@ describe('rewriteConnections', () => {
     )
   })
 })
+
+describe('rewriteConnections — code is a sample, never a connection', () => {
+  it('leaves a link inside a fenced block alone while rewriting the prose around it', () => {
+    const body = ['see [[Old]]', '', '```md', 'write [[Old]] to link it', '```', '', 'and [[Old]]'].join(
+      '\n',
+    )
+    expect(rewriteConnections(body, 'Old', 'New')).toBe(
+      ['see [[New]]', '', '```md', 'write [[Old]] to link it', '```', '', 'and [[New]]'].join('\n'),
+    )
+  })
+
+  it('leaves a link inside an inline span alone', () => {
+    expect(rewriteConnections('type `[[Old]]` to get [[Old]]', 'Old', 'New')).toBe(
+      'type `[[Old]]` to get [[New]]',
+    )
+  })
+
+  it('honours a ~~~ fence and treats a ``` line inside it as content', () => {
+    const body = ['~~~', '[[Old]]', '```', '[[Old]]', '~~~', '[[Old]]'].join('\n')
+    expect(rewriteConnections(body, 'Old', 'New')).toBe(
+      ['~~~', '[[Old]]', '```', '[[Old]]', '~~~', '[[New]]'].join('\n'),
+    )
+  })
+})

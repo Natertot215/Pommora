@@ -24,6 +24,10 @@ describe('scanConnections', () => {
     expect(scanConnections('[[]] [[   ]] no links here')).toEqual([])
   })
 
+  it('does not index a link inside code — a sample names no page', () => {
+    expect(titles('```\n[[Fenced]]\n```\ntype `[[Inline]]` here, then [[Real]]')).toEqual(['real'])
+  })
+
   it('tolerates internal brackets in a title (a `]` is content unless it closes the pair)', () => {
     expect(titles('see [[Notes [WIP] final]] and [[A [x] B]]')).toEqual([
       'a [x] b',

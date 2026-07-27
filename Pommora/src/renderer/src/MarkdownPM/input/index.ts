@@ -1,4 +1,5 @@
-import { isInsideCode, isInsideWikilink } from '../parser'
+import { isInsideWikilink } from '../parser'
+import { isInsideCode } from '@shared/markdownCode'
 import {
   parseListMarker,
   MAX_NESTING_LEVEL,

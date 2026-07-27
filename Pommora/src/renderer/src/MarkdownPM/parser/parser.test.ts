@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { parse, isInsideCode, isInsideWikilink } from './index'
+import { parse, isInsideWikilink } from './index'
+import { isInsideCode } from '@shared/markdownCode'
 
 describe('parse (mdast seam)', () => {
   it('parses GFM into an mdast tree', () => {
