@@ -310,8 +310,8 @@
   border-radius: 5px;
   opacity: 0;
   transition:
-    opacity 0.12s ease,
-    background 0.12s ease;
+    opacity var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
 }
 
 .section:hover .section-add {
