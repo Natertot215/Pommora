@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { columnLabel } from './columnLabel'
+import { contextsByIdOf } from '../pipeline/contextIdentity'
 import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@shared/properties'
 
 const schema: PropertyDefinition[] = [
@@ -7,26 +8,34 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_due', name: 'Due', type: 'datetime' },
 ]
 
+const NO_CONTEXTS = new Map()
+
 describe('columnLabel', () => {
   it('resolves reserved built-in columns', () => {
-    expect(columnLabel(RESERVED_PROPERTY_ID.title, schema)).toBe('Title')
-    expect(columnLabel(RESERVED_PROPERTY_ID.createdAt, schema)).toBe('Created')
-    expect(columnLabel(RESERVED_PROPERTY_ID.modifiedAt, schema)).toBe('Modified')
+    expect(columnLabel(RESERVED_PROPERTY_ID.title, schema, NO_CONTEXTS)).toBe('Title')
+    expect(columnLabel(RESERVED_PROPERTY_ID.createdAt, schema, NO_CONTEXTS)).toBe('Created')
+    expect(columnLabel(RESERVED_PROPERTY_ID.modifiedAt, schema, NO_CONTEXTS)).toBe('Modified')
   })
 
-  it('resolves context columns through the registry tree', () => {
+  it('resolves a Context column through the registry, and an unregistered one falls to its id', () => {
     const tree = {
       contexts: [{ def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' }, spaces: [] }],
     } as unknown as import('@shared/types').NexusTree
-    expect(columnLabel('ctx_areas', schema, tree)).toBe('Areas')
-    expect(columnLabel('ctx_topics', schema)).toBe('ctx_topics')
+    const contexts = contextsByIdOf(tree)
+    expect(columnLabel('ctx_areas', schema, contexts)).toBe('Areas')
+    expect(columnLabel('ctx_topics', schema, contexts)).toBe('ctx_topics')
+  })
+
+  // The header bug this guards: a caller that can't resolve Contexts renders their raw ids.
+  it('falls back to the raw id when handed no contexts at all', () => {
+    expect(columnLabel('ctx_areas', schema, NO_CONTEXTS)).toBe('ctx_areas')
   })
 
   it('resolves a user property through the schema name', () => {
-    expect(columnLabel('prop_status', schema)).toBe('Status')
+    expect(columnLabel('prop_status', schema, NO_CONTEXTS)).toBe('Status')
   })
 
   it('falls back to the id for an unknown column (never throws)', () => {
-    expect(columnLabel('prop_gone', schema)).toBe('prop_gone')
+    expect(columnLabel('prop_gone', schema, NO_CONTEXTS)).toBe('prop_gone')
   })
 })
