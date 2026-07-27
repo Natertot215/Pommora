@@ -626,10 +626,10 @@ export function FilterPane({
     index: number,
     op: OperatorChoice | undefined,
   ): React.ReactNode => {
-    // An operandless operator (Is Empty · Is Checked · Has File) takes no value at all, so the slot
-    // holds the row's width without painting a field — an empty one reads as a control still waiting
-    // to be filled.
-    if (!op || op.slot === 'none') return <span className={fp.valueSpacer} />
+    // An operandless operator (Is Empty · Is Checked · Has File) takes no value at all, and paints
+    // no slot — an empty field would advertise an operand the operator can't accept. The operator
+    // widens instead, so the row still runs to the trailing edge.
+    if (!op || op.slot === 'none') return null
     const rule = row.rule
     const def = defById.get(rule.property_id)
     const patch = (next: Partial<Pick<FilterRule, 'value' | 'values'>>): void =>
@@ -757,7 +757,7 @@ export function FilterPane({
           <FieldPicker
             ariaLabel="Filter operator"
             chevron
-            className={fp.controlField}
+            className={current?.slot === 'none' ? fp.controlFieldWide : fp.controlField}
             display={current?.label ?? row.rule.op}
             {...(isCheckbox && current ? { lead: checkboxBox(current) } : {})}
             placeholder="Condition"

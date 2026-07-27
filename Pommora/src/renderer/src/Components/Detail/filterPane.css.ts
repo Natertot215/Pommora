@@ -319,10 +319,11 @@ export const segmentDivider = style([
   { alignSelf: 'stretch', marginBlock: SEGMENT_DIVIDER_INSET },
 ])
 
-/** The value slot for an operator that takes NO operand (Is Empty, Is Checked, Has File). It holds
- *  the row's leftover width so the × stays pinned at the trailing edge like every other row, but
- *  paints nothing — an empty field would advertise an operand the operator can't accept. */
-export const valueSpacer = style({ flex: '1 1 auto', minWidth: 0 })
+/** The Operator cell when its operator takes NO operand (Is Empty, Is Checked, Has File). With no
+ *  value cell to absorb it, the operator takes the row's leftover width itself — the last field
+ *  present always runs to the trailing edge, so a two-field row reads as full width rather than
+ *  trailing off into a gap. */
+export const controlFieldWide = style([cellField, { flex: '1 1 auto' }])
 
 /** The add-rule affordance — sits at the foot of the rule list, aligned under the rows themselves
  *  rather than pinned as a footing, so adding reads as extending the list rather than a pane action. */
