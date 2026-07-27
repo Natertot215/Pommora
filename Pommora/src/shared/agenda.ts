@@ -2,8 +2,8 @@
 // pure JSON at `<Tasks>/<title>.task.json` / `<Events>/<title>.event.json`. One zod schema
 // per kind = codec = type, mirroring Swift's AgendaTask/AgendaEvent minus the Codable
 // ceremony. Loose ⇒ foreign keys ride through. `title` is derived from the filename (never
-// stored). tier1/2/3 are bare ULID arrays at the root; dates are ISO strings. Reads are
-// lenient (optional); the writer enforces the required fields (an event needs start/end).
+// stored); dates are ISO strings. Reads are lenient (optional); the writer enforces the
+// required fields (an event needs start/end).
 
 import { z } from 'zod'
 
@@ -12,11 +12,6 @@ const agendaBase = z.looseObject({
   id: z.string(),
   icon: z.string().optional(),
   description: z.string().optional(),
-  // LEGACY migration-era reads — bracketed title keys are the live context shape; these
-  // bare-ULID arrays stay read-recognized and heal on each file's next governed write.
-  tier1: z.array(z.string()).optional(),
-  tier2: z.array(z.string()).optional(),
-  tier3: z.array(z.string()).optional(),
   properties: z.record(z.string(), z.unknown()).optional(),
   created_at: z.string().optional(),
   modified_at: z.string().optional(),

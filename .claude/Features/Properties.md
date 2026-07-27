@@ -92,7 +92,7 @@ A per-value **alias** (right-click → Rename, stored markdown-native as `[alias
 
 #### II. Context Links
 
-Context links are the only relation-type connection. They store as **quoted bracketed title keys at the entity root** (`"[Projects]": [Pommora]`), not under `properties`, and the schema exposes one synthesized context property per registry Context, merged after the user-defined ones — the seeded three keep the reserved `_tier1` / `_tier2` / `_tier3` ids, user-minted Contexts ride their ULIDs. Legacy bare-ULID `tierN` arrays stay read-recognized and heal to bracketed keys on the file's next governed write. Full cross-layer behavior → `Contexts.md`.
+Context links are the only relation-type connection. They store as **quoted bracketed title keys at the entity root** (`"[Projects]": [Pommora]`), not under `properties`, and the schema exposes one synthesized context property per registry Context, merged after the user-defined ones — the seeded three keep the reserved `_tier1` / `_tier2` / `_tier3` ids, user-minted Contexts ride their ULIDs. Full cross-layer behavior → `Contexts.md`.
 
 #### II. Auto-Managed Properties
 

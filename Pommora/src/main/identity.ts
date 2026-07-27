@@ -17,10 +17,13 @@ export function swiftISODate(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
 }
 
+/** The on-disk shape every nexus is written at: Contexts are a registry of Spaces. */
+export const NEXUS_SCHEMA_VERSION = 2
+
 /** A fresh identity in Swift's shape. Single source for both the open-time ensure and the
  *  lazy create-defaults on the first description/photo write. */
 export function defaultIdentity(): { schemaVersion: number; id: string; createdAt: string } {
-  return { schemaVersion: 1, id: newId(), createdAt: swiftISODate() }
+  return { schemaVersion: NEXUS_SCHEMA_VERSION, id: newId(), createdAt: swiftISODate() }
 }
 
 /** Ensure `.nexus/nexus.json` exists in Swift's `{ schemaVersion, id, createdAt }` shape.
@@ -34,7 +37,7 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
 
   if (existing && existingId) {
     const patch: Record<string, unknown> = {}
-    if (typeof existing.schemaVersion !== 'number') patch.schemaVersion = 1
+    if (typeof existing.schemaVersion !== 'number') patch.schemaVersion = NEXUS_SCHEMA_VERSION
     if (!asString(existing.createdAt)) patch.createdAt = swiftISODate()
     if (Object.keys(patch).length > 0) await writeJson(path, { ...existing, ...patch })
     return { id: existingId, created: false }

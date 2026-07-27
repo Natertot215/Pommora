@@ -8,7 +8,7 @@ A Page is a single `.md` file: YAML frontmatter for identity and property values
 
 #### II. On-Disk Shape
 
-Frontmatter carries `id` (a ULID), an optional `icon`, the bracketed Context keys (`"[Projects]": [Pommora]` — Space titles at the root, resolved through the registry; legacy bare-ULID `tierN` arrays stay read-recognized and heal on the next governed write), `properties` (values keyed by property ID), `created_at` / `modified_at`, and `cover` (a Nexus-relative page-banner path). Property values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write: the writer re-serializes only the modeled keys and never reconstructs the object.
+Frontmatter carries `id` (a ULID), an optional `icon`, the bracketed Context keys (`"[Projects]": [Pommora]` — Space titles at the root, resolved through the registry), `properties` (values keyed by property ID), `created_at` / `modified_at`, and `cover` (a Nexus-relative page-banner path). Property values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write: the writer re-serializes only the modeled keys and never reconstructs the object.
 
 #### II. Title + Membership
 

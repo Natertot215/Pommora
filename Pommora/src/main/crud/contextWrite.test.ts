@@ -127,17 +127,16 @@ describe('setPageContext', () => {
     expect('[Projects]' in fm).toBe(false)
   })
 
-  it('reconciles sibling keys and migrates legacy tierN in place (D-9a/H-5)', async () => {
+  it('reconciles sibling keys in place (D-9a/H-5)', async () => {
     await writeFile(
       page(),
-      '---\nid: p1\ntier3:\n  - sp-pom\n"[Classes]":\n  - cs 161\n  - Bogus\n---\nbody',
+      '---\nid: p1\n"[Projects]":\n  - pommora\n"[Classes]":\n  - cs 161\n  - Bogus\n---\nbody',
     )
     const r = await setPageContext(page(), await world(), 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
-    expect('tier3' in fm).toBe(false)
-    expect(fm['[Projects]']).toEqual(['Pommora'])
     expect(fm['[Classes]']).toEqual(['CS 161'])
+    expect(fm['[Projects]']).toEqual(['Pommora']) // untargeted sibling repaired on the same write
   })
 
   it('fails without writing when ANY space sidecar is unreadable (never strips siblings)', async () => {
@@ -165,16 +164,18 @@ describe('setAgendaContext + the agenda lock', () => {
   const task = () => join(root, 'Tasks', 'T.task.json')
   beforeEach(async () => {
     await mkdir(join(root, 'Tasks'), { recursive: true })
-    await writeFile(task(), JSON.stringify({ id: 't1', tier3: ['sp-pom'], foreign: true }))
+    await writeFile(
+      task(),
+      JSON.stringify({ id: 't1', '[Projects]': ['pommora'], foreign: true }),
+    )
   })
 
-  it('writes the bracketed key, migrates tierN, preserves foreign keys', async () => {
+  it('writes the bracketed key, repairs siblings, preserves foreign keys', async () => {
     const r = await setAgendaContext(task(), await world(), 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
     const raw = JSON.parse(await readFile(task(), 'utf8'))
     expect(raw['[Classes]']).toEqual(['CS 161'])
     expect(raw['[Projects]']).toEqual(['Pommora'])
-    expect('tier3' in raw).toBe(false)
     expect(raw.foreign).toBe(true)
   })
 

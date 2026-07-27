@@ -20,11 +20,11 @@ The organization layer. A **Context** is a user-defined group — the registry s
 
 - **Validation is registry membership at read**: keys exact-match a registry title; values match through one normalizer (trim → lowercase → NFC), so scalar and case/width drift still resolve. A drifted-but-resolvable value displays fine and repairs on that file's next context write; an unknown value sits inert — never guessed, never dropped on read.
 
-- **Legacy healing is permanent**: bare `tierN` ULID arrays from the pre-registry era (or a stale synced device) stay read-recognized through the reserved ids and migrate to bracketed keys on that file's next governed write.
+- **The bracketed key is the only membership shape.** Nothing reads or converts the pre-registry `tierN` ULID arrays — a file still carrying them keeps them as foreign keys, preserved by value and otherwise ignored.
 
 #### II. Writes
 
-- **`setContext`** is the one membership write per entity kind (page / agenda / space), under per-file locks, reconciling the whole root it rewrites — healing legacy keys in place. Space-to-Space links use the same shape: a Space tags Spaces in *other* Contexts via its own sidecar keys.
+- **`setContext`** is the one membership write per entity kind (page / agenda / space), under per-file locks, reconciling the whole root it rewrites. Space-to-Space links use the same shape: a Space tags Spaces in *other* Contexts via its own sidecar keys.
 
 - **Renames are journaled**: a rename writes the pending-rename journal first, cascades the title across all three file scopes, commits the registry, then settles — a crash replays forward on the next open (with re-mint guards), and a live registry-commit failure reverses the cascade. Renames are id-keyed; ids never change.
 

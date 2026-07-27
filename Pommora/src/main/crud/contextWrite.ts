@@ -1,8 +1,8 @@
 // The Contexts & Spaces write layer: create ops, the setContext family (one per entity
 // kind — page frontmatter, agenda JSON, `_space.json`), color/singular setters, and the
 // per-file reconcile every context write runs on the root it's already rewriting (repair
-// near-misses, drop unknowns, migrate legacy tierN in place). Ids arrive from the
-// renderer; titles serialize here, through the live registry — never earlier.
+// near-misses, drop unknowns). Ids arrive from the renderer; titles serialize here,
+// through the live registry — never earlier.
 
 import { readFile, mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -93,34 +93,6 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
   return ok({ registry: reg.value, spacesByContext, spaceById })
 }
 
-/** Reconcile a root being rewritten anyway: migrate legacy `tierN` ULID arrays to
- *  bracketed title keys (unresolvable ids drop), then run the per-value repair pass. */
-export function reconcileWriteRoot(world: ContextWorld, raw: Raw): { root: Raw; changed: boolean } {
-  const out: Raw = { ...raw }
-  let changed = false
-  for (const level of [1, 2, 3]) {
-    const field = `tier${level}`
-    if (!(field in out)) continue
-    const arr = out[field]
-    const def = world.registry.contexts.find((c) => c.id === `_tier${level}`)
-    if (def && Array.isArray(arr)) {
-      const titles = arr
-        .map((v) => (typeof v === 'string' ? world.spaceById.get(v) : undefined))
-        .filter((ref): ref is SpaceRef => ref?.contextId === `_tier${level}`)
-        .map((ref) => ref.title)
-      if (titles.length) {
-        const key = contextKey(def.title)
-        const existing = Array.isArray(out[key]) ? (out[key] as unknown[]) : []
-        out[key] = [...existing, ...titles.filter((t) => !existing.includes(t))]
-      }
-    }
-    delete out[field]
-    changed = true
-  }
-  const rec = reconcileContextKeys(out, world.registry, world.spacesByContext)
-  return { root: rec.root, changed: changed || rec.changed }
-}
-
 function defById(world: ContextWorld, contextId: string): ContextDef | undefined {
   return world.registry.contexts.find((c) => c.id === contextId)
 }
@@ -147,7 +119,7 @@ function applyTarget(
 ): Result<{ root: Raw; key: string }> {
   const def = defById(world, contextId)
   if (!def) return fail('not-found', 'Unknown Context.', 'contexts')
-  const { root } = reconcileWriteRoot(world, raw)
+  const { root } = reconcileContextKeys(raw, world.registry, world.spacesByContext)
   const key = contextKey(def.title)
   if (titles.length) root[key] = titles
   else delete root[key]
@@ -155,7 +127,7 @@ function applyTarget(
 }
 
 /** Every context-shaped key across the original + next roots — the governed-key set a
- *  page merge needs so repaired keys rewrite and dropped keys (tierN included) delete. */
+ *  page merge needs so repaired keys rewrite and dropped keys delete. */
 function governedContextKeys(raw: Raw, next: Raw, targetKey: string): string[] {
   const keys = new Set<string>([targetKey])
   for (const source of [raw, next]) {

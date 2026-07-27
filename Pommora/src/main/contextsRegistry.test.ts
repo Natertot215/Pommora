@@ -3,7 +3,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { mutateRegistryFile, readRegistry } from './contextsRegistry'
-import { contextTierDir, contextsRegistryFile, nexusDir, spaceDir } from './paths'
+import { contextsRegistryFile, nexusDir, spaceDir } from './paths'
 import { readJsonStrict, rmwJsonStrict } from './io/atomicWrite'
 import { DEFAULT_LABELS } from '@shared/types'
 
@@ -34,14 +34,6 @@ describe('readRegistry', () => {
     expect(r.value.contexts.map((c) => c.title)).toEqual(['Areas', 'Topics', 'Projects'])
     const onDisk = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     expect(onDisk.contexts).toHaveLength(3)
-  })
-
-  it('fails as unmigrated when a legacy tier dir exists without a registry', async () => {
-    await mkdir(contextTierDir(root, 'areas'), { recursive: true })
-    const r = await readRegistry(root, DEFAULT_LABELS)
-    expect(r.ok).toBe(false)
-    if (r.ok) return
-    expect(r.error.code).toBe('unmigrated')
   })
 
   it('fails on corrupt JSON and leaves the file untouched', async () => {

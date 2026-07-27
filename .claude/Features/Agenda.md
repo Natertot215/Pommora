@@ -21,7 +21,7 @@ An `.event.json` file carries `start_at` and `end_at` (required on write, lenien
 
 #### II. Shared Fields
 
-Both kinds carry `id`, an optional `icon`, a plain-text `description`, the bracketed Context keys at the JSON root (Space titles, registry-resolved; legacy bare-ULID `tierN` arrays read-heal), a `properties` object (values keyed by property ID), `created_at` / `modified_at`, a `recurrence` object (round-tripped, not yet edited), `alarm_offsets` (seconds; negative is before), and `calendar_id` + `eventkit_uuid` for sync state. Foreign keys are preserved by value on every write.
+Both kinds carry `id`, an optional `icon`, a plain-text `description`, the bracketed Context keys at the JSON root (Space titles, registry-resolved), a `properties` object (values keyed by property ID), `created_at` / `modified_at`, a `recurrence` object (round-tripped, not yet edited), `alarm_offsets` (seconds; negative is before), and `calendar_id` + `eventkit_uuid` for sync state. Foreign keys are preserved by value on every write.
 
 #### II. Schema + Status
 

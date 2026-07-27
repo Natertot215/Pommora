@@ -132,7 +132,6 @@ The eight items the passes parked were then closed in three waves, each dispatch
 Inert by choice, not half-wired:
 
 - **The SQLite index has no query consumer.** It is built and maintained; nothing reads it, and every mutation cold-rebuilds it. Writing the query facade is the open architectural task, gating Linked-From, backlinks and search.
-- **`tierN` read-healing on write** — a stale device that writes `tierN` is repaired rather than rejected.
 - **NOR filters are hand-authoring only.**
 - **`bounds` and `scanLabel` on PreviewPane** have no caller yet; hard-coding them would force the first new consumer to edit the component instead of configuring it.
 - **Four affordances whose features have not landed** — the Space pane's actions ellipsis, the ViewPane's More menu, the ViewSettings icon picker, and the Page Preview's own Settings button — are `disabled` rather than live buttons wired to a no-op. `AccessoryButton` gained a real disabled state to make that expressible, and `InlineEditHeader`'s icon handler became optional.

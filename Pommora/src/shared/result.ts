@@ -16,7 +16,6 @@ export type ErrorCode =
   | 'operation-failed'
   // A legacy tier layout exists without a Contexts registry — the open path must run the
   // migration before anything reads contexts.
-  | 'unmigrated'
 
 /** A structured, serializable error. `scope` names the entity/kind domain (free-form: an
  *  entity name like "page"/"agenda" or a SidecarKind), used for message context only. */

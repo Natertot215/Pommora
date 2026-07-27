@@ -94,17 +94,12 @@ export type AgendaConfigSidecar = z.infer<typeof agendaConfigSidecar>
 
 /** Page (.md) frontmatter. Context links are bracketed TITLE keys (`"[Projects]": [...]`)
  *  riding the loose object as retained raw keys — resolved against the registry at walk
- *  assembly, never modeled here (per-nexus dynamic keys can't be schema fields). tier1/2/3
- *  are the LEGACY bare-ULID arrays, read-recognized for the migration-era window (a stale
- *  device may still write them) and healed to bracketed keys on each file's next governed
- *  write. `properties` maps property-id to an encoded PropertyValue. Loose ⇒ foreign keys
+ *  assembly, never modeled here (per-nexus dynamic keys can't be schema fields).
+ *  `properties` maps property-id to an encoded PropertyValue. Loose ⇒ foreign keys
  *  ride through. */
 export const pageFrontmatter = z.looseObject({
   id: z.string(),
   icon: z.string().optional(),
-  tier1: z.array(z.string()).optional(),
-  tier2: z.array(z.string()).optional(),
-  tier3: z.array(z.string()).optional(),
   properties: z.record(z.string(), z.unknown()).optional(),
   created_at: z.string().optional(),
   modified_at: z.string().optional(),
@@ -118,9 +113,6 @@ export type PageFrontmatter = z.infer<typeof pageFrontmatter>
 export const PAGE_MODELED_KEYS = [
   'id',
   'icon',
-  'tier1',
-  'tier2',
-  'tier3',
   'properties',
   'created_at',
   'modified_at',
