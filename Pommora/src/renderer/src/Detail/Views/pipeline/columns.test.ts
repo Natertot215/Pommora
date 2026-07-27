@@ -26,7 +26,7 @@ describe('resolveColumns — fixture', () => {
     )
     const cols = resolveColumns(v, fixtureSchema, CONTEXT_IDS)
     expect(ids(cols)).toEqual(['prop_status', '_title', 'ctx_projects', 'ctx_topics', 'ctx_areas'])
-    expect(cols.map((c) => c.kind)).toEqual(['property', 'title', 'tier', 'tier', 'tier'])
+    expect(cols.map((c) => c.kind)).toEqual(['property', 'title', 'context', 'context', 'context'])
     // prop_when is in the schema but in neither list → the allowlist keeps it off the table
     expect(cols.some((c) => c.id === 'prop_when')).toBe(false)
     // fixture hides _modified_at and it is not default-on → never a column
@@ -47,7 +47,7 @@ describe('resolveColumns — rules', () => {
       CONTEXT_IDS,
     )
     expect(ids(cols)).toEqual(['_title', 'ctxC', 'ctx_areas'])
-    expect(cols.map((c) => c.kind)).toEqual(['title', 'tier', 'tier'])
+    expect(cols.map((c) => c.kind)).toEqual(['title', 'context', 'context'])
   })
 
   it('never auto-shows a schema prop absent from propertyOrder (added-after-view stays hidden)', () => {
@@ -101,8 +101,8 @@ describe('resolveColumns — rules', () => {
     )
     const kindOf = (id: string): string | undefined => cols.find((c) => c.id === id)?.kind
     expect(kindOf('_title')).toBe('title')
-    expect(kindOf('ctx_areas')).toBe('tier')
-    expect(kindOf('ctxC')).toBe('tier')
+    expect(kindOf('ctx_areas')).toBe('context')
+    expect(kindOf('ctxC')).toBe('context')
     expect(kindOf('prop_a')).toBe('property')
     expect(kindOf('_modified_at')).toBe('modified')
   })

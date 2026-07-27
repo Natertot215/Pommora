@@ -108,9 +108,9 @@ describe('cellMenuContextFor', () => {
   })
 
   it('a tier column → clear-only when filled, no menu when empty', () => {
-    const tier: ResolvedColumn = { id: 'tier1', kind: 'tier' }
-    expect(cellMenuContextFor(tier, 'tier', {}, true)).toEqual({ kind: 'clear-only' })
-    expect(cellMenuContextFor(tier, 'tier', {}, false)).toBeNull()
+    const tier: ResolvedColumn = { id: 'tier1', kind: 'context' }
+    expect(cellMenuContextFor(tier, 'context', {}, true)).toEqual({ kind: 'clear-only' })
+    expect(cellMenuContextFor(tier, 'context', {}, false)).toBeNull()
   })
 
   it('url → link (carrying filled); file → style-edit with the column style', () => {

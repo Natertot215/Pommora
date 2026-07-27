@@ -39,7 +39,7 @@ describe('declaredType', () => {
   })
 
   it('classifies a Context column only when its id is among the registry ids', () => {
-    expect(declaredType('ctx_areas', schema, ['ctx_areas'])).toBe('tier')
+    expect(declaredType('ctx_areas', schema, ['ctx_areas'])).toBe('context')
     expect(declaredType('ctx_areas', schema)).toBeUndefined()
   })
 

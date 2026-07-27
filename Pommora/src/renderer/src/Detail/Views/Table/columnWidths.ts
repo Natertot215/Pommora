@@ -13,14 +13,14 @@ export interface ColumnWidth {
   max: number
 }
 
-// Keyed by declaredType's outputs ('title' | 'tier' | a PropertyType) + 'created' (special-cased).
+// Keyed by declaredType's outputs ('title' | 'context' | a PropertyType) + 'created' (special-cased).
 // Max is UNCAPPED for every type (Nathan): a resize past the pane pushes the table into rightward
 // h-scroll (the overflowing flatten) instead of hitting an immovable per-type wall. Mins stay —
 // a stale saved value still can't squash a column below legibility.
 const UNCAPPED = Number.POSITIVE_INFINITY
 const WIDTHS: Record<string, ColumnWidth> = {
   title: { min: 120, default: 280, max: UNCAPPED },
-  tier: { min: 80, default: 140, max: 350 },
+  context: { min: 80, default: 140, max: 350 },
   status: { min: 65, default: 120, max: 250 },
   select: { min: 65, default: 120, max: 350 },
   multi_select: { min: 65, default: 180, max: 350 },

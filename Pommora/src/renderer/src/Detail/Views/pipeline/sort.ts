@@ -143,7 +143,7 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
     case 'file':
       return { extract: (r) => sortText(r, c.property_id, schema), less: ciLess, ascending }
     default:
-      return null // 'tier' | undefined → not sortable
+      return null // 'context' | undefined → not sortable
   }
 }
 

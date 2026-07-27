@@ -531,7 +531,7 @@ export interface ViewRow {
 /** What a resolved column renders from. `title`/`tier`/`modified` are reserved columns;
  *  `property` is a user-defined schema property. (Width + the group/sort hoist are Part-2
  *  render concerns, not modeled here.) */
-export type ColumnKind = 'title' | 'property' | 'tier' | 'modified'
+export type ColumnKind = 'title' | 'property' | 'context' | 'modified'
 
 /** A resolved table column — the stable seam Part 2's table routes to. `id` is the property id
  *  (a reserved `_title`/`_modified_at`, a Context id, or a `prop_*`); `kind` picks the renderer. */
