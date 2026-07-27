@@ -141,13 +141,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* The cell hosting an open value picker: the PickerMenu anchors absolutely to it, so it must be
-   positioned, unclipped, and above the following rows. */
-.data-cell.cell-anchored {
-  position: relative;
-  overflow: visible;
-  z-index: var(--z-anchor-host);
-}
 /* The inline cell editor (A-12) — replaces the cell's content in flow, inheriting its type ramp. */
 .property-editor {
   width: 100%;
@@ -333,9 +326,6 @@
 }
 .cell-link-underline {
   text-decoration: underline;
-}
-.cell-muted {
-  color: var(--text-dim);
 }
 .cell-control {
   color: var(--label-control);

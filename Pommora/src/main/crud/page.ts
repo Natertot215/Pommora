@@ -7,7 +7,7 @@ import { join, dirname, basename } from 'node:path'
 import { rename, readFile } from 'node:fs/promises'
 import { newId } from '../ids'
 import { writePageFile, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
-import { atomicWriteFile, trashWithTimestamp } from '../io/atomicWrite'
+import { atomicWriteFile } from '../io/atomicWrite'
 import { recordWrite } from '../io/writeEcho'
 import { splitFrontmatter } from '../readNexus'
 import { applyPropertyValue, type PropertyValue } from '@shared/propertyValue'
@@ -63,15 +63,6 @@ export async function renamePage(
   )
   await atomicWriteFile(target, content)
   return ok({ path: target })
-}
-
-/** Delete a page by moving it to the nexus-local .trash (recoverable). */
-export async function deletePage(
-  nexusRoot: string,
-  absFile: string,
-): Promise<Result<{ trashedTo: string }>> {
-  if (!(await pathExists(absFile))) return fail('not-found', 'Nothing to delete.', 'page')
-  return ok({ trashedTo: await trashWithTimestamp(nexusRoot, absFile) })
 }
 
 /** Replace the body, bumping modified_at. Governs only modified_at, so all other

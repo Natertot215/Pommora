@@ -95,14 +95,6 @@ export function scheduleRecentsWrite(root: string, entries: RecentEntry[]): void
 export const writeRecentsNow = (root: string, entries: RecentEntry[]): Promise<void> =>
   sidecar.writeNow(root, entries)
 
-/** Whether a debounced recents write is still queued — the quit hook checks this before deciding
- *  to defer the quit. */
-export const hasPendingRecents = (): boolean => sidecar.hasQueued()
-
-/** Flush any queued recents write immediately (drives the debounce → disk). Idempotent: a no-op
- *  when nothing is pending. */
-export const flushRecents = (): Promise<void> => sidecar.flushQueued()
-
 /** Any nav write still owed to disk — a queued debounce OR an immediate write (favorite/pin) still
  *  settling. The quit gate + nexus-switch check this before deciding to wait. */
 export const hasPendingNavWrites = (): boolean => sidecar.hasPending()

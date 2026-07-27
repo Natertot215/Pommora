@@ -3,7 +3,6 @@ import {
   isThematicBreakLine,
   isHeadingLine,
   isBlockquoteLine,
-  hasCheckbox,
   isInlineMathContent,
   parseListMarker,
   indentLevel,
@@ -85,16 +84,6 @@ describe('parseListMarker (single marker source)', () => {
     expect(indentLevel('')).toBe(0)
     expect(indentLevel('    ')).toBe(2)
     expect(indentLevel('\t\t\t\t')).toBe(3) // capped
-  })
-})
-
-describe('task checkbox', () => {
-  it('requires a non-empty inner char; empty [] is NOT a checkbox', () => {
-    expect(hasCheckbox('- [ ] a')).toBe(true)
-    expect(hasCheckbox('- [x] a')).toBe(true)
-    expect(hasCheckbox('- [X] a')).toBe(true)
-    expect(hasCheckbox('-[] a')).toBe(false) // empty inner
-    expect(hasCheckbox('- a')).toBe(false)
   })
 })
 

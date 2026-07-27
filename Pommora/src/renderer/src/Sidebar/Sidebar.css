@@ -295,33 +295,6 @@
   padding: 4px 8px;
 }
 
-/* Section "+" — create a top-level entity. Revealed on section hover (uncluttered), no-drag so
-   it's clickable inside the draggable glass sidebar. */
-.section-add {
-  -webkit-app-region: no-drag;
-  appearance: none;
-  border: none;
-  background: none;
-  color: var(--label-tertiary);
-  font-size: 15px;
-  line-height: 1;
-  cursor: default;
-  padding: 0 2px;
-  border-radius: 5px;
-  opacity: 0;
-  transition:
-    opacity var(--duration-fast) var(--ease-standard),
-    background var(--duration-fast) var(--ease-standard);
-}
-
-.section:hover .section-add {
-  opacity: 1;
-}
-
-.section-add:hover {
-  background: var(--state-hover);
-}
-
 /* Inline rename styling is the menu system's flush titleInput (dimensionally identical to the
    title text it replaces — the caret alone marks edit mode); `.row-title-input` remains as the
    query hook only. While the input is mounted, its title box must lay out as a flex row with the

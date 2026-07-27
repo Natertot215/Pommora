@@ -70,7 +70,6 @@ export function PickerMenu({
   maxHeight,
   width,
   bareSurface = false,
-  accentOutline = false,
   manageFocus = true,
   contentClassName,
   style,
@@ -113,9 +112,6 @@ export function PickerMenu({
   /** Drop the default surface gutter entirely — `contentClassName` is the ONLY surface class, so a
    *  bespoke body (the icon picker) owns 100% of its padding/layout with no `surface` collision. */
   bareSurface?: boolean
-  /** Outline the pane in accent @ tint-secondary (the page-location border signal) — opt-in, used by the
-   *  block-surface pickers so they read as part of that surface. */
-  accentOutline?: boolean
   /** The focus contract: the pane takes focus on open, keeps Tab inside it, and hands focus back to
    *  whatever held it when it opened. Turn OFF for a pane the pointer merely summons rather than
    *  commits to — a hover card must never pull the caret out of the surface underneath it. Manual
@@ -367,7 +363,6 @@ export function PickerMenu({
       notchInsetLeft={pos?.notchInsetLeft}
       notchInsetBottom={pos?.notchInsetBottom}
       notchSide={notchSide}
-      accentOutline={accentOutline}
       onResize={onPaneResize}
       // Through the Bloom-out the pane still paints but must not ACT: its content goes pointer-inert so a
       // stray click can't re-fire an option mid-close. The layer below stays interactive (it swallows the

@@ -5,7 +5,6 @@ import { join } from 'node:path'
 import {
   createPage,
   renamePage,
-  deletePage,
   updatePageBody,
   movePage,
   updatePageProperty,
@@ -111,14 +110,7 @@ describe('updatePageBody', () => {
   })
 })
 
-describe('deletePage / movePage', () => {
-  it('deletes into .trash', async () => {
-    const c = await createPage(typeDir, 'Gone')
-    if (!c.ok) throw new Error('setup failed')
-    expect((await deletePage(root, c.value.path)).ok).toBe(true)
-    await expect(stat(c.value.path)).rejects.toThrow()
-  })
-
+describe('movePage', () => {
   it('moves a page to another container', async () => {
     const other = join(root, 'Journal')
     await mkdir(other, { recursive: true })

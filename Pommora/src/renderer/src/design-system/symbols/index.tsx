@@ -174,9 +174,6 @@ export const iconNameOr = (value: unknown, fallback: IconName): string =>
 export const DEFAULT_ENTITY_ICONS: Record<EntityIconKind, IconName> = {
   collection: 'gallery-vertical-end',
   set: 'folder-closed',
-  area: 'layout-grid',
-  topic: 'layout-grid',
-  project: 'layout-grid',
   space: 'layout-grid',
   page: 'file-text',
 }

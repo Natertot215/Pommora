@@ -477,32 +477,6 @@ describe('readNexus — structured labels (Swift SettingsLabels shape)', () => {
   })
 })
 
-describe('readNexus — saved-config items[] (Swift shape)', () => {
-  const roots: string[] = []
-  const mk = (savedConfig: object): string => {
-    const root = mkdtempSync(join(tmpdir(), 'pom-saved-'))
-    roots.push(root)
-    d(join(root, '.nexus'))
-    w(
-      join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ schemaVersion: 1, id: 'nxs', createdAt: '2026' }),
-    )
-    w(join(root, '.nexus', 'saved-config.json'), JSON.stringify(savedConfig))
-    return root
-  }
-  afterAll(() =>
-    roots.forEach((r) => {
-      rmSync(r, { recursive: true, force: true })
-    }),
-  )
-
-  it('resolves a saved label from items[{key,label}]', async () => {
-    const t = await readNexus(mk({ schemaVersion: 1, items: [{ key: 'homepage', label: 'Home' }] }))
-    expect(t.saved.find((s) => s.key === 'homepage')?.title).toBe('Home')
-    expect(t.saved.find((s) => s.key === 'calendar')?.title).toBe('Calendar') // default for unlisted
-  })
-})
-
 describe('readNexus — homepage lock (blocks_locked → homepage.locked)', () => {
   const roots: string[] = []
   const mk = (homepage: object): string => {
