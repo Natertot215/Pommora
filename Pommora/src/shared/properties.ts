@@ -8,8 +8,8 @@
 // per-VIEW in SavedView `column_styles` (a deliberate divergence from Swift's def-level
 // keys); Swift's def-level riders (number_format, date_format, time_format, display_as,
 // date_includes_time) stay inert foreign keys that round-trip but are never read.
-// The renderable structure (type, options, context target, tier reverse labels,
-// icons) IS modeled because the write path + tier synthesis read it.
+// The renderable structure (type, options, context target, Context reverse labels,
+// icons) IS modeled because the write path + Context synthesis read it.
 
 import { z } from 'zod'
 
@@ -152,9 +152,6 @@ export function isReservedPropertyId(id: string): boolean {
 }
 
 
-/** Default 3-group seed written when a Status property is first added. Group IDs stay fixed (calendar
- *  sync); labels are Open / Active / Done, and each group seeds one option whose value=label=its group
- *  label, carrying the group color. Per Properties.md § "Status property type → Default seed". */
 /** A status def's options flattened for display — an option without its own color wears its
  *  GROUP's (the on-disk contract: group color is the default, option color the override). THE
  *  read for status chips anywhere the group isn't separately in scope. */
@@ -166,6 +163,9 @@ export function statusOptions(
   )
 }
 
+/** Default 3-group seed written when a Status property is first added. Group IDs stay fixed
+ *  (calendar sync); labels are Open / Active / Done, and each group seeds one option whose
+ *  value=label=its group label, carrying the group color. */
 export function defaultStatusSeed(): StatusGroup[] {
   return [
     {

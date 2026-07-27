@@ -66,7 +66,7 @@ export async function renamePage(
 }
 
 /** Replace the body, bumping modified_at. Governs only modified_at, so all other
- *  frontmatter (id, tiers, properties, foreign keys, comments) is preserved. */
+ *  frontmatter (id, Contexts, properties, foreign keys, comments) is preserved. */
 export async function updatePageBody(absFile: string, body: string): Promise<Result<null>> {
   if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.', 'page')
   await writePageFile(absFile, { modified_at: nowIso() }, ['modified_at'], body)
@@ -93,7 +93,7 @@ export async function movePage(
 
 /**
  * Set or clear one property value on a page. Governs only `properties` + `modified_at`,
- * so all other frontmatter (id, tiers, foreign keys, comments) is preserved. A null
+ * so all other frontmatter (id, Contexts, foreign keys, comments) is preserved. A null
  * value (or the `null` kind) removes the key; otherwise the value is encoded to its
  * on-disk shape via the codec. Sibling properties are untouched.
  */

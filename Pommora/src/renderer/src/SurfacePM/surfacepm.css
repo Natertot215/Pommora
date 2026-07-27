@@ -31,7 +31,7 @@
   transition: none;
 }
 
-/* Per-block Scale (G-10): one discrete var on the tile. Markdown/page tiles read it for the font (via
+/* Per-block Scale: one discrete var on the tile. Markdown/page tiles read it for the font (via
    .cm-content) + the editor glyphs (via --glyph-scale); a view tile's table reads it in its own grid
    `zoom` (base density × --block-zoom). The handle, resize edges, gutter, and padding do NOT read it —
    chrome + structure stay fixed. Five steps; 1.0 needs no class (--block-zoom falls back to 1). Every
@@ -179,10 +179,10 @@
   z-index: 1;
 }
 
-/* Borderless style (G-14): the chassis hides until you reach for it — the border
+/* Borderless style: the chassis hides until you reach for it — the border
    (and the notch with it) returns on border/handle hover, while dragging or
    resizing, and while its handle menu is open (handle-pinned) so the menu reads
-   as attached to a visible tile. A locked host will pin it hidden (lands with G-3). */
+   as attached to a visible tile. */
 .spm-tile.is-borderless:not(.is-lifted):not(.is-resizing):not(.handle-pinned):not(
   :has(> .spm-edge:hover)
 ):not(:has(> .spm-handle:hover)) {
@@ -278,10 +278,11 @@
   cursor: nwse-resize;
 }
 
-/* A locked tile OR a locked host (G-3) is a geometry lock, not a full freeze: SurfaceView gates the
+/* A locked tile OR a locked host is a geometry lock, not a full freeze: SurfaceView gates the
    drag + resize gestures (isTileStatic), so the edges + handle drop their grab/resize cursors and read
-   inert. Everything else stays live — the handle still opens its menu on click (to unlock; Duplicate/
-   Link/…), tile content stays editable, borderless tiles reveal on hover. The lock guards position + size. */
+   inert. The handle still opens its menu on click — every mutating row (Duplicate, Link, Style, Scale)
+   dims and goes inert; only Unlock stays live. Tile content stays editable; borderless tiles reveal on
+   hover. The lock guards position + size. */
 .spm-tile.is-locked .spm-edge,
 .spm-tile.is-locked .spm-handle,
 .blk-surface.is-host-locked .spm-edge,

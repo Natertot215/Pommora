@@ -8,7 +8,7 @@ import {
 import type { PropertyType } from './properties'
 import type { ColumnAlign } from './views'
 
-/** The table-view column-header right-click menu (E-1/E-5): hide the column, set its text alignment,
+/** The table-view column-header right-click menu: hide the column, set its text alignment,
  *  or set a per-view display style. The renderer applies the resolved action, or no-ops on null
  *  (dismissed). Mirrors calloutMenu's shape. */
 export type ColumnMenuAction =
@@ -51,8 +51,8 @@ export interface StyleMenuItem {
 }
 
 /** The per-type Style items — the ONE place that knows which types are style-addressable
- *  (select/multi/context aren't: their chips always render pill). Datetime labels are
- *  format-type NAMES, never rendered samples. */
+ *  (select/multi/context aren't: each renders one fixed chip shape, never a user-picked look).
+ *  Datetime labels are format-type NAMES, never rendered samples. */
 export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
   const { type, current } = ctx
   const row =

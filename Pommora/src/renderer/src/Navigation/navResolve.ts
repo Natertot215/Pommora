@@ -37,9 +37,9 @@ type NavCore = { icon: string; title: string; path: PathCrumb[] }
 /** navKey → display core. Built once per tree; resolution is then an O(1) lookup per entry. */
 export type ResolveIndex = Map<string, NavCore>
 
-/** Flatten the tree into the display index in a single walk: homepage, every context (its tier as the
- *  path), every Collection, every Set + Page (their resolved container chain). Icons resolve against
- *  the Nexus's default-icon overrides, matching the sidebar. */
+/** Flatten the tree into the display index in a single walk: homepage, every Space (its Context as
+ *  the path), every Collection, every Set + Page (their resolved container chain). Icons resolve
+ *  against the Nexus's default-icon overrides, matching the sidebar. */
 export function buildResolveIndex(tree: NexusTree): ResolveIndex {
   const ix: ResolveIndex = new Map()
   const di = tree.personalization.defaultIcons

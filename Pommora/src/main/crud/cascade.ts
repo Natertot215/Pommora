@@ -1,6 +1,6 @@
 // Cascades that keep references consistent when an entity's identity changes: a page
 // rename rewrites every inbound `[[link]]` across the nexus; a Context delete strips its
-// id from every page's tier array. Both walk the nexus's real pages and rewrite each under
+// id from every page's Context array. Both walk the nexus's real pages and rewrite each under
 // its file lock (rewritePageSerialized) — the same lock the cell-write path takes, so a
 // cascade can't clobber a concurrent edit on a page. Per-file, not cross-file atomic: a
 // partly-applied cascade is recoverable by re-running. No SQLite — the inbound set is found

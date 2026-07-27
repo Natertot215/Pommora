@@ -35,7 +35,7 @@ export type Index = {
 
 /** Id-keyed index + top-level groups. Depths match the sidebar's rendered indent (Collection 0 →
  *  its Sets 1 → Sub-Sets 2 …; pages one deeper than their container). Contexts are leaf rows at
- *  depth 1, nested under their tier disclosure (Areas / Topics / Projects) at depth 0. */
+ *  depth 1, nested under their Context group's disclosure (Areas / Topics / Projects) at depth 0. */
 export function buildIndex(tree: NexusTree): Index {
   const byId = new Map<string, Entry>()
   const addPages = (

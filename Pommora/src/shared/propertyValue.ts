@@ -21,7 +21,7 @@ export type PropertyValue =
   | { kind: 'select'; value: string }
   | { kind: 'multiSelect'; value: string[] }
   | { kind: 'status'; value: string }
-  | { kind: 'context'; value: string[] } // context-tier target ULIDs
+  | { kind: 'context'; value: string[] } // Context target ULIDs
   | { kind: 'url'; value: string }
   | { kind: 'file'; value: FileRef[] }
   | { kind: 'lastEditedTime' } // virtual — never persisted (encode throws)
