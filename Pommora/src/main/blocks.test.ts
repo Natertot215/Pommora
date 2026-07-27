@@ -174,7 +174,7 @@ describe('markdown block lifecycle', () => {
     await removeBlockTile(root, HOST, id)
     expect((await readConfig()).blocks).toEqual([{ id: 'alien', type: 'widget', keep: true }])
     expect(await pathExists(await blockFilePath(root, HOST, id))).toBe(false)
-    const trashed = await readdir(join(root, '.trash'))
+    const trashed = await readdir(join(root, '.trash'), { recursive: true })
     expect(trashed.some((f) => f.includes(id))).toBe(true)
   })
 
@@ -200,7 +200,7 @@ describe('markdown block lifecycle', () => {
     expect(config.id).not.toBe('source-view-id')
     expect(typeof config.id).toBe('string')
     expect(await pathExists(await blockFilePath(root, HOST, id))).toBe(false)
-    const trashed = await readdir(join(root, '.trash'))
+    const trashed = await readdir(join(root, '.trash'), { recursive: true })
     expect(trashed.some((f) => f.includes(id))).toBe(true)
   })
 

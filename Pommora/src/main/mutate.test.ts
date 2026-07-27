@@ -113,15 +113,16 @@ describe('handleMutate — rename', () => {
 })
 
 describe('handleMutate — delete', () => {
-  it('nexus mode moves a page to the in-nexus .trash', async () => {
+  it('nexus mode moves a page into .trash under the folders it was deleted from', async () => {
     const r = await handleMutate(
       { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(false)
-    const trashed = await readdir(join(root, '.trash'))
-    expect(trashed.some((f) => f.endsWith('Beta.md'))).toBe(true)
+    // The chain IS the restore record: .trash mirrors the nexus, the leaf carries the stamp.
+    const trashed = await readdir(join(root, '.trash', 'Notes', 'Daily'))
+    expect(trashed.some((f) => f.endsWith('__Beta.md'))).toBe(true)
   })
 
   it('system mode delegates to the injected OS-trash fn (not the .trash)', async () => {
