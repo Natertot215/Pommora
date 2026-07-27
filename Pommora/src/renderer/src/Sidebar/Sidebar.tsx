@@ -24,7 +24,7 @@ import type {
   SpaceNode,
 } from '@shared/types'
 import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/mutate'
-import { RESERVED_CONTEXT_IDS } from '@shared/contexts'
+import { createSpaceLabel } from '@shared/contexts'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { AgendaMode } from './AgendaMode'
 import { loadOpen, saveOpen } from './disclosureState'
@@ -535,11 +535,7 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
       }
       rename={{ path, kind: 'context' }}
       onBodyContextMenu={() => {
-        // The seeded three keep their given singulars; user-minted Contexts read flat
-        // "New Space" until the singulars rework.
-        const label = (RESERVED_CONTEXT_IDS as readonly string[]).includes(group.def.id)
-          ? `New ${group.def.singular}`
-          : 'New Space'
+        const label = createSpaceLabel(group.def)
         void useSession
           .getState()
           .createFromMenu([

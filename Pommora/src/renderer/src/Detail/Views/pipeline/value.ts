@@ -22,9 +22,8 @@ import { type PropertyValue, parsePropertyValue } from '@shared/propertyValue'
 
 /** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
  *  a synthetic sentinel: `_title`→'title', any registry Context id→'tier', `_modified_at`→
- *  'last_edited_time' (Swift treats it as a date for both filter and sort). `contextIds` callers
- *  that never meet a context column (schema-only pickers) may omit it — the reserved `_tierN`
- *  three classify regardless. */
+ *  'last_edited_time' (Swift treats it as a date for both filter and sort). `contextIds` is what
+ *  classifies a Context column, so a caller that omits it sees none. */
 export function declaredType(
   propertyId: string,
   schema: PropertyDefinition[],
@@ -35,10 +34,6 @@ export function declaredType(
       return 'title'
     case RESERVED_PROPERTY_ID.modifiedAt:
       return 'last_edited_time'
-    case RESERVED_PROPERTY_ID.tier1:
-    case RESERVED_PROPERTY_ID.tier2:
-    case RESERVED_PROPERTY_ID.tier3:
-      return 'tier'
     default:
       if (contextIds.includes(propertyId)) return 'tier'
       return schema.find((d) => d.id === propertyId)?.type

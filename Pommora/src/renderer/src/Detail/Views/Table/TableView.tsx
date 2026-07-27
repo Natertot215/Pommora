@@ -504,7 +504,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // Resize applies live (a separate override, so the pipeline doesn't re-run) and returns the clamped
   // width so the header tracks the real edge; commit persists the merged widths.
   const resizeColumn = (id: string, width: number): number => {
-    const clamped = clampWidth(Math.round(width), id, schema, colStyle(id).look)
+    const clamped = clampWidth(Math.round(width), id, schema, colStyle(id).look, contextIds)
     setWidthOverride((prev) => ({ ...prev, [id]: clamped }))
     return clamped
   }
@@ -514,7 +514,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       column_widths: {
         ...liveView.column_widths,
         ...widthOverride,
-        [id]: clampWidth(width, id, schema, colStyle(id).look),
+        [id]: clampWidth(width, id, schema, colStyle(id).look, contextIds),
       },
     })
   }
@@ -532,7 +532,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     persistView({ hidden_properties: hidden })
   }
   // A column's resolved alignment: the live override, else the saved value / type default.
-  const colAlign = (id: string): ColumnAlign => alignOverride[id] ?? alignFor(id, schema, liveView)
+  const colAlign = (id: string): ColumnAlign =>
+    alignOverride[id] ?? alignFor(id, schema, liveView, contextIds)
   // A column header's type glyph, gated by the per-view Column Icons toggle (`hide_column_icons`),
   // which defaults ON (icons hidden). Tier columns wear the context glyph; a schema-less column
   // (unknown type) gets none.
@@ -949,10 +950,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     collapsing === id
       ? 0
       : clampWidth(
-          widthOverride[id] ?? liveView.column_widths?.[id] ?? widthFor(id, schema).default,
+          widthOverride[id] ??
+            liveView.column_widths?.[id] ??
+            widthFor(id, schema, contextIds).default,
           id,
           schema,
           colStyle(id).look,
+          contextIds,
         )
 
   // ---- Memoized-row inputs: every prop a DataRow receives must hold identity across unrelated
@@ -962,13 +966,15 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // allocates), the measured bulk of a full-table re-render's JS floor.
   const { alignByCol, styleByCol } = useMemo(
     () => ({
-      alignByCol: columns.map((c) => alignOverride[c.id] ?? alignFor(c.id, schema, liveView)),
+      alignByCol: columns.map(
+        (c) => alignOverride[c.id] ?? alignFor(c.id, schema, liveView, contextIds),
+      ),
       styleByCol: columns.map((c) => ({
         ...styleFor(c.id, schema, liveView),
         ...styleOverride[c.id],
       })),
     }),
-    [columns, schema, liveView, alignOverride, styleOverride],
+    [columns, schema, liveView, alignOverride, styleOverride, contextIds],
   )
   // Slide detection: mark any column whose look just changed to one whose rendered width grows,
   // so its track eases to the new per-style min. Render-phase + a prev-look ref, so it catches EVERY
@@ -981,8 +987,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     prevLooks.current[c.id] = look
     if (prev === undefined || prev === look) return
     const basis =
-      widthOverride[c.id] ?? liveView.column_widths?.[c.id] ?? widthFor(c.id, schema).default
-    if (clampWidth(basis, c.id, schema, look) > clampWidth(basis, c.id, schema, prev))
+      widthOverride[c.id] ??
+      liveView.column_widths?.[c.id] ??
+      widthFor(c.id, schema, contextIds).default
+    if (
+      clampWidth(basis, c.id, schema, look, contextIds) >
+      clampWidth(basis, c.id, schema, prev, contextIds)
+    )
       widened.push(c.id)
   })
   if (widened.some((id) => !sliding.has(id))) setSliding((s) => new Set([...s, ...widened]))

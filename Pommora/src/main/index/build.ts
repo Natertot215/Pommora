@@ -15,7 +15,7 @@ import { SIDECAR_FILENAME } from '../paths'
 import { agendaTask, agendaEvent, AGENDA_SUFFIX } from '@shared/agenda'
 import { orderedDefs, readRegistry } from '../io/propertiesRegistry'
 import { nowIso } from '../crud/util'
-import { seededRegistry, type ContextsRegistry } from '@shared/contexts'
+import type { ContextsRegistry } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
 import { buildLinkIndex } from '../connections/resolve'
 import { connectionEdges } from '../connections/edges'
@@ -110,11 +110,9 @@ interface NexusData {
 async function collectNexusData(nexusRoot: string): Promise<NexusData> {
   const tree = await readNexus(nexusRoot)
 
-  // Registry-backed when the tree carries groups; a nexus whose registry has not been read
-  // yet falls back to the seeded reserved ids so its links still resolve.
-  const ctxRegistry: ContextsRegistry = tree.contexts.length
-    ? { contexts: tree.contexts.map((g) => g.def) }
-    : seededRegistry(tree.labels)
+  // A tree with no groups has no Spaces to resolve against either, so an empty registry is
+  // what it actually means — seeding one here would invent ids that match nothing on disk.
+  const ctxRegistry: ContextsRegistry = { contexts: tree.contexts.map((g) => g.def) }
   const spacesByContext = new Map<string, SpaceNode[]>(
     tree.contexts.map((g) => [g.def.id, g.spaces]),
   )
