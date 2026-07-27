@@ -5,6 +5,7 @@ import { Switch } from '../Switches/Switch'
 import { OverflowScroll } from '../OverflowScroll'
 import { PickerMenu, PickerOption } from '../PickerMenu/PickerMenu'
 import { useExitPresence } from '../../useExitPresence'
+import { stack } from '../../tokens/stack'
 import { cx } from '../../cx'
 import * as s from './calendarPicker.css'
 
@@ -39,9 +40,9 @@ function PortalMenu({
         top: rect.y,
         width: rect.w,
         height: rect.h,
-        // Above the hosting picker pane AND its dismiss backdrop (1100/1099) — below that, the
-        // month/year/time menus render behind the pane and their clicks hit the grid or the dismiss.
-        zIndex: 1200,
+        // Above the hosting picker pane AND its dismiss backdrop — below those, the month/year/time
+        // menus render behind the pane and their clicks hit the grid or the dismiss.
+        zIndex: stack.top.menuOverlay,
         pointerEvents: 'none',
       }}
     >

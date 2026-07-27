@@ -166,7 +166,7 @@ textarea,
   left: calc(var(--glass-inset) + var(--sidebar-width) + var(--glass-inset));
   right: 0;
   height: var(--toolbar-h);
-  z-index: 2;
+  z-index: var(--z-titlebar);
   -webkit-app-region: drag;
   transition: left var(--duration-base) var(--ease-standard);
 }
@@ -184,7 +184,7 @@ textarea,
   left: 0;
   width: calc(var(--glass-inset) + var(--sidebar-width) - 48px);
   height: calc(var(--glass-inset) + var(--toolbar-h));
-  z-index: 2;
+  z-index: var(--z-titlebar);
   -webkit-app-region: drag;
 }
 .shell.is-resizing .titlebar {

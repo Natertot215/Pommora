@@ -49,7 +49,7 @@ export class Overlay {
       const l = document.createElement('div')
       l.setAttribute('aria-hidden', 'true')
       l.style.cssText =
-        'position:fixed;height:2px;border-radius:2px;background:var(--accent);pointer-events:none;z-index:1000'
+        'position:fixed;height:2px;border-radius:2px;background:var(--accent);pointer-events:none;z-index:var(--z-floating)'
       const dot = document.createElement('span')
       dot.style.cssText =
         'position:absolute;left:-3px;top:-2.5px;width:7px;height:7px;border-radius:50%;background:var(--accent)'

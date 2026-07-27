@@ -10,6 +10,7 @@ import {
 } from '../../design-system/components/menu/menu.css'
 import { surface } from '../../design-system/components/menu/menuSurface.css'
 import { dropdownAnchor } from '../../design-system/components/dropdownAnchor'
+import { stack } from '../../design-system/tokens/stack'
 import { fieldRing } from '../../design-system/components/fieldRing'
 
 const c = colorVars.color
@@ -68,7 +69,7 @@ export const ICON = {
 /** Anchored under the toolbar Settings button (the trio cluster is position:relative). Right-aligned,
  *  so the dropdown-menu open animation blooms from the trigger side via --dropdown-origin. */
 export const anchor = style([
-  dropdownAnchor('right', 10),
+  dropdownAnchor('right', stack.local.lifted),
   { vars: { '--dropdown-origin': 'top right' } },
 ])
 
