@@ -4,6 +4,19 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 ### Completion Timeline (Descending)
 
+#### Contexts & Spaces (2026-07-27)
+
+The fixed three-tier context model is gone. A Context is now a user-defined registry entry holding Spaces — Areas, Topics and Projects are seeded rows, not types — and every consumer that had hard-coded three tiers was rewritten against it: the walk, the index, the sidebar, selection, navigation, table resolution, column labels, the DnD model. Membership is a bracketed title key in front-matter, resolved against the registry at assembly. Registry writes run under a lock with a journal, so an interrupted rename cascade resumes instead of half-applying, and the `tierN` migration keys its re-entry on the version alone — the tier folders can't be the signal, because the step that moves them consumes them.
+
+Spaces became the second BlockHost, which surfaced a second problem: three near-identical floating windows and no shared chassis. Extracting **PreviewPane** absorbed the Page Preview and the NavWindow, retired `FloatingPane`, and made a real Settings window cheap enough to build — the ribbon's Settings glyph had been a documented no-op since the ribbon shipped. Verified against a captured baseline at 15/15 states pixel-identical. **PickerMenu** became the second shared chassis on the FilterPane's return, gaining a growth origin, a height cap through the shared scroll frame, a fixed width, a selection ring that merges across adjacent rows, and a keyboard focus contract.
+
+Shipping Settings falsified its own absence in five places, which triggered an audit that found worse: the docs asserted an architecture nobody built — a SwiftUI manager layer with a DI graph, a live SQLite query engine with a facade, Connections resolving through SQLite. None of it existed. The docs now describe the real read path, and say plainly that the index has no query consumer.
+
+Two bugs worth remembering. A rename to a leading-underscore name wrote a real file and dropped it from the tree permanently — indistinguishable from a delete, with no error and no way back. And a toolbar pair chased its own pane: a reveal nudge and a side-pane swallow shared one element, so `transition: transform` annexed a transform derived from an interpolating variable and every frame retargeted a fresh transition. A settled-state pixel diff could not see it.
+
+The branch closed on three adversarial passes — CSS, behaviour, interaction — and the cleanup they drove. They found six real defects, four introduced by the branch's own final session, and caught two shipped tests certifying guarantees they never tested. Then eight parked items were closed against agents and verified by hand: the filter's abstain guarantee extended from leaves to groups, writes stopped rebuilding from stale render snapshots, a locked embed stopped reporting success while dropping the write, the Toolbar's dropdown beaks moved off hard-coded fractions that were already wrong, two ResizeObservers over one box became one publisher, and the duplicated dropdown anchor, disclosure row, Space-glyph derivation and scattered z-index values each collapsed to a single source.
+
+
 #### The Lint Gate Becomes Real (2026-07-25)
 
 `npm run lint` had never passed — 215 errors and 332 warnings, and nothing in the workflow invoking it, so a gate that proved nothing sat in `package.json` looking like it did. It now runs clean across every file, and the discipline is that a change adding a diagnostic isn't finished.
