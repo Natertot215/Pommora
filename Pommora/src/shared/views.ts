@@ -158,6 +158,10 @@ export interface SavedView {
   /** Structural band-order source — 'location' mirrors the filesystem (drags write fs;
    *  group_order is preserved-but-ignored); absent/'custom' = the view-owned group_order. */
   structural_order_mode?: StructuralOrderMode
+  /** The cards Location SORT's own order source. Its own key, not the grouping one: a cards
+   *  view can group structurally AND sort by Location, and the two orders are independent
+   *  controls that would otherwise shadow each other. Absent = 'location'. */
+  location_order_mode?: StructuralOrderMode
   /** Location-mode sub-grouping config — survives Group By switches by living view-level. */
   sub_group?: SubGroupConfig
   /** Global ungrouped-region placement — one view-level knob for every ungrouped tail; the
@@ -304,14 +308,15 @@ export const savedView = z.looseObject({
     .transform((a) => a.filter((x): x is string => typeof x === 'string'))
     .optional(),
   structural_order_mode: z.enum(STRUCTURAL_ORDER_MODES).optional().catch(undefined),
+  location_order_mode: z.enum(STRUCTURAL_ORDER_MODES).optional().catch(undefined),
   sub_group: z.unknown().transform(decodeSubGroup).optional(),
   ungrouped_placement: z.enum(EMPTY_PLACEMENTS).optional().catch(undefined),
   date_separator: z.enum(DATE_SEPARATORS).optional().catch(undefined),
 })
 
 /** The reserved Sort By `property_id` for the cards "Location" sort — not a real property (the
- *  sorter can't rank location; resolveView orders by structural position). Its order mode reuses
- *  `structural_order_mode` (Location = filesystem, Custom = the view's manual order). */
+ *  sorter can't rank location; resolveView orders by structural position). Its order source is
+ *  `location_order_mode` (Location = filesystem, Custom = the view's manual order). */
 export const LOCATION_SORT = '__location__'
 
 /** Shared on-disk prefix for view ids (`view_<ulid>`); single-sourced so the sentinel and the

@@ -58,7 +58,7 @@ describe('createContextGroup', () => {
     const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     const entry = reg.contexts.find((c: { title: string }) => c.title === 'Clients')
     expect(entry.id).toBe(r.value.id)
-    expect(entry.singular).toBe('Clients')
+    expect(entry.singular).toBeUndefined() // user-minted: no singular, so its create entry reads "New Space"
     const entries = await readdir(join(contextsDir(root), 'Clients'))
     expect(entries).toEqual([])
   })
