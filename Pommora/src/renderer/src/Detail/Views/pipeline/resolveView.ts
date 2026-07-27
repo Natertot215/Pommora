@@ -5,7 +5,7 @@
 
 import type { PropertyDefinition } from '@shared/properties'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@shared/types'
-import { LOCATION_SORT, type SavedView } from '@shared/views'
+import { isLocationFsOrder, type SavedView } from '@shared/views'
 import { applyFilter } from './filter'
 import { orderGroups } from './bandOrder'
 import { groupsStructurally, resolveGroups, type SetTreeNode } from './group'
@@ -30,8 +30,7 @@ export function resolveView(input: {
   // Sort By: Location (cards) is a reserved sort primary the sorter can't rank; on its Location order
   // mode it flattens the structural walk into one band (locationFlat). Its Custom order mode falls to
   // the manual sorter (flat() + viewOrders). Gated on flattenStructural so it can't affect a table.
-  const sortByLocation = view.sort?.[0]?.property_id === LOCATION_SORT
-  const locationFsOrder = sortByLocation && (view.location_order_mode ?? 'location') === 'location'
+  const locationFsOrder = isLocationFsOrder(view)
   const useLocationFlat =
     (flattenStructural && view.group?.kind === 'flat' && locationFsOrder) ?? false
   const columns = resolveColumns(view, schema, contextIds)
