@@ -72,8 +72,8 @@ import { size as sizeTokens, type IconSize } from '../tokens/size.css'
 
 /**
  * Curated icon set — Lucide (https://lucide.dev/icons). The single source of which icons exist in
- * the app; keys are the app's icon vocabulary (mostly the lucide.dev name). This registry mirrors
- * `Symbols.md` — add a name there, then import it above and add a line here. Tree-shaking keeps
+ * the app; keys are the app's icon vocabulary (mostly the lucide.dev name). This registry IS the
+ * roster — to add an icon, import it above and add a line here. Tree-shaking keeps
  * only these in the bundle. **Tabler (`@tabler/icons-react`) stays installed as a second source we
  * can pull from** — to use one, import its `Icon*` component and add the entry (it renders through
  * the same seam; Lucide's and Tabler's default stroke are both 2, so they sit at the same weight with
