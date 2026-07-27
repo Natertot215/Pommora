@@ -8,7 +8,7 @@ import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@shared/types'
 import { isLocationFsOrder, type SavedView } from '@shared/views'
 import { applyFilter } from './filter'
 import { orderGroups } from './bandOrder'
-import { groupsStructurally, resolveGroups, type SetTreeNode } from './group'
+import { groupsStructurally, pruneEmptyGroups, resolveGroups, type SetTreeNode } from './group'
 import { makeSorter } from './sort'
 import { resolveColumns } from './columns'
 
@@ -48,19 +48,22 @@ export function resolveView(input: {
   // renders structurally), so the location gate + sub-group thread whenever the table draws sets.
   const structuralGrouping = groupsStructurally(view.group, schema)
   const locationOrdered = structuralGrouping && view.structural_order_mode === 'location'
+  const resolved = resolveGroups(
+    filtered,
+    view.group,
+    schema,
+    setTree,
+    sorter,
+    view.collapsed_groups,
+    view.ungrouped_placement ?? 'bottom',
+    structuralGrouping ? view.sub_group : undefined,
+    flattenStructural,
+    useLocationFlat,
+  )
+  // Empty Sets are shown deliberately — until a filter actually excludes something, at which point
+  // the view shows what matched and a band holding nothing is noise.
   const groups = orderGroups(
-    resolveGroups(
-      filtered,
-      view.group,
-      schema,
-      setTree,
-      sorter,
-      view.collapsed_groups,
-      view.ungrouped_placement ?? 'bottom',
-      structuralGrouping ? view.sub_group : undefined,
-      flattenStructural,
-      useLocationFlat,
-    ),
+    filtered.length === rows.length ? resolved : pruneEmptyGroups(resolved),
     locationOrdered ? undefined : view.group_order,
   )
   return { columns, groups }

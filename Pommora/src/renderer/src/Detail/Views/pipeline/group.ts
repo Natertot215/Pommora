@@ -405,6 +405,19 @@ function structuralSubGrouped(
   )
 }
 
+/** Drop the structural bands a filter emptied, bottom-up — a set whose every descendant was
+ *  filtered out goes with them. Structural only: property bands answer to their own
+ *  hide_empty_groups knob, and the ungrouped tail is only built when it holds rows. */
+export function pruneEmptyGroups(groups: ResolvedGroup[]): ResolvedGroup[] {
+  return groups.flatMap((group) => {
+    if (group.kind !== 'structural-set') return [group]
+    const { children: nested, ...band } = group
+    const children = nested ? pruneEmptyGroups(nested) : []
+    if (band.items.length === 0 && children.length === 0) return []
+    return [children.length > 0 ? { ...band, children } : band]
+  })
+}
+
 function flat(rows: ViewRow[], sorter: Sorter | null, collapsed: Set<string>): ResolvedGroup[] {
   if (rows.length === 0) return []
   return [

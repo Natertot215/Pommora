@@ -317,6 +317,121 @@ describe('resolveView — group_order', () => {
   })
 })
 
+describe('resolveView — a biting filter prunes emptied structural bands', () => {
+  const set = (id: string, pages: PageNode[], sets: SetNode[] = []): SetNode => ({
+    kind: 'set',
+    id,
+    title: id,
+    path: id,
+    pages,
+    sets,
+  })
+  // sOuter holds one page of its own and nests sInner (one page); sBare holds nothing at all.
+  const nested: CollectionNode = {
+    kind: 'collection',
+    id: 'col',
+    title: 'Col',
+    path: 'Col',
+    sets: [set('sOuter', [page('p_outer')], [set('sInner', [page('p_inner')])]), set('sBare', [])],
+    pages: [],
+  }
+  const values: Record<string, PageFrontmatter> = {}
+  const view = (patch: Partial<SavedView> = {}): SavedView => ({
+    id: 'v',
+    name: 'V',
+    type: 'table',
+    property_order: ['_title'],
+    hidden_properties: [],
+    group: { kind: 'structural' },
+    ...patch,
+  })
+  const keys = (groups: { key: string }[]): string[] => groups.map((g) => g.key)
+
+  it('keeps every empty band while no filter is applied', () => {
+    const { rows, setTree } = flattenContainer(nested, values)
+    const { groups } = resolveView({ rows, setTree, view: view(), schema: [] })
+    expect(keys(groups)).toEqual(['sOuter', 'sBare'])
+    expect(keys(groups[0].children ?? [])).toEqual(['sInner'])
+  })
+
+  it('keeps every empty band when the filter is on but excludes nothing', () => {
+    const { rows, setTree } = flattenContainer(nested, values)
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is_not_empty' }] } }),
+      schema: [],
+    })
+    expect(keys(groups)).toEqual(['sOuter', 'sBare'])
+  })
+
+  it('drops a parent whose own rows AND every descendant were filtered out', () => {
+    const { rows, setTree } = flattenContainer(nested, values)
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'nothing' }] } }),
+      schema: [],
+    })
+    expect(groups).toEqual([])
+  })
+
+  it('keeps a parent that survives on its own row and drops the emptied child', () => {
+    const { rows, setTree } = flattenContainer(nested, values)
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'p_outer' }] } }),
+      schema: [],
+    })
+    expect(keys(groups)).toEqual(['sOuter'])
+    expect(groups[0].children).toBeUndefined()
+  })
+
+  it('keeps a parent holding no rows of its own when a descendant survives', () => {
+    const { rows, setTree } = flattenContainer(nested, values)
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'p_inner' }] } }),
+      schema: [],
+    })
+    expect(keys(groups)).toEqual(['sOuter'])
+    expect(groups[0].items).toEqual([])
+    expect(keys(groups[0].children ?? [])).toEqual(['sInner'])
+  })
+
+  it('prunes the flattened cards bands too', () => {
+    const { rows, setTree } = flattenContainer(nested, values)
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({
+        type: 'cards',
+        filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'p_inner' }] },
+      }),
+      schema: [],
+      flattenStructural: true,
+    })
+    expect(keys(groups)).toEqual(['sOuter'])
+    expect(groups[0].items.map((r) => r.id)).toEqual(['p_inner'])
+  })
+
+  it('a parked filter prunes nothing — rules and mode survive, application stops', () => {
+    const { rows, setTree } = flattenContainer(nested, values)
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({
+        filter_enabled: false,
+        filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'nothing' }] },
+      }),
+      schema: [],
+    })
+    expect(keys(groups)).toEqual(['sOuter', 'sBare'])
+  })
+})
+
 describe('mintDefaultView', () => {
   it('mints a Table view: sentinel id, title-only, structural, no sort or _modified_at', () => {
     const schema: PropertyDefinition[] = [
