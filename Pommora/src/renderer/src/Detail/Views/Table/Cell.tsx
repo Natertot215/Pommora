@@ -18,7 +18,7 @@ import { StatusCapsule } from '../PropertyEditing/StatusCapsule'
 import { findOption } from './cellResolve'
 import { LinkCell } from './LinkCell'
 import { solidColorCss } from './solidColor'
-import { checkboxBoxStyle } from './checkboxLook'
+import { CheckboxGlyph } from './checkboxLook'
 import type { ResolveContext } from './resolveContext'
 
 /** Type-aware cell render: the title with its page icon; chips for select/status;
@@ -78,12 +78,7 @@ export function Cell({
         <Switch checked={checked} onChange={() => {}} ariaLabel="Checkbox value" />
       </span>
     ) : (
-      <span
-        className={cx(chipBox, checked ? undefined : chipColor.default, 'cell-checkbox')}
-        style={checkboxBoxStyle(checked, color)}
-      >
-        {checked ? <Icon name="check" size={12} strokeWidth={3} /> : null}
-      </span>
+      <CheckboxGlyph checked={checked} color={color} className="cell-checkbox" />
     )
   }
 
