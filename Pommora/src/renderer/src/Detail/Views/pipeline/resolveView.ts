@@ -31,8 +31,7 @@ export function resolveView(input: {
   // mode it flattens the structural walk into one band (locationFlat). Its Custom order mode falls to
   // the manual sorter (flat() + viewOrders). Gated on flattenStructural so it can't affect a table.
   const sortByLocation = view.sort?.[0]?.property_id === LOCATION_SORT
-  const locationFsOrder =
-    sortByLocation && (view.structural_order_mode ?? 'location') === 'location'
+  const locationFsOrder = sortByLocation && (view.location_order_mode ?? 'location') === 'location'
   const useLocationFlat =
     (flattenStructural && view.group?.kind === 'flat' && locationFsOrder) ?? false
   const columns = resolveColumns(view, schema, contextIds)
