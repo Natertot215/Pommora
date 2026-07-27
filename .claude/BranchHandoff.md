@@ -94,7 +94,7 @@ Each replaced two or more implementations with one:
 - **Filter writes rebuilt from a render snapshot.** A ref write does not re-render, so the second write in one gesture re-serialised a pre-save row list: a blur-committed value dropped by the click that caused it, a removal resurrected by the next removal. Every mutator now re-reads the last-written rows at call time.
 - **A text field's flush read a dead DOM node.** The input is keyed on its value, so each commit swaps the element; a node captured at mount went stale, and leaving via Back — which suppresses pointerdown to protect focus and fires no blur — silently saved nothing.
 - **A picker could park off-screen.** The collision flip is decided once per open, but the reset was keyed on unmount, and reopening inside the 380ms exit window cancels it. On shared-anchor hosts the pane inherited the previous placement.
-- **A locked embed reported success while dropping the write.** The config seam returned `ok` on a refused write, so the caller's optimistic state stood until remount. It now refuses explicitly.
+- **A locked embed reported success while dropping the write.** The config seam returned `ok` on a refused write, so the caller's optimistic state stood until remount. It now refuses explicitly — and the lock learned the difference between config and **view state**, so a group collapse still lands and is still remembered while every genuine config gesture stays frozen.
 - **The Toolbar's dropdown beaks were hard-coded fractions** of a width they did not own, and were already aimed wrong. They measure the trigger now.
 
 ### Reversals
@@ -141,13 +141,12 @@ Inert by choice, not half-wired:
 
 ### Open Rulings
 
-Two items are open because they need a decision, not an implementation:
+One item is open because it needs a reproduction, not a decision:
 
-- **A locked embed's BODY still writes silently.** The config panes are frozen and the seam now refuses, but `TableView` and `CardsView` write view config from the table itself — column resize/reorder/align, hide column, card style, group collapse. They carry optimistic overrides, so they look applied until remount. Freezing them needs a ruling on which in-table gestures a config lock owns; group collapse in particular reads as "how I'm looking at it" rather than authoring, yet it persists into view config.
 - **Right-clicking Change Color in the Space settings pane closes the pane.** Not reproduced. Every renderer-side path was eliminated: no blur or focus listener exists, `setPanel(null)` has one caller whose ref contains the dropdown, and the picker's portals are spared by both dismissal checks. The residual mechanism is a pointer event delivered after the native menu returns input. Two guards landed that are correct regardless — `useDismiss` ignores non-primary buttons, and the header yields the gesture over an editable target, which also closes a proven two-native-menu collision. Confirm with a capture-phase `pointerdown` log during one right-click.
 
 ### Merge
 
 The branch was rebased onto `origin/main`, replaying all 90 commits with no conflicts — the one commit it was behind (`9ba2e53e`) touched `.gitignore` and `.claude/settings.json`, which this branch never opened. `origin/main` is an ancestor, so the merge is a true fast-forward.
 
-**Gates, re-run on the rebased tip:** `typecheck 0` (both configs) · `lint 0` · `1904 tests / 187 files` · build clean · working tree clean.
+**Gates, re-run on the rebased tip:** `typecheck 0` (both configs) · `lint 0` · `1906 tests / 187 files` · build clean · working tree clean.

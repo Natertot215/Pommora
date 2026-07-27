@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 // The locked scope's contract: a frozen view config never takes a write it can't land — the seam
 // answers a refusal envelope, the payload writer is never reached, and the panes that write it
-// aren't reachable to author into.
+// aren't reachable to author into. View STATE is the deliberate exception and lands regardless.
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import { act, useEffect } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { CollectionNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
-import type { SavedView } from '@shared/views'
+import type { SavedView, ViewState } from '@shared/views'
 import { useSession } from '@renderer/store'
 import { GroupingPane } from '@renderer/Components/Detail/GroupingPane'
 import { SettingsPane } from '@renderer/Components/Detail/SettingsPane'
@@ -62,12 +62,14 @@ const view: SavedView = {
 let host: HTMLDivElement
 let root: Root
 let persistConfig: Mock<(next: SavedView) => void>
+let persistState: Mock<(next: ViewState) => void>
 let sourceSave: Mock
 
 const scope = (locked: boolean): ViewEmbedScopeValue => ({
   source,
   view,
   persistConfig,
+  persistState,
   locked,
   setLocked: vi.fn(),
 })
@@ -91,6 +93,7 @@ beforeEach(() => {
   document.body.appendChild(host)
   root = createRoot(host)
   persistConfig = vi.fn()
+  persistState = vi.fn()
   sourceSave = vi.fn(async () => ({ ok: true }))
   ;(window as unknown as { nexus: unknown }).nexus = {
     views: { save: sourceSave },
@@ -108,6 +111,19 @@ function Probe({ onResult }: { onResult: (r: unknown) => void }): null {
   const save = useSaveView(source, async () => {})
   useEffect(() => {
     void save({ ...view, name: 'Renamed' }).then(onResult)
+  }, [save, onResult])
+  return null
+}
+
+// A collapse write as the table sends it: the state field alongside the live config overrides the
+// merge always folds in — here a column width, standing in for a gesture the lock already refused.
+function StateProbe({ onResult }: { onResult: (r: unknown) => void }): null {
+  const save = useSaveView(source, async () => {})
+  useEffect(() => {
+    void save(
+      { ...view, collapsed_groups: ['Done'], column_widths: { _title: 420 } },
+      { skipRefetch: true, viewState: true },
+    ).then(onResult)
   }, [save, onResult])
   return null
 }
@@ -133,6 +149,29 @@ describe('a locked view-embed scope', () => {
     )
     expect(results).toEqual([{ ok: true, id: view.id }])
     expect(persistConfig).toHaveBeenCalledWith({ ...view, name: 'Renamed' })
+  })
+
+  it('lets a collapse through — the lock freezes config, not how you are reading the tile', async () => {
+    const results: unknown[] = []
+    await render(
+      <ViewEmbedScopeProvider value={scope(true)}>
+        <StateProbe onResult={(r) => results.push(r)} />
+      </ViewEmbedScopeProvider>,
+    )
+    expect(results).toEqual([{ ok: true, id: view.id }])
+    expect(persistState).toHaveBeenCalledWith({ collapsed_groups: ['Done'] })
+  })
+
+  it('narrows a state write to the state keys, so a refused override cannot ride along', async () => {
+    await render(
+      <ViewEmbedScopeProvider value={scope(true)}>
+        <StateProbe onResult={() => {}} />
+      </ViewEmbedScopeProvider>,
+    )
+    // The probe's write carries a widened column too — the lock refused that gesture, so it must
+    // not reach the payload on the back of the collapse that IS allowed.
+    expect(persistState).toHaveBeenCalledWith({ collapsed_groups: ['Done'] })
+    expect(persistConfig).not.toHaveBeenCalled()
   })
 
   it('drops nothing to the source container either', async () => {
