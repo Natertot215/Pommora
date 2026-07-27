@@ -552,7 +552,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (t === undefined) return null
     return (
       <span className="col-header-icon">
-        <PropertyTypeIcon type={t === 'tier' ? 'context' : t} size={13} />
+        <PropertyTypeIcon type={t} size={13} />
       </span>
     )
   }
@@ -594,7 +594,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const t = declaredType(id, schema)
     const barCapable = numberBarCapable(id, t)
     const style =
-      t !== undefined && t !== 'title' && t !== 'tier'
+      t !== undefined && t !== 'title' && t !== 'context'
         ? { type: t, current: colStyle(id), ...(barCapable ? { barCapable: true } : {}) }
         : undefined
     const action = await window.nexus.columnMenu({
@@ -629,18 +629,18 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const contextOptionsFor = (
     col: ResolvedColumn,
   ): Array<{ value: string; label: string; color?: string; icon?: string }> | null => {
-    if (col.kind !== 'tier' || !tree) return null
+    if (col.kind !== 'context' || !tree) return null
     return contextOptionsForSpaces(col.id, tree)
   }
   // A context column writes its full Space-id list through the setContext op (ids out;
   // main serializes titles); everything else is a property write.
-  const commitTierValue = (row: ViewRow, colId: string, ids: string[]): void => {
+  const commitContextValue = (row: ViewRow, colId: string, ids: string[]): void => {
     writeContextValue(row, colId, ids, row.frontmatter, setValueOverride, mutate)
   }
   // A chip's hover × commits whatever remains after that chip: the picker's exact
   // routing — a context column through setContext, everything else through setProperty.
   const removeCellValue = (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null): void => {
-    if (col.kind === 'tier' && next?.kind === 'context') commitTierValue(row, col.id, next.value)
+    if (col.kind === 'context' && next?.kind === 'context') commitContextValue(row, col.id, next.value)
     else commitCellValue(row, col.id, next)
   }
   // Single-click acts per the cell's type: checkbox-look status cycles its group,
@@ -667,7 +667,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       } else void select({ kind: 'page', id: row.id, path: row.path })
       return
     }
-    if (col.kind === 'tier') {
+    if (col.kind === 'context') {
       e.stopPropagation()
       setEditing({ rowId: row.id, colId: col.id, mode: 'picker' })
       return
@@ -834,8 +834,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         look={colStyle(col.id).look}
         {...(contextOptions ? { contextOptions } : {})}
         onCommit={(v) =>
-          col.kind === 'tier' && v?.kind === 'context'
-            ? commitTierValue(row, col.id, v.value)
+          col.kind === 'context' && v?.kind === 'context'
+            ? commitContextValue(row, col.id, v.value)
             : commitCellValue(row, col.id, v)
         }
         onDismiss={dismiss}
@@ -936,7 +936,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       renameNonce.current += 1
       setEditing({ rowId: row.id, colId: col.id, mode: 'rename', nonce: renameNonce.current })
     } else if (action === 'cell:clear') {
-      if (col.kind === 'tier') commitTierValue(row, col.id, [])
+      if (col.kind === 'context') commitContextValue(row, col.id, [])
       else commitCellValue(row, col.id, null)
     } else if (action.startsWith('style:')) {
       const parsed = parseStyleAction(action)

@@ -188,7 +188,7 @@ function evaluateByType(
   op: Op,
   expected: Expected,
   values: string[] | undefined,
-  t: PropertyType | 'title' | 'tier',
+  t: PropertyType | 'title',
 ): boolean {
   switch (t) {
     case 'number':
@@ -207,8 +207,6 @@ function evaluateByType(
     case 'title':
       // resolveFieldValue('_title') carries row.title as a select-kind string — the text matrix reads it.
       return evaluateText(v, op, expected, values)
-    // A tier IS a context relation — same carrier, same matrix. One arm, not two copies.
-    case 'tier':
     case 'context':
       return evaluateList(v.kind === 'context' ? v.value : [], op, expected, values)
     case 'file':

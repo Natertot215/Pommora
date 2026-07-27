@@ -63,7 +63,9 @@ export function CardValue({
   const commit = (v: PropertyValue | null): void => onCommit(column, v)
 
   const dt = declaredType(column.id, ctx.schema)
-  const t = column.kind === 'tier' ? 'context' : dt
+  // The resolved kind is the only reliable Context test here — declaredType can't tell without
+  // the registry ids, which this context doesn't carry.
+  const t = column.kind === 'context' ? 'context' : dt
   const v = resolveFieldValue(row, column.id, ctx.schema)
   const schemaDef = ctx.schema.find((d) => d.id === column.id)
   // Kinds a click on a blank value fills in place (picker / calendar / editor). A checkbox draws its own
