@@ -44,7 +44,7 @@ export const pane = style({
 /** The rule region grows to push the footer to the pane's bottom. */
 export const body = style({ flex: '1 0 auto' })
 
-export const grid = style({
+export const ruleList = style({
   display: 'flex',
   flexDirection: 'column',
   gap: '4px',
@@ -52,8 +52,8 @@ export const grid = style({
 })
 
 /** A rule row — a plain flex run: every field sizes to ITS OWN content, no cross-row column
- *  alignment (rows and sections deliberately unequal). */
-export const gridRow = style({
+ *  alignment (rows are deliberately unequal). Named for what it is: there is no grid here. */
+export const ruleRow = style({
   display: 'flex',
   alignItems: 'center',
   gap: '6px',
@@ -68,8 +68,10 @@ export const whatCell = style({
   minWidth: 0,
 })
 
-/** The one field stroke — the menu separator hairline as an inset ring. */
-const fieldStroke = `inset 0 0 0 1px ${c.separator.line}`
+/** The house ring CHANNEL, not a hand-rolled shadow: interactionField already paints
+ *  `inset 0 0 0 1px var(--field-ring)`, so a field only sets the colour. Overriding boxShadow
+ *  instead would also stomp the channel for any ancestor that sets it. */
+const restRing = { vars: { '--field-ring': c.separator.line } }
 
 /** The shared input-field recipe in its column: flush to the gutters, STANDARD field height
  *  (the interactionField 28px floor), body-size type, separator-hairline stroke. */
@@ -89,7 +91,7 @@ export const cellField = style([
     color: c.label.control,
     overflow: 'hidden',
     whiteSpace: 'nowrap',
-    boxShadow: fieldStroke,
+    ...restRing,
   },
 ])
 
@@ -126,7 +128,7 @@ export const connector = style([
     border: 'none',
     cursor: 'default',
     color: c.label.secondary,
-    boxShadow: fieldStroke,
+    ...restRing,
   },
 ])
 
@@ -179,12 +181,13 @@ export const cellInput = style([
     outline: 'none',
     fontFamily: 'inherit',
     color: c.label.control,
-    boxShadow: fieldStroke,
+    ...restRing,
     transition: `box-shadow ${duration.fast} ${easing.standard}`,
     selectors: {
+      // Focus lights the same channel accent — the TextPicker recipe, not a second shadow.
       '&:focus, &:focus-visible': {
         outline: 'none',
-        boxShadow: `inset 0 0 0 1px ${tintAt('var(--accent)', TINT_STEPS.secondary)}`,
+        vars: { '--field-ring': tintAt('var(--accent)', TINT_STEPS.secondary) },
       },
     },
   },

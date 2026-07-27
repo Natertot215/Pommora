@@ -1,5 +1,6 @@
-import type { PropertyType } from '@shared/properties'
-import { Icon, type IconName } from '@renderer/design-system/symbols'
+import type { PropertyDefinition, PropertyType } from '@shared/properties'
+import { RESERVED_PROPERTY_ID } from '@shared/properties'
+import { asRenderableIcon, Icon, type IconName } from '@renderer/design-system/symbols'
 import { DashIcon } from './DashIcon'
 
 /**
@@ -51,3 +52,34 @@ export function PropertyTypeIcon({
   const name = (type === 'title' ? TITLE_META : PROPERTY_TYPES[type]).icon
   return name ? <Icon name={name} size={size} /> : <DashIcon />
 }
+
+/** A pickable target row in a view-config pane (Sort's What, Filter's What). One shape, because the
+ *  two panes differ only in WHICH defs qualify and which reserved entries lead. */
+export interface PaneTarget {
+  id: string
+  label: string
+  icon: IconName | undefined
+}
+
+/** The reserved leads both panes draw from. */
+export const TITLE_TARGET: PaneTarget = {
+  id: RESERVED_PROPERTY_ID.title,
+  label: 'Title',
+  icon: TITLE_META.icon,
+}
+export const MODIFIED_TARGET: PaneTarget = {
+  id: RESERVED_PROPERTY_ID.modifiedAt,
+  label: 'Modified',
+  icon: propertyTypeIconName('last_edited_time'),
+}
+
+/** Schema defs → targets, keeping the def's own icon and falling back to its type glyph. */
+export const schemaTargets = (
+  schema: PropertyDefinition[],
+  qualifies: (def: PropertyDefinition) => boolean,
+): PaneTarget[] =>
+  schema.filter(qualifies).map((d) => ({
+    id: d.id,
+    label: d.name,
+    icon: (asRenderableIcon(d.icon) as IconName | undefined) ?? propertyTypeIconName(d.type),
+  }))

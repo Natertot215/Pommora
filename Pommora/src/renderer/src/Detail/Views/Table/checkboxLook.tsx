@@ -1,4 +1,7 @@
 import type { CSSProperties } from 'react'
+import { chipBox, chipColor } from '@renderer/design-system/tokens'
+import { cx } from '@renderer/design-system/cx'
+import { Icon } from '@renderer/design-system/symbols'
 import { tint } from '@renderer/design-system/tokens/tint'
 import { solidColorCss } from './solidColor'
 
@@ -11,4 +14,26 @@ import { solidColorCss } from './solidColor'
 export function checkboxBoxStyle(checked: boolean, color: string | undefined): CSSProperties {
   const base: CSSProperties = { verticalAlign: 'middle', color: 'var(--label-control)' }
   return checked ? { ...tint(color ? solidColorCss(color) : 'var(--accent)'), ...base } : base
+}
+
+/** The checkbox box itself — the box chip, its checked tint, and the check glyph as one component.
+ *  Every surface that draws a checkbox value (cells, group bands, the grouping and filter panes)
+ *  renders this, so the look can't drift between them. `className` carries a caller's extra hook. */
+export function CheckboxGlyph({
+  checked,
+  color,
+  className,
+}: {
+  checked: boolean
+  color?: string
+  className?: string
+}): React.JSX.Element {
+  return (
+    <span
+      className={cx(chipBox, checked ? undefined : chipColor.default, className)}
+      style={checkboxBoxStyle(checked, color)}
+    >
+      {checked ? <Icon name="check" size={12} strokeWidth={3} /> : null}
+    </span>
+  )
 }

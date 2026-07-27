@@ -12,7 +12,6 @@ import type { FilterRule, SavedView } from '@shared/views'
 import { Icon } from '@renderer/design-system/symbols'
 import { Chip, chipShapeForType } from '@renderer/Components/Chip'
 import { ContextChip } from '@renderer/Components/ContextChip'
-import { chipBox, chipColor } from '@renderer/design-system/tokens'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import {
   MenuBottomRow,
@@ -29,15 +28,15 @@ import { PickerMenu, PickerOption } from '../../design-system/components/PickerM
 import { Reveal } from '../../design-system/components/Reveal'
 import { duration as motion } from '../../design-system/tokens/motion'
 import { CalendarPicker } from '../../design-system/components/CalendarPicker/CalendarPicker'
-import { saveViewAdopting } from '../../Detail/Views/viewMint'
 import { contextIdsOf, isContextColumnId } from '../../Detail/Views/pipeline/contextIdentity'
 import { styleFor } from '../../Detail/Views/Table/columnStyles'
 import { condensedDate, formatDate } from '../../Detail/Views/PropertyEditing/formatValue'
 import { contextOptionsFor, type ContextOption } from '../../Detail/Views/pipeline/contextOptions'
 import { declaredType } from '../../Detail/Views/pipeline/value'
-import { checkboxBoxStyle } from '../../Detail/Views/Table/checkboxLook'
+import { CheckboxGlyph } from '../../Detail/Views/Table/checkboxLook'
 import { onActivateKey } from '../../design-system/interactions/activate'
 import { cx } from '../../design-system/cx'
+import { useSaveView } from '../../Embeds/ViewEmbedScope'
 import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { optionsOf } from './GroupingPane'
@@ -46,7 +45,7 @@ import {
   type DecodedFilter,
   type MatchMode,
   type OperatorChoice,
-  type PaneRow,
+  type FilterRow,
   decodeFilter,
   connectorFor,
   encodeFilter,
@@ -149,8 +148,10 @@ function FieldPicker({
         </span>
         {chevron ? <Icon name="chevrons-up-down" size={12} className={fp.chevron} /> : null}
       </button>
+      {/* Built only while mounted: JSX children evaluate on EVERY render, so an un-gated render prop
+          allocates each option element per row, per render, and throws them away. */}
       <PickerMenu open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
-        {children(() => setOpen(false))}
+        {open ? children(() => setOpen(false)) : null}
       </PickerMenu>
     </>
   )
@@ -292,7 +293,7 @@ function ChipsField({
         )}
       </div>
       <PickerMenu open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
-        {options.length === 0
+        {!open ? null : options.length === 0
           ? emptyPicker(emptyLabel)
           : options.map((o) => (
               <PickerOption
@@ -340,6 +341,9 @@ export function FilterPane({
   onBack: () => void
 }): React.JSX.Element {
   const load = useSession((st) => st.load)
+  // The shared view-config writer: in an embed this updates the tile payload instead of the source
+  // collection's sidecar. Every other config surface routes here.
+  const saveView = useSaveView(source, load)
   // The "+" draft — local until it gains a target (an incomplete rule is never written). Cleared
   // synchronously in the same handler that dispatches its write; the hosts key the pane by view id,
   // so a view switch can never float a stale draft onto another view's rows.
@@ -367,19 +371,19 @@ export function FilterPane({
 
   const commit = (next: SavedView): void => {
     writtenRef.current = next
-    void saveViewAdopting(source, next, load)
+    void saveView(next)
   }
 
   const decoded: DecodedFilter = decodeFilter(liveView.filter)
   const enabled = liveView.filter_enabled !== false
-  const rows: PaneRow[] = decoded.kind === 'rows' ? decoded.rows : []
+  const rows: FilterRow[] = decoded.kind === 'rows' ? decoded.rows : []
   const decodedMode: MatchMode = decoded.kind === 'rows' ? decoded.mode : 'all'
   const mode: MatchMode = rows.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
 
   // Both read the ref at CALL time, never the render-time `liveView`: a handler created before an
   // in-gesture write would otherwise still hold the pre-write snapshot, since a write updates the
   // ref without re-rendering.
-  const save = (nextMode: MatchMode, nextRows: PaneRow[]): void =>
+  const save = (nextMode: MatchMode, nextRows: FilterRow[]): void =>
     commit({ ...writtenRef.current, filter: encodeFilter(nextMode, nextRows) })
 
   /** On/off is its own persisted axis — flipping it never touches the rules or the mode. */
@@ -387,7 +391,10 @@ export function FilterPane({
     commit({ ...writtenRef.current, filter_enabled: next })
 
   const contextIds = contextIdsOf(tree)
-  const targets = filterTargets(schema, tree)
+  const targets = filterTargets(schema, tree, (source.sets?.length ?? 0) > 0)
+  // One pass instead of a linear scan per lookup: the same property_id was being walked out of
+  // `schema` up to five times per row, per render.
+  const defById = new Map(schema.map((d) => [d.id, d]))
   const targetById = new Map(targets.map((t) => [t.id, t]))
 
   const pickMatch = (pick: MatchMode): void => {
@@ -460,13 +467,13 @@ export function FilterPane({
     ))
 
   const valueCell = (
-    row: PaneRow,
+    row: FilterRow,
     index: number,
     op: OperatorChoice | undefined,
   ): React.ReactNode => {
     if (!op || op.slot === 'none') return <span className={fp.valueField} />
     const rule = row.rule
-    const def = schema.find((d) => d.id === rule.property_id)
+    const def = defById.get(rule.property_id)
     const patch = (next: Partial<Pick<FilterRule, 'value' | 'values'>>): void =>
       replaceRule(index, {
         property_id: rule.property_id,
@@ -551,7 +558,7 @@ export function FilterPane({
     )
   }
 
-  const ruleRow = (row: PaneRow, index: number): React.JSX.Element => {
+  const ruleRow = (row: FilterRow, index: number): React.JSX.Element => {
     const ops = operatorsFor(row.rule.property_id, schema, contextIds)
     const current = ops.find(
       (o) =>
@@ -561,21 +568,16 @@ export function FilterPane({
     // The checkbox family leads with THE checkbox component (the table cell's box recipe) —
     // checked wears the def's property-wide checkbox_color (absent = accent), empty stays neutral.
     const isCheckbox = declaredType(row.rule.property_id, schema, contextIds) === 'checkbox'
-    const checkboxColor = schema.find((d) => d.id === row.rule.property_id)?.checkbox_color
+    const checkboxColor = defById.get(row.rule.property_id)?.checkbox_color
     const checkboxBox = (o: OperatorChoice): React.JSX.Element => {
       const checked = o.impliedValue === 'true'
       return (
-        <span
-          className={cx(chipBox, fp.checkBoxScale, checked ? undefined : chipColor.default)}
-          style={checkboxBoxStyle(checked, checkboxColor)}
-        >
-          {checked ? <Icon name="check" size={12} strokeWidth={3} /> : null}
-        </span>
+        <CheckboxGlyph checked={checked} color={checkboxColor} className={fp.checkBoxScale} />
       )
     }
     return (
       <RevealRow key={index} animate={index === justAdded}>
-        <div className={fp.gridRow}>
+        <div className={fp.ruleRow}>
           <span className={fp.whatCell}>
             {row.connector !== null && (
               <button
@@ -673,7 +675,7 @@ export function FilterPane({
   const lead = rows.length === 0
   const draftRow = (draft !== false || lead) && (
     <RevealRow animate={!lead}>
-      <div className={fp.gridRow}>
+      <div className={fp.ruleRow}>
         <span className={fp.whatCell}>
           {!lead && (
             // Toggleable before the rule exists: the Or is what splits the list into runs, so the
@@ -735,14 +737,15 @@ export function FilterPane({
         </>
       ) : (
         <div className={cx(gp.middle, fp.body, 'overflow-eclipse-y')}>
-          <div className={fp.grid}>
+          <div className={fp.ruleList}>
             {rows.map(ruleRow)}
             {draftRow}
             <button
               type="button"
               className={fp.addRow}
               aria-label="Add filter rule"
-              onClick={() => setDraft(rows.length === 0 ? null : connectorFor(mode))}
+              // Seeds only a NEW draft — re-seeding an open one would discard a toggled Or.
+                onClick={() => draft === false && setDraft(rows.length === 0 ? null : connectorFor(mode))}
             >
               <Icon name="plus" size={13} />
             </button>

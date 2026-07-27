@@ -43,9 +43,8 @@ import { reparentFsOrder, structuralOrderAfterDrop } from '../../Detail/Views/Ta
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { Chip, chipShapeForType } from '../Chip'
 import { chipColorFor } from '../../design-system/tokens/colorMap'
-import { chipBox, chipColor } from '../../design-system/tokens'
 import { cx } from '../../design-system/cx'
-import { checkboxBoxStyle } from '../../Detail/Views/Table/checkboxLook'
+import { CheckboxGlyph } from '../../Detail/Views/Table/checkboxLook'
 import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { propertyTypeIconName } from './PropertyTypes'
@@ -214,12 +213,7 @@ export function GroupingPane({
             </span>
           }
           trailing={
-            <span
-              className={cx(chipBox, group.hide_empty_groups ? undefined : chipColor.default)}
-              style={checkboxBoxStyle(group.hide_empty_groups, undefined)}
-            >
-              {group.hide_empty_groups ? <Icon name="check" size={12} strokeWidth={3} /> : null}
-            </span>
+            <CheckboxGlyph checked={group.hide_empty_groups} />
           }
           onClick={() => saveGroup({ ...group, hide_empty_groups: !group.hide_empty_groups })}
         >
