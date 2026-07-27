@@ -12,7 +12,7 @@ import { useActiveView } from '../../Detail/Views/useActiveView'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { PaneDnd, RowShell, usePaneRegions } from './paneDnd'
 import type { PaneDrop, PaneRow } from './paneDndModel'
-import { contextIdsOf } from '../../Detail/Views/pipeline/contextIdentity'
+import { contextIdsOf, contextsByIdOf } from '../../Detail/Views/pipeline/contextIdentity'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenPaneModel'
 import { PropertyTypeIcon } from './PropertyTypes'
 import { cx } from '../../design-system/cx'
@@ -170,7 +170,7 @@ export function VisibilityList({
   const shownIds = resolveColumns(view, schema, contextIds).map((c) => c.id)
   const hiddenIds = hiddenListIds(view, schema, contextIds)
   const hiddenSet = new Set(view.hidden_properties)
-  const nameFor = (id: string): string => columnLabel(id, schema, tree)
+  const nameFor = (id: string): string => columnLabel(id, schema, contextsByIdOf(tree))
 
   const save = async (patch: Partial<SavedView>): Promise<void> => {
     const res = await saveView({ ...view, ...patch })

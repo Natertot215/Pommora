@@ -776,7 +776,7 @@ function CardProperties({
       {shown.map((c) => (
         <div key={c.id} className="card-prop-row">
           <span className={cx('card-prop-label', text.caption.emphasized)}>
-            {columnLabel(c.id, ctx.schema)}
+            {columnLabel(c.id, ctx.schema, ctx.contexts)}
           </span>
           {value(c)}
         </div>

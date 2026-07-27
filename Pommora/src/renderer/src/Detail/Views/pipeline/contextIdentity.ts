@@ -73,6 +73,12 @@ export function contextIdentityOf(tree: NexusTree | null, id: string): ContextId
   return tree ? mapsFor(tree).contexts.get(id) : undefined
 }
 
+/** Every Context id → its identity. Hand this to a surface that must label Context columns but
+ *  can't hold the tree — a memoized row would re-render on every unrelated tree push. */
+export function contextsByIdOf(tree: NexusTree | null): ReadonlyMap<string, ContextIdentity> {
+  return tree ? mapsFor(tree).contexts : new Map()
+}
+
 export function spaceIdentityOf(tree: NexusTree | null, id: string): SpaceIdentity | undefined {
   return tree ? mapsFor(tree).spaces.get(id) : undefined
 }
