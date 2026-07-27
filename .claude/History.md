@@ -4,6 +4,14 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 ### Completion Timeline (Descending)
 
+#### The tierN Era Closes (2026-07-27)
+
+Every nexus was confirmed on the registry shape — the real one had migrated through daily use, the test one was migrated and diffed against a pre-migration copy to prove no assignment was dropped. With nothing left to convert, the backward-compatibility surface came out entirely rather than staying as dormant weight: the migration and its resumable version handshake, the read-healing that ran inside every context write, the legacy key modeling in the page and agenda schemas, the walk's recognition of the old arrays, the registry's unmigrated-layout refusal, and the tier-level helpers.
+
+**Locked — a compatibility path is a liability once its last consumer is gone.** Keeping the conversion "just in case" would preserve a code path that can never again be exercised or tested against real input, and every future edit to the write layer would have to reason about a shape that no longer exists on disk. The consequence is accepted and stated plainly: a nexus left at the old shape can no longer be opened, because the conversion is gone rather than dormant.
+
+Two changes fell out of the removal. New nexuses are minted at the current schema version, instead of being stamped at the old one and relying on a migration to catch up — which was only ever correct while the migration existed. And a wrapper whose sole outside consumer was the migration collapsed into the shared reconcile it had been forwarding to. The reserved `_tier1`/`_tier2`/`_tier3` ids stay: they are the seeded Contexts' live identifiers, referenced by saved views and space orders, and are not legacy residue despite the name. → [[Contexts]].
+
 #### Contexts & Spaces (2026-07-27)
 
 The fixed three-tier context model is gone. A Context is now a user-defined registry entry holding Spaces — Areas, Topics and Projects are seeded rows, not types — and every consumer that had hard-coded three tiers was rewritten against it: the walk, the index, the sidebar, selection, navigation, table resolution, column labels, the DnD model. Membership is a bracketed title key in front-matter, resolved against the registry at assembly. Registry writes run under a lock with a journal, so an interrupted rename cascade resumes instead of half-applying, and the `tierN` migration keys its re-entry on the version alone — the tier folders can't be the signal, because the step that moves them consumes them.
