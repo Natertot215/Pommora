@@ -75,7 +75,7 @@ beforeEach(async () => {
   // under `.nexus/contexts/<ContextTitle>/<SpaceTitle>/`.
   ids.work = 'sp-work'
   await writeJson(contextsRegistryFile(root), {
-    contexts: [{ id: '_tier1', title: 'Areas', singular: 'Area' }],
+    contexts: [{ id: 'ctx_areas', title: 'Areas', singular: 'Area' }],
   })
   await mkdir(join(nexusDir(root), 'contexts', 'Areas', 'Work'), { recursive: true })
   await writeJson(join(nexusDir(root), 'contexts', 'Areas', 'Work', '_space.json'), {
@@ -170,7 +170,7 @@ describe('rebuildIndex (cold build)', () => {
 
     // Context link PageA → Work (legacy tierN resolved through the reserved context id)
     const link = get(db, 'SELECT * FROM context_links WHERE source_id = ?', ids.a)
-    expect(link).toMatchObject({ target_id: ids.work, context_id: '_tier1', target_kind: 'space' })
+    expect(link).toMatchObject({ target_id: ids.work, context_id: 'ctx_areas', target_kind: 'space' })
 
     // Agenda: the task row + its status property + tier link + schema def
     const task = get(db, 'SELECT * FROM agenda_tasks WHERE id = ?', ids.task)
@@ -187,7 +187,7 @@ describe('rebuildIndex (cold build)', () => {
   it('carries registry-mode space rows + space-source links (G-2)', async () => {
     await writeJson(nexusConfig(root, 'contexts.json'), {
       contexts: [
-        { id: '_tier3', title: 'Projects', singular: 'Project' },
+        { id: 'ctx_projects', title: 'Projects', singular: 'Project' },
         { id: 'ctxC', title: 'Classes', singular: 'Class' },
       ],
     })
@@ -204,7 +204,7 @@ describe('rebuildIndex (cold build)', () => {
     expect(db).not.toBeNull()
     if (!db) return
     expect(get(db, 'SELECT context_id FROM contexts WHERE id = ?', 'sp-pom')).toMatchObject({
-      context_id: '_tier3',
+      context_id: 'ctx_projects',
     })
     const link = get(db, 'SELECT * FROM context_links WHERE source_id = ?', 'sp-pom')
     expect(link).toMatchObject({

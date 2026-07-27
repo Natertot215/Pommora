@@ -99,7 +99,7 @@ describe('resolveView — full pipeline over the fixture', () => {
       setTree,
       view,
       schema,
-      contextIds: ['_tier1', '_tier2', '_tier3'],
+      contextIds: ['ctx_areas', 'ctx_topics', 'ctx_projects'],
     })
 
     expect(columns[0].id).toBe('prop_status')
@@ -107,9 +107,9 @@ describe('resolveView — full pipeline over the fixture', () => {
     expect(columns.map((c) => c.id)).toEqual([
       'prop_status',
       '_title',
-      '_tier3',
-      '_tier2',
-      '_tier1',
+      'ctx_projects',
+      'ctx_topics',
+      'ctx_areas',
     ])
     // manual order ['in_progress','opt_open','not_started','done'] — done empty → an empty band; no-value tail last
     expect(groups.map((g) => g.key)).toEqual([
@@ -329,7 +329,6 @@ describe('mintDefaultView', () => {
     expect(v.type).toBe('table')
     expect(v.property_order).toEqual(['_title'])
     expect(v.hidden_properties).toContain('prop_x')
-    expect(v.hidden_properties).toContain('_tier1')
     expect(v.group).toEqual({ kind: 'structural' })
     expect(v.sort).toBeUndefined()
     expect(v.property_order).not.toContain('_modified_at')

@@ -22,7 +22,7 @@ const schema: PropertyDefinition[] = [
     id: 'prop_rel',
     name: 'Rel',
     type: 'context',
-    context_target: { kind: 'context_tier', tier: 1 },
+    context_target: { kind: 'context', context_id: 'ctx_areas' },
   },
 ]
 
@@ -45,12 +45,12 @@ function row(
       ...(opts.created_at ? { created_at: opts.created_at } : {}),
       properties: opts.props ?? {},
     },
-    ...(opts.tier1 ? { contextValues: { _tier1: opts.tier1 } } : {}),
+    ...(opts.tier1 ? { contextValues: { ctx_areas: opts.tier1 } } : {}),
   }
 }
 
 const ids = (rows: ViewRow[], filter: FilterGroup | undefined): string[] =>
-  applyFilter(rows, filter, schema, [], ['_tier1']).map((r) => r.id)
+  applyFilter(rows, filter, schema, [], ['ctx_areas']).map((r) => r.id)
 
 describe('applyFilter — match mode + recursion', () => {
   const rows = [
@@ -225,7 +225,7 @@ describe('applyFilter — per-type matrix', () => {
     expect(
       ids([rA, rB], {
         match: 'all',
-        rules: [{ property_id: '_tier1', op: 'contains', value: 'area1' }],
+        rules: [{ property_id: 'ctx_areas', op: 'contains', value: 'area1' }],
       }),
     ).toEqual(['rA'])
     expect(
@@ -528,13 +528,13 @@ describe('applyFilter — multi-operand values[]', () => {
     expect(
       ids([rows[4]], {
         match: 'all',
-        rules: [{ property_id: '_tier1', op: 'contains_all', values: ['area1', 'area2'] }],
+        rules: [{ property_id: 'ctx_areas', op: 'contains_all', values: ['area1', 'area2'] }],
       }),
     ).toEqual(['t1'])
     expect(
       ids([rows[4]], {
         match: 'all',
-        rules: [{ property_id: '_tier1', op: 'contains_any', values: ['zzz'] }],
+        rules: [{ property_id: 'ctx_areas', op: 'contains_any', values: ['zzz'] }],
       }),
     ).toEqual([])
   })

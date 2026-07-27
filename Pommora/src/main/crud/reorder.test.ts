@@ -27,11 +27,11 @@ describe('setStateOrder', () => {
   })
 
   it('does not clobber other state keys (read-modify-write)', async () => {
-    await setSpaceOrder(root, '_tier1', ['x', 'y'])
+    await setSpaceOrder(root, 'ctx_areas', ['x', 'y'])
     await setStateOrder(root, 'collection_order', ['a'])
     const state = await readState()
     expect(state.collection_order).toEqual(['a'])
-    expect((state.space_orders as Record<string, unknown>)._tier1).toEqual(['x', 'y'])
+    expect((state.space_orders as Record<string, unknown>).ctx_areas).toEqual(['x', 'y'])
   })
 
   it('never persists adopted- placeholder ids', async () => {
@@ -40,10 +40,10 @@ describe('setStateOrder', () => {
   })
 
   it('setSpaceOrder writes per-context entries in the space_orders map', async () => {
-    await setSpaceOrder(root, '_tier3', ['s2', 's1'])
+    await setSpaceOrder(root, 'ctx_projects', ['s2', 's1'])
     await setSpaceOrder(root, 'ctxC', ['x'])
     const orders = (await readState()).space_orders as Record<string, unknown>
-    expect(orders._tier3).toEqual(['s2', 's1'])
+    expect(orders.ctx_projects).toEqual(['s2', 's1'])
     expect(orders.ctxC).toEqual(['x'])
   })
 })

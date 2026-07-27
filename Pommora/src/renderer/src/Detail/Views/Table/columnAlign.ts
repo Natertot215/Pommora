@@ -23,10 +23,15 @@ const CENTERED = new Set([
 ])
 
 /** The E-6 default alignment for a column, from its declared type. Title is always left (its primary
- *  icon+text treatment); unknown types fall back to left. */
-export function defaultAlignFor(columnId: string, schema: PropertyDefinition[]): ColumnAlign {
+ *  icon+text treatment); unknown types fall back to left. `contextIds` is what makes a Context
+ *  column classify as such — omit it and one reads as an unknown type. */
+export function defaultAlignFor(
+  columnId: string,
+  schema: PropertyDefinition[],
+  contextIds: readonly string[] = [],
+): ColumnAlign {
   if (columnId === RESERVED_PROPERTY_ID.title) return 'left'
-  const t = declaredType(columnId, schema)
+  const t = declaredType(columnId, schema, contextIds)
   return t !== undefined && CENTERED.has(t) ? 'center' : 'left'
 }
 
@@ -35,6 +40,7 @@ export function alignFor(
   columnId: string,
   schema: PropertyDefinition[],
   view: SavedView,
+  contextIds: readonly string[] = [],
 ): ColumnAlign {
-  return view.column_alignments?.[columnId] ?? defaultAlignFor(columnId, schema)
+  return view.column_alignments?.[columnId] ?? defaultAlignFor(columnId, schema, contextIds)
 }

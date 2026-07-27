@@ -26,11 +26,12 @@ describe('paths', () => {
 })
 
 describe('readRegistry', () => {
-  it('seeds the three reserved contexts on a true fresh nexus and writes the file', async () => {
+  it('seeds the three contexts on a true fresh nexus and writes the file', async () => {
     const r = await readRegistry(root, DEFAULT_LABELS)
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.value.contexts.map((c) => c.id)).toEqual(['_tier1', '_tier2', '_tier3'])
+    expect(r.value.contexts.map((c) => c.id)).toHaveLength(3)
+    expect(new Set(r.value.contexts.map((c) => c.id)).size).toBe(3) // distinct minted ids
     expect(r.value.contexts.map((c) => c.title)).toEqual(['Areas', 'Topics', 'Projects'])
     const onDisk = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     expect(onDisk.contexts).toHaveLength(3)

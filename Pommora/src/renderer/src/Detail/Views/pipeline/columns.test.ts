@@ -10,7 +10,7 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_b', name: 'B', type: 'number' },
 ]
 
-const CONTEXT_IDS = ['_tier1', '_tier2', '_tier3', 'ctxC']
+const CONTEXT_IDS = ['ctx_areas', 'ctx_topics', 'ctx_projects', 'ctxC']
 
 function view(over: Partial<SavedView>): SavedView {
   return { id: 'v', name: 'V', type: 'table', property_order: [], hidden_properties: [], ...over }
@@ -25,7 +25,7 @@ describe('resolveColumns — fixture', () => {
       propertyDefinition.parse((registry as Record<string, unknown>)[id]),
     )
     const cols = resolveColumns(v, fixtureSchema, CONTEXT_IDS)
-    expect(ids(cols)).toEqual(['prop_status', '_title', '_tier3', '_tier2', '_tier1'])
+    expect(ids(cols)).toEqual(['prop_status', '_title', 'ctx_projects', 'ctx_topics', 'ctx_areas'])
     expect(cols.map((c) => c.kind)).toEqual(['property', 'title', 'tier', 'tier', 'tier'])
     // prop_when is in the schema but in neither list → the allowlist keeps it off the table
     expect(cols.some((c) => c.id === 'prop_when')).toBe(false)
@@ -42,11 +42,11 @@ describe('resolveColumns — rules', () => {
 
   it('a context column renders when propertyOrder explicitly reveals it', () => {
     const cols = resolveColumns(
-      view({ property_order: ['_title', 'ctxC', '_tier1'] }),
+      view({ property_order: ['_title', 'ctxC', 'ctx_areas'] }),
       schema,
       CONTEXT_IDS,
     )
-    expect(ids(cols)).toEqual(['_title', 'ctxC', '_tier1'])
+    expect(ids(cols)).toEqual(['_title', 'ctxC', 'ctx_areas'])
     expect(cols.map((c) => c.kind)).toEqual(['title', 'tier', 'tier'])
   })
 
@@ -95,13 +95,13 @@ describe('resolveColumns — rules', () => {
 
   it('maps each column id to its kind', () => {
     const cols = resolveColumns(
-      view({ property_order: ['_title', '_tier1', 'ctxC', 'prop_a', '_modified_at'] }),
+      view({ property_order: ['_title', 'ctx_areas', 'ctxC', 'prop_a', '_modified_at'] }),
       schema,
       CONTEXT_IDS,
     )
     const kindOf = (id: string): string | undefined => cols.find((c) => c.id === id)?.kind
     expect(kindOf('_title')).toBe('title')
-    expect(kindOf('_tier1')).toBe('tier')
+    expect(kindOf('ctx_areas')).toBe('tier')
     expect(kindOf('ctxC')).toBe('tier')
     expect(kindOf('prop_a')).toBe('property')
     expect(kindOf('_modified_at')).toBe('modified')

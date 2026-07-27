@@ -16,12 +16,10 @@ describe('columnLabel', () => {
 
   it('resolves context columns through the registry tree', () => {
     const tree = {
-      contexts: [
-        { def: { id: RESERVED_PROPERTY_ID.tier1, title: 'Areas', singular: 'Area' }, spaces: [] },
-      ],
+      contexts: [{ def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' }, spaces: [] }],
     } as unknown as import('@shared/types').NexusTree
-    expect(columnLabel(RESERVED_PROPERTY_ID.tier1, schema, tree)).toBe('Areas')
-    expect(columnLabel(RESERVED_PROPERTY_ID.tier2, schema)).toBe(RESERVED_PROPERTY_ID.tier2)
+    expect(columnLabel('ctx_areas', schema, tree)).toBe('Areas')
+    expect(columnLabel('ctx_topics', schema)).toBe('ctx_topics')
   })
 
   it('resolves a user property through the schema name', () => {

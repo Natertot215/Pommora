@@ -13,13 +13,13 @@ const space = (id: string, title: string, contextId: string): SpaceNode => ({
 
 const registry: ContextsRegistry = {
   contexts: [
-    { id: '_tier3', title: 'Projects', singular: 'Project' },
+    { id: 'ctx_projects', title: 'Projects', singular: 'Project' },
     { id: 'ctxA', title: 'Classes', singular: 'Class' },
   ],
 }
 
 const spacesByContext = new Map<string, SpaceNode[]>([
-  ['_tier3', [space('sp1', 'Pommora', '_tier3'), space('sp2', 'CS 161', '_tier3')]],
+  ['ctx_projects', [space('sp1', 'Pommora', 'ctx_projects'), space('sp2', 'CS 161', 'ctx_projects')]],
   ['ctxA', [space('sp3', '2024', 'ctxA'), space('sp4', 'true', 'ctxA')]],
 ])
 
@@ -30,7 +30,7 @@ describe('resolveContextKeys', () => {
       registry,
       spacesByContext,
     )
-    expect(links.get('_tier3')).toEqual(['sp1', 'sp2'])
+    expect(links.get('ctx_projects')).toEqual(['sp1', 'sp2'])
   })
 
   it('ignores unbracketed keys and unknown titles', () => {
@@ -49,7 +49,7 @@ describe('resolveContextKeys', () => {
       spacesByContext,
     )
     expect(links.get('ctxA')).toEqual(['sp3', 'sp4'])
-    expect(links.get('_tier3')).toEqual(['sp1'])
+    expect(links.get('ctx_projects')).toEqual(['sp1'])
   })
 
   it('drops only the unmatched values, keeping valid siblings', () => {
@@ -58,7 +58,7 @@ describe('resolveContextKeys', () => {
       registry,
       spacesByContext,
     )
-    expect(links.get('_tier3')).toEqual(['sp1'])
+    expect(links.get('ctx_projects')).toEqual(['sp1'])
   })
 })
 

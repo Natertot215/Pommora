@@ -10,10 +10,6 @@ export type ContextDef = { id: string; title: string; singular: string; icon?: s
 /** Array position IS the display order — no ordinal semantics anywhere. */
 export type ContextsRegistry = { contexts: ContextDef[] }
 
-/** The seeded three keep these reserved ids on BOTH fresh-create and migration, anchoring
- *  legacy bare-ULID `tierN` resolution; user-created Contexts mint ULIDs. */
-export const RESERVED_CONTEXT_IDS = ['_tier1', '_tier2', '_tier3'] as const
-
 export const contextsRegistry: z.ZodType<ContextsRegistry> = z.looseObject({
   contexts: z.array(
     z.looseObject({
@@ -70,17 +66,23 @@ export function normalizeContextValue(raw: unknown): string {
 }
 
 /** The fresh-nexus registry: titles from the tier LabelPairs' plurals, singulars from their
- *  singular halves, reserved ids in tier order. Colliding custom plurals disambiguate
- *  ("Title 2") — titles are nexus-wide identity, so two entries can never share one. */
-export function seededRegistry(labels: NexusLabels): ContextsRegistry {
+ *  singular halves, a minted id each. Colliding custom plurals disambiguate ("Title 2") —
+ *  titles are nexus-wide identity, so two entries can never share one. */
+export function seededRegistry(labels: NexusLabels, mintId: () => string): ContextsRegistry {
   const pairs = [labels.area, labels.topic, labels.project]
   const taken = new Set<string>()
   return {
-    contexts: pairs.map((pair, i) => {
+    contexts: pairs.map((pair) => {
       let title = pair.plural
       for (let n = 2; taken.has(title); n++) title = `${pair.plural} ${n}`
       taken.add(title)
-      return { id: RESERVED_CONTEXT_IDS[i], title, singular: pair.singular }
+      return { id: mintId(), title, singular: pair.singular }
     }),
   }
+}
+
+/** The create-entry label for a Context's Spaces. A seeded Context carries the singular its
+ *  label pair gave it ("New Area"); one the user minted has none to speak for it. */
+export function createSpaceLabel(def: ContextDef): string {
+  return def.singular ? `New ${def.singular}` : 'New Space'
 }

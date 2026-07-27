@@ -20,7 +20,7 @@ beforeEach(async () => {
     contextsRegistryFile(root),
     JSON.stringify({
       contexts: [
-        { id: '_tier3', title: 'Projects', singular: 'Project' },
+        { id: 'ctx_projects', title: 'Projects', singular: 'Project' },
         { id: 'ctxC', title: 'Classes', singular: 'Class' },
       ],
     }),
@@ -48,11 +48,11 @@ const regTitle = async (id: string): Promise<string | undefined> => {
 
 describe('case folding on renames', () => {
   it('a case-only Context rename of itself passes; a case-variant of ANOTHER fails', async () => {
-    expect((await renameContextOp(root, '_tier3', 'classes')).ok).toBe(false)
-    const self = await renameContextOp(root, '_tier3', 'PROJECTS')
+    expect((await renameContextOp(root, 'ctx_projects', 'classes')).ok).toBe(false)
+    const self = await renameContextOp(root, 'ctx_projects', 'PROJECTS')
     expect(self.ok).toBe(true)
     const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-    expect(reg.contexts.find((c: { id: string }) => c.id === '_tier3').title).toBe('PROJECTS')
+    expect(reg.contexts.find((c: { id: string }) => c.id === 'ctx_projects').title).toBe('PROJECTS')
   })
 
   it('a case-only Space rename passes (its own folder is not a collision)', async () => {
@@ -65,7 +65,7 @@ describe('case folding on renames', () => {
 
 describe('renameContextOp', () => {
   it('rewrites the KEY in all three scopes, commits the registry, clears the journal', async () => {
-    const r = await renameContextOp(root, '_tier3', 'Ventures')
+    const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(true)
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect(fm['[Ventures]']).toEqual(['Pommora', 'pommora'])
@@ -75,7 +75,7 @@ describe('renameContextOp', () => {
     expect(t.foreign).toBe(1)
     const sc = JSON.parse(await readFile(csSidecar(), 'utf8'))
     expect(sc['[Ventures]']).toEqual(['Pommora'])
-    expect(await regTitle('_tier3')).toBe('Ventures')
+    expect(await regTitle('ctx_projects')).toBe('Ventures')
     expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora'))).toBe(true)
     expect(await readJournal(root)).toBeNull()
   })
@@ -85,7 +85,7 @@ describe('renameContextOp', () => {
       task(),
       JSON.stringify({ id: 't1', '[Projects]': ['Pommora'], '[Ventures]': ['Other', 'Pommora'] }),
     )
-    const r = await renameContextOp(root, '_tier3', 'Ventures')
+    const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(true)
     const t = JSON.parse(await readFile(task(), 'utf8'))
     expect(t['[Ventures]']).toEqual(['Other', 'Pommora'])
@@ -93,10 +93,10 @@ describe('renameContextOp', () => {
   })
 
   it('rejects a taken or bracketed title without journaling', async () => {
-    expect((await renameContextOp(root, '_tier3', 'Classes')).ok).toBe(false)
-    expect((await renameContextOp(root, '_tier3', 'No[pe')).ok).toBe(false)
+    expect((await renameContextOp(root, 'ctx_projects', 'Classes')).ok).toBe(false)
+    expect((await renameContextOp(root, 'ctx_projects', 'No[pe')).ok).toBe(false)
     expect(await readJournal(root)).toBeNull()
-    expect(await regTitle('_tier3')).toBe('Projects')
+    expect(await regTitle('ctx_projects')).toBe('Projects')
   })
 })
 
@@ -135,9 +135,9 @@ describe('skip-aware journal (D-7b)', () => {
     // A directory wearing an agenda suffix: enumerated, unreadable as JSON → skipped.
     const broken = join(root, 'Tasks', 'Broken.task.json')
     await mkdir(broken)
-    const r = await renameContextOp(root, '_tier3', 'Ventures')
+    const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(true)
-    expect(await regTitle('_tier3')).toBe('Ventures')
+    expect(await regTitle('ctx_projects')).toBe('Ventures')
     const j = await readJournal(root)
     expect(j?.skipped).toEqual([broken])
 
@@ -177,7 +177,7 @@ describe('replayPendingRename (D-7a crash windows)', () => {
     // Crash simulation: journal written, folder renamed, files NOT yet cascaded,
     // registry still on the old title.
     await writeJournal(root, {
-      contextId: '_tier3',
+      contextId: 'ctx_projects',
       oldTitle: 'Projects',
       newTitle: 'Ventures',
       skipped: [],
@@ -191,13 +191,13 @@ describe('replayPendingRename (D-7a crash windows)', () => {
     await replayPendingRename(root)
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect(fm['[Ventures]']).toEqual(['Pommora', 'pommora'])
-    expect(await regTitle('_tier3')).toBe('Ventures')
+    expect(await regTitle('ctx_projects')).toBe('Ventures')
     expect(await readJournal(root)).toBeNull()
   })
 
   it('is idempotent — replaying twice equals once', async () => {
     await writeJournal(root, {
-      contextId: '_tier3',
+      contextId: 'ctx_projects',
       oldTitle: 'Projects',
       newTitle: 'Ventures',
       skipped: [],
@@ -206,13 +206,13 @@ describe('replayPendingRename (D-7a crash windows)', () => {
     await replayPendingRename(root)
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect(fm['[Ventures]']).toEqual(['Pommora', 'pommora'])
-    expect(await regTitle('_tier3')).toBe('Ventures')
+    expect(await regTitle('ctx_projects')).toBe('Ventures')
     expect(await readJournal(root)).toBeNull()
   })
 
   it('discards a journal whose registry mapping no longer holds', async () => {
     await writeJournal(root, {
-      contextId: '_tier3',
+      contextId: 'ctx_projects',
       oldTitle: 'SomethingElse',
       newTitle: 'Ventures',
       skipped: [],
@@ -220,7 +220,7 @@ describe('replayPendingRename (D-7a crash windows)', () => {
     await replayPendingRename(root)
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect(fm['[Projects]']).toEqual(['Pommora', 'pommora'])
-    expect(await regTitle('_tier3')).toBe('Projects')
+    expect(await regTitle('ctx_projects')).toBe('Projects')
     expect(await readJournal(root)).toBeNull()
   })
 
@@ -238,7 +238,7 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       JSON.stringify({ id: 'sp-new' }),
     )
     await writeJournal(root, {
-      contextId: '_tier3',
+      contextId: 'ctx_projects',
       spaceId: 'sp-pom',
       oldTitle: 'Pommora',
       newTitle: 'Pommora 2',
@@ -259,7 +259,7 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       JSON.stringify({ id: 'sp-pom' }),
     )
     await writeJournal(root, {
-      contextId: '_tier3',
+      contextId: 'ctx_projects',
       spaceId: 'sp-pom',
       oldTitle: 'Pommora',
       newTitle: 'Pommora 2',

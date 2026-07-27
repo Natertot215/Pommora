@@ -5,21 +5,21 @@ import { DEFAULT_LABELS, type NexusTree } from '@shared/types'
 const tree = {
   contexts: [
     {
-      def: { id: '_tier1', title: 'Areas', singular: 'Area' },
+      def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' },
       spaces: [
         {
           id: 'a1',
           kind: 'space',
           title: 'Personal',
           path: 'P',
-          contextId: '_tier1',
+          contextId: 'ctx_areas',
           color: 'blue',
         },
       ],
     },
     {
-      def: { id: '_tier2', title: 'Topics', singular: 'Topic' },
-      spaces: [{ id: 't1', kind: 'space', title: 'Reading', path: 'R', contextId: '_tier2' }],
+      def: { id: 'ctx_topics', title: 'Topics', singular: 'Topic' },
+      spaces: [{ id: 't1', kind: 'space', title: 'Reading', path: 'R', contextId: 'ctx_topics' }],
     },
   ],
   labels: DEFAULT_LABELS,

@@ -58,7 +58,7 @@ describe('entity upserts', () => {
   })
 
   it('writes contexts + property definitions', () => {
-    upsertContext(db, { id: 'cx', contextId: '_tier1', title: 'Area' })
+    upsertContext(db, { id: 'cx', contextId: 'ctx_areas', title: 'Area' })
     upsertPropertyDefinition(db, {
       id: 'prop_x',
       name: 'Score',
@@ -66,7 +66,7 @@ describe('entity upserts', () => {
       position: 0,
       modifiedAt: 'M',
     })
-    expect(one('SELECT context_id FROM contexts WHERE id = ?', 'cx').context_id).toBe('_tier1')
+    expect(one('SELECT context_id FROM contexts WHERE id = ?', 'cx').context_id).toBe('ctx_areas')
     expect(one('SELECT type FROM property_definitions WHERE id = ?', 'prop_x').type).toBe('number')
   })
 })
@@ -79,7 +79,7 @@ describe('replace-by-source', () => {
         sourceKind: 'page',
         targetId: 'cxA',
         targetKind: 'space',
-        contextId: '_tier1',
+        contextId: 'ctx_areas',
         modifiedAt: 'M',
       },
       {
@@ -87,7 +87,7 @@ describe('replace-by-source', () => {
         sourceKind: 'page',
         targetId: 'cxB',
         targetKind: 'space',
-        contextId: '_tier1',
+        contextId: 'ctx_areas',
         modifiedAt: 'M',
       },
     ])
@@ -97,7 +97,7 @@ describe('replace-by-source', () => {
         sourceKind: 'page',
         targetId: 'cxA',
         targetKind: 'space',
-        contextId: '_tier1',
+        contextId: 'ctx_areas',
         modifiedAt: 'M',
       },
     ])
@@ -108,7 +108,7 @@ describe('replace-by-source', () => {
         sourceKind: 'page',
         targetId: 'cxA',
         targetKind: 'space',
-        contextId: '_tier1',
+        contextId: 'ctx_areas',
         modifiedAt: 'M',
       },
     ])

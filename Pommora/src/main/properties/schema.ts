@@ -24,11 +24,10 @@ export function parseDefinitions(raw: unknown): PropertyDefinition[] {
   return out
 }
 
-/** Drop stored user `.context` defs (the context tiers are synthesized at runtime) EXCEPT reserved
- *  `_tier1/2/3` entries, which persist a user's reverse-name/icon override. Mirrors the Swift
- *  array extension that drops stored user contexts. */
+/** Drop stored `.context` defs — every Context column is synthesized at runtime from the
+ *  registry, so a stored one is stale by construction. */
 export function droppingUserContexts(defs: PropertyDefinition[]): PropertyDefinition[] {
-  return defs.filter((d) => d.type !== 'context' || isReservedPropertyId(d.id))
+  return defs.filter((d) => d.type !== 'context')
 }
 
 // MARK: - Validation (mirrors Swift PropertyDefinitionValidator)

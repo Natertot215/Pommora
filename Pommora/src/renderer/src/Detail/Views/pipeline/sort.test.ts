@@ -47,7 +47,7 @@ const schema: PropertyDefinition[] = [
     id: 'prop_rel',
     name: 'Rel',
     type: 'context',
-    context_target: { kind: 'context_tier', tier: 1 },
+    context_target: { kind: 'context', context_id: 'ctx_areas' },
   },
   { id: 'prop_link', name: 'Link', type: 'url' },
 ]
@@ -246,7 +246,7 @@ describe('makeSorter — multi-key + null cases', () => {
     expect(makeSorter(undefined, schema)).toBeNull()
     expect(makeSorter([], schema)).toBeNull()
     expect(makeSorter([{ property_id: 'prop_unknown', direction: 'ascending' }], schema)).toBeNull()
-    expect(makeSorter([{ property_id: '_tier1', direction: 'ascending' }], schema)).toBeNull()
+    expect(makeSorter([{ property_id: 'ctx_areas', direction: 'ascending' }], schema)).toBeNull()
   })
 })
 
@@ -314,7 +314,7 @@ describe('resolvedSortCount', () => {
     expect(resolvedSortCount([{ property_id: 'prop_gone', direction: 'ascending' }], schema)).toBe(
       0,
     )
-    expect(resolvedSortCount([{ property_id: '_tier1', direction: 'ascending' }], schema)).toBe(0)
+    expect(resolvedSortCount([{ property_id: 'ctx_areas', direction: 'ascending' }], schema)).toBe(0)
     expect(
       resolvedSortCount(
         [

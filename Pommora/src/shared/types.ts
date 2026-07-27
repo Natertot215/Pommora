@@ -534,7 +534,7 @@ export interface ViewRow {
 export type ColumnKind = 'title' | 'property' | 'tier' | 'modified'
 
 /** A resolved table column — the stable seam Part 2's table routes to. `id` is the property id
- *  (reserved `_title`/`_tierN`/`_modified_at`, or a `prop_*`); `kind` picks the cell renderer. */
+ *  (a reserved `_title`/`_modified_at`, a Context id, or a `prop_*`); `kind` picks the renderer. */
 export interface ResolvedColumn {
   id: string
   kind: ColumnKind

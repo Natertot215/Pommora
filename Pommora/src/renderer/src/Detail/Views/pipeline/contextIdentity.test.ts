@@ -12,14 +12,14 @@ const mkTree = (): NexusTree =>
   ({
     contexts: [
       {
-        def: { id: '_tier1', title: 'Areas', singular: 'Area', icon: 'briefcase' },
+        def: { id: 'ctx_areas', title: 'Areas', singular: 'Area', icon: 'briefcase' },
         spaces: [
           {
             id: 'a1',
             kind: 'space',
             title: 'Personal',
             path: 'P',
-            contextId: '_tier1',
+            contextId: 'ctx_areas',
             color: 'blue',
           },
           {
@@ -27,14 +27,14 @@ const mkTree = (): NexusTree =>
             kind: 'space',
             title: 'Work',
             path: 'W',
-            contextId: '_tier1',
+            contextId: 'ctx_areas',
             icon: 'anchor',
           },
         ],
       },
       {
-        def: { id: '_tier2', title: 'Topics', singular: 'Topic' },
-        spaces: [{ id: 't1', kind: 'space', title: 'Reading', path: 'R', contextId: '_tier2' }],
+        def: { id: 'ctx_topics', title: 'Topics', singular: 'Topic' },
+        spaces: [{ id: 't1', kind: 'space', title: 'Reading', path: 'R', contextId: 'ctx_topics' }],
       },
     ],
   }) as unknown as NexusTree
@@ -48,14 +48,14 @@ describe('spacesByIdOf', () => {
       title: 'Personal',
       color: 'blue',
       icon: 'layout-grid',
-      contextId: '_tier1',
+      contextId: 'ctx_areas',
     })
     expect(m.get('a2')?.icon).toBe('anchor')
     expect(m.get('t1')).toEqual({
       title: 'Reading',
       color: undefined,
       icon: 'layout-grid',
-      contextId: '_tier2',
+      contextId: 'ctx_topics',
     })
   })
 
@@ -75,26 +75,26 @@ describe('spacesByIdOf', () => {
 
 describe('context accessors', () => {
   it('lists Context ids in registry order', () => {
-    expect(contextIdsOf(tree)).toEqual(['_tier1', '_tier2'])
+    expect(contextIdsOf(tree)).toEqual(['ctx_areas', 'ctx_topics'])
     expect(contextIdsOf(null)).toEqual([])
   })
 
   it('resolves a Context to its titles and a renderable icon', () => {
-    expect(contextIdentityOf(tree, '_tier1')).toEqual({
+    expect(contextIdentityOf(tree, 'ctx_areas')).toEqual({
       title: 'Areas',
       singular: 'Area',
       icon: 'briefcase',
     })
-    expect(contextIdentityOf(tree, '_tier2')?.icon).toBe('layout-grid')
+    expect(contextIdentityOf(tree, 'ctx_topics')?.icon).toBe('layout-grid')
     expect(contextIdentityOf(tree, 'a1')).toBeUndefined()
   })
 
   it('resolves a Space id and tells Context columns from Space ids', () => {
     expect(spaceIdentityOf(tree, 'a1')?.title).toBe('Personal')
     expect(spaceIdentityOf(null, 'a1')).toBeUndefined()
-    expect(isContextColumnId(tree, '_tier1')).toBe(true)
+    expect(isContextColumnId(tree, 'ctx_areas')).toBe(true)
     expect(isContextColumnId(tree, 'a1')).toBe(false)
-    expect(isContextColumnId(null, '_tier1')).toBe(false)
+    expect(isContextColumnId(null, 'ctx_areas')).toBe(false)
   })
 })
 
@@ -104,7 +104,7 @@ describe('context accessors', () => {
 it('an icon-less Space takes the USER default glyph, not the curated seed', () => {
   const personalized = { ...mkTree(), personalization: { defaultIcons: { space: 'folder-open' } } } as NexusTree
   expect(spaceIdentityOf(personalized, 'a1')?.icon).toBe('folder-open')
-  expect(contextIdentityOf(personalized, '_tier2')?.icon).toBe('folder-open')
+  expect(contextIdentityOf(personalized, 'ctx_topics')?.icon).toBe('folder-open')
   // A Space carrying its OWN icon still wins over the default.
   expect(spaceIdentityOf(mkTree(), 'a1')?.icon).toBe('layout-grid')
 })

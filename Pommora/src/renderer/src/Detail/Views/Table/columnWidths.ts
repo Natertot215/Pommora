@@ -45,10 +45,15 @@ const STYLE_MIN: Record<string, Partial<Record<string, number>>> = {
 }
 
 /** The {min, default, max} width for a column, keyed by its declared type (`_created_at` special-cased,
- *  unknown → a sane fallback). */
-export function widthFor(columnId: string, schema: PropertyDefinition[]): ColumnWidth {
+ *  unknown → a sane fallback). `contextIds` is what makes a Context column classify as such — omit it
+ *  and one takes the fallback instead of the Context width. */
+export function widthFor(
+  columnId: string,
+  schema: PropertyDefinition[],
+  contextIds: readonly string[] = [],
+): ColumnWidth {
   if (columnId === RESERVED_PROPERTY_ID.createdAt) return WIDTHS.created
-  const t = declaredType(columnId, schema)
+  const t = declaredType(columnId, schema, contextIds)
   return (t !== undefined && WIDTHS[t]) || FALLBACK
 }
 
@@ -56,10 +61,15 @@ export function widthFor(columnId: string, schema: PropertyDefinition[]): Column
  *  table defines one (a Switch checkbox needs room the checkbox min can't give; a Pill status wants more
  *  than a Checkbox status). `look` omitted resolves the type's DEFAULT look, so an unstyled status reads
  *  its Pill min; reserved timestamp columns keep the base. */
-export function minWidthFor(columnId: string, schema: PropertyDefinition[], look?: string): number {
-  const base = widthFor(columnId, schema).min
+export function minWidthFor(
+  columnId: string,
+  schema: PropertyDefinition[],
+  look?: string,
+  contextIds: readonly string[] = [],
+): number {
+  const base = widthFor(columnId, schema, contextIds).min
   if (columnId === RESERVED_PROPERTY_ID.createdAt) return base
-  const t = declaredType(columnId, schema)
+  const t = declaredType(columnId, schema, contextIds)
   if (t === undefined) return base
   const resolved = look ?? defaultStyleFor(t).look
   const override = resolved !== undefined ? STYLE_MIN[t]?.[resolved] : undefined
@@ -72,7 +82,8 @@ export function clampWidth(
   columnId: string,
   schema: PropertyDefinition[],
   look?: string,
+  contextIds: readonly string[] = [],
 ): number {
-  const { max } = widthFor(columnId, schema)
-  return Math.max(minWidthFor(columnId, schema, look), Math.min(max, width))
+  const { max } = widthFor(columnId, schema, contextIds)
+  return Math.max(minWidthFor(columnId, schema, look, contextIds), Math.min(max, width))
 }

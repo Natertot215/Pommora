@@ -5,7 +5,8 @@ import type { SavedView } from '@shared/views'
 import type { PaneRow } from './paneDndModel'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenPaneModel'
 
-const { title, tier1, tier3, modifiedAt } = RESERVED_PROPERTY_ID
+const { title, modifiedAt } = RESERVED_PROPERTY_ID
+const [tier1, tier3] = ['ctx_areas', 'ctx_projects'] // Context column ids
 
 const def = (id: string): PropertyDefinition => ({ id, name: id, type: 'select' })
 

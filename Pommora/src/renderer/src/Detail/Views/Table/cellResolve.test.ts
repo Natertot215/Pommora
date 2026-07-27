@@ -42,7 +42,7 @@ const schema: PropertyDefinition[] = [
 const ctx: ResolveContext = {
   schema,
   contextsById: new Map([
-    ['ctx1', { title: 'Personal', icon: 'layout-grid', contextId: '_tier1' }],
+    ['ctx1', { title: 'Personal', icon: 'layout-grid', contextId: 'ctx_areas' }],
   ]),
   labels: DEFAULT_LABELS,
 }
@@ -83,8 +83,8 @@ describe('cellText', () => {
     expect(cellText(mkRow({}), '_title', ctx)).toBe('Page')
   })
   it('resolves context Space ids to titles (unknown id falls back to the id)', () => {
-    const r = { ...mkRow({}), contextValues: { _tier1: ['ctx1', 'ctx_x'] } }
-    expect(cellText(r, '_tier1', ctx)).toBe('Personal, ctx_x')
+    const r = { ...mkRow({}), contextValues: { ctx_areas: ['ctx1', 'ctx_x'] } }
+    expect(cellText(r, 'ctx_areas', ctx)).toBe('Personal, ctx_x')
   })
 })
 
