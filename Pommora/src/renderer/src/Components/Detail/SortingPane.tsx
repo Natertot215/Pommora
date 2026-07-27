@@ -162,8 +162,7 @@ export function SortingPane({
     const fresh: SortCriterion = { property_id: id, direction: 'ascending' }
     const next = sub && sub.property_id !== id ? [fresh, sub] : [fresh]
     // Picking Location seeds its Order at Location (filesystem) — the flatten's default (E-4).
-    if (id === LOCATION_SORT)
-      void saveView({ ...view, sort: next, structural_order_mode: 'location' })
+    if (id === LOCATION_SORT) void saveView({ ...view, sort: next, location_order_mode: 'location' })
     else save(next)
   }
 
@@ -257,18 +256,18 @@ export function SortingPane({
       {!sortByOpen && primary && (
         <>
           {primary.property_id === LOCATION_SORT ? (
-            // The location sort ranks by the filesystem (Location) or the view's manual order (Custom) —
-            // the table's Group-By-Location Order, reused (structural_order_mode). Not Asc/Desc.
+            // The location sort ranks by the filesystem (Location) or the view's manual order
+            // (Custom). Its own key, so grouping structurally on the same view can't shadow it.
             <ValueRow<'location' | 'custom'>
               tier={sub ? 'sub' : 'primary'}
               icon="folder"
               label="Order"
-              value={view.structural_order_mode ?? 'location'}
+              value={view.location_order_mode ?? 'location'}
               options={[
                 { value: 'location', label: 'Location' },
                 { value: 'custom', label: 'Custom' },
               ]}
-              onPick={(v) => void saveView({ ...view, structural_order_mode: v })}
+              onPick={(v) => void saveView({ ...view, location_order_mode: v })}
             />
           ) : (
             <ValueRow<OrderChoice>
