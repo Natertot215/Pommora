@@ -48,6 +48,15 @@ Findings sort into four actions, and naming which one applies is part of the fin
 - **An override is a tell.** When one file fights another with escalating specificity — a tripled class, an `&&`, a `!important` — the loser is usually right and the winner is usually mis-scoped. The fix belongs in the component as a variant, not in a counter-selector.
 - **A stale comment is a trap, not a typo.** A comment pointing at the wrong source file sends the next reader somewhere that never ships. Treat a wrong pointer as a real finding and correct it at the source.
 
+### Dispatching Implementation Agents
+
+The sweep above is read-only and safe to fan out. **Agents that WRITE are not.** They share one working tree, and the failure mode is not a merge conflict you can see — it is one agent's tooling silently reaching outside its own files.
+
+- **Group by disjoint file sets and gate between waves.** Two agents editing one file is the obvious hazard; the subtler one is a shared *primitive* — a token, a CSS export — that several tasks all want to touch.
+- **Forbid whole-tree git operations in the brief.** `git stash`, `git checkout .`, `git clean` and `git reset` act on everything, including work an agent cannot see. One `stash --include-untracked` run to capture a "before" state swept up three other agents' in-flight files and reverted them mid-write. Nothing was lost, but only because the stash was recoverable. An agent needing a clean baseline uses a worktree.
+- **Tell each agent the tree is shared and not clean.** Otherwise it reports a failing gate as its own problem, or worse, "fixes" a file it doesn't own.
+- **Verify each result against the code yourself.** An agent's green is a starting point. Across one branch's waves, agents surfaced real defects *and* left a deliberately-failing instrumentation probe, a stale stash entry, and a report that misattributed a broken file — all of which read as fine in the summary.
+
 ### Skill Extraction
 
 The section above is deliberately written as an executable procedure so it can be lifted into a skill without rewriting. A skill built from it takes the surface under construction as input, runs Steps 1–6 as a dispatched read-only agent, and returns the four-way action table plus the violations list. Steps 3, 4, and 6 are the ones that carry the value — a version that drops the citation requirement, the permission to report nothing, or the unprompted violation hunt degrades into a summary and should not ship.
