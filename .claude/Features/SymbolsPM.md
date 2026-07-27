@@ -1,6 +1,16 @@
-## Icons
+## SymbolsPM
 
-Pommora's standard semantic icons — the canonical glyph for each pane, property type, and recurring concept. The curated registry behind `design-system/symbols` (mirrored by `symbols/Symbols.md`) is the primary source and the app's own vocabulary: keys are mostly the lucide.dev name, and only a registered glyph ships in the bundle. Lucide is the default library; Tabler is a per-icon opt-in through the same seam. A caller with no assigned glyph renders `DashIcon`, the dashed-square placeholder, until a symbol is chosen — a placeholder is intentional, not a gap to fill arbitrarily — while an id that resolves in neither source falls back to `square-dashed`.
+Pommora's standard semantic icons — the canonical glyph for each pane, property type, and recurring concept. The curated registry behind `design-system/symbols` is the primary source and the app's own vocabulary. A caller with no assigned glyph renders `DashIcon`, the dashed-square placeholder, until a symbol is chosen — a placeholder is intentional, not a gap to fill arbitrarily — while an id that resolves in neither source falls back to `square-dashed`.
+
+### The Registry
+
+**Only a registered glyph ships.** The registry is an explicit import list, so adding an icon means registering it; nothing arrives by wildcard, and the bundle carries exactly what's named.
+
+**Keys are Pommora's vocabulary, not the library's.** Most match the lucide.dev name because that's the least surprising choice, but a key is renamed only when its glyph changes *identity* — never to chase library spelling. That's what lets a stored id stay valid across a library bump.
+
+**Lucide is the default; Tabler is a per-icon opt-in** through the same seam, and both default to the same stroke weight, so they sit together with no override. Custom glyphs are registry-conforming SVG components drawn at that same weight.
+
+The registry itself is the roster — this doc names the concepts and their assignments, never the full inventory.
 
 ### View Settings Panes
 

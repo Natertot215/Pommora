@@ -23,6 +23,8 @@ The design system lives in `src/renderer/src/design-system/`. Stacking is named 
 
 Three primitives carry the dark system: a neutral grey, a near-white, and a black. Fills, separators, and the hover / selected states are that one grey at fixed opacities; the label tones are the near-white at descending opacities; the de-emphasis veil is the black. Surfaces and the spectrum solids are their own opaque values, not derivations.
 
+Within the grey, **strokes sit above fills** — a separator reads harder than the surface it divides, so an edge stays legible against the fill it borders rather than dissolving into it. Text doesn't compete on that scale at all: labels ride the near-white, which is why the lightest label still reads over the heaviest fill.
+
 #### Semantic Surface Roles
 
 Surfaces are addressed by **role**, not by literal shade. The window is the app substrate that everything sits on; **primary / secondary / tertiary** surfaces are progressively-lifted content layers above it. Components reference the role; the shade behind each role lives in the token files.
@@ -59,7 +61,7 @@ Two recipes in `materials/`. **Frost** is a blur plus a slight dimming of what's
 
 ### Icons
 
-Icons are **Lucide**, resolved through one `Icon` component against the curated `design-system/symbols` registry. Full spec → `Icons.md`.
+Icons are **Lucide**, resolved through one `Icon` component against the curated `design-system/symbols` registry. Full spec → `SymbolsPM.md`.
 
 ### Showcase
 
