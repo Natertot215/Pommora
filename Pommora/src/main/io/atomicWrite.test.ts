@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, readFile, writeFile, stat } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, readFile, writeFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, basename } from 'node:path'
 import {
   atomicWriteFile,
   writeJson,
@@ -95,5 +95,26 @@ describe('trashWithTimestamp', () => {
     expect(dest).toContain('.trash')
     expect(await readFile(dest, 'utf8')).toBe('bye')
     await expect(stat(p)).rejects.toThrow()
+  })
+
+  it('mirrors the folder chain the entity was deleted from', async () => {
+    await mkdir(join(dir, 'Notes', 'Daily'), { recursive: true })
+    const p = join(dir, 'Notes', 'Daily', 'Beta.md')
+    await atomicWriteFile(p, 'bye')
+    const dest = await trashWithTimestamp(dir, p)
+    expect(dest.startsWith(join(dir, '.trash', 'Notes', 'Daily'))).toBe(true)
+    expect(basename(dest).endsWith('__Beta.md')).toBe(true)
+    expect(await readFile(dest, 'utf8')).toBe('bye')
+  })
+
+  it('de-collides two deletes of the same name from the same folder', async () => {
+    const p = join(dir, 'twice.md')
+    await atomicWriteFile(p, 'one')
+    const first = await trashWithTimestamp(dir, p)
+    await atomicWriteFile(p, 'two')
+    const second = await trashWithTimestamp(dir, p)
+    expect(second).not.toBe(first)
+    expect(await readFile(first, 'utf8')).toBe('one')
+    expect(await readFile(second, 'utf8')).toBe('two')
   })
 })

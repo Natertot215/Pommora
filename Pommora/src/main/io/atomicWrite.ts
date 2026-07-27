@@ -5,7 +5,7 @@
 
 import writeFileAtomic from 'write-file-atomic'
 import { readFile, rename, mkdir, stat } from 'node:fs/promises'
-import { join, basename } from 'node:path'
+import { join, basename, dirname, relative, isAbsolute } from 'node:path'
 import { isPlainObject } from '@shared/propertyValue'
 import { fail, ok, type Result } from '@shared/result'
 import { recordWrite } from './writeEcho'
@@ -146,19 +146,24 @@ export async function pathExists(p: string): Promise<boolean> {
 }
 
 /**
- * Move a file/folder into the nexus-local `.trash/`, timestamped and de-collided.
- * Files stay canonical and recoverable (in-nexus, not OS trash). Returns the
- * destination path. The original's relative layout is not preserved.
+ * Move a file/folder into the nexus-local `.trash/`, keeping the folder chain it was deleted
+ * from and stamping the leaf. `.trash` reads as a shadow of the nexus, so a deleted page shows
+ * where it lived and can be put back by dropping the stamp — the layout IS the restore record.
+ * Files stay canonical and recoverable (in-nexus, not OS trash). Returns the destination path.
  */
 export async function trashWithTimestamp(nexusRoot: string, absPath: string): Promise<string> {
   // The source's unlink echo is our own write (the .trash destination is unwatched).
   recordWrite(absPath)
-  const trash = join(nexusRoot, '.trash')
-  await mkdir(trash, { recursive: true })
+  const rel = relative(nexusRoot, absPath)
+  // A path that isn't under the root has no chain to mirror, and following its `..` would write
+  // outside the trash entirely — it lands flat instead.
+  const chain = rel && !rel.startsWith('..') && !isAbsolute(rel) ? dirname(rel) : '.'
+  const dir = join(nexusRoot, '.trash', chain)
+  await mkdir(dir, { recursive: true })
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   const base = basename(absPath)
-  let dest = join(trash, `${stamp}__${base}`)
-  for (let n = 1; await pathExists(dest); n++) dest = join(trash, `${stamp}__${n}__${base}`)
+  let dest = join(dir, `${stamp}__${base}`)
+  for (let n = 1; await pathExists(dest); n++) dest = join(dir, `${stamp}__${n}__${base}`)
   await rename(absPath, dest)
   return dest
 }
