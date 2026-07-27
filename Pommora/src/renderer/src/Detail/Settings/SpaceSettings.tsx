@@ -65,7 +65,12 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
         <div
           ref={headerRef}
           onContextMenu={(e) => {
+            // Main pops the editor menu for ANY editable target, and a renderer preventDefault does
+            // not suppress it — so right-clicking the title mid-rename would put two native menus on
+            // one window and lose both picks. Yield the gesture there; ours owns the rest of the row.
+            if ((e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return
             e.preventDefault()
+            e.stopPropagation()
             void window.nexus.spaceHeaderMenu().then((action) => {
               if (action === 'change-color') setColorOpen(true)
             })

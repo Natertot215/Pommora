@@ -104,6 +104,7 @@ export function NotchedPane({
   notchHeight = 8,
   notchCurve = 0.25,
   notchInsetRight,
+  notchInsetLeft,
   notchInsetBottom,
   notchSide = 'top',
   accentOutline = false,
@@ -122,6 +123,9 @@ export function NotchedPane({
   notchCurve?: number
   /** Beak position for a top/bottom notch, measured from the pane's right edge (omit = centered). */
   notchInsetRight?: number
+  /** The mirror: measured from the pane's LEFT edge. Used by a left-anchored pane, whose width may
+   *  change under it — a right-measured beak would drift as the pane grows. Wins over notchInsetRight. */
+  notchInsetLeft?: number
   /** Beak position for a left/right notch, measured from the pane's bottom edge (omit = centered). */
   notchInsetBottom?: number
   /** Which edge the beak hangs off: 'top' (default, downward pane) / 'bottom' (upward) / 'left' /
@@ -167,9 +171,11 @@ export function NotchedPane({
       ? notchInsetBottom !== undefined
         ? h - notchInsetBottom
         : h / 2
-      : notchInsetRight !== undefined
-        ? w - notchInsetRight
-        : w / 2
+      : notchInsetLeft !== undefined
+        ? notchInsetLeft
+        : notchInsetRight !== undefined
+          ? w - notchInsetRight
+          : w / 2
     const pos = nMin < nMax ? Math.min(Math.max(nRaw, nMin), nMax) : along / 2
     const path = ready
       ? vertical
@@ -188,6 +194,7 @@ export function NotchedPane({
     notchHeight,
     notchCurve,
     notchInsetRight,
+    notchInsetLeft,
     notchInsetBottom,
   ])
   // The Bloom starts from the beak tip: the sideways tip sits on the near vertical edge, the

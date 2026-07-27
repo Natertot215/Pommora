@@ -24,7 +24,9 @@ export function InlineEditHeader({
   icon?: string
   iconRef?: Ref<HTMLButtonElement>
   onCommit: (next: string) => void
-  onIconClick: () => void
+  /** Omit where no icon picker exists yet — the glyph then renders inert instead of as a live
+   *  button wired to nothing. */
+  onIconClick?: () => void
   /** OutlineTint — rings the icon button + title field in a resolved color; unset = ringless. */
   outline?: string
 }): React.JSX.Element {
@@ -39,6 +41,7 @@ export function InlineEditHeader({
         type="button"
         className={s.iconButton}
         aria-label="Edit icon"
+        disabled={!onIconClick}
         onClick={onIconClick}
       >
         {icon ? <Icon name={icon} /> : <DashIcon />}

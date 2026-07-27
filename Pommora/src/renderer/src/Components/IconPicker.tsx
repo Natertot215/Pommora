@@ -139,7 +139,7 @@ export function IconPicker({
       onDismiss={onClose}
       triggerRef={triggerRef}
       direction={direction}
-      center
+      origin="center"
       notchHeight={7}
       bareSurface
       contentClassName={cx(s.content, beak)}

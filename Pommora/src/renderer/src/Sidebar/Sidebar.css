@@ -361,24 +361,14 @@
   cursor: grabbing;
 }
 
-/* Disclosure chevron — a chevron-right Icon (1em → tracks the row's 12px) that rotates 90° when
-   open; colour comes from the row's secondary glyph cluster. */
-.twisty {
-  transition: transform var(--disclosure) var(--ease-standard);
-  flex: 0 0 auto;
-}
-
-.twisty.open {
-  transform: rotate(90deg);
-}
-
 /* "Hide Chevrons" personalization (class on <html>): the leading chevron slot collapses to a tunable
    gutter. KNOB: --chevron-gutter (default 0 = flush with the section header; the glyph is clipped by
    overflow, and the negative margin cancels the row's 8px leading gap so 0 truly sits flush — bump it for
-   breathing room). Matched by the .twisty / .twisty-spacer the slot holds, so the Saved strip (no chevron
+   breathing room). Matched by the data-twisty / data-twisty-spacer hook the slot holds — the look is the
+   design system's hashed class, so this rule keys on the attribute instead. The Saved strip (no chevron
    slot) is untouched. The header row still toggles on click. */
-.hide-chevrons .row > span:has(> .twisty),
-.hide-chevrons .row > span:has(> .twisty-spacer) {
+.hide-chevrons .row > span:has(> [data-twisty]),
+.hide-chevrons .row > span:has(> [data-twisty-spacer]) {
   --chevron-gutter: 2px;
   width: var(--chevron-gutter);
   min-width: var(--chevron-gutter);
@@ -394,11 +384,6 @@
   margin-left: var(--sidebar-hidechevron-pad);
 }
 
-/* Leaf rows align their icon under disclosure rows' icons via a chevron-width spacer. */
-.twisty-spacer {
-  width: 12px;
-  flex: 0 0 auto;
-}
 
 /* Opt into the left-edge scroll fade (truncateHoverScroll): only once a row is actually scrolled off the
    start (JS adds .title-scrolled on scrollLeft>0) does its icon + title eclipse into the glass — hovering

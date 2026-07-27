@@ -35,38 +35,11 @@ describe('encodeFilter', () => {
 
   it('no rows → undefined, whatever the mode', () => {
     expect(encodeFilter('all', [])).toBeUndefined()
-    expect(encodeFilter('none', [])).toBeUndefined()
+    expect(encodeFilter('any', [])).toBeUndefined()
   })
 
-  it('none is a real NOR mode on the group, not an off switch', () => {
-    expect(
-      encodeFilter('none', [
-        { connector: null, rule: r('a') },
-        { connector: 'and', rule: r('b') },
-      ]),
-    ).toEqual({ match: 'none', rules: [r('a'), r('b')] })
-  })
-
-  // NOR over runs is De-Morgan-exact, so the root keeps its mode across a split. Rewriting it to
-  // `any` would invert the filter's polarity on a single connector click.
-  it('an Or under none splits into runs WITHOUT losing the none', () => {
-    expect(
-      encodeFilter('none', [
-        { connector: null, rule: r('a') },
-        { connector: 'or', rule: r('b') },
-      ]),
-    ).toEqual({ match: 'none', rules: [r('a'), r('b')] })
-  })
-
-  it('a none over mixed connectors keeps the none and nests the And-run', () => {
-    expect(
-      encodeFilter('none', [
-        { connector: null, rule: r('a') },
-        { connector: 'and', rule: r('b') },
-        { connector: 'or', rule: r('c') },
-      ]),
-    ).toEqual({ match: 'none', rules: [{ match: 'all', rules: [r('a'), r('b')] }, r('c')] })
-  })
+  // `PaneMode` excludes 'none', so NOR has no encode path to test — the compiler rejects one. The
+  // decode side still has to handle a hand-authored NOR; those cases live in the decodeFilter block.
 })
 
 describe('decodeFilter', () => {
@@ -81,10 +54,6 @@ describe('decodeFilter', () => {
         { connector: null, rule: r('a') },
         { connector: 'and', rule: r('b') },
         { connector: 'or', rule: r('c') },
-      ]),
-      encodeFilter('none', [
-        { connector: null, rule: r('a') },
-        { connector: 'and', rule: r('b') },
       ]),
     ]
     for (const tree of shapes) {
@@ -120,21 +89,17 @@ describe('decodeFilter', () => {
     ).toBe('locked')
   })
 
-  it('a none of leaves is editable — it is an authored mode, not a locked shape', () => {
-    const d = decodeFilter({ match: 'none', rules: [r('a'), r('b')] })
-    expect(d).toEqual({
-      kind: 'rows',
-      mode: 'none',
-      rows: [
-        { connector: null, rule: r('a') },
-        { connector: 'and', rule: r('b') },
-      ],
-    })
+  // NOR is hand-authoring only — the pane offers All and Any. Every `none` shape locks, WHATEVER its
+  // nesting: shown as rows it would read "All" (the Matches control falls back to its first option)
+  // and one toggle would invert the filter. Locked keeps the file intact behind an explicit Reset.
+  it('locks a flat none — the shape is legible but the mode is not authorable', () => {
+    expect(decodeFilter({ match: 'none', rules: [r('a'), r('b')] })).toEqual({ kind: 'locked' })
   })
 
-  it('a none over of-runs decodes as rows and still reports mode none', () => {
-    const d = decodeFilter({ match: 'none', rules: [r('a'), { match: 'all', rules: [r('b')] }] })
-    expect(d.kind === 'rows' && d.mode).toBe('none')
+  it('locks a none over of-runs', () => {
+    expect(
+      decodeFilter({ match: 'none', rules: [r('a'), { match: 'all', rules: [r('b')] }] }),
+    ).toEqual({ kind: 'locked' })
   })
 
   it('locks a none whose children nest deeper than one run', () => {

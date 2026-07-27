@@ -57,7 +57,7 @@ export function PickerControl<T extends string>({
         open={open}
         onDismiss={() => setOpen(false)}
         triggerRef={ref}
-        center
+        origin="center"
         solid={solid}
       >
         {options.map((o) => (

@@ -31,6 +31,11 @@ import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../store'
 import { contextTargetToSelect, isOpenInTabs } from '../Tabs/tabsModel'
 import { RenamableTitle } from '../Components/RenamableTitle'
+import {
+  twisty,
+  twistyOpen,
+  twistySpacer,
+} from '@renderer/design-system/components/menu/menu.css'
 
 /** Right-click an entity → main pops the native context menu. Every PathNode (page +
  *  container + context) carries kind/id/path/title; the code-keyed saved rows don't, so they
@@ -149,7 +154,7 @@ function Leaf({
       indent={depth}
       onClick={onSelect}
       onContextMenu={ctxHandler(onContextMenu)}
-      leading={chevronSpace ? <span className="twisty-spacer" /> : null}
+      leading={chevronSpace ? <span className={twistySpacer} data-twisty-spacer /> : null}
     >
       <Icon name={icon} size={16} className="row-icon" />
       {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}
@@ -263,7 +268,14 @@ function Disclosure({
       onClick={toggle}
       onPointerDown={onHeaderPointerDown}
       onContextMenu={ctxHandler(onContextMenu)}
-      leading={<Icon name="chevron-right" size={12} className={`twisty${open ? ' open' : ''}`} />}
+      leading={
+        <Icon
+          name="chevron-right"
+          size={12}
+          className={cx(twisty, open && twistyOpen)}
+          data-twisty
+        />
+      }
     >
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the surrounding row is the control; this narrows its hit area */}
       <span onClick={openView}>

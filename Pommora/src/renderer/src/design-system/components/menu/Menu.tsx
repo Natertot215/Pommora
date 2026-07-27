@@ -164,6 +164,7 @@ export function AccessoryButton({
   box,
   onClick,
   className,
+  disabled = false,
 }: {
   icon: IconName
   size: number
@@ -171,10 +172,14 @@ export function AccessoryButton({
   box?: number
   onClick: () => void
   className?: string
+  /** An affordance whose feature hasn't landed. Inert and dimmed — never a live button wired to a
+   *  no-op, which reads as broken rather than pending. */
+  disabled?: boolean
 }): React.JSX.Element {
   return (
     <button
       type="button"
+      disabled={disabled}
       className={cx(s.accessoryButton, className)}
       style={box ? ({ '--accessory-box': `${box}px` } as CSSProperties) : undefined}
       aria-label={ariaLabel}

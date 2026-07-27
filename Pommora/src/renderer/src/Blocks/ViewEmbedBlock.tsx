@@ -14,7 +14,7 @@ import {
 } from '@renderer/design-system/components/menu'
 import { titleInput as rowInput } from '@renderer/design-system/components/menu/menu.css'
 import { reorder, SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
-import { activeRow } from '@renderer/Toolbar/viewDropdown.css'
+import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import { EditableInput } from '@renderer/Components/EditableInput'
 import { IconPicker } from '@renderer/Components/IconPicker'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
@@ -22,7 +22,7 @@ import { ViewRenderer } from '@renderer/Detail/Views/ViewRenderer'
 import { SettingsPane } from '@renderer/Components/Detail/SettingsPane'
 import { ViewEmbedScopeProvider } from '@renderer/Embeds/ViewEmbedScope'
 import { useSession } from '@renderer/store'
-import { PICKER_MAX_H } from './handleMenu.css'
+import { PICKER_MAX_HEIGHT } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import { PILL_ICON } from './viewEmbed.css'
 import * as s from './viewEmbed.css'
 
@@ -490,14 +490,14 @@ export function ViewEmbedBlock({
         <PickerMenu open={listOpen} onDismiss={() => setListOpen(false)} triggerRef={dropRef}>
           <div className={s.listPane}>
             <MenuScrollFrame
-              maxHeight={PICKER_MAX_H}
+              maxHeight={PICKER_MAX_HEIGHT}
               footer={<MenuBottomRow leading={newViewButton} />}
             >
               <Menu>
                 {views.map((v, i) => (
                   <MenuItem
                     key={v.id}
-                    className={i === index ? activeRow : undefined}
+                    className={i === index ? optionRing : undefined}
                     leading={<Icon name={viewIcon(v)} size={16} />}
                     onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
                     onContextMenu={(e) => void rowMenu(i, e, false)}

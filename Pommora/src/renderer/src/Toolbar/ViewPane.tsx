@@ -19,6 +19,7 @@ import { useSaveView, useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
 import { EditableInput } from '../Components/EditableInput'
 import { IconPicker } from '../Components/IconPicker'
 import { useSession } from '../store'
+import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import * as vd from './viewDropdown.css'
 
 // ── KNOB — the pane opens at least this square (width floor × the same as height floor). A sparse list
@@ -146,7 +147,16 @@ export function ViewPane({
             />
           }
           trailing={
-            <AccessoryButton icon="dots" size={12} box={20} ariaLabel="More" onClick={() => {}} />
+            // Parked: the per-view actions menu hasn't landed. Inert rather than a live button
+            // that swallows its own click.
+            <AccessoryButton
+              icon="dots"
+              size={12}
+              box={20}
+              ariaLabel="More"
+              disabled
+              onClick={() => {}}
+            />
           }
         />
       }
@@ -157,7 +167,7 @@ export function ViewPane({
             {rows.map((v) => (
               <RowShell key={v.id} id={v.id}>
                 <MenuItem
-                  className={activeId === v.id ? vd.activeRow : undefined}
+                  className={activeId === v.id ? optionRing : undefined}
                   leading={<Icon name={iconNameOr(v.icon, 'table')} size={16} />}
                   trailing={
                     <button

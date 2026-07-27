@@ -25,22 +25,26 @@ export interface FilterRow {
   rule: FilterRule
 }
 
-export type DecodedFilter = { kind: 'rows'; mode: MatchMode; rows: FilterRow[] } | { kind: 'locked' }
+/** The modes the PANE may author. `MatchMode` keeps `none` — the on-disk contract and the evaluator
+ *  both still honour a hand-authored NOR — so this narrows only what the pane is allowed to WRITE,
+ *  putting the invariant in the compiler's hands instead of a comment's. */
+export type PaneMode = Exclude<MatchMode, 'none'>
+
+export type DecodedFilter = { kind: 'rows'; mode: PaneMode; rows: FilterRow[] } | { kind: 'locked' }
 
 const isLeaf = (node: FilterRule | FilterGroup): node is FilterRule => !('rules' in node)
 const isAllOfLeaves = (node: FilterRule | FilterGroup): node is FilterGroup =>
   !isLeaf(node) && node.match === 'all' && node.rules.every(isLeaf)
 
-/** A mode's default connector — only `any` splits the list into runs, so every other mode flattens
- *  to one And run. The encoder's structure rule and the pane's row seeding read it from here. */
-export const connectorFor = (mode: MatchMode): Connector => (mode === 'any' ? 'or' : 'and')
+/** A mode's default connector — `any` splits the list into runs, `all` flattens to one And run. The
+ *  encoder's structure rule and the pane's row seeding read it from here. */
+export const connectorFor = (mode: PaneMode): Connector => (mode === 'any' ? 'or' : 'and')
 
 /** Rows → tree. Connectors derive the structure: the list splits into AND-runs at each 'or'; one run
- *  is a flat group in the base mode, several become of-runs (a one-rule run stays a bare leaf).
- *  The root KEEPS its mode across the split — `none` over runs is NOR over those runs, which is
- *  De-Morgan-exact. Rewriting it to `any` there would invert the filter's polarity on one connector
- *  click: "matches neither" would quietly become "matches either". */
-export function encodeFilter(mode: MatchMode, rows: FilterRow[]): FilterGroup | undefined {
+ *  is a flat group in the base mode, several become of-runs (a one-rule run stays a bare leaf). A
+ *  split under All becomes an `any` of `all`-runs — the OR-of-ANDs the connectors literally spell
+ *  out; under Any the root already is `any`, so it holds. */
+export function encodeFilter(mode: PaneMode, rows: FilterRow[]): FilterGroup | undefined {
   if (rows.length === 0) return undefined
   const runs: FilterRule[][] = [[]]
   for (const row of rows) {
@@ -60,7 +64,14 @@ export function encodeFilter(mode: MatchMode, rows: FilterRow[]): FilterGroup | 
 export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
   if (!filter) return { kind: 'rows', mode: 'all', rows: [] }
 
-  // A flat all/none is one And-run of leaves — no split, so every connector reads And.
+  // NOR is not authorable — the pane offers All and Any only. A `none` root can still arrive from a
+  // hand-authored file, and showing it as rows would be a lie in two directions: the Matches control
+  // falls back to its FIRST option, so a NOR would read "All", and one toggle would then rewrite the
+  // tree's polarity. Locked parks it behind Reset, the same contract every other shape the pane can't
+  // represent already gets. The evaluator still runs `none`, so the file keeps working untouched.
+  if (filter.match === 'none') return { kind: 'locked' }
+
+  // A flat all is one And-run of leaves — no split, so every connector reads And.
   if (filter.match !== 'any' && filter.rules.every(isLeaf)) {
     return {
       kind: 'rows',
@@ -69,7 +80,7 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
     }
   }
 
-  // any / none over runs: every child must be a leaf or an all-of-leaves run.
+  // `any` over runs: every child must be a leaf or an all-of-leaves run.
   if (!filter.rules.every((n) => isLeaf(n) || isAllOfLeaves(n))) return { kind: 'locked' }
   const rows: FilterRow[] = []
   for (const child of filter.rules) {
@@ -79,9 +90,8 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
     })
   }
   // A pure-leaf `any` is genuinely Any; one carrying an all-of-leaves run is a mixed tree, which the
-  // pane shows as All with the Or as a deviation. `none` always reports itself.
-  const mode: MatchMode =
-    filter.match === 'none' ? 'none' : filter.rules.every(isLeaf) ? 'any' : 'all'
+  // pane shows as All with the Or as a deviation.
+  const mode: PaneMode = filter.rules.every(isLeaf) ? 'any' : 'all'
   return { kind: 'rows', mode, rows }
 }
 
@@ -159,9 +169,8 @@ const FILE_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.isEmpty, label: 'No File', slot: 'none' },
 ]
 
-/** Location reads from the SET's side — "Contains" is both shorter than "Is Inside" and the way the
- *  operand is picked (you choose the set, not the page). Membership is still any-depth. */
-/** Is/Isn't test the IMMEDIATE parent Set; Contains/Doesn't Contain are their any-depth twins. All
+/** Location reads from the SET's side — you choose the Set, not the page, which is why "Contains"
+ *  beats "Is Inside" as the label. Is/Isn't test the IMMEDIATE parent Set; Contains/Doesn't Contain are their any-depth twins. All
  *  four take a SET of Sets — "in any of these" — so the operand is chips like every other membership
  *  test, not a single pick. */
 const LOCATION_OPS: OperatorChoice[] = [

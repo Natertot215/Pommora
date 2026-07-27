@@ -12,7 +12,9 @@ export function PreviewActions({
 }): React.JSX.Element {
   return (
     <>
-      <button type="button" className="ppane-action" title="Settings">
+      {/* Parked: this toolbar's own settings surface hasn't landed. The ribbon's Settings glyph is
+          the live one. Inert here rather than a button that silently does nothing. */}
+      <button type="button" className="ppane-action" title="Settings" disabled>
         <Icon name="sliders-horizontal" size={13} />
       </button>
       <button

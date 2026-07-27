@@ -21,6 +21,7 @@ import { formatBucketLabel } from './PropertyEditing/formatValue'
 import type { ResolveContext } from './Table/resolveContext'
 import './GroupBand.css'
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
+import { twisty, twistyOpen } from '@renderer/design-system/components/menu/menu.css'
 
 /** The plain-text label + the rendered head visual for a group band — the single home for the five
  *  glyph cases the table and cards views both show. Structural Set → its icon + name (swapping to the
@@ -224,7 +225,8 @@ export function GroupBand({
               onPointerDown={(e) => e.stopPropagation()}
               aria-label={collapsed ? 'Expand group' : 'Collapse group'}
             >
-              <Icon name="chevron-right" size={12} className={cx('twisty', !collapsed && 'open')} />
+              <Icon name="chevron-right" size={12} className={cx(twisty, !collapsed && twistyOpen)}
+                data-twisty />
             </button>
             {/* biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content */}
             <span

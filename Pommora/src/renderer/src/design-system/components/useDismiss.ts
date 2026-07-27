@@ -13,6 +13,10 @@ export function useDismiss(
   useEffect(() => {
     if (!active) return
     const onDown = (e: PointerEvent): void => {
+      // Right/middle presses open menus in this app; none of them is a dismissal. A native menu also
+      // returns input asynchronously, so the press that closes it can land here as a stray outside
+      // click and take the host down with it.
+      if (e.button !== 0) return
       const target = e.target as Element
       // A portal'd picker (its layer + backdrop) renders OUTSIDE this ref in the DOM, so a plain
       // containment check reads any interaction with it as "outside" and dismisses the host it

@@ -91,7 +91,8 @@ export function applyFilter(
 ): ViewRow[] {
   if (!filter) return rows
   const locate = makeLocationIndex(setTree)
-  return rows.filter((row) => matchesGroup(row, filter, schema, locate, contextIds))
+  // A whole filter that abstains filters nothing — the row passes. Only a real `false` excludes.
+  return rows.filter((row) => matchesGroup(row, filter, schema, locate, contextIds) !== false)
 }
 
 /** A child is a nested group iff it carries `rules`; otherwise it's a leaf FilterRule. */
@@ -105,8 +106,11 @@ function matchesGroup(
   schema: PropertyDefinition[],
   locate: LocationIndex,
   contextIds: readonly string[],
-): boolean {
-  if (group.rules.length === 0) return true
+): Verdict {
+  // A GROUP abstains too, and must — returning `true` here would hand the parent a vote its own
+  // NO_OP filter can't strip, so a fully-unauthored `(A and B)` inside `(A and B) or C` would read
+  // as a match and suppress C's filtering entirely. Under `none` it blanks the view instead.
+  if (group.rules.length === 0) return NO_OP
   // Only rules that can actually be applied get a vote. A no-op verdict must never read as a MATCH:
   // under `none` that would invert the guarantee and exclude every row on a half-authored rule.
   const votes = group.rules
@@ -116,7 +120,7 @@ function matchesGroup(
         : evaluateRule(row, node, schema, locate, contextIds),
     )
     .filter((v): v is boolean => v !== NO_OP)
-  if (votes.length === 0) return true
+  if (votes.length === 0) return NO_OP
   switch (group.match) {
     case 'all':
       return votes.every(Boolean)
@@ -187,8 +191,6 @@ function evaluateByType(
   t: PropertyType | 'title' | 'tier',
 ): boolean {
   switch (t) {
-    case 'tier':
-      return evaluateList(v.kind === 'context' ? v.value : [], op, expected, values)
     case 'number':
       return evaluateNumber(v, op, expected)
     case 'datetime':
@@ -205,6 +207,8 @@ function evaluateByType(
     case 'title':
       // resolveFieldValue('_title') carries row.title as a select-kind string — the text matrix reads it.
       return evaluateText(v, op, expected, values)
+    // A tier IS a context relation — same carrier, same matrix. One arm, not two copies.
+    case 'tier':
     case 'context':
       return evaluateList(v.kind === 'context' ? v.value : [], op, expected, values)
     case 'file':
