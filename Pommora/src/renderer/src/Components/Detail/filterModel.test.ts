@@ -151,7 +151,7 @@ describe('vocabulary', () => {
   it('targets lead Title · Location · Modified, then registry Contexts, then schema', () => {
     const tree = {
       contexts: [
-        { def: { id: '_tier1', title: 'Areas', singular: 'Area' }, spaces: [] },
+        { def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' }, spaces: [] },
         { def: { id: 'ctx-crew', title: 'Crew', singular: 'Member' }, spaces: [] },
       ],
     } as unknown as NexusTree

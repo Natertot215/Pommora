@@ -342,13 +342,9 @@ function mintVisibility(
   switch (type) {
     default:
       return {
+        // Context columns need no entry: absence from property_order IS hidden for them.
         property_order: [RESERVED_PROPERTY_ID.title],
-        hidden_properties: [
-          ...schema.map((d) => d.id),
-          RESERVED_PROPERTY_ID.tier1,
-          RESERVED_PROPERTY_ID.tier2,
-          RESERVED_PROPERTY_ID.tier3,
-        ],
+        hidden_properties: schema.map((d) => d.id),
       }
   }
 }

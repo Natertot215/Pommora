@@ -26,7 +26,7 @@ describe('defaultAlignFor', () => {
   it('centers the chip/box + context types (E-6)', () => {
     expect(defaultAlignFor('prop_status', schema)).toBe('center')
     expect(defaultAlignFor('prop_multi', schema)).toBe('center')
-    expect(defaultAlignFor(RESERVED_PROPERTY_ID.tier1, schema)).toBe('center')
+    expect(defaultAlignFor('ctx_areas', schema, ['ctx_areas'])).toBe('center')
     expect(defaultAlignFor('prop_date', schema)).toBe('center')
   })
 

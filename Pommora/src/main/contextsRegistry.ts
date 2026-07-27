@@ -8,6 +8,7 @@ import { fail, ok, type Result } from '@shared/result'
 import type { NexusLabels } from '@shared/types'
 import { readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
 import { serializeOnFile } from './io/fileLock'
+import { newId } from './ids'
 import { contextsRegistryFile } from './paths'
 
 /** Parse a raw registry object leniently — zod loose keeps unknown fields at both the
@@ -28,7 +29,7 @@ export async function readRegistry(
   if (raw.ok) return parseRegistry(raw.value)
   if (raw.error.code !== 'not-found') return raw
 
-  const seeded = seededRegistry(labels)
+  const seeded = seededRegistry(labels, newId)
   await writeJson(contextsRegistryFile(root), seeded)
   return ok(seeded)
 }

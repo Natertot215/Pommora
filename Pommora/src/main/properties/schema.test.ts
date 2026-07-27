@@ -34,13 +34,13 @@ describe('parseDefinitions', () => {
 })
 
 describe('droppingUserContexts', () => {
-  it('drops user .context defs but keeps reserved tier contexts and non-contexts', () => {
+  it('drops every stored .context def and keeps non-contexts', () => {
     const out = droppingUserContexts([
       def({ id: 'prop_x', name: 'Link', type: 'context' }),
-      def({ id: '_tier1', name: 'Areas', type: 'context' }),
+      def({ id: 'ctx_areas', name: 'Areas', type: 'context' }),
       def({ id: 'prop_y', name: 'Score', type: 'number' }),
     ])
-    expect(out.map((d) => d.id)).toEqual(['_tier1', 'prop_y'])
+    expect(out.map((d) => d.id)).toEqual(['prop_y'])
   })
 })
 

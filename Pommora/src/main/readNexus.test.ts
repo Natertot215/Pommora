@@ -233,16 +233,16 @@ describe('readNexus — registry-backed contexts', () => {
       join(reg, '.nexus', 'contexts.json'),
       JSON.stringify({
         contexts: [
-          { id: '_tier1', title: 'Areas', singular: 'Area' },
-          { id: '_tier2', title: 'Topics', singular: 'Topic' },
-          { id: '_tier3', title: 'Projects', singular: 'Project' },
+          { id: 'ctx_areas', title: 'Areas', singular: 'Area' },
+          { id: 'ctx_topics', title: 'Topics', singular: 'Topic' },
+          { id: 'ctx_projects', title: 'Projects', singular: 'Project' },
           { id: 'ctxC', title: 'Classes', singular: 'Class', icon: 'book' },
         ],
       }),
     )
     w(
       join(reg, '.nexus', 'state.json'),
-      JSON.stringify({ space_orders: { _tier3: ['sp-cs-proj', 'sp-pom'] } }),
+      JSON.stringify({ space_orders: { ctx_projects: ['sp-cs-proj', 'sp-pom'] } }),
     )
     d(join(reg, '.nexus', 'contexts', 'Areas', 'Work'))
     w(
@@ -273,12 +273,12 @@ describe('readNexus — registry-backed contexts', () => {
 
   it('builds contexts in registry order with ordered spaces', async () => {
     const t = await readNexus(reg)
-    expect(t.contexts?.map((g) => g.def.id)).toEqual(['_tier1', '_tier2', '_tier3', 'ctxC'])
-    const projects = t.contexts?.find((g) => g.def.id === '_tier3')
+    expect(t.contexts?.map((g) => g.def.id)).toEqual(['ctx_areas', 'ctx_topics', 'ctx_projects', 'ctxC'])
+    const projects = t.contexts?.find((g) => g.def.id === 'ctx_projects')
     expect(projects?.spaces.map((s) => s.id)).toEqual(['sp-cs-proj', 'sp-pom'])
     const pom = projects?.spaces.find((s) => s.id === 'sp-pom')
     expect(pom?.kind).toBe('space')
-    expect(pom?.contextId).toBe('_tier3')
+    expect(pom?.contextId).toBe('ctx_projects')
     expect(pom?.color).toBe('cyan')
     expect(pom?.path).toBe('.nexus/contexts/Projects/Pommora')
   })
@@ -286,7 +286,7 @@ describe('readNexus — registry-backed contexts', () => {
   it('resolves bracketed page keys onto the node contextValues', async () => {
     const t = await readNexus(reg)
     const page = t.collections![0].pages.find((p) => p.id === 'pg-linked')
-    expect(page?.contextValues).toEqual({ _tier3: ['sp-pom'] })
+    expect(page?.contextValues).toEqual({ ctx_projects: ['sp-pom'] })
     const plain = t.collections![0].pages.find((p) => p.id === 'pg-plain')
     expect(plain?.contextValues).toBeUndefined()
   })
@@ -295,7 +295,7 @@ describe('readNexus — registry-backed contexts', () => {
   it('resolves a space sidecar own bracketed keys (space-to-space, cross-context)', async () => {
     const t = await readNexus(reg)
     const pom = t.contexts
-      ?.find((g) => g.def.id === '_tier3')
+      ?.find((g) => g.def.id === 'ctx_projects')
       ?.spaces.find((s) => s.id === 'sp-pom')
     expect(pom?.contextValues).toEqual({ ctxC: ['sp-cs'] })
   })

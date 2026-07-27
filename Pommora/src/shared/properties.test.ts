@@ -4,7 +4,6 @@ import {
   propertyType,
   isReservedPropertyId,
   defaultStatusSeed,
-  RESERVED_PROPERTY_ID,
 } from './properties'
 
 describe('propertyType', () => {
@@ -45,16 +44,6 @@ describe('propertyDefinition', () => {
     }
     const parsed = propertyDefinition.parse(def)
     expect(parsed).toEqual(def)
-  })
-
-  it('parses a tier override entry (reserved id + context_tier target)', () => {
-    const def = {
-      id: RESERVED_PROPERTY_ID.tier1,
-      name: 'Areas',
-      type: 'context',
-      context_target: { kind: 'context_tier', tier: 1 },
-    }
-    expect(propertyDefinition.safeParse(def).success).toBe(true)
   })
 
   it('round-trips a checkbox def with its property-wide color', () => {
@@ -118,7 +107,7 @@ describe('propertyDefinition', () => {
 describe('reserved property ids', () => {
   it('recognizes reserved vs user ids', () => {
     expect(isReservedPropertyId('_status')).toBe(true)
-    expect(isReservedPropertyId('_tier1')).toBe(true)
+    expect(isReservedPropertyId('_title')).toBe(true)
     expect(isReservedPropertyId('prop_01H')).toBe(false)
     expect(isReservedPropertyId('stage')).toBe(false)
   })

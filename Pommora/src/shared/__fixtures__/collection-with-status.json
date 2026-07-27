@@ -11,7 +11,7 @@
       "icon": "tablecells",
       "type": "table",
       "_foreign_view_key": "preserved",
-      "property_order": ["prop_status", "_title", "_tier3", "_tier2", "_tier1"],
+      "property_order": ["prop_status", "_title", "ctx_projects", "ctx_topics", "ctx_areas"],
       "hidden_properties": ["_modified_at"],
       "group": {
         "kind": "property",

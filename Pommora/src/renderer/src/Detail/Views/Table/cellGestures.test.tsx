@@ -79,7 +79,7 @@ const sourceWith = (columnStyles?: Record<string, { look?: string }>): Collectio
           'prop_n',
           'prop_link',
           'prop_files',
-          '_tier1',
+          'ctx_areas',
         ],
         hidden_properties: ['_modified_at'],
         ...(columnStyles ? { column_styles: columnStyles } : {}),
@@ -146,14 +146,14 @@ beforeEach(() => {
     tree: {
       contexts: [
         {
-          def: { id: '_tier1', title: 'Areas', singular: 'Area' },
+          def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' },
           spaces: [
             {
               kind: 'space',
               id: 'area_work',
               title: 'Work',
               path: '.nexus/contexts/Areas/Work',
-              contextId: '_tier1',
+              contextId: 'ctx_areas',
               color: 'blue',
             },
             {
@@ -161,7 +161,7 @@ beforeEach(() => {
               id: 'area_life',
               title: 'Personal',
               path: '.nexus/contexts/Areas/Personal',
-              contextId: '_tier1',
+              contextId: 'ctx_areas',
             },
           ],
         },
@@ -339,7 +339,7 @@ describe('optimistic value persistence', () => {
 })
 
 describe('context tier cells', () => {
-  const tierCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[6] // _tier1 last
+  const tierCell = (): HTMLElement => host.querySelectorAll<HTMLElement>('.data-cell')[6] // ctx_areas last
 
   it("click opens the context picker listing the Context's Spaces; toggling writes setContext", async () => {
     await mountTable(sourceWith())
@@ -356,7 +356,7 @@ describe('context tier cells', () => {
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setContext',
       path: 'Col/Page One.md',
-      contextId: '_tier1',
+      contextId: 'ctx_areas',
       spaceIds: ['area_work'],
     })
   })
@@ -589,7 +589,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
           id: 'p1',
           title: 'Page One',
           path: 'Col/Page One.md',
-          contextValues: { _tier1: ['area_work', 'area_life'] },
+          contextValues: { ctx_areas: ['area_work', 'area_life'] },
         },
       ],
       properties: [statusDef, multiDef],
@@ -598,7 +598,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
           id: 'view_1',
           name: 'Table',
           type: 'table',
-          property_order: ['_title', 'prop_status', 'prop_tags', '_tier1'],
+          property_order: ['_title', 'prop_status', 'prop_tags', 'ctx_areas'],
           hidden_properties: ['_modified_at'],
         },
       ],
@@ -678,7 +678,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setContext',
       path: 'Col/Page One.md',
-      contextId: '_tier1',
+      contextId: 'ctx_areas',
       spaceIds: ['area_life'],
     })
   })

@@ -24,7 +24,7 @@ beforeEach(async () => {
     contextsRegistryFile(root),
     JSON.stringify({
       contexts: [
-        { id: '_tier3', title: 'Projects', singular: 'Project' },
+        { id: 'ctx_projects', title: 'Projects', singular: 'Project' },
         { id: 'ctxC', title: 'Classes', singular: 'Class' },
       ],
     }),
@@ -80,7 +80,7 @@ describe('createContextGroup', () => {
 
 describe('createSpace', () => {
   it('creates folder + sidecar (no icon, no color) seeded with the 2×2 block doc', async () => {
-    const r = await createSpace(root, '_tier3', 'Sapphire')
+    const r = await createSpace(root, 'ctx_projects', 'Sapphire')
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.path).toBe('.nexus/contexts/Projects/Sapphire')
@@ -112,7 +112,7 @@ describe('setPageContext', () => {
 
   it('writes the quoted bracketed key with titles resolved from ids (H-1)', async () => {
     await writeFile(page(), '---\nid: p1\n---\nbody')
-    const r = await setPageContext(page(), await world(), '_tier3', ['sp-pom'])
+    const r = await setPageContext(page(), await world(), 'ctx_projects', ['sp-pom'])
     expect(r.ok).toBe(true)
     const content = await readFile(page(), 'utf8')
     expect(content).toContain('"[Projects]"')
@@ -122,7 +122,7 @@ describe('setPageContext', () => {
 
   it('clears the key entirely on an empty list (A-5)', async () => {
     await writeFile(page(), '---\nid: p1\n"[Projects]":\n  - Pommora\n---\nbody')
-    await setPageContext(page(), await world(), '_tier3', [])
+    await setPageContext(page(), await world(), 'ctx_projects', [])
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect('[Projects]' in fm).toBe(false)
   })
@@ -154,7 +154,7 @@ describe('setPageContext', () => {
   it('fails on an unknown space id without writing', async () => {
     await writeFile(page(), '---\nid: p1\n---\nbody')
     const before = await readFile(page(), 'utf8')
-    const r = await setPageContext(page(), await world(), '_tier3', ['nope'])
+    const r = await setPageContext(page(), await world(), 'ctx_projects', ['nope'])
     expect(r.ok).toBe(false)
     expect(await readFile(page(), 'utf8')).toBe(before)
   })

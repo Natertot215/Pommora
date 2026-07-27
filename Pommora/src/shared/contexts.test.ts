@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  RESERVED_CONTEXT_IDS,
+  createSpaceLabel,
   contextKey,
   contextsRegistry,
   invalidContextTitle,
@@ -56,26 +56,38 @@ describe('normalizeContextValue', () => {
 })
 
 describe('seededRegistry', () => {
-  it('yields the three reserved contexts in tier order from the labels', () => {
-    const reg = seededRegistry(DEFAULT_LABELS)
-    expect(reg.contexts.map((c) => c.id)).toEqual([...RESERVED_CONTEXT_IDS])
+  const mint = (): (() => string) => {
+    let n = 0
+    return () => `id-${++n}`
+  }
+
+  it('yields the three seeded contexts in label order, each with a minted id', () => {
+    const reg = seededRegistry(DEFAULT_LABELS, mint())
+    expect(reg.contexts.map((c) => c.id)).toEqual(['id-1', 'id-2', 'id-3'])
     expect(reg.contexts.map((c) => c.title)).toEqual(['Areas', 'Topics', 'Projects'])
     expect(reg.contexts.map((c) => c.singular)).toEqual(['Area', 'Topic', 'Project'])
   })
 
   it('disambiguates colliding custom plurals — titles are nexus-wide identity', () => {
-    const reg = seededRegistry({
-      ...DEFAULT_LABELS,
-      topic: { singular: 'Area', plural: 'Areas' },
-    })
+    const reg = seededRegistry(
+      { ...DEFAULT_LABELS, topic: { singular: 'Area', plural: 'Areas' } },
+      mint(),
+    )
     expect(reg.contexts.map((c) => c.title)).toEqual(['Areas', 'Areas 2', 'Projects'])
+  })
+})
+
+describe('createSpaceLabel', () => {
+  it('speaks a seeded Context’s singular, and falls back for one without', () => {
+    expect(createSpaceLabel({ id: 'a', title: 'Areas', singular: 'Area' })).toBe('New Area')
+    expect(createSpaceLabel({ id: 'b', title: 'Clients', singular: '' })).toBe('New Space')
   })
 })
 
 describe('contextsRegistry schema', () => {
   it('parses and preserves unknown fields', () => {
     const raw = {
-      contexts: [{ id: '_tier1', title: 'Areas', singular: 'Area', future_field: 7 }],
+      contexts: [{ id: 'ctx_areas', title: 'Areas', singular: 'Area', future_field: 7 }],
       foreign: true,
     }
     const parsed = contextsRegistry.parse(raw)

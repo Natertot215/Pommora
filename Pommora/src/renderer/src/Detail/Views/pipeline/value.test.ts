@@ -18,7 +18,7 @@ const row: ViewRow = {
   id: '01ROW',
   title: 'My Page',
   path: 'Col/my-page.md',
-  contextValues: { _tier1: ['01AREA'] },
+  contextValues: { ctx_areas: ['01AREA'] },
   frontmatter: {
     id: '01ROW',
     modified_at: '2026-06-20T10:00:00Z',
@@ -36,8 +36,11 @@ describe('declaredType', () => {
   it('maps reserved columns to the type/sentinel sort+group+filter switch on', () => {
     expect(declaredType('_title', schema)).toBe('title')
     expect(declaredType('_modified_at', schema)).toBe('last_edited_time')
-    expect(declaredType('_tier1', schema)).toBe('tier')
-    expect(declaredType('_tier3', schema)).toBe('tier')
+  })
+
+  it('classifies a Context column only when its id is among the registry ids', () => {
+    expect(declaredType('ctx_areas', schema, ['ctx_areas'])).toBe('tier')
+    expect(declaredType('ctx_areas', schema)).toBeUndefined()
   })
 
   it('reads user property types from the schema (snake_case PropertyType)', () => {
@@ -60,8 +63,8 @@ describe('resolveFieldValue', () => {
       kind: 'datetime',
       value: '2026-06-20T10:00:00Z',
     })
-    expect(rfv(row, '_tier1')).toEqual({ kind: 'context', value: ['01AREA'] })
-    expect(rfv(row, '_tier2')).toEqual({ kind: 'null' })
+    expect(rfv(row, 'ctx_areas')).toEqual({ kind: 'context', value: ['01AREA'] })
+    expect(rfv(row, 'ctx_topics')).toEqual({ kind: 'null' })
   })
 
   it('routes user properties through the on-disk codec, trusting its kind', () => {
@@ -102,7 +105,7 @@ describe('resolveFieldValue memoization', () => {
     // each call — the expensive parse stays cached, only the O(1) re-tag is per-call. No consumer keys
     // identity on the resolved value (Cell resolves fresh; rowById keys on row.id), so this is contractual.
     expect(rfv(row, 'prop_s')).toBe(rfv(row, 'prop_s'))
-    expect(rfv(row, '_tier1')).toBe(rfv(row, '_tier1'))
+    expect(rfv(row, 'ctx_areas')).toBe(rfv(row, 'ctx_areas'))
   })
 
   it('a fresh frontmatter identity re-resolves (the optimistic-patch / reload contract)', () => {
