@@ -81,11 +81,6 @@
 .edge-fade {
   animation-timeline: scroll(self block);
 }
-/* Top-only variant: drop the trailing keyframe so --edge-b holds its 0 initial and the mask stays
-   solid to the bottom edge — the fade eases in at the top as content scrolls under it, nowhere else. */
-.edge-fade.top-only {
-  animation-name: edge-fade-lead;
-}
 /* Opt-in (page/markdown embeds): hold the TOP fade until a full fade-height of scroll has actually
    passed under it. A first line at rest — or a small autofocus scroll offset — shouldn't fade; it
    needs real scroll first. The lead animation starts at --edge-fade of scroll (fill-mode both pins

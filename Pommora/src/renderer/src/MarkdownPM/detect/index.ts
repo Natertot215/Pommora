@@ -204,7 +204,6 @@ export function parseListMarkerPrefixed(line: string): ListMarker | null {
   }
 }
 
-const taskMarkerRegex = /^[ \t]*[-*+][ \t]*\[[ xX]\][ \t]+/
 const headingPrefilter = /^[ ]{0,3}#{1,6}([ \t]|$)/
 const blockquotePrefilter = /^[ \t]*>+[ \t]/
 
@@ -233,10 +232,6 @@ export function headingParts(
 export function isBlockquoteLine(line: string): boolean {
   if (!blockquotePrefilter.test(line)) return false
   return parse(line).children.some((n) => n.type === 'blockquote')
-}
-
-export function hasCheckbox(line: string): boolean {
-  return taskMarkerRegex.test(line)
 }
 
 /** Inline-math gate: keeps prose / currency `$…$` from tokenizing as math. */

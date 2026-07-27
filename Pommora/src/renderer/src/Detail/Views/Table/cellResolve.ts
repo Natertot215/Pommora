@@ -4,9 +4,8 @@
 // the same helpers. Pure: no React.
 
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
-import type { CollectionNode, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
+import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
-import { resolveFieldValue } from '../pipeline/value'
 import type { ResolveContext } from './resolveContext'
 
 /** A select/status option for a stored value, via the column's schema def — `{ label, color? }`,
@@ -33,35 +32,6 @@ export function optionLabel(
   return findOption(columnId, value, schema)?.label
 }
 
-/** A row's cell as display text: option values → labels, tier/context ULIDs → Context titles, the
- *  rest stringified. Resolved through the context so no raw id reaches screen. */
-export function cellText(row: ViewRow, columnId: string, ctx: ResolveContext): string {
-  const v = resolveFieldValue(row, columnId, ctx.schema)
-  switch (v.kind) {
-    case 'select':
-    case 'status':
-      return optionLabel(columnId, v.value, ctx.schema) ?? v.value
-    case 'multiSelect':
-      return v.value.map((val) => optionLabel(columnId, val, ctx.schema) ?? val).join(', ')
-    case 'context':
-      return v.value.map((id) => ctx.contextsById.get(id)?.title ?? id).join(', ')
-    case 'url':
-    case 'datetime':
-      return v.value
-    case 'number':
-      return String(v.value)
-    case 'checkbox':
-      return v.value ? '✓' : ''
-    case 'file':
-      return v.value.map((f) => f.path.split('/').pop() ?? f.path).join(', ')
-    default:
-      return ''
-  }
-}
-
-/** A group header's display label: a structural Set group → its title; a property group → the grouped
- *  property's option label for the bucket (checkbox buckets → On/Off), the raw key as last resort; the
- *  no-value band → '' (rendered headerless). */
 export function groupLabel(
   group: ResolvedGroup,
   view: SavedView,

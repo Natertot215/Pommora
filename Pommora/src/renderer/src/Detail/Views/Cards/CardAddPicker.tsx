@@ -18,19 +18,6 @@ import { type AddEntry, orderAddableEntries, parseEditorValue } from './cardValu
 import { compactRow } from './cardAddPicker.css'
 import { cx } from '@renderer/design-system/cx'
 
-/** The kinds whose BLANK entries drill into a value pane. Checkbox is deliberately excluded from the
- *  pane split (its box on the card is the toggle — an add-list pick just reveals it); tiers/contexts
- *  pane via contextOptions rather than this set. */
-export const ADDABLE_TYPES: ReadonlySet<string> = new Set([
-  'select',
-  'status',
-  'multi_select',
-  'datetime',
-  'number',
-  'url',
-  'checkbox',
-])
-
 /** The value pane — routes the picked def to its editing surface (chip options, the calendar, or the
  *  text editor). pickSemantics is pure, so the branch is safe. */
 function ValuePane({

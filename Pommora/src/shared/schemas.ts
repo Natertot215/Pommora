@@ -56,7 +56,6 @@ export const pageCollectionSidecar = baseSidecar.extend({
   view_button: viewButtonField,
   view_style: viewStyleField,
 })
-export type PageCollectionSidecar = z.infer<typeof pageCollectionSidecar>
 
 // `_pageset.json` is the RECURSIVE tier at any depth. `parent_id` is the immediate parent
 // (a Collection at depth-1, a Set deeper). `set_order` orders child Sets; `views`/`banner`
@@ -70,7 +69,6 @@ export const pageSetSidecar = baseSidecar.extend({
   view_button: viewButtonField,
   view_style: viewStyleField,
 })
-export type PageSetSidecar = z.infer<typeof pageSetSidecar>
 
 /** `_space.json` — one Space under `.nexus/contexts/<Context>/<Space>/`. Membership comes
  *  from the parent folder, never a field. `color` is an open chip-solid key validated
@@ -80,7 +78,6 @@ export const spaceSidecar = baseSidecar.extend({
   banner: z.string().optional(),
   color: z.string().optional().catch(undefined),
 })
-export type SpaceSidecar = z.infer<typeof spaceSidecar>
 
 /** Agenda config sidecar (`_taskconfig.json` / `_eventconfig.json`) — a property schema
  *  for its agenda items. property_definitions stay loose (per-def codec is parseDefinitions);
@@ -90,7 +87,6 @@ export const agendaConfigSidecar = baseSidecar.extend({
   views: z.array(z.looseObject({})).optional(),
   default_sort: z.looseObject({}).optional(),
 })
-export type AgendaConfigSidecar = z.infer<typeof agendaConfigSidecar>
 
 /** Page (.md) frontmatter. Context links are bracketed TITLE keys (`"[Projects]": [...]`)
  *  riding the loose object as retained raw keys — resolved against the registry at walk

@@ -119,7 +119,6 @@ globalStyle(':root', {
     '--z-toolbar': `${stack.shell.toolbar}`,
     '--z-lifted': `${stack.local.lifted}`,
     '--z-overlay': `${stack.local.overlay}`,
-    '--z-anchor-host': `${stack.local.anchorHost}`,
     '--z-floating': `${stack.top.floating}`,
     '--z-caret': `${stack.top.caret}`,
   },

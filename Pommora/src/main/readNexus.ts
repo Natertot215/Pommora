@@ -15,7 +15,6 @@ import type {
   NexusLabels,
   NexusTree,
   PageNode,
-  SavedNode,
   SetNode,
   SpaceNode,
   ConnectionColorSetting,
@@ -436,38 +435,12 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const profileIcon = asString(settings.profile_icon)
   const profileSubtitle = asString(settings.profile_subtitle) ?? ''
   const state = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {}
-  const savedConfig =
-    (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.savedConfig))) ?? {}
   const sectionsConfig =
     (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.sidebarSections))) ?? {}
   const homepageConfig =
     (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.homepage))) ?? {}
   const navviewConfig = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.navview))) ?? {}
   const registry = await readRegistry(root)
-
-  // Saved strip — 3 fixed, code-keyed rows; labels come from saved-config `items[{key,label}]`.
-  const savedItems = Array.isArray(savedConfig.items)
-    ? (savedConfig.items as { key?: unknown; label?: unknown }[])
-    : []
-  const savedLabelByKey = new Map<string, string>()
-  for (const it of savedItems) {
-    const k = asString(it?.key)
-    const l = asString(it?.label)
-    if (k && l) savedLabelByKey.set(k, l)
-  }
-  const saved: SavedNode[] = (
-    [
-      { key: 'homepage', title: 'Homepage', icon: 'house' },
-      { key: 'calendar', title: 'Calendar', icon: 'calendar' },
-      { key: 'recents', title: 'Recents', icon: 'clock' },
-    ] as const
-  ).map((s) => ({
-    kind: 'saved',
-    id: `saved-${s.key}`,
-    key: s.key,
-    title: savedLabelByKey.get(s.key) ?? s.title,
-    icon: s.icon,
-  }))
 
   // Contexts. Registry-backed when `.nexus/contexts.json` parses (the walk never writes —
   // seeding/migration are open-path mutations). No registry (raw/unmigrated) → `contexts`
@@ -553,7 +526,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
       headingIconHidden: homepageConfig.heading_icon_hidden === true,
     },
     navView: { banner: asString(navviewConfig.banner) },
-    saved,
     contexts: contexts ?? [],
     collections,
     userSections,

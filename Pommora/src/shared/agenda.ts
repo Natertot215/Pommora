@@ -32,7 +32,6 @@ export const agendaTask = agendaBase.extend({
   completed_at: z.string().optional(),
   priority: z.number().optional(),
 })
-export type AgendaTask = z.infer<typeof agendaTask>
 
 /** AgendaEvent — required start_at + end_at, all-day flag, location, absolute alarms. */
 export const agendaEvent = agendaBase.extend({
@@ -42,7 +41,6 @@ export const agendaEvent = agendaBase.extend({
   location: z.string().optional(),
   alarm_absolute: z.array(z.string()).optional(),
 })
-export type AgendaEvent = z.infer<typeof agendaEvent>
 
 export type AgendaKind = 'task' | 'event'
 
@@ -57,10 +55,4 @@ export function agendaKindOf(filename: string): AgendaKind | null {
   if (filename.endsWith(AGENDA_SUFFIX.task)) return 'task'
   if (filename.endsWith(AGENDA_SUFFIX.event)) return 'event'
   return null
-}
-
-/** The title (filename minus the agenda suffix) for an agenda file, or null if not one. */
-export function agendaTitleOf(filename: string): string | null {
-  const kind = agendaKindOf(filename)
-  return kind ? filename.slice(0, -AGENDA_SUFFIX[kind].length) : null
 }

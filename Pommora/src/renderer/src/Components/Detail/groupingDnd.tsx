@@ -2,7 +2,7 @@
 // is SHARED (bandDndModel: slots, nest cycle-guard, order math); only the pointer wiring and the
 // insertion line live here. paneDnd doesn't fit: its two-region assigned/all vocabulary has no
 // parent/nest concept, and the hierarchy list needs reparent drops (F-4).
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { suppressNextClick } from '@renderer/design-system/interactions/shared'
 import type { Band, BandIndex, BandSlot } from '../../Detail/Views/Table/bandDndModel'
@@ -126,9 +126,4 @@ export function useGroupingListDrag({
     nestTarget,
     ghost,
   }
-}
-
-export function GroupingDropLine({ line }: { line: { y: number } | null }): ReactNode {
-  if (!line) return null
-  return <div className="grouping-drop-line" aria-hidden style={{ top: line.y }} />
 }

@@ -66,12 +66,9 @@ export const ICON = {
 // § SHELL — the dropdown anchor under the toolbar Settings button
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Anchored under the toolbar Settings button (the trio cluster is position:relative). Right-aligned,
- *  so the dropdown-menu open animation blooms from the trigger side via --dropdown-origin. */
-export const anchor = style([
-  dropdownAnchor('right', stack.local.lifted),
-  { vars: { '--dropdown-origin': 'top right' } },
-])
+/** Anchored under the toolbar Settings button (the trio cluster is position:relative). Right-aligned;
+ *  the pane's own beak tip owns the Bloom origin. */
+export const anchor = style(dropdownAnchor('right', stack.local.lifted))
 
 // ═══════════════════════════════════════════════════════════════════════════
 // § TITLE HEADER — the root menu's icon + inline-rename title row

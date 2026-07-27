@@ -552,21 +552,10 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
 
 // --- sections -------------------------------------------------------------
 
-function SectionHeader({ label, onAdd }: { label: string; onAdd?: () => void }): React.JSX.Element {
+function SectionHeader({ label }: { label: string }): React.JSX.Element {
   return (
     <div className={cx('section-header', text.control.semibold)}>
       <span>{label}</span>
-      {onAdd && (
-        <button
-          type="button"
-          className="section-add"
-          title={`New ${label}`}
-          aria-label={`New ${label}`}
-          onClick={onAdd}
-        >
-          +
-        </button>
-      )}
     </div>
   )
 }
