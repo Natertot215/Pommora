@@ -363,22 +363,29 @@ describe('FilterPane', () => {
     root = createRoot(host)
   })
 
-  // The pane never drops below one row, so the sole rule carries no × — removing it would leave
-  // nothing. Clearing its operand is the escape: an unauthored rule abstains and filters nothing.
-  it('the last remaining rule has no clear-×; two or more rules each do', async () => {
+  // Every authored rule clears, the sole one included — otherwise a half-authored rule is stuck
+  // in the pane with no way out, filtering nothing and looking like it should.
+  it('every authored rule carries a clear-×, including the only one', async () => {
     await mount(
       view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'a' }] } }),
     )
-    expect(host.querySelector('[aria-label="Remove filter"]')).toBeNull()
+    expect(host.querySelectorAll('[aria-label="Remove filter"]').length).toBe(1)
     await mount(twoRules())
     expect(host.querySelectorAll('[aria-label="Remove filter"]').length).toBe(2)
   })
 
-  it("removing down to one rule drops that row's ×", async () => {
-    await mount(twoRules())
+  it('clearing the only rule empties the filter and leaves the blank lead row', async () => {
+    await mount(
+      view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'a' }] } }),
+    )
     await click(host.querySelector('[aria-label="Remove filter"]'))
+    // Zero rows serializes to no filter at all, not an empty group that would still be "a filter".
+    expect(lastSaved().filter).toBeUndefined()
+    // The lead row is what renders at zero rules — its fields are present, and it carries no ×
+    // because there's nothing authored left to clear.
     await mount(view({ filter: lastSaved().filter }))
     expect(host.querySelector('[aria-label="Remove filter"]')).toBeNull()
+    expect(host.querySelector('[class*="ruleRow"]')).not.toBeNull()
   })
 
   it('toggling a connector And→Or re-serializes to any-of-runs', async () => {
