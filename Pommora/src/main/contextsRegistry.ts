@@ -6,10 +6,11 @@
 import { contextsRegistry, seededRegistry, type ContextsRegistry } from '@shared/contexts'
 import { fail, ok, type Result } from '@shared/result'
 import type { NexusLabels } from '@shared/types'
-import { readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
+import { readJsonObject, readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
 import { serializeOnFile } from './io/fileLock'
 import { newId } from './ids'
-import { contextsRegistryFile } from './paths'
+import { readLabels } from './readNexus'
+import { contextsRegistryFile, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
 /** Parse a raw registry object leniently — zod loose keeps unknown fields at both the
  *  registry and entry level, so foreign data round-trips every rewrite. */
@@ -32,6 +33,14 @@ export async function readRegistry(
   const seeded = seededRegistry(labels, newId)
   await writeJson(contextsRegistryFile(root), seeded)
   return ok(seeded)
+}
+
+/** Seed `.nexus/contexts.json` on open when a nexus has none. The registry IS Context
+ *  identity, so a nexus without one has no Contexts and no way to mint the first — every
+ *  create reads the registry strictly and fails on a missing file. */
+export async function ensureContextsRegistry(root: string): Promise<void> {
+  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
+  await readRegistry(root, readLabels(settings.labels))
 }
 
 /** Read the registry for a lookup — strict, no seeding, no writes. Mutation-side use

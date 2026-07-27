@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mutateRegistryFile, readRegistry } from './contextsRegistry'
+import { ensureContextsRegistry, mutateRegistryFile, readRegistry } from './contextsRegistry'
 import { contextsRegistryFile, nexusDir, spaceDir } from './paths'
 import { readJsonStrict, rmwJsonStrict } from './io/atomicWrite'
 import { DEFAULT_LABELS } from '@shared/types'
@@ -35,6 +35,23 @@ describe('readRegistry', () => {
     expect(r.value.contexts.map((c) => c.title)).toEqual(['Areas', 'Topics', 'Projects'])
     const onDisk = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     expect(onDisk.contexts).toHaveLength(3)
+  })
+
+  // The open path is the ONLY seeder: every create reads the registry strictly and fails on a
+  // missing file, so a nexus that opens without one can never mint its first Context.
+  it('ensureContextsRegistry seeds a fresh nexus, and leaves an existing registry alone', async () => {
+    await mkdir(nexusDir(root), { recursive: true })
+    await ensureContextsRegistry(root)
+    const seeded = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    expect(seeded.contexts.map((c: { title: string }) => c.title)).toEqual([
+      'Areas',
+      'Topics',
+      'Projects',
+    ])
+
+    await ensureContextsRegistry(root)
+    const again = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    expect(again).toEqual(seeded) // idempotent — ids don't re-mint on the next open
   })
 
   it('fails on corrupt JSON and leaves the file untouched', async () => {
