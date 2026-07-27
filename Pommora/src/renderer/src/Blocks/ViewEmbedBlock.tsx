@@ -12,7 +12,10 @@ import {
   MenuItem,
   MenuScrollFrame,
 } from '@renderer/design-system/components/menu'
-import { titleInput as rowInput } from '@renderer/design-system/components/menu/menu.css'
+import {
+  titleInput as rowInput,
+  rowDisabled,
+} from '@renderer/design-system/components/menu/menu.css'
 import { reorder, SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
 import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import { EditableInput } from '@renderer/Components/EditableInput'
@@ -60,10 +63,13 @@ const viewIcon = (v: SavedView): string => iconNameOr(v.icon, 'table')
 function EmbedTitle({
   title,
   level,
+  editable,
   onCommit,
 }: {
   title: string
   level: number
+  /** A locked tile's chrome is frozen — the title displays, never takes a caret. */
+  editable: boolean
   onCommit: (next: string) => void
 }): React.JSX.Element {
   const [editing, setEditing] = useState(false)
@@ -98,7 +104,7 @@ function EmbedTitle({
       spellCheck={false}
       role="textbox"
       tabIndex={editing ? 0 : undefined}
-      onClick={editing ? undefined : () => setEditing(true)}
+      onClick={editing || !editable ? undefined : () => setEditing(true)}
       onKeyDown={
         editing
           ? (e) => {
@@ -339,8 +345,11 @@ export function ViewEmbedBlock({
     patchEntry({ display_title: !t || t === source.title ? undefined : t })
   }
 
+  // Every row of the three chrome menus writes through the frozen patchEntry/persistConfig, so a
+  // locked tile opens none of them — nothing in them could land.
   const titleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
+    if (locked) return
     const action = await window.nexus.viewEmbedTitleMenu({ iconShown, level: titleLevel })
     if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : undefined })
     else if (action === 'hide-title') patchEntry({ title: false })
@@ -351,6 +360,7 @@ export function ViewEmbedBlock({
   }
   const areaMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
+    if (locked) return
     const action = await window.nexus.viewEmbedAreaMenu({
       viewButton: labeled ? 'labeled' : 'icon',
       viewStyle: dropdown ? 'dropdown' : 'toolbar',
@@ -367,6 +377,7 @@ export function ViewEmbedBlock({
   const rowMenu = async (i: number, e: React.MouseEvent, animate: boolean): Promise<void> => {
     e.preventDefault()
     e.stopPropagation() // the switcher row underneath owns the area menu
+    if (locked) return
     const action = await window.nexus.viewRowMenu(entry.views.length > 1)
     if (action === 'view:rename') setRenaming(i)
     else if (action === 'view:edit-icon') setIconFor(i)
@@ -404,7 +415,15 @@ export function ViewEmbedBlock({
   )
 
   const newViewButton = (
-    <AccessoryButton icon="plus" size={12} box={20} ariaLabel="New View" onClick={addView} />
+    <AccessoryButton
+      icon="plus"
+      size={12}
+      box={20}
+      ariaLabel="New View"
+      disabled={locked}
+      className={locked ? rowDisabled : undefined}
+      onClick={addView}
+    />
   )
 
   const switcher = dropdown ? (
@@ -415,7 +434,13 @@ export function ViewEmbedBlock({
     </button>
   ) : (
     <>
-      <SortableZone items={views.map((v) => v.id)} layout="list" axis="x" onReorder={reorderViews}>
+      <SortableZone
+        items={views.map((v) => v.id)}
+        layout="list"
+        axis="x"
+        disabled={locked}
+        onReorder={reorderViews}
+      >
         {views.map((v, i) => (
           <ViewPill
             key={v.id}
@@ -456,6 +481,7 @@ export function ViewEmbedBlock({
             <EmbedTitle
               title={entry.display_title ?? source.title}
               level={titleLevel}
+              editable={!locked}
               onCommit={commitTitle}
             />
             {configButton}

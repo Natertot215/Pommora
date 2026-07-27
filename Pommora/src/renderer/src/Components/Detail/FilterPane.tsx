@@ -34,7 +34,6 @@ import {
   PICKER_MAX_HEIGHT,
   PICKER_TREE_WIDTH,
 } from '../../design-system/components/PickerMenu/pickerMenu.css'
-import { OverflowScroll } from '../../design-system/components/OverflowScroll'
 import { Reveal } from '../../design-system/components/Reveal'
 import { duration as motion } from '../../design-system/tokens/motion'
 import { CalendarPicker } from '../../design-system/components/CalendarPicker/CalendarPicker'
@@ -382,11 +381,15 @@ function LocationField({
                     {/* The chip's own label + remove, at their defaults: the melt machinery is what
                         blurs the title tail under the ×, and it only ever needed a `chipRemovable`
                         host and this label — never a chip's fill. */}
-                    {/* The tab strip's eclipse, not the chip's melt: a label that runs under the ×
-                        fades at its own edge through the shared mask. One box instead of three
-                        stacked copies, and it reads clearer at this size. */}
-                    <OverflowScroll className={fp.segmentLabel}>{set?.title ?? v}</OverflowScroll>
-                    <ChipRemoveButton label="Remove location" onRemove={() => toggle(v)} />
+                    <span className={fp.segmentLabel}>{set?.title ?? v}</span>
+                    <span className={fp.segmentRemoveSlot}>
+                      <ChipRemoveButton
+                        className={fp.segmentRemove}
+                        label="Remove location"
+                        size={10}
+                        onRemove={() => toggle(v)}
+                      />
+                    </span>
                   </span>
                 </Fragment>
               )

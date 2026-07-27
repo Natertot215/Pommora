@@ -8,12 +8,12 @@
 // A field's glyphs space THEMSELVES: a leading icon and a trailing chevron want different gaps, and
 // one container `gap` can only state one — so each role carries its own margin and the field sets none.
 import { style } from '@vanilla-extract/css'
+import { titleReveal } from '../../design-system/animations.css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
 import { field as fieldBase } from '../../design-system/components/interactionField.css'
 import { focusRing } from '../../design-system/components/fieldRing'
 import { divider as segmentHairline } from '../../design-system/components/Segmented-Controls/segmented.css'
-import { chipRemovable } from '../../design-system/tokens/chip.css'
 
 const c = colorVars.color
 
@@ -222,6 +222,10 @@ export const chipRun = style({
 const SEGMENT_GAP = '5px'
 const SEGMENT_DIVIDER_INSET = '3px'
 
+/** KNOB — the field-edge fade on an overflowing Location run. Wider than the house default because
+ *  it dissolves a whole run rather than one word, and the × it clears sits inside that ramp. */
+const SEGMENT_FADE = '30px'
+
 /** A Location run — the picked Sets divided by the house segment hairline. A Set carries no colour
  *  of its own, so a chip would render as a colourless box pretending to be a value; a divided run
  *  is the honest treatment for a list of plain titles.
@@ -236,46 +240,74 @@ export const segmentRun = style({
   gap: SEGMENT_GAP,
   minWidth: 0,
   overflow: 'hidden',
+  // The FIELD is what runs out of room, so the eclipse belongs here — one fade at the field's
+  // trailing edge saying "there is more". Per-segment fades would put a gradient mid-field on every
+  // title, which reads as four broken labels rather than one truncated list.
+  vars: { '--edge-fade': SEGMENT_FADE },
 })
 
 /** KNOB — a segment's glyph gap. Tighter than the field's LEAD_GAP on purpose: a segment is a
  *  compact unit INSIDE a field, so it reads as one token rather than a second field. */
 const SEGMENT_ICON_GAP = '4px'
 
-/** KNOB — how far a segment's label fades before the ×. Wide enough that the glyph never lands on
- *  a solid letter; the shared eclipse mask does the rest. */
-const SEGMENT_FADE = '18px'
-
-/** A segment's label — the tab strip's eclipse box, tuned so its trailing fade clears the ×. */
-export const segmentLabel = style({
-  minWidth: 0,
-  vars: { '--edge-fade': SEGMENT_FADE },
-})
+/** A segment's label — plain and unclipped. The truncation signal is the RUN's, one field-edge fade
+ *  for the whole list; a label that masked itself too would stack a second gradient on the same text. */
+export const segmentLabel = style({ whiteSpace: 'nowrap' })
 
 /** A segment's leading glyph — the Set's own icon, or the entity default when it has none, so a
  *  segment and its picker row always read as the same thing. */
 export const segmentIcon = style({ marginRight: SEGMENT_ICON_GAP, flexShrink: 0 })
 
-/** One Set in that run — its glyph and title, and the host for the shared remove-×. It wears
- *  `chipRemovable`: that class is the melt family's HOST marker, not a chip shape, so composing it
- *  hands a plain segment the same hover-reveal + label-tail blur without a chip's fill or border. */
-export const segment = style([
-  chipRemovable,
-  {
-    display: 'inline-flex',
-    alignItems: 'center',
-    minWidth: 0,
-    overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    selectors: {
-      // The × is never what sizes a segment. The TRAILING one absorbs the field's slack, so its ×
-      // lands out at the field's edge in empty space instead of sitting on the title's last letters.
-      // An interior segment has no slack to take, so its × falls back to the chip behaviour — over
-      // the tail, with the tail blurring beneath it.
-      '&:last-child': { flex: '1 1 auto' },
-    },
+/** One Set in that run — its glyph, its title, and the slot its × opens into. The × never overlays
+ *  the label, so a segment carries none of the chip melt machinery. */
+export const segment = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  // Segments hold their natural width so the RUN is what overflows and fades; letting each one
+  // squeeze instead would truncate every title a little rather than the list as a whole.
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
+})
+
+/** The ×'s SLOT — collapsed to nothing at rest, opening to the glyph's width when its segment is
+ *  hovered, so the segment elongates to make room instead of the × landing on the title. The house
+ *  `0fr ↔ 1fr` morph (the segmented control's label slot; `Reveal` is its vertical twin), which
+ *  collapses the leading gap along with the width — a resting segment is pixel-identical to one that
+ *  never had a ×. */
+export const segmentRemoveSlot = style({
+  display: 'inline-grid',
+  gridTemplateColumns: '0fr',
+  marginLeft: 0,
+  minWidth: 0,
+  overflow: 'hidden',
+  transition: `grid-template-columns ${titleReveal}, margin-left ${titleReveal}`,
+  selectors: {
+    [`${segment}:hover &`]: { gridTemplateColumns: '1fr', marginLeft: TRAILING_GAP },
   },
-])
+})
+
+/** The × itself. The opacity lives HERE, not on the slot: the shared remove gates its click on its
+ *  own computed opacity, so a transparent button inside an open slot would still remove. */
+export const segmentRemove = style({
+  // The grid ITEM has to zero its own floor or the slot can't close: `0fr` resolves to
+  // `minmax(auto, 0fr)`, and that `auto` is the item's min-content width. Reveal and the segmented
+  // control's label slot each do the same on their inner box.
+  minWidth: 0,
+  overflow: 'hidden',
+  border: 'none',
+  background: 'none',
+  padding: 0,
+  display: 'inline-flex',
+  alignItems: 'center',
+  color: c.label.secondary,
+  cursor: 'pointer',
+  opacity: 0,
+  transition: `opacity ${titleReveal}`,
+  selectors: {
+    [`${segment}:hover &`]: { opacity: 1 },
+    '&:hover': { color: c.label.primary },
+  },
+})
 
 /** The house segment separator (Segmented-Controls), measured against the FIELD rather than given a
  *  fixed height: it stretches with the run and insets a few px, so it stays proportional if the
@@ -285,11 +317,6 @@ export const segmentDivider = style([
   segmentHairline,
   { alignSelf: 'stretch', marginBlock: SEGMENT_DIVIDER_INSET },
 ])
-
-// A segment's clear-× has NO skin of its own: it is ChipRemoveButton at its default, so the reveal,
-// the pointer cursor, the reveal-gated click AND the label-tail blur beneath it all come from the one
-// place that owns them. That machinery was never chip-specific — it only ever needed a `chipRemovable`
-// host and a `ChipLabel`, which `segment` and the segment's label now supply.
 
 /** The value slot for an operator that takes NO operand (Is Empty, Is Checked, Has File). It holds
  *  the row's leftover width so the × stays pinned at the trailing edge like every other row, but

@@ -32,6 +32,13 @@ const stopContextBubble = (e: {
   e.preventDefault()
 }
 
+// `[tabindex="-1"]` is excluded on purpose: a programmatic-only target (the pane shell itself) is
+// reachable by script but is never a tab stop.
+const FOCUSABLE =
+  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+const tabStops = (root: HTMLElement): HTMLElement[] =>
+  Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE))
+
 // Uses the `dropdown` token (snappier, symmetric Bloom — same keyframes as the menu Bloom, shared with
 // AutocompletePanel). The beaked shell is the shared NotchedPane; this stays the picker-flavoured skin.
 //
@@ -63,6 +70,7 @@ export function PickerMenu({
   width,
   bareSurface = false,
   accentOutline = false,
+  manageFocus = true,
   contentClassName,
   style,
 }: {
@@ -107,6 +115,11 @@ export function PickerMenu({
   /** Outline the pane in accent @ tint-secondary (the page-location border signal) — opt-in, used by the
    *  block-surface pickers so they read as part of that surface. */
   accentOutline?: boolean
+  /** The focus contract: the pane takes focus on open, keeps Tab inside it, and hands focus back to
+   *  whatever held it when it opened. Turn OFF for a pane the pointer merely summons rather than
+   *  commits to — a hover card must never pull the caret out of the surface underneath it. Manual
+   *  mode ignores this entirely (an inline pane is already in the document's tab order). */
+  manageFocus?: boolean
   /** Overrides the surface's content gutter (cx'd after the default) — for a picker that wants its own
    *  inset, e.g. the tight single-field TextPicker. */
   contentClassName?: string
@@ -263,6 +276,60 @@ export function PickerMenu({
     return () => document.removeEventListener('keydown', onKey)
   }, [selfManaged, onDismiss, open, closing])
 
+  // ── The focus contract (self-managed only). A body-portalled pane sits at the END of the document's
+  // tab order, so without this a Tab from the trigger walks the whole app before reaching the menu it
+  // just opened.
+  const managed = selfManaged && manageFocus
+  const focusReturn = useRef<HTMLElement | null>(null)
+  const tookFocus = useRef(false)
+  // The return target is read in a LAYOUT effect: a field the pane's own children focus from their
+  // mount effects would otherwise be captured as "where focus came from" and stranded on close.
+  useLayoutEffect(() => {
+    if (!managed || open !== true) return
+    const from = document.activeElement
+    focusReturn.current =
+      from instanceof HTMLElement && !paneRef.current?.contains(from) ? from : null
+  }, [managed, open])
+
+  // Gated on a measured placement, not just mount: the pane is visibility:hidden until it's placed,
+  // and focus() on a hidden element is a silent no-op.
+  const placed = pos !== null
+  useEffect(() => {
+    if (!managed || open !== true || closing || !placed || tookFocus.current) return
+    tookFocus.current = true
+    const pane = paneRef.current
+    // A child that focuses itself (a rename field) is the authority on where the caret belongs.
+    if (!pane || pane.contains(document.activeElement)) return
+    ;(tabStops(pane)[0] ?? pane).focus()
+  }, [managed, open, closing, placed])
+
+  // Restore on the open→false edge (and on an unmount that skips it), never mid-Bloom-out from a
+  // detached trigger — and never over a target the user has already moved focus to themselves.
+  useEffect(() => {
+    if (!managed || open !== true) return
+    return () => {
+      tookFocus.current = false
+      const back = focusReturn.current
+      focusReturn.current = null
+      if (!back?.isConnected) return
+      const active = document.activeElement
+      if (active && active !== document.body && !paneRef.current?.contains(active)) return
+      back.focus({ preventScroll: true })
+    }
+  }, [managed, open])
+
+  const trapTab = (e: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (e.key !== 'Tab' || e.ctrlKey || e.metaKey || e.altKey) return
+    const pane = paneRef.current
+    if (!pane) return
+    const stops = tabStops(pane)
+    const edge = e.shiftKey ? stops[0] : stops[stops.length - 1]
+    if (stops.length > 0 && document.activeElement !== edge && document.activeElement !== pane)
+      return
+    e.preventDefault()
+    ;(e.shiftKey ? stops[stops.length - 1] : stops[0])?.focus()
+  }
+
   // Render off the EFFECTIVE direction (post-flip), so the beak side + gutter match where the pane sits.
   const up = effDir === 'up'
   const horizontal = effDir === 'left' || effDir === 'right'
@@ -339,11 +406,13 @@ export function PickerMenu({
             ref={paneRef}
             className={s.layer}
             data-picker-portal
+            tabIndex={managed ? -1 : undefined}
             // React events cross portals, so a pointerdown on the pane (an option/row) would bubble to a
             // trigger's drag-handle ancestor and pointer-capture — stealing the click. Stop it here so any
             // consumer's picker is safe, not just ones whose trigger happens to stop pointerdown itself.
             onPointerDown={stopPointerBubble}
             onContextMenu={stopContextBubble}
+            onKeyDown={managed ? trapTab : undefined}
             style={{
               // Vertical panes anchor by `top`; sideways panes by `bottom` (aiming the side beak).
               ...(pos?.top !== undefined ? { top: `${pos.top}px` } : null),

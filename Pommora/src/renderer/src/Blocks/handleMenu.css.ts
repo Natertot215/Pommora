@@ -26,13 +26,6 @@ export const row = style({
   },
 })
 
-/** A structurally-present but inert row (a view embed's Source — sources are per-view, G-14). */
-export const rowDisabled = style({
-  selectors: {
-    '&&': { opacity: 0.4, pointerEvents: 'none' },
-  },
-})
-
 /** Header/footer density for this thin menu — the house zoom knob scales the whole bar
  *  (Nathan's call: the scaled bars read right here; tones stay the house classes). */
 export const barScale = style({ zoom: 0.85 })
