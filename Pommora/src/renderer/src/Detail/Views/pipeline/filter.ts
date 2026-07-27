@@ -268,7 +268,7 @@ function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
       return n !== null
     case FILTER_OPS.is: {
       const e = parseNum(expected)
-      return n === null || e === null ? true : n === e
+      return e === null ? true : n !== null && n === e
     }
     case FILTER_OPS.isNot: {
       const e = parseNum(expected)
@@ -276,19 +276,19 @@ function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
     }
     case FILTER_OPS.greaterThan: {
       const e = parseNum(expected)
-      return n === null || e === null ? true : n > e
+      return e === null ? true : n !== null && n > e
     }
     case FILTER_OPS.lessThan: {
       const e = parseNum(expected)
-      return n === null || e === null ? true : n < e
+      return e === null ? true : n !== null && n < e
     }
     case FILTER_OPS.greaterOrEqual: {
       const e = parseNum(expected)
-      return n === null || e === null ? true : n >= e
+      return e === null ? true : n !== null && n >= e
     }
     case FILTER_OPS.lessOrEqual: {
       const e = parseNum(expected)
-      return n === null || e === null ? true : n <= e
+      return e === null ? true : n !== null && n <= e
     }
     default:
       return true
@@ -309,23 +309,23 @@ function evaluateDate(v: PropertyValue, op: Op, expected: Expected): boolean {
       return d !== null
     case FILTER_OPS.is: {
       const raw = v.kind === 'datetime' ? v.value : null
-      return raw === null || expected == null ? true : dayOf(raw) === dayOf(expected)
+      return expected == null ? true : raw !== null && dayOf(raw) === dayOf(expected)
     }
     case FILTER_OPS.isBefore: {
       const e = parseDateMs(expected)
-      return d === null || e === null ? true : d < e
+      return e === null ? true : d !== null && d < e
     }
     case FILTER_OPS.isAfter: {
       const e = parseDateMs(expected)
-      return d === null || e === null ? true : d > e
+      return e === null ? true : d !== null && d > e
     }
     case FILTER_OPS.onOrAfter: {
       const e = parseDateMs(expected)
-      return d === null || e === null ? true : d >= e
+      return e === null ? true : d !== null && d >= e
     }
     case FILTER_OPS.onOrBefore: {
       const e = parseDateMs(expected)
-      return d === null || e === null ? true : d <= e
+      return e === null ? true : d !== null && d <= e
     }
     default:
       return true
@@ -374,8 +374,8 @@ function evaluateText(v: PropertyValue, op: Op, expected: Expected, values?: str
     case FILTER_OPS.isNotEmpty:
       return !(s === null || s === '')
     case FILTER_OPS.is:
-      if (values?.length) return s === null ? true : values.includes(s) // any-of
-      return s === null || expected == null ? true : s === expected
+      if (values?.length) return s !== null && values.includes(s) // any-of
+      return expected == null ? true : s !== null && s === expected
     case FILTER_OPS.isNot:
       if (values?.length) return s === null ? true : !values.includes(s) // none-of
       return expected == null ? true : s !== expected

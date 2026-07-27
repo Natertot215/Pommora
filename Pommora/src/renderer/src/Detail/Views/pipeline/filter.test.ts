@@ -111,35 +111,35 @@ describe('applyFilter — match mode + recursion', () => {
 })
 
 describe('applyFilter — per-type matrix', () => {
-  it('number: comparison ops filter present values; an absent value is a no-op pass (Swift parity)', () => {
+  it('number: a comparison excludes a row with no value — only is_empty selects absence', () => {
     const rows = [
       row('a', { props: { prop_num: 5 } }),
       row('b', { props: { prop_num: 1 } }),
       row('c', { props: {} }),
     ]
-    // c (absent) passes every comparison op — a filter never excludes on an op it can't apply;
-    // is_empty is how absence is actually filtered.
+    // c has no value: it satisfies no positive comparison. A rule the user CAN'T author (no
+    // operand) still abstains — that's a different case from a row simply having nothing.
     expect(
       ids(rows, {
         match: 'all',
         rules: [{ property_id: 'prop_num', op: 'greater_than', value: '3' }],
       }),
-    ).toEqual(['a', 'c'])
+    ).toEqual(['a'])
     expect(
       ids(rows, {
         match: 'all',
         rules: [{ property_id: 'prop_num', op: 'less_than', value: '3' }],
       }),
-    ).toEqual(['b', 'c'])
+    ).toEqual(['b'])
     expect(
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_num', op: 'is', value: '5' }] }),
-    ).toEqual(['a', 'c'])
+    ).toEqual(['a'])
     expect(
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_num', op: 'is_empty' }] }),
     ).toEqual(['c'])
   })
 
-  it('date: comparison ops filter present values; an absent value is a no-op pass (Swift parity)', () => {
+  it('date: a comparison excludes a row with no date — only is_empty selects absence', () => {
     const rows = [
       row('a', { props: { prop_when: '2026-06-20' } }),
       row('b', { props: { prop_when: '2026-06-10' } }),
@@ -150,13 +150,13 @@ describe('applyFilter — per-type matrix', () => {
         match: 'all',
         rules: [{ property_id: 'prop_when', op: 'on_or_after', value: '2026-06-15' }],
       }),
-    ).toEqual(['a', 'c'])
+    ).toEqual(['a'])
     expect(
       ids(rows, {
         match: 'all',
         rules: [{ property_id: 'prop_when', op: 'on_or_before', value: '2026-06-15' }],
       }),
-    ).toEqual(['b', 'c'])
+    ).toEqual(['b'])
     expect(
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_when', op: 'is_empty' }] }),
     ).toEqual(['c'])
@@ -415,13 +415,13 @@ describe('applyFilter — new single-operand ops', () => {
     row('sBanana', { props: { prop_sel: 'banana' } }),
   ]
 
-  it('number greater_or_equal / less_or_equal (absent values pass)', () => {
+  it('number greater_or_equal / less_or_equal exclude rows with no number', () => {
     expect(
       ids(rows, {
         match: 'all',
         rules: [{ property_id: 'prop_num', op: 'greater_or_equal', value: '5' }],
       }),
-    ).toEqual(['n5', 'n9', 'd20', 'd25', 'sApple', 'sBanana'])
+    ).toEqual(['n5', 'n9'])
     expect(
       ids([rows[0], rows[1]], {
         match: 'all',
