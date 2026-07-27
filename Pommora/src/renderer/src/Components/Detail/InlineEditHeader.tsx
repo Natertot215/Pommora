@@ -19,6 +19,7 @@ export function InlineEditHeader({
   onCommit,
   onIconClick,
   outline,
+  readOnly = false,
 }: {
   value: string
   icon?: string
@@ -29,6 +30,9 @@ export function InlineEditHeader({
   onIconClick?: () => void
   /** OutlineTint — rings the icon button + title field in a resolved color; unset = ringless. */
   outline?: string
+  /** The identity is frozen (a locked view embed): the field displays, never edits, and the icon
+   *  button goes inert — an editable field whose commit can't land is the loss this closes. */
+  readOnly?: boolean
 }): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   return (
@@ -41,12 +45,12 @@ export function InlineEditHeader({
         type="button"
         className={s.iconButton}
         aria-label="Edit icon"
-        disabled={!onIconClick}
+        disabled={readOnly || !onIconClick}
         onClick={onIconClick}
       >
         {icon ? <Icon name={icon} /> : <DashIcon />}
       </button>
-      {editing ? (
+      {editing && !readOnly ? (
         <EditableInput
           value={value}
           className={`${fieldInputClass} ${s.titleField}`}
@@ -57,7 +61,10 @@ export function InlineEditHeader({
           onCancel={() => setEditing(false)}
         />
       ) : (
-        <InteractionField className={s.titleField} onClick={() => setEditing(true)}>
+        <InteractionField
+          className={s.titleField}
+          onClick={readOnly ? undefined : () => setEditing(true)}
+        >
           {value}
         </InteractionField>
       )}

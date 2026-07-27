@@ -1,0 +1,110 @@
+import { describe, it, expect } from 'vitest'
+import {
+  contextIdentityOf,
+  contextIdsOf,
+  isContextColumnId,
+  spaceIdentityOf,
+  spacesByIdOf,
+} from './contextIdentity'
+import type { NexusTree } from '@shared/types'
+
+const mkTree = (): NexusTree =>
+  ({
+    contexts: [
+      {
+        def: { id: '_tier1', title: 'Areas', singular: 'Area', icon: 'briefcase' },
+        spaces: [
+          {
+            id: 'a1',
+            kind: 'space',
+            title: 'Personal',
+            path: 'P',
+            contextId: '_tier1',
+            color: 'blue',
+          },
+          {
+            id: 'a2',
+            kind: 'space',
+            title: 'Work',
+            path: 'W',
+            contextId: '_tier1',
+            icon: 'anchor',
+          },
+        ],
+      },
+      {
+        def: { id: '_tier2', title: 'Topics', singular: 'Topic' },
+        spaces: [{ id: 't1', kind: 'space', title: 'Reading', path: 'R', contextId: '_tier2' }],
+      },
+    ],
+  }) as unknown as NexusTree
+
+const tree = mkTree()
+
+describe('spacesByIdOf', () => {
+  it('maps every Space id to its title, color, owning Context, and a renderable icon', () => {
+    const m = spacesByIdOf(tree)
+    expect(m.get('a1')).toEqual({
+      title: 'Personal',
+      color: 'blue',
+      icon: 'layout-grid',
+      contextId: '_tier1',
+    })
+    expect(m.get('a2')?.icon).toBe('anchor')
+    expect(m.get('t1')).toEqual({
+      title: 'Reading',
+      color: undefined,
+      icon: 'layout-grid',
+      contextId: '_tier2',
+    })
+  })
+
+  it('returns undefined for an unknown id', () => {
+    expect(spacesByIdOf(tree).get('nope')).toBeUndefined()
+  })
+
+  it('hands back the same map instance for a tree, and a fresh one per tree', () => {
+    expect(spacesByIdOf(tree)).toBe(spacesByIdOf(tree))
+    expect(spacesByIdOf(mkTree())).not.toBe(spacesByIdOf(tree))
+  })
+
+  it('is empty on an unmigrated tree', () => {
+    expect(spacesByIdOf({ contexts: [] } as unknown as NexusTree).size).toBe(0)
+  })
+})
+
+describe('context accessors', () => {
+  it('lists Context ids in registry order', () => {
+    expect(contextIdsOf(tree)).toEqual(['_tier1', '_tier2'])
+    expect(contextIdsOf(null)).toEqual([])
+  })
+
+  it('resolves a Context to its titles and a renderable icon', () => {
+    expect(contextIdentityOf(tree, '_tier1')).toEqual({
+      title: 'Areas',
+      singular: 'Area',
+      icon: 'briefcase',
+    })
+    expect(contextIdentityOf(tree, '_tier2')?.icon).toBe('layout-grid')
+    expect(contextIdentityOf(tree, 'a1')).toBeUndefined()
+  })
+
+  it('resolves a Space id and tells Context columns from Space ids', () => {
+    expect(spaceIdentityOf(tree, 'a1')?.title).toBe('Personal')
+    expect(spaceIdentityOf(null, 'a1')).toBeUndefined()
+    expect(isContextColumnId(tree, '_tier1')).toBe(true)
+    expect(isContextColumnId(tree, 'a1')).toBe(false)
+    expect(isContextColumnId(null, '_tier1')).toBe(false)
+  })
+})
+
+// A personalized Space glyph must reach every surface that resolves through the seam, not just the
+// sidebar — a nexus that sets its own default otherwise wears two different icons for one Space.
+// The override must name a CURATED glyph; `defaultEntityIcon` rejects anything else and keeps the seed.
+it('an icon-less Space takes the USER default glyph, not the curated seed', () => {
+  const personalized = { ...mkTree(), personalization: { defaultIcons: { space: 'folder-open' } } } as NexusTree
+  expect(spaceIdentityOf(personalized, 'a1')?.icon).toBe('folder-open')
+  expect(contextIdentityOf(personalized, '_tier2')?.icon).toBe('folder-open')
+  // A Space carrying its OWN icon still wins over the default.
+  expect(spaceIdentityOf(mkTree(), 'a1')?.icon).toBe('layout-grid')
+})

@@ -12,7 +12,7 @@ import { PickerMenu, PickerOption } from '@renderer/design-system/components/Pic
 import { MenuItem } from '@renderer/design-system/components/menu'
 import { iconOption } from '../Components/Detail/pickerControl.css'
 import { Cell } from '../Detail/Views/Table/Cell'
-import { buildContextsById, type ResolveContext } from '../Detail/Views/Table/resolveContext'
+import { buildResolveContext, type ResolveContext } from '../Detail/Views/Table/resolveContext'
 import { contextOptionsFor } from '../Detail/Views/pipeline/contextOptions'
 import { contextIdentityOf, spaceIdentityOf } from '../Detail/Views/pipeline/contextIdentity'
 import { PropertyEditor } from '../Detail/Views/PropertyEditing/PropertyEditor'
@@ -72,7 +72,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
 
   const schema = useMemo(() => schemaForPage(tree, target.path), [tree, target.path])
   const ctx = useMemo<ResolveContext | null>(
-    () => (tree ? { schema, contextsById: buildContextsById(tree), labels: tree.labels } : null),
+    () => (tree ? buildResolveContext(tree, schema) : null),
     [tree, schema],
   )
   // The registry rows + the same shared resolution the walk runs — bracketed frontmatter
@@ -298,7 +298,13 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             aria-hidden
             style={{ position: 'fixed', left: rowMenu.x, top: rowMenu.y, width: 0, height: 0 }}
           />
-          <PickerMenu solid open onDismiss={() => setRowMenu(null)} triggerRef={rowMenuRef} origin="center">
+          <PickerMenu
+            solid
+            open
+            onDismiss={() => setRowMenu(null)}
+            triggerRef={rowMenuRef}
+            origin="center"
+          >
             <div className="nav-row-menu">
               <MenuItem
                 leading={<Icon name="x" size={13} />}
@@ -316,7 +322,13 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
         </>
       )}
       {addOpen && (
-        <PickerMenu solid open onDismiss={() => setAddOpen(false)} triggerRef={addRef} origin="center">
+        <PickerMenu
+          solid
+          open
+          onDismiss={() => setAddOpen(false)}
+          triggerRef={addRef}
+          origin="center"
+        >
           {/* The grouping pane's picker verbatim — PickerOption rows with the icon treatment.
               Unassigned tiers lead (contexts add from here too), unassigned properties follow. */}
           {contextRows

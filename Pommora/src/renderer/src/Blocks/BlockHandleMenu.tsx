@@ -17,6 +17,7 @@ import {
   MenuScrollFrame,
   MenuSeparator,
 } from '@renderer/design-system/components/menu'
+import { rowDisabled } from '@renderer/design-system/components/menu/menu.css'
 import { PaneSlider } from '@renderer/Components/Detail/PaneSlider'
 import { cx } from '@renderer/design-system/cx'
 import { ZOOM_STEPS, zoomStep } from './blockZoom'
@@ -84,7 +85,7 @@ function DrillLevel({
           n.submenu ? (
             <MenuItem
               key={`${n.label}-${String(i)}`}
-              className={cx(s.row, n.submenu.length === 0 && s.rowDisabled)}
+              className={cx(s.row, n.submenu.length === 0 && rowDisabled)}
               leading={n.icon ? <Icon name={n.icon} size={GLYPH} /> : undefined}
               trailing={chevron}
               onClick={() => setOpenIdx(i)}
@@ -94,7 +95,7 @@ function DrillLevel({
           ) : (
             <MenuItem
               key={`${n.label}-${String(i)}`}
-              className={cx(s.row, n.pick === undefined && s.rowDisabled)}
+              className={cx(s.row, n.pick === undefined && rowDisabled)}
               leading={n.icon ? <Icon name={n.icon} size={GLYPH} /> : undefined}
               onClick={n.pick === undefined ? undefined : () => resolve(n.pick)}
             >
@@ -204,7 +205,7 @@ export function BlockHandleMenu({
   // board/tile. The dim is the house rowDisabled (opacity on the row content, not a full-row veil). The
   // footer stays live: the per-tile Lock toggles back; a board lock shows the inert "Locked".
   const locked = (entry.locked ?? false) || containerLocked
-  const rowMute = locked ? s.rowDisabled : undefined
+  const rowMute = locked ? rowDisabled : undefined
   const act = (fn: () => void) => () => {
     onClose()
     fn()
@@ -220,7 +221,7 @@ export function BlockHandleMenu({
               leading={
                 containerLocked ? (
                   <span
-                    className={`${s.footerLockAction} ${s.rowDisabled}`}
+                    className={`${s.footerLockAction} ${rowDisabled}`}
                     title="Locked by the board"
                   >
                     <Icon name="lock" size={GLYPH} className={s.lockIcon} />
@@ -286,7 +287,7 @@ export function BlockHandleMenu({
           </>
         ) : (
           <MenuItem
-            className={cx(s.row, entry.type === 'view' && s.rowDisabled, rowMute)}
+            className={cx(s.row, entry.type === 'view' && rowDisabled, rowMute)}
             leading={<Icon name="link" size={GLYPH} />}
             trailing={chevron}
             onClick={!locked && entry.type === 'page' ? () => setPane('page') : undefined}

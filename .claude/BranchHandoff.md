@@ -130,14 +130,21 @@ Inert by choice, not half-wired:
 
 Named, with the survivor already decided where it is a duplication:
 
-- **`PickerMenu` has no focus trap**, and this branch made it materially worse: `MenuItem` gained a tab stop, so a portalled menu's rows now land at the end of the document tab order. Focus is neither moved in on open nor restored on close.
-- **A locked view-embed drops writes silently** while its config panes stay interactive.
 - **Three statements of "dropdown anchored below its trigger"** (`pickerMenu` · `viewDropdown` · `settingsPane`), differing only in alignment and z-index. One `dropdownAnchor` base with variants.
-- **`Table/resolveContext.ts` re-derives the context id map** the memoized identity seam already builds. Survivor: `contextIdentity`.
 - **Disclosure state and the recursive Set-tree row are written twice** (GroupingPane, FilterPane) and genuinely differ in what the row does. Extract the state as a hook and the row as one component taking a `rowAction`.
 - **`PickerMenu` and `NotchedPane` each run their own `ResizeObserver`** on the same pane.
-- **The Toolbar aims its dropdown beaks with hard-coded trio fractions.**
 - **No z-index scale exists** — raw layer numbers from 1 to 1100 across the design system.
+- **A locked embed's BODY still writes silently.** The config panes are frozen and the seam now refuses,
+  but `TableView` and `CardsView` write view config from the table itself — column resize/reorder/align,
+  hide column, card style, group collapse. They carry optimistic overrides, so they look applied until
+  remount. Freezing them needs a ruling on which in-table gestures a config lock owns; group collapse in
+  particular reads as "how I'm looking at it" rather than authoring, yet it persists into view config.
+- **No `:focus-visible` styling on `MenuItem` or `PickerOption`.** With the focus contract in, a
+  KEYBOARD-opened picker now shows Chromium's default UA outline on its first row. Mouse-opened pickers
+  are unaffected. A house focus ring on those rows is a design call.
+- **Three surfaces still resolve a Space's default glyph without the personalization overrides** —
+  `contextOptions.ts` holds the last copy of that derivation, and `PreviewInspector`'s local Context map
+  re-applies the fallback by hand. The identity seam is normalized; these are the stragglers.
 - **Right-clicking Change Color in the Space settings pane closes the pane.** Not reproduced. Every renderer-side path was eliminated: no blur or focus listener exists, `setPanel(null)` has one caller whose ref contains the dropdown, and the picker's portals are spared by both dismissal checks. The residual mechanism is a pointer event delivered after the native menu returns input. Two guards landed that are correct regardless — `useDismiss` ignores non-primary buttons, and the header yields the gesture over an editable target, which also closes a proven two-native-menu collision. Confirm with a capture-phase `pointerdown` log during one right-click.
 
 ### Merge Closeout

@@ -4,8 +4,10 @@ import { PickerMenu } from '@renderer/design-system/components/PickerMenu/Picker
 
 // B-7's hover card — the PLACEHOLDER contract: a hover-intent on a resolved connection blooms a
 // blank pane anchored to the link. NO dismiss backdrop (PickerMenu only renders one when given
-// onDismiss) — a hover affordance must never eat the next click. Dismissal: the pointer settles
-// outside both the link and the card for the grace window, or Escape (marked handled).
+// onDismiss) — a hover affordance must never eat the next click, and `manageFocus={false}` is the
+// same law for the keyboard: passing the pointer over a link must never pull the caret out of the
+// editor. Dismissal: the pointer settles outside both the link and the card for the grace window,
+// or Escape (marked handled).
 
 /** KNOB — the blank card's opening size. */
 const CARD = { w: 260, h: 120 }
@@ -72,7 +74,7 @@ export function useConnectionHover(): {
           }}
         />
       )}
-      <PickerMenu solid open={hovered !== null} triggerRef={anchorRef}>
+      <PickerMenu solid open={hovered !== null} triggerRef={anchorRef} manageFocus={false}>
         <div ref={cardRef} style={{ width: CARD.w, height: CARD.h }} />
       </PickerMenu>
     </>
