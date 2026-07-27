@@ -3,7 +3,6 @@
 
 import { join } from 'node:path'
 
-export type ContextTier = 'areas' | 'topics' | 'projects'
 
 export type SidecarKind =
   | 'area'
@@ -33,10 +32,6 @@ export function nexusDir(root: string): string {
 
 export function nexusConfig(root: string, file: string): string {
   return join(nexusDir(root), file)
-}
-
-export function contextTierDir(root: string, tier: ContextTier): string {
-  return join(nexusDir(root), tier)
 }
 
 /** The Contexts registry — `.nexus/contexts.json` (per-Context id, title, singular, icon;

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ensureIdentity } from './identity'
+import { ensureIdentity, NEXUS_SCHEMA_VERSION } from './identity'
 import { isUlid } from './ids'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
@@ -27,7 +27,7 @@ describe('ensureIdentity', () => {
     const r = await ensureIdentity(root)
     expect(r.created).toBe(true)
     const j = await readId()
-    expect(j.schemaVersion).toBe(1)
+    expect(j.schemaVersion).toBe(NEXUS_SCHEMA_VERSION)
     expect(typeof j.id === 'string' && isUlid(j.id as string)).toBeTruthy()
     // ISO-8601 with NO fractional seconds — Swift's .iso8601 decoder rejects milliseconds.
     expect(j.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)
@@ -40,7 +40,7 @@ describe('ensureIdentity', () => {
     expect(r.id).toBe('existing-ulid')
     const j = await readId()
     expect(j.id).toBe('existing-ulid') // unchanged
-    expect(j.schemaVersion).toBe(1) // backfilled
+    expect(j.schemaVersion).toBe(NEXUS_SCHEMA_VERSION) // backfilled
     expect(j.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/) // backfilled
     expect(j.description).toBe('keep me') // foreign key preserved
   })

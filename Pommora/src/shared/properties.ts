@@ -68,11 +68,9 @@ const statusGroup = z.looseObject({
 export type StatusGroup = z.infer<typeof statusGroup>
 
 /** Context picker constraint — which registry Context a `context` property draws from
- *  (`{ context_id }`; the legacy `{ kind: "context_tier", tier: N }` shape reads through).
- *  Lenient `kind` so an unknown target survives parse. */
+ *  (`{ context_id }`). Lenient `kind` so an unknown target survives parse. */
 const contextTarget = z.looseObject({
   kind: z.string().optional(),
-  tier: z.number().optional(),
   context_id: z.string().optional(),
 })
 
@@ -156,17 +154,6 @@ export function isReservedPropertyId(id: string): boolean {
   return RESERVED_SET.has(id)
 }
 
-/** LEGACY — migration/legacy-read only. The fixed context tier levels (1 = Area,
- *  2 = Topic, 3 = Project) the registry model replaces; live iteration goes through
- *  `.nexus/contexts.json`. */
-export const TIER_LEVELS = [1, 2, 3] as const
-
-
-/** LEGACY — migration/legacy-read only. Tier level → the reserved property id
- *  (`_tier1`/`_tier2`/`_tier3`), which the seeded three keep as their registry ids. */
-export function tierPropertyId(level: number): string {
-  return `_tier${level}`
-}
 
 /** Default 3-group seed written when a Status property is first added. Group IDs stay fixed (calendar
  *  sync); labels are Open / Active / Done, and each group seeds one option whose value=label=its group
