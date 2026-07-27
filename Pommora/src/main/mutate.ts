@@ -18,7 +18,7 @@ import { mkdir, readFile, realpath, rm } from 'node:fs/promises'
 import { sessionRoot } from './session'
 import { refreshSessionIndex } from './sessionIndex'
 import { resolveUnderRoot } from './pathSafety'
-import { createPage, renamePage, movePage } from './crud/page'
+import { createPage, renamePage, movePage, updatePageProperty } from './crud/page'
 import { setChildOrder, setStateOrder } from './crud/reorder'
 import { createFolderEntity, renameFolderEntity, moveFolderEntity } from './crud/folderEntity'
 import {
@@ -56,7 +56,6 @@ import { updateSettings } from './settings'
 import { newId } from './ids'
 import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
 import { ok, fail, type Result } from '@shared/result'
-import { applyPropertyValue } from '@shared/propertyValue'
 import type { MutateRequest, MutateResult } from '@shared/mutate'
 import type { TrashMode } from './appConfig'
 
@@ -490,27 +489,13 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setProperty': {
-      // One typed property write into a page's `.md` frontmatter `properties` map; foreign frontmatter
-      // + body survive (same shape as the page-banner cover write). applyPropertyValue is the shared
-      // set/clear rule — a null value deletes the key. Drives table cross-group reassignment.
+      // Routed through the one page-value writer so a cell edit and an option cascade stamp the
+      // page identically. Drives table cross-group reassignment.
       const resolved = await resolveUnderRoot(root, req.path)
       if (!resolved.ok) return relay(resolved)
-      return serializeOnFile(resolved.value, async () => {
-        let existing: string
-        try {
-          existing = await readFile(resolved.value, 'utf8')
-        } catch {
-          return fault('That page could not be read.')
-        }
-        const { body } = splitEnvelope(existing)
-        const fields = readFrontmatterFields(existing)
-        const properties = applyPropertyValue(fields.properties, req.propertyId, req.value)
-        await atomicWriteFile(
-          resolved.value,
-          mergeFrontmatter(existing, { properties }, ['properties'], body),
-        )
-        return { ok: true }
-      })
+      return serializeOnFile(resolved.value, () =>
+        updatePageProperty(resolved.value, req.propertyId, req.value).then(relay),
+      )
     }
 
     case 'movePage': {
