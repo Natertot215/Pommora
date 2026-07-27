@@ -14,17 +14,18 @@ import { asRenderableIcon } from '@renderer/design-system/symbols'
 import { contextIdentityOf, contextIdsOf } from '../../Detail/Views/pipeline/contextIdentity'
 import { declaredType } from '../../Detail/Views/pipeline/value'
 import { FILTER_OPS } from '../../Detail/Views/pipeline/filter'
-import { propertyTypeIconName, TITLE_META } from './PropertyTypes'
+import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from './PropertyTypes'
 
 export type Connector = 'and' | 'or'
 
-/** One pane row — `connector` is null on row 0 (nothing to join). */
-export interface PaneRow {
+/** One authored row — `connector` is null on row 0 (nothing to join). Named FilterRow, not PaneRow:
+ *  paneDndModel exports an unrelated PaneRow in this same directory. */
+export interface FilterRow {
   connector: Connector | null
   rule: FilterRule
 }
 
-export type DecodedFilter = { kind: 'rows'; mode: MatchMode; rows: PaneRow[] } | { kind: 'locked' }
+export type DecodedFilter = { kind: 'rows'; mode: MatchMode; rows: FilterRow[] } | { kind: 'locked' }
 
 const isLeaf = (node: FilterRule | FilterGroup): node is FilterRule => !('rules' in node)
 const isAllOfLeaves = (node: FilterRule | FilterGroup): node is FilterGroup =>
@@ -39,7 +40,7 @@ export const connectorFor = (mode: MatchMode): Connector => (mode === 'any' ? 'o
  *  The root KEEPS its mode across the split — `none` over runs is NOR over those runs, which is
  *  De-Morgan-exact. Rewriting it to `any` there would invert the filter's polarity on one connector
  *  click: "matches neither" would quietly become "matches either". */
-export function encodeFilter(mode: MatchMode, rows: PaneRow[]): FilterGroup | undefined {
+export function encodeFilter(mode: MatchMode, rows: FilterRow[]): FilterGroup | undefined {
   if (rows.length === 0) return undefined
   const runs: FilterRule[][] = [[]]
   for (const row of rows) {
@@ -70,7 +71,7 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
 
   // any / none over runs: every child must be a leaf or an all-of-leaves run.
   if (!filter.rules.every((n) => isLeaf(n) || isAllOfLeaves(n))) return { kind: 'locked' }
-  const rows: PaneRow[] = []
+  const rows: FilterRow[] = []
   for (const child of filter.rules) {
     const run = isLeaf(child) ? [child] : (child.rules as FilterRule[])
     run.forEach((rule, i) => {
@@ -79,7 +80,8 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
   }
   // A pure-leaf `any` is genuinely Any; one carrying an all-of-leaves run is a mixed tree, which the
   // pane shows as All with the Or as a deviation. `none` always reports itself.
-  const mode: MatchMode = filter.match === 'none' ? 'none' : filter.rules.every(isLeaf) ? 'any' : 'all'
+  const mode: MatchMode =
+    filter.match === 'none' ? 'none' : filter.rules.every(isLeaf) ? 'any' : 'all'
   return { kind: 'rows', mode, rows }
 }
 
@@ -216,16 +218,17 @@ export interface FilterTarget {
 export function filterTargets(
   schema: PropertyDefinition[],
   tree: NexusTree | null,
+  hasSets = true,
 ): FilterTarget[] {
   const contextIds = contextIdsOf(tree)
   return [
-    { id: RESERVED_PROPERTY_ID.title, label: 'Title', icon: TITLE_META.icon },
-    { id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' },
-    {
-      id: RESERVED_PROPERTY_ID.modifiedAt,
-      label: 'Modified',
-      icon: propertyTypeIconName('last_edited_time'),
-    },
+    TITLE_TARGET,
+    // Every Location operator needs a Set to point at, so on a container with none it's a target
+    // that can never complete.
+    ...(hasSets
+      ? [{ id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' as const }]
+      : []),
+    MODIFIED_TARGET,
     ...contextIds.map((id) => {
       const identity = contextIdentityOf(tree, id)
       return {
@@ -234,12 +237,6 @@ export function filterTargets(
         icon: asRenderableIcon(identity?.icon) ?? 'layout-grid',
       }
     }),
-    ...schema
-      .filter((d) => operatorsFor(d.id, schema, contextIds).length > 0)
-      .map((d) => ({
-        id: d.id,
-        label: d.name,
-        icon: asRenderableIcon(d.icon) ?? propertyTypeIconName(d.type),
-      })),
+    ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0),
   ]
 }

@@ -8,7 +8,7 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion } from '@shared/views'
-import { Icon, asRenderableIcon } from '@renderer/design-system/symbols'
+import { Icon, } from '@renderer/design-system/symbols'
 import { MenuItem, MenuPaneTopRow, MenuSeparator } from '../../design-system/components/menu'
 import { flushTrailing } from '../../design-system/components/menu/menu.css'
 import { Reveal } from '../../design-system/components/Reveal'
@@ -19,7 +19,7 @@ import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { CustomList, PropertyPreview, optionsOf } from './GroupingPane'
 import { bucketOrder } from '../../Detail/Views/pipeline/group'
-import { propertyTypeIconName, TITLE_META } from './PropertyTypes'
+import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from './PropertyTypes'
 import * as gp from './groupingPane.css'
 
 type Direction = SortCriterion['direction']
@@ -88,19 +88,9 @@ interface SortTarget {
  *  schema's sortable set (they sort via buildCriterion's reserved-id branches). */
 function sortTargets(schema: PropertyDefinition[]): SortTarget[] {
   return [
-    { id: RESERVED_PROPERTY_ID.title, label: 'Title', icon: TITLE_META.icon },
-    {
-      id: RESERVED_PROPERTY_ID.modifiedAt,
-      label: 'Modified',
-      icon: propertyTypeIconName('last_edited_time'),
-    },
-    ...schema
-      .filter((d) => SORTABLE_PANE.has(declaredType(d.id, schema) ?? ''))
-      .map((d) => ({
-        id: d.id,
-        label: d.name,
-        icon: asRenderableIcon(d.icon) ?? propertyTypeIconName(d.type),
-      })),
+    TITLE_TARGET,
+    MODIFIED_TARGET,
+    ...schemaTargets(schema, (d) => SORTABLE_PANE.has(declaredType(d.id, schema) ?? '')),
   ]
 }
 

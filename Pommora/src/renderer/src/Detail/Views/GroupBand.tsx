@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useRef } from 'react'
 import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
-import { chipBox, chipColor, text } from '@renderer/design-system/tokens'
+import { text } from '@renderer/design-system/tokens'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { cx } from '@renderer/design-system/cx'
 import {
@@ -16,7 +16,7 @@ import { Chip, chipShapeForType } from '@renderer/Components/Chip'
 import { RenamableTitle } from '@renderer/Components/RenamableTitle'
 import { declaredType } from './pipeline/value'
 import { findOption, groupLabel } from './Table/cellResolve'
-import { checkboxBoxStyle } from './Table/checkboxLook'
+import { CheckboxGlyph } from './Table/checkboxLook'
 import { formatBucketLabel } from './PropertyEditing/formatValue'
 import type { ResolveContext } from './Table/resolveContext'
 import './GroupBand.css'
@@ -107,12 +107,7 @@ export function resolveBandHead(
         label,
         glyph: (
           <span className="group-name">
-            <span
-              className={cx(chipBox, on ? undefined : chipColor.default)}
-              style={checkboxBoxStyle(on, color)}
-            >
-              {on ? <Icon name="check" size={12} strokeWidth={3} /> : null}
-            </span>
+            <CheckboxGlyph checked={on} color={color} />
             {on ? 'On' : 'Off'}
           </span>
         ),
