@@ -47,7 +47,7 @@
 .mdpm-tbl-grip {
   color: var(--label-secondary);
   opacity: 0;
-  transition: opacity 0.12s var(--ease-standard, ease);
+  transition: opacity var(--duration-fast) var(--ease-standard, ease);
 }
 .mdpm-tbl-grip-zone:hover .mdpm-tbl-grip {
   opacity: 1;

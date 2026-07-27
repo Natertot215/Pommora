@@ -788,7 +788,7 @@
   position: absolute;
   left: var(--grip-x);
   top: calc(var(--callout-gap) + var(--grip-y));
-  transition: opacity 0.12s var(--ease-standard, ease);
+  transition: opacity var(--duration-fast) var(--ease-standard, ease);
   /* cursor:grab (shared) receives the press so the pseudo targets its line → the gesture fires. */
 }
 .mdpm-editor .cm-line.md-callout-first.md-grip-hot::after {
