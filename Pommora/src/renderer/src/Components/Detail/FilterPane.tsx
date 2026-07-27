@@ -32,6 +32,7 @@ import {
   PICKER_MAX_HEIGHT,
   PICKER_TREE_WIDTH,
 } from '../../design-system/components/PickerMenu/pickerMenu.css'
+import { OverflowScroll } from '../../design-system/components/OverflowScroll'
 import { Reveal } from '../../design-system/components/Reveal'
 import { duration as motion } from '../../design-system/tokens/motion'
 import { CalendarPicker } from '../../design-system/components/CalendarPicker/CalendarPicker'
@@ -155,9 +156,9 @@ function FieldPicker({
         onClick={() => setOpen(true)}
       >
         {leadGlyph ? <span className={fp.leadGlyph}>{leadGlyph}</span> : null}
-        <span className={cx(fp.fieldLabel, 'overflow-eclipse', display === null && fp.placeholder)}>
+        <OverflowScroll className={cx(fp.fieldLabel, display === null && fp.placeholder)}>
           {display ?? placeholder}
-        </span>
+        </OverflowScroll>
         {chevron ? <Icon name="chevrons-up-down" size={12} className={fp.chevron} /> : null}
       </button>
       {/* Built only while mounted: JSX children evaluate on EVERY render, so an un-gated render prop
@@ -332,7 +333,7 @@ function LocationField({
         {shown.length === 0 ? (
           <span className={fp.placeholder}>Value</span>
         ) : (
-          <span className={cx(fp.segmentRun, 'overflow-eclipse')}>
+          <OverflowScroll className={fp.segmentRun}>
             {shown.map((v, i) => {
               const set = byId.get(v)
               return (
@@ -360,7 +361,7 @@ function LocationField({
                 </Fragment>
               )
             })}
-          </span>
+          </OverflowScroll>
         )}
       </ValueFieldShell>
       {/* Left-anchored: disclosing a Set widens the pane, and a right-anchored pane would walk every
@@ -410,7 +411,7 @@ function ChipsField({
         {shown.length === 0 ? (
           <span className={fp.placeholder}>Value</span>
         ) : (
-          <span className={cx(fp.chipRun, 'overflow-eclipse')}>
+          <OverflowScroll className={fp.chipRun}>
             {shown.map((v) => {
               const o = byValue.get(v)
               return isContext ? (
@@ -431,7 +432,7 @@ function ChipsField({
                 />
               )
             })}
-          </span>
+          </OverflowScroll>
         )}
       </ValueFieldShell>
       <PickerMenu open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
