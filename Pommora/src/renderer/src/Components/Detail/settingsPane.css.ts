@@ -9,6 +9,7 @@ import {
   titleText,
 } from '../../design-system/components/menu/menu.css'
 import { surface } from '../../design-system/components/menu/menuSurface.css'
+import { dropdownAnchor } from '../../design-system/components/dropdownAnchor'
 import { fieldRing } from '../../design-system/components/fieldRing'
 
 const c = colorVars.color
@@ -66,13 +67,10 @@ export const ICON = {
 
 /** Anchored under the toolbar Settings button (the trio cluster is position:relative). Right-aligned,
  *  so the dropdown-menu open animation blooms from the trigger side via --dropdown-origin. */
-export const anchor = style({
-  position: 'absolute',
-  top: 'calc(100% + 6px)',
-  right: 0,
-  zIndex: 10,
-  vars: { '--dropdown-origin': 'top right' },
-})
+export const anchor = style([
+  dropdownAnchor('right', 10),
+  { vars: { '--dropdown-origin': 'top right' } },
+])
 
 // ═══════════════════════════════════════════════════════════════════════════
 // § TITLE HEADER — the root menu's icon + inline-rename title row

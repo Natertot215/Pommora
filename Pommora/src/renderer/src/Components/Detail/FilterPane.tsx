@@ -14,19 +14,17 @@ import { Chip, ChipRemoveButton, chipShapeForType } from '@renderer/Components/C
 import { ContextChip } from '@renderer/Components/ContextChip'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import {
+  DisclosureRow,
   MenuBottomRow,
   MenuCaption,
   MenuItem,
   MenuPaneTopRow,
+  useDisclosureSet,
 } from '../../design-system/components/menu'
 import {
   flushTrailing,
   footingLabel,
   footingSymbol,
-  railRow,
-  twisty,
-  twistyOpen,
-  twistySpacer,
 } from '../../design-system/components/menu/menu.css'
 import { PickerMenu, PickerOption } from '../../design-system/components/PickerMenu'
 import {
@@ -300,63 +298,31 @@ function LocationField({
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
+  const expanded = useDisclosureSet()
   const { shown, toggle } = useMultiValue(values, onCommit)
   const byId = new Map(flattenSets(sets).map((s) => [s.id, s]))
-  const disclose = (id: string): void =>
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      if (!next.delete(id)) next.add(id)
-      return next
-    })
 
   const renderSet = (s: SetNode): React.JSX.Element => {
     const kids = s.sets ?? []
-    const isOpen = expanded.has(s.id)
+    const picked = shown.includes(s.id)
     return (
-      // A Fragment, not a wrapper div: the rows must be real siblings for the ring's run-merging to
-      // see them. A per-node wrapper makes every row an only-child and no `+` rule can ever match.
-      <Fragment key={s.id}>
-        <MenuItem
-          selected={shown.includes(s.id)}
-          // A Set row carries no colour of its own, so the 5% selected fill alone is easy to lose in
-          // a packed tree — the ring is what makes a pick obvious at a glance.
-          className={shown.includes(s.id) ? optionRing : undefined}
-          leading={
-            <>
-              {/* Always rendered, unlike the Grouping pane's — there the ROW discloses, so its twisty
-                  is decorative and the Hide Chevrons personalization may drop it. Here the row picks
-                  a value, so the chevron is the only way into a child Set. */}
-              {kids.length > 0 ? (
-                <Icon
-                  name="chevron-right"
-                  size={12}
-                  className={cx(twisty, isOpen && twistyOpen)}
-                  data-twisty
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    disclose(s.id)
-                  }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                />
-              ) : (
-                // A leaf Set holds the chevron's width so its glyph lines up under a parent's,
-                // instead of stepping 16px left and breaking the list's icon column.
-                <span className={twistySpacer} data-twisty-spacer />
-              )}
-              <Icon name={iconNameOr(s.icon, defaultEntityIcon('set'))} size={13} />
-            </>
-          }
-          onClick={() => toggle(s.id)}
-        >
-          {s.title}
-        </MenuItem>
-        {kids.length > 0 && (
-          <Reveal open={isOpen}>
-            <div className={railRow}>{kids.map(renderSet)}</div>
-          </Reveal>
-        )}
-      </Fragment>
+      <DisclosureRow
+        key={s.id}
+        title={s.title}
+        icon={<Icon name={setGlyph(s)} size={13} />}
+        // The row picks a value here, so the chevron is the only way into a child Set — it survives
+        // the Hide Chevrons personalization, and a leaf holds its width so glyphs stay in one column.
+        twisty={kids.length > 0 ? 'chevron' : 'spacer'}
+        open={expanded.has(s.id)}
+        onToggle={() => expanded.toggle(s.id)}
+        onClick={() => toggle(s.id)}
+        selected={picked}
+        // A Set row carries no colour of its own, so the 5% selected fill alone is easy to lose in a
+        // packed tree — the ring is what makes a pick obvious at a glance.
+        className={picked ? optionRing : undefined}
+      >
+        {kids.length > 0 ? kids.map(renderSet) : undefined}
+      </DisclosureRow>
     )
   }
 

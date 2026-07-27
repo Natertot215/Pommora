@@ -21,11 +21,13 @@ import {
   type IconName,
 } from '@renderer/design-system/symbols'
 import {
+  DisclosureRow,
   MenuItem,
   MenuSeparator,
   MenuPaneTopRow,
   MenuScrollFrame,
   MenuBottomRow,
+  useDisclosureSet,
 } from '../../design-system/components/menu'
 import {
   flushTrailing,
@@ -50,7 +52,6 @@ import { PickerControl, type PickerChoice } from './PickerControl'
 import { propertyTypeIconName } from './PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
 import * as gp from './groupingPane.css'
-import { railRow, twisty, twistyOpen } from '../../design-system/components/menu/menu.css'
 
 /** The pane's Group By offering — location + these property types. Checkbox is deliberately absent
  *  (the pipeline still renders it from a foreign sidecar; the pane never authors it). */
@@ -213,9 +214,7 @@ export function GroupingPane({
               <Icon name="eye-off" size={12} />
             </span>
           }
-          trailing={
-            <CheckboxGlyph checked={group.hide_empty_groups} />
-          }
+          trailing={<CheckboxGlyph checked={group.hide_empty_groups} />}
           onClick={() => saveGroup({ ...group, hide_empty_groups: !group.hide_empty_groups })}
         >
           <span className={footingLabel}>Hide Empty Groups</span>
@@ -519,7 +518,7 @@ function LocationHierarchy({
   const mutate = useSession((st) => st.mutate)
   const hideChevrons = useSession((st) => st.personalization.hideChevrons ?? false)
   // Sub-groups are hidden by default — a set discloses on demand.
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const expanded = useDisclosureSet()
   const flat = subDef !== undefined
 
   // The property sub-group's disclosed chips — the same value run under every top-level set.
@@ -647,82 +646,50 @@ function LocationHierarchy({
   }
 
   const dnd = useGroupingListDrag({ bands, nestable: true, onDrop })
-  const toggle = (id: string): void =>
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
   const subType = subDef?.type === 'status' ? 'status' : 'select'
 
-  // Recursive render: each set row + a Reveal (the sidebar's disclosure motion) carrying its
-  // sub-group — sub-sets under Location, the chip run under a property sub-group. The chevron sits
-  // LEFT of the icon (the sidebar cluster) and honors the Hide Chevrons personalization; the row
-  // itself toggles either way.
-  const renderSet = (s: SetNode): React.JSX.Element => {
-    const kids = flat ? [] : (s.sets ?? [])
-    const disclosable = flat ? subChips.length > 0 : kids.length > 0
-    const isOpen = expanded.has(s.id)
+  const subChipRow = (setId: string, o: (typeof subChips)[number]): React.JSX.Element => {
+    const id = `sub:${setId}:${o.value}`
     return (
-      <div key={s.id}>
-        <div
-          ref={dnd.rowRef(s.id)}
-          {...dnd.rowHandle(s.id)}
-          style={dnd.draggingId === s.id ? { opacity: 0.4 } : undefined}
-        >
-          <MenuItem
-            selected={dnd.nestTarget === s.id}
-            leading={
-              <>
-                {!hideChevrons && disclosable ? (
-                  <Icon
-                    name="chevron-right"
-                    size={12}
-                    className={cx(twisty, isOpen && twistyOpen)}
-                    data-twisty
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      toggle(s.id)
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  />
-                ) : null}
-                <Icon name={iconNameOr(s.icon, defaultEntityIcon('set'))} size={13} />
-              </>
-            }
-            onClick={disclosable ? () => toggle(s.id) : undefined}
-          >
-            {s.title}
-          </MenuItem>
-        </div>
-        {disclosable && (
-          <Reveal open={isOpen}>
-            <div className={railRow}>
-              {flat
-                ? subChips.map((o) => {
-                    const id = `sub:${s.id}:${o.value}`
-                    return (
-                      <div
-                        key={o.value}
-                        ref={dnd.rowRef(id)}
-                        {...dnd.rowHandle(id)}
-                        className={`${gp.chipRow} ${gp.subChip}`}
-                        style={dnd.draggingId === id ? { opacity: 0.4 } : undefined}
-                      >
-                        <Chip
-                          color={chipColorFor(o.color)}
-                          label={o.label}
-                          shape={chipShapeForType(subType)}
-                        />
-                      </div>
-                    )
-                  })
-                : kids.map(renderSet)}
-            </div>
-          </Reveal>
-        )}
+      <div
+        key={o.value}
+        ref={dnd.rowRef(id)}
+        {...dnd.rowHandle(id)}
+        className={`${gp.chipRow} ${gp.subChip}`}
+        style={dnd.draggingId === id ? { opacity: 0.4 } : undefined}
+      >
+        <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShapeForType(subType)} />
       </div>
+    )
+  }
+
+  // The ROW discloses here, so the chevron is decorative and bows to the Hide Chevrons
+  // personalization; a leaf takes no spacer in its place.
+  const renderSet = (s: SetNode): React.JSX.Element => {
+    const body = flat ? subChips.map((o) => subChipRow(s.id, o)) : (s.sets ?? []).map(renderSet)
+    const disclosable = body.length > 0
+    return (
+      <DisclosureRow
+        key={s.id}
+        title={s.title}
+        icon={<Icon name={iconNameOr(s.icon, defaultEntityIcon('set'))} size={13} />}
+        twisty={disclosable && !hideChevrons ? 'chevron' : 'none'}
+        open={expanded.has(s.id)}
+        onToggle={() => expanded.toggle(s.id)}
+        onClick={disclosable ? () => expanded.toggle(s.id) : undefined}
+        selected={dnd.nestTarget === s.id}
+        wrap={(row) => (
+          <div
+            ref={dnd.rowRef(s.id)}
+            {...dnd.rowHandle(s.id)}
+            style={dnd.draggingId === s.id ? { opacity: 0.4 } : undefined}
+          >
+            {row}
+          </div>
+        )}
+      >
+        {disclosable ? body : undefined}
+      </DisclosureRow>
     )
   }
 

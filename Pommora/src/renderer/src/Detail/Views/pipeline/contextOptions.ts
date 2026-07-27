@@ -2,7 +2,7 @@
 // fields). Spaces list in their per-Context sidebar order; every option carries the Space's
 // color + icon so a picker chip renders identically to a cell chip. Pure: no fs, no React.
 import type { NexusTree } from '@shared/types'
-import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { spacesByIdOf } from './contextIdentity'
 
 export interface ContextOption {
   value: string
@@ -33,11 +33,21 @@ export function contextOptionsFor(contextId: string, tree: NexusTree): ContextOp
 
 function buildOptions(contextId: string, tree: NexusTree): ContextOption[] {
   const group = tree.contexts?.find((g) => g.def.id === contextId)
-  const fallback = defaultEntityIcon('space')
-  return (group?.spaces ?? []).map((s) => ({
-    value: s.id,
-    label: s.title,
-    icon: iconNameOr(s.icon, fallback),
-    ...(s.color ? { color: s.color } : {}),
-  }))
+  // Identity — title, glyph, colour — comes from the seam, never re-derived here: resolving the
+  // glyph locally is what let a picker chip disagree with the sidebar on a personalized nexus.
+  // Order is this function's own concern: options list in the Context's sidebar order.
+  const byId = spacesByIdOf(tree)
+  return (group?.spaces ?? []).flatMap((s) => {
+    const identity = byId.get(s.id)
+    return identity
+      ? [
+          {
+            value: s.id,
+            label: identity.title,
+            icon: identity.icon,
+            ...(identity.color ? { color: identity.color } : {}),
+          },
+        ]
+      : []
+  })
 }

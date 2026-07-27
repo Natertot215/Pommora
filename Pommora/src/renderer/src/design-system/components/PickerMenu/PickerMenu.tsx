@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -13,9 +14,9 @@ import { useExitPresence } from '../../useExitPresence'
 import { NotchedPane } from '../NotchedPane'
 import { MenuScrollFrame } from '../menu/Menu'
 import { cx } from '../../cx'
+import { DROPDOWN_GAP as GAP } from '../dropdownAnchor'
 import * as s from './pickerMenu.css'
 
-const GAP = 6 // trigger → pane
 const VIEWPORT_MARGIN = 8 // keep the pane this far from the viewport edges
 
 // A pointerdown inside the body-portalled picker must not bubble (React events cross portals) to a
@@ -167,6 +168,17 @@ export function PickerMenu({
   // on a shared anchor whose trigger moved, park the pane off-screen.
   if (open === false && decidedDir.current !== null) decidedDir.current = null
 
+  // The pane's box arrives from the pane itself — NotchedPane measures it for the beak path and
+  // publishes it here — so placement never observes or re-reads the element the shell already owns.
+  // `place` is the live placement pass, null whenever the picker isn't placing: that null is what
+  // freezes the pane through its Bloom-out.
+  const paneBox = useRef({ w: 0, h: 0 })
+  const place = useRef<(() => void) | null>(null)
+  const onPaneResize = useCallback((w: number, h: number): void => {
+    paneBox.current = { w, h }
+    place.current?.()
+  }, [])
+
   // The pane hangs off the trigger's right edge and opens down-left (a stable dropdown — the pane
   // doesn't move to center the beak). The beak lands as far right as the corner radius allows
   // (`reserve` = the notch's clamp), so we push the pane's right edge `reserve` past the trigger
@@ -183,8 +195,7 @@ export function PickerMenu({
       const c = anchorX ?? t.left + t.width / 2
       // Collision test against the measured pane, then flip so the pane fits: any blocked side → down,
       // and down itself → up only when there's no room below (down is the preferred resting direction).
-      const ph = paneRef.current?.offsetHeight ?? 0
-      const pw = paneRef.current?.offsetWidth ?? 0
+      const { w: pw, h: ph } = paneBox.current
       let eff = decidedDir.current ?? direction
       if (decidedDir.current === null) {
         if (direction === 'up' && t.top - GAP - ph < VIEWPORT_MARGIN) eff = 'down'
@@ -236,6 +247,7 @@ export function PickerMenu({
         setPos({ bottom: window.innerHeight - t.top + GAP, right, notchInset: reserve })
       else setPos({ top: t.bottom + GAP, right, notchInset: reserve })
     }
+    place.current = measure
     measure()
     // The capture-phase scroll listener hears EVERY scroll in the document while the pane is open,
     // and measure() forces a layout — coalesce to one re-measure per frame so scrolling a grid
@@ -250,10 +262,10 @@ export function PickerMenu({
     }
     const ro = new ResizeObserver(measure)
     ro.observe(trigger)
-    if (paneRef.current) ro.observe(paneRef.current)
     window.addEventListener('scroll', measureOnFrame, true)
     window.addEventListener('resize', measureOnFrame)
     return () => {
+      place.current = null
       ro.disconnect()
       if (raf) cancelAnimationFrame(raf)
       window.removeEventListener('scroll', measureOnFrame, true)
@@ -356,6 +368,7 @@ export function PickerMenu({
       notchInsetBottom={pos?.notchInsetBottom}
       notchSide={notchSide}
       accentOutline={accentOutline}
+      onResize={onPaneResize}
       // Through the Bloom-out the pane still paints but must not ACT: its content goes pointer-inert so a
       // stray click can't re-fire an option mid-close. The layer below stays interactive (it swallows the
       // click) so it can't fall through to whatever sits behind — a card's nav/drag surface.
