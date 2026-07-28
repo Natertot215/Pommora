@@ -286,11 +286,11 @@ const api = {
     list: (): Promise<AgendaListResult> => ipcRenderer.invoke('agenda:list'),
   },
   // Navigation layer — recents/favorites persistence. The renderer owns the arrays; main persists.
-  // saveRecents debounces main-side (immediate=true for the pin toggle); saveFavorites is immediate.
+  // Recents are a device-local row in nexus.db; favorites stay a synced file.
   nav: {
     load: (): Promise<NavStateResult> => ipcRenderer.invoke('nav:load'),
-    saveRecents: (entries: RecentEntry[], immediate?: boolean): Promise<Ack> =>
-      ipcRenderer.invoke('nav:saveRecents', entries, immediate),
+    saveRecents: (entries: RecentEntry[]): Promise<Ack> =>
+      ipcRenderer.invoke('nav:saveRecents', entries),
     saveFavorites: (entries: NavFavorite[]): Promise<Ack> =>
       ipcRenderer.invoke('nav:saveFavorites', entries),
     loadPins: (): Promise<PinsResult> => ipcRenderer.invoke('nav:loadPins'),

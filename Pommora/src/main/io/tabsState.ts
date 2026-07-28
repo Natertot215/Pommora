@@ -1,103 +1,20 @@
-// One SYNCED sidecar under `.nexus/` — `tabs.json`: the ordered UNPINNED tab list + the
-// active-tab pointer + each tab's Back/Forward targets. Pinned tabs are never stored here —
-// they derive from `.nexus/pins/` (a second synced copy would re-introduce the whole-array-LWW
-// desync the per-pin files dodge). The renderer owns the in-memory set; main is the persister,
-// and DEBOUNCEs writes, coalescing to one disk write per burst of navigation.
+// The tab set — the ordered UNPINNED tabs, the active-tab pointer, and each tab's Back/Forward
+// targets. Pinned tabs are never stored here; they derive from `.nexus/pins/`. Device-local: two
+// machines with different tabs open have no correct merge, so a machine keeps its own.
+//
+// The renderer owns the in-memory set and every invariant on it (the navStack/navIndex lockstep,
+// id uniqueness); main persists it as one row. A save is a single upsert, so there is nothing to
+// coalesce and nothing owed at quit. Restore re-reconciles against the live tree either way —
+// a page deleted on disk dangles regardless of where the tab set was stored.
 
-import { isPlainObject } from '@shared/propertyValue'
-import type { SelectTarget, Tab, TabSet, TabTarget } from '@shared/types'
-import { nexusConfig, NEXUS_CONFIG_FILES } from '../paths'
-import { readJsonObject } from './atomicWrite'
-import { debouncedSidecar } from './debouncedSidecar'
+import type { TabSet } from '@shared/types'
+import { readValue, writeValue } from '../db/localState'
 
-const tabsPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.tabs)
-
-/** Coalescing window for the per-navigation tab-set write — same rationale as the recents debounce:
- *  a burst of navigations collapses to one write; the quit/switch drain rarely has work to do. */
-const TABS_DEBOUNCE_MS = 500
-
-// --- validation (lenient read) --------------------------------------------
-
-const SELECT_KINDS = new Set(['homepage', 'context', 'collection', 'set', 'page'])
-
-/** A well-formed drivable target: known kind, an `id` on every kind but homepage, and a `path` on the
- *  path-carrying kinds (set/page). Hand-edited or cross-version junk is dropped, never crashes. */
-function isSelectTarget(v: unknown): v is SelectTarget {
-  if (!isPlainObject(v)) return false
-  const kind = v.kind
-  if (typeof kind !== 'string' || !SELECT_KINDS.has(kind)) return false
-  if (kind === 'homepage') return true
-  if (typeof v.id !== 'string') return false
-  if (kind === 'set' || kind === 'page') return typeof v.path === 'string'
-  return true
+/** The persisted tab set, or null when the nexus has none yet (the store seeds a fresh NavView). */
+export function readTabsState(): TabSet | null {
+  return readValue<TabSet>('tabs')
 }
 
-function isTabTarget(v: unknown): v is TabTarget {
-  return (isPlainObject(v) && v.kind === 'newtab') || isSelectTarget(v)
+export function writeTabsState(set: TabSet): void {
+  writeValue('tabs', set)
 }
-
-/** Identity of a drivable target — kind+id, or bare kind for the id-less homepage (navKey's shape;
- *  duplicated here because the renderer's helper can't cross into main). */
-const targetKey = (t: SelectTarget): string => ('id' in t ? `${t.kind}:${t.id}` : t.kind)
-
-/** A well-formed persisted tab: id + target + a history of drivable targets whose index points AT the
- *  target (the lockstep invariant openTab's dedup relies on). A newtab tab always reads with an empty
- *  history; a desynced or malformed history degrades to just the target (the tab survives;
- *  Back/Forward starts fresh). This is the sanitizing gate for a synced, cross-version file — the
- *  store assumes every invariant enforced here. */
-function readTab(v: unknown): Tab | null {
-  if (!isPlainObject(v) || typeof v.id !== 'string' || !isTabTarget(v.target)) return null
-  if (v.target.kind === 'newtab') return { id: v.id, target: v.target, navStack: [], navIndex: -1 }
-  const stack = Array.isArray(v.navStack) ? v.navStack.filter(isSelectTarget) : []
-  const index = typeof v.navIndex === 'number' && Number.isInteger(v.navIndex) ? v.navIndex : -1
-  const sane =
-    stack.length > 0 &&
-    index >= 0 &&
-    index < stack.length &&
-    targetKey(stack[index]) === targetKey(v.target)
-  if (sane) return { id: v.id, target: v.target, navStack: stack, navIndex: index }
-  // Target/history desync: re-point the index at the target's entry when the stack holds one
-  // (preserving the history), else degrade to a single-entry stack.
-  const at = stack.findIndex((s) => targetKey(s) === targetKey(v.target as SelectTarget))
-  if (at !== -1) return { id: v.id, target: v.target, navStack: stack, navIndex: at }
-  return { id: v.id, target: v.target, navStack: [v.target], navIndex: 0 }
-}
-
-// --- read -------------------------------------------------------------------
-
-/** The persisted tab set, read leniently: absent / corrupt → null (the store seeds a fresh NavView);
- *  invalid tabs dropped; a dangling activeTabId is the store's job to reconcile (it also has to fold
- *  in the derived pinned tabs this file never sees). */
-export async function readTabsState(root: string): Promise<TabSet | null> {
-  const raw = await readJsonObject(tabsPath(root))
-  if (!raw || !Array.isArray(raw.tabs)) return null
-  // Dedupe by id — closeTab drops by-id, so two tabs sharing one would close together.
-  const seen = new Set<string>()
-  const tabs = raw.tabs.map(readTab).filter((t): t is Tab => {
-    if (t === null || seen.has(t.id)) return false
-    seen.add(t.id)
-    return true
-  })
-  return { tabs, activeTabId: typeof raw.activeTabId === 'string' ? raw.activeTabId : '' }
-}
-
-// --- debounced write --------------------------------------------------------
-
-const sidecar = debouncedSidecar<TabSet>({
-  path: tabsPath,
-  debounceMs: TABS_DEBOUNCE_MS,
-  label: 'tabs',
-})
-
-/** Debounced tab-set write — the per-navigation path. The newest payload supersedes any pending one,
- *  so only the last state in a burst reaches disk. */
-export function scheduleTabsWrite(root: string, set: TabSet): void {
-  sidecar.schedule(root, set)
-}
-
-/** Any tab write still owed to disk — a queued debounce OR a flushed write still settling. The quit
- *  gate + nexus-switch drain check this. */
-export const hasPendingTabsWrites = (): boolean => sidecar.hasPending()
-
-/** Drain every owed tab write (before-quit + nexus switch). */
-export const flushTabsWrites = (): Promise<void> => sidecar.flush()

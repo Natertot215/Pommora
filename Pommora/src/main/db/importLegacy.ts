@@ -5,7 +5,7 @@
 import { readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { nexusDir } from '../paths'
-import { writeKey, type Scope } from './localState'
+import { writeKey, writeValue, type Scope } from './localState'
 
 const isStringArray = (v: unknown): boolean =>
   Array.isArray(v) && v.every((x) => typeof x === 'string')
@@ -22,26 +22,52 @@ const LEGACY: { file: string; scope: Scope; keep: (v: unknown) => boolean }[] = 
   },
 ]
 
-/** Lift every legacy sidecar into the database, then delete it. Entries are written key by key so
- *  an already-populated scope is added to rather than replaced. */
+/** The whole-value sidecars — each was always read and written entire, so each lifts to one row. */
+const LEGACY_VALUES: { file: string; scope: Scope; keep: (v: unknown) => boolean }[] = [
+  { file: 'tabs.json', scope: 'tabs', keep: (v) => isObject(v) && Array.isArray(v.tabs) },
+  { file: 'page-previews.json', scope: 'previews', keep: isObject },
+  { file: 'navRecents.json', scope: 'recents', keep: Array.isArray },
+]
+
+function isObject(v: unknown): v is Record<string, unknown> {
+  return v !== null && typeof v === 'object' && !Array.isArray(v)
+}
+
+/** Parse a sidecar, or undefined when it is absent or unreadable — in which case it is left on
+ *  disk rather than deleted, so nothing is destroyed that could not be read. */
+function parseLegacy(root: string, file: string): unknown | undefined {
+  try {
+    return JSON.parse(readFileSync(join(nexusDir(root), file), 'utf8'))
+  } catch {
+    return undefined
+  }
+}
+
+const discard = (root: string, file: string): void => {
+  try {
+    rmSync(join(nexusDir(root), file), { force: true })
+  } catch {
+    /* best-effort — a re-run just re-writes the same rows */
+  }
+}
+
+/** Lift every legacy sidecar into the database, then delete it. Keyed entries are written one at a
+ *  time so an already-populated scope is added to rather than replaced. */
 export function importLegacySidecars(root: string): void {
   for (const { file, scope, keep } of LEGACY) {
-    const path = join(nexusDir(root), file)
-    let parsed: unknown
-    try {
-      parsed = JSON.parse(readFileSync(path, 'utf8'))
-    } catch {
-      continue // absent or unreadable — nothing to lift, and nothing to remove
-    }
-    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+    const parsed = parseLegacy(root, file)
+    if (parsed === undefined) continue
+    if (isObject(parsed)) {
+      for (const [key, value] of Object.entries(parsed)) {
         if (keep(value)) writeKey(scope, key, value)
       }
     }
-    try {
-      rmSync(path, { force: true })
-    } catch {
-      /* best-effort — a re-run just re-writes the same rows */
-    }
+    discard(root, file)
+  }
+  for (const { file, scope, keep } of LEGACY_VALUES) {
+    const parsed = parseLegacy(root, file)
+    if (parsed === undefined) continue
+    if (keep(parsed)) writeValue(scope, parsed)
+    discard(root, file)
   }
 }
