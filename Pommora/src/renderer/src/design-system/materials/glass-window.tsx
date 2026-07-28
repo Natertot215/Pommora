@@ -1,13 +1,9 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { frostMaterial } from './glass-material'
 
-/**
- * GlassWindow — Pommora's glass for the **window** tier: the app's largest,
- * backmost glass — the window frame the sidebar attaches to. Spreads the shared
- * CSS frost material; its own component so window glass can diverge from
- * surface/control glass later (override props after the spread). Layout (size /
- * position / radius) is the consumer's job via style/className.
- */
+/** The app's largest, backmost glass — the window frame the sidebar attaches to. Its own
+ *  component (not a re-export of frostMaterial) so window glass can diverge from surface/control
+ *  glass later. */
 export function GlassWindow({
   children,
   style,

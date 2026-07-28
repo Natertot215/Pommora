@@ -16,15 +16,6 @@ import { PropertyEditor } from '../PropertyEditing/PropertyEditor'
 import { numberDivisor } from '../PropertyEditing/formatValue'
 import { sharedValueClickAction } from '../PropertyEditing/valueClick'
 
-/**
- * One interactive property value on a card — the cell gesture matrix (portable to
- * Gallery/List/Cards, TableView.md), anchored per-value rather than per-table: the value renders
- * through the shared `Cell`, and a click opens the right surface for its kind — status/select/
- * multi/context → the PropertyPicker dropdown; a checkbox-look status cycles (or opens the
- * picker when empty); a checkbox toggles; a date → the CalendarPicker; a number → the inline
- * editor; a url opens (filled) or edits (empty); a file chip opens its own file. Pill chips carry
- * the hover-× remove. `onCommit` owns the write routing (Context column vs property).
- */
 export function CardValue({
   row,
   column,
@@ -43,18 +34,17 @@ export function CardValue({
   onCommit: (column: ResolvedColumn, value: PropertyValue | null) => void
   onStyle: (colId: string, key: keyof ColumnStyle & string, value: string) => void
   onHide: (colId: string) => void
-  /** Open this value's portal picker at the GRID-LEVEL host (CardPickerHost) — the picker outlives
-   *  this card's remounts. kind 'picker' = the option picker; 'datetime' = the calendar. */
+  /** Opens this value's portal picker at the grid-level host — it outlives this card's remounts. */
   onOpenPicker: (
     column: ResolvedColumn,
     kind: 'picker' | 'datetime' | 'link',
     anchor: HTMLElement,
     clickX?: number,
   ) => void
-  /** False only when the EMBED zoom shrinks chips (≤0.8 effective — chips don't scale with
-   *  card_size). Gates ONLY the multi-select hover-×; select keeps its × always (clears the whole
-   *  value) and context keeps its × always (removes that ONE context). The × itself is inert until
-   *  hover-revealed (ChipRemoveButton), so an un-hovered click opens the picker at every size. */
+  /** False only when the EMBED zoom shrinks chips (chips don't scale with card_size). Gates ONLY
+   *  the multi-select hover-×; select and context keep their × always (clearing the whole value vs.
+   *  removing just that one context). The × is inert until hover-revealed, so an un-hovered click
+   *  opens the picker at every size. */
   allowInlineRemove: boolean
 }): React.JSX.Element {
   const anchorRef = useRef<HTMLSpanElement>(null)
@@ -86,7 +76,6 @@ export function CardValue({
     // backdrop) bubbles back through its trigger — this span — and would re-open what the pick/outside
     // click just dismissed. Swallow it here (the stopPropagation above still keeps it off the card).
     if (!e.currentTarget.contains(e.target as Node)) return
-    // The portal pickers open at the grid-level host, anchored here, dropping from the click point.
     const openPicker = (kind: 'picker' | 'datetime' | 'link'): void => {
       if (anchorRef.current) onOpenPicker(column, kind, anchorRef.current, e.clientX)
     }

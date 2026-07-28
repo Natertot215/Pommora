@@ -103,9 +103,8 @@ describe('scrollableInAxis', () => {
 })
 
 describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
-  // A faithful rAF fake: ids map to callbacks and cancelAnimationFrame actually removes them (a no-op
-  // cancel would let an abandoned loop keep driving, hiding the one-driver invariant). The clock is
-  // MONOTONIC across every flush so dt is always positive and a real stall can be simulated.
+  // A faithful rAF fake: cancelAnimationFrame actually removes the callback (a no-op cancel would
+  // hide the one-driver invariant). The clock is MONOTONIC so dt is always positive.
   let rafMap: Map<number, (ts: number) => void>
   let rafId: number
   let clock: number

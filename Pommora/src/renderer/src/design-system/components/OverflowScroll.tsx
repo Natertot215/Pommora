@@ -3,11 +3,7 @@ import { cx } from '../cx'
 import { truncateHoverScroll } from '../tokens/typography.css'
 import '../edge-fade.css'
 
-/**
- * Slide a hover-scrolled box back to its start when the pointer leaves — scrollLeft isn't a
- * CSS-transitionable property, so a rAF tween honours the panel-slide timing (reads
- * --duration-base, never hardcodes). ONE mechanism for every truncate-then-hover-scroll surface.
- */
+/** scrollLeft isn't a CSS-transitionable property, so this rAF tween replaces it — reads --duration-base, never hardcodes the timing. */
 export function slideScrollBack(scroller: HTMLElement): void {
   const from = scroller.scrollLeft
   if (from <= 0) return
@@ -23,14 +19,10 @@ export function slideScrollBack(scroller: HTMLElement): void {
 }
 
 /**
- * The shared truncate-then-hover-scroll box: content
- * clips at rest, the pointer scrolls it horizontally in place, leaving slides it back to the
- * start. Overflowing content always ECLIPSES — a fade at whichever edge hides content, never a
- * hard cutoff — via the scroll-driven mask in OverflowScroll.css. The engine activates the fade
- * only while the box genuinely overflows, so there is no JS measurement and no signal to plumb:
- * column resizes, content edits, and zoom changes all re-resolve on their own. Wrap ANY
- * overflowing content — the consumer's class owns display/gap/width; --edge-fade tunes the
- * fade width per context.
+ * Overflowing content always ECLIPSES — a fade at whichever edge hides content, never a hard
+ * cutoff (OverflowScroll.css). The fade activates only while content genuinely overflows: no JS
+ * measurement, so resizes, edits, and zoom all re-resolve on their own. The consumer's class owns
+ * display/gap/width; --edge-fade tunes the fade width per context.
  */
 export function OverflowScroll({
   children,

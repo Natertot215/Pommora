@@ -7,8 +7,8 @@ import { useSession } from '../../store'
 import { findCollection } from '../Scope'
 import { computeStats } from './subfieldStats'
 
-/** The catalog of Subfield items — page document stats + the container add-menu. New ids slot in
- *  here, and the per-view default order below — the seam for future user-defined (scoped) items. */
+/** New item ids slot in here, and in the per-view default order below — the seam for future
+ *  user-defined (scoped) items. */
 export type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType'
 
 const ALL_ITEM_IDS: SubfieldItemId[] = ['pageStats', 'addMenu', 'viewType']
@@ -18,9 +18,9 @@ export function isSubfieldItemId(id: string): id is SubfieldItemId {
 }
 
 /** An optional per-mount scope. When a host (the floating preview) passes it, the footer describes
- *  THIS target and counts THIS body instead of the global selection/`liveBody`. The preview's body
- *  is its own local buffer — never the shared `liveBody` slot, which has a single owner (the active
- *  main editor); a second writer would evict the main pane's live count to its saved snapshot. */
+ *  THIS target and counts THIS body instead of the global selection. The preview's body is its own
+ *  local buffer — never the shared `liveBody` slot, which has a single owner (the active main
+ *  editor); a second writer would evict the main pane's live count. */
 export interface SubfieldScope {
   target: { id: string; path: string }
   body: string
@@ -62,7 +62,6 @@ function PageStatsItem({ scope }: SubfieldItemProps): React.JSX.Element {
   )
 }
 
-/** "+" → native New Page / New <container> menu for the open Collection or Set. */
 function AddMenuItem(): React.JSX.Element | null {
   const selection = useSession((s) => s.selection)
   const tree = useSession((s) => s.tree)

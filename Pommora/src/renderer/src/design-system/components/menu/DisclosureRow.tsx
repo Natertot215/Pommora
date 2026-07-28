@@ -1,6 +1,3 @@
-// The disclosure-tree row — a MenuItem over the rail-ridden run it discloses, plus the open-id set
-// such a tree keeps. One definition for every pane that walks a hierarchy; what the row's click
-// does, and whether its chevron is decorative or load-bearing, is the consumer's to say.
 import { useState, type ReactNode } from 'react'
 import { Icon } from '../../symbols'
 import { cx } from '../../cx'
@@ -8,7 +5,6 @@ import { Reveal } from '../Reveal'
 import { MenuItem } from './Menu'
 import { railRow, twisty, twistyOpen, twistySpacer } from './menu.css'
 
-/** The open-id set a disclosure tree keeps. Nothing is disclosed until asked — a tree opens closed. */
 export function useDisclosureSet(): {
   has: (id: string) => boolean
   toggle: (id: string) => void
@@ -25,8 +21,7 @@ export function useDisclosureSet(): {
   }
 }
 
-/** What sits in the row's disclosure column: the chevron, a leaf's stand-in for it (so glyphs stay
- *  in one column), or nothing at all. */
+/** A leaf's stand-in for the chevron ('spacer') keeps glyphs in one column; 'none' renders nothing. */
 export type TwistyKind = 'chevron' | 'spacer' | 'none'
 
 function twistyGlyph(kind: TwistyKind, open: boolean, onToggle: () => void): ReactNode {
@@ -65,19 +60,16 @@ export function DisclosureRow({
   children,
 }: {
   title: ReactNode
-  /** The row's own glyph, past the disclosure column. */
   icon: ReactNode
   twisty: TwistyKind
   open: boolean
-  /** The chevron's action — always disclosure, whatever the row itself does. */
   onToggle: () => void
-  /** The ROW's action. Omitted leaves the row inert — no button role, no hover-click. */
+  /** Omitted leaves the row inert (MenuItem's contract) — no button role, no hover-click. */
   onClick?: () => void
   selected?: boolean
   className?: string
   /** Wraps the row ALONE, never the disclosed run — a drag rect must be the row's own height. */
   wrap?: (row: ReactNode) => ReactNode
-  /** The disclosed run. Absent = nothing to disclose, and no Reveal is emitted. */
   children?: ReactNode
 }): React.JSX.Element {
   const row = (

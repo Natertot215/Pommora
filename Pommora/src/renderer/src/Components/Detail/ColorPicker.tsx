@@ -17,12 +17,7 @@ const SWATCHES = [
   'grey',
 ] as const
 
-/**
- * The 2×5 solid-colour picker — a PickerMenu shell over the shared colour
- * tokens. `selected` is the option's resolved chip colour; picking a swatch sets it, picking the
- * already-selected one clears to Default (`onPick(undefined)`). A larger picker over the same tokens
- * is a Prospect — the swatch list is the only thing that grows.
- */
+/** A larger picker over the same tokens is a Prospect — the swatch list is the only thing that grows. */
 export function ColorPicker({
   open,
   selected,

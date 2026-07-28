@@ -1,28 +1,21 @@
 // The one pointer-gesture lifecycle: a pending→active state machine gated on ACTIVATION travel,
-// the window listener trio + Esc, deferred pointer capture, and mirrored teardown. Every drag
-// surface needs this skeleton — hand-rolling it per surface means the same edge-case bug (leaked
-// listener, stranded capture, un-suppressed click) has to be fixed again in every copy. This
-// module owns exactly that skeleton and nothing else: geometry models, snapshots, autoscroll, and
-// drop chrome stay with the caller, wired through the hooks below.
+// the window listener trio + Esc, deferred pointer capture, and mirrored teardown. This module
+// owns exactly that skeleton — geometry models, snapshots, autoscroll, and drop chrome stay with
+// the caller, wired through the hooks below.
 
 import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from 'react'
 import { ACTIVATION } from './shared'
 
 export type PointerGestureSpec = {
-  /** The element that anchors the gesture (capture target; the caller's drag subject). */
   el: HTMLElement
-  /** The React pointerdown that starts the press. */
   event: ReactPointerEvent
-  /** Travel (px) before the press becomes a drag. Default ACTIVATION. */
+  /** Travel (px) before the press becomes a drag. */
   activation?: number
-  /** Defer-capture the pointer on activation (default true). Off for window-listener-only surfaces. */
+  /** Off for window-listener-only surfaces — otherwise capture defers to activation. */
   capture?: boolean
-  /**
-   * The press crossed the activation threshold: snapshot geometry, bind per-drag listeners,
-   * start autoscroll. Return false to abort (e.g. the subject vanished) — teardown runs, no drop.
-   */
+  /** Crossing the activation threshold: snapshot geometry, bind per-drag listeners, start
+   *  autoscroll. Return false to abort (e.g. the subject vanished) — teardown runs, no drop. */
   onActivate: (e: PointerEvent) => boolean | undefined
-  /** A post-activation pointermove. */
   onDragMove: (e: PointerEvent) => void
   /** Release after activation — commit here (and suppress the click yourself if one landed). */
   onDrop: () => void
@@ -71,11 +64,8 @@ function detach(g: LiveGesture): void {
  *  (a component unmounting mid-drag must never kill a sibling's gesture). */
 export type GestureHandle = { abort: () => void }
 
-/**
- * Start the shared pending→active pointer gesture. Returns null if refused (busy, non-primary,
- * or a non-left button). Window listeners drive the whole gesture — capture (if enabled) is
- * deferred to activation so a sub-threshold tap keeps its click.
- */
+/** Window listeners drive the whole gesture — capture (if enabled) is deferred to activation so
+ *  a sub-threshold tap keeps its click. */
 export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | null {
   const e = spec.event
   if (live || e.button !== 0 || !e.isPrimary) return null
@@ -140,12 +130,9 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
   }
 }
 
-/**
- * A surface's side of the ritual: hold the live handle, abort it on unmount, and honor the
- * refusal rule — a refused begin (a gesture already live) must never overwrite the live
- * gesture's handle, or the unmount abort would no-op and leak that gesture's listeners.
- * Returns whether the gesture actually started.
- */
+/** Honors the refusal rule: a refused begin (already live) must never overwrite this hook's
+ *  handle, or the unmount abort would leak the ACTIVE gesture's listeners instead. Returns
+ *  whether the gesture actually started. */
 export function usePointerGesture(): (spec: PointerGestureSpec) => boolean {
   const handle = useRef<GestureHandle | null>(null)
   useEffect(() => () => handle.current?.abort(), [])

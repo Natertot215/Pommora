@@ -30,11 +30,9 @@ import {
 // small tap-wobble opens the control (picker/checkbox) instead of lifting the card and eating the click.
 const INTERACTIVE_ACTIVATION = 12
 
-// Cross-list drag (the board). A DragGroup owns the one active drag across its zones. No
-// array churn: the lifted card is hidden in its source column and rendered as a portal overlay
-// under the cursor; every column just shifts its items by one slot-pitch to show where the card
-// would land. The move commits once, on drop (decide-then-animate). Each zone's rects are frozen
-// the first time the drag enters it (measured before any shift), mirroring the single-zone engine.
+// Cross-list drag (the board). A DragGroup owns the one active drag across its zones — no array
+// churn: the lifted card hides in its source column and renders as a portal overlay under the
+// cursor while every column shifts its items by one slot-pitch to preview where it would land.
 
 type ZoneReg = { ids: string[]; els: Map<string, HTMLElement>; container: HTMLElement | null }
 type ActiveDrag = { id: string; zone: string; srcIdx: number; pitch: number; rect: Box }
@@ -55,9 +53,9 @@ type GroupValue = {
 }
 const GroupCtx = createContext<GroupValue | null>(null)
 
-// Group frozen rects into visual ROWS by vertical-span overlap (cards top-align with unequal heights,
-// so a per-card centre or bottom splits one row and makes the insertion index flip-flop). Each row
-// carries a SHARED band [top, bottom] (min top, max bottom) so the whole row reads as one row.
+// Groups frozen rects into visual ROWS by vertical-span overlap — cards top-align with unequal
+// heights, so a per-card centre/bottom split would flip-flop the insertion index. Each row
+// carries a SHARED band [top, bottom] so the whole row reads as one.
 function rowsOf(
   rects: Box[],
   skip: number,
@@ -79,10 +77,10 @@ function rowsOf(
   return rows
 }
 
-// The viewport position of grid SLOT `slot`: the measured rect for an existing card, else WALKED
-// forward by grid columns from the last card — next column in the same row, wrapping to the next row
-// only once the row is full. A linear "below the last card" extrapolation would instead drop a slot
-// with open space to its RIGHT onto a new row (a partial row's right-hand drop reading as "below").
+// Viewport position of grid SLOT `slot`: the measured rect for an existing card, else WALKED
+// forward by grid columns from the last card — wrapping to the next row only once the row is
+// full. A linear "below the last card" extrapolation would instead drop a slot with open space
+// to its RIGHT onto a new row.
 function cellAt(
   rects: Box[],
   slot: number,
@@ -93,8 +91,8 @@ function cellAt(
   if (rects.length === 0) return { x: 0, y: 0 }
   const lefts = [...new Set(rects.map((r) => Math.round(r.left)))].sort((a, b) => a - b)
   // Column stride from the two closest occupied columns, else the card's own width. The grid keeps
-  // empty tracks (auto-fill), so infer the FULL column count from the container width — not from how
-  // many cards are present, or a sparse band wraps an append onto a phantom new row below the cards.
+  // empty tracks (auto-fill), so the FULL column count comes from container width — not from how
+  // many cards are present, or a sparse band wraps an append onto a phantom row below the cards.
   const stride = lefts.length >= 2 ? lefts[1] - lefts[0] : (rects[0]?.width ?? 1) + 1
   const cols = Math.max(
     lefts.length,
@@ -116,12 +114,10 @@ function cellAt(
 const ZoneIdCtx = createContext<string | null>(null)
 
 export type DragGroupProps = {
-  /** Commit the move: relocate `activeId` into `toZone` at `toIndex` (index among that zone's items, active removed). */
+  /** `toIndex` is the destination index among that zone's items, with the active one already removed. */
   onCommit: (activeId: string, toZone: string, toIndex: number) => void
-  /** Render the lifted card's content for the portal overlay. */
   renderOverlay?: (activeId: string) => ReactNode
-  /** Allow a drag to cross into other zones (default true). False pins it to its source zone — a
-   *  within-zone reorder only (a card can't fly to a band that can't receive it). */
+  /** False pins the drag to its source zone — for a band that can't receive foreign cards. */
   crossZone?: boolean
   children: ReactNode
 }
@@ -214,9 +210,8 @@ export function DragGroup({
     return out
   }
 
-  // Cached zone container bounds — snapshotted once at activation, refreshed by onScroll, never per
-  // pointermove. No band moves mid-drag otherwise, so the cache stays valid and the per-move
-  // getBoundingClientRect (a layout read every frame) is gone.
+  // Snapshotted once at activation, refreshed by onScroll, never per pointermove — bands don't
+  // move mid-drag otherwise, so the cache stays valid and the per-frame layout read is gone.
   const bounds = useRef(
     new Map<string, { left: number; right: number; top: number; bottom: number }>(),
   )
@@ -228,10 +223,9 @@ export function DragGroup({
       bounds.current.set(zid, { left: r.left, right: r.right, top: r.top, bottom: r.bottom })
     }
   }
-  // Reserve (or release) one row of height on a FOREIGN over-zone so the incoming card's wrapped
-  // trailing card grows into real space instead of spilling past the band into the group below. Only
-  // ONE zone is padded at a time, toggled SYNCHRONOUSLY on band-entry (never a per-move effect), so a
-  // zone is always measured at its natural geometry — the frozen rects can't go stale under it.
+  // Reserves one row of height on a FOREIGN over-zone so the incoming card's wrapped trailing card
+  // grows into real space instead of spilling past the band. Only ONE zone is padded at a time,
+  // toggled SYNCHRONOUSLY on band-entry (never per-move) so the frozen rects can't go stale under it.
   const padded = useRef<string | null>(null)
   const setPad = (zid: string | null): void => {
     if (padded.current === zid) return
@@ -245,9 +239,9 @@ export function DragGroup({
     const b = bounds.current.get(zid)
     return b ? b.right - b.left : 0
   }
-  // A scroll during the drag moves every band; re-measure bounds AND shift each zone's FROZEN item
-  // rects by its container's delta (frozen can't be re-measured live — transforms contaminate it), so
-  // zoneAt, indexAt and the placement all stay aligned to what's on screen.
+  // A scroll during the drag moves every band; re-measures bounds AND shifts each zone's FROZEN
+  // item rects by its container's delta (frozen can't be re-measured live — transforms contaminate
+  // it), so zoneAt/indexAt/placement all stay aligned to what's on screen.
   const onScroll = (): void => {
     for (const [zid, z] of zones.current) {
       if (!z.container) continue
@@ -277,17 +271,15 @@ export function DragGroup({
     return null
   }
 
-  // Insertion index in a zone by pointer Y: count non-active items whose centre is above the
-  // pointer. Uses the FROZEN rects (measured before shift-transforms) — never live rects, which
-  // are transform-contaminated mid-drag — matching the single-zone engine's collision model.
+  // Insertion index in a zone by pointer Y: counts non-active items whose centre is above the
+  // pointer, over the FROZEN rects (never live — transform-contaminated mid-drag).
   const indexAt = (zoneId: string, x: number, y: number): number => {
     const rects = frozen.current.get(zoneId)
     if (!rects) return 0
     const skip = zoneId === drag.current.zone ? drag.current.srcIdx : -1
-    // Insertion index in NON-active space, over SHARED row bands: rows entirely above the pointer
-    // count whole; in the pointer's own row, count the cards left of it (x past centre); below all
-    // rows, everything counts. One row band per visual row means a vertical wobble never re-buckets a
-    // card, so the index holds steady across a row (the coarse per-move flip-flop is gone).
+    // Rows entirely above the pointer count whole; in the pointer's own row, count the cards left
+    // of it (x past centre); below all rows, everything counts. One row band per visual row means
+    // a vertical wobble never re-buckets a card, so the index holds steady across a row.
     const rows = rowsOf(rects, skip)
     let idx = 0
     for (const row of rows) {
@@ -311,11 +303,10 @@ export function DragGroup({
     const d = drag.current
     const dx = cx - d.startX
     const dy = cy - d.startY
-    // crossZone off → the drag is pinned to its source zone (within-zone reorder only).
     const zid = crossZoneRef.current ? (zoneAt(cx, cy) ?? d.overZone) : d.zone
     if (zid !== d.overZone) {
-      // Band-entry: reserve the wrap row on a foreign destination (release it from the old one) and
-      // refresh bounds — synchronously, so no zone is measured while another is padded.
+      // Band-entry: reserve the wrap row on a foreign destination and refresh bounds together,
+      // synchronously.
       setPad(zid && zid !== d.zone ? zid : null)
       measureBounds()
     }
@@ -346,9 +337,9 @@ export function DragGroup({
 
   const onMove = (e: PointerEvent): void => {
     const d = drag.current
-    // No pointer capture, so a release OUTSIDE the Electron window delivers no pointerup; the first
-    // move back in reports no button pressed — cancel the stranded drag rather than leave the ghost
-    // glued to the pointer (whose next click would otherwise commit the card wherever it lands).
+    // No pointer capture, so a release OUTSIDE the Electron window delivers no pointerup; the next
+    // move back in reports no button pressed — cancel the stranded drag rather than leave a ghost
+    // glued to the pointer.
     if (d.active && e.buttons === 0) {
       onCancel()
       return
@@ -382,9 +373,8 @@ export function DragGroup({
       // holding still right after pickup closes the gap with no target box until the pointer moves.
       setOverZone(d.zone)
       setOverIndex(srcIdx)
-      // Edge auto-scroll, exactly as the single-zone engine wires it. Each scrolled frame first
-      // re-shifts the frozen rects + bounds (onScroll — the capture-phase event may lag the
-      // programmatic scroll), then re-tracks the held-still pointer over the moved content.
+      // Edge auto-scroll. Each scrolled frame first re-shifts the frozen rects + bounds (onScroll —
+      // the capture-phase event may lag the programmatic scroll), then re-tracks the held-still pointer.
       const scroller = findScroller(d.el, 'xy')
       if (scroller) {
         stopScroll.current = startAutoScroll({
@@ -428,8 +418,8 @@ export function DragGroup({
     setDropTarget(null)
   }
 
-  // Arm the commit: run `fn` once, fired by the overlay's fly-to-slot transitionend (preferred) or
-  // a fallback timer (covers the no-transition case). Mirrors the single-zone settle.
+  // Runs `fn` once, fired by the overlay's fly-to-slot transitionend (preferred) or a fallback
+  // timer (covers the no-transition case).
   const arm = (fn: () => void): void => {
     let done = false
     const once = (): void => {
@@ -446,10 +436,10 @@ export function DragGroup({
     timerRef.current = window.setTimeout(once, feelRef.current.duration + SETTLE_FALLBACK)
   }
 
-  // Where the lifted card lands in the over-zone. After the move the items (incl. the inserted
-  // card) sit contiguously from the zone's first slot, one pitch apart — so the card at non-active
-  // index `idx` lands at firstSlotTop + idx*pitch. (Indexing the filtered frozen array directly is
-  // off-by-one for within-zone trailing drops, because the source close-shift isn't accounted for.)
+  // After the move, items (incl. the inserted card) sit contiguously from the zone's first slot,
+  // one pitch apart — so the card at non-active index `idx` lands at firstSlotTop + idx*pitch.
+  // (Indexing the filtered frozen array directly is off-by-one for within-zone trailing drops,
+  // since the source close-shift isn't accounted for.)
   const targetXY = (zoneId: string, idx: number): { x: number; y: number } => {
     const rects = frozen.current.get(zoneId) ?? []
     if (rects.length === 0) {
@@ -472,7 +462,7 @@ export function DragGroup({
     suppressNextClick()
     const rect = d.rect
     // The TRUE zone under the drop point — not d.overZone, which sticks to the last zone crossed. A
-    // drop over no zone (an inter-band gap, an empty/collapsed band's header) cancels and flies home;
+    // drop over no zone (an inter-band gap, a collapsed band's header) cancels and flies home;
     // committing to the stale zone would silently reassign to the WRONG band.
     const dropZone = crossZoneRef.current ? zoneAt(d.lastX, d.lastY) : d.zone
     if (!dropZone) {
@@ -482,9 +472,9 @@ export function DragGroup({
       return
     }
     if (!frozen.current.has(dropZone)) frozen.current.set(dropZone, measure(dropZone))
-    // Honor the hysteresis-smoothed index when the drop lands in the tracked over-zone — the card
-    // commits to the slot the preview showed. A raw recompute would ignore the dead-band and land one
-    // slot off the box; only a drop into a DIFFERENT zone than tracked recomputes.
+    // Honors the hysteresis-smoothed index when the drop lands in the tracked over-zone, so the
+    // card commits to the slot the preview showed — a raw recompute would ignore the dead-band and
+    // land one slot off. Only a drop into a DIFFERENT zone than tracked recomputes.
     const toIndex = dropZone === d.overZone ? d.overIndex : indexAt(dropZone, d.lastX, d.lastY)
     const tgt = targetXY(dropZone, toIndex)
     setDropState('dropping')
@@ -560,9 +550,8 @@ export function DragGroup({
       handlers,
     }
     // Window listeners, NOT pointer capture: capture would retarget a no-move tap's click onto the
-    // handle, stealing an inner clickable's click. Without it the whole surface is a drag handle AND
-    // every inner click survives — a move past activation drags, a tap clicks. suppressNextClick eats
-    // the post-drag click.
+    // handle, stealing an inner clickable's click. Without it, a move past activation drags and a
+    // tap still clicks — suppressNextClick eats the post-drag click.
     window.addEventListener('pointermove', handlers.move)
     window.addEventListener('pointerup', handlers.up)
     window.addEventListener('pointercancel', handlers.cancel)
@@ -584,10 +573,10 @@ export function DragGroup({
     const oi = z.ids.indexOf(id)
     if (oi === -1 || !rects[oi])
       return { transform: 'translate3d(0,0,0)', hidden: false, animate: dropState !== 'idle' }
-    // The resting arrangement: this zone's items minus the lifted one, with it re-inserted at the hover
-    // index when this IS the over-zone (source zone closes the gap; over zone — within OR across bands —
-    // opens one so the adjacent cards part to show the landing). Each item targets a MEASURED slot rect,
-    // so a 2-D grid reflows by real positions; a foreign over-zone reserves one wrap row (setPad) so the
+    // The resting arrangement: this zone's items minus the lifted one, re-inserted at the hover
+    // index when this IS the over-zone (source zone closes the gap; over zone opens one so adjacent
+    // cards part to show the landing). Each item targets a MEASURED slot rect, so a 2-D grid
+    // reflows by real positions; a foreign over-zone reserves one wrap row (setPad) so the
     // trailing card that wraps grows into real space instead of spilling into the group below.
     const order = z.ids.filter((x) => x !== active.id)
     if (zoneId === overZone)
@@ -647,9 +636,8 @@ export function DragGroup({
         }
       : null
 
-  // The drop-location preview (SurfacePM's spm-placement idiom) — the accent-washed slot the lifted
-  // card will land in, within OR across bands. It rides the live over-zone/index, so it IS the future
-  // slot the reflow's gap opens for. Shown only while dragging (the overlay flies here on drop).
+  // The drop-location preview (SurfacePM's spm-placement idiom) — rides the live over-zone/index,
+  // so it IS the future slot the reflow's gap opens for. Shown only while dragging.
   const placeSlot =
     active && dropState === 'dragging' && overZone ? targetXY(overZone, overIndex) : null
 

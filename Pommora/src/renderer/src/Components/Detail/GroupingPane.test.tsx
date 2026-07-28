@@ -181,7 +181,7 @@ describe('GroupingPane rows', () => {
       )
     })
     expect(texts()).toContain('Alpha')
-    expect(texts()).not.toContain('Nested') // sub-groups hidden by default — disclose on demand
+    expect(texts()).not.toContain('Nested') // hidden by default — disclose on demand
     expect(texts()).toContain('Beta')
     const alphaRow = [...host.querySelectorAll('*')]
       .filter((el) => el.textContent === 'Alpha')
@@ -189,7 +189,7 @@ describe('GroupingPane rows', () => {
     await act(async () => {
       ;(alphaRow!.closest('[class]') as HTMLElement).click()
     })
-    expect(texts()).toContain('Nested') // disclosed
+    expect(texts()).toContain('Nested')
     await act(async () => {
       root.render(
         <GroupingPane
@@ -202,7 +202,7 @@ describe('GroupingPane rows', () => {
       )
     })
     expect(texts()).toContain('Alpha')
-    expect(texts()).not.toContain('Nested') // F-3: flat set list under sub-grouping
+    expect(texts()).not.toContain('Nested') // flat set list under sub-grouping
   })
 
   it('footings: Ungrouped always; Hide Empty Groups under property grouping; Separation under numeric date formats', async () => {

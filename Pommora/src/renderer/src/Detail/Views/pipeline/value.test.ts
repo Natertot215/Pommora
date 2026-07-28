@@ -166,7 +166,7 @@ describe('resolveFieldValue — declared-type coercion (the plain-string kinds f
     })
   })
 
-  it('a select column keeps a link-shaped value as select (build-breaker #2 — never stolen to url)', () => {
+  it('a select column keeps a link-shaped value as select (never stolen to url)', () => {
     expect(
       resolveFieldValue(rowOf({ prop_tag: '[URGENT](tel:911)' }), 'prop_tag', typedSchema),
     ).toEqual({

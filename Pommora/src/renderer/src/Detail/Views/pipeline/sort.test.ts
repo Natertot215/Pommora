@@ -77,7 +77,7 @@ function makeRow(
 const ids = (rows: ViewRow[]): string[] => rows.map((r) => r.id)
 
 describe('makeSorter — type-aware single criterion', () => {
-  it('url sorts by the SHOWN text (alias, else URL), not the raw [alias](url) (build-breaker #3)', () => {
+  it('url sorts by the SHOWN text (alias, else URL), not the raw [alias](url)', () => {
     const rows = [
       makeRow('r_zebra', { props: { prop_link: '[Zebra](https://a.co)' } }),
       makeRow('r_apple', { props: { prop_link: '[Apple](https://z.co)' } }),
@@ -250,7 +250,7 @@ describe('makeSorter — multi-key + null cases', () => {
   })
 })
 
-describe('makeSorter — manual order tiebreaker (viewOrders, D-5/D-6)', () => {
+describe('makeSorter — manual order tiebreaker (viewOrders)', () => {
   it('orders by the manual array when there is no sort (grouped-but-unsorted)', () => {
     const rows = [makeRow('a'), makeRow('b'), makeRow('c')]
     expect(ids(makeSorter(undefined, schema, ['c', 'a', 'b'])!(rows))).toEqual(['c', 'a', 'b'])
@@ -261,7 +261,7 @@ describe('makeSorter — manual order tiebreaker (viewOrders, D-5/D-6)', () => {
     expect(ids(makeSorter(undefined, schema, ['c', 'a'])!(rows))).toEqual(['c', 'a', 'b', 'd'])
   })
 
-  it('breaks ties only AFTER the sort key — within an equal-key run (D-6)', () => {
+  it('breaks ties only AFTER the sort key — within an equal-key run', () => {
     const rows = [
       makeRow('r1', { props: { prop_sel: 'a' } }),
       makeRow('r2', { props: { prop_sel: 'b' } }),

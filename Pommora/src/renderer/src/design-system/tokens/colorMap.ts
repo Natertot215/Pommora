@@ -1,27 +1,22 @@
-// The color-exchange layer — maps an external color name (a legacy Notion select color / the Swift
-// AreaColor palette) onto one of the app's render palettes. `chipColorFor` is the chip-palette accessor;
-// other exchanges add a sibling accessor here rather than re-deriving the mapping. Aligns at the
-// boundary — the app palette stays intact, the on-disk names map onto it. The 7 shared hues map 1:1;
-// brown/pink/indigo have no chip equivalent and take a nearest color (tunable); teal→cyan; gray→grey.
-// Absent/unknown → the neutral default.
+// The color-exchange layer — maps an external color name (a legacy Notion select color / the
+// Swift AreaColor palette) onto one of the app's render palettes. `chipColorFor` is the
+// chip-palette accessor; other exchanges add a sibling accessor here rather than re-deriving the
+// mapping.
 //
-// `import type` keeps this module runtime-pure (the vanilla-extract `chip.css` is never loaded here),
-// so it stays unit-testable while the name list still single-sources from the chip palette.
+// `import type` keeps this module runtime-pure (the vanilla-extract `chip.css` is never loaded
+// here), so it stays unit-testable while the name list still single-sources from the chip palette.
 
 import { CHIP_SOLID_COLORS, LEGACY_CHIP_COLOR_MAP } from '@shared/types'
 import type { ChipColorName } from './chip.css'
 
 const MAP: Record<string, ChipColorName> = LEGACY_CHIP_COLOR_MAP
 
-// The render-palette keys (ChipColorName minus 'default') — the shared CHIP_SOLID_COLORS
-// list, so this module stays runtime-pure (chip.css is never loaded here). An option's
-// stored color IS a solid key now, so a key already in the palette is its own render key —
-// pass it through before consulting the legacy Notion map, which only covers old on-disk
-// names (and never reached lightBlue/cyan/grey/lavender).
+// The render-palette keys (ChipColorName minus 'default') — runtime-pure via CHIP_SOLID_COLORS
+// (chip.css is never loaded here). An option's stored color IS a solid key now, so a key already
+// in the palette passes through before consulting the legacy Notion map, which only covers old
+// on-disk names.
 const PALETTE: ReadonlySet<string> = new Set(CHIP_SOLID_COLORS)
 
-/** A stored option / area color → its chip palette key. A solid key passes straight through; a legacy
- *  Notion name maps; absent or unrecognized → the neutral default. */
 export function chipColorFor(color: string | undefined): ChipColorName {
   if (color && PALETTE.has(color)) return color as ChipColorName
   return (color && MAP[color]) || 'default'
@@ -31,7 +26,6 @@ export function chipColorFor(color: string | undefined): ChipColorName {
 // display only. `lightBlue` reads as "Cobalt" (Nathan's term); everything else Title-cases its key.
 const COLOR_LABELS: Partial<Record<ChipColorName, string>> = { lightBlue: 'Cobalt' }
 
-/** The user-facing display name for a chip palette key (e.g. `lightBlue` → "Cobalt"). */
 export function colorLabel(name: ChipColorName): string {
   return COLOR_LABELS[name] ?? name.charAt(0).toUpperCase() + name.slice(1)
 }

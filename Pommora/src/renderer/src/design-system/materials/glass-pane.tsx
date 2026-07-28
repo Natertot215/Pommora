@@ -1,12 +1,8 @@
 import type { CSSProperties, HTMLAttributes, ReactNode, Ref } from 'react'
 import { shadowStandardVar } from '../tokens/color.css'
 
-/**
- * GlassPane — Pommora's native CSS frost for panes/dropdowns (the menu MenuSurface + the toolbar
- * Navigation/Settings panels). Same recipe as the static frostMaterial (glass-material.ts) — a dimmed
- * blur with a glassy edge — with its own pane-tuned params (PANE_FROST); the drop shadow is the shared
- * --shadow-standard token.
- */
+/** Same recipe as the static frostMaterial (glass-material.ts) — a dimmed blur with a glassy
+ *  edge — but with its own pane-tuned params (PANE_FROST). */
 export interface FrostParams {
 
   blur: number

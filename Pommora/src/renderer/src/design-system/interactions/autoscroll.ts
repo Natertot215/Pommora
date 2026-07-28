@@ -1,8 +1,6 @@
-// App-wide auto-scroll-on-drag. One singleton rAF loop (below) scrolls a FIXED container — resolved
-// once at drag start — toward whichever edge the pointer holds near: frame-synced, proximity-ramped,
-// distance-accelerated, direction-gated, limit-aware. Every drag surface feeds it a point + a scroller;
-// no surface re-implements the loop. Tuning lives in autoscroll.css, read off the drag element once per
-// drag. The pure math below is unit-tested; the loop's DOM glue is verified live.
+// One singleton rAF loop scrolls a FIXED container, resolved once at drag start. Tuning lives in
+// autoscroll.css, read off the drag element once per drag. The pure math below is unit-tested;
+// the loop's DOM glue is verified live.
 
 export type Axis = 'x' | 'y' | 'xy'
 
@@ -22,7 +20,6 @@ export interface Intent {
   right: boolean
 }
 
-/** Does an element scroll in `axis`? Pure predicate over computed overflow + measured dims. */
 export function scrollableInAxis(
   overflowX: string,
   overflowY: string,
@@ -37,8 +34,8 @@ export function scrollableInAxis(
   return x || y
 }
 
-/** Nearest ancestor of `el` that scrolls IN THE NEEDED AXIS (default both), or null. Axis-aware so a
- *  vertical drag skips an x-only ancestor (e.g. the table's `overflow-x` shell) to reach the real y-scroller. */
+/** Axis-aware so a vertical drag skips an x-only ancestor (e.g. a horizontal-scroll shell) to
+ *  reach the real y-scroller. */
 export function findScroller(el: HTMLElement | null, axis: Axis = 'xy'): HTMLElement | null {
   let n = el?.parentElement ?? null
   while (n) {
@@ -49,9 +46,8 @@ export function findScroller(el: HTMLElement | null, axis: Axis = 'xy'): HTMLEle
   return null
 }
 
-/** Desired scroll velocity (px/sec, signed) for one axis: negative toward `lo`, positive toward `hi`,
- *  0 outside the edge band. A point past the edge (depth > edge) reads as max ramp — no viewport clamp
- *  needed. Pre-acceleration, pre-limit. */
+/** Signed velocity for one axis: negative toward `lo`, positive toward `hi`. Pre-acceleration,
+ *  pre-limit — composed with accelFactor/clampToLimit downstream. */
 export function edgeVelocity(
   lo: number,
   hi: number,
@@ -64,9 +60,7 @@ export function edgeVelocity(
   return 0
 }
 
-/** Distance-based acceleration. A sustained scroll eases in from `accelStart` and climbs to `accelMax`
- *  over `accelDist` px of accumulated scroll — the longer a drag-scroll runs, the faster it goes, to the
- *  cap. `accelStart` MUST be > 0: at 0 the loop would scroll 0px, accumulate 0 distance, and deadlock. */
+/** `accelStart` MUST be > 0: at 0 the loop would scroll 0px, accumulate 0 distance, and deadlock. */
 export function accelFactor(scrolled: number, { accelStart, accelMax, accelDist }: Params): number {
   if (accelDist <= 0) return accelMax
   return accelStart + (accelMax - accelStart) * Math.min(1, scrolled / accelDist)
@@ -79,18 +73,16 @@ export function clampToLimit(v: number, pos: number, max: number): number {
   return v
 }
 
-/** Sub-pixel step: fold the fractional remainder forward so slow ramps don't round to 0. Returns the
- *  integer pixels to scroll this frame and the carried remainder. */
+/** Folds the fractional remainder forward so a slow ramp doesn't round to 0 every frame. */
 export function stepPixels(v: number, dtMs: number, frac: number): { px: number; frac: number } {
   const raw = v * (dtMs / 1000) + frac
   const px = Math.trunc(raw)
   return { px, frac: raw - px }
 }
 
-/** Direction-intent gate. A direction may scroll only after the pointer has been OUTSIDE that
- *  direction's edge band at least once since drag start — so grabbing an item already pinned at the
- *  bottom edge doesn't immediately rocket the container. Being outside a band (velocity not pushing
- *  that way) arms it. Mutates + reads `intent`. */
+/** A direction may scroll only after the pointer has been OUTSIDE that direction's edge band at
+ *  least once since drag start — so grabbing an item already pinned at an edge doesn't
+ *  immediately rocket the container. */
 export function gateIntent(intent: Intent, vx: number, vy: number): { vx: number; vy: number } {
   if (vy >= 0) intent.up = true
   if (vy <= 0) intent.down = true
@@ -103,9 +95,9 @@ export function gateIntent(intent: Intent, vx: number, vy: number): { vx: number
 }
 
 // One drag at a time (pointer capture guarantees it). The loop scrolls every frame off the last
-// recorded point — so holding still at the edge keeps scrolling — and self-owns a termination
-// backstop (blur/visibilitychange/pointercancel → stop) so a focus-steal can't strand it running.
-// It stops the LOOP only; each surface still aborts its OWN gesture on its own up/cancel/blur.
+// recorded point, so holding still at the edge keeps scrolling. It self-owns a termination
+// backstop (blur/visibilitychange/pointercancel) so a focus-steal can't strand it running — but
+// stops the LOOP only; each surface still aborts its OWN gesture on its own up/cancel/blur.
 
 interface StartCfg {
   getPoint: () => { x: number; y: number }
@@ -131,9 +123,8 @@ interface Live {
 
 let live: Live | null = null
 
-// Upper bound on a single frame's dt. A velocity×dt loop teleports if rAF stalls (a jank spike while
-// the window keeps focus, display sleep/wake with the pointer held) and resumes with a huge gap — cap
-// it so the worst case is one small step, not a thousand-pixel jump.
+// Upper bound on a single frame's dt. A velocity×dt loop teleports if rAF stalls (a jank spike,
+// display sleep/wake) and resumes with a huge gap — cap it so the worst case is one small step.
 const MAX_FRAME_MS = 50
 
 function readParams(el: HTMLElement): Params {
@@ -154,13 +145,12 @@ function readParams(el: HTMLElement): Params {
 
 export type { StartCfg }
 
-/** Begin auto-scrolling a fixed container. Resolves the scroller ONCE (explicit, else axis-aware
- *  `findScroller(dragEl, axis)`); reads tuning off `dragEl` once; then drives a singleton rAF loop.
- *  Returns an INSTANCE-scoped stopper that halts only THIS loop (a no-op if another drag has since
- *  replaced it) — so a bystander's unmount teardown can't sabotage a live drag. Use it over the global
- *  `stopAutoScroll` wherever a stop might fire while a different drag owns the loop (e.g. unmount cleanup). */
+/** Returns an INSTANCE-scoped stopper that halts only THIS loop (a no-op if another drag has
+ *  since replaced it) — so a bystander's unmount teardown can't sabotage a live drag. Prefer this
+ *  over the global `stopAutoScroll` wherever a stop might fire after ownership may have changed
+ *  (e.g. unmount cleanup). */
 export function startAutoScroll(cfg: StartCfg): () => void {
-  stopAutoScroll() // singleton: replace any running loop
+  stopAutoScroll()
   const axis = cfg.axis ?? 'xy'
   const scroller = cfg.scroller ?? findScroller(cfg.dragEl ?? null, axis)
   if (!scroller) return () => {} // no scrollable container — the drag still works, just no auto-scroll
@@ -192,7 +182,6 @@ export function startAutoScroll(cfg: StartCfg): () => void {
   }
 }
 
-/** Stop the auto-scroll loop (and only the loop — the surface owns its gesture's own teardown). */
 export function stopAutoScroll(): void {
   if (!live) return
   if (live.raf) cancelAnimationFrame(live.raf)
@@ -210,8 +199,8 @@ function tick(ts: number): void {
   let vx = L.axis === 'y' ? 0 : edgeVelocity(r.left, r.right, pt.x, L.params)
   let vy = L.axis === 'x' ? 0 : edgeVelocity(r.top, r.bottom, pt.y, L.params)
   ;({ vx, vy } = gateIntent(L.intent, vx, vy))
-  // Distance-based acceleration: leaving the band (or a gated direction) has no edge velocity → reset
-  // the run so the next scroll eases in fresh; a sustained scroll accelerates with the distance covered.
+  // No edge velocity (out of the band, or a gated direction) resets the run so the next scroll
+  // eases in fresh.
   if (vx === 0 && vy === 0) L.dist = 0
   const accel = accelFactor(L.dist, L.params)
   vx = clampToLimit(

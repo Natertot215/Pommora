@@ -4,11 +4,10 @@ import { autoSizeWrap, autoSizeMirror, autoSizeInput } from './EditableInput.css
 
 /**
  * The `settled` guard stops Enter (which blurs) and the trailing blur from both committing;
- * it's mounted only while editing, so each edit session gets a fresh guard. Consumers own
- * the commit/cancel meaning — store dispatch for sidebar rows, local callbacks for the header.
+ * it's mounted only while editing, so each edit session gets a fresh guard.
  *
- * `autoSize` shrink-wraps the field to its text via a hidden mirror span (the option-chip caret);
- * font + padding inherit from the caller's surface so the mirror measures in the same metrics.
+ * `autoSize`'s hidden mirror span inherits font + padding from the caller's surface so it
+ * measures in the same metrics as the real input.
  */
 export function EditableInput({
   value,
@@ -23,8 +22,6 @@ export function EditableInput({
   className: string
   maxLength?: number
   autoSize?: boolean
-  /** Focus drops the caret at the END of the text instead of selecting all — for editing in place (the
-   *  rename field) rather than replacing. Default selects all (type-to-replace: the chip/sidebar rename). */
   caretAtEnd?: boolean
   onCommit: (next: string) => void
   onCancel: () => void

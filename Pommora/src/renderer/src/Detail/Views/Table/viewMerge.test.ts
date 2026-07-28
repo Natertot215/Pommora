@@ -22,7 +22,7 @@ describe('mergeOverrides', () => {
     expect(out.collapsed_groups).toEqual(['g1'])
   })
 
-  it('a patch (e.g. hide) does NOT drop an unsaved width, align, or collapse override — H-2', () => {
+  it('a patch (e.g. hide) does NOT drop an unsaved width, align, or collapse override', () => {
     const out = mergeOverrides(base(), { _title: 300 }, { a: 'center' }, new Set(['g1']), {
       hidden_properties: ['x'],
     })

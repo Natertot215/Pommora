@@ -2,10 +2,7 @@ import type { MutableKind } from '@shared/mutate'
 import { useSession } from '../store'
 import { EditableInput } from './EditableInput'
 
-/** An entity's title that swaps to the store-driven inline rename input while this entity is
- *  being renamed (`store.renamingPath === path` — set by the native context menu's Rename via
- *  `begin-rename`). Commit runs the rename mutate through the store; unchanged/empty cancels.
- *  One flow for every renamable surface — sidebar rows and table group bands share it. */
+/** `renamingPath` is set by the native context menu's Rename via `begin-rename`. */
 export function RenamableTitle({
   path,
   kind,

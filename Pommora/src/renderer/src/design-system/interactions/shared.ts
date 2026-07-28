@@ -1,9 +1,8 @@
 import type { CSSProperties } from 'react'
 
-// Shared vocabulary for the drag engine — the types, tuning constants, and pure helpers used by
-// BOTH the single-zone engine (`engine.tsx`) and the cross-list engine (`group.tsx`). The two
-// engines model genuinely different interactions (in-place transform vs portal overlay), so their
-// drag-state and commit machinery stay separate; only these shared primitives are hoisted here.
+// Shared vocabulary between the single-zone engine (engine.tsx) and the cross-list engine
+// (group.tsx) — they model genuinely different interactions (in-place transform vs portal
+// overlay), so their drag-state and commit machinery stay separate; only primitives hoist here.
 
 export type Box = {
   left: number
@@ -37,7 +36,7 @@ export const ACTIVATION = 5 // px the pointer must travel before a drag starts (
 export const DROP_LINE_INSET = 2 // px an insertion line is pulled in from its surface's edges
 
 /** Swallow the click that fires right after a committed drag, so the drop doesn't also trigger
- *  the surface's click action (select a row, toggle a band). One capture-phase, once-only guard. */
+ *  the surface's click action. One capture-phase, once-only guard. */
 export function suppressNextClick(): void {
   const swallow = (e: MouseEvent): void => {
     e.stopPropagation()
@@ -49,7 +48,6 @@ export function suppressNextClick(): void {
 export const HYSTERESIS = 6 // px a new candidate must beat the current `over` by, to switch — kills flicker
 export const SETTLE_FALLBACK = 80 // ms slack past the transition for the commit fallback (paint-start delay)
 
-/** Measure an element into a Box (with centre), in viewport coordinates. */
 export function toBox(el: HTMLElement): Box {
   const r = el.getBoundingClientRect()
   return {

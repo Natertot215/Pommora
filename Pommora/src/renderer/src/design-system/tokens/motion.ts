@@ -9,9 +9,8 @@ export const duration = {
 } as const
 
 export const easing = {
-  // The disclosure chevron's curve — the shared everyday ease. Swap this one value
-  // to shift the whole system's feel (e.g. to a stronger ease-out); both the chevron
-  // and the reveal follow because they reference the same token.
+  // The shared everyday ease. Swap this one value to shift the whole system's feel — the
+  // chevron and the reveal both follow because they reference the same token.
   standard: 'ease',
   inOut: 'ease-in-out', // symmetric fade — in as fast as out (the NavWindow highlight)
   out: 'cubic-bezier(0.22, 1, 0.36, 1)', // ease-out (quint), no bounce

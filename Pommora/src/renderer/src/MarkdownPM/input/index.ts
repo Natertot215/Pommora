@@ -25,10 +25,9 @@ export const lineEndAt = (doc: string, pos: number): number => {
 const lineMarkerRe = /^(\s*)(?:\d+\.|[-*+•→]|>|#{1,6})(?:[ \t]*\[[ xX]?\])?[ \t]+/
 const shorthandCheckboxRe = /^([ \t]*)([-*+])\[([ xX]?)\]$/
 
-// The leading `>`/callout prefix on a line (empty for top-level lines). A list continues / indents inside a
-// callout because every list op reads the marker from after this prefix and re-emits the prefix on the new line.
-// Only a REAL blockquote (whitespace after the `>`, per isBlockquoteLine) carries a prefix — so `>x` isn't
-// mistaken for a quoted line by input ops while the renderer shows it as plain text (cross-layer agreement).
+// Every list op reads the marker after this prefix and re-emits it on the new line — this is why a list
+// indents correctly inside a callout. Gated to REAL blockquotes only (whitespace after `>`) so `>x` isn't
+// mistaken for a quoted line here while the renderer treats it as plain text (cross-layer agreement).
 const blockPrefix = (line: string): string =>
   isBlockquoteLine(line) ? (blockquotePrefixRe.exec(line)?.[0] ?? '') : ''
 
@@ -73,7 +72,6 @@ export function continueListOnEnter(doc: string, selStart: number, selEnd: numbe
         fpfx === pfx &&
         fline.slice(fpfx.length, fpfx.length + flm.markerStart) === indent
       if (!sameLevel) {
-        // Deeper lines (nested sublists, continuations) ride along untouched; anything else ends the run.
         if (fpfx === pfx && isNested(finner)) {
           pendingSkipped += `\n${fline}`
           p = fe
@@ -111,7 +109,7 @@ export function continueBlockquoteOnEnter(
   if (doc.slice(ls + m[0].length, lineEnd).trim() === '' && !lineInCallout(doc, selStart)) {
     return { from: ls, to: lineEnd, insert: '', selection: ls }
   }
-  const insert = `\n${m[0].replace(/[ \t]+$/, '')} ` // normalize to a single trailing space
+  const insert = `\n${m[0].replace(/[ \t]+$/, '')} `
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length }
 }
 
@@ -127,13 +125,11 @@ export function calloutShorthand(
   if (inserted !== '|' || selStart !== selEnd) return null
   const c = selStart
   const ls = lineStartAt(doc, c)
-  if (ls !== c - 1 || doc[c - 1] !== '|') return null // only a bare `|` at line start
+  if (ls !== c - 1 || doc[c - 1] !== '|') return null
   const lineEnd = lineEndAt(doc, c)
   const head = '> [!callout] '
-  // Consume just the `||` (replace the first `|`; the second is suppressed) so any content already on the line
-  // is preserved as the callout's first-line body. Separate the new callout from an adjacent blockquote/callout
-  // with a blank line so they read as two boxes, not one touching pair. Add a trailing exit line when the
-  // callout is alone on its line and there's nothing below to land on (or a quote it must separate from).
+  // Replaces just the `||` (content already on the line survives as the callout's first-line body). A blank
+  // line separates the new callout from an adjacent blockquote/callout so they read as two boxes, not one.
   const onlyOnLine = c === lineEnd
   const prevIsQuote = ls > 0 && isBlockquoteLine(doc.slice(lineStartAt(doc, ls - 1), ls - 1))
   const nextStart = lineEnd + 1
@@ -149,9 +145,8 @@ export function calloutShorthand(
 // continuing the `> ` prefix — so multi-line content and lists can be built without escaping; exit is by
 // caret placement on the empty line below.
 export function shiftEnterEdit(doc: string, selStart: number, selEnd: number): Edit {
-  // Inside a callout the new line keeps the box prefix (works with a selection too — a plain `\n` there would
-  // drop an un-prefixed line into the middle of the run and split the callout). Require BOTH ends in the
-  // callout: a selection straddling the box edge falls back to a plain `\n` so outside text isn't pulled in.
+  // A plain `\n` here would drop an un-prefixed line into the run and split the callout. Requires BOTH ends
+  // in the callout — a selection straddling the box edge falls back to plain `\n` so outside text isn't pulled in.
   if (lineInCallout(doc, selStart) && lineInCallout(doc, selEnd)) {
     const ls = lineStartAt(doc, selStart)
     const pfx = (
@@ -199,8 +194,8 @@ export function smartBackspace(doc: string, selStart: number, selEnd: number): E
   const ls = lineStartAt(doc, selStart)
   const line = doc.slice(ls, lineEndAt(doc, selStart))
 
-  // Inside a callout, never strip a lone `>` (that drops the line out of the box / splits the callout into a
-  // stray quote). Delete an inner list marker, strip the whole `> [!type] ` head, or join to the line above.
+  // Inside a callout, never strip a lone `>` — that would drop the line out of the box, splitting the
+  // callout into a stray quote.
   if (lineInCallout(doc, selStart)) {
     const pfx = blockPrefix(line)
     const headLen = calloutHeadPrefixLen(line)

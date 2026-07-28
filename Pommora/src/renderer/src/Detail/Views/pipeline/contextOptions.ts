@@ -16,7 +16,6 @@ export interface ContextOption {
 // push naturally invalidates it.
 const optionsCache = new WeakMap<NexusTree, Map<string, ContextOption[]>>()
 
-/** A Context's pickable Spaces — id/title/color/icon off the live tree, memoized per tree. */
 export function contextOptionsFor(contextId: string, tree: NexusTree): ContextOption[] {
   let byContext = optionsCache.get(tree)
   if (!byContext) {

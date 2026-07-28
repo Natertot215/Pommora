@@ -5,13 +5,9 @@ import { PickerMenu } from '../PickerMenu/PickerMenu'
 import '../../edge-fade.css'
 import * as s from './textPicker.css'
 
-/**
- * TextPicker — a beaked PickerMenu wrapping one input-field, for renaming/labelling a cell in place
- * (the link alias, to start). Self-managed like ColorPicker (`open`/`onDismiss`/`triggerRef`). The
- * field grows with typing between a 100px floor and a 200px cap, then scrolls; Enter or blur commit the
- * trimmed text, Escape cancels. `accent` scopes the pane's `--accent` so the focus stroke wears a
- * caller's colour (a link tints it its own); omitted, it inherits the app accent.
- */
+/** The field grows with typing between a 100px floor and a 200px cap, then scrolls. Enter or
+ *  blur commit the trimmed text; Escape cancels. `accent` scopes the pane's `--accent` so the
+ *  focus stroke wears a caller's colour; omitted, it inherits the app accent. */
 export function TextPicker({
   open,
   onDismiss,
@@ -29,7 +25,6 @@ export function TextPicker({
   onCommit: (next: string) => void
   accent?: string
   maxLength?: number
-  /** An optional right-side adornment on the field's line — a number's "/ N" out-of hint. */
   trailing?: React.ReactNode
 }): React.JSX.Element | null {
   const hasTrailing = trailing !== undefined

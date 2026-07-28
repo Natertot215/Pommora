@@ -21,9 +21,9 @@ const rectOf = (el: HTMLElement): TriggerRect => {
   return { x: r.x, y: r.y, w: r.width, h: r.height }
 }
 
-/** The nested menus portal to body as a fixed phantom of their trigger box, so the dropdown is a
- *  REAL dropdown — free of the calendar pane's clip-path — while PickerMenu's anchor math works
- *  unchanged. The phantom is pointer-inert; only the menu re-enables hits. */
+/** Portals to body as a fixed phantom of the trigger box, so the dropdown escapes the calendar
+ *  pane's clip-path while PickerMenu's anchor math still works unchanged. Pointer-inert — only
+ *  the menu re-enables hits. */
 function PortalMenu({
   rect,
   children,
@@ -79,15 +79,8 @@ const pad = (n: number): string => String(n).padStart(2, '0')
 // formatters parse date-only strings as LOCAL midnight, so the key must be minted locally too).
 const keyOf = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
-/**
- * The date(-time) picker: Month-Year header with duration-base slide nav · Mon-first
- * label-secondary week row ·
- * connected range selection (endpoints tint-secondary, in-between band tint-tertiary; clicking a
- * selected date removes it) · a divider · separator-stroked value fields (calendar/clock icon,
- * `--` empty state, OverflowScroll on long formats) whose layout morphs on the two booleans
- * (real Switches). Display formats are INJECTED so the owning property's config stays the boss;
- * times are display-only until the entry UX is designed.
- */
+/** Display formats are INJECTED so the owning property's config stays the boss; times are
+ *  display-only until the entry UX is designed. */
 export function CalendarPicker({
   formatDateValue,
   timeFormat = 'twelveHour',
@@ -98,14 +91,12 @@ export function CalendarPicker({
   /** `condensed` set = the range layout asking for the picker-only short form (withYear when the
    *  range spans years); absent = the property's own format, verbatim. */
   formatDateValue: (isoDate: string, condensed?: { withYear: boolean }) => string
-  /** The nexus-wide time format (.nexus settings): twelveHour reads (Hour):(Minutes)(PM);
-   *  twentyFourHour flattens — padded HH:MM, no meridiem. */
   timeFormat?: 'twelveHour' | 'twentyFourHour'
-  /** The property's current ISO (bare date, or date-time) — initializes the picker; uncontrolled after mount. */
+  /** Initializes the picker; uncontrolled after mount. */
   value?: string | null
   /** Debounced single-value commits: the start date (+ time when Use Time), null on clear. */
   onChange?: (iso: string | null) => void
-  /** The End Date affordance — the datetime property is single-valued, so its mount passes false. */
+  /** Set false for a single-valued mount (no End Date affordance). */
   range?: boolean
 }): React.JSX.Element {
   const twelve = timeFormat === 'twelveHour'
@@ -124,8 +115,7 @@ export function CalendarPicker({
   const [endOn, setEndOn] = useState(false)
   const [timeOn, setTimeOn] = useState(initHasTime)
   const [menu, setMenu] = useState<{ kind: 'month' | 'year'; rect: TriggerRect } | null>(null)
-  // The [00][00] segment dropdowns — each segment opens its own upward PickerMenu (the fields sit
-  // at the pane's bottom), beak-down at the segment.
+  // Each segment opens its own upward PickerMenu (the fields sit at the pane's bottom).
   const [timeMenu, setTimeMenu] = useState<{
     which: 'start' | 'end'
     part: 'h' | 'm'
@@ -149,8 +139,8 @@ export function CalendarPicker({
   const rootRef = useRef<HTMLDivElement>(null)
   // Portal'd menus escape the root, so dismissal is a document listener that spares the root AND
   // any [data-calmenu] portal (useDismiss's containment check can't see through the portal). The
-  // phantoms are frozen at open-time coordinates, so any outside scroll CLOSES them (the native
-  // popover behavior) rather than letting them float away from their triggers.
+  // phantoms are frozen at open-time coordinates, so any outside scroll CLOSES them rather than
+  // letting them float away from their triggers.
   useEffect(() => {
     if (!menu && !timeMenu) return
     const close = (): void => {
@@ -196,9 +186,9 @@ export function CalendarPicker({
   onChangeRef.current = onChange
   const emitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingEmit = useRef<string | null | undefined>(undefined)
-  // Changed-state guard (not a consumed-once flag): emit only after the state actually leaves its
-  // mount value. A once-flag breaks under StrictMode's dev remount — the second effect pass sees it
-  // consumed and debounce-writes the UNCHANGED state (a spurious commit on every open).
+  // Changed-state guard (not a consumed-once flag): emits only after state actually leaves its
+  // mount value. A once-flag breaks under StrictMode's dev remount — the second effect pass sees
+  // it consumed and debounce-writes the UNCHANGED state (a spurious commit on every open).
   const initial = useRef({ start, timeOn, startMin })
   const armed = useRef(false)
   useEffect(() => {
@@ -233,8 +223,6 @@ export function CalendarPicker({
     },
     [],
   )
-  // Both endpoints share one time model; the segment/menu/toggle helpers all resolve their
-  // endpoint through these rather than re-branching `which` at each call site.
   const minsOf = (which: 'start' | 'end'): number => (which === 'start' ? startMin : endMin)
   const setMinsFor = (which: 'start' | 'end'): typeof setStartMin =>
     which === 'start' ? setStartMin : setEndMin
@@ -269,9 +257,8 @@ export function CalendarPicker({
   }
 
   // Trackpad swipe on the calendar area only: horizontal wheel deltas accumulate to one nav per
-  // gesture (natural direction — content follows the fingers). The accumulator resets on a
-  // direction flip and on a wheel-idle gap, and a post-nav cooldown holds through the momentum
-  // tail so one hard flick can't double-nav.
+  // gesture (natural direction). The accumulator resets on a direction flip or a wheel-idle gap; a
+  // post-nav cooldown holds through the momentum tail so one hard flick can't double-nav.
   const swipe = useRef(0)
   const swipeCooldown = useRef(false)
   const swipeIdle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -332,10 +319,10 @@ export function CalendarPicker({
       suppressClick.current = true
       return
     }
-    // A no-move press on a selected endpoint IS the click-to-remove — but arming the drag pointer-captured
-    // this grid on pointerdown, which retargets the day button's `click` onto the grid so its onClick never
-    // fires the pick. Do it here (pointerup always fires on the captured grid), and suppress the click that
-    // may still land so it can't re-add the date.
+    // A no-move press on a selected endpoint IS the click-to-remove — but pointer-capturing the grid
+    // on pointerdown retargets the day button's `click` onto the grid, so its onClick never fires.
+    // Do it here (pointerup always fires on the captured grid), and suppress the click that may
+    // still land so it can't re-add the date.
     const k = d.which === 'start' ? start : end
     if (k) {
       suppressClick.current = true
@@ -498,8 +485,8 @@ export function CalendarPicker({
           )
         }}
         onDoubleClick={() => {
-          // Enter empty — the current value shows as a label-tertiary placeholder you type over
-          // (blur/Enter with an empty draft keeps it, per segCommit).
+          // Enter empty — the current value shows as a placeholder you type over (blur/Enter with
+          // an empty draft keeps it, per segCommit).
           setTimeMenu(null)
           setSegEdit({ which, part, draft: '' })
         }}
@@ -549,10 +536,9 @@ export function CalendarPicker({
 
   const prevMonth = slide?.from ?? cursor
   const year = cursor.getFullYear()
-  // The grid viewport's height is COMPUTED from the target month's row count (geometry mirrors
-  // the css) and set the instant nav fires — SizeMorph then animates the delta on the same
-  // duration-base beat as the slide keyframe, so the resize FLOWS with the horizontal move
-  // (the PaneSlider contract) instead of snapping after it.
+  // The grid viewport's height is COMPUTED from the target month's row count (geometry mirrors the
+  // css) the instant nav fires — SizeMorph then animates the delta on the same beat as the slide,
+  // so the resize FLOWS with the horizontal move instead of snapping after it.
   const gridHeight = rowsFor(cursor) * 24 + (rowsFor(cursor) - 1) * 2 + 2
   const jump = (y: number, m: number): void => {
     setCursor(new Date(y, m, 1))

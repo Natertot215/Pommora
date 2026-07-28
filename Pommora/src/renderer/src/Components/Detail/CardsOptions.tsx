@@ -16,12 +16,7 @@ const BANNERS: PickerChoice<CardBanner>[] = [
   { value: 'none', label: 'None' },
 ]
 
-/**
- * The cards view's options — Card Banner (the card image source) and the Hide Location / Wrap
- * Titles / Hide Icons / Set Cards switches; Card Style + Scale live in the ViewSettings footing.
- * Shared by both Layout surfaces: the full door's Layout leaf and the SettingsPane flat door. All
- * persist per-view through the shared adopt-only writer.
- */
+/** Card Style + Scale live in the ViewSettings footing, not here. */
 export function CardsOptions({
   source,
   view,

@@ -128,7 +128,7 @@ export function dateBucketKey(
 }
 
 /** The grouping key for a row under one property (null = no value → caller routes to the no-value
- *  band, or the checkbox 'false' bucket). Mirrors Swift bucketKey. */
+ *  band, or the checkbox 'false' bucket). */
 export function bucketKey(
   row: ViewRow,
   propertyId: string,
@@ -174,8 +174,8 @@ function configuredOrder(def: PropertyDefinition | undefined, present: Set<strin
 }
 
 /** Bucket display order: manual (explicit `order` then sorted tail), configured (schema order),
- *  or reversed (configured, reversed). Mirrors Swift bucketOrder. Exported for the Grouping
- *  pane's Custom list — the one order source for property AND sub-group buckets. */
+ *  or reversed (configured, reversed). Exported for the Grouping pane's Custom list — the one
+ *  order source for property AND sub-group buckets. */
 export function bucketOrder(
   group: Pick<PropertyGroup, 'order_mode' | 'order'>,
   def: PropertyDefinition | undefined,

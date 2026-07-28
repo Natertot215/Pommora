@@ -2,8 +2,8 @@
 // Band drop commits through the real TableView (state-level; geometry truth = the CDP pass):
 // structural reorder → view-level group_order (collapsed ids included, NO fs write) · property
 // reorder → group.order + manual · reparent → moveSet with APPENDED fs order + the slot in
-// group_order · the override rides liveView so a sibling persist can't clobber a fresh drag (F1)
-// and survives a source-identity swap (HIGH-3).
+// group_order · the override rides liveView so a sibling persist can't clobber a fresh drag
+// and survives a source-identity swap.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -233,7 +233,7 @@ describe('structural band reorder', () => {
     expect(headerTexts()[0]).toContain('B') // the override renders without waiting on the round-trip
   })
 
-  it('a collapse toggle right after the drag persists WITH the fresh band order (the F1 clobber regression)', async () => {
+  it('a collapse toggle right after the drag persists WITH the fresh band order (the clobber regression)', async () => {
     await mountTable(structuralSource())
     await dragBand(2, 2) // B above A
     await drop()
@@ -245,7 +245,7 @@ describe('structural band reorder', () => {
     expect(lastSavedView().group_order).toEqual(['sB', 'sA', 'sA1'])
   })
 
-  it('the override survives a source-identity swap (HIGH-3)', async () => {
+  it('the override survives a source-identity swap', async () => {
     const source = structuralSource()
     await mountTable(source)
     await dragBand(2, 2)
@@ -416,7 +416,7 @@ describe('sub-group bucket band drag', () => {
   })
 })
 
-describe('sub-group row drop (F-2 — the set × bucket matrix)', () => {
+describe('sub-group row drop (the set × bucket matrix)', () => {
   beforeEach(() => {
     ;(window as unknown as { nexus: { loadValues: () => Promise<unknown> } }).nexus.loadValues =
       async () => SUB_VALUES
@@ -497,7 +497,7 @@ describe('band reparent', () => {
     expect(lastSavedView().group_order).toEqual(['sA', 'sA1', 'sB'])
   })
 
-  it('a FAILED moveSet commits nothing — no phantom group_order, no optimistic reorder (F1)', async () => {
+  it('a FAILED moveSet commits nothing — no phantom group_order, no optimistic reorder', async () => {
     mutateSpy.mockImplementation(async () => false)
     await mountTable(structuralSource())
     await dragBand(2, 12) // nest B into A
@@ -507,7 +507,7 @@ describe('band reparent', () => {
     expect(headerTexts()[0]).toContain('A')
   })
 
-  it('a persist landing during the reparent round-trip is not clobbered by the deferred commit (F3)', async () => {
+  it('a persist landing during the reparent round-trip is not clobbered by the deferred commit', async () => {
     let resolveMove: (v: boolean) => void = () => {}
     mutateSpy.mockImplementation(
       () =>

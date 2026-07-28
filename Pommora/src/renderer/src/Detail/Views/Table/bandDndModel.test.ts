@@ -32,10 +32,9 @@ const ungrouped: ResolvedGroup = {
   isCollapsed: false,
 }
 
-// A[A1, A2], B[B1] + a loose tail — the plan's 2-level fixture.
+// A[A1, A2], B[B1] + a loose tail — a 2-level fixture.
 const tree = [sg('A', [sg('A1'), sg('A2')]), sg('B', [sg('B1')]), ungrouped]
 
-/** Stack measured rows (height 24) in the given display order. */
 const measure = (ids: string[]): MeasuredRow[] =>
   ids.map((id, i) => ({ id, top: i * 24, bottom: i * 24 + 24, mid: i * 24 + 12 }))
 
@@ -72,7 +71,7 @@ describe('bandSlot', () => {
   const bands = flattenBands(tree, new Set())
   const rows = measure(['A', 'A1', 'A2', 'B', 'B1'])
 
-  it('HIGH-1 regression: the slot above A from A1 implies parent ROOT — a parent change, not a reorder', () => {
+  it('regression: the slot above A from A1 implies parent ROOT — a parent change, not a reorder', () => {
     const slot = bandSlot(buildBandIndex(bands, rows), 2, 'A1', 120)
     expect(slot).toEqual({ beforeId: 'A', impliedParentId: null, nestInto: null, lineY: 0 })
   })
@@ -144,7 +143,7 @@ describe('bandSlot — non-adjacent headers (data rows between them)', () => {
     { id: 'B', top: 200, bottom: 220, mid: 210 },
   ]
 
-  it("F2 regression: hovering a group's data rows nests into THAT group — never the next header's slot", () => {
+  it("regression: hovering a group's data rows nests into THAT group — never the next header's slot", () => {
     expect(bandSlot(buildBandIndex(bands, gapRows), 60, 'B', 300)).toMatchObject({
       nestInto: 'A',
       impliedParentId: 'A',
@@ -217,7 +216,7 @@ describe('canNest', () => {
 describe('structuralOrderAfterDrop', () => {
   const fullIds = ['A', 'A1', 'A2', 'B', 'B1']
 
-  it('HIGH-2 regression: collapsed-sibling ids survive the merge — dragging B above A keeps A2/A1', () => {
+  it('regression: collapsed-sibling ids survive the merge — dragging B above A keeps A2/A1', () => {
     expect(structuralOrderAfterDrop(['A', 'A2', 'A1', 'B'], fullIds, 'B', 'A')).toEqual([
       'B',
       'A',
@@ -269,7 +268,7 @@ describe('propertyOrderAfterDrop', () => {
 })
 
 describe('reparentFsOrder', () => {
-  it('APPENDS the moved id regardless of the visual drop slot (C-4 order-leak guard)', () => {
+  it('APPENDS the moved id regardless of the visual drop slot (order-leak guard)', () => {
     expect(reparentFsOrder(['x', 'y'], 'm')).toEqual(['x', 'y', 'm'])
     expect(reparentFsOrder([], 'm')).toEqual(['m'])
     // Already present (same-parent safety): moves to the tail, never duplicates.

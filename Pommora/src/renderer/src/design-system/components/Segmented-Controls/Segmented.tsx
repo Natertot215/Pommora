@@ -4,30 +4,24 @@ import { Icon } from '../../symbols'
 import { vars, type ButtonSize, type IconSize } from '../../tokens'
 import * as s from './segmented.css'
 
-/** One segment of a segmented control. `active` is accepted but never drawn (no
- *  active-state fill, per spec) — it only surfaces as `aria-pressed` for toggles. */
+/** `active` never draws a fill (no active-state style, by design) — it only sets `aria-pressed`. */
 export type Segment = {
   icon: string
   label?: string
   onClick?: () => void
   disabled?: boolean
   active?: boolean
-  /** Tooltip + accessible name. */
   title?: string
 }
 
 type SegmentedProps = {
   segments: Segment[]
   size?: ButtonSize
-  /** Override the size bundle's horizontal segment padding (e.g. a tighter Back/Forward). */
   paddingX?: string
-  /** Override the glyph size only (geometry unchanged) — e.g. larger Back/Forward chevrons. */
   iconSize?: IconSize
   className?: string
-  /** Drop the glass pill, rendering bare buttons (the consumer supplies its own glass layer). */
   glass?: boolean
-  /** Collapse the label to zero width (it stays mounted and slides back on toggle) — the labeled
-   *  control's icon-only state. Only meaningful with a labeled segment. */
+  /** Stays mounted and slides back on toggle (a CSS width collapse), not unmounted. */
   labelCollapsed?: boolean
 }
 
@@ -42,8 +36,6 @@ function Segmented({
   glass = true,
 }: SegmentedProps & { withLabel: boolean }): React.JSX.Element {
   const g = vars.size.control[size]
-  // A lone segment is a standalone control, not a divided group — it takes the pill's full radius
-  // (no inner segment radius, no dividers) so a single toolbar button needs no "segmented" wrapper.
   const segmented = segments.length > 1
   const containerClass = className ? `${s.container} ${className}` : s.container
   const containerStyle = {
@@ -97,12 +89,12 @@ function Segmented({
   )
 }
 
-/** Icon-only segmented control (Figma SEGMENTED · SYMBOL). The toolbar uses this. */
+/** Figma SEGMENTED · SYMBOL. */
 export function SegmentedSymbol(props: SegmentedProps): React.JSX.Element {
   return <Segmented {...props} withLabel={false} />
 }
 
-/** Icon + label segmented control (Figma SEGMENTED · BUTTON), same core. */
+/** Figma SEGMENTED · BUTTON — same core. */
 export function SegmentedButton(props: SegmentedProps): React.JSX.Element {
   return <Segmented {...props} withLabel />
 }

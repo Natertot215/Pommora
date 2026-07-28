@@ -53,9 +53,7 @@ function SwatchDraggable({ id, name, color }: SwatchItem): React.JSX.Element {
   return <SwatchView name={name} color={color} dragRef={setNodeRef} style={style} handle={handle} />
 }
 
-// A color group. On desktop it's a reorderable gallery (grid reflow); on a compact
-// screen the swatches are static so the page scrolls (a draggable item sets
-// touch-action:none, which would trap touch scrolling on the tall grid).
+// Static on a compact screen so the page scrolls (drag sets touch-action:none).
 function SwatchGroup({
   label,
   group,
@@ -144,8 +142,6 @@ function AccentDemo(): React.JSX.Element {
   )
 }
 
-// The tint scale (opacity steps) applied across the spectrum — one row per color,
-// five steps primary → solid. Static reference (each is the color over the page).
 const TINT_ORDER = ['primary', 'secondary', 'tertiary', 'quaternary', 'solid'] as const
 
 function TintRow({ name, color }: { name: string; color: string }): React.JSX.Element {

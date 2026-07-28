@@ -10,12 +10,8 @@ import { useNexusIcon } from '../useNexusIcon'
 import { assetUrl } from '../../assetUrl'
 import * as s from './settingsPane.css'
 
-/**
- * The stripped settings pane for the homepage — an icon+title header with none of SettingsPane's
- * view-config leaves (Layout/Group/Filter/Sort are view concepts). The homepage identity is the
- * nexus itself: a photo-or-glyph icon opening the native icon menu, plus the board-lock footer.
- * Every other selection renders nothing; Spaces edit their identity from the Contexts toolbar pane.
- */
+/** Every other selection renders nothing here; Spaces edit their identity from the Contexts
+ *  toolbar pane. */
 export function SettingsScaffold(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)

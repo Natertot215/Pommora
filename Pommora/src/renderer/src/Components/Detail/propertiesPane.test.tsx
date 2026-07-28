@@ -284,7 +284,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
   it('⋮ Delete (main-confirmed) runs the global property.delete — and the footer Delete row is GONE (A-8/D-1)', async () => {
     propertyMenuSpy.mockResolvedValueOnce('property:destroy')
     await openEditor()
-    expect(host.textContent).not.toContain('Delete Property') // the old footer row died
+    expect(host.textContent).not.toContain('Delete Property') // no footer Delete row — only the editor's ⋮ menu offers it
     await act(async () => {
       host.querySelector<HTMLButtonElement>('[aria-label="Property Menu"]')!.click()
     })

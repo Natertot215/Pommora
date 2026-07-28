@@ -70,16 +70,11 @@ import './CardsView.css'
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `nexus-asset://nexus/.nexus/assets/${nexusId}/thumbnails/page-${pageId}.jpg?v=${v}`
 
-// ONE source for every card/set title's type.
 const cardTitleType = text.body.semibold
 
-/**
- * The Cards renderer — the container's Pages as a resizable card grid over the same pipeline the
- * table reads: the Set Cards row on top, then a flattened disclosure band per resolved group (cards
- * never indent — descendants roll up under their top-level band; ungrouped pages band under the
- * container's own heading). Each card renders its visible properties as interactive values and
- * reorders within its band by drag.
- */
+/** The Cards renderer — the container's Pages as a resizable card grid over the same pipeline the
+ *  table reads. Cards never indent — descendants roll up under their top-level band; ungrouped
+ *  pages band under the container's own heading. */
 export function CardsView({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const select = useSession((s) => s.select)
@@ -88,8 +83,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
   const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
 
-  // Lazy value load on container open — the same batch IPC the table rides; `cancelled` guards a
-  // fast container swap.
+  // Lazy value load on container open — the same batch IPC the table rides.
   useEffect(() => {
     let cancelled = false
     setValueOverride(null)
@@ -122,8 +116,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
     void mutate({ op: 'setProperty', path: row.path, propertyId, value })
   }
-  // The commit router (the table's cell-write split): a context column writes its full
-  // Space-id list through the setContext op; everything else is a property write.
   const commitValue = (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null): void => {
     if (column.kind === 'context') {
       const ids = value?.kind === 'context' ? value.value : []
@@ -252,14 +244,11 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // drops that leading crumb and starts at the next set down — the band already shows it.
   // Property/flat grouping keeps the full chain (the band is a bucket, not a location).
   const structural = useMemo(() => groupsStructurally(view.group, schema), [view.group, schema])
-  // Group By: None → a single headerless, flattened band.
   const flatMode = view.group?.kind === 'flat'
 
-  // Band collapse — seeded from the view, persisted through the shared writer (the table's model).
   const [collapsed, setCollapsed] = useState<Set<string>>(
     () => new Set(view.collapsed_groups ?? []),
   )
-  // Re-seed only on a view switch.
   useEffect(() => {
     setCollapsed(new Set(view.collapsed_groups ?? []))
     // Two cards views on one container share this instance (keyed by source.id), so the [source.path]
@@ -353,10 +342,9 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     }),
     [],
   )
-  // Per-card location trail, resolved ONCE per grouping/location change. Under structural grouping the
-  // band header IS the top-level set, so the trail drops that leading crumb; property/flat keeps the full
-  // chain. Built as a map (not called inline) — chain.slice allocates, and a fresh array per render would
-  // defeat each card's memo.
+  // Per-card location trail, resolved ONCE per grouping/location change — built as a map (not
+  // called inline), since chain.slice allocates and a fresh array per render would defeat each
+  // card's memo.
   const locByRow = useMemo(() => {
     const m = new Map<string, PathCrumb[]>()
     if (hideLocation) return m
@@ -406,8 +394,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     setManualOverride(full)
     void window.nexus.viewOrders.set(view.id, full)
   }
-  // One card drop: same band → reorder; a different band → reassign the grouped property to that
-  // band's value (the same optimistic setProperty the table's reassignRow makes).
   const onCardDrop = (activeId: string, toZone: string, toIndex: number): void => {
     const from = groups.find((g) => flattenGroups([g]).some((r) => r.id === activeId))?.key
     if (from == null) return
@@ -466,14 +452,10 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
           </SortableZone>
         </div>
       )}
-      {/* One DragGroup spans every band so a card can be dragged ACROSS bands: same band reorders,
-          a different band reassigns the grouped property (onCardDrop). The lifted card floats as a
-          portal overlay (the shared drag-ghost look) while the columns reflow to show its landing. */}
+      {/* One DragGroup spans every band so a card can be dragged ACROSS bands. The lifted card floats
+          as a portal overlay while the columns reflow to show its landing. */}
       <DragGroup
         onCommit={onCardDrop}
-        // Cross-band is meaningful when a foreign band can RECEIVE the card — a reassignable property
-        // grouping (rewrite the value) or location grouping (move the folder). Otherwise pin drags to
-        // their own band (within-band reorder only), so a card never flies to a band that can't take it.
         crossZone={canReassign || canRelocate}
         // The lifted card IS the whole card (the nav-gallery drag look), not a partial glyph — the same
         // CardFace the live card renders, at is-dragging opacity, floating under the pointer while its
@@ -602,7 +584,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
 }
 
 // The Move To ▸ tree: every Collection and its nested Sets as relocation targets (movePage's
-// newParentPath is a container path). A childless container is a leaf; the walk preserves tree order.
+// newParentPath is a container path).
 function buildMoveTargets(collections: CollectionNode[]): MoveTarget[] {
   const walkSets = (sets: SetNode[] | undefined): MoveTarget[] =>
     (sets ?? []).map((set) => ({ label: set.title, path: set.path, children: walkSets(set.sets) }))
@@ -621,15 +603,11 @@ function flattenGroups(groups: ResolvedGroup[]): ViewRow[] {
   return out
 }
 
-/** Wires a Set Card into the set-cards-row's SortableZone (reorder routes through moveSet). */
 function DraggableSetCard({ set }: { set: SetNode }): React.JSX.Element {
   const drag = useDragItem(set.id)
   return <SetCard set={set} drag={drag} />
 }
 
-/** A Set Card: banner-only image (placeholder when unset) + icon + title; clicking
- *  navigates to the Set (guarded so a reorder-drop doesn't navigate). Rides the page card's chassis
- *  at the larger set-row size. */
 function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.Element {
   const select = useSession((s) => s.select)
   const mutate = useSession((s) => s.mutate)
@@ -700,18 +678,14 @@ interface PageCardProps {
   onOpenValuePicker: (req: ValuePickerRequest) => void
   onOpenAddPicker: (req: AddPickerRequest) => void
   onRefreshValues: () => void
-  /** Whether this card arms a drag (grid-wide: within-band reorder or cross-band reassign is possible). */
   draggable: boolean
   /** False when the embed zoom shrinks chips too far — drops multi-select's inline ×. */
   allowInlineRemove: boolean
 }
 
-/**
- * The card's property body: the visible, non-blank columns (`shown`), each an interactive
- * CardValue (the per-kind click matrix). Standard = labeled rows; Compact = the label-less
- * clamped value flow in property order. Only rendered when there ARE properties (no empty reserve
- * gap); an empty card's add-input is the breadcrumb. Clicking the flow's empty space adds another.
- */
+/** The card's property body: the visible, non-blank columns (`shown`), each an interactive
+ *  CardValue. Only rendered when there ARE properties (no empty reserve gap) — an empty card's
+ *  add-input is the breadcrumb instead. Clicking the flow's empty space adds another. */
 function CardProperties({
   row,
   view,
@@ -787,12 +761,9 @@ function CardProperties({
 // A no-op for the drag-ghost's inert handlers (the overlay is pointer-events:none, so nothing fires).
 const NOOP = (): void => {}
 
-/**
- * The card's inner face — the image band + the title/property/breadcrumb column, everything inside
- * `.page-card-body`. ONE source shared by the live PageCard and the drag-ghost overlay, so the lifted
- * card is the whole faithful card (banner + properties + crumbs), not a hand-built partial. Memoized
- * so the per-move overlay re-render is a no-op.
- */
+/** The card's inner face — the image band + the title/property/breadcrumb column. ONE source
+ *  shared by the live PageCard and the drag-ghost overlay, so the lifted card is the whole faithful
+ *  card, not a hand-built partial. Memoized so the per-move overlay re-render is a no-op. */
 const CardFace = memo(function CardFace({
   row,
   view,
@@ -833,9 +804,6 @@ const CardFace = memo(function CardFace({
   onHide: (colId: string) => void
   onOpenValuePicker: (req: ValuePickerRequest) => void
 }): React.JSX.Element {
-  // Standard keeps a blank value as a labeled, fillable row (add = make it visible); Compact's
-  // label-less flow can't render an empty value, so there it drops blanks — EXCEPT a checkbox,
-  // which renders its own (unchecked) box and is the on-card toggle, so it stays.
   const shown = useMemo(
     () => (ctx ? shownColumnsFor(row, columns, ctx, isCompact(view)) : []),
     [ctx, columns, row, view],
@@ -945,8 +913,8 @@ const PageCard = memo(function PageCard({
   // A broken image latches `failed` — a cover change must retry the NEW src, not keep the placeholder.
   const lastSrc = useRef<string | undefined>(undefined)
 
-  // The add-picker opens at the GRID-LEVEL host (CardPickerHost), anchored to this card's text area —
-  // the property zone's empty space AND the location row both open it.
+  // This card's text-area ref anchors the add-picker for both the property zone's empty space
+  // and the location row.
   const textRef = useRef<HTMLDivElement>(null)
   const openAdd = (e: React.MouseEvent): void => {
     e.stopPropagation()
@@ -954,8 +922,7 @@ const PageCard = memo(function PageCard({
     if (!drag?.isDragging && addable.length > 0 && textRef.current)
       onOpenAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: null })
   }
-  // The add menu (addEntriesFor): everything NOT currently shown — the native menu lists it, and the
-  // grid-level host recomputes the same entries when its picker opens for this row.
+  // The grid-level host recomputes the same addEntriesFor when its picker opens for this row.
   const addable = useMemo<AddEntry[]>(
     () => (ctx && labels ? addEntriesFor(row, view, ctx, columns, tree) : []),
     [ctx, view, row, labels, columns, tree],
@@ -963,9 +930,9 @@ const PageCard = memo(function PageCard({
   const mutate = useSession((s) => s.mutate)
   const [renameOpen, setRenameOpen] = useState(false)
   const [iconOpen, setIconOpen] = useState(false)
-  // The card's native right-click menu: page meta (Open · Rename · Change Icon · Delete) + an
-  // Add Property ▸ submenu — the add path for cards with no in-body add surface. A value right-click
-  // is caught by CardValue's own menu (it stops propagation), so this handles the empty/title/thumb.
+  // The card's native right-click menu handles page meta + an Add Property ▸ submenu — the add
+  // path for cards with no in-body add surface. A value right-click is caught by CardValue's own
+  // menu (it stops propagation), so this handles the empty/title/thumb.
   const onCardContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
@@ -991,8 +958,6 @@ const PageCard = memo(function PageCard({
     else if (action.startsWith('add:')) {
       const entry = addable.find((e) => e.id === action.slice(4))
       if (!entry) return
-      // A reveal-only entry (a Context column, hidden-filled, checkbox) just unhides; a pane entry opens
-      // the value pane to set a value.
       if (entry.revealOnly) onReveal(entry.id)
       else if (textRef.current)
         onOpenAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: entry })

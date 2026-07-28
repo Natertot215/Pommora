@@ -5,11 +5,6 @@ import { useActiveView } from './useActiveView'
 import { resolveContainerSchema, TableView } from './Table/TableView'
 import { CardsView } from './Cards/CardsView'
 
-/**
- * The renderer seam — the ONE `view.type` switch, consumed by both TableView mounts (the
- * container detail pane and the SurfacePM view embed). A new view type adds its branch here
- * and nowhere else.
- */
 export function ViewRenderer({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])

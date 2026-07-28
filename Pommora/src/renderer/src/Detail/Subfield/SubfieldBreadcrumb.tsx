@@ -1,8 +1,6 @@
 import { Fragment } from 'react'
 import type { Crumb } from './crumbs'
 
-/** Finder-style `›`-joined breadcrumb. Navigable segments are buttons; the current segment is plain;
- *  the ghost (last-visited page) segment is dimmed but still clickable to jump forward. */
 export function SubfieldBreadcrumb({ crumbs }: { crumbs: Crumb[] }): React.JSX.Element {
   return (
     <div className="subfield-crumbs">

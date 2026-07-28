@@ -1,11 +1,4 @@
-// Pure model behind the visibility list (the Visibility pane + the table view's Layout leaf) — no
-// React, no DOM. One flat list, two zones: the shown rows in the view's column order (Title, the
-// Context columns, and the properties all together), then the hidden rows ghosted after them, NO
-// heading between. Title rides the list as a draggable anchor but never hides (so a column can be
-// dragged before it — the point of listing it); the Context columns behave like any property (drag to reorder,
-// eye to hide). Cross-zone drags carry the drag language: INTO the shown zone lands at a slot (a drop
-// line — the position writes the view order), into the hidden zone just hides (an area highlight, no
-// line — the hidden order is derived, never authored).
+// Pure model behind the visibility list — no React, no DOM.
 
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import {

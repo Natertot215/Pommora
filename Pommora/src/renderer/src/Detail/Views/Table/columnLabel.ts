@@ -1,8 +1,3 @@
-// Renderer-side resolution of a column id → its human header label. User properties
-// resolve through the stored schema; context columns through the registry (the contextIdentity
-// seam); built-in reserved columns carry fixed labels. An unknown id (a stale prop_* reference)
-// falls back to the id itself, never throwing — a single bad column never breaks the header row.
-
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
 import type { ContextIdentity } from '../pipeline/contextIdentity'
 
@@ -13,10 +8,7 @@ const RESERVED_LABEL: Record<string, string> = {
   [RESERVED_PROPERTY_ID.modifiedAt]: 'Modified',
 }
 
-/** A column id → its header label: any registry Context via its title, built-ins via fixed
- *  labels, user props via the schema def's `name`, an unknown id via itself (never throws).
- *
- *  `contexts` is REQUIRED and deliberately un-defaulted. Context titles are registry data, so a
+/** `contexts` is REQUIRED and deliberately un-defaulted. Context titles are registry data, so a
  *  caller that omits them silently falls through to the raw id — a header reading as a ULID,
  *  which looks like data corruption rather than a missing argument. */
 export function columnLabel(

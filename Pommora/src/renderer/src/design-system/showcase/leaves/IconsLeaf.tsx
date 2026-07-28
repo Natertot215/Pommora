@@ -13,8 +13,6 @@ function IconCell({ name }: { name: IconName }): React.JSX.Element {
   )
 }
 
-/** Foundations · Icons — the registry, auto-iterated; drag to reorder (compact stays static
- *  so the page scrolls). */
 export function IconsLeaf(): React.JSX.Element {
   const [names, setNames] = useState<IconName[]>(() => Object.keys(icons) as IconName[])
   const compact = useIsCompact()

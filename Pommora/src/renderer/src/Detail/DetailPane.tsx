@@ -10,10 +10,6 @@ import { PageView } from './PageView'
 import { NavView } from '../Tabs/NavView'
 import { Subfield } from './Subfield/Subfield'
 
-/**
- * Routes the current selection to its view. Collection + (depth-1) Set share ContainerView (same
- * view principles); Homepage and Context have their own; Page is a placeholder. (Swift: SidebarDetailView.)
- */
 function DetailView(): React.JSX.Element {
   const selection = useSession((s) => s.selection)
   const tree = useSession((s) => s.tree)
@@ -65,11 +61,6 @@ function DetailView(): React.JSX.Element {
   }
 }
 
-/**
- * The detail pane: the routed view above, the Subfield (footer) pinned below. The Subfield collapses
- * app-wide via a hover chevron — `.subfield-reveal` slides it up/down and reclaims its space.
- */
-// Applies on a directional navigation — tab switch, Back, or Forward.
 const VIEW_SLIDE_PX = 14
 
 // The preview's engulf target: the detail pane's live rect, read once at promote time —
@@ -88,10 +79,9 @@ export function DetailPane(): React.JSX.Element {
   const expanded = useSession((s) => s.subfieldExpanded)
   const setExpanded = useSession((s) => s.setSubfieldExpanded)
 
-  // Directional view slide: when a stamped navigation's swap COMMITS (selection changes with an
-  // unconsumed stamp — under the pause that's one commit, possibly later than the stamp), the incoming
-  // view slides in from the step's direction. WAAPI on the wrapper: nothing remounts, replays per seq,
-  // and a plain sidebar select (no stamp) swaps without motion.
+  // Directional view slide: when a stamped navigation's swap commits, the incoming view slides in
+  // via WAAPI on the wrapper (no remount) — `seq` guards against replay, and a plain sidebar select
+  // (no stamp) swaps without motion.
   const viewRef = useRef<HTMLDivElement>(null)
   const prevSelection = useRef(selection)
   const playedSeq = useRef(0)
@@ -113,9 +103,6 @@ export function DetailPane(): React.JSX.Element {
   // here rather than with a giant invisible button so the reveal zone never blocks clicks beneath it.
   const [near, setNear] = useState(false)
 
-  // The Subfield shows where it has something to display: Collections, Sets, Pages, and NavView (the
-  // `none` empty state, but only with a nexus open — bare `none` also renders the no-nexus prompt, and
-  // NavView carries the List/Gallery toggle). Contexts + Homepage stay omitted until they have content.
   const showSubfield =
     selectionKind === 'collection' ||
     selectionKind === 'set' ||

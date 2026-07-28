@@ -82,7 +82,7 @@ export function PageView(): React.JSX.Element {
             onEditIcon={() => setIconPickerOpen(true)}
             onRename={(newName) => submitRename(pageDetail.path, 'page', newName)}
             onChange={(body) => {
-              pushLiveBody(pageDetail.path, body) // debounced live buffer → Subfield stats
+              pushLiveBody(pageDetail.path, body)
               schedulePageSave(pageDetail.path, body)
             }}
             connections={connections}

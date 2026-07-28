@@ -23,12 +23,8 @@ import './GroupBand.css'
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { twisty, twistyOpen } from '@renderer/design-system/components/menu/menu.css'
 
-/** The plain-text label + the rendered head visual for a group band — the single home for the five
- *  glyph cases the table and cards views both show. Structural Set → its icon + name (swapping to the
- *  shared inline rename input while the store renames its path, when `setPath` is given); status/select
- *  → a Chip (status a pill, select a squared label); checkbox → the box glyph + On/Off; datetime → the
- *  property icon + bucket label; ungrouped → the container's own icon + title; otherwise the raw value.
- *  Chip colour/shape resolve from the schema here, so `ResolvedGroup` stays colourless. */
+/** The single home for group-band glyph resolution, shared by the table and cards views. Chip
+ *  colour/shape resolve from the schema here, so `ResolvedGroup` stays colourless. */
 export function resolveBandHead(
   group: ResolvedGroup,
   view: SavedView,
@@ -142,8 +138,6 @@ export function resolveBandHead(
   }
 }
 
-/** The band-drag wiring a table group passes down (from `useBandDrag`): `ref` marks the measured head,
- *  `handle` arms the glyph as the drag surface, and the two flags drive the pick-up mute / nest tint. */
 export interface BandDragHandle {
   ref: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: React.PointerEvent) => void }
@@ -151,13 +145,8 @@ export interface BandDragHandle {
   isNestTarget: boolean
 }
 
-/** The shared group-band chrome: the disclosure twisty, the resolved glyph (also the drag + click
- *  surface), an optional hover "+", and the band body inside a `Reveal`. Presentational — every
- *  view-specific behaviour arrives as props: the table injects `dragHandle`/`onOpen`/`onContextMenu`
- *  and its rows as children; cards omits them and passes its card grid. `headless` drops the head and
- *  forces the body open (cards' Group By: None band). The glyph's single-click toggles the disclosure,
- *  double-click opens an openable Set; the twisty + "+" isolate on pointerdown so they never arm a band
- *  gesture, and a double-click's two clicks net out on the disclosure. */
+/** The twisty and "+" isolate their pointerdown so they never arm a band drag; a double-click's
+ *  two leading clicks also net out on the disclosure toggle (harmless, not a bug). */
 export function GroupBand({
   glyph,
   collapsed,

@@ -1,6 +1,6 @@
-// Swift-parity value formatters for the per-view column styles. Pure: no fs, no React.
-// Pinned to en-US — the ordinal-day style ("March 1st") is English-only, and pinning keeps
-// output deterministic across machines; currency follows Swift's locale formatter as USD.
+// Value formatters for the per-view column styles. Pure: no fs, no React. Pinned to en-US — the
+// ordinal-day style ("March 1st") is English-only, and pinning keeps output deterministic across
+// machines.
 
 import type { DateFormat, TimeFormat, WeekdayFormat } from '@shared/columnStyles'
 import type { DateGranularity, DateSeparator } from '@shared/views'
@@ -182,7 +182,6 @@ export function condensedDate(iso: string, dateFormat: DateFormat, withYear: boo
   }
 }
 
-/** A file chip's label per the column's look — the basename, or the full stored path. */
 export function fileLabel(ref: { path: string }, look: 'filename' | 'path'): string {
   return look === 'path' ? ref.path : (ref.path.split('/').pop() ?? ref.path)
 }
@@ -213,8 +212,6 @@ function formatScalar(n: number, cfg: NumberConfig | undefined): string {
   return cfg?.number_family === 'percent' ? `${num}%` : num
 }
 
-/** Render a number per its def-level config. Fraction (Number/Currency) wraps the scalar as
- *  "N out of Value"; every other case is the bare scalar. */
 export function formatNumber(n: number, cfg: NumberConfig | undefined): string {
   if (
     cfg?.number_fraction &&

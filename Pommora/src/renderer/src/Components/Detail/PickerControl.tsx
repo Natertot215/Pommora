@@ -12,10 +12,8 @@ export type PickerChoice<T extends string> = {
 export const labelOf = <T extends string>(opts: PickerChoice<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
 
-/** A bare value + double-chevron trigger — the shared control for the property editors' Format / Style
- *  rows. Two options toggle in place (design rule: a dual-option is a toggleable double-chevron, never a
- *  dropdown); three+ pop a centered PickerMenu of radio options. The caller owns the surrounding row
- *  (label, glyph); this owns only the trigger + its menu. */
+/** Two options toggle in place — a dual-option control is always a toggleable double-chevron, never
+ *  a dropdown; three+ pop a centered PickerMenu of radio options. */
 export function PickerControl<T extends string>({
   ariaLabel,
   value,

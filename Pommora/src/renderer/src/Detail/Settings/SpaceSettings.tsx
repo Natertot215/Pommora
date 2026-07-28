@@ -12,12 +12,6 @@ import { IconPicker } from '../../Components/IconPicker'
 import { ColorPicker } from '../../Components/Detail/ColorPicker'
 import { InlineEditHeader } from '../../Components/Detail/InlineEditHeader'
 
-/**
- * The Space settings pane for the toolbar dropdown — the (Icon)(Title) heading over the
- * BottomRow footer: the board lock leading, the actions ellipsis trailing (its menu is a
- * later arrival). Right-clicking the heading offers Change Color; the title field's fill
- * IS the selected color (the input var re-tints for this subtree).
- */
 export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
@@ -54,6 +48,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
               </button>
             }
             trailing={
+              // Stub — its menu is a later arrival.
               <button type="button" aria-label="More actions" className={footerLockAction} disabled>
                 <Icon name="ellipsis" size={13} />
               </button>

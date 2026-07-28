@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { UNGROUPED } from '@shared/types'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from './reassign'
 
-describe('groupKeyToValue — destination group key → PropertyValue (D-4)', () => {
+describe('groupKeyToValue — destination group key → PropertyValue', () => {
   it('status: the key is the status value', () => {
     expect(groupKeyToValue('done', 'status')).toEqual({ kind: 'status', value: 'done' })
   })

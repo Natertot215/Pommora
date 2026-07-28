@@ -6,7 +6,7 @@ import type { PaneRow } from './paneDndModel'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenPaneModel'
 
 const { title, modifiedAt } = RESERVED_PROPERTY_ID
-const [areas, projects] = ['ctx_areas', 'ctx_projects'] // Context column ids
+const [areas, projects] = ['ctx_areas', 'ctx_projects']
 
 const def = (id: string): PropertyDefinition => ({ id, name: id, type: 'select' })
 

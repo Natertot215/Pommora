@@ -478,7 +478,7 @@ describe('menu-entered editing', () => {
   })
 })
 
-describe('open actions + row-click narrowing (A-7)', () => {
+describe('open actions + row-click narrowing', () => {
   it('title cell click navigates; row background click does not', async () => {
     await mountTable(sourceWith())
     const cells = host.querySelectorAll<HTMLElement>('.data-cell')

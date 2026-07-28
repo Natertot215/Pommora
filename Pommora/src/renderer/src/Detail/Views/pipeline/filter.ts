@@ -95,7 +95,6 @@ export function applyFilter(
   return rows.filter((row) => matchesGroup(row, filter, schema, locate, contextIds) !== false)
 }
 
-/** A child is a nested group iff it carries `rules`; otherwise it's a leaf FilterRule. */
 function isGroup(node: FilterRule | FilterGroup): node is FilterGroup {
   return 'rules' in node
 }
@@ -257,7 +256,7 @@ function textValue(v: PropertyValue): string | null {
   }
 }
 
-// Mirrors Swift FilterEvaluator; an unmatched op is a no-op pass.
+// An unmatched op is a no-op pass.
 
 function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
   const n = v.kind === 'number' ? v.value : null
@@ -437,7 +436,7 @@ function evaluateList(ids: string[], op: Op, expected: Expected, values?: string
   }
 }
 
-/** File: presence only (is/contains/etc. are no-op passes — Swift evaluatePresence). */
+/** File: presence only (is/contains/etc. are no-op passes). */
 function evaluatePresence(v: PropertyValue, op: Op): boolean {
   const empty = v.kind === 'context' || v.kind === 'file' ? v.value.length === 0 : v.kind === 'null'
   switch (op) {

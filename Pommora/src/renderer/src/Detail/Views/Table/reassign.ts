@@ -1,6 +1,3 @@
-// Cross-group row drag → property reassignment. When a row is dropped into a different group,
-// its grouped property is written to that group's value. Pure: no fs, no React — unit-tested.
-
 import { UNGROUPED } from '@shared/types'
 import type { PropertyValue } from '@shared/propertyValue'
 

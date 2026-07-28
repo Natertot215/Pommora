@@ -5,20 +5,18 @@ import { Icon } from '@renderer/design-system/symbols'
 import { tint } from '@renderer/design-system/tokens/tint'
 import { solidColorCss } from './solidColor'
 
-/** The inline style for a checkbox/group-on box at a given checked state + property colour. An empty
- *  box stays neutral grey (the caller adds `chipColor.default`); a checked box tints its colour — a set
- *  solid, else the configured accent via `var(--accent)` so it matches the switch look and resolves for
- *  a palette OR system accent. The check glyph always reads label-control. `verticalAlign: middle`
- *  pins the box's line box the SAME whether or not it holds the check glyph, so toggling a cell never
- *  changes the row height (an empty inline-flex box otherwise sits on the baseline and adds descender). */
+/** A checked box tints its colour — a set solid, else the system accent, so it matches the switch
+ *  look; the check glyph itself always stays label-control regardless. `verticalAlign: middle` pins
+ *  the box's line box the SAME whether or not it holds the check glyph, so toggling a cell never
+ *  changes the row height (an empty inline-flex box otherwise sits on the baseline and adds
+ *  descender). */
 export function checkboxBoxStyle(checked: boolean, color: string | undefined): CSSProperties {
   const base: CSSProperties = { verticalAlign: 'middle', color: 'var(--label-control)' }
   return checked ? { ...tint(color ? solidColorCss(color) : 'var(--accent)'), ...base } : base
 }
 
-/** The checkbox box itself — the box chip, its checked tint, and the check glyph as one component.
- *  Every surface that draws a checkbox value (cells, group bands, the grouping and filter panes)
- *  renders this, so the look can't drift between them. `className` carries a caller's extra hook. */
+/** The checkbox box itself — the box chip, its checked tint, and the check glyph as one component,
+ *  so the look can't drift between every surface that draws a checkbox value. */
 export function CheckboxGlyph({
   checked,
   color,
