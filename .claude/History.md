@@ -4,6 +4,18 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 ### Completion Timeline (Descending)
 
+#### Operational State Leaves the Filesystem (2026-07-28)
+
+The database had never run. `better-sqlite3` is a native module compiled against Node's ABI while Electron requires its own, so the open failed on every launch, was caught by the degradation path that exists for exactly that reason, and returned null — silently, since Vitest runs under plain Node and every test passed. No nexus had ever contained the index file. `node:sqlite` ships inside Electron's own runtime, which removes the native dependency, the rebuild scripts, and the entire class of failure.
+
+**Locked — a store earns its shape from what it holds, not from where its neighbours live.** Nine `.nexus/` files held per-machine chrome: folded headings, the active view per container, manual order under a sort, heading columns, a fetched-title cache, the tab set, the preview sets, the recents stream, and block layout. Each defaulted to JSON because everything beside it was JSON, and each paid a whole-file read-merge-write behind a temp file, an fsync and a rename to change one key. The compensation that cost — a coalescing engine, a drain contract, per-file locks, and a quit gate that could defer the app's exit — was larger than the state it protected. As rows in `nexus.db` a change is one statement, so all of it retired at once.
+
+**Locked — guard code divides by what it defends against.** Validating a byte pattern exists because a file is hand-editable, and typed rows delete it. Reconciling a saved id against an entity that is no longer on disk exists because files are canonical, and no storage change touches it — foreign keys cannot reach the filesystem. The two read identically at the call site and an adversarial pass proved the distinction has teeth: `reconcileTabs` repairs references and returns a tab whose targets all resolve completely untouched, so the shape and lockstep repairs deleted alongside the JSON were not redundant at all. They came back.
+
+**Locked — favorites and pins stay files.** Deliberate, rarely written, and the one part of Navigation worth following a user across machines; recents, tabs and previews are ambient state whose cross-device merge has no correct answer. Block layout went the other way from `blocks[]`, which names real content — the split retired a repair pass that only ever caught hand-edits, and a lost update between a banner write and a layout drag.
+
+The content mirror went with it: nine entity tables and a builder that re-read the whole nexus on every mutation, with no query consumer anywhere. Linked-From, backlinks, ContextView and full-text search still need a content index, and it gets written alongside the query layer that reads it rather than years ahead of it. → `Features/Architecture.md`.
+
 #### The Cleanup Pass (2026-07-27)
 
 The merge's aftermath, audited rather than built on: one agent per feature doc, every claim opened at the code before it survived. It returned a dozen defects, most live before the session and none reported — filtering that looked inert, comparisons that passed valueless rows, a move that didn't count as modifying a page, a rename that rewrote `[[links]]` inside code samples. The behavioural outcomes live in the feature docs; two principles came out of it.
