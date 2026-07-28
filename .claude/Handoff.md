@@ -19,7 +19,7 @@
 
 **What Happened Along the Way — the migration.** Scoping the SQL question found that the database had never run: `better-sqlite3` is compiled against Node's ABI, Electron needs its own, and `openDb`'s degradation path caught the failure on every launch. No nexus had ever contained the file. Vitest runs under plain Node, so every SQLite test passed against a database the product never had. `node:sqlite` removed the dependency and the failure class together.
 
-Nine `.nexus/` files then moved into it, and the machinery compensating for whole-file writes — a coalescing engine, a drain contract, a quit gate — retired with them. An adversarial pass proved one of my stated premises false: `reconcileTabs` repairs entity references and returns an intact tab untouched, so the read-time normalization deleted with the JSON was load-bearing and came back. Both live nexuses were migrated by hand, so no migration code shipped.
+Eight `.nexus/` files then moved into it, along with the block document buried inside two more, and the machinery compensating for whole-file writes — a coalescing engine, a drain contract, a quit gate — retired with them. An adversarial pass proved one of my stated premises false: `reconcileTabs` repairs entity references and returns an intact tab untouched, so the read-time normalization deleted with the JSON was load-bearing and came back. Both live nexuses were migrated by hand, so no migration code shipped.
 
 **What It Ended With:** 84 commits, every one gated green — closing state **typecheck 0 · lint 0 · 1871 tests / 176 files · build clean**. Verified end-to-end rather than asserted: the built app was launched against copies of both real nexuses and every migrated surface was read back through real IPC.
 

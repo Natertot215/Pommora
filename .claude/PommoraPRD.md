@@ -72,9 +72,9 @@ Operational entities tag Spaces through quoted bracketed Context keys — `"[Pro
 
 #### Stack
 
-Pommora is an Electron desktop app — a React + TypeScript renderer over a Node main process that owns the filesystem, bridged by a narrow typed IPC. State lives in a Zustand store fed by one eager nexus walk; tables render over TanStack. The Pages editor is **MarkdownPM** — a CodeMirror 6 build where Markdown markers show as raw source on the caret line and render styled when the caret leaves.
+Pommora is an Electron desktop app — a React + TypeScript renderer over a Node main process that owns the filesystem, bridged by a narrow typed IPC. State lives in a Zustand store fed by one eager nexus walk; tables render over a shared CSS grid. The Pages editor is **MarkdownPM** — a CodeMirror 6 build where Markdown markers show as raw source on the caret line and render styled when the caret leaves.
 
-**No dependency lock-in.** Every library sits behind a thin seam — the editor, YAML, IDs, the SQLite accelerator, the glass material, the drag engine — so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
+**No dependency lock-in.** Every library sits behind a thin seam — the editor, YAML, IDs, SQLite, the glass material, the drag engine — so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 
 The main process is the sole filesystem owner; the renderer never touches Node. One shared types module is the cross-process contract both sides import, and IPC never throws across the boundary — handlers return a result envelope. Full architecture → `Features/Architecture.md`.
 
@@ -102,7 +102,7 @@ Full on-disk spec → `Features/Architecture.md`.
 
 A Page is a Markdown document — one continuous stream, not a stack of blocks. The filename is the title (there is no separate title field), and the parent Page Collection is implied by location. Pages conform to their Collection's schema; values live in YAML frontmatter, keyed by stable property ID.
 
-Pages support everything in standard Markdown — paragraphs, headings, bulleted / numbered / task lists, fenced and inline code, images, GFM tables, blockquotes, and horizontal rules — all of which round-trip natively to any external tool. **Headings fold**, with the fold state held in a per-machine file rather than the portable `.md`. On top of that, Pages support two Pommora rendering directives, each degrading to plain Markdown for external tools:
+Pages support everything in standard Markdown — paragraphs, headings, bulleted / numbered / task lists, fenced and inline code, images, GFM tables, blockquotes, and horizontal rules — all of which round-trip natively to any external tool. **Headings fold**, with the fold state held per-machine in the database rather than the portable `.md`. On top of that, Pages support two Pommora rendering directives, each degrading to plain Markdown for external tools:
 
 - **Callouts** — content rendered as an outlined box, distinct from a blockquote's filled left-bar emphasis.
 - **Columns** — a section rendered in evenly-divided horizontal columns; visual layout only. Specified, not built.
@@ -164,7 +164,7 @@ Every entity reorders by drag-and-drop, and Pages reparent across the tree. Crea
 
 #### App Shell + Property Surfaces
 
-A three-pane shell: sidebar / main / inspector, both side panes drag-resizable with persisted widths. The inspector is reserved for the **Claude chat** (a frontend to a local CLI, not an API integration); its own design pass is pending. Properties do *not* live there — they live with the content, in a panel attached to the Page. Inspector → `Features/Inspector.md`.
+A three-pane shell: sidebar / main / inspector, both side panes drag-resizable with persisted widths. The inspector is reserved for the **Claude chat** (a frontend to a local CLI, not an API integration); its own design pass is pending. Properties do *not* live there — they live with the content, in a panel attached to the Page. Inspector → `Features/Subfield.md`.
 
 Every entity opens under a consistent header. Containers can set an optional **banner** image that bleeds edge-to-edge under the side panes; when set, the title overlays its bottom-leading corner, and the banner and title lock in place while the body scrolls.
 

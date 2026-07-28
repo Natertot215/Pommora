@@ -10,7 +10,7 @@ Capture is title-and-properties first, not a body editor — prose continues in 
 
 #### II. Single-Owner Principle
 
-Every Pommora write goes through the main process's atomic-write path, alongside the index that process maintains. Quick Capture is therefore a surface inside that process, not a second binary: it reuses the live data layer and the open index directly, with no second writer to coordinate. Any external source acts as a **courier** — it gathers a payload and hands it to the running app, which performs the write. The courier never writes to the Nexus itself.
+Every Pommora write goes through the main process's atomic-write path. Quick Capture is therefore a surface inside that process, not a second binary: it reuses the live data layer directly, with no second writer to coordinate. Any external source acts as a **courier** — it gathers a payload and hands it to the running app, which performs the write. The courier never writes to the Nexus itself.
 
 #### II. Capture Flow
 

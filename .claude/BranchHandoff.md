@@ -26,7 +26,7 @@ The branch set out to replace the fixed three-tier context model with a **user-d
 
 ### Spaces — Surfaces
 
-A Space is the second **BlockHost**: `_space.json` carries its block document, tiles live in its folder, and the host resolves through the write-side world load. Space doc writes ride `rmwJsonStrict`. The link-graph walk enumerates the homepage plus every Space.
+A Space is the second **BlockHost**: it owns a block document, tiles live in its folder, and the host resolves through the write-side world load. The link-graph walk enumerates the homepage plus every Space.
 
 `SpaceView` renders a Space's banner scaffold over its block surface, keyed per Space so a session never carries across a host swap, and the doc load keys on **host identity, not kind**. Board locks generalised to host-keyed: the homepage flag plus a per-Space lock map seeded from each doc load.
 
