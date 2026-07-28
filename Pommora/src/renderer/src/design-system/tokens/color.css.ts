@@ -55,7 +55,7 @@ const derived = createGlobalTheme(':root', {
     background: {
       window: WINDOW_BG,
     },
-    // Content surfaces layered on the window (Figma "Surface").
+    // Content surfaces layered on the window.
     surface: {
       primary: '#202022',
       secondary: '#2A2A2E',

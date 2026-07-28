@@ -121,19 +121,11 @@ export function NotchedPane({
   notchWidth?: number
   notchHeight?: number
   notchCurve?: number
-  /** Beak position for a top/bottom notch, measured from the pane's right edge (omit = centered). */
   notchInsetRight?: number
-  /** The mirror: measured from the pane's LEFT edge. Used by a left-anchored pane, whose width may
-   *  change under it — a right-measured beak would drift as the pane grows. Wins over notchInsetRight. */
   notchInsetLeft?: number
-  /** Beak position for a left/right notch, measured from the pane's bottom edge (omit = centered). */
   notchInsetBottom?: number
-  /** Which edge the beak hangs off: 'top' (default, downward pane) / 'bottom' (upward) / 'left' /
-   *  'right' (sideways panes — the beak points horizontally at the trigger). */
   notchSide?: 'top' | 'bottom' | 'left' | 'right'
-  /** Publishes the pane's measured box to a host that needs the SAME numbers for its own reason —
-   *  PickerMenu places off it. The pane is the one measurement owner: a host consumes this instead
-   *  of observing the pane itself, so one resize costs one observer and one layout read. */
+
   onResize?: (w: number, h: number) => void
   style?: CSSProperties
 }): React.JSX.Element {

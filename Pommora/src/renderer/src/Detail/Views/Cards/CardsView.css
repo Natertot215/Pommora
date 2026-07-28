@@ -15,7 +15,7 @@
     var(--card-scale, 1)
   ); /* KNOB — page-card image band height (fixed; the card grows below it) */
   --thumb-share: 65%; /* KNOB — the SET card's image share (set cards keep their fixed aspect) */
-  /* KNOB — the body-area's reserved floor (0.54 ≈ the old 35:65 body:image split). An empty card keeps
+  /* KNOB — the body-area's reserved floor. An empty card keeps
      that image:body proportion instead of collapsing to the title; a content-heavy card still grows
      past it (no aspect clip). */
   --card-body-min: calc(var(--thumb-h) * 0.54);
@@ -29,10 +29,7 @@
   zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
 }
 .cards-view.is-compact {
-  --band-gap: 14px; /* KNOB — the tightened band rhythm under imageless cards */
-  /* Imageless cards reserve a bottom area of the title + TWO property-value rows (the location toggle is
-     excluded) — so they read as cards, and the first two properties fill the reserve before the card
-     grows. = body padding + title row + title-gap + the flow row-gap + 2 property rows. */
+  --band-gap: 14px; 
   --card-row-h: 17px; /* KNOB — a compact property-value row (chip height × --chip-zoom) */
   --card-foot-h: calc(
     1.5px +

@@ -116,10 +116,7 @@ export const option = style([
     cursor: 'default',
     selectors: {
       '&:hover': { background: c.state.hover },
-      // Keyboard focus only. `:focus-visible` never matches the programmatic focus that follows a
-      // click, so a mouse-opened menu looks untouched and a keyboard-opened one shows where it is.
-      // The tone is the FIELD's focus tone through the same channel — a step lighter than the
-      // selection ring's, so a focused row and a chosen one stay tellable apart at the same weight.
+    
       '&:focus-visible': {
         outline: 'none',
         boxShadow: fieldRing(ROW_RING),
