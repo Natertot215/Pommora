@@ -125,7 +125,7 @@ function DrillLevel({
   )
 }
 
-/** The drag-handle menu (G-14/G-16, PickerMenu form): state-dependent root rows — an
+/** The drag-handle menu (PickerMenu form): state-dependent root rows — an
  *  unconfigured markdown block links out (the one conversion); a configured page embed
  *  re-picks its Source; a view embed's Source sits inert (sources are per-view). The
  *  pickers slide as nested panes INSIDE the menu; Delete still confirms in main. */
@@ -165,10 +165,10 @@ export function BlockHandleMenu({
   onToggleLock: () => void
   /** Open the source page full-view (respects Open In — full-page for now). */
   onOpenPage: () => void
-  /** Per-tile Scale (G-10): the tile's current factor (absent = 1.0) + its setter. Markdown/page only. */
+  /** Per-tile Scale: the tile's current factor (absent = 1.0) + its setter. Markdown/page only. */
   zoom?: number
   onSetZoom?: (factor: number) => void
-  /** The host board is locked (G-3): the per-tile lock is subsumed, so the footer reads a muted,
+  /** The host board is locked: the per-tile lock is subsumed, so the footer reads a muted,
    *  inert "Locked" instead of the Lock/Unlock toggle. */
   containerLocked?: boolean
 }): React.JSX.Element {
@@ -200,7 +200,7 @@ export function BlockHandleMenu({
   }, [scaleOpen])
   const style: BlockStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
   const currentStep = zoomStep(zoom) // the tile's resolved Scale step — trailing value + the picker's active check
-  // Content/board lock: a per-tile lock (B-5) OR the host board lock (G-3) dims + inerts every action —
+  // Content/board lock: a per-tile lock OR the host board lock dims + inerts every action —
   // the menu still opens (grab-menu stays reachable + reads its lock state), it just can't mutate a locked
   // board/tile. The dim is the house rowDisabled (opacity on the row content, not a full-row veil). The
   // footer stays live: the per-tile Lock toggles back; a board lock shows the inert "Locked".

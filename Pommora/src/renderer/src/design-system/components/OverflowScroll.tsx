@@ -6,8 +6,7 @@ import '../edge-fade.css'
 /**
  * Slide a hover-scrolled box back to its start when the pointer leaves — scrollLeft isn't a
  * CSS-transitionable property, so a rAF tween honours the panel-slide timing (reads
- * --duration-base, never hardcodes). Hoisted from the sidebar rows: ONE mechanism for every
- * truncate-then-hover-scroll surface.
+ * --duration-base, never hardcodes). ONE mechanism for every truncate-then-hover-scroll surface.
  */
 export function slideScrollBack(scroller: HTMLElement): void {
   const from = scroller.scrollLeft

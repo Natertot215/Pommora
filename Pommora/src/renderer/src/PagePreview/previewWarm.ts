@@ -1,4 +1,4 @@
-// Session-only warmth for preview tabs (H-8/H-11): serialized editor state (undo via CM6's
+// Session-only warmth for preview tabs: serialized editor state (undo via CM6's
 // historyField) + scroll, keyed by preview-tab id — the app tabs' warmCache pattern, but flat:
 // preview tabs have no Back/Forward, so one entry per tab. Module state, never render state.
 // Tab ids re-mint at every summon/restore, so the map lives and dies with the OPEN window —

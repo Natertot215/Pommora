@@ -5,7 +5,7 @@ import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { font } from '../../tokens/typography.css'
 
 const c = vars.color
-// Selection tints (Nathan's ratified pair): endpoints at tint-secondary, the in-between band a
+// Selection tints: endpoints at tint-secondary, the in-between band a
 // step lighter at tint-tertiary — both off the live --accent.
 const endpointFill = tintAt('var(--accent)', TINT_STEPS.secondary)
 const bandFill = tintAt('var(--accent)', TINT_STEPS.tertiary)
@@ -182,7 +182,7 @@ export const pillRowLast = style({ borderRadius: '0 7px 7px 0', inset: '1px 1px 
 export const divider = style({ height: '1px', background: c.separator.line, margin: '7px 2px 8px' })
 
 /* ── Value fields: separator-stroked inputs, icon + value (or the -- empty). The block keeps
-      EQUAL breathing room above (divider's 8px) and below (its own 8px margin). ── */
+      EQUAL breathing room above and below, mirroring the divider's own bottom margin. ── */
 export const fields = style({
   display: 'flex',
   flexDirection: 'column',
@@ -200,7 +200,7 @@ export const field = style({
   border: `1px solid ${c.separator.line}`,
   borderRadius: '8px',
   padding: '4px 7px',
-  background: c.fill.tertiary, // ad-hoc fill on this surface — Nathan's call
+  background: c.fill.tertiary, // ad-hoc fill on this surface, not the shared token ramp
 })
 export const fieldIcon = style({ flex: 'none', color: c.label.secondary })
 export const fieldValue = style({

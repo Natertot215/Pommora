@@ -188,10 +188,10 @@ function ViewPill({
   )
 }
 
-// The view-embed tile (H-4/H-5): the title row (editable ####, right-click chrome menu) over the
+// The view-embed tile: the title row (editable ####, right-click chrome menu) over the
 // view switcher (pills or a dropdown, right-click presentation menu) over the REAL TableView at
 // the fixed embed zoom, all inside the ViewEmbedScope — resolution reads the payload config,
-// config writes land on it, data writes flow through to the source (D-12).
+// config writes land on it, data writes flow through to the source.
 export function ViewEmbedBlock({
   entry,
   mutateEntry,
@@ -254,7 +254,7 @@ export function ViewEmbedBlock({
     prevIdsRef.current = cur
   }, [idKey])
 
-  if (!embedded || !source || !tree) return <div className="blk-inert" /> // dead source — inert, space holds (E-2)
+  if (!embedded || !source || !tree) return <div className="blk-inert" /> // dead source — inert, space holds
 
   const view = views[index]
   const titleShown = entry.title !== false
@@ -264,9 +264,9 @@ export function ViewEmbedBlock({
   const dropdown = entry.view_style === 'dropdown'
 
   const locked = entry.locked ?? false
-  // Every write transforms the RAW entry (raw spreads — foreign keys survive, E-1); chrome
+  // Every write transforms the RAW entry (raw spreads — foreign keys survive); chrome
   // defaults are stored as ABSENT keys, so clearing a toggle deletes it rather than pinning it.
-  // While locked (B-5) this is the freeze for all chrome (title rename, hide title/icon, heading size,
+  // While locked this is the freeze for all chrome (title rename, hide title/icon, heading size,
   // pill/switcher style): only the lock toggle itself and the active-view SWITCH (viewing, not editing)
   // still write — so a locked tile's title + presentation are frozen to match the handle menu's promise.
   const patchEntry = (patch: Record<string, unknown>): void => {
@@ -292,7 +292,7 @@ export function ViewEmbedBlock({
     })
   }
   const persistConfig = (i: number, config: SavedView): void => {
-    if (locked) return // B-5: every config surface routes through here, so this one gate freezes them all
+    if (locked) return // every config surface routes through here, so this one gate freezes them all
     writeConfig(i, config)
   }
   // View state folds onto the STORED view, never the caller's: on a locked tile the live overrides
@@ -522,13 +522,13 @@ export function ViewEmbedBlock({
             <ViewRenderer key={source.id} source={source} />
           </div>
         </div>
-        {/* PickerMenu owns the anchoring — body portal (H-11), scroll/resize re-measure,
+        {/* PickerMenu owns the anchoring — body portal, scroll/resize re-measure,
             collision flip; a hand-rolled fixed portal detaches when the surface scrolls. */}
         <PickerMenu open={cfgOpen} onDismiss={() => setCfgOpen(false)} triggerRef={btnRef}>
           <SettingsPane />
         </PickerMenu>
-        {/* Dropdown mode's view list — the ViewPane's rows without the edit chevrons (H-5:
-            per-view editing lives behind the Settings affordance, not in the switcher). */}
+        {/* Dropdown mode's view list — the ViewPane's rows without the edit chevrons
+            (per-view editing lives behind the Settings affordance, not in the switcher). */}
         <PickerMenu open={listOpen} onDismiss={() => setListOpen(false)} triggerRef={dropRef}>
           <div className={s.listPane}>
             <MenuScrollFrame

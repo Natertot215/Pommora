@@ -363,7 +363,7 @@ export function PropertiesPane({
     )
       backToList()
   }
-  // A row's right-click (A-10): Rename (both groups) · Remove (assigned only).
+  // A row's right-click: Rename (both groups) · Remove (assigned only).
   const rowMenu = async (d: PropertyDefinition, group: 'assigned' | 'all'): Promise<void> => {
     const action = await window.nexus.propertyMenu({
       kind: group === 'assigned' ? 'assigned-row' : 'registry-row',

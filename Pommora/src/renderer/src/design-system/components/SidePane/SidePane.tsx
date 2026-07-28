@@ -3,7 +3,7 @@ import { GlassWindow } from '@renderer/design-system/materials'
 import { cx } from '@renderer/design-system/cx'
 import './sidePane.css'
 
-// THE side-pane shell (G-3): the NavWindow's favorites rail and the PagePreview's inspector are
+// THE side-pane shell: the NavWindow's favorites rail and the PagePreview's inspector are
 // the same component — one material (GlassWindow + state-muted veil), one inner geometry, one
 // edge-drag resize with per-window persisted width. Hosts own positioning (in-flow vs overlay),
 // the width CSS var their layout math reads (mirrored via onWidthChange), and any slide (--io).

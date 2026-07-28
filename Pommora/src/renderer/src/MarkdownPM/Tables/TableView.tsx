@@ -180,7 +180,6 @@ export function TableView({
     window.addEventListener('pointerup', onUp)
   }
 
-  // Drag a column boundary: dashes move between the two adjacent columns (total conserved, 1-dash floor).
   // Preview is pixel-exact (override both <col> widths in px); on release we quantize the new left width
   // to whole dashes and commit one resizeColumn. Same window-bound pointer-capture pattern as startDrag.
   const startResize = (e: React.PointerEvent<HTMLDivElement>, boundaryIndex: number): void => {

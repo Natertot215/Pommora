@@ -1,8 +1,7 @@
 // One string materialization + one callout scan per doc VERSION, shared by every extension that runs per
 // keystroke / caret move. CM's Text.toString() re-joins the rope on every call and calloutLines re-splits
-// the result — with several extensions each doing both per transaction, this was the designated lag source
-// under the project's "never do expensive work on every X" rule. Keyed on the immutable Text via WeakMap,
-// so old versions collect with the history.
+// the result — with several extensions each doing both per transaction, this was the lag source. Keyed on
+// the immutable Text via WeakMap, so old versions collect with the history.
 import type { Text } from '@codemirror/state'
 import { calloutLines, type CalloutLine } from '../detect'
 import { scanDoc, type DocScan } from '../decorations/intent'

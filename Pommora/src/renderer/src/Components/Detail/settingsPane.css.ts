@@ -23,7 +23,7 @@ const c = colorVars.color
 /** — COLOR — */
 const COLOR = {
   headingLabel: c.label.tertiary, // section-heading TEXT — "Options", "Format", "All Properties" (the dimmest tier)
-  actionLabel: c.label.tertiary, // interactive SYMBOLS — icon-picker · eye toggle · recolor palette · Options + · header ⊕/⋮ · promote + (eye/palette add their own ghost-opacity rest; the glyph swaps open ↔ off)
+  actionLabel: c.label.tertiary, // interactive SYMBOLS (eye/palette add their own ghost-opacity rest; the glyph swaps open ↔ off)
   allRow: c.label.secondary, // unassigned registry rows — dimmer than assigned (primary), brighter than the heading (tertiary)
   iconHover: c.state.hover, // the shared fill behind any pane icon-button on hover (not a glyph shift)
   dragHighlight: c.state.hover, // the unassign area tint while dragging out
@@ -32,16 +32,16 @@ const COLOR = {
 
 /** — SIZING — (px boxes; the glyphs inside are ICON's) */
 const SIZE = {
-  topRowActionWidth: 20, // TopRow ⊕ / ⋮ horizontal hit target (height hugs the glyph)
-  iconPickerButton: 28, // the title header's square icon button
-  dashIcon: 16, // the placeholder dashed square
-  dragHighlightRadius: 6, // the unassign tint's corner radius
+  topRowActionWidth: 20, // height hugs the glyph
+  iconPickerButton: 28,
+  dashIcon: 16,
+  dragHighlightRadius: 6,
 }
 
 /** — OPTION EDITOR — (Select/Multi option list; px) */
 const OPTION = {
   gapAroundLabel: 6, // "Options" → first chip (the gap ABOVE "Options" is the header's own bottom pad)
-  gapBetweenChips: 6, // chip → chip
+  gapBetweenChips: 6,
   chipPadX: 6, // option chip horizontal padding — retunes the shared chip-label default, this pane only
   addBox: 20, // the "Options" + hit target (its glyph is ICON.optionsAdd)
   groupGap: 12, // status only: gap between one group's block (heading + chips) and the next
@@ -101,7 +101,6 @@ export const iconButton = style({
   selectors: { '&:hover': { background: c.fill.quaternary } },
 })
 
-/** The title interaction-field / input takes the remaining width. */
 export const titleField = style({ flex: '1 1 auto', minWidth: 0 })
 
 /** A profile photo filling the square icon-button slot (homepage identity) — cover-fit, corners
@@ -175,7 +174,6 @@ export const allHeadingRow = style({
   cursor: 'default',
 })
 
-/** Unassigned registry rows render dimmer than assigned ones (A-3). */
 export const allRow = style({ color: COLOR.allRow })
 
 // The row's LABEL rides the surface's primary titleText global (`.surface .titleText`, 0-2-0); beat it
@@ -186,7 +184,7 @@ globalStyle(`.${surface} .${allRow} .${titleText}`, { color: c.label.secondary }
  *  the surface's primary titleText tone like every other nav/settings row. */
 export const toggleRow = style({})
 
-/** The per-row `+` promote affordance (A-5) — the shared accessory recipe at the 16px box. */
+/** The per-row `+` promote affordance — the shared accessory recipe at the 16px box. */
 export const rowPlus = accessoryButton
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -200,8 +198,8 @@ export const rowDragging = style({ opacity: 'var(--state-ghost)' })
 /** Hidden rows read de-emphasized via the shared ghost opacity (the drag-dim token — Nathan's
  *  call: `--state-ghost`, not the muted veil). The ghost IS the shown/hidden boundary — no
  *  heading (Nathan's call). Reset to full opacity while this row is the drag subject: `rowDragging`
- *  already dims the wrapper to the ghost, and two stacked 60% layers composite to 36% (breaker
- *  L-3) — the inner row rides full so the net dim is the single intended ghost. */
+ *  already dims the wrapper to the ghost, and two stacked 60% layers composite to 36%
+ *  — the inner row rides full so the net dim is the single intended ghost. */
 export const hiddenRow = style({
   opacity: 'var(--state-ghost)',
   selectors: { [`${rowDragging} &`]: { opacity: 1 } },
@@ -254,7 +252,7 @@ export const paneDnd = style({
   flex: '1 1 auto',
 })
 
-/** The unassign target's area highlight (C-4) — the whole all-group tints, no insertion line. */
+/** The unassign target's area highlight — the whole all-group tints, no insertion line. */
 export const allHighlight = style({
   background: COLOR.dragHighlight,
   borderRadius: `${SIZE.dragHighlightRadius}px`,
@@ -312,8 +310,6 @@ export const groupAdd = style([
   },
 ])
 
-/** The chip list — full-width rows (chip left, hover recolor icon at the right edge), the inter-chip
- *  gap between them, the "Options"→chips gap on top. */
 export const optionList = style({
   display: 'flex',
   flexDirection: 'column',
@@ -373,7 +369,6 @@ export const configEditor = style({
   paddingTop: `${OPTION.gapAroundLabel}px`,
 })
 
-/** One config row — label left, control right. */
 export const configRow = style({
   display: 'flex',
   alignItems: 'center',
@@ -396,7 +391,6 @@ export const colorCluster = style({
   gap: '4px',
 })
 
-/** The bare button wrapping the colour chip — the recolor affordance (click the chip to open the picker). */
 export const colorChip = style({
   border: 'none',
   background: 'none',

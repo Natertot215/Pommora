@@ -39,7 +39,7 @@ export function NavGallery({
   // A host (NavWindow) can override to also rewrite its frozen snapshot; NavView uses the store directly.
   const reorderRecent = onReorderRecent ?? reorderRecentStore
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
-  // The cards share NavList's row menu (D-3's gallery point) — same items, same open/pin/favorite state.
+  // The cards share NavList's row menu — same items, same open/pin/favorite state.
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav, e: React.MouseEvent): void => {
     e.preventDefault()

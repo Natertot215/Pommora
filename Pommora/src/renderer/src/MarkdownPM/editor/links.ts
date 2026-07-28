@@ -1,9 +1,8 @@
 import { EditorView } from '@codemirror/view'
 import { tokenize } from '../tokens'
 
-// The external markdown link at `pos`, with its URL pulled from the source. The closing marker is
-// `](url)` — strip the 2-char `](` head and the `)` tail. Works even when the markers are hidden
-// off-caret (the source still holds them).
+// The external markdown link at `pos`, with its URL pulled from the source. Works even when the markers
+// are hidden off-caret (the source still holds them).
 function externalLinkAt(view: EditorView, pos: number): { url: string } | null {
   const line = view.state.doc.lineAt(pos)
   const rel = pos - line.from

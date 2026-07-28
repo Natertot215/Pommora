@@ -33,7 +33,7 @@
   --ppane-flow-reveal: 0px;
 }
 
-/* F-7: the strip row exists only past one tab — height grows in on the standard ease, nudging the
+/* The strip row exists only past one tab — height grows in on the standard ease, nudging the
    search row down; a single-tab (map-only) window keeps today's exact layout. The strip lives in
    the CONTENT COLUMN right of the rail (never above it), so the rail runs the window's full
    height and the tabs start right of the sidebar, exactly like the app's tab bar — a page tab

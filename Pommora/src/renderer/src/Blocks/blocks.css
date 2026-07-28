@@ -1,4 +1,4 @@
-/* Block tile content family (G-2). The tile chassis (border, radius, clipping)
+/* Block tile content family. The tile chassis (border, radius, clipping)
    is SurfacePM's; these style what lives inside. */
 
 /* The tile IS the CM6 portal (read-only at rest). Its padding is the BLOCK's own

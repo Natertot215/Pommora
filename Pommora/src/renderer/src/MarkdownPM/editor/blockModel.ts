@@ -193,7 +193,7 @@ export interface BlockStart {
 
 /** Every draggable block's first-line offset + kind, in document order — a heading line and each block inside
  *  its section both qualify; continuation/blank lines don't. The shared basis for where handles render and
- *  where a drag can drop. Single pass over the shared block context (was O(n²) via `blockAt`-per-line). */
+ *  where a drag can drop. Single pass over the shared block context — a per-line `blockAt` call would be O(n²). */
 export function blockStarts(doc: string): BlockStart[] {
   const ctx = blockContext(doc)
   const { n, starts, callout, listMember } = ctx
