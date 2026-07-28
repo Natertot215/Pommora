@@ -22,7 +22,7 @@ The content column renders one mode at a time. A ribbon switch plays the **overt
 
 - **Contexts** — every registry Context as a disclosure of its draggable Space rows, in registry order; group headers drag to reorder the registry itself. A Context header is a pure expand/collapse toggle (a Context has no destination view — Spaces do). Full behaviour → `Contexts.md`.
 
-- **Agenda** — a list of Tasks then Events, fetched when the mode mounts and kept off the tree walk. Rows are display-only: no selection kind routes an agenda entity, so opening one is future work → `Agenda.md`.
+- **Agenda** — a list of Tasks then Events, kept off the tree walk. The sidebar owns the fetch rather than the mode component: the mode-switch overlay renders a second copy of the outgoing layer, and a component fetching its own list would bring that copy up empty over the list it is animating away. It re-reads per open nexus, so switching one never leaves the previous nexus's items on screen. Rows are display-only: no selection kind routes an agenda entity, so opening one is future work → `Agenda.md`.
 
 #### II. Creation
 

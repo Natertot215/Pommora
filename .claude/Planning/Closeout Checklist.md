@@ -165,3 +165,25 @@ authored, and all of it is plumbing the legibility rule was never meant to cover
 Worth noting for the rethink: `linkTitles.json` is *derived*, so it is a cache masquerading as a
 config file; `viewOrders.json` exists specifically to keep manual order out of the synced sidecar,
 which is a constraint the JSON shape imposes rather than one the product wants.
+
+## DIAGNOSED — NavWindow search ignores the Gallery toggle (Nathan's focus #3)
+
+**It is a small fix, not a session. Apply it, don't defer it.**
+
+`NavWindow/NavWindow.tsx:262` renders a three-way branch:
+
+```
+{results ? <NavList …/> : viewMode === 'gallery' ? <NavGallery …/> : <NavList …/>}
+```
+
+The `results` arm short-circuits before `viewMode` is ever consulted, so a search always lists even
+when the rail toggle says Gallery.
+
+**Fix:** branch on `viewMode` FIRST, and let each arm choose its data source (`results` vs
+recents+pins). That collapses three branches to two — fewer lines, and the toggle governs both
+states as the rail claims.
+
+One consequence to state in `Navigation.md`: `results.extras` (inert agenda hits — `NavList` renders
+them with "Agenda navigation isn't wired yet") has no gallery equivalent, so they show in List only.
+`NavGallery` takes no `extras` prop and adding one would be new code for placeholder rows whose
+routing is unbuilt. Acceptable; note it rather than build it.
