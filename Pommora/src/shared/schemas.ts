@@ -42,7 +42,7 @@ const baseSidecar = z.looseObject({
   modified_at: z.string().optional(),
 })
 
-// `_pagecollection.json` is the schema-bearing TOP tier (a top Collection has no parent).
+// `_pagecollection.json` is the schema-bearing TOP level (a top Collection has no parent).
 // `properties` is the ASSIGNMENT LIST — the nexus-wide registry prop-ids this Collection
 // validates. The defs themselves live in `.nexus/properties.json`; readNexus joins ids→defs.
 export const pageCollectionSidecar = baseSidecar.extend({
@@ -57,7 +57,7 @@ export const pageCollectionSidecar = baseSidecar.extend({
   view_style: viewStyleField,
 })
 
-// `_pageset.json` is the RECURSIVE tier at any depth. `parent_id` is the immediate parent
+// `_pageset.json` is the RECURSIVE level at any depth. `parent_id` is the immediate parent
 // (a Collection at depth-1, a Set deeper). `set_order` orders child Sets; `views`/`banner`
 // are read at every depth, not just depth-1.
 export const pageSetSidecar = baseSidecar.extend({

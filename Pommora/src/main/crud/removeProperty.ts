@@ -1,12 +1,12 @@
-// Remove (C-3) — the daily non-destructive lifecycle op, and its restore half. Remove caches
+// Remove — the daily non-destructive lifecycle op, and its restore half. Remove caches
 // { pageId: raw } + unassigns on the Collection's sidecar FIRST, then strips the property's value
-// from every member page under its file lock (E-3). Cache-before-strip keeps Remove RECOVERABLE:
+// from every member page under its file lock. Cache-before-strip keeps Remove RECOVERABLE:
 // the values are persisted before any page loses them, so an fs failure mid-strip never destroys
 // them. (The pre-strip snapshot is best-effort against a concurrent edit of the SAME property
 // mid-remove — the cache may then hold a value one edit stale; acceptable, since it's a restore
 // convenience for a value being intentionally cleared, never canonical data.) Re-assigning
 // restores each cached value that still conforms to the def's CURRENT type + options (per-value
-// reconciliation); the global Delete purges these caches (D-6).
+// reconciliation); the global Delete purges these caches.
 
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'
@@ -40,7 +40,7 @@ export function removeProperty(
 async function removeInner(collectionFolder: string, propertyId: string): Promise<Result<null>> {
   const sidecar = await readSidecar(collectionFolder, 'collection', pageCollectionSidecar)
   const ids = (sidecar?.properties as string[] | undefined) ?? []
-  if (!sidecar || !ids.includes(propertyId)) return ok(null) // not assigned → no-op (E-6)
+  if (!sidecar || !ids.includes(propertyId)) return ok(null) // not assigned → no-op
 
   const files = await listMarkdownFiles(collectionFolder)
   // Snapshot each page's value for the restore cache — read BEFORE stripping so the cache is
@@ -77,7 +77,7 @@ async function removeInner(collectionFolder: string, propertyId: string): Promis
   return ok(null)
 }
 
-/** Per-value schema-currency gate — type-DIRECTED, never shape-inferred (breaker H-1): the
+/** Per-value schema-currency gate — type-DIRECTED, never shape-inferred: the
  *  shape-blind codec would re-infer a select value like "2024-01-01" or "https://acme.io" as
  *  datetime/url and destroy it, so the RAW on-disk encoding validates against the def's
  *  CURRENT type + options directly. select/status need a live option; multiSelect intersects

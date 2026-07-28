@@ -138,7 +138,7 @@ function evaluateRule(
   locate: LocationIndex,
   contextIds: readonly string[],
 ): Verdict {
-  if (!FILTER_OP_SET.has(rule.op)) return NO_OP // unknown op
+  if (!FILTER_OP_SET.has(rule.op)) return NO_OP
 
   // "Last edited" resolves to the modified∥created stamp (never a stored property) → date matrix.
   if (rule.property_id === RESERVED_PROPERTY_ID.modifiedAt) {
@@ -351,7 +351,7 @@ function evaluateCheckbox(v: PropertyValue, op: Op, expected: Expected): boolean
   }
 }
 
-/** The one set-membership core for multi_select AND id-lists (tiers/context). An empty `want` on
+/** The one set-membership core for multi_select AND id-lists (Context columns/context). An empty `want` on
  *  the any-shaped op passes — a mid-authoring empty chip set never blanks the table;
  *  contains_all passes empty for free ([].every()). Returns undefined for ops it doesn't own, so
  *  each caller keeps its own single-operand/presence branches. */
@@ -416,7 +416,7 @@ function evaluateMulti(v: PropertyValue, op: Op, expected: Expected, values?: st
   }
 }
 
-/** Tier / id-list membership + presence (Swift evaluateList). DELIBERATE asymmetry, stated so
+/** Context-column / id-list membership + presence (Swift evaluateList). DELIBERATE asymmetry, stated so
  *  nobody "fixes" it: is/contains with a missing SINGLE operand → false (cannot match, Swift
  *  parity) — while the chip-shaped set ops (matchesSet + values[]) pass on an empty operand set,
  *  because a mid-authoring chip row must never blank the table. */

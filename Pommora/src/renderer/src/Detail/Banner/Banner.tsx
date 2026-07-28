@@ -43,7 +43,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
 
   // The homepage IS the nexus, so its title renames the root folder (renameNexus, a fs rename) — not
   // submitRename. Double-click the homepage title to edit it in place; this is the sole rename-nexus
-  // affordance now that the sidebar's NexusHeader is gone.
+  // affordance.
   const commitHome = (next: string): void => {
     setEditingHome(false)
     if (!next || next === owner.name) return

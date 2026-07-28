@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom'
 import { GlassSurface } from '@renderer/design-system/materials'
 import * as s from './photoCropModal.css'
 
-// Geometry (px): the square viewport, the crop circle centered inside it, and the
-// exported avatar resolution. The circle's bounding box is what gets exported.
+// The circle's bounding box is what gets exported.
 const VIEWPORT = 280
 const CIRCLE = 220
 const RADIUS = CIRCLE / 2
@@ -46,7 +45,7 @@ export function PhotoCropModal({
   const imgLeft = (VIEWPORT - dispW) / 2 + offset.x
   const imgTop = (VIEWPORT - dispH) / 2 + offset.y
 
-  // Escape closes; re-clamp the offset whenever the bounds shrink (zoom out / first load).
+  // Re-clamp the offset whenever the bounds shrink (zoom out / first load).
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onCancel()

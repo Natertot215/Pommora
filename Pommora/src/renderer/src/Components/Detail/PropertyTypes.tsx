@@ -6,7 +6,8 @@ import { DashIcon } from './DashIcon'
 /**
  * The single source for per-property-type presentation: the user-facing label + the standard Pommora
  * icon (catalogued in Features/Icons.md). `creatable` flags the user-pickable set, in picker order —
- * `context` is tier-only and `last_edited_time` is auto-managed. Types still awaiting a glyph carry no
+ * `context` backs Context columns only, and `last_edited_time` is auto-managed. Types still
+ * awaiting a glyph carry no
  * `icon` and fall back to DashIcon.
  */
 interface TypeMeta {

@@ -72,8 +72,8 @@ export async function showContextMenu(
 
   const items: MenuItemConstructorOptions[] = []
 
-  // Open in New Tab (D-3) — the action runs renderer-side (only the renderer knows the tab set); an
-  // already-open entity reads "Open" and the push-back focuses its tab (I-1's dedup).
+  // Open in New Tab — the action runs renderer-side (only the renderer knows the tab set); an
+  // already-open entity reads "Open" and the push-back focuses its tab.
   if (target.id) {
     items.push({
       label: target.alreadyOpen ? 'Open' : 'Open in New Tab',

@@ -15,11 +15,11 @@ import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { DROP_LINE_INSET, suppressNextClick } from '@renderer/design-system/interactions/shared'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 
-// Table row drag — the sidebar drop-line gesture (B): an accent insertion LINE marks the exact slot,
-// the picked-up row mutes in place (--drag-muted), and NO row displaces. Where you drop disambiguates
-// (D-8): a slot inside the dragged row's own group reorders it (viewOrders); a slot in another group
+// Table row drag — the sidebar drop-line gesture: an accent insertion LINE marks the exact slot,
+// the picked-up row mutes in place (--drag-muted), and NO row displaces. Where you drop disambiguates:
+// a slot inside the dragged row's own group reorders it (viewOrders); a slot in another group
 // reassigns the grouped property (setProperty). The commits live in TableView and are passed in — this
-// file owns only the gesture + hit-testing + the line. The cursor ghost is omitted (B-2).
+// file owns only the gesture + hit-testing + the line. The cursor ghost is omitted.
 
 type Slot = { lineY: number; left: number; width: number; commit: () => void; noop: boolean }
 type MeasuredRow = {
@@ -155,7 +155,6 @@ export function TableRowDnd({
     const measured = snap.rows
     if (measured.length === 0) return null
 
-    // nearest row: the last whose top is at/above the cursor, else the first.
     let near = measured[0]
     for (const m of measured) {
       if (clientY >= m.top) near = m

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 
 /**
- * The inline text editor every container view's cells share (A-12: Enter = confirm ·
+ * The inline text editor every container view's cells share (Enter = confirm ·
  * click-out = save · Esc = revert and exit). Table-agnostic: raw text in/out — the caller
  * owns the value typing, parsing, and write. `numeric` filters keystrokes so an invalid
  * number can never be typed (Nathan, at pickup). The done-guard keeps Enter's commit from

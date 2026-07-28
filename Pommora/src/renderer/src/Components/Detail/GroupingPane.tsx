@@ -81,7 +81,7 @@ const orderOptionsFor = (type: string | undefined): PickerChoice<GroupOrderMode>
   type === 'datetime' ? DATE_ORDER : OPTION_ORDER
 
 /** A labeled row whose trailing PickerControl pops the option menu — the DateTimeEditor PickerRow
- *  shape on the MenuItem chassis. `tier: 'sub'` is the subordinate Order treatment (C-8). */
+ *  shape on the MenuItem chassis. `tier: 'sub'` is the subordinate Order treatment. */
 function ValueRow<T extends string>({
   tier = 'primary',
   icon,
@@ -121,7 +121,7 @@ export function GroupingPane({
   schema: PropertyDefinition[]
   /** The back-destination breadcrumb — 'Settings' from SettingsPane, 'Views' from ViewSettings. */
   label: string
-  /** Cards views drop the Sub-Group tier entirely — same pane, no second grouping level. */
+  /** Cards views drop Sub-Group entirely — same pane, no second grouping level. */
   subGrouping?: boolean
   onBack: () => void
 }): React.JSX.Element {
@@ -141,7 +141,7 @@ export function GroupingPane({
     group.kind === 'property' ? schema.find((d) => d.id === group.property_id) : undefined
   const subGroup = structural && subGrouping ? view.sub_group : undefined
   // The property whose date buckets head bands right now (top-level date grouping, or the date
-  // sub-group) — the Separation footing appears only when its column wears a numeric format (D-8).
+  // sub-group) — the Separation footing appears only when its column wears a numeric format.
   const dateHeadingProp =
     group.kind === 'property' && declaredType(group.property_id, schema) === 'datetime'
       ? group.property_id
@@ -149,7 +149,7 @@ export function GroupingPane({
         ? subGroup.property_id
         : undefined
 
-  // E-3 preservation is free: structural_order_mode / sub_group are view-level, so switching the
+  // Preservation is free: structural_order_mode / sub_group are view-level, so switching the
   // one group slot never touches them — flip back to Location and they're still in force.
   const pickGroupBy = (target: 'location' | 'none' | PropertyDefinition): void => {
     setGroupByOpen(false)
@@ -400,15 +400,13 @@ function FootingPick<T extends string>({
   )
 }
 
-// ---- middle-region bodies ----
-
 export const optionsOf = (
   def: PropertyDefinition | undefined,
 ): { value: string; label: string; color?: string }[] => def?.select_options ?? statusOptions(def)
 
 type PropertyGroupConfig = Extract<GroupConfig, { kind: 'property' }>
 
-/** Default/Reversed read-only preview (D-9): status renders its groups as muted headings with each
+/** Default/Reversed read-only preview: status renders its groups as muted headings with each
  *  group's option chips beneath; select renders one flat chip run; datetime has no finite list.
  *  Shared with the Sorting pane's example order — `group` is just the ordering pair. */
 export function PropertyPreview({
@@ -448,7 +446,7 @@ export function PropertyPreview({
 }
 
 /** Custom (manual) order: one flat "Options" list of draggable chips handing back the reordered
- *  value sequence (D-2). Shared with the Sorting pane's Custom order — the caller owns the write. */
+ *  value sequence. Shared with the Sorting pane's Custom order — the caller owns the write. */
 export function CustomList({
   group,
   def,
@@ -497,12 +495,12 @@ export function CustomList({
   )
 }
 
-/** The set hierarchy (C-2): sets with their sub-group disclosed beneath them, no pages. Each set
+/** The set hierarchy: sets with their sub-group disclosed beneath them, no pages. Each set
  *  discloses what the sub-group yields — sub-sets under Location, the property's value chips under
- *  a property sub-group (sub-sets flatten, F-3) — both riding the rail. Drags mirror the table
- *  band rules (F-4): sibling reorder writes view order in Custom / the filesystem in Location; a
+ *  a property sub-group (sub-sets flatten) — both riding the rail. Drags mirror the table
+ *  band rules: sibling reorder writes view order in Custom / the filesystem in Location; a
  *  cross-nesting drop is always an fs reparent. Chip rows are inert (their reorder surface is the
- *  table bands, F-1). */
+ *  table bands). */
 function LocationHierarchy({
   source,
   view,
@@ -560,8 +558,8 @@ function LocationHierarchy({
       paths.set(s.id, s.path)
       if (visible) {
         bands.push({ id: s.id, kind: 'set', depth, parentId })
-        // A disclosed chip run registers as property bands so the SAME gesture drags them (F-1's
-        // pane surface) — the drop resolves back to the value through chipValueOf.
+        // A disclosed chip run registers as property bands so the SAME gesture drags them (the
+        // pane's own drag surface) — the drop resolves back to the value through chipValueOf.
         if (flat && expanded.has(s.id)) {
           for (const o of subChips)
             bands.push({
@@ -578,8 +576,8 @@ function LocationHierarchy({
   index(source.sets, 0, null, true)
 
   const onDrop = (draggedId: string, drop: GroupingDrop): void => {
-    // A chip drag is a GLOBAL sub-order write regardless of drop kind or target set (F-1's
-    // semantics); dragging also flips the sub-order to Custom (the first-UI-writer pattern).
+    // A chip drag is a GLOBAL sub-order write regardless of drop kind or target set; dragging
+    // also flips the sub-order to Custom (the first-UI-writer pattern).
     if (chipValueOf.has(draggedId)) {
       const value = chipValueOf.get(draggedId)
       const before = drop.beforeId === null ? null : (chipValueOf.get(drop.beforeId) ?? null)

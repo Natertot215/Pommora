@@ -11,8 +11,7 @@ import type { PropertyDefinition } from '@shared/properties'
 import { UNGROUPED } from '@shared/types'
 import { declaredType, resolveFieldValue } from './value'
 
-/** Only these declared types group; everything else falls back to structural (Global Constraint:
- *  NOT number/multi_select/url/relation/file/last_edited/tier/title). */
+/** Only these declared types group; everything else falls back to structural. */
 const GROUPABLE = new Set<string>(['select', 'status', 'checkbox', 'date', 'datetime'])
 
 type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>

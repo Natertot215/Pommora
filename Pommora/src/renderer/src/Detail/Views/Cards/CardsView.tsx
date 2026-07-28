@@ -601,7 +601,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   )
 }
 
-// The cards view never indents: a band's descendants' pages roll up flat, in resolved order.
 // The Move To ▸ tree: every Collection and its nested Sets as relocation targets (movePage's
 // newParentPath is a container path). A childless container is a leaf; the walk preserves tree order.
 function buildMoveTargets(collections: CollectionNode[]): MoveTarget[] {
@@ -992,7 +991,7 @@ const PageCard = memo(function PageCard({
     else if (action.startsWith('add:')) {
       const entry = addable.find((e) => e.id === action.slice(4))
       if (!entry) return
-      // A reveal-only entry (tier/context, hidden-filled, checkbox) just unhides; a pane entry opens
+      // A reveal-only entry (a Context column, hidden-filled, checkbox) just unhides; a pane entry opens
       // the value pane to set a value.
       if (entry.revealOnly) onReveal(entry.id)
       else if (textRef.current)

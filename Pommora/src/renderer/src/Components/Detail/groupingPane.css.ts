@@ -1,6 +1,6 @@
 // The Grouping pane's row-tier knobs. Primary rows (Group By / Sub-Group / Date By) read the
 // MenuItem default (Body, label-primary); a subordinate Order row reads a step quieter and
-// tucks toward its parent so the pair reads grouped (C-8).
+// tucks toward its parent so the pair reads grouped.
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'

@@ -1,7 +1,7 @@
 // The walk's parse gate: absolute path → the value parsed at a known (mtime, size).
 // Every walk still enumerates every directory and stats every file it encounters — the
 // walk IS the verification pass, so tree-vs-disk drift is unrepresentable — but the
-// expensive tier (file reads + YAML/JSON parsing) runs only for files whose metadata
+// expensive layer (file reads + YAML/JSON parsing) runs only for files whose metadata
 // moved. Entries a walk doesn't touch are pruned at walk end, so a deleted file's
 // value can't linger; a root switch drops everything.
 

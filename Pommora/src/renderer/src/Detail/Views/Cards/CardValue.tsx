@@ -20,10 +20,10 @@ import { sharedValueClickAction } from '../PropertyEditing/valueClick'
  * One interactive property value on a card — the cell gesture matrix (portable to
  * Gallery/List/Cards, TableView.md), anchored per-value rather than per-table: the value renders
  * through the shared `Cell`, and a click opens the right surface for its kind — status/select/
- * multi/context/tier → the PropertyPicker dropdown; a checkbox-look status cycles (or opens the
+ * multi/context → the PropertyPicker dropdown; a checkbox-look status cycles (or opens the
  * picker when empty); a checkbox toggles; a date → the CalendarPicker; a number → the inline
  * editor; a url opens (filled) or edits (empty); a file chip opens its own file. Pill chips carry
- * the hover-× remove. `onCommit` owns the write routing (tier vs property).
+ * the hover-× remove. `onCommit` owns the write routing (Context column vs property).
  */
 export function CardValue({
   row,

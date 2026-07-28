@@ -394,7 +394,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         return
       }
       if (!subGrouped || !liveView.sub_group || liveView.sub_group.order_mode !== 'manual') return
-      // F-1: global sub-order — dragging one set's bucket reorders that bucket across EVERY set. A
+      // Global sub-order — dragging one set's bucket reorders that bucket across EVERY set. A
       // cross-set drag arrives as kind 'reparent' (bandDnd routes by impliedParentId) and is STILL a
       // global reorder: only the beforeId's bucket value matters, targetParentId is ignored. The
       // key→bucket map builds once per drop, never a walk per lookup.
@@ -425,7 +425,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     )
     if (drop.kind === 'reorder') {
       if (structuralGrouping && liveView.structural_order_mode === 'location') {
-        // C-1c: Location mode — the same-parent reorder IS the filesystem write; group_order stays
+        // Location mode — the same-parent reorder IS the filesystem write; group_order stays
         // untouched (preserved for the flip back to Custom). The reparent branch below is mode-blind
         // by design: its group_order write is the slot preservation.
         const parentPath = dragged.parentId === null ? source.path : setPaths.get(dragged.parentId)
@@ -470,7 +470,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }
 
   // Persist the saved view + every live override (order + collapse) + a patch, so no one mutation
-  // clobbers another's unsaved state — the exact Swift reorder/resize data-loss H-2 guards against.
+  // clobbers another's unsaved state — the exact Swift reorder/resize data-loss bug this guards against.
   // Adopt-only: if this fires while the entry-mint is still in flight, it awaits the minted id and
   // saves against it — never mints a rival default from its own sentinel. skipRefetch defaults true:
   // order/width/align/collapse/style all show through a live override, so a refetch would only repaint
@@ -531,11 +531,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     setHiddenOverride(hidden)
     persistView({ hidden_properties: hidden })
   }
-  // A column's resolved alignment: the live override, else the saved value / type default.
   const colAlign = (id: string): ColumnAlign =>
     alignOverride[id] ?? alignFor(id, schema, liveView, contextIds)
   // A column header's type glyph, gated by the per-view Column Icons toggle (`hide_column_icons`),
-  // which defaults ON (icons hidden). Tier columns wear the context glyph; a schema-less column
+  // which defaults ON (icons hidden). Context columns wear the context glyph; a schema-less column
   // (unknown type) gets none.
   const headerIcon = (id: string): React.ReactNode => {
     if (liveView.hide_column_icons ?? true) return null
@@ -571,7 +570,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       column_styles: mergeStyleRecords(liveView.column_styles, { ...styleOverride, [id]: merged }),
     })
   }
-  // Set a column's alignment: applies live via the override, persists to the SavedView column_alignments.
   const setColumnAlign = (id: string, align: ColumnAlign): void => {
     setAlignOverride((prev) => ({ ...prev, [id]: align }))
     persistView({
@@ -818,7 +816,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       )
     }
     const contextOptions = contextOptionsFor(col)
-    // A reserved tier column has no schema def — a minimal synthetic one satisfies the picker,
+    // A reserved Context column has no schema def — a minimal synthetic one satisfies the picker,
     // whose options come from `contextOptions` anyway.
     const def =
       schema.find((d) => d.id === col.id) ??
@@ -897,7 +895,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }
   // Right-click a cell → its native menu (always a menu, never an action). Title = page meta;
   // style-bearing types = the COLUMN's Style radios; link/file add Edit; picker-based cells add
-  // Clear (status gets Style + Clear; select/multi/context/tier get Clear alone).
+  // Clear (status gets Style + Clear; select/multi/context get Clear alone).
   const openCellMenu = async (
     row: ViewRow,
     col: ResolvedColumn,

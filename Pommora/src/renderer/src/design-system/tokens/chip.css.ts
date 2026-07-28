@@ -16,7 +16,7 @@ const chipBase = style([
   text.control.semibold,
   {
     // THE chip-size knob — scales every chip shape (pill/label/context/capsule/box)
-    // everywhere; set --chip-zoom on any scope (or :root) to retune. Default 1.
+    // everywhere; set --chip-zoom on any scope (or :root) to retune.
     zoom: 'var(--chip-zoom, 0.9)',
     display: 'inline-flex',
     alignItems: 'center',
@@ -41,8 +41,8 @@ export const chipPill = style([
   },
 ])
 
-/** chip-label — the select / multi-select shape: the pill's geometry squared off to a
- *  6px radius, so option chips read apart from status pills. Same `--chip-pad-x` source. */
+/** chip-label — the select / multi-select shape: the pill's geometry squared off,
+ *  so option chips read apart from status pills. Same `--chip-pad-x` source. */
 export const chipLabel = style([
   chipBase,
   {
@@ -97,16 +97,14 @@ export const chipBoxGeometry = style({
   borderWidth: '1.5px',
 })
 
-/** chip-box — the fixed 17×17 rounded square (radius 5.5, 1.5px stroke); holds one
- *  glyph (the checkbox look's checkmark). */
+/** chip-box — the fixed rounded-square frame; holds one glyph (the checkbox look's checkmark). */
 export const chipBox = style([chipBase, chipBoxGeometry])
 
 // ═══════════════════════════════════════════════════════════════════════════
 // § REMOVE-× MELT MACHINERY — the hover-revealed × + the label-tail melt.
-// LOAD-BEARING (Guidelines/Build-Gotchas.md § Chip Melt): masks STATIC from
-// mount, reveals flip OPACITIES only, the removable label is pointer-inert.
-// Any change here runs the re-verify matrix — computed styles lie for this
-// bug class; only live hovers are truth.
+// LOAD-BEARING: masks STATIC from mount, reveals flip OPACITIES only, the
+// removable label is pointer-inert. Any change here runs the re-verify
+// matrix — computed styles lie for this bug class; only live hovers are truth.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** A chip that carries a hover-revealed remove ×. The modifier only anchors the affordance;
@@ -117,7 +115,7 @@ export const chipRemovable = style({ position: 'relative' })
 
 // The cap lives on the LABEL, not the chip (a % width is unreliable in a shrink-to-fit flex chip): the
 // label truncates at `--chip-max` and the chip wraps it snugly, so the ellipsis lands at the padding
-// edge instead of floating mid-chip. `--chip-max` (80px default) is overridable per context. The
+// edge instead of floating mid-chip. `--chip-max` is overridable per context. The
 // ellipsis-at-rest / scroll-on-hover behaviour is the shared `truncateHoverScroll`; the cap is the add.
 // `position: relative` anchors the removable chip's twins; masks NEVER go on this box — a
 // mask here erases every descendant, the twins included. On a REMOVABLE chip the label is

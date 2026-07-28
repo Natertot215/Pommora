@@ -3,8 +3,6 @@ import { cx } from '../design-system/cx'
 import { autoSizeWrap, autoSizeMirror, autoSizeInput } from './EditableInput.css'
 
 /**
- * Shared inline-edit input: autofocus (select-all, or drop the caret at the end via `caretAtEnd`),
- * commit on Enter/blur, cancel on Escape.
  * The `settled` guard stops Enter (which blurs) and the trailing blur from both committing;
  * it's mounted only while editing, so each edit session gets a fresh guard. Consumers own
  * the commit/cancel meaning — store dispatch for sidebar rows, local callbacks for the header.

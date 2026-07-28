@@ -38,7 +38,7 @@ export async function openSessionIndex(root: string): Promise<void> {
  * incremental updater yet, so we drop index.db + cold-rebuild — correct by construction
  * (reuses the cold build; no per-entity row logic duplicated from buildIndex). Never throws
  * (all errors internally caught), so the mutate layer fire-and-forgets it off the UI path.
- * v1.1: targeted incremental upserts/deletes when nexuses grow + a query consumer lands.
+ * Targeted incremental upserts/deletes land when nexuses grow + a query consumer lands.
  */
 export async function refreshSessionIndex(root: string): Promise<void> {
   closeSessionIndex() // release the handle + flush WAL so the file delete is clean

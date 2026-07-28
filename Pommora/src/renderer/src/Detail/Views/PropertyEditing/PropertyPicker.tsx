@@ -29,7 +29,7 @@ const selectedValues = (current: PropertyValue | null): string[] => {
 export const toggleValue = (selected: string[], value: string): string[] =>
   selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]
 
-/** The minimal def a context-only column with no schema entry (a reserved tier) feeds the picker —
+/** The minimal def a Context column with no schema entry feeds the picker —
  *  its real options arrive through `contextOptions`, so the name goes unused. */
 export const syntheticContextDef = (id: string): PropertyDefinition => ({
   id,
@@ -68,8 +68,8 @@ export function PropertyPicker({
   /** The column's resolved look — a status column on a glyph look (checkbox/capsule) renders
    *  its OPTIONS as capsule chips too (Nathan); pill columns keep labeled pills. */
   look?: ColumnLook
-  /** Context columns (the reserved tiers + user context props) pick from the NEXUS's contexts,
-   *  not the def — the caller supplies the tier's list. Toggles like multi; commits `context`. */
+  /** Context columns (the registry Contexts + user context props) pick from the NEXUS's contexts,
+   *  not the def — the caller supplies the column's list. Toggles like multi; commits `context`. */
   contextOptions?: Array<{ value: string; label: string; color?: string; icon?: string }>
   onCommit: (value: PropertyValue | null) => void
   onDismiss: () => void
@@ -156,7 +156,7 @@ export function PropertyOptionRows({
 /** The picker's shared option plumbing — options + selection + the per-type commit, extracted so
  *  both PropertyPicker's own menu and a host pane (the cards add-picker) run the exact same semantics.
  *  A `contextOptions` list swaps the options source and makes the pick toggle+commit `context` (the
- *  reserved tiers + user context props); without it, def-driven select/status/multi. */
+ *  registry Contexts + user context props); without it, def-driven select/status/multi. */
 export function pickSemantics(
   def: PropertyDefinition,
   current: PropertyValue | null,

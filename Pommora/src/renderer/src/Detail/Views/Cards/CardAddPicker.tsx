@@ -30,7 +30,7 @@ function ValuePane({
 }: {
   def: PropertyDefinition
   current: PropertyValue | null
-  /** Tier/context entries: the pickable contexts — flips pickSemantics into context mode. */
+  /** Context entries: the pickable contexts — flips pickSemantics into context mode. */
   contextOptions?: ContextOption[] | null
   onCommit: (value: PropertyValue | null) => void
   onDone: () => void
@@ -81,8 +81,8 @@ function ValuePane({
 
 /**
  * The card's two-stage add-property menu: the list is everything NOT currently shown (hidden props,
- * tiers, and blank addable props). A pane entry (a blank addable-type prop) slides into a value pane
- * to set a value; a reveal-only entry (a hidden tier/context, a hidden-but-filled prop, a checkbox)
+ * Context columns, and blank addable props). A pane entry (a blank addable-type prop) slides into a value pane
+ * to set a value; a reveal-only entry (a hidden Context column, a hidden-but-filled prop, a checkbox)
  * just unhides on pick. One PickerMenu hosting a PaneSlider, the SurfacePM multi-pane idiom.
  */
 export function CardAddPicker({
@@ -99,7 +99,7 @@ export function CardAddPicker({
 }: {
   entries: AddEntry[]
   currentOf: (entry: AddEntry) => PropertyValue | null
-  /** The pickable contexts for a tier/context entry (null for every other kind). */
+  /** The pickable contexts for a Context entry (null for every other kind). */
   contextOptionsOf: (entry: AddEntry) => ContextOption[] | null
   open: boolean
   anchorRef: RefObject<HTMLElement | null>

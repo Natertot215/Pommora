@@ -14,8 +14,7 @@ import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 
-/** The chip shapes this component can wear — status wears the pill; select/multi wear the
- *  squared label (Nathan's assignment). Context chips are ContextChip's (chip-context). */
+/** Context chips use their own shape (ContextChip's chip-context) — not part of this map. */
 const SHAPE = { pill: chipPill, label: chipLabel } as const
 export type ChipShape = keyof typeof SHAPE
 
@@ -27,7 +26,7 @@ export function chipShapeForType(type: string): ChipShape {
 }
 
 /** The shared text chip — the chip recipe (colored fill/border/text) with a capped,
- *  hover-scrolling label (Part 2 G-3). One source for table select/status/multi-select cells
+ *  hover-scrolling label. One source for table select/status/multi-select cells
  *  AND the inline picker. `onRemove` opts into the hover ×: it removes THIS chip's value, so
  *  the handler owns what that means (one option off a multi, the whole value off a single). */
 export function Chip({
