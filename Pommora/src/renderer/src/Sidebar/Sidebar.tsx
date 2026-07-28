@@ -575,6 +575,9 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   useEffect(() => {
     if (mode !== 'agenda') return undefined
     let live = true
+    // Clear first: the list belongs to the nexus that produced it, so a switch must not show the
+    // previous one's items while the new read is in flight — or indefinitely, if it fails.
+    setAgenda({ tasks: [], events: [] })
     void window.nexus.agenda.list().then((r) => {
       if (live && r.ok) setAgenda({ tasks: r.tasks, events: r.events })
     })

@@ -266,6 +266,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
                 <NavGallery
                   pins={results ? [] : resolvedPins}
                   items={results ? results.items : shownRecents}
+                  frozenLayout={!!results}
                   {...(results ? {} : { onReorderRecent: reorderShownRecent })}
                   onSelect={goClose}
                   onOpenNewTab={goNewTab}
