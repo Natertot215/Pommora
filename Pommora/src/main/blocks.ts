@@ -10,13 +10,11 @@ import { join } from 'node:path'
 import {
   blockHostKey,
   knownBlock,
-  rawLayoutSchema,
   type BlockDoc,
   type BlockDocPatch,
   type BlockHostRef,
 } from '@shared/blocks'
 import { readKey, writeKey } from './db/localState'
-import { sessionDb } from './sessionDb'
 import { normalizeTitle } from '@shared/connections'
 import { scanConnections } from './connections/scan'
 import { rewriteConnections } from './connections/rewrite'
@@ -99,43 +97,17 @@ async function healSplitDoc(root: string, host: BlockHostRef): Promise<void> {
   if (!sidecar) return
   await mutateDoc(root, host, (cur) => ({
     ...cur,
-    ...('layout' in sidecar ? { layout: sidecar.layout } : {}),
     ...('blocks' in sidecar ? { blocks: sidecar.blocks } : {}),
     ...('blocks_locked' in sidecar ? { blocks_locked: sidecar.blocks_locked } : {}),
   }))
   await rm(sidecarPath, { force: true })
 }
 
-/**
- * The layout comes from the database; a host whose config still carries one is lifted here, on
- * the read that finds it — no walk, and nothing to run for a host already migrated. A layout the
- * schema rejects is left where it is rather than lifted, so nothing unreadable is destroyed, and
- * with no database open the config is not touched at all.
- */
-async function hostLayout(
-  root: string,
-  host: BlockHostRef,
-  raw: Record<string, unknown> | null,
-): Promise<unknown> {
-  const key = blockHostKey(host)
-  const stored = readKey<unknown>('layout', key)
-  if (stored !== null) return stored
-  const legacy = raw?.layout
-  if (legacy === undefined || sessionDb() === null) return legacy
-  if (!rawLayoutSchema.safeParse(legacy).success) {
-    console.error(`blocks: ${key} carries an unreadable layout — leaving it on disk`)
-    return legacy
-  }
-  writeKey('layout', key, legacy)
-  await mutateDoc(root, host, ({ layout: _lifted, ...rest }) => rest)
-  return legacy
-}
-
 export async function readBlockDoc(root: string, host: BlockHostRef): Promise<BlockDoc> {
   await healSplitDoc(root, host)
   const raw = await readJsonObject(await blockHostConfig(root, host))
   return {
-    layout: await hostLayout(root, host, raw),
+    layout: readKey<unknown>('layout', blockHostKey(host)) ?? undefined,
     blocks: Array.isArray(raw?.blocks) ? raw.blocks : [],
     locked: raw?.blocks_locked === true,
   }

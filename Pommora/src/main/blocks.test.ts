@@ -55,16 +55,16 @@ describe('readBlockDoc', () => {
     expect(await readBlockDoc(root, HOST)).toEqual({ layout: undefined, blocks: [], locked: false })
   })
 
-  it('surfaces layout, blocks, and the lock', async () => {
+  it('surfaces the lock and entries from the config, the layout from the database', async () => {
     await writeFile(
       configPath(),
       JSON.stringify({
         banner: 'b.png',
-        layout: { bands: [] },
         blocks: [{ id: 'a', type: 'markdown' }],
         blocks_locked: true,
       }),
     )
+    await writeBlockDoc(root, HOST, { layout: { bands: [] } })
     const doc = await readBlockDoc(root, HOST)
     expect(doc.layout).toEqual({ bands: [] })
     expect(doc.blocks).toEqual([{ id: 'a', type: 'markdown' }])
@@ -118,42 +118,6 @@ describe('space block host', () => {
   })
 })
 
-describe('layout lift', () => {
-  it('lifts a config-held layout into the database and strips it from the file', async () => {
-    const layout = { bands: [{ node: { kind: 'tile', id: 'a', h: 120 } }] }
-    await writeFile(configPath(), JSON.stringify({ banner: 'b.png', layout, blocks: [] }))
-
-    expect((await readBlockDoc(root, HOST)).layout).toEqual(layout)
-    expect(storedLayout(HOST)).toEqual(layout)
-    const cfg = await readConfig()
-    expect(cfg.layout).toBeUndefined()
-    expect(cfg.banner).toBe('b.png') // foreign keys survive the strip
-  })
-
-  it('runs once — a second read reads the row, not the file', async () => {
-    const layout = { bands: [{ node: { kind: 'tile', id: 'a', h: 120 } }] }
-    await writeFile(configPath(), JSON.stringify({ layout }))
-    await readBlockDoc(root, HOST)
-    await writeFile(configPath(), JSON.stringify({ layout: { bands: [] } })) // a stale hand-edit
-    expect((await readBlockDoc(root, HOST)).layout).toEqual(layout)
-  })
-
-  it('leaves an unreadable layout on disk rather than lifting or destroying it', async () => {
-    await writeFile(configPath(), JSON.stringify({ layout: { bands: 'not-an-array' } }))
-    await readBlockDoc(root, HOST)
-    expect((await readConfig()).layout).toEqual({ bands: 'not-an-array' })
-    expect(storedLayout(HOST)).toBeNull()
-  })
-
-  it('does not strip the config when no database is open', async () => {
-    const layout = { bands: [{ node: { kind: 'tile', id: 'a', h: 120 } }] }
-    await writeFile(configPath(), JSON.stringify({ layout }))
-    closeSessionDb()
-    expect((await readBlockDoc(root, HOST)).layout).toEqual(layout)
-    expect((await readConfig()).layout).toEqual(layout)
-  })
-})
-
 describe('writeBlockDoc', () => {
   it('touches only the patched keys — banner and foreign keys survive', async () => {
     await writeFile(
@@ -182,13 +146,11 @@ describe('writeBlockDoc', () => {
     await writeFile(
       sidecarPath(),
       JSON.stringify({
-        layout: { bands: [] },
         blocks: [{ id: 'a', type: 'markdown' }],
         blocks_locked: true,
       }),
     )
     const doc = await readBlockDoc(root, HOST)
-    expect(doc.layout).toEqual({ bands: [] })
     expect(doc.blocks).toEqual([{ id: 'a', type: 'markdown' }])
     expect(doc.locked).toBe(true)
     const cfg = await readConfig()
