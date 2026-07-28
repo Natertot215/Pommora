@@ -1,8 +1,11 @@
 import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from './io/atomicWrite'
+import { openSessionDb, closeSessionDb } from './sessionDb'
+import { readKey } from './db/localState'
+import { blockHostKey } from '@shared/blocks'
 import {
   blockFilePath,
   convertTileToView,
@@ -37,7 +40,15 @@ beforeEach(async () => {
     JSON.stringify({ contexts: [{ id: 'g1', title: 'Realms', singular: 'Realm' }] }),
   )
   await writeFile(spaceSidecar(), JSON.stringify({ id: 'sp1', color: 'mint' }))
+  openSessionDb(root)
 })
+
+afterEach(() => {
+  closeSessionDb()
+})
+
+const storedLayout = (host: { kind: 'homepage' } | { kind: 'space'; id: string }): unknown =>
+  readKey<unknown>('layout', blockHostKey(host))
 
 describe('readBlockDoc', () => {
   it('yields an empty doc when the config is missing', async () => {
@@ -84,8 +95,19 @@ describe('space block host', () => {
     expect(await readFile(spaceSidecar(), 'utf8')).toBe('not-json{')
   })
 
-  it('an unknown Space id fails the op', async () => {
-    await expect(writeBlockDoc(root, { kind: 'space', id: 'ghost' }, {})).rejects.toThrow()
+  it('an unknown Space id fails a config-touching op', async () => {
+    await expect(
+      writeBlockDoc(root, { kind: 'space', id: 'ghost' }, { locked: true }),
+    ).rejects.toThrow()
+  })
+
+  // A layout write resolves no host: validating one costs a registry + sidecar load on every drag
+  // commit, to catch an id the renderer can only hold for a host it just read. The cost of being
+  // wrong is a row nothing ever reads — the same tolerance every other local_state scope carries.
+  it('a layout-only write never resolves the host', async () => {
+    await expect(
+      writeBlockDoc(root, { kind: 'space', id: 'ghost' }, { layout: { bands: [] } }),
+    ).resolves.toBeUndefined()
   })
 
   it('listBlockBodies walks space hosts too', async () => {
@@ -96,18 +118,63 @@ describe('space block host', () => {
   })
 })
 
+describe('layout lift', () => {
+  it('lifts a config-held layout into the database and strips it from the file', async () => {
+    const layout = { bands: [{ node: { kind: 'tile', id: 'a', h: 120 } }] }
+    await writeFile(configPath(), JSON.stringify({ banner: 'b.png', layout, blocks: [] }))
+
+    expect((await readBlockDoc(root, HOST)).layout).toEqual(layout)
+    expect(storedLayout(HOST)).toEqual(layout)
+    const cfg = await readConfig()
+    expect(cfg.layout).toBeUndefined()
+    expect(cfg.banner).toBe('b.png') // foreign keys survive the strip
+  })
+
+  it('runs once — a second read reads the row, not the file', async () => {
+    const layout = { bands: [{ node: { kind: 'tile', id: 'a', h: 120 } }] }
+    await writeFile(configPath(), JSON.stringify({ layout }))
+    await readBlockDoc(root, HOST)
+    await writeFile(configPath(), JSON.stringify({ layout: { bands: [] } })) // a stale hand-edit
+    expect((await readBlockDoc(root, HOST)).layout).toEqual(layout)
+  })
+
+  it('leaves an unreadable layout on disk rather than lifting or destroying it', async () => {
+    await writeFile(configPath(), JSON.stringify({ layout: { bands: 'not-an-array' } }))
+    await readBlockDoc(root, HOST)
+    expect((await readConfig()).layout).toEqual({ bands: 'not-an-array' })
+    expect(storedLayout(HOST)).toBeNull()
+  })
+
+  it('does not strip the config when no database is open', async () => {
+    const layout = { bands: [{ node: { kind: 'tile', id: 'a', h: 120 } }] }
+    await writeFile(configPath(), JSON.stringify({ layout }))
+    closeSessionDb()
+    expect((await readBlockDoc(root, HOST)).layout).toEqual(layout)
+    expect((await readConfig()).layout).toEqual(layout)
+  })
+})
+
 describe('writeBlockDoc', () => {
   it('touches only the patched keys — banner and foreign keys survive', async () => {
     await writeFile(
       configPath(),
       JSON.stringify({ banner: 'b.png', swift_future: { x: 1 }, blocks: [] }),
     )
-    await writeBlockDoc(root, HOST, { layout: { bands: [] } })
+    await writeBlockDoc(root, HOST, { layout: { bands: [] }, blocks: [] })
     const cfg = await readConfig()
     expect(cfg.banner).toBe('b.png')
     expect(cfg.swift_future).toEqual({ x: 1 })
-    expect(cfg.layout).toEqual({ bands: [] })
     expect(cfg.blocks).toEqual([])
+    expect(cfg.layout).toBeUndefined() // the layout is not the config's to hold
+    expect(storedLayout(HOST)).toEqual({ bands: [] })
+  })
+
+  it('a layout-only write leaves the config untouched entirely', async () => {
+    await writeFile(configPath(), JSON.stringify({ banner: 'b.png' }))
+    const before = await readFile(configPath(), 'utf8')
+    await writeBlockDoc(root, HOST, { layout: { bands: [] } })
+    expect(await readFile(configPath(), 'utf8')).toBe(before)
+    expect(storedLayout(HOST)).toEqual({ bands: [] })
   })
 
   it('heals the interim split-doc sidecar back onto the host config', async () => {
@@ -151,9 +218,9 @@ describe('writeBlockDoc', () => {
     ])
     const cfg = await readConfig()
     expect(cfg.banner).toBe('keep.png')
-    expect(cfg.layout).toEqual({ bands: [] })
     expect(cfg.blocks_locked).toBe(true)
     expect(cfg.blocks).toEqual([{ id: 'z', type: 'markdown' }])
+    expect(storedLayout(HOST)).toEqual({ bands: [] })
   })
 })
 
