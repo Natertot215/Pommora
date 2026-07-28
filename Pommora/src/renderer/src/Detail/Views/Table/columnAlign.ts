@@ -22,7 +22,7 @@ const CENTERED = new Set([
   'datetime',
 ])
 
-/** The E-6 default alignment for a column, from its declared type. Title is always left (its primary
+/** The default alignment for a column, from its declared type. Title is always left (its primary
  *  icon+text treatment); unknown types fall back to left. `contextIds` is what makes a Context
  *  column classify as such — omit it and one reads as an unknown type. */
 export function defaultAlignFor(
@@ -35,7 +35,7 @@ export function defaultAlignFor(
   return t !== undefined && CENTERED.has(t) ? 'center' : 'left'
 }
 
-/** The resolved alignment for a column: a saved `column_alignments` override, else the E-6 type default. */
+/** The resolved alignment for a column: a saved `column_alignments` override, else the type default. */
 export function alignFor(
   columnId: string,
   schema: PropertyDefinition[],

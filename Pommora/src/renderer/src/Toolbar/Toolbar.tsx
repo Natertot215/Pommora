@@ -77,7 +77,7 @@ export function Toolbar({
 
   const goBack = useSession((s) => s.goBack)
   const goForward = useSession((s) => s.goForward)
-  // Back/Forward act on the ACTIVE tab's own history (D-7); a pinned/newtab active tab (not in `tabs`)
+  // Back/Forward act on the ACTIVE tab's own history; a pinned/newtab active tab (not in `tabs`)
   // carries none, so both disable.
   const canGoBack = useSession((s) => {
     const a = activeUnpinnedTab(s.tabs, s.activeTabId)

@@ -40,7 +40,7 @@ import {
 
 /** Right-click an entity → main pops the native context menu. Every PathNode (page +
  *  container + context) carries kind/id/path/title; the code-keyed saved rows don't, so they
- *  never wire this. Tab membership rides along so the menu's open item reads stateful (I-1). */
+ *  never wire this. Tab membership rides along so the menu's open item reads stateful. */
 function showContextFor(node: {
   kind: MutableKind
   id: string
@@ -141,7 +141,7 @@ function Leaf({
   // Reserve the disclosure-chevron column so the icon lines up under expandable
   // rows. Top-level shortcuts (the Saved strip) opt out and sit flush.
   chevronSpace?: boolean
-  /** Receives the click (MenuItem passes it through) — page rows read ⌘ for the I-19 bypass. */
+  /** Receives the click (MenuItem passes it through) — page rows read ⌘ for the bypass. */
   onSelect?: (e: React.MouseEvent) => void
   onContextMenu?: () => void
   rename?: RenameTarget
@@ -597,8 +597,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     void select({ kind: 'set', id: set.id, path: set.path })
   }
   const onSelectPage = (page: PageNode, e?: React.MouseEvent): void => {
-    // B-2: a page in a page-preview Collection opens the floating preview (the sidebar resolves the
-    // owner by path prefix — it has no source prop); ⌘-click is the explicit full-page bypass (I-19).
+    // a page in a page-preview Collection opens the floating preview (the sidebar resolves the
+    // owner by path prefix — it has no source prop); ⌘-click is the explicit full-page bypass.
     const owner = [...tree.collections, ...tree.userSections.flatMap((s) => s.collections)].find(
       (c) => page.path.startsWith(`${c.path}/`),
     )

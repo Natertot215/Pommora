@@ -77,7 +77,7 @@
   );
 }
 
-/* Vertical scroll container (the Apple scroll-edge fade, hoisted from the sidebar — A-6). */
+/* Vertical scroll container (the Apple scroll-edge fade, hoisted from the sidebar). */
 .edge-fade {
   animation-timeline: scroll(self block);
 }

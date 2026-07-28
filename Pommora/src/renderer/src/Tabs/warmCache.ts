@@ -1,8 +1,8 @@
-// The session-only warm cache behind warm tabs (B-2/B-3): serialized editor state (undo history via
+// The session-only warm cache behind warm tabs: serialized editor state (undo history via
 // CM6's historyField), scroll position, and the cached PageDetail, keyed (tabId → navKey) so a tab's
-// whole Back/Forward stack stays warm (I-7) without cross-tab bleed — two tabs can hold the same
+// whole Back/Forward stack stays warm without cross-tab bleed — two tabs can hold the same
 // entity in their histories, each with its own undo. Module state, not store state: none of it is
-// render state, and it must survive React remounts while dying with the session (quit resets, D-8).
+// render state, and it must survive React remounts while dying with the session (quit resets).
 //
 // Entries have two writers under one key: the STORE captures pageDetail at switch-initiation (before
 // `select` nulls it), and the editor captures editorState/scrollTop at unmount under keys frozen at
@@ -18,7 +18,7 @@ export interface WarmEntry {
   pageDetail?: PageDetail
 }
 
-/** Warm depth per tab (I-7): Back/Forward restores warm this many entries deep; beyond it, cold. */
+/** Warm depth per tab: Back/Forward restores warm this many entries deep; beyond it, cold. */
 const WARM_CAP_PER_TAB = 20
 
 const cache = new Map<string, Map<string, WarmEntry>>()
@@ -50,7 +50,7 @@ export function dropWarmTab(tabId: string): void {
   cache.delete(tabId)
 }
 
-/** Wholesale reset — nexus switch (I-10). */
+/** Wholesale reset — nexus switch. */
 export function clearWarm(): void {
   cache.clear()
 }

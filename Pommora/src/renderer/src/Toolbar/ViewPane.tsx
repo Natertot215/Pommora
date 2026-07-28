@@ -82,12 +82,12 @@ export function ViewPane({
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [iconOpen, setIconOpen] = useState(false)
   const scope = useViewEmbedScope()
-  // ViewPane never mounts inside a view embed until the payload switcher lands (H-5);
+  // ViewPane never mounts inside a view embed until the payload switcher lands;
   // its source-CRUD family (create/reorder/delete/switch) must route to the payload first.
   if (scope) return null
   const views = node.views ?? []
   // The list never renders empty: during the entry-mint beat (a legacy container's first open, before
-  // the refetch lands) show the in-memory sentinel default, same as the button + table (G-4).
+  // the refetch lands) show the in-memory sentinel default, same as the button + table.
   const rows = views.length ? views : [mintDefaultView(schema)]
   // The active view whose row wears the outline — `pickView`'s fallback (a gone/unset pointer → the
   // first row), so the ring always marks exactly one row.

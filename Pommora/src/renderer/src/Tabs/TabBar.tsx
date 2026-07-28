@@ -22,13 +22,13 @@ const EXIT_MS = BASE_MS + Number.parseInt(duration.fast, 10)
 interface TabEntry {
   tab: Tab
   /** Live-resolved display, or null for the NavView tab (rendered off its own treatment). A pinned
-   *  tab that no longer resolves render-hides upstream (I-2) and never reaches here. */
+   *  tab that no longer resolves render-hides upstream and never reaches here. */
   res: ResolvedNav | null
 }
 
-/** The toolbar tab bar: pinned compact icons docked left (the pins set, C-1), the unpinned strip
+/** The toolbar tab bar: pinned compact icons docked left (the pins set), the unpinned strip
  *  right of them (overflow-scroll + edge fade), the trailing `+`. Blank until there's a working set
- *  to show — two tabs, or a pin (D-6). The gate/body split keeps every interaction hook (the Ctrl+Tab
+ *  to show — two tabs, or a pin. The gate/body split keeps every interaction hook (the Ctrl+Tab
  *  listener included) mounted exactly when the bar shows. */
 export function TabBar(): React.JSX.Element | null {
   const tabs = useSession((s) => s.tabs)
@@ -40,7 +40,7 @@ export function TabBar(): React.JSX.Element | null {
   const index = useMemo(() => (tree ? buildResolveIndex(tree) : null), [tree])
   const pinnedEntries = useMemo<TabEntry[]>(() => {
     if (!index) return []
-    // A pinned entity that no longer resolves render-hides (I-2: render-prune, never storage-prune).
+    // A pinned entity that no longer resolves render-hides (render-prune, never storage-prune).
     return derivePinnedTabs(pins).flatMap((tab) => {
       if (tab.target.kind === 'newtab') return []
       const res = resolveWith(index, tab.target)
@@ -57,7 +57,7 @@ export function TabBar(): React.JSX.Element | null {
   )
 
   // Blank ONLY for the pure empty state (a lone NavView, no pins); otherwise the bar shows so the +
-  // stays reachable — even at a single real tab (Nathan's revision of D-6's blank-at-single).
+  // stays reachable — even at a single real tab (Nathan's revision of the blank-at-single rule).
   if (pinnedEntries.length === 0 && unpinnedEntries.every((e) => e.tab.target.kind === 'newtab'))
     return null
   return <TabBarBody pinnedEntries={pinnedEntries} unpinnedEntries={unpinnedEntries} />
@@ -82,7 +82,7 @@ function TabBarBody({
 
   // Closing is store-first: the tab leaves the store IMMEDIATELY (content switches, dedup/cycle/MRU
   // all read truth — a re-click of the entity spawns fresh instead of resurrecting a zombie), while a
-  // GHOST of it stays rendered for the width-collapse exit on the slow token (J-6).
+  // GHOST of it stays rendered for the width-collapse exit on the slow token.
   const [ghosts, setGhosts] = useState<ReadonlyMap<string, { entry: TabEntry; index: number }>>(
     new Map(),
   )
@@ -116,7 +116,7 @@ function TabBarBody({
   // Index of the first non-ghost tab — drives the leftmost-close segment handoff (F2).
   const firstLive = renderEntries.findIndex((e) => !e.ghost)
 
-  // Ctrl+Tab / Ctrl+Shift+Tab cycles the full visual order, wrapping (I-11 — the one signed-off
+  // Ctrl+Tab / Ctrl+Shift+Tab cycles the full visual order, wrapping (the one signed-off
   // binding). Lives in the body, so the combo is intercepted exactly while the bar shows.
   const orderedIds = useMemo(
     () => [...pinnedEntries.map((e) => e.tab.id), ...unpinnedEntries.map((e) => e.tab.id)],
@@ -135,7 +135,7 @@ function TabBarBody({
     return () => window.removeEventListener('keydown', onKey)
   }, [activateTab])
 
-  // The active tab scrolls into view on switch (J-5).
+  // The active tab scrolls into view on switch.
   const stripRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     stripRef.current
@@ -143,7 +143,7 @@ function TabBarBody({
       ?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
   }, [activeTabId])
 
-  // A tab's native (Electron) right-click menu (I-12): context out, action back, dispatched against the
+  // A tab's native (Electron) right-click menu: context out, action back, dispatched against the
   // tab id. Close animates through the ghost path.
   const runTabMenu =
     (tabId: string, pinned: boolean, isNewTab: boolean) =>
@@ -269,8 +269,8 @@ function TabBarBody({
 }
 
 /** A pinned tab: the compact entity icon (the nexus photo for Homepage, via EntityGlyph); the full
- *  name reveals on hover (I-8). The pin badge is pulled for now — position (left of the divider) +
- *  compactness carry the pinned reading. Not closable (D-10) — unpin first. */
+ *  name reveals on hover. The pin badge is pulled for now — position (left of the divider) +
+ *  compactness carry the pinned reading. Not closable — unpin first. */
 function PinnedTab({
   entry,
   active,
@@ -321,7 +321,7 @@ function DraggableUnpinnedTab(props: {
   return <UnpinnedTab {...props} drag={drag} />
 }
 
-/** An unpinned tab: icon + ellipsizing label, the hover-fade × (D-10), width-animated open/close. */
+/** An unpinned tab: icon + ellipsizing label, the hover-fade ×, width-animated open/close. */
 function UnpinnedTab({
   entry,
   active,
@@ -386,7 +386,7 @@ function UnpinnedTab({
         )}
         <OverflowScroll className={cx('tab-label', slideClass)}>{title}</OverflowScroll>
       </Fragment>
-      {/* The chip ×'s glyph + swallow behavior (J-1) with a plain hover-fade — never the melt
+      {/* The chip ×'s glyph + swallow behavior with a plain hover-fade — never the melt
           (glass has no solid fill), never on pinned tabs. */}
       <button
         type="button"
