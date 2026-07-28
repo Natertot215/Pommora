@@ -333,7 +333,7 @@ interface SessionState {
   reorderPreviewTabs: (activeId: string, overId: string) => void
   closePreviewTab: (id: string, exit?: 'dismiss' | 'engulf') => void
   closePreview: (reason?: 'dismiss' | 'engulf') => void
-  /** the NavWindow's routing override toggle — persisted in `page-previews.json`. */
+  /** The NavWindow's routing override toggle — persisted in `page-previews.json`. */
   setNavOverride: (on: boolean) => void
   /** How the CURRENT close should read: promote paths pass 'engulf' (the window flies into
    *  the detail pane), X/Escape 'dismiss' (the scale-out). Consumed by the exit animation. */
@@ -885,7 +885,7 @@ export const useSession = create<SessionState>((set, get) => {
           void get().select(next, { record: false }) // refetch the detail at the page's new path — not a nav
         }
       }
-      // every tab reconciles, not just the active selection — an inactive tab whose entity was
+      // Every tab reconciles, not just the active selection — an inactive tab whose entity was
       // renamed/moved refreshes in place; a deleted entity closes its unpinned tab (pinned tabs derive
       // from pins, which render-prune, never storage-prune). Reference-preserving: an unchanged set
       // skips the write entirely.
@@ -1153,7 +1153,7 @@ export const useSession = create<SessionState>((set, get) => {
       if (!pinnedTab || pinnedTab.target.kind === 'newtab') return
       const target = pinnedTab.target
       get().unpinTarget(navKey(target))
-      // if the entity somehow already holds an unpinned tab, focus it instead of duplicating.
+      // If the entity somehow already holds an unpinned tab, focus it instead of duplicating.
       const existing = get().tabs.find(
         (t) => t.target.kind !== 'newtab' && navKey(t.target) === navKey(target),
       )
@@ -1344,7 +1344,7 @@ export const useSession = create<SessionState>((set, get) => {
     openPreview: (target) => {
       const cur = get().preview
       if (cur?.flavor === 'page' && cur.originId === target.id) return // same-origin no-op
-      // a summon restores the origin's remembered set, reconciled; an emptied or absent
+      // A summon restores the origin's remembered set, reconciled; an emptied or absent
       // record falls back to the bare origin.
       const { tabs: restored, activeTab } = reconcileRecord(get().previewsFile.origins[target.id])
       const tabs =
@@ -1371,7 +1371,7 @@ export const useSession = create<SessionState>((set, get) => {
       // exit hides the outgoing window instantly so the nav carries the whole motion.
       const morphing = cur?.flavor === 'page'
       if (morphing) stashWindowMorph()
-      // the map sentinel is always tab 1; the remembered page tabs restore after it. The map
+      // The map sentinel is always tab 1; the remembered page tabs restore after it. The map
       // tab opens ACTIVE (the gallery is the landing view; remembered tabs sit beside it).
       const { tabs: pages } = reconcileRecord(get().previewsFile.navSet)
       const sentinel = { id: makeTabId(), target: { kind: 'navwindow' as const } }

@@ -364,8 +364,8 @@
   --scroll-fade: 24px;
 }
 
-/* label-secondary keeps the icon tone the leading .side slot gave it before the icon moved inline into
-   the title's scroll box; small gap to the title. */
+/* label-secondary matches the tone the design system's leading .side slot gives an icon — this row's
+   icon sits inline in the title's scroll box instead, so the tone is restated here; small gap to the title. */
 .row-icon {
   color: var(--label-secondary);
   vertical-align: middle;

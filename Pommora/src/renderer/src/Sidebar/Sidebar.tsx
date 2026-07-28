@@ -58,7 +58,6 @@ function showContextFor(node: {
   })
 }
 
-/** A row's onContextMenu handler — suppress the browser default, then run `cb`. */
 function ctxHandler(cb?: () => void): ((e: React.MouseEvent) => void) | undefined {
   return cb
     ? (e) => {
@@ -109,10 +108,6 @@ function isPageSelected(sel: SelectionState, id: string): boolean {
 
 // --- icon helper ----------------------------------------------------------
 
-// Resolve a row's icon, attaching the folder open/closed swap ONLY when the icon
-// is the folder icon. A custom icon — or a non-folder default like the vault's
-// stack — stays put when the row toggles. Falls back when the stored name isn't a
-// known symbol.
 function folderAwareIcons(
   custom: string | undefined,
   fallback: IconName,
@@ -705,8 +700,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     </SidebarDnd>
   )
 
-  // Right-click the empty mode area → its create menu (the section headers that once held the "+"
-  // are gone). Fires only on the bare layer surface, so a row's own context menu still wins.
+  // Right-click the empty mode area → its create menu. Fires only on the bare layer
+  // surface, so a row's own context menu still wins.
   const modeCtx =
     (cb?: () => void) =>
     (e: React.MouseEvent): void => {
