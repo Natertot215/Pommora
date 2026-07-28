@@ -64,7 +64,7 @@ Every sidecar's field shape is canonical in `src//shared//schemas.ts`.
 
 **Agenda is discriminated by config sidecar, never by name.** A Tasks / Events singleton is *only* the folder carrying `_taskconfig.json` / `_eventconfig.json`; the folder names are renameable defaults. Every collection-discovery path skips a folder iff it carries an agenda config, so a Page Collection named "Tasks" is still a Collection. No name is ever reserved.
 
-**An agenda item's own kind is its filename suffix.** `.task.json` and `.event.json` are the on-disk task-vs-event discriminator, deriving both the kind and the title, and load-bearing in the read walk and the index build.
+**An agenda item's own kind is its filename suffix.** `.task.json` and `.event.json` are the on-disk task-vs-event discriminator, deriving both the kind and the title, and load-bearing in the read walk.
 
 > **Pending — per-file kind at adoption.** Adoption classifies at the folder level and skips agenda folders wholesale, so no individual file is scoped to a kind when a folder is adopted. Applying the existing suffix discriminator per file lands with the Agenda surfaces.
 
@@ -138,7 +138,7 @@ Opening a folder as a Nexus stamps every un-adopted entity with a real ULID: a r
 
 #### Migration — schema versioning
 
-**Index-side** — covered above: a version mismatch deletes + rebuilds the index, no per-user data migration.
+**Database-side** — covered above: a version mismatch deletes the file and starts clean, no per-user data migration.
 
 **File-side** — `nexus.json` carries the nexus schema version; folder sidecars accept an optional `schema_version` Pommora doesn't write. There is no property-ID migration pass: the build is ID-first — values are `prop_<ulid>`-keyed from creation and definitions live in the nexus-wide registry — so entity files never need rewriting.
 

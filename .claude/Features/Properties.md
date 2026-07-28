@@ -129,7 +129,7 @@ At every write: a created property's `name` is non-empty and its `id` is unique 
 
 #### II. Index
 
-The SQLite `property_definitions` table mirrors the nexus-wide registry — one row per definition, keyed by id alone, no owner columns; Agenda's own definitions stay out of it. Each member's values mirror into its entity row as a JSON column. Nothing reads either yet: filter, sort, and group all run renderer-side over the frontmatter the walk already carries, so the mirror stages the shape a query facade would read. It's regeneratable — a schema-version bump drops and rebuilds it. Full data layer → `Architecture.md`.
+Nothing mirrors the registry into a database: filter, sort, and group all run renderer-side over the frontmatter the walk already carries, and the registry file is the single source. Full data layer → `Architecture.md`.
 
 ### Pending
 

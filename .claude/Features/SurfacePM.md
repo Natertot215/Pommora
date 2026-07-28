@@ -4,9 +4,9 @@ Pommora's composable dashboard layer: any **BlockHost** — an entity whose conf
 
 ### The Block Document
 
-A host's config carries `layout` — a split tree of row and column bands with tiles as leaves — plus the block entries and the lock, under the shared zod contract. Every write is a locked read-merge-write touching only its own keys, so foreign keys survive by construction. A Space's sidecar carries identity other writers own, so its merge is strict: an unreadable sidecar fails the save rather than clobbering it.
+A host's config carries the block entries and the lock under the shared zod contract; the `layout` — a split tree of row and column bands with tiles as leaves — is arrangement rather than content, so it is a row in `nexus.db` that no hand-edit can reach. Config writes are a locked read-merge-write touching only their own keys, so foreign keys survive by construction, and a layout write opens no file at all. A Space's sidecar carries identity other writers own, so its merge is strict: an unreadable sidecar fails the save rather than clobbering it.
 
-Robustness is repair-not-reject: unknown entries and dead references render inert rather than being stripped, holding until the user removes the tile; an entry-less layout leaf holds its space invisibly; broken hand-edited values repair in place without wiping the document's survivors.
+Robustness is render-inert rather than strip: an entry this build doesn't recognize, a dead page reference, and a layout leaf whose entry is gone all hold their space until the user removes the tile. The layout itself needs no repair — the ops renormalize ratios and collapse single-child splits on every mutation, and the boundary rejects a malformed tree before it can be stored.
 
 ### Tile Types
 
@@ -48,7 +48,7 @@ An embedded **page** signals itself with an accent border under the pointer or w
 
 ### Storage + Host Rules
 
-Two hosts carry a block document: the Homepage's `homepage.json` and a Space's own `_space.json`, both under `.nexus/`. The document loads per-host on open — never in the tree walk — and layout writes debounce on gesture end; the watcher ignores host content folders while host configs stay watched, so block edits never cost a re-walk. Markdown-block bodies write pure, with no frontmatter envelope and no stamp, locked per file.
+Two hosts carry a block document: the Homepage's `homepage.json` and a Space's own `_space.json`, both under `.nexus/`, each paired with its layout row. The document loads per-host on open — never in the tree walk — and layout writes debounce on gesture end; the watcher ignores host content folders while host configs stay watched, so block edits never cost a re-walk. Markdown-block bodies write pure, with no frontmatter envelope and no stamp, locked per file.
 
 #### Pending
 

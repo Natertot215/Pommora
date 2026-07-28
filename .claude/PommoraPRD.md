@@ -61,7 +61,7 @@ Tasks and Events sit under the **Agenda** parent schema. The Page Collection's p
 
 #### Identity and linking
 
-- **`id`** — a stable ULID assigned at creation, never changing. Connections and the index are ID-keyed; Context links are the deliberate exception, stored as registry-resolved titles whose renames cascade.
+- **`id`** — a stable ULID assigned at creation, never changing. Connections are ID-keyed; Context links are the deliberate exception, stored as registry-resolved titles whose renames cascade.
 - **Title** — the display name, carried as the filename (minus extension), freely renameable. Renames are filesystem renames; ID-keyed references resolve to the current title at render time. Within a container, a colliding Page create auto-disambiguates and a rename is rejected. Titles aren't unique Nexus-wide — a connection to a title shared by two Pages resolves as ambiguous.
 
 Operational entities tag Spaces through quoted bracketed Context keys — `"[Projects]": [Pommora]`, arrays of Space titles at the frontmatter or JSON root, the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections. Full model and the linking catalog → `Features/Structure.md` plus the per-entity docs.
@@ -84,13 +84,13 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 2. **Cloud-sync-ready and cross-nexus queryable.** Collections aren't isolated silos — property definitions live nexus-wide, so one shared property id means the same thing in every Collection that assigns it and a single query matches across all of them; any Page or Context can query, link, or embed any Collection's contents regardless of where it sits on disk. The on-disk model maps cleanly onto a cloud database, so sync arrives later as an additive translation rather than a rewrite. A Nexus placed in iCloud Drive, Dropbox, or any synced folder already gets device-to-device sync for free.
 
-3. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read Pommora's entire structured graph (Pages, schemas, Areas, relations, properties) straight from plain text files. The bar is convention-aware, not instant to an outsider: a `[[wikilink]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob or held only in the regeneratable index.
+3. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read Pommora's entire structured graph (Pages, schemas, Areas, relations, properties) straight from plain text files. The bar is convention-aware, not instant to an outsider: a `[[wikilink]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob. The device-local database holds per-machine chrome only, never content.
 
 #### Storage Philosophy
 
 **Files are canonical.** Everything a user creates lives as a plain file in a folder they pick, and that folder is the whole product — it can sit in any synced location and travels intact. Pages are Markdown with YAML frontmatter; Agenda entries, Contexts, and all configuration are JSON. No database of record holds user data.
 
-**Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_area.json` / `_topic.json` / `_project.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar — folder names stay freely renameable, and classification never depends on a file extension or a frontmatter field. App-internal config and the index live under a hidden `.nexus/` folder that travels with the Nexus.
+**Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_area.json` / `_topic.json` / `_project.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar — folder names stay freely renameable, and classification never depends on a file extension or a frontmatter field. App-internal config and the device-local database live under a hidden `.nexus/` folder that travels with the Nexus.
 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault leaves notes byte-identical until the user edits them.
 
@@ -148,7 +148,7 @@ The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Cal
 
 #### The Local-End Translation Principle
 
-**The local file is the spec, not the render.** Anything the index computes — board contents, gallery cards, aggregated counts, relation lookups — is referenced by directive in the file, never inlined. An external agent reads the directive and understands the structure; the rendered data lives only inside Pommora.
+**The local file is the spec, not the render.** Anything Pommora computes — board contents, gallery cards, aggregated counts, relation lookups — is referenced by directive in the file, never inlined. An external agent reads the directive and understands the structure; the rendered data lives only inside Pommora.
 
 #### Connections
 
@@ -200,7 +200,7 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 - **Settings** — storage, label wiring across renameable surfaces, and accent-color reading now; full editing UI planned.
 - Property panel driven by each entity's schema, the full v1 catalog (including Status and File / Attachment), and per-view configuration (sort / group / filter / layout / visibility).
 - Connections — `[[Page]]` inline links, the sole connection syntax, with automatic rename cascade across all referencing bodies.
-- A file watcher keeping the index synced, and global full-text search.
+- A file watcher keeping the tree live, and global full-text search.
 - Sidebar (Nexus header / Contexts / Collections) plus user-creatable Collection sections, reorderable with drag-and-drop.
 - Inline editing of embedded views.
 - One design scheme plus in-app accent customization.
