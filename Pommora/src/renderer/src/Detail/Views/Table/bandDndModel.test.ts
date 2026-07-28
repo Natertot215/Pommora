@@ -227,6 +227,17 @@ describe('structuralOrderAfterDrop', () => {
     ])
   })
 
+  // A filter prunes emptied bands out of the resolved groups. Merging against THAT set would drop
+  // their stored position, so a filtered-out Set silently loses its place in the manual order.
+  it('a Set filtered out of view keeps its position when the universe is the tree', () => {
+    // S2 sits first by user order; a filter empties it, so only S3 and S1 render.
+    expect(structuralOrderAfterDrop(['S2', 'S3', 'S1'], ['S1', 'S2', 'S3'], 'S1', 'S3')).toEqual([
+      'S2',
+      'S1',
+      'S3',
+    ])
+  })
+
   it('seeds from the full tree in tree order when no prior order exists', () => {
     expect(structuralOrderAfterDrop([], fullIds, 'B', 'A')).toEqual(['B', 'A', 'A1', 'A2', 'B1'])
   })
