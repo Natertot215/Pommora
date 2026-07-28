@@ -7,16 +7,20 @@ import { footerLockAction, lockIcon } from '../../Blocks/handleMenu.css'
 import { IconPicker } from '../IconPicker'
 import { PhotoCropModal } from '../PhotoCropModal'
 import { useNexusIcon } from '../useNexusIcon'
+import { blockHostKey, type BlockHostRef } from '@shared/blocks'
 import { assetUrl } from '../../assetUrl'
 import * as s from './settingsPane.css'
+
+const HOMEPAGE_HOST: BlockHostRef = { kind: 'homepage' }
 
 /** Every other selection renders nothing here; Spaces edit their identity from the Contexts
  *  toolbar pane. */
 export function SettingsScaffold(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
-  const locked = useSession((st) => st.homepageLocked)
-  const setLocked = useSession((st) => st.setHomepageLocked)
+  const locked = useSession((st) => st.hostLocks[blockHostKey(HOMEPAGE_HOST)] ?? false)
+  const setHostLocked = useSession((st) => st.setHostLocked)
+  const setLocked = (v: boolean): Promise<void> => setHostLocked(HOMEPAGE_HOST, v)
   const {
     profileImage,
     profileIcon,

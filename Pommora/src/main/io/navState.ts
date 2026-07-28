@@ -29,8 +29,9 @@ function isRecentEntry(v: unknown): v is RecentEntry {
 }
 
 /** A well-formed nav target: known kind, an `id` on every kind but homepage, and a `path` on the
- *  path-carrying kinds (set/page). Hand-edited or cross-version junk is dropped, never crashes. */
-function isNavTarget(v: unknown): v is NavTarget {
+ *  path-carrying kinds (set/page). Hand-edited or cross-version junk is dropped, never crashes.
+ *  Shared with the pin reader, which layers its own fields on top. */
+export function isNavTarget(v: unknown): v is NavTarget {
   if (!isPlainObject(v)) return false
   const kind = v.kind
   if (typeof kind !== 'string' || !NAV_KINDS.has(kind)) return false

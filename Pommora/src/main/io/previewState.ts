@@ -3,10 +3,8 @@
 // for the same reason as the tab set. The renderer owns restore-time reconciliation against the
 // live tree; main persists the file as one row.
 
-import type { PreviewsFile } from '@shared/types'
+import { EMPTY_PREVIEWS, type PreviewsFile } from '@shared/types'
 import { readValue, writeValue } from '../db/localState'
-
-export const EMPTY_PREVIEWS: PreviewsFile = { navSet: null, origins: {}, open: null }
 
 export function readPreviewsState(): PreviewsFile {
   return readValue<PreviewsFile>('previews') ?? EMPTY_PREVIEWS

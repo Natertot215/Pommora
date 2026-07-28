@@ -141,24 +141,6 @@ describe('writeBlockDoc', () => {
     expect(storedLayout(HOST)).toEqual({ bands: [] })
   })
 
-  it('heals the interim split-doc sidecar back onto the host config', async () => {
-    await writeFile(configPath(), JSON.stringify({ banner: 'b.png' }))
-    await writeFile(
-      sidecarPath(),
-      JSON.stringify({
-        blocks: [{ id: 'a', type: 'markdown' }],
-        blocks_locked: true,
-      }),
-    )
-    const doc = await readBlockDoc(root, HOST)
-    expect(doc.blocks).toEqual([{ id: 'a', type: 'markdown' }])
-    expect(doc.locked).toBe(true)
-    const cfg = await readConfig()
-    expect(cfg.banner).toBe('b.png')
-    expect(cfg.blocks).toEqual([{ id: 'a', type: 'markdown' }])
-    expect(await pathExists(sidecarPath())).toBe(false)
-  })
-
   it('sets and clears the lock key', async () => {
     await writeBlockDoc(root, HOST, { locked: true })
     expect((await readConfig()).blocks_locked).toBe(true)

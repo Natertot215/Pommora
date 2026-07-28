@@ -5,7 +5,7 @@
 // blocks/blocks_locked, so foreign keys (banner included) survive; the layout no longer shares
 // that file, so a banner write and a layout drag can't lose each other.
 
-import { mkdir, readFile, rm, stat } from 'node:fs/promises'
+import { mkdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   blockHostKey,
@@ -87,24 +87,7 @@ async function mutateDoc(
   await serializeOnFile(path, () => mutateJson<Record<string, unknown>>(path, () => ({}), fn))
 }
 
-/** One-time healing: a brief interim build split the homepage doc into a `_blocks.json`
- *  sidecar — fold it back onto the host config (one file, one entity) and remove
- *  it. No-op when no sidecar exists; Space hosts never had the split. */
-async function healSplitDoc(root: string, host: BlockHostRef): Promise<void> {
-  if (host.kind !== 'homepage') return
-  const sidecarPath = join(blockHostDir(root, host), '_blocks.json')
-  const sidecar = await readJsonObject(sidecarPath)
-  if (!sidecar) return
-  await mutateDoc(root, host, (cur) => ({
-    ...cur,
-    ...('blocks' in sidecar ? { blocks: sidecar.blocks } : {}),
-    ...('blocks_locked' in sidecar ? { blocks_locked: sidecar.blocks_locked } : {}),
-  }))
-  await rm(sidecarPath, { force: true })
-}
-
 export async function readBlockDoc(root: string, host: BlockHostRef): Promise<BlockDoc> {
-  await healSplitDoc(root, host)
   const raw = await readJsonObject(await blockHostConfig(root, host))
   return {
     layout: readKey<unknown>('layout', blockHostKey(host)) ?? undefined,
@@ -311,9 +294,6 @@ async function listBlockHosts(root: string): Promise<{ config: string; dir: stri
 async function markdownBlockFiles(root: string): Promise<{ id: string; file: string }[]> {
   const out: { id: string; file: string }[] = []
   for (const host of await listBlockHosts(root)) {
-    // Read the config DIRECTLY, not via readBlockDoc — its healSplitDoc fold is a WRITE, and the index
-    // build (a read path) must stay read-only by construction. A nexus still carrying the legacy
-    // `_blocks.json` sidecar gets folded by the renderer's normal load and indexed on the next rebuild.
     const raw = await readJsonObject(host.config)
     const blocks = Array.isArray(raw?.blocks) ? raw.blocks : []
     for (const b of blocks) {

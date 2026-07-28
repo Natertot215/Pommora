@@ -3,6 +3,7 @@ import {
   knownBlock,
   NEW_TILE_H,
   type BlockEntry,
+  blockHostKey,
   type BlockHostRef,
   type BlockStyle,
   type PagePickerItem,
@@ -100,7 +101,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   const select = useSession((s) => s.select)
   // The store is the cross-subtree source — settings surfaces toggle this from elsewhere.
   const hostLocked = useSession((s) =>
-    host.kind === 'homepage' ? s.homepageLocked : (s.spaceLocks[host.id] ?? false),
+    s.hostLocks[blockHostKey(host)] ?? false,
   )
 
   const entries = useMemo(() => {
