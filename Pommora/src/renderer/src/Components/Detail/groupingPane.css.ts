@@ -1,6 +1,6 @@
 // The Grouping pane's row-tier knobs. Primary rows (Group By / Sub-Group / Date By) read the
-// MenuItem default (Body, label-primary); a subordinate Order row reads a step quieter and
-// tucks toward its parent so the pair reads grouped.
+// MenuItem default; a subordinate Order row reads a step quieter and tucks toward its parent
+// so the pair reads grouped.
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
@@ -18,15 +18,15 @@ export const subLabel = style([text.body.emphasized, { color: c.label.secondary 
 /** KNOB — the hierarchy's disclosed sub-group chips render a step smaller than table chips. */
 export const subChip = style({ zoom: 0.85 })
 
-/** The Group By row's trailing value — Control-size (the PickerControl trigger's weight class), a
- *  step LARGER than the menus' Footnote detail so the pane's lead value reads at full strength. */
+/** The Group By row's trailing value — matches the PickerControl trigger's weight class, a step
+ *  LARGER than the menus' Footnote detail so the pane's lead value reads at full strength. */
 export const groupByValue = style([
   text.control.standard,
   { color: c.label.control, display: 'inline-flex', alignItems: 'center', gap: '4px' },
 ])
 
-/** Scope class for the pane's rows: every grouping picker's value reads label-control, a step
- *  brighter than the shared PickerControl's secondary (triple-class to outrank its `&&`). */
+/** Scope class for the pane's rows: every grouping picker's value reads a step brighter than the
+ *  shared PickerControl's default (triple-class to outrank its `&&`). */
 export const pickerTone = style({})
 globalStyle(`${pickerTone} ${pickerValue}${pickerValue}${pickerValue}`, { color: c.label.control })
 

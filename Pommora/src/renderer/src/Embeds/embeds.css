@@ -1,6 +1,6 @@
 /* The shared page-embed chrome — tile-agnostic: the host surface sizes it,
    the embed fills and scrolls. The embed IS the CM6 portal; its padding is its
-   own (the editor's 16px boundary-to-first-line standard), never the host's
+   own (the editor's boundary-to-first-line standard), never the host's
    insets. Header chrome (banner + title) is parked — returns with the ⋮ pass. */
 
 /* Scroll model (edge-release, matching view embeds): at rest the embed scrolls its
@@ -28,7 +28,7 @@
   padding: calc(16px * var(--mdpm-scale)) calc(14px * var(--mdpm-scale))
     calc(16px * var(--mdpm-scale)) var(--fold-gutter);
 }
-/* The task checkbox rides the shared fixed chip-box geometry (17px), which the scale vars don't reach —
+/* The task checkbox rides the shared fixed chip-box geometry, which the scale vars don't reach —
    so in a scaled block it reads oversized against the text. Zoom the whole widget (box + stroke +
    checkmark) to --glyph-scale so it tracks both the embed's base scale AND the per-block Scale in
    lockstep with the glyphs. Scoped to the two block contexts: the chipBoxGeometry token and every chip

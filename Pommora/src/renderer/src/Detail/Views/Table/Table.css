@@ -62,7 +62,6 @@
   transition: grid-template-columns var(--disclosure) var(--ease-standard) !important;
 }
 
-/* — Header — */
 .table-head {
   /* weight/size come from the text.callout.semibold alias on each .col-header — no raw font-weight here
      (typography via aliases only). */
@@ -108,7 +107,7 @@
 .col-header.col-dragging,
 .data-cell.col-dragging {
   /* The cursor-follow rides an imperative grid-level var, NOT React state — a per-pointermove
-     setState re-renders every unmemoized row (the "on every X" rule); slot flips stay state. */
+     setState would re-render every unmemoized row; slot flips stay state. */
   transform: translateX(var(--col-drag-x, 0px));
   z-index: 2;
   background-color: var(--col-drag-band);
@@ -132,7 +131,6 @@
   z-index: 1;
 }
 
-/* — Data cells — */
 .data-cell {
   padding: var(--cell-padding-y) var(--cell-padding-x);
   color: var(--text);
@@ -156,8 +154,7 @@
 .property-editor-ghost {
   opacity: var(--state-ghost);
 }
-/* Data-row vertical column lines — full-height hairlines (every data cell except the trailing filler).
-   A single-column table (everything hidden but Title) is a plain list — no trailing line to bound. */
+/* A single-column table (everything hidden but Title) reads as a plain list — no trailing line to bound. */
 .data-cell:not(:last-child) {
   border-right: var(--table-border);
 }
@@ -252,8 +249,7 @@
 .table-grid.no-borders .data-cell {
   position: relative;
 }
-/* Resize / reorder reveal — every column's vertical hairline (each cell's right edge) fades in while a
-   column is being resized (col-resizing-active) or reordered (col-dragging-active), and fades back out. */
+/* Every column's vertical hairline fades in while a column is being resized or reordered, then fades back out. */
 .table-grid.no-borders .data-cell::after {
   content: "";
   position: absolute;
@@ -285,8 +281,8 @@
   opacity: 1;
 }
 
-/* Type-aware cell content (chips, title icon, links). The page icon reads at --label-secondary (the
-   shared icon tone, same as the sidebar's), a step under the title text, which stays --text. */
+/* Type-aware cell content (chips, title icon, links). The page icon reads at the shared icon tone
+   (same as the sidebar's), a step under the title text. */
 /* The title is an OverflowScroll box (the sidebar-row mechanism): icon + text INLINE in one nowrap
    scroller, so the icon rides the hover-scroll with the title instead of pinning while text slides.
    The lead cell keeps overflow visible for the gutter grip, so the content box carries the cap. */
@@ -330,9 +326,8 @@
 .cell-control {
   color: var(--label-control);
 }
-/* The checkbox column's Switch look — scaled down to sit within the row (the Links pane's switch-scale
-   parity) and vertically centred, so a switch cell never taller than a checkbox cell and a toggle never
-   shifts the row height. */
+/* Scaled to match the Links pane's switch-scale, so a switch cell is never taller than a checkbox cell
+   and a toggle never shifts the row height. */
 .cell-switch {
   display: inline-flex;
   align-items: center;
@@ -340,7 +335,6 @@
   zoom: 0.8;
 }
 
-/* — Number bar look — */
 .cell-bar {
   display: flex;
   align-items: center;
@@ -348,8 +342,8 @@
   height: 100%;
 }
 
-/* — Row drag grip — sits in the views gutter (the same strip the group chevron occupies), revealed on
-   row hover; the lifted row ghosts (MarkdownPM feel). */
+/* Sits in the views gutter (the same strip the group chevron occupies), revealed on row hover;
+   the lifted row ghosts (MarkdownPM feel). */
 .data-cell.cell-lead {
   position: relative; /* containing block for the grip in the views gutter */
   overflow: visible; /* let the grip escape left into the gutter */
@@ -380,9 +374,9 @@
   cursor: grabbing;
 }
 
-/* — Group section band — the shared disclosure head (twisty + glyph + hover "+") over the group's rows,
-   a full-width band off the column grid. The chrome lives on .group-band-* (GroupBand.css); the table
-   scopes the section rhythm (the row), the sticky pin (the head), and the gutter chevron. */
+/* The shared disclosure head (twisty + glyph + hover "+") over the group's rows, a full-width band off
+   the column grid. The chrome lives on .group-band-* (GroupBand.css); the table scopes the section
+   rhythm (the row), the sticky pin (the head), and the gutter chevron. */
 .table-view .group-band-row {
   /* Base density only — the row re-applies base --zoom to match the data-row scale. It never wraps the
      rows (the Reveal is its sibling), so they keep the grid's compound zoom; re-adding --block-zoom
@@ -406,9 +400,9 @@
   left: 0;
   display: inline-flex;
 }
-/* — Band drag — the glyph is the drag surface; the picked-up band mutes in place and the
-   shared drop line marks the slot (BandDnd's .band-dnd wrapper is its positioning context). A
-   nestable Set band tints on middle-zone hover instead of showing a line. */
+/* The glyph is the drag surface; the picked-up band mutes in place and the shared drop line marks the
+   slot (BandDnd's .band-dnd wrapper is its positioning context). A nestable Set band tints on
+   middle-zone hover instead of showing a line. */
 .band-dnd {
   position: relative;
 }

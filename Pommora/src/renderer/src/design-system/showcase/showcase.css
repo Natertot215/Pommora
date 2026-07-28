@@ -265,7 +265,7 @@ code {
   color: var(--label-primary);
 }
 
-/* Collapse / expand glyph buttons — secondary, lifting to primary on hover. */
+/* Collapse / expand glyph buttons — brightens on hover. */
 .sc-icon-btn,
 .sc-expand {
   align-items: center;

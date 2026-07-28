@@ -12,7 +12,7 @@
   flex-direction: column;
   gap: var(--card-gap-v);
   /* Both insets are tokens so a host can zero the gallery's OWN padding and drive the edge itself (NavView
-     lands on the surface inset; NavWindow lets its scroll's 6px be the sole gap, not doubled to 12px). */
+     lands on the surface inset; NavWindow lets its scroll be the sole gap, not doubled). */
   padding: var(--navwindow-inset-v, 6px) var(--navwindow-inset, 12px);
 }
 .nav-gallery-grid {
@@ -66,7 +66,7 @@
 
 .nav-gallery-thumb {
   position: relative;
-  flex: 0 0 var(--thumb-share, 74%); /* image height = --thumb-share of the card; title-area takes the rest */
+  flex: 0 0 var(--thumb-share, 74%);
   min-height: 0;
   overflow: hidden;
   background: var(--fill-tertiary);
@@ -91,8 +91,8 @@
   background: var(--fill-quaternary);
 }
 
-/* Pin overlaid top-left ON the thumbnail — no fill. Hover-revealed in label-tertiary on unpinned
-   cards; solid accent (still no background) once pinned. */
+/* Pin overlaid top-right ON the thumbnail — no fill. Hover-revealed on unpinned cards; solid (still
+   no background) once pinned. */
 .nav-gallery-pin {
   position: absolute;
   top: 6px;

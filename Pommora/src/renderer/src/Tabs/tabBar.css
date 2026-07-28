@@ -4,19 +4,19 @@
 
 .tab-bar {
   /* KNOBS — the whole bar tunes here. */
-  --tab-height: 32px; /* bar/tab height (button-large row) */
+  --tab-height: 32px; /* matches the button-large row */
   --tab-min: 90px; /* unpinned floor ≈ icon + ~6ch */
   --tab-pref: 180px; /* preferred (browser-tab feel) */
-  --tab-max: 240px; /* growth cap */
+  --tab-max: 240px;
   --tab-pinned-w: 34px; /* compact pinned tab (icon + accent) */
-  --tab-pad-x: 12px; /* tab horizontal padding */
-  --tab-gap: 6px; /* icon ↔ label gap */
+  --tab-pad-x: 12px;
+  --tab-gap: 6px;
   --tab-icon: 14px; /* entity icon size (TabBar.tsx mirrors it) */
   --tab-x: 11px; /* close-× glyph (strokeWidth 3, chip spec) */
-  --tab-plus: 13px; /* new-tab + glyph */
+  --tab-plus: 13px;
   --tab-divider-w: 2px; /* pinned│unpinned segment divider */
   --tab-divider-h: 16px;
-  --tab-edge-fade: 20px; /* overflow edge dissolve */
+  --tab-edge-fade: 20px;
   --tab-plus-gutter: 28px; /* trailing room so the parked + clears the last tab's × */
   --tab-nav-slide: 10px; /* Back/Forward content slide-in distance */
 

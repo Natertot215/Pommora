@@ -5,13 +5,12 @@ import { duration, easing } from '../../tokens/motion'
 
 const c = colorVars.color
 const ease = `${duration.fast} ${easing.standard}` // one motion source for the whole switch
-const control = 'var(--label-control)' // knob fill + tick glyphs — the global on-control label token
+const control = 'var(--label-control)' // knob fill + tick glyphs
 
 /**
  * The Figma "Switch" — a pill sliding a liquid-glass knob between a `|` (on) and an `O` (off)
- * tick. Geometry mirrors the Figma component; the knob insets from the track on every side. The knob
- * is the label-control white fill wrapped in the real liquid glass (GlassControls); off-fill quinary,
- * on-fill accent + tint-primary, behind a label-secondary stroke.
+ * tick. Geometry mirrors the Figma component; the knob insets from the track on every side, wrapped
+ * in the real liquid glass (GlassControls).
  */
 export const track = style({
   position: 'relative',
@@ -28,12 +27,12 @@ export const track = style({
 
 export const trackOn = style({ background: tintAt('var(--accent)', TINT_STEPS.primary) })
 
-// The sliding slot — vertically centred (top 50% / translateY) so the 1px border never offsets it; it
-// shrink-wraps the glass-wrapped fill and slides 22px between off (left) and on (right).
+// The sliding slot — vertically centred so the border never offsets it; it shrink-wraps the
+// glass-wrapped fill and slides between off (left) and on (right).
 export const knob = style({
   position: 'absolute',
   top: '50%',
-  left: '2px', // 3px visual inset from the track edge (1px border + 2px)
+  left: '2px',
   display: 'flex', // drops the inline-block baseline descender so translateY centres the glass exactly
   transform: 'translateY(-50%)',
   transition: `transform ${ease}`,
@@ -48,7 +47,7 @@ export const knobFill = style({
   background: control,
 })
 
-// Both ticks: centred, label-control, fade on the same beat as the slide; one shows per state.
+// Both ticks: centred, fade on the same beat as the slide; one shows per state.
 const tickBase = style({
   position: 'absolute',
   top: '50%',

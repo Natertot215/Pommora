@@ -13,7 +13,7 @@
   --card-min: 220px; /* KNOB — the full-window gallery card floor. */
 }
 
-/* The banner-title slot: a chromeless search input in the title position. The top band is the 44px
+/* The banner-title slot: a chromeless search input in the title position. The top band is the
    add-banner hover strip (flow content), not padding. */
 .nav-view-head {
   flex-shrink: 0;
@@ -59,8 +59,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  /* Card edges land on the EXACT homepage block-surface insets (Detail.css): 8px top / 28px bottom /
-     --surface-inset sides. The gallery's own padding is zeroed (both axes, above), so these ARE the edges. */
+  /* Card edges land on the EXACT homepage block-surface insets set in Detail.css. The gallery's own
+     padding is zeroed (both axes, above), so these ARE the edges. */
   padding: 8px var(--surface-inset-right) 28px var(--surface-inset);
   transition:
     padding-left var(--duration-base) var(--ease-standard),

@@ -4,7 +4,7 @@ import { stack } from '@renderer/design-system/tokens/stack'
 
 const c = vars.color
 
-/** Scrim behind the crop dialog, in system black (color-mix is the project's opacity mechanism). */
+/** Scrim behind the crop dialog (color-mix is the project's opacity mechanism). */
 export const backdrop = style({
   position: 'fixed',
   inset: 0,

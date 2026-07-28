@@ -38,7 +38,7 @@ const REMOVE_INSET = '2px'
 
 export const pane = style({
   // Fill the host leaf first — its floor is the real minimum — then stretch with the longest row up
-  // to the ceiling. Without the `100%` floor a bare `max-content` collapses the pane to its widest
+  // to the ceiling. Without that floor a bare `max-content` collapses the pane to its widest
   // row (~112px on an empty filter) INSIDE a 225px host, leaving every row and separator stranded
   // at half the surface's width.
   minWidth: '100%',
@@ -84,7 +84,7 @@ export const whatCell = style({
 const restRing = { vars: { '--field-ring': c.separator.line } }
 
 /** The shared input-field recipe in its column: flush to the gutters, STANDARD field height
- *  (the interactionField 28px floor), separator-hairline stroke, and the house field's own BODY
+ *  (the interactionField floor), separator-hairline stroke, and the house field's own BODY
  *  type — a filter row is content the user reads, not chrome, so it holds the reading size rather
  *  than the compact control scale (which shrank the chips inside it to match). */
 export const cellField = style([
@@ -136,8 +136,8 @@ export const controlField = style([cellField, { flex: '0 0 auto' }])
  *  any pane width, while the value truncates (its full text stays readable in its picker). */
 export const valueField = style([cellField, { flex: '1 1 auto' }])
 
-/** The And/Or connector — a mini field in the footnote/secondary register (the trailing-option
- *  tone); never shrinks, so "And"/"Or" + its chevron stay uncramped. */
+/** The And/Or connector — a mini field in the trailing-option tone; never shrinks, so "And"/"Or"
+ *  + its chevron stay uncramped. */
 export const connector = style([
   fieldBase,
   {

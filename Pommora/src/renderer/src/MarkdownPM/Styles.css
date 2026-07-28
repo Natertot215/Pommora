@@ -225,8 +225,8 @@
   content: "";
   position: absolute;
   left: calc(-1 * var(--fold-gutter) + (var(--fold-gutter) - 14px * var(--glyph-scale)) / 2);
-  /* Centre on the FIRST visual row's text (half the 1.6 line-height − half the 14px grip), so it lines up
-     with the content even when the block's first line wraps. --grip-top is the knob; box blocks raise it. */
+  /* Centre on the FIRST visual row's text, so it lines up with the content even when the block's
+     first line wraps. --grip-top is the knob; box blocks raise it. */
   top: var(--grip-top, calc(0.8em - 7px * var(--glyph-scale)));
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
@@ -429,7 +429,7 @@
   --outliner-gap-bottom: -2px;
 }
 .outliner-lines .md-outliner-task {
-  --rail-x: 8.5px; /* checkbox box centre — chipBoxGeometry 17px / 2 */
+  --rail-x: 8.5px; /* checkbox box centre, from chipBoxGeometry */
   /* The box rides low in its line (vertical-align), so its bottom cap reads longer — raise it to even the rail. */
   --outliner-gap-bottom: 8px;
 }

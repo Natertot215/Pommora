@@ -3,7 +3,7 @@
    each cluster opts back into pointer events AND out of the drag region. */
 .app-toolbar {
   position: absolute;
-  /* Cluster tops sit on the sidebar/inspector glass top edge — glass-inset + a 1px optical
+  /* Cluster tops sit on the sidebar/inspector glass top edge — glass-inset plus an optical
      nudge (the liquid-glass pill reads a hair high against the frost panels otherwise). */
   top: calc(var(--glass-inset) + 1px);
   /* Hug the sidebar's right edge (clusters then sit a small gap in via padding). */
@@ -54,8 +54,8 @@
   -webkit-app-region: no-drag;
 }
 
-/* The right group holds the ViewDropdown just left of the trio (10px inter-control gap — the shared
-   toolbar spacing knob). Click-through itself so the gap still drags the window; children opt back in. */
+/* The right group holds the ViewDropdown just left of the trio — the shared toolbar spacing knob.
+   Click-through itself so the gap still drags the window; children opt back in. */
 .app-toolbar-right {
   display: flex;
   align-items: flex-start;
@@ -63,7 +63,7 @@
   pointer-events: none;
 }
 /* The trio and the ViewDropdown (first child) both slide by the shared --toolbar-swallow magnitude, so
-   the trio lands flush in the inspector's left corner and the ViewDropdown holds its 10px to its left. */
+   the trio lands flush in the inspector's left corner and the ViewDropdown holds its gap to its left. */
 .app-toolbar-cluster--trio,
 .app-toolbar-right > :first-child {
   transform: translateX(calc(-1 * var(--toolbar-swallow)));
