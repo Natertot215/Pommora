@@ -6,7 +6,7 @@ The React rebuild of the Swift paradigm reached its finish line at v0.5.0 — Pa
 
 **Contexts & Spaces is on `main`.** The registry model, the shared floating-window chassis, the Settings window, the lint and accessibility campaign and the FilterPane rebuild all merged, so the build counts forward from a user-defined context layer over a two-renderer pipeline. Both nexuses run the registry shape, and with every one migrated the `tierN` era is closed in code: no migration, no read-healing, no legacy recognition. A nexus left at the old shape can no longer be opened — the conversion is gone, not dormant.
 
-**A full cleanup pass closed out the merge.** Every feature doc was audited against real code, the retired Context vocabulary left the source, the whole tree had its comments cut to what a reader couldn't reconstruct, and four facts that had eighty-one separate sources between them collapsed to one owner each. Nine defects were found and fixed along the way — most of them present before the session started, none of them reported.
+**A full cleanup pass closed out the merge.** Every feature doc was audited against real code, the retired Context vocabulary left the source, the whole tree had its comments cut to what a reader couldn't reconstruct, and the repeated shapes across the IPC layer collapsed to one owner each. A dozen defects were found and fixed along the way — most present before the session started, none of them reported.
 
 **Nothing is mid-flight.** The next focus is open, and the list below is what came to mind rather than a mandate — if something else matters more, take that instead.
 
@@ -21,7 +21,7 @@ Behind those sit two smaller knowns: the IPC boundary flattens its structured er
 
 #### The cleanup pass (07-27)
 
-The merge's aftermath, audited rather than built on. Every feature doc was re-grounded against real code, which surfaced nine defects — most of them live before the session and none reported. The behavioural outcomes are in the feature docs; what's durable here is the shape they shared.
+The merge's aftermath, audited rather than built on. Every feature doc was re-grounded against real code, which surfaced a run of defects — most live before the session and none reported. The behavioural outcomes are in the feature docs; what's durable here is the shape they shared.
 
 **A fact with two sources is a defect.** An order key read by two sites with opposite defaults, a Context column named one thing in one layer and another below it, two page-value writers governing different frontmatter keys, a code mask the editor applied three ways and the write side not at all. Each read as an inconsistency and each was live. The fixes remove the second source rather than reconcile the two — narrow a type until the wrong call can't be written, delete the duplicate, route both callers through one owner. A guard that catches the bad case leaves the bad case reachable.
 

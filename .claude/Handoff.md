@@ -18,13 +18,15 @@
 
 **What Started:** `contexts-spaces` was merged and `Context.md` needed truing. Nathan chose the doc audit and the `tierN` retirement, then drove the rest live from the running app.
 
-**What Happened Along the Way:** The audit put one agent on each of the 26 feature docs, every finding grounded against real code — 440 confirmed, 78 rejected, 39 questions routed back. It caught a regression of mine: removing `migrateContexts` had removed the de-facto fresh-nexus seeder, since a fresh nexus minted below the version and so always ran the migration that wrote the registry. Seeding became explicit, with an idempotence test.
+**What Happened Along the Way:** The audit put one agent on each feature doc, every finding grounded against real code, and the questions it couldn't answer went to Nathan for a ruling. It caught a regression of mine: removing `migrateContexts` had removed the de-facto fresh-nexus seeder, since a fresh nexus minted below the version and so always ran the migration that wrote the registry. Seeding became explicit, with an idempotence test.
 
 Nathan live-drove the filter and reported it "completely backwards." It was four problems, three real: positive comparisons passed rows holding no value, the pane wired no scroll mechanism at all, and — the one that made it look inert — structural bands came from the container's Set tree rather than from surviving rows, so a filter could empty a Set and its band plus every sub-folder still drew.
 
 Nine defects were fixed in total, seven of them pre-existing and unreported. The last two came out of the review's own leftovers: an `ENOTEMPTY` that had been dismissed as test flake was really the fire-and-forget index rebuild racing a nexus teardown, and the NavWindow's search branch was tested before its view mode, so searching always listed even with the rail set to Gallery.
 
-**What It Ended With:** 59 commits, every one gated green — closing state **typecheck 0 · lint 0 · 1913 tests / 185 files · build clean**, with the previously-flaky `mutate.test.ts` now passing three consecutive full runs. Against the merge baseline (`05a98344`): **−562 comment lines, −1,111 code lines, +1,341 documentation lines.**
+**What It Ended With:** 75 commits, every one gated green — closing state **typecheck 0 · lint 0 · 1917 tests / 185 files · build clean**, with the previously-flaky `mutate.test.ts` now passing consecutive full runs. Against the merge baseline (`05a98344`): **−1,918 comment lines, −1,125 code lines, −675 documentation lines** — the docs ended below where they started while gaining the modified-at rule, trash mirroring, the alias rule and a consolidated SymbolsPM.
+
+The comment campaign finished as a per-file read of all 303 renderer files earlier passes had only pattern-matched. The yield ranged from 2.8% in the CodeMirror extensions to 32.7% in the design system, which is the honest shape: one guards engine traps, the other had accumulated prop docs naming their props.
 
 **Next Session:** Open. The pending focuses are in `Context.md`, and none of them is mid-flight — pick one or pick something else.
 
