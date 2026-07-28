@@ -3,6 +3,7 @@
 // handle means every operational store no-ops and the session runs without persisted chrome.
 
 import { openNexusDb } from './db/open'
+import { importLegacySidecars } from './db/importLegacy'
 import type { Db } from './db/driver'
 
 let db: Db | null = null
@@ -16,6 +17,7 @@ export function sessionDb(): Db | null {
 export function openSessionDb(root: string): void {
   closeSessionDb()
   db = openNexusDb(root)
+  if (db) importLegacySidecars(root)
 }
 
 /** Close + drop the handle (session switch / app quit). */

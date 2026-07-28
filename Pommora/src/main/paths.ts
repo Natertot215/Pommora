@@ -59,6 +59,8 @@ export function blockHostDir(root: string, _host: { kind: 'homepage' }): string 
   return join(nexusDir(root), HOMEPAGE_HOST_DIRNAME)
 }
 
+/** The canonical `.nexus/` files. Per-machine chrome is not among them — that lives in nexus.db,
+ *  so everything named here is content a user or another app can legitimately read and edit. */
 export const NEXUS_CONFIG_FILES = {
   identity: 'nexus.json',
   settings: 'settings.json',
@@ -66,25 +68,9 @@ export const NEXUS_CONFIG_FILES = {
   homepage: 'homepage.json',
   navview: 'navview.json',
   sidebarSections: 'sidebar-sections.json',
-  folds: 'folds.json',
-  tableHeadingColumns: 'tableHeadingColumns.json',
-  activeViews: 'activeViews.json',
-  viewOrders: 'viewOrders.json',
   properties: 'properties.json',
-  linkTitles: 'linkTitles.json',
   navRecents: 'navRecents.json',
   navFavorites: 'navFavorites.json',
   tabs: 'tabs.json',
   previews: 'page-previews.json',
 } as const
-
-/** The `.nexus/` files that are per-machine display state or a regeneratable accelerator, never
- *  shared — the set to exclude from any device-to-device sync. Everything else under `.nexus/`
- *  (registry, Contexts, Homepage, settings, assets) is canonical. */
-export const DEVICE_LOCAL_NEXUS_FILES: ReadonlySet<string> = new Set([
-  NEXUS_CONFIG_FILES.folds,
-  NEXUS_CONFIG_FILES.activeViews,
-  NEXUS_CONFIG_FILES.viewOrders,
-  NEXUS_CONFIG_FILES.tableHeadingColumns,
-  NEXUS_CONFIG_FILES.linkTitles,
-])
