@@ -58,7 +58,6 @@ export const NEW_TILE_H = 160
  *  (homepage.json) or a Space (its `_space.json`). */
 export type BlockHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
 
-/** The key a host's layout stores under. Homepage is a singleton, so its bare kind suffices. */
 export function blockHostKey(host: BlockHostRef): string {
   return host.kind === 'homepage' ? 'homepage' : `space:${host.id}`
 }
@@ -209,7 +208,7 @@ export function knownBlock(raw: unknown): BlockEntry | null {
 }
 
 /** The doc as main hands it across IPC — layout + entries stay raw; the renderer
- *  decodes the layout (repairing) and lenses the entries. */
+ *  decodes the layout and lenses the entries. */
 export interface BlockDoc {
   layout: unknown
   blocks: unknown[]

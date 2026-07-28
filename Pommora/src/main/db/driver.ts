@@ -7,9 +7,8 @@ import { errText } from '@shared/result'
 
 export type Db = DatabaseSync
 
-/** Open (creating if needed) a database at `path`, or null when it can't be opened. A null handle
- *  is LOUD: every operational store silently no-ops behind it, so a quiet failure reads as
- *  "Pommora forgot my tabs" with nothing pointing at the cause. */
+/** A null handle here is LOUD: every operational store silently no-ops behind it, so a quiet
+ *  failure reads as "Pommora forgot my tabs" with nothing pointing at the cause. */
 export function openDb(path: string): Db | null {
   try {
     const db = new DatabaseSync(path)

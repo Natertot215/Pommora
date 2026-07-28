@@ -444,10 +444,10 @@ handleEnvelope('nav:evictThumbs', async (liveKeys: unknown): Promise<Ack> => {
   return { ok: true }
 })
 
-// Shared by every path that opens a nexus, run after openSession and before the index reads
+// Shared by every path that opens a nexus, run after openSession and before anything reads the nexus
 // anything: ensures `.nexus/nexus.json` + `settings.json` exist in Swift's shape (a full settings
 // file keeps Swift's decoder from reseeding and losing data when it later opens the folder), then
-// stamps any un-adopted entity with a real ULID so the index and every later write get a stable
+// stamps any un-adopted entity with a real ULID so every later write gets a stable
 // id instead of a transient `adopted-` placeholder. Best-effort: never blocks opening the folder.
 async function prepareOpenedNexus(path: string): Promise<void> {
   try {
@@ -484,7 +484,7 @@ async function adoptNexus(path: string): Promise<void> {
 async function adoptNexusInner(path: string): Promise<void> {
   await openSession(path)
   // openSession canonicalized the root (realpath); thread THAT everywhere below so the watcher's
-  // session-match guard and the index/persistence key off the same string — a raw path here
+  // session-match guard and the persistence layer key off the same string — a raw path here
   // would make the watcher treat every event as a session switch.
   const root = sessionRoot() ?? path
   await prepareOpenedNexus(root)
@@ -1224,8 +1224,8 @@ async function mutateDeps(): Promise<MutateDeps> {
   }
 }
 
-// The single write path — main resolves the request under the session root, runs the
-// orchestration, and best-effort refreshes the index.
+// The single write path — main resolves the request under the session root and runs the
+// orchestration.
 ipcMain.handle(
   'mutate',
   async (_e, req: MutateRequest): Promise<MutateResult> => handleMutate(req, await mutateDeps()),
@@ -1568,7 +1568,7 @@ ipcMain.handle('file:open', async (_e, relPath: unknown): Promise<Ack> => {
 
 // Rename the OPEN nexus's ROOT folder within its parent dir, then RE-POINT the live session
 // to the new path. A dedicated IPC (not a mutate op) because it re-targets the whole session:
-// after the fs.rename, adoptNexus re-opens the session, index, watcher, and recents at the new
+// after the fs.rename, adoptNexus re-opens the session, database, watcher, and recents at the new
 // path. Never throws across the boundary.
 handleEnvelope('nexus:rename', async (newName: unknown): Promise<Ack> => {
   const root = sessionRoot()

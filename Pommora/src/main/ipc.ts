@@ -33,8 +33,8 @@ export function handleEnvelope<A extends unknown[], T extends { ok: true } | Ack
  *  than persisting an empty container, matching the properties map and contexts. */
 const isEmptyValue = (v: unknown): boolean => v === '' || (Array.isArray(v) && v.length === 0)
 
-/** Registers the get/set pair every keyed operational store takes. The store is app-owned, so the
- *  only validation is here at the boundary, where the renderer's payload is still untrusted. */
+/** The store is app-owned, so the only validation is here at the boundary, where the renderer's
+ *  payload is still untrusted. */
 export function handleLocalScope<T>(
   channel: string,
   scope: Scope,

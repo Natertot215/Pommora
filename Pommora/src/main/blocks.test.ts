@@ -10,7 +10,6 @@ import {
   convertTileToView,
   duplicateBlockTile,
   createMarkdownBlock,
-  listBlockBodies,
   readBlockDoc,
   readMarkdownBlock,
   removeBlockTile,
@@ -186,34 +185,6 @@ describe('markdown block lifecycle', () => {
     await removeBlockTile(root, HOST, 'p1')
     expect(entries()).toEqual([])
     expect(await pathExists(join(root, '.trash'))).toBe(false)
-  })
-})
-
-describe('listBlockBodies', () => {
-  it('returns each markdown block body, skipping non-markdown tiles', async () => {
-    const md = await createMarkdownBlock(root, HOST)
-    await writeMarkdownBlock(root, HOST, md, 'hello [[X]]')
-    writeBlockDoc(HOST, {
-      blocks: [
-        { id: md, type: 'markdown' },
-        { id: 'v1', type: 'view', views: [] },
-      ],
-    })
-    const bodies = await listBlockBodies(root)
-    expect(bodies).toHaveLength(1)
-    expect(bodies[0]).toMatchObject({ id: md, body: 'hello [[X]]' })
-  })
-
-  it('skips an entry whose backing file is missing', async () => {
-    writeBlockDoc(HOST, { blocks: [{ id: 'ghost', type: 'markdown' }] })
-    expect(await listBlockBodies(root)).toEqual([])
-  })
-
-  it('walks space hosts too', async () => {
-    const id = await createMarkdownBlock(root, SPACE_HOST)
-    await writeMarkdownBlock(root, SPACE_HOST, id, 'space body')
-    const bodies = await listBlockBodies(root)
-    expect(bodies.find((b) => b.id === id)?.body).toBe('space body')
   })
 })
 

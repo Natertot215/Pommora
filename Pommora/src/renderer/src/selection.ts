@@ -10,7 +10,6 @@ import type {
   SpaceNode,
 } from '@shared/types'
 
-/** Every top Collection across ungrouped + user sections. */
 export function allCollections(tree: NexusTree): CollectionNode[] {
   return [...(tree.collections ?? []), ...tree.userSections.flatMap((s) => s.collections ?? [])]
 }

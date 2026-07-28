@@ -20,9 +20,8 @@ export interface AcCtl {
   close: () => void
 }
 
-/** A keymap binding that drives the connection panel only while it's open, and otherwise reports the
- *  key unhandled so it falls through to the editor's own binding. Both keymaps bind the same arrows +
- *  Escape this way, so the fall-through rule lives in one place. */
+/** Both keymaps bind the same arrows + Escape through this binding, so the fall-through
+ *  rule lives in one place. */
 export const whenAcOpen = (ctl: RefObject<AcCtl>, drive: (c: AcCtl) => void) => (): boolean => {
   if (!ctl.current.open) return false
   drive(ctl.current)
@@ -89,9 +88,8 @@ export function useConnectionAutocomplete(
   return { ac, setAc, candidates, acIndex, acTop, commit, acCtl }
 }
 
-// Recompute the active `[[…]]` query from the live caret and push it to setAc — call from the editor's
-// updateListener on doc/selection changes. setAc (a useState setter) is stable, so capturing it once at
-// mount is safe; this is a free function rather than a closure so both editors share one detection path.
+// setAc (a useState setter) is stable, so capturing it once at mount is safe; this is a free
+// function rather than a closure so both editors share one detection path.
 export function detectConnectionQuery(view: EditorView, setAc: (s: AcState | null) => void): void {
   const sel = view.state.selection.main
   let next: AcState | null = null

@@ -3,7 +3,6 @@ import type { NexusTree, SelectionState } from '@shared/types'
 import { DEFAULT_LABELS } from '@shared/types'
 import { reconcileSelection } from './selection'
 
-/** A minimal tree with one Collection holding the given top-level pages. */
 function tree(pages: { id: string; path: string }[]): NexusTree {
   return {
     nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
