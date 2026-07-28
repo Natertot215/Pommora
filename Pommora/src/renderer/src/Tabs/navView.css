@@ -32,17 +32,15 @@
   background: transparent;
   outline: none;
   color: var(--label-primary);
-  font-size: 16px; /* KNOB — title2 scale (a step down from the banner-title size) */
+  font-size: 16px; /* KNOB — a step down from the banner-title size */
+  /* The drawn caret takes its height from the COMPUTED line-height (nativeCaret.ts), so a field that
+     overrides its font-size has to carry a line box to match — otherwise the bar is sized for the
+     type ramp this field left behind. */
+  line-height: 20px;
   font-weight: var(--weight-emphasized);
 }
 .nav-view-search::placeholder {
   color: var(--label-tertiary);
-}
-/* The app hides native carets to draw its own (nativeCaret.ts), but that overlay doesn't position over
-   this banner-hosted field — so this one search keeps the native caret. Out-specifies Carets.css's
-   `input:not([type])` transparent rule (0,1,1) with (0,2,0). */
-.nav-view .nav-view-search {
-  caret-color: var(--label-primary);
 }
 
 /* When NavView wears the Homepage banner, the search sits in the banner-title slot — re-enable pointer
