@@ -5,19 +5,22 @@
 // memoizes buildNavIndex over (tree, agenda) and re-runs filterNav per keystroke.
 
 import type { AgendaEntry, NavTarget, NexusTree } from '@shared/types'
-import { allCollections, allPages, allSets, allSpaces } from '../selection'
+import { flattenTree } from '../selection'
 import { navKey } from './navRecents'
 
 export interface SearchEntry {
   key: string
   target: NavTarget
   title: string
+  /** Lowercased once at build — filterNav scores EVERY entry on every keystroke. */
+  lower: string
 }
 
 const entry = (target: NavTarget, title: string): SearchEntry => ({
   key: navKey(target),
   target,
   title,
+  lower: title.toLowerCase(),
 })
 
 /** Flatten the tree (+ the agenda snapshot) into a searchable list: homepage, every context, every
@@ -26,21 +29,22 @@ export function buildNavIndex(
   tree: NexusTree,
   agenda?: { tasks: AgendaEntry[]; events: AgendaEntry[] },
 ): SearchEntry[] {
+  const { collections, sets, pages, spaces } = flattenTree(tree)
   const out: SearchEntry[] = [entry({ kind: 'homepage' }, tree.nexus.name)]
   if (tree.contexts)
-    for (const s of allSpaces(tree)) out.push(entry({ kind: 'space', id: s.id }, s.title))
-  for (const c of allCollections(tree)) out.push(entry({ kind: 'collection', id: c.id }, c.title))
-  for (const s of allSets(tree)) out.push(entry({ kind: 'set', id: s.id, path: s.path }, s.title))
-  for (const p of allPages(tree)) out.push(entry({ kind: 'page', id: p.id, path: p.path }, p.title))
+    for (const s of spaces) out.push(entry({ kind: 'space', id: s.id }, s.title))
+  for (const c of collections) out.push(entry({ kind: 'collection', id: c.id }, c.title))
+  for (const s of sets) out.push(entry({ kind: 'set', id: s.id, path: s.path }, s.title))
+  for (const p of pages) out.push(entry({ kind: 'page', id: p.id, path: p.path }, p.title))
   for (const t of agenda?.tasks ?? []) out.push(entry({ kind: 'task', id: t.id }, t.title))
   for (const e of agenda?.events ?? []) out.push(entry({ kind: 'event', id: e.id }, e.title))
   return out
 }
 
-/** Fuzzy subsequence score of `text` against an already-lowercased `q`, or null when `q` isn't a
- *  subsequence. Rewards contiguous runs + word-start hits so substring/prefix matches rank highest. */
-function fuzzyScore(text: string, q: string): number | null {
-  const t = text.toLowerCase()
+/** Fuzzy subsequence score of an already-lowercased `t` against an already-lowercased `q`, or null
+ *  when `q` isn't a subsequence. Rewards contiguous runs + word-start hits so substring/prefix
+ *  matches rank highest. */
+function fuzzyScore(t: string, q: string): number | null {
   let ti = 0
   let score = 0
   let streak = 0
@@ -67,7 +71,7 @@ export function filterNav(index: SearchEntry[], query: string, limit = 50): Sear
   if (!q) return []
   const scored: { e: SearchEntry; s: number }[] = []
   for (const e of index) {
-    const s = fuzzyScore(e.title, q)
+    const s = fuzzyScore(e.lower, q)
     if (s !== null) scored.push({ e, s })
   }
   scored.sort((a, b) => b.s - a.s || a.e.title.localeCompare(b.e.title))

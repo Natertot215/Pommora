@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { EditorView } from '@codemirror/view'
 import type { ConnPage } from './connections'
 import { autocompleteQuery, connectionInsert, acPanelTop } from './autocomplete'
@@ -50,7 +50,12 @@ export function useConnectionAutocomplete(
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
   const [acIndex, setAcIndex] = useState(0)
-  const candidates = ac ? candidatesFor(ac.query) : []
+  // Every caret move rebuilds `ac`, so the scan keys on the query alone — `candidatesFor` is an
+  // inline closure at both call sites and would defeat the memo as a dependency.
+  const candidatesForRef = useRef(candidatesFor)
+  candidatesForRef.current = candidatesFor
+  const query = ac?.query ?? null
+  const candidates = useMemo(() => (query === null ? [] : candidatesForRef.current(query)), [query])
 
   const commit = (page: ConnPage): void => {
     const view = viewRef.current
