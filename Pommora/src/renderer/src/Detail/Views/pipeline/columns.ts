@@ -2,7 +2,7 @@
 // not hidden — one allowlist, so a property added to a collection after a view already exists
 // AND a Context created after the view stay hidden until the user reveals them (creation never
 // visually changes an existing view). Title is always guaranteed. React divergences: emits only
-// {id, kind} — column width and the group/sort hoist before Title are Part-2 render concerns;
+// {id, kind} — column width and the group/sort hoist before Title are render concerns;
 // and `_modified_at` is NOT default-on (it appears only when explicitly in propertyOrder).
 // Pure: no fs, no React.
 
@@ -47,8 +47,8 @@ function visibleOrder(
   return out
 }
 
-/** Resolve a view + schema + the registry Context ids into the ordered columns Part 2
- *  renders: visible order, then a guaranteed front Title (always present, never hidden).
+/** Resolve a view + schema + the registry Context ids into the ordered render columns:
+ *  visible order, then a guaranteed front Title (always present, never hidden).
  *  Context columns are default-OFF — they render only when the view's property_order
  *  explicitly reveals them. Emits {id, kind} only. */
 export function resolveColumns(

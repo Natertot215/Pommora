@@ -26,7 +26,7 @@ type Direction = SortCriterion['direction']
 
 /** The pane's Sort By offering — only what makeSorter actually ranks. context/file route to a
  *  no-op text key in the sorter, so they're deliberately absent (never offer what the extractor
- *  can't rank); tiers are unsortable outright. */
+ *  can't rank); Context columns are unsortable outright. */
 const SORTABLE_PANE = new Set([
   'select',
   'status',

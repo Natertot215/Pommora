@@ -913,7 +913,7 @@ ipcMain.handle(
 // `.nexus/properties.json`; a Collection's sidecar holds the assigned prop-ids. The surface keeps
 // its pre-V2 names/args so the renderer is untouched — add = create-in-registry + assign here,
 // rename/changeType = global def edit, delete = Remove (strip values + cache restorably on the
-// sidecar, C-3; the word Delete means property:delete only), reorder = assignment-order move,
+// sidecar; the word Delete means property:delete only), reorder = assignment-order move,
 // assign = append + restore-from-cache (+ optional slot placement). containerPath is the
 // schema-owning Collection's folder — a Set inherits the schema, so the renderer passes the
 // ancestor Collection's path. Mirrors the views:* envelope contract.
@@ -1112,7 +1112,7 @@ ipcMain.handle(
 
 // Global option edits for a Select / Multi-Select property — registry-level, cascading to pages.
 // No-container-scope siblings of property:delete; the confirm dialog for remove/clear lives in the
-// Phase-2 option menu, not here (property:delete is likewise unconfirmed at this layer).
+// option menu, not here (property:delete is likewise unconfirmed at this layer).
 function isOptionArray(v: unknown): v is Option[] {
   return (
     Array.isArray(v) &&

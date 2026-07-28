@@ -7,7 +7,7 @@ import { useSession } from '../../store'
 import { findCollection } from '../Scope'
 import { computeStats } from './subfieldStats'
 
-/** The catalog of Subfield items. v1: page document stats + the container add-menu. New ids slot in
+/** The catalog of Subfield items — page document stats + the container add-menu. New ids slot in
  *  here, and the per-view default order below — the seam for future user-defined (scoped) items. */
 export type SubfieldItemId = 'pageStats' | 'addMenu' | 'viewType'
 

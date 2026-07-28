@@ -22,7 +22,7 @@ import { CheckboxGlyph } from './checkboxLook'
 import type { ResolveContext } from './resolveContext'
 
 /** Type-aware cell render: the title with its page icon; chips for select/status;
- *  several chips for multi-select; a checkbox glyph; ContextChips for tiers; an inline link for url;
+ *  several chips for multi-select; a checkbox glyph; ContextChips for Context columns; an inline link for url;
  *  per-file chips; formatted date/number text. The per-view `style` picks each type's look + formats.
  *  Every value routes through the resolution context so no raw id ever shows; an empty/unknown value
  *  renders nothing. */

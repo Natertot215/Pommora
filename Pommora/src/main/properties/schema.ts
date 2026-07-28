@@ -34,7 +34,7 @@ export function droppingUserContexts(defs: PropertyDefinition[]): PropertyDefini
 
 /** A property name in the context of a schema: non-empty after trim + unique
  *  case-insensitively, excluding the def identified by `excludeId` (for rename).
- *  `unique: false` skips the clash check — the registry paths allow twin names (D-3);
+ *  `unique: false` skips the clash check — the registry paths allow twin names;
  *  Agenda's callers pass nothing, so uniqueness holds there. */
 export function validateName(
   name: string,

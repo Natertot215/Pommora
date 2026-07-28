@@ -106,7 +106,7 @@ const api = {
     ): Promise<{ ok: true } | { ok: false; error: string }> =>
       ipcRenderer.invoke('views:delete', containerPath, kind, viewId),
   },
-  // Per-container non-view settings (open_in is collection-only; view_button / view_style either tier).
+  // Per-container non-view settings (open_in is collection-only; view_button / view_style either level).
   container: {
     configure: (
       containerPath: string,
@@ -275,7 +275,7 @@ const api = {
     ): Promise<{ ok: true } | { ok: false; error: string }> =>
       ipcRenderer.invoke('property:clearStatusOption', propertyId, value),
   },
-  // The nexus-wide cosmetic property order (B-1) — how every collection's All Properties lists.
+  // The nexus-wide cosmetic property order — how every collection's All Properties lists.
   registry: {
     reorder: (
       propertyId: string,
@@ -325,7 +325,7 @@ const api = {
       pageId: string,
     ): Promise<BlocksSaveResult> =>
       ipcRenderer.invoke('blocks:convertToPage', host, tileId, pageId),
-    // Link View: the entry becomes a view embed carrying the COPIED config (D-12);
+    // Link View: the entry becomes a view embed carrying the COPIED config;
     // main re-mints each config id payload-local.
     convertToView: (
       host: BlockHostRef,

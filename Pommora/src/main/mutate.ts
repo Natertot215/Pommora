@@ -232,8 +232,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         }
         return { ok: true }
       }
-      // Containers + contexts: rename the folder. No link cascade — [[links]] target pages,
-      // and contexts are referenced by stable id (the rename only changes the display title).
+      // Containers: rename the folder. No link cascade — [[links]] target pages, and a
+      // container's title is referenced nowhere else.
       const r = await renameFolderEntity(abs, req.newName)
       if (!r.ok) return relay(r)
       return { ok: true }

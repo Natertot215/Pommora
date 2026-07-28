@@ -17,8 +17,8 @@ import { findScroller, startAutoScroll } from '@renderer/design-system/interacti
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type Band, type BandIndex, type BandSlot, bandSlot, buildBandIndex } from './bandDndModel'
 
-// Band drag (Phase 2) — group headers reorder/reparent via the sidebar's insertion-line gesture.
-// The GLYPH is the drag surface (C-6); this file owns only the gesture + the frozen snapshot +
+// Band drag — group headers reorder/reparent via the sidebar's insertion-line gesture.
+// The GLYPH is the drag surface; this file owns only the gesture + the frozen snapshot +
 // the line/ghost/nest chrome. The drop hands TableView a CLASSIFIED commit (reorder vs reparent,
 // routed by the slot's implied parent vs the dragged band's current parent) — the caller never
 // re-derives it.
@@ -75,7 +75,7 @@ export function BandDnd({
   const dragId = useRef<string | null>(null)
   const beginGesture = usePointerGesture()
 
-  // Frozen at activation (C-2): geometry AND the band list ride one snapshot — a mid-drag tree
+  // Frozen at activation: geometry AND the band list ride one snapshot — a mid-drag tree
   // swap re-renders headers, so both go stale together and re-measure together, lazily.
   type Snapshot = { index: BandIndex; boxTop: number; boxBottom: number }
   const snapshot = useRef<Snapshot | null>(null)

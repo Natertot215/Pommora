@@ -19,7 +19,7 @@ import {
 import type { PropertyType, StatusGroup } from '@shared/properties'
 
 /** These ops edit `select_options`, so they apply to Select / Multi-Select only. A Status property's
- *  options live in `status_groups` (Phase 3's per-group ops); other types have none. Reject anything
+ *  options live in `status_groups` (its own per-group ops below); other types have none. Reject anything
  *  else up front — writing select_options onto a status def corrupts it and orphans its page values. */
 function requireOptionType(type: PropertyType): Result<null> {
   return type === 'select' || type === 'multi_select'
@@ -170,7 +170,7 @@ export function removeStatusOption(
 
 /** Rewrite every assigning collection's pages through `rewrite` (null = the page doesn't hold it,
  *  skip). Each page's read-modify-write runs under its file lock — the SAME lock the cell-write path
- *  takes — so a cascade and a concurrent cell edit on one page can't clobber each other (F1). Per
+ *  takes — so a cascade and a concurrent cell edit on one page can't clobber each other. Per
  *  file, not all-or-nothing across pages: a partly-applied rename/strip is recoverable by re-running
  *  and each page stays individually valid. Shared by rename (replace) and remove/clear (strip). */
 async function cascadePages(

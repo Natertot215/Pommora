@@ -66,15 +66,15 @@ export function GridSurface(): React.JSX.Element {
   )
 }
 
-type TableRowT = Row & { kind: string; tier: string }
+type TableRowT = Row & { kind: string; context: string }
 const TABLE_SEED: TableRowT[] = [
-  { id: 'r1', label: 'Roadmap', kind: 'Doc', tier: 'Pommora' },
-  { id: 'r2', label: 'Q3 Plan', kind: 'Doc', tier: 'Work' },
-  { id: 'r3', label: 'Design Review', kind: 'Note', tier: 'Pommora' },
-  { id: 'r4', label: 'Hiring', kind: 'Task', tier: 'Work' },
-  { id: 'r5', label: 'Budget', kind: 'Sheet', tier: 'Finance' },
-  { id: 'r6', label: 'Reading list', kind: 'Note', tier: 'Personal' },
-  { id: 'r7', label: 'Trip plan', kind: 'Doc', tier: 'Personal' },
+  { id: 'r1', label: 'Roadmap', kind: 'Doc', context: 'Pommora' },
+  { id: 'r2', label: 'Q3 Plan', kind: 'Doc', context: 'Work' },
+  { id: 'r3', label: 'Design Review', kind: 'Note', context: 'Pommora' },
+  { id: 'r4', label: 'Hiring', kind: 'Task', context: 'Work' },
+  { id: 'r5', label: 'Budget', kind: 'Sheet', context: 'Finance' },
+  { id: 'r6', label: 'Reading list', kind: 'Note', context: 'Personal' },
+  { id: 'r7', label: 'Trip plan', kind: 'Doc', context: 'Personal' },
 ]
 
 export function TableSurface(): React.JSX.Element {
@@ -92,7 +92,7 @@ export function TableSurface(): React.JSX.Element {
           <tr>
             <th>Name</th>
             <th>Kind</th>
-            <th>Tier</th>
+            <th>Context</th>
             <th>Modified</th>
           </tr>
         </thead>
@@ -114,7 +114,7 @@ function TableRow({ row }: { row: TableRowT }): React.JSX.Element {
         <Icon name="file-text" size={14} /> {row.label}
       </td>
       <td className="ix-dim">{row.kind}</td>
-      <td className="ix-dim">{row.tier}</td>
+      <td className="ix-dim">{row.context}</td>
       <td className="ix-dim">2d ago</td>
     </tr>
   )

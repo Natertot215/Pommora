@@ -93,7 +93,7 @@ export function IconPicker({
     [favs, toggleFav],
   )
 
-  // Virtualized grid: rows of `cols`. Defaults to 6 (Nathan's target width) so icons ALWAYS render —
+  // Virtualized grid: rows of `cols`. Defaults to 6 so icons ALWAYS render —
   // a live width measurement only *widens* it, never blanks the grid. `scrollEl` is a state-backed
   // callback ref so the virtualizer re-runs the moment the element mounts (else the grid stays empty
   // until the first re-render — e.g. a keystroke).

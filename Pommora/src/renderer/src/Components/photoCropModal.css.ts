@@ -4,7 +4,7 @@ import { stack } from '@renderer/design-system/tokens/stack'
 
 const c = vars.color
 
-/** Scrim behind the crop dialog — system black at 45% (color-mix is the project's opacity mechanism). */
+/** Scrim behind the crop dialog, in system black (color-mix is the project's opacity mechanism). */
 export const backdrop = style({
   position: 'fixed',
   inset: 0,
@@ -44,7 +44,6 @@ export const grabbing = style({ cursor: 'grabbing' })
 /** The dark, blurred surround outside the circle (clear inside) — a masked backdrop-filter overlay. */
 export const surround = style({ position: 'absolute', inset: 0, pointerEvents: 'none' })
 
-/** A hairline ring marking the exact crop circle. */
 export const ring = style({
   position: 'absolute',
   borderRadius: '50%',

@@ -4,7 +4,7 @@ import { type PageMetaAction, pageMetaMenuItems } from './pageMenu'
 import type { PropertyType } from './properties'
 import type { ResolvedColumn } from './types'
 
-/** The table-cell right-click menu (A-13: right-click always opens a menu, never acts).
+/** The table-cell right-click menu (right-click always opens a menu, never acts).
  *  Title cells get the page meta menu; style-bearing cells get their COLUMN's Style radios;
  *  a `link` (url) cell gets Edit · Rename · Clear (its look is per-property, set in its pane, not a
  *  per-view Style); a file cell adds Edit to Style; picker-based cells add Clear (`clearable` on a

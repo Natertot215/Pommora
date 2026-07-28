@@ -67,7 +67,6 @@ export function canNest(draggedId: string, targetId: string, bands: Band[]): boo
   return byId.get(targetId)?.kind === 'set' && !walksTo(targetId, draggedId, byId)
 }
 
-/** True when walking parent links up from `fromId` reaches `ancestorId`. */
 function walksTo(fromId: string, ancestorId: string, byId: Map<string, Band>): boolean {
   let cur: string | null = fromId
   while (cur) {
@@ -125,7 +124,6 @@ export function bandSlot(
     return { beforeId: below.id, impliedParentId: below.parentId, nestInto: null, lineY }
   }
 
-  // Hovered band by REGION — the last header whose top sits at/above the pointer.
   let idx = -1
   for (const [i, m] of rows.entries()) {
     if (y >= m.top) idx = i
@@ -177,7 +175,7 @@ export function propertyOrderAfterDrop(
 
 /** The destination's fs `set_order` for a reparent commit: its CURRENT children + the moved id
  *  APPENDED — never the visual drop position, which persists only in the view's group_order
- *  (C-4: the per-view order must not leak into the filesystem). */
+ *  (the per-view order must not leak into the filesystem). */
 export function reparentFsOrder(destChildIds: string[], movedId: string): string[] {
   return [...destChildIds.filter((id) => id !== movedId), movedId]
 }

@@ -1,4 +1,4 @@
-// Per-column display style (B-1..B-5). Mirrors columnAlign: a pure render-layer resolver keyed
+// Per-column display style. Mirrors columnAlign: a pure render-layer resolver keyed
 // by the column's declared type; a SavedView `column_styles` entry merges per-key over the
 // defaults. Pure: no fs, no React.
 

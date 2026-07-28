@@ -75,7 +75,7 @@ export function ensureSettings(root: string): Promise<void> {
 }
 
 /** Serialized read-modify-write of settings.json — the one primitive every settings writer funnels
- *  through, so concurrent writes to different keys can't clobber each other (G-1). A missing file
+ *  through, so concurrent writes to different keys can't clobber each other. A missing file
  *  starts from the full seed (parity with the prior mutateJson fallback). */
 export function updateSettings(
   root: string,

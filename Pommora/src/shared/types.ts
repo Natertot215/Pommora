@@ -15,7 +15,7 @@ export type NodeKind =
   | 'set'
   | 'page'
 
-// The Settings accent palette — 10 cases, written once as the single source for the — the spectrum solids usable as the app accent, plus
+// The Settings accent palette — the spectrum solids usable as the app accent, plus
 // `system` (follow the OS accent). Names mirror the renderer's vars.color.solid
 // keys (color.css.ts); greyDefault is excluded (it's the chip "Default" neutral,
 // not an accent). resolveAccent (renderer) maps each name to its hex.
@@ -227,7 +227,7 @@ export type ViewStyle = 'dropdown' | 'toolbar'
 
 export interface SetNode extends PathNode {
   kind: 'set'
-  /** Child Sets nested at any depth (2-tier recursion). Optional during the migration
+  /** Child Sets nested at any depth. Optional during the migration
    *  window; populated by the recursive read. */
   sets?: SetNode[]
   pages: PageNode[]
@@ -242,7 +242,7 @@ export interface CollectionNode extends PathNode {
   kind: 'collection'
   sets: SetNode[] // rendered before pages
   pages: PageNode[]
-  /** The property schema every Page inside inherits (2-tier top tier). Read from the
+  /** The property schema every Page inside inherits. Read from the
    *  Collection sidecar's `properties`. */
   properties?: PropertyDefinition[]
   /** Saved views from the sidecar `views[]`. */
@@ -257,7 +257,7 @@ export interface CollectionNode extends PathNode {
 export interface UserSection {
   id: string
   label: string
-  /** Top-tier Collections grouped into this user section. */
+  /** Top-level Collections grouped into this user section. */
   collections: CollectionNode[]
 }
 
@@ -304,7 +304,7 @@ export interface NexusTree {
   /** Registry-backed Context groups in registry order, each with its Spaces ([] on a
    *  raw/unmigrated tree — the open path migrates + seeds before anything renders). */
   contexts: ContextGroup[]
-  /** Ungrouped top-tier Collections (those not assigned to a user section). */
+  /** Ungrouped top-level Collections (those not assigned to a user section). */
   collections: CollectionNode[]
   userSections: UserSection[]
   labels: NexusLabels
@@ -418,7 +418,7 @@ export interface PreviewsFile {
   navSet: PreviewSetRecord | null
   origins: Record<string, PreviewSetRecord>
   open: { flavor: 'page' | 'nav'; originId: string } | null
-  /** B-2: the NavWindow's routing override — "Open in Preview" from its rows opens a tab in THIS
+  /** The NavWindow's routing override — "Open in Preview" from its rows opens a tab in THIS
    *  window instead of the floating preview. Absent = on (Nathan's default: the override wins). */
   navOverride?: boolean
 }
@@ -513,7 +513,7 @@ export interface ViewRow {
  *  render concerns, not modeled here.) */
 export type ColumnKind = 'title' | 'property' | 'context' | 'modified'
 
-/** A resolved table column — the stable seam Part 2's table routes to. `id` is the property id
+/** A resolved table column — the stable seam the table routes to. `id` is the property id
  *  (a reserved `_title`/`_modified_at`, a Context id, or a `prop_*`); `kind` picks the renderer. */
 export interface ResolvedColumn {
   id: string
@@ -527,7 +527,7 @@ export type GroupKind = 'structural-set' | 'property' | 'ungrouped'
 /** A resolved bucket of rows produced by the pipeline. `children` nests Sub-Set groups under a
  *  Set group (structural grouping); `items` holds this group's own rows. `key` is the group's
  *  identity (a property value, a Set id, or `'_ungrouped'`) — round-trips `collapsed_groups`.
- *  Header labels are derived at render time (Part 2) from `key` + schema, not stored here. */
+ *  Header labels are derived at render time from `key` + schema, not stored here. */
 export interface ResolvedGroup {
   key: string
   kind: GroupKind
@@ -540,7 +540,7 @@ export interface ResolvedGroup {
 
 /** The reserved `key` for the no-value / flat / structural-root band. Stored on disk in
  *  `collapsed_groups`, so it round-trips across builds — the single source the pipeline and the
- *  Part-2 render code both match group keys against. */
+ *  render code both match group keys against. */
 export const UNGROUPED = '_ungrouped'
 
 export const DEFAULT_LABELS: NexusLabels = {

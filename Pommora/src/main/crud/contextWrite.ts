@@ -1,5 +1,5 @@
 // The Contexts & Spaces write layer: create ops, the setContext family (one per entity
-// kind — page frontmatter, agenda JSON, `_space.json`), color/singular setters, and the
+// kind — page frontmatter, agenda JSON, `_space.json`), color setters, and the
 // per-file reconcile every context write runs on the root it's already rewriting (repair
 // near-misses, drop unknowns). Ids arrive from the renderer; titles serialize here,
 // through the live registry — never earlier.
@@ -229,9 +229,8 @@ export async function setContextOnPath(
   return fail('invalid-path', 'Not a context-taggable entity.', 'contexts')
 }
 
-/** Append a new Context to the registry (ULID id; no singular until per-Context singular
- *  editing ships) + mkdir its folder. Title collisions disambiguate like every other
- *  create ("New Context 2"). */
+/** Append a new Context to the registry (ULID id, no singular) + mkdir its folder. Title
+ *  collisions disambiguate like every other create ("New Context 2"). */
 export async function createContextGroup(
   root: string,
   name: string,

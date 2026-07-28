@@ -22,7 +22,7 @@ export function PageView(): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const select = useSession((s) => s.select)
   const openPreview = useSession((s) => s.openPreview)
-  // B-6 reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
+  // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
   const openInPreview = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const setLiveBody = useSession((s) => s.setLiveBody)
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)

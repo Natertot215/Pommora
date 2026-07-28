@@ -1,6 +1,6 @@
 // The tab set's per-nexus persistence: one SYNCED sidecar under `.nexus/` — `tabs.json`, the ordered
-// UNPINNED tab list + the active-tab pointer + each tab's Back/Forward targets (D-8/D-8a). Pinned tabs
-// are never stored here — they derive from `.nexus/pins/` (C-6; a second synced copy would re-introduce
+// UNPINNED tab list + the active-tab pointer + each tab's Back/Forward targets. Pinned tabs
+// are never stored here — they derive from `.nexus/pins/` (a second synced copy would re-introduce
 // the whole-array-LWW desync the per-pin files dodge). Warm view-state (scroll/undo) is session-only
 // and never persisted.
 //

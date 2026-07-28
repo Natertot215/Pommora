@@ -2,7 +2,7 @@
 // timestamped JSON of the def + every page value lands in `.trash`, so the scrub is
 // recoverable), then strips the value from every collection's page under its file lock (the
 // same lock the cell-write path takes), drops the id from every assignment, purges every
-// Remove-cache block (D-6), and finally removes the def from the registry. Per-file, not
+// Remove-cache block, and finally removes the def from the registry. Per-file, not
 // cross-file atomic — the `.trash` snapshot is the recovery net, so a partial run re-runs
 // cleanly. The daily non-destructive op is Remove (crud/removeProperty); this is the rare
 // one, and it saves nothing restorable in-app.
@@ -62,7 +62,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   if (!def) return fail('not-found', 'Property not found.')
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a
-  // sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page (D-6).
+  // sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await allCollectionFolders(root)
   await snapshot(root, propertyId, def, folders)
 

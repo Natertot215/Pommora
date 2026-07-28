@@ -51,7 +51,6 @@ function clockOf(date: Date, timeFormat: TimeFormat): string {
     : dateFmt({ hour: '2-digit', minute: '2-digit', hour12: false }).format(date)
 }
 
-// ── Relative thresholds (Nathan-tunable) ──
 const WEEK_DAYS = 7 // |Δdays| ≤ this shows named/day-count form (with clock when time-shown)
 
 const startOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate())
