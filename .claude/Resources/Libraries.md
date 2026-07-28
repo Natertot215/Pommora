@@ -7,7 +7,6 @@ The vetted library menu. Each entry is tagged **Decided** (in `package.json` tod
 - **Electron** + **electron-vite** — desktop shell + Vite-first dev loop with main-process HMR. **Decided.**
 - **Vite 7** + **@vitejs/plugin-react 5** — renderer bundler. **Decided** (compat pin: newer plugin-react needs Vite 8, unsupported by electron-vite 5).
 - **electron-builder** — packaging + (via `electron-updater`) auto-update. **Decided** for packaging; updater **Not-yet-needed**.
-- **@electron/rebuild** — native-module ABI rebuild for `better-sqlite3` at package time. **Decided** (used in `npm run package`).
 - **@electron/notarize** · **@sentry/electron** — notarization wrapper · crash reporting. **Not-yet-needed** (current build is ad-hoc-signed). See `Distribution.md`.
 
 ### UI · Styling · Icons
@@ -20,12 +19,12 @@ The vetted library menu. Each entry is tagged **Decided** (in `package.json` tod
 ### State · Data · Search
 
 - **Zustand 5** (vanilla + `useSyncExternalStore`) — framework-agnostic store. **Decided.**
-- **better-sqlite3 12** (WAL) — synchronous SQLite behind `db.ts`; a regeneratable query accelerator, off the read path. **Decided.**
+- **`node:sqlite`** (WAL) — synchronous SQLite behind `db//driver.ts`, holding device-local operational state. Ships inside Electron's own Node, so there is no native module to compile and no ABI to match. **Decided** — it replaced `better-sqlite3`, whose prebuilt binary matched Node's ABI and therefore never loaded under Electron at all.
 - **zod 4** — schema = codec = type for sidecars + frontmatter. **Decided.** `z.looseObject` defensively retains foreign keys on sidecars — note this is *defensive*, not required: sidecars are controlled schemas, and markdown frontmatter (not the sidecar) is the preserve-everything surface.
 - **ulidx** — monotonic ULID ids. **Decided.**
 - **write-file-atomic** + **eemeli/yaml** — atomic writes + the comment-preserving YAML Document API. **Decided.**
-- **chokidar 5** — filesystem watcher (Phase 4 live refresh). **Decided.** (`@parcel/watcher` is faster on very large trees but adds a native-module rebuild like better-sqlite3 — revisit only if watch perf at nexus scale becomes an issue.)
-- **SQLite FTS5** — full-text search; `unicode61` tokenizer with `remove_diacritics=2` + external-content mode over the `pages` table is the nexus-scale pattern (1k–10k pages). `MiniSearch` (in-memory) is fine to ~2k notes but balloons by 10k. **Not-yet-needed** (deferred global search; ships inside better-sqlite3 already).
+- **chokidar 5** — filesystem watcher (Phase 4 live refresh). **Decided.** (`@parcel/watcher` is faster on very large trees but adds a native-module rebuild — the failure class the SQLite driver was chosen to avoid; revisit only if watch perf at nexus scale becomes an issue.)
+- **SQLite FTS5** — full-text search; `unicode61` tokenizer with `remove_diacritics=2` + external-content mode over the `pages` table is the nexus-scale pattern (1k–10k pages). `MiniSearch` (in-memory) is fine to ~2k notes but balloons by 10k. **Not-yet-needed** (deferred global search; ships inside `node:sqlite` already). Needs a `pages` table and a body column, neither of which currently exists.
 ### Drag-and-Drop · Block Layout
 
 - **PommoraDND** — the **in-house drag-and-drop engine** (behind the `interactions/drag.tsx` seam): measure-once, no mid-drag array churn, pointer-capture single sensor, closest-centre + hysteresis, decide-then-animate; constraints, auto-scroll, keyboard + ARIA. **Decided + shipped** — built, reviewed, and Lab-approved (2026-06-18); replaced `@dnd-kit` entirely. Spec → `Features/PommoraDND.md`.

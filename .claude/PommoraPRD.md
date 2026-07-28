@@ -94,7 +94,7 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault leaves notes byte-identical until the user edits them.
 
-**The index is disposable and off the read path.** Reads are a single filesystem walk; nothing user-created depends on a database being present. A SQLite index stands ready as a regeneratable accelerator — it's built and maintained, and rebuilds itself from the files whenever it's missing or stale, but no query consumer reads it yet. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from; the surface for browsing and restoring it is planned, not built.
+**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from; the surface for browsing and restoring it is planned, not built.
 
 Full on-disk spec → `Features/Architecture.md`.
 
@@ -154,7 +154,7 @@ The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Cal
 
 Connections are body `[[Title]]` links — the sole connection syntax, rendered as styled colored inline text (Obsidian-style), never as Notion-style chips. The disk format stays plain and Obsidian-compatible: just the bracketed title, no embedded id or alias.
 
-In v1, connections resolve by title. A uniquely-held title is live and navigable; a title held by two Pages is ambiguous; an unmatched one renders as inert literal text with the brackets visible, going live the moment a single matching Page exists. Renaming a target **cascades** — every referencing body is rewritten to the new title, per-file atomic and re-runnable rather than transactional. Resolution runs on an in-memory map and the cascade scans the page tree, so the SQLite index is a pure accelerator the feature never depends on. Typing `[[` plus at least one character opens an autocomplete over prefix-matching Pages Nexus-wide. Canonical spec → `Features/Connections.md`.
+In v1, connections resolve by title. A uniquely-held title is live and navigable; a title held by two Pages is ambiguous; an unmatched one renders as inert literal text with the brackets visible, going live the moment a single matching Page exists. Renaming a target **cascades** — every referencing body is rewritten to the new title, per-file atomic and re-runnable rather than transactional. Resolution runs on an in-memory map and the cascade scans the page tree, so connections depend on no database at all. Typing `[[` plus at least one character opens an autocomplete over prefix-matching Pages Nexus-wide. Canonical spec → `Features/Connections.md`.
 
 #### Sidebar Navigation
 

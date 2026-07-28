@@ -34,7 +34,7 @@ Since the baseline:
 
 #### The prerequisite — a query consumer
 
-The SQLite index is built, schema-versioned, and rebuilt on every mutation, and **nothing reads it**: there is no query facade. Linked-From, backlinks, ContextView, and full-text search are all blocked on that one missing hop, and the rebuild still costs a full nexus re-read per write for no benefit — bursts now collapse onto one rebuild rather than racing each other, but the cost per burst stands. Writing the query layer — or suspending the rebuild until it exists — precedes the features that depend on it.
+Linked-From, backlinks, ContextView, and full-text search all need a content index, and none exists. The prior one was deleted rather than repaired: nothing queried it, and its only update path was a full nexus re-walk per write. Its replacement gets written alongside the query layer that reads it, updating a row at a time; the database, the driver seam, and the version handshake are already in place for it.
 
 #### v0.6.0 — The View Renderers
 

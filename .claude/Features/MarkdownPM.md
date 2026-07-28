@@ -20,13 +20,13 @@ A construct's Markdown markers are **revealed** (literal editable text) when the
 - **Disk == `EditorState.doc` string, always** — no reconstruction layer; survives an editor swap.
 - **Display ≠ source** — the same bytes render differently; the editor never auto-tidies source (mutations are user-initiated only).
 - **Binds to the body only** — frontmatter is stripped on load, held on the model, re-serialized from the typed object on save (foreign keys / comments preserved). YAML is never visible or destroyable in the editor.
-- **Display-only UI state lives in dedicated `.nexus/` files, never frontmatter** — e.g. heading folds in `.nexus/folds.json`, keyed by page id, per-machine.
+- **Display-only UI state lives in `nexus.db`, never frontmatter** — e.g. heading folds, keyed by page id, per-machine.
 
 ### Constructs
 
 - **Inline marks** — bold / italic / bold-italic, strikethrough, inline code, links, [[Studio/Pommora/II. Features/Connections|Connections]]; caret-aware marker reveal; heading-aware sizing; suppressed inside code + literal targets.
 
-- **Headings** — H1–H6 on the em scale; `#` reveals on caret. The context menu offers Paragraph plus H1–H5. **Foldable** via a chevron in the fold gutter reusing the sidebar's disclosure language (chevron on hover when open, persistent when folded); state in `.nexus/folds.json`.
+- **Headings** — H1–H6 on the em scale; `#` reveals on caret. The context menu offers Paragraph plus H1–H5. **Foldable** via a chevron in the fold gutter reusing the sidebar's disclosure language (chevron on hover when open, persistent when folded); fold state is per-machine, in `nexus.db`.
 
 - **Lists** — bullet (`-` → `•`), `+`, arrow `→` (typed `->`), ordered, and GFM task checkboxes — all sharing one indent/spacing zone and the full behavior set (continuation, indent, drag). On disk all are portable CommonMark except the arrow line (`→ text`, a Pommora render directive legible anywhere but only rendered as a list inside Pommora). **Drag-to-reorder by the glyph**: grab a list glyph to move the item with its nested sub-block; dropping beside a shallower item re-nests, ordered runs renumber — one source-line transaction, one undo. Pure logic in a unit-tested `editor/listDragModel.ts` under the `editor/listDrag.ts` gesture.
 

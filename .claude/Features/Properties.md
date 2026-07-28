@@ -90,7 +90,7 @@ A URL property renders each value as a clickable link (opened through the sancti
 - **Underline** — on or off.
 - **Color** — the link colour, a palette key chosen from the chip beside it (Default = the app accent), which also themes the editor pane's own controls.
 
-A per-value **alias** (right-click → Rename, stored markdown-native as `[alias](url)`) overrides the display for a single link. In the title look, the page `<title>` is fetched once per URL and cached in `.nexus/linkTitles.json` (device-local, regeneratable), falling back to the bare domain while loading or on failure.
+A per-value **alias** (right-click → Rename, stored markdown-native as `[alias](url)`) overrides the display for a single link. In the title look, the page `<title>` is fetched once per URL and cached per-machine in `nexus.db`, falling back to the bare domain while loading or on failure.
 
 #### II. Context Links
 

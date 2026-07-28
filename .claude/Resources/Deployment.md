@@ -34,5 +34,4 @@ Unchanged: **https://pommora-design-system.vercel.app**. The custom domain `pomm
 ### Assets + Gotchas
 
 - Glass-stage photos live in `Pommora/public/surfaces/`; `vite build` copies `public/` into `dist/` automatically — no action.
-- `better-sqlite3` (a dependency) installs from a prebuilt binary, so Vercel's Linux `npm install` won't native-compile it; the showcase bundle never imports it anyway.
 - The showcase is decoupled from Electron — `build:showcase` is plain `vite build` (via `vite.config.ts`), not `electron-vite`.

@@ -10,7 +10,6 @@ The React rebuild of the Swift paradigm reached its finish line at v0.5.0 — Pa
 
 **Nothing is mid-flight.** The next focus is open, and the list below is what came to mind rather than a mandate — if something else matters more, take that instead.
 
-- **Rethink where SQL belongs.** The index is maintained on every write and read by nothing, while nine `.nexus/` JSON files hold pure plumbing: fold state, active view per container, per-machine row order, heading-column toggles, a derived title cache, recents, favorites, tabs, previews. None of it is content anyone authored, so none of it is what agent-legibility was written to protect. The sharper question is what the JSON shape is *costing*: `viewOrders.json` exists only to keep manual order out of the synced sidecar, and `linkTitles.json` is a cache wearing a config file's clothes. The same move gives the index its first real consumer — which is what backlinks, Linked-From, ContextView and full-text search are all waiting on. An architecture session, and the highest-leverage one available.
 - **In-view page creation.** Creating a page from inside a view is sparse across every surface. The one on this list that would be felt daily; wants a brainstorm loop, not a patch.
 - **PagePreview hover.** Unbuilt, self-contained, no dependencies.
 - **Cross-location card reordering** in views — scoped and mechanical.
@@ -81,13 +80,13 @@ NavView also picked up the List/Gallery toggle the detail pane already had, plus
 
 Directly advancing on the Multi-Tab Nexus momentum, a parked `open_in` value became a real floating, editable preview window — wiki-clicks open dedup-focused tabs beside the origin instead of a back-only peek, and it stays neutral to the app's own tabs.
 
-The page window and the NavWindow are the same thing under the hood: one chrome, one tab-motion layer, one side-pane, one warm seam. Each origin page remembers its opened tabs across sessions in a synced `page-previews.json`. → [[PagePreview]] · `History.md`.
+The page window and the NavWindow are the same thing under the hood: one chrome, one tab-motion layer, one side-pane, one warm seam. Each origin page remembers its opened tabs across sessions, per machine. → [[PagePreview]] · `History.md`.
 
 #### Multi-Tab Nexus (07-14 → 07-16)
 
 The nav model had a fork sitting open for around a month — replace the pane, stack top-bar tabs, or split panes — and it mostly came down to the perf hard-rule: N live tables would wreck scroll, so tabs keep one view mounted and cache the rest per-tab.
 
-Pinned tabs ARE the pin set, never a second stored copy; the whole set travels across devices through a synced `tabs.json`, and every tab carries its own Back/Forward. The empty state became NavView, the full-window recents gallery. → [[Navigation]] §II · `History.md`.
+Pinned tabs ARE the pin set, never a second stored copy; the unpinned set is per-machine, and every tab carries its own Back/Forward. The empty state became NavView, the full-window recents gallery. → [[Navigation]] §II · `History.md`.
 
 #### SurfacePM — Block Surfaces (07-10 → 07-13)
 
@@ -103,7 +102,7 @@ Alongside it, every drag's edge-scroll collapsed onto one shared primitive acros
 
 ### Pending Focuses
 
-**The architectural task.** The SQLite index is built, schema-versioned and maintained, and nothing reads it — `sessionDb()` has no production caller and the only `SELECT`s in the tree are the schema handshake's own. Every successful mutation deletes `index.db` and cold-rebuilds it from a full nexus walk, so the highest-frequency ops in the app each pay a whole re-read to populate nine tables no code path queries; the refresh is also unguarded, so two rapid mutations race and the second's delete lands under the first's build. Writing the query facade — or suspending the rebuild until it exists — gates Linked-From, backlinks, ContextView and search, and is the one item every roadmap doc points at.
+**Backlinks and full-text.** Linked-From, backlinks, ContextView and body search are the features with no route off the in-memory tree, and they are what a content index would be *for*. The previous one was deleted rather than repaired: it had no query consumer, and its only entry point was a full nexus re-walk on every mutation, which no amount of tuning makes cheap. Whatever replaces it gets written alongside the code that reads it and updates a row at a time — the primitives (`nexus.db`, the driver seam, the version handshake) are already in place. Full-text needs an FTS table and a body column, neither of which has ever existed.
 
 - `schema:changeType` is fully built in main, exposed in preload, and has no renderer call site — only two test mocks, which read as coverage it doesn't have. Its `lossy-change-requires-confirmation` code exists to drive a confirm-then-retry dialog that nothing can reach.
 - The IPC envelope flattens the structured error contract: `PommoraError.code` is dropped at ~47 handler tails into a bare string, and no renderer anywhere reads `.code`. Either propagate it or delete the unreachable `ErrorCode` members — the middle state is what costs.
@@ -116,7 +115,7 @@ Alongside it, every drag's edge-scroll collapsed onto one shared primitive acros
 - The flattened-mode bundle is half-landed: `flat` grouping and Hide Location are live for Cards, while the grouping pane offers "None" only under Cards and the pipeline refuses `flat` structurally for tables. The table half plus a separate Flatten control is what remains. → [[Views]].
 - Perf debt: no row virtualization yet (every row mounts, which bites at thousands), and an external value edit doesn't live-refresh an open table. The one-view-mounted multi-tab design deliberately dodges needing table virtualization.
 - Canvas — the spec sits at `Planning/6-26 - Canvas Spec.md`, pending adversarial review → plan → build.
-- iCloud-sync readiness (future) — `serializeOnFile` can't coordinate with the iCloud daemon under LWW, `.nexus/index.db` needs sync-exclusion, and the walk has to skip `.icloud` placeholders.
+- iCloud-sync readiness (future) — `serializeOnFile` can't coordinate with the iCloud daemon under LWW, `.nexus/nexus.db` needs sync-exclusion, and the walk has to skip `.icloud` placeholders.
 - Mobile iOS companion — parked, spec at `.claude/Mobile/MobileSpec.md`, no build commitment.
 - Editor deep cut (post-scan-cache): the per-caret line/rail loop still walks every line — the full StateField split (doc-keyed line chrome mapped through changes + a selection-scoped reveal plugin) is the remaining step; needs live-editor verification.
 - `useExitPresence`'s default exit window is a raw constant decoupled from the motion tokens — derive it from `duration.slow` + slack or menus flash on close if the tokens are ever retuned.
@@ -160,7 +159,6 @@ Alongside it, every drag's edge-scroll collapsed onto one shared primitive acros
 
 ### Fix Log
 
-- `.nexus/activeViews.json` and its per-machine siblings (`folds`, `viewOrders`, `tableHeadingColumns`, `linkTitles`) aren't gitignored — using the switcher on a fresh container creates a would-sync file. They need adding to the Nexus `.gitignore`; `tabs.json` does not, since it's synced on purpose.
 - **A rename rewrites `[[links]]` inside fenced code blocks.** The editor excludes bracketed titles in code three separate ways, but the main-side scanner and rewriter carry no code mask — so a page documenting a link in a code sample has that sample silently altered when an unrelated page is renamed, and the same body indexes a phantom edge. The fix is one shared mask both layers read.
 - The "File" property icon gets clipped by its vertical row padding on the ViewPane.
 - The link-rename field shows a leading empty space — a visual inset, not a stored character (deprioritized).

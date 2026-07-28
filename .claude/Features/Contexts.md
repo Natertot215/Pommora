@@ -38,7 +38,7 @@ The organization layer. A **Context** is a user-defined group — a fresh nexus 
 
 #### II. Index
 
-The SQLite index holds a row per Space and a link row per membership value, with a target-keyed index ready for a reverse lookup. Nothing reads any of it yet — resolution runs at walk assembly off the registry, so losing the index loses nothing. The reverse query that Linked-From and ContextView both need is unwritten, and it's the single dependency blocking them.
+Resolution runs at walk assembly off the registry, entirely in memory. The reverse query that Linked-From and ContextView both need is unwritten, and it is the single dependency blocking them — it wants a content index written alongside the code that reads it.
 
 ### Pending
 
