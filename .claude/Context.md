@@ -21,36 +21,11 @@ Behind those sit two smaller knowns: the IPC boundary flattens its structured er
 
 #### The cleanup pass (07-27)
 
-A full day spent on the merge's aftermath rather than on features, and it paid for itself in defects
-nobody had reported. Filtering looked inert because a folder heading kept drawing after every row
-under it was gone. A filter comparison passed rows that held no value at all, so "Modified is empty"
-matched everything. Moving a page didn't count as modifying it, and neither did editing a property
-through the table. A rename rewrote `[[links]]` sitting inside fenced code samples — silent
-corruption of a user's own file. Leaving the Agenda sidebar painted "no tasks or events" over the
-list it was animating away, and the same list would have gone stale on a nexus switch. A generic
-rename could have moved a Space's folder and stranded every tag pointing at it. Two rapid edits
-raced the index rebuild, with the second deleting the file the first was still writing.
+The merge's aftermath, audited rather than built on. Every feature doc was re-grounded against real code, which surfaced nine defects — most of them live before the session and none reported. The behavioural outcomes are in the feature docs; what's durable here is the shape they shared.
 
-The whole tree then lost its plan-task tags, its retired Context vocabulary, and the comments that
-only restated the code beneath them, while four repeated shapes — the ack envelope, the throw-to-
-message narrowing, the try/catch that turns either into an envelope, and the sender's-window lookup
-— collapsed from eighty-one sources to four owners. Every IPC channel was verified byte-identical
-across that refactor.
+**A fact with two sources is a defect.** An order key read by two sites with opposite defaults, a Context column named one thing in one layer and another below it, two page-value writers governing different frontmatter keys, a code mask the editor applied three ways and the write side not at all. Each read as an inconsistency and each was live. The fixes remove the second source rather than reconcile the two — narrow a type until the wrong call can't be written, delete the duplicate, route both callers through one owner. A guard that catches the bad case leaves the bad case reachable.
 
-The pattern behind nearly every one: **two sources for one fact.** An order key read by two sites
-with opposite defaults, a column named one thing in one layer and another below it, two page-value
-writers governing different keys, a code mask the editor applied three ways and the write side not
-at all. Each read as an inconsistency; each was live. → [[Views]] · [[Connections]] · [[Pages]].
-
-#### The truing campaign (07-27)
-
-Every feature doc got its own agent and its own grounding pass against real code — 440 confirmed corrections, 39 questions routed back for a ruling. The findings that mattered all had one shape: **a fact with two sources.** An order key read by two sites with opposite defaults; a Context column named one thing in one layer and another below it; two page-value writers governing different key sets; a code mask the editor applied three ways and the write side not at all. Each looked like an inconsistency and each was a live defect, which is why a duplicated fact now counts as a bug rather than untidiness.
-
-Six fixes came out of it, all subtractive where they could be. Structural bands build from surviving rows instead of the folder tree, so a filter that empties a Set takes its band and its sub-folders with it — the piece that made filtering look inert. A positive comparison stops matching a row holding no value, while the negatives deliberately keep the opposite reading. `modified_at` answers to exactly four things, with a move and a property write no longer silent. A `[[link]]` inside a code fence is a sample no rename touches. A pipe can't be a title, since it opens the alias segment, and an alias now rides through a rename intact. The trash mirrors the folder chain a delete came from.
-
-Two more defects surfaced after the record was written: the sidebar's mode-exit overlay mounted a second Agenda list that fetched its own data, so leaving Agenda painted an empty state over the list it was animating away; and the generic path-addressed rename accepted a Space, which would have moved its folder and stranded every title-keyed tag. Its `kind` excludes them now — the trap isn't guarded, it's unrepresentable.
-
-The source then lost its plan-task tags, its retired Context vocabulary and the comments that only restated the code beneath them. → [[Views]] · [[Connections]] · [[Pages]].
+That ran forward as construction: the repeated shapes across the IPC layer collapsed to single owners, with every channel verified identical across the change. The tree also lost its plan-task tags and the comments that only restated the code beneath them. → [[Views]] · [[Connections]] · [[Pages]].
 
 #### Contexts & Spaces — the registry model (07-22 → 07-27)
 
@@ -62,21 +37,13 @@ A Space became the second BlockHost — `_space.json` carries its block document
 
 #### Closing the tierN era (07-27)
 
-Both nexuses were confirmed on the registry shape — the real one had already migrated through daily use, the test one was migrated and diffed against a pre-migration copy to prove nothing was dropped. With no unmigrated nexus left to serve, the whole backward-compatibility surface came out rather than staying as dormant weight: the migration and its resumable version handshake, the `tierN` read-healing that ran inside every context write, the legacy key modeling in the page and agenda schemas, the walk's `tierN` recognition, the registry's unmigrated-layout refusal, and the tier-level helpers.
+With both nexuses confirmed on the registry shape, the entire backward-compatibility surface came out rather than staying as dormant weight — the migration, the read-healing, the legacy key modelling, the tier helpers. The seeded Contexts took ordinary minted ULIDs, so nothing is named after the model that replaced it. **A compatibility path is a liability once its last consumer is gone:** it can never again be exercised against real input, and every future edit has to reason about a shape that no longer exists on disk. The stated consequence is that a nexus left at the old shape can no longer be opened.
 
-Two things followed from the removal. New nexuses are minted at the current schema version instead of the old one and relying on a migration to catch up, and `reconcileWriteRoot` — a wrapper whose only outside consumer was the migration — collapsed into the shared reconcile it had been forwarding to.
-
-The seeded Contexts then took ordinary minted ULIDs, converted across the registry, the space orders and every saved view's column order, so nothing anywhere is named after the model that replaced it. Removing the migration also removed the de-facto seeder — it had been writing the registry for fresh nexuses as a side effect of always running — so the open path seeds explicitly now.
-
-**A Context column's vocabulary followed.** The pipeline had resolved one as the `tier` sentinel while the property type it renders is `context`, so four surfaces translated between the two and the filter carried them as separate arms over a comment reading "one arm, not two copies." It is one name. The merge was safe because a stored `.context` definition is dropped on read, so the schema branch could never produce the collision it looked like it would.
+**A Context column's vocabulary followed.** The pipeline resolved one as a `tier` sentinel while the property type it renders is `context`, so surfaces translated between the two and the filter carried them as separate arms. It is one name now.
 
 #### The Docs Meet the Code (07-27)
 
-Every feature doc was rewritten against the source, one pass per doc, each claim opened at the code before it survived. Four errors spanned several docs at once: the SQLite index described as serving live queries, the index "refreshed on every write" when only mutate ops touch it, reserved tier ids anchoring Context resolution, and a roll-up concept that was never scoped here.
-
-The durable lesson is about the *shape* of doc error. Architecture carried the most because it described machinery at a distance — a trash layout that preserves nothing, cascade deletes that never run, a validating transaction that is really a two-phase rename, a state file named for one that doesn't exist. Docs drift hardest where they restate mechanism instead of naming it, which is why the passes cut on sight and only restated what a reader couldn't infer.
-
-Icons became **SymbolsPM** and absorbed the registry's own hand-kept mirror, whose glyph table had already gone stale in three entries — the registry is the roster, and a doc that duplicates it is a second source that can only diverge.
+Every feature doc was rewritten against the source, each claim opened at the code before it survived. The durable lesson is the *shape* of doc error: Architecture carried the most because it described machinery at a distance. **Docs drift hardest where they restate mechanism instead of naming it** — which is why the passes cut on sight and restated only what a reader couldn't infer. Icons became **SymbolsPM** and absorbed the registry's own hand-kept mirror, which had already gone stale: the registry is the roster, and a doc duplicating it is a second source that can only diverge.
 
 #### PreviewPane — the shared floating-window chassis (07-24 → 07-25)
 
