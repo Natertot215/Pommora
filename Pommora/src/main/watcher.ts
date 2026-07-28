@@ -33,8 +33,8 @@ export function isNavPath(root: string, path: string): boolean {
   )
 }
 
-// Ignore only what ISN'T user-meaningful tree content: the SQLite index (index.db*,
-// which thrashes on every mutation via WAL), the .trash, and OS/editor dotfile cruft.
+// Ignore only what ISN'T user-meaningful tree content: the SQLite databases (which thrash via
+// WAL on every operational write), the .trash, and OS/editor dotfile cruft.
 // Crucially we DO watch .nexus/ — Contexts (.nexus/contexts/) and settings/state (accent,
 // labels, ordering) live there, so external edits to them must auto-refresh. Checks only
 // the path BELOW the root, so a dot-segment in the root's own absolute path (e.g. a nexus
@@ -51,7 +51,8 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
       segs.some(
         (seg) =>
           seg === '.trash' || // deleted items — not part of the tree
-          seg.startsWith('index.db') || // SQLite index + its WAL/SHM — churns on every mutation
+          seg.startsWith('nexus.db') || // our store + its WAL/SHM
+          seg.startsWith('index.db') || // the Swift build's index, in a nexus shared with it
           (seg.startsWith('.') && seg !== '.nexus'), // dotfile cruft, but .nexus holds contexts + settings
       ) ||
       // Block-host content loads through blocks:get, never the tree walk —

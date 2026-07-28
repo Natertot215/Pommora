@@ -1,6 +1,5 @@
-// Lazy, on-demand agenda read for the sidebar's Agenda mode — a lean sibling of the index
-// builder's collectAgenda (index/build.ts), which stays richer for the SQLite upserts. This one
-// yields only what a read-only list needs, so agenda cost is paid only when Agenda mode asks for it.
+// Lazy, on-demand agenda read for the sidebar's Agenda mode. It yields only what a read-only list
+// needs, so agenda cost is paid only when Agenda mode asks for it.
 
 import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
