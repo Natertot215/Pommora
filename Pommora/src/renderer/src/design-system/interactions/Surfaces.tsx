@@ -199,7 +199,7 @@ function Tree({
   )
 }
 
-// Phase 4 constraints demo — exercises the engine options the faithful surfaces don't use, without
+// Constraints demo — exercises the engine options the faithful surfaces don't use, without
 // changing their behaviour. Toggle each and drag the list.
 export function ConstraintsSurface(): React.JSX.Element {
   const [items, setItems] = useState(mk(['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon']))
@@ -257,7 +257,7 @@ export function ConstraintsSurface(): React.JSX.Element {
   )
 }
 
-// Phase 5 harness — a capped-height scrolling list so auto-scroll has an edge to engage. Drag a
+// A capped-height scrolling list so auto-scroll has an edge to engage. Drag a
 // row toward the top/bottom edge and the container scrolls to reveal more.
 export function ScrollSurface(): React.JSX.Element {
   const [items, setItems] = useState(mk(Array.from({ length: 20 }, (_, i) => `Row ${i + 1}`)))

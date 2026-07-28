@@ -8,8 +8,8 @@ const ease = `${duration.fast} ${easing.standard}` // one motion source for the 
 const control = 'var(--label-control)' // knob fill + tick glyphs — the global on-control label token
 
 /**
- * The Figma "Switch" — a 54×24 pill sliding a liquid-glass knob between a `|` (on) and an `O` (off)
- * tick. Geometry mirrors the Figma component (track 54×24, knob inset 2 → 28×20, full pills). The knob
+ * The Figma "Switch" — a pill sliding a liquid-glass knob between a `|` (on) and an `O` (off)
+ * tick. Geometry mirrors the Figma component; the knob insets from the track on every side. The knob
  * is the label-control white fill wrapped in the real liquid glass (GlassControls); off-fill quinary,
  * on-fill accent + tint-primary, behind a label-secondary stroke.
  */
