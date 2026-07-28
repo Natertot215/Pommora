@@ -102,15 +102,6 @@ function rootsOf(
   const roots: { collections: CollectionNode[]; assign: (cs: CollectionNode[]) => NexusTree }[] = [
     { collections: tree.collections, assign: (cs) => ({ ...tree, collections: cs }) },
   ]
-  tree.userSections.forEach((_, i) => {
-    roots.push({
-      collections: tree.userSections[i].collections,
-      assign: (cs) => ({
-        ...tree,
-        userSections: tree.userSections.map((s, j) => (j === i ? { ...s, collections: cs } : s)),
-      }),
-    })
-  })
   return roots
 }
 

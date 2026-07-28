@@ -11,7 +11,7 @@ import type {
 } from '@shared/types'
 
 export function allCollections(tree: NexusTree): CollectionNode[] {
-  return [...(tree.collections ?? []), ...tree.userSections.flatMap((s) => s.collections ?? [])]
+  return tree.collections ?? []
 }
 
 export interface FlatTree {

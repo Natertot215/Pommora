@@ -22,7 +22,6 @@ import type {
   FolderPlacement,
   Personalization,
   SidebarMode,
-  UserSection,
 } from '@shared/types'
 import {
   contextsRegistry as contextsRegistrySchema,
@@ -433,8 +432,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const profileIcon = asString(settings.profile_icon)
   const profileSubtitle = asString(settings.profile_subtitle) ?? ''
   const state = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {}
-  const sectionsConfig =
-    (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.sidebarSections))) ?? {}
   const homepageConfig =
     (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.homepage))) ?? {}
   const navviewConfig = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.navview))) ?? {}
@@ -477,20 +474,8 @@ async function walkNexus(root: string): Promise<NexusTree> {
   }
   const orderedCollections = resolveOrder(allCollections, asStringArray(state.collection_order), fb)
 
-  // Partition into user sections vs ungrouped (sidebar-sections keys by `collectionIDs`).
-  const rawSections =
-    (sectionsConfig.sections as { id: string; label: string; collectionIDs?: string[] }[]) ?? []
-  const claimed = new Set<string>()
-  const userSections: UserSection[] = rawSections.map((s) => {
-    const collections = (s.collectionIDs ?? [])
-      .map((id) => orderedCollections.find((c) => c.id === id))
-      .filter((c): c is CollectionNode => !!c)
-    collections.forEach((c) => {
-      claimed.add(c.id)
-    })
-    return { id: s.id, label: s.label, collections }
-  })
-  const collections = orderedCollections.filter((c) => !claimed.has(c.id))
+  const collections = orderedCollections
+
 
   // Resolve each entity's retained raw context keys onto its own node — a cheap in-memory
   // pass over already-parsed data, so a pre-existing inert key lights up on the first walk
@@ -525,7 +510,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
     navView: { banner: asString(navviewConfig.banner) },
     contexts: contexts ?? [],
     collections,
-    userSections,
     labels,
     accent,
     timeFormat,

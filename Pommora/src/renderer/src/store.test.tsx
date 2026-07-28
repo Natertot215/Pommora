@@ -307,7 +307,6 @@ function treeWith(pages: { id: string; path: string }[]): NexusTree {
         pages: pages.map((p) => ({ kind: 'page', id: p.id, title: 'P', path: p.path })),
       },
     ],
-    userSections: [],
     labels: DEFAULT_LABELS,
     accent: 'lavender',
     timeFormat: 'twelveHour',

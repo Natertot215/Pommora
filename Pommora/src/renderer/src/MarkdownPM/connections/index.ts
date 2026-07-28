@@ -42,9 +42,6 @@ export function flattenPages(tree: NexusTree): ConnPage[] {
     for (const s of c.sets) walkSet(s)
   }
   ;(tree.collections ?? []).forEach(walkCollection)
-  tree.userSections.forEach((sec) => {
-    ;(sec.collections ?? []).forEach(walkCollection)
-  })
   return out
 }
 

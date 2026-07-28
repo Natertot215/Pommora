@@ -95,7 +95,6 @@ export async function allCollectionFolders(root: string): Promise<string[]> {
   }
   for (const c of [
     ...(tree.collections ?? []),
-    ...tree.userSections.flatMap((s) => s.collections ?? []),
   ])
     visit(c)
   return out

@@ -37,7 +37,6 @@ export function makeTree(): NexusTree {
         ],
       },
     ],
-    userSections: [],
     labels: DEFAULT_LABELS,
     accent: 'lavender',
     timeFormat: 'twelveHour',

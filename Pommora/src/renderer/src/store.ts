@@ -114,7 +114,6 @@ export interface TrailEntry {
 function findContainerPath(tree: NexusTree, id: string): string | null {
   const cols = [
     ...(tree.collections ?? []),
-    ...tree.userSections.flatMap((s) => s.collections ?? []),
   ]
   const inSets = (sets: SetNode[] | undefined): string | null => {
     for (const s of sets ?? []) {
@@ -1370,10 +1369,7 @@ export const useSession = create<SessionState>((set, get) => {
       else if (selection.kind === 'page')
         parentPath = selection.path.split('/').slice(0, -1).join('/')
       if (parentPath === null) {
-        parentPath =
-          (tree.collections ?? [])[0]?.path ??
-          tree.userSections.flatMap((s) => s.collections ?? [])[0]?.path ??
-          null
+        parentPath = (tree.collections ?? [])[0]?.path ?? null
       }
       if (parentPath === null) return
       // main disambiguates the name on collision.

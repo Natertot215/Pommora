@@ -29,7 +29,6 @@ const collection = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): C
 const tree = (over: Partial<NexusTree>): NexusTree =>
   ({
         collections: [],
-    userSections: [],
     contexts: [],
     ...over,
   }) as unknown as NexusTree
@@ -46,14 +45,6 @@ describe('existingNavKeys', () => {
       expect(keys.has(k)).toBe(true)
   })
 
-  it('includes collections nested under user sections', () => {
-    const t = tree({
-      userSections: [{ id: 'u1', label: 'U', collections: [collection('c2', [page('p4')])] }],
-    })
-    const keys = new Set(existingNavKeys(t))
-    expect(keys.has('collection:c2')).toBe(true)
-    expect(keys.has('page:p4')).toBe(true)
-  })
 
   it('always includes the id-less homepage singleton', () => {
     expect(existingNavKeys(tree({}))).toContain('homepage')
