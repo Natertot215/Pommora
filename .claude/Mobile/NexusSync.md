@@ -42,7 +42,7 @@ Some operations touch many files at once — renaming a page rewrites every inbo
 
 ### The Index Stays Local
 
-The database holds per-machine chrome — folds, view selection, tabs, layouts — and never content. It is excluded from sync: a binary database syncing across devices invites corruption and churn, and none of what it holds has a correct cross-device merge anyway. A device without one starts with default arrangement and a complete Nexus.
+The database currently holds per-machine chrome — folds, view selection, tabs, layouts — and no content. It is excluded from sync: a binary database syncing across devices invites corruption and churn, and none of what it holds has a correct cross-device merge anyway. A device without one starts with default arrangement and a complete Nexus.
 
 ### When iCloud Isn't There
 

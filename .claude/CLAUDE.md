@@ -31,11 +31,11 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Main owns the filesystem.** All fs/Node lives in `src/main`, exposed to the renderer only through a **narrow typed IPC** bridge in `src/preload` (contextBridge). The renderer never touches `fs`/Node.
 - **`src/shared/types.ts` is the cross-process contract.** No fs, no React there. Both sides import it.
 - **IPC never throws across the boundary** — handlers return a `{ ok: true, … } | { ok: false, error }` envelope.
-- **Filesystem is canonical.** The on-disk model is the portable contract (TS-native serialization). No SQLite on the content read path — a single fs walk is the source; the database carries per-machine chrome only.
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; don't add unrequested complexity.
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full rebuild / re-walk when an incremental or cached update works — cache, memoize, snapshot, subscribe narrowly. It's THE lag source.
 - **Never** reference plans, decision logs, or any other session-dependent phrasing in documentation or code comments; **Never** write comments that restate what the code clearly shows. 
+- **Never** assume a locked decision within the docs is truly absolute 
 - **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they never restate exact code values. Name the token and its treatment ("the red solid at a low opacity"), never the literal `#hex` / `%` / line-for-line code stays in the code itself. The same discipline must be held true equally to code comments.
 
 #### Design Rules
