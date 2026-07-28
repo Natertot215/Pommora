@@ -81,7 +81,6 @@ export const LEAVES: readonly Leaf[] = [
   },
 ]
 
-/** Resolve a hash id to a leaf, falling back to the first leaf. */
 export function leafById(id: string): Leaf {
   return LEAVES.find((l) => l.id === id) ?? LEAVES[0]
 }

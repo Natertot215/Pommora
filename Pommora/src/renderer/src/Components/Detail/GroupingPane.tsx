@@ -1,7 +1,3 @@
-// The Grouping leaf — authors a table view's group config behind both doors (SettingsPane's Group
-// entry, ViewSettings' Group leaf). Group By is the pane-flip disclosure (the Swift GroupingPane
-// precedent); Order / Date By / Sub-Group are PickerControl dropdown rows. Structural-only settings
-// (structural_order_mode, sub_group) live VIEW-level, so they survive Group By switches for free.
 import { useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
@@ -53,8 +49,8 @@ import { propertyTypeIconName } from './PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
 import * as gp from './groupingPane.css'
 
-/** The pane's Group By offering — location + these property types. Checkbox is deliberately absent
- *  (the pipeline still renders it from a foreign sidecar; the pane never authors it). */
+/** Checkbox is deliberately absent — the pipeline still renders it from a foreign sidecar; the
+ *  pane never authors it. */
 const GROUPABLE_PANE = new Set(['select', 'status', 'datetime'])
 
 const STRUCTURAL_ORDER: PickerChoice<StructuralOrderMode>[] = [
@@ -80,8 +76,6 @@ const GRANULARITY: PickerChoice<DateGranularity>[] = [
 const orderOptionsFor = (type: string | undefined): PickerChoice<GroupOrderMode>[] =>
   type === 'datetime' ? DATE_ORDER : OPTION_ORDER
 
-/** A labeled row whose trailing PickerControl pops the option menu — the DateTimeEditor PickerRow
- *  shape on the MenuItem chassis. `tier: 'sub'` is the subordinate Order treatment. */
 function ValueRow<T extends string>({
   tier = 'primary',
   icon,
@@ -140,8 +134,7 @@ export function GroupingPane({
   const activeDef =
     group.kind === 'property' ? schema.find((d) => d.id === group.property_id) : undefined
   const subGroup = structural && subGrouping ? view.sub_group : undefined
-  // The property whose date buckets head bands right now (top-level date grouping, or the date
-  // sub-group) — the Separation footing appears only when its column wears a numeric format.
+  // The Separation footing (below) appears only when this property wears a numeric date format.
   const dateHeadingProp =
     group.kind === 'property' && declaredType(group.property_id, schema) === 'datetime'
       ? group.property_id
@@ -179,8 +172,6 @@ export function GroupingPane({
   const hasMiddle =
     group.kind !== 'property' || declaredType(group.property_id, schema) !== 'datetime'
 
-  // The footings sit in the pane's bottom bar (MenuBottomRow owns the divider + bottom placement);
-  // present only while the Group By list is collapsed.
   const footings = groupByOpen ? undefined : (
     <MenuBottomRow>
       <FootingPick
@@ -370,8 +361,6 @@ export function GroupingPane({
   )
 }
 
-/** A value footing — the ViewSettings Format-footer look (footing icon + label) with the Order
- *  rows' PickerControl as its trailing picker. */
 function FootingPick<T extends string>({
   icon,
   label,
@@ -406,9 +395,7 @@ export const optionsOf = (
 
 type PropertyGroupConfig = Extract<GroupConfig, { kind: 'property' }>
 
-/** Default/Reversed read-only preview: status renders its groups as muted headings with each
- *  group's option chips beneath; select renders one flat chip run; datetime has no finite list.
- *  Shared with the Sorting pane's example order — `group` is just the ordering pair. */
+/** Shared with the Sorting pane's example order — `group` is just the ordering pair. */
 export function PropertyPreview({
   group,
   def,
@@ -445,8 +432,7 @@ export function PropertyPreview({
   return <>{ordered.flatMap((v) => (byValue.has(v) ? [chip(byValue.get(v)!)] : []))}</>
 }
 
-/** Custom (manual) order: one flat "Options" list of draggable chips handing back the reordered
- *  value sequence. Shared with the Sorting pane's Custom order — the caller owns the write. */
+/** Shared with the Sorting pane's Custom order — the caller owns the write. */
 export function CustomList({
   group,
   def,
@@ -495,12 +481,8 @@ export function CustomList({
   )
 }
 
-/** The set hierarchy: sets with their sub-group disclosed beneath them, no pages. Each set
- *  discloses what the sub-group yields — sub-sets under Location, the property's value chips under
- *  a property sub-group (sub-sets flatten) — both riding the rail. Drags mirror the table
- *  band rules: sibling reorder writes view order in Custom / the filesystem in Location; a
- *  cross-nesting drop is always an fs reparent. Chip rows are inert (their reorder surface is the
- *  table bands). */
+/** Drags mirror the table band rules: sibling reorder writes view order in Custom / the
+ *  filesystem in Location; a cross-nesting drop is always an fs reparent. */
 function LocationHierarchy({
   source,
   view,
@@ -509,13 +491,11 @@ function LocationHierarchy({
 }: {
   source: CollectionNode | SetNode
   view: SavedView
-  /** The sub-group property's definition when sub-grouped by a property; undefined = Location. */
   subDef: PropertyDefinition | undefined
   onSaveView: (patch: Partial<SavedView>) => void
 }): React.JSX.Element {
   const mutate = useSession((st) => st.mutate)
   const hideChevrons = useSession((st) => st.personalization.hideChevrons ?? false)
-  // Sub-groups are hidden by default — a set discloses on demand.
   const expanded = useDisclosureSet()
   const flat = subDef !== undefined
 
@@ -717,8 +697,8 @@ function LocationHierarchy({
   )
 }
 
-/** The Sub-Group picker row — its pick genuinely branches (Location CLEARS the view-level field;
- *  a property writes a fresh config), so it stays its own component. Empty schema ⇒ Location alone. */
+/** Location CLEARS the view-level field; a property writes a fresh config — different enough
+ *  to stay its own component. */
 function SubGroupRow({
   subGroup,
   groupable,

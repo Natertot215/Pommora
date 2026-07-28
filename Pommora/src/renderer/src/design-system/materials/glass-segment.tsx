@@ -2,11 +2,8 @@ import type { HTMLAttributes, ReactNode } from 'react'
 import { Glass } from '@samasante/liquid-glass'
 import { CONTROL_OPTICS } from './glass-controls'
 
-/**
- * GlassSegment — the actual liquid glass (the SAME @samasante/liquid-glass material as GlassControls),
- * tuned for small on-control "segments" like the switch knob: the control optics at full brightness
- * (no dim) and zero depth. Real edge refraction, not a CSS frost.
- */
+/** The SAME @samasante/liquid-glass material as GlassControls — real edge refraction, not a CSS
+ *  frost — tuned for small on-control segments (full brightness, zero depth) like the switch knob. */
 const SEGMENT_OPTICS = { ...CONTROL_OPTICS, brightness: 0, depth: 0 }
 
 export function GlassSegment({

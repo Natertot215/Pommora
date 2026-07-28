@@ -6,7 +6,6 @@ import { onActivateKey } from './activate'
 const mk = (labels: string[], p = ''): Row[] =>
   labels.map((l, i) => ({ id: `${p}${i}-${l}`, label: l }))
 
-/** A draggable <li> — the one item element every list/grid surface reuses. */
 function Cell({
   id,
   className,
@@ -199,8 +198,6 @@ function Tree({
   )
 }
 
-// Constraints demo — exercises the engine options the faithful surfaces don't use, without
-// changing their behaviour. Toggle each and drag the list.
 export function ConstraintsSurface(): React.JSX.Element {
   const [items, setItems] = useState(mk(['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon']))
   const [swap, setSwap] = useState(false)
@@ -209,8 +206,8 @@ export function ConstraintsSurface(): React.JSX.Element {
   const [asyncReject, setAsyncReject] = useState(false)
   const ids = items.map((i) => i.id)
 
-  // Async-reject: after a simulated "server check", reject any drop into the first slot — the item
-  // holds lifted while pending, then springs home. Exercises the async decide-then-animate path.
+  // Rejects any drop into slot 0 after a simulated delay — exercises the engine's async
+  // decide-then-animate path.
   const canReorder = asyncReject
     ? (_a: string, o: string): Promise<boolean> =>
         new Promise((res) => window.setTimeout(() => res(ids.indexOf(o) !== 0), 300))
@@ -257,8 +254,6 @@ export function ConstraintsSurface(): React.JSX.Element {
   )
 }
 
-// A capped-height scrolling list so auto-scroll has an edge to engage. Drag a
-// row toward the top/bottom edge and the container scrolls to reveal more.
 export function ScrollSurface(): React.JSX.Element {
   const [items, setItems] = useState(mk(Array.from({ length: 20 }, (_, i) => `Row ${i + 1}`)))
   return (

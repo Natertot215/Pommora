@@ -37,10 +37,8 @@ import { PageHeader } from './PageHeader'
 import { ZOOM_DEFAULT, zoomFontSize } from './zoom'
 import './Styles.css'
 
-/** The warm-tab seam: `restore` is read once at mount to seed the fresh EditorState (undo via
- *  the serialized historyField) + scroll; `capture` fires at unmount with the state to keep warm. The
- *  host binds both to a (tab, entity) identity at mount time — the mount-once effect freezes that
- *  binding, so a capture can never land under the NEXT tab's identity mid-switch. */
+/** The host binds `restore`/`capture` to a (tab, entity) identity at mount time — the mount-once
+ *  effect freezes that binding, so a capture can never land under the NEXT tab's identity mid-switch. */
 export interface WarmSeam {
   restore: () => { editorState?: unknown; scrollTop?: number } | undefined
   capture: (state: { editorState: unknown; scrollTop: number }) => void
@@ -52,7 +50,6 @@ interface Props {
   title?: string
   // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename?: (newName: string) => void | Promise<boolean>
-  /** Page identity + chrome for the header (banner cover + Edit Icon). */
   path?: string
   cover?: string
   onEditIcon?: () => void
@@ -61,13 +58,8 @@ interface Props {
   folds?: FoldsApi
   tableHeadingColumns?: TableHeadingColsApi
   menu?: EditorMenuApi
-  /** Focus the editor on mount — for click-to-edit surfaces (block tiles). */
   autoFocus?: boolean
-  /** Read-only portal mode: the SAME view, editing gated by a live-reconfigured
-   *  compartment — flipping it never remounts (embeds' jitter-free enter-edit). */
   readOnly?: boolean
-  /** Apply the shared scroll-edge fade to the editor's scroller — the embed treatment; the full page
-   *  editor leaves it off. */
   edgeFade?: boolean
   /** Warm-tab state seam — page editors only; embeds/blocks mount cold. */
   warm?: WarmSeam
@@ -156,7 +148,7 @@ export function MarkdownEditor({
       markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false }),
       EditorView.lineWrapping,
       // iOS soft-keyboard hints — no-ops on desktop; keep the on-screen keyboard from
-      // auto-capitalizing and "correcting" Markdown / [[wikilinks]]. Tune during the mobile editor pass.
+      // auto-capitalizing and "correcting" Markdown / [[wikilinks]].
       EditorView.contentAttributes.of({
         autocapitalize: 'sentences',
         autocorrect: 'off',
@@ -164,8 +156,7 @@ export function MarkdownEditor({
         enterkeyhint: 'enter',
       }),
       markdownDecorations(() => connectionsRef.current),
-      // Interactive table widget — renders each Markdown table as an editable HTML table over the GFM
-      // source; the connections getter lets `[[…]]` render + autocomplete inside cells.
+      // The connections getter lets `[[…]]` render + autocomplete inside table cells.
       tableWidgetExtension(
         () => connectionsRef.current,
         (indices) => tableHeadingColsRef.current?.save(indices),
@@ -273,7 +264,6 @@ export function MarkdownEditor({
         restoreScroll()
       })
     else requestAnimationFrame(restoreScroll)
-    // Restore this page's heading-column tables (rebuilds the affected table widgets).
     void tableHeadingColsRef.current?.load().then((indices) => applySavedHeadingCols(view, indices))
     // The header parks on scroll via a CSS scroll-driven animation (Styles.css) — no JS scroll handler.
     const unsubMenu = menuRef.current?.onAction((action) => applyEditorAction(view, action))

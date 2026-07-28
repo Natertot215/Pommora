@@ -20,14 +20,10 @@ import { useStatusReorder } from './useStatusReorder'
 import * as s from './settingsPane.css'
 
 /**
- * The Status option editor — the option list grouped by status group (Open / Active /
- * Done): each group's heading (double-click to rename its label; the calendar-locked id stays) + its
- * option chips (pills, the exclusive status shape), defaulting to the group's colour. The per-group +
- * reveals on group hover and adds an inline-named option; a hover palette icon opens the shared
- * ColorPicker (same placement + logic as the Select/Multi editor); dragging a chip reorders it within
- * its group or across into another (including an empty one). A right-click Rename/Remove/Clear menu
- * (native) mirrors the Select editor — Rename is inline, Remove/Clear cascade pages. The Style picker
- * lands in a later slice; registry-only edits ride setStatusGroups, the page-touching ops their own IPC.
+ * Double-click a group heading to rename its label. The id underneath never changes — a calendar
+ * bridge maps groups by id, and every stored value references one. Remove/Clear
+ * cascade pages. The Style picker lands in a later slice; registry-only edits ride setStatusGroups,
+ * the page-touching ops their own IPC.
  */
 export function StatusEditor({
   groups,

@@ -2,8 +2,6 @@
 // The manual-order gate the pipeline sorter reads lives in pipeline/sort.ts (resolveManualOrder), shared
 // with the table.
 
-/** Move `activeId` into `overId`'s slot, returning a new array. A no-op copy when either id is
- *  absent or they're identical. Shared by the page in-band reorder and the Set-Card reorder. */
 export function reorderIds(ids: string[], activeId: string, overId: string): string[] {
   const from = ids.indexOf(activeId)
   const to = ids.indexOf(overId)

@@ -1,9 +1,7 @@
-// Spring-loaded group headers. While ANY drag is active, dwelling the pointer over a COLLAPSED band
-// header for ~half a second discloses (expands) it, so a card/row can be dropped into a folded group.
-// Engine-agnostic by construction: a drag engine calls beginDragDisclose/endDragDisclose around its
-// gesture, and GroupBand registers each collapsed header — no engine needs to know about bands, and
-// no band needs to know which engine is dragging. The hit-test rides a window pointermove +
-// elementFromPoint, so it works under pointer capture too (where pointerenter never fires).
+// Engine-agnostic by construction: a drag engine calls beginDragDisclose/endDragDisclose around
+// its gesture, and GroupBand registers each collapsed header — neither needs to know about the
+// other. The hit-test rides a window pointermove + elementFromPoint so it works under pointer
+// capture too (where pointerenter never fires).
 
 const DWELL_MS = 500 // ~half a second — the deliberate hold before a folded group springs open
 
@@ -23,9 +21,9 @@ function clearHover(): void {
   }
 }
 
-// After a band springs open its rows/cards mount and the layout shifts — so the engine's ONE-TIME drag
-// geometry snapshot is now stale and the just-revealed group isn't a drop target. Re-snapshot it: once
-// on the next frame (an instant/reduced-motion open) and once after the disclosure animation settles.
+// After a band springs open, mounted rows shift the layout — so the engine's ONE-TIME drag
+// geometry snapshot goes stale. Re-snapshot once on the next frame (instant/reduced-motion open)
+// and once after the disclosure animation settles.
 function scheduleRemeasure(): void {
   if (!remeasure) return
   requestAnimationFrame(() => {

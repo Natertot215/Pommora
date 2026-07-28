@@ -4,7 +4,6 @@ import type { ConnectionsApi, ConnPage } from '../connections'
 
 type GetApi = () => ConnectionsApi | undefined
 
-/** KNOB — hover-intent delay: how long the pointer rests on a connection before the card. */
 const CONN_HOVER_INTENT_MS = 450
 
 function wikiLinkAt(view: EditorView, pos: number): { title: string } | null {

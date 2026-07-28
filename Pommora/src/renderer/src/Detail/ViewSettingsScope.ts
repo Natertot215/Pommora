@@ -1,11 +1,7 @@
 import type { SelectionState } from '@shared/types'
 
-/**
- * What the in-window content view exposes to the Settings dropdown — the React mirror of Swift's
- * ViewSettingsScope. The toolbar's Settings button is generic chrome; this maps the current
- * selection to a scope, and SettingsDropdown switches on it to pick the pane (or show nothing).
- * Adding a future surface's pane is a new case here + a switch arm there, never a change to the button.
- */
+/** Maps the current selection to a Settings-dropdown scope; SettingsDropdown switches on this to
+ *  pick its pane. Adding a future surface's pane is a new case here + a switch arm there. */
 export type ViewSettingsScope = 'view' | 'page' | 'context' | 'space' | 'homepage' | 'none'
 
 export function viewSettingsScope(selection: SelectionState): ViewSettingsScope {

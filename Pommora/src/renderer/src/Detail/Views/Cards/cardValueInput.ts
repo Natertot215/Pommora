@@ -82,10 +82,8 @@ export const addColumn = (id: string, tree: NexusTree | null = null): ResolvedCo
   kind: contextIdsOf(tree).includes(id) ? 'context' : 'property',
 })
 
-/** One row of the card add-property menu (something NOT currently shown). A `pane` entry (a blank
- *  addable-type prop) drills into a value pane to set a value; a `revealOnly` entry (a hidden
- *  Context column, a filled prop, or a checkbox) just unhides on pick. `def` is null for a reserved
- *  Context or Modified id, which carries no schema entry. */
+/** One row of the card add-property menu. `def` is null for a reserved Context or Modified id,
+ *  which carries no schema entry. */
 export type AddEntry = {
   id: string
   name: string
@@ -94,9 +92,6 @@ export type AddEntry = {
   revealOnly: boolean
 }
 
-/** Menu order: the pane-bearing entries (a `>` chevron) sort to the top, reveal-only entries below,
- *  order preserved WITHIN each group. Shared by the in-app add-picker and the native Add-Property
- *  menu so both read the same. */
 export function orderAddableEntries(entries: AddEntry[]): AddEntry[] {
   return [...entries.filter((e) => !e.revealOnly), ...entries.filter((e) => e.revealOnly)]
 }

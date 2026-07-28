@@ -11,12 +11,6 @@ const INSET = (VIEWPORT - CIRCLE) / 2
 const OUTPUT = 512
 const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v))
 
-/**
- * Circular crop dialog (custom): the picked image sits under a dark, blurred surround with a
- * clear circular window showing the exact crop. Drag to reposition, zoom to scale; "Choose"
- * exports the circle's bounding box to a square PNG via canvas. Design-system throughout —
- * GlassSurface panel + color/type tokens.
- */
 export function PhotoCropModal({
   image,
   onCancel,
@@ -45,7 +39,6 @@ export function PhotoCropModal({
   const imgLeft = (VIEWPORT - dispW) / 2 + offset.x
   const imgTop = (VIEWPORT - dispH) / 2 + offset.y
 
-  // Re-clamp the offset whenever the bounds shrink (zoom out / first load).
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onCancel()

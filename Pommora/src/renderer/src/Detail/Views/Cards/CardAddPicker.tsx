@@ -18,8 +18,6 @@ import { type AddEntry, orderAddableEntries, parseEditorValue } from './cardValu
 import { compactRow } from './cardAddPicker.css'
 import { cx } from '@renderer/design-system/cx'
 
-/** The value pane — routes the picked def to its editing surface (chip options, the calendar, or the
- *  text editor). pickSemantics is pure, so the branch is safe. */
 function ValuePane({
   def,
   current,
@@ -79,12 +77,8 @@ function ValuePane({
   )
 }
 
-/**
- * The card's two-stage add-property menu: the list is everything NOT currently shown (hidden props,
- * Context columns, and blank addable props). A pane entry (a blank addable-type prop) slides into a value pane
- * to set a value; a reveal-only entry (a hidden Context column, a hidden-but-filled prop, a checkbox)
- * just unhides on pick. One PickerMenu hosting a PaneSlider, the SurfacePM multi-pane idiom.
- */
+/** The card's two-stage add-property menu: a pane entry (a blank addable-type prop) slides into a
+ *  value pane to set a value; a reveal-only entry just unhides on pick. */
 export function CardAddPicker({
   entries,
   currentOf,
@@ -99,11 +93,9 @@ export function CardAddPicker({
 }: {
   entries: AddEntry[]
   currentOf: (entry: AddEntry) => PropertyValue | null
-  /** The pickable contexts for a Context entry (null for every other kind). */
   contextOptionsOf: (entry: AddEntry) => ContextOption[] | null
   open: boolean
   anchorRef: RefObject<HTMLElement | null>
-  /** Jump straight to this entry's value pane (the native Add Property ▸ pick on a pane entry). */
   initialEntry?: AddEntry | null
   onCommit: (entry: AddEntry, value: PropertyValue | null) => void
   onReveal: (entry: AddEntry) => void
@@ -128,8 +120,7 @@ export function CardAddPicker({
       onDismiss={dismiss}
       triggerRef={anchorRef}
       solid
-      // Tighten the "Properties" pane header for the add-picker's compact density (the shared
-      // --top-row-block rhythm knob — paddingBlock + separator gap).
+      // Tighten the "Properties" pane header for the add-picker's compact density.
       style={{ '--top-row-block': '0px' } as CSSProperties}
     >
       <PaneSlider

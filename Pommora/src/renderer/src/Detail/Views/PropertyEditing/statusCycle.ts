@@ -1,6 +1,3 @@
-// Status group mechanics shared by every container view's cells — the capsule/checkbox glyphs
-// key off the group, and the checkbox-look click cycle steps through them.
-
 import type { IconName } from '@renderer/design-system/symbols'
 import type { PropertyDefinition, StatusGroupId } from '@shared/properties'
 
@@ -16,7 +13,6 @@ export function statusGroupGlyph(group: string | undefined): IconName {
   return (group ? STATUS_GROUP_GLYPH[group] : undefined) ?? 'circle-dashed'
 }
 
-/** The group a status value belongs to (undefined for an unknown value or a missing def). */
 export function statusGroupOf(
   value: string,
   def: PropertyDefinition | undefined,

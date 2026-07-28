@@ -2,11 +2,7 @@ import * as s from './switch.css'
 import { cx } from '../../cx'
 import { GlassSegment } from '../../materials'
 
-/**
- * The Pommora switch (Figma "Switch") — a controlled on/off pill: a liquid-glass knob slides between
- * the `|` (on) and `O` (off) ticks, the track tinting to accent when on. The knob is a label-control
- * fill wrapped in the real GlassSegment liquid glass; ticks fade on the same beat as the slide.
- */
+/** Figma "Switch". Ticks fade on the same beat as the knob's slide (switch.css.ts). */
 export function Switch({
   checked,
   onChange,

@@ -57,7 +57,7 @@ const WRAP: Record<Exclude<InlineFormat, 'link' | 'connection'>, string> = {
   inlineCode: '`',
 }
 
-/** Toggle an inline mark over the selection: unwrap if it already wraps, else wrap (caret sits inside when empty). */
+/** Toggle an inline mark over the selection (caret sits inside the wrap when empty). */
 export function toggleInline(doc: string, from: number, to: number, fmt: InlineFormat): FormatEdit {
   if (fmt === 'link') return toggleLink(doc, from, to)
   if (fmt === 'connection') return toggleConnection(doc, from, to)
@@ -185,8 +185,7 @@ export function setBlock(doc: string, pos: number, fmt: BlockFormat): FormatEdit
   const line = doc.slice(ls, le)
   switch (fmt) {
     case 'quote': {
-      // Strip a plain quote; a callout's `>` is box chrome, so toggle-quote on a callout head wraps instead of
-      // demoting it (stripping would orphan the `[!type]`).
+      // Toggling a callout head wraps (never demotes it — stripping would orphan the `[!type]`).
       const next = isQuoteToggleable(line) ? stripQuotePrefix(line) : `> ${line}`
       return { changes: [{ from: ls, to: le, insert: next }], selection: ls + next.length }
     }

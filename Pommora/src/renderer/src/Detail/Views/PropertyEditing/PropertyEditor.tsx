@@ -2,11 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 
 /**
- * The inline text editor every container view's cells share (Enter = confirm ·
- * click-out = save · Esc = revert and exit). Table-agnostic: raw text in/out — the caller
- * owns the value typing, parsing, and write. `numeric` filters keystrokes so an invalid
- * number can never be typed (Nathan, at pickup). The done-guard keeps Enter's commit from
- * double-firing through the blur that follows it.
+ * Table-agnostic: raw text in/out — the caller owns the value typing, parsing, and write.
+ * `numeric` filters keystrokes so an invalid number can never be typed (Nathan, at pickup).
+ * The done-guard keeps Enter's commit from double-firing through the blur that follows it.
  */
 export function PropertyEditor({
   initial,
@@ -18,8 +16,8 @@ export function PropertyEditor({
 }: {
   initial: string
   numeric?: boolean
-  /** When set, non-empty text that fails it renders ghosted (faded to --state-ghost) — a live "not a
-   *  valid value yet" cue for the url field, which commits nothing until it passes. */
+  /** When set, non-empty text that fails it renders ghosted — a live "not a valid value yet" cue
+   *  for the url field, which commits nothing until it passes. */
   validate?: (raw: string) => boolean
   /** Overrides the field's text colour — the url field wears its link colour, so typing previews as the
    *  link (ghosted until valid, then solid). */

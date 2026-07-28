@@ -1,11 +1,5 @@
 import { Icon } from '@renderer/design-system/symbols'
 
-/**
- * The canonical hover-revealed "Add Banner" affordance — icon + label, used by every banner-less
- * header (container/context views via Banner, the page editor via PageHeader). One markup + one CSS
- * source (`add-banner-strip` / `add-banner-btn` in Banner.css); consumers supply only the click
- * handler. The strip is the hover zone; the button fades in on hover and triggers the picker.
- */
 export function AddBannerButton({ onClick }: { onClick: () => void }): React.JSX.Element {
   return (
     <div className="add-banner-strip">

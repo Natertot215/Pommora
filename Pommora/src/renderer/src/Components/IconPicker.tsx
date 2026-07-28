@@ -28,19 +28,11 @@ interface Props {
   /** The element the beak points at (an icon glyph is an SVG, so `Element`, not just `HTMLElement`).
    *  Omit ⇒ PickerMenu anchors to the picker's own mount point. */
   triggerRef?: RefObject<Element | null>
-  /** The currently-set icon id — highlighted in the grid/favorites. */
   value?: string
-  /** Fires with the picked Lucide id; the pane then retracts. */
   onSelect?: (id: string) => void
   direction?: 'down' | 'up' | 'left' | 'right'
 }
 
-/**
- * The icon picker: a beaked PickerMenu over a left-aligned search, a right-click Favorites strip, and
- * the full virtualized Lucide grid. Favorites persist to `personalization.favoriteIcons`; the
- * right-click Favorite menu is the native Electron menu. Selection fires `onSelect`, then the shell
- * retracts.
- */
 export function IconPicker({
   open,
   onClose,
@@ -93,7 +85,7 @@ export function IconPicker({
     [favs, toggleFav],
   )
 
-  // Virtualized grid: rows of `cols`. Defaults to 6 so icons ALWAYS render —
+  // Defaults to 6 so icons ALWAYS render —
   // a live width measurement only *widens* it, never blanks the grid. `scrollEl` is a state-backed
   // callback ref so the virtualizer re-runs the moment the element mounts (else the grid stays empty
   // until the first re-render — e.g. a keystroke).
@@ -114,9 +106,8 @@ export function IconPicker({
     return () => ro.disconnect()
   }, [open, scrollEl])
 
-  // The list sits below the (scrolling) favorites strip, so tell the virtualizer how far its top is
-  // offset from the scroll container's top — the favorites + separator height. Re-measured when
-  // favorites appear/disappear.
+  // Tells the virtualizer how far the list's top sits below the scroll container's top
+  // (the favorites strip + separator height).
   const [scrollMargin, setScrollMargin] = useState(0)
   useLayoutEffect(() => {
     if (listEl) setScrollMargin(listEl.offsetTop)

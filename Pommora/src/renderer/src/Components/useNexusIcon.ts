@@ -1,12 +1,7 @@
 import { useState } from 'react'
 import { useSession } from '../store'
 
-/**
- * The nexus identity icon (photo OR glyph) — the shared state + native-menu dispatch behind both the
- * sidebar ribbon avatar and the homepage SettingsPane header. The menu offers Change Icon (→ the glyph
- * picker), Add/Change Photo (→ the native image pick → crop → setProfileImage), and the removes. A photo
- * outranks a glyph in display; a glyph outranks the default placeholder.
- */
+/** A photo outranks a glyph in display; a glyph outranks the default placeholder. */
 export function useNexusIcon() {
   const profileImage = useSession((st) => st.tree?.nexus.profileImage ?? null)
   const profileIcon = useSession((st) => st.tree?.nexus.profileIcon)
@@ -31,8 +26,7 @@ export function useNexusIcon() {
     setCropImage(null)
     await mutate({ op: 'setProfileImage', dataUrl })
   }
-  // Picking a glyph makes it the identity — so a photo (which outranks it in display) is cleared,
-  // matching the "either a glyph or a photo" model: the chosen glyph shows immediately.
+  // Clears the photo — otherwise it would still outrank the newly picked glyph in display.
   const selectGlyph = (id: string): void => {
     setPickerOpen(false)
     void (async () => {

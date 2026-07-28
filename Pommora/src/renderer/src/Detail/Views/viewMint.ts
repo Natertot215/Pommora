@@ -11,12 +11,9 @@ import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@shared/views'
 
 const inFlight = new Map<string, Promise<string>>()
 
-/** The promise a sentinel-holding writer awaits — the minted real id, or undefined if not minting. */
 export const pendingViewMint = (containerId: string): Promise<string> | undefined =>
   inFlight.get(containerId)
 
-/** Mint the default view once for an empty view-bearing container, then refetch. No-op when the
- *  container already has views or a mint is already in flight (the re-select guard). */
 export function ensureContainerView(
   source: CollectionNode | SetNode,
   schema: PropertyDefinition[],
@@ -39,11 +36,10 @@ export function ensureContainerView(
 /** The ONE view writer every surface calls. A sentinel-holding write adopts the in-flight mint's real
  *  id (never mints its own); a real id saves directly. A sentinel save also adopts the id as the active
  *  view so the writer's edits stay on the view the user sees. A successful save then refetches — the
- *  sidecar write is echo-suppressed at the watcher (a self-write never trips its push), so the explicit
- *  load() is the sole confirm that re-hydrates the shown view for surfaces without their own optimistic
- *  view state (the cards' format/grouping/banner, every settings pane). A caller that ALREADY shows the
- *  change through a live override (the table's width/order/collapse; a band collapse) passes
- *  `skipRefetch` to avoid a redundant full-nexus walk. A mint always refetches (it adopts a new view). */
+ *  sidecar write is echo-suppressed at the watcher, so the explicit load() is the sole confirm for
+ *  surfaces without their own optimistic view state. A caller that already shows the change through a
+ *  live override passes `skipRefetch` to avoid a redundant full-nexus walk. A mint always refetches
+ *  (it adopts a new view). */
 export async function saveViewAdopting(
   source: CollectionNode | SetNode,
   view: SavedView,

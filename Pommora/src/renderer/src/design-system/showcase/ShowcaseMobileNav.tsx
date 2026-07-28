@@ -4,9 +4,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import { leafById } from './leaves/registry'
 import { NavSections } from './NavSections'
 
-// Mobile navigation — a top-right glass button that drops the same registry leaves
-// (via NavSections). CSS hides this above the breakpoint and hides the sidebar below
-// it, so the two never show at once. Glass comes from the shared frost material.
+// CSS hides this above the breakpoint and hides the sidebar below it, so the two never show at once.
 export function ShowcaseMobileNav({
   activeId,
   onSelect,

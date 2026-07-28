@@ -66,9 +66,7 @@ const VIEWSETTINGS_MAX_HEIGHT = 375
 const LEAF_MIN_WIDTH = 225
 const LEAF_MIN_HEIGHT = 245
 
-// The full-door config leaves below the grid — same rows the SettingsPane carries, so the view config
-// is reachable without the dropdown (the future Toolbar mode). Right-side breadcrumb reads the
-// active tense.
+// So the view config is reachable without the dropdown (the future Toolbar mode).
 type Leaf = 'layout' | 'group' | 'filter' | 'sort'
 const LEAF_ROWS: { id: Leaf; label: string; icon: IconName }[] = [
   { id: 'layout', label: 'Layout', icon: 'layout-dashboard' },
@@ -83,11 +81,9 @@ const LEAF_CURRENT: Record<Exclude<Leaf, 'layout'>, string> = {
 }
 
 /**
- * ViewSettings — the shared per-view editor, both doors. The full door (a ViewPane row's
- * chevron) carries the ⋮ (Duplicate/Delete) + the Layout/Group/Filter/Sort leaf rows; the flat door
- * (SettingsPane → Layout) drops the ⋮ and the leaf rows and reads `Settings · Layout`. Both frame the
- * same body — title + type grid (+ the flat door's icon toggles) — with the Format control pinned as
- * the footer so it holds while the body scrolls. `onClose` closes the whole dropdown.
+ * The full door (a ViewPane row's chevron) carries the ⋮ (Duplicate/Delete) + the
+ * Layout/Group/Filter/Sort leaf rows; the flat door (SettingsPane → Layout) drops the ⋮ and the
+ * leaf rows and reads `Settings · Layout`.
  */
 export function ViewSettings({
   source,
@@ -146,8 +142,6 @@ export function ViewSettings({
     }
   }
 
-  // The format double-chevron: the two-option Compact ⇄ Standard toggle, rendered as the cards
-  // footing ("Style", cards-grid glyph) and the table footer ("Format", layers-2 glyph) — one control.
   const formatToggle = (glyph: IconName, label: string): React.JSX.Element => (
     <MenuItem
       className={flushTrailing}
@@ -170,8 +164,6 @@ export function ViewSettings({
     </MenuItem>
   )
 
-  // The cards footing: Style over Scale (the ProgressBar-logic slider with the glass knob).
-  // Pinned on the editor in both doors, the Format slot.
   const cardsFooting =
     view.type === 'cards' ? (
       <MenuBottomRow>
@@ -198,9 +190,7 @@ export function ViewSettings({
       </MenuBottomRow>
     ) : null
 
-  // Full-door leaves — the detail slot of the leaf slider (below). Layout opens the visibility list
-  // (+ its icon toggles) for tables, the cards options for cards. Only mounted while a leaf is open,
-  // so a push measures it before the flip.
+  // Only mounted while a leaf is open, so a push measures it before the flip.
   const leafPane =
     leaf === 'layout' ? (
       view.type === 'cards' ? (
@@ -270,7 +260,6 @@ export function ViewSettings({
     </div>
   )
 
-  // Format — the pinned footer. Table-only.
   const formatRow =
     view.type === 'table' ? (
       <MenuBottomRow>{formatToggle('layers-2', 'Format')}</MenuBottomRow>
@@ -331,9 +320,8 @@ export function ViewSettings({
     </MenuScrollFrame>
   )
 
-  // The leaf slider — the same primitive the ViewPane rides one level up, nested here so a full-door
-  // leaf (Layout/Group/Filter/Sort) slides in over the editor instead of hard-swapping. Flat door never
-  // opens a leaf, so this stays parked on the main frame.
+  // Nested here so a full-door leaf slides in over the editor instead of hard-swapping. The flat
+  // door never opens a leaf, so this stays parked on the main frame.
   return (
     <PaneSlider
       open={leaf !== null}

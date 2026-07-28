@@ -4,11 +4,6 @@ import { DragGroup, GroupZone, useGroupedDragItem, type DragGroupProps } from '.
 import type { DragItem, DragNotify, Modifier } from './shared'
 
 // The drag seam. Surfaces import ONLY from here — the engine lives behind it.
-//
-//   SortableZone — one sortable list (list / grid / table / each tree level). Standalone by
-//                  default; pass `group` to make it a member of a DragGroup (cross-list).
-//   DragGroup     — a set of zones that hand items between each other (the board).
-//   useDragItem   — wires a standalone item. useGroupedDragItem wires a DragGroup item.
 
 export type Row = { id: string; label: string }
 export type Layout = 'list' | 'grid' | 'table'
@@ -40,30 +35,26 @@ export function arraySwap<T extends { id: string }>(items: T[], aId: string, bId
 }
 
 export type SortableZoneProps = DragNotify & {
-  /** Zone id — used as the drop-target id when this zone belongs to a `group`. */
   id?: string
   items: string[]
-  /** Informational; the engine is geometry-driven, so list/grid/table all use the same shift. */
+  /** Informational only — the engine is geometry-driven, so list/grid/table share the same shift. */
   layout?: Layout
   onReorder?: (activeId: string, overId: string) => void
   /** Return false (or a Promise<false>) to reject a drop; the item animates back to origin. */
   canReorder?: (activeId: string, overId: string) => boolean | Promise<boolean>
   disabled?: boolean
-  /** Lock the drag to one axis. */
   axis?: 'x' | 'y'
   /** Clamp the lifted item to the viewport (`window`) or the list's extent (`parent`). */
   bounds?: 'parent' | 'window'
-  /** Escape hatch: custom transforms applied to the drag translation. */
   modifiers?: Modifier[]
   /** Exchange the active + over items instead of shifting the gap. Commit with `arraySwap`. */
   swap?: boolean
-  /** ARIA role for each item's handle (default 'button'); set null to omit (e.g. table rows). */
+  /** ARIA role for each item's handle; default 'button'. Pass null to omit it entirely. */
   itemRole?: string | null
   /** Human label for screen-reader announcements (defaults to the id). */
   getItemLabel?: (id: string) => string
-  /** When set, this zone is a member of the enclosing DragGroup (cross-list). */
   group?: string
-  /** Container class — only used for grouped zones (which render their own droppable element). */
+  /** Only used for grouped zones — standalone zones render no wrapper of their own to apply it to. */
   className?: string
   children: ReactNode
 }
@@ -76,8 +67,8 @@ export function SortableZone(props: SortableZoneProps): React.JSX.Element {
       </GroupZone>
     )
   }
-  // Standalone — the single-zone drag engine. `id`/`layout`/`group`/`className` don't apply
-  // (it renders no wrapper; the surface provides its container); everything else forwards through.
+  // Standalone: id/layout/group/className don't apply (no wrapper is rendered) — everything else
+  // forwards through.
   const {
     id: _id,
     items,

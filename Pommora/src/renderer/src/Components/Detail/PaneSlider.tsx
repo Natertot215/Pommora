@@ -10,17 +10,9 @@ import * as s from './paneSlider.css'
 const SLIDE_MS = Number.parseInt(duration.base, 10)
 
 /**
- * Two-slot horizontal nav with animated height — the one slide primitive every pane rides, so no
- * surface hand-rolls its own push/back state. Declare `open` (root ↔ detail) and it does the rest: on
- * push it slides the detail in from the right and animates the viewport height to it; back reverses.
- * Width, height, and the slide share one duration/easing so the horizontal move and the vertical
- * resize land together.
- *
- * The measure-then-flip is intrinsic: both slots stay mounted (each watched by a ResizeObserver)
- * and the push lags the flip by one frame, so the detail's height is already measured the instant the
- * viewport animates — no growing-from-`auto` entry bounce. Back flips immediately so the slide-out
- * isn't delayed. Nesting composes: a detail may itself be a PaneSlider (each only slides + resizes, so
- * the inner height change just feeds the outer's ResizeObserver).
+ * The one slide primitive every pane rides, so no surface hand-rolls its own push/back state.
+ * Nesting composes: a detail may itself be a PaneSlider (each only slides + resizes, so the
+ * inner height change just feeds the outer's ResizeObserver).
  *
  * The slider ONLY slides + resizes — it never caps or scrolls a slot. A slot that needs a ceiling or a
  * pinned footer wraps its content in a `MenuScrollFrame` (the single cap/scroll/footer source); the
@@ -34,13 +26,12 @@ export function PaneSlider({
   minWidth,
   minHeight,
 }: {
-  /** false → show root (slot A); true → slide to the detail (slot B). Owns the two-phase entry. */
+  /** false → show root (slot A); true → slide to the detail (slot B). */
   open: boolean
   root: ReactNode
   detail: ReactNode
-  /** Width floor (px) per slot, so a sparse pane keeps the dropdown's minimum width (no shrink-wrap). */
   minWidth?: number
-  /** Height floor (px) per slot, so a sparse pane reserves height and its footer pins to the bottom. */
+  /** Height floor (px) per slot, so a sparse pane's footer still pins to the bottom. */
   minHeight?: number
 }): React.JSX.Element {
   const aRef = useRef<HTMLDivElement>(null)

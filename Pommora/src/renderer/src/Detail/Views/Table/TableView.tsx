@@ -627,20 +627,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (col.kind !== 'context' || !tree) return null
     return contextOptionsForSpaces(col.id, tree)
   }
-  // A context column writes its full Space-id list through the setContext op (ids out;
-  // main serializes titles); everything else is a property write.
   const commitContextValue = (row: ViewRow, colId: string, ids: string[]): void => {
     writeContextValue(row, colId, ids, row.frontmatter, setValueOverride, mutate)
   }
-  // A chip's hover × commits whatever remains after that chip: the picker's exact
-  // routing — a context column through setContext, everything else through setProperty.
   const removeCellValue = (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null): void => {
     if (col.kind === 'context' && next?.kind === 'context') commitContextValue(row, col.id, next.value)
     else commitCellValue(row, col.id, next)
   }
-  // Single-click acts per the cell's type: checkbox-look status cycles its group,
-  // checkbox toggles, status/select/multi/context open the picker. Acting stops propagation so the
-  // row's select doesn't also fire; anything else bubbles.
+  // Acting stops propagation so the row's select doesn't also fire; anything else bubbles.
   const onCellClick = (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent): void => {
     // Ctrl+Click is macOS's secondary-click: it fires `click` alongside `contextmenu`. Bail so the
     // right-click menu wins instead of the click acting under it (e.g. opening a link's browser tab).
@@ -889,9 +883,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       />
     )
   }
-  // Right-click a cell → its native menu (always a menu, never an action). Title = page meta;
-  // style-bearing types = the COLUMN's Style radios; link/file add Edit; picker-based cells add
-  // Clear (status gets Style + Clear; select/multi/context get Clear alone).
+  // Right-click a cell → its native menu (always a menu, never an action) — the shared builder
+  // decides which items each type gets.
   const openCellMenu = async (
     row: ViewRow,
     col: ResolvedColumn,
@@ -1578,8 +1571,6 @@ const DataRow = memo(function DataRow({
         if (i === 0 && alignByCol[i] === 'left') style.paddingLeft = padLeft
         // Borderless reveal: the edited cell wears the faint accent ring (Table.css, no-borders only).
         const stateCx = activeCol === c.id && 'cell-active'
-        // The inline editor (mode 'editor') REPLACES the cell in flow; the value pickers are the
-        // table-level cellPicker (portaled), never in the cell.
         const editor = overlayCol === c.id ? api.overlay(row, c) : null
         const content = editor ?? (
           <Cell

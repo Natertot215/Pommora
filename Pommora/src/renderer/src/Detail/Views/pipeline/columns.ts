@@ -47,10 +47,8 @@ function visibleOrder(
   return out
 }
 
-/** Resolve a view + schema + the registry Context ids into the ordered render columns:
- *  visible order, then a guaranteed front Title (always present, never hidden).
- *  Context columns are default-OFF — they render only when the view's property_order
- *  explicitly reveals them. Emits {id, kind} only. */
+/** Context columns are default-OFF — they render only when the view's property_order explicitly
+ *  reveals them. Emits {id, kind} only — width and other render concerns are resolved elsewhere. */
 export function resolveColumns(
   view: SavedView,
   schema: PropertyDefinition[],

@@ -70,15 +70,10 @@ import { CardsGrid, ListRounded, LockSolid, ProgressCheck } from './customGlyphs
 import { lucideGlyph } from './AllSymbols'
 import { size as sizeTokens, type IconSize } from '../tokens/size.css'
 
-/**
- * Curated icon set — Lucide (https://lucide.dev/icons). The single source of which icons exist in
- * the app; keys are the app's icon vocabulary (mostly the lucide.dev name). This registry IS the
- * roster — to add an icon, import it above and add a line here. Tree-shaking keeps
- * only these in the bundle. **Tabler (`@tabler/icons-react`) stays installed as a second source we
- * can pull from** — to use one, import its `Icon*` component and add the entry (it renders through
- * the same seam; Lucide's and Tabler's default stroke are both 2, so they sit at the same weight with
- * no override).
- */
+/** Curated icon set — Lucide. This registry IS the roster: to add an icon, import it above and
+ *  add a line here (tree-shaking keeps only these in the bundle). Tabler stays installed as a
+ *  second source to pull from — both default to stroke 2, so they sit at the same weight with no
+ *  override. */
 export const icons = {
   house: House,
   calendar: Calendar,
@@ -150,7 +145,6 @@ export const icons = {
 
 export type IconName = keyof typeof icons
 
-/** Coerce an arbitrary value to a CURATED IconName, or undefined if it isn't one of them. */
 export const asIconName = (value: unknown): IconName | undefined =>
   typeof value === 'string' && value in icons ? (value as IconName) : undefined
 
@@ -168,9 +162,8 @@ export const iconNameOr = (value: unknown, fallback: IconName): string =>
     ? value
     : fallback
 
-/** Per-entity-kind default icon — the seed for `personalization.defaultIcons`. One source for the
- *  sidebar, banners, the table, and the connection autocomplete. A nexus can override a kind's
- *  default; an entity's own `icon` overrides that in turn. */
+/** The seed for `personalization.defaultIcons`. A nexus can override a kind's default; an
+ *  entity's own `icon` overrides that in turn. */
 export const DEFAULT_ENTITY_ICONS: Record<EntityIconKind, IconName> = {
   collection: 'gallery-vertical-end',
   set: 'folder-closed',
@@ -184,8 +177,6 @@ export function defaultEntityIcon(
   kind: EntityIconKind,
   overrides?: Partial<Record<EntityIconKind, string>>,
 ): IconName {
-  // Kind DEFAULTS stay curated (a sensible seed glyph); a per-entity arbitrary pick is layered on by
-  // the caller via iconNameOr / folderAwareIcons, which keep the full set.
   return asIconName(overrides?.[kind]) ?? DEFAULT_ENTITY_ICONS[kind]
 }
 

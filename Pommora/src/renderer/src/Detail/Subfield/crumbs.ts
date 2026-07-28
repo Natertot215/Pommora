@@ -18,7 +18,6 @@ const allCollections = (tree: NexusTree): CollectionNode[] => [
   ...tree.userSections.flatMap((s) => s.collections ?? []),
 ]
 
-/** The collection + set-chain leading to a node id (a container, or the container holding a page). */
 export function chainOf(
   tree: NexusTree,
   id: string,
@@ -39,7 +38,6 @@ export function chainOf(
   return null
 }
 
-/** Immediate container id holding a page (its last set, or the collection if directly in one). */
 export function pageContainerId(tree: NexusTree, pageId: string): string | null {
   const chain = chainOf(tree, pageId)
   if (!chain) return null

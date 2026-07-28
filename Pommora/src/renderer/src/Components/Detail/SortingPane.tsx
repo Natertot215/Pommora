@@ -1,7 +1,4 @@
-// The Sorting leaf — authors a table view's sort[] behind both doors (SettingsPane's Sort entry,
-// ViewSettings' Sort leaf) on the grouping chassis: Sort By (pane-flip disclosure) · Order ·
-// Sub-Sort · its sub Order · the example order. The pane owns the sort slot WHOLESALE — every
-// write is [primary], [primary, sub], or undefined (the Group By wholesale-replacement precedent);
+// The pane owns the sort slot WHOLESALE — every write is [primary], [primary, sub], or undefined;
 // a foreign 3+-key tail renders by its first two slots until the first write replaces the slot.
 import { useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
@@ -24,9 +21,8 @@ import * as gp from './groupingPane.css'
 
 type Direction = SortCriterion['direction']
 
-/** The pane's Sort By offering — only what makeSorter actually ranks. context/file route to a
- *  no-op text key in the sorter, so they're deliberately absent (never offer what the extractor
- *  can't rank); Context columns are unsortable outright. */
+/** context/file route to a no-op text key in the sorter, so they're deliberately absent —
+ *  never offer what the extractor can't rank. */
 const SORTABLE_PANE = new Set([
   'select',
   'status',
@@ -57,9 +53,8 @@ const TEXT_DIRECTIONS: PickerChoice<Direction>[] = [
   { value: 'descending', label: 'Z → A' },
 ]
 
-/** Per-type direction vocabulary: option-ordered types read the grouping pane's locked
- *  Default/Reversed; temporal/numeric read Ascending/Descending; text reads A → Z. A dead def
- *  falls to the value labels. */
+/** Per-type direction vocabulary: option-ordered types read Default/Reversed; temporal/numeric
+ *  read Ascending/Descending; text reads A → Z. A dead def falls to the value labels. */
 function directionOptions(
   propertyId: string,
   schema: PropertyDefinition[],
@@ -84,8 +79,7 @@ interface SortTarget {
   icon: React.ComponentProps<typeof Icon>['name'] | undefined
 }
 
-/** Title + Modified are reserved columns, not schema defs — offered as fixed targets ahead of the
- *  schema's sortable set (they sort via buildCriterion's reserved-id branches). */
+/** Title and Modified sort via buildCriterion's reserved-id branches, not through the schema. */
 function sortTargets(schema: PropertyDefinition[]): SortTarget[] {
   return [
     TITLE_TARGET,
@@ -94,8 +88,6 @@ function sortTargets(schema: PropertyDefinition[]): SortTarget[] {
   ]
 }
 
-/** A labeled row whose trailing PickerControl pops the option menu — the GroupingPane ValueRow
- *  shape; `tier: 'sub'` is the subordinate Order treatment. */
 function ValueRow<T extends string>({
   tier = 'primary',
   icon,

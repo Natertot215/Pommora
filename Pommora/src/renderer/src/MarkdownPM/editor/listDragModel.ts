@@ -32,8 +32,7 @@ export interface SubBlock extends BlockRange {
   level: number
 }
 
-/** Resolve the contiguous sub-block owned by the list item whose line contains `pos`.
- *  Returns null when `pos` isn't on a list line. */
+/** The contiguous sub-block owned by the list item whose line contains `pos` (null when off a list line). */
 export function subBlockAt(doc: string, pos: number): SubBlock | null {
   const from = lineStartAt(doc, pos)
   const headEnd = lineEndAt(doc, from)
@@ -218,7 +217,6 @@ export function applyChanges(doc: string, changes: ChangeSpec[]): string {
   return out + doc.slice(cursor)
 }
 
-/** Collapse two strings into a single minimal `from/to/insert` replace (shared common prefix + suffix). */
 function diffAsSingleReplace(a: string, b: string): ChangeSpec[] {
   if (a === b) return []
   let pre = 0

@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react'
 
-// The shared displacement feel — the engine sorts via a CSS transition, so "smooth, not snappy"
-// is a duration + easing. One source, tuned live; also exposed to CSS (expand/caret) via vars.
+// The engine sorts via a CSS transition, so "smooth, not snappy" is just a duration + easing —
+// also exposed to CSS (expand/caret) via vars.
 export type Feel = { duration: number; easing: string }
 
 export const EASINGS: Record<string, string> = {

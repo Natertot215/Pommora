@@ -21,13 +21,13 @@ interface ResolvedCriterion {
 
 const numericLess: Less = (a, b) => (a as number) < (b as number)
 const plainLess: Less = (a, b) => (a as string) < (b as string)
-// Case-insensitive, accent-sensitive — mirrors Swift's localizedCaseInsensitiveCompare.
+// Case-insensitive, accent-sensitive.
 const ciLess: Less = (a, b) =>
   (a as string).localeCompare(b as string, undefined, { sensitivity: 'accent' }) < 0
 
 /** Map each select/status option value to its position so those types sort by the author's option
  *  order, not alphabetically (select options first, then status options flattened across the
- *  groups). Unknown/absent values rank last. Mirrors Swift optionOrderIndex. */
+ *  groups). Unknown/absent values rank last. */
 function optionOrderIndex(def: PropertyDefinition): Record<string, number> {
   const index: Record<string, number> = {}
   def.select_options?.forEach((o, i) => {
@@ -67,7 +67,7 @@ function dateOf(row: ViewRow, propertyId: string, schema: PropertyDefinition[]):
     const t = Date.parse(v.value)
     if (!Number.isNaN(t)) return t
   }
-  return Number.NEGATIVE_INFINITY // absent / unparseable sorts first ascending (Swift .distantPast)
+  return Number.NEGATIVE_INFINITY // absent / unparseable sorts first ascending
 }
 
 function boolRank(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): number {

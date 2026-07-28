@@ -18,8 +18,6 @@ import { PropertyTypeIcon } from './PropertyTypes'
 import { cx } from '../../design-system/cx'
 import * as s from './settingsPane.css'
 
-/** A row's leading glyph: schema props wear their type icon; Title and the Context columns wear
- *  the reserved glyph; Modified falls back with its type meta. */
 function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
   const def = schema.find((d) => d.id === id)
   if (def) return <PropertyTypeIcon type={def.type} size={s.ICON.doc} />
@@ -60,11 +58,8 @@ function EyeToggle({
   )
 }
 
-/** The two zones — the shown rows (the one drag region, in view order: Title, Context columns,
- *  and properties together) then the hidden block. Lives outside the pane so rows never remount on its re-renders;
- *  the region keys ('assigned' = shown, 'all' = hidden) are the PaneDnd group names; the hidden zone
- *  grows into the pane's slack so its hide-highlight reads even while nothing's hidden. Title's eye is
- *  inert (it never hides). */
+/** Lives outside the pane so rows never remount on its re-renders; the region keys
+ *  ('assigned' = shown, 'all' = hidden) are the PaneDnd group names. */
 function VisibilityGroups({
   shownIds,
   hiddenIds,
@@ -128,16 +123,10 @@ function VisibilityGroups({
 }
 
 /**
- * The visibility list — a view's shown/hidden split as ONE flat list, shared by the Visibility pane
- * and the table view's Layout leaf. Below the header the rows run in the view's column order (Title,
- * the Context columns, and the properties together), then the hidden rows ghosted after them. Title
- * rides the list as a draggable anchor but never hides (its eye is inert), so a column can be dragged
- * before it — the reason it's listed at all. Drags carry the drag language: into the shown zone lands
- * at a slot (drop line), into the hidden zone hides (area highlight, no line — the hidden order is
- * derived). Hiding only flags (`hidden_properties`), never moves: an eye-unhide restores the property
- * to its remembered view slot; only a drag-in chooses a new one. Writes go through `views:save` +
- * `load()`, so the live table behind the dropdown updates on the same beat. An optional `footer` (the
- * Layout leaf's icon toggles) pins below the list.
+ * Title rides the list as a draggable anchor but never hides (its eye is inert), so a column
+ * can be dragged before it — the reason it's listed at all. Into the hidden zone, the drop order
+ * is derived rather than stored; hiding only flags `hidden_properties`, so an eye-unhide restores
+ * the property to its remembered view slot — only a drag-in chooses a new one.
  */
 export function VisibilityList({
   source,
@@ -209,7 +198,6 @@ export function VisibilityList({
   )
 }
 
-/** The Visibility pane (SettingsPane → Visibility) — the active view's visibility list, no footer. */
 export function HiddenPane({
   source,
   schema,

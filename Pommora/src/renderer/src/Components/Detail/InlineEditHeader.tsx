@@ -5,13 +5,7 @@ import { EditableInput } from '../EditableInput'
 import { DashIcon } from './DashIcon'
 import * as s from './settingsPane.css'
 
-/**
- * The icon-button + inline-rename title header shared by the ViewPane (Collection/Set) and the
- * property editor. Owns the editing toggle; the title commits on blur with no focus ring, and
- * `onCommit` fires only on a real change. The icon button IS the editable target — it shows the
- * current glyph (dashed-square when unset), opens its picker via `onIconClick`, and registers its
- * element via `iconRef` so the picker's beak anchors to it.
- */
+/** `iconRef` registers the icon button's element so an external picker's beak can anchor to it. */
 export function InlineEditHeader({
   value,
   icon,
@@ -25,13 +19,10 @@ export function InlineEditHeader({
   icon?: string
   iconRef?: Ref<HTMLButtonElement>
   onCommit: (next: string) => void
-  /** Omit where no icon picker exists yet — the glyph then renders inert instead of as a live
-   *  button wired to nothing. */
   onIconClick?: () => void
-  /** OutlineTint — rings the icon button + title field in a resolved color; unset = ringless. */
   outline?: string
-  /** The identity is frozen (a locked view embed): the field displays, never edits, and the icon
-   *  button goes inert — an editable field whose commit can't land is the loss this closes. */
+  /** A locked view embed sets this — an editable field whose commit can't land is the failure
+   *  mode this prevents. */
   readOnly?: boolean
 }): React.JSX.Element {
   const [editing, setEditing] = useState(false)

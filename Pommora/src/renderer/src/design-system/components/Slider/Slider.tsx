@@ -8,12 +8,8 @@ const decimalsOf = (step: number): number => {
   return str.includes('.') ? str.split('.')[1].length : 0
 }
 
-/**
- * A pointer-driven value slider — the ProgressBar's accent-over-track fill with the Switch's glass
- * knob (GlassSegment over the label-control pill) riding the fill edge. Drafts locally while
- * dragging: `onInput` fires per-tick for live consumers, `onCommit` on release (and on an
- * arrow-key step) for the persisted write. `format` renders the live value readout after the strip.
- */
+/** Drafts locally while dragging: `onInput` fires per-tick, `onCommit` on release (and on an
+ *  arrow-key step) for the persisted write. */
 export function Slider({
   value,
   min,

@@ -46,9 +46,8 @@ function Row({ label, children }: { label: string; children: React.ReactNode }):
   )
 }
 
-/** The fraction denominator control — reads like the picker rows (secondary value + double-chevron) at
- *  rest, and reveals the accent input only while editing; committing (Enter/blur) returns to the trigger.
- *  Mirrors PickerControl's trigger so it sits identically among the other rows. */
+/** Its rest-state button deliberately mirrors PickerControl's trigger, so it sits identically
+ *  among the other rows. */
 function ValueField({
   value,
   onCommit,
@@ -85,10 +84,8 @@ function ValueField({
   )
 }
 
-/** The Number property editor — property-wide Format config (Family · conditional Currency · Separators ·
- *  Decimals · conditional Fraction + Value) plus a per-view Style row (Number/Bar). Def-level fields
- *  write `onSetConfig` (the batched IPC); the look writes `onSetStyle` (the active view's column_styles).
- *  Conditional rows ride the Reveal disclosure — the DateTimeEditor Day-row pattern. */
+/** Def-level fields write `onSetConfig` (the batched IPC); the look writes `onSetStyle`
+ *  (the active view's column_styles). */
 export function NumberEditor({
   config,
   look,

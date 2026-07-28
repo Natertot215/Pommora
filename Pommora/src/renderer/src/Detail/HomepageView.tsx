@@ -5,11 +5,6 @@ import { DetailScaffold } from './DetailScaffold'
 // Module-level: a fresh literal per render would churn every tile memo downstream.
 const HOMEPAGE_HOST = { kind: 'homepage' } as const
 
-/**
- * The homepage view — the live nexus entity (the sidebar header), hosting the real
- * block surface persisted to homepage.json, behind the BlockHost seam. The SurfacePM
- * lab stays reachable from the showcase leaf.
- */
 export function HomepageView({ tree }: { tree: NexusTree | null }): React.JSX.Element {
   return (
     <DetailScaffold

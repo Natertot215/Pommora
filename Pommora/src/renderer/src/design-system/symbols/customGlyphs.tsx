@@ -1,4 +1,3 @@
-// The custom registry glyphs (List's rounded-circle list, Cards' 2×3 stretch-horizontal bar stack).
 // Registry-conforming forwardRef svgs at Lucide's default 2 stroke weight so they sit evenly beside it.
 import { forwardRef } from 'react'
 import type { LucideIcon, LucideProps } from 'lucide-react'
@@ -54,7 +53,7 @@ export const ProgressCheck = forwardRef<SVGSVGElement, LucideProps>(
   ),
 ) as unknown as LucideIcon
 
-// ── The lock (Nathan-supplied glyph) — solid rounded body + thick shackle, drawn to his
+// The lock (Nathan-supplied glyph) — solid rounded body + thick shackle, drawn to his
 // reference image's proportions (body ~15/24 wide, shackle stroke ~2.6). Fill-based.
 export const LockSolid = forwardRef<SVGSVGElement, LucideProps>(
   ({ size = 24, color, ...rest }, ref) => (

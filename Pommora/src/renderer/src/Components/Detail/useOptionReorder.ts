@@ -1,10 +1,8 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { ACTIVATION, suppressNextClick } from '@renderer/design-system/interactions/shared'
 
-// Single-region drag-to-reorder for the option chip list — the flat cousin of the two-region paneDnd.
-// The whole chip row is the handle (buttons/inputs inside never arm one); the dragged row dims in
-// place and a drop-line marks the target gap. Escape aborts. The drop calls onReorder(value, toIndex)
-// where toIndex is in the without-the-dragged coordinate space (matching optionModel.reorderOption).
+// The flat cousin of the two-region paneDnd. The drop calls onReorder(value, toIndex) where
+// toIndex is in the without-the-dragged coordinate space (matching optionModel.reorderOption).
 
 type Handlers = {
   move: (e: PointerEvent) => void

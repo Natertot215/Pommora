@@ -4,7 +4,7 @@ import { shadowStandardVar } from '../tokens/color.css'
 // The Pommora glass recipe — CSS frost: a clear, slightly-dimmed blur (no fill, no
 // saturate) with a glassy edge — a crisp top specular, a hairline inner ring, and a
 // soft light pooling at the lower rim — so the edge reads like glass, not a flat panel.
-// One source for surfaces + controls; layout (size / position / radius) is the consumer's.
+// One source for surfaces + windows; layout (size / position / radius) is the consumer's.
 export const frostMaterial: CSSProperties = {
   background: 'transparent', // no fill
   backdropFilter: 'blur(6px) brightness(95%)', // no saturate

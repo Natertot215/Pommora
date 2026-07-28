@@ -1,7 +1,3 @@
-// Per-column display style. Mirrors columnAlign: a pure render-layer resolver keyed
-// by the column's declared type; a SavedView `column_styles` entry merges per-key over the
-// defaults. Pure: no fs, no React.
-
 import { defaultStyleFor, type ColumnStyle } from '@shared/columnStyles'
 import type { PropertyDefinition } from '@shared/properties'
 import type { SavedView } from '@shared/views'

@@ -10,8 +10,8 @@ import { statusGroupOf } from './statusCycle'
 import { StatusCapsule } from './StatusCapsule'
 
 /** A pickable option — status options flatten out of their groups, select/multi read
- *  `select_options`. Values are shown regardless of name (a seed-shaped option is still a real
- *  value); the groups themselves are containers, never pickable chips. */
+ *  `select_options`. An option is never filtered by what it's called: the starter options a new
+ *  property seeds are ordinary values. Groups are containers, never pickable chips. */
 const optionsOf = (
   def: PropertyDefinition,
 ): Array<{ value: string; label: string; color?: string; icon?: string }> => {
@@ -25,7 +25,6 @@ const selectedValues = (current: PropertyValue | null): string[] => {
   return []
 }
 
-/** Multi-select toggle: drop the value when it's already selected, else append it. */
 export const toggleValue = (selected: string[], value: string): string[] =>
   selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]
 
@@ -38,12 +37,11 @@ export const syntheticContextDef = (id: string): PropertyDefinition => ({
 })
 
 /**
- * The value dropdown every container view's status/select/multi cells share (PickerMenu for
- * values, native menus for meta). Table-agnostic and stateless: props in, `onCommit(PropertyValue)`
- * out — the caller owns the write + the optimistic patch. Self-managed: PickerMenu portals to a body
- * top layer off `triggerRef` (escaping the table's overflow clip), owns its Bloom-in/out off `open`,
- * and dismisses (outside-click / Escape) via its own backdrop. Single-value types commit + dismiss on
- * pick; multi toggles against `current` and stays open.
+ * The value dropdown every container view's status/select/multi cells share. Table-agnostic and
+ * stateless: props in, `onCommit(PropertyValue)` out — the caller owns the write + the optimistic
+ * patch. Self-managed: PickerMenu portals to a body top layer off `triggerRef` (escaping the
+ * table's overflow clip), owns its Bloom-in/out off `open`, and dismisses via its own backdrop.
+ * Single-value types commit + dismiss on pick; multi toggles against `current` and stays open.
  */
 export function PropertyPicker({
   def,
@@ -58,9 +56,7 @@ export function PropertyPicker({
 }: {
   def: PropertyDefinition
   current: PropertyValue | null
-  /** Self-managed open state — PickerMenu blooms in on true, out on false. */
   open: boolean
-  /** The cell the picker hangs off — measured for placement, so it escapes the table's clip. */
   triggerRef: RefObject<HTMLElement | null>
   /** Click x (viewport px). When set, the pane centres on the click point instead of the trigger's
    *  fixed centre (the card value gesture). Omitted → the default right-anchored dropdown. */
