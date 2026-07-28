@@ -13,6 +13,7 @@ import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { slideScrollBack } from '@renderer/design-system/components/OverflowScroll'
 import type {
+  AgendaEntry,
   CollectionNode,
   ContextGroup,
   FolderPlacement,
@@ -568,6 +569,27 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const subSetPlacement = useSession((s) => s.personalization.subSetPlacement ?? 'top')
   const mode: SidebarMode = useSession((s) => s.personalization.sidebarMode ?? 'collections')
 
+  // The agenda list lives HERE, not in AgendaMode: the mode-exit overlay renders a second copy of
+  // the outgoing layer, and a component that fetched its own data would mount that copy empty —
+  // painting "no tasks or events" over the list it is supposed to be animating away. Lazy on first
+  // activation, then held, so re-entering the mode costs nothing.
+  const [agenda, setAgenda] = useState<{ tasks: AgendaEntry[]; events: AgendaEntry[] }>({
+    tasks: [],
+    events: [],
+  })
+  const agendaLoaded = useRef(false)
+  useEffect(() => {
+    if (mode !== 'agenda' || agendaLoaded.current) return undefined
+    agendaLoaded.current = true
+    let live = true
+    void window.nexus.agenda.list().then((r) => {
+      if (live && r.ok) setAgenda({ tasks: r.tasks, events: r.events })
+    })
+    return () => {
+      live = false
+    }
+  }, [mode])
+
   const onSelectCollection = (col: CollectionNode): void => {
     void select({ kind: 'collection', id: col.id })
   }
@@ -693,8 +715,10 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       cb()
     }
 
+  const agendaLayer = <AgendaMode tasks={agenda.tasks} events={agenda.events} />
+
   const layerFor = (m: SidebarMode): React.ReactNode =>
-    m === 'contexts' ? contextsLayer : m === 'agenda' ? <AgendaMode /> : collectionsLayer
+    m === 'contexts' ? contextsLayer : m === 'agenda' ? agendaLayer : collectionsLayer
   const activeNode = layerFor(mode)
   const onCreate =
     mode === 'contexts' ? newContextMenu : mode === 'agenda' ? undefined : newCollectionMenu
