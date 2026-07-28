@@ -379,7 +379,7 @@ function closerEndAt(doc: string, c: number): number | null {
 }
 
 // Enter inside an open pair / quote / emphasis / connection closes it — the caret steps past the closer (no
-// newline). Generalizes the old empty-pair skip to constructs with content (`[[word|]]` → `[[word]]|`).
+// newline), including constructs with content (`[[word|]]` → `[[word]]|`).
 export function closeConstructOnEnter(doc: string, selStart: number, selEnd: number): Edit | null {
   if (selStart !== selEnd) return null
   const end = closerEndAt(doc, selStart)

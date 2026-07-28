@@ -1,7 +1,7 @@
 // The Grouping pane's list drag — the table's band gesture rehosted over pane rows. The pure model
 // is SHARED (bandDndModel: slots, nest cycle-guard, order math); only the pointer wiring and the
 // insertion line live here. paneDnd doesn't fit: its two-region assigned/all vocabulary has no
-// parent/nest concept, and the hierarchy list needs reparent drops (F-4).
+// parent/nest concept, and the hierarchy list needs reparent drops.
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { suppressNextClick } from '@renderer/design-system/interactions/shared'

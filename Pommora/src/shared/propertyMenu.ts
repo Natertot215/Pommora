@@ -1,4 +1,4 @@
-/** The Properties pane's native menus (A-8/A-10). The editor's ⋮ carries Remove AND Delete —
+/** The Properties pane's native menus. The editor's ⋮ carries Remove AND Delete —
  *  Delete is deliberately reachable ONLY inside the property's own pane, behind main's confirm
  *  dialog. An assigned row right-clicks to Rename · Remove; a registry row to Rename only
  *  (Remove is meaningless unassigned). Pure model — main maps it to Electron MenuItems. */

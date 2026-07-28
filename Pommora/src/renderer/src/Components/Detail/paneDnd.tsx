@@ -20,7 +20,7 @@ import * as s from './settingsPane.css'
 
 // The Properties pane's two-region drag (the bandDnd gesture skeleton, the paneSlot model).
 // WHOLE rows are the drag surface; the two [data-group] wrappers are the region rects the
-// classification runs on (E-4). Esc aborts with a capture-phase swallow so the Toolbar's
+// classification runs on. Esc aborts with a capture-phase swallow so the Toolbar's
 // useDismiss never closes the dropdown mid-drag; the capped slot auto-scrolls at the edges,
 // and any scroll dirties the frozen snapshot.
 
@@ -81,7 +81,7 @@ export function PaneDnd({
   const beginGesture = usePointerGesture()
 
   // Frozen at activation: row geometry, the row set, and the region rects ride one snapshot;
-  // scroll/content changes dirty it and the next move re-measures (E-4).
+  // scroll/content changes dirty it and the next move re-measures.
   type Snapshot = {
     rows: MeasuredRow[]
     byId: Map<string, PaneRow>
@@ -114,7 +114,7 @@ export function PaneDnd({
     const boxRect = boxEl.getBoundingClientRect()
     const assignedRect = assignedEl.getBoundingClientRect()
     const allRect = allEl.getBoundingClientRect()
-    // Regions own their FIELD, not just their rendered rows (Nathan's call): assigned runs down
+    // Regions own their FIELD, not just their rendered rows: assigned runs down
     // to the All Properties heading, and the all region runs to the pane's bottom edge — the
     // empty space around short lists is a legal drop zone, never a dead no-op.
     return {
@@ -279,7 +279,7 @@ export function usePaneDrag(id: string): {
 }
 
 /** The two region wrappers register their rects here; the all-group wrapper also reads the
- *  unassign area-highlight (C-4). */
+ *  unassign area-highlight. */
 export function usePaneRegions(): {
   assignedRef: (el: HTMLElement | null) => void
   allRef: (el: HTMLElement | null) => void

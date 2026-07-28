@@ -47,7 +47,7 @@ type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
 type WriteResult = { ok: true } | { ok: false; error: string }
 
-/** The two drag regions (E-4): assigned rows on top, the bottom-pinned All Properties block below
+/** The two drag regions: assigned rows on top, the bottom-pinned All Properties block below
  *  the elastic spacer. Lives outside PropertiesPane so rows never remount on its re-renders. */
 function ListGroups({
   assigned,
@@ -73,7 +73,7 @@ function ListGroups({
   onRenameCancel: () => void
 }): React.JSX.Element {
   const { assignedRef, allRef, allHighlighted } = usePaneRegions()
-  // The row title swaps to the store-driven inline rename input (A-10) — the RenamableTitle UX
+  // The row title swaps to the store-driven inline rename input — the RenamableTitle UX
   // over the property-keyed channel (properties are registry ids, not paths).
   const title = (d: PropertyDefinition): ReactNode =>
     renamingId === d.id ? (
@@ -168,7 +168,7 @@ function ListGroups({
  * user-defined properties → a type picker for new ones → a per-property editor. Writes route to the
  * `schema:*` IPC; the tree refresh after each write re-flows the live schema back in as `schema`,
  * so the editor re-reads the property by id. The subviews ride an inner PaneSlider nested in the
- * ViewPane's outer one, so every push at every depth slides on the same beat (A-7) — one primitive,
+ * ViewPane's outer one, so every push at every depth slides on the same beat — one primitive,
  * zero per-window wiring.
  */
 export function PropertiesPane({
@@ -323,7 +323,7 @@ export function PropertiesPane({
   const clearStatusOption = async (id: string, value: string): Promise<void> => {
     await commit(await window.nexus.property.clearStatusOption(id, value))
   }
-  // The four drop kinds route to their persistence targets (E-4): collection order, nexus
+  // The four drop kinds route to their persistence targets: collection order, nexus
   // order (the visible slot translated into the full-order index — assigned ids stay in it),
   // atomic assign-at-slot, and the strip-and-cache Remove.
   const handleDrop = async (drop: PaneDrop): Promise<void> => {
@@ -353,7 +353,7 @@ export function PropertiesPane({
   const nameFor = (id: string): string =>
     props.find((d) => d.id === id)?.name ?? unassigned.find((d) => d.id === id)?.name ?? ''
 
-  // The editor's ⋮ (A-8): Remove, or the pane-gated Delete (main confirms before resolving).
+  // The editor's ⋮: Remove, or the pane-gated Delete (main confirms before resolving).
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
     const action = await window.nexus.propertyMenu({ kind: 'editor', name: def.name })
     if (action === 'property:remove') await remove(def.id)

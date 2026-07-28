@@ -622,8 +622,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
     void mutate({ op: 'setProperty', path: row.path, propertyId, value })
   }
-  // A context column's pickable list — its Context's Spaces off the live tree. Null for
-  // anything else.
   const contextOptionsFor = (
     col: ResolvedColumn,
   ): Array<{ value: string; label: string; color?: string; icon?: string }> | null => {
@@ -703,7 +701,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       else setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
     }
   }
-  // What the inline editor starts from, per the column's value shape.
   const editorInitial = (row: ViewRow, col: ResolvedColumn): string => {
     if (col.kind === 'title') return row.title
     const v = resolveFieldValue(row, col.id, schema)
@@ -960,8 +957,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // ---- Memoized-row inputs: every prop a DataRow receives must hold identity across unrelated
   // re-renders (a tree push, an editing toggle, a drag frame), so React.memo can bail per row. ----
 
-  // Per-column look/alignment resolved ONCE per change — previously per CELL per render (styleFor
-  // allocates), the measured bulk of a full-table re-render's JS floor.
+  // Per-column look/alignment resolved ONCE per change, not per CELL per render (styleFor
+  // allocates) — the measured bulk of a full-table re-render's JS floor.
   const { alignByCol, styleByCol } = useMemo(
     () => ({
       alignByCol: columns.map(
@@ -1060,7 +1057,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
 
   if (!ctx) return <div className="table-empty">Loading…</div>
   if (groups.length === 0) return <div className="table-empty">No pages here</div>
-  // The Apple table model (Nathan, reverting the elastic-title reflow): EVERY column — title included —
+  // The Apple table model: EVERY column — title included —
   // holds its resolved width. While the sum fits the pane the trailing filler eats the slack (the capped,
   // content-inset look); the moment any resize/add pushes the sum past the pane, the grid extends beyond
   // the window and the whole view h-scrolls. No column is ever compressed to absorb growth.

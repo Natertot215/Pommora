@@ -258,8 +258,7 @@ export function decorationsFor(
 
     const fence = fences[i]
     if (fence) {
-      // Code block (composes with box chrome). Hide the `>` prefix, then hide the ``` fence line itself (after
-      // the prefix) unless the caret is in the block. Content lines show as code.
+      // Code block (composes with box chrome).
       const innerStart = ls + base
       const caretInBlock = selStart >= fence.from && selStart <= fence.to
       intents.push({

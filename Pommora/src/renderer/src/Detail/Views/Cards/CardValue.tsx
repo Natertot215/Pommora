@@ -80,7 +80,7 @@ export function CardValue({
     t === 'url'
 
   const onClick = (e: React.MouseEvent): void => {
-    if (e.ctrlKey) return // macOS secondary-click — let the (future) context menu win
+    if (e.ctrlKey) return // macOS secondary-click — let the context menu win
     e.stopPropagation()
     // React events cross portals along the component tree: a click inside the picker (an option, the
     // backdrop) bubbles back through its trigger — this span — and would re-open what the pick/outside
@@ -154,7 +154,6 @@ export function CardValue({
 
   const editing = mode === 'editor' || mode === 'rename'
   return (
-    // The value is the click surface for its picker.
     // data-drag-slop: the whole card is a drag handle, so a press that begins on a value gets a larger
     // drag-activation threshold — a tap-wobble opens the picker instead of lifting the card.
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix

@@ -30,7 +30,7 @@ function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
 }
 
 /** The eye toggle — rest shows the current state's glyph, hover previews the toggle: a hidden
- *  row runs the same pair in reverse (Nathan's spec). Both glyphs mount; CSS swaps them. */
+ *  row runs the same pair in reverse. Both glyphs mount; CSS swaps them. */
 function EyeToggle({
   hidden,
   name,
@@ -104,7 +104,7 @@ function VisibilityGroups({
           </RowShell>
         ))}
       </div>
-      {/* No heading — the ghost IS the shown/hidden boundary (Nathan's call). The zone grows into
+      {/* No heading — the ghost IS the shown/hidden boundary. The zone grows into
           the pane's slack so the hide-highlight reads even while nothing's hidden. */}
       <div
         data-group="all"

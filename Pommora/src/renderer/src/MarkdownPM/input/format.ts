@@ -179,7 +179,6 @@ export function setList(doc: string, pos: number, fmt: ListFormat): FormatEdit {
   }
 }
 
-/** Apply a block construct to the caret line. */
 export function setBlock(doc: string, pos: number, fmt: BlockFormat): FormatEdit {
   const ls = lineStartAt(doc, pos)
   const le = lineEndAt(doc, pos)

@@ -79,7 +79,7 @@ globalStyle(':root', {
     // with the default solid so SSR/cold paint has a value.
     '--system-accent': colorVars.color.solid[DEFAULT_ACCENT],
     // Semantic link colors (labels side, not tints): external links wear the OS
-    // accent, internal connections wear the Pommora accent; code is systemRed @ 0.85.
+    // accent, internal connections wear the Pommora accent; code is systemRed.
     '--link': 'var(--system-accent)',
     '--connection': 'var(--accent)',
     '--code': `color-mix(in srgb, ${colorVars.color.solid.red} 85%, transparent)`,

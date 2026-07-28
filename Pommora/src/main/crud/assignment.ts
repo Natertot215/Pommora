@@ -59,7 +59,7 @@ async function reorderInner(
   return ok(null)
 }
 
-/** Assign appends the id (idempotent), then restores any Remove-cache for it (C-3) —
+/** Assign appends the id (idempotent), then restores any Remove-cache for it —
  *  root scopes the registry read the per-value reconciliation needs. */
 export function assignProperty(
   root: string,
@@ -69,7 +69,7 @@ export function assignProperty(
   return serializeSchemaOp(() => assignInner(root, collectionFolder, propertyId))
 }
 
-/** The atomic assign-at-slot (E-2): append + restore + placement land in ONE chain slot,
+/** The atomic assign-at-slot: append + restore + placement land in ONE chain slot,
  *  so no sibling op can interleave between the assign and its reorder. */
 export function assignPropertyAt(
   root: string,
@@ -86,7 +86,7 @@ export function assignPropertyAt(
 
 /** Absolute folder paths of EVERY Collection in the tree (schema-owning folders only —
  *  Sets inherit). The shared walk for global fan-outs that must reach non-assigners too:
- *  a Remove-cache lives on a sidecar that no longer assigns the id (D-6). */
+ *  a Remove-cache lives on a sidecar that no longer assigns the id. */
 export async function allCollectionFolders(root: string): Promise<string[]> {
   const tree = await readNexus(root)
   const out: string[] = []
