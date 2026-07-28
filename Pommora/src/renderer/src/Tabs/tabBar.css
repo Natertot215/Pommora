@@ -17,7 +17,7 @@
   --tab-divider-w: 2px; /* pinned│unpinned segment divider */
   --tab-divider-h: 16px;
   --tab-edge-fade: 20px; /* overflow edge dissolve */
-  --tab-plus-gutter: 28px; /* trailing room so the parked + clears the last tab's × (J-4) */
+  --tab-plus-gutter: 28px; /* trailing room so the parked + clears the last tab's × */
   --tab-nav-slide: 10px; /* Back/Forward content slide-in distance */
 
   flex: 1;
@@ -37,7 +37,7 @@
      (TabBar's onPointerDown → win:dragBy), so the same pixels hover AND drag. */
   -webkit-app-region: no-drag;
 }
-/* F-1 reveal-on-hover: the bar sits invisible until the pointer enters its strip. */
+/* Reveal-on-hover: the bar sits invisible until the pointer enters its strip. */
 .tab-bar.reveal-on-hover {
   opacity: 0;
   transition: opacity var(--duration-base) var(--ease-standard);
@@ -46,13 +46,13 @@
   opacity: 1;
 }
 
-/* ---- pinned zone (fixed left, compact icons, I-8) ---- */
+/* ---- pinned zone (fixed left, compact icons) ---- */
 .tab-pinned-zone {
   display: flex;
   align-items: center;
   flex: 0 1 auto;
   min-width: 0;
-  overflow: hidden; /* bounded — uncapped pins never collide with the right cluster (J-5) */
+  overflow: hidden; /* bounded — uncapped pins never collide with the right cluster */
 }
 .tab-pinned {
   position: relative;
@@ -107,7 +107,7 @@
   padding-right: var(--tab-plus-gutter);
 }
 
-/* ---- the trailing + (J-2/J-4): the .group-add glyph + fade. A SIBLING of the masked scroller —
+/* ---- the trailing +: the .group-add glyph + fade. A SIBLING of the masked scroller —
    inside it, the edge fade would dim the + itself; the strip's --tab-plus-gutter padding keeps the
    last tab's × clear beneath it when the strip runs full-width. ---- */
 .tab-plus {

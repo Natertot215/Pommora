@@ -115,7 +115,7 @@ function ListGroups({
         )}
       </div>
       {/* Closed, the elastic spacer holds the block at the pane's bottom; opening collapses it on
-          the same beat as the Reveal, so the heading RISES to meet the assigned rows (Nathan's call). */}
+          the same beat as the Reveal, so the heading RISES to meet the assigned rows. */}
       <div className={cx(s.allSpacer, allOpen && s.allSpacerCollapsed)} aria-hidden />
       <div data-group="all" ref={allRef} className={cx(allHighlighted && s.allHighlight)}>
         <button type="button" className={s.allHeadingRow} onClick={onToggleAll}>

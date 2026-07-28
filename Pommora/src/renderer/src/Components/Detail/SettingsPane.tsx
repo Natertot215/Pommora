@@ -50,7 +50,7 @@ interface MenuEntry {
   Icon: LucideIcon
 }
 
-// Root order (A-3): Configuration · Properties · Visibility · Layout · Group · Filter · Sort.
+// Root order: Configuration · Properties · Visibility · Layout · Group · Filter · Sort.
 const ENTRIES: MenuEntry[] = [
   { id: 'configuration', label: 'Configuration', Icon: SlidersHorizontal },
   { id: 'properties', label: 'Properties', Icon: Server },
@@ -111,7 +111,7 @@ export function SettingsPane(): React.JSX.Element | null {
   const entries = scope
     ? ENTRIES.filter((e) => e.id !== 'configuration' && e.id !== 'filter')
     : ENTRIES
-  // A locked tile (B-5) freezes this view's config, so the leaves that write it don't open — shown,
+  // A locked tile freezes this view's config, so the leaves that write it don't open — shown,
   // dimmed, inert, the treatment the handle menu already wears. Properties stays live: it writes the
   // collection's schema, not this view's config (its one per-view control reports the refusal).
   const configLocked = scope?.locked ?? false
@@ -180,7 +180,7 @@ export function SettingsPane(): React.JSX.Element | null {
         iconRef={iconRef}
         onIconClick={() => setIconOpen(true)}
         onCommit={(next) => {
-          // The header is the VIEW's identity in scope (G-6/H-5) — renaming the source
+          // The header is the VIEW's identity in scope — renaming the source
           // folder from an embed is exactly the mutation the scope exists to prevent.
           if (scope) {
             if (next && next !== view.name) scope.persistConfig({ ...view, name: next })
@@ -203,7 +203,7 @@ export function SettingsPane(): React.JSX.Element | null {
   )
 
   // The scoped footer follows the house footing (ViewPane / PropertiesPane): a
-  // MenuBottomRow in the scroll frame's footer slot, footing-toned content, the B-5
+  // MenuBottomRow in the scroll frame's footer slot, footing-toned content, the
   // config lock as a 12-in-20 AccessoryButton — pressed while it freezes the view config.
   const scopedRoot = scope && schemaCollection && (
     <MenuScrollFrame

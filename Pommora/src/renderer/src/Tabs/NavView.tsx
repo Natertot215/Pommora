@@ -11,10 +11,10 @@ import { AddBannerButton } from '../Detail/Banner/AddBannerButton'
 import '../Detail/Banner/Banner.css'
 import './navView.css'
 
-/** NavView — the new-tab page AND the empty state (E-1/E-2): a full-window gallery + search under a
+/** NavView — the new-tab page AND the empty state: a full-window gallery + search under a
  *  banner. The search bar IS the inline title — it sits in the banner-title slot over the NavView's
  *  own cover when one is set (`.nexus/navview.json`), else the homepage's as the default, or a
- *  banner-less header when neither exists. Shares NavGallery with NavWindow, never a merged shell (E-3). */
+ *  banner-less header when neither exists. Shares NavGallery with NavWindow, never a merged shell. */
 export function NavView(): React.JSX.Element {
   // resolvedRecents arrives already pin-deduped (useNavData filters against the pin set).
   const { resolvedRecents, resolvedPins, search, go } = useNavData()

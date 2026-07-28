@@ -1,4 +1,4 @@
-/* The container-agnostic tab motion layer (F-4): a tab, its sibling segment, the hover ×, and the
+/* The container-agnostic tab motion layer: a tab, its sibling segment, the hover ×, and the
    Back/Forward content slide — no toolbar skin, no store wiring. Any strip mounts these classes;
    the --tab-* knobs default here and a host container (the toolbar's .tab-bar knob block, the
    preview strip) overrides them. */
@@ -120,7 +120,7 @@
   --scroll-fade: 16px;
 }
 
-/* The hover-fade × (J-1: the chip glyph, a plain fade — no melt on glass). It sits in the label's
+/* The hover-fade × (the chip glyph, a plain fade — no melt on glass). It sits in the label's
    reserved right lane, so the ellipsis clears it without masking the text. */
 .tab-x {
   position: absolute;

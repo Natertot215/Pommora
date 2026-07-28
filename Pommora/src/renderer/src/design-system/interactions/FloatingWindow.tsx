@@ -6,8 +6,8 @@ import {
 } from 'react'
 import './floatingWindow.css'
 
-// The shared floating-window chrome engine — the NavWindow move/resize pattern extracted for every
-// in-app floating window (NavWindow rebases onto it at the Page Previews implementation pass).
+// The shared floating-window chrome engine — one move/resize pattern for every in-app floating
+// window (NavWindow, Page Previews).
 
 export interface FloatingBounds {
   minW: number

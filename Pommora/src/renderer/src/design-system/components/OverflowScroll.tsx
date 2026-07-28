@@ -23,7 +23,7 @@ export function slideScrollBack(scroller: HTMLElement): void {
 }
 
 /**
- * The shared truncate-then-hover-scroll box (the sidebar-row mechanism, componentized): content
+ * The shared truncate-then-hover-scroll box: content
  * clips at rest, the pointer scrolls it horizontally in place, leaving slides it back to the
  * start. Overflowing content always ECLIPSES — a fade at whichever edge hides content, never a
  * hard cutoff — via the scroll-driven mask in OverflowScroll.css. The engine activates the fade
