@@ -27,7 +27,7 @@ import {
   type MeasuredRow,
 } from './sidebarDndModel'
 
-// Sidebar drag-and-drop — the "sidebar" behavior (chosen 2026-06-19): an Apple-style insertion
+// Sidebar drag-and-drop — the "sidebar" behavior: an Apple-style insertion
 // LINE marks the exact drop, the picked-up row stays muted in place, and a ghost rides the cursor.
 // No row displacement. EVERY sidebar entity is draggable and reorders within its parent heading —
 // pages (within a folder; also reparent across folders), Sets (reorder/reparent across Collections
