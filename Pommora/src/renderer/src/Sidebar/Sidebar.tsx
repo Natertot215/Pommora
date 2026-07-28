@@ -566,16 +566,14 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
 
   // The agenda list lives HERE, not in AgendaMode: the mode-exit overlay renders a second copy of
   // the outgoing layer, and a component that fetched its own data would mount that copy empty —
-  // painting "no tasks or events" over the list it is supposed to be animating away. Lazy on first
-  // activation, then held, so re-entering the mode costs nothing.
+  // painting "no tasks or events" over the list it is supposed to be animating away. Keyed on the
+  // nexus so switching one re-reads rather than holding the previous nexus's list.
   const [agenda, setAgenda] = useState<{ tasks: AgendaEntry[]; events: AgendaEntry[] }>({
     tasks: [],
     events: [],
   })
-  const agendaLoaded = useRef(false)
   useEffect(() => {
-    if (mode !== 'agenda' || agendaLoaded.current) return undefined
-    agendaLoaded.current = true
+    if (mode !== 'agenda') return undefined
     let live = true
     void window.nexus.agenda.list().then((r) => {
       if (live && r.ok) setAgenda({ tasks: r.tasks, events: r.events })
@@ -583,7 +581,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     return () => {
       live = false
     }
-  }, [mode])
+  }, [mode, tree.nexus.rootPath])
 
   const onSelectCollection = (col: CollectionNode): void => {
     void select({ kind: 'collection', id: col.id })
