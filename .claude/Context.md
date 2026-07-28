@@ -6,11 +6,41 @@ The React rebuild of the Swift paradigm reached its finish line at v0.5.0 — Pa
 
 **Contexts & Spaces is on `main`.** The registry model, the shared floating-window chassis, the Settings window, the lint and accessibility campaign and the FilterPane rebuild all merged, so the build counts forward from a user-defined context layer over a two-renderer pipeline. Both nexuses run the registry shape, and with every one migrated the `tierN` era is closed in code: no migration, no read-healing, no legacy recognition. A nexus left at the old shape can no longer be opened — the conversion is gone, not dormant.
 
-**The active work is the query consumer, with a correctness sweep beside it.** The index is the last place the architecture states one thing and the code does another: it is built, schema-versioned and refreshed on every write, and nothing reads it. That costs a full nexus walk per property edit to fill tables nobody queries, and the refresh is unguarded, so two quick edits race. Stopping the cold rebuild comes first because it is a live defect rather than a missing feature; the facade follows, and it is what Linked-From, backlinks, ContextView and search have all been waiting on.
+**A full cleanup pass closed out the merge.** Every feature doc was audited against real code, the retired Context vocabulary left the source, the whole tree had its comments cut to what a reader couldn't reconstruct, and four facts that had eighty-one separate sources between them collapsed to one owner each. Nine defects were found and fixed along the way — most of them present before the session started, none of them reported.
 
-The sweep runs alongside because it settles a contract the index work needs. The IPC boundary flattens the structured error into a bare string, so a code the CRUD layer raises to drive a confirmation dialog can't reach the renderer at all — deciding whether that contract is real precedes any further handler work. Behind it sit a property type-change flow built end-to-end in main with no way in, and the drag surfaces still hand-rolling the skeleton the gesture primitive owns.
+**Nothing is mid-flight.** The next focus is open, and the list below is what came to mind rather than a mandate — if something else matters more, take that instead.
+
+- **Rethink where SQL belongs.** The index is maintained on every write and read by nothing, while nine `.nexus/` JSON files hold pure plumbing: fold state, active view per container, per-machine row order, heading-column toggles, a derived title cache, recents, favorites, tabs, previews. None of it is content anyone authored, so none of it is what agent-legibility was written to protect. The sharper question is what the JSON shape is *costing*: `viewOrders.json` exists only to keep manual order out of the synced sidecar, and `linkTitles.json` is a cache wearing a config file's clothes. The same move gives the index its first real consumer — which is what backlinks, Linked-From, ContextView and full-text search are all waiting on. An architecture session, and the highest-leverage one available.
+- **In-view page creation.** Creating a page from inside a view is sparse across every surface. The one on this list that would be felt daily; wants a brainstorm loop, not a patch.
+- **PagePreview hover.** Unbuilt, self-contained, no dependencies.
+- **Cross-location card reordering** in views — scoped and mechanical.
+
+Behind those sit two smaller knowns: the IPC boundary flattens its structured error to a bare string at thirty-one sites, so the closed error union can't reach the renderer; and a property type-change flow is built end-to-end in main with no way in.
 
 ### Recent Work
+
+#### The cleanup pass (07-27)
+
+A full day spent on the merge's aftermath rather than on features, and it paid for itself in defects
+nobody had reported. Filtering looked inert because a folder heading kept drawing after every row
+under it was gone. A filter comparison passed rows that held no value at all, so "Modified is empty"
+matched everything. Moving a page didn't count as modifying it, and neither did editing a property
+through the table. A rename rewrote `[[links]]` sitting inside fenced code samples — silent
+corruption of a user's own file. Leaving the Agenda sidebar painted "no tasks or events" over the
+list it was animating away, and the same list would have gone stale on a nexus switch. A generic
+rename could have moved a Space's folder and stranded every tag pointing at it. Two rapid edits
+raced the index rebuild, with the second deleting the file the first was still writing.
+
+The whole tree then lost its plan-task tags, its retired Context vocabulary, and the comments that
+only restated the code beneath them, while four repeated shapes — the ack envelope, the throw-to-
+message narrowing, the try/catch that turns either into an envelope, and the sender's-window lookup
+— collapsed from eighty-one sources to four owners. Every IPC channel was verified byte-identical
+across that refactor.
+
+The pattern behind nearly every one: **two sources for one fact.** An order key read by two sites
+with opposite defaults, a column named one thing in one layer and another below it, two page-value
+writers governing different keys, a code mask the editor applied three ways and the write side not
+at all. Each read as an inconsistency; each was live. → [[Views]] · [[Connections]] · [[Pages]].
 
 #### The truing campaign (07-27)
 
