@@ -14,7 +14,7 @@
 }
 
 /* The banner-title slot: a chromeless search input in the title position. The top band is the 44px
-   add-banner hover strip (flow content), not padding — same geometry as before it landed. */
+   add-banner hover strip (flow content), not padding. */
 .nav-view-head {
   flex-shrink: 0;
   padding: 0 0 10px;

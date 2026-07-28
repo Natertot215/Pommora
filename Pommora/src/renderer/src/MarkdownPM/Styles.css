@@ -8,9 +8,8 @@
   initial-value: 1;
 }
 
-/* The 6-dot drag-grip glyph (lucide grip-vertical) — one source for the editor's rail grips,
-   the callout grip, the blockquote widget grip, AND SurfacePM's block handle, so every drag
-   grip in the app renders identically. Global on purpose: consumers span surfaces. */
+/* The 6-dot drag-grip glyph (lucide grip-vertical), on :root: kept global on purpose since
+   consumers outside this file (SurfacePM's block handle) read it too. */
 :root {
   --grip-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='12' r='1'/%3E%3Ccircle cx='9' cy='5' r='1'/%3E%3Ccircle cx='9' cy='19' r='1'/%3E%3Ccircle cx='15' cy='12' r='1'/%3E%3Ccircle cx='15' cy='5' r='1'/%3E%3Ccircle cx='15' cy='19' r='1'/%3E%3C/svg%3E");
   /* --mdpm-scale: the editor's SINGLE size factor — every px-fixed dimension
@@ -115,10 +114,9 @@
   --detail-title-size: 28px;
 }
 
-/* No-banner state: the shared hover-revealed Add-Banner strip (canonical .add-banner-strip /
-   .add-banner-btn in Banner.css) above the title, then an inset divider. Top padding clears the
-   floating toolbar so the strip's zone starts at the toolbar's bottom edge and the button centers
-   vertically in the gap; the strip itself self-insets to --content-inset (title + divider already do). */
+/* No-banner state: canonical .add-banner-strip / .add-banner-btn live in Banner.css. Top padding
+   clears the floating toolbar so the strip's zone starts at its bottom edge and the button centers
+   in the gap. */
 .mdpm-header:not(.has-banner) {
   --add-banner-zone: 44px;
   padding-top: calc(var(--glass-inset) + 1px + var(--toolbar-h));
@@ -135,9 +133,6 @@
   background: var(--separator-border);
   border-radius: 999px;
 }
-
-/* Banner state: full-width cover band at the container-banner height, title overlaid bottom-left,
-   its bottom edge the full-width divider. */
 
 .mdpm-banner {
   position: relative;
@@ -210,7 +205,7 @@
    ::before on the line, so it can't drift below callouts/folds). Hover-revealed. Glyph mirrors the
    table/callout grips (the shared --grip-glyph). KNOBS: --fold-gutter (rail x) · --grip-top (first-line
    offset — box blocks override it to drop the grip onto their padded first row, e.g. the code fence). */
-/* Shared masked-grip recipe, 14px at scale 1 (look only — each instance owns its own anchor below). */
+/* Shared masked-grip recipe (look only — each instance owns its own anchor below). */
 .mdpm-editor .cm-line.md-block-handle::before,
 .mdpm-editor .cm-line.md-bq-first .md-bq-grip,
 .mdpm-editor .cm-line.md-callout-first::after {
@@ -284,9 +279,8 @@
 .mdpm-editor .cm-line:has(.md-h6) {
   padding-top: 0.15em;
 }
-/* A heading on the very first body line has no preceding content, so its top padding only inflates the
-   gap below the divider/banner that the header's 16px already provides. Strip it on the first line, all
-   levels (H1 included — the 16px does the spacing). */
+/* A heading on the first body line has no preceding content, so its top padding would only double up
+   with the header's own gap below the divider/banner — stripped here for all levels, H1 included. */
 .mdpm-editor .cm-content
   > .cm-line:first-child:has(:is(.md-h1, .md-h2, .md-h3, .md-h4, .md-h5, .md-h6)) {
   padding-top: 0;
@@ -502,7 +496,7 @@
   box-sizing: border-box;
   display: inline-block;
   position: relative;
-  vertical-align: -0.18em; /* sit the box on the text line */
+  vertical-align: -0.18em;
   border-style: solid;
   border-color: var(--label-tertiary);
   background: transparent;
@@ -681,7 +675,7 @@
   border-bottom-right-radius: var(--callout-radius);
 }
 /* First line of the page: drop the top separation — the title-bar header gap above already provides it
-   (mirrors the first-line heading rule below). */
+   (mirrors the first-line heading rule above). */
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first {
   padding-top: var(--callout-inner-pad);
 }

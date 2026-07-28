@@ -54,7 +54,7 @@
     padding-right var(--duration-base) var(--ease-standard);
 }
 /* A header (banner image or banner-less title) already clears the toolbar, so the body sits just
-   under it; without a header the body itself clears the toolbar (38px). */
+   under it; without a header the body itself clears the toolbar. */
 .detail-scroll.has-header .detail-body {
   padding-top: 16px;
 }
@@ -69,7 +69,7 @@
   padding-left: calc(var(--content-inset) - var(--fold-gutter));
 }
 /* A cards content-view (collection/set): the card grid runs the tight surface inset — cards carry no
-   grips/chevron lane, so no views gutter is reserved — with the block surfaces' 8px banner clearance.
+   grips/chevron lane, so no views gutter is reserved — with the block surfaces' banner clearance.
    Same whole-page scoping as the table rule: a tile that embeds a cards view never flips its body. */
 .detail-scroll.has-header .detail-body:has(.cards-view):not(:has(.blk-surface)) {
   padding-top: 8px;
@@ -89,9 +89,8 @@
   padding-left: var(--surface-inset);
   padding-right: var(--surface-inset-right);
 }
-/* Under a banner the tiles clear it by the SAME tight tile gutter they run on the sides (the 8px
-   inter-tile rhythm) — uniform all around, and never the container-table flush above. KNOB: the
-   banner→first-tile clearance. */
+/* Under a banner the tiles clear it by the SAME tight tile gutter they run on the sides — uniform
+   all around, and never the container-table flush above. KNOB: the banner→first-tile clearance. */
 .detail-scroll.has-header.is-surface .detail-body {
   padding-top: 8px;
 }
