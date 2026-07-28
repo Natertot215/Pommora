@@ -291,7 +291,7 @@ export interface NexusTree {
    *  lock: the block doc's heavy layout/blocks stay off the walk (loaded lazily by
    *  useBlockDoc), but the single `blocks_locked` boolean rides here like `banner` so the
    *  store can seed the freeze without a second read. Absent = unlocked. */
-  homepage: { banner?: string; locked: boolean; headingIconHidden: boolean }
+  homepage: { banner?: string; headingIconHidden: boolean }
   /** NavView singleton (`.nexus/navview.json`) — its own banner; absent, the NavView inherits
    *  the homepage's. */
   navView: { banner?: string }
@@ -416,6 +416,10 @@ export interface PreviewsFile {
 }
 
 /** The `previews:load` IPC envelope — absent/corrupt sidecars read as the empty shape, never null. */
+/** The shape a nexus with no persisted previews reads as — shared so main's reader and the
+ *  renderer's reset can't drift into two different "empty". */
+export const EMPTY_PREVIEWS: PreviewsFile = { navSet: null, origins: {}, open: null }
+
 export type PreviewsResult = { ok: true; file: PreviewsFile } | { ok: false; error: string }
 
 /** The `nav:loadPins` IPC envelope. */

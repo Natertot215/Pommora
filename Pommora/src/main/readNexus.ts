@@ -521,7 +521,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
     nexus: { id, rootPath: root, name: basename(root), profileImage, profileIcon, profileSubtitle },
     homepage: {
       banner: asString(homepageConfig.banner),
-      locked: homepageConfig.blocks_locked === true,
       headingIconHidden: homepageConfig.heading_icon_hidden === true,
     },
     navView: { banner: asString(navviewConfig.banner) },
