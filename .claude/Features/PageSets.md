@@ -35,7 +35,7 @@ Within one Collection, moving a Page or a whole Set at any depth is a pure files
 
 Page Sets run through the same generic folder-entity CRUD as Collections and Spaces. A move reparents the whole subtree, and a delete sends the folder with its Sub-Sets and Pages to the configured delete target (→ `Configuration.md`). Reorder persists the parent's orders on each drag.
 
-#### II. Index (Model A)
+#### II. Index
 
 Each `page_sets` row references exactly one parent — its Collection at depth-1, its parent Set deeper. A page row records the owning Collection plus its immediate Set, so pages in Sets are ordinary page rows with no special-casing. Nothing queries the index yet. Full index → `Architecture.md`.
 
