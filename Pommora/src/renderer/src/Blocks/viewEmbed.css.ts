@@ -19,9 +19,9 @@ const HEAD_PAD_L = '14px'
 const HEAD_PAD_R = '12px'
 
 // KNOB — how far the scroll region rises BEHIND the transparent switcher so rows flow UNDER the whole
-// toolbar and dissolve at the title divider (not just under its lower half). The full switcher height:
-// PILL_H + its 6px top/bottom padding. The scroll-fade (--edge-fade below) spans the same distance so a
-// row is fully gone by the divider.
+// toolbar and dissolve at the title divider (not just under its lower half), matching the switcher's
+// full height. The scroll-fade (--edge-fade below) spans the same distance so a row is fully gone by
+// the divider.
 const FADE_RISE = `calc(${PILL_H} + 12px)`
 
 export const tile = style({
@@ -83,9 +83,9 @@ export const switcherRow = style({
   zIndex: 1, // paints over the scroll region that rises behind it (FADE_RISE)
 })
 
-/** A view pill: icon + label-control title on the quaternary fill, hairline-bordered — a fixed height
- *  with wider horizontal padding for the ViewDropdown button's slightly-rectangular ratio (PILL_H /
- *  PILL_PAD_X). The active view's pill lifts on the selected-state fill (surfacepm idiom, not outline). */
+/** A view pill: icon + title, hairline-bordered — a fixed height with wider horizontal padding for the
+ *  ViewDropdown button's slightly-rectangular ratio (PILL_H / PILL_PAD_X). The active view's pill lifts
+ *  on the selected-state fill (surfacepm idiom, not outline). */
 export const pill = style([
   text.control.emphasized,
   {
@@ -188,7 +188,7 @@ export const configBtnActive = style({
 export const listPane = style({ minWidth: 150 })
 
 // The embed owns its table gutter (row grips + group chevrons strip) rather than inheriting
-// --fold-gutter from a host rule — the container-table treatment no longer reaches a block surface,
+// --fold-gutter from a host rule — the container-table treatment doesn't reach a block surface,
 // so the embedded table sets its own, the way .blk-md / .pgembed each set theirs.
 //
 // SCROLL MODEL (edge-release): the rows scroll vertically inside the body (the header rows stay pinned

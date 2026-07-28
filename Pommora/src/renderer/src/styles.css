@@ -6,15 +6,15 @@
   --row-h: 28px;
   --text: #ffffffe6;
   --text-dim: #ffffff80;
-  --hover: var(--state-hover); /* Figma States/hover — #71717A @ 2.5% */
-  --selected: var(--state-selected); /* Figma States/selected — #71717A @ 5% */
+  --hover: var(--state-hover); /* Figma States/hover */
+  --selected: var(--state-selected); /* Figma States/selected */
   --main-bg: var(
     --bg-window
   ); /* the background.window token via the theme-vars bridge — single source (@shared/theme) */
   --glass-inset: 5px; /* gap from the window edges */
   --glass-radius: 12px; /* matched to the macOS window corner (≈ window radius − inset) */
   --toolbar-h: 38px; /* the top strip: titlebar drag region + floating toolbar clusters */
-  /* iOS safe-area insets — 0px on desktop (no cutouts); the mobile shell / drawers / bottom bar mount to these. */
+  /* iOS safe-area insets — inert on desktop (no cutouts); the mobile shell / drawers / bottom bar mount to these. */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -133,8 +133,8 @@ textarea,
   /* Surface insets: block-based views (homepage, contexts) drop the content gutter — their tile handles
      supply the grip/chevron actions a page/table needs the fold-gutter for, so no reserved lane. The
      gutter PORTION of the content inset swaps for a tight value; the floating sidebar/inspector clearance
-     stays. The tile BODY runs the unique 8px inter-tile lane; the banner title sits a touch looser at
-     12px (its own value, kept from the homepage). */
+     stays. The tile BODY runs its own inter-tile lane; the banner title sits a touch looser, on its own
+     separate value. */
   /* The tight inter-tile lane — the gutter a view runs once its container has already cleared the
      floating sidebar/inspector (a whole-page view adds it to that clearance; a tile embed runs it bare). */
   --surface-lane: 8px;

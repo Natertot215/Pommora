@@ -133,7 +133,7 @@
   border: none;
   border-radius: 6px;
   background: none;
-  /* Always secondary — an active state never brightens the glyph. */
+  /* An active state never brightens the glyph. */
   color: var(--label-secondary);
   cursor: pointer;
 }
@@ -192,8 +192,8 @@
   left: calc(var(--ppane-side-inset) + var(--ppane-side-l-w) - 3px);
 }
 
-/* In-flow: a column in the body row. Closing FADES as it collapses — the glass material's 1px
-   borders would otherwise survive the zero-width collapse as a doubled hairline at the edge. */
+/* In-flow: a column in the body row. Closing FADES as it collapses — the glass material's border
+   would otherwise survive the zero-width collapse as a doubled hairline at the edge. */
 .ppane-side-left-inflow,
 .ppane-side-right-inflow {
   flex-shrink: 0;

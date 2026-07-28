@@ -11,5 +11,5 @@ export const row = style({ display: 'flex', alignItems: 'center', gap: '8px', mi
 
 export const leading = style({ display: 'inline-flex', color: c.label.secondary })
 
-/** The row label (Date · Day · Time) — the on-control label tone, matching the URL editor's rows. */
+/** The row label (Date · Day · Time) — matching the URL editor's rows. */
 export const label = style([text.control.emphasized, { flex: '1 1 auto', color: c.label.control }])

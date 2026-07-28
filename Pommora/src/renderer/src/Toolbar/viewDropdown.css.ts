@@ -31,8 +31,8 @@ globalStyle(`${button} button`, { gap: 0 })
 export const buttonSlot = style({ display: 'contents' })
 
 /** The ViewPane row's push chevron. It's a <button> in the toolbar's DOM, so `.app-toolbar button`'s
- *  control-tone rule (0,1,1) would paint it bright — the `&&` (0,2,0) pins it to the row's label-secondary
- *  trailing tone, matching the ViewSettings/SettingsPane nav chevrons (bare Icons the rule can't touch). */
+ *  control-tone rule (0,1,1) would paint it bright — the `&&` (0,2,0) pins it to the row's trailing tone,
+ *  matching the ViewSettings/SettingsPane nav chevrons (bare Icons the rule can't touch). */
 export const chevronButton = style({
   border: 'none',
   background: 'none',

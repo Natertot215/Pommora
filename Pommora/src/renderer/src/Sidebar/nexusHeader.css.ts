@@ -3,7 +3,7 @@ import { vars } from '@renderer/design-system/tokens'
 
 const c = vars.color
 
-/** Circular photo / avatar slot (32px) — holds the nexus photo (cover-fit) or the default icon.
+/** Circular photo / avatar slot — holds the nexus photo (cover-fit) or the default icon.
  *  No background of its own, so a photo with transparency shows the liquid-glass sidebar through. */
 export const photo = style({
   display: 'flex',

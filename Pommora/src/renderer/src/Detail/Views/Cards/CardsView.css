@@ -223,7 +223,6 @@
   align-items: center;
   min-width: 0;
 }
-/* Standard rows: label left, value pushed to the card's right edge. */
 .card-prop-row {
   display: flex;
   align-items: center;
@@ -256,8 +255,6 @@
 .card-value:has(.cell-checkbox, .cell-switch) {
   padding-inline: var(--chip-pad-x, 6px);
 }
-/* The Switch checkbox-look is natively 54×24 — scale it to the card's density so it sits near chip
-   height in the flow instead of towering over the chips. */
 .card-value .cell-switch {
   zoom: var(--switch-zoom);
 }

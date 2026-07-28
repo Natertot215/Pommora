@@ -15,7 +15,8 @@
   width: 100%;
   /* Separate (not collapsed) borders: a collapsed border is painted by the table grid and doesn't move
      when a cell is transformed, so a dragged column/row would tear away from its gridlines. With separate
-     borders each cell carries its own edges. Table draws top+left; cells draw right+bottom → single 1px grid. */
+     borders each cell carries its own edges. Table draws top+left; cells draw right+bottom → one shared
+     grid line, not a doubled one. */
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
@@ -96,8 +97,8 @@
 }
 
 /* Heading column: body cells of the first column read like the header row, one tone lighter. Applied to
-   tbody only — the corner cell stays in thead, so the header row's fill-tertiary naturally sits above
-   this column fill (no z-index needed). */
+   tbody only — the corner cell stays in thead, so the header row's fill naturally sits above this
+   column fill (no z-index needed). */
 .mdpm-tbl tbody .mdpm-tbl-cell.mdpm-tbl-heading-col {
   background: var(--fill-quinary);
   font-weight: var(--weight-emphasized);

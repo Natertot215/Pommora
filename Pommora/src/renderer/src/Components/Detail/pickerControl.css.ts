@@ -4,7 +4,7 @@ import { text } from '../../design-system/tokens/typography.css'
 
 const c = colorVars.color
 
-/** The picker trigger — bare button reading in the secondary tone; `&&` beats the toolbar/UA button tone. */
+/** The picker trigger — bare button; `&&` beats the toolbar/UA button tone. */
 export const trigger = style({
   display: 'inline-flex',
   alignItems: 'center',
