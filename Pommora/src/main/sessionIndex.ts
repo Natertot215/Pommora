@@ -33,14 +33,7 @@ export async function openSessionIndex(root: string): Promise<void> {
   }
 }
 
-/**
- * Rebuild the index from the (now-mutated) files after a mutation. The index has no
- * incremental updater yet, so we drop index.db + cold-rebuild — correct by construction
- * (reuses the cold build; no per-entity row logic duplicated from buildIndex). Never throws
- * (all errors internally caught), so the mutate layer fire-and-forgets it off the UI path.
- * Targeted incremental upserts/deletes land when nexuses grow + a query consumer lands.
- */
-export async function refreshSessionIndex(root: string): Promise<void> {
+async function dropAndRebuild(root: string): Promise<void> {
   closeSessionIndex() // release the handle + flush WAL so the file delete is clean
   for (const suffix of ['', '-wal', '-shm']) {
     try {
@@ -50,6 +43,38 @@ export async function refreshSessionIndex(root: string): Promise<void> {
     }
   }
   await openSessionIndex(root)
+}
+
+/** In-flight rebuild, and whether the files changed again while it ran. */
+let rebuilding: Promise<void> | null = null
+let restale = false
+
+/**
+ * Rebuild the index from the (now-mutated) files after a mutation. The index has no
+ * incremental updater yet, so we drop index.db + cold-rebuild — correct by construction
+ * (reuses the cold build; no per-entity row logic duplicated from buildIndex). Never throws
+ * (all errors internally caught), so the mutate layer fire-and-forgets it off the UI path.
+ * Targeted incremental upserts/deletes land when nexuses grow + a query consumer lands.
+ *
+ * At most ONE rebuild runs at a time, with at most one more queued behind it: the rebuild
+ * deletes index.db before rewriting it, so a second overlapping call would unlink the file
+ * the first is still writing and leave its handle pointing at nothing. A request arriving
+ * mid-rebuild doesn't need its own pass either — one more run after this one sees the
+ * settled files, however many writes landed meanwhile.
+ */
+export function refreshSessionIndex(root: string): Promise<void> {
+  if (rebuilding) {
+    restale = true
+    return rebuilding
+  }
+  rebuilding = (async () => {
+    do {
+      restale = false
+      await dropAndRebuild(root)
+    } while (restale)
+    rebuilding = null
+  })()
+  return rebuilding
 }
 
 /** Close + drop the current index handle (session switch / app quit). */
