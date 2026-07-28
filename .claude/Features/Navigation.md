@@ -50,7 +50,7 @@ The toolbar Navigation button's dropdown — a blank placeholder on the shared b
 
 #### II. NavView
 
-The new-tab page — a full-window Recents **gallery or list** over a search bar. It is the empty state: a `+` opens it, a nexus with no open tabs defaults to it, and closing the last tab lands on it. NavView shares the gallery and list components with NavWindow but stays its own surface, never a merged shell. It carries its own banner, falling back to the Homepage's when it has none and to a bare header when neither exists; the search field sits in the banner's title slot, so the search bar *is* the inline title. As a detail-pane resident, its **List / Gallery toggle lives in the detail-pane [[Subfield]] footer**, not on a rail. Search always renders as gallery cards; the toggle switches only the recents/empty view. The list is **reorderable and shows the pinned group** above recents, recents dragging on the shared drop-line. The NavWindow's shared-toolbar scan promotes its **map flavor** into NavView, deduped and carrying the view mode once (→ [[PagePreview]]).
+The new-tab page — a full-window Recents **gallery or list** over a search bar. It is the empty state: a `+` opens it, a nexus with no open tabs defaults to it, and closing the last tab lands on it. NavView shares the gallery and list components with NavWindow but stays its own surface, never a merged shell. It carries its own banner, falling back to the Homepage's when it has none and to a bare header when neither exists; the search field sits in the banner's title slot, so the search bar *is* the inline title. As a detail-pane resident, its **List / Gallery toggle lives in the detail-pane [[Subfield]] footer**, not on a rail. Search always renders as gallery cards here — NavView's toggle switches only the recents/empty view, unlike the NavWindow rail's, which governs its results too. The list is **reorderable and shows the pinned group** above recents, recents dragging on the shared drop-line. The NavWindow's shared-toolbar scan promotes its **map flavor** into NavView, deduped and carrying the view mode once (→ [[PagePreview]]).
 
 **View mode persists per surface.** NavWindow's List / Gallery choice and NavView's are separate, each stored per-Nexus — flipping one never moves the other, and both survive relaunch.
 
@@ -62,7 +62,7 @@ The footer carries a breadcrumb of the active tab's container path, plus a dimme
 
 **Surface build state:** NavWindow (the overlay), **Toolbar Tabs**, and **NavView** are shipped. **NavPane** (the dropdown) is a placeholder pending its content call.
 
-The rail's **Style toggle governs the search results too** — searching changes what is listed, never how it's drawn. Only recents reorder, since a result set has no stored order to drag against, and the inert agenda hits render as List rows only, having no card form.
+The **NavWindow rail's** Style toggle governs its search results too — searching changes what is listed, never how it's drawn. (NavView differs deliberately: its search is always cards.) Only recents reorder, since a result set has no stored order to drag against, and the inert agenda hits render as List rows only, having no card form.
 
 **Open design:** the NavWindow's Figma gallery form. Whether the rail as built is the intended rail or a stand-in has no ruling; nor does whether the shipped hover pin marker settles the row marker. List rows carry no current-item treatment today; gallery cards do.
 
