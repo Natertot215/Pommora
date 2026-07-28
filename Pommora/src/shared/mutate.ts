@@ -39,7 +39,9 @@ export type ChildOrderKey = 'collection_order' | 'set_order'
 export type MutateRequest =
   | { op: 'createPage'; parentPath: string; name: string }
   | { op: 'createContainer'; parentPath: string; kind: MutableContainerKind; name: string }
-  | { op: 'rename'; path: string; kind: MutableKind; newName: string }
+  // Spaces and Contexts rename through their own ops: membership is keyed by TITLE, so their
+  // renames are cascades, and a path-addressed folder rename would strip every tag silently.
+  | { op: 'rename'; path: string; kind: Exclude<MutableKind, 'space' | 'context'>; newName: string }
   | { op: 'delete'; path: string; kind: MutableKind }
   // Set/clear the nexus profile image (sidebar header avatar). dataUrl set ⇒ decode + copy
   // into `.nexus/assets/<nexusID>/profile-<token>.<ext>` + record the rel path in
