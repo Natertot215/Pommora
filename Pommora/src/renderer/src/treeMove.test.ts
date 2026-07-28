@@ -41,7 +41,7 @@ function tree(): NexusTree {
   }
   return {
     nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
-    homepage: { locked: false, headingIconHidden: false },
+    homepage: { headingIconHidden: false },
     navView: {},
     contexts: [],
     collections: [notes, work],

@@ -1,3 +1,4 @@
+import { blockHostKey } from '@shared/blocks'
 import { useRef, useState } from 'react'
 import { CHIP_SOLID_COLORS, type ChipSolidColor } from '@shared/types'
 import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
@@ -16,8 +17,8 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const locked = useSession((s) => s.spaceLocks[id] ?? false)
-  const setSpaceLocked = useSession((s) => s.setSpaceLocked)
+  const locked = useSession((s) => s.hostLocks[blockHostKey({ kind: 'space', id })] ?? false)
+  const setHostLocked = useSession((s) => s.setHostLocked)
   const iconRef = useRef<HTMLButtonElement>(null)
   const headerRef = useRef<HTMLDivElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -41,7 +42,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
                 type="button"
                 aria-label={locked ? 'Unlock board' : 'Lock board'}
                 className={footerLockAction}
-                onClick={() => void setSpaceLocked(id, !locked)}
+                onClick={() => void setHostLocked({ kind: 'space', id }, !locked)}
               >
                 <Icon name="lock" size={12} className={lockIcon} />
                 {locked ? 'Unlock' : 'Lock'}

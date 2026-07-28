@@ -294,7 +294,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
 function treeWith(pages: { id: string; path: string }[]): NexusTree {
   return {
     nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
-    homepage: { locked: false, headingIconHidden: false },
+    homepage: { headingIconHidden: false },
     navView: {},
     contexts: [],
     collections: [

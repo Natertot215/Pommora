@@ -1,5 +1,7 @@
 import { create } from 'zustand'
+import { blockHostKey, type BlockHostRef } from '@shared/blocks'
 import {
+  EMPTY_PREVIEWS,
   DEFAULT_COMMANDS,
   type AgendaEntry,
   type NavFavorite,
@@ -163,11 +165,10 @@ interface SessionState {
   resolveLinkTitle: (url: string) => void
   activeViews: Record<string, string>
   setActiveView: (containerId: string, viewId: string) => Promise<void>
-  homepageLocked: boolean
-  setHomepageLocked: (v: boolean) => Promise<void>
-  spaceLocks: Record<string, boolean>
-  seedSpaceLock: (id: string, locked: boolean) => void
-  setSpaceLocked: (id: string, v: boolean) => Promise<void>
+  /** Every block host's lock, keyed by host. Seeded from the doc the host loads — the one source. */
+  hostLocks: Record<string, boolean>
+  seedHostLock: (host: BlockHostRef, locked: boolean) => void
+  setHostLocked: (host: BlockHostRef, v: boolean) => Promise<void>
   load: () => Promise<void>
   applyTree: (tree: NexusTree) => Promise<void>
   choose: () => Promise<void>
@@ -280,11 +281,6 @@ const COLD_SWAP_DEADLINE = 200
 // otherwise a later stampless selection change replays the abandoned slide.
 let coldStampSeq = -1
 
-// The lock's write is echo-suppressed (no self-push), so an unrelated push landing mid-write would
-// read the pre-commit homepage.json and revert the optimistic value with nothing to heal it —
-// trust the optimistic value while a write is in flight instead.
-let homepageLockWritesInFlight = 0
-
 let systemAccentCache: string | null | undefined
 
 export const useSession = create<SessionState>((set, get) => {
@@ -349,7 +345,6 @@ export const useSession = create<SessionState>((set, get) => {
     return { dir: to < from ? 'back' : 'fwd', seq: ++previewSlideSeq }
   }
 
-  const EMPTY_PREVIEWS: PreviewsFile = { navSet: null, origins: {}, open: null }
 
   const toPreviewRecord = (p: PreviewState): PreviewSetRecord => ({
     tabs: p.tabs.map((t) => ({ target: t.target })),
@@ -525,24 +520,15 @@ export const useSession = create<SessionState>((set, get) => {
     status: 'idle',
     tree: null,
     error: undefined,
-    homepageLocked: false,
-    setHomepageLocked: async (v) => {
-      homepageLockWritesInFlight++
-      set({ homepageLocked: v })
-      try {
-        await window.nexus.blocks.save({ kind: 'homepage' }, { locked: v })
-      } finally {
-        homepageLockWritesInFlight--
-      }
-    },
-    spaceLocks: {},
-    seedSpaceLock: (id, locked) =>
-      set((s) =>
-        s.spaceLocks[id] === locked ? {} : { spaceLocks: { ...s.spaceLocks, [id]: locked } },
-      ),
-    setSpaceLocked: async (id, v) => {
-      set((s) => ({ spaceLocks: { ...s.spaceLocks, [id]: v } }))
-      await window.nexus.blocks.save({ kind: 'space', id }, { locked: v })
+    hostLocks: {},
+    seedHostLock: (host, locked) =>
+      set((s) => {
+        const key = blockHostKey(host)
+        return s.hostLocks[key] === locked ? {} : { hostLocks: { ...s.hostLocks, [key]: locked } }
+      }),
+    setHostLocked: async (host, v) => {
+      set((s) => ({ hostLocks: { ...s.hostLocks, [blockHostKey(host)]: v } }))
+      await window.nexus.blocks.save(host, { locked: v })
     },
     load: async () => {
       // Only the FIRST load shows the full-screen loading state — a mutation refetch keeps the
@@ -770,7 +756,6 @@ export const useSession = create<SessionState>((set, get) => {
       applySystemAccent(systemColor)
       set({ personalization: tree.personalization, commands: tree.commands ?? DEFAULT_COMMANDS })
       applyPersonalization(tree.personalization)
-      if (homepageLockWritesInFlight === 0) set({ homepageLocked: tree.homepage.locked })
       if (get().agendaSnapshot) set({ agendaSnapshot: null })
     },
 

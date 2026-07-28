@@ -2,9 +2,9 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { PreviewsFile } from '@shared/types'
+import { EMPTY_PREVIEWS, type PreviewsFile } from '@shared/types'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
-import { EMPTY_PREVIEWS, readPreviewsState, writePreviewsState } from './previewState'
+import { readPreviewsState, writePreviewsState } from './previewState'
 
 let root: string
 beforeEach(async () => {

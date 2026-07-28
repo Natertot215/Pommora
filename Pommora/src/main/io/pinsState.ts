@@ -5,14 +5,12 @@
 
 import { mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import { isPlainObject } from '@shared/propertyValue'
 import type { NavTarget, PinEntry } from '@shared/types'
 import { nexusDir } from '../paths'
 import { readJsonObject, writeJson } from './atomicWrite'
 import { serializeOnFile } from './fileLock'
-import { readNavState } from './navState'
+import { isNavTarget, readNavState } from './navState'
 
-const NAV_KINDS = new Set(['homepage', 'context', 'collection', 'set', 'page', 'task', 'event'])
 const pinsDir = (root: string): string => join(nexusDir(root), 'pins')
 
 /** navKey with the path-illegal colon swapped for a hyphen (kinds are hyphen-free and we never split
@@ -23,13 +21,9 @@ export function pinFileName(t: NavTarget): string {
 }
 
 function isPinEntry(v: unknown): v is PinEntry {
-  if (!isPlainObject(v)) return false
-  const kind = v.kind
-  if (typeof kind !== 'string' || !NAV_KINDS.has(kind)) return false
-  if (kind !== 'homepage' && typeof v.id !== 'string') return false
-  if ((kind === 'set' || kind === 'page') && typeof v.path !== 'string') return false
-  if (typeof v.order !== 'number') return false
-  return v.deleted === undefined || typeof v.deleted === 'boolean'
+  if (!isNavTarget(v)) return false
+  const { order, deleted } = v as { order?: unknown; deleted?: unknown }
+  return typeof order === 'number' && (deleted === undefined || typeof deleted === 'boolean')
 }
 
 /** Read the live pin set: every `.json` under `.nexus/pins/`, validated, tombstones + malformed
