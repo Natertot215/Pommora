@@ -12,9 +12,19 @@ The sweep runs alongside because it settles a contract the index work needs. The
 
 ### Recent Work
 
+#### The truing campaign (07-27)
+
+Every feature doc got its own agent and its own grounding pass against real code — 440 confirmed corrections, 39 questions routed back for a ruling. The findings that mattered all had one shape: **a fact with two sources.** An order key read by two sites with opposite defaults; a Context column named one thing in one layer and another below it; two page-value writers governing different key sets; a code mask the editor applied three ways and the write side not at all. Each looked like an inconsistency and each was a live defect, which is why a duplicated fact now counts as a bug rather than untidiness.
+
+Six fixes came out of it, all subtractive where they could be. Structural bands build from surviving rows instead of the folder tree, so a filter that empties a Set takes its band and its sub-folders with it — the piece that made filtering look inert. A positive comparison stops matching a row holding no value, while the negatives deliberately keep the opposite reading. `modified_at` answers to exactly four things, with a move and a property write no longer silent. A `[[link]]` inside a code fence is a sample no rename touches. A pipe can't be a title, since it opens the alias segment, and an alias now rides through a rename intact. The trash mirrors the folder chain a delete came from.
+
+Two more defects surfaced after the record was written: the sidebar's mode-exit overlay mounted a second Agenda list that fetched its own data, so leaving Agenda painted an empty state over the list it was animating away; and the generic path-addressed rename accepted a Space, which would have moved its folder and stranded every title-keyed tag. Its `kind` excludes them now — the trap isn't guarded, it's unrepresentable.
+
+The source then lost its plan-task tags, its retired Context vocabulary and the comments that only restated the code beneath them. → [[Views]] · [[Connections]] · [[Pages]].
+
 #### Contexts & Spaces — the registry model (07-22 → 07-27)
 
-The three-tier taxonomy was the last fixed thing in an otherwise user-defined system, so it became a registry: Contexts are entries in `.nexus/contexts.json` (the seeded three keep reserved `_tierN` ids so legacy ULIDs keep resolving), Spaces live as folders under `.nexus/contexts/<Context>/<Space>/`, and membership is a bracketed title key at every entity root. Validation is registry-membership at read — an outside edit with a valid title registers, a typo sits inert until the file's next real write repairs the case-class misses and drops the unknowns, never guessing.
+The three-tier taxonomy was the last fixed thing in an otherwise user-defined system, so it became a registry: Contexts are entries in `.nexus/contexts.json`, each carrying an ordinary minted ULID whether seeded or user-created, Spaces live as folders under `.nexus/contexts/<Context>/<Space>/`, and membership is a bracketed title key at every entity root. Validation is registry-membership at read — an outside edit with a valid title registers, a typo sits inert until the file's next real write repairs the case-class misses and drops the unknowns, never guessing.
 
 The dangerous parts got their own machinery: renames cascade titles across all three file scopes under a pending-rename journal that replays on open (a crash forward-completes instead of letting the repair pass eat valid tags), the migration bumps its version last so a kill re-runs the remainder, and every sidecar RMW goes through one strict read chokepoint that fails rather than clobbers a transiently-unreadable file. Migration re-entry keys on the **version alone**, never on the presence of tier directories, because an earlier step consumes those.
 
