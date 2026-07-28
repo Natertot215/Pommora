@@ -12,11 +12,6 @@ import { NavCrumbs, NavPinButton, NavRowMenu } from '../Navigation/NavList'
 import './navGallery.css'
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
 
-// The gallery view over the same nav data as NavList: pinned cards then recents in one flow, no divider,
-// each zone drag-reorderable within itself. A card is the detail-pane thumbnail (3:2, pin overlaid
-// top-left) over a title/location text block. Thumbnails resolve deterministically from the synced assets
-// tree; a miss falls back to an icon placeholder. Active card (the open selection) gets the accent border.
-
 const thumbFile = (key: string): string => key.replace(':', '-')
 
 export function NavGallery({
@@ -36,10 +31,9 @@ export function NavGallery({
 }): React.JSX.Element {
   const reorderPin = useSession((s) => s.reorderPin)
   const reorderRecentStore = useSession((s) => s.reorderRecent)
-  // A host (NavWindow) can override to also rewrite its frozen snapshot; NavView uses the store directly.
+  // NavWindow overrides to also rewrite its frozen snapshot; NavView uses the store directly.
   const reorderRecent = onReorderRecent ?? reorderRecentStore
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
-  // The cards share NavList's row menu — same items, same open/pin/favorite state.
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav, e: React.MouseEvent): void => {
     e.preventDefault()
@@ -49,9 +43,7 @@ export function NavGallery({
   const card = (it: ResolvedNav): React.JSX.Element => (
     <DraggableCard key={it.key} it={it} nexusId={nexusId} onSelect={onSelect} onMenu={openMenu} />
   )
-  // One grid, two independent zones sharing the flow (no divider): pins reorder among pins, recents among
-  // recents — separate zones, so a drag never crosses the boundary. Search results render static (dragging
-  // a filtered view would rewrite the recents order out from under the query).
+  // Search results render static — dragging a filtered view would rewrite the recents order out from under the query.
   return (
     <div className="nav-gallery">
       <div className={cx('nav-gallery-grid', frozenLayout && 'is-fill')}>

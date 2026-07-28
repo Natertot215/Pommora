@@ -10,14 +10,9 @@ import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import { useSession } from '../store'
 import * as s from './viewDropdown.css'
 
-// The pane opens at the ViewPane's footprint — same square, blank body until its content lands.
+// Matches ViewPane's footprint — blank until its content lands.
 const PANE_SQUARE = 225
 
-/**
- * The Space dropdown — the ViewDropdown's slot when a Space is active. The glyph is the
- * contexts default icon; clicking opens the ViewPane-footprint pane, deliberately blank
- * until its content is designed.
- */
 export function SpaceDropdown(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)

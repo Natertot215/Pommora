@@ -23,15 +23,13 @@ import { cx } from '@renderer/design-system/cx'
 import { ZOOM_STEPS, zoomStep } from './blockZoom'
 import * as s from './handleMenu.css'
 
-// Icon seats follow the SettingsPane ladder at this menu's control-size rows:
-// the property-row 12 (ICON.doc) for leading glyphs, the twisty 12 for chevrons.
+// Matches the SettingsPane ladder's control-size rows.
 const GLYPH = 12
 // The title field's location sub-line rides a step smaller than its glyph.
 const LOC_GLYPH = 11
 
-/** One drill level — a nested PaneSlider per depth (the slider's documented composition),
- *  so every push AND back slides; a flat content swap animates neither. Rows come from the
- *  same DrillPickItem trees the pickers always used. */
+/** A nested PaneSlider per depth so every push AND back slides — a flat content swap would
+ *  animate neither. */
 function DrillLevel({
   nodes,
   title,
@@ -125,10 +123,7 @@ function DrillLevel({
   )
 }
 
-/** The drag-handle menu (PickerMenu form): state-dependent root rows — an
- *  unconfigured markdown block links out (the one conversion); a configured page embed
- *  re-picks its Source; a view embed's Source sits inert (sources are per-view). The
- *  pickers slide as nested panes INSIDE the menu; Delete still confirms in main. */
+// Delete still confirms natively in main.
 export function BlockHandleMenu({
   entry,
   anchor,
@@ -152,9 +147,7 @@ export function BlockHandleMenu({
   anchor: HTMLElement
   pageItems: PagePickerItem[]
   viewItems: ViewPickerItem[]
-  /** A page embed's source identity — its title + resolved icon, for the openable title field. */
   pageInfo?: { title: string; icon: string }
-  /** The source page's parent container (its location) — title + resolved icon, for the field's sub-line. */
   location?: { title: string; icon: string }
   onClose: () => void
   onPickPage: (pageId: string) => void
@@ -163,20 +156,17 @@ export function BlockHandleMenu({
   onDuplicate: () => void
   onRemove: () => void
   onToggleLock: () => void
-  /** Open the source page full-view (respects Open In — full-page for now). */
+  /** Respects Open In — full-page for now. */
   onOpenPage: () => void
-  /** Per-tile Scale: the tile's current factor (absent = 1.0) + its setter. Markdown/page only. */
+  /** absent = 1.0. Markdown/page only. */
   zoom?: number
   onSetZoom?: (factor: number) => void
-  /** The host board is locked: the per-tile lock is subsumed, so the footer reads a muted,
-   *  inert "Locked" instead of the Lock/Unlock toggle. */
   containerLocked?: boolean
 }): React.JSX.Element {
   const [pane, setPane] = useState<'root' | 'style' | 'page' | 'view'>('root')
-  // The Scale picker is an anchored dropdown (not an in-menu pane) — it hangs off the row's trailing
-  // value, so the menu stays put while the steps drop over it. Picking a step keeps it open (scrub
-  // live); dismissal is a document listener (the CalendarPicker idiom) that spares the dropdown + its
-  // trigger and closes on any other pointerdown — so a click anywhere else, incl. the menu, closes it.
+  // An anchored dropdown (not an in-menu pane) — the menu stays put while steps drop over it.
+  // Dismissal is a document listener (the CalendarPicker idiom) that spares the dropdown + trigger
+  // and closes on any other pointerdown.
   const [scaleOpen, setScaleOpen] = useState(false)
   const scaleTriggerRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
@@ -199,11 +189,9 @@ export function BlockHandleMenu({
     }
   }, [scaleOpen])
   const style: BlockStyle = entry.style === 'borderless' ? 'borderless' : 'bordered'
-  const currentStep = zoomStep(zoom) // the tile's resolved Scale step — trailing value + the picker's active check
-  // Content/board lock: a per-tile lock OR the host board lock dims + inerts every action —
-  // the menu still opens (grab-menu stays reachable + reads its lock state), it just can't mutate a locked
-  // board/tile. The dim is the house rowDisabled (opacity on the row content, not a full-row veil). The
-  // footer stays live: the per-tile Lock toggles back; a board lock shows the inert "Locked".
+  const currentStep = zoomStep(zoom)
+  // A per-tile lock OR the host board lock dims + inerts every action, but the menu still opens
+  // (it just can't mutate). The per-tile Lock always toggles back; a board lock shows the inert "Locked".
   const locked = (entry.locked ?? false) || containerLocked
   const rowMute = locked ? rowDisabled : undefined
   const act = (fn: () => void) => () => {
@@ -244,8 +232,7 @@ export function BlockHandleMenu({
         }
       >
         {entry.type === 'page' && pageInfo && (
-          // The source page's identity as an openable field (not muted by lock — opening is read-only):
-          // page title over its location, both left-aligned + capped.
+          // Not muted by lock — opening is read-only.
           <button
             type="button"
             className={s.titleField}
@@ -303,9 +290,8 @@ export function BlockHandleMenu({
         >
           Style
         </MenuItem>
-        {/* Scale is view-agnostic — every tile type carries it. Markdown/page tiles freeze-inset (only
-            content + glyphs scale); a view tile scales as a unit within the fixed inset (the grid's own
-            CSS zoom compounds --block-zoom). */}
+        {/* Markdown/page tiles freeze-inset (only content + glyphs scale); a view tile scales as a
+            unit — the grid's own CSS zoom compounds with --block-zoom. */}
         <MenuItem
           className={cx(s.row, rowMute)}
           leading={<Icon name="scaling" size={GLYPH} />}
@@ -389,9 +375,7 @@ export function BlockHandleMenu({
         <PaneSlider open={pane !== 'root'} root={root} detail={detail} />
       </PickerMenu>
       {scaleOpen && (
-        // The Scale dropdown — a nested PickerMenu hung off the row's trailing value (solid, so it reads
-        // opaque over the menu beneath). No onDismiss: the document listener above owns dismissal, so a
-        // pick can leave it open. Picking a step scales the tile live (accent check marks the current).
+        // No onDismiss — the document listener above owns dismissal, so a pick can leave it open.
         <PickerMenu open triggerRef={scaleTriggerRef} solid>
           <div className={cx(s.barScale, s.scaleMenu)} data-scale-menu>
             {ZOOM_STEPS.map((st) => (

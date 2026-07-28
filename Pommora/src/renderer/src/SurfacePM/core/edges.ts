@@ -1,11 +1,7 @@
-// Edge → boundary resolution: blocks resize by their own edges and corners
-// (window-style, never bars in the gaps). East/west edges move the nearest
-// ancestor ROW divider (width splitter). A north edge negotiates with the
-// stacked neighbor directly above — the nearest COLUMN ancestor where this
-// branch isn't first, or, for a FULL-WIDTH band-root tile, the band above when
-// its root is also a plain tile (the same one-height-to-give rule nested stacks
-// use). South edges never resolve here — they stretch the tile itself (the
-// caller goes straight to stretchTileHeight).
+// Blocks resize by their own edges and corners (window-style, never bars in the gaps). East/west
+// edges move the nearest ancestor ROW divider. A north edge negotiates with the stacked neighbor
+// directly above. South edges never resolve here — they stretch the tile itself (the caller goes
+// straight to stretchTileHeight).
 
 import type { DividerRef, Edge, SurfaceLayout } from './model'
 import { findTile } from './model'

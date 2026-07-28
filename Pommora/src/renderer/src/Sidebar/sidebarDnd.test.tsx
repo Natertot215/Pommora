@@ -129,9 +129,7 @@ describe('sidebar drag — Esc abort', () => {
   })
 })
 
-// The page↔Set boundary: dragging a page onto a Set that's its own sibling (same container) must
-// reorder the page to the edge of its OWN pages group, never reparent it into that Set — while a
-// Set in a DIFFERENT container still reparents. Geometry is stubbed; the seam decision is the truth.
+// Geometry is stubbed; the seam decision is the truth.
 describe('sidebar drag — page↔Set seam', () => {
   const seamTree = {
         collections: [

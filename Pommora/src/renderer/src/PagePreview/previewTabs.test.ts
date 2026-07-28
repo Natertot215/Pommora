@@ -182,7 +182,7 @@ describe('previewTabs — durable sets (H-3/H-6/H-10)', () => {
     expect(useSession.getState().preview).toBeNull()
     expect(file.origins.x).toBeUndefined() // emptied → retired
     useSession.getState().openPreview(page('x'))
-    expect(useSession.getState().preview?.tabs).toHaveLength(1) // fresh
+    expect(useSession.getState().preview?.tabs).toHaveLength(1)
   })
 })
 
@@ -250,7 +250,7 @@ describe('previewTabs — the NavWindow flavor entry (H-2/H-3)', () => {
     useSession.getState().closeNav()
     expect(useSession.getState().preview).toBeNull()
     expect(useSession.getState().navOpen).toBe(false)
-    expect(useSession.getState().previewsFile.navSet?.tabs).toHaveLength(2) // durable
+    expect(useSession.getState().previewsFile.navSet?.tabs).toHaveLength(2)
   })
 
   it('the B-2 override toggle persists in the previews file', () => {

@@ -3,10 +3,8 @@ import type { WarmSeam } from '@renderer/MarkdownPM'
 import { useSession } from '../store'
 import { capturePreviewWarm, readPreviewWarm, type PreviewWarmEntry } from './previewWarm'
 
-// The preview warm seam, shared by BOTH flavors' windows: editor state keys on the active
-// preview-tab id; the BODY's scroll (the preview's one scroller) is captured live and restored
-// after CM6's async height build. Captures are LIVENESS-GATED — the editor's unmount capture
-// trails the store's drop, and ungated it would re-insert one ghost editorState per close.
+// Captures are LIVENESS-GATED — the editor's unmount capture trails the store's drop, and
+// ungated it would re-insert one ghost editorState per close.
 
 export function usePreviewWarm(
   scrollerRef: RefObject<HTMLElement | null>,

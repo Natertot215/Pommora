@@ -1,10 +1,7 @@
-// Structural sharing for watcher pushes. Every 'nexus:changed' arrives as a WHOLE fresh tree —
-// IPC strips object identity, so without this every push re-rendered every consumer even when
-// nothing (or something unrelated) changed. `stabilize` recycles the prior tree's subobjects
-// wherever the new content is deep-equal: an unchanged container keeps reference identity (its
-// open table's pipeline memo holds), and an echo push returns the previous tree itself (a
-// zustand no-op — zero re-renders). Pure over JSON-safe data (the IPC contract): plain objects,
-// arrays, primitives only.
+// IPC strips object identity, so without this every 'nexus:changed' push re-rendered every
+// consumer even when nothing changed. `stabilize` recycles the prior tree's subobjects wherever
+// the new content is deep-equal: an unchanged container keeps reference identity, and an echo
+// push returns the previous tree itself (a zustand no-op — zero re-renders).
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)

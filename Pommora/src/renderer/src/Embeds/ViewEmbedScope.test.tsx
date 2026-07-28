@@ -1,7 +1,4 @@
 // @vitest-environment jsdom
-// The locked scope's contract: a frozen view config never takes a write it can't land — the seam
-// answers a refusal envelope, the payload writer is never reached, and the panes that write it
-// aren't reachable to author into. View STATE is the deliberate exception and lands regardless.
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import { act, useEffect } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -115,8 +112,6 @@ function Probe({ onResult }: { onResult: (r: unknown) => void }): null {
   return null
 }
 
-// A collapse write as the table sends it: the state field alongside the live config overrides the
-// merge always folds in — here a column width, standing in for a gesture the lock already refused.
 function StateProbe({ onResult }: { onResult: (r: unknown) => void }): null {
   const save = useSaveView(source, async () => {})
   useEffect(() => {
@@ -168,8 +163,6 @@ describe('a locked view-embed scope', () => {
         <StateProbe onResult={() => {}} />
       </ViewEmbedScopeProvider>,
     )
-    // The probe's write carries a widened column too — the lock refused that gesture, so it must
-    // not reach the payload on the back of the collapse that IS allowed.
     expect(persistState).toHaveBeenCalledWith({ collapsed_groups: ['Done'] })
     expect(persistConfig).not.toHaveBeenCalled()
   })

@@ -1,7 +1,5 @@
-// The renderer's block-document session for one host: load once on host open
-// (never the tree walk), decode the layout through SurfacePM's repairing
-// codec, and persist layout changes with a trailing debounce that flushes on
-// unmount so a navigation inside the window can't drop a gesture.
+// Loads once on host open (never the tree walk); persists layout changes with a trailing
+// debounce that flushes on unmount so a navigation inside the window can't drop a gesture.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BlockHostRef } from '@shared/blocks'
@@ -40,9 +38,8 @@ export function useBlockDoc(host: BlockHostRef): BlockDocSession {
     layout: null,
   })
 
-  // The always-current layout — async continuations (IPC .then) must never build
-  // on a render-captured layout; a gesture committing during the await would be
-  // silently overwritten.
+  // Async continuations (IPC .then) must never build on a render-captured layout — a gesture
+  // committing during the await would be silently overwritten.
   const liveLayout = useRef<SurfaceLayout>(state.layout)
 
   // Host IDENTITY keys the load — two Spaces share a kind, so kind alone would serve one
@@ -85,10 +82,9 @@ export function useBlockDoc(host: BlockHostRef): BlockDocSession {
     [flush],
   )
 
-  // Immediate variant — structural mutations (tile create/remove) write the layout
-  // NOW, before their entry op runs, so a crash leaves an invisible orphan rather
-  // than a dead box. Takes an updater so async callers compose with the LIVE
-  // layout, never a stale render capture.
+  // Structural mutations write the layout NOW, before their entry op runs, so a crash leaves an
+  // invisible orphan rather than a dead box. Takes an updater so async callers compose with the
+  // LIVE layout, never a stale render capture.
   const commitLayout = useCallback(
     (update: SurfaceLayout | ((cur: SurfaceLayout) => SurfaceLayout)) => {
       const layout = typeof update === 'function' ? update(liveLayout.current) : update
@@ -107,8 +103,8 @@ export function useBlockDoc(host: BlockHostRef): BlockDocSession {
     })
   }, [])
 
-  // Entry writes take an updater for the same reason commitLayout does — a menu
-  // or IPC window between capture and write must not clobber concurrent changes.
+  // Same reason as commitLayout — a menu or IPC window between capture and write must not
+  // clobber concurrent changes.
   const liveBlocks = useRef<unknown[]>(state.blocks)
   liveBlocks.current = state.blocks
 

@@ -1,8 +1,6 @@
 import type { PreviewTabTarget } from '@shared/types'
 
-// The preview window's tab model — pure functions, no store. The close/spawn bodies are bespoke
-// (NOT tabsModel's): the last tab closing kills the WINDOW (no NavView reseed), and there are no
-// pins.
+// Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, and there are no pins.
 
 export interface PreviewTab {
   id: string
@@ -20,7 +18,6 @@ export interface PreviewState {
 
 const targetPageId = (t: PreviewTabTarget): string | null => (t.kind === 'page' ? t.id : null)
 
-/** Dedup-focus an existing tab for the page, else append + activate. */
 export function openTabIn(
   p: PreviewState,
   makeId: () => string,
@@ -34,8 +31,7 @@ export function openTabIn(
   return { ...p, tabs: [...p.tabs, tab], activeTabId: tab.id }
 }
 
-/** Drag-reorder a page tab onto another's slot. The map sentinel is immovable AND un-landable —
- *  it holds slot 1, so a move that names it either way is refused. */
+/** The map sentinel is immovable AND un-landable — it holds slot 1. */
 export function reorderTabIn(p: PreviewState, activeId: string, overId: string): PreviewState {
   const from = p.tabs.findIndex((t) => t.id === activeId)
   const to = p.tabs.findIndex((t) => t.id === overId)
@@ -47,8 +43,6 @@ export function reorderTabIn(p: PreviewState, activeId: string, overId: string):
   return { ...p, tabs }
 }
 
-/** Close a tab: the active falls to its left neighbor; the origin re-parents to the left-most
- *  surviving page tab; the last tab closing kills the window (null). */
 export function closeTabIn(p: PreviewState, id: string): PreviewState | null {
   const idx = p.tabs.findIndex((t) => t.id === id)
   if (idx === -1) return p
@@ -64,7 +58,6 @@ export function closeTabIn(p: PreviewState, id: string): PreviewState | null {
   return { ...p, tabs, activeTabId, originId }
 }
 
-/** The window's shown page — the active tab when it's a page (the nav sentinel shows the gallery). */
 export function deriveTarget(p: PreviewState | null): { id: string; path: string } | null {
   if (!p) return null
   const active = p.tabs.find((t) => t.id === p.activeTabId)

@@ -14,12 +14,8 @@ import { useActiveView } from '../Detail/Views/useActiveView'
 import { ViewPane } from './ViewPane'
 import * as s from './viewDropdown.css'
 
-/**
- * The per-container view switcher, standalone left of the toolbar trio. Renders only on a
- * Collection / depth-1 Set (which owns saved views): its glyph is the active view's icon; clicking
- * opens the ViewPane; right-clicking opens the native presentation menu (Show/Hide Title · Style).
- * The `view_style` branch is a real seam — Toolbar mode reuses the dropdown button until ViewBar lands.
- */
+/** Renders only on a Collection / depth-1 Set (sub-Sets don't own saved views). The `view_style`
+ *  branch is a seam — Toolbar mode reuses this dropdown button until ViewBar lands. */
 export function ViewDropdown(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
@@ -74,8 +70,7 @@ function ViewDropdownInner({ node }: { node: CollectionNode | SetNode }): React.
 
   return (
     <div ref={wrapRef} className={s.wrapper}>
-      {/* The presentation menu (Show/Hide Title · Style) rides the button chrome ONLY — a display:contents
-          slot so a right-click on the open pane (a sibling below) never reaches it. */}
+      {/* display:contents — a right-click on the open pane (a sibling below) must never reach this menu. */}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
       <span className={s.buttonSlot} onContextMenu={(e) => void onContextMenu(e)}>
         <SegmentedButton

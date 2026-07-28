@@ -15,28 +15,25 @@ import './tabStrip.css'
 import './tabBar.css'
 
 const BASE_MS = Number.parseInt(duration.base, 10)
-/** The tab close/open width window: the standard token plus one fast beat for the segment's delayed
- *  exit (the ghost stays rendered until the whole sequence lands). */
+/** One fast beat added for the segment's delayed exit — the ghost stays rendered until the whole
+ *  sequence lands. */
 const EXIT_MS = BASE_MS + Number.parseInt(duration.fast, 10)
 
 interface TabEntry {
   tab: Tab
-  /** Live-resolved display, or null for the NavView tab (rendered off its own treatment). A pinned
-   *  tab that no longer resolves render-hides upstream and never reaches here. */
+  /** null for the NavView tab. A pinned tab that no longer resolves render-hides upstream —
+   *  never reaches here. */
   res: ResolvedNav | null
 }
 
-/** The toolbar tab bar: pinned compact icons docked left (the pins set), the unpinned strip
- *  right of them (overflow-scroll + edge fade), the trailing `+`. Blank until there's a working set
- *  to show — two tabs, or a pin. The gate/body split keeps every interaction hook (the Ctrl+Tab
- *  listener included) mounted exactly when the bar shows. */
+// Gate/body split: every interaction hook (the Ctrl+Tab listener included) mounts only when the
+// bar actually shows.
 export function TabBar(): React.JSX.Element | null {
   const tabs = useSession((s) => s.tabs)
   const pins = useSession((s) => s.pins)
   const tree = useSession((s) => s.tree)
 
-  // Titles + icons resolve live off the nav layer's index — a rename is current on the next push,
-  // never cached stale. Built once per tree (memoized), shared by every tab.
+  // Titles + icons resolve live off the nav index — a rename is current on the next push, never cached stale.
   const index = useMemo(() => (tree ? buildResolveIndex(tree) : null), [tree])
   const pinnedEntries = useMemo<TabEntry[]>(() => {
     if (!index) return []
@@ -80,9 +77,8 @@ function TabBarBody({
   const reorderTabs = useSession((s) => s.reorderTabs)
   const reorderPin = useSession((s) => s.reorderPin)
 
-  // Closing is store-first: the tab leaves the store IMMEDIATELY (content switches, dedup/cycle/MRU
-  // all read truth — a re-click of the entity spawns fresh instead of resurrecting a zombie), while a
-  // GHOST of it stays rendered for the width-collapse exit on the slow token.
+  // Closing is store-first — the tab leaves the store immediately (a re-click spawns fresh instead
+  // of resurrecting a zombie) while a GHOST stays rendered for the width-collapse exit.
   const [ghosts, setGhosts] = useState<ReadonlyMap<string, { entry: TabEntry; index: number }>>(
     new Map(),
   )
@@ -100,12 +96,10 @@ function TabBarBody({
       })
     }, EXIT_MS)
   }
-  // The live (non-ghost) entries — the zone's reorderable set AND the render base (computed once).
   const liveEntries = useMemo(
     () => unpinnedEntries.filter((e) => !ghosts.has(e.tab.id)),
     [unpinnedEntries, ghosts],
   )
-  // The render list: live entries with each ghost spliced back at its remembered slot mid-exit.
   const renderEntries = useMemo<{ entry: TabEntry; ghost: boolean }[]>(() => {
     const live = liveEntries.map((entry) => ({ entry, ghost: false }))
     for (const [, g] of [...ghosts.entries()].sort((a, b) => a[1].index - b[1].index)) {
@@ -113,11 +107,10 @@ function TabBarBody({
     }
     return live
   }, [liveEntries, ghosts])
-  // Index of the first non-ghost tab — drives the leftmost-close segment handoff.
   const firstLive = renderEntries.findIndex((e) => !e.ghost)
 
-  // Ctrl+Tab / Ctrl+Shift+Tab cycles the full visual order, wrapping (the one signed-off
-  // binding). Lives in the body, so the combo is intercepted exactly while the bar shows.
+  // Ctrl+Tab / Ctrl+Shift+Tab cycles the full visual order (the one signed-off keybinding) —
+  // intercepted only while the bar shows.
   const orderedIds = useMemo(
     () => [...pinnedEntries.map((e) => e.tab.id), ...unpinnedEntries.map((e) => e.tab.id)],
     [pinnedEntries, unpinnedEntries],
@@ -135,7 +128,6 @@ function TabBarBody({
     return () => window.removeEventListener('keydown', onKey)
   }, [activateTab])
 
-  // The active tab scrolls into view on switch.
   const stripRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     stripRef.current
@@ -143,8 +135,6 @@ function TabBarBody({
       ?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
   }, [activeTabId])
 
-  // A tab's native (Electron) right-click menu: context out, action back, dispatched against the
-  // tab id. Close animates through the ghost path.
   const runTabMenu =
     (tabId: string, pinned: boolean, isNewTab: boolean) =>
     async (e: React.MouseEvent): Promise<void> => {
@@ -156,10 +146,8 @@ function TabBarBody({
       else if (action === 'close') requestClose(tabId)
     }
 
-  // JS window mover: a press on the bar's BARE space (not a tab / the + / any button) drags the app
-  // window. A native app-region can't do this — it never delivers hover, killing the + reveal on the
-  // same pixels — so the bar moves the window itself off screen-coordinate deltas (immune to the
-  // window moving under the pointer). Double-click on bare space zooms (the macOS titlebar gesture).
+  // A native CSS app-region can't do this — it never delivers hover, killing the + button's
+  // hover-reveal on the same pixels — so the bar drags the window itself via pointer deltas.
   const onBarDown = (e: React.PointerEvent<HTMLElement>): void => {
     if (e.button !== 0 || (e.target as HTMLElement).closest('.tab, .tab-pinned, button')) return
     const el = e.currentTarget
@@ -230,17 +218,16 @@ function TabBarBody({
           <div className="tab-strip">
             {renderEntries.map(({ entry, ghost }, i) => (
               <Fragment key={entry.tab.id}>
-                {/* The segment before this tab closes with it — OR, when the leftmost tab is the ghost (it
-                    has no left segment), the segment before the first LIVE tab closes in its place. */}
+                {/* When the leftmost tab is itself the ghost (no left segment), the segment before
+                    the first LIVE tab closes in its place instead. */}
                 {i > 0 && (
                   <span
                     className={cx('tab-seg', (ghost || i === firstLive) && 'is-closing')}
                     aria-hidden
                   />
                 )}
-                {/* The ghost stays the SAME component type as the live tab — a type swap would remount
-                    the DOM node, and a fresh node mounts already-collapsed (no exit slide). is-closing
-                    is pointer-inert, so the live handlers are unreachable on it. */}
+                {/* Same component type as a live tab — a type swap would remount the DOM node,
+                    losing the exit slide. is-closing makes it pointer-inert. */}
                 <DraggableUnpinnedTab
                   entry={entry}
                   active={!ghost && entry.tab.id === activeTabId}
@@ -268,9 +255,8 @@ function TabBarBody({
   )
 }
 
-/** A pinned tab: the compact entity icon (the nexus photo for Homepage, via EntityGlyph); the full
- *  name reveals on hover. The pin badge is pulled for now — position (left of the divider) +
- *  compactness carry the pinned reading. Not closable — unpin first. */
+/** The pin badge is pulled for now — position + compactness carry the pinned reading. Not
+ *  closable — unpin first. */
 function PinnedTab({
   entry,
   active,
@@ -307,8 +293,8 @@ function PinnedTab({
   )
 }
 
-/** The zone-registered tab. A ghost keeps this same wrapper (its id has left the zone's items, so the
- *  drag hook is inert on it) — the closing flag is the only difference. */
+/** A ghost keeps this same wrapper — its id has left the zone's items, so the drag hook is
+ *  naturally inert on it. */
 function DraggableUnpinnedTab(props: {
   entry: TabEntry
   active: boolean
@@ -321,7 +307,6 @@ function DraggableUnpinnedTab(props: {
   return <UnpinnedTab {...props} drag={drag} />
 }
 
-/** An unpinned tab: icon + ellipsizing label, the hover-fade ×, width-animated open/close. */
 function UnpinnedTab({
   entry,
   active,
@@ -341,9 +326,8 @@ function UnpinnedTab({
 }): React.JSX.Element {
   const isNewTab = entry.tab.target.kind === 'newtab'
   const title = isNewTab ? 'New Tab' : (entry.res?.title ?? '')
-  // A navigation that swaps this tab's CONTENT (Back/Forward, a genuine select replacing in place)
-  // slides the icon + label in from its direction, replayed per step via the seq-keyed remount. A tab
-  // SWITCH changes nothing here, so 'tab' stamps stay motionless on the label.
+  // A navigation that swaps this tab's CONTENT slides the icon+label in; a tab SWITCH
+  // (`source === 'tab'`) leaves it motionless.
   const slide = useSession((s) =>
     s.navSlide && s.navSlide.source !== 'tab' && s.navSlide.tabId === entry.tab.id
       ? s.navSlide
@@ -386,8 +370,7 @@ function UnpinnedTab({
         )}
         <OverflowScroll className={cx('tab-label', slideClass)}>{title}</OverflowScroll>
       </Fragment>
-      {/* The chip ×'s glyph + swallow behavior with a plain hover-fade — never the melt
-          (glass has no solid fill), never on pinned tabs. */}
+      {/* Plain hover-fade, never the chip melt — glass has no solid fill for it. */}
       <button
         type="button"
         className="tab-x"

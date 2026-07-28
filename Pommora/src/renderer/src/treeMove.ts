@@ -1,7 +1,6 @@
-// Optimistic tree patches: reflect a just-written move or create in the in-memory tree INSTANTLY —
-// the reload confirms canon a beat later (and heals any mismatch, since most-recent-wins). Pure: no
-// fs, no React. A request that can't be resolved here returns null → the caller skips optimism and
-// waits for the reload.
+// Reflects a just-written move or create in the in-memory tree INSTANTLY — the reload confirms
+// canon a beat later. A request that can't be resolved here returns null → the caller skips
+// optimism and waits for the reload.
 
 import type { MutateRequest, StateOrderKey } from '@shared/mutate'
 import type {
@@ -21,8 +20,7 @@ const parentOf = (path: string): string => {
 }
 const joinPath = (parent: string, name: string): string => (parent ? `${parent}/${name}` : name)
 
-/** Rewrite a moved subtree's paths: every descendant's `path` swaps the old prefix for the new.
- *  The ORIGINAL oldPath/newPath thread through the whole recursion — swapping against a child's
+/** The ORIGINAL oldPath/newPath thread through the whole recursion — swapping against a child's
  *  already-swapped path would re-prepend its segment and corrupt every grandchild. */
 function reparentPaths<T extends PageNode | SetNode | CollectionNode>(
   node: T,
@@ -135,8 +133,7 @@ export function relocateNodeInTree(
   return null
 }
 
-/** Insert a just-created entity provisionally so its row (icon + rename input) appears before the
- *  confirming reload. Handles the create ops whose result lands in the tree; null → no optimism. */
+/** Its row (icon + rename input) appears before the confirming reload. */
 export function insertCreatedInTree(
   tree: NexusTree,
   req: MutateRequest,
@@ -206,9 +203,8 @@ export function insertCreatedInTree(
   return null
 }
 
-/** Optimistic contexts patch for the registry ops — titles/colors/order land instantly;
- *  a renamed folder's stale child paths settle on the confirming reload. null → no groups (or
- *  an op this fn doesn't own) → skip optimism. */
+/** Titles/colors/order land instantly; a renamed folder's stale child paths settle on the
+ *  confirming reload. */
 export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): NexusTree | null {
   const groups = tree.contexts
   if (!groups.length) return null
@@ -267,8 +263,7 @@ type TreeEntity =
   | CollectionNode
   | SpaceNode
 
-/** Apply `fn` to the entity at `path`, wherever it lives (a Context, a top collection, a
- *  user section, a nested set, a page). `fn` returns the replacement — or null to remove it. */
+/** `fn` returns the replacement — or null to remove it. */
 export function updateNodeInTree(
   tree: NexusTree,
   path: string,
@@ -377,7 +372,6 @@ function byOrder<T extends { id: string }>(arr: T[], order: string[]): T[] {
   )
 }
 
-/** Reorder a top-level group (top Collections) to the given id order. */
 export function reorderTopInTree(tree: NexusTree, _key: StateOrderKey, order: string[]): NexusTree {
   return { ...tree, collections: byOrder(tree.collections, order) }
 }

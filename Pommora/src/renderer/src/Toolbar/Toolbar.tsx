@@ -16,16 +16,11 @@ import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import './toolbar.css'
 
 type TrioPanel = 'navigation' | 'settings'
-/** A trio segment tagged with the panel it opens, so its beak is aimed by identity rather than by
- *  position — inserting or reordering a button can't silently misaim a dropdown. */
+/** Tagged by identity (not position) so inserting/reordering a button can't silently misaim its
+ *  dropdown's beak. */
 type TrioSegment = Segment & { panel?: TrioPanel }
 
-/**
- * The two persistent toolbar clusters, floated in the top window strip:
- * Back/Forward (leading) and the Navigation · Settings · Inspector trio (trailing).
- * The only always-in-view chrome; each button's behaviour/content depends on the
- * active view (Navigation + Settings are stub panels for now).
- */
+// Navigation + Settings are stub panels for now.
 export function Toolbar({
   inspectorOpen,
   onToggleInspector,
@@ -37,24 +32,21 @@ export function Toolbar({
   const [beaks, setBeaks] = useState<number[]>([])
   const trioRef = useRef<HTMLDivElement>(null)
   useDismiss(trioRef, () => setPanel(null), panel !== null)
-  // Each dropdown stays mounted through its retract animation before leaving the DOM.
   const navP = useExitPresence(panel === 'navigation')
   const settingsP = useExitPresence(panel === 'settings')
 
-  // Publish the pill's measured width so the ride math (toolbar.css) knows where the trio's left edge
-  // sits — it lands flush at the inspector's left corner. offsetWidth ignores the ride transform.
-  // The same pass measures each trio button's centre against the pill's right edge: the dropdowns hang
-  // right-aligned under the cluster, so that distance is the button's beak inset.
+  // Publishes the pill's width for the ride math in toolbar.css (offsetWidth ignores the ride
+  // transform). Also measures each button's centre against the pill's right edge — that distance
+  // is the button's beak inset.
   useEffect(() => {
     const el = trioRef.current
     if (!el) return
     const apply = (): void => {
-      // Published on the whole toolbar (not the trio or its group) so BOTH the right cluster's swallow
-      // transform and the tab-bar's right-edge condense read one --toolbar-swallow magnitude — the +
-      // stays flush against the swallowing cluster. CSS vars inherit downward from the common ancestor.
+      // Published on the whole toolbar, not the trio — CSS vars inherit downward, and both the
+      // right cluster's swallow transform and the tab-bar's condense need to read the one value.
       el.closest<HTMLElement>('.app-toolbar')?.style.setProperty('--trio-w', `${el.offsetWidth}px`)
-      // Both rects carry the cluster's ride transform, so their difference is free of it. The cover
-      // layer alone — the glass layer behind it holds a hidden duplicate of every button.
+      // Both rects carry the cluster's ride transform, so their difference cancels it out.
+      // Measures the cover layer alone — the glass layer behind holds a hidden duplicate of every button.
       const right = el.getBoundingClientRect().right
       const next = Array.from(
         el.querySelectorAll<HTMLElement>('.toolbar-trio-cover button'),
@@ -77,8 +69,6 @@ export function Toolbar({
 
   const goBack = useSession((s) => s.goBack)
   const goForward = useSession((s) => s.goForward)
-  // Back/Forward act on the ACTIVE tab's own history; a pinned/newtab active tab (not in `tabs`)
-  // carries none, so both disable.
   const canGoBack = useSession((s) => {
     const a = activeUnpinnedTab(s.tabs, s.activeTabId)
     return !!a && a.navIndex > 0
@@ -88,7 +78,6 @@ export function Toolbar({
     return !!a && a.navIndex < a.navStack.length - 1
   })
 
-  // Back/Forward walk the store's navigation history (disabled at each end).
   const backForward: Segment[] = [
     { icon: 'chevron-left', title: 'Back', onClick: goBack, disabled: !canGoBack },
     { icon: 'chevron-right', title: 'Forward', onClick: goForward, disabled: !canGoForward },
@@ -110,7 +99,6 @@ export function Toolbar({
     },
     { icon: 'panel-right', title: 'Inspector', onClick: onToggleInspector, active: inspectorOpen },
   ]
-  // Undefined until the trio is measured (and for an untagged segment) — NotchedPane centres the beak.
   const beakFor = (p: TrioPanel): number | undefined => beaks[trio.findIndex((s) => s.panel === p)]
 
   return (

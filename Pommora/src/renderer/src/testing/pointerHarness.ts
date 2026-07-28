@@ -1,12 +1,8 @@
-// Shared jsdom stubs for driving pointer-gesture tests. jsdom has no PointerEvent constructor,
-// measures every rect as zero, and lacks pointer capture — these helpers stub exactly those
-// three seams so dnd-surface tests can assert STATE (mount/mute/clear/commit callbacks).
-// Geometry truth stays with the CDP passes, never jsdom.
+// jsdom has no PointerEvent constructor, measures every rect as zero, and lacks pointer capture —
+// these stubs cover exactly those three gaps. Geometry truth stays with the CDP passes, never jsdom.
 
 type PointerOpts = { x?: number; y?: number; button?: number; pointerId?: number }
 
-/** Dispatch a pointer-typed event built on MouseEvent (jsdom can't construct PointerEvent),
- *  patched with the pointer fields the gesture code reads. */
 export function firePointer(
   target: EventTarget,
   type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel',
@@ -24,7 +20,6 @@ export function firePointer(
   target.dispatchEvent(e)
 }
 
-/** Give an element a fixed, non-zero bounding rect. */
 export function stubRect(
   el: Element,
   r: { top: number; bottom: number; left?: number; right?: number },
@@ -45,7 +40,6 @@ export function stubRect(
   el.getBoundingClientRect = () => rect
 }
 
-/** Install no-op pointer capture on every element (jsdom throws "not implemented"). */
 export function stubPointerCapture(): void {
   Object.assign(HTMLElement.prototype, {
     setPointerCapture: () => {},

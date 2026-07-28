@@ -9,23 +9,20 @@ import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
 import './settingsWindow.css'
 
-// KNOB — a settings sheet opens smaller than a content window, and its rail bounds.
 const WIN = { minW: 460, minH: 340, defW: 720, defH: 520 }
 const RAIL = { min: 130, def: 170, max: 240 }
 
-// The bare backgrounds a window-move may start from, beyond the pane's own.
 const DRAG_SURFACES = '.settings-body, .settings-rail-list, .settings-section, .settings-heading'
 
-/** The category rail. One entry for now; the roster is where new panels register. */
+/** One entry for now — new panels register here. */
 const CATEGORIES = [{ key: 'general', label: 'General', icon: 'sliders-horizontal' }] as const
 type CategoryKey = (typeof CATEGORIES)[number]['key']
 
-/** A per-nexus boolean knob: label, the key it writes, and whether absent reads as on. */
 interface Toggle {
   key: keyof Personalization
   label: string
   hint: string
-  /** Absent means ON for a few keys (the default is the enabled behaviour). */
+  /** Absent reads as ON for a few keys. */
   defaultOn?: boolean
 }
 
@@ -76,7 +73,6 @@ function SettingsWindowBody({ closing }: { closing: boolean }): React.JSX.Elemen
       onClose={closeSettings}
       bounds={WIN}
       dragSurfaces={DRAG_SURFACES}
-      // No toolbar band: the category rail runs the window's full height, so only the × sits above it.
       toolbar="floating"
       className="settings-window"
       ariaLabel="Settings"
@@ -141,8 +137,7 @@ function ToggleRow({ toggle }: { toggle: Toggle }): React.JSX.Element {
       <Switch
         checked={on}
         ariaLabel={toggle.label}
-        // A knob whose default is ON stores only the OFF state, so an untouched nexus keeps a
-        // clean settings file — the no-empties discipline the rest of the block follows.
+        // Stores only the OFF state — an untouched nexus keeps a clean file (no-empties discipline).
         onChange={(next) =>
           setPersonalization(
             toggle.key,

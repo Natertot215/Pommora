@@ -11,19 +11,12 @@ import { AddBannerButton } from '../Detail/Banner/AddBannerButton'
 import '../Detail/Banner/Banner.css'
 import './navView.css'
 
-/** NavView — the new-tab page AND the empty state: a full-window gallery + search under a
- *  banner. The search bar IS the inline title — it sits in the banner-title slot over the NavView's
- *  own cover when one is set (`.nexus/navview.json`), else the homepage's as the default, or a
- *  banner-less header when neither exists. Shares NavGallery with NavWindow, never a merged shell. */
 export function NavView(): React.JSX.Element {
   // resolvedRecents arrives already pin-deduped (useNavData filters against the pin set).
   const { resolvedRecents, resolvedPins, search, go } = useNavData()
-  // The List/Gallery toggle lives in the detail-pane Subfield (the `none` viewType item), driving this.
   const viewMode = useSession((s) => s.navViewMode)
-  // List mode is reorderable (pins + recents drag on the shared drop-line, like NavWindow). Recents
-  // are already pin-deduped, so a drop reorders them directly and commits the order wholesale; pins
-  // reorder through NavList's own store hook. (NavWindow's freeze-at-open is for its persistent pane —
-  // NavView opens fresh each time, so it isn't needed.)
+  // NavWindow's freeze-at-open is for its persistent pane — NavView opens fresh each time, so it
+  // isn't needed here.
   const setRecentsOrder = useSession((s) => s.setRecentsOrder)
   const reorderRecent = (activeKey: string, overKey: string): void => {
     const from = resolvedRecents.findIndex((r) => r.key === activeKey)
@@ -43,8 +36,8 @@ export function NavView(): React.JSX.Element {
   const open = (target: NavTarget): void => go(target)
   const openNew = (target: NavTarget): void => go(target, undefined, { newTab: true })
 
-  // Change always writes the NavView's OWN banner; Remove clears only that override (falling back to
-  // the homepage default), so it's offered only while an override exists — never the homepage's.
+  // Remove clears only NavView's own override (falls back to the homepage banner) — offered only
+  // while an override exists.
   const changeBanner = async (): Promise<void> => {
     const dataUrl = await window.nexus.pickImage()
     if (dataUrl) await mutate({ op: 'setBanner', path: '', kind: 'navview', dataUrl })
@@ -82,9 +75,8 @@ export function NavView(): React.JSX.Element {
         </div>
       )}
       <div className="nav-view-scroll edge-fade">
-        {/* Search stays in gallery cards regardless of the toggle (filtered items only, no pins section;
-            unresolvable agenda matches can't be cards and drop out). The viewType toggle switches only
-            the recents/empty view between List and Gallery. */}
+        {/* Search always renders Gallery cards (frozen layout) — the toggle governs only the
+            recents/empty view. */}
         {results ? (
           <NavGallery
             pins={[]}

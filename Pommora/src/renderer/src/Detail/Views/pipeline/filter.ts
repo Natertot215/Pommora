@@ -257,7 +257,7 @@ function textValue(v: PropertyValue): string | null {
   }
 }
 
-// ---- per-type evaluators (mirror Swift FilterEvaluator; unmatched op → no-op pass) ----
+// Mirrors Swift FilterEvaluator; an unmatched op is a no-op pass.
 
 function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
   const n = v.kind === 'number' ? v.value : null

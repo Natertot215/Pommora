@@ -13,8 +13,7 @@ import '../Tabs/tabStrip.css'
 import './previewTabStrip.css'
 
 const BASE_MS = Number.parseInt(duration.base, 10)
-/** The tab close/open width window — the toolbar strip's EXIT_MS twin (base + the segment's
- *  delayed exit). */
+/** The toolbar strip's EXIT_MS twin. */
 const EXIT_MS = BASE_MS + Number.parseInt(duration.fast, 10)
 const TAB_ICON = 12
 
@@ -23,11 +22,9 @@ interface Entry {
   res: ResolvedNav | null
 }
 
-/** The preview toolbar's center region — the morph owner. One tab renders the centered
- *  breadcrumb title (inert); a second tab's birth swaps it for the left-aligned strip on the
- *  shared tab-open motion (tabs grow via tabStrip.css's @starting-style; the title fades/slides
- *  left on the same tokens, held through its exit). Ghost-closing keeps the strip mounted so the
- *  last collapse plays before the title returns. */
+// The morph owner between the centered breadcrumb title and the left-aligned strip on the shared
+// tab-open motion. Ghost-closing keeps the strip mounted so the last collapse plays before the
+// title returns.
 export function PreviewTabStrip({
   index,
   title,
@@ -87,7 +84,6 @@ export function PreviewTabStrip({
   const heldTitle = useRef(title)
   if (!showStrip) heldTitle.current = title
 
-  // The active tab scrolls into view on switch (the toolbar's rule).
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!activeTabId) return
@@ -106,9 +102,7 @@ export function PreviewTabStrip({
       <div className="pgpreview-tabwrap">
         {showStrip && (
           <div className="pgpreview-tabscroll edge-fade-x" ref={scrollRef}>
-            {/* Page tabs drag-reorder within the zone (the toolbar strip's pattern); the map
-                sentinel and ghosts stay out of the item set, so they're drag-inert and
-                un-landable — the model refuses them besides. */}
+            {/* The map sentinel and ghosts stay out of the item set — drag-inert and un-landable. */}
             <SortableZone
               items={renderEntries
                 .filter((e) => !e.ghost && e.entry.tab.target.kind === 'page')
@@ -162,8 +156,8 @@ function PreviewTabItem({
 }): React.JSX.Element {
   const isMap = entry.tab.target.kind === 'navwindow'
   const label = isMap ? 'Navigation' : (entry.res?.title ?? '')
-  // Nav flavor only: a page tab whose own icon is ALSO the map glyph renders its type icon
-  // instead — nothing masquerades as the perma-pinned NavWindow tab.
+  // A page tab whose own icon is ALSO the map glyph renders its type icon instead — nothing
+  // masquerades as the perma-pinned NavWindow tab.
   const res =
     navFlavor && entry.res?.icon === 'map'
       ? { ...entry.res, icon: defaultEntityIcon('page') }
@@ -199,8 +193,7 @@ function PreviewTabItem({
       ) : (
         <Icon name={isMap ? 'map' : 'file'} size={TAB_ICON} className="tab-icon" />
       )}
-      {/* The map tab is icon-only — the label is its tooltip. A long title eclipses rather
-          than hard-cutting, on the same box every other truncating surface uses. */}
+      {/* The map tab is icon-only — the label is its tooltip. */}
       {!isMap && <OverflowScroll className="tab-label">{label}</OverflowScroll>}
       {/* The map tab is perma-pinned — no ×; the model refuses the close anyway. */}
       {!isMap && (
