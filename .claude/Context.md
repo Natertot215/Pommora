@@ -33,7 +33,7 @@ The three-tier taxonomy was the last fixed thing in an otherwise user-defined sy
 
 The dangerous parts got their own machinery: renames cascade titles across all three file scopes under a pending-rename journal that replays on open (a crash forward-completes instead of letting the repair pass eat valid tags), the migration bumps its version last so a kill re-runs the remainder, and every sidecar RMW goes through one strict read chokepoint that fails rather than clobbers a transiently-unreadable file. Migration re-entry keys on the **version alone**, never on the presence of tier directories, because an earlier step consumes those.
 
-A Space became the second BlockHost — `_space.json` carries its block document, tiles live in its folder, and the doc load keys on host identity rather than kind. The sidebar renders every registry Context as its own disclosure of Space rows, with scoped creation landing directly in a rename field and group headers dragging to reorder. → [[Contexts & Spaces — Decision Log]] · [[Contexts & Spaces — Implementation Plan]] · [[Contexts]].
+A Space became the second BlockHost — `_space.json` carries its block document, tiles live in its folder, and the doc load keys on host identity rather than kind. The sidebar renders every registry Context as its own disclosure of Space rows, with scoped creation landing directly in a rename field and group headers dragging to reorder. → [[Contexts]].
 
 #### Closing the tierN era (07-27)
 

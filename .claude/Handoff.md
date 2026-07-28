@@ -37,7 +37,6 @@ Nine defects were fixed in total, seven of them pre-existing and unreported. The
 
 **Session Pointers**
 
-- **`Planning//Feature-Doc Audit — Open Rulings.md`** — the questions the audit couldn't answer without Nathan, each with its conflict and options.
 - **`Planning//Open Code Findings.md`** — verified, unactioned findings with the `file:line` each was confirmed at.
 - **The filter pipeline** — `Detail/Views/pipeline/`: `filter.ts` (abstain model — `null` abstains, only `false` excludes), `group.ts` (`pruneEmptyGroups`), `resolveView.ts` (the one layer that knows a filter actually bit).
 - **`main/ipc.ts`** — `handleEnvelope` and `handleWindowMenu`, the two shapes every IPC handler now takes.
