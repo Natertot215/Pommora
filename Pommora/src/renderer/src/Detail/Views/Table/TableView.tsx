@@ -534,9 +534,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }
   const colAlign = (id: string): ColumnAlign =>
     alignOverride[id] ?? alignFor(id, schema, liveView, contextIds)
-  // A column header's type glyph, gated by the per-view Column Icons toggle (`hide_column_icons`),
-  // which defaults ON (icons hidden). Context columns wear the context glyph; a schema-less column
-  // (unknown type) gets none.
+  // A column header's glyph, gated by the per-view Column Icons toggle (`hide_column_icons`), which
+  // defaults ON (icons hidden). A Context column wears the Context's OWN icon — a shared type glyph
+  // would render every Context identically — and a schema-less column (unknown type) gets none.
   const headerIcon = (id: string): React.ReactNode => {
     if (liveView.hide_column_icons ?? true) return null
     // Created At has a reserved column but no PropertyType, so it carries no registry glyph — give it
@@ -545,6 +545,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       return (
         <span className="col-header-icon">
           <Icon name="clock-plus" size={13} />
+        </span>
+      )
+    }
+    const contextIcon = ctx?.contexts.get(id)?.icon
+    if (contextIcon) {
+      return (
+        <span className="col-header-icon">
+          <Icon name={contextIcon} size={13} />
         </span>
       )
     }
