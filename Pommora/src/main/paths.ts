@@ -67,7 +67,6 @@ export const NEXUS_CONFIG_FILES = {
   state: 'state.json',
   homepage: 'homepage.json',
   navview: 'navview.json',
-  sidebarSections: 'sidebar-sections.json',
   properties: 'properties.json',
   navFavorites: 'navFavorites.json',
 } as const

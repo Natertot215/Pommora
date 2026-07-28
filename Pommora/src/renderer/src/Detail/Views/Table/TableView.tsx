@@ -99,7 +99,7 @@ export function resolveContainerSchema(
   source: CollectionNode | SetNode,
 ): PropertyDefinition[] {
   if (source.kind === 'collection') return source.properties ?? []
-  const collections = [...tree.collections, ...tree.userSections.flatMap((s) => s.collections)]
+  const collections = tree.collections
   const owns = (sets: SetNode[] | undefined): boolean =>
     (sets ?? []).some((s) => s.id === source.id || owns(s.sets))
   return collections.find((c) => owns(c.sets))?.properties ?? []

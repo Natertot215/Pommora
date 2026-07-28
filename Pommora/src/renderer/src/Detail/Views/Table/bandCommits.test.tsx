@@ -158,7 +158,6 @@ beforeEach(() => {
   useSession.setState({
     tree: {
             collections: [],
-      userSections: [],
       contexts: [],
       labels: {
         area: pair('Area', 'Areas'),

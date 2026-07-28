@@ -167,7 +167,6 @@ beforeEach(() => {
         },
       ],
       collections: [],
-      userSections: [],
       labels: {
         area: pair('Area', 'Areas'),
         topic: pair('Topic', 'Topics'),

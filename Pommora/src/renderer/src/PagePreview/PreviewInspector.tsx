@@ -38,7 +38,7 @@ import { useSession, type PreviewTarget } from '../store'
 /** The page's owning Collection by path prefix — schema lives only on Collections. */
 const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition[] => {
   if (!tree) return []
-  const all = [...tree.collections, ...tree.userSections.flatMap((s) => s.collections)]
+  const all = tree.collections
   return all.find((c) => path.startsWith(`${c.path}/`))?.properties ?? []
 }
 

@@ -248,12 +248,6 @@ export interface CollectionNode extends PathNode {
   viewStyle?: ViewStyle
 }
 
-export interface UserSection {
-  id: string
-  label: string
-  /** Top-level Collections grouped into this user section. */
-  collections: CollectionNode[]
-}
 
 /** A user-facing entity name in both forms (mirrors Swift `LabelPair`). */
 export interface LabelPair {
@@ -297,10 +291,9 @@ export interface NexusTree {
   navView: { banner?: string }
   /** Registry-backed Context groups in registry order, each with its Spaces ([] on a
    *  raw/unmigrated tree — the open path migrates + seeds before anything renders). */
+  collections: CollectionNode[]
   contexts: ContextGroup[]
   /** Ungrouped top-level Collections (those not assigned to a user section). */
-  collections: CollectionNode[]
-  userSections: UserSection[]
   labels: NexusLabels
   /** Resolved app accent from .nexus/settings.json (defaults to DEFAULT_ACCENT). */
   accent: AccentSetting

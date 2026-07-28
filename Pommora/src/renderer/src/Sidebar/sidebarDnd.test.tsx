@@ -30,7 +30,6 @@ const tree = {
       ],
     },
   ],
-  userSections: [],
   contexts: [],
 } as unknown as NexusTree
 
@@ -145,7 +144,6 @@ describe('sidebar drag — page↔Set seam', () => {
         ],
       },
     ],
-    userSections: [],
     contexts: [],
   } as unknown as NexusTree
 
@@ -224,7 +222,6 @@ describe('sidebar drag — page↔Set seam', () => {
           pages: [],
         },
       ],
-      userSections: [],
       contexts: [],
     } as unknown as NexusTree
     await act(async () => {

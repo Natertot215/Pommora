@@ -50,7 +50,7 @@ function pagePickerItems(
     icon: iconNameOr(c.icon, defaultEntityIcon('collection', defaultIcons)),
     submenu: [...c.sets.map(setItem), ...c.pages.map(pageItem)],
   })
-  return [...tree.collections, ...tree.userSections.flatMap((u) => u.collections)].map(
+  return tree.collections.map(
     collectionItem,
   )
 }
@@ -81,7 +81,7 @@ function viewPickerItems(
       })),
     ],
   })
-  return [...tree.collections, ...tree.userSections.flatMap((u) => u.collections)].map(
+  return tree.collections.map(
     collectionItem,
   )
 }
@@ -131,7 +131,6 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
     }
     for (const c of [
       ...(tree?.collections ?? []),
-      ...(tree?.userSections ?? []).flatMap((u) => u.collections),
     ])
       addCol(c)
     return map

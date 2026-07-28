@@ -45,7 +45,6 @@ function tree(): NexusTree {
     navView: {},
     contexts: [],
     collections: [notes, work],
-    userSections: [],
     labels: DEFAULT_LABELS,
     accent: 'lavender',
     timeFormat: 'twelveHour',
