@@ -56,8 +56,7 @@ describe('ignoredUnder', () => {
 
 describe('isNavPath', () => {
   const root = '/nexus'
-  it('matches the nav sidecars and the pins dir (nav-only refresh, no tree walk)', () => {
-    expect(isNavPath(root, '/nexus/.nexus/navRecents.json')).toBe(true)
+  it('matches the favorites file and the pins dir (nav-only refresh, no tree walk)', () => {
     expect(isNavPath(root, '/nexus/.nexus/navFavorites.json')).toBe(true)
     expect(isNavPath(root, '/nexus/.nexus/pins/page-abc.json')).toBe(true)
   })

@@ -4,13 +4,16 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { writeFile, mkdir } from 'node:fs/promises'
 import type { PinEntry, RecentEntry } from '@shared/types'
+import { openSessionDb, closeSessionDb } from '../sessionDb'
 import { readPins, writePin, removePin, pinFileName, loadOrMigratePins } from './pinsState'
 
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-pins-'))
+  openSessionDb(root)
 })
 afterEach(async () => {
+  closeSessionDb()
   await rm(root, { recursive: true, force: true })
 })
 
@@ -45,9 +48,13 @@ describe('pinsState', () => {
     expect((await readPins(root)).map((p) => ('id' in p ? p.id : ''))).toEqual(['z', 'a', 'b'])
   })
 
+  // Legacy recents arrive as the pre-nexus.db sidecar; reopening lifts them into the database,
+  // which is where loadOrMigratePins reads them from.
   const writeRecents = async (entries: RecentEntry[]): Promise<void> => {
+    closeSessionDb()
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(join(root, '.nexus', 'navRecents.json'), JSON.stringify(entries), 'utf8')
+    openSessionDb(root)
   }
 
   it('migrates legacy pinned recents on first load (dir absent), order-preserving', async () => {

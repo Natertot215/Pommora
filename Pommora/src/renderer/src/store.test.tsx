@@ -462,7 +462,7 @@ describe('store — recents reorder + batched close', () => {
     seed({ recents: [a, b, c] })
     useSession.getState().reorderRecent(navKey(a), navKey(c)) // drop a onto c's slot
     expect(useSession.getState().recents).toEqual([b, c, a])
-    expect(savedRecents()).toHaveBeenCalledWith([b, c, a], true) // immediate write, like the pin toggle
+    expect(savedRecents()).toHaveBeenCalledWith([b, c, a])
   })
 
   it('reorderRecent is a no-op on same/unknown key (no state churn, no write)', () => {

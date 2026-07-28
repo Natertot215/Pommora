@@ -1066,7 +1066,7 @@ export const useSession = create<SessionState>((set, get) => {
       const next = removeRecentByKey(get().recents, key)
       if (next === get().recents) return
       set({ recents: next })
-      void window.nexus.nav.saveRecents(next, true)
+      void window.nexus.nav.saveRecents(next)
     },
     reorderRecent: (activeKey, overKey) => {
       const recents = get().recents
@@ -1077,7 +1077,7 @@ export const useSession = create<SessionState>((set, get) => {
       const [moved] = next.splice(from, 1)
       next.splice(to, 0, moved)
       set({ recents: next })
-      void window.nexus.nav.saveRecents(next, true)
+      void window.nexus.nav.saveRecents(next)
     },
     setRecentsOrder: (keys) => {
       const s = get()
@@ -1087,7 +1087,7 @@ export const useSession = create<SessionState>((set, get) => {
       const next = [...s.recents.filter((r) => !pos.has(navKey(r))), ...listed]
       if (next.every((r, i) => r === s.recents[i])) return
       set({ recents: next })
-      void window.nexus.nav.saveRecents(next, true)
+      void window.nexus.nav.saveRecents(next)
     },
     agendaSnapshot: null,
     ensureAgendaSnapshot: async () => {
