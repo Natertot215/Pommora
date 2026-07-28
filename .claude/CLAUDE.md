@@ -16,7 +16,7 @@ Pommora is a personal management app based on Nathan’s frustration with modern
 - **Properties:** the nexus-wide typed attributes that collections inherit, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use. 
 - **Connections:** inline `[[Title]]` colored-text links that live in a Page's Markdown body (the canonical source) and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix.
 
-**Files are canonical for content.** Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, and container sidecars are JSON; an entity's kind comes from its folder's sidecar, not the extension. Foreign keys are preserved on every write. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development — but legibility is a claim about *content*, not about every byte the app stores: per-machine chrome and derived caches belong in `nexus.db`, not in hand-readable JSON. A **content** index — the one Linked-From, backlinks and full-text search all wait on — is unbuilt, and gets written alongside the query layer that reads it.
+**Files are canonical for content.** Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, and container sidecars are JSON; an entity's kind comes from its folder's sidecar, not the extension. Foreign keys are preserved on every write. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development — but legibility is a claim about *content*, not about every byte the app stores: per-machine chrome and derived caches belong in `nexus.db`, not in hand-readable JSON, and the line for content runs at assignment — a property definition may move there, an assignment or a value may not. A **content** index — the one Linked-From, backlinks and full-text search all wait on — is unbuilt, and gets written alongside the query layer that reads it.
 
 ### Stack
 
@@ -35,7 +35,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; don't add unrequested complexity.
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full rebuild / re-walk when an incremental or cached update works — cache, memoize, snapshot, subscribe narrowly. It's THE lag source.
 - **Never** reference plans, decision logs, or any other session-dependent phrasing in documentation or code comments; **Never** write comments that restate what the code clearly shows. 
-- **Never** assume a locked decision within the docs is truly absolute 
+- **Never** assume locked decisions are above questioning — never implement otherwise unless you explicitly state the conflicting state, find the evidence to support the change, and Nathan gives an explicit sign-off. 
 - **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they never restate exact code values. Name the token and its treatment ("the red solid at a low opacity"), never the literal `#hex` / `%` / line-for-line code stays in the code itself. The same discipline must be held true equally to code comments.
 
 #### Design Rules
