@@ -62,7 +62,7 @@ Every sidecar's field shape is canonical in `src//shared//schemas.ts`.
 
 **No wrapper folders.** Page Collections and the Tasks / Events singletons all live as siblings at the nexus root — there is no `Pages/` or `Agenda/` container folder.
 
-**Agenda is discriminated by config sidecar, never by name.** A Tasks / Events singleton is *only* the folder carrying `_taskconfig.json` / `_eventconfig.json`; folder names (`Tasks` / `Events`) are renameable defaults, not reserved. Every collection-discovery path — adoption, the read walk, on-creation — skips a folder *iff* it carries an agenda config sidecar, so a user could even name a Page Collection "Tasks" or "Events" and it's correctly a Collection. No name is ever reserved.
+**Agenda is discriminated by config sidecar, never by name.** A Tasks / Events singleton is *only* the folder carrying `_taskconfig.json` / `_eventconfig.json`; the folder names are renameable defaults. Every collection-discovery path skips a folder iff it carries an agenda config, so a Page Collection named "Tasks" is still a Collection. No name is ever reserved.
 
 **An agenda item's own kind is its filename suffix.** `.task.json` and `.event.json` are the on-disk task-vs-event discriminator, deriving both the kind and the title, and load-bearing in the read walk and the index build.
 
@@ -74,7 +74,7 @@ Every sidecar's field shape is canonical in `src//shared//schemas.ts`.
 
 > **Pending — trash restore surface.** Nothing browses or restores the trash yet; the path record it needs is on disk.
 
-**User folder exclusion.** Beyond the built-in skips (dot/underscore-prefixed + `node_modules`), the user can exclude arbitrary folders via `excluded_folders` on `settings.json` — anchored, nexus-relative paths Pommora ignores *completely* at any depth: never adopted, shown, indexed, walked, or auto-tagged. One subtractive filter (whole-segment, case-insensitive + NFC, root-anchored) loads directly from disk, so it works in the index-rebuild pass that runs before the per-Nexus environment exists. Internal `.nexus/` Context reads run the same filter; root-anchoring is what keeps an ordinary exclusion from reaching them. Editing UI is deferred to Settings.
+**User folder exclusion.** Beyond the built-in skips, `excluded_folders` on `settings.json` takes anchored nexus-relative paths Pommora ignores *completely* at any depth — never adopted, shown, indexed, walked, or auto-tagged. The filter is subtractive and root-anchored, which is what keeps an ordinary exclusion from reaching the internal `.nexus/` reads that run through it too. Editing UI is deferred to Settings.
 
 ---
 
@@ -90,17 +90,15 @@ Mutations are separate by construction: the write path never runs inside a read,
 
 #### SQLite index — regeneratable scaffolding
 
-The index lives at `<nexus>/.nexus/index.db`, travelling with the Nexus so a moved or renamed Nexus keeps it without re-pathing. Context links live in the `context_links` table; `connections` carries body links from both page bodies and markdown blocks. DDL is canonical in `src//main//index//schema.ts`.
+The index lives at `<nexus>/.nexus/index.db`, travelling with the Nexus so a moved or renamed one keeps it without re-pathing. DDL is canonical in `src//main//index//schema.ts`.
 
-**Fully regeneratable.** The index is stamped with a `schema_version`; on open a mismatch force-deletes + rebuilds the whole DB — no per-user data migration. Losing the file just means a rebuild on next open.
+**Fully regeneratable.** A schema-version mismatch on open force-deletes and rebuilds the whole database rather than migrating it, and the version is stamped only after a rebuild succeeds, so a failed one retries next launch instead of locking in an empty index. Losing the file costs a rebuild, nothing more.
 
-**Launch-tail indexing contract.** On launch the index rebuilds **only** when the schema-version handshake flags it — there is no unconditional launch scan. The version is stamped only *after* a rebuild succeeds, so a failed rebuild retries next launch instead of locking in an empty index.
+**No query consumer — the index is write-only.** Nothing reads it: there is no query facade, and the only statements outside the write layer are the version handshake. Everything the product needs is answered off the in-memory tree instead. Writing that facade is the open architectural task, and it gates the features with no other route — Linked-from, backlinks, and full-text search.
 
-**No query consumer — the index is write-only.** Nothing in the app reads the index: there is no query facade, and the only statements issued against it outside the write layer are the schema-version handshake. Everything the product currently needs is answered off the in-memory tree instead — filter, sort, and group run renderer-side over frontmatter, Connections resolve against a title map built from the page tree, and Context links resolve at walk assembly. Writing the query facade is the open architectural task, and it gates the features that have no other route: Linked-from, backlinks, and full-text search (navigation search is title-and-kind only today).
+**Update path — full rebuild per mutation.** There is no incremental updater. Every successful `mutate` op drops the database and cold-rebuilds it, re-walking the nexus and re-reading every page body. The body-autosave channel sits outside that contract, so a page typed into after a rebuild stays unindexed until the next mutation. This is a known violation of the never-rebuild-the-whole-Y rule, currently paid for no benefit; it resolves either by writing the query consumer that justifies it or by suspending the refresh until one exists.
 
-**Update path — full rebuild per mutation.** There is no incremental updater and no per-entity delete. Every successful `mutate` op drops `index.db` and cold-rebuilds it from the files, which re-walks the nexus and re-reads every page body. The body-autosave channel is outside that contract — it lands on disk without touching the index — so a page Finder-dropped or typed into after a rebuild stays out of the index until the next mutation. This is a known violation of the never-rebuild-the-whole-Y rule, currently paid for no benefit; it resolves either by writing the query consumer that justifies it, or by suspending the refresh until one exists.
-
-A burst of edits costs **one** rebuild, not one each: at most a single rebuild runs at a time with at most one more queued behind it, and the follow-up sees the settled files however many writes landed while it waited. That guard is a correctness requirement rather than a tuning knob — the rebuild deletes `index.db` before rewriting it, so two overlapping passes would unlink the file the first was still filling.
+A burst of edits costs **one** rebuild. At most a single rebuild runs at a time with one more queued behind it, and that follow-up sees the settled files. The guard is correctness rather than tuning: the rebuild deletes the database before rewriting it, so two overlapping passes would unlink the file the first was still filling.
 
 ---
 
@@ -114,19 +112,23 @@ Every file write goes through an atomic path — temp-file + rename, so a crash 
 
 - **Schema transaction** — multi-file commits that must succeed-or-fail as a unit: a Collection-scoped property delete or a lossy type change rewrites the sidecar *and* strips the property from every member page. Two-phase — stage every payload to a temp sibling, then rename each over its target, rolling the filesystem back on any failure. The nexus-wide property delete deliberately opts out: it snapshots every value to `.trash` first and runs per-file, so a partial run re-runs cleanly rather than rolling back.
 
-**Page save contract.** The editor binds only to `body`; frontmatter is held as a typed struct and re-serialized on save, so the editor can't destroy frontmatter. Autosave is owned by one **path-keyed flush registry** shared by every editor host (the page view, previews, embeds): edits schedule a debounced save per page path, any path can be flushed on demand, and everything flushes on host teardown, on a nexus switch, and on window close — so no host carries its own debounce and a page can never race two savers. Write mechanics → `// Features//Pages.md` § "Read + Write".
+**Page save contract.** The editor binds only to `body`, so it cannot destroy frontmatter — that's held as a typed struct and re-serialized on save. Autosave belongs to one **path-keyed flush registry** shared by every editor host: edits debounce per page path, any path flushes on demand, and everything flushes on teardown, nexus switch and window close. No host carries its own debounce, so a page can never race two savers. Write mechanics → `// Features//Pages.md` § "Read + Write".
 
 ---
 
 #### File-watcher
 
-External + out-of-band on-disk changes (Obsidian / vim / Finder / cloud-sync) propagate to the sidebar without a restart, via a recursive watch on the Nexus root — the SQLite index, `.trash`, dotfile cruft, and the user's `excluded_folders` all ignored at intake so their churn never costs a reconcile. **The watcher exists for external changes — the app's own writes must not re-trigger it.** Every in-app write records itself (both endpoints of a rename/move/trash: an exact-path window, plus a shorter prefix window so a moved folder's descendants are covered), and the watcher skips recorded paths at intake. That suppression is what holds the mutation cost to **exactly one walk per op** — the store's confirming reload — instead of a second watcher-triggered one. Between writes, authority is recency: the newest on-disk state wins. Events that survive intake debounce to a settle, then main re-derives the tree with a **verification walk**: every directory is enumerated and every file statted — the walk *is* the truth pass, so tree-vs-disk drift is unrepresentable — while file reads and YAML/JSON parses run only for entries whose `(mtime, size)` moved (the walk cache; a racy-window rule re-parses hot files so coarse-mtime volumes can't serve a stale hit). The fresh tree pushes whole over IPC and the renderer's structural sharing collapses echoes to zero re-renders. Identity survives an external rename because the id rides in the file itself (frontmatter / sidecar), with the deterministic adopted-id fallback for unstamped files. A container-scoped surgical reconcile remains the designed escalation if measured scale ever outgrows the stat sweep — the verification walk then becomes its fallback + verify pass. Decision record → `History.md`.
+Out-of-band changes — Obsidian, vim, Finder, cloud-sync — reach the sidebar without a restart, through a recursive watch on the Nexus root. The index, `.trash`, dotfile cruft and the user's `excluded_folders` are ignored at intake so their churn never costs a reconcile.
+
+**The watcher exists for external changes; the app's own writes must not re-trigger it.** Every in-app write records itself and the watcher skips recorded paths, which is what holds a mutation to exactly one walk — the store's confirming reload — instead of a second watcher-triggered one. Between writes, authority is recency: the newest on-disk state wins.
+
+Surviving events debounce to a settle, then main re-derives the tree with a **verification walk** — every directory enumerated, every file statted. The walk *is* the truth pass, so tree-vs-disk drift is unrepresentable; reads and parses run only for entries whose mtime or size moved. The fresh tree pushes whole over IPC, where structural sharing collapses echoes to zero re-renders. Identity survives an external rename because the id rides in the file itself.
 
 ---
 
 #### Adoption — opening any folder as a Nexus
 
-Opening a folder as a Nexus runs a stamp pass that gives every un-adopted entity a real ULID: a raw folder gets its sidecar, an externally-authored page gets a frontmatter `id`. Parents are stamped before children, so a Set's healed `parent_id` points at its parent's fresh id. Root folders holding content become Page Collections and everything nested becomes a Set; agenda singletons, excluded folders, hidden folders, and empty sidecar-less folders are left alone, and an unrecognized sidecar stays **inert on disk** beside the one Pommora writes. The pass runs silently and best-effort on every open, is idempotent, and is safe to re-run on partial state. Full per-shape detail → `// Features//Collections.md`.
+Opening a folder as a Nexus stamps every un-adopted entity with a real ULID: a raw folder gets its sidecar, an externally-authored page gets a frontmatter `id`. Parents are stamped before children, so a Set's healed `parent_id` points at its parent's fresh id. Root folders holding content become Page Collections and everything nested becomes a Set; agenda singletons, excluded and hidden folders, and empty sidecar-less folders are left alone, and an unrecognized sidecar stays inert beside the one Pommora writes. The pass is silent, best-effort, idempotent, and safe to re-run on partial state. Full per-shape detail → `// Features//Collections.md`.
 
 **Kind authority = the folder sidecar, not the extension.** A `.md` file's kind comes from its parent folder's sidecar (`_pagecollection.json` / `_pageset.json` → Page), never from frontmatter. Any kind-like frontmatter key is treated as preserved foreign frontmatter — carried by value, never written by Pommora. The one extension-borne kind is an agenda item's task-vs-event suffix.
 
