@@ -37,7 +37,6 @@
      (TabBar's onPointerDown → win:dragBy), so the same pixels hover AND drag. */
   -webkit-app-region: no-drag;
 }
-/* Reveal-on-hover: the bar sits invisible until the pointer enters its strip. */
 .tab-bar.reveal-on-hover {
   opacity: 0;
   transition: opacity var(--duration-base) var(--ease-standard);
