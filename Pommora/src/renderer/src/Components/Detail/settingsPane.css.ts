@@ -74,8 +74,8 @@ export const anchor = style(dropdownAnchor('right', stack.local.lifted))
 // § TITLE HEADER — the root menu's icon + inline-rename title row
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** The icon + title header row. 2px left inset lands the icon-button's centered dash on the row-icon
- *  column (rows inset their 16px dash by 8px; the 28px button centers its dash at 6px → 2px + 6px = 8px). */
+/** The icon + title header row. Its 2px left inset aligns the icon-button's centered dash with the
+ *  row-icon column used elsewhere (which insets its dash by 8px). */
 export const header = style({
   display: 'flex',
   alignItems: 'center',
@@ -265,8 +265,8 @@ export const allHighlight = style({
 /** The option list container, below the InlineEditHeader (whose bottom pad sets the gap above). */
 export const optionEditor = style({ display: 'flex', flexDirection: 'column' })
 
-/** Status only — the grouped variant: one block per group (heading + its chips), stacked with a gap.
- *  Each block reuses `optionsRow` / `optionsLabel` / `optionList` / `optionRow` from the flat editor. */
+/** Status only — the grouped variant: one block per group (heading + its chips). Reuses `optionsRow` /
+ *  `optionsLabel` / `optionList` / `optionRow` from the flat editor. */
 export const statusGroups = style({
   display: 'flex',
   flexDirection: 'column',
@@ -274,7 +274,7 @@ export const statusGroups = style({
 })
 export const statusGroup = style({ display: 'flex', flexDirection: 'column' })
 
-/** The "Options" row — label left, the always-shown + right. */
+/** The "Options" row — its trailing + is always shown, unlike the per-group + below. */
 export const optionsRow = style({
   display: 'flex',
   alignItems: 'center',
@@ -319,7 +319,6 @@ export const optionList = style({
   vars: { '--chip-pad-x': `${OPTION.chipPadX}px` },
 })
 
-/** One option's row — chip left, the hover palette icon pushed to the right edge. */
 export const optionRow = style({
   display: 'flex',
   alignItems: 'center',
@@ -380,7 +379,7 @@ export const configRow = style({
 export const configLabel = style([text.control.emphasized, { color: c.label.control }])
 
 /** The Switch at pane density — shrunk to sit level with the emphasized labels + colour chip (the same
- *  0.8 the CalendarPicker uses for its picker-scale Switches). Zoom is the house density knob. */
+ *  scale the CalendarPicker uses for its picker-scale Switches). Zoom is the house density knob. */
 export const switchScale = style({ zoom: 0.8 })
 
 /** The colour control cluster — the clickable chip; the ColorPicker anchors below. */

@@ -1,6 +1,6 @@
 /* Table view — a container's pages as rows on a CSS grid: the header band and every data row share one
    column track set (--cols, set inline), so columns align without a <colgroup>. Group sections are
-   full-width bands off the column grid. Every number lives in table-tokens.css (§G). */
+   full-width bands off the column grid. Every number lives in table-tokens.css. */
 
 .table-view {
   /* Width is auto (not 100%) so the negative side margins WIDEN the box out to both glass edges (the
@@ -16,7 +16,7 @@
   --table-right-inset: var(--content-gutter);
   padding-left: var(--content-gutter);
   padding-right: var(--table-right-inset);
-  overflow-x: auto; /* columns scroll horizontally when they exceed the pane */
+  overflow-x: auto;
 }
 .table-view.overflowing {
   --table-right-inset: 0px;
@@ -65,7 +65,7 @@
 /* — Header — */
 .table-head {
   /* weight/size come from the text.callout.semibold alias on each .col-header — no raw font-weight here
-     (§G: typography via aliases only). */
+     (typography via aliases only). */
   background: var(--heading-fill);
   color: var(--heading-text);
   border-bottom: var(--heading-divider);
@@ -213,7 +213,7 @@
   opacity: var(--drag-muted);
 }
 
-/* Drop-line drag (B): the DnD wrapper (.table-dnd) is the line's positioning context — the accent line
+/* Drop-line drag: the DnD wrapper (.table-dnd) is the line's positioning context — the accent line
    + dot mark the exact slot while the picked-up row mutes in place; nothing displaces. */
 .table-dnd {
   position: relative;
@@ -340,7 +340,7 @@
   zoom: 0.8;
 }
 
-/* — Number bar look — the ProgressBar fills the cell width, vertically centered. */
+/* — Number bar look — */
 .cell-bar {
   display: flex;
   align-items: center;
@@ -389,7 +389,7 @@
      would square it. Zoom rides the row, the sticky pin the head — kept apart so zoom never distorts
      the sticky offset. */
   zoom: var(--zoom);
-  padding-top: var(--group-gap-top); /* inter-section gap */
+  padding-top: var(--group-gap-top);
   padding-bottom: var(
     --cell-padding-y
   ); /* matches the data-cell vertical padding — head-to-row gap */
@@ -406,7 +406,7 @@
   left: 0;
   display: inline-flex;
 }
-/* — Band drag (Phase 2) — the glyph is the drag surface; the picked-up band mutes in place and the
+/* — Band drag — the glyph is the drag surface; the picked-up band mutes in place and the
    shared drop line marks the slot (BandDnd's .band-dnd wrapper is its positioning context). A
    nestable Set band tints on middle-zone hover instead of showing a line. */
 .band-dnd {

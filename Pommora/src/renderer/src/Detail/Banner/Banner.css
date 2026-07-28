@@ -31,8 +31,8 @@
 .banner-title {
   position: absolute;
   bottom: 12px;
-  /* Every banner title sits on the tight --surface-banner-inset (12px), content and surface views alike
-     (Nathan's call) — the title hugs the block gutter even when the body carries the wider fold-gutter. */
+  /* Every banner title sits on the tight --surface-banner-inset, content and surface views alike — the
+     title hugs the block gutter even when the body carries the wider fold-gutter. */
   left: var(--surface-banner-inset);
   right: 28px;
   display: flex;
@@ -123,7 +123,7 @@
      Top pad clears the toolbar (glass-inset + 1px optical + toolbar-h) so the zone starts exactly at
      the toolbar's bottom edge, and the button centers vertically inside that zone (see .add-banner-strip). */
   --add-banner-zone: 44px;
-  /* Title on the unified 12px surface inset (matches the banner-image header's title). */
+  /* Title on the unified surface inset (matches the banner-image header's title). */
   padding: calc(var(--glass-inset) + 1px + var(--toolbar-h)) var(--content-inset-right) 14px
     var(--surface-banner-inset);
   /* Full-width divider below the title — content-views always carry it (banner or not), unlike

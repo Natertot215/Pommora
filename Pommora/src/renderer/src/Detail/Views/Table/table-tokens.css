@@ -10,10 +10,10 @@
   --zoom: 1; /* Standard (default); Compact = 0.9. One knob scales text + chips + padding + widths together. */
 
   /* — Cell spacing — */
-  --cell-padding-x: 12px; /* cell content padding, left + right */
-  --cell-padding-y: 6px; /* cell content padding, top + bottom (drives row height) */
-  --cell-icon-gap: 6px; /* gap between an icon and its label (title cell + group glyph) */
-  --chips-gap: 4px; /* gap between adjacent chips (multi-select / relation cells) */
+  --cell-padding-x: 12px;
+  --cell-padding-y: 6px; /* drives row height */
+  --cell-icon-gap: 6px; /* used by the title cell + group glyph */
+  --chips-gap: 4px; /* used by multi-select / relation cells */
   --row-indent: 22px; /* extra left-indent added per nesting depth (Set within Set, group members) */
   --loose-inset: 8px; /* title inset for ungrouped/loose rows — tucked left of the cell-padding-x column inset */
 
@@ -29,20 +29,20 @@
   /* — Heading row — the header band reads distinct from the body: a faint fill, dimmed control text, a
        heavier bottom seam, and short centered segment dividers between columns (vs the data rows'
        full-height hairlines). Each aliases a design-system token. — */
-  --heading-fill: var(--fill-quinary); /* faint band behind the header, sets it off the body */
+  --heading-fill: var(--fill-quinary);
   --heading-text: var(
     --label-control
-  ); /* header label colour — the global on-control label token */
+  ); /* the global on-control label token */
   --heading-divider: var(
     --border-heading
-  ); /* the heading↔body bottom seam (the global heading-seam token) */
-  --heading-segment: var(--label-tertiary); /* the short inter-column bar on the heading row */
-  --heading-segment-height: 16px; /* bar length — shorter than the row (segmented-control feel) */
-  --heading-segment-width: 1.5px; /* bar thickness */
-  --heading-padding-y: 8px; /* header vertical padding — sits the label off its top + bottom seams */
+  ); /* the global heading-seam token */
+  --heading-segment: var(--label-tertiary);
+  --heading-segment-height: 16px; /* shorter than the row — reads like a segmented control */
+  --heading-segment-width: 1.5px;
+  --heading-padding-y: 8px; /* clears the label off the top + bottom seams */
 
   /* — Group sections — */
-  --group-gap-top: 16px; /* vertical gap above a group header (separates sections) */
+  --group-gap-top: 16px;
   --subband-gap-top: var(
     --cell-padding-y
   ); /* a sub-group bucket header sits at data-row height, not band height */
