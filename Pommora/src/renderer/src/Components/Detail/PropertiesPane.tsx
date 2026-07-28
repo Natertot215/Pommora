@@ -9,6 +9,7 @@ import {
   type StatusGroup,
 } from '@shared/properties'
 import type { Option } from '@shared/optionModel'
+import type { Ack } from '@shared/result'
 import type { ColumnStyle } from '@shared/columnStyles'
 import type { CollectionNode, SetNode } from '@shared/types'
 import { useActiveView } from '../../Detail/Views/useActiveView'
@@ -45,7 +46,7 @@ import { twisty, twistyOpen } from '../../design-system/components/menu/menu.css
 
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
-type WriteResult = { ok: true } | { ok: false; error: string }
+type WriteResult = Ack
 
 /** The two drag regions: assigned rows on top, the bottom-pinned All Properties block below
  *  the elastic spacer. Lives outside PropertiesPane so rows never remount on its re-renders. */
