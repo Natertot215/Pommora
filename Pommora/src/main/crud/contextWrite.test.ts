@@ -13,6 +13,8 @@ import {
 } from './contextWrite'
 import { updateAgendaItem, updateAgendaProperty } from './agendaEntity'
 import { rawLayoutSchema } from '@shared/blocks'
+import { readBlockDoc } from '../blocks'
+import { openSessionDb, closeSessionDb } from '../sessionDb'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../paths'
 import { splitFrontmatter } from '../readNexus'
 
@@ -20,6 +22,7 @@ let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-ctxwrite-'))
   await mkdir(nexusDir(root), { recursive: true })
+  openSessionDb(root)
   await writeFile(
     contextsRegistryFile(root),
     JSON.stringify({
@@ -41,6 +44,7 @@ beforeEach(async () => {
   )
 })
 afterEach(async () => {
+  closeSessionDb()
   await rm(root, { recursive: true, force: true })
 })
 
@@ -90,9 +94,11 @@ describe('createSpace', () => {
     expect(typeof sc.id).toBe('string')
     expect(sc.icon).toBeUndefined()
     expect(sc.color).toBeUndefined()
-    expect(sc.blocks).toHaveLength(4)
-    expect(sc.blocks.every((b: { type: string }) => b.type === 'markdown')).toBe(true)
-    const layout = rawLayoutSchema.parse(sc.layout)
+    expect(sc.blocks).toBeUndefined() // the document is a row, not the sidecar's business
+    const doc = readBlockDoc({ kind: 'space', id: sc.id })
+    expect(doc.blocks).toHaveLength(4)
+    expect((doc.blocks as { type: string }[]).every((b) => b.type === 'markdown')).toBe(true)
+    const layout = rawLayoutSchema.parse(doc.layout)
     expect(layout.bands).toHaveLength(2)
     const files = await readdir(join(contextsDir(root), 'Projects', 'Sapphire'))
     expect(files.filter((f) => f.endsWith('.md'))).toHaveLength(4)

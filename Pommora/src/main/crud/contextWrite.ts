@@ -15,7 +15,8 @@ import {
   type ContextsRegistry,
 } from '@shared/contexts'
 import { reconcileContextKeys } from '@shared/contextResolve'
-import { NEW_TILE_H } from '@shared/blocks'
+import { blockHostKey, NEW_TILE_H } from '@shared/blocks'
+import { writeKey } from '../db/localState'
 import { agendaKindOf } from '@shared/agenda'
 import { CHIP_SOLID_COLORS, type SpaceNode } from '@shared/types'
 import { ok, fail, type Result } from '@shared/result'
@@ -279,12 +280,11 @@ export async function createSpace(
   const band = (a: string, b: string): Raw => ({
     node: { kind: 'row', ratios: [0.5, 0.5], children: [tile(a), tile(b)] },
   })
-  const seeded = await rmwJsonStrict(join(created.value.path, SPACE_SIDECAR), (cur) => ({
-    ...cur,
+  writeKey('blockDoc', blockHostKey({ kind: 'space', id: created.value.id }), {
     blocks: tileIds.map((tid) => ({ id: tid, type: 'markdown' })),
     layout: { bands: [band(tileIds[0], tileIds[1]), band(tileIds[2], tileIds[3])] },
-  }))
-  if (!seeded.ok) return seeded
+    locked: false,
+  })
   return ok({
     id: created.value.id,
     path: `.nexus/contexts/${def.title}/${name}`,
