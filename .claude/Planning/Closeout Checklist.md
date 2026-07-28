@@ -213,3 +213,36 @@ He asked for phone pings. Use `PushNotification` sparingly, since he is sleeping
   can't be made from the record.
 - **Not** for routine agent completions or progress. He is asleep; a ping he didn't need costs more
   than one he missed.
+
+## Pending-focus analysis — drafted for Context.md, keep the reasoning
+
+**1. Rethink where SQL belongs.** The index is built and maintained on every write and *nothing reads
+it* — that's a full nexus re-read per mutation buying nothing. Meanwhile nine `.nexus/` JSON files
+hold pure plumbing: fold state, active view per container, per-machine row order, heading-column
+toggles, a derived title cache, plus recents/favorites/tabs/previews. None is content Nathan
+authored, so none of it is what the legibility rule was written to protect.
+
+The interesting part isn't "move files into SQLite" — it's that **the JSON shape is imposing product
+constraints**. `viewOrders.json` exists purely to keep manual row order out of the synced sidecar.
+`linkTitles.json` is a cache pretending to be config. Fold state is per-heading-per-file, which JSON
+makes awkward enough that it's stored coarsely. A table would dissolve all three problems, and the
+same move gives the index its first real consumer — which is the thing backlinks, Linked-From,
+ContextView and full-text search have all been waiting on.
+
+Cost: it's an architecture session, not an afternoon. Payoff: it unblocks four features at once and
+removes the worst standing perf violation in the codebase.
+
+**2. In-view page creation.** Creating a page from inside a view is sparse across every surface.
+This is the one that most affects daily use — every other item is either invisible plumbing or a
+single surface. Wants a brainstorm loop, not a patch.
+
+**3. PagePreview hover.** Unbuilt. Self-contained, well-understood, no dependencies.
+
+**4. Cross-location card reordering.** Pending and wanted soon; scoped, mechanical.
+
+**5. NavWindow search ignores the Gallery toggle.** Diagnosed this session — a one-branch fix,
+already applied if the checklist above is ticked.
+
+Order argument: **1 is the highest leverage and the only one that unblocks other work**, but it's
+also the only one that needs a real design pass. If Nathan wants a session that ships something
+visible, 2 is the one he'd feel every day. 3 and 4 are the cheap wins.
