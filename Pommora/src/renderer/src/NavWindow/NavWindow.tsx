@@ -24,12 +24,10 @@ import { usePreviewWarm } from '../PagePreview/usePreviewWarm'
 import { NavGallery } from './NavGallery'
 import './navWindow.css'
 
-// KNOB — the favorites rail's resize bounds (width persists per window id).
 const RAIL = { min: 120, def: 200, max: 320 }
 
-// The bare backgrounds a window-move may start from, beyond the pane's own (matched against the
-// press target itself, so any child content — row internals, card bodies, the search input — never
-// arms a move).
+// Matched against the press target itself, so child content — row internals, card bodies, the
+// search input — never arms a window move.
 const DRAG_SURFACES =
   '.navwindow-content, .navwindow-rail, .navwindow-rail-list, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .navwindow-page, .navwindow-tabs, .pgpreview-tabwrap, .pgpreview-tabscroll, .pgpreview-tabstrip, .nav-list, .nav-gallery, .nav-gallery-grid'
 
@@ -45,20 +43,16 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const closeNav = useSession((s) => s.closeNav)
   const tree = useSession((s) => s.tree)
 
-  // Freeze the recents order at open — navigating while the pane stays open still records into the
-  // store's recents, but the visible list must NOT reshuffle placement under the cursor. Re-snapshots
-  // on reopen (the body remounts). Filtered against the LIVE pin set (pinning while open drops the
-  // card) AND live recents membership (a row-menu Remove drops it) — placement stays frozen either way.
+  // Placement freezes at open — new recents activity must not reshuffle the list under the cursor.
+  // Re-snapshots on reopen; still filtered against live pin/membership so a pin or removal drops out.
   const [frozenRecents, setFrozenRecents] = useState(resolvedRecents)
   const shownRecents = useMemo(() => {
     const pinned = new Set(resolvedPins.map((p) => p.key))
     const live = new Set(resolvedRecents.map((r) => r.key))
     return frozenRecents.filter((r) => live.has(r.key) && !pinned.has(r.key))
   }, [frozenRecents, resolvedPins, resolvedRecents])
-  // A drag is the ONE thing that bypasses the freeze — it's the deliberate reorder. The commit writes
-  // the SHOWN order wholesale (setRecentsOrder): the store's live order can lag the frozen view (a
-  // click mid-open re-fronts its entry), so an (active, over) splice against it would land elsewhere
-  // than the drop showed. Opening a page still leaves placement frozen until a reopen re-snapshots.
+  // A drag is the one thing that bypasses the freeze, and commits the SHOWN order wholesale — the
+  // store's live order can lag the frozen view, so splicing against it would land elsewhere than the drop showed.
   const setRecentsOrder = useSession((s) => s.setRecentsOrder)
   const reorderShownRecent = (activeKey: string, overKey: string): void => {
     const from = frozenRecents.findIndex((r) => r.key === activeKey)
@@ -74,9 +68,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const [query, setQuery] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
 
-  // The flavor-swap entrance: an open that came from a live page preview FLIPs from its stashed
-  // rect into place (the engulf pattern reversed). The css intro is cancelled pre-paint — one
-  // window, one motion; a plain open finds no stash and plays the normal scale-in.
+  // An open sourced from a live page preview FLIPs from its stashed rect; the css intro is
+  // cancelled pre-paint so only one motion plays.
   const rootRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const from = consumeWindowMorph()
@@ -96,29 +89,21 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       { duration: Number.parseInt(duration.base, 10), easing: easing.standard },
     )
   }, [])
-  // The inspector — PAGE TABS ONLY (Nathan's call): its button lives in the sliding page-tab
-  // chrome, its pane shares the preview's width slot, and it dies on the map return.
+  // The inspector is PAGE TABS ONLY (Nathan's call) — it dies on the map return.
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
   const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
-  // Selecting from the pane closes it, unless `navCloseOnSelect` is explicitly off (keep it open to browse).
   const closeOnSelect = useSession((s) => s.tree?.personalization.navCloseOnSelect !== false)
   const onSelected = closeOnSelect ? closeNav : undefined
   const goClose = (target: NavTarget): void => go(target, onSelected)
-  // The row/card menu's "Open in New Tab" — same reconcile + close-on-select pipeline as a click.
   const goNewTab = (target: NavTarget): void => go(target, onSelected, { newTab: true })
-  // Rail Style toggle — List ⇄ Gallery. Persisted per nexus in the store's `navWindowMode` slice
-  // (separate from NavView's `navViewMode`), so it survives relaunch and re-renders sibling readers.
   const viewMode = useSession((s) => s.navWindowMode)
   const setNavWindowMode = useSession((s) => s.setNavWindowMode)
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
 
-  // The nav flavor: the whole body below is the MAP TAB's content; an active page tab swaps
-  // it away and slides the rail closed. The strip is persistent window chrome above it.
   const preview = useSession((s) => s.preview)
   const pageTarget = useSession((s) => (s.preview?.flavor === 'nav' ? s.previewTarget : null))
-  // Focus the search on open AND on every map-tab return (a command-palette focus — the
-  // input remounts when a page tab swaps the body away); the inspector dies with the page tab.
+  // Also re-focuses on every map-tab return — the input remounts when a page tab swaps the body away.
   useEffect(() => {
     if (!pageTarget) {
       searchRef.current?.focus()
@@ -131,10 +116,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const openNewTab = useSession((s) => s.openNewTab)
   const setNavViewMode = useSession((s) => s.setNavViewMode)
 
-  // The shared toolbar's scan/Open targets by the active flavor. On a page tab it promotes that page
-  // for real. On the MAP flavor it promotes the NavWindow itself into NavView — carrying the
-  // view mode ONCE, then closing and opening/focusing the single NavView tab (no engulf; the
-  // scan is a fixed toolbar action, not an animated FLIP). The nav set stays durable either way.
   const promote = (): void => {
     if (pageTarget) {
       closeNav()
@@ -148,8 +129,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const hasTabs = preview?.flavor === 'nav' && preview.tabs.length > 1
   const resolveIndex = useMemo(() => (tree ? buildResolveIndex(tree) : null), [tree])
 
-  // The page tab's embed: fully editable, same autosave + warm seams as the floating preview
-  // (writes ride the shared path-keyed page autosave; one preview exists at a time).
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [pageTarget?.path])
   const pageScrollRef = useRef<HTMLDivElement>(null)
@@ -174,16 +153,13 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       rootRef={rootRef}
       closing={closing}
       onClose={closeNav}
-      // The pane first, then the window; an Escape during the flavor-swap exit is the shell's
-      // own closing gate (one press, one layer).
+      // The pane closes first — an Escape during the flavor-swap exit is the shell's own closing gate.
       onEscape={() => (inspectorOpen ? setInspectorOpen(false) : closeNav())}
       dragSurfaces={DRAG_SURFACES}
-      // No toolbar band: the tab row reaches the window's top edge, so only the corner clusters
-      // sit above it.
       toolbar="floating"
       className={cx('navwindow', pageTarget !== null && 'is-page-tab')}
       ariaLabel="Navigation"
-      // The preview window's tint verbatim — the flavor swap keeps ONE background, no opacity jump.
+      // Matches the preview window's tint — the flavor swap must keep one background, no opacity jump.
       tintOpacity={90}
       onScan={promote}
       actions={
@@ -196,7 +172,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         windowId: 'navwindow',
         bounds: RAIL,
         mode: 'inflow',
-        // An active page tab slides the rail closed; the map tab's return reopens it.
         open: pageTarget === null,
         className: 'navwindow-rail',
         children: (
@@ -229,9 +204,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       }}
     >
       <div className="navwindow-content">
-        {/* The strip row exists only past one tab — its height grows in on the standard
-              ease. It lives in the content column so the rail runs the window's FULL height and
-              the tabs start right of the sidebar, exactly like the app's tab bar. */}
         <div className={cx('navwindow-tabs', hasTabs && 'has-tabs')}>
           <PreviewTabStrip index={resolveIndex} title={null} />
         </div>
@@ -259,9 +231,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
               />
             </div>
             <div className="navwindow-main-scroll edge-fade">
-              {/* The rail's Style toggle governs results too — searching switches WHAT is listed,
-                  never how it's drawn. Only recents reorder; a result set has no stored order.
-                  `extras` (inert agenda hits) is a List row with no card form, so it shows there. */}
+              {/* `extras` (inert agenda hits) has no card form, so it renders as a List row regardless
+                  of the Style toggle. */}
               {viewMode === 'gallery' ? (
                 <NavGallery
                   pins={results ? [] : resolvedPins}

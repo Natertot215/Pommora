@@ -1,10 +1,7 @@
-// Session-only warmth for preview tabs: serialized editor state (undo via CM6's
-// historyField) + scroll, keyed by preview-tab id — the app tabs' warmCache pattern, but flat:
-// preview tabs have no Back/Forward, so one entry per tab. Module state, never render state.
-// Tab ids re-mint at every summon/restore, so the map lives and dies with the OPEN window —
-// window close/overtake/adopt clear it wholesale; a tab close drops its key. A capture landing
-// under an already-closed id (the store-first close beats the unmount capture) leaves one inert
-// entry — never readable, ids are never reused — reaped by the next wholesale clear.
+// Module state, never render state. Tab ids re-mint at every summon/restore, so the map lives and
+// dies with the OPEN window — window close/overtake/adopt clear it wholesale; a tab close drops
+// its key. A capture landing under an already-closed id (the store-first close beats the unmount
+// capture) leaves one inert entry, reaped by the next wholesale clear.
 
 export interface PreviewWarmEntry {
   editorState?: unknown

@@ -1,12 +1,7 @@
-// Render-time resolution of stored recents/favorites against the LIVE tree. Every entry carries only
-// {kind,id,path} — its title, icon, and container path are resolved fresh here, so a rename/move is
-// always current and never cached stale. An entry that no longer resolves (deleted, or a cross-nexus
-// target against the wrong tree) is RENDER-PRUNED — dropped from the returned list, NEVER from storage
-// (a cross-nexus switch resolves everything to null; auto-deleting would wipe durable favorites).
-// Agenda kinds (task/event) have no destination in v1 — absent from the index → null.
-//
-// Resolution goes through a display index built in ONE tree walk, so resolving a full recents list is
-// O(tree + entries), not O(entries × tree) — the gallery must never re-flatten the tree per row.
+// An entry that no longer resolves (deleted, or a cross-nexus target against the wrong tree) is
+// RENDER-PRUNED — dropped from the returned list, NEVER from storage (a cross-nexus switch
+// resolves everything to null; auto-deleting would wipe durable favorites). Resolution goes
+// through a display index built in ONE tree walk — the gallery must never re-flatten the tree per row.
 
 import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import type { NavTarget, NexusTree, PinEntry, RecentEntry } from '@shared/types'
@@ -25,7 +20,6 @@ export interface ResolvedNav {
   target: NavTarget
   kind: NavTarget['kind']
   title: string
-  /** The entry's own resolved icon glyph. */
   icon: string
   /** The container chain the entry lives under (empty for a top-level Collection / Homepage). */
   path: PathCrumb[]

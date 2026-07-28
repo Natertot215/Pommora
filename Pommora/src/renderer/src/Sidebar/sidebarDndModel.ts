@@ -14,7 +14,7 @@ export type Kind =
   | 'space'
   | 'contextGroup'
 export type Entry = {
-  id: string // the entry's own id (also its key in `byId`) — lets a row identify itself
+  id: string
   kind: Kind
   path: string
   depth: number
@@ -33,9 +33,9 @@ export type Index = {
   contextGroupIds: string[]
 }
 
-/** Id-keyed index + top-level groups. Depths match the sidebar's rendered indent (Collection 0 →
- *  its Sets 1 → Sub-Sets 2 …; pages one deeper than their container). Contexts are leaf rows at
- *  depth 1, nested under their Context group's disclosure (Areas / Topics / Projects) at depth 0. */
+/** Depths match the sidebar's rendered indent (Collection 0 → Sets 1 → Sub-Sets 2 …; pages one
+ *  deeper than their container). Contexts are leaf rows at depth 1, nested under their group's
+ *  disclosure at depth 0. */
 export function buildIndex(tree: NexusTree): Index {
   const byId = new Map<string, Entry>()
   const addPages = (
@@ -129,8 +129,7 @@ export function buildIndex(tree: NexusTree): Index {
   }
 }
 
-/** A sibling group's order after dropping `draggedId` before `beforeId` (null = append). Drops
- *  the dragged id first so a reorder lands cleanly; an unknown `beforeId` falls back to append. */
+/** Drops the dragged id first so a reorder lands cleanly; an unknown `beforeId` falls back to append. */
 export function nextOrder(current: string[], draggedId: string, beforeId: string | null): string[] {
   const without = current.filter((id) => id !== draggedId)
   const found = beforeId ? without.indexOf(beforeId) : -1
@@ -141,10 +140,8 @@ export function nextOrder(current: string[], draggedId: string, beforeId: string
 /** A measured sidebar row's geometry, used for hit-testing the drop slot. */
 export type MeasuredRow = { id: string; top: number; bottom: number; mid: number }
 
-/** Where a dragged item lands when dropped over `over` (a same-group sibling): the id to insert
- *  before (null = append) + the y-edge for the insertion line. Top half drops before `over`;
- *  bottom half drops after it — skipping the dragged id so "after" can't resolve to itself and
- *  append to the bottom. The single source for the slot math every reorder branch shares. */
+/** Top half drops before `over`; bottom half drops after it — skipping the dragged id so "after"
+ *  can't resolve to itself. The single source for the slot math every reorder branch shares. */
 export function slotInGroup(
   group: string[],
   over: MeasuredRow,
@@ -158,10 +155,8 @@ export function slotInGroup(
 }
 
 /** The container (Collection or Set) a dragged Set would join, resolved from whatever row the
- *  pointer is over: the Collection/Set itself for a container header, a hovered Set's parent
- *  (reorder beside it), or a hovered page's parent container. Returns null for a context — a Set
- *  may only live inside a Collection or another Set. The caller guards against self/descendant
- *  drops (cycles). */
+ *  pointer is over. Returns null for a context — a Set may only live inside a Collection or
+ *  another Set. The caller guards against self/descendant drops. */
 export function setContainerOf(entry: Entry, idx: Index): Entry | null {
   switch (entry.kind) {
     case 'collection':
@@ -178,8 +173,8 @@ export function setContainerOf(entry: Entry, idx: Index): Entry | null {
   }
 }
 
-/** True when `targetId` is `ancestorId` itself or one of its descendants — walks parent links up
- *  from the target. Blocks dropping a Set into its own subtree. */
+/** True when `targetId` is `ancestorId` itself or one of its descendants. Blocks dropping a Set
+ *  into its own subtree. */
 export function isSelfOrDescendant(targetId: string, ancestorId: string, idx: Index): boolean {
   let cur: string | null = targetId
   while (cur) {

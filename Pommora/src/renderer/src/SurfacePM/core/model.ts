@@ -1,10 +1,7 @@
-// SurfacePM layout model — a mosaic of independent column stacks.
-// The page is a vertical stack of bands; inside a band, ROW splits divide width
-// by ratios, COLUMN nodes stack children, and every tile owns its own pixel
-// height. Columns flow independently: a short column simply ends (ragged ends
-// are legal); trapped holes between blocks can't exist by construction. Widths
-// are zero-sum splitters; heights are absolute — stretching a tile never
-// deforms its neighbors, the page just flows.
+// A mosaic of independent column stacks. The page is a vertical stack of bands; inside a band,
+// ROW splits divide width by ratios, COLUMN nodes stack children, and every tile owns its own
+// pixel height. Columns flow independently: a short column simply ends (ragged ends are legal);
+// trapped holes between blocks can't exist by construction.
 
 export interface RowNode {
   kind: 'row'

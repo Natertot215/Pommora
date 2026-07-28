@@ -1,17 +1,13 @@
-// Per-machine sidebar disclosure (expand/collapse) state. Transient UI chrome — regeneratable, not
-// portable content — so it lives in app-level localStorage (mirrors Swift IconFavorites → UserDefaults),
-// not `.nexus/`. Keyed by entity id (containers) or a `context:*` string (the structural Context
-// groups). Storage is a parameter so the behavior is testable without a DOM; callers pass
-// `window.localStorage`.
+// Transient UI chrome — regeneratable, not portable content — so it lives in app-level
+// localStorage (mirrors Swift IconFavorites → UserDefaults), not `.nexus/`. Storage is a
+// parameter so behavior is testable without a DOM.
 
 type OpenMap = Record<string, boolean>
 
 export const DISCLOSURE_KEY = 'pommora.sidebar.disclosure'
 
-// The map is parsed once per storage object and mutated through saveOpen thereafter — expanding a
-// container mounts one Disclosure per child, and a full-blob JSON.parse per mount is the kind of
-// per-mount cost that adds up fast. A different storage (each test passes a fresh fake) misses the
-// cache and re-reads.
+// Parsed once per storage object and mutated through saveOpen thereafter — a full JSON.parse per
+// mount (one per child Disclosure) adds up fast.
 let cached: { storage: Pick<Storage, 'getItem'>; map: OpenMap } | null = null
 
 function readMap(storage: Pick<Storage, 'getItem'>): OpenMap {

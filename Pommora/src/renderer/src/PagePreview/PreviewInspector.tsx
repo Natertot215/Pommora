@@ -31,10 +31,9 @@ import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
 import { useSession, type PreviewTarget } from '../store'
 
-// The front-matter inspector: the preview page's title, banner, Context columns, and
-// schema properties — listed and editable through the SAME primitives the table views edit with
-// (Cell render, PropertyPicker/CalendarPicker portals, the inline PropertyEditor). Writes go through
-// mutate with the table's optimistic-patch pattern; the reconcile re-paths the open tab on rename.
+// Editable through the SAME primitives the table views use (Cell render, PropertyPicker/
+// CalendarPicker, PropertyEditor). Writes ride the table's optimistic-patch pattern; the reconcile
+// re-paths the open tab on rename.
 
 /** The page's owning Collection by path prefix — schema lives only on Collections. */
 const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition[] => {
@@ -56,7 +55,6 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
   const [addOpen, setAddOpen] = useState(false)
   const addRef = useRef<HTMLButtonElement | null>(null)
-  // Right-click a property row → the remove menu (un-assigns: the key deletes from frontmatter).
   const [rowMenu, setRowMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   const rowMenuRef = useRef<HTMLSpanElement | null>(null)
 
@@ -79,8 +77,6 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     () => (tree ? buildResolveContext(tree, schema) : null),
     [tree, schema],
   )
-  // The registry rows + the same shared resolution the walk runs — bracketed frontmatter
-  // keys resolve to Space ids against the live tree.
   const contextRows = useMemo(
     () =>
       contextIdsOf(tree).flatMap((id) => {
@@ -107,9 +103,8 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     [fm, title, target, contextValues],
   )
 
-  // The assign-reveal flow, one behavior for contexts AND properties: a row shows when
-  // it holds a real value OR was assigned this session via + Add Property (session-only —
-  // disk never carries an empty key).
+  // A row shows when it holds a real value OR was assigned this session (session-only — disk
+  // never carries an empty key).
   const isAssigned = (id: string): boolean => {
     if (revealed.has(id)) return true
     if (contextRows.some((c) => c.id === id)) return (contextValues?.[id]?.length ?? 0) > 0
@@ -125,8 +120,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     void mutate({ op: 'setProperty', path: target.path, propertyId, value })
   }
   const commitContext = (contextId: string, ids: string[]): void => {
-    // Optimistic: patch the bracketed key with titles off the live tree (main re-resolves
-    // authoritatively at the write boundary).
+    // Optimistic — main re-resolves authoritatively at the write boundary.
     const ctxTitle = contextIdentityOf(tree, contextId)?.title
     if (ctxTitle === undefined) return
     const titles = ids
@@ -144,16 +138,15 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
 
   const editRow = (def: PropertyDefinition, el: HTMLElement): void => {
     triggerRef.current = el
-    // The shared click semantics (toggle/picker/datetime — a checkbox is true-or-absent on disk,
-    // never a stored false) live in one router; the inspector's tail keeps number/url inline.
+    // checkbox is true-or-absent on disk, never a stored false — the shared click-semantics
+    // router handles it; number/url stay inline here.
     const v = row ? resolveFieldValue(row, def.id, schema) : ({ kind: 'null' } as const)
     const shared = sharedValueClickAction(def.type, undefined, v, def)
     if (shared) {
       if (shared.kind === 'commit') {
         commitValue(def.id, shared.value)
-        // Un-checking clears the key on disk (true-or-absent — never a stored false), which
-        // would also un-assign the row: keep it revealed this session so the box can be
-        // re-checked; the next preview open hides it like any other empty property.
+        // Un-checking clears the key, which would also un-assign the row — keep it revealed
+        // this session so the box can be re-checked.
         if (def.type === 'checkbox' && shared.value === null)
           setRevealed((prev) => new Set([...prev, def.id]))
       } else setEditing({ id: def.id, mode: shared.kind === 'datetime' ? 'date' : 'picker' })
@@ -162,9 +155,8 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     if (def.type === 'number' || def.type === 'url') setEditing({ id: def.id, mode: 'editor' })
   }
 
-  // The Add picker's shared landing: reveal the row, then open its editor anchored to the value
-  // field on the right (the row mounts next frame). A Context column passes no def — it opens the context
-  // picker; a checkbox commits true directly and needs no editor.
+  // Opens the editor anchored to the value field on the right — the row mounts next frame
+  // (requestAnimationFrame).
   const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
     setAddOpen(false)
     setRevealed((prev) => new Set([...prev, id]))
@@ -195,9 +187,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   return (
     <div className="pgpreview-insp">
       <div className="pgpreview-insp-rows edge-fade">
-        {/* The Swift layout: two rounded fill fields — contexts, then properties — each rendered
-            only once something's assigned into it. Nothing pre-shows: on an empty page the Add
-            affordance alone sits at the top (the Obsidian read). */}
+        {/* Nothing pre-shows — on an empty page the Add affordance alone sits at the top. */}
         {[
           contextRows.filter((t) => isAssigned(t.id)).map((t) => ({ def: null, ...t })),
           schema.filter((d) => isAssigned(d.id)).map((d) => ({ def: d, id: d.id, label: d.name })),
@@ -251,8 +241,8 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                           numeric={def.type === 'number'}
                           validate={def.type === 'url' ? isValidLink : undefined}
                           onCommit={(raw) => {
-                            // The shared parser: number NaN-gates, url validates/normalizes and
-                            // rides the existing alias along — identical to the cell surfaces.
+                            // url validates/normalizes and rides the existing alias along —
+                            // identical to the cell surfaces.
                             const cur = resolveFieldValue(row, id, schema)
                             const next =
                               def.type === 'url'
@@ -332,8 +322,6 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           triggerRef={addRef}
           origin="center"
         >
-          {/* The grouping pane's picker verbatim — PickerOption rows with the icon treatment.
-              Unassigned Context columns lead (contexts add from here too), unassigned properties follow. */}
           {contextRows
             .filter((t) => !isAssigned(t.id))
             .map((t) => (

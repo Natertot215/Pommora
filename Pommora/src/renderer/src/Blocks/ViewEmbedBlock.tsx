@@ -35,10 +35,9 @@ import { PICKER_MAX_HEIGHT } from '@renderer/design-system/components/PickerMenu
 import { PILL_ICON } from './viewEmbed.css'
 import * as s from './viewEmbed.css'
 
-/** The copied config is ours by construction; a foreign or malformed one degrades to the
- *  blank default (repair-not-reject). Every degrade path re-stamps `fallbackId` — a repaired
- *  config must never carry the DEFAULT_VIEW_ID sentinel (it keys viewOrders per-machine and
- *  would persist on the next config edit), and never a random id (coerce runs per render). */
+/** A foreign or malformed config degrades to the blank default (repair-not-reject), re-stamped
+ *  with `fallbackId` — never the DEFAULT_VIEW_ID sentinel (keys viewOrders per-machine, would
+ *  persist on the next edit) and never a random id (this runs per render). */
 function coerceConfig(raw: unknown, schema: PropertyDefinition[], fallbackId: string): SavedView {
   const v = raw as SavedView | null
   const shapeOk =
@@ -54,18 +53,16 @@ function coerceConfig(raw: unknown, schema: PropertyDefinition[], fallbackId: st
   return v.id === DEFAULT_VIEW_ID ? { ...v, id: fallbackId } : v
 }
 
-/** A fresh shallow copy of the entry's raw `views` array — a caller can mutate then return it
- *  without touching the input (elements stay the untouched `{ source_id, config }` records). */
+/** A shallow copy — callers can mutate then return it without touching the input. */
 const rawViews = (raw: Record<string, unknown>): unknown[] =>
   Array.isArray(raw.views) ? [...(raw.views as unknown[])] : []
 
 /** A view's leading glyph, falling back to the table icon when unset (legacy `'tablecells'` too). */
 const viewIcon = (v: SavedView): string => iconNameOr(v.icon, 'table')
 
-/** The display title — sized by markdownPM's own `.md-h{level}` heading class (they're the same code,
- *  so a title reads uniform with any rendered heading). Editing happens in place on the SAME element via
- *  contentEditable — no input swap, so the field is the text itself: the caret drops in and it reads
- *  smooth. Enter/blur commit, Escape reverts; an empty commit clears back to the source. */
+/** Sized by markdownPM's own `.md-h{level}` class so a title reads uniform with any heading.
+ *  Editing happens in place via contentEditable — no input swap. Escape reverts; an empty commit
+ *  clears back to the source. */
 function EmbedTitle({
   title,
   level,
@@ -142,8 +139,6 @@ function EmbedTitle({
   )
 }
 
-/** One draggable view pill (toolbar mode). Reorder rides the shared drag engine (`useDragItem`),
- *  the same mechanism the sidebar ribbon uses; enter/exit slides run off the css presence classes. */
 function ViewPill({
   id,
   view,
@@ -188,10 +183,7 @@ function ViewPill({
   )
 }
 
-// The view-embed tile: the title row (editable ####, right-click chrome menu) over the
-// view switcher (pills or a dropdown, right-click presentation menu) over the REAL TableView at
-// the fixed embed zoom, all inside the ViewEmbedScope — resolution reads the payload config,
-// config writes land on it, data writes flow through to the source.
+// Resolution reads the payload config; config writes land on it; data writes flow through to the source.
 export function ViewEmbedBlock({
   entry,
   mutateEntry,
@@ -202,8 +194,8 @@ export function ViewEmbedBlock({
     entryId: string,
     fn: (raw: Record<string, unknown>) => Record<string, unknown>,
   ) => void
-  /** Mark this tile the surface's active one — a view has no text-edit mode, so interacting with it
-   *  (any pointerdown inside) is its "busy" signal, which corner-scopes its drag handle like an editor. */
+  /** A view has no text-edit mode, so any pointerdown inside is its "busy" signal — corner-scopes
+   *  its drag handle like an editor. */
   onActivate?: () => void
 }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
@@ -219,8 +211,7 @@ export function ViewEmbedBlock({
   const dropRef = useRef<HTMLButtonElement>(null)
 
   const index = Math.min(entry.active ?? 0, entry.views.length - 1)
-  // View-switch slide direction: a higher index (a pill to the right) enters from the right (+), a lower
-  // one from the left (−). prevIndexRef holds the last-committed index so the offset reads at switch time.
+  // prevIndexRef holds the last-committed index so the slide offset reads at switch time, not after.
   const prevIndexRef = useRef(index)
   const slideFrom =
     index > prevIndexRef.current ? '24px' : index < prevIndexRef.current ? '-24px' : '0px'
@@ -242,8 +233,7 @@ export function ViewEmbedBlock({
   viewsRef.current = views
   const idKey = views.map((v) => v.id).join(',')
 
-  // A view added since the last render slides in (a fresh DOM node whose entering class survives
-  // re-renders because it's state, not derived — a derived flag would clear mid-animation).
+  // entering is STATE, not derived — a derived flag would clear mid-animation on the next render.
   useEffect(() => {
     const prev = prevIdsRef.current
     const cur = new Set(viewsRef.current.map((v) => v.id))
@@ -264,11 +254,9 @@ export function ViewEmbedBlock({
   const dropdown = entry.view_style === 'dropdown'
 
   const locked = entry.locked ?? false
-  // Every write transforms the RAW entry (raw spreads — foreign keys survive); chrome
-  // defaults are stored as ABSENT keys, so clearing a toggle deletes it rather than pinning it.
-  // While locked this is the freeze for all chrome (title rename, hide title/icon, heading size,
-  // pill/switcher style): only the lock toggle itself and the active-view SWITCH (viewing, not editing)
-  // still write — so a locked tile's title + presentation are frozen to match the handle menu's promise.
+  // Chrome defaults store as ABSENT keys (clearing a toggle deletes it). While locked this freezes
+  // all chrome — only the lock toggle and the active-view SWITCH still write, so a locked tile's
+  // presentation matches the handle menu's promise.
   const patchEntry = (patch: Record<string, unknown>): void => {
     if (locked && !('locked' in patch) && !('active' in patch)) return
     mutateEntry(entry.id, (raw) => {
@@ -295,16 +283,14 @@ export function ViewEmbedBlock({
     if (locked) return // every config surface routes through here, so this one gate freezes them all
     writeConfig(i, config)
   }
-  // View state folds onto the STORED view, never the caller's: on a locked tile the live overrides
-  // hold gestures the lock already refused, and folding those in would smuggle them past it.
+  // Folds onto the STORED view, never the caller's — the live overrides on a locked tile hold
+  // gestures the lock already refused, and folding those in would smuggle them past it.
   const persistState = (i: number, state: ViewState): void => {
     const stored = views[i]
     if (stored) writeConfig(i, { ...stored, ...state })
   }
-  // A new view mints blank on the ACTIVE view's source and becomes active. Its payload-local id
-  // takes the first free slot in the coerce family — deletes shift indexes, so the next slot
-  // number can already be taken by a survivor and a plain length-stamp would collide (viewOrders
-  // keys on config id; two views must never share one).
+  // Payload-local id takes the first free slot — deletes shift indexes, so a plain length-stamp
+  // could collide with a survivor (viewOrders keys on config id; two views must never share one).
   const addView = (): void => {
     if (locked) return
     mutateEntry(entry.id, (raw) => {
@@ -331,7 +317,6 @@ export function ViewEmbedBlock({
       return { ...raw, views: arr, active: Math.min(cur > i ? cur - 1 : cur, arr.length - 1) }
     })
   }
-  // Toolbar delete slides out first: mark the pill exiting; its animationend commits the removal.
   const beginDeleteView = (i: number): void => {
     if (locked || entry.views.length <= 1) return
     setExitingId(views[i].id)
@@ -360,8 +345,7 @@ export function ViewEmbedBlock({
     patchEntry({ display_title: !t || t === source.title ? undefined : t })
   }
 
-  // Every row of the chrome menus writes through the frozen patchEntry/persistConfig, so a
-  // locked tile opens none of them — nothing in them could land.
+  // Every chrome menu writes through the frozen patchEntry/persistConfig, so a locked tile opens none of them.
   const titleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     if (locked) return
@@ -387,8 +371,7 @@ export function ViewEmbedBlock({
     else if (action === 'style-dropdown') patchEntry({ view_style: 'dropdown' })
     else if (action === 'style-toolbar') patchEntry({ view_style: undefined })
   }
-  // A pill/list row's own menu — the ViewPane row family (Rename / Edit Icon / Delete). `animate`
-  // routes the pill's delete through the slide-out; the dropdown list removes in place.
+  // `animate` routes the pill's delete through the slide-out; the dropdown list removes in place.
   const rowMenu = async (i: number, e: React.MouseEvent, animate: boolean): Promise<void> => {
     e.preventDefault()
     e.stopPropagation() // the switcher row underneath owns the area menu
@@ -522,13 +505,12 @@ export function ViewEmbedBlock({
             <ViewRenderer key={source.id} source={source} />
           </div>
         </div>
-        {/* PickerMenu owns the anchoring — body portal, scroll/resize re-measure,
-            collision flip; a hand-rolled fixed portal detaches when the surface scrolls. */}
+        {/* PickerMenu owns the anchoring (scroll/resize re-measure, collision flip) — a hand-rolled
+            fixed portal detaches when the surface scrolls. */}
         <PickerMenu open={cfgOpen} onDismiss={() => setCfgOpen(false)} triggerRef={btnRef}>
           <SettingsPane />
         </PickerMenu>
-        {/* Dropdown mode's view list — the ViewPane's rows without the edit chevrons
-            (per-view editing lives behind the Settings affordance, not in the switcher). */}
+        {/* No edit chevrons — per-view editing lives behind the Settings affordance, not in the switcher. */}
         <PickerMenu open={listOpen} onDismiss={() => setListOpen(false)} triggerRef={dropRef}>
           <div className={s.listPane}>
             <MenuScrollFrame

@@ -1,7 +1,5 @@
-// The SurfacePM pointer sensor — PommoraDND's capture discipline (Pointer Events +
-// setPointerCapture, rAF-coalesced moves, Esc abort) as a one-shot drag primitive
-// for the surface's free-2D gestures, which the engine's list-slot Zones can't
-// host. Shares the engine's vocabulary: the app-wide ACTIVATION threshold and the
+// A one-shot drag primitive for the surface's free-2D gestures, which the engine's list-slot
+// Zones can't host. Shares the engine's vocabulary: the app-wide ACTIVATION threshold and the
 // post-drop click suppression.
 
 import { ACTIVATION, suppressNextClick } from '@renderer/design-system/interactions/shared'

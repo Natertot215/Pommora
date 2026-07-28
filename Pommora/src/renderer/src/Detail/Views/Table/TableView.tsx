@@ -953,8 +953,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
           contextIds,
         )
 
-  // ---- Memoized-row inputs: every prop a DataRow receives must hold identity across unrelated
-  // re-renders (a tree push, an editing toggle, a drag frame), so React.memo can bail per row. ----
+  // Every prop a DataRow receives must hold identity across unrelated re-renders (a tree push, an
+  // editing toggle, a drag frame), so React.memo can bail per row.
 
   // Per-column look/alignment resolved ONCE per change, not per CELL per render (styleFor
   // allocates) — the measured bulk of a full-table re-render's JS floor.

@@ -1,10 +1,6 @@
-// The Filtering leaf — authors a table view's filter behind both doors (SettingsPane's Filter
-// entry, ViewSettings' Filter leaf). The rule list fills the pane; each row is
-// (connector)(what)(operator)(value)(×), serialized to the nested FilterGroup by filterModel. The
-// footer carries both pane-level controls: how the rules combine (All / Any) and whether the
-// filter runs at all — two independent axes, neither of which touches the rules. The pane owns the
-// filter slot wholesale for shapes it writes; a hand-authored tree it can't represent renders
-// locked behind an explicit Reset (never silently flattened).
+// How the rules combine (All / Any) and whether the filter runs at all are two independent axes,
+// neither of which touches the rules. A hand-authored tree the pane can't represent renders locked
+// behind an explicit Reset (never silently flattened).
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
@@ -65,17 +61,14 @@ import {
 import * as gp from './groupingPane.css'
 import * as fp from './filterPane.css'
 
-/** All (AND) · Any (OR). Two options, so PickerControl flips in place behind the double-chevron —
- *  the dual-option design rule, matching the on/off control beside it. NOR isn't offered: it can't
- *  be reached from the row connectors either, so a `none` tree is hand-authoring only and decodes
- *  as locked rather than being shown as an All it would silently become. */
+/** NOR isn't offered: it can't be reached from the row connectors either, so a `none` tree is
+ *  hand-authoring only and decodes as locked rather than being shown as an All it would silently
+ *  become. */
 const MATCH_OPTIONS: PickerChoice<PaneMode>[] = [
   { value: 'all', label: 'All' },
   { value: 'any', label: 'Any' },
 ]
 
-/** Two options, so PickerControl flips it in place behind the double-chevron — the dual-option
- *  design rule, and the same control the match-mode picker wears beside it. */
 const ACTIVE_OPTIONS: PickerChoice<'on' | 'off'>[] = [
   { value: 'on', label: 'On' },
   { value: 'off', label: 'Off' },
@@ -84,10 +77,9 @@ const ACTIVE_OPTIONS: PickerChoice<'on' | 'off'>[] = [
 /** The disclosure beat in ms — how long a just-added row is flagged for its unfold. */
 const DISCLOSURE_MS = Number.parseInt(motion.disclosure, 10)
 
-/** A rule row's ENTRY on the shared disclosure beat. `animate` is opt-IN and read only at mount:
- *  a row renders at full height unless it is the one just added, so neither opening the pane nor the
- *  tree reload behind every commit can replay the unfold across the list. There is no exit beat —
- *  rows are index-keyed, so a survivor shifting up would inherit the departing row's collapse. */
+/** `animate` is opt-IN and read only at mount, so neither opening the pane nor the tree reload
+ *  behind every commit can replay the unfold across the list. There is no exit beat — rows are
+ *  index-keyed, so a survivor shifting up would inherit the departing row's collapse. */
 function RevealRow({
   animate = false,
   children,
@@ -112,7 +104,6 @@ function RevealRow({
  *  broken menu. Reachable in practice: a Context with no Spaces yet, or a type with no operators. */
 const emptyPicker = (label: string): React.JSX.Element => <MenuCaption>{label}</MenuCaption>
 
-/** A grid-cell trigger field popping a beaked PickerMenu — the What/Operator control. */
 function FieldPicker({
   ariaLabel,
   display,
@@ -525,16 +516,11 @@ export function FilterPane({
   const decodedMode: PaneMode = decoded.kind === 'rows' ? decoded.mode : 'all'
   const mode: PaneMode = rows.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
 
-  // Both read the ref at CALL time, never the render-time `liveView`: a handler created before an
-  // in-gesture write would otherwise still hold the pre-write snapshot, since a write updates the
-  // ref without re-rendering.
+  // Reads writtenRef at CALL time, never the render-time `liveView` — same reason as above.
   const save = (nextMode: PaneMode, nextRows: FilterRow[]): void =>
     commit({ ...writtenRef.current, filter: encodeFilter(nextMode, nextRows) })
 
-  /** The rows as last WRITTEN. Every mutation maps over THIS, never the render-time `rows` — the
-   *  base object alone isn't enough. A ref write doesn't re-render and a save round-trips through a
-   *  full tree reload, so two writes in one gesture (a value's blur-commit and the click that caused
-   *  it) would both map the same pre-save snapshot and the second would silently drop the first. */
+  /** Every mutation maps over writtenRef, never the render-time `rows` — same reason as above. */
   const liveRows = (): FilterRow[] => {
     const d = decodeFilter(writtenRef.current.filter)
     return d.kind === 'rows' ? d.rows : []
@@ -906,8 +892,7 @@ export function FilterPane({
           parking rather than destroying, so both states reach the footer. */}
       <MenuBottomRow
         leading={
-          // Withheld on a hand-authored tree: the pane holds no rows to re-serialize there, so a
-          // stray mode pick would write an empty filter over it. Reset stays the only writer.
+          // Same lock as above — Reset stays the only writer on a hand-authored tree.
           decoded.kind === 'rows' ? (
             <PickerControl
               ariaLabel="Matches"

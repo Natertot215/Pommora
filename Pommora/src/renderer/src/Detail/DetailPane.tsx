@@ -69,7 +69,7 @@ function DetailView(): React.JSX.Element {
  * The detail pane: the routed view above, the Subfield (footer) pinned below. The Subfield collapses
  * app-wide via a hover chevron — `.subfield-reveal` slides it up/down and reclaims its space.
  */
-// KNOB — how far the incoming view slides in on a directional navigation (tab switch / Back / Forward).
+// Applies on a directional navigation — tab switch, Back, or Forward.
 const VIEW_SLIDE_PX = 14
 
 // The preview's engulf target: the detail pane's live rect, read once at promote time —

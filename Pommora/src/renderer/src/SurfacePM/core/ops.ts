@@ -1,7 +1,6 @@
-// The mosaic-preserving operations. Every op returns a new layout; the input is
-// never mutated. Widths are zero-sum ratio splitters; heights are per-tile and
-// absolute — vertical ops touch exactly one tile (stretch) or one stacked pair
-// (north negotiation), and the page flows.
+// Every op returns a new layout; the input is never mutated. Widths are zero-sum ratio splitters;
+// heights are per-tile and absolute — vertical ops touch exactly one tile (stretch) or one
+// stacked pair (north negotiation), and the page flows.
 
 import type { Band, DividerRef, Edge, LayoutNode, SurfaceLayout, TileLeaf } from './model'
 import { cloneLayout, findTile, getTile } from './model'

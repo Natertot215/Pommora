@@ -1,13 +1,8 @@
-// The session-only warm cache behind warm tabs: serialized editor state (undo history via
-// CM6's historyField), scroll position, and the cached PageDetail, keyed (tabId → navKey) so a tab's
-// whole Back/Forward stack stays warm without cross-tab bleed — two tabs can hold the same
-// entity in their histories, each with its own undo. Module state, not store state: none of it is
-// render state, and it must survive React remounts while dying with the session (quit resets).
-//
-// Entries have two writers under one key: the STORE captures pageDetail at switch-initiation (before
-// `select` nulls it), and the editor captures editorState/scrollTop at unmount under keys frozen at
-// its mount. A capture landing under an already-closed tabId leaves one inert entry (never readable —
-// tab ids are never reused); the nexus-switch clear reaps it.
+// Module state, not store state — none of it is render state, and it must survive React remounts
+// while dying with the session. Two writers share one key: the store captures pageDetail at
+// switch-initiation; the editor captures editorState/scrollTop at unmount. A capture landing under
+// an already-closed tabId leaves one inert entry (tab ids are never reused) that the nexus-switch
+// clear reaps.
 
 import type { PageDetail } from '@shared/types'
 
@@ -18,13 +13,12 @@ export interface WarmEntry {
   pageDetail?: PageDetail
 }
 
-/** Warm depth per tab: Back/Forward restores warm this many entries deep; beyond it, cold. */
+/** Beyond this many entries deep, a Back/Forward restore goes cold. */
 const WARM_CAP_PER_TAB = 20
 
 const cache = new Map<string, Map<string, WarmEntry>>()
 
-/** Merge a partial capture under (tabId, navKey), refreshing its LRU slot; the per-tab cap evicts the
- *  stalest entry (Map insertion order = recency, since every capture re-inserts). */
+/** LRU by Map insertion order — every capture re-inserts, so `.keys().next()` is always the stalest. */
 export function captureWarm(tabId: string, navKey: string, patch: Partial<WarmEntry>): void {
   let tabMap = cache.get(tabId)
   if (!tabMap) {
@@ -45,12 +39,10 @@ export function readWarm(tabId: string, navKey: string): WarmEntry | undefined {
   return cache.get(tabId)?.get(navKey)
 }
 
-/** Drop a closed tab's whole warm stack. */
 export function dropWarmTab(tabId: string): void {
   cache.delete(tabId)
 }
 
-/** Wholesale reset — nexus switch. */
 export function clearWarm(): void {
   cache.clear()
 }

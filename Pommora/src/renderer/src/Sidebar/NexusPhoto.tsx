@@ -6,12 +6,8 @@ import { useNexusIcon } from '../Components/useNexusIcon'
 import { assetUrl } from '../assetUrl'
 import * as s from './nexusHeader.css'
 
-/**
- * The nexus identity as the Homepage ribbon icon — the circular avatar showing the profile photo, else
- * the chosen glyph, else the dashed-square placeholder. Right-click opens the native icon menu (Change
- * Icon → glyph picker · Add Photo → crop). Its click (homepage select) is owned by the wrapping ribbon
- * button. Rename-nexus lives on the homepage banner title, not here.
- */
+/** Click (homepage select) is owned by the wrapping ribbon button, not here. Rename-nexus lives
+ *  on the homepage banner title, not here either. */
 export function NexusPhoto({ size }: { size: number }): React.JSX.Element {
   const {
     profileImage,

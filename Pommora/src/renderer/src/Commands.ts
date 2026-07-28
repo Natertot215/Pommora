@@ -1,4 +1,3 @@
-// Match a keydown against a command spec from the nexus `commands` map ("cmd+e", "ctrl+shift+k").
 // Modifiers are exact — a spec without shift rejects a shifted press — so overlapping bindings
 // can't double-fire.
 export function matchesCommand(spec: string | undefined, e: KeyboardEvent): boolean {

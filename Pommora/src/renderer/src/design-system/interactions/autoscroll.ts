@@ -102,7 +102,6 @@ export function gateIntent(intent: Intent, vx: number, vy: number): { vx: number
   }
 }
 
-// ---- the singleton loop --------------------------------------------------
 // One drag at a time (pointer capture guarantees it). The loop scrolls every frame off the last
 // recorded point — so holding still at the edge keeps scrolling — and self-owns a termination
 // backstop (blur/visibilitychange/pointercancel → stop) so a focus-steal can't strand it running.

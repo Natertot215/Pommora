@@ -45,8 +45,6 @@ function groupRows<K>(rows: ViewRow[], keyOf: (r: ViewRow) => K): Map<K, ViewRow
   return m
 }
 
-// ---- flatten ----
-
 function buildSetTree(sets: SetNode[] | undefined): SetTreeNode[] {
   return (sets ?? []).map((s) => ({ id: s.id, children: buildSetTree(s.sets) }))
 }
@@ -88,8 +86,6 @@ export function flattenContainer(
   return { rows, setTree: buildSetTree(node.sets) }
 }
 
-// ---- date buckets ----
-
 const pad = (n: number, width: number): string => String(n).padStart(width, '0')
 
 /** ISO 8601 week + week-year from a calendar date's components (already resolved to the chosen zone
@@ -130,8 +126,6 @@ export function dateBucketKey(
     }
   }
 }
-
-// ---- property buckets ----
 
 /** The grouping key for a row under one property (null = no value → caller routes to the no-value
  *  band, or the checkbox 'false' bucket). Mirrors Swift bucketKey. */
@@ -243,8 +237,6 @@ function property(
     placement,
   )
 }
-
-// ---- structural + flat ----
 
 function structural(
   rows: ViewRow[],

@@ -27,12 +27,7 @@ import {
   type MeasuredRow,
 } from './sidebarDndModel'
 
-// Sidebar drag-and-drop — the "sidebar" behavior: an Apple-style insertion
-// LINE marks the exact drop, the picked-up row stays muted in place, and a ghost rides the cursor.
-// No row displacement. EVERY sidebar entity is draggable and reorders within its parent heading —
-// pages (within a folder; also reparent across folders), Sets (reorder/reparent across Collections
-// and Sets), top-level Collections, Context groups, and Spaces. The commit routes to the right
-// order store.
+// An Apple-style insertion line marks the drop; no row displacement.
 
 const LINE_INSET_RIGHT = 12
 const BASE_INDENT = 8 // MenuItem's base left padding
@@ -92,8 +87,7 @@ export function SidebarDnd({
   const index = useMemo(() => buildIndex(tree), [tree])
   const indexRef = useRef(index)
   indexRef.current = index
-  // Placement drives where an empty Sets block lands when a Set is dropped onto a container header —
-  // above its pages (top) or below them (bottom). Ref'd so the frozen-snapshot resolver reads current.
+  // Ref'd so the frozen-snapshot resolver reads current placement, not a captured prop.
   const placements = useRef({ set: setPlacement, subSet: subSetPlacement })
   placements.current = { set: setPlacement, subSet: subSetPlacement }
   // A mid-drag tree swap (watcher push) can re-render rows — stale rects must not survive it.
@@ -110,10 +104,9 @@ export function SidebarDnd({
 
   const gesture = useRef<Gesture>({ kind: 'idle' })
 
-  // Geometry snapshot — measured ONCE at drag activation, not per pointermove. No row displaces
-  // mid-drag (the insertion-line treatment), so frozen rects stay valid; only a scroll moves them,
-  // which marks the snapshot dirty and the next move re-measures once (coalescing a scroll's
-  // event burst into a single layout read). Never O(rows) rect reads on a high-frequency trigger.
+  // Measured ONCE at drag activation, not per pointermove — no row displaces mid-drag, so frozen
+  // rects stay valid until a scroll marks the snapshot dirty. Never O(rows) rect reads on a
+  // high-frequency trigger.
   type Snapshot = { contentTop: number; measured: MeasuredRow[] }
   const snapshot = useRef<Snapshot | null>(null)
   const snapshotDirty = useRef(false)
@@ -139,7 +132,6 @@ export function SidebarDnd({
     else rows.current.delete(id)
   }
 
-  // Hit-test the frozen snapshot → the landing slot.
   const computeTarget = (clientY: number): DropTarget | null => {
     const g = gesture.current
     if (g.kind === 'idle') return null
@@ -162,7 +154,6 @@ export function SidebarDnd({
       return over
     }
 
-    // Pages: reorder within a container, or reparent into one.
     if (dragged.kind === 'page') {
       const over = nearest(measured)
       const entry = idx.byId.get(over.id)
@@ -179,10 +170,9 @@ export function SidebarDnd({
           noop: entry.parentId === dragged.parentId && sameOrder(order, container.pageIds),
         }
       }
-      // Seam guard: a Set that's a sibling of the dragged page (same container) is the page↔Set
-      // boundary, not a reparent target — grazing it reorders the page to its own group's edge (the
-      // side the Sets block sits on), never drops it into the Set. Reparenting a page into a Set is
-      // done by dropping over the Set's expanded pages (the page-over-page branch above).
+      // A Set that's a sibling of the dragged page is the page↔Set boundary, not a reparent target —
+      // grazing it reorders the page to its group's edge, never drops it into the Set (that happens
+      // via the Set's expanded pages instead).
       if (
         entry.kind === 'set' &&
         dragged.parentId &&
@@ -204,7 +194,6 @@ export function SidebarDnd({
           noop: sameOrder(order, pageIds),
         }
       }
-      // Over a container header → drop in at the top of its pages.
       const beforeId = entry.pageIds.find((id) => id !== g.id) ?? null
       const order = nextOrder(entry.pageIds, g.id, beforeId)
       return {
@@ -215,8 +204,8 @@ export function SidebarDnd({
       }
     }
 
-    // Sets: reorder within their container, or reparent into any Collection or Set (except the
-    // dragged set's own subtree → cycle). A Set may never land on a context or the top level.
+    // A Set may never land on a context or the top level; dropping into its own subtree is
+    // blocked as a cycle.
     if (dragged.kind === 'set') {
       const over = nearest(measured)
       const overEntry = idx.byId.get(over.id)
@@ -232,10 +221,8 @@ export function SidebarDnd({
         beforeId = slot.beforeId
         lineY = slot.edge - contentTop
       } else {
-        // Over the container header or one of its pages → land at the near edge of its Sets block.
-        // The block sits above or below the pages per placement, so derive the line from real
-        // geometry: an existing block's first-row top (correct either way), else — an empty block —
-        // just under the header (top) or after the container's last page (bottom).
+        // Derived from real geometry: an existing block's first-row top (correct either way), else
+        // — an empty block — just under the header (top) or after the container's last page (bottom).
         beforeId = group.find((id) => id !== g.id) ?? null
         const headerRect = measured.find((m) => m.id === target.id)
         const headEdge = headerRect ? headerRect.bottom : over.bottom
@@ -262,7 +249,6 @@ export function SidebarDnd({
       }
     }
 
-    // Collections / contexts: reorder among same-kind siblings under the same parent.
     const siblings = measured.filter((m) => {
       const e = idx.byId.get(m.id)
       return e !== undefined && e.kind === dragged.kind && e.parentId === dragged.parentId
@@ -284,9 +270,8 @@ export function SidebarDnd({
     }
   }
 
-  // Only a scroll that moves the rows themselves (the nav, an ancestor, the window) shifts the
-  // frozen rects — a row's inner hover-marquee scroll never changes row geometry, so it must not
-  // trigger an O(rows) re-measure on its per-frame ticks.
+  // Only a scroll that moves the rows themselves shifts the frozen rects — a row's inner
+  // hover-marquee scroll never changes row geometry and must not trigger a re-measure.
   const markSnapshotDirty = (e: Event): void => {
     if (e.target instanceof Element && contentRef.current && !e.target.contains(contentRef.current))
       return
@@ -335,10 +320,9 @@ export function SidebarDnd({
       grabX: e.clientX - r.left,
       handlers,
     }
-    // The gesture listeners live on the WINDOW, never the row: a mid-drag tree push (watcher) can
-    // move or remount the row's DOM node, which silently releases pointer capture and would starve
-    // row-hosted listeners — freezing the ghost, eating the drop, and wedging the gesture so no
-    // later drag can start. Window listeners receive every pointer event regardless.
+    // Listeners live on the WINDOW, never the row — a mid-drag tree push can remount the row's DOM
+    // node, silently releasing pointer capture and starving row-hosted listeners (frozen ghost,
+    // eaten drop, wedged gesture).
     window.addEventListener('pointermove', handlers.move)
     window.addEventListener('pointerup', handlers.up)
     window.addEventListener('pointercancel', handlers.cancel)
@@ -350,8 +334,8 @@ export function SidebarDnd({
     if (g.kind === 'idle' || e.pointerId !== g.pid) return
     if (g.kind === 'pending') {
       if (Math.hypot(e.clientX - g.startX, e.clientY - g.startY) < ACTIVATION) return
-      // Capture only at activation (a tap must stay a click) and purely to keep other rows
-      // hover-inert under the drag — the gesture itself never depends on it surviving.
+      // Capture only at activation (a tap must stay a click), purely to keep other rows
+      // hover-inert — the gesture itself never depends on it surviving.
       try {
         g.el.setPointerCapture(g.pid)
       } catch {
@@ -360,8 +344,8 @@ export function SidebarDnd({
       gesture.current = { ...g, kind: 'active' }
       // Any scroll (nav, ancestors) shifts viewport-relative rects → invalidate, re-measure lazily.
       window.addEventListener('scroll', markSnapshotDirty, { capture: true, passive: true })
-      // Auto-scroll the sidebar (the y-scroller — findScroller('y') walks to `.sidebar`). Start at
-      // ACTIVATION so the dampen ramp measures from the drag; onScrolled re-resolves a held-still drag.
+      // Start at ACTIVATION so the dampen ramp measures from the drag; onScrolled re-resolves a
+      // held-still drag.
       const sc = findScroller(g.el, 'y')
       if (sc) {
         stopScroll.current = startAutoScroll({
@@ -378,8 +362,8 @@ export function SidebarDnd({
     resolveSlot()
   }
 
-  // Hit-test the current point → the drop slot + ghost. Shared by pointer move and the auto-scroll
-  // re-resolve, so a held-still drag near an edge keeps re-targeting as the sidebar scrolls.
+  // Shared by pointer move and the auto-scroll re-resolve, so a held-still drag near an edge keeps
+  // re-targeting as the sidebar scrolls.
   function resolveSlot(): void {
     const g = gesture.current
     if (g.kind !== 'active') return
@@ -496,9 +480,8 @@ const base = (p: string): string => {
 const sameOrder = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])
 
-// The ordered sibling group a Collection / context entity reorders within — all top-level groups
-// held in `.nexus/state.json`. (Sets have their own reparent-aware branch in computeTarget and
-// never reach here.)
+// All top-level groups held in `.nexus/state.json`. Sets have their own reparent-aware branch in
+// computeTarget and never reach here.
 function siblingGroup(dragged: Entry, idx: Index): string[] {
   switch (dragged.kind) {
     case 'collection':
@@ -512,8 +495,7 @@ function siblingGroup(dragged: Entry, idx: Index): string[] {
   }
 }
 
-// The commit for a non-page reorder — every top-level group is held in `.nexus/state.json`.
-// (Sets reorder/move via the moveSet branch in computeTarget, not here.)
+// Sets reorder/move via the moveSet branch in computeTarget, not here.
 function reorderCommit(dragged: Entry, _idx: Index, order: string[]): MutateRequest | null {
   switch (dragged.kind) {
     case 'collection':
@@ -531,8 +513,8 @@ function reorderCommit(dragged: Entry, _idx: Index, order: string[]): MutateRequ
   }
 }
 
-/** Make any sidebar row draggable + registered for hit-testing: spread `handle`, put `ref` on
- *  the row element. The engine decides what the drop means from the row's kind. */
+/** Spread `handle`, put `ref` on the row element — the engine decides what the drop means from
+ *  the row's kind. */
 export function useSidebarDrag(id: string): {
   ref: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: ReactPointerEvent) => void }

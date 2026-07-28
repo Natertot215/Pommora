@@ -5,16 +5,15 @@ import { useSession } from '../store'
 import { NexusPhoto } from './NexusPhoto'
 import './Sidebar.css'
 
-// The ribbon's launcher icons below the pinned Homepage. Some switch sidebarMode (the content
-// column); navigation and settings each summon their floating window.
+// Some ribbon keys switch sidebarMode; navigation and settings each summon their floating window instead.
 type RibbonKey = 'navigation' | 'agenda' | 'contexts' | 'collections' | 'settings'
 const MODE_FOR: Partial<Record<RibbonKey, SidebarMode>> = {
   collections: 'collections',
   contexts: 'contexts',
   agenda: 'agenda',
 }
-// The mode icons reuse the entity defaults (a Collection's icon is a Collection's icon), so they
-// track any personalization override; agenda/nav/settings have no entity kind and stay literal.
+// agenda/nav/settings have no entity kind, so their icons stay literal here; collections/contexts
+// track personalization overrides via iconFor.
 const STATIC_ICON: Record<'agenda' | 'navigation' | 'settings', string> = {
   agenda: 'calendar',
   navigation: 'map',
@@ -52,12 +51,12 @@ export function Ribbon(): React.JSX.Element {
     const m = MODE_FOR[k]
     if (m) setPersonalization('sidebarMode', m)
     else if (k === 'navigation')
-      openNav() // summon NavWindow (the floating mini-shell)
+      openNav()
     else if (k === 'settings') openSettings()
   }
 
-  // Drag-to-order the launcher icons (Homepage stays pinned, outside the zone). The reordered keys
-  // persist to ribbonOrder; the id-wrap mirrors the shared reorder helper's object contract.
+  // Homepage stays pinned, outside the zone. The id-wrap mirrors the shared reorder helper's
+  // object contract.
   const reorderIcons = (activeId: string, overId: string): void => {
     const next = reorder(
       keys.map((id) => ({ id })),
