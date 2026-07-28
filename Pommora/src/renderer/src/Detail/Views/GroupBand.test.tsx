@@ -177,3 +177,38 @@ describe('resolveBandHead', () => {
     expect(textOf(head.glyph)).toContain('Inbox')
   })
 })
+
+describe('resolveBandHead — Context grouping', () => {
+  const ctxWithSpace: ResolveContext = {
+    ...ctx,
+    contextsById: new Map([
+      ['sp1', { title: 'Pommora', icon: 'rocket', color: 'mint', contextId: 'ctx_projects' }],
+    ]),
+    contexts: new Map([['ctx_projects', { title: 'Projects', icon: 'folder' }]]),
+  }
+
+  it('names the Space rather than showing its id', () => {
+    const head = resolveBandHead(
+      group('property', 'sp1'),
+      view(propGroup('ctx_projects')),
+      ctxWithSpace,
+      setNames,
+      setIcons,
+      source,
+    )
+    expect(head.label).toBe('Pommora')
+    expect(textOf(head.glyph)).toContain('Pommora')
+  })
+
+  it('falls back to the raw id when the Space is gone', () => {
+    const head = resolveBandHead(
+      group('property', 'ghost'),
+      view(propGroup('ctx_projects')),
+      ctxWithSpace,
+      setNames,
+      setIcons,
+      source,
+    )
+    expect(head.label).toBe('ghost')
+  })
+})
