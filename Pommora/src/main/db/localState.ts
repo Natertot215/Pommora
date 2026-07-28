@@ -32,7 +32,6 @@ function decode<T>(scope: Scope, key: string, raw: string): T | undefined {
   }
 }
 
-/** Every entry in a scope. No database ⇒ `{}`. */
 export function readScope<T>(scope: Scope): Record<string, T> {
   const db = sessionDb()
   if (!db) return {}
@@ -66,7 +65,6 @@ export function writeKey(scope: Scope, key: string, value: unknown): boolean {
   return true
 }
 
-/** One key's value, or null when unset. */
 export function readKey<T>(scope: Scope, key: string): T | null {
   const db = sessionDb()
   if (!db) return null
@@ -77,7 +75,6 @@ export function readKey<T>(scope: Scope, key: string): T | null {
   return decode<T>(scope, key, row.value) ?? null
 }
 
-/** A scope's singleton value, or null when unset. */
 export function readValue<T>(scope: Scope): T | null {
   return readKey<T>(scope, SINGLETON)
 }

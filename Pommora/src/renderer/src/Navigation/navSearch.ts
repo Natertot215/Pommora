@@ -23,8 +23,6 @@ const entry = (target: NavTarget, title: string): SearchEntry => ({
   lower: title.toLowerCase(),
 })
 
-/** Flatten the tree (+ the agenda snapshot) into a searchable list: homepage, every context, every
- *  Collection/Set, every Page (titles ARE searchable), plus agenda Tasks/Events from the snapshot. */
 export function buildNavIndex(
   tree: NexusTree,
   agenda?: { tasks: AgendaEntry[]; events: AgendaEntry[] },
@@ -64,8 +62,7 @@ function fuzzyScore(t: string, q: string): number | null {
   return score - t.length * 0.01 // gentle tiebreak toward shorter titles
 }
 
-/** Rank the index against `query` (fuzzy, case-insensitive). Empty query → no results (the surface
- *  shows recents/favorites instead). Ties break alphabetically; capped at `limit`. */
+/** Empty query → no results (the surface shows recents/favorites instead). */
 export function filterNav(index: SearchEntry[], query: string, limit = 50): SearchEntry[] {
   const q = query.trim().toLowerCase()
   if (!q) return []

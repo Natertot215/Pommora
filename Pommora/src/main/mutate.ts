@@ -1,7 +1,6 @@
 // The single write orchestration behind the `mutate` IPC: resolves nexus-relative paths under
-// the session root, runs the matching crud/* op, applies the cascade policy, then
-// fire-and-forgets the index refresh (off the UI critical path — the renderer's tree comes
-// from readNexus, not the index). Never throws across the boundary.
+// the session root, runs the matching crud/* op, applies the cascade policy. Never throws
+// across the boundary.
 //
 // Cascade policy, owned here so no call site re-invents it: a page rename reverts if
 // renameCascade's inbound-[[links]] rewrite fails; a context/space delete unlinks the
@@ -72,10 +71,8 @@ async function parentContainerId(parentDir: string): Promise<string | undefined>
   return undefined
 }
 
-/** POSIX-join a nexus-relative parent with a child basename (`''` parent = the root). */
 const relJoin = (parent: string, child: string): string => (parent ? `${parent}/${child}` : child)
 
-/** Decode a `data:image/<subtype>;base64,<data>` URL to its bytes + file extension (jpeg→jpg). */
 function decodeImageDataUrl(dataUrl: string): { ext: string; buffer: Buffer } | null {
   const m = /^data:image\/([a-z0-9.+-]+);base64,(.+)$/i.exec(dataUrl)
   if (!m) return null
@@ -83,9 +80,7 @@ function decodeImageDataUrl(dataUrl: string): { ext: string; buffer: Buffer } | 
   return { ext: subtype === 'jpeg' ? 'jpg' : subtype, buffer: Buffer.from(m[2], 'base64') }
 }
 
-/** Decode + atomically write an image into `.nexus/assets/<key>/<prefix>-<token>.<ext>`;
- *  returns the nexus-relative path, or null if the data URL isn't a supported image. A FRESH
- *  filename per write is deliberate: a stable name gave every image the same URL, so the
+/** A FRESH filename per write is deliberate: a stable name gave every image the same URL, so the
  *  renderer's <img> served the browser-cached previous image on Change/replace. */
 async function writeImageAsset(
   root: string,
@@ -114,7 +109,6 @@ async function isReserved(root: string, abs: string): Promise<boolean> {
   return rel === '' || rel === '.nexus' || rel === '.trash' || rel.startsWith(`.trash${sep}`)
 }
 
-/** Map a failed data-layer Result onto a MutateResult; pass an ok Result through as a bare ok. */
 function relay<T>(r: Result<T>): MutateResult {
   return r.ok ? { ok: true } : { ok: false, error: r.error }
 }
@@ -171,7 +165,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // '' parentPath = the nexus root (new top-level Collection). See createPage.
       const parent = await resolveUnderRoot(root, req.parentPath || '.')
       if (!parent.ok) return relay(parent)
-      // A nested Set carries parent_id; a top-level Collection has no parent.
       const extra: Record<string, unknown> = {}
       if (req.kind === 'set') {
         const pid = await parentContainerId(parent.value)
@@ -199,7 +192,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         const oldTitle = basenameNoMd(basename(abs))
         const r = await renamePage(abs, req.newName)
         if (!r.ok) return relay(r)
-        // Rewrite inbound [[links]] nexus-wide; revert the file rename if the cascade fails.
+        // renameCascade rewrites inbound [[links]] nexus-wide.
         try {
           const cascade = await renameCascade(root, oldTitle, req.newName)
           if (!cascade.ok) {
@@ -215,13 +208,10 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         // never un-reverts the now-successful page rename.
         try {
           await rewriteBlockConnections(root, oldTitle, req.newName)
-        } catch {
-          // blocks stay stale until the next rewrite — the page rename stands
-        }
+        } catch {}
         return { ok: true }
       }
-      // Containers: rename the folder. No link cascade — [[links]] target pages, and a
-      // container's title is referenced nowhere else.
+      // No link cascade — [[links]] target pages, and a container's title is referenced nowhere else.
       const r = await renameFolderEntity(abs, req.newName)
       if (!r.ok) return relay(r)
       return { ok: true }
@@ -503,8 +493,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'moveSet': {
-      // Move a set folder between collections (within its vault) or reorder it in place, then
-      // write the destination collection's set_order. The set's pages travel inside the folder.
+      // The set's pages travel inside the folder.
       const src = await resolveUnderRoot(root, req.path)
       if (!src.ok) return relay(src)
       const dst = await resolveUnderRoot(root, req.newParentPath)

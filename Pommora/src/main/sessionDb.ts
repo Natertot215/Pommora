@@ -8,7 +8,6 @@ import type { Db } from './db/driver'
 
 let db: Db | null = null
 
-/** The open nexus's handle, or null when none is open / the database is unavailable. */
 export function sessionDb(): Db | null {
   return db
 }
@@ -25,7 +24,6 @@ export function openSessionDb(root: string): void {
   }
 }
 
-/** Close + drop the handle (session switch / app quit). */
 export function closeSessionDb(): void {
   if (!db) return
   try {

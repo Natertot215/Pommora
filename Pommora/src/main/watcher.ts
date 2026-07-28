@@ -42,12 +42,12 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
   const isExcluded = excludedMatcher(excluded)
   return (path) => {
     const rel = relative(root, path)
-    if (!rel || rel.startsWith('..')) return false // the root itself / outside root
+    if (!rel || rel.startsWith('..')) return false
     const segs = rel.split(sep)
     return (
       segs.some(
         (seg) =>
-          seg === '.trash' || // deleted items — not part of the tree
+          seg === '.trash' ||
           seg.startsWith('nexus.db') || // our store + its WAL/SHM
           seg.startsWith('index.db') || // the Swift build's index, in a nexus shared with it
           (seg.startsWith('.') && seg !== '.nexus'), // dotfile cruft, but .nexus holds contexts + settings
@@ -70,7 +70,7 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
 
 /** Start (or restart) watching `root`, pushing fresh trees to `win`. */
 export async function startWatcher(root: string, win: BrowserWindow): Promise<void> {
-  stopWatcher() // one watcher at a time — replace any prior session's
+  stopWatcher()
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
   const excluded = asStringArray(settings.excluded_folders) ?? []
   if (sessionRoot() !== root) return // session switched during the settings read
@@ -86,7 +86,6 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
     // in-app write refetches explicitly, so the echo only buys a wasted full walk
     // (hot under block gestures + embed typing). External edits still walk.
     if (isRecentWrite(path)) return
-    // Nav sidecars/pins aren't in the tree — a synced-in change refreshes nav state only, never a walk.
     if (isNavPath(root, path)) {
       if (navDebounce) clearTimeout(navDebounce)
       navDebounce = setTimeout(() => void pushNav(root, win), SETTLE_MS)
@@ -124,7 +123,7 @@ export function stopWatcher(): void {
 }
 
 async function push(root: string, win: BrowserWindow): Promise<void> {
-  if (sessionRoot() !== root || win.isDestroyed()) return // session switched / window gone
+  if (sessionRoot() !== root || win.isDestroyed()) return
   try {
     const tree = await readNexus(root)
     if (!win.isDestroyed()) win.webContents.send('nexus:changed', tree)

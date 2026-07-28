@@ -230,7 +230,6 @@ async function readPage(absFile: string, relFile: string): Promise<PageNode> {
   })
 }
 
-/** `.md` files directly in `absDir` (skips `_`-prefixed). */
 async function readDirectPages(absDir: string, relDir: string): Promise<PageNode[]> {
   const out: PageNode[] = []
   for (const e of await listEntries(absDir)) {

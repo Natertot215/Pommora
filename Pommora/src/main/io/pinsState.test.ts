@@ -67,8 +67,8 @@ describe('pinsState', () => {
 
   it('does NOT re-migrate once the pins dir exists (tombstone sentinel)', async () => {
     writeRecents([{ kind: 'page', id: 'a', path: '/a', pinned: true }])
-    await loadOrMigratePins(root) // first run migrates
-    await removePin(root, { kind: 'page', id: 'a', path: '/a' }, 0) // unpin — dir now holds a tombstone
+    await loadOrMigratePins(root)
+    await removePin(root, { kind: 'page', id: 'a', path: '/a' }, 0) // dir now holds a tombstone
     expect(await loadOrMigratePins(root)).toEqual([]) // stale flag ignored, no resurrection
   })
 })

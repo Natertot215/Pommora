@@ -1,7 +1,6 @@
-// The device-local schema: the `meta` version row plus `local_state`, the one keyed store every
-// operational surface writes through. Nothing here is content — the filesystem stays canonical —
-// so a version mismatch drops the file and starts clean rather than migrating in place. That
-// costs a user their folds and tab set once, exactly as a corrupt sidecar always has.
+// Nothing here is content — the filesystem stays canonical — so a version mismatch drops the file
+// and starts clean rather than migrating in place. That costs a user their folds and tab set once,
+// exactly as a corrupt sidecar always has.
 
 import type { Db } from './driver'
 
