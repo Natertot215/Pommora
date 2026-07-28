@@ -63,11 +63,16 @@ export function refreshSessionIndex(root: string): Promise<void> {
     return rebuilding
   }
   rebuilding = (async () => {
-    do {
-      restale = false
-      await dropAndRebuild(root)
-    } while (restale)
-    rebuilding = null
+    try {
+      do {
+        restale = false
+        await dropAndRebuild(root)
+      } while (restale)
+    } finally {
+      // Released even if a rebuild throws — a latched promise here would wedge every
+      // later refresh behind a failure the index is supposed to shrug off.
+      rebuilding = null
+    }
   })()
   return rebuilding
 }
