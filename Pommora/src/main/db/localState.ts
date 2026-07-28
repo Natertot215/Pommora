@@ -49,33 +49,39 @@ export function readScope<T>(scope: Scope): Record<string, T> {
 }
 
 /** Set one key, or clear it when `value` is null — an emptied value deletes its key rather than
- *  persisting an empty container, matching the properties map and contexts. */
-export function writeKey(scope: Scope, key: string, value: unknown): void {
+ *  persisting an empty container, matching the properties map and contexts. Returns false when no
+ *  database is open, so a caller can report the failure instead of acknowledging a lost write. */
+export function writeKey(scope: Scope, key: string, value: unknown): boolean {
   const db = sessionDb()
-  if (!db) return
+  if (!db) return false
   if (value === null) {
     db.prepare('DELETE FROM local_state WHERE scope = ? AND key = ?').run(scope, key)
-    return
+    return true
   }
   db.prepare('INSERT OR REPLACE INTO local_state (scope, key, value) VALUES (?, ?, ?)').run(
     scope,
     key,
     JSON.stringify(value),
   )
+  return true
 }
 
 /** Replace a whole scope atomically — for the callers that own the entire map in memory. */
 export function replaceScope(scope: Scope, entries: Record<string, unknown>): void {
   const db = sessionDb()
   if (!db) return
-  db.exec('BEGIN')
   try {
+    db.exec('BEGIN')
     db.prepare('DELETE FROM local_state WHERE scope = ?').run(scope)
     const insert = db.prepare('INSERT INTO local_state (scope, key, value) VALUES (?, ?, ?)')
     for (const [key, value] of Object.entries(entries)) insert.run(scope, key, JSON.stringify(value))
     db.exec('COMMIT')
   } catch (e) {
-    db.exec('ROLLBACK')
+    try {
+      db.exec('ROLLBACK')
+    } catch {
+      /* the transaction never opened */
+    }
     console.error(`local_state: replacing ${scope} failed:`, errText(e))
   }
 }
@@ -96,6 +102,6 @@ export function readValue<T>(scope: Scope): T | null {
   return readKey<T>(scope, SINGLETON)
 }
 
-export function writeValue(scope: Scope, value: unknown): void {
-  writeKey(scope, SINGLETON, value)
+export function writeValue(scope: Scope, value: unknown): boolean {
+  return writeKey(scope, SINGLETON, value)
 }

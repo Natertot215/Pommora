@@ -62,19 +62,19 @@ const api = {
   // Debounced editor body write (relative path); main resolves under the session root + preserves frontmatter.
   updatePageBody: (relPath: string, body: string): Promise<Ack> =>
     ipcRenderer.invoke('page:updateBody', relPath, body),
-  // Heading-fold UI state — local `.nexus/folds.json`, keyed by page id (per-machine, not frontmatter).
+  // Heading-fold UI state — per-machine rows in nexus.db, keyed by page id (not frontmatter).
   folds: {
     get: (): Promise<Record<string, string[]>> => ipcRenderer.invoke('folds:get'),
     set: (pageId: string, keys: string[]): Promise<Ack> =>
       ipcRenderer.invoke('folds:set', pageId, keys),
   },
-  // Active-view pointer — local `.nexus/activeViews.json`, container id → active view id (per-machine).
+  // Active-view pointer — per-machine rows in nexus.db, container id → active view id.
   activeViews: {
     get: (): Promise<Record<string, string>> => ipcRenderer.invoke('activeViews:get'),
     set: (containerId: string, viewId: string): Promise<Ack> =>
       ipcRenderer.invoke('activeViews:set', containerId, viewId),
   },
-  // Sorted-view manual order — local `.nexus/viewOrders.json`, view id → page-id tiebreaker (per-machine).
+  // Sorted-view manual order — per-machine rows in nexus.db, view id → page-id tiebreaker.
   viewOrders: {
     get: (): Promise<Record<string, string[]>> => ipcRenderer.invoke('viewOrders:get'),
     set: (viewId: string, order: string[]): Promise<Ack> =>

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { chmod, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
@@ -81,5 +81,29 @@ describe('no database open', () => {
     expect(() => writeKey('folds', 'p1', ['x'])).not.toThrow()
     expect(() => writeValue('tabs', {})).not.toThrow()
     expect(() => replaceScope('linkTitle', { a: 'b' })).not.toThrow()
+  })
+
+  it('writes report failure so a caller never acknowledges a lost write', () => {
+    expect(writeKey('folds', 'p1', ['x'])).toBe(true)
+    expect(writeValue('tabs', {})).toBe(true)
+    closeSessionDb()
+    expect(writeKey('folds', 'p1', ['x'])).toBe(false)
+    expect(writeValue('tabs', {})).toBe(false)
+  })
+})
+
+describe('openSessionDb', () => {
+  it('never throws — an unwritable nexus opens without persistence, not with a failure', async () => {
+    closeSessionDb()
+    const ro = await mkdtemp(join(tmpdir(), 'pom-readonly-'))
+    await chmod(ro, 0o555)
+    try {
+      expect(() => openSessionDb(ro)).not.toThrow()
+      expect(readScope('folds')).toEqual({})
+      expect(writeKey('folds', 'p1', ['x'])).toBe(false)
+    } finally {
+      await chmod(ro, 0o755)
+      await rm(ro, { recursive: true, force: true })
+    }
   })
 })

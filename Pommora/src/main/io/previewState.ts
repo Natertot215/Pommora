@@ -12,6 +12,6 @@ export function readPreviewsState(): PreviewsFile {
   return readValue<PreviewsFile>('previews') ?? EMPTY_PREVIEWS
 }
 
-export function writePreviewsState(file: PreviewsFile): void {
-  writeValue('previews', file)
+export function writePreviewsState(file: PreviewsFile): boolean {
+  return writeValue('previews', file)
 }

@@ -45,7 +45,8 @@ export function handleLocalScope<T>(
   handleEnvelope(`${channel}:set`, (key: unknown, value: unknown): Ack => {
     if (typeof key !== 'string') return { ok: false, error: 'A key is required.' }
     if (!valid(value)) return { ok: false, error: expected }
-    writeKey(scope, key, isEmptyValue(value) ? null : value)
+    if (!writeKey(scope, key, isEmptyValue(value) ? null : value))
+      return { ok: false, error: 'No nexus is open.' }
     return { ok: true }
   })
 }

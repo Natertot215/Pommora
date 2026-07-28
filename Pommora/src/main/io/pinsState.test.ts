@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { writeFile, mkdir } from 'node:fs/promises'
 import type { PinEntry, RecentEntry } from '@shared/types'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
+import { writeValue } from '../db/localState'
 import { readPins, writePin, removePin, pinFileName, loadOrMigratePins } from './pinsState'
 
 let root: string
@@ -48,17 +48,14 @@ describe('pinsState', () => {
     expect((await readPins(root)).map((p) => ('id' in p ? p.id : ''))).toEqual(['z', 'a', 'b'])
   })
 
-  // Legacy recents arrive as the pre-nexus.db sidecar; reopening lifts them into the database,
-  // which is where loadOrMigratePins reads them from.
-  const writeRecents = async (entries: RecentEntry[]): Promise<void> => {
-    closeSessionDb()
-    await mkdir(join(root, '.nexus'), { recursive: true })
-    await writeFile(join(root, '.nexus', 'navRecents.json'), JSON.stringify(entries), 'utf8')
-    openSessionDb(root)
+  // loadOrMigratePins reads recents from the database. The pre-nexus.db sidecar's own path into
+  // it is covered by the legacy-lift suite.
+  const writeRecents = (entries: RecentEntry[]): void => {
+    writeValue('recents', entries)
   }
 
   it('migrates legacy pinned recents on first load (dir absent), order-preserving', async () => {
-    await writeRecents([
+    writeRecents([
       { kind: 'page', id: 'a', path: '/a', pinned: true },
       { kind: 'page', id: 'b', path: '/b' },
       { kind: 'context', id: 'x', pinned: true },
@@ -69,7 +66,7 @@ describe('pinsState', () => {
   })
 
   it('does NOT re-migrate once the pins dir exists (tombstone sentinel)', async () => {
-    await writeRecents([{ kind: 'page', id: 'a', path: '/a', pinned: true }])
+    writeRecents([{ kind: 'page', id: 'a', path: '/a', pinned: true }])
     await loadOrMigratePins(root) // first run migrates
     await removePin(root, { kind: 'page', id: 'a', path: '/a' }, 0) // unpin — dir now holds a tombstone
     expect(await loadOrMigratePins(root)).toEqual([]) // stale flag ignored, no resurrection
