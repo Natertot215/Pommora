@@ -87,7 +87,7 @@ function panePathVertical(
 }
 
 /**
- * The shared beaked-glass dropdown shell (hoisted from PickerMenu): a GlassPane whose frost is
+ * The shared beaked-glass dropdown shell: a GlassPane whose frost is
  * clipped to a rounded rect with a top beak, outlined by an SVG stroke of the SAME path (a rect
  * border/box-shadow can't trace the beak — the frame owns outline + shadow). Publishes
  * `--notch-h` so a surface's gutter can clear the beak band, and points `--dropdown-origin` at
@@ -212,7 +212,7 @@ export function NotchedPane({
   return (
     // The Bloom class rides the pane + frame INDIVIDUALLY (same keyframes + origin var → one move),
     // never this wrapper: an opacity-animated ancestor becomes the frost's backdrop root and the
-    // backdrop-filter silently samples nothing (Build-Gotchas §Glass — the chip-× lesson).
+    // backdrop-filter silently samples nothing.
     <div
       ref={popRef}
       className={s.pop}

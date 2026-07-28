@@ -6,15 +6,14 @@ const c = colorVars.color
 
 // ── KNOBS — the ViewSettings grid + tiles (tune here) ──
 const GRID = {
-  gapX: 8, // between-cell horizontal gap
-  gapY: 8, // between-cell vertical gap
-  edgeY: 8, // grid insets against the dividers above/below
-  tileRadius: 8, // tile corner radius
-  tileBorder: 2, // tile border width
+  gapX: 8,
+  gapY: 8,
+  edgeY: 8,
+  tileRadius: 8,
+  tileBorder: 2,
   tileAspect: 1.5, // wider than tall (the Figma proportion)
 }
 
-/** The 3×2 type grid. */
 export const grid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(3, 1fr)',
@@ -40,7 +39,6 @@ export const tile = style({
   selectors: { '&&': { color: c.solid.grey } },
 })
 
-/** The selected type — accent border at tint-primary. */
 export const tileSelected = style({ borderColor: tintAt('var(--accent)', TINT_STEPS.primary) })
 
 /** The Scale footing row — composed WITH the menu `item` class so it sits on the exact MenuItem

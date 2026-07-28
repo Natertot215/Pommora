@@ -57,7 +57,7 @@ const TEXT_DIRECTIONS: PickerChoice<Direction>[] = [
   { value: 'descending', label: 'Z → A' },
 ]
 
-/** Per-type direction vocabulary (D-3): option-ordered types read the grouping pane's locked
+/** Per-type direction vocabulary: option-ordered types read the grouping pane's locked
  *  Default/Reversed; temporal/numeric read Ascending/Descending; text reads A → Z. A dead def
  *  falls to the value labels. */
 function directionOptions(
@@ -145,7 +145,7 @@ export function SortingPane({
   const sub = view.sort?.[1]
   const targets = sortTargets(schema)
   const targetById = new Map(targets.map((t) => [t.id, t]))
-  // A dead criterion (deleted def) renders by its raw id (D-6) — the pane never silently drops
+  // A dead criterion (deleted def) renders by its raw id — the pane never silently drops
   // config it didn't write; None clears it like any other. Location is the reserved cards sort.
   const nameOf = (c: SortCriterion): string =>
     c.property_id === LOCATION_SORT
@@ -161,7 +161,7 @@ export function SortingPane({
     if (primary?.property_id === id) return
     const fresh: SortCriterion = { property_id: id, direction: 'ascending' }
     const next = sub && sub.property_id !== id ? [fresh, sub] : [fresh]
-    // Picking Location seeds its Order at Location (filesystem) — the flatten's default (E-4).
+    // Picking Location seeds its Order at Location (filesystem) — the flatten's default.
     if (id === LOCATION_SORT) void saveView({ ...view, sort: next, location_order_mode: 'location' })
     else save(next)
   }
@@ -176,7 +176,7 @@ export function SortingPane({
     save([primary, { property_id: id, direction: 'ascending' }])
   }
 
-  // The example order (D-5): only a finite-ordered primary previews — the hasMiddle logic.
+  // The example order: only a finite-ordered primary previews — the hasMiddle logic.
   const primaryType = primary ? declaredType(primary.property_id, schema) : undefined
   const finiteDef =
     primaryType === 'select' || primaryType === 'status'

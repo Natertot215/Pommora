@@ -41,8 +41,8 @@ const derived = createGlobalTheme(':root', {
       grey: '#8E8E93',
       greyDefault: '#48484A',
     },
-    // Label tones — system-white at full / 65% / 35% (separate from the type ramp). `control` is the
-    // on-control label (white 80%) worn by control chrome — toolbar / subfield / editor / switches / the
+    // Label tones — system-white at varying opacity steps (separate from the type ramp). `control` is
+    // the on-control label worn by control chrome — toolbar / subfield / editor / switches / the
     // table heading — bright but a step under primary.
     label: {
       primary: primitive.color.system.white,
@@ -86,7 +86,7 @@ const derived = createGlobalTheme(':root', {
 })
 
 // Semantic alias — the Interaction Field surface (text inputs / editable fields), exposed under the
-// literal CSS var `--input-field` so every input references one named knob. It points at the quinary
+// literal CSS var `--input-field` so every input references one named knob. It points at the quaternary
 // fill var, so retuning the input surface is a single edit here. Consume via `inputFieldVar`.
 globalStyle(':root', {
   vars: {

@@ -1,5 +1,5 @@
 // Pure model behind the Properties pane's two-region drag — no React, no DOM. One gesture
-// surface, two persistence targets: the pointer's REGION decides everything (E-4); the rows
+// surface, two persistence targets: the pointer's REGION decides everything; the rows
 // only refine the insertion slot within it. Slot indexes land in the persisted arrays'
 // without-dragged coordinates — the filter-then-splice idiom both reorder ops share.
 
@@ -8,17 +8,17 @@ import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 export type PaneRow = { id: string; group: 'assigned' | 'all' }
 
 export type PaneDrop =
-  | { kind: 'reorder-assigned'; propId: string; toIndex: number } // → schema.reorder (C-5)
-  | { kind: 'reorder-nexus'; propId: string; toIndex: number } // → registry.reorder (C-1)
-  | { kind: 'assign'; propId: string; toIndex: number } // all → assigned at the slot (C-2)
-  | { kind: 'unassign'; propId: string } // assigned → all; area highlight, natural slot (C-3/C-4)
+  | { kind: 'reorder-assigned'; propId: string; toIndex: number } // → schema.reorder
+  | { kind: 'reorder-nexus'; propId: string; toIndex: number } // → registry.reorder
+  | { kind: 'assign'; propId: string; toIndex: number } // all → assigned at the slot
+  | { kind: 'unassign'; propId: string } // assigned → all; area highlight, natural slot
 
 export type PaneSlot = { drop: PaneDrop; lineY: number | null; highlightAll: boolean }
 export type Region = { top: number; bottom: number }
 
 /** Translate an All-Properties visible slot (counted over unassigned rows only) into the FULL
  *  nexus-order index `registry:reorder` splices at — the full order still holds every assigned
- *  id, so the raw visible index would land the drop among hidden rows (breaker M-1). Anchors on
+ *  id, so the raw visible index would land the drop among hidden rows. Anchors on
  *  the visible successor's full-order position; past the last visible row appends after it. */
 export function nexusReorderIndex(
   orderedIds: string[],

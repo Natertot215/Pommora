@@ -1,4 +1,4 @@
-// Pure resolution over an in-memory link index — no SQLite (Phase 6 is a pure
+// Pure resolution over an in-memory link index — no SQLite (the index is a pure
 // accelerator, not a correctness dependency). buildLinkIndex turns the nexus's pages into
 // normalized-title → ids; resolveTitle classifies a scanned title as resolved (exactly
 // one holder), ambiguous (more than one), or phantom (none). The resolved id is in-memory

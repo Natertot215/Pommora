@@ -1,5 +1,5 @@
 // The per-machine sorted/grouped manual-order cache: `.nexus/viewOrders.json`, keyed by view id → the
-// ordered page-id list used as the lowest-priority tiebreaker under a sort (Part 2 D-5). Kept local
+// ordered page-id list used as the lowest-priority tiebreaker under a sort. Kept local
 // (NOT the synced sidecar's views[]) so a sorted-view drag never moves the portable `page_order` nor
 // churns the container's modified_at. Inside `.nexus/` it's outside the content walk + body-sync —
 // per-machine by construction. Mirrors activeViews.ts / folds.ts.

@@ -1,4 +1,4 @@
-// The NavWindow row/card right-click menu (D-3) — a NATIVE Electron menu (like the tab/cell menus),
+// The NavWindow row/card right-click menu — a NATIVE Electron menu (like the tab/cell menus),
 // not an in-renderer surface. The renderer sends the row's live membership state; main pops the menu
 // and returns the chosen action (or null on dismiss); the renderer runs it against the row it held.
 

@@ -15,7 +15,7 @@ export function sessionRoot(): string | null {
 /** Open a nexus at `root` (absolute path). The stored root is CANONICALIZED (realpath) so it
  *  keys the same string resolveUnderRoot hands the cell-write path: a symlinked root ancestry
  *  (e.g. macOS /var→/private/var, an external mount) would otherwise split the cascade and
- *  cell-write file locks into different buckets and they'd stop serializing (F1). Falls back to
+ *  cell-write file locks into different buckets and they'd stop serializing. Falls back to
  *  the raw path if it can't be resolved (e.g. a not-yet-existing path in a test). */
 export async function openSession(root: string): Promise<void> {
   currentRoot = await realpath(root).catch(() => root)

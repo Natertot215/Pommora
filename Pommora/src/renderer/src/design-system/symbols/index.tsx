@@ -150,7 +150,7 @@ export const icons = {
 
 export type IconName = keyof typeof icons
 
-/** Coerce an arbitrary value to a CURATED IconName, or undefined if it isn't one of the 61. */
+/** Coerce an arbitrary value to a CURATED IconName, or undefined if it isn't one of them. */
 export const asIconName = (value: unknown): IconName | undefined =>
   typeof value === 'string' && value in icons ? (value as IconName) : undefined
 
@@ -169,8 +169,8 @@ export const iconNameOr = (value: unknown, fallback: IconName): string =>
     : fallback
 
 /** Per-entity-kind default icon — the seed for `personalization.defaultIcons`. One source for the
- *  sidebar, banners, the table, and the connection autocomplete (was this same literal copied across
- *  all of them). A nexus can override a kind's default; an entity's own `icon` overrides that in turn. */
+ *  sidebar, banners, the table, and the connection autocomplete. A nexus can override a kind's
+ *  default; an entity's own `icon` overrides that in turn. */
 export const DEFAULT_ENTITY_ICONS: Record<EntityIconKind, IconName> = {
   collection: 'gallery-vertical-end',
   set: 'folder-closed',
