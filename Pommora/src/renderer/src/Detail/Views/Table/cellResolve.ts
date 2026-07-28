@@ -65,7 +65,7 @@ export const buildSetNames = (source: CollectionNode | SetNode): Map<string, str
   buildSetMap(source, (s) => s.title)
 
 /** Set id → its per-entity icon (a symbol name, or undefined ⇒ the folder default) across a container's
- *  Set subtree — for structural group-header glyphs (E-3). */
+ *  Set subtree — for structural group-header glyphs. */
 export const buildSetIcons = (source: CollectionNode | SetNode): Map<string, string | undefined> =>
   buildSetMap(source, (s) => s.icon)
 

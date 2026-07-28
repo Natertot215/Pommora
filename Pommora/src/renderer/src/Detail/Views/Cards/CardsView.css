@@ -3,7 +3,7 @@
    diverge as the card design settles. The pane insets live in Detail.css (the `:has(.cards-view)`
    body rule — the block-surface inset regime, no views gutter); the embed zoom law rides here so a
    view embed scales the grid as a unit. `.is-compact` = Card Banner: None — imageless cards, and
-   the band rhythm tightens with them (B-3). */
+   the band rhythm tightens with them. */
 .cards-view {
   --card-min: calc(180px * var(--card-scale, 1)); /* KNOB — column-width floor × the Scale factor */
   --set-card-min: calc(var(--card-min) * 1.5); /* KNOB — the Set Cards row's larger floor */
@@ -22,9 +22,9 @@
   --band-gap: 22px; /* KNOB — vertical rhythm between disclosure bands */
   /* ONE padding source for everything in a card's value flow: the chip tokens' own vars. Chips read
      them natively; the text-shaped values (dates, numbers, links) are re-pointed at the same vars
-     below — so C-3's tight packing is a single knob pair. */
+     below — so the tight packing is a single knob pair. */
   --chip-zoom: 0.85; /* KNOB — chip density on cards (the chip tokens' global zoom var) */
-  --chip-pad-x: 4px; /* KNOB — horizontal padding of chips AND text values (tight, C-3) */
+  --chip-pad-x: 4px; /* KNOB — horizontal padding of chips AND text values (tight) */
   --switch-zoom: 0.75; /* KNOB — the Switch checkbox-look's card scale (its native 54×24 towers over chips raw) */
   zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
 }
@@ -46,7 +46,7 @@
   min-height: calc(var(--card-body-min) + var(--card-foot-h));
 }
 
-/* ── The Set Cards row (F-1): larger cards at a FIXED size — set-scale tracks (no stretch, unlike
+/* ── The Set Cards row: larger cards at a FIXED size — set-scale tracks (no stretch, unlike
    the page grid's auto-fit fill); they wrap left-aligned as rows fill. ── */
 .set-cards-row {
   display: grid;
@@ -94,7 +94,7 @@
 
 /* A page card's image band is a fixed height; title + properties + footing extend below. Cards
    STRETCH to their grid row's height (the default), so every card in a row matches its tallest
-   sibling — a location can't make one card taller than its row-mates (I-5). */
+   sibling — a location can't make one card taller than its row-mates. */
 .page-card {
   text-align: left;
   cursor: pointer;
@@ -200,8 +200,8 @@
   flex: 0 0 auto;
   color: var(--label-secondary);
 }
-/* ── Properties (C-2/C-3): the card body between title and footing — rendered ONLY when the card
-   has values (an empty card shows no gap; its add trigger scopes to the breadcrumb, G-1). Empty
+/* ── Properties: the card body between title and footing — rendered ONLY when the card
+   has values (an empty card shows no gap; its add trigger scopes to the breadcrumb). Empty
    flow space inside stays the click surface for adding another. ── */
 .card-props {
   display: flex;
@@ -235,7 +235,7 @@
   flex: 0 0 auto;
   color: var(--label-secondary);
 }
-/* A value never wraps (I-4) — it clamps at the card's width; chips inside keep their own
+/* A value never wraps — it clamps at the card's width; chips inside keep their own
    hover-scroll/melt mechanics. */
 .card-value {
   display: inline-flex;
@@ -278,7 +278,7 @@
   color: var(--label-secondary);
 }
 
-/* The location footing (E-3): NavCrumbs — the house breadcrumb formula (caption type, per-crumb
+/* The location footing: NavCrumbs — the house breadcrumb formula (caption type, per-crumb
    icons, › separators). */
 .page-card-loc {
   color: var(--label-secondary);

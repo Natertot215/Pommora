@@ -50,8 +50,8 @@ const OPTION = {
 /** — ICONS — glyph sizes, consumed by PropertiesPane/ViewPane TSX. The TopRow's own
  *  ‹ chevron is the shared MenuTopRow's (12, in Menu.tsx) — not a pane-local knob. */
 export const ICON = {
-  add: 14, // the header ⊕ (square-plus) — sized to the back-row heading (13px), per Nathan
-  editorMenu: 14, // the editor header's ⋮ — sized to the back-row heading (13px), per Nathan
+  add: 14, // the header ⊕ (square-plus) — sized to the back-row heading (13px)
+  editorMenu: 14, // the editor header's ⋮ — sized to the back-row heading (13px)
   doc: 12, // the property-type icon on every row (assigned · registry · type picker)
   rowChevron: 16, // the trailing › on navigable rows (root entries + assigned rows)
   rootEntry: 16, // the root menu's leading icons (Properties · Visibility · …)
@@ -113,7 +113,7 @@ export const headerPhotoImg = style({
   display: 'block',
 })
 
-/** Placeholder dashed-square menu icon (until Nathan specifies the real symbols). */
+/** Placeholder dashed-square menu icon (until the real symbols are specified). */
 export const dashIcon = style({
   width: `${SIZE.dashIcon}px`,
   height: `${SIZE.dashIcon}px`,
@@ -160,7 +160,7 @@ export const allSpacerCollapsed = style({ flexGrow: 0 })
  *  MenuItem, so its text escapes the surface's primary titleText tone and reads at the heading tier. */
 export const allHeadingRow = style({
   // The pane's beat, not the disclosure beat: this row's chevron, its Reveal unfold and the elastic
-  // spacer's height-resize all have to land together, and the other two run on `base` (E-8).
+  // spacer's height-resize all have to land together, and the other two run on `base`.
   vars: { '--twisty-beat': 'var(--duration-base)' },
   display: 'flex',
   alignItems: 'center',
@@ -195,9 +195,9 @@ export const rowPlus = accessoryButton
  *  panes' RowShell; declared here so the hidden-row ghost below can reference it (source order). */
 export const rowDragging = style({ opacity: 'var(--state-ghost)' })
 
-/** Hidden rows read de-emphasized via the shared ghost opacity (the drag-dim token — Nathan's
- *  call: `--state-ghost`, not the muted veil). The ghost IS the shown/hidden boundary — no
- *  heading (Nathan's call). Reset to full opacity while this row is the drag subject: `rowDragging`
+/** Hidden rows read de-emphasized via the shared ghost opacity (the drag-dim token:
+ *  `--state-ghost`, not the muted veil). The ghost IS the shown/hidden boundary — no
+ *  heading. Reset to full opacity while this row is the drag subject: `rowDragging`
  *  already dims the wrapper to the ghost, and two stacked 60% layers composite to 36%
  *  — the inner row rides full so the net dim is the single intended ghost. */
 export const hiddenRow = style({
@@ -206,7 +206,7 @@ export const hiddenRow = style({
 })
 
 /** The hidden zone sits directly below the shown rows and grows into the pane's slack (rows
- *  top-aligned — Nathan's call: placed below, NOT bottom-pinned), so the drag-to-hide area
+ *  top-aligned, placed below, NOT bottom-pinned), so the drag-to-hide area
  *  highlight covers the empty space beneath them even while nothing's hidden yet. */
 export const hiddenZone = style({ flex: '1 1 auto' })
 
@@ -281,12 +281,12 @@ export const optionsRow = style({
   justifyContent: 'space-between',
 })
 
-/** The "Options" heading + the Status group labels — footnote-semibold (Nathan's call: a step heavier
+/** The "Options" heading + the Status group labels — footnote-semibold (a step heavier
  *  than the All Properties / back-row headings), the shared heading-label color. */
 export const optionsLabel = style([text.footnote.semibold, { color: COLOR.headingLabel }])
 
 /** The "All Properties" label — the optionsLabel look at SECONDARY, a tier up from the tertiary
- *  section headings (Nathan's call: only this row, not every options-row). */
+ *  section headings (only this row, not every options-row). */
 export const allPropertiesLabel = style([optionsLabel, { color: c.label.secondary }])
 
 /** The always-shown + that appends an option — the shared action-symbol color, brightening on hover. */
@@ -296,7 +296,7 @@ export const optionsAdd = style([
 ])
 
 /** Status only — the per-group + . Reuses the "Options" + button, hidden until you hover the group
- *  (its heading or its chips), per Nathan's reveal. Tertiary at rest, a state-hover fill on direct
+ *  (its heading or its chips). Tertiary at rest, a state-hover fill on direct
  *  hover; the `&&` clears `.app-toolbar button`'s control-tone default (0,1,1) so rest reads tertiary. */
 export const groupAdd = style([
   optionsAdd,
@@ -361,7 +361,7 @@ export const paletteButton = style([
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** A config body. The Link editor root also scopes `--accent` (inline) to the chosen colour, so its
- *  Switches' on-track tints to it — that pane only (Nathan's neat thing). */
+ *  Switches' on-track tints to it — that pane only. */
 export const configEditor = style({
   display: 'flex',
   flexDirection: 'column',
@@ -376,7 +376,7 @@ export const configRow = style({
   minHeight: '24px',
 })
 
-/** The row label (Underline · Full URL · Color · Style) — emphasized (Nathan's call), the primary label tone. */
+/** The row label (Underline · Full URL · Color · Style) — emphasized, the primary label tone. */
 export const configLabel = style([text.control.emphasized, { color: c.label.control }])
 
 /** The Switch at pane density — shrunk to sit level with the emphasized labels + colour chip (the same
@@ -406,7 +406,7 @@ export const crumbRow = style([
   { display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 },
 ])
 
-/** The scoped footer's lock reads the footing TRAILING tone — label-tertiary (Nathan), a
+/** The scoped footer's lock reads the footing TRAILING tone — label-tertiary, a
  *  step under the leading breadcrumb; quadrupled to outrank the BottomRow secondary bump. */
 export const footerLock = style({
   selectors: { '&&&&': { color: c.label.tertiary } },

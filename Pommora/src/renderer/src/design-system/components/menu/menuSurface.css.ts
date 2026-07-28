@@ -22,7 +22,7 @@ export const surface = style({
   minWidth: '225px',
 })
 
-// Dropdown row titles read at label-PRIMARY — the ratified surface tone, load-bearing for the
+// Dropdown row titles read at label-PRIMARY — the surface's default tone, load-bearing for the
 // settings panes' hierarchy: assigned rows read primary, and the unassigned/secondary and control
 // row overrides (settingsPane's 0-3-0 scopes) assume they're stepping DOWN from it. The sidebar
 // keeps its own title tone outside a surface, and the picker-menu OPTION is deliberately control —

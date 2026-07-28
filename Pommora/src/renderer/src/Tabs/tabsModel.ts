@@ -192,7 +192,7 @@ export function reorderWithinZone(tabs: Tab[], fromId: string, toIndex: number):
   return next
 }
 
-/** D-11 promote-to-front: an unpinned entity enters the strip at the front (left), or just behind the
+/** Promote-to-front: an unpinned entity enters the strip at the front (left), or just behind the
  *  active tab when the active tab is itself the front one (so it keeps its spot). */
 export function insertUnpinned(tabs: Tab[], activeTabId: string, tab: Tab): Tab[] {
   const at = tabs[0] && tabs[0].id === activeTabId ? 1 : 0

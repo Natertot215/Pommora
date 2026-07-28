@@ -189,7 +189,7 @@ interface SessionState {
   /** Switch a container's active view: persist to `.nexus/activeViews.json`, then update the slice
    *  (no tree reload — the pointer isn't in the tree). */
   setActiveView: (containerId: string, viewId: string) => Promise<void>
-  /** The homepage board lock (G-3), seeded from `tree.homepage.locked` on every applyTree and
+  /** The homepage board lock, seeded from `tree.homepage.locked` on every applyTree and
    *  the single cross-subtree source: the toolbar-dropdown SettingsPane toggles it, the detail-pane
    *  BlockSurface reads it to freeze the board (a React scope can't bridge the two subtrees). */
   homepageLocked: boolean
@@ -217,34 +217,34 @@ interface SessionState {
    *  ahead of the debounced save. `pageDetail.body` stays the loaded/saved snapshot. */
   liveBody: { path: string; body: string } | null
   setLiveBody: (path: string, body: string) => void
-  /** Navigate to a target: maintains the tab set (dedup/replace/spawn per the active tab, D-3b),
+  /** Navigate to a target: maintains the tab set (dedup/replace/spawn per the active tab),
    *  records recents, and fetches the detail. `{ record: false }` is a programmatic re-select — a path
    *  refetch, Back/Forward, or a tab activation — that refreshes the shown detail WITHOUT touching the
    *  tab set or recents. `{ newTab: true }` forces a new tab ("Open in New Tab"). Preview opens (once
    *  they land) also pass `{ record: false }` so Back/Forward never lands on a preview. */
   select: (target: SelectTarget, opts?: { record?: boolean; newTab?: boolean }) => Promise<void>
   /** Open tabs — the UNPINNED set (pinned tabs derive from the pins slice). The ACTIVE tab always drives
-   *  the singular `selection`/`pageDetail`. Persisted as the synced tab set (Phase 1). */
+   *  the singular `selection`/`pageDetail`. Persisted as the synced tab set. */
   tabs: Tab[]
   activeTabId: string
-  /** Tab-activation MRU (ids, most-recent-first) — governs close-focus (D-9). */
+  /** Tab-activation MRU (ids, most-recent-first) — governs close-focus. */
   tabMru: string[]
-  /** Activate an existing tab (a plain switch) — re-surfaces its target without recording (C-5); a
+  /** Activate an existing tab (a plain switch) — re-surfaces its target without recording; a
    *  newtab tab routes to the empty state. */
   activateTab: (id: string) => void
-  /** Open a fresh NavView tab (the `+`), or focus the existing one (I-1). */
+  /** Open a fresh NavView tab (the `+`), or focus the existing one. */
   openNewTab: () => void
-  /** Close a tab — MRU-focus the next (D-9); reseed a NavView when the last closes (I-5). */
+  /** Close a tab — MRU-focus the next; reseed a NavView when the last closes. */
   closeTab: (id: string) => void
-  /** Reorder within the unpinned strip (D-4b) — pinned reorder is the pins slice's reorderPin. */
+  /** Reorder within the unpinned strip — pinned reorder is the pins slice's reorderPin. */
   reorderTabs: (activeId: string, overId: string) => void
   /** Pin an unpinned tab: the entity joins the pins set and the tab graduates to the derived pinned
-   *  zone (C-6 — never dual-stored). */
+   *  zone (never dual-stored). */
   pinTab: (id: string) => void
   /** Unpin a pinned tab: the pin is removed and the entity re-enters the unpinned strip at the
-   *  front (D-11 promote-to-front). */
+   *  front (promote-to-front). */
   unpinTab: (pinId: string) => void
-  /** Step the ACTIVE tab's own Back/Forward history (D-7), skipping deleted entries. */
+  /** Step the ACTIVE tab's own Back/Forward history, skipping deleted entries. */
   goBack: () => void
   goForward: () => void
   /** Transient direction stamp for a navigation that swaps the shown view: a Back/Forward step
@@ -261,7 +261,7 @@ interface SessionState {
 
   /** Navigation layer (recents + favorites) — the shared, UI-agnostic wayfinding state NavWindow +
    *  NavPane read. Persisted per-nexus (synced) via the `nav` bridge; the store owns the arrays and
-   *  the MRU/pin/cap/prune logic. Loaded + wholesale-reset on every nexus open (E-11), recorded in
+   *  the MRU/pin/cap/prune logic. Loaded + wholesale-reset on every nexus open, recorded in
    *  `select`. Entries store only {kind,id,path} — title/icon/location resolve live (navResolve). */
   recents: RecentEntry[]
   favorites: NavFavorite[]
@@ -315,27 +315,27 @@ interface SessionState {
   closeSettings: () => void
 
   /** The Page Preview floating window (Decision Log H): null = closed. One floating window
-   *  total (D-8): opening either the preview or the NavWindow closes the other. */
+   *  total: opening either the preview or the NavWindow closes the other. */
   preview: PreviewState | null
-  /** The in-memory mirror of `page-previews.json` (H-3) — loaded once per nexus, updated on every
+  /** The in-memory mirror of `page-previews.json` — loaded once per nexus, updated on every
    *  preview mutation, saved fire-and-forget (main debounces + drains). */
   previewsFile: PreviewsFile
   /** DERIVED from `preview` (the active page tab) — kept in lockstep by every preview action so
    *  the window's consumers read one stable shape. */
   previewTarget: PreviewTarget | null
-  /** The preview's own slide stamp (H-11) — the app-wide navSlide is a single slot it can't share. */
+  /** The preview's own slide stamp — the app-wide navSlide is a single slot it can't share. */
   previewSlide: { dir: 'back' | 'fwd'; seq: number } | null
   openPreview: (target: PreviewTarget) => void
   openNavPreview: () => void
   openPreviewTab: (target: PreviewTarget) => void
   activatePreviewTab: (id: string) => void
-  /** Drag-reorder within the strip; the map sentinel never moves (H-2). Order persists (H-3). */
+  /** Drag-reorder within the strip; the map sentinel never moves. Order persists. */
   reorderPreviewTabs: (activeId: string, overId: string) => void
   closePreviewTab: (id: string, exit?: 'dismiss' | 'engulf') => void
   closePreview: (reason?: 'dismiss' | 'engulf') => void
-  /** B-2: the NavWindow's routing override toggle — persisted in `page-previews.json`. */
+  /** the NavWindow's routing override toggle — persisted in `page-previews.json`. */
   setNavOverride: (on: boolean) => void
-  /** How the CURRENT close should read (A-4): promote paths pass 'engulf' (the window flies into
+  /** How the CURRENT close should read: promote paths pass 'engulf' (the window flies into
    *  the detail pane), X/Escape 'dismiss' (the scale-out). Consumed by the exit animation. */
   previewExit: 'dismiss' | 'engulf' | 'morph'
 
@@ -355,7 +355,7 @@ interface SessionState {
    *  Resolves `true` on success, `false` if the op failed (so a caller can revert its draft). */
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
 
-  /** The property row in inline-rename edit mode (A-10) — its OWN channel: properties are
+  /** The property row in inline-rename edit mode — its OWN channel: properties are
    *  id-keyed registry entities, not paths, so `renamingPath`/`submitRename` can't carry them. */
   renamingProperty: { collectionPath: string; propertyId: string } | null
   beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
@@ -401,8 +401,8 @@ let homepageLockWritesInFlight = 0
 let systemAccentCache: string | null | undefined
 
 export const useSession = create<SessionState>((set, get) => {
-  // The wholesale per-nexus session reset (I-10): every adopt path clears the same state —
-  // openVia BEFORE its adopt IPC (D-9 ordering), applyTree's foreign-root guard for adopts that
+  // The wholesale per-nexus session reset: every adopt path clears the same state —
+  // openVia BEFORE its adopt IPC (ordering), applyTree's foreign-root guard for adopts that
   // arrive main-first (the menu's reload-state). Clearing activeTabId marks the tab set
   // never-seeded, so load() re-reads the new nexus's sidecars.
   const resetNexusSession = (): void => {
@@ -429,7 +429,7 @@ export const useSession = create<SessionState>((set, get) => {
       navWindowMode: 'list',
       navViewMode: 'list',
     })
-    clearWarm() // warmth is per-nexus AND session-only — never crosses an adoption (I-10)
+    clearWarm() // warmth is per-nexus AND session-only — never crosses an adoption
     clearPreviewWarm()
   }
 
@@ -467,7 +467,7 @@ export const useSession = create<SessionState>((set, get) => {
   // the renderer's secure context.
   const makeTabId = (): string => crypto.randomUUID()
 
-  // The preview's slide stamp (H-11): direction = strip order (the app-tab rule), its own counter.
+  // The preview's slide stamp: direction = strip order (the app-tab rule), its own counter.
   let previewSlideSeq = 0
   const stampByOrder = (
     cur: PreviewState,
@@ -488,8 +488,8 @@ export const useSession = create<SessionState>((set, get) => {
     ),
   })
 
-  // Mirror the slice into the sidecar (H-3/H-10): the live window updates its record + the open
-  // pointer; `retire` drops a re-keyed or emptied origin (H-6). Fire-and-forget — main debounces
+  // Mirror the slice into the sidecar: the live window updates its record + the open
+  // pointer; `retire` drops a re-keyed or emptied origin. Fire-and-forget — main debounces
   // and drains at quit/switch; the optional chain tolerates test stubs without the bridge.
   const mirrorPreviews = (retire?: string): void => {
     const s = get()
@@ -522,7 +522,7 @@ export const useSession = create<SessionState>((set, get) => {
       .catch(() => undefined)
   }
 
-  // Reconcile a remembered set's page tabs against the live tree (the H-10 restore): dead paths
+  // Reconcile a remembered set's page tabs against the live tree (the restore): dead paths
   // drop, renames re-path, dupes dedup, ids re-mint. The stored-active survivor comes back so the
   // caller can keep it focused; sentinels are the caller's business (nav prepends its own).
   const reconcileRecord = (
@@ -553,7 +553,7 @@ export const useSession = create<SessionState>((set, get) => {
 
   // The preview and its derived target move in lockstep (previewTarget is a Phase-2 casualty); commit
   // both from one place so no action can let them drift, and mirror the sidecar on every commit —
-  // a window emptied or re-parented away from its origin retires the old key (H-6).
+  // a window emptied or re-parented away from its origin retires the old key.
   const commitPreview = (
     next: PreviewState | null,
     extra?: { previewSlide: ReturnType<typeof stampByOrder> },
@@ -596,7 +596,7 @@ export const useSession = create<SessionState>((set, get) => {
     void get().select(reconciled.kind === 'none' ? active.target : reconciled, { record: false })
   }
 
-  // Persist the tab set (fire-and-forget; main debounces + drains at quit/switch, D-8).
+  // Persist the tab set (fire-and-forget; main debounces + drains at quit/switch).
   const persistTabs = (): void => {
     const s = get()
     void window.nexus.tabs.save({ tabs: s.tabs, activeTabId: s.activeTabId }).catch(() => undefined)
@@ -612,7 +612,7 @@ export const useSession = create<SessionState>((set, get) => {
     persistTabs()
   }
 
-  // C-6's live twin (the load-time filter covers only seeding): when an OPEN entity becomes pinned —
+  // The live twin of the pinned-tabs-derive rule (the load-time filter covers only seeding): when an OPEN entity becomes pinned —
   // locally (pinTarget from any surface) or via a synced-in pin (applyNavChanged) — its unpinned tab
   // graduates to the derived pinned zone instead of duplicating beside it. The active pointer follows.
   const graduatePinCovered = (): void => {
@@ -645,7 +645,7 @@ export const useSession = create<SessionState>((set, get) => {
     captureWarm(s.activeTabId, navKey(s.selection), { pageDetail: detail })
   }
 
-  // Back/Forward replay over the ACTIVE tab's own history (D-7): walk in `delta` direction, resolving
+  // Back/Forward replay over the ACTIVE tab's own history: walk in `delta` direction, resolving
   // each entry by id against the live tree (a renamed/moved entity → its fresh path) and skipping
   // deleted entries. A pinned/newtab active tab has no unpinned back-history, so this is a no-op.
   const stepActiveHistory = (delta: number): void => {
@@ -655,7 +655,7 @@ export const useSession = create<SessionState>((set, get) => {
     for (let i = active.navIndex + delta; i >= 0 && i < active.navStack.length; i += delta) {
       const resolved = s.tree ? reconcileSelection(s.tree, active.navStack[i]) : active.navStack[i]
       if (resolved.kind === 'none') continue // entity gone — skip to the next live entry in this direction
-      captureOutgoingDetail() // the entry being left stays warm for the return trip (I-7)
+      captureOutgoingDetail() // the entry being left stays warm for the return trip
       // target moves in lockstep with navIndex — openTab's dedup keys off `target`, so a stale one
       // would mis-dedup the very next click on the shown entity (destroying the Forward stack).
       set({
@@ -743,7 +743,7 @@ export const useSession = create<SessionState>((set, get) => {
             } catch {
               // bridge/handler absent — surfaces fall back to the first saved view
             }
-            // Navigation layer — wholesale per-nexus reset (E-11): replace every slice from disk and
+            // Navigation layer — wholesale per-nexus reset: replace every slice from disk and
             // drop the stale agenda snapshot before any record/render happens in the new nexus. Pins
             // load (+ first-open legacy migration) through their own bridge.
             try {
@@ -768,15 +768,15 @@ export const useSession = create<SessionState>((set, get) => {
               // the next open; harmless, since a lingering thumbnail just isn't shown.
               get().evictThumbs()
               // The previews sidecar loads on the same once-per-nexus trigger; the stored `open`
-              // pointer is a record, never an auto-summon (H-10).
+              // pointer is a record, never an auto-summon.
               const previews = await window.nexus.previews?.load().catch(() => null)
               if (previews?.ok) set({ previewsFile: previews.file })
               const stored = await window.nexus.tabs.load().catch(() => null)
               const storedSet = stored?.ok ? stored.set : null
               const pins = get().pins
               const seen = new Set<string>()
-              // Drop any stored tab now covered by a pin (C-6 — pinned tabs derive, never dual-store)
-              // and dedupe by entity (I-1 — a cross-device merge can't produce duplicate tabs).
+              // Drop any stored tab now covered by a pin (pinned tabs derive, never dual-store)
+              // and dedupe by entity (a cross-device merge can't produce duplicate tabs).
               const tabs = (storedSet?.tabs ?? []).filter((t) => {
                 if (t.target.kind !== 'newtab' && isPinned(t.target, pins)) return false
                 const k = tabKey(t.target)
@@ -803,7 +803,7 @@ export const useSession = create<SessionState>((set, get) => {
                 ? storedActive
                 : (tabs[0]?.id ?? livePinnedTabs[0]?.id ?? '')
               if (active === '') {
-                // Nothing persisted and no live pins — a fresh nexus opens onto one NavView tab (E-2).
+                // Nothing persisted and no live pins — a fresh nexus opens onto one NavView tab.
                 const seeded = newTabTab(makeTabId())
                 set({ tabs: [seeded], activeTabId: seeded.id, tabMru: [seeded.id] })
               } else {
@@ -885,7 +885,7 @@ export const useSession = create<SessionState>((set, get) => {
           void get().select(next, { record: false }) // refetch the detail at the page's new path — not a nav
         }
       }
-      // I-2a: every tab reconciles, not just the active selection — an inactive tab whose entity was
+      // every tab reconciles, not just the active selection — an inactive tab whose entity was
       // renamed/moved refreshes in place; a deleted entity closes its unpinned tab (pinned tabs derive
       // from pins, which render-prune, never storage-prune). Reference-preserving: an unchanged set
       // skips the write entirely.
@@ -913,7 +913,7 @@ export const useSession = create<SessionState>((set, get) => {
           applyTabResult({ tabs: rec.tabs, activeTabId: rec.activeTabId, mru: rec.mru })
         }
       }
-      // The preview's tabs reconcile like app tabs (D-6): re-path on rename/move; a deleted page
+      // The preview's tabs reconcile like app tabs: re-path on rename/move; a deleted page
       // closes its tab (the keyed embed unmounts; its flush hits a dead path, which the crud guard
       // refuses — the stale body is never written anywhere). Dead tabs fold through closeTabIn so
       // active-falls-left / origin re-parent / window-close-on-empty stay in one place.
@@ -1141,7 +1141,7 @@ export const useSession = create<SessionState>((set, get) => {
       set({ tabs: next })
       persistTabs()
     },
-    // Pinning graduates the tab (pinTarget's C-6 twin does the tab-side move; pinTarget itself
+    // Pinning graduates the tab (pinTarget's twin does the tab-side move; pinTarget itself
     // refuses adopted ids, in which case nothing moves and the tab stays).
     pinTab: (id) => {
       const tab = get().tabs.find((t) => t.id === id)
@@ -1153,7 +1153,7 @@ export const useSession = create<SessionState>((set, get) => {
       if (!pinnedTab || pinnedTab.target.kind === 'newtab') return
       const target = pinnedTab.target
       get().unpinTarget(navKey(target))
-      // I-1: if the entity somehow already holds an unpinned tab, focus it instead of duplicating.
+      // if the entity somehow already holds an unpinned tab, focus it instead of duplicating.
       const existing = get().tabs.find(
         (t) => t.target.kind !== 'newtab' && navKey(t.target) === navKey(target),
       )
@@ -1319,13 +1319,13 @@ export const useSession = create<SessionState>((set, get) => {
     navOpen: false,
     openNav: () => {
       void get().ensureAgendaSnapshot() // warm the agenda snapshot so search can list Tasks/Events
-      // D-8 closes any page preview; the NavWindow then IS the nav flavor (H-2) — its durable tab
+      // Opening the NavWindow closes any page preview; the NavWindow then IS the nav flavor — its durable tab
       // set restores beside the perma map tab.
       set({ navOpen: true })
       get().openNavPreview()
     },
     closeNav: () => {
-      // The window closes; its set stays remembered (H-3) — the mirror already holds every mutation.
+      // The window closes; its set stays remembered — the mirror already holds every mutation.
       clearPreviewWarm()
       set({ navOpen: false, preview: null, previewTarget: null })
       mirrorPreviews()
@@ -1343,8 +1343,8 @@ export const useSession = create<SessionState>((set, get) => {
     previewSlide: null,
     openPreview: (target) => {
       const cur = get().preview
-      if (cur?.flavor === 'page' && cur.originId === target.id) return // I-1: same-origin no-op
-      // H-3: a summon restores the origin's remembered set, reconciled; an emptied or absent
+      if (cur?.flavor === 'page' && cur.originId === target.id) return // same-origin no-op
+      // a summon restores the origin's remembered set, reconciled; an emptied or absent
       // record falls back to the bare origin.
       const { tabs: restored, activeTab } = reconcileRecord(get().previewsFile.origins[target.id])
       const tabs =
@@ -1359,7 +1359,7 @@ export const useSession = create<SessionState>((set, get) => {
       }
       clearPreviewWarm() // a summon/overtake re-mints every tab id — prior warmth is unreachable
       // previewExit re-seeds on every open: only the close that WROTE 'engulf' may play the FLIP —
-      // the six other window-closing paths (D-8/D-9/reconcile) never write the flag.
+      // the other window-closing paths never write the flag.
       set({ preview, previewTarget: deriveTarget(preview), navOpen: false, previewExit: 'dismiss' })
       mirrorPreviews()
     },
@@ -1371,7 +1371,7 @@ export const useSession = create<SessionState>((set, get) => {
       // exit hides the outgoing window instantly so the nav carries the whole motion.
       const morphing = cur?.flavor === 'page'
       if (morphing) stashWindowMorph()
-      // H-2: the map sentinel is always tab 1; the remembered page tabs restore after it. The map
+      // the map sentinel is always tab 1; the remembered page tabs restore after it. The map
       // tab opens ACTIVE (the gallery is the landing view; remembered tabs sit beside it).
       const { tabs: pages } = reconcileRecord(get().previewsFile.navSet)
       const sentinel = { id: makeTabId(), target: { kind: 'navwindow' as const } }
@@ -1392,7 +1392,7 @@ export const useSession = create<SessionState>((set, get) => {
     setNavOverride: (on) => savePreviewsFile({ ...get().previewsFile, navOverride: on }),
     openPreviewTab: (target) => {
       const cur = get().preview
-      // H-7 lives at the caller (the behind-the-window gate needs the main selection); here a
+      // The behind-the-window gate lives at the caller (it needs the main selection); here a
       // tab-less call is a summon.
       if (!cur) {
         get().openPreview(target)
@@ -1433,7 +1433,7 @@ export const useSession = create<SessionState>((set, get) => {
       commitPreview(next)
     },
     closePreview: (reason) => {
-      // X/Escape: the window closes but its set stays remembered (H-3) — only `open` clears.
+      // X/Escape: the window closes but its set stays remembered — only `open` clears.
       // Warmth dies with the window: a restore re-mints tab ids, so old entries are unreachable.
       clearPreviewWarm()
       set({ preview: null, previewTarget: null, previewExit: reason ?? 'dismiss' })
@@ -1452,10 +1452,10 @@ export const useSession = create<SessionState>((set, get) => {
         )
       }
       // A genuine navigation (record !== false) maintains the tab set — dedup/replace/spawn per the
-      // active tab's pin state (D-3b) — and records recents. A programmatic re-select (Back/Forward, a
+      // active tab's pin state — and records recents. A programmatic re-select (Back/Forward, a
       // path refetch, a tab activation) passes { record: false } and does neither; it only refreshes the
       // shown detail below. Recents record ONLY when a tab actually opened (a spawn or in-place replace),
-      // never on a focus/re-surface of an already-open tab (C-5).
+      // never on a focus/re-surface of an already-open tab.
       if (opts?.record !== false) {
         captureOutgoingDetail()
         const s = get()
@@ -1529,7 +1529,7 @@ export const useSession = create<SessionState>((set, get) => {
             pageDetail: null,
             pageError: undefined,
           })
-          // Entry-mint (G-1): a view-bearing container with an empty views[] gets its default minted
+          // Entry-mint: a view-bearing container with an empty views[] gets its default minted
           // here, the sole mint site. A fired side-effect — the case stays synchronous for render.
           const col = findCollection(get().tree, target.id)
           if (col) ensureContainerView(col, col.properties ?? [], get().load)
@@ -1554,7 +1554,7 @@ export const useSession = create<SessionState>((set, get) => {
           return
         }
         case 'page': {
-          // Warm-instant (B-3): a warm entity under the active tab renders its cached detail with no
+          // Warm-instant: a warm entity under the active tab renders its cached detail with no
           // fetch and no loading flash. The path equality keeps it honest across renames — a stale-path
           // detail would route saves at the old file — and a miss falls through to the cold fetch.
           const cached = readWarm(get().activeTabId, navKey(target))?.pageDetail
