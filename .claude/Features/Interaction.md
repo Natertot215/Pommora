@@ -6,7 +6,7 @@ The single home for the React build's animation system: the motion token vocabul
 
 The single source is `design-system/tokens/motion.ts`, surfaced as CSS vars through `tokens/theme-vars.css.ts`. Every permanent transition references these, not literals.
 
-- **Durations:** `fast` (hover feedback and affordance reveal — grips, hover buttons, the sidebar's section "+") · `disclosure` (chevron + disclosure open/close, app-wide — the shared `twisty`, the `Reveal` primitive, the editor fold) · `dropdown` (the inline picker + autocomplete open/close — the Bloom keyframes at a snappier pace) · `base` (the shell slides — sidebar + inspector + the reflow that tracks them) · `slow` (the menu Bloom, and the app-wide `hover-pop` swell). Every step publishes as a `--duration-*` var, with `disclosure` on its own `--disclosure` so it stays tunable apart from `fast`.
+- **Durations:** `fast` (hover feedback and affordance reveal) · `disclosure` (chevron and disclosure open/close, app-wide) · `dropdown` (the inline picker and autocomplete, Bloom at a snappier pace) · `base` (the shell slides and the reflow tracking them) · `slow` (the menu Bloom and the hover-pop swell). Every step publishes as a `--duration-*` var, with `disclosure` on its own `--disclosure` so it stays tunable apart from `fast`.
 
 - **Easings:** `standard` (the everyday ease) · `inOut` (a symmetric fade — in as fast as out) · `out` (emphatic moves, also the drag "out" curve). All three publish as `--ease-*` vars.
 
