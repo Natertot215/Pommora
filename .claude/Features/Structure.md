@@ -75,7 +75,7 @@ Every link is stored as a title and resolved at read time — an id never reache
 
 #### II. On-Disk Model
 
-Files are canonical: Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, sidecars, and all config are JSON. **A container's kind is its folder's sidecar filename**, never a frontmatter field; an **Agenda item's kind is its file extension**. Foreign keys — and YAML comments on pages — are preserved by value on every write. A device-local database beside the read path holds per-machine chrome only — no content, so a Nexus stays complete without it. Full on-disk spec and the read/IPC engine → `Architecture.md`.
+Files are canonical: Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, sidecars, and all config are JSON. **A container's kind is its folder's sidecar filename**, never a frontmatter field; an **Agenda item's kind is its file extension**. Foreign keys — and YAML comments on pages — are preserved by value on every write. A device-local database beside the read path holds per-machine chrome only — view selection, editor state, tabs, and each block host's document — so a Nexus stays complete without it. Full on-disk spec and the read/IPC engine → `Architecture.md`.
 
 #### II. The NexusTree Contract
 
