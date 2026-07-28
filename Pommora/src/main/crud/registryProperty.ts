@@ -17,8 +17,8 @@ function seeded(def: PropertyDefinition): PropertyDefinition {
   return d
 }
 
-/** Mint + persist a nexus-wide definition, appending its id to the nexus order (A-9).
- *  Duplicate names are allowed — the flat D-3 policy; ids keep twins mechanically safe. */
+/** Mint + persist a nexus-wide definition, appending its id to the nexus order.
+ *  Duplicate names are allowed — the flat policy; ids keep twins mechanically safe. */
 export function createProperty(
   root: string,
   def: PropertyDefinition,
@@ -71,7 +71,7 @@ export function removeFromRegistry(root: string, propertyId: string): Promise<Re
   })
 }
 
-/** Move propertyId to toIndex in the nexus-wide cosmetic order (C-1). Clamped; unknown id fails. */
+/** Move propertyId to toIndex in the nexus-wide cosmetic order. Clamped; unknown id fails. */
 export function reorderRegistry(
   root: string,
   propertyId: string,

@@ -4,7 +4,7 @@
 // its file lock (rewritePageSerialized) — the same lock the cell-write path takes, so a
 // cascade can't clobber a concurrent edit on a page. Per-file, not cross-file atomic: a
 // partly-applied cascade is recoverable by re-running. No SQLite — the inbound set is found
-// by scanning; Phase 6's index can narrow this later, but correctness doesn't depend on it.
+// by scanning; the index can narrow this later, but correctness doesn't depend on it.
 
 import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'

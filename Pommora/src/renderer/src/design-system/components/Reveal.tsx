@@ -7,7 +7,7 @@ import { duration as motionDuration, easing } from '../tokens/motion'
  * chevron. Children mount on open and unmount once the collapse finishes, so closed
  * subtrees stay out of the DOM (no regression to the sidebar's lazy rendering).
  * `duration` overrides the default disclosure beat — a Reveal inside a PaneSlider pins
- * to the pane's beat so the unfold and the height-resize land together (E-8).
+ * to the pane's beat so the unfold and the height-resize land together.
  *
  * The inner clips only while animating/collapsed — once fully open and idle it stops
  * clipping so affordances that overhang the row (the table's gutter drag grips) aren't

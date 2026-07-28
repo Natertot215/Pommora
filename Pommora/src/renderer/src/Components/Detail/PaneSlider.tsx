@@ -16,7 +16,7 @@ const SLIDE_MS = Number.parseInt(duration.base, 10)
  * Width, height, and the slide share one duration/easing so the horizontal move and the vertical
  * resize land together.
  *
- * The measure-then-flip is intrinsic (D-1): both slots stay mounted (each watched by a ResizeObserver)
+ * The measure-then-flip is intrinsic: both slots stay mounted (each watched by a ResizeObserver)
  * and the push lags the flip by one frame, so the detail's height is already measured the instant the
  * viewport animates — no growing-from-`auto` entry bounce. Back flips immediately so the slide-out
  * isn't delayed. Nesting composes: a detail may itself be a PaneSlider (each only slides + resizes, so

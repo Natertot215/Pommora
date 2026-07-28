@@ -5,7 +5,7 @@ import { createGlobalTheme, style } from '@vanilla-extract/css'
  * Edit a value here and it propagates to every composed text style and every
  * component that uses one. Sizes mirror the Figma "Pommora - React" text styles
  * (Inter, letter-spacing 0); weights follow the standard/emphasized/semibold/bold
- * ladder by name, not a per-style emphasis. Full spec: .claude/Features/Typography.md.
+ * ladder by name, not a per-style emphasis.
  */
 export const font = createGlobalTheme(':root', {
   family:
@@ -59,7 +59,7 @@ const ramp = (key: ScaleKey): Record<WeightKey, string> => {
 /**
  * Composed text styles — apply a whole style by name, e.g. `<span className={text.body.emphasized}>`.
  * Size comes from the style key; weight from the variant, named for the weight it is
- * (standard/emphasized/semibold/bold). Full spec: .claude/Features/Typography.md.
+ * (standard/emphasized/semibold/bold).
  */
 export const text = {
   largeTitle: ramp('largeTitle'),

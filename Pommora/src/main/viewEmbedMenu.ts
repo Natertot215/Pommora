@@ -1,4 +1,4 @@
-// The view embed's two right-click menus (H-5): the title row's chrome menu (icon / title-row
+// The view embed's two right-click menus: the title row's chrome menu (icon / title-row
 // visibility) and the switcher area's presentation menu (pill titles · New View · Style) — the
 // same returning-menu chassis as the ViewDropdown's. Show Title only surfaces in the area menu
 // while the title row is hidden: with the row gone, its own right-click target is gone too.

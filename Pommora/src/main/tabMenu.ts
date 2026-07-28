@@ -2,7 +2,7 @@ import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { TabMenuAction, TabMenuContext } from '@shared/tabMenu'
 
-// The tab right-click menu (I-12): Pin/Unpin · Close, gated by the tab's state.
+// The tab right-click menu: Pin/Unpin · Close, gated by the tab's state.
 // resolve(null) covers a dismissed menu so the renderer no-ops.
 export function popTabMenu(win: BrowserWindow, ctx: TabMenuContext): Promise<TabMenuAction | null> {
   return new Promise<TabMenuAction | null>((resolve) => {

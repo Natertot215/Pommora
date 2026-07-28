@@ -34,7 +34,7 @@ import { iconForTypeSwitch } from './viewIcon'
 import { cx } from '../../design-system/cx'
 import * as vs from './viewSettings.css'
 
-// Grid order (D-4) + each type's glyph (D-5). Unimplemented types render at full weight but their
+// Grid order + each type's glyph. Unimplemented types render at full weight but their
 // tiles are inert.
 const TYPE_ORDER: ViewType[] = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline']
 const TYPE_GLYPH: Record<ViewType, IconName> = {
@@ -47,7 +47,6 @@ const TYPE_GLYPH: Record<ViewType, IconName> = {
 }
 const IMPLEMENTED: ReadonlySet<ViewType> = new Set(['table', 'cards'])
 
-// The cards Scale slider's range — the card-size factor. Steps of 0.05; default 1.
 const SCALE_MIN = 0.5
 const SCALE_MAX = 1.5
 
@@ -85,7 +84,7 @@ const LEAF_CURRENT: Record<Exclude<Leaf, 'layout'>, string> = {
 }
 
 /**
- * ViewSettings — the shared per-view editor, both doors (D-1). The full door (a ViewPane row's
+ * ViewSettings — the shared per-view editor, both doors. The full door (a ViewPane row's
  * chevron) carries the ⋮ (Duplicate/Delete) + the Layout/Group/Filter/Sort leaf rows; the flat door
  * (SettingsPane → Layout) drops the ⋮ and the leaf rows and reads `Settings · Layout`. Both frame the
  * same body — title + type grid (+ the flat door's icon toggles) — with the Format control pinned as
@@ -119,7 +118,7 @@ export function ViewSettings({
   }
   const setType = (type: ViewType): void => {
     if (type === view.type) return
-    // Re-icon to the new type's glyph only when the view still wears the old default (Decision B);
+    // Re-icon to the new type's glyph only when the view still wears the old default;
     // a custom icon is preserved.
     const icon = iconForTypeSwitch(view.icon, view.type, type, TYPE_GLYPH)
     write(icon ? { type, icon } : { type })
@@ -148,7 +147,7 @@ export function ViewSettings({
     }
   }
 
-  // The format double-chevron (D-8): the two-option Compact ⇄ Standard toggle, rendered as the cards
+  // The format double-chevron: the two-option Compact ⇄ Standard toggle, rendered as the cards
   // footing ("Style", cards-grid glyph) and the table footer ("Format", layers-2 glyph) — one control.
   const formatToggle = (glyph: IconName, label: string): React.JSX.Element => (
     <MenuItem
@@ -172,7 +171,7 @@ export function ViewSettings({
     </MenuItem>
   )
 
-  // The cards footing (K-2): Style over Scale (the ProgressBar-logic slider with the glass knob).
+  // The cards footing: Style over Scale (the ProgressBar-logic slider with the glass knob).
   // Pinned on the editor in both doors, the Format slot.
   const cardsFooting =
     view.type === 'cards' ? (
@@ -272,7 +271,7 @@ export function ViewSettings({
     </div>
   )
 
-  // Format — the pinned footer (D-8): persists, inert visually this cycle. Table-only.
+  // Format — the pinned footer: persists, inert visually this cycle. Table-only.
   const formatRow =
     view.type === 'table' ? (
       <MenuBottomRow>{formatToggle('layers-2', 'Format')}</MenuBottomRow>

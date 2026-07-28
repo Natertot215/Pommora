@@ -14,7 +14,7 @@ type MenuItemProps = {
   /** Optional trailing glyph — e.g. a submenu chevron (1em, secondary). */
   trailing?: ReactNode
   selected?: boolean
-  /** Tree depth — adds 14px of left inset per level on top of the 8px base. */
+  /** Tree depth — adds a left inset per level on top of the row's base padding. */
   indent?: number
   onClick?: (e: React.MouseEvent) => void
   onContextMenu?: (e: MouseEvent) => void

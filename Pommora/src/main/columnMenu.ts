@@ -4,7 +4,7 @@ import { styleMenuItems, type ColumnMenuAction, type ColumnMenuContext } from '@
 import type { ColumnAlign } from '@shared/views'
 import { styleSubmenu } from './styleMenu'
 
-// The table-view column header's right-click menu (E-1/E-5) — same shape as popTableMenu. Align (a radio
+// The table-view column header's right-click menu — same shape as popTableMenu. Align (a radio
 // L/C/R, current checked) + Style (per-type radios from the shared builder) + Hide; the Title column
 // carries none (empty menu ⇒ dismissed). resolve(null) covers a dismissed menu so the renderer no-ops.
 export function popColumnMenu(
