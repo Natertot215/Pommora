@@ -16,13 +16,13 @@ Pommora is a personal management app based on Nathan’s frustration with modern
 - **Properties:** the nexus-wide typed attributes that collections inherit, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use. 
 - **Connections:** inline `[[Title]]` colored-text links that live in a Page's Markdown body (the canonical source) and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix.
 
-**Files are canonical for content.** Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, and container sidecars are JSON; an entity's kind comes from its folder's sidecar, not the extension. Foreign keys are preserved on every write. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development — but legibility is a claim about *content*, not about every byte the app stores: derived indexes and device-local caches belong in SQLite, not in hand-readable JSON. The index is currently built and maintained with **no query consumer** — writing that facade is the open architectural task.
+**Files are canonical for content.** Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, and container sidecars are JSON; an entity's kind comes from its folder's sidecar, not the extension. Foreign keys are preserved on every write. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development — but legibility is a claim about *content*, not about every byte the app stores: per-machine chrome and derived caches belong in `nexus.db`, not in hand-readable JSON. A **content** index — the one Linked-From, backlinks and full-text search all wait on — is unbuilt, and gets written alongside the query layer that reads it.
 
 ### Stack
 
 Pommora is an **Electron** desktop app — a **React + TypeScript** renderer over a Node main process that owns the filesystem. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5 (compat pin — newer plugin-react needs Vite 8, which electron-vite doesn't support yet) · Zustand · TanStack Table/Virtual · `react-markdown` + `remark-gfm` · `eemeli/yaml` · `lucide-react` (the curated icon registry — `design-system/symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 build behind a swappable editor seam. The codebase lives at `Pommora/` on the monorepo's main branch.
 
-**No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `db.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
+**No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `db//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 
 **The Figma Library** (https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r) is canonical for design values — mirror changes into the tokens at `/design-system.` The live showcase deploys from `Pommora/` to https://pommora-design-system.vercel.app.
 
@@ -31,7 +31,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Main owns the filesystem.** All fs/Node lives in `src/main`, exposed to the renderer only through a **narrow typed IPC** bridge in `src/preload` (contextBridge). The renderer never touches `fs`/Node.
 - **`src/shared/types.ts` is the cross-process contract.** No fs, no React there. Both sides import it.
 - **IPC never throws across the boundary** — handlers return a `{ ok: true, … } | { ok: false, error }` envelope.
-- **Filesystem is canonical.** The on-disk model is the portable contract (TS-native serialization). No SQLite on the read path *currently* — a single fs walk is the source (SQLite returns later as a regeneratable query accelerator).
+- **Filesystem is canonical.** The on-disk model is the portable contract (TS-native serialization). No SQLite on the content read path — a single fs walk is the source; the database carries per-machine chrome only.
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; don't add unrequested complexity.
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full rebuild / re-walk when an incremental or cached update works — cache, memoize, snapshot, subscribe narrowly. It's THE lag source.

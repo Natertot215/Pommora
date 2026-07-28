@@ -1,6 +1,6 @@
 ### Architecture — Data Layer + Nexus
 
-The dynamics of Pommora's data layer — the on-disk Nexus, the read + state layer, the SQLite index, the atomic-write contract, the adopter, and the external-edit watcher. PRD carries the high-altitude storage model.
+The dynamics of Pommora's data layer — the on-disk Nexus, the read + state layer, the device-local database, the atomic-write contract, the adopter, and the external-edit watcher. PRD carries the high-altitude storage model.
 
 ---
 
@@ -8,9 +8,9 @@ The dynamics of Pommora's data layer — the on-disk Nexus, the read + state lay
 
 Every architectural choice below traces back to one of these.
 
-1. **Files are canonical (≠ everything is Markdown).** Only Pages are Markdown; Tasks, Events, sidecars, Contexts, Homepage, and Settings stay JSON. SQLite is regeneratable scaffolding, never source of truth — no user data is trapped in it.
+1. **Files are canonical (≠ everything is Markdown).** Only Pages are Markdown; Tasks, Events, sidecars, Contexts, Homepage, and Settings stay JSON. SQLite holds no content — only per-machine chrome — so no user data is trapped in it.
 
-2. **Agent legibility.** External agents (Claude via MCP, any filesystem tool, vim, Obsidian) read Pommora's entire structured graph — Pages, schemas, relations, properties — directly from plain text files. The bar is convention-aware, not stranger-instant: a file that abstracts a resolver, an id reference, or a path lookup still counts as legible once the agent has learned the convention. The firm line that never bends: no user data is trapped in a binary blob or held only in the regeneratable index.
+2. **Agent legibility.** External agents (Claude via MCP, any filesystem tool, vim, Obsidian) read Pommora's entire structured graph — Pages, schemas, relations, properties — directly from plain text files. The bar is convention-aware, not stranger-instant: a file that abstracts a resolver, an id reference, or a path lookup still counts as legible once the agent has learned the convention. The firm line that never bends: no user data is trapped in a binary blob. Legibility is a claim about content, not about every byte the app stores — which is exactly why per-machine chrome belongs in the database and not in a file an agent would have to learn to ignore.
 
 ---
 
@@ -45,7 +45,7 @@ A Nexus is a single folder. Pommora opens it via picker and treats it as canonic
     properties.json                     ← nexus-wide property registry (propId → definition)
     saved-config.json                   ← Saved-section entry labels
     homepage.json                       ← singleton Homepage entity (composed blocks)
-    index.db                            ← SQLite index (regeneratable, schema-versioned)
+    nexus.db                            ← device-local operational state (schema-versioned)
     contexts.json                       ← the Context registry (order = display)
     contexts/<Context>/<Space>/_space.json ← one Space per folder
 
@@ -88,15 +88,17 @@ Mutations are separate by construction: the write path never runs inside a read,
 
 ---
 
-#### SQLite index — regeneratable scaffolding
+#### The device-local database
 
-The index lives at `<nexus>/.nexus/index.db`, travelling with the Nexus so a moved or renamed one keeps it without re-pathing. DDL is canonical in `src//main//index//schema.ts`.
+`<nexus>/.nexus/nexus.db` travels with the Nexus so a moved or renamed one keeps it without re-pathing, and holds exactly one table of substance: `local_state`, keyed by `(scope, key)`. DDL is canonical in `src//main//db//schema.ts`; `node:sqlite` sits behind `driver.ts` as the swappable seam, so there is no native module to compile and no runtime ABI to match.
 
-**Fully regeneratable.** A schema-version mismatch on open force-deletes and rebuilds the whole database rather than migrating it, and the version is stamped only after a rebuild succeeds, so a failed one retries next launch instead of locking in an empty index. Losing the file costs a rebuild, nothing more.
+**What lives here.** Per-machine chrome only — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, and the recents stream. None of it is authored content, and two machines interleaving any of it has no correct answer.
 
-**No query consumer — the index is write-only.** Nothing reads it: there is no query facade, and the only statements outside the write layer are the version handshake. Everything the product needs is answered off the in-memory tree instead. Writing that facade is the open architectural task, and it gates the features with no other route — Linked-from, backlinks, and full-text search.
+**What deliberately does not.** Favorites and pins stay files, because they are deliberate, rarely written, and the one part of Navigation worth following a user across machines. Everything canonical — the registry, Contexts, Homepage, settings, schemas — stays a file by the first principle.
 
-**Update path — full rebuild per mutation.** There is no incremental updater. Every successful `mutate` op drops the database and cold-rebuilds it, re-walking the nexus and re-reading every page body. The body-autosave channel sits outside that contract, so a page typed into after a rebuild stays unindexed until the next mutation. This is a known violation of the never-rebuild-the-whole-Y rule, currently paid for no benefit; it resolves either by writing the query consumer that justifies it or by suspending the refresh until one exists.
+**Every action is one statement.** A change is a single-row upsert; an emptied value deletes its key. Nothing coalesces, nothing locks, and nothing is owed at quit, which is what retired the debounce engine, its drain contract and the before-quit gate that once deferred the app's exit.
+
+**Versioned, not migrated.** A schema mismatch on open deletes the file and starts clean. That costs a machine its chrome once — the same outcome a corrupt sidecar always had — and is why the schema stays small enough that the trade is obviously worth it.
 
 A burst of edits costs **one** rebuild. At most a single rebuild runs at a time with one more queued behind it, and that follow-up sees the settled files. The guard is correctness rather than tuning: the rebuild deletes the database before rewriting it, so two overlapping passes would unlink the file the first was still filling.
 
