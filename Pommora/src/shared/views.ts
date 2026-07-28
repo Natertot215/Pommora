@@ -90,11 +90,10 @@ export interface FilterRule {
   values?: string[]
 }
 
-/** A group of filter rules combined by `match`: all = AND, any = OR, none = NOR (no rule may
- *  match). RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR like
- *  `(A AND B) OR C` (React-ahead of Swift's flat rules, whose modes are all/any only).
- *  Whether the filter APPLIES is a separate axis — `SavedView.filter_enabled` — so turning a
- *  filter off never costs it its authored mode. */
+/** A group of filter rules combined by `match`: all = AND, any = OR, none = NOR. RECURSIVE: a
+ *  child may itself be a FilterGroup, expressing mixed AND/OR like `(A AND B) OR C`
+ *  (React-ahead of Swift's flat rules). Whether the filter APPLIES is a separate axis —
+ *  `SavedView.filter_enabled` — so turning it off never costs it its authored mode. */
 export interface FilterGroup {
   match: MatchMode
   rules: Array<FilterRule | FilterGroup>
@@ -363,10 +362,9 @@ function mintVisibility(
   }
 }
 
-/** Mint the seeded/entry-minted default Table view — title-only, every user prop AND the default-on
- *  Context columns hidden, routed through the same per-type visibility seam as a `+`-created view, so
- *  a view always starts clean and the user reveals what they want. No sort, no `_modified_at` column.
- *  Carries the sentinel id until first save. */
+/** The seeded/entry-minted default Table view — same visibility seam as a `+`-created view, so
+ *  it always starts clean and the user reveals what they want. Carries the sentinel id until
+ *  first save. */
 export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
   return {
     ...mintBase('Table'),
@@ -374,8 +372,6 @@ export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
   }
 }
 
-/** Mint a `+`-created view: title-only (every assigned property + the default-on Context columns
- *  hidden), routed through the per-type visibility seam. Carries the sentinel id until first save. */
 export function mintNewView(name: string, schema: PropertyDefinition[]): SavedView {
   return { ...mintBase(name), ...mintVisibility('table', schema) }
 }

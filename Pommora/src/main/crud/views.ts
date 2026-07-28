@@ -1,8 +1,7 @@
 // View persistence CRUD — save / reorder / delete a SavedView in a Collection or Set sidecar's
-// `views[]`. Read-modify-write through readSidecar/writeSidecar so the sidecar's foreign keys (top
-// level AND on the views NOT being touched) ride through untouched. A freshly-minted default view
-// arrives with the `view_default` sentinel id; saveView swaps it for a real `view_<ulid>` here
-// (shared/ can't mint ids — see mintDefaultView). Errors flow as Result, never thrown.
+// `views[]`. Read-modify-write through readSidecar/writeSidecar so foreign keys ride through
+// untouched. A freshly-minted default view arrives with the `view_default` sentinel id; saveView
+// swaps it for a real `view_<ulid>` here (shared/ can't mint ids — see mintDefaultView).
 
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
 import { DEFAULT_VIEW_ID, VIEW_ID_PREFIX, type SavedView } from '@shared/views'

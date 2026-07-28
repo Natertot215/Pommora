@@ -550,15 +550,15 @@ export function CalendarPicker({
   const prevMonth = slide?.from ?? cursor
   const year = cursor.getFullYear()
   // The grid viewport's height is COMPUTED from the target month's row count (geometry mirrors
-  // the css: 24px cells · 2px row gap · 2px bottom pad) and set the instant nav fires — SizeMorph
-  // then animates the delta on the same duration-base beat as the slide keyframe, so the resize
-  // FLOWS with the horizontal move (the PaneSlider contract) instead of snapping after it.
+  // the css) and set the instant nav fires — SizeMorph then animates the delta on the same
+  // duration-base beat as the slide keyframe, so the resize FLOWS with the horizontal move
+  // (the PaneSlider contract) instead of snapping after it.
   const gridHeight = rowsFor(cursor) * 24 + (rowsFor(cursor) - 1) * 2 + 2
   const jump = (y: number, m: number): void => {
     setCursor(new Date(y, m, 1))
     setMenu(null)
   }
-  // ~10 years visible before the list scrolls (the menu's max-height caps it); ±10 around the cursor.
+  // Years visible before the list scrolls (the menu's max-height caps it), centered on the cursor.
   const yearChoices = Array.from({ length: 21 }, (_, i) => year - 10 + i)
   const monthName = (m: number): string =>
     new Date(2026, m, 1).toLocaleDateString('en-US', { month: 'long' })

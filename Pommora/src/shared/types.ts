@@ -15,10 +15,9 @@ export type NodeKind =
   | 'set'
   | 'page'
 
-// The Settings accent palette — the spectrum solids usable as the app accent, plus
-// `system` (follow the OS accent). Names mirror the renderer's vars.color.solid
-// keys (color.css.ts); greyDefault is excluded (it's the chip "Default" neutral,
-// not an accent). resolveAccent (renderer) maps each name to its hex.
+// The spectrum solids the app accent can be set to, plus `system` (follow the OS accent).
+// Names mirror the renderer's vars.color.solid keys; greyDefault is excluded (the chip
+// "Default" neutral, not an accent).
 export const ACCENT_COLORS = [
   'red',
   'orange',
@@ -36,9 +35,8 @@ export type AccentColor = (typeof ACCENT_COLORS)[number]
 /** The `accent` value in .nexus/settings.json: a spectrum solid, or follow-the-OS. */
 export type AccentSetting = AccentColor | 'system'
 
-// The chip palette's ten solid keys — the render-palette vocabulary (ChipColorName minus
-// the neutral 'default') shared by option colors and Space colors. Main validates Space
-// color writes against it; the renderer's chip palette accessor keys off the same list.
+// The chip palette's solid keys, shared by option colors and Space colors. Main validates
+// Space color writes against it; the renderer's chip palette accessor keys off the same list.
 export const CHIP_SOLID_COLORS = [
   'red',
   'orange',
@@ -53,9 +51,9 @@ export const CHIP_SOLID_COLORS = [
 ] as const
 export type ChipSolidColor = (typeof CHIP_SOLID_COLORS)[number]
 
-/** Legacy external color names (Notion select colors / the Swift Area palette) → their
- *  chip solid. The 7 shared hues map 1:1; brown/pink/indigo take a nearest color;
- *  teal→cyan; gray→grey. `accent` and unknowns are deliberately absent (→ unset). */
+/** Legacy external color names (Notion select colors / the Swift Area palette) → their chip
+ *  solid — most hues map 1:1; brown/pink/indigo take a nearest color; teal→cyan; gray→grey.
+ *  `accent` and unknowns are deliberately absent (→ unset). */
 export const LEGACY_CHIP_COLOR_MAP: Record<string, ChipSolidColor> = {
   gray: 'grey',
   brown: 'orange',
@@ -70,11 +68,8 @@ export const LEGACY_CHIP_COLOR_MAP: Record<string, ChipSolidColor> = {
   indigo: 'purple',
 }
 
-/**
- * Default accent when settings.json omits or has an invalid `accent`. A concrete
- * spectrum color (never `system`) so it always resolves to a hex and can seed the
- * static `--accent`. Users opt into `system` explicitly.
- */
+/** Default when settings.json omits or has an invalid `accent`. A concrete spectrum color
+ *  (never `system`) so it always resolves to a hex; users opt into `system` explicitly. */
 export const DEFAULT_ACCENT: AccentColor = 'lavender'
 
 /** Connection color — the inline [[Title]] connection link color. `'accent'` (the default) tracks
@@ -169,16 +164,15 @@ export interface BaseNode {
   kind: NodeKind
   /** Derived from the file/folder basename — never stored on disk. */
   title: string
-  /** Optional per-entity icon override (a symbol name). */
+  /** A symbol name; overrides the kind's default icon. */
   icon?: string
 }
 
 /**
- * A node backed by a real file or folder on disk, carrying its nexus-relative
- * POSIX path so a mutation can address it: the renderer sends `path` back and
- * main resolves it under the session root (the renderer must never reconstruct
- * the on-disk path — that layout is main's to know). Pages + every container are
- * PathNodes.
+ * A node backed by a real file or folder on disk, carrying its nexus-relative POSIX path so a
+ * mutation can address it: the renderer sends `path` back and main resolves it under the session
+ * root — the renderer must never reconstruct the on-disk path itself. Pages + every container
+ * are PathNodes.
  */
 export interface PathNode extends BaseNode {
   /** Nexus-relative POSIX path to the entity on disk (forward slashes). */
@@ -352,8 +346,8 @@ export type SelectionState =
   | { kind: 'set'; id: string; path: string }
   | { kind: 'page'; id: string; path: string }
 
-/** What can be driven into the main pane or a tab — every `SelectionState` except the transient
- *  `none`. Narrower than `NavTarget`: no agenda kinds (they have no click destination in v1). */
+/** Every `SelectionState` except the transient `none`. Narrower than `NavTarget`: no agenda
+ *  kinds (they have no click destination in v1). */
 export type SelectTarget = Exclude<SelectionState, { kind: 'none' }>
 
 /** A navigable target for the Navigation layer: a `SelectTarget` widened with the agenda kinds
@@ -378,11 +372,9 @@ export type PinEntry = NavTarget & { order: number; deleted?: boolean }
  *  `SelectionState` kind, so it bypasses `select` entirely. */
 export type NewTabSentinel = { kind: 'newtab' }
 
-/** A tab's target: any drivable selection, or the new-tab sentinel. */
 export type TabTarget = SelectTarget | NewTabSentinel
 
-/** A preview tab's target: a page, or the NavWindow flavor's tab-1 sentinel — the gallery itself;
- *  no id/path, never warmed. */
+/** A page, or the NavWindow flavor's tab-1 sentinel — the gallery itself; no id/path, never warmed. */
 export type PreviewTabTarget = SelectTarget | { kind: 'navwindow' }
 
 /** One toolbar tab. Carries its OWN Back/Forward history (`navStack`/`navIndex`). `isPinned` is
@@ -438,9 +430,9 @@ export interface ThumbRect {
   y: number
   width: number
   height: number
-  /** DIP height of the toolbar band overlapping the top of the shot — overpainted so its chrome doesn't
-   *  bake in (no live hide → no flicker). `maskFill` picks the fill: `banner` copies the banner just below
-   *  the band up over it (a full-bleed banner reads continuous); `window` fills the bannerless empty strip. */
+  /** DIP height of the toolbar band overlapping the shot's top — overpainted so its chrome doesn't
+   *  bake in. `maskFill` picks the fill: `banner` copies the banner up over it (reads continuous);
+   *  `window` fills the bannerless empty strip. */
   maskTop?: number
   maskFill?: 'banner' | 'window'
 }

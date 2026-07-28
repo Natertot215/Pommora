@@ -1,8 +1,6 @@
-// Live filesystem watcher. The watcher ONLY reads: on a debounced
-// settle it re-reads the tree and pushes it to the renderer over 'nexus:changed'.
-// No pause flag — an in-app write that echoes back is a harmless redundant
-// re-read (a read-only watcher can't loop; re-rendering an identical tree is a
-// no-op). ⌘R Reload stays as the manual fallback.
+// Live filesystem watcher: on a debounced settle it re-reads the tree and pushes it to the
+// renderer over 'nexus:changed'. No pause flag — an in-app write that echoes back is a
+// harmless redundant re-read. ⌘R Reload stays as the manual fallback.
 
 import { relative, sep } from 'node:path'
 import chokidar, { type FSWatcher } from 'chokidar'

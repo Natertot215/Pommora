@@ -1,15 +1,10 @@
 // The index schema — the entity tables + the `meta` table. Model A: a `page_collections`
 // top level (no parent), recursive `page_sets` keyed by parent_collection_id (depth-1) XOR
 // parent_set_id (deeper), and `pages` keyed by page_collection_id (always) + a nullable
-// page_set_id (null only at the Collection root). The index is REGENERATABLE — it holds no
-// user data; a version mismatch drops + rebuilds. The version is stamped only AFTER a
-// successful build, so a half-built index never sticks (open sees an absent version + retries).
-//
-// Cross-build note: the column NAMES mirror Swift's Model A so the shape is conceptually
-// portable, but React's SCHEMA_VERSION is deliberately distinct from Swift's — a nexus opened
-// in both apps simply rebuilds its index on each switch (safe churn, never a foreign-schema
-// query). Churn-free cross-open at a matched version is a later refinement (needs Swift's exact
-// DDL verified first).
+// page_set_id (null only at the Collection root). The index is REGENERATABLE — a version
+// mismatch drops + rebuilds, stamped only AFTER a successful build so a half-built index
+// never sticks. React's SCHEMA_VERSION is deliberately distinct from Swift's — a nexus opened
+// in both apps simply rebuilds its index on each switch (safe churn, never a foreign-schema query).
 
 import type { Db } from './db'
 

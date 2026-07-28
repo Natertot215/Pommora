@@ -1,10 +1,6 @@
-// Agenda item CRUD — Tasks + Events as pure JSON files (`<title>.task.json` /
-// `.event.json`). One factory for both kinds, paralleling page.ts but for JSON (no
-// envelope/body). filename = title; create mints a fresh ULID with the kind's required
-// defaults; every update is a read-merge-write that preserves foreign keys (spread the raw
-// parsed object) + bumps modified_at. The agenda config folder (`_taskconfig.json` /
-// `_eventconfig.json`) is created via the shared createFolderEntity factory, so there's no
-// agenda-specific folder code here.
+// Agenda item CRUD — Tasks + Events as pure JSON files (`<title>.task.json` / `.event.json`).
+// One factory for both kinds, paralleling page.ts but for JSON (no envelope/body). filename =
+// title; every update is a read-merge-write that preserves foreign keys + bumps modified_at.
 
 import { join, dirname } from 'node:path'
 import { rename } from 'node:fs/promises'

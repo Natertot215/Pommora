@@ -360,7 +360,7 @@ export function ViewEmbedBlock({
     patchEntry({ display_title: !t || t === source.title ? undefined : t })
   }
 
-  // Every row of the three chrome menus writes through the frozen patchEntry/persistConfig, so a
+  // Every row of the chrome menus writes through the frozen patchEntry/persistConfig, so a
   // locked tile opens none of them — nothing in them could land.
   const titleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()

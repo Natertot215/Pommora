@@ -1,8 +1,7 @@
-// Cold index build — populate the SQLite accelerator from the canonical files. The index
-// is off the read path, so this never blocks: it reads the nexus, then writes every row in
-// one transaction. better-sqlite3 transactions are synchronous, so all async file I/O
-// happens first (collect), then the sync upserts run inside transact(). Mirrors Swift's
-// IndexBuilder.populate; ids match the sidecars so a React- and Swift-built index agree.
+// Populate the SQLite accelerator from the canonical files, off the read path so it never
+// blocks. better-sqlite3 transactions are synchronous, so all async file I/O happens first
+// (collect), then the sync upserts run inside transact(). Ids match the sidecars so a
+// React- and Swift-built index agree.
 
 import { readFile, readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -104,9 +103,8 @@ interface NexusData {
   resolveRoot: (raw: Record<string, unknown>) => Record<string, string[]>
 }
 
-/** Read every canonical file the index needs (async). Folder paths are reconstructed from
- *  titles (filename = title); container modified_at/schema_version come from the sidecars
- *  readNexus already parsed (re-read here until the readNexus refactor exposes them). */
+/** Read every canonical file the index needs. Container modified_at/schema_version come from
+ *  the sidecars readNexus already parsed (re-read here until the readNexus refactor exposes them). */
 async function collectNexusData(nexusRoot: string): Promise<NexusData> {
   const tree = await readNexus(nexusRoot)
 

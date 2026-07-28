@@ -1,24 +1,15 @@
-// zod schemas for the JSON sidecars. Each schema IS the codec AND the type
-// (`z.infer`) — one source of truth, replacing Swift's hand-written Codable +
-// CodingKeys + a separate struct per entity.
-//
-// DEVIATIONS FROM SWIFT (enhancements):
-// 1. `z.looseObject` ⇒ FOREIGN keys survive a rewrite. Swift's Codable silently
-//    dropped unknown keys on JSON sidecars (only pages preserved foreign data);
-//    this closes that cloud-sync / agent-legibility data-loss gap.
-// 2. Shared builders (baseSidecar, contextBase) collapse what Swift expressed as
-//    three byte-identical context managers/schemas — one source, DRY.
-// 3. The schema is simultaneously runtime validation and the static type, so they
-//    can never drift (Swift maintained the struct and the Codable impl separately).
+// zod schemas for the JSON sidecars. Each schema IS the codec AND the type (`z.infer`) — one
+// source of truth. `z.looseObject` ⇒ FOREIGN keys survive a rewrite, unlike Swift's Codable,
+// which silently dropped unknown keys on JSON sidecars — this closes that cloud-sync /
+// agent-legibility data-loss gap.
 
 import { z } from 'zod'
 import { savedView } from './views'
 
 const ulidList = z.array(z.string()).optional()
 
-// Per-container config keys. `open_in` renames from Swift's `compact | window` to `full-page |
-// page-preview`; legacy values coerce on read. Each field doubles as the read-side coercer
-// (readNexus builds nodes from raw JSON, so it calls these instead of re-parsing the whole sidecar).
+// `open_in` renames from Swift's `compact | window` to `full-page | page-preview`; legacy
+// values coerce on read. Each field doubles as the read-side coercer for readNexus.
 const OPEN_IN_LEGACY: Record<string, string> = { window: 'full-page', compact: 'page-preview' }
 export const openInField = z.preprocess(
   (v) => (typeof v === 'string' ? (OPEN_IN_LEGACY[v] ?? v) : v),

@@ -1,9 +1,8 @@
-// The three-scope title cascade behind Context/Space renames, plus the rename ops and
-// the on-open journal replay. A Context rename rewrites the bracketed KEY in every
-// member root; a Space rename rewrites its exact canonical title as a VALUE under its
-// Context's key (near-miss forms stay — the reconcile owns those). Scopes: every `.md`
-// frontmatter, every agenda `*.json` root, every `_space.json` root — each under its
-// own file lock, unreadable files recorded in `skipped` and never fatal to the run.
+// The three-scope title cascade behind Context/Space renames, plus the rename ops and the
+// on-open journal replay. A Context rename rewrites the bracketed KEY in every member root; a
+// Space rename rewrites its exact canonical title as a VALUE under its Context's key
+// (near-miss forms stay — the reconcile owns those). Scopes: every `.md` frontmatter, every
+// agenda `*.json` root, every `_space.json` root — each under its own file lock.
 
 import { readFile, rename } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -66,9 +65,8 @@ function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | nu
   return { ...raw, [key]: next }
 }
 
-/** Sweep every root in the three scopes (`.md` frontmatter, agenda JSON, `_space.json`)
- *  through `rewrite` (null = untouched), each under its file lock; unreadable files are
- *  recorded and never fatal. The one walk every key/value cascade and unlink shares. */
+/** Sweep every root in the three scopes through `rewrite` (null = untouched), each under
+ *  its file lock. The one walk every key/value cascade and unlink shares. */
 export async function sweepContextRoots(
   root: string,
   rewrite: (raw: Raw) => Raw | null,

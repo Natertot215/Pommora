@@ -1,8 +1,7 @@
-// The per-machine sorted/grouped manual-order cache: `.nexus/viewOrders.json`, keyed by view id → the
-// ordered page-id list used as the lowest-priority tiebreaker under a sort. Kept local
-// (NOT the synced sidecar's views[]) so a sorted-view drag never moves the portable `page_order` nor
-// churns the container's modified_at. Inside `.nexus/` it's outside the content walk + body-sync —
-// per-machine by construction. Mirrors activeViews.ts / folds.ts.
+// The per-machine sorted/grouped manual-order cache: `.nexus/viewOrders.json`, keyed by view id →
+// the ordered page-id list used as the lowest-priority tiebreaker under a sort. Kept local (NOT
+// the synced sidecar's views[]) so a sorted-view drag never moves the portable `page_order` nor
+// churns the container's modified_at. Per-machine by construction, same rationale as folds.ts.
 import { mkdir } from 'node:fs/promises'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../paths'
 import { readJsonObject, writeJson } from './atomicWrite'

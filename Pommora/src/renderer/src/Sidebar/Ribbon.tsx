@@ -5,7 +5,7 @@ import { useSession } from '../store'
 import { NexusPhoto } from './NexusPhoto'
 import './Sidebar.css'
 
-// The ribbon's launcher icons below the pinned Homepage. Three switch sidebarMode (the content
+// The ribbon's launcher icons below the pinned Homepage. Some switch sidebarMode (the content
 // column); navigation and settings each summon their floating window.
 type RibbonKey = 'navigation' | 'agenda' | 'contexts' | 'collections' | 'settings'
 const MODE_FOR: Partial<Record<RibbonKey, SidebarMode>> = {

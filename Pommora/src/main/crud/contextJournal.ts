@@ -1,9 +1,7 @@
-// The pending-rename journal — `.nexus/context-rename.json`, one record max. A title
-// rename commits this record FIRST, cascades, commits the registry, then clears it; a
-// crash at any point leaves an exact old→new record that replays idempotently on the
-// next open (the one heal the no-fuzzy-match rule permits: it's a record, not a guess).
-// Composes existing primitives only: the atomic write (whole-or-absent across any
-// crash) and the .nexus-resident JSON snapshot idiom.
+// The pending-rename journal — `.nexus/context-rename.json`, one record max. A title rename
+// commits this record FIRST, cascades, commits the registry, then clears it; a crash at any
+// point leaves an exact old→new record that replays idempotently on the next open (the one heal
+// the no-fuzzy-match rule permits: it's a record, not a guess).
 
 import { rm } from 'node:fs/promises'
 import { ok, type Result } from '@shared/result'

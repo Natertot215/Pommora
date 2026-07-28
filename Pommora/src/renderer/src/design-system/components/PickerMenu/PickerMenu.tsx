@@ -459,8 +459,8 @@ export function PickerOption({
   children: ReactNode
   onClick?: () => void
   selected?: boolean
-  /** Add the selection RING on top of the fill — for rows carrying no colour of their own, where a
-   *  5% fill alone is easy to lose in a packed list. A chip row must NOT set this: its own fill
+  /** Add the selection RING on top of the fill — for rows carrying no colour of their own, where the
+   *  fill alone is easy to lose in a packed list. A chip row must NOT set this: its own fill
    *  already says "chosen", and two signals on one row read as two different states. */
   ring?: boolean
 }): React.JSX.Element {

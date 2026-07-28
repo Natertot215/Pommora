@@ -90,7 +90,7 @@ function sectionsOf(doc: Text): HeadingSection[] {
 
 // ── Custom fold state ──────────────────────────────────────────────────────────
 // CM6's native fold removes the body lines instantly. To mirror the sidebar's Reveal
-// (grid 0fr↔1fr, 180ms), each fold is a block widget over the body lines whose own DOM
+// (grid 0fr↔1fr), each fold is a block widget over the body lines whose own DOM
 // animates; a per-frame requestMeasure keeps the lines below tracking the animated height.
 
 type Phase = 'collapsing' | 'collapsed' | 'expanding'

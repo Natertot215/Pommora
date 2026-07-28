@@ -1,7 +1,6 @@
-// The per-session SQLite index handle. The index is a regeneratable accelerator that
-// sits OFF the read path (the sidebar reads the filesystem via readNexus), so opening it
-// is best-effort: rebuildIndex returns null on any failure and the app runs file-only.
-// One handle per open nexus, kept warm so a mutation can apply its incremental upsert.
+// The per-session SQLite index handle. The index is a regeneratable accelerator off the read
+// path (the sidebar reads the filesystem via readNexus), so opening it is best-effort:
+// rebuildIndex returns null on any failure and the app runs file-only.
 //
 // Kept separate from session.ts (which owns only the root path) so that module stays pure
 // Node with no native dependency; the better-sqlite3 import enters the graph only here.
@@ -51,16 +50,12 @@ let restale = false
 
 /**
  * Rebuild the index from the (now-mutated) files after a mutation. The index has no
- * incremental updater yet, so we drop index.db + cold-rebuild — correct by construction
- * (reuses the cold build; no per-entity row logic duplicated from buildIndex). Never throws
- * (all errors internally caught), so the mutate layer fire-and-forgets it off the UI path.
- * Targeted incremental upserts/deletes land when nexuses grow + a query consumer lands.
+ * incremental updater yet, so this drops index.db + cold-rebuilds. Never throws, so the
+ * mutate layer fire-and-forgets it off the UI path.
  *
  * At most ONE rebuild runs at a time, with at most one more queued behind it: the rebuild
  * deletes index.db before rewriting it, so a second overlapping call would unlink the file
- * the first is still writing and leave its handle pointing at nothing. A request arriving
- * mid-rebuild doesn't need its own pass either — one more run after this one sees the
- * settled files, however many writes landed meanwhile.
+ * the first is still writing and leave its handle pointing at nothing.
  */
 export function refreshSessionIndex(root: string): Promise<void> {
   if (rebuilding) {

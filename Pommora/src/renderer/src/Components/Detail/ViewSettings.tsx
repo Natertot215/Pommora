@@ -34,8 +34,7 @@ import { iconForTypeSwitch } from './viewIcon'
 import { cx } from '../../design-system/cx'
 import * as vs from './viewSettings.css'
 
-// Grid order + each type's glyph. Unimplemented types render at full weight but their
-// tiles are inert.
+// Unimplemented types render at full weight but their tiles are inert.
 const TYPE_ORDER: ViewType[] = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline']
 const TYPE_GLYPH: Record<ViewType, IconName> = {
   table: 'table',
@@ -271,7 +270,7 @@ export function ViewSettings({
     </div>
   )
 
-  // Format — the pinned footer: persists, inert visually this cycle. Table-only.
+  // Format — the pinned footer. Table-only.
   const formatRow =
     view.type === 'table' ? (
       <MenuBottomRow>{formatToggle('layers-2', 'Format')}</MenuBottomRow>

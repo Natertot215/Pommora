@@ -174,7 +174,7 @@ export function BlockHandleMenu({
 }): React.JSX.Element {
   const [pane, setPane] = useState<'root' | 'style' | 'page' | 'view'>('root')
   // The Scale picker is an anchored dropdown (not an in-menu pane) — it hangs off the row's trailing
-  // value, so the menu stays put while the five steps drop over it. Picking a step keeps it open (scrub
+  // value, so the menu stays put while the steps drop over it. Picking a step keeps it open (scrub
   // live); dismissal is a document listener (the CalendarPicker idiom) that spares the dropdown + its
   // trigger and closes on any other pointerdown — so a click anywhere else, incl. the menu, closes it.
   const [scaleOpen, setScaleOpen] = useState(false)

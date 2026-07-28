@@ -24,11 +24,9 @@ export function mintPropertyId(): string {
   return `prop_${newId()}`
 }
 
-/**
- * Stable synthetic id for an entity read from a raw/un-adopted folder with no
- * persisted id. Derived from the nexus-relative POSIX path, so the same file always
- * reads as the same id until adoption mints a real ULID for it.
- */
+/** Stable synthetic id for an entity read from a raw/un-adopted folder with no persisted id.
+ *  Derived from the nexus-relative POSIX path, so the same file always reads as the same id
+ *  until adoption mints a real ULID for it. */
 export function adoptedId(relPath: string): string {
   return `adopted-${createHash('sha256').update(relPath).digest('hex').slice(0, 16)}`
 }

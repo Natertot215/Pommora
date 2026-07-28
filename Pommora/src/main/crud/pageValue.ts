@@ -1,11 +1,8 @@
 // Per-value page primitives — strip or rewrite ONE option's value on a page, distinct from
-// stripPageMember (which deletes a whole property key). The option editor's Remove/Clear fan-out
-// and the rename cascade drive these. Type-switched over the on-disk value shapes: select = bare
-// string, multi_select = string array, status = { $status }. Mirrors stripPageMember's read/merge.
-//
-// Multi arrays are edited IN PLACE (filter/map on the raw array), never decode-to-strings→re-encode:
-// a page may carry foreign / non-string elements (hand- or agent-authored, Pommora's whole pitch),
-// and an op must touch only its target, preserving everything else it never named.
+// stripPageMember (which deletes a whole property key). Type-switched over the on-disk value
+// shapes: select = bare string, multi_select = string array, status = { $status }. Multi arrays
+// are edited IN PLACE (filter/map on the raw array), never decode-to-strings→re-encode: a page
+// may carry foreign / non-string elements, and an op must touch only its target.
 
 import type { PropertyType } from '@shared/properties'
 import { isPlainObject } from '@shared/propertyValue'

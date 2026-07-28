@@ -1,8 +1,7 @@
-// Detail-pane thumbnail capture for the Navigation gallery. Captured on entity-open (renderer signals
-// after the view settles), downscaled, and written under the SYNCED `.nexus/assets/<nexusId>/thumbnails/`
-// tree so the existing `nexus-asset://` protocol serves it and a second machine gets real previews.
-// Full-page capturePage then crop (rect × scaleFactor) sidesteps the HiDPI rect-crop bug; JPEG has no
-// alpha (dodges the transparent→black resize bug). Existence eviction drops only orphans (entity gone).
+// Detail-pane thumbnail capture for the Navigation gallery. Captured on entity-open, downscaled,
+// and written under the SYNCED `.nexus/assets/<nexusId>/thumbnails/` tree so a second machine
+// gets real previews. Full-page capturePage then crop (rect × scaleFactor) sidesteps the HiDPI
+// rect-crop bug; JPEG has no alpha (dodges the transparent→black resize bug).
 
 import { mkdir, readdir, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'

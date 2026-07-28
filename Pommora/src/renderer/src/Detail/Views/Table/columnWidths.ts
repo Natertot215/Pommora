@@ -38,7 +38,7 @@ const FALLBACK: ColumnWidth = { min: 80, default: 140, max: UNCAPPED }
 // Per-STYLE min overrides (TableView Prospect: each look carries its own column min, so a compact look
 // shrinks tighter than a wide one). Keyed [type][look]; where an entry exists it replaces the type's
 // base min (default + max stay type-level). checkbox→switch is the live case — the scaled switch plus
-// cell padding overflows the 45px checkbox min; status is the scaffold (checkbox < capsule < pill).
+// cell padding overflows the checkbox type's own min; status is the scaffold (checkbox < capsule < pill).
 const STYLE_MIN: Record<string, Partial<Record<string, number>>> = {
   checkbox: { switch: 70 },
   status: { checkbox: 45, capsule: 65, pill: 80 },

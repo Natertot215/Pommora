@@ -1,7 +1,6 @@
 // Lazy, on-demand agenda read for the sidebar's Agenda mode — a lean sibling of the index
-// builder's collectAgenda (index/build.ts), which stays richer (properties/Contexts/modifiedAt) for
-// the SQLite upserts. This one yields only what a read-only list needs, so it never joins the
-// tree walk (readNexus) — agenda cost is paid only when Agenda mode asks for it.
+// builder's collectAgenda (index/build.ts), which stays richer for the SQLite upserts. This one
+// yields only what a read-only list needs, so agenda cost is paid only when Agenda mode asks for it.
 
 import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
