@@ -19,13 +19,8 @@ import { DragGhost } from './DragGhost'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from './settingsPane.css'
 
-/**
- * The Select / Multi-Select option editor — the flat option list inside a property's editor pane.
- * Options render as squared `label`-shape chips; a right-click chip menu
- * (native) drives Rename (inline) · Remove · Clear, and a hover palette icon opens the 2×5 recolor
- * picker. The caller owns persistence: each callback maps to a `property.*Option` write (+ error
- * surface + reload). Status layers grouping on top.
- */
+/** The caller owns persistence: each callback maps to a `property.*Option` write (+ error
+ *  surface + reload). Status layers grouping on top. */
 export function OptionEditor({
   type,
   options,

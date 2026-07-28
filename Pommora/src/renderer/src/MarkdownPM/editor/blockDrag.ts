@@ -96,7 +96,6 @@ export function startBlockDrag(
   // Re-aim the insertion line at the candidate nearest the last pointer Y — no re-measure.
   const repick = (): void => {
     g.slot = nearest(g.cands, g.lastY)
-    // The "stay put" slot stays the resolved target (release-in-place cancels) but draws no line — a drop there no-ops.
     if (g.slot && !g.slot.noop)
       g.overlay.show(g.slot.left, g.slot.y, Math.max(g.slot.right - g.slot.left, 40))
     else g.overlay.hide()
@@ -122,8 +121,7 @@ export function startBlockDrag(
       g.cands = collectCands(view, block)
       // The shared loop scrolls CM's viewport (explicit scroller — findScroller can't derive scrollDOM).
       // No `onScrolled` needed: the loop's `scrollBy` fires CM's native `scroll` → the existing `onScroll`
-      // → `remeasure`, so far candidates (CM only renders ~viewport) become targetable as they scroll in —
-      // the exact single path the old local `tick` relied on.
+      // → `remeasure`, so far candidates (CM only renders ~viewport) become targetable as they scroll in.
       stopScroll = startAutoScroll({
         getPoint: () => ({ x: 0, y: g.lastY }),
         scroller: host,

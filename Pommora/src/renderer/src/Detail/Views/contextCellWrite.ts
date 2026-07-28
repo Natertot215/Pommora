@@ -6,11 +6,10 @@ import type { ViewRow } from '@shared/types'
 type ValueOverride = Record<string, PageFrontmatter> | null
 
 /**
- * The optimistic context write both container views share (cards + table): patch the row's
- * resolved ids into the `contextValues` rider on the value-override layer — loadValues never
- * re-reads mid-session, so the pipeline only re-groups because this patch feeds it (the rider
- * wins over the tree node's own resolution while the commit is in flight) — then fire the
- * setContext op (ids out; main resolves titles at the write boundary). `base` is the
+ * The optimistic context write both container views share: patch the row's resolved ids into
+ * the `contextValues` rider on the value-override layer, since loadValues never re-reads
+ * mid-session — the rider wins over the tree's own resolution while the commit is in flight.
+ * Then fire setContext (ids out; main resolves titles at the write boundary). `base` is the
  * frontmatter to patch over, so each caller keeps its own resolved shape.
  */
 export function writeContextValue(

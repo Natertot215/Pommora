@@ -135,7 +135,6 @@ function ControlsBody({
   )
 }
 
-// Controls surface: an always-open side rail on desktop, a toggled dropdown on compact.
 function GlassControls({
   params,
   setParams,

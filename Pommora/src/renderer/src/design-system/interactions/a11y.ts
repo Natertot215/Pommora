@@ -1,7 +1,3 @@
-// Screen-reader plumbing for the drag engine. One shared, visually-hidden ARIA live region announces
-// keyboard-drag progress; one shared hidden instructions element is referenced by every draggable's
-// aria-describedby. Singletons appended to <body> (Chromium/Electron — no SSR), created lazily.
-
 export const INSTRUCTIONS_ID = 'dnd-instructions'
 
 const HIDDEN: Partial<CSSStyleDeclaration> = {
@@ -21,7 +17,6 @@ const HIDDEN: Partial<CSSStyleDeclaration> = {
 let region: HTMLElement | null = null
 let instructions: HTMLElement | null = null
 
-/** Announce a drag-progress message to assistive tech (assertive live region). */
 export function announce(message: string): void {
   if (typeof document === 'undefined') return
   if (!region) {

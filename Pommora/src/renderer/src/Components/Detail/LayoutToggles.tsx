@@ -9,13 +9,6 @@ import { useSession } from '../../store'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { ICON, switchScale, toggleRow } from './settingsPane.css'
 
-/**
- * The table view's Layout toggles — Column Icons (the type-icon in each column header), Hide Borders
- * (drops every grid line), and Page Icons (the leading icon on every page row). Shared by both Layout
- * surfaces: the ViewSettings full-door Layout leaf (below the visibility list) and the SettingsPane
- * flat-door Layout (below the type grid). All persist per-view (`hide_*` flags) through the shared
- * adopt-only writer and drive the table live.
- */
 export function LayoutToggles({
   source,
   view,

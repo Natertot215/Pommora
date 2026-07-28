@@ -1,11 +1,5 @@
 import { icons as lucideIcons, type LucideIcon } from 'lucide-react'
 
-/**
- * The FULL Lucide set — the Icon Picker's source, distinct from the curated `icons` registry
- * (`./index`). The curated set is the app's semantic vocabulary; this is every glyph the user can pick
- * from. Built once at module load.
- */
-
 /** A Lucide PascalCase component name → its canonical kebab id. Validated against lucide-react's own
  *  per-icon dist filenames — the sole outlier is a legacy alias with no canonical file. Digits split
  *  from letters on both sides, so `Grid3x3 → grid-3-x-3`, `Columns3Cog →
@@ -24,7 +18,8 @@ export interface IconEntry {
   Glyph: LucideIcon
 }
 
-/** Every Lucide icon, kebab-keyed, de-duped by id, sorted. */
+/** The FULL Lucide set — the Icon Picker's source, distinct from the curated `icons` registry
+ *  (./index), which is the app's semantic vocabulary. Kebab-keyed, de-duped by id, sorted. */
 export const ALL_ICONS: IconEntry[] = (() => {
   const seen = new Set<string>()
   const out: IconEntry[] = []
@@ -39,10 +34,8 @@ export const ALL_ICONS: IconEntry[] = (() => {
 
 const BY_ID = new Map(ALL_ICONS.map((e) => [e.id, e.Glyph]))
 
-/** Resolve any Lucide id to its component, or undefined if unknown. */
 export const lucideGlyph = (id: string): LucideIcon | undefined => BY_ID.get(id)
 
-/** Dash/space-insensitive substring search over ids ("arrow up" ⇒ `arrow-up-down`). Empty ⇒ all. */
 export function searchIcons(query: string): IconEntry[] {
   const q = query.trim().toLowerCase().replace(/[\s-]/g, '')
   if (!q) return ALL_ICONS

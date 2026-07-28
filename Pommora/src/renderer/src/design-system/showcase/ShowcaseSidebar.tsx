@@ -2,9 +2,8 @@ import { GlassSurface } from '@renderer/design-system/materials'
 import { Icon } from '@renderer/design-system/symbols'
 import { NavSections } from './NavSections'
 
-// The showcase navigation — a visual mirror of the app's glass sidebar (shared
-// GlassSurface material + the same section-header / selectable-row language). The
-// nav rows themselves come from NavSections (shared with the mobile dropdown).
+// A visual mirror of the app's glass sidebar (shared GlassSurface material + the same
+// section-header / selectable-row language).
 export function ShowcaseSidebar({
   activeId,
   onSelect,

@@ -22,9 +22,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   const iconHidden = owner.headingIconHidden === true
   const toggleHeadingIcon = (): Promise<boolean> =>
     mutate({ op: 'setHeadingIconHidden', path: owner.path, kind: owner.kind, hidden: !iconHidden })
-  // The homepage identity in the banner: its profile photo, else the chosen glyph, else the default house
-  // glyph — always rendered so hide/show slides it in/out (the `is-hidden` class collapses it) rather
-  // than popping. `banner-home-icon` carries the slide transition.
+  // Always rendered (never conditionally removed) so hide/show slides it in/out rather than popping.
   const homeIcon = (): React.ReactNode => {
     const cls = iconHidden ? 'banner-home-icon is-hidden' : 'banner-home-icon'
     if (nexus?.profileImage)
@@ -34,16 +32,14 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   const openHomeTitleMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation() // the homepage title menu, not the banner's Change/Remove-photo menu underneath
-    // Rename (→ renameNexus, writes the root folder title) + Hide/Show Icon; no Change Icon (the nexus
-    // icon is set from the settings pane / ribbon). Double-click also enters rename.
+    // No Change Icon here — the nexus icon is set from Settings / the ribbon, not this menu.
     const action = await window.nexus.titleMenu({ toggleIcon: true, iconHidden, noEditIcon: true })
     if (action === 'rename') setEditingHome(true)
     else if (action === 'toggleIcon') await toggleHeadingIcon()
   }
 
-  // The homepage IS the nexus, so its title renames the root folder (renameNexus, a fs rename) — not
-  // submitRename. Double-click the homepage title to edit it in place; this is the sole rename-nexus
-  // affordance.
+  // The homepage IS the nexus, so its title renames the root folder via renameNexus — not
+  // submitRename, which the other title header (below) uses.
   const commitHome = (next: string): void => {
     setEditingHome(false)
     if (!next || next === owner.name) return
@@ -85,8 +81,6 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
 
   const homeClass = owner.kind === 'homepage' ? ' is-homepage' : ''
   const surfaceClass = isSurfaceKind(owner.kind) ? ' is-surface' : ''
-  // The one non-homepage title header — bannered and banner-less views share it, so the icon,
-  // its hide/show slide, and the Rename / Change Icon menu behave identically on both.
   const titleHeader = owner.kind !== 'homepage' && (
     <DetailTitleHeader
       title={owner.name}
@@ -139,9 +133,6 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
     >
       <img className="banner-img" src={assetUrl(owner.banner)} alt="" />
       {owner.kind === 'homepage' ? (
-        // The homepage IS the nexus: its identity icon (photo/glyph) leads the title, hidden/shown from the
-        // title's right-click; the title double-clicks to rename the nexus. Right-click the banner (not the
-        // title) still falls through to the Change/Remove-photo menu.
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
         <span className="banner-title" onContextMenu={(e) => void openHomeTitleMenu(e)}>
           {homeIcon()}

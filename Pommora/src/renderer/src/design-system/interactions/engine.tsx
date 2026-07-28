@@ -27,21 +27,7 @@ import {
   type Modifier,
 } from './shared'
 
-// The single-zone drag engine. Replaces dnd-kit behind the seam for every standalone
-// surface (list, grid, table, each tree level). Principles, grounded in the dnd-kit dissection:
-//
-//   • One pointer sensor — Pointer Events + setPointerCapture (Chromium), no document listeners.
-//     A keyboard path mirrors it: Space/Enter lifts, arrows move, Space/Enter drops, Esc cancels.
-//   • Measure rects once at drag start; no continuous re-measuring, no array churn mid-drag.
-//   • Closest-center collision with hysteresis (no slot-boundary flicker); DOM order breaks ties.
-//   • One strategy-agnostic displacement: the rects-reflow shift covers list, row, and 2-D grid.
-//     `swap` mode instead exchanges the active + over items only.
-//   • Decide, THEN animate (shared by pointer + keyboard): run the accept/reject decision first,
-//     then animate the item to its TRUE resting slot. `canReorder` may be async (`pending` hold).
-//   • Constraints are inline options: `axis` lock, `bounds` clamp, plus a `modifiers` escape hatch.
-//   • Auto-scroll: the shared loop (interactions/autoscroll.ts) scrolls the container at the edges;
-//     each scrolled frame re-runs `track`, so the scroll delta stays compensated into the drag.
-//   • Accessible: focusable handle + assertive live-region announcements + restored focus on drop.
+// The single-zone drag engine — replaces dnd-kit behind the seam for every standalone surface.
 
 type ZoneValue = {
   ids: string[]
@@ -63,19 +49,17 @@ const ZoneCtx = createContext<ZoneValue | null>(null)
 export type ZoneProps = DragNotify & {
   ids: string[]
   onReorder?: (activeId: string, overId: string) => void
-  /** Decide-then-animate hook. Return false (or a Promise<false>) to reject; the item animates back
-   *  to origin. A Promise holds the item lifted (`pending`) until it resolves. */
+  /** Return false (or a Promise<false>) to reject; the item animates back to origin. A Promise
+   *  holds the item lifted (`pending`) until it resolves. */
   canReorder?: (activeId: string, overId: string) => boolean | Promise<boolean>
   disabled?: boolean
-  /** Lock the drag to one axis. */
   axis?: 'x' | 'y'
   /** Clamp the lifted item within the viewport (`window`) or the list's own extent (`parent`). */
   bounds?: 'parent' | 'window'
-  /** Escape hatch: fold the drag translation through custom transforms (applied after axis+bounds). */
   modifiers?: Modifier[]
   /** Exchange the active + over items instead of shifting the gap. Commit with `arraySwap`. */
   swap?: boolean
-  /** ARIA role for each item's handle (default 'button'); set null to omit it (e.g. table rows). */
+  /** ARIA role for each item's handle; default 'button'. Pass null to omit it entirely. */
   itemRole?: string | null
   /** Human label for screen-reader announcements (defaults to the id). */
   getItemLabel?: (id: string) => string
@@ -143,8 +127,8 @@ export function Zone({
     kdown: null as null | ((e: KeyboardEvent) => void),
   })
 
-  // The auto-scroll loop this Zone started (instance-scoped stopper). detach() calls it rather than the
-  // global stop, so a sibling Zone's unmount can't halt THIS Zone's live drag (the loop is a module singleton).
+  // This Zone's auto-scroll stopper (instance-scoped). detach() calls it rather than the global
+  // stop, so a sibling Zone's unmount can't halt THIS Zone's live drag.
   const stopScroll = useRef<(() => void) | null>(null)
 
   const labelOf = (id: string): string => labelRef.current?.(id) ?? id
@@ -203,10 +187,9 @@ export function Zone({
     })
     const curDist = Math.hypot(d.rects[d.over].cx - px, d.rects[d.over].cy - py)
     const next = best !== d.over && curDist - bestDist > HYSTERESIS ? best : d.over
-    // The pointer-follow is written straight to the lifted element — never through React state. A
-    // delta in the context value would re-render EVERY item on EVERY pointermove (each re-running
-    // its O(N) reflow → O(N²) per frame). useZoneItem omits `transform` for the pointer-following
-    // item, so React never clobbers this write.
+    // Written straight to the element, never through React state: a delta in context would re-render
+    // EVERY item on EVERY pointermove (O(N) reflow each → O(N²) per frame). useZoneItem omits
+    // `transform` for the pointer-following item so React never clobbers this write.
     if (d.el) d.el.style.transform = `translate3d(${dx + comp.x}px, ${dy + comp.y}px, 0)`
     if (next !== d.over) {
       d.over = next
@@ -238,14 +221,14 @@ export function Zone({
       setOverIndex(activeIdx)
       setDropState('dragging')
       notifyRef.current.onDragStart?.({ activeId: d.id })
-      // The activation commit strips React's managed transform (the follow is imperative from
-      // here) — re-assert after that commit so the first frame can't paint the item at origin.
+      // The activation commit strips React's managed transform — re-assert it on the next frame so
+      // the item can't paint at origin before the imperative follow takes over.
       requestAnimationFrame(() => {
         if (drag.current.active) track(drag.current.lastX, drag.current.lastY)
       })
-      // The module owns the scroll loop; on each scrolled frame it re-runs `track` off the last point,
-      // exactly as the old inline `tick` did. The engine folds the scroller's delta into `track`'s
-      // collision math (see `comp`), so it passes the SAME scroller explicitly.
+      // The module owns the scroll loop; on each scrolled frame it re-runs `track` off the last point.
+      // The engine folds the scroller's delta into `track`'s collision math (see `comp`), so it
+      // passes the SAME scroller explicitly.
       if (d.scroller) {
         stopScroll.current = startAutoScroll({
           getPoint: () => ({ x: drag.current.lastX, y: drag.current.lastY }),
@@ -261,7 +244,6 @@ export function Zone({
     track(e.clientX, e.clientY)
   }
 
-  // Tear down everything a live drag attached: the auto-scroll loop, pointer listeners + capture, the keydown listener.
   const detach = (): void => {
     stopScroll.current?.()
     stopScroll.current = null
@@ -283,11 +265,10 @@ export function Zone({
     }
   }
 
-  // Animate the lifted item to its final slot, then settle. We commit on the lifted item's
-  // `transitionend` — NOT a blind timer — because the CSS transition starts a frame after a timer
-  // would, so a timer fires while gap items are still mid-flight and snaps them short (the jerk).
-  // The lifted item's transition starts last, so its end means every item has settled. Fallback
-  // timer covers the no-transition case.
+  // Commits on the lifted item's `transitionend` — NOT a blind timer — because the CSS transition
+  // starts a frame after a timer would, so a timer fires while gap items are still mid-flight and
+  // snaps them short (the jerk). The lifted item's transition starts last, so its end means every
+  // item has settled. Fallback timer covers the no-transition case.
   const settle = (targetIndex: number, commit: () => void): void => {
     setDropState('dropping')
     setOverIndex(targetIndex)
@@ -426,9 +407,8 @@ export function Zone({
     }
   }
 
-  // Keyboard lift: Space/Enter on a focused item. Measures, parks the item on its own slot, and
-  // listens on the document for arrows/Space/Esc (the lift keydown won't re-fire — listeners added
-  // mid-dispatch are skipped for the current event).
+  // Listens on the document for arrows/Space/Esc after lifting — the lift keydown itself won't
+  // re-fire into this new listener (listeners added mid-dispatch skip the current event).
   const liftKeyboard = (id: string): void => {
     if (disabled || drag.current.active) return
     const el = els.current.get(id) ?? null
@@ -485,9 +465,8 @@ export function Zone({
       begin,
       liftKeyboard,
     }),
-    // register reads only refs; begin/liftKeyboard also close over `disabled` (in deps). Recreating
-    // them each render with current values is intentional — not memoized, so identity churn is fine.
-    // Pointer delta deliberately NOT here — the follow is an imperative style write (see track).
+    // begin/liftKeyboard close over `disabled`, so recreating them each render is intentional — not
+    // memoized, since identity churn here is fine. Pointer delta deliberately NOT here (see track).
     [ids, feel, activeId, overIndex, rects, dropState, keyboard, disabled, swap, itemRole],
   )
   return <ZoneCtx.Provider value={value}>{children}</ZoneCtx.Provider>
@@ -506,7 +485,6 @@ function resolveBounds(kind: 'parent' | 'window' | undefined, rects: Box[]): Box
   return null
 }
 
-/** rects-reflow: where the item at `index` lands once the active item moves to the over-slot. */
 export function reflow(rects: Box[], overIndex: number, activeIdx: number, index: number): Box {
   const a = rects.slice()
   const [moved] = a.splice(overIndex, 1)
@@ -539,17 +517,15 @@ export function useZoneItem(id: string): DragItem {
   let transform: string | undefined = 'translate3d(0,0,0)'
   if (rects.length && activeIdx !== -1 && index !== -1) {
     if (isDragging) {
-      // The lifted item sits on the over-slot for keyboard (eases each arrow step) or on drop;
-      // during a live pointer drag its follow is an IMPERATIVE style write in track() — transform
-      // is omitted here so a re-render (an over-slot flip) can't clobber the followed position.
-      // (On the slot, no comp — the slot scrolled with the item, so they cancel.)
+      // The lifted item sits on the over-slot for keyboard (eases each arrow step) or on drop; during
+      // a live pointer drag, transform is omitted here so a re-render can't clobber track()'s
+      // imperative follow write. (On the slot, no scroll comp — the slot scrolled with the item too.)
       const onSlot = keyboard || dropState === 'dropping'
       const t = onSlot ? (rects[overIndex] ?? rects[activeIdx]) : null
       transform = t
         ? `translate3d(${px(t.left - rects[activeIdx].left)}, ${px(t.top - rects[activeIdx].top)}, 0)`
         : undefined
     } else if (swap) {
-      // Swap mode: only the over item moves, exchanging into the active item's slot.
       if (index === overIndex)
         transform = `translate3d(${px(rects[activeIdx].left - rects[index].left)}, ${px(rects[activeIdx].top - rects[index].top)}, 0)`
     } else {
@@ -559,13 +535,13 @@ export function useZoneItem(id: string): DragItem {
     }
   }
 
-  // Transition during a live drag: non-active items ease the gap; the active item eases on drop and
-  // on every keyboard arrow step (but follows the pointer with no transition during a pointer drag).
-  // At rest (idle) the inline transition clears ENTIRELY — an inline value (even 'none') replaces the
-  // element's whole stylesheet transition list, silently killing its own color/size motion (the tab
-  // bar's open/close slide died this way). The commit still snaps pixel-identically because an engine
-  // item's stylesheet must never transition `transform` (that's the zone contract — hover-pop and
-  // friends live on an inner layer).
+  // Non-active items ease the gap; the active item eases on drop and on every keyboard arrow step
+  // (but follows the pointer with no transition during a pointer drag). At rest (idle) the inline
+  // transition clears ENTIRELY — an inline value (even 'none') replaces the element's whole
+  // stylesheet transition list, silently killing its own color/size motion (the tab bar's open/close
+  // slide died this way). The commit still snaps pixel-identically because an engine item's
+  // stylesheet must never transition `transform` — that's the zone contract; hover-pop and friends
+  // live on an inner layer.
   const animate = isDragging ? dropState === 'dropping' || keyboard : dropState !== 'idle'
   return {
     setNodeRef: (el) => register(id, el),

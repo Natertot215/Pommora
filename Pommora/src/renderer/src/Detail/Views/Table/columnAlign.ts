@@ -1,26 +1,11 @@
-// Per-column text alignment. Mirrors columnWidths: a pure render-layer helper keyed by the
-// column's declared type. The default is center for the chip/box types (contexts + checkbox/status/
-// select/multi-select), left for everything else; a SavedView `column_alignments` entry overrides it.
-// Pure: no fs, no React.
-
 import type { PropertyDefinition } from '@shared/properties'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import type { ColumnAlign, SavedView } from '@shared/views'
 import { declaredType } from '../pipeline/value'
 
-// declaredType outputs that center by default: the chip/box-shaped values — contexts ('context' for
-// the reserved Context columns, 'context' for a user context prop), checkbox/status/select/multi_select, and
-// the user datetime property, whose formatted value reads centered. The reserved Modified timestamp keeps
-// its left metadata treatment (like Title).
-const CENTERED = new Set([
-  'checkbox',
-  'status',
-  'select',
-  'multi_select',
-  'context',
-  'context',
-  'datetime',
-])
+// The chip- and box-shaped values center; so does a datetime, whose formatted value reads centered.
+// The reserved Modified timestamp keeps Title's left metadata treatment.
+const CENTERED = new Set(['checkbox', 'status', 'select', 'multi_select', 'context', 'datetime'])
 
 /** The default alignment for a column, from its declared type. Title is always left (its primary
  *  icon+text treatment); unknown types fall back to left. `contextIds` is what makes a Context
@@ -35,7 +20,6 @@ export function defaultAlignFor(
   return t !== undefined && CENTERED.has(t) ? 'center' : 'left'
 }
 
-/** The resolved alignment for a column: a saved `column_alignments` override, else the type default. */
 export function alignFor(
   columnId: string,
   schema: PropertyDefinition[],

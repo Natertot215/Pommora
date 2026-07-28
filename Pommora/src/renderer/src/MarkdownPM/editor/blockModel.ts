@@ -31,7 +31,7 @@ export type BlockKind =
   | 'paragraph'
 
 export interface Block {
-  from: number // line start of the block's first line
+  from: number
   to: number // line end of the block's last line, exclusive of the trailing newline
   kind: BlockKind
 }

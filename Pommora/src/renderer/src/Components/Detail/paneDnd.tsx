@@ -18,11 +18,7 @@ import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type PaneDrop, type PaneRow, type PaneSlot, type Region, paneSlot } from './paneDndModel'
 import * as s from './settingsPane.css'
 
-// The Properties pane's two-region drag (the bandDnd gesture skeleton, the paneSlot model).
-// WHOLE rows are the drag surface; the two [data-group] wrappers are the region rects the
-// classification runs on. Esc aborts with a capture-phase swallow so the Toolbar's
-// useDismiss never closes the dropdown mid-drag; the capped slot auto-scrolls at the edges,
-// and any scroll dirties the frozen snapshot.
+// The capped slot auto-scrolls at the edges, and any scroll dirties the frozen snapshot.
 
 type DragState = {
   id: string | null
@@ -49,7 +45,6 @@ export function PaneDnd({
   slot = paneSlot,
   children,
 }: {
-  /** Every draggable property row (both groups) — snapshot state during a drag. */
   rows: PaneRow[]
   labelFor: (id: string) => string
   onDrop: (drop: PaneDrop) => void
@@ -262,8 +257,7 @@ export function RowShell({ id, children }: { id: string; children: ReactNode }):
   )
 }
 
-/** Make a property row a pane-drag participant: `ref` + `handle` spread on the row wrapper —
- *  the WHOLE row drags (buttons/inputs inside never arm one). */
+/** `ref` + `handle` spread on the row wrapper — the WHOLE row drags (buttons/inputs inside never arm one). */
 export function usePaneDrag(id: string): {
   ref: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: ReactPointerEvent) => void }
@@ -278,8 +272,6 @@ export function usePaneDrag(id: string): {
   }
 }
 
-/** The two region wrappers register their rects here; the all-group wrapper also reads the
- *  unassign area-highlight. */
 export function usePaneRegions(): {
   assignedRef: (el: HTMLElement | null) => void
   allRef: (el: HTMLElement | null) => void

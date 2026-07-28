@@ -17,8 +17,7 @@ export function BoardSurface(): React.JSX.Element {
       .flat()
       .find((it) => it.id === id)?.label ?? ''
 
-  // Single commit on drop: pull the card from its column, insert into `toZone` at `toIndex`
-  // (index among the destination's cards with the active one removed). No mid-drag churn.
+  // Single commit on drop: `toIndex` is the destination index with the active card already removed.
   const onCommit = (activeId: string, toZone: string, toIndex: number): void => {
     setCols((prev) => {
       const fromZone = COLS.find((c) => prev[c].some((it) => it.id === activeId))

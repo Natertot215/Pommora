@@ -14,20 +14,17 @@ import {
 } from '@renderer/design-system/components/SidePane/SidePane'
 import './previewPane.css'
 
-/** The unified floating-chrome opening size every in-app window shares. */
 const BOUNDS: FloatingBounds = { minW: 360, minH: 280, defW: 850, defH: 600 }
 
 /** The shared inspector rail bounds — one remembered width across every window that hosts one. */
 export const PREVIEW_PANE_INSPECTOR: SidePaneBounds = { min: 180, def: 260, max: 420 }
 
 export interface PreviewPaneSide {
-  /** Keys the persisted width — panes sharing an id share one remembered width. */
+  /** Panes sharing this id share one remembered width. */
   windowId: string
   bounds: SidePaneBounds
-  /**
-   * `overlay` — slides over the body on its own driver; the body pads aside for it.
-   * `inflow` — takes a column in the body row; closing collapses its width.
-   */
+  /** `overlay` slides over the body on its own driver (body pads aside for it); `inflow` takes a
+   *  column in the body row and collapses its width on close. */
   mode: 'overlay' | 'inflow'
   /** Overlay panes toggle. An in-flow pane collapses to nothing when false. */
   open?: boolean
@@ -36,58 +33,47 @@ export interface PreviewPaneSide {
 }
 
 /**
- * How the toolbar occupies the top of the window.
- * - `band` — a full-width strip that is itself a window-move surface, with the title slot
- *   between the two action clusters. Content scrolls beneath it.
- * - `floating` — no strip: the action clusters pin to the top corners and everything between
- *   them stays clickable, so a window whose own content reaches the top edge is not covered.
+ * `band` — a full-width strip that is itself a window-move surface; content scrolls beneath it.
+ * `floating` — no strip: action clusters pin to the top corners and everything between stays
+ * clickable, so content reaching the top edge isn't covered.
  */
 export type PreviewPaneToolbar = 'band' | 'floating'
 
 export interface PreviewPaneProps {
-  /** Stable geometry id — windows sharing an id share one stashed size slot. */
+  /** Windows sharing this id share one stashed size slot. */
   id: string
   closing: boolean
   onClose: () => void
-  /** Escape override — defaults to `onClose` (e.g. close an inner pane first). */
   onEscape?: () => void
-  /** Opening size + resize floor. Both windows today share the default; a surface that wants its
-   *  own (a settings sheet, a small popup) overrides it rather than editing this one. */
+  /** Opening size + resize floor. Override per-surface instead of editing the shared default. */
   bounds?: FloatingBounds
-  /** Extra bare-background selectors a window-move may start from, appended to the pane's own. */
   dragSurfaces?: string
   ariaLabel: string
   className?: string
   style?: CSSProperties
-  /** The root glass element. Hosts running a FLIP measure their rect from here. */
+  /** Hosts running a FLIP measure their rect from here. */
   rootRef?: Ref<HTMLDivElement>
-  /** The window fill's opacity over the frost, 0–100. 0 = pure frost, 100 = opaque. The colour
-   *  itself is the `--ppane-bg` var, which a host restyles from its own stylesheet. */
+  /** The colour itself is the `--ppane-bg` var, which a host restyles from its own stylesheet. */
   tintOpacity?: number
   toolbar?: PreviewPaneToolbar
-  /** The leading toolbar glyph. Omitted = no scan button. */
   onScan?: () => void
-  /** Its tooltip. Defaults to the promote wording both windows use — a surface that does
-   *  something else with the glyph says so rather than inheriting a lie. */
   scanLabel?: string
-  /** Toolbar centre — a title, a breadcrumb, a tab strip, or nothing. `band` mode only: a
-   *  `floating` toolbar is a zero-height, pointer-inert line, so a title there is clipped away. */
+  /** `band` mode only — a `floating` toolbar is zero-height and pointer-inert, so a title there
+   *  is clipped away silently. */
   title?: ReactNode
-  /** Trailing buttons, left of the ×. They ride the swallow when a right overlay pane opens. */
+  /** Rides the swallow when a right overlay pane opens. */
   actions?: ReactNode
   left?: PreviewPaneSide
   right?: PreviewPaneSide
-  /** Optional footer, pinned at the window bottom behind a collapse chevron. */
   footer?: ReactNode
   children: ReactNode
 }
 
-/** The bottom-right region that reveals the footer chevron, measured from the pane's own corner. */
+// Footer-chevron reveal hit-zone, from the pane's own corner.
 const NEAR_W = 260
 const NEAR_H = 120
 
-// The bare backgrounds a window-move may start from. The title is pointer-inert, so a press on it
-// lands on the toolbar beneath and arms the move.
+// The title is pointer-inert, so a press on it falls through to the toolbar and arms the move.
 const DRAG_SURFACES = '.ppane, .ppane-toolbar, .ppane-row'
 
 export function PreviewPane({
@@ -115,8 +101,7 @@ export function PreviewPane({
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
   const { style: winStyle, onWindowDown, startDrag } = useFloatingWindow(id, bounds, surfaces)
 
-  // Widths mirror into vars the layout math reads (pane position, body squeeze, button swallow).
-  // Seeded from the persisted slot so the first painted frame already carries a restored width.
+  // Seeded from the persisted slot so the first painted frame already carries the restored width.
   const [leftW, setLeftW] = useState(() =>
     left ? sidePaneWidth(left.windowId, left.bounds.def) : 0,
   )
@@ -132,9 +117,8 @@ export function PreviewPane({
   // Footer collapse is session-only — a floating surface never persists it.
   const [footerOpen, setFooterOpen] = useState(true)
   const [footerNear, setFooterNear] = useState(false)
-  // The near-zone hit-test's rect, measured lazily and cached: a getBoundingClientRect per
-  // mousemove forces a layout on every pointer travel across the pane. Anything that can move or
-  // resize the pane drops the cache; the next move re-measures.
+  // Measured lazily and cached: getBoundingClientRect per mousemove forces a layout every pointer
+  // move. Anything that can move/resize the pane drops the cache so the next move re-measures.
   const paneRect = useRef<DOMRect | null>(null)
   useEffect(() => {
     paneRect.current = null
@@ -169,9 +153,6 @@ export function PreviewPane({
     </SidePane>
   )
 
-  // An in-flow pane shares a flex row with the content; an overlay pane is an absolutely
-  // positioned sibling. The row only exists when something actually needs it, so a window with
-  // no in-flow pane keeps its children as direct children of the window's column.
   const inflow = left?.mode === 'inflow' || right?.mode === 'inflow'
   const body = inflow ? (
     <div className="ppane-row">
@@ -251,8 +232,6 @@ export function PreviewPane({
       {body}
       {hasFooter && (
         <>
-          {/* The chevron rides above the bar when open and reveals on the bottom-right approach,
-              inset past the corner resize handle. */}
           <button
             type="button"
             className="ppane-footer-toggle"

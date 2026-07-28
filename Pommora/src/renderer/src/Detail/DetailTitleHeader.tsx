@@ -2,25 +2,15 @@ import { type Ref, useEffect, useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import './DetailTitleHeader.css'
 
-/**
- * Shared detail-title chrome (Swift: DetailTitleHeader) — `[icon?] [name]` with a right-click →
- * Rename / Edit Icon menu; Rename flips the name to an inline editable field. The page editor
- * passes no icon (pages are title-only by design); the container/context banners pass theirs.
- */
 interface Props {
   title: string
-  /** The glyph to lead with — omitted renders title-only (the page editor's mode). Any Lucide id. */
   icon?: string
-  /** Registers the icon glyph as the editable target — the picker's beak anchors to it. */
   iconRef?: Ref<SVGSVGElement>
   // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename: (newName: string) => void | Promise<boolean | void>
-  /** Pops the native title menu and resolves the chosen action (Rename / Change Icon / Hide-Show Icon). */
   requestMenu: () => Promise<'rename' | 'editIcon' | 'toggleIcon' | null>
   onEditIcon: () => void
-  /** Toggle the banner-heading icon's visibility. When absent, the menu omits the Hide/Show item. */
   onToggleIcon?: () => void
-  /** The heading icon is hidden — it stays mounted but collapses/slides out (so hide/show animates). */
   iconHidden?: boolean
 }
 
@@ -68,7 +58,6 @@ export function DetailTitleHeader({
   }
 
   return (
-    // Only the icon glyph + the name text are Rename / Edit-Icon targets — not the full-width row.
     <div className="detail-title">
       {icon && (
         <Icon

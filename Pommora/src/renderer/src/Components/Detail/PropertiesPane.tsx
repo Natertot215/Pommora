@@ -48,8 +48,7 @@ type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
 type WriteResult = Ack
 
-/** The two drag regions: assigned rows on top, the bottom-pinned All Properties block below
- *  the elastic spacer. Lives outside PropertiesPane so rows never remount on its re-renders. */
+/** Lives outside PropertiesPane so rows never remount on its re-renders. */
 function ListGroups({
   assigned,
   unassigned,
@@ -165,12 +164,10 @@ function ListGroups({
 }
 
 /**
- * The Properties pane — the page-schema CRUD surface, a sub-nav inside the ViewPane: a list of
- * user-defined properties → a type picker for new ones → a per-property editor. Writes route to the
- * `schema:*` IPC; the tree refresh after each write re-flows the live schema back in as `schema`,
- * so the editor re-reads the property by id. The subviews ride an inner PaneSlider nested in the
- * ViewPane's outer one, so every push at every depth slides on the same beat — one primitive,
- * zero per-window wiring.
+ * A list of user-defined properties → a type picker for new ones → a per-property editor, riding
+ * an inner PaneSlider nested in the ViewPane's outer one. Writes route to the `schema:*` IPC; the
+ * tree refresh after each write re-flows the live schema back in as `schema`, so the editor
+ * re-reads the property by id.
  */
 export function PropertiesPane({
   collectionPath,
@@ -212,8 +209,7 @@ export function PropertiesPane({
   const backHeader = (label: string, onClick: () => void): React.JSX.Element => (
     <MenuPaneTopRow label={label} onBack={onClick} />
   )
-  // TopRow with a trailing icon action (the editor's ⋮ menu) — the action rides the row's trailing
-  // slot, so it's part of the TopRow. stopPropagation keeps its click off the back-nav.
+  // stopPropagation keeps the action's click off the row's back-nav.
   const actionHeader = (
     label: string,
     onBackClick: () => void,
@@ -238,7 +234,6 @@ export function PropertiesPane({
     />
   )
 
-  // Surface an IPC error, else refresh the live schema; returns whether the write landed.
   const commit = async (res: WriteResult): Promise<boolean> => {
     if (!res.ok) {
       await window.nexus.showError(res.error)
@@ -324,9 +319,8 @@ export function PropertiesPane({
   const clearStatusOption = async (id: string, value: string): Promise<void> => {
     await commit(await window.nexus.property.clearStatusOption(id, value))
   }
-  // Each drop kind routes to its own persistence target: collection order, nexus
-  // order (the visible slot translated into the full-order index — assigned ids stay in it),
-  // atomic assign-at-slot, and the strip-and-cache Remove.
+  // The reorder-nexus branch translates the visible slot into the full registry's order
+  // index — assigned ids stay in it.
   const handleDrop = async (drop: PaneDrop): Promise<void> => {
     const r =
       drop.kind === 'reorder-assigned'

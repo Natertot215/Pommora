@@ -1,8 +1,3 @@
-// Per-type column sizing {min, default, max}. One DRY source; the width key is the
-// column's declared type (reusing the pipeline's declaredType so title/context/property all resolve
-// through one path), with `_created_at` special-cased and a sane fallback. Values are starting
-// points — tunable. Pure: no fs, no React.
-
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
 import { defaultStyleFor } from '@shared/columnStyles'
 import { declaredType } from '../pipeline/value'

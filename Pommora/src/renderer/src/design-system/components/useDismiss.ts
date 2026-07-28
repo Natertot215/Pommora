@@ -1,10 +1,7 @@
 import { useEffect, type RefObject } from 'react'
 
-/**
- * Close on a pointerdown outside `ref` (its element + descendants) or on Escape,
- * while `active`. Scoping to the trigger's container means clicking the trigger
- * again doesn't fire dismiss, so the trigger's own toggle stays clean.
- */
+/** Scope `ref` to include the trigger itself — otherwise a click that re-toggles it also reads
+ *  as an outside click and double-fires the close. */
 export function useDismiss(
   ref: RefObject<HTMLElement | null>,
   onClose: () => void,
@@ -13,14 +10,12 @@ export function useDismiss(
   useEffect(() => {
     if (!active) return
     const onDown = (e: PointerEvent): void => {
-      // Right/middle presses open menus in this app; none of them is a dismissal. A native menu also
-      // returns input asynchronously, so the press that closes it can land here as a stray outside
-      // click and take the host down with it.
+      // Right/middle presses open menus, not dismiss. A native menu also returns input
+      // asynchronously, so the press that closes IT can land here as a stray outside click.
       if (e.button !== 0) return
       const target = e.target as Element
-      // A portal'd picker (its layer + backdrop) renders OUTSIDE this ref in the DOM, so a plain
-      // containment check reads any interaction with it as "outside" and dismisses the host it
-      // visually sits within. Spare the marked portal — the picker owns its own dismissal.
+      // A portal'd picker renders OUTSIDE this ref in the DOM, so a plain containment check reads
+      // it as "outside" and dismisses the host it visually sits within — spare the marked portal.
       if (ref.current && !ref.current.contains(target) && !target.closest?.('[data-picker-portal]'))
         onClose()
     }

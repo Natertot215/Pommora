@@ -144,7 +144,6 @@ describe('FilterPane', () => {
     await click(byLabel('Filter active'))
     const saved = lastSaved()
     expect(saved.filter_enabled).toBe(false)
-    // The authored filter survives verbatim — parking is a separate axis from the rules.
     expect(saved.filter).toEqual(twoRules().filter)
   })
 
@@ -171,8 +170,6 @@ describe('FilterPane', () => {
     expect(byLabel('Filter active')).toBeTruthy()
   })
 
-  // An empty filter encodes to `undefined`, so a mode picked before the first rule has nowhere to
-  // persist; it has to survive locally and ride out on the write that mints that rule.
   it('a mode picked on an empty filter sticks and lands on the first rule', async () => {
     await mount(view())
     // Two options, so the control flips in place — no menu to open.
@@ -194,7 +191,6 @@ describe('FilterPane', () => {
     await mount(twoRules())
     await click(byLabel('Matches'))
     expect(lastSaved().filter?.match).toBe('any')
-    // The mode says nothing about whether the filter runs — that is the switch's job alone.
     expect(lastSaved().filter_enabled).toBeUndefined()
   })
 
@@ -244,8 +240,8 @@ describe('FilterPane', () => {
     })
   })
 
-  // Two writes in one gesture: a value's blur-commit, then the click that caused the blur. Both
-  // used to build from the same pre-save render prop, so the second silently dropped the first.
+  // Two writes in one gesture — a value's blur-commit, then the click that caused it — must not
+  // both build from the same pre-save render prop, or the second silently drops the first.
   it('a value committed on blur survives the click that caused the blur', async () => {
     await mount(view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }))
     const input = host.querySelector('input')
@@ -297,7 +293,7 @@ describe('FilterPane', () => {
     })
   })
 
-  // Two removals in one beat: the second used to map a snapshot still holding the first-removed row.
+  // Two removals in one beat: the second must map against a snapshot that already reflects the first.
   it('two removals in one beat both stick', async () => {
     await mount(
       view({
@@ -321,7 +317,6 @@ describe('FilterPane', () => {
     })
   })
 
-  // Back suppresses pointerdown to protect focus, so leaving that way fires no blur at all.
   it('an uncommitted value flushes when the pane unmounts', async () => {
     await mount(view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }))
     const input = host.querySelector('input')
@@ -335,9 +330,6 @@ describe('FilterPane', () => {
     root = createRoot(host) // afterEach unmounts again
   })
 
-  // The same flush, but AFTER a committed round-trip. The input is keyed on its value, so committing
-  // swaps in a new DOM node — a flush holding the node it captured at mount would read the dead
-  // first one, find its stale text unchanged, and silently save nothing.
   it('a value edited after an earlier commit still flushes on unmount', async () => {
     await mount(view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }))
     await act(async () => {
@@ -363,8 +355,6 @@ describe('FilterPane', () => {
     root = createRoot(host)
   })
 
-  // Every authored rule clears, the sole one included — otherwise a half-authored rule is stuck
-  // in the pane with no way out, filtering nothing and looking like it should.
   it('every authored rule carries a clear-×, including the only one', async () => {
     await mount(
       view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'a' }] } }),
@@ -381,8 +371,6 @@ describe('FilterPane', () => {
     await click(host.querySelector('[aria-label="Remove filter"]'))
     // Zero rows serializes to no filter at all, not an empty group that would still be "a filter".
     expect(lastSaved().filter).toBeUndefined()
-    // The lead row is what renders at zero rules — its fields are present, and it carries no ×
-    // because there's nothing authored left to clear.
     await mount(view({ filter: lastSaved().filter }))
     expect(host.querySelector('[aria-label="Remove filter"]')).toBeNull()
     expect(host.querySelector('[class*="ruleRow"]')).not.toBeNull()
@@ -418,9 +406,6 @@ describe('FilterPane', () => {
     )
     expect(texts()).toContain('Hand-authored filter')
     expect(texts()).toContain('Reset Filter')
-    // The Matches control must be ABSENT in the locked state — the pane holds no rows there, so a
-    // stray pick would write an empty filter over the authored tree. Reset is the sole writer, and
-    // the on/off toggle is safe because it provably touches neither rules nor mode.
     expect(byLabel('Matches')).toBeUndefined()
     expect(byLabel('Filter active')).toBeTruthy()
     await click([...host.querySelectorAll('*')].find((el) => el.textContent === 'Reset Filter'))

@@ -1,7 +1,5 @@
-// Resolved cell + group-header text for the table render. Turns a row's raw PropertyValue
-// into display text — option VALUES become their schema label, Context-column/context ULIDs become Context
-// titles — so no raw id ever reaches screen. The type-aware chip rendering resolves through
-// the same helpers. Pure: no React.
+// Resolved cell + group-header text for the table render: option VALUES become their schema
+// label, Context ULIDs become Context titles — so no raw id ever reaches screen.
 
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
 import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
@@ -23,7 +21,6 @@ export function findOption(
   )
 }
 
-/** A select/status option's label for a stored value (undefined if unknown). */
 export function optionLabel(
   columnId: string,
   value: string,
@@ -47,7 +44,6 @@ export function groupLabel(
   return optionLabel(groupPropId, group.key, ctx.schema) ?? rawFallback
 }
 
-/** One walk of a container's Set subtree → an id-keyed map (names / icons / paths below). */
 function buildSetMap<T>(source: CollectionNode | SetNode, pick: (s: SetNode) => T): Map<string, T> {
   const m = new Map<string, T>()
   const walk = (sets: SetNode[] | undefined): void => {
@@ -60,12 +56,11 @@ function buildSetMap<T>(source: CollectionNode | SetNode, pick: (s: SetNode) => 
   return m
 }
 
-/** Set id → title across a container's Set subtree (for structural group headers). */
 export const buildSetNames = (source: CollectionNode | SetNode): Map<string, string> =>
   buildSetMap(source, (s) => s.title)
 
-/** Set id → its per-entity icon (a symbol name, or undefined ⇒ the folder default) across a container's
- *  Set subtree — for structural group-header glyphs. */
+/** Set id → its per-entity icon across a container's Set subtree — undefined means the folder
+ *  default. */
 export const buildSetIcons = (source: CollectionNode | SetNode): Map<string, string | undefined> =>
   buildSetMap(source, (s) => s.icon)
 

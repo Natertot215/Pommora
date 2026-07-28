@@ -63,9 +63,7 @@ export function TableRowDnd({
    *  caller can map a structural group to its on-disk container for the page_order write) + the dragged
    *  row's id (for callers whose commit is (active, over)-shaped). */
   reorderTo: (orderIds: string[], groupKey: string, activeId: string) => void
-  /** Commit a cross-group reassign (write the dragged row's grouped property to the target group). */
   reassign: (activeId: string, targetGroupKey: string) => void
-  /** Commit a cross-folder move: relocate the dragged page into the target location band's Set. */
   relocate?: (activeId: string, targetGroupKey: string) => void
   children: ReactNode
 }): React.JSX.Element {
@@ -236,8 +234,8 @@ export function TableRowDnd({
       event: e,
       onActivate: () => {
         dragId.current = id
-        // Snapshot geometry now that the drag is real, then re-snapshot only when a scroll shifts
-        // the rects (rows never displace mid-drag — hit-testing reads the cache, no per-move reflow).
+        // Snapshot geometry now that the drag is real; re-snapshot only on scroll (rows never
+        // displace mid-drag, so hit-testing reads the cache).
         measure(id)
         // A scroll that moves the rows (wheel OR the auto-scroll loop below — its scrollBy fires
         // this same native event) dirties the snapshot and re-resolves from the last point, so a

@@ -23,14 +23,14 @@ function view(over: Partial<SavedView>): SavedView {
 }
 
 describe('defaultAlignFor', () => {
-  it('centers the chip/box + context types (E-6)', () => {
+  it('centers the chip/box + context types', () => {
     expect(defaultAlignFor('prop_status', schema)).toBe('center')
     expect(defaultAlignFor('prop_multi', schema)).toBe('center')
     expect(defaultAlignFor('ctx_areas', schema, ['ctx_areas'])).toBe('center')
     expect(defaultAlignFor('prop_date', schema)).toBe('center')
   })
 
-  it('left-aligns title, number, url, and modified (E-6)', () => {
+  it('left-aligns title, number, url, and modified', () => {
     expect(defaultAlignFor(RESERVED_PROPERTY_ID.title, schema)).toBe('left')
     expect(defaultAlignFor('prop_n', schema)).toBe('left')
     expect(defaultAlignFor('prop_url', schema)).toBe('left')

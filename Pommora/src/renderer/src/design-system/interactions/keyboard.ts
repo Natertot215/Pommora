@@ -1,9 +1,5 @@
 import type { Box } from './shared'
 
-// Keyboard-drag direction model. Geometric and strategy-agnostic, like the pointer collision: from
-// the current slot, an arrow picks the nearest slot that lies AHEAD in that direction, biased toward
-// alignment on the perpendicular axis so a grid steps to the cell directly above/below/beside.
-
 export type Dir = { x: number; y: number }
 
 export const ARROW_DIRS: Record<string, Dir> = {
@@ -13,7 +9,6 @@ export const ARROW_DIRS: Record<string, Dir> = {
   ArrowRight: { x: 1, y: 0 },
 }
 
-/** Next slot index from `over` in arrow direction `dir`. Returns `over` if nothing lies ahead. */
 export function keyboardNext(rects: Box[], over: number, dir: Dir): number {
   const c = rects[over]
   if (!c) return over

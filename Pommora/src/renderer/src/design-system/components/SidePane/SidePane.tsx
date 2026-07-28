@@ -3,10 +3,8 @@ import { GlassWindow } from '@renderer/design-system/materials'
 import { cx } from '@renderer/design-system/cx'
 import './sidePane.css'
 
-// THE side-pane shell: the NavWindow's favorites rail and the PagePreview's inspector are
-// the same component — one material (GlassWindow + state-muted veil), one inner geometry, one
-// edge-drag resize with per-window persisted width. Hosts own positioning (in-flow vs overlay),
-// the width CSS var their layout math reads (mirrored via onWidthChange), and any slide (--io).
+// Hosts own positioning (in-flow vs overlay), the width CSS var their layout math reads
+// (mirrored via onWidthChange), and any slide (--io).
 
 export interface SidePaneBounds {
   min: number
@@ -14,11 +12,11 @@ export interface SidePaneBounds {
   max: number
 }
 
-// Widths persist per window id across remounts (the exit-presence pattern), session-only.
+// Widths persist per window id across remounts, session-only — not written to disk.
 const widths = new Map<string, number>()
 
-/** The persisted width for a window's pane — hosts seed their CSS-var state from this so the
- *  first painted frame already carries the restored width (the mirror effect runs post-mount). */
+/** Hosts seed their CSS-var state from this so the first frame already carries the restored
+ *  width — the mirror effect runs post-mount. */
 export const sidePaneWidth = (windowId: string, def: number): number => widths.get(windowId) ?? def
 
 const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v))
@@ -34,19 +32,15 @@ export function SidePane({
   onResizingChange,
   children,
 }: {
-  /** Keys the persisted width — one slot per hosting window. */
+  /** One persisted-width slot per hosting window. */
   windowId: string
   /** Which window edge the pane hugs; the resize strip drags the OPPOSITE edge. */
   side: 'left' | 'right'
   bounds: SidePaneBounds
-  /** Overlay hosts toggle; in-flow hosts leave it true. Gates the strip + aria. */
+  /** Overlay hosts toggle; in-flow hosts leave it true. */
   open?: boolean
-  /** The host's positioning class for the pane (e.g. navwindow-rail / pgpreview-inspector). */
   className?: string
-  /** The host's positioning class for the resize strip. */
   resizeClassName?: string
-  /** Mirror the width into the host's CSS var — its layout math (squeeze, swallow, strip
-   *  position) reads the var, never this component. Fires on mount and every drag frame. */
   onWidthChange?: (w: number) => void
   /** Transitions pause while dragging so the pane tracks 1:1 (the house resize rule). */
   onResizingChange?: (resizing: boolean) => void
@@ -67,7 +61,6 @@ export function SidePane({
     onResizingChange?.(true)
     const move = (ev: PointerEvent): void => {
       const dx = ev.clientX - s.x
-      // A left pane grows dragging right; a right pane grows dragging left.
       const w = clamp(side === 'left' ? s.w + dx : s.w - dx, bounds.min, bounds.max)
       widths.set(windowId, w)
       setWidth(w)

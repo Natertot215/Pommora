@@ -1,12 +1,12 @@
-/** Page document stats for the Subfield (Swift: PageTextStats). `lines` counts raw source lines;
- *  `words`/`characters` count Markdown-stripped prose (so `## **Bold**` is one word, "Bold"). */
+/** Page document stats for the Subfield. `lines` counts raw source lines; `words`/`characters`
+ *  count Markdown-stripped prose (so `## **Bold**` is one word, "Bold"). */
 export interface PageStats {
   lines: number
   words: number
   characters: number
 }
 
-/** Light Markdown → prose strip (mirrors Swift's MarkdownPlainText for counting only). */
+/** Light Markdown → prose strip, built for counting only — not a general-purpose stripper. */
 function stripMarkdown(md: string): string {
   return md
     .replace(/```[\s\S]*?```/g, ' ') // fenced code
@@ -27,7 +27,7 @@ export function computeStats(body: string): PageStats {
   const lines = trimmed.split('\n').length
 
   const prose = stripMarkdown(body)
-  // Strictly-visible characters: drop the structural newlines, keep everything else (Swift parity).
+  // Strictly-visible characters: drop the structural newlines, keep everything else.
   const characters = prose.replace(/\n/g, '').length
   const words = (prose.match(/\S+/g) ?? []).length
   return { lines, words, characters }

@@ -1,7 +1,6 @@
-// The FilterPane's pure model — the flat And/Or row list ↔ the on-disk FilterGroup tree, plus the
-// pane's target + per-type operator vocabularies. The pane owns the filter slot wholesale for the
-// shapes it writes; anything it can't faithfully represent decodes as `locked` and is never
-// silently flattened (a rewrite would change the filter's truth table). Pure: no fs, no React.
+// The pane owns the filter slot wholesale for the shapes it writes; anything it can't faithfully
+// represent decodes as `locked` and is never silently flattened (a rewrite would change the
+// filter's truth table). Pure: no fs, no React.
 
 import type { PropertyDefinition } from '@shared/properties'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
@@ -36,8 +35,7 @@ const isLeaf = (node: FilterRule | FilterGroup): node is FilterRule => !('rules'
 const isAllOfLeaves = (node: FilterRule | FilterGroup): node is FilterGroup =>
   !isLeaf(node) && node.match === 'all' && node.rules.every(isLeaf)
 
-/** A mode's default connector — `any` splits the list into runs, `all` flattens to one And run. The
- *  encoder's structure rule and the pane's row seeding read it from here. */
+/** The encoder's structure rule and the pane's row seeding both read the default connector from here. */
 export const connectorFor = (mode: PaneMode): Connector => (mode === 'any' ? 'or' : 'and')
 
 /** Rows → tree. Connectors derive the structure: the list splits into AND-runs at each 'or'; one run
@@ -131,7 +129,6 @@ const DATE_OPS: OperatorChoice[] = [
   ...EMPTIES,
 ]
 
-/** Array-valued membership (multi-select, Context columns, context relations). */
 const SET_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.containsAny, label: 'Is Any', slot: 'chips', multi: true },
   { op: FILTER_OPS.containsAll, label: 'Is All', slot: 'chips', multi: true },
@@ -149,8 +146,8 @@ const NUMBER_OPS: OperatorChoice[] = [
   ...EMPTIES,
 ]
 
-/** Single-valued options (select/status): Is/Isn't are chip pickers whose multi-chips mean
- *  any-of/none-of — never Is All, which is unsatisfiable on a one-value property. */
+/** Is/Isn't are chip pickers whose multi-chips mean any-of/none-of — never Is All, which is
+ *  unsatisfiable on a one-value property. */
 const OPTION_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.is, label: 'Is', slot: 'chips', multi: true },
   { op: FILTER_OPS.isNot, label: "Isn't", slot: 'chips', multi: true },
@@ -217,10 +214,8 @@ export interface FilterTarget {
   icon: React.ComponentProps<typeof Icon>['name'] | undefined
 }
 
-/** The pane's What offering: the reserved targets, then every registry Context in display order,
- *  then every schema def with a non-empty operator vocabulary (the sortTargets recipe — real def
- *  icon, else the type glyph). Contexts resolve through the identity seam, so a user-defined one is
- *  offered on the same footing as the seeded three and wears its own title and icon. */
+/** Contexts resolve through the identity seam, so a user-defined one is offered on the same
+ *  footing as the seeded three and wears its own title and icon. */
 export function filterTargets(
   schema: PropertyDefinition[],
   tree: NexusTree | null,

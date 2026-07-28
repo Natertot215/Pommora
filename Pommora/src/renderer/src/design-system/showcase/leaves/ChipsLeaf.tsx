@@ -36,8 +36,7 @@ function ChipCell({
   )
 }
 
-// The pill row reorders on desktop (the "list component reorders" demo); on a compact
-// screen the pills are static so the page scrolls (drag sets touch-action:none).
+// Pills are static on a compact screen so the page scrolls (drag sets touch-action:none).
 function PillRow(): React.JSX.Element {
   const [items, setItems] = useState(() => CHIP_COLORS.map((c) => ({ id: c, name: humanize(c) })))
   const compact = useIsCompact()
@@ -78,7 +77,6 @@ const SHAPE_ROWS: Array<{ label: string; shape: string; content: () => ReactNode
   { label: 'Box', shape: chipBox, content: () => <Icon name="check" size={12} strokeWidth={3} /> },
 ]
 
-/** A reorderable row of one shape across the palette — the pill row's machinery for any shape. */
 function ShapeRow({
   rowId,
   shape,
@@ -145,8 +143,6 @@ function ShapeCell({
   )
 }
 
-/** A live Switch tinted to a palette color — the track's on-tint rides --accent, so one
- *  var override colors it without touching the component. */
 function SwitchDemo({ color }: { color: ChipColorName }): React.JSX.Element {
   const [on, setOn] = useState(true)
   const solid =
@@ -166,7 +162,6 @@ function SwitchDemo({ color }: { color: ChipColorName }): React.JSX.Element {
   )
 }
 
-/** A clickable checkbox chip — toggles its check on click. */
 function CheckboxDemo({ color }: { color: ChipColorName }): React.JSX.Element {
   const [on, setOn] = useState(true)
   return (

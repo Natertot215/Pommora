@@ -77,7 +77,6 @@ describe('the datetime Format editor writes the ACTIVE view (A-3)', () => {
         />,
       )
     })
-    // Open the Due property's editor.
     const dueRow = [...host.querySelectorAll<HTMLElement>('span')].find(
       (el) => el.textContent === 'Due' && el.children.length === 0,
     )
@@ -87,7 +86,6 @@ describe('the datetime Format editor writes the ACTIVE view (A-3)', () => {
     await act(async () => {
       await new Promise((r) => requestAnimationFrame(() => r(undefined)))
     })
-    // Pick Date → Short Date.
     await act(async () => {
       buttonFor('Date format').click()
     })

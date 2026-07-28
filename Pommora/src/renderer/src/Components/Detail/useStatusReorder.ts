@@ -1,13 +1,11 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { ACTIVATION, suppressNextClick } from '@renderer/design-system/interactions/shared'
 
-// Group-aware drag-to-reorder for the Status option editor — the multi-region cousin of useOptionReorder.
-// The whole chip row is the handle (buttons/inputs inside never arm one). A drag can reorder within a
-// group OR cross into another group (including an empty one); on drop it calls
-// onMove(value, toGroupId, toIndex) — toIndex in the target group's without-the-dragged space, matching
-// optionModel.moveStatusOption. Row geometry is snapshotted at drag-start (no rect-read per move — the
-// hard rule); a mid-drag scroll dirties the snapshot. Escape aborts. The drop-line lives in the target
-// group and its Y is relative to that group's list container.
+// The multi-region cousin of useOptionReorder. A drag can reorder within a group OR cross into
+// another group (including an empty one); on drop it calls onMove(value, toGroupId, toIndex) —
+// toIndex in the target group's without-the-dragged space, matching optionModel.moveStatusOption.
+// Row geometry is snapshotted at drag-start (no rect-read per move — the hard rule); a mid-drag
+// scroll dirties the snapshot.
 
 type Handlers = {
   move: (e: PointerEvent) => void
@@ -27,8 +25,7 @@ type Gesture = {
 type SnapRow = { value: string; top: number; bottom: number }
 type SnapGroup = { id: string; top: number; bottom: number; containerTop: number; rows: SnapRow[] }
 
-/** `order`: the current group structure (each group's id + its ordered option values) — the identity
- *  the snapshot iterates. Passing it keeps the hook's geometry aligned with what's rendered. */
+/** Passing `order` keeps the hook's geometry snapshot aligned with what's actually rendered. */
 export function useStatusReorder(
   order: { id: string; values: string[] }[],
   onMove: (value: string, toGroupId: string, toIndex: number) => void,
@@ -88,9 +85,8 @@ export function useStatusReorder(
     })
   }
 
-  // The target group + drop index the pointer is over, and the drop-line's Y within that group's
-  // container — read off the frozen snapshot. Groups partition the pointer axis by boundary midpoints,
-  // so every clientY (gaps + empty groups included) resolves to exactly one group.
+  // Groups partition the pointer axis by boundary midpoints, so every clientY (gaps + empty
+  // groups included) resolves to exactly one group.
   const locate = (clientY: number): { groupId: string; index: number; top: number } | null => {
     const snap = snapshot.current
     if (!snap || snap.length === 0) return null

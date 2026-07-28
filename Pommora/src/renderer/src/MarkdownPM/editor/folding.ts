@@ -22,7 +22,6 @@ export interface FoldsApi {
 const initialFoldAnnotation = Annotation.define<boolean>()
 
 export interface HeadingSection {
-  /** Start of the heading line. */
   from: number
   /** End of the heading line's text — the body to fold begins on the next line. */
   lineEnd: number

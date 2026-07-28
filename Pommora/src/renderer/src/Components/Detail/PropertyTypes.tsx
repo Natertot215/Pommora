@@ -4,11 +4,9 @@ import { asRenderableIcon, Icon, type IconName } from '@renderer/design-system/s
 import { DashIcon } from './DashIcon'
 
 /**
- * The single source for per-property-type presentation: the user-facing label + the standard Pommora
- * icon (catalogued in Features/Icons.md). `creatable` flags the user-pickable set, in picker order —
- * `context` backs Context columns only, and `last_edited_time` is auto-managed. Types still
- * awaiting a glyph carry no
- * `icon` and fall back to DashIcon.
+ * The single source for per-property-type presentation, catalogued in Features/Icons.md.
+ * `context` backs Context columns only, and `last_edited_time` is auto-managed — neither is
+ * `creatable`.
  */
 interface TypeMeta {
   label: string
@@ -31,7 +29,6 @@ const PROPERTY_TYPES: Record<PropertyType, TypeMeta> = {
 
 export const propertyTypeLabel = (type: PropertyType): string => PROPERTY_TYPES[type].label
 
-/** The type's standard glyph name — for pickers that list properties by their real icon. */
 export const propertyTypeIconName = (type: PropertyType): IconName | undefined =>
   PROPERTY_TYPES[type].icon
 
@@ -54,15 +51,14 @@ export function PropertyTypeIcon({
   return name ? <Icon name={name} size={size} /> : <DashIcon />
 }
 
-/** A pickable target row in a view-config pane (Sort's What, Filter's What). One shape, because the
- *  two panes differ only in WHICH defs qualify and which reserved entries lead. */
+/** One shape for both Sort's What and Filter's What — the panes differ only in which defs
+ *  qualify and which reserved entries lead. */
 export interface PaneTarget {
   id: string
   label: string
   icon: IconName | undefined
 }
 
-/** The reserved leads both panes draw from. */
 export const TITLE_TARGET: PaneTarget = {
   id: RESERVED_PROPERTY_ID.title,
   label: 'Title',

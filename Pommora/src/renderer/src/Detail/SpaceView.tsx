@@ -4,10 +4,6 @@ import { BlockSurface } from '@renderer/Blocks/BlockSurface'
 import { DetailScaffold } from './DetailScaffold'
 import { findSpace } from './Scope'
 
-/**
- * A Space's detail view — its banner scaffold over the block surface persisted to the
- * Space's own `_space.json` (the second BlockHost beside the homepage).
- */
 export function SpaceView({ tree, id }: { tree: NexusTree | null; id: string }): React.JSX.Element {
   // Memoized per Space — a fresh host literal each render would churn every tile memo downstream.
   const host = useMemo(() => ({ kind: 'space' as const, id }), [id])

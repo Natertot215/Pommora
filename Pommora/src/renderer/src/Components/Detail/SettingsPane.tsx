@@ -50,7 +50,6 @@ interface MenuEntry {
   Icon: LucideIcon
 }
 
-// Root order: Configuration · Properties · Visibility · Layout · Group · Filter · Sort.
 const ENTRIES: MenuEntry[] = [
   { id: 'configuration', label: 'Configuration', Icon: SlidersHorizontal },
   { id: 'properties', label: 'Properties', Icon: Server },
@@ -72,12 +71,8 @@ const CURRENT_LABEL: Record<PaneId, string> = {
   sort: 'Sorting',
 }
 
-/**
- * The Collection/Set settings menu — the content rendered inside the settings dropdown when a
- * Collection or Set is selected: an icon+title header over Configuration · Properties · Visibility ·
- * Layout · Group · Filter · Sort as a push/back nav stack. Layout opens the active view's ViewSettings
- * (the flat door); Configuration holds the collection's Open In.
- */
+/** Layout opens the active view's ViewSettings (the flat door); Configuration holds the
+ *  collection's Open In. */
 export function SettingsPane(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
@@ -131,7 +126,6 @@ export function SettingsPane(): React.JSX.Element | null {
     await window.nexus.container.configure(schemaCollection.path, 'collection', { open_in: v })
     await load()
   }
-  // Binary control: click flips Full Page ↔ Preview directly (the double-chevron reads as a toggle).
   const toggleOpenIn = (): void => {
     void setOpenIn(openInValue === 'page-preview' ? 'full-page' : 'page-preview')
   }
@@ -202,9 +196,6 @@ export function SettingsPane(): React.JSX.Element | null {
     </>
   )
 
-  // The scoped footer follows the house footing (ViewPane / PropertiesPane): a
-  // MenuBottomRow in the scroll frame's footer slot, footing-toned content, the
-  // config lock as a 12-in-20 AccessoryButton — pressed while it freezes the view config.
   const scopedRoot = scope && schemaCollection && (
     <MenuScrollFrame
       footer={

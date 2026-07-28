@@ -11,7 +11,7 @@ describe('reorderColumns', () => {
     ])
   })
 
-  it('preserves a hidden property (in property_order, not rendered) at the tail — survives hide/show (H-2)', () => {
+  it('preserves a hidden property (in property_order, not rendered) at the tail — survives hide/show', () => {
     expect(reorderColumns(['_title', 'a'], ['_title', 'hidden1', 'a'], 'a', '_title')).toEqual([
       'a',
       '_title',

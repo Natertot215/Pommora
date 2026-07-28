@@ -14,8 +14,7 @@ export type LinkConfig = {
   link_color?: string | undefined
 }
 
-/** The link colour resolved for the pane: its chip key, display label, and the raw CSS colour that
- *  themes the pane (shared with the URL cell via solidColorCss). Absent = the system accent, "Default". */
+/** Shared with the URL cell's own render via solidColorCss, so the two stay in sync. */
 function resolveLinkColor(color: string | undefined): {
   name: ChipColorName
   label: string
@@ -27,11 +26,8 @@ function resolveLinkColor(color: string | undefined): {
 }
 
 /**
- * The URL / Link property editor body — the def-level, per-property display config. Two toggles
- * (Underline, Full URL ⇄ page Title) plus a Colour chip that opens the recolor picker. The chosen
- * colour renders the link AND themes the pane's own Switches via a scoped `--accent`; absent = the
- * system accent, shown as "Default". The alias (a per-value Rename) overrides the Full URL / Title look
- * at render time — it's not configured here. The caller owns the single `property.setLinkConfig` write.
+ * The chosen colour themes the pane's own Switches via a scoped `--accent`. The alias (a per-value
+ * Rename) overrides the Full URL / Title look at render time — it's not configured here.
  */
 export function URLEditor({
   underline,

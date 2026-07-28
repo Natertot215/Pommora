@@ -21,11 +21,9 @@ import { solidColorCss } from './solidColor'
 import { CheckboxGlyph } from './checkboxLook'
 import type { ResolveContext } from './resolveContext'
 
-/** Type-aware cell render: the title with its page icon; chips for select/status;
- *  several chips for multi-select; a checkbox glyph; ContextChips for Context columns; an inline link for url;
- *  per-file chips; formatted date/number text. The per-view `style` picks each type's look + formats.
- *  Every value routes through the resolution context so no raw id ever shows; an empty/unknown value
- *  renders nothing. */
+/** Type-aware cell render — the per-view `style` picks each type's look + formats. Every value
+ *  routes through the resolution context so no raw id ever shows; an empty/unknown value renders
+ *  nothing. */
 export function Cell({
   row,
   column,
@@ -48,8 +46,6 @@ export function Cell({
   remove?: (next: PropertyValue | null) => void
 }): React.JSX.Element | null {
   if (column.kind === 'title') {
-    // The page's frontmatter icon, else the file-text default (the sidebar's page glyph) — so every page
-    // reads with an icon. Hide Page Icons drops it entirely.
     const iconName = hideIcon ? undefined : iconNameOr(row.icon, defaultEntityIcon('page'))
     return (
       <OverflowScroll className="cell-title">
@@ -63,10 +59,7 @@ export function Cell({
 
   // A checkbox column ALWAYS shows its box — even on a page with no stored value — so it toggles in
   // place without first assigning the property. The box keys off the column's schema TYPE, not the
-  // value's presence; unchecked means no frontmatter value at all (the toggle strips the key). The
-  // property-wide checkbox_color colors the ON state only, exactly like the switch: an empty box is
-  // always neutral grey; a checked box fills with the color (its default is the accent via var(--accent)),
-  // and the switch's on-track tints. The check glyph stays label-control.
+  // value's presence; unchecked means no frontmatter value at all (the toggle strips the key).
   if (declaredType(column.id, ctx.schema) === 'checkbox') {
     const checked = v.kind === 'checkbox' && v.value
     const color = ctx.schema.find((d) => d.id === column.id)?.checkbox_color
@@ -157,8 +150,6 @@ export function Cell({
         </OverflowScroll>
       )
     case 'url':
-      // A bare URL or a markdown `[alias](url)`. LinkCell owns the render + its link-title fetch so the
-      // store subscription stays off every other cell type. showFullLink pins the raw URL while renaming.
       return (
         <LinkCell
           raw={v.value}

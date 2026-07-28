@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
-// The self-managed focus contract: focus in on open, Tab kept inside the pane, focus handed back on
-// close. Placement/Bloom geometry is visual truth (CDP), not asserted here.
+// Placement/Bloom geometry is visual truth (CDP), not asserted here.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'

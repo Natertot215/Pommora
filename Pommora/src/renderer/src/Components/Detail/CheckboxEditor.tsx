@@ -13,9 +13,7 @@ const STYLE_OPTIONS: { value: CheckboxLook; label: string }[] = [
   { value: 'switch', label: 'Switch' },
 ]
 
-/** Resolve the pane's colour chip: its key + display label. Absent = the configured accent, shown
- *  "Accent" — as is a chosen colour that equals the accent (the accent is a live user config, so it's
- *  named, never frozen to a palette label). */
+/** The accent is a live user config, so it's always labeled "Accent," never frozen to a palette name. */
 function resolveColor(
   color: string | undefined,
   accentName: ChipColorName,
@@ -25,12 +23,8 @@ function resolveColor(
   return { name, label: name === accentName ? 'Accent' : colorLabel(name) }
 }
 
-/**
- * The Checkbox property editor body — a property-wide Colour chip (the Link editor's colour logic:
- * absent = the system accent, "Default") plus a per-VIEW Style picker (Checkbox ⇄ Switch, the shared
- * double-chevron control). The caller owns the two writes: Colour → the def (`setCheckboxColor`),
- * Style → the active view's `column_styles`.
- */
+/** The two controls write to different scopes: Colour → the property def (`setCheckboxColor`,
+ *  applies everywhere), Style → this view's `column_styles` alone. */
 export function CheckboxEditor({
   color,
   look,
@@ -40,7 +34,6 @@ export function CheckboxEditor({
 }: {
   color: string | undefined
   look: CheckboxLook
-  /** The nexus-configured accent (a palette key). Drives the "Accent" default + the equals-accent label. */
   accent: string | undefined
   onSetColor: (color: string | undefined) => void
   onSetStyle: (look: CheckboxLook) => void

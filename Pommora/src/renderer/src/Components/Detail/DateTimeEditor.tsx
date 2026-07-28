@@ -48,9 +48,7 @@ function PickerRow<T extends string>({
   )
 }
 
-/** The datetime property's per-view Format section — Date · (conditional) Day · Time. The Day row
- *  (weekday) reveals only for the worded date formats (short/full); Relative and the numeric formats
- *  carry no weekday. Time stays visible under Relative (it gates the "at <clock>" rendering). */
+/** Time stays visible under Relative — it still gates the "at <clock>" rendering. */
 export function DateTimeEditor({
   style,
   onChange,

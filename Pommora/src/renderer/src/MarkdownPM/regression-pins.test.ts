@@ -1,5 +1,5 @@
-// Pins for the adversarial-review fix wave — each case is an executed break from the MarkdownPM
-// findings catalog, fixed and pinned so it can't quietly return. Grouped by the seam it guards.
+// Pins for specific parser/editor bugs found during review — each case is a fixed break, kept
+// here so it can't quietly return. Grouped by the seam it guards.
 import { describe, it, expect } from 'vitest'
 import { isInsideCode } from '@shared/markdownCode'
 import { splitRow } from './Tables/codec'

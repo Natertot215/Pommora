@@ -6,9 +6,6 @@ import {
 } from 'react'
 import './floatingWindow.css'
 
-// The shared floating-window chrome engine — one move/resize pattern for every in-app floating
-// window (NavWindow, Page Previews).
-
 export interface FloatingBounds {
   minW: number
   minH: number
@@ -25,8 +22,8 @@ interface Geo {
   h: number
 }
 
-// Geometry survives each window's exit-presence unmount, keyed per window id — never a bare module
-// singleton (the multi-preview A-B needs windows that don't share one slot).
+// Geometry survives each window's exit-presence unmount, keyed per window id — never a bare
+// module singleton (multiple simultaneous previews need windows that don't share one slot).
 const geoStore = new Map<string, Geo>()
 
 const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v))
@@ -48,8 +45,8 @@ export function useFloatingWindow(
   const g = stored
   const [, force] = useState(0)
 
-  // Always open centered — size persists across opens, position doesn't (the NavWindow contract).
-  // Re-clamp on window resize so the chrome never strands off-screen.
+  // Always opens centered — size persists across opens, position doesn't. Re-clamps on window
+  // resize so the chrome never strands off-screen.
   useEffect(() => {
     g.w = Math.min(g.w, window.innerWidth)
     g.h = Math.min(g.h, window.innerHeight)
@@ -82,7 +79,6 @@ export function useFloatingWindow(
         g.x = clamp(s.gx + dx, 0, window.innerWidth - 80)
         g.y = clamp(s.gy + dy, 0, window.innerHeight - 40)
       } else {
-        // Corner resize — a west/north corner drags its own edge, holding the opposite edge fixed.
         if (mode === 'nw' || mode === 'sw') {
           const w = clamp(s.gw - dx, bounds.minW, s.gx + s.gw)
           g.w = w
@@ -111,8 +107,8 @@ export function useFloatingWindow(
     el.addEventListener('pointercancel', end)
   }
 
-  // Window-move is RESERVED to the bare surfaces (the allow-list, matched against the press target
-  // itself) — anything else owns its pointer, so row/reorder captures are never stolen mid-press.
+  // Window-move is reserved to the bare surfaces (the allow-list) — anything else owns its
+  // pointer, so row/reorder captures are never stolen mid-press.
   const onWindowDown = (e: ReactPointerEvent<HTMLElement>): void => {
     if ((e.target as HTMLElement).matches(dragSurfaces)) startDrag('move', e)
   }

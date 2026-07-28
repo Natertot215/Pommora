@@ -120,7 +120,7 @@ describe('band drag gesture', () => {
     expect(dropSpy).toHaveBeenCalledExactlyOnceWith('B', { kind: 'reorder', beforeId: 'A' })
   })
 
-  it('classifies a parent-changing between-slot as reparent (HIGH-1)', async () => {
+  it('classifies a parent-changing between-slot as reparent', async () => {
     await drag('A1', 2) // above A: implied parent root ≠ A1's parent A
     await act(async () => {
       firePointer(window, 'pointerup')
@@ -132,7 +132,7 @@ describe('band drag gesture', () => {
     })
   })
 
-  it('twisty pointerdown never arms the gesture — a follow-up click still toggles (C-6 isolation)', async () => {
+  it('twisty pointerdown never arms the gesture — a follow-up click still toggles', async () => {
     const toggleSpy = vi.fn()
     const group: ResolvedGroup = { key: 'A', kind: 'structural-set', items: [], isCollapsed: false }
     const view: SavedView = {

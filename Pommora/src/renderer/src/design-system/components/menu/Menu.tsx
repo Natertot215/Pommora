@@ -5,22 +5,16 @@ import { cx } from '../../cx'
 import { onActivateClick } from '../../interactions/activate'
 
 type MenuItemProps = {
-  /** Leading glyph cluster — disclosure and/or icon (label-secondary, sized at 1em). */
   leading?: ReactNode
-  /** Optional second line under the title (Caption, secondary). */
   subLabel?: ReactNode
-  /** Optional trailing detail text (Footnote, secondary) — e.g. a count or shortcut. */
   detail?: ReactNode
-  /** Optional trailing glyph — e.g. a submenu chevron (1em, secondary). */
   trailing?: ReactNode
   selected?: boolean
-  /** Tree depth — adds a left inset per level on top of the row's base padding. */
   indent?: number
   onClick?: (e: React.MouseEvent) => void
   onContextMenu?: (e: MouseEvent) => void
   onPointerDown?: (e: React.PointerEvent) => void
   className?: string
-  /** The title line. */
   children: ReactNode
 }
 
@@ -68,7 +62,6 @@ export function MenuItem({
   )
 }
 
-/** A heading row within a menu — 13px Semibold, label-secondary. */
 export function MenuHeading({
   leading,
   detail,
@@ -89,8 +82,8 @@ export function MenuHeading({
   )
 }
 
-/** A horizontal divider between menu groups — 11px band, centered hairline. `flush` drops the side
- *  inset so the hairline spans the full gutter (aligns with full-width rows inside a MenuSurface). */
+/** `flush` drops the side inset so the hairline spans the full gutter (matches full-width rows
+ *  inside a MenuSurface). */
 export function MenuSeparator({
   flush = false,
   className,
@@ -105,15 +98,13 @@ export function MenuSeparator({
   )
 }
 
-/** A non-interactive caption / empty-state line inside a menu — body text, centered + secondary. */
 export function MenuCaption({ children }: { children: ReactNode }): React.JSX.Element {
   return <div className={s.caption}>{children}</div>
 }
 
-/** A pane's TopRow — a leading ‹ chevron + label that pops the nav stack one level, plus an optional
- *  trailing action (the property editor's ⋮ / the list's +). The action rides the row's trailing slot
- *  so it reads — and colours — as part of the TopRow, not a floating toolbar button beside it.
- *  `className` composes surface-local tuning (e.g. the ViewPane's vertical-padding knob). */
+/** A pane's TopRow — a leading ‹ chevron + label that pops the nav stack one level. The trailing
+ *  action rides the row's trailing slot so it reads — and colours — as part of the TopRow, not a
+ *  floating toolbar button beside it. */
 export function MenuTopRow({
   label,
   onClick,
@@ -144,7 +135,6 @@ export function MenuTopRow({
   )
 }
 
-/** A flush vertical stack of rows with 6px top/bottom padding. */
 export function Menu({
   className,
   children,
@@ -155,8 +145,7 @@ export function Menu({
   return <div className={cx(s.menu, className)}>{children}</div>
 }
 
-/** The shared icon-button affordance (ellipsis · plus · eye · palette). Box defaults to 16px; pass
- *  `box` for a consumer's own hit target. `variant` classes (ghost/hidden rest) compose via className. */
+/** No dedicated `variant` prop — ghost/hidden-rest styling composes via `className`. */
 export function AccessoryButton({
   icon,
   size,
@@ -172,8 +161,8 @@ export function AccessoryButton({
   box?: number
   onClick: () => void
   className?: string
-  /** An affordance whose feature hasn't landed. Inert and dimmed — never a live button wired to a
-   *  no-op, which reads as broken rather than pending. */
+  /** A feature that hasn't landed — inert and dimmed, never a live button wired to a no-op
+   *  (which reads as broken rather than pending). */
   disabled?: boolean
 }): React.JSX.Element {
   return (
@@ -193,8 +182,6 @@ export function AccessoryButton({
   )
 }
 
-/** A pane's TopRow scheme: the ‹ back row (+ optional trailing action) over its flush separator —
- *  the header pair every pushable pane shares. */
 export function MenuPaneTopRow({
   label,
   onBack,
@@ -204,12 +191,10 @@ export function MenuPaneTopRow({
 }: {
   label: string
   onBack: () => void
-  /** A trailing action (⋮) — only ViewSettings + a property editor carry one. */
   trailing?: ReactNode
-  /** The current pane's name — a right-side label-secondary breadcrumb when there's no action. */
   current?: string
-  /** Scale/tone the CONTENT row only (e.g. the handle menu's barScale) — the separator stays full so a
-   *  density zoom never thins or shifts the divider. */
+  /** Scale/tone the CONTENT row only — the separator stays full so a density zoom never thins or
+   *  shifts the divider. */
   contentClassName?: string
 }): React.JSX.Element {
   const right = trailing ? (
@@ -230,11 +215,12 @@ export function MenuPaneTopRow({
   )
 }
 
-/** The pane's bottom bar — the mirror of MenuPaneTopRow. Carries its OWN flush divider and its OWN
- *  bottom placement (it sinks to the pane's bottom edge in a flex-column pane; inert when a frame
- *  already pins it in a footer slot), so a footing can never lose its divider or ride up mid-pane.
- *  Placement only — it imposes no typography, so each menu keeps its own action sizing. Pass
- *  `children` for a stack of footing rows, or `leading`/`trailing` for the icon-action shape. */
+/**
+ * Mirror of MenuPaneTopRow. Carries its own flush divider and bottom placement — it sinks to the
+ * pane's bottom edge in a flex-column pane, and is inert when a frame already pins it in a footer
+ * slot, so a footing can never lose its divider or ride up mid-pane. Placement only: no imposed
+ * typography, so each menu keeps its own action sizing.
+ */
 export function MenuBottomRow({
   leading,
   trailing,
@@ -258,12 +244,11 @@ export function MenuBottomRow({
   )
 }
 
-/** Pinned-edge scroll frame — the pane's sole cap + scroll + footer-pin mechanism. An optional `header`
- *  and `footer` hold their place (never scroll) while `children` scroll between them, capped at
- *  `maxHeight` (the dropdown ceiling by default; a pane overrides for its own max). The body is the ONE
- *  overflow region, so nothing slides under an edge; it owns the scroll ancestor, so a drag inside
- *  auto-scrolls it, and carries the shared edge-fade mask. PaneSlider slides between frames but never
- *  caps/scrolls a slot itself — the frame is the single source, so no pane re-wires the cap each time. */
+/**
+ * The body is the ONE overflow region: a drag inside auto-scrolls it (it owns the scroll
+ * ancestor), and it carries the shared edge-fade mask. PaneSlider slides between frames but never
+ * caps/scrolls a slot itself — this frame is the single source.
+ */
 export function MenuScrollFrame({
   header,
   footer,
@@ -272,7 +257,6 @@ export function MenuScrollFrame({
 }: {
   header?: ReactNode
   footer?: ReactNode
-  /** Height ceiling (px) before the body scrolls — defaults to the shared MENU_MAX_HEIGHT. */
   maxHeight?: number
   children: ReactNode
 }): React.JSX.Element {

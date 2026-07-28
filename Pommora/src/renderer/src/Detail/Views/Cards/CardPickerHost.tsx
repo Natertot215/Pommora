@@ -127,8 +127,8 @@ export function CardPickerHost({
     if (vReq?.revealOnCommit) onReveal(vColumn.id)
     commitValue(vRow, vColumn, nv)
   }
-  // A dependent kind picked in the ADD menu exits it and opens the value's own dropdown at the same
-  // anchor (the calendar's law, generalized): datetime → the calendar, url → the link dropdown.
+  // A dependent kind picked in the ADD menu exits it and opens the value's own dropdown at the
+  // same anchor (the calendar's law, generalized).
   const pickDependent = (entry: AddEntry): void => {
     if (!aReq) return
     onDismissAdd()
