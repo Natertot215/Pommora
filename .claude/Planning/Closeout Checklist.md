@@ -1,0 +1,141 @@
+# Closeout Checklist — the full-cleanup session
+
+Nathan is asleep and unreachable. This document is the contract for finishing the session and
+survives an auto-compact. **Nothing here may be dropped.** Work top to bottom; tick a job only when
+its verification command has actually been run and passed.
+
+## Session baseline
+
+`origin/main` = **`05a98344`** — the post-merge state of the `contexts-spaces` work. Every diff and
+line count in the final report is measured against it.
+
+```
+git diff --stat 05a98344..HEAD -- Pommora/src
+```
+
+## Measured baseline at `05a98344` — for the final report
+
+Measured with `scratchpad/measure.py` over `Pommora/src` (`.ts`/`.tsx`/`.css`, excluding
+`graphify-out` and `node_modules`):
+
+```
+files=678  comments=10484  code=75781  blank=6094
+docs: 51 files, 4578 lines (.claude/**/*.md)
+```
+
+Re-measure the same way at closeout and report all three deltas. The baseline tree is extracted at
+`scratchpad/base/` if it's needed again; regenerate with
+`git archive 05a98344 Pommora/src | tar -x -C <dir>`.
+
+## Standing rules for the rest of this session
+
+- **One writer on `Pommora/src` at a time.** A completion notification only covers that agent's own
+  children. Before starting the next writer, poll `git status --short` until unchanged for ~60s.
+- Forbid sub-agents in every dispatch brief.
+- Gates, from `Pommora/`, with `set -o pipefail`, reading the summary line:
+  `env -u ELECTRON_RUN_AS_NODE npm run typecheck` · `npx biome lint src` · `npx vitest run` ·
+  `env -u ELECTRON_RUN_AS_NODE npm run build`
+- Baseline: typecheck 0 · lint 0 · **1913 tests / 185 files** · build clean.
+  `src/main/mutate.test.ts` has a **known flaky `ENOTEMPTY`** in temp-dir cleanup under full-suite
+  parallelism — re-run before ever reporting it as a break.
+- Verify every agent claim against the code before folding it. Several this session were stale.
+- **Comment standard is Nathan's, set by his own hand-edits in `da096de5`.** Read those diffs before
+  judging any comment. He cuts prop docs that name the prop, and he cuts architectural rationale a
+  reader could reconstruct — even when it reads like a genuine "why". The test is *"would I know this
+  without the comment?"*, not *"is this a why?"*. `KNOB` markers and `(Nathan's call)` decision
+  markers are exempt and must survive.
+- Do not add code unless it refactors something flawed or makes the result simpler.
+
+## THE FOUR JOBS
+
+### 1. Code comments — two agents, full tree
+
+- [x] `main` + `preload` + `shared`: 2675 → 2490 (6.9%) — committed `ae7e2691`
+- [x] CSS, all 69 stylesheets: 2071 → 2030 — committed `98a2682b`
+- [ ] `src/renderer` re-run under Nathan's standard, all 403 files — **agent `acfc3479b641be769` running**
+- [ ] Report the TOTAL comment-line diff vs `05a98344`
+
+Verify:
+```
+python3 - <<'PY'
+import pathlib
+tot=0
+for p in pathlib.Path('Pommora/src').rglob('*'):
+    if p.suffix not in ('.ts','.tsx','.css'): continue
+    n,inblk=0,False
+    for ln in p.read_text().splitlines():
+        s=ln.strip()
+        if inblk:
+            n+=1
+            if '*/' in s: inblk=False
+        elif s.startswith('/*'):
+            n+=1
+            if '*/' not in s: inblk=True
+        elif s.startswith('//') or '//' in s or '/*' in s: n+=1
+    tot+=n
+print(tot)
+PY
+```
+
+### 2. Code cleanup — recent commits
+
+- [x] Simplification sweep: −470 code lines, 5 hoists — committed `26c6da64`
+- [ ] Fold whatever the review surfaces as a NOW fix
+- [ ] Re-verify: no new dead code, no duplicated fact left behind
+
+### 3. Code review — source causes, not down-river patches
+
+- [ ] **agent `a58f0e3da3f4a7e1e` running** (read-only, 17 behaviour commits, IPC hoist first)
+- [ ] Split findings into **APPLY NOW** vs **NEEDS ITS OWN SESSION**. Do not defer anything easy or
+      important. Nathan's words: don't let anything hang he'd say "do this now" about.
+- [ ] Apply the NOW list, gate, commit
+- [ ] Record the session-sized items as pending focuses
+
+Already independently verified by me (do not redo):
+- IPC channel parity across `26c6da64`: **102 → 102**, none added/dropped/renamed.
+- preload↔main: the 6 unmatched names are `ipcRenderer.on` push listeners, each with a real
+  `webContents.send` on the main side.
+
+### 4. Doc pass — do the docs still align?
+
+- [ ] Every feature doc vs the code as it now stands
+- [ ] `PommoraPRD.md`, `Architecture.md`, `Views.md`, `Connections.md`, `Pages.md`, `Contexts.md`
+      were touched this session — re-verify they're still true after simplification
+- [ ] `Framework.md` roadmap
+- [ ] Kill any claim the simplification falsified (the IPC envelope shape is the likely one)
+
+## CLOSEOUT — required before the session ends
+
+- [ ] `Context.md` — current state, and the pending focuses below
+- [ ] `Handoff.md` — rewritten for this session
+- [ ] `History.md` — the campaign entry
+- [ ] Delete this checklist once every box is ticked
+
+### The pending focuses Nathan named (order is my judgement)
+
+1. **Rethink SQL's place in Pommora.** He gives *full permission and encouragement* to rethink the
+   agent-legibility line: it is meant for **content the user authors**, not plumbing. Candidates to
+   move out of JSON and into SQLite: heading folds, active views, tabs, and similar device-local
+   state. Also examine what constraints the JSON state-recording currently imposes that SQL would
+   dissolve. This subsumes the standing "query consumer" prerequisite and is the highest-leverage
+   item on the list.
+2. **PagePreview hover — unbuilt, needs building.**
+3. **NavWindow search defaults to List even when the format is Gallery** — a bug fix.
+4. **Cross-location card reordering in views** — pending, wanted soon.
+5. **In-view creation methods** — creating a page from inside a view is noticeably sparse across
+   surfaces; wants a full brainstorm loop.
+
+State explicitly in both docs that Nathan should **feel free to find an alternative focus** — these
+are what came to mind, not a mandate.
+
+## FINAL REPORT — the deliverable
+
+A full report covering the multi-session run. Must include:
+
+- Line-count deltas vs `05a98344`: **comments**, **actionable code**, **documentation**.
+- What was found, what was resolved.
+- **Things that existed before this session that he didn't know about and are now fixed.**
+- **Things not previously surfaced that are now known** (and where they're recorded).
+- Project state and continuation paths.
+
+He must finish reading it thinking about what to build next — not wondering what was left dangling.
