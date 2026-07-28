@@ -80,7 +80,13 @@ import { startWatcher, stopWatcher } from './watcher'
 import { resolveUnderRoot } from './pathSafety'
 import { updatePageBody } from './crud/page'
 import { replayPendingRename } from './crud/contextCascade'
-import { readNavState, writeFavorites, writeRecents } from './io/navState'
+import {
+  flushFavorites,
+  hasPendingFavorites,
+  readNavState,
+  writeFavorites,
+  writeRecents,
+} from './io/navState'
 import { readTabsState, writeTabsState } from './io/tabsState'
 import { readPreviewsState, writePreviewsState } from './io/previewState'
 import { loadOrMigratePins, removePin, writePin } from './io/pinsState'
@@ -332,7 +338,7 @@ handleEnvelope('nav:load', async (): Promise<NavStateResult> => {
 handleEnvelope('nav:saveRecents', (entries: unknown): Ack => {
   if (adopting) return { ok: false, error: 'Nexus switching.' }
   if (!Array.isArray(entries)) return { ok: false, error: 'Recents entries must be an array.' }
-  writeRecents(entries as RecentEntry[])
+  if (!writeRecents(entries as RecentEntry[])) return { ok: false, error: 'No nexus is open.' }
   return { ok: true }
 })
 
@@ -389,7 +395,7 @@ handleEnvelope('tabs:load', (): TabsResult => {
 ipcMain.handle('tabs:save', (_e, set: unknown): Ack => {
   if (adopting) return { ok: false, error: 'Nexus switching.' }
   if (!isPlainObject(set) || !Array.isArray(set.tabs)) return { ok: false, error: 'Bad tab set.' }
-  writeTabsState(set as unknown as TabSet)
+  if (!writeTabsState(set as unknown as TabSet)) return { ok: false, error: 'No nexus is open.' }
   return { ok: true }
 })
 
@@ -403,7 +409,8 @@ ipcMain.handle('previews:save', (_e, file: unknown): Ack => {
   if (adopting) return { ok: false, error: 'Nexus switching.' }
   if (!isPlainObject(file) || !isPlainObject(file.origins))
     return { ok: false, error: 'Bad previews file.' }
-  writePreviewsState(file as unknown as PreviewsFile)
+  if (!writePreviewsState(file as unknown as PreviewsFile))
+    return { ok: false, error: 'No nexus is open.' }
   return { ok: true }
 })
 
@@ -1638,9 +1645,21 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// Quit cleanup. Operational writes land synchronously in nexus.db, so nothing is owed at quit and
-// the close is only tidying: it flushes the WAL and frees its sibling files.
-app.on('before-quit', () => {
+// Quit cleanup. Database writes commit synchronously, so the close is only tidying — it flushes
+// the WAL and frees its sibling files. Favorites are the one operational write still going to
+// disk, so they are the one thing that can still be owed: defer the quit, settle it, re-quit.
+let flushingBeforeQuit = false
+app.on('before-quit', (e) => {
+  if (flushingBeforeQuit) return
   stopWatcher()
-  closeSessionDb()
+  if (!hasPendingFavorites()) {
+    closeSessionDb()
+    return
+  }
+  e.preventDefault()
+  flushingBeforeQuit = true
+  void flushFavorites().then(() => {
+    closeSessionDb()
+    app.quit()
+  })
 })
