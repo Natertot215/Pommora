@@ -8,7 +8,7 @@
 // its id and color — and no longer carries the document, so a block gesture and a banner write can
 // never lose each other, and no hand-edit can mangle a host into an unrenderable tree.
 
-import { mkdir, readFile, stat } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   blockHostKey,
@@ -27,8 +27,6 @@ import { serializeOnFile } from './io/fileLock'
 import { loadContextWorld } from './crud/contextWrite'
 import { blockHostDir } from './paths'
 
-const EPOCH = '1970-01-01T00:00:00.000Z'
-
 /** A Space host's folder, resolved through the write-side world load (registry + sidecars —
  *  the same strictness every context write rides). Unknown or unresolvable ids throw; the IPC
  *  envelope catches. */
@@ -40,12 +38,10 @@ async function spaceHostDir(root: string, id: string): Promise<string> {
   return ref.dir
 }
 
-/** The host's own folder — homepage's fixed dir, or the Space's folder. */
 async function hostDir(root: string, host: BlockHostRef): Promise<string> {
   return host.kind === 'homepage' ? blockHostDir(root, host) : spaceHostDir(root, host.id)
 }
 
-/** A markdown block's backing file: `<tile-ulid>.md` in the host's own folder. */
 export async function blockFilePath(
   root: string,
   host: BlockHostRef,
@@ -54,7 +50,6 @@ export async function blockFilePath(
   return join(await hostDir(root, host), `${tileId}.md`)
 }
 
-/** The document for a host, or the empty one it opens with. */
 export function readBlockDoc(host: BlockHostRef): BlockDoc {
   const row = readKey<Partial<BlockDoc>>('blockDoc', blockHostKey(host))
   return {
@@ -224,8 +219,6 @@ export async function writeMarkdownBlock(
   await serializeOnFile(file, () => atomicWriteFile(file, body))
 }
 
-/** Every block host with its resolved folder: the homepage singleton plus one per Space.
- *  Tolerates a failed world load (those hosts just skip this pass). */
 async function listBlockHosts(root: string): Promise<{ host: BlockHostRef; dir: string }[]> {
   const homepage: BlockHostRef = { kind: 'homepage' }
   const hosts: { host: BlockHostRef; dir: string }[] = [
@@ -242,9 +235,8 @@ async function listBlockHosts(root: string): Promise<{ host: BlockHostRef; dir: 
   return hosts
 }
 
-/** Every markdown block across all hosts as `{ id, file }` — the shared walk under both the
- *  link-index read and the rename heal. Non-markdown tiles are filtered here; a missing
- *  backing file is left to each caller to tolerate. */
+/** The shared walk under both the link-index read and the rename heal — a missing backing file
+ *  is left to each caller to tolerate. */
 async function markdownBlockFiles(root: string): Promise<{ id: string; file: string }[]> {
   const out: { id: string; file: string }[] = []
   for (const { host, dir } of await listBlockHosts(root)) {
@@ -253,33 +245,6 @@ async function markdownBlockFiles(root: string): Promise<{ id: string; file: str
       if (entry?.type !== 'markdown') continue
       out.push({ id: entry.id, file: join(dir, `${entry.id}.md`) })
     }
-  }
-  return out
-}
-
-/** Every markdown block's body + mtime — the block half of the link index reads from here. A
- *  blocks[] entry whose file is missing is skipped, never fatal to the build. */
-export async function listBlockBodies(
-  root: string,
-): Promise<{ id: string; body: string; modifiedAt: string }[]> {
-  const out: { id: string; body: string; modifiedAt: string }[] = []
-  for (const { id, file } of await markdownBlockFiles(root)) {
-    let body: string
-    try {
-      body = await readFile(file, 'utf8')
-    } catch {
-      continue // entry without a backing file — skip
-    }
-    // A missing/corrupt mtime must not throw (toISOString on an Invalid Date) and silently drop the
-    // whole block from the index — fall back to the epoch so the block + its edges still index.
-    let modifiedAt = EPOCH
-    try {
-      const m = (await stat(file)).mtime
-      if (!Number.isNaN(m.getTime())) modifiedAt = m.toISOString()
-    } catch {
-      // keep EPOCH
-    }
-    out.push({ id, body, modifiedAt })
   }
   return out
 }

@@ -415,11 +415,11 @@ export interface PreviewsFile {
   navOverride?: boolean
 }
 
-/** The `previews:load` IPC envelope — absent/corrupt sidecars read as the empty shape, never null. */
 /** The shape a nexus with no persisted previews reads as — shared so main's reader and the
  *  renderer's reset can't drift into two different "empty". */
 export const EMPTY_PREVIEWS: PreviewsFile = { navSet: null, origins: {}, open: null }
 
+/** The `previews:load` IPC envelope — a nexus with nothing stored reads as the empty shape, never null. */
 export type PreviewsResult = { ok: true; file: PreviewsFile } | { ok: false; error: string }
 
 /** The `nav:loadPins` IPC envelope. */
@@ -462,7 +462,6 @@ export interface SubfieldConfig {
   expanded: boolean
 }
 
-/** List vs Gallery for a nav surface. */
 export type NavViewMode = 'list' | 'gallery'
 
 /** Per-nexus nav view modes — persisted as a foreign `navViewModes` key in settings.json. Kept

@@ -34,8 +34,7 @@ function decodeEntities(s: string): string {
     .replace(/&amp;/gi, '&')
 }
 
-/** Pull the first `<title>…</title>` out of HTML: entity-decoded, whitespace-collapsed, trimmed.
- *  Exported for tests (the network wrapper below isn't unit-testable). Absent/empty → null. */
+/** Exported for tests (the network wrapper below isn't unit-testable). */
 export function extractTitle(html: string): string | null {
   const m = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)
   if (!m) return null
@@ -108,7 +107,6 @@ function fetchPageTitle(rawUrl: string): Promise<string | null> {
   })
 }
 
-// Authoritative in-memory cache for the open session's nexus. Replaced when the root changes.
 let cache: LinkTitleCache = {}
 let cacheRoot: string | null = null
 
@@ -118,15 +116,14 @@ function ensureCache(root: string): void {
   cacheRoot = root
 }
 
-/** The full cached map for the current nexus — the renderer hydrates its store from this on open. */
+/** The renderer hydrates its store from this on open. */
 export function getTitleCache(root: string): LinkTitleCache {
   ensureCache(root)
   return { ...cache }
 }
 
-/** Resolve one URL's title: cache hit (instant) → the cached title; miss → fetch, cache + persist a
- *  success, return it. A failed fetch returns null and caches nothing (the renderer won't re-ask this
- *  session; next session retries once). */
+/** A failed fetch returns null and caches nothing (the renderer won't re-ask this session; next
+ *  session retries once). */
 export async function resolveTitle(root: string, url: string): Promise<string | null> {
   ensureCache(root)
   const hit = cache[url]
