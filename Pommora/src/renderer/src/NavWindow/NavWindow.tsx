@@ -259,27 +259,27 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
               />
             </div>
             <div className="navwindow-main-scroll edge-fade">
-              {results ? (
-                <NavList
-                  items={results.items}
-                  extras={results.extras}
-                  onSelect={goClose}
-                  onOpenNewTab={goNewTab}
-                />
-              ) : viewMode === 'gallery' ? (
+              {/* The rail's Style toggle governs results too — searching switches WHAT is listed,
+                  never how it's drawn. Only recents reorder; a result set has no stored order.
+                  `extras` (inert agenda hits) is a List row with no card form, so it shows there. */}
+              {viewMode === 'gallery' ? (
                 <NavGallery
-                  pins={resolvedPins}
-                  items={shownRecents}
-                  onReorderRecent={reorderShownRecent}
+                  pins={results ? [] : resolvedPins}
+                  items={results ? results.items : shownRecents}
+                  {...(results ? {} : { onReorderRecent: reorderShownRecent })}
                   onSelect={goClose}
                   onOpenNewTab={goNewTab}
                 />
               ) : (
                 <NavList
-                  pins={resolvedPins}
-                  items={shownRecents}
-                  reorderable
-                  onReorderRecent={reorderShownRecent}
+                  {...(results
+                    ? { items: results.items, extras: results.extras }
+                    : {
+                        pins: resolvedPins,
+                        items: shownRecents,
+                        reorderable: true,
+                        onReorderRecent: reorderShownRecent,
+                      })}
                   onSelect={goClose}
                   onOpenNewTab={goNewTab}
                 />
