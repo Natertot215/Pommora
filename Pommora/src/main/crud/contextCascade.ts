@@ -14,7 +14,7 @@ import {
   type ContextsRegistry,
 } from '@shared/contexts'
 import { AGENDA_SUFFIX } from '@shared/agenda'
-import { ok, fail, type Result } from '@shared/result'
+import { ok, fail, errText, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
 import { atomicWriteFile, pathExists, readJsonObject, writeJson } from '../io/atomicWrite'
 import { serializeOnFile } from '../io/fileLock'
@@ -214,7 +214,7 @@ export async function renameContextOp(
     }
   } catch (e) {
     await clearJournal(root)
-    return fail('operation-failed', e instanceof Error ? e.message : String(e), 'contexts')
+    return fail('operation-failed', errText(e), 'contexts')
   }
 
   const cascade = await cascadeTitle(root, reg.value, j)
@@ -275,7 +275,7 @@ export async function renameSpaceOp(
     await rename(ref.dir, target)
   } catch (e) {
     await clearJournal(root)
-    return fail('operation-failed', e instanceof Error ? e.message : String(e), 'contexts')
+    return fail('operation-failed', errText(e), 'contexts')
   }
 
   const cascade = await cascadeTitle(root, world.value.registry, j)

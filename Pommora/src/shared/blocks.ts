@@ -6,6 +6,7 @@
 
 import { z } from 'zod'
 import type { ViewButton, ViewStyle } from './types'
+import type { Ack } from './result'
 
 export interface RawTile {
   kind: 'tile'
@@ -218,7 +219,7 @@ export interface BlockDocPatch {
 }
 
 export type BlocksGetResult = { ok: true; doc: BlockDoc } | { ok: false; error: string }
-export type BlocksSaveResult = { ok: true } | { ok: false; error: string }
+export type BlocksSaveResult = Ack
 
 /** Main-side gate for a blocks:save patch (the views:save convention) — a shape CHECK
  *  only: the ORIGINAL values are what get written, since zod's parse output strips
