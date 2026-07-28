@@ -1,7 +1,6 @@
-// Open-time write-pass that stamps a real ULID into every entity still lacking a persisted
-// id (raw folder → sidecar, externally-authored page → frontmatter id). Walks parents
-// before children so a Set's healed parent_id points at the parent's fresh id. Idempotent;
-// folder position decides kind — a root child is a Collection, anything nested is a Set.
+// Open-time write-pass that stamps a real ULID into every entity still lacking a persisted id.
+// Walks parents before children so a Set's healed parent_id points at the parent's fresh id.
+// Idempotent; folder position decides kind — a root child is a Collection, anything nested a Set.
 
 import { readdir, readFile } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'

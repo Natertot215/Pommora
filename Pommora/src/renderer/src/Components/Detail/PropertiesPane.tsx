@@ -323,7 +323,7 @@ export function PropertiesPane({
   const clearStatusOption = async (id: string, value: string): Promise<void> => {
     await commit(await window.nexus.property.clearStatusOption(id, value))
   }
-  // The four drop kinds route to their persistence targets: collection order, nexus
+  // Each drop kind routes to its own persistence target: collection order, nexus
   // order (the visible slot translated into the full-order index — assigned ids stay in it),
   // atomic assign-at-slot, and the strip-and-cache Remove.
   const handleDrop = async (drop: PaneDrop): Promise<void> => {

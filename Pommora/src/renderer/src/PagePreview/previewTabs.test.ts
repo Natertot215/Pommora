@@ -250,7 +250,7 @@ describe('previewTabs — the NavWindow flavor entry (H-2/H-3)', () => {
     useSession.getState().closeNav()
     expect(useSession.getState().preview).toBeNull()
     expect(useSession.getState().navOpen).toBe(false)
-    expect(useSession.getState().previewsFile.navSet?.tabs).toHaveLength(2) // durable (H-3)
+    expect(useSession.getState().previewsFile.navSet?.tabs).toHaveLength(2) // durable
   })
 
   it('the B-2 override toggle persists in the previews file', () => {
@@ -265,7 +265,7 @@ describe('previewTabs — the engulf exit flag (A-4)', () => {
     useSession.getState().openPreview(page('x'))
     useSession.getState().closePreview('engulf')
     expect(useSession.getState().previewExit).toBe('engulf')
-    // Re-opening re-seeds — the six close paths that never write the flag can't replay the FLIP.
+    // Re-opening re-seeds — the close paths that never write the flag can't replay the FLIP.
     useSession.getState().openPreview(page('y'))
     expect(useSession.getState().previewExit).toBe('dismiss')
   })

@@ -522,7 +522,7 @@ export function DragGroup({
     if (e.button !== 0 || !e.isPrimary) return
     if (drag.current.active) return // a live drag owns the pointer
     // A press during a drop's settle animation fast-forwards that commit instead of being refused —
-    // grabbing the next card immediately then feels responsive, not dead for ~300ms.
+    // grabbing the next card immediately then feels responsive, not dead while it finishes.
     if (commitRef.current) commitRef.current()
     const z = zones.current.get(zoneId)
     const el = z?.els.get(id) ?? null

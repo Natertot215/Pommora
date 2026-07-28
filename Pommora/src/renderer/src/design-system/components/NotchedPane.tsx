@@ -14,7 +14,7 @@ import * as s from './notchedPane.css'
 // are the same line. The beak is the Apple-popover silhouette: one cubic per side, tangent to the
 // top edge at its base and horizontal over the apex — a smooth fillet into a rounded crest, no
 // straight slopes, no tip vertex. `curve` morphs sharp↔round (it scales both tangent runs; the
-// 0.25 default lands on Apple's proportions). `flip` mirrors the whole outline vertically for
+// default lands on Apple's proportions). `flip` mirrors the whole outline vertically for
 // upward-opening panes — the beak then hangs from the BOTTOM edge, pointing down at the trigger.
 function panePath(
   w: number,

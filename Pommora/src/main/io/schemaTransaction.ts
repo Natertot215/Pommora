@@ -1,12 +1,10 @@
-// Atomic multi-file commit for schema mutations that touch more than one file. A
-// delete-property or a lossy type-change rewrites the type sidecar AND strips the
-// property from every member page — those writes must land together-or-not-at-all. A
-// filesystem has no real multi-file transaction, so this fakes it with a two-phase
-// commit: stage every payload to a sibling temp, then rename each over its target
-// (backing up any existing target); any failure rolls the filesystem back. A crash
-// mid-commit is self-healed by the stale-temp sweep on the next commit. Single-file
-// writes should use atomicWriteFile directly — this is overhead-only for one file.
-// Mirrors Swift's SchemaTransaction.
+// Atomic multi-file commit for schema mutations that touch more than one file (e.g. a
+// delete-property rewrites the type sidecar AND strips every member page — those writes
+// must land together-or-not-at-all). A filesystem has no real multi-file transaction, so
+// this fakes it with a two-phase commit: stage every payload to a sibling temp, then rename
+// each over its target (backing up any existing target); any failure rolls the filesystem
+// back. A crash mid-commit is self-healed by the stale-temp sweep on the next commit.
+// Single-file writes should use atomicWriteFile directly — this is overhead-only for one file.
 
 import { writeFile, rename, readdir, unlink } from 'node:fs/promises'
 import { join, dirname } from 'node:path'

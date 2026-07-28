@@ -80,8 +80,7 @@ export const NEXUS_CONFIG_FILES = {
 } as const
 
 /** The `.nexus/` files that are per-machine display state or a regeneratable accelerator, never
- *  shared — the set to exclude from any device-to-device sync (heading folds, active view, per-view
- *  row order, table-heading toggles, the fetched-page-title cache). Everything else under `.nexus/`
+ *  shared — the set to exclude from any device-to-device sync. Everything else under `.nexus/`
  *  (registry, Contexts, Homepage, settings, assets) is canonical. */
 export const DEVICE_LOCAL_NEXUS_FILES: ReadonlySet<string> = new Set([
   NEXUS_CONFIG_FILES.folds,

@@ -70,7 +70,7 @@ import './CardsView.css'
 const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `nexus-asset://nexus/.nexus/assets/${nexusId}/thumbnails/page-${pageId}.jpg?v=${v}`
 
-// ONE source for every card/set title's type — the body ramp, semibold.
+// ONE source for every card/set title's type.
 const cardTitleType = text.body.semibold
 
 /**
@@ -702,7 +702,7 @@ interface PageCardProps {
   onRefreshValues: () => void
   /** Whether this card arms a drag (grid-wide: within-band reorder or cross-band reassign is possible). */
   draggable: boolean
-  /** False only when the embed zoom shrinks chips (≤0.8 effective) — drops multi-select's inline ×. */
+  /** False when the embed zoom shrinks chips too far — drops multi-select's inline ×. */
   allowInlineRemove: boolean
 }
 

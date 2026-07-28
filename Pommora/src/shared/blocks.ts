@@ -1,11 +1,8 @@
-// The block document — the host-agnostic contract a BlockHost carries:
-// a SurfacePM layout tree under `layout`, tagged-union tile payloads under
-// `blocks` (the Swift-reserved key, now modeled), and the host lock under
-// `blocks_locked`. Entries ride RAW through reads and writes so foreign or
-// future tile types survive rewrites; `knownBlock` is the read lens typing
-// the entries this build understands. The layout's raw wire schemas live here so
-// main and the renderer validate one shape; the renderer's SurfacePM codec owns
-// the repair pass on top.
+// The host-agnostic contract a BlockHost carries: a SurfacePM layout tree under `layout`,
+// tagged-union tile payloads under `blocks`, and the host lock under `blocks_locked`. Entries
+// ride RAW through reads and writes so foreign or future tile types survive rewrites;
+// `knownBlock` is the read lens typing the entries this build understands. The layout's raw
+// wire schemas live here so main and the renderer validate one shape.
 
 import { z } from 'zod'
 import type { ViewButton, ViewStyle } from './types'

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Menu, MenuItem, MenuHeading, MenuSeparator } from '@renderer/design-system/components/menu'
 import { Icon } from '@renderer/design-system/symbols'
 
-// A constrained panel so the flush rows read like a real menu (≈ the Figma 230px card).
+// A constrained panel so the flush rows read like a real menu (matching the Figma card).
 function Panel({ children }: { children: ReactNode }): React.JSX.Element {
   return (
     <div
@@ -18,8 +18,7 @@ function Panel({ children }: { children: ReactNode }): React.JSX.Element {
   )
 }
 
-// Icons render at 1em (the new Icon default) → they follow each row's text step:
-// 12px in a Menu Item, 13px in a Menu Heading.
+// Icons render at 1em (the new Icon default) → they follow each row's text step.
 const dashed = <Icon name="square-dashed" size={16} />
 const chevron = <Icon name="chevron-right" size={12} />
 

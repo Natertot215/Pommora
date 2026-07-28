@@ -1,9 +1,8 @@
 // The fetched-page-title cache: `.nexus/linkTitles.json`, keyed by URL → the page's <title>. A URL
 // property in the `link-title` look shows this instead of the raw URL. It's a regeneratable network
-// accelerator (re-fetchable any time), so it lives in `.nexus/` OUT of the portable content and is
-// excluded from device sync (DEVICE_LOCAL_NEXUS_FILES) — each machine builds its own. The resolver
-// (../linkTitles.ts) owns the authoritative in-memory copy and persists the WHOLE map through here, so
-// there's no per-key read-modify-write to race (the lesson from the properties-cascade F1 work).
+// accelerator excluded from device sync — each machine builds its own. The resolver (../linkTitles.ts)
+// owns the authoritative in-memory copy and persists the WHOLE map through here, so there's no
+// per-key read-modify-write to race.
 import { mkdir } from 'node:fs/promises'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../paths'
 import { readJsonObject, writeJson } from './atomicWrite'

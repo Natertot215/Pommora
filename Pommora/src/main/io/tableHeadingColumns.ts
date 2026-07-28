@@ -1,10 +1,9 @@
 // The local table heading-column store: `.nexus/tableHeadingColumns.json`, keyed by page id → the
-// indices of the tables on that page whose first column is rendered as a heading. Same rationale as
-// the fold store (see io/folds.ts): a heading column is a Pommora-only visual with no GFM equivalent,
-// so it lives OUT of the portable `.md` (no noise leaking to Obsidian) and OUT of the regeneratable
-// index. Tables are keyed by their position on the page — stable unless whole tables are added/removed
-// above a styled one (an accepted v1 limitation, matching the fold store's ordinal fragility; slightly
-// worse here — a stale index mis-styles whatever table now sits at it, where a stale fold key just no-ops).
+// indices of the tables on that page whose first column is rendered as a heading. A heading column
+// is a Pommora-only visual with no GFM equivalent, so it lives OUT of the portable `.md` (no noise
+// leaking to Obsidian) and OUT of the regeneratable index. Tables are keyed by their position on
+// the page — stable unless whole tables are added/removed above a styled one (an accepted v1
+// limitation: a stale index mis-styles whatever table now sits at it).
 import { mkdir } from 'node:fs/promises'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../paths'
 import { readJsonObject, writeJson } from './atomicWrite'

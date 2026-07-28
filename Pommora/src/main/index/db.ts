@@ -1,8 +1,6 @@
-// The SQLite seam. better-sqlite3 lives ONLY behind this module — swapping the driver
-// (e.g. to node:sqlite later) is a one-file change, callers unchanged ("no dependency
-// lock-in"). Synchronous (better-sqlite3 has no async). The index is regeneratable, so an
-// open failure returns null and the app degrades to file-only reads — the DB never blocks
-// anything (it's a pure accelerator, off the read path).
+// The SQLite seam. better-sqlite3 lives ONLY behind this module — swapping the driver is a
+// one-file change, callers unchanged. The index is regeneratable, so an open failure returns
+// null and the app degrades to file-only reads — the DB never blocks anything.
 
 import type DatabaseT from 'better-sqlite3'
 

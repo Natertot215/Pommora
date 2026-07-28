@@ -1,10 +1,8 @@
-// Cascades that keep references consistent when an entity's identity changes: a page
-// rename rewrites every inbound `[[link]]` across the nexus; a Context delete strips its
-// id from every page's Context array. Both walk the nexus's real pages and rewrite each under
-// its file lock (rewritePageSerialized) — the same lock the cell-write path takes, so a
-// cascade can't clobber a concurrent edit on a page. Per-file, not cross-file atomic: a
-// partly-applied cascade is recoverable by re-running. No SQLite — the inbound set is found
-// by scanning; the index can narrow this later, but correctness doesn't depend on it.
+// Cascades that keep references consistent when an entity's identity changes: a page rename
+// rewrites every inbound `[[link]]` across the nexus. Walks the nexus's real pages and rewrites
+// each under its file lock (rewritePageSerialized) — the same lock the cell-write path takes,
+// so a cascade can't clobber a concurrent edit. Per-file, not cross-file atomic: a
+// partly-applied cascade is recoverable by re-running.
 
 import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'

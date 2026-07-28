@@ -287,7 +287,7 @@ describe('outliner rails', () => {
     expect(bulletParent).toHaveLength(1)
     expect(bulletParent[0].typeClass).toBe('md-outliner-bullet')
 
-    // checkbox parent, bullet child → the rail centres on the parent’s 17px box.
+    // checkbox parent, bullet child → the rail centres on the parent’s box.
     const taskParent = rails('- [ ] parent\n\t- child')
     expect(taskParent).toHaveLength(1)
     expect(taskParent[0].typeClass).toBe('md-outliner-task')

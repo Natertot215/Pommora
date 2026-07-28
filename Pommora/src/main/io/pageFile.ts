@@ -1,8 +1,7 @@
 // The page (.md) file engine. Owns the `---\n<yaml>---\n<body>` envelope and the
-// foreign-preserving write. Foreign frontmatter (plugin/unmodeled keys) AND comments
-// survive a save because we parse the ORIGINAL frontmatter into a yaml Document and
-// only `set`/`delete` the modeled keys — we never reconstruct the object, so anything
-// we don't touch is carried through verbatim. Atomic on disk via atomicWriteFile.
+// foreign-preserving write. Foreign frontmatter (plugin/unmodeled keys) AND comments survive
+// a save because the ORIGINAL frontmatter parses into a yaml Document and only `set`/`delete`
+// touches the modeled keys — the object is never reconstructed.
 
 import { parseDocument, isMap } from 'yaml'
 import { readFile } from 'node:fs/promises'

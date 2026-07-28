@@ -181,15 +181,12 @@ if (process.env.POMMORA_DEBUG_PORT) {
   app.commandLine.appendSwitch('remote-debugging-port', process.env.POMMORA_DEBUG_PORT)
 }
 
-// The production renderer is served over a custom secure scheme (app://) rather
-// than file://: ES-module scripts fetch in CORS mode and every file:// resource is
-// an opaque origin, so a file://-loaded module bundle is blocked (blank window). A
-// standard secure scheme gives the renderer a real origin (like the dev http
-// server), so the bundle loads normally. Must be registered before app is ready.
+// app:// serves the production renderer instead of file://: a file://-loaded ES-module bundle
+// is CORS-blocked (opaque origin → blank window); a standard secure scheme gives it a real
+// origin instead. Must be registered before app is ready.
 const RENDERER_SCHEME = 'app'
 // Banner/avatar assets ride their own privileged scheme so the renderer can <img src> them
-// without inlining bytes into the reloaded state tree (see registerAssetProtocol). Must be
-// registered before app is ready, alongside the renderer scheme.
+// without inlining bytes into the reloaded state tree. Also registered before app is ready.
 const ASSET_SCHEME = 'nexus-asset'
 protocol.registerSchemesAsPrivileged([
   { scheme: RENDERER_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -211,9 +208,8 @@ const RENDERER_MIME: Record<string, string> = {
   '.ico': 'image/x-icon',
 }
 
-// Serve the built renderer over app://: resolve each request under out/renderer and
-// return the file with its MIME type. fs.readFile is asar-aware (the bundle lives
-// inside app.asar); a containment check rejects any path escaping the bundle dir.
+// fs.readFile is asar-aware (the bundle lives inside app.asar); the containment check
+// below rejects any path escaping the bundle dir.
 function registerRendererProtocol(): void {
   const rendererRoot = join(__dirname, '../renderer')
   protocol.handle(RENDERER_SCHEME, async (request) => {
@@ -233,9 +229,8 @@ function registerRendererProtocol(): void {
   })
 }
 
-// Serve banner/avatar assets over nexus-asset://nexus/<nexus-relative-path>: read-only and
-// confined to the open nexus's .nexus/assets/ (resolveUnderRoot realpaths + contains; the
-// prefix check pins it to that dir). Keeps image bytes out of the reloaded state tree.
+// Read-only and confined to the open nexus's .nexus/assets/ (resolveUnderRoot realpaths +
+// contains; the prefix check pins it to that dir).
 const ASSET_MIME: Record<string, string> = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -264,16 +259,14 @@ function registerAssetProtocol(): void {
   })
 }
 
-// The single main window + a menu-rebuild hook. The menu (Open Recent + the
-// session-gated items) is rebuilt whenever the session / recents change.
+// Rebuilds the menu (Open Recent + session-gated items) whenever the session / recents change.
 let mainWindow: BrowserWindow | null = null
 function refreshMenu(): void {
   if (mainWindow) void installAppMenu(mainWindow, adoptNexus)
 }
 
-// Set the window to the open nexus's default view scale (personalization.defaultViewScale) — the
-// zoom it opens at and ⌘0 resets to. Applied on every load (did-finish-load: launch-restore + ⌘R)
-// and on nexus switch (adoptNexus, where no reload fires); ⌘ +/− nudge live from here.
+// Applies personalization.defaultViewScale — the zoom it opens at and ⌘0 resets to. Called on
+// every load (launch-restore + ⌘R) and on nexus switch, where no reload fires to trigger it.
 async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   if (win.isDestroyed()) return
   // Empty state (no nexus) normalizes to 1.0 — the same value ⌘0 asserts there — so the welcome
@@ -288,25 +281,23 @@ function createWindow(): void {
     width: 1280,
     height: 832,
     show: false,
-    // Native frame kept (macOS draws the standard window corner radius + shadow, matching
-    // Swift apps) but the title bar is hidden; the traffic lights are positioned into the
-    // sidebar's top-left. Opaque so the sidebar glass samples the window background.
+    // Native frame kept (macOS draws the corner radius + shadow) but the title bar hidden,
+    // traffic lights repositioned into the sidebar. Opaque so the sidebar glass samples the window.
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 18, y: 18 },
     backgroundColor: WINDOW_BG, // single source (@shared/theme) — also drives the background.window token + --bg-window
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      // CommonJS preload (package is not type:module) → sandbox can stay ON.
-      // Plus contextIsolation on + nodeIntegration off; the preload exposes only
-      // the narrow nexus read API.
+      // CommonJS preload → sandbox can stay ON, plus contextIsolation on + nodeIntegration
+      // off; the preload exposes only the narrow nexus read API.
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
     },
   })
 
-  // Apply the default zoom BEFORE the first paint is shown, so the window opens at scale instead of
-  // flashing 100% → scale. finally() guarantees show() even if the (error-swallowing) read somehow stalls.
+  // Applied before first paint so the window opens at scale instead of flashing 100% → scale;
+  // finally() guarantees show() even if the (error-swallowing) read stalls.
   win.on('ready-to-show', () => void applyDefaultZoom(win).finally(() => win.show()))
   installEditorContextMenu(win)
   mainWindow = win
@@ -334,8 +325,7 @@ function createWindow(): void {
   }
 }
 
-// What's currently open — the renderer's launch + post-change read. Empty when no
-// nexus is open (not an error); reads the session root's tree otherwise.
+// The renderer's launch + post-change read. Empty status is not an error — just no nexus open.
 ipcMain.handle('nexus:state', async (): Promise<NexusState> => {
   const root = sessionRoot()
   if (root === null) return { status: 'empty' }
@@ -347,8 +337,7 @@ ipcMain.handle('nexus:state', async (): Promise<NexusState> => {
   }
 })
 
-// Lazy agenda read for the sidebar's Agenda mode — called only when that mode is active, so
-// agenda files never join the tree walk. Read-only; no EventKit, no CRUD here.
+// Called only when the sidebar's Agenda mode is active, so agenda files never join the tree walk.
 ipcMain.handle('agenda:list', async (): Promise<AgendaListResult> => {
   const root = sessionRoot()
   if (root === null) return { ok: false, error: 'No nexus open' }
@@ -360,9 +349,8 @@ ipcMain.handle('agenda:list', async (): Promise<AgendaListResult> => {
   }
 })
 
-// Navigation layer (recents + favorites) — the renderer owns the in-memory arrays and all
-// MRU/dedupe/cap/prune logic; main persists. Recents records debounce (fired on every selection);
-// the pin toggle and favorites write immediately.
+// The renderer owns the in-memory recents/favorites arrays and all MRU/dedupe/cap/prune logic;
+// main only persists. Recents debounce (fired on every selection); favorites write immediately.
 ipcMain.handle('nav:load', async (): Promise<NavStateResult> => {
   const root = sessionRoot()
   if (root === null) return { ok: false, error: 'No nexus open' }
@@ -461,9 +449,8 @@ ipcMain.handle(
   },
 )
 
-// The tab set — a synced sidecar (`tabs.json`): the ordered unpinned tabs + the active pointer +
-// per-tab history targets. Saves debounce main-side (every navigation mutates the set); drained at
-// before-quit + nexus switch alongside the nav writes.
+// A synced sidecar (`tabs.json`): ordered unpinned tabs + active pointer + per-tab history
+// targets. Saves debounce main-side; drained at before-quit + nexus switch with the nav writes.
 ipcMain.handle('tabs:load', async (): Promise<TabsResult> => {
   const root = sessionRoot()
   if (root === null) return { ok: false, error: 'No nexus open' }
@@ -483,8 +470,8 @@ ipcMain.handle('tabs:save', (_e, set: unknown): { ok: true } | { ok: false; erro
   return { ok: true }
 })
 
-// The preview tab sets — a synced sidecar (`page-previews.json`): the NavWindow set,
-// per-origin page sets, the open pointer. Saves debounce main-side; drained with the nav/tab writes.
+// A synced sidecar (`page-previews.json`): the NavWindow set, per-origin page sets, the open
+// pointer. Saves debounce main-side; drained with the nav/tab writes.
 ipcMain.handle('previews:load', async (): Promise<PreviewsResult> => {
   const root = sessionRoot()
   if (root === null) return { ok: false, error: 'No nexus open' }
@@ -545,14 +532,11 @@ ipcMain.handle(
   },
 )
 
-// Open-time prep shared by EVERY path that opens a nexus (explicit open + launch-restore),
-// run after openSession and before the index reads anything:
-//   1. Ensure `.nexus/nexus.json` + `settings.json` exist in Swift's shape (matches Swift's
-//      eager create-on-open) — identity flips a raw folder into sidecar mode; a full settings
-//      file keeps Swift's decoder from reseeding (losing data) when it later opens the folder.
-//   2. Stamp any un-adopted entity (raw folder / externally-authored page) with a real ULID so
-//      the index + every later write capture a stable id, not a transient `adopted-` placeholder.
-// Best-effort: a failure here must never block opening the folder.
+// Shared by every path that opens a nexus, run after openSession and before the index reads
+// anything: ensures `.nexus/nexus.json` + `settings.json` exist in Swift's shape (a full settings
+// file keeps Swift's decoder from reseeding and losing data when it later opens the folder), then
+// stamps any un-adopted entity with a real ULID so the index and every later write get a stable
+// id instead of a transient `adopted-` placeholder. Best-effort: never blocks opening the folder.
 async function prepareOpenedNexus(path: string): Promise<void> {
   try {
     await ensureIdentity(path)
@@ -586,32 +570,28 @@ async function adoptNexus(path: string): Promise<void> {
 }
 
 async function adoptNexusInner(path: string): Promise<void> {
-  // Drain the outgoing nexus's owed nav + tab + previews writes before the session root changes,
-  // so a rapid switch-away-and-back can't let a queued write clobber the freshly-loaded state.
+  // Drains the outgoing nexus's owed writes before the session root changes, so a rapid
+  // switch-away-and-back can't let a queued write clobber the freshly-loaded state.
   await Promise.all([flushNavWrites(), flushTabsWrites(), flushPreviewsWrites()])
   await openSession(path)
   // openSession canonicalized the root (realpath); thread THAT everywhere below so the watcher's
-  // session-match guard (watcher.ts) and the index/persistence key off the same string sessionRoot()
-  // returns — a raw path here would make the watcher treat every event as a session switch.
+  // session-match guard and the index/persistence key off the same string — a raw path here
+  // would make the watcher treat every event as a session switch.
   const root = sessionRoot() ?? path
   await prepareOpenedNexus(root)
-  // Mutation-side work that may block open (not part of best-effort prepare):
-  // forward-completing a crashed rename, BEFORE anything reads contexts.
+  // Forward-completes a crashed rename, BEFORE anything reads contexts.
   await replayPendingRename(root)
-  // Open (cold-build if needed) the index for the new session. Best-effort + off the read
-  // path — the renderer's tree comes from readNexus, so a null index just means no live
-  // query acceleration until the next rebuild. Replaces any prior session's handle.
+  // Best-effort + off the read path: the renderer's tree comes from readNexus, so a null index
+  // just means no live query acceleration until the next rebuild.
   await openSessionIndex(root)
-  // Live-watch the new nexus (startWatcher replaces any prior session's watcher).
-  // A user-initiated open always has a window; launch-restore starts its watcher
-  // after createWindow below.
+  // A user-initiated open always has a window; launch-restore starts its watcher after
+  // createWindow below instead.
   if (mainWindow) void startWatcher(root, mainWindow)
-  // Switching nexus doesn't reload the renderer (no did-finish-load fires), so apply the new
-  // nexus's default scale here — the launch-restore path gets it via did-finish-load instead.
+  // Switching nexus doesn't reload the renderer, so apply the new default scale here —
+  // the launch-restore path gets it via did-finish-load instead.
   if (mainWindow) void applyDefaultZoom(mainWindow)
-  // Persistence (last-opened + recents + OS list) is best-effort: a config-write
-  // failure must not block opening the folder this session, nor leave a half-open
-  // "ghost" session the renderer never re-reads.
+  // Best-effort: a config-write failure must not block opening the folder this session,
+  // nor leave a half-open "ghost" session the renderer never re-reads.
   try {
     const userData = app.getPath('userData')
     const config = await readAppConfig(userData)
@@ -629,11 +609,10 @@ async function adoptNexusInner(path: string): Promise<void> {
   } catch (e) {
     console.error('Could not persist recents / last-opened:', e)
   }
-  refreshMenu() // recents + session changed → refresh Open Recent / session-gated items
+  refreshMenu()
 }
 
-// Native folder picker (a sheet on the calling window). Returns whether a folder
-// was chosen; on success the renderer re-reads nexus:state.
+// A sheet on the calling window; on success the renderer re-reads nexus:state.
 ipcMain.handle('nexus:choose', async (e): Promise<boolean> => {
   const win = BrowserWindow.fromWebContents(e.sender)
   const opts = {
@@ -648,10 +627,8 @@ ipcMain.handle('nexus:choose', async (e): Promise<boolean> => {
   return true
 })
 
-// Open a folder dropped onto the window. The preload resolves the dropped File to
-// an absolute path (webUtils) and sends it here — the one place a renderer-origin
-// path enters. Accept it only if it's an existing directory (rejects dropped files
-// / non-folders), then adopt it like a picked folder.
+// The preload resolves the dropped File to an absolute path (webUtils) and sends it here —
+// the one place a renderer-origin path enters. Accepted only if it's an existing directory.
 ipcMain.handle('nexus:openPath', async (_e, p: unknown): Promise<boolean> => {
   if (typeof p !== 'string' || p.length === 0) return false
   if (!(await isExistingDir(p))) return false
@@ -659,9 +636,8 @@ ipcMain.handle('nexus:openPath', async (_e, p: unknown): Promise<boolean> => {
   return true
 })
 
-// On-demand page read. The renderer passes a nexus-relative path (PageNode.path);
-// resolveUnderRoot canonicalizes it under the open nexus root and rejects anything
-// that escapes (traversal, absolute, or an in-nexus symlink pointing out).
+// resolveUnderRoot canonicalizes the renderer's nexus-relative path under the open nexus root
+// and rejects anything that escapes (traversal, absolute, or an in-nexus symlink pointing out).
 ipcMain.handle('page:open', async (_e, relPath: unknown): Promise<PageResult> => {
   try {
     const root = sessionRoot()
@@ -685,10 +661,8 @@ ipcMain.handle('page:open', async (_e, relPath: unknown): Promise<PageResult> =>
   }
 })
 
-// Debounced body writes from the editor. Reconstructs the file via updatePageBody
-// (frontmatter-preserving) + atomic write; the renderer sends a relative path, main
-// resolves it under the session root. Structurally distinct from the one-shot `mutate`
-// ops, so it gets its own channel.
+// Reconstructs the file via updatePageBody (frontmatter-preserving) + atomic write.
+// Structurally distinct from the one-shot `mutate` ops, so it gets its own channel.
 ipcMain.handle(
   'page:updateBody',
   async (
@@ -909,14 +883,12 @@ ipcMain.handle(
   },
 )
 
-// Property schema CRUD, registry+assignment-backed (PropertiesV2): defs live nexus-wide in
-// `.nexus/properties.json`; a Collection's sidecar holds the assigned prop-ids. The surface keeps
-// its pre-V2 names/args so the renderer is untouched — add = create-in-registry + assign here,
-// rename/changeType = global def edit, delete = Remove (strip values + cache restorably on the
-// sidecar; the word Delete means property:delete only), reorder = assignment-order move,
-// assign = append + restore-from-cache (+ optional slot placement). containerPath is the
-// schema-owning Collection's folder — a Set inherits the schema, so the renderer passes the
-// ancestor Collection's path. Mirrors the views:* envelope contract.
+// Registry+assignment-backed: defs live nexus-wide in `.nexus/properties.json`; a Collection's
+// sidecar holds the assigned prop-ids. Keeps its pre-V2 names/args so the renderer is untouched —
+// add = create-in-registry + assign, rename/changeType = global def edit, delete = Remove (strip
+// values + cache restorably on the sidecar; the word Delete means property:delete only), reorder =
+// assignment-order move, assign = append + restore-from-cache. containerPath is the schema-owning
+// Collection's folder — a Set inherits the schema, so the renderer passes the ancestor's path.
 async function resolveSchemaFolder(
   containerPath: unknown,
 ): Promise<{ ok: true; root: string; folder: string } | { ok: false; error: string }> {
@@ -1093,8 +1065,8 @@ ipcMain.handle(
   },
 )
 
-// Nexus-wide global delete — snapshot to .trash, strip the value across every assigner,
-// drop the def + all assignments. The rare destructive op; unassign is the daily path.
+// Snapshot to .trash, strip the value across every assigner, drop the def + all assignments.
+// The rare destructive op; unassign is the daily path.
 ipcMain.handle(
   'property:delete',
   async (_e, propertyId: unknown): Promise<{ ok: true } | { ok: false; error: string }> => {
@@ -1110,9 +1082,8 @@ ipcMain.handle(
   },
 )
 
-// Global option edits for a Select / Multi-Select property — registry-level, cascading to pages.
-// No-container-scope siblings of property:delete; the confirm dialog for remove/clear lives in the
-// option menu, not here (property:delete is likewise unconfirmed at this layer).
+// Registry-level option edits, cascading to pages. No-container-scope siblings of
+// property:delete; the confirm dialog for remove/clear lives in the option menu, not here.
 function isOptionArray(v: unknown): v is Option[] {
   return (
     Array.isArray(v) &&
@@ -1665,8 +1636,8 @@ ipcMain.handle('blocks:confirmRemove', async (e): Promise<boolean> => {
   return response === 0
 })
 
-// Personalization (accent, connection color, interface toggles) — merged one key at a time into the
-// React-owned `personalization` object in `.nexus/settings.json`; the value is validated on read.
+// Merged one key at a time into the React-owned `personalization` object in `.nexus/settings.json`;
+// the value is validated on read.
 ipcMain.handle(
   'personalization:set',
   async (
@@ -1687,8 +1658,7 @@ ipcMain.handle(
   },
 )
 
-// The renderer pushes the editor's active formatting state here so the native context menu
-// (built in editorMenu.ts on right-click) can render accurate checkmarks/radios.
+// Pushed here so the native context menu (editorMenu.ts) can render accurate checkmarks/radios.
 ipcMain.on('editor:format-state', (_e, state: FormatState) => setFormatState(state))
 
 // The JS window mover (hover-bearing chrome can't be a native drag region — it'd lose hover).
@@ -1705,8 +1675,8 @@ ipcMain.on('win:zoom', (e) => {
   else win.maximize()
 })
 
-// The renderer flags (on hover) when the pointer sits on a callout grip, so the generic editor menu can
-// stand down and the renderer's own Delete Callout menu is the only one that pops on the right-press.
+// Flagged on hover so the generic editor menu stands down and the renderer's own Delete
+// Callout menu is the only one that pops on the right-press.
 ipcMain.on('editor:callout-grip', (_e, on: boolean) => setCalloutGrip(on))
 
 // The Electron-side bits the write orchestration needs: trashMode from app config +
@@ -1719,15 +1689,15 @@ async function mutateDeps(): Promise<MutateDeps> {
   }
 }
 
-// The single write path. The renderer sends a relative-path request; main resolves it
-// under the session root, runs the orchestration, and best-effort refreshes the index.
+// The single write path — main resolves the request under the session root, runs the
+// orchestration, and best-effort refreshes the index.
 ipcMain.handle(
   'mutate',
   async (_e, req: MutateRequest): Promise<MutateResult> => handleMutate(req, await mutateDeps()),
 )
 
-// Pop a native per-kind context menu for a right-clicked sidebar entity; its items act
-// main-side (handleMutate / confirm / Finder) and signal the renderer to refetch on change.
+// A right-clicked sidebar entity's menu; its items act main-side (handleMutate / confirm /
+// Finder) and signal the renderer to refetch on change.
 ipcMain.handle('context-menu', async (e, target: ContextTarget): Promise<void> => {
   const win = BrowserWindow.fromWebContents(e.sender)
   if (!win) return
@@ -1736,10 +1706,9 @@ ipcMain.handle('context-menu', async (e, target: ContextTarget): Promise<void> =
   })
 })
 
-// Pop a native "New …" menu (the section-header "+" for contexts: New Area/Topic/Project).
-// Resolves with the picked request (null when dismissed) — the renderer's store runs it, so
-// create rides the same one-write-path + optimistic-insert flow as every other renderer
-// mutation instead of acting main-side and forcing a full reload before the rename input.
+// The section-header "+" menu (New Area/Topic/Project). Resolves with the picked request (null
+// when dismissed) — the renderer's store runs it, riding the same one-write-path +
+// optimistic-insert flow as every other mutation, instead of forcing a full reload here.
 ipcMain.handle(
   'create-menu',
   async (e, items: { label: string; req: MutateRequest }[]): Promise<MutateRequest | null> => {
@@ -1763,8 +1732,8 @@ ipcMain.handle(
   },
 )
 
-// Surface a renderer-side failure as a native dialog (renderer-initiated mutations — e.g.
-// New Page ⌘N — have no native dialog of their own, unlike the context menu).
+// Renderer-initiated mutations (e.g. New Page ⌘N) have no native dialog of their own,
+// unlike the context menu.
 ipcMain.handle('error:show', async (e, message: unknown): Promise<void> => {
   const win = BrowserWindow.fromWebContents(e.sender)
   if (win && typeof message === 'string') {
@@ -1783,9 +1752,8 @@ ipcMain.handle('link:open', async (_e, url: unknown): Promise<void> => {
   await shell.openExternal(normalizeLinkUrl(url))
 })
 
-// The fetched page-title cache for URL properties in the `link-title` look. `get` hydrates the
-// renderer's store on open (whole cached map); `fetch` resolves one URL (cache hit or a live network
-// fetch), persisting successes to `.nexus/linkTitles.json`. Main owns the network + the cache.
+// `get` hydrates the renderer's store on open (whole cached map); `fetch` resolves one URL
+// (cache hit or a live network fetch), persisting successes to `.nexus/linkTitles.json`.
 ipcMain.handle('linkTitles:get', async (): Promise<LinkTitleCache> => {
   const root = sessionRoot()
   return root ? getTitleCache(root) : {}
@@ -1818,8 +1786,7 @@ ipcMain.handle('theme:systemAccent', (): string | null => {
   }
 })
 
-// The native image picker → the chosen file as a data URL (null if canceled). The one owner of
-// "pick an image file"; reuses ASSET_MIME for the ext→mime mapping (single source for both).
+// The one owner of "pick an image file"; reuses ASSET_MIME for the ext→mime mapping.
 const IMAGE_EXTS = Object.keys(ASSET_MIME).map((e) => e.slice(1))
 async function pickImageDataUrl(win: BrowserWindow): Promise<string | null> {
   const result = await dialog.showOpenDialog(win, {
@@ -1837,8 +1804,8 @@ async function pickImageDataUrl(win: BrowserWindow): Promise<string | null> {
   }
 }
 
-// The ViewDropdown right-click menu — resolves the picked action to the renderer, which performs the
-// container-config write. macOS-native; the renderer supplies the current values for the checkmarks.
+// Resolves the picked action to the renderer, which performs the container-config write;
+// the renderer supplies the current values for the checkmarks.
 ipcMain.handle(
   'view-button-menu',
   async (e, current: unknown): Promise<ViewButtonMenuAction | null> => {
@@ -1907,16 +1874,14 @@ ipcMain.handle(
   },
 )
 
-// The icon picker's right-click Favorite menu — resolves 'toggle' to the renderer, which owns the
-// favoriteIcons write. Native (not a hand-rolled popover) so it matches every other right-click menu.
+// The icon picker's right-click Favorite menu — resolves 'toggle' to the renderer, which owns
+// the favoriteIcons write.
 ipcMain.handle('icon-favorite-menu', async (e, favorited: unknown): Promise<'toggle' | null> => {
   const win = BrowserWindow.fromWebContents(e.sender)
   if (!win) return null
   return popIconFavoriteMenu(win, favorited === true)
 })
 
-// Pop a native single-item "Add Photo" menu; on click open the image picker and resolve the
-// chosen file as a data URL. Resolves null if the menu is dismissed or the picker canceled.
 // The nexus identity icon menu (Change Icon → the renderer's glyph picker; Add/Change Photo → the native
 // image pick, done renderer-side). Returns the chosen action; the renderer runs the picker/pick + mutate.
 type NexusIconAction = 'changeIcon' | 'addPhoto' | 'removePhoto' | 'removeIcon'
@@ -1946,16 +1911,15 @@ ipcMain.handle('nexus:iconMenu', async (e, arg: unknown): Promise<NexusIconActio
   })
 })
 
-// Open the native image picker directly (no menu) → data URL or null. The banner's Add/Change
-// affordances use this (the photo's "Add Photo" menu wraps the same picker).
+// The banner's Add/Change affordances use this directly (the photo's "Add Photo" menu wraps
+// the same picker).
 ipcMain.handle('nexus:pickImage', async (e): Promise<string | null> => {
   const win = BrowserWindow.fromWebContents(e.sender)
   return win ? pickImageDataUrl(win) : null
 })
 
-// Pop a native macOS banner menu (mirrors Swift's .contextMenu): Change/Remove for an existing
-// image, a single Add item when `add`. The noun follows the surface's vocabulary (Banner by
-// default; the cards' Cover-mode thumb passes "Cover"). Resolves the action, null on dismissal —
+// Change/Remove for an existing image, a single Add item when `add`. The noun follows the
+// surface's vocabulary (Banner by default; the cards' Cover-mode thumb passes "Cover").
 // Add resolves 'change' (both routes open the image picker).
 ipcMain.handle(
   'nexus:bannerMenu',
@@ -1992,8 +1956,8 @@ ipcMain.handle(
   },
 )
 
-// Pop a native detail-title menu. Rename is always offered; Change Icon unless `noEditIcon` (the homepage
-// sets its icon from the settings pane, not here); `toggleIcon` adds the Hide/Show Icon item.
+// Rename is always offered; Change Icon unless `noEditIcon` (the homepage sets its icon from
+// the settings pane, not here); `toggleIcon` adds the Hide/Show Icon item.
 type TitleMenuAction = 'rename' | 'editIcon' | 'toggleIcon'
 ipcMain.handle('nexus:titleMenu', async (e, arg: unknown): Promise<TitleMenuAction | null> => {
   const win = BrowserWindow.fromWebContents(e.sender)
@@ -2021,49 +1985,49 @@ ipcMain.handle('nexus:titleMenu', async (e, arg: unknown): Promise<TitleMenuActi
   })
 })
 
-// Pop the table grip's native right-click menu → the chosen action (null if dismissed); renderer applies it.
+// The table grip's right-click menu.
 ipcMain.handle('table-menu', async (e, ctx: TableMenuContext) => {
   const win = BrowserWindow.fromWebContents(e.sender)
   return win ? popTableMenu(win, ctx) : null
 })
 
-// Pop the callout grip's native right-click menu → the chosen action (null if dismissed); renderer applies it.
+// The callout grip's right-click menu.
 ipcMain.handle('callout-menu', async (e) => {
   const win = BrowserWindow.fromWebContents(e.sender)
   return win ? popCalloutMenu(win) : null
 })
 
-// Pop the table-view column header's native right-click menu → the chosen action (null if dismissed); renderer applies it.
+// The table-view column header's right-click menu.
 ipcMain.handle('column-menu', async (e, ctx: ColumnMenuContext) => {
   const win = BrowserWindow.fromWebContents(e.sender)
   return win ? popColumnMenu(win, ctx) : null
 })
 
-// Pop a table cell's native right-click menu (title meta / per-type Style / Edit) — same contract.
+// A table cell's right-click menu (title meta / per-type Style / Edit).
 ipcMain.handle('cell-menu', async (e, ctx: CellMenuContext) => {
   const win = BrowserWindow.fromWebContents(e.sender)
   return win ? popCellMenu(win, ctx) : null
 })
 
-// Pop a card's native right-click menu (page meta + Add Property ▸) → the chosen action, null if dismissed.
+// A card's right-click menu (page meta + Add Property ▸).
 ipcMain.handle('card-menu', async (e, ctx: CardMenuContext) => {
   const win = BrowserWindow.fromWebContents(e.sender)
   return win ? popCardMenu(win, ctx) : null
 })
 
-// Pop a tab's native right-click menu (Pin/Unpin · Close · Close to the Right) → the chosen action.
+// A tab's right-click menu (Pin/Unpin · Close · Close to the Right).
 ipcMain.handle('tab-menu', async (e, ctx: TabMenuContext) => {
   const win = BrowserWindow.fromWebContents(e.sender)
   return win && isPlainObject(ctx) ? popTabMenu(win, ctx as unknown as TabMenuContext) : null
 })
 
-// Pop a NavWindow row/card's native right-click menu → the chosen action.
+// A NavWindow row/card's right-click menu.
 ipcMain.handle('nav-row-menu', async (e, ctx: NavRowMenuContext) => {
   const win = BrowserWindow.fromWebContents(e.sender)
   return win && isPlainObject(ctx) ? popNavRowMenu(win, ctx as unknown as NavRowMenuContext) : null
 })
 
-// Pop a wikilink's native right-click menu (Open in Preview) → the chosen action.
+// A wikilink's right-click menu (Open in Preview).
 ipcMain.handle('conn-menu', async (e) => {
   const win = BrowserWindow.fromWebContents(e.sender)
   return win ? popConnMenu(win) : null
@@ -2136,9 +2100,9 @@ app
       const restore = await resolveRestorePath(config)
       if (restore) {
         await openSession(restore)
-        const root = sessionRoot() ?? restore // the canonicalized root (see adoptNexus)
-        await prepareOpenedNexus(root) // same ensure+stamp prep as an explicit open
-        await replayPendingRename(root) // forward-complete a crashed rename before reads
+        const root = sessionRoot() ?? restore
+        await prepareOpenedNexus(root)
+        await replayPendingRename(root)
         await openSessionIndex(root)
       }
     } catch (e) {

@@ -1,14 +1,10 @@
-// The Navigation layer's per-nexus persistence: two SYNCED sidecars under `.nexus/` —
-// `navRecents.json` (the auto history stream, MRU, with a per-entry `pinned` float) and
+// Two SYNCED sidecars under `.nexus/` — `navRecents.json` (the auto history stream, MRU) and
 // `navFavorites.json` (the durable favorites list). Unlike activeViews/folds these are NOT
-// device-local — a user's recents and favorites follow them across machines (single-user,
-// last-writer-wins sync model).
+// device-local — a user's recents and favorites follow them across machines.
 //
 // The renderer owns the in-memory arrays and the MRU/dedupe/cap/prune logic; main is the
-// persister. Recents writes DEBOUNCE (passive nav records fire on every selection), coalescing
-// to one disk write; the pin toggle and the quit/switch flush write immediately. Favorites are
-// deliberate user acts, so they always write immediately. The pending recents write carries its
-// own root, so a late flush always lands in the nexus it was recorded for.
+// persister. Recents writes DEBOUNCE (passive nav records fire on every selection); favorites
+// are deliberate user acts, so they always write immediately.
 
 import { mkdir } from 'node:fs/promises'
 import { isPlainObject } from '@shared/propertyValue'

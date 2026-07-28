@@ -43,36 +43,29 @@ export type MutateRequest =
   // renames are cascades, and a path-addressed folder rename would strip every tag silently.
   | { op: 'rename'; path: string; kind: Exclude<MutableKind, 'space' | 'context'>; newName: string }
   | { op: 'delete'; path: string; kind: MutableKind }
-  // Set/clear the nexus profile image (sidebar header avatar). dataUrl set ⇒ decode + copy
-  // into `.nexus/assets/<nexusID>/profile-<token>.<ext>` + record the rel path in
-  // `settings.profile_image`; null ⇒ clear the field + delete the file. Matches Swift.
+  // dataUrl set ⇒ decode + copy into `.nexus/assets/<nexusID>/profile-<token>.<ext>` + record
+  // the rel path in `settings.profile_image`; null ⇒ clear the field + delete the file.
   | { op: 'setProfileImage'; dataUrl: string | null }
-  // Set/clear the nexus glyph icon (the identity fallback when no photo is set) in
-  // `settings.profile_icon`. A symbol-registry name (e.g. "house"); null ⇒ clear the field.
+  // The identity fallback when no photo is set, in `settings.profile_icon`; null ⇒ clear it.
   | { op: 'setProfileIcon'; icon: string | null }
   // Set the nexus profile subtitle (≤30 chars, enforced) in `settings.profile_subtitle`. Parked: the
   // sidebar NexusHeader that edited it is gone (ribbon rework); the field + op are retained for the
   // eventual homepage/settings surface — NOT dead code.
   | { op: 'setProfileSubtitle'; subtitle: string }
-  // Set or clear an entity's banner. dataUrl set ⇒ decode + copy into `.nexus/assets/<key>/
-  // banner.<ext>` + record that path in the owner's config (folder sidecar, homepage.json, or — for
-  // a page — the `cover` key in its `.md` frontmatter); null ⇒ clear the field + delete the file.
+  // dataUrl set ⇒ decode + copy into `.nexus/assets/<key>/banner.<ext>` + record that path in
+  // the owner's config (folder sidecar, homepage.json, or — for a page — frontmatter `cover`).
   | { op: 'setBanner'; path: string; kind: BannerOwnerKind; dataUrl: string | null }
   // Hide or show an entity's banner-heading icon — a `heading_icon_hidden` boolean in the
   // owner's config (folder sidecar or homepage.json; absent = shown). `true` hides, `false` clears it.
   | { op: 'setHeadingIconHidden'; path: string; kind: BannerOwnerKind; hidden: boolean }
-  // Set or clear an entity's icon — a bare symbol id (any Lucide id). A page carries it in its `.md`
-  // frontmatter `icon`; a container/context in its JSON sidecar. `null` clears the field. The one write
-  // for every entity kind that has an icon (pages, collections, sets, and the three Contexts);
-  // property + view icons ride their own writers (properties.json / views.save). Foreign keys survive.
+  // A page carries it in `.md` frontmatter `icon`; a container/context in its JSON sidecar.
+  // `null` clears it. Property + view icons ride their own writers, not this op.
   | { op: 'setIcon'; path: string; kind: MutableKind; icon: string | null }
-  // Set or clear one property in a page's `.md` frontmatter `properties` map (id-keyed PropertyValue);
-  // `null` clears the key. Foreign frontmatter + body survive. Drives table cross-group reassignment
-  // + later inline edits — the single typed property write.
+  // One property in a page's `.md` frontmatter `properties` map (id-keyed PropertyValue);
+  // `null` clears the key. Drives table cross-group reassignment + inline edits.
   | { op: 'setProperty'; path: string; propertyId: string; value: PropertyValue | null }
-  // `order`: the destination container's full page-id order after the drop (renderer-
-  // computed). Absent = legacy append (order falls back to title/creation). Same parent +
-  // order = a pure reorder. Stale ids in a source container self-drop on the next read.
+  // `order`: the destination container's full page-id order after the drop (renderer-computed).
+  // Absent = legacy append. Stale ids in a source container self-drop on the next read.
   | { op: 'movePage'; path: string; newParentPath: string; order?: string[] }
   // Move a set between collections (within its vault) or reorder it among a collection's sets:
   // `fs.rename` the set folder into `newParentPath` (a no-op when that's its current collection),

@@ -349,7 +349,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     const beforeStall = scrolls()
     flush(1, 5000) // one frame after a 5-second main-thread stall
     const jump = scrolls() - beforeStall
-    // Clamped to MAX_FRAME_MS (50ms): well under 100px. Without the clamp it'd be thousands.
+    // Clamped to MAX_FRAME_MS: well under 100px. Without the clamp it'd be thousands.
     expect(jump).toBeGreaterThan(0)
     expect(jump).toBeLessThan(100)
   })

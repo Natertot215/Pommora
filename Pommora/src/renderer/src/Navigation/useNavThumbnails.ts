@@ -50,7 +50,7 @@ export function dropCapturedOutside(live: ReadonlySet<string>): void {
 // Snapshot the detail view as a gallery thumbnail — captured ONLY while the NavWindow is closed, so the
 // overlay never bakes into the (synced) shot. Runs on selection settle AND on the pane closing (navOpen
 // is a dep), so a page opened while browsing with the pane open gets its cover the moment the pane
-// closes. Waits for fonts + all images (the banner) so the banner has rendered first; a ~300ms delay
+// closes. Waits for fonts + all images (the banner) so the banner has rendered first; a short delay
 // clears the pane's close animation and debounces rapid navigation. Only the detail rect (contentRect
 // carves off the sidebar/inspector overlays) is captured.
 export function useNavThumbnails(): void {

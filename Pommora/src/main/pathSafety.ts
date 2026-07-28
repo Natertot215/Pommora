@@ -1,12 +1,9 @@
-// The single path-safety validator every read and write funnels through. The
-// renderer only ever sends nexus-relative POSIX paths/ids; main resolves them
-// under the open nexus root and rejects anything that escapes it.
-//
-// Three rejections: an absolute input, a `..` traversal, and — the one the prior
-// resolve()/relative()-only guard in page:open missed — a symlink INSIDE the
-// nexus that resolves to a target OUTSIDE it. realpath both sides closes that
-// hole: a contained-looking lexical path whose real target sits outside the root
-// is caught after the links collapse.
+// The single path-safety validator every read and write funnels through. The renderer only
+// ever sends nexus-relative POSIX paths/ids; main resolves them under the open nexus root and
+// rejects anything that escapes it: an absolute input, a `..` traversal, or a symlink INSIDE
+// the nexus that resolves to a target OUTSIDE it. realpath on both sides closes that last hole
+// — a contained-looking lexical path whose real target sits outside the root is caught after
+// the links collapse.
 
 import { isAbsolute, relative, resolve, sep } from 'node:path'
 import { realpath } from 'node:fs/promises'

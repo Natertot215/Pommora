@@ -1,10 +1,7 @@
-// ONE generic CRUD for every folder-shaped entity — Areas, Topics, Projects, Page
-// Types, Page Collections, Page Sets. Swift expressed this as several managers with
-// copy-pasted create/rename/delete/rollback ladders; here it's a single source.
-//
-// Invariants: filename = title (rename = folder rename); a fresh entity gets a real
-// ULID; delete moves to the in-nexus .trash. Foreign sidecar keys are preserved on
-// update (readSidecar retains them via looseObject, and we spread the read object).
+// ONE generic CRUD for every folder-shaped entity — Areas, Topics, Projects, Page Types, Page
+// Collections, Page Sets — replacing Swift's several managers with copy-pasted ladders.
+// Invariants: filename = title (rename = folder rename); a fresh entity gets a real ULID;
+// foreign sidecar keys are preserved on update.
 
 import { mkdir, rename } from 'node:fs/promises'
 import { join, dirname, basename } from 'node:path'

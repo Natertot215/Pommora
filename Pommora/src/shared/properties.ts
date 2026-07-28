@@ -1,15 +1,12 @@
-// The PropertyDefinition model — one schema entry inside a Type / agenda-config
-// sidecar's `property_definitions[]`. The zod schema IS the codec AND the type
-// (z.infer), mirroring Swift's PropertyDefinition + PropertyType + nested config +
-// ReservedPropertyID, minus the ~117 lines of Codable / CodingKeys ceremony.
+// One schema entry inside a Type / agenda-config sidecar's `property_definitions[]`. The zod
+// schema IS the codec AND the type (z.infer), mirroring Swift's PropertyDefinition.
 //
-// Snake_case keys = the on-disk shape. Loose ⇒ foreign keys within a def survive a
-// rewrite. Only structurally load-bearing fields are modeled. Display formats live
-// per-VIEW in SavedView `column_styles` (a deliberate divergence from Swift's def-level
-// keys); Swift's def-level riders (number_format, date_format, time_format, display_as,
-// date_includes_time) stay inert foreign keys that round-trip but are never read.
-// The renderable structure (type, options, context target, Context reverse labels,
-// icons) IS modeled because the write path + Context synthesis read it.
+// Snake_case keys = the on-disk shape. Loose ⇒ foreign keys within a def survive a rewrite.
+// Display formats live per-VIEW in SavedView `column_styles` (a deliberate divergence from
+// Swift's def-level keys); Swift's def-level riders (number_format, date_format, time_format,
+// display_as, date_includes_time) stay inert foreign keys that round-trip but are never read.
+// The renderable structure (type, options, context target, Context reverse labels, icons) IS
+// modeled because the write path + Context synthesis read it.
 
 import { z } from 'zod'
 
@@ -98,12 +95,10 @@ export const propertyDefinition = z.looseObject({
   // tinting both looks — the box fill (checkbox look) and the on-track (switch look). Absent = Default
   // = the system accent. The checkbox/switch LOOK itself is per-VIEW (column_styles), not here.
   checkbox_color: z.string().optional().catch(undefined),
-  // Def-level (property-wide) number format config — a deliberate divergence from Swift, whose number
-  // format rode per-def as the inert `number_format` foreign key (still preserved in build.ts's config
-  // blob). These are READ by the renderer. `number_family` picks plain/percent/currency; percent stores
-  // the LITERAL (30 → "30%"); `number_decimals` is 'hidden' (no places shown) or a fixed 1–10; fraction
-  // renders "N out of number_denominator" (Number/Currency only). Loose .catch ⇒ a bad value drops the
-  // field, never the def.
+  // Def-level number format config — a deliberate divergence from Swift, whose format rode as an
+  // inert foreign key. `number_family` picks plain/percent/currency; percent stores the LITERAL
+  // (30 → "30%"); fraction renders "N out of number_denominator" (Number/Currency only). Loose
+  // .catch ⇒ a bad value drops the field, never the def.
   number_family: z.enum(NUMBER_FAMILIES).optional().catch(undefined),
   number_currency: z.string().optional().catch(undefined),
   number_separators: z.boolean().optional().catch(undefined),

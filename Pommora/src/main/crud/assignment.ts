@@ -1,7 +1,6 @@
 // Assignment ops — a Collection's sidecar `properties` is a flat array of registry prop-ids
-// (which nexus-wide defs this Collection validates). References, not definitions: assign runs
-// no name-clash check and restores any Remove-cache; the unassign leg lives in
-// crud/removeProperty (strip + cache).
+// (which nexus-wide defs this Collection validates). References, not definitions: assign runs no
+// name-clash check and restores any Remove-cache; the unassign leg lives in crud/removeProperty.
 
 import { join } from 'node:path'
 import { readSidecar, writeSidecar } from '../sidecarIO'

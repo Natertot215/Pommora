@@ -1,17 +1,12 @@
-// The single write orchestration behind the `mutate` IPC. Each request carries nexus-
-// relative paths; main resolves them under the session root (resolveUnderRoot), runs the
-// matching crud/* op, applies the cascade policy, then fire-and-forgets the index refresh
-// (off the UI critical path — the renderer's tree comes from readNexus, not the index, so
-// the response returns the instant the files are written). Returns a MutateResult (never
-// throws across the boundary).
+// The single write orchestration behind the `mutate` IPC: resolves nexus-relative paths under
+// the session root, runs the matching crud/* op, applies the cascade policy, then
+// fire-and-forgets the index refresh (off the UI critical path — the renderer's tree comes
+// from readNexus, not the index). Never throws across the boundary.
 //
-// Cascade policy (the load-bearing part of Swift's design, owned here so no call site
-// re-invents it):
-//   • page rename  → renameCascade rewrites inbound [[links]]; the file rename is reverted
-//                    if the cascade fails (Result error OR throw).
-//   • context/space delete → the bracketed key/value unlinks everywhere BEFORE the folder
-//                    is removed, so no member file keeps a dangling reference.
-// System-trash is injected (deps.trashToSystem) so this module stays Electron-free + testable.
+// Cascade policy, owned here so no call site re-invents it: a page rename reverts if
+// renameCascade's inbound-[[links]] rewrite fails; a context/space delete unlinks the
+// bracketed key/value everywhere BEFORE the folder is removed, so no member file keeps a
+// dangling reference. System-trash is injected (deps.trashToSystem) so this stays testable.
 
 import { basename, dirname, join, relative, sep } from 'node:path'
 import { mkdir, readFile, realpath, rm } from 'node:fs/promises'
@@ -149,14 +144,12 @@ async function createDisambiguated(
 export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promise<MutateResult> {
   const root = sessionRoot()
   if (root === null) return fault('No nexus is open.')
-  // The contract is "never throws across the boundary": a CRUD/fs/trash throw (e.g.
-  // shell.trashItem rejecting, EACCES/ENOSPC) becomes a fault Result, not a rejected IPC
-  // promise the callers (store.newPage / contextMenu) silently swallow.
+  // A CRUD/fs/trash throw (e.g. shell.trashItem rejecting, EACCES/ENOSPC) becomes a fault
+  // Result here, not a rejected IPC promise callers would silently swallow.
   try {
     const result = await dispatch(req, deps, root)
-    // One post-dispatch refresh (fire-and-forget, off the response path) instead of a copy in
-    // every case body — the index is a regeneratable mirror, so over-refreshing on a
-    // settings-only op is harmless while a missed copy on a new op is a stale index.
+    // One post-dispatch refresh instead of a copy in every case body — the index is a
+    // regeneratable mirror, so over-refreshing on a settings-only op is harmless.
     if (result.ok) void refreshSessionIndex(root)
     return result
   } catch (e) {

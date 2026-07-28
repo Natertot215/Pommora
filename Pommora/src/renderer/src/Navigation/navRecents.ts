@@ -1,5 +1,5 @@
 // Pure recents-stream logic for the Navigation layer. Storage is a plain MRU list (newest first).
-// Durable pins are their OWN list now (navPins / `.nexus/pins/`) — recents carry no pin state, so cap
+// Durable pins are their own list (navPins / `.nexus/pins/`) — recents carry no pin state, so cap
 // roll-off simply drops the oldest. All functions are pure (no store, no IPC) so they unit-test
 // without a DOM. RecentEntry keeps an optional `pinned` only so a legacy sidecar reads + migrates.
 
