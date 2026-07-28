@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { NavFavorite, RecentEntry } from '@shared/types'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
+import { writeValue } from '../db/localState'
 import { readNavState, writeFavorites, writeRecents } from './navState'
 
 let root: string
@@ -34,6 +35,19 @@ describe('recents — one row in nexus.db', () => {
     ]
     writeRecents(recents)
     expect((await readNavState(root)).recents).toEqual(recents)
+  })
+
+  it('drops junk elements — loadOrMigratePins reads .pinned off every entry', async () => {
+    const good = { kind: 'page', id: 'p1', path: 'a/b.md', pinned: true } as const
+    writeValue('recents', [
+      good,
+      null,
+      42,
+      { kind: 'notakind', id: 'x' },
+      { kind: 'page', id: 'p2' },
+      { kind: 'page', id: 'p3', path: 'c.md', pinned: 'yes' },
+    ])
+    expect((await readNavState(root)).recents).toEqual([good])
   })
 
   it('the latest write wins outright — no coalescing window to lose one in', async () => {

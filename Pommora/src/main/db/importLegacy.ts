@@ -5,7 +5,13 @@
 import { readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { nexusDir } from '../paths'
+import { sessionDb } from '../sessionDb'
 import { writeKey, writeValue, type Scope } from './localState'
+
+/** Marks the lift as run. Without it a sidecar that reappears — a restore from backup, or an older
+ *  build writing one again — would lift over newer database state, since the singleton scopes
+ *  replace rather than merge. */
+const DONE_KEY = 'legacy_import_done'
 
 const isStringArray = (v: unknown): boolean =>
   Array.isArray(v) && v.every((x) => typeof x === 'string')
@@ -54,6 +60,9 @@ const discard = (root: string, file: string): void => {
 /** Lift every legacy sidecar into the database, then delete it. Keyed entries are written one at a
  *  time so an already-populated scope is added to rather than replaced. */
 export function importLegacySidecars(root: string): void {
+  const db = sessionDb()
+  if (!db) return
+  if (db.prepare('SELECT 1 FROM meta WHERE key = ?').get(DONE_KEY)) return
   for (const { file, scope, keep } of LEGACY) {
     const parsed = parseLegacy(root, file)
     if (parsed === undefined) continue
@@ -70,4 +79,5 @@ export function importLegacySidecars(root: string): void {
     if (keep(parsed)) writeValue(scope, parsed)
     discard(root, file)
   }
+  db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES (?, '1')").run(DONE_KEY)
 }

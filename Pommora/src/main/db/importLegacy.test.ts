@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
-import { readScope } from './localState'
+import { readScope, readValue, writeValue } from './localState'
 
 let root: string
 const nexus = (): string => join(root, '.nexus')
@@ -52,6 +52,18 @@ describe('importLegacySidecars', () => {
     closeSessionDb()
     openSessionDb(root)
     expect(readScope<string[]>('viewOrder')).toEqual({ v1: ['a'] })
+  })
+
+  it('a sidecar that reappears cannot overwrite newer state', async () => {
+    await write('tabs.json', { tabs: [{ id: 'old' }], activeTabId: 'old' })
+    openSessionDb(root)
+    writeValue('tabs', { tabs: [{ id: 'new' }], activeTabId: 'new' })
+    closeSessionDb()
+
+    // A restore from backup, or an older build writing the file again.
+    await write('tabs.json', { tabs: [{ id: 'stale' }], activeTabId: 'stale' })
+    openSessionDb(root)
+    expect(readValue<{ activeTabId: string }>('tabs')?.activeTabId).toBe('new')
   })
 
   it('drops malformed entries but keeps the well-formed siblings', async () => {

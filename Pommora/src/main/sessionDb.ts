@@ -2,6 +2,7 @@
 // recents — lives here, opened on nexus open and closed on switch or quit. Best-effort: a null
 // handle means every operational store no-ops and the session runs without persisted chrome.
 
+import { errText } from '@shared/result'
 import { openNexusDb } from './db/open'
 import { importLegacySidecars } from './db/importLegacy'
 import type { Db } from './db/driver'
@@ -13,11 +14,17 @@ export function sessionDb(): Db | null {
   return db
 }
 
-/** Open the database for `root`, replacing any prior handle. */
+/** Open the database for `root`, replacing any prior handle. Never throws: opening a nexus on
+ *  read-only media must leave it browsable, not fail the adopt half-way through. */
 export function openSessionDb(root: string): void {
   closeSessionDb()
-  db = openNexusDb(root)
-  if (db) importLegacySidecars(root)
+  try {
+    db = openNexusDb(root)
+    if (db) importLegacySidecars(root)
+  } catch (e) {
+    console.error('nexus.db: unavailable — operational state will not persist:', errText(e))
+    db = null
+  }
 }
 
 /** Close + drop the handle (session switch / app quit). */
