@@ -44,7 +44,9 @@ Reserved property IDs (`_id`, `_title`, `_created_at`, `_modified_at`, `_status`
 
 #### II. On-Disk Value Shapes
 
-A value is recovered from raw JSON by **shape**, in a fixed precedence — the declared type lives in the schema, and the on-disk value is type-erased. Status uses a tagged object (`$status`) so an agent can identify the value type from any single file without the schema; Select stays a bare string and Multi-select a bare array because their shapes don't collide. **No value, no key:** setting a property to null — or to any empty value (an empty array or empty string) — clears its key from the member file; a member without a value never carries a null / `[]` / `''` placeholder. Checkbox false and number zero are real values and stay. Context keys follow the same rule — an emptied bracketed key leaves the root entirely.
+A value is recovered from raw JSON by **shape** — the declared type lives in the schema, and the on-disk value is type-erased. Status uses a tagged object so an agent can identify it from a single file without the schema; Select and Multi-select stay bare because their shapes don't collide.
+
+**No value, no key.** Setting a property to null, or to any empty value, clears its key from the member file — a member without a value never carries a placeholder. Checkbox false and number zero are real values and stay. Context keys follow the same rule.
 
 #### II. Status
 
@@ -56,7 +58,9 @@ A workflow property whose values sort into status **groups**. The group model is
 | `in_progress` | Active        | blue          |
 | `done`        | Done          | green         |
 
-Group **ids** are the load-bearing keys: every value references its group by id, and the status semantics (the checkbox cycle, the group glyph) resolve by id rather than list position. The model isn't capped at the seed — more groups (Paused, Cancelled, or user-defined) drop into the open enum later with no data change, and a future EventKit bridge maps each group by a completion semantic (which groups count as done) rather than a fixed count. Group labels and the options within each group are user-editable. An option's `value` IS its label (value=title): renaming rewrites both and cascades the new value onto every assigning page's `$status`. Each option also carries an optional `color` and its `group_id` — an option without its own colour wears its group's (group colour is the default, option colour the override), and every chip surface resolves through that one rule (`statusOptions`). Creating a Status property seeds one starter option per group. Sort is group position first, then option order within a group. On a Collection, Status is opt-in like any other property.
+Group **ids** are the load-bearing keys: every value references its group by id, and the status semantics resolve by id rather than list position. The model isn't capped at the seed — further groups drop into the open enum with no data change, and a future EventKit bridge maps each by a completion semantic rather than a fixed count.
+
+An option's `value` IS its label, so renaming rewrites both and cascades onto every assigning page. An option without its own colour wears its group's, and every chip surface resolves through that one rule. Sort is group position first, then option order within it. Status is opt-in on a Collection like any other property.
 
 The **Status editor** edits it in place: a group-labeled option list (double-click a heading to relabel its group), each option a pill chip in its group's colour, with a per-group `+` for an inline-named option, a hover palette to recolor, drag to reorder within or across groups, and a right-click **Rename · Remove · Clear** menu.
 
@@ -66,11 +70,13 @@ A boolean with two per-view looks and one property-wide colour. The **look** (`c
 
 #### II. Number
 
-A bare number on disk with **property-wide** (def-level) format config plus a **per-view** look. The format — a **family** (Number, Percent, or Currency), a currency code, thousands **Separators**, **Decimals** (Hidden or a fixed number of places), and a **Fraction** toggle that renders "N out of Value" — is set once on the property and applies in every view, mirroring the checkbox colour and link config rather than the per-view date formats. Percent stores the **literal** value and appends `%` (a stored `30` reads as "30%"), keeping the file legible; it's also the family that hides the Separators, Fraction, and Value rows. The **look** (`column_styles`) is per-view — **Number** (formatted text) or **Bar**, a rounded progress bar filling its accent against a muted track by `value ÷ Value` (fraction) or `value ÷ 100` (percent). The **Number editor** pane exposes the format as one Format section whose conditional rows reveal on the disclosure, and whose Style row (Number ⇄ Bar) writes the per-view look and appears only when the config makes a bar meaningful. Ring and the tile-grid Show-as belong to view types with vertical room, not the table.
+A bare number on disk with a **property-wide** format and a **per-view** look. The format — a family (Number, Percent, Currency), a currency code, thousands separators, decimal places, and a Fraction toggle rendering "N out of Value" — is set once and applies everywhere, like the checkbox colour rather than the per-view date formats. Percent stores the **literal** value and appends the sign, keeping the file legible.
+
+The **look** is per-view: **Number** (formatted text) or **Bar**, a progress bar filling against a muted track. The editor exposes the format as one section whose conditional rows reveal on disclosure, with the Style row appearing only when the config makes a bar meaningful. Ring and the tile-grid Show-as belong to view types with vertical room, not the table.
 
 #### II. Date & Time
 
-Stores a single ISO value — a date-only string folds into Date on read, a with-time string carries the clock. Its **formats** are per-view (`column_styles`): a **Date** format (numeric MM/DD/YYYY or DD/MM/YYYY, worded Short or Full, or **Relative** — "N Days from now" and "N Ago"), a conditional **Day** weekday (Full · Short · Hidden, offered only for the worded formats), and a **Time** (12- or 24-hour, or Hidden; en-US pinned). A cell opens the **CalendarPicker** — a calendar grid plus segmented time editor whose clock follows the nexus-wide `time_format` (`.nexus/settings.json`, resolved onto the tree like the accent; default 12-hour). The **Date & Time editor** pane exposes the same formats as a discoverable Format section (Date · conditional Day · Time), writing the same per-view `column_styles`.
+Stores a single ISO value — a date-only string folds into Date on read, a with-time string carries the clock. Its **formats** are per-view: a Date format (numeric, worded, or Relative), a conditional weekday offered only for the worded formats, and a Time. A cell opens the **CalendarPicker**, a calendar grid plus segmented time editor whose clock follows the nexus-wide `time_format`. The editor pane exposes the same formats as one discoverable section.
 
 #### II. Select & Multi-Select
 
