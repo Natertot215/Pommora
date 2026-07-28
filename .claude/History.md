@@ -4,6 +4,36 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 ### Completion Timeline (Descending)
 
+#### The Cleanup Pass (2026-07-27)
+
+A day spent on the merge's aftermath instead of on features, and it returned nine defects — seven of
+them present before the session began and none of them reported. Filtering that looked inert because
+folder headings kept drawing after every row beneath them was filtered away. A comparison that
+passed rows holding no value, so "Modified is empty" matched everything. A move that didn't count as
+modifying a page, and a property edit through the table that didn't either. A rename that rewrote
+`[[links]]` inside fenced code samples — silent corruption of a user's own file. A sidebar that
+painted its empty state over the list it was animating away, and would have held a stale one across
+a nexus switch. A generic rename that could have moved a Space's folder and stranded every tag
+pointing at it. Two rapid edits racing the index rebuild, the second deleting the file the first was
+still writing. A search that ignored its own view toggle.
+
+**Locked — a duplicated fact is a defect, not untidiness.** The pattern under nearly all of them was
+one fact with two sources, and the fix each time was to remove the second rather than reconcile the
+two: narrow a type until the wrong call cannot be written, delete the duplicate, route both callers
+through one owner. A guard that catches the bad case leaves the bad case reachable.
+
+That principle then ran forward as construction. Four repeated shapes across the IPC layer — the
+payload-free ack envelope, the narrowing of an unknown throw to a message, the try/catch that turns
+either into an envelope, and the sender's-window lookup — collapsed from **eighty-one sources to
+four owners**, with every one of the 102 channels verified byte-identical across the change. The
+whole tree lost its plan-task tags, its retired Context vocabulary, and the comments that only
+restated the code beneath them.
+
+**Locked — a comment earns its place by being unrecoverable, not by being true.** The standard is
+*"would I know this without the comment?"* A prop doc that names the prop goes; so does architectural
+rationale a competent reader would reconstruct, even where it reads as genuine reasoning. `KNOB`
+markers and decision markers are exempt — they carry what the code cannot say about itself.
+
 #### The Truing Campaign (2026-07-27)
 
 One agent per feature doc, each finding grounded against real code, produced 440 confirmed corrections and 39 questions worth Nathan's ruling. It also caught a regression the same session had introduced: removing the migration removed the de-facto fresh-nexus seeder, because a fresh nexus minted below the version and so always ran the migration that wrote the registry. Seeding became explicit, with an idempotence test.
