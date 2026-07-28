@@ -4,6 +4,7 @@
 
 import { readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
+import { isPlainObject } from '@shared/propertyValue'
 import { nexusDir } from '../paths'
 import { sessionDb } from '../sessionDb'
 import { writeKey, writeValue, type Scope } from './localState'
@@ -30,14 +31,10 @@ const LEGACY: { file: string; scope: Scope; keep: (v: unknown) => boolean }[] = 
 
 /** The whole-value sidecars — each was always read and written entire, so each lifts to one row. */
 const LEGACY_VALUES: { file: string; scope: Scope; keep: (v: unknown) => boolean }[] = [
-  { file: 'tabs.json', scope: 'tabs', keep: (v) => isObject(v) && Array.isArray(v.tabs) },
-  { file: 'page-previews.json', scope: 'previews', keep: isObject },
+  { file: 'tabs.json', scope: 'tabs', keep: (v) => isPlainObject(v) && Array.isArray(v.tabs) },
+  { file: 'page-previews.json', scope: 'previews', keep: isPlainObject },
   { file: 'navRecents.json', scope: 'recents', keep: Array.isArray },
 ]
-
-function isObject(v: unknown): v is Record<string, unknown> {
-  return v !== null && typeof v === 'object' && !Array.isArray(v)
-}
 
 /** Parse a sidecar, or undefined when it is absent or unreadable — in which case it is left on
  *  disk rather than deleted, so nothing is destroyed that could not be read. */
@@ -66,7 +63,7 @@ export function importLegacySidecars(root: string): void {
   for (const { file, scope, keep } of LEGACY) {
     const parsed = parseLegacy(root, file)
     if (parsed === undefined) continue
-    if (isObject(parsed)) {
+    if (isPlainObject(parsed)) {
       for (const [key, value] of Object.entries(parsed)) {
         if (keep(value)) writeKey(scope, key, value)
       }
