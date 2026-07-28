@@ -15,30 +15,31 @@ export function allCollections(tree: NexusTree): CollectionNode[] {
   return [...(tree.collections ?? []), ...tree.userSections.flatMap((s) => s.collections ?? [])]
 }
 
-/** Every Set at any depth under the tree's Collections (the recursive flatten). */
-export function allSets(tree: NexusTree): SetNode[] {
-  const out: SetNode[] = []
-  const walk = (sets: SetNode[] | undefined): void => {
-    for (const s of sets ?? []) {
-      out.push(s)
+export interface FlatTree {
+  collections: CollectionNode[]
+  sets: SetNode[]
+  pages: PageNode[]
+  spaces: SpaceNode[]
+}
+
+/** One recursive walk yielding every flattened list. Per-kind helpers stacked together each re-walk
+ *  from the Collections down, and every caller here wants three of them at once. */
+export function flattenTree(tree: NexusTree): FlatTree {
+  const collections = allCollections(tree)
+  const sets: SetNode[] = []
+  const walk = (list: SetNode[] | undefined): void => {
+    for (const s of list ?? []) {
+      sets.push(s)
       walk(s.sets)
     }
   }
-  for (const c of allCollections(tree)) walk(c.sets)
-  return out
-}
-
-/** Every page in the tree (Collection-direct + every nested Set's pages). */
-export function allPages(tree: NexusTree): PageNode[] {
-  const pages: PageNode[] = []
-  for (const c of allCollections(tree)) pages.push(...c.pages)
-  for (const s of allSets(tree)) pages.push(...s.pages)
-  return pages
-}
-
-/** Every Space across every registry Context, in display order. */
-export function allSpaces(tree: NexusTree): SpaceNode[] {
-  return (tree.contexts ?? []).flatMap((g) => g.spaces)
+  for (const c of collections) walk(c.sets)
+  return {
+    collections,
+    sets,
+    pages: [...collections.flatMap((c) => c.pages), ...sets.flatMap((s) => s.pages)],
+    spaces: (tree.contexts ?? []).flatMap((g) => g.spaces),
+  }
 }
 
 /** Reusable across many reconciles — `applyTree` builds this ONCE per push instead of a per-call tree walk. */
@@ -50,11 +51,12 @@ export interface ReconcileIndex {
 }
 
 export function buildReconcileIndex(tree: NexusTree): ReconcileIndex {
+  const { collections, sets, pages, spaces } = flattenTree(tree)
   return {
-    contexts: new Set(allSpaces(tree).map((c) => c.id)),
-    collections: new Set(allCollections(tree).map((c) => c.id)),
-    sets: new Map(allSets(tree).map((s) => [s.id, s.path])),
-    pages: new Map(allPages(tree).map((p) => [p.id, p.path])),
+    contexts: new Set(spaces.map((c) => c.id)),
+    collections: new Set(collections.map((c) => c.id)),
+    sets: new Map(sets.map((s) => [s.id, s.path])),
+    pages: new Map(pages.map((p) => [p.id, p.path])),
   }
 }
 
