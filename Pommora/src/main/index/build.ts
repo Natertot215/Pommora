@@ -338,7 +338,7 @@ export async function buildIndex(db: Db, nexusRoot: string): Promise<void> {
     for (const c of data.contexts) upsertContext(db, c)
     for (const c of data.collections) upsertCollection(db, c)
     // property_definitions mirrors the nexus-wide registry, one row per def (no owner —
-    // assignment lives on the collection sidecars; agenda defs stay out per D-1).
+    // assignment lives on the collection sidecars; agenda defs stay out).
     // `position` rides the nexus-wide cosmetic order — the same rule readNexus exposes.
     orderedDefs(registry).forEach((def, position) => {
       upsertPropertyDefinition(db, {

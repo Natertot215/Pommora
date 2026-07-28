@@ -1,6 +1,6 @@
 // Multi-key view sort. Ports Swift's ViewSortComparator — decorate-sort, select/status by schema
 // option order, a type-complete property branch per PropertyType — and EXTENDS it to multiple
-// criteria (divergence #1): Swift sorts by a single criterion; here `sort[]` is honored in array
+// criteria: Swift sorts by a single criterion; here `sort[]` is honored in array
 // order (priority = index), each criterion compared until one breaks the tie, then stable input
 // order. Pure: no fs, no React.
 
@@ -103,7 +103,7 @@ function modifiedStamp(row: ViewRow): number {
 }
 
 /** Resolve one criterion to an extract+less pair, or null when the property isn't sortable
- *  (unknown id, or a tier column — Swift returns nil for non-schema properties). */
+ *  (unknown id, or a Context column — Swift returns nil for non-schema properties). */
 function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): ResolvedCriterion | null {
   const ascending = c.direction !== 'descending'
   switch (c.property_id) {
@@ -143,12 +143,12 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
     case 'file':
       return { extract: (r) => sortText(r, c.property_id, schema), less: ciLess, ascending }
     default:
-      return null // 'context' | undefined → not sortable
+      return null // undefined → not sortable
   }
 }
 
-/** The EFFECTIVE criteria count — only what buildCriterion resolves (a deleted property or tier
- *  criterion sorts by nothing). TableView's drag/manual-order gates read this, never the raw array
+/** The EFFECTIVE criteria count — only what buildCriterion resolves (a deleted property or
+ *  Context-column criterion sorts by nothing). TableView's drag/manual-order gates read this, never the raw array
  *  length, so a dead criterion can't retire row reorder. */
 export function resolvedSortCount(
   sort: SortCriterion[] | undefined,
@@ -168,7 +168,7 @@ export function makeSorter(
   const resolved = (sort ?? [])
     .map((c) => buildCriterion(c, schema))
     .filter((rc): rc is ResolvedCriterion => rc !== null)
-  // The per-machine manual order (viewOrders) is the LOWEST-priority tiebreaker (D-6): it reorders
+  // The per-machine manual order (viewOrders) is the LOWEST-priority tiebreaker: it reorders
   // only rows already equal on every real sort key, and is the sole comparator when a view is grouped
   // but unsorted. A row absent from the manual order ranks last (appended after the placed ones).
   const manualIndex = manualOrder?.length
@@ -196,7 +196,7 @@ export function makeSorter(
           if (less(ka, kb)) return 1
         }
       }
-      if (a.manual !== b.manual) return a.manual - b.manual // manual order breaks remaining ties (D-6)
+      if (a.manual !== b.manual) return a.manual - b.manual // manual order breaks remaining ties
       return a.offset - b.offset // stable: input order among full ties
     })
     return decorated.map((d) => d.row)

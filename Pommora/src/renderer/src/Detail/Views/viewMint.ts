@@ -1,4 +1,4 @@
-// The view-mint machinery (G-1): entry-mint is the SOLE place a container's default view is born.
+// The view-mint machinery: entry-mint is the SOLE place a container's default view is born.
 // On landing a view-bearing container whose views[] is empty, `ensureContainerView` mints once (an
 // in-flight map keyed by container id guards a re-select from double-firing). Every other view writer
 // routes through `saveViewAdopting` — a sentinel-holding write awaits the in-flight mint and saves

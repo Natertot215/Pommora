@@ -20,7 +20,7 @@ export function DetailScaffold({
   const ref = useRef<HTMLDivElement>(null)
   const activeTabId = useSession((s) => s.activeTabId)
   const selection = useSession((s) => s.selection)
-  // A container's warmth is its scroll position only (I-14) — undo/folds are page-editor concerns.
+  // A container's warmth is its scroll position only — undo/folds are page-editor concerns.
   const warmKey = selection.kind !== 'none' && selection.kind !== 'page' ? navKey(selection) : null
 
   // The scaffold's div is REUSED across containers (no key), so warmth rides this effect: restore on

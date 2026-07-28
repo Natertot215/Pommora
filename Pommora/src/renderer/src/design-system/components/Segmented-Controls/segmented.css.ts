@@ -66,6 +66,6 @@ export const labelSlot = style({
 export const labelSlotHidden = style({ gridTemplateColumns: '0fr', marginLeft: 0, opacity: 0 })
 
 export const labelText = style([
-  text.control.standard,
-  { overflow: 'hidden', whiteSpace: 'nowrap', fontWeight: 500 },
+  text.control.emphasized,
+  { overflow: 'hidden', whiteSpace: 'nowrap' },
 ])

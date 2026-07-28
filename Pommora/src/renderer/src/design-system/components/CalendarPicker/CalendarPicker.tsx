@@ -13,7 +13,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
 const HOURS_24 = Array.from({ length: 24 }, (_, h) => h)
-const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5) // 5-minute steps — the granularity knob
+const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
 
 type TriggerRect = { x: number; y: number; w: number; h: number }
 const rectOf = (el: HTMLElement): TriggerRect => {
@@ -80,8 +80,8 @@ const pad = (n: number): string => String(n).padStart(2, '0')
 const keyOf = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
 /**
- * The date(-time) picker prototype (Nathan's Figma direction, iterating live on the Homepage):
- * Month-Year header with duration-base slide nav · Mon-first label-secondary week row ·
+ * The date(-time) picker: Month-Year header with duration-base slide nav · Mon-first
+ * label-secondary week row ·
  * connected range selection (endpoints tint-secondary, in-between band tint-tertiary; clicking a
  * selected date removes it) · a divider · separator-stroked value fields (calendar/clock icon,
  * `--` empty state, OverflowScroll on long formats) whose layout morphs on the two booleans
@@ -511,8 +511,8 @@ export function CalendarPicker({
           timeOptions(which, part)}
       </button>
     )
-  // The Swift-style meridiem segment — a plain click-toggle, no affordance glyph (Nathan's call;
-  // two values never earn a dropdown either).
+  // The Swift-style meridiem segment — a plain click-toggle, no affordance glyph
+  // (two values never earn a dropdown either).
   const ampmSegment = (which: 'start' | 'end', mins: number): React.JSX.Element => {
     const setMins = setMinsFor(which)
     return (

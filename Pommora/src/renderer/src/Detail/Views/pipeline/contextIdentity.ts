@@ -10,7 +10,7 @@ import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
 export interface ContextIdentity {
   title: string
   /** Seeded Contexts only (Areas/Topics/Projects) — any other Context has none; its Spaces
-   *  read "New Space" until per-Context singular editing ships. */
+   *  read "New Space". */
   singular?: string
   /** Always renderable — the entry's own icon, else the contexts default. */
   icon: string

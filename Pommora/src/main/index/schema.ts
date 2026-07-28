@@ -1,5 +1,5 @@
-// The index schema — the entity tables + the `meta` table. Model A (2-tier): a `page_collections`
-// top tier (no parent), recursive `page_sets` keyed by parent_collection_id (depth-1) XOR
+// The index schema — the entity tables + the `meta` table. Model A: a `page_collections`
+// top level (no parent), recursive `page_sets` keyed by parent_collection_id (depth-1) XOR
 // parent_set_id (deeper), and `pages` keyed by page_collection_id (always) + a nullable
 // page_set_id (null only at the Collection root). The index is REGENERATABLE — it holds no
 // user data; a version mismatch drops + rebuilds. The version is stamped only AFTER a
@@ -22,7 +22,7 @@ const META_DDL = `
     value TEXT NOT NULL
   );`
 
-// The entity tables — Model A (2-tier Collection -> recursive Set).
+// The entity tables — Model A (Collection -> recursive Set).
 const TABLE_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS page_collections (
     id TEXT PRIMARY KEY,

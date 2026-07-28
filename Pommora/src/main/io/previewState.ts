@@ -1,5 +1,5 @@
 // The preview windows' per-nexus persistence: one SYNCED sidecar under `.nexus/` —
-// `page-previews.json` (H-3/H-10): the NavWindow flavor's tab set, the per-origin page-preview
+// `page-previews.json`: the NavWindow flavor's tab set, the per-origin page-preview
 // sets (keyed by origin page id, re-keyed on re-parent), and which preview was open. The renderer
 // owns restore-time reconciliation against the live tree; main is the persister.
 

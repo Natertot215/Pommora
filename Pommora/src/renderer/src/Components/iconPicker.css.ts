@@ -44,7 +44,6 @@ export const search = style({
   outline: 'none',
   selectors: {
     '&::placeholder': { color: vars.color.label.tertiary },
-    // Tint-secondary outline highlight only while the caret is in the field.
     '&:focus': { borderColor: tintAt('var(--accent)', TINT_STEPS.secondary) },
   },
 })
@@ -58,7 +57,7 @@ export const separator = style({
 
 /** Favorites: a rounded, outlined box — a second input field holding the favorite icons. Its
  *  divider-color outline replaces the flanking dividers; `overflow: hidden` clips the inner scroll to
- *  the corners so the border stays crisp under the eclipse mask. Tight vertical padding. */
+ *  the corners so the border stays crisp under the eclipse mask. */
 export const favorites = style({
   width: '100%',
   flex: '0 0 auto',

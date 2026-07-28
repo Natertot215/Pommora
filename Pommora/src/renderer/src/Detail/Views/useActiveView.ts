@@ -12,7 +12,7 @@ export function useActiveView(
   source: CollectionNode | SetNode,
   schema: PropertyDefinition[],
 ): { activeViewId: string | undefined; view: SavedView } {
-  // Inside a view embed the tile payload IS the view (C-1: per-instance, never the
+  // Inside a view embed the tile payload IS the view (per-instance, never the
   // global slot) — the slot read stays unconditional to keep hook order stable.
   const scope = useViewEmbedScope()
   const activeViewId = useSession((s) => s.activeViews[source.id])

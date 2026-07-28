@@ -18,7 +18,7 @@ interface Props {
   /** Pops the native title menu and resolves the chosen action (Rename / Change Icon / Hide-Show Icon). */
   requestMenu: () => Promise<'rename' | 'editIcon' | 'toggleIcon' | null>
   onEditIcon: () => void
-  /** Toggle the banner-heading icon's visibility (G-4). When absent, the menu omits the Hide/Show item. */
+  /** Toggle the banner-heading icon's visibility. When absent, the menu omits the Hide/Show item. */
   onToggleIcon?: () => void
   /** The heading icon is hidden — it stays mounted but collapses/slides out (so hide/show animates). */
   iconHidden?: boolean

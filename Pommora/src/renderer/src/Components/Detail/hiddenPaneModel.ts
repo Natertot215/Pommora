@@ -1,8 +1,8 @@
 // Pure model behind the visibility list (the Visibility pane + the table view's Layout leaf) — no
 // React, no DOM. One flat list, two zones: the shown rows in the view's column order (Title, the
-// context tiers, and the properties all together), then the hidden rows ghosted after them, NO
+// Context columns, and the properties all together), then the hidden rows ghosted after them, NO
 // heading between. Title rides the list as a draggable anchor but never hides (so a column can be
-// dragged before it — the point of listing it); the tiers behave like any property (drag to reorder,
+// dragged before it — the point of listing it); the Context columns behave like any property (drag to reorder,
 // eye to hide). Cross-zone drags carry the drag language: INTO the shown zone lands at a slot (a drop
 // line — the position writes the view order), into the hidden zone just hides (an area highlight, no
 // line — the hidden order is derived, never authored).
@@ -43,7 +43,7 @@ export function hiddenListIds(
 /** Place `id` at the properties section's without-dragged slot `toIndex` — the ONE write both
  *  drops share: a shown row's reorder and a hidden row's drag-in unhide are the same operation
  *  (the hidden filter is a no-op for an already-shown id). The section is a WINDOW into the full
- *  column order (Title + tiers live there too), so the slot translates through the successor
+ *  column order (Title + Context columns live there too), so the slot translates through the successor
  *  anchor (the nexusReorderIndex idiom) before splicing; the full visible order is then written
  *  verbatim with every unlisted property_order id trailing, preserved (the columnReorder idiom). */
 export function placeInShown(

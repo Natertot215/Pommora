@@ -1,6 +1,6 @@
-// Resolved cell + group-header text for the table render (Part 2 A). Turns a row's raw PropertyValue
-// into display text — option VALUES become their schema label, tier/context ULIDs become Context
-// titles — so no raw id ever reaches screen. The type-aware chip rendering (Task 7) resolves through
+// Resolved cell + group-header text for the table render. Turns a row's raw PropertyValue
+// into display text — option VALUES become their schema label, Context-column/context ULIDs become Context
+// titles — so no raw id ever reaches screen. The type-aware chip rendering resolves through
 // the same helpers. Pure: no React.
 
 import { type PropertyDefinition, statusOptions } from '@shared/properties'

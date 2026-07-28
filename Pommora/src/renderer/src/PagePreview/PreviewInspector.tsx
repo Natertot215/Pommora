@@ -31,10 +31,10 @@ import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
 import { useSession, type PreviewTarget } from '../store'
 
-// The front-matter inspector: the preview page's title, banner, context tiers, and
+// The front-matter inspector: the preview page's title, banner, Context columns, and
 // schema properties — listed and editable through the SAME primitives the table views edit with
 // (Cell render, PropertyPicker/CalendarPicker portals, the inline PropertyEditor). Writes go through
-// mutate with the table's optimistic-patch pattern; the D-6 reconcile re-paths the open tab on rename.
+// mutate with the table's optimistic-patch pattern; the reconcile re-paths the open tab on rename.
 
 /** The page's owning Collection by path prefix — schema lives only on Collections. */
 const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition[] => {
@@ -163,7 +163,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   }
 
   // The Add picker's shared landing: reveal the row, then open its editor anchored to the value
-  // field on the right (the row mounts next frame). A tier passes no def — it opens the context
+  // field on the right (the row mounts next frame). A Context column passes no def — it opens the context
   // picker; a checkbox commits true directly and needs no editor.
   const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
     setAddOpen(false)
@@ -333,7 +333,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           origin="center"
         >
           {/* The grouping pane's picker verbatim — PickerOption rows with the icon treatment.
-              Unassigned tiers lead (contexts add from here too), unassigned properties follow. */}
+              Unassigned Context columns lead (contexts add from here too), unassigned properties follow. */}
           {contextRows
             .filter((t) => !isAssigned(t.id))
             .map((t) => (

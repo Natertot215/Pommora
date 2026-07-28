@@ -11,7 +11,7 @@ import type { ResolveContext } from '../Table/resolveContext'
 import { serializeLink } from '../Table/linkValue'
 
 /** The kinds whose BLANK entries drill into a value pane. Checkbox is deliberately excluded from the
- *  pane split (its box on the card is the toggle — an add-list pick just reveals it); tiers/contexts
+ *  pane split (its box on the card is the toggle — an add-list pick just reveals it); Context columns
  *  pane via contextOptions rather than this set. */
 export const ADDABLE_TYPES: ReadonlySet<string> = new Set([
   'select',
@@ -43,7 +43,7 @@ export function shownColumnsFor(
 
 /** The add menu: everything NOT currently shown — the Visibility hidden list, any schema prop that's
  *  revealed-but-blank (Compact drops it, so it stays addable to re-fill), and Compact-suppressed blank
- *  tiers. Context-shaped entries pane when blank (the picker fills in place); filled entries reveal. */
+ *  Context columns. Context-shaped entries pane when blank (the picker fills in place); filled entries reveal. */
 export function addEntriesFor(
   row: ViewRow,
   view: SavedView,
@@ -75,7 +75,7 @@ export function addEntriesFor(
     })
 }
 
-/** An add-menu entry's column ref: a registry Context id routes as a TIER (writeContextValue),
+/** An add-menu entry's column ref: a registry Context id routes as a Context column (writeContextValue),
  *  everything else as a property — the same split commitValue makes for on-card values. */
 export const addColumn = (id: string, tree: NexusTree | null = null): ResolvedColumn => ({
   id,
@@ -84,8 +84,8 @@ export const addColumn = (id: string, tree: NexusTree | null = null): ResolvedCo
 
 /** One row of the card add-property menu (something NOT currently shown). A `pane` entry (a blank
  *  addable-type prop) drills into a value pane to set a value; a `revealOnly` entry (a hidden
- *  tier/context, a filled prop, or a checkbox) just unhides on pick. `def` is null for a reserved
- *  tier/Modified id, which carries no schema entry. */
+ *  Context column, a filled prop, or a checkbox) just unhides on pick. `def` is null for a reserved
+ *  Context or Modified id, which carries no schema entry. */
 export type AddEntry = {
   id: string
   name: string

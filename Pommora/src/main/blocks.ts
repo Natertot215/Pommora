@@ -1,5 +1,5 @@
-// The BlockHost read/write path (D-2): the block document lives on the host's own
-// config — homepage.json for the dev host (G-12) — and every write is a locked
+// The BlockHost read/write path: the block document lives on the host's own
+// config — homepage.json for the dev host — and every write is a locked
 // read-merge-write, so layout/blocks/blocks_locked are the ONLY keys touched and
 // foreign keys (banner included) survive. All homepage.json writers serialize on
 // the config path: this module and setBanner's homepage branch share the lock, or
@@ -138,8 +138,8 @@ export async function createMarkdownBlock(root: string, host: BlockHostRef): Pro
   return id
 }
 
-/** Drop a tile's entry; a markdown tile's backing `.md` goes to `.trash` (E-5). Foreign
- *  entries are never touched (E-1). The renderer splices the layout leaf FIRST — if this
+/** Drop a tile's entry; a markdown tile's backing `.md` goes to `.trash`. Foreign
+ *  entries are never touched. The renderer splices the layout leaf FIRST — if this
  *  op is what fails, the leftover is an entry-less invisible orphan, never a dead box. */
 export async function removeBlockTile(
   root: string,
@@ -169,8 +169,8 @@ async function trashTileFile(root: string, host: BlockHostRef, tileId: string): 
   })
 }
 
-/** Linking IS the one conversion (G-7, markdown → embed): the RAW entry spreads so
- *  foreign keys + chrome survive (E-1), the backing `.md` trashes recoverably (E-5),
+/** Linking IS the one conversion (markdown → embed): the RAW entry spreads so
+ *  foreign keys + chrome survive, the backing `.md` trashes recoverably,
  *  and the embedded source is never touched. */
 async function flipTile(
   root: string,
@@ -213,7 +213,7 @@ function remintConfigIds(views: unknown[]): unknown[] {
   })
 }
 
-/** Link View: the entry becomes a view embed carrying the COPIED config(s) (D-12), each re-minted. */
+/** Link View: the entry becomes a view embed carrying the COPIED config(s), each re-minted. */
 export async function convertTileToView(
   root: string,
   host: BlockHostRef,
@@ -224,7 +224,7 @@ export async function convertTileToView(
 }
 
 /** Duplicate a tile: the RAW entry copies under a fresh id (foreign fields + chrome
- *  survive, E-1); a markdown tile's body file copies FIRST (a crash leaks an orphan
+ *  survive); a markdown tile's body file copies FIRST (a crash leaks an orphan
  *  file, never an entry without one); a view tile's copied configs re-mint their
  *  payload-local ids (they key per-machine state — two tiles must never share one). */
 export async function duplicateBlockTile(
@@ -265,7 +265,7 @@ export async function readMarkdownBlock(
   }
 }
 
-/** Pure body write — no frontmatter envelope, no stamp (D-11: block files stay bare).
+/** Pure body write — no frontmatter envelope, no stamp (block files stay bare).
  *  Locked on the file so a future rename-cascade rewrite can't clobber a live edit. */
 export async function writeMarkdownBlock(
   root: string,
@@ -277,10 +277,6 @@ export async function writeMarkdownBlock(
   await serializeOnFile(file, () => atomicWriteFile(file, body))
 }
 
-/** Every markdown block across all hosts as `{ id, file }` — the shared walk under both the
- *  link-index read and the rename heal (a block id is globally unique, so the host isn't threaded
- *  out past the file path). Non-markdown tiles are filtered here; a missing backing file is left
- *  to each caller to tolerate. */
 /** Every block host with its resolved folder: the homepage singleton plus one per Space.
  *  A read-path walk, so it tolerates a failed world load (those hosts just skip this pass)
  *  and never writes. */
@@ -303,6 +299,10 @@ async function listBlockHosts(root: string): Promise<{ config: string; dir: stri
   return hosts
 }
 
+/** Every markdown block across all hosts as `{ id, file }` — the shared walk under both the
+ *  link-index read and the rename heal (a block id is globally unique, so the host isn't threaded
+ *  out past the file path). Non-markdown tiles are filtered here; a missing backing file is left
+ *  to each caller to tolerate. */
 async function markdownBlockFiles(root: string): Promise<{ id: string; file: string }[]> {
   const out: { id: string; file: string }[] = []
   for (const host of await listBlockHosts(root)) {

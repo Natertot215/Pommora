@@ -1,5 +1,5 @@
 // Field-value extraction for the view pipeline. Two functions, two AXES that must NOT be
-// confused (this is the trap the plan calls out):
+// confused:
 //   - declaredType: the column's SCHEMA type — a snake_case PropertyType (e.g. 'multi_select',
 //     'last_edited_time') plus the synthetic 'title'/'context' sentinels for reserved columns. This
 //     is what sort/group/filter switch on to choose type-aware behavior.

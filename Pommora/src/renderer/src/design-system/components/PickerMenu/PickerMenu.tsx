@@ -17,7 +17,7 @@ import { cx } from '../../cx'
 import { DROPDOWN_GAP as GAP } from '../dropdownAnchor'
 import * as s from './pickerMenu.css'
 
-const VIEWPORT_MARGIN = 8 // keep the pane this far from the viewport edges
+const VIEWPORT_MARGIN = 8
 
 // A pointerdown inside the body-portalled picker must not bubble (React events cross portals) to a
 // trigger's drag-handle ancestor and pointer-capture — which retargets the click to that handle and
@@ -383,7 +383,7 @@ export function PickerMenu({
     </NotchedPane>
   )
 
-  // Manual (legacy) — inline, caller-mounted, centered beak.
+  // Manual — inline, caller-mounted, centered beak.
   if (!selfManaged) {
     return <div className={up ? s.anchorUp : s.anchor}>{pane}</div>
   }

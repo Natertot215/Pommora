@@ -157,11 +157,11 @@ export function readLabels(raw: unknown): NexusLabels {
   // new LabelPairs are absent (singular defaults). The old `pages` header is dropped — the Collections
   // sidebar header now derives from pageCollection.plural.
   const ss = obj(L.sidebar_sections)
-  const tier = (key: string, legacyPlural: unknown, fallback: LabelPair): LabelPair =>
+  const labelled = (key: string, legacyPlural: unknown, fallback: LabelPair): LabelPair =>
     pair(L[key], { singular: fallback.singular, plural: asString(legacyPlural) ?? fallback.plural })
   return {
-    area: tier('area', ss.areas, DEFAULT_LABELS.area),
-    topic: tier('topic', ss.topics, DEFAULT_LABELS.topic),
+    area: labelled('area', ss.areas, DEFAULT_LABELS.area),
+    topic: labelled('topic', ss.topics, DEFAULT_LABELS.topic),
     project: pair(L.project, DEFAULT_LABELS.project),
     pageCollection: pair(L.page_collection, DEFAULT_LABELS.pageCollection),
     pageSet: pair(L.page_set, DEFAULT_LABELS.pageSet),
@@ -199,8 +199,8 @@ const readSidecar = (absPath: string): Promise<Json | null> =>
 
 // ---------- page reads ----------
 
-/** Raw context keys retained off the parse each entity read already does — bracketed root
- *  keys plus the legacy tierN arrays, keyed by the cached node object. Registry-INDEPENDENT
+/** Raw context keys retained off the parse each entity read already does — the bracketed root
+ *  keys, keyed by the cached node object. Registry-INDEPENDENT
  *  data, so the parse cache never needs busting for registry changes; resolution runs at
  *  tree assembly each walk. */
 const rawContextByNode = new WeakMap<object, Json>()
@@ -247,7 +247,7 @@ async function readDirectPages(absDir: string, relDir: string): Promise<PageNode
   return out
 }
 
-// ---------- container reads (2-tier: Collection -> recursive Set) ----------
+// ---------- container reads (Collection -> recursive Set) ----------
 
 /** Lenient read of a sidecar `views[]` — drops any view that fails to decode rather than
  *  poisoning the whole container read; absent/empty ⇒ undefined. */
@@ -495,8 +495,8 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const collections = orderedCollections.filter((c) => !claimed.has(c.id))
 
   // Resolve each entity's retained raw context keys onto its own node — a cheap in-memory
-  // pass over already-parsed data (a pre-existing inert key lights up on the first walk
-  // after its Space registers; bracketed keys override a legacy tierN for the same Context).
+  // pass over already-parsed data, so a pre-existing inert key lights up on the first walk
+  // after its Space registers.
   if (ctxRegistry && contexts) {
     const spacesByContext = new Map(contexts.map((g) => [g.def.id, g.spaces]))
     const attach = (node: PageNode | SpaceNode): void => {

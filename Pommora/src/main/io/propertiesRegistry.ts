@@ -7,14 +7,14 @@ import { propertyDefinition, type PropertyDefinition } from '@shared/properties'
 /** propId → its nexus-wide definition. The shared registry, `.nexus/properties.json`. */
 export type PropertyRegistry = Record<string, PropertyDefinition>
 
-/** The on-disk registry file: defs + the nexus-wide cosmetic order (B-1/B-2). */
+/** The on-disk registry file: defs + the nexus-wide cosmetic order. */
 export type RegistryFile = { order: string[]; defs: PropertyRegistry }
 
 const registryPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.properties)
 
 /** Lenient read: absent / corrupt → empty; a legacy bare-Record file reads as
  *  `{ order: [], defs }`; drops any entry that fails the def schema, and element-filters
- *  the order — non-strings and ids without defs dropped (B-3). */
+ *  the order — non-strings and ids without defs dropped. */
 export async function readRegistry(root: string): Promise<RegistryFile> {
   const obj = await readJsonObject(registryPath(root))
   if (obj === null) return { order: [], defs: {} }

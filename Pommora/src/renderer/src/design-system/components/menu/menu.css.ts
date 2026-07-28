@@ -157,7 +157,7 @@ export const subLabel = style([
 /** Trailing detail — Footnote/Emphasized (10px Semibold); colour inherited from `side`. */
 export const detail = style([text.footnote.emphasized])
 
-/** Separator — an 11px band with a centered hairline (Apple's menu separator height). */
+/** Separator — a band with a centered hairline (Apple's menu separator height). */
 export const separator = style({
   height: '11px',
   display: 'flex',
@@ -176,7 +176,7 @@ export const separatorFlush = style({ padding: 0 })
 export const flushAffordance = style({ paddingLeft: 0, gap: '4px', color: c.label.secondary })
 
 /** Flush-trailing row — the trailing cluster (chevron, detail) sits against the gutter edge where
- *  the flush divider ends, instead of floating in on the row's right padding (Nathan's call). */
+ *  the flush divider ends, instead of floating in on the row's right padding. */
 export const flushTrailing = style({ paddingRight: 0 })
 
 /** TopRow — a pane's top navigation row (‹ back chevron + label, optional trailing action). Flush
@@ -190,7 +190,7 @@ export const caption = style([
   { padding: '28px 8px', textAlign: 'center', color: c.label.secondary, userSelect: 'none' },
 ])
 
-/** Menu container — a flush vertical stack with 6px top/bottom breathing room. */
+/** Menu container — a flush vertical stack with top/bottom breathing room. */
 export const menu = style({ display: 'flex', flexDirection: 'column', padding: '6px 0' })
 
 // ── Shared dropdown row defaults + the AccessoryButton primitive ──
@@ -199,7 +199,7 @@ export const menu = style({ display: 'flex', flexDirection: 'column', padding: '
 // dropdown surfaces opt in via `dropdownRowTitle`.
 
 /** The one icon-button recipe behind every TopRow/BottomRow/row affordance (ellipsis · plus · eye ·
- *  palette). Box via `--accessory-box` (consumers pass their own; 16 default). The `&&` pins the
+ *  palette). Box via `--accessory-box` (consumers pass their own). The `&&` pins the
  *  action tone above `.app-toolbar button`'s control-tone rule (0,1,1). */
 export const accessoryButton = style({
   width: 'var(--accessory-box, 16px)',
@@ -224,7 +224,7 @@ export const accessoryGhostRest = style({
   transition: `opacity ${duration.fast} ${easing.standard}, background ${duration.fast} ${easing.standard}`,
   selectors: { '&:hover': { opacity: 1 } },
 })
-// ── TopRow / BottomRow rhythm (the current SettingsPane values, hoisted verbatim) ──
+// ── TopRow / BottomRow rhythm ──
 
 /** A pane TopRow's vertical padding + heading tone — drops the base 24px floor to the caption line. */
 export const topRowPad = style({

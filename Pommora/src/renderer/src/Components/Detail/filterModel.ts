@@ -95,8 +95,6 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
   return { kind: 'rows', mode, rows }
 }
 
-// ---- vocabulary ----
-
 export type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'
 
 export interface OperatorChoice {
@@ -133,7 +131,7 @@ const DATE_OPS: OperatorChoice[] = [
   ...EMPTIES,
 ]
 
-/** Array-valued membership (multi-select, tiers, context relations). */
+/** Array-valued membership (multi-select, Context columns, context relations). */
 const SET_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.containsAny, label: 'Is Any', slot: 'chips', multi: true },
   { op: FILTER_OPS.containsAll, label: 'Is All', slot: 'chips', multi: true },

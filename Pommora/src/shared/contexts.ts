@@ -6,8 +6,7 @@ import { z } from 'zod'
 import type { NexusLabels } from './types'
 
 /** `singular` is the seeded three's only (Areas/Topics/Projects) — set once at registry
- *  creation. Any other Context has none; its Spaces read "New Space" until per-Context
- *  singular editing ships. */
+ *  creation. Any other Context has none; its Spaces read "New Space". */
 export type ContextDef = { id: string; title: string; singular?: string; icon?: string }
 
 /** Array position IS the display order — no ordinal semantics anywhere. */
@@ -31,10 +30,9 @@ export function contextKey(title: string): string {
 }
 
 /** A frontmatter/JSON root key the Contexts layer governs when it rewrites a root: any
- *  bracketed key (context-shaped — malformed ones included, so a rewrite still sweeps them)
- *  or a legacy bare `tierN`. */
+ *  bracketed key — malformed ones included, so a rewrite still sweeps them. */
 export function isGovernedContextKey(key: string): boolean {
-  return key.startsWith('[') || /^tier[123]$/.test(key)
+  return key.startsWith('[')
 }
 
 /** '[Projects]' → 'Projects'; anything unbracketed, empty, or with interior brackets → null. */
