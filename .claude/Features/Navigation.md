@@ -62,6 +62,8 @@ The footer carries a breadcrumb of the active tab's container path, plus a dimme
 
 **Surface build state:** NavWindow (the overlay), **Toolbar Tabs**, and **NavView** are shipped. **NavPane** (the dropdown) is a placeholder pending its content call.
 
+The rail's **Style toggle governs the search results too** — searching changes what is listed, never how it's drawn. Only recents reorder, since a result set has no stored order to drag against, and the inert agenda hits render as List rows only, having no card form.
+
 **Open design:** the NavWindow's Figma gallery form. Whether the rail as built — the Favorites list with its List / Gallery toggle — is the intended rail or a stand-in has no ruling; nor does whether the shipped hover pin marker settles the row marker. List rows carry no current-item treatment today; gallery cards do.
 
 **Deferred:** Agenda entries are search-listable but route nowhere — no selection kind opens a Task or Event, so they list inert until Agenda's own surfaces land. Body / full-text search (today's is title-only) waits on a SQLite FTS layer that doesn't exist; nothing queries the index the app already maintains. Drag-to-pin across the tab divider, and dragging a tab out into its own window, are Prospects.
