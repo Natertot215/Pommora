@@ -77,6 +77,13 @@ export function refreshSessionIndex(root: string): Promise<void> {
   return rebuilding
 }
 
+/** Settle once no rebuild is in flight. `mutate` fires its refresh and doesn't wait, so a caller
+ *  tearing the nexus down — a test's temp dir, a session switch — needs a point where the index
+ *  has stopped writing into `.nexus`, or the removal races the rebuild that is still filling it. */
+export function indexIdle(): Promise<void> {
+  return rebuilding ?? Promise.resolve()
+}
+
 /** Close + drop the current index handle (session switch / app quit). */
 export function closeSessionIndex(): void {
   if (db) {
