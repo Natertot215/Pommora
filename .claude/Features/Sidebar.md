@@ -18,7 +18,7 @@ The ribbon collapses and expands *with* the sidebar, and toggles on its own insi
 
 The content column renders one mode at a time. A ribbon switch plays the **overtake sweep**: the incoming mode slides in rightward from the ribbon edge over the sitting content. Both layers are transparent glass, so the cover is two complementary clip sweeps tiling the width rather than a plain overlay, which would read as text over text; the outgoing layer holds still, counter-translated so its visible window doesn't jump when the scroll snaps to the incoming's top. The ribbon tab names the mode, so the column carries no heading:
 
-- **Collections** — the ungrouped top-level Collections, then any user-named sections with their headings. A Collection discloses its Sets and its loose Pages, recursively; a depth-1 Set is selectable and opens its scoped view, a Sub-Set is expand-only here, and Pages are leaf rows. Full container behaviour → `Collections.md` + `PageSets.md`.
+- **Collections** — the top-level Collections. A Collection discloses its Sets and its loose Pages, recursively; a depth-1 Set is selectable and opens its scoped view, a Sub-Set is expand-only here, and Pages are leaf rows. Full container behaviour → `Collections.md` + `PageSets.md`.
 
 - **Contexts** — every registry Context as a disclosure of its draggable Space rows, in registry order; group headers drag to reorder the registry itself. A Context header is a pure expand/collapse toggle — a Context has no destination view, Spaces do. Full behaviour → `Contexts.md`.
 
@@ -46,7 +46,7 @@ The inline rename field is the menu system's flush `titleInput` — dimensionall
 
 ### Pending
 
-**User Sections CRUD:** Collections can render user-created sections, but the mutate layer carries no section op — sections are read-only, populated only by hand-editing config. The planned surface adds an **"Add Heading"** entry to the Collections create menu plus rename and drag-a-Collection-into-a-section.
+**User Sections:** unbuilt. A first attempt shipped a read path with no writer — a config file the app parsed and never wrote — and it was removed rather than left looking real. The surface wants an **"Add Heading"** entry in the Collections create menu plus rename and drag-a-Collection-into-a-section, and the sections themselves belong in the database with the rest of the sidebar's arrangement.
 
 **Space-Create Label:** Today the create item reads a **stored singular**, which only the seeded Contexts carry — so those offer New Area / New Topic / New Project and every other Context offers flat **New Space**. Because the singular is stored rather than derived, renaming a seeded Context leaves its old label behind. The ruled behaviour keys off the **title** instead, so the label follows a rename. Per-Context custom singulars are prospective.
 
