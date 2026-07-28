@@ -91,7 +91,7 @@ textarea,
   width: var(--caret-width);
   margin-left: calc(var(--caret-width) / -2);
   background: var(--caret-color);
-  border-radius: 999px; /* rounded caps, top + bottom */
+  border-radius: 999px;
 }
 .cm-focused > .cm-scroller > .mdpm-caretLayer .mdpm-caret {
   display: block;

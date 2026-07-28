@@ -142,7 +142,6 @@ class TableWidget extends WidgetType {
       const change = cellCommitChange(docString(view.state.doc), this.tableIndex, row, col, text)
       if (change) view.dispatch({ changes: change, annotations: tableSelfEdit.of(true) })
     }
-    // Navigating past a table edge moves the main caret before/after the table block.
     const exit = (dir: 'before' | 'after'): void => {
       const region = tableRegions(docString(view.state.doc))[this.tableIndex]
       if (!region) return

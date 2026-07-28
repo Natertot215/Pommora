@@ -1,4 +1,4 @@
-/* The per-block Scale factor (G-10), registered so it's an ANIMATABLE number: a `.blk-zoom-*` class
+/* The per-block Scale factor, registered so it's an ANIMATABLE number: a `.blk-zoom-*` class
    change interpolates it over --duration-base (transition on .spm-tile), and everything reading it —
    the .cm-content font, --glyph-scale — follows in lockstep, giving one smooth zoom in/out. inherits so
    it cascades from the tile into the editor shell. */
@@ -24,7 +24,7 @@
   /* --fold-gutter (set on .detail-page) is the width of the left strip the fold chevron lives in, carved
      from the --content-inset margin so the body still lands on --content-inset. --fold-chevron-size:
      chevron glyph size (title3). (--label-control is the single global :root def.) */
-  /* Glyph scale = the structural px scale × the per-block Scale (G-10). Structural dims (gutter WIDTH,
+  /* Glyph scale = the structural px scale × the per-block Scale. Structural dims (gutter WIDTH,
      content padding) stay on --mdpm-scale and never see --block-zoom; only glyphs read this. Absent
      --block-zoom (full-page editor, or a 1.0 tile) makes this identical to --mdpm-scale. */
   --glyph-scale: calc(var(--mdpm-scale) * var(--block-zoom, 1));
@@ -75,7 +75,7 @@
 }
 .mdpm-editor .cm-content {
   color: var(--label-primary);
-  /* The drawn caret + I-beam cursor are app-wide now — see Carets.css. */
+  /* The drawn caret + I-beam cursor are app-wide — see Carets.css. */
   /* Top reserves the header zone — set live from the header's measured height (index.tsx ResizeObserver).
      Left re-adds the --fold-gutter the editor reclaimed, so text lands on --content-inset and the chevron
      strip stays inside the scroller's clip. */
@@ -101,8 +101,8 @@
   animation-fill-mode: both;
   animation-timeline: --mdpm-scroll;
   animation-range: 0 var(--header-zone, 90px);
-  /* Gap below the divider / banner border before the first body line — in BOTH states (a banner page was
-     jammed against its border). (offsetHeight feeds --header-zone → pushes the body down.) */
+  /* Gap below the divider / banner border before the first body line — in BOTH states (without it a banner
+     page reads jammed against its border). (offsetHeight feeds --header-zone → pushes the body down.) */
   padding-bottom: 16px;
 }
 @keyframes mdpm-header-park {
@@ -387,7 +387,7 @@
    square through the middle so consecutive lines connect seamlessly, with an end-gap + rounded cap ONLY at the
    run's first/last line (md-outliner-first/-last) — the blockquote bar's trick. A rail sits centred (pixel-snapped
    left, below) on its ANCESTOR's glyph, so --rail-x tracks the ANCESTOR marker's TYPE (bullet • / checkbox box),
-   not the descendant's — which is why a nested checkbox no longer drags the guide off-centre.
+   not the descendant's — which is why a nested checkbox never drags the guide off-centre.
    KNOBS (on the rail): --outliner-width weight · --outliner-color colour · --outliner-radius cap rounding ·
    --outliner-gap end inset (both ends). The cap inset is split into --outliner-gap-top / --outliner-gap-bottom
    (each defaults to --outliner-gap) so ONE end can be dialled without the other — a run's rail spans the LINE

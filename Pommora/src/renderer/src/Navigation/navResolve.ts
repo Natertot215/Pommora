@@ -2,8 +2,8 @@
 // {kind,id,path} — its title, icon, and container path are resolved fresh here, so a rename/move is
 // always current and never cached stale. An entry that no longer resolves (deleted, or a cross-nexus
 // target against the wrong tree) is RENDER-PRUNED — dropped from the returned list, NEVER from storage
-// (E-3: a cross-nexus switch resolves everything to null; auto-deleting would wipe durable favorites).
-// Agenda kinds (task/event) have no destination in v1 (E-9b) — absent from the index → null.
+// (a cross-nexus switch resolves everything to null; auto-deleting would wipe durable favorites).
+// Agenda kinds (task/event) have no destination in v1 — absent from the index → null.
 //
 // Resolution goes through a display index built in ONE tree walk, so resolving a full recents list is
 // O(tree + entries), not O(entries × tree) — the gallery must never re-flatten the tree per row.
@@ -29,7 +29,7 @@ export interface ResolvedNav {
   icon: string
   /** The container chain the entry lives under (empty for a top-level Collection / Homepage). */
   path: PathCrumb[]
-  /** Recents only: drives the float-to-top at render. */
+  /** Drives the pin button's active/toggle state at render (is-pinned style, aria-label). */
   pinned?: boolean
 }
 

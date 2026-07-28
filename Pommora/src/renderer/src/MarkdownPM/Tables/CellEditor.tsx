@@ -92,7 +92,6 @@ export function CellEditor({
           EditorView.contentAttributes.of({ spellcheck: 'true' }),
           Prec.highest(
             keymap.of([
-              // Tab accepts an open connection candidate (like Enter); otherwise it moves to the next cell.
               {
                 key: 'Tab',
                 run: consume(() =>
@@ -100,7 +99,8 @@ export function CellEditor({
                 ),
               },
               { key: 'Shift-Tab', run: consume(() => onNavigateRef.current('prev')) },
-              // With the connection panel open these keys drive it; otherwise they navigate cells.
+              // With the connection panel open these keys drive it; when it's closed only Enter falls
+              // through to cell navigation (arrows/Escape are no-ops without an open panel).
               {
                 key: 'Enter',
                 run: consume(() =>
@@ -144,7 +144,6 @@ export function CellEditor({
             if (text.length !== 1 || from !== to) return false
             return applyEdit(view, autoPair(view.state.doc.toString(), from, from, text), 'input')
           }),
-          // Close the connection panel when focus leaves the cell (Tab to the next cell, click away).
           EditorView.domEventHandlers({
             blur: () => {
               setAc(null)

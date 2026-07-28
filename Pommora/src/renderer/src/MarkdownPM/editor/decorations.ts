@@ -212,7 +212,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
     if (tk.kind !== 'link') return
     const [open, close] = tk.markerRanges // `[`  and  `](url)`
     const bracketEnd = close[0] + 1 // the `]`
-    const valid = isValidLink(text.slice(bracketEnd + 1, close[1] - 1)) // strip `](` head + `)` tail
+    const valid = isValidLink(text.slice(bracketEnd + 1, close[1] - 1))
     const isActive = active.has(i)
     ranges.push(
       Decoration.mark({ class: valid ? 'md-link' : 'md-link-invalid' }).range(
@@ -241,7 +241,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
     tokens.forEach((tk, i) => {
       if (tk.kind !== 'wikiLink') return
       const status = conn.resolve(text.slice(tk.contentRange[0], tk.contentRange[1])).status
-      if (status === 'phantom') return // unresolved → raw `[[Foo]]`, brackets visible + inert (spec)
+      if (status === 'phantom') return // unresolved → raw `[[Foo]]`, brackets visible + inert
       ranges.push(
         Decoration.mark({ class: `md-connection-${status}` }).range(
           tk.contentRange[0],

@@ -94,7 +94,7 @@
    rounded border is the curve, its --main-bg fill erases the straight border line
    behind it, and its border-color inherits the tile's (so the accent resize/lift
    highlight flows through). The grip glyph (shared --grip-glyph) rides inside.
-   Hover-revealed; drag = move; click/right-click menus ride Task 6. */
+   Hover-revealed; drag = move; click/right-click open the handle menu. */
 .spm-handle {
   position: absolute;
   top: 16px;

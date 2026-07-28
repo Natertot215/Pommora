@@ -1,4 +1,4 @@
-/** THE embed scale knobs (G-10) — fixed amounts; resize is a viewport, never a scale (H-10).
+/** THE embed scale knobs — fixed amounts; resize is a viewport, never a scale.
  *  EMBED_SCALE is the ONE tunable; both embed kinds derive from it.
  *
  *  Page embeds: EMBED_SCALE drives the px-fixed dims (--mdpm-scale) and EMBED_ZOOM its

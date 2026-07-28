@@ -23,8 +23,8 @@ interface Entry {
   res: ResolvedNav | null
 }
 
-/** The preview toolbar's center region — the H-9 morph owner. One tab renders the centered
- *  breadcrumb title (inert, F-2); a second tab's birth swaps it for the left-aligned strip on the
+/** The preview toolbar's center region — the morph owner. One tab renders the centered
+ *  breadcrumb title (inert); a second tab's birth swaps it for the left-aligned strip on the
  *  shared tab-open motion (tabs grow via tabStrip.css's @starting-style; the title fades/slides
  *  left on the same tokens, held through its exit). Ghost-closing keeps the strip mounted so the
  *  last collapse plays before the title returns. */
@@ -51,7 +51,7 @@ export function PreviewTabStrip({
     [tabs, index],
   )
 
-  // Store-first close with a rendered ghost for the width-collapse exit (the toolbar's J-6 pattern).
+  // Store-first close with a rendered ghost for the width-collapse exit (the toolbar's pattern).
   const [ghosts, setGhosts] = useState<ReadonlyMap<string, { entry: Entry; index: number }>>(
     new Map(),
   )
@@ -87,7 +87,7 @@ export function PreviewTabStrip({
   const heldTitle = useRef(title)
   if (!showStrip) heldTitle.current = title
 
-  // The active tab scrolls into view on switch (the toolbar's J-5 rule).
+  // The active tab scrolls into view on switch (the toolbar's rule).
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!activeTabId) return
@@ -162,7 +162,7 @@ function PreviewTabItem({
 }): React.JSX.Element {
   const isMap = entry.tab.target.kind === 'navwindow'
   const label = isMap ? 'Navigation' : (entry.res?.title ?? '')
-  // H-4 (nav flavor only): a page tab whose own icon is ALSO the map glyph renders its type icon
+  // Nav flavor only: a page tab whose own icon is ALSO the map glyph renders its type icon
   // instead — nothing masquerades as the perma-pinned NavWindow tab.
   const res =
     navFlavor && entry.res?.icon === 'map'
@@ -199,10 +199,10 @@ function PreviewTabItem({
       ) : (
         <Icon name={isMap ? 'map' : 'file'} size={TAB_ICON} className="tab-icon" />
       )}
-      {/* The map tab is icon-only (H-2) — the label is its tooltip. A long title eclipses rather
+      {/* The map tab is icon-only — the label is its tooltip. A long title eclipses rather
           than hard-cutting, on the same box every other truncating surface uses. */}
       {!isMap && <OverflowScroll className="tab-label">{label}</OverflowScroll>}
-      {/* The map tab is perma-pinned (H-2) — no ×; the model refuses the close anyway. */}
+      {/* The map tab is perma-pinned — no ×; the model refuses the close anyway. */}
       {!isMap && (
         <button
           type="button"

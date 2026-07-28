@@ -1,4 +1,4 @@
-// The per-block Scale model (G-10): a fixed set of discrete zoom factors a tile can carry. The factor
+// The per-block Scale model: a fixed set of discrete zoom factors a tile can carry. The factor
 // is user-facing and RELATIVE to the tile's natural size (1.0 = no change). It rides ONE CSS var
 // --block-zoom (keyed off `cls`); the font + glyphs + handle all derive from it. No JS font math — the
 // factor is applied linearly in CSS, so it never touches the editor's clamped zoom curve.

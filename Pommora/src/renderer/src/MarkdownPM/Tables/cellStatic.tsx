@@ -5,7 +5,7 @@ import type { ConnectionsApi } from '../connections'
 
 // A cell's resting render WITHOUT a CodeMirror instance: inline marks styled + markers hidden +
 // connections coloured by status, matching the nested editor's look. Only the focused cell mounts a
-// real editor (see TableView), so a table scrolling into view no longer builds R×C editors in one frame.
+// real editor (see TableView), so a table scrolling into view doesn't build R×C editors in one frame.
 // Block-level markdown (headings, lists, fences) isn't reproduced here — it doesn't occur in a cell.
 export function renderCellContent(
   text: string,

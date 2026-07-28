@@ -4,7 +4,7 @@ import type { ConnectionsApi, ConnPage } from '../connections'
 
 type GetApi = () => ConnectionsApi | undefined
 
-/** KNOB — B-7's hover-intent delay: how long the pointer rests on a connection before the card. */
+/** KNOB — hover-intent delay: how long the pointer rests on a connection before the card. */
 const CONN_HOVER_INTENT_MS = 450
 
 function wikiLinkAt(view: EditorView, pos: number): { title: string } | null {
@@ -27,7 +27,7 @@ function resolvedPageAt(view: EditorView, api: ConnectionsApi, event: MouseEvent
 }
 
 export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.domEventHandlers> {
-  // The pending hover intent (B-7) — armed on mouseover of a resolved connection, cancelled the
+  // The pending hover intent — armed on mouseover of a resolved connection, cancelled the
   // moment the pointer leaves it (mouseout fires per CM6 text span; re-entry re-arms fresh).
   let hoverTimer: ReturnType<typeof setTimeout> | null = null
   const cancelHover = (): void => {
@@ -57,7 +57,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       cancelHover()
       return false
     },
-    // Navigate on a plain single-click (spec). Handled on `click`, not `mousedown`, and skipped when the
+    // Navigate on a plain single-click. Handled on `click`, not `mousedown`, and skipped when the
     // selection is non-empty — so dragging across a connection highlights it instead of navigating away.
     click(event, view) {
       if (event.button !== 0 || event.detail !== 1 || !view.state.selection.main.empty) return false
@@ -66,7 +66,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       const page = resolvedPageAt(view, api, event)
       if (!page) return false
       event.preventDefault()
-      // The one modifier branch (H-11/I-19): ⌘ takes the host's other route when it offers one.
+      // The one modifier branch: ⌘ takes the host's other route when it offers one.
       if (event.metaKey && api.bypass) api.bypass(page)
       else api.open(page)
       return true

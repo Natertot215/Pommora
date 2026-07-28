@@ -1,5 +1,5 @@
 // The renderer's block-document session for one host: load once on host open
-// (E-3 — never the tree walk), decode the layout through SurfacePM's repairing
+// (never the tree walk), decode the layout through SurfacePM's repairing
 // codec, and persist layout changes with a trailing debounce that flushes on
 // unmount so a navigation inside the window can't drop a gesture.
 

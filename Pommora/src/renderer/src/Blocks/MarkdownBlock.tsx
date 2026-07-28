@@ -7,8 +7,8 @@ const SAVE_DEBOUNCE_MS = 400
 
 // A markdown block tile — the CM6 portal: one view per tile, read-only at rest
 // (full decorations), editability reconfigured in place while THIS tile is the
-// surface's single live editor (E-4's revised at-rest form) — no remount, no
-// jitter. Body writes are pure (no frontmatter — D-11) and debounce like the
+// surface's single live editor (revised at-rest form) — no remount, no
+// jitter. Body writes are pure (no frontmatter) and debounce like the
 // page editor's.
 
 export function MarkdownBlock({
@@ -28,7 +28,7 @@ export function MarkdownBlock({
   /** True while this tile is being removed — a flush then would land AFTER the
    *  trash and resurrect the file as an entry-less orphan. */
   suppressFlush?: (tileId: string) => boolean
-  /** B-5 content lock: a locked tile can't be entered for editing (it stays a selectable portal). */
+  /** Content lock: a locked tile can't be entered for editing (it stays a selectable portal). */
   locked?: boolean
 }): React.JSX.Element {
   const [body, setBody] = useState<string | null>(null)

@@ -98,7 +98,7 @@ export function App(): React.JSX.Element {
     return window.nexus.onBeginRename((path) => beginRename(path))
   }, [beginRename])
 
-  // Context-menu "Open in New Tab" → open into a new tab (dedup focuses an already-open one, I-1).
+  // Context-menu "Open in New Tab" → open into a new tab (dedup focuses an already-open one).
   useEffect(() => {
     return window.nexus.onOpenInNewTab((target) => {
       if (!target.id) return
@@ -137,7 +137,7 @@ export function App(): React.JSX.Element {
           void choose()
           break
         case 'new-tab': {
-          // I-20: ⌘N is a NATIVE accelerator (menu.ts) — a renderer keydown can't intercept it, so
+          // ⌘N is a NATIVE accelerator (menu.ts) — a renderer keydown can't intercept it, so
           // the promote branch lives here. While a page-flavor preview is open, its active tab
           // promotes to a new app tab and closes (the window only when it was the last).
           const s = useSession.getState()
@@ -288,7 +288,7 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <InspectorPanel open={inspectorOpen} />}
       {/* NavWindow — the ribbon/⌘O-summoned floating mini-shell; app-global overlay, own presence. */}
       {status === 'ready' && <NavWindow />}
-      {/* Page Preview — the B-1-routed floating page window; one floating window total (D-8). */}
+      {/* Page Preview — the floating page window; one floating window total. */}
       {status === 'ready' && <PreviewWindow />}
       {/* Settings — the ribbon-summoned floating panel; a surface onto already-persisted state. */}
       {status === 'ready' && <SettingsWindow />}

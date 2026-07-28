@@ -105,7 +105,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const closeOnSelect = useSession((s) => s.tree?.personalization.navCloseOnSelect !== false)
   const onSelected = closeOnSelect ? closeNav : undefined
   const goClose = (target: NavTarget): void => go(target, onSelected)
-  // The row/card menu's "Open in New Tab" (D-3) — same reconcile + close-on-select pipeline as a click.
+  // The row/card menu's "Open in New Tab" — same reconcile + close-on-select pipeline as a click.
   const goNewTab = (target: NavTarget): void => go(target, onSelected, { newTab: true })
   // Rail Style toggle — List ⇄ Gallery. Persisted per nexus in the store's `navWindowMode` slice
   // (separate from NavView's `navViewMode`), so it survives relaunch and re-renders sibling readers.
@@ -113,11 +113,11 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const setNavWindowMode = useSession((s) => s.setNavWindowMode)
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
 
-  // The nav flavor (H-2): the whole body below is the MAP TAB's content; an active page tab swaps
-  // it away and slides the rail closed (G-4/F-5). The strip is persistent window chrome above it.
+  // The nav flavor: the whole body below is the MAP TAB's content; an active page tab swaps
+  // it away and slides the rail closed. The strip is persistent window chrome above it.
   const preview = useSession((s) => s.preview)
   const pageTarget = useSession((s) => (s.preview?.flavor === 'nav' ? s.previewTarget : null))
-  // H-2: focus the search on open AND on every map-tab return (a command-palette focus — the
+  // Focus the search on open AND on every map-tab return (a command-palette focus — the
   // input remounts when a page tab swaps the body away); the inspector dies with the page tab.
   useEffect(() => {
     if (!pageTarget) {
@@ -132,9 +132,9 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const setNavViewMode = useSession((s) => s.setNavViewMode)
 
   // The shared toolbar's scan/Open targets by the active flavor. On a page tab it promotes that page
-  // for real (B-5). On the MAP flavor it promotes the NavWindow itself into NavView — carrying the
-  // view mode ONCE (DF-2), then closing and opening/focusing the single NavView tab (no engulf; the
-  // scan is a fixed toolbar action, not an animated FLIP). The nav set stays durable either way (H-3).
+  // for real. On the MAP flavor it promotes the NavWindow itself into NavView — carrying the
+  // view mode ONCE, then closing and opening/focusing the single NavView tab (no engulf; the
+  // scan is a fixed toolbar action, not an animated FLIP). The nav set stays durable either way.
   const promote = (): void => {
     if (pageTarget) {
       closeNav()
@@ -229,9 +229,9 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       }}
     >
       <div className="navwindow-content">
-        {/* F-7: the strip row exists only past one tab — its height grows in on the standard
+        {/* The strip row exists only past one tab — its height grows in on the standard
               ease. It lives in the content column so the rail runs the window's FULL height and
-              the tabs start right of the sidebar, exactly like the app's tab bar (H-2/I-4). */}
+              the tabs start right of the sidebar, exactly like the app's tab bar. */}
         <div className={cx('navwindow-tabs', hasTabs && 'has-tabs')}>
           <PreviewTabStrip index={resolveIndex} title={null} />
         </div>
