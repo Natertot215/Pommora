@@ -130,15 +130,31 @@ are what came to mind, not a mandate.
 
 ## FINAL REPORT — the deliverable
 
-A full report covering the multi-session run. Must include:
+**Nathan stressed this twice. It is the point of the whole session.** Two pieces:
 
+### Piece 1 — what got done, in PLAIN ENGLISH
+
+Not a changelog. Not commit subjects. **What each thing MEANS.** Nathan is not a technical reader:
+say what was broken in terms of what he would have seen, and what is different now that he would
+notice. "The filter looked like it did nothing because the folder headings kept drawing even when
+every row under them was gone" — not "pruned empty structural bands in the group resolver."
+
+Must include:
 - Line-count deltas vs `05a98344`: **comments**, **actionable code**, **documentation**.
-- What was found, what was resolved.
-- **Things that existed before this session that he didn't know about and are now fixed.**
-- **Things not previously surfaced that are now known** (and where they're recorded).
-- Project state and continuation paths.
+- What was found and what was resolved.
+- **Bugs that were already there, that he never knew about, now fixed.** Call these out explicitly —
+  they are the most valuable part of the report.
+- **Things newly surfaced that are now known**, and where each is written down.
 
-He must finish reading it thinking about what to build next — not wondering what was left dangling.
+### Piece 2 — state-of-project brief
+
+Where the project actually stands, and **things to think about going forward.** Give him something
+to chew on, not just a task list — the tradeoffs behind the pending focuses, what each would unlock,
+what it would cost. He should finish reading it thinking about what he wants to build, with no
+worry that something was left dangling.
+
+No hedging, no jargon, no "as previously mentioned". Write it so it reads well at a glance and
+rewards a second pass.
 
 ## Inventory for the SQL focus (gathered while agents ran)
 
@@ -187,3 +203,13 @@ One consequence to state in `Navigation.md`: `results.extras` (inert agenda hits
 them with "Agenda navigation isn't wired yet") has no gallery equivalent, so they show in List only.
 `NavGallery` takes no `extras` prop and adding one would be new code for placeholder rows whose
 routing is unbuilt. Acceptable; note it rather than build it.
+
+## Nathan is asleep — ping his phone for important updates only
+
+He asked for phone pings. Use `PushNotification` sparingly, since he is sleeping:
+
+- **When the whole session is done and the report is ready** — the one he actually wants.
+- **If something blocks that genuinely needs him** — a gate that will not go green, a decision that
+  can't be made from the record.
+- **Not** for routine agent completions or progress. He is asleep; a ping he didn't need costs more
+  than one he missed.
