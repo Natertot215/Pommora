@@ -14,8 +14,7 @@ export const PANE_MAX_W = 180
 
 export const pane = style({ minWidth: PANE_W, maxWidth: PANE_MAX_W, boxSizing: 'border-box' })
 
-/** Handle-menu rows read at control size in the control label tone (Nathan's call) —
- *  the && doubles specificity over MenuItem's own class. */
+/** The && doubles specificity over MenuItem's own class, so this row's type/tone override sticks. */
 export const row = style({
   selectors: {
     '&&': {
@@ -26,8 +25,7 @@ export const row = style({
   },
 })
 
-/** Header/footer density for this thin menu — the house zoom knob scales the whole bar
- *  (Nathan's call: the scaled bars read right here; tones stay the house classes). */
+/** Header/footer density for this thin menu — the house zoom knob scales the whole bar. */
 export const barScale = style({ zoom: 0.85 })
 
 /** A pinned-footer text action (+ Custom) — footing tone over the accessory hover pill. */
@@ -43,9 +41,8 @@ export const footerAction = style([
   },
 ])
 
-/** The footing lock action — a left-pinned labeled toggle (lock icon + "Lock"/"Unlock"): label-secondary
- *  text (footerAction), a step-quieter label-tertiary icon, and the footerAction hover. No pressed/
- *  selected state — it never mutes on lock (only the actions above do). */
+/** The footing lock action — a left-pinned labeled toggle (lock icon + "Lock"/"Unlock"), a step-quieter
+ *  icon than its label. No pressed/selected state — it never mutes on lock (only the actions above do). */
 export const footerLockAction = style([
   footerAction,
   { display: 'inline-flex', alignItems: 'center', gap: '5px' },
@@ -80,7 +77,7 @@ export const titleFieldRow = style({
   gap: '6px',
   overflow: 'hidden',
 })
-/** Page title — control type + tone, matching the menu's rows (truncateHoverScroll caps long titles). */
+/** Page title — matches the menu's rows (truncateHoverScroll caps long titles). */
 export const titleFieldText = style([
   truncateHoverScroll,
   {
@@ -91,7 +88,7 @@ export const titleFieldText = style([
     color: c.label.control,
   },
 ])
-/** Location sub-line — footnote (a step under the title), label-secondary. */
+/** Location sub-line — a step under the title. */
 export const titleFieldLoc = style([
   truncateHoverScroll,
   {
@@ -108,11 +105,11 @@ export const titleFieldLocIcon = style({ selectors: { '&&': { color: c.label.ter
 /** The Scale dropdown body — a tight column of the five step rows (narrower than the menu's own pane). */
 export const scaleMenu = style({ minWidth: 58 })
 
-/** The current step's check, in the runtime accent (not the row's label tone). */
+/** The current step's check — deliberately not the row's label tone. */
 export const scaleCheck = style({ selectors: { '&&': { color: 'var(--accent)' } } })
 
-/** The Scale row's trailing value + double-chevron trigger — a bare button: the current factor in
- *  footnote/label-secondary (mirroring titleFieldLoc), the chevron a step quieter in label-tertiary. */
+/** The Scale row's trailing value + double-chevron trigger — a bare button, mirroring titleFieldLoc;
+ *  the chevron a step quieter than the value. */
 export const scaleTrailing = style({
   display: 'inline-flex',
   alignItems: 'center',

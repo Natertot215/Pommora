@@ -86,8 +86,8 @@ const derived = createGlobalTheme(':root', {
 })
 
 // Semantic alias — the Interaction Field surface (text inputs / editable fields), exposed under the
-// literal CSS var `--input-field` so every input references one named knob. It points at the quaternary
-// fill var, so retuning the input surface is a single edit here. Consume via `inputFieldVar`.
+// literal CSS var `--input-field` so every input references one named knob. It points at a fill var,
+// so retuning the input surface is a single edit here. Consume via `inputFieldVar`.
 globalStyle(':root', {
   vars: {
     '--input-field': derived.color.fill.quaternary,

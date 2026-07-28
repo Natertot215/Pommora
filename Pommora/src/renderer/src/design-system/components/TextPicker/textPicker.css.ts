@@ -6,8 +6,8 @@ import { focusRing } from '../fieldRing'
 
 const c = vars.color
 
-/** The pane's own gutter — 4px between the input-field and the beaked edge, overriding PickerMenu's
- *  default 6px surface gutter (the top still clears the beak band via `--notch-h`). */
+/** The pane's own gutter — tighter than PickerMenu's default surface gutter (the top still clears
+ *  the beak band via `--notch-h`). */
 export const content = style({
   paddingTop: 'calc(var(--notch-h, 0px) + 4px) !important',
   paddingRight: '4px !important',
@@ -53,7 +53,7 @@ export const suffixInput = style({
   selectors: { '&::-webkit-scrollbar': { display: 'none' } },
 })
 
-/** The "/ N" out-of hint pinned to the field's right — emphasized label-tertiary, never scrolling. */
+/** The "/ N" out-of hint pinned to the field's right — never scrolling. */
 export const trailing = style({
   flex: '0 0 auto',
   whiteSpace: 'nowrap',
@@ -64,16 +64,17 @@ export const trailing = style({
 })
 
 /** The rename field — the shared input-field chrome at CalendarPicker's caret metrics (control size;
- *  the native caret scales with the font). `field-sizing` grows it to its text between a 100px floor
- *  and a 200px cap, then it scrolls internally. Focused, an `--accent` stroke at tint-secondary fades
+ *  the native caret scales with the font). `field-sizing` grows it to its text between a floor and a
+ *  cap, then it scrolls internally. Focused, an `--accent` stroke fades
  *  in over duration-fast; a consumer may scope `--accent` on the pane to tint it (a link wears its own
  *  colour), else it inherits the app accent. */
 export const input = style([
   field,
   {
     // Undo `field`'s div-oriented layout so the bare input lays out its own single-line caret (the
-    // CalendarPicker model): no flex, no 28px floor, and the caret sized to the control line — not body's
-    // 16px on 12px text, which is what left the caret oversized + vertically off.
+    // CalendarPicker model): no flex, no default-height floor, and the caret sized to the control line —
+    // not the field's base line-height sized for larger text, which is what left the caret oversized
+    // + vertically off.
     display: 'block',
     minHeight: 0,
     lineHeight: font.scale.control.line,

@@ -51,8 +51,7 @@
 .tab:hover {
   background: var(--state-hover);
 }
-/* Active tab: the label switches tertiary → control, fading on the standard token (the color transition
-   on .tab above). */
+/* Active tab: the label brightens, fading on the standard token (the color transition on .tab above). */
 .tab.is-active {
   color: var(--label-control);
 }
@@ -113,8 +112,8 @@
   flex: 1;
   min-width: 0;
   /* The sidebar's OverflowScroll mechanism (nav-item-title): eclipse-fade + hover-scroll at the shared
-     16px fade. The ×'s lane reserve is trimmed (14px → 8px) so the title gets more width before it
-     eclipses — padding-right is the × clearance knob. */
+     16px fade. The ×'s lane reserve is tighter than the sidebar's own so the title gets more width
+     before it eclipses — padding-right is the × clearance knob. */
   padding-right: 8px;
   --edge-fade: 16px;
   --scroll-fade: 16px;

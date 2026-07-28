@@ -8,8 +8,8 @@ import { fieldRing, ROW_RING } from '../fieldRing'
 const c = colorVars.color
 
 /**
- * Menu Item row — the menu / sidebar row primitive.  Composes Body/Standard so
- * the title is 13px (the macOS standard content size, NSFont.systemFontSize).
+ * Menu Item row — the menu / sidebar row primitive. Composes Body/Standard so
+ * the title matches the macOS standard content size (NSFont.systemFontSize).
  */
 export const item = style([
   text.body.standard,
@@ -39,10 +39,10 @@ export const item = style([
 ])
 
 /** THE disclosure chevron — a chevron-right glyph that rotates 90° when open, on the shared
- *  disclosure beat. One definition for every surface that discloses: the sidebar rows, the grouping
- *  and filter panes, the group bands, the properties pane. Pair it with `data-twisty` on the element:
- *  the sidebar's Hide-Chevrons layout keys its `:has()` rules on that attribute, because a plain
- *  stylesheet can't name a hashed class — so the LOOK lives here and the sidebar keeps its own layout. */
+ *  disclosure beat. One definition shared by every disclosing surface. Pair it with `data-twisty` on
+ *  the element: a plain stylesheet can't name a hashed class, so a surface keys its own `:has()`
+ *  layout rules (e.g. the sidebar's Hide-Chevrons) off that attribute instead — the LOOK lives here,
+ *  each surface keeps its own layout. */
 export const twisty = style({
   // The beat is a CHANNEL, not a constant: a chevron has to land with whatever it discloses, and not
   // every surface unfolds on the disclosure beat. The Properties pane's All-Properties row runs its
@@ -55,9 +55,9 @@ export const twistyOpen = style({ transform: 'rotate(90deg)' })
 /** A leaf row's stand-in for the chevron, so its icon lines up under a disclosure row's. */
 export const twistySpacer = style({ width: '12px', flex: '0 0 auto' })
 
-/** KNOB — the rail's x. It rides the parent row's DISCLOSURE column: the row's 6px inset plus half
- *  the 12px twisty, nudged a hair right. (Not the icon column — a row's icon sits past its chevron,
- *  at ~28px, which would put the rail through the child titles.) */
+/** KNOB — the rail's x. It rides the parent row's DISCLOSURE column, nudged a hair right — not the
+ *  icon column, since a row's icon sits well past its chevron, which would put the rail through the
+ *  child titles. */
 const RAIL_X = '14px'
 
 /** A disclosed child run — rides the shared list-outline rail with rounded caps, children indenting
@@ -92,8 +92,7 @@ export const rowDisabled = style({
   },
 })
 
-/** Heading row — Headline/Emphasized (13px Semibold), label-secondary; same
- *  geometry as an item, so its icon follows at 1em → 13px. */
+/** Heading row — same geometry as an item, so its icon follows the row's own size. */
 export const heading = style([
   text.headline.emphasized,
   {
@@ -107,9 +106,9 @@ export const heading = style([
   },
 ])
 
-/** A leading / trailing glyph cluster — label-secondary (the shared icon tone), doesn't grow, its own
- *  4px gap so a disclosure + icon (or detail + chevron) keep the row rhythm. Bound to the stable
- *  --label-secondary CSS var, not the vanilla-extract ref, so an HMR token-hash shift can't blank it. */
+/** A leading / trailing glyph cluster — doesn't grow, its own gap so a disclosure + icon (or detail +
+ *  chevron) keep the row rhythm. Bound to the stable CSS var, not the vanilla-extract ref, so an HMR
+ *  token-hash shift can't blank it. */
 export const side = style({
   display: 'flex',
   alignItems: 'center',
@@ -128,8 +127,8 @@ export const titleWrap = style({
   gap: '2px',
 })
 
-/** Title line — inherits the row's size (13px item / 13px heading) + colour; ellipsis at rest, scrolls
- *  the full value on hover (shared `truncateHoverScroll`, the chip-label behaviour). */
+/** Title line — inherits the row's size + colour; ellipsis at rest, scrolls the full value on hover
+ *  (shared `truncateHoverScroll`, the chip-label behaviour). */
 export const titleText = style([truncateHoverScroll])
 
 /** Inline-rename field for a menu row — sits flush in the title slot: the row's own font, colour, and
@@ -148,13 +147,13 @@ export const titleInput = style({
   WebkitAppRegion: 'no-drag',
 } as Parameters<typeof style>[0])
 
-/** Sub-label — Caption/Standard (11px), label-secondary, under the title. */
+/** Sub-label — under the title. */
 export const subLabel = style([
   text.caption.standard,
   { color: c.label.secondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
 ])
 
-/** Trailing detail — Footnote/Emphasized (10px Semibold); colour inherited from `side`. */
+/** Trailing detail — colour inherited from `side`. */
 export const detail = style([text.footnote.emphasized])
 
 /** Separator — a band with a centered hairline (Apple's menu separator height). */
@@ -171,7 +170,7 @@ export const separatorFlush = style({ padding: 0 })
 
 /** Gutter-flush affordance — the shared geometry/colour for the TopRow heading nav and the pane
  *  footer actions: no item inset (so the ‹ heading and the +/Delete footer line up at one left edge),
- *  a tight 4px icon↔label gap, and label-secondary text. Each consumer sets its own type; the
+ *  a tight icon↔label gap, and its own text tone. Each consumer sets its own type; the
  *  destructive footer (Delete) re-overrides the colour. */
 export const flushAffordance = style({ paddingLeft: 0, gap: '4px', color: c.label.secondary })
 
@@ -184,7 +183,7 @@ export const flushTrailing = style({ paddingRight: 0 })
  *  class (the ViewPane's topRowPad knob). */
 export const topRow = style([text.caption.emphasized, flushAffordance])
 
-/** Non-interactive caption / empty-state line — body text, centered + secondary (no row geometry). */
+/** Non-interactive caption / empty-state line — centered, no row geometry. */
 export const caption = style([
   text.body.standard,
   { padding: '28px 8px', textAlign: 'center', color: c.label.secondary, userSelect: 'none' },
@@ -226,7 +225,7 @@ export const accessoryGhostRest = style({
 })
 // ── TopRow / BottomRow rhythm ──
 
-/** A pane TopRow's vertical padding + heading tone — drops the base 24px floor to the caption line. */
+/** A pane TopRow's vertical padding + heading tone — drops the base row-height floor to the caption line. */
 export const topRowPad = style({
   paddingBlock: 'var(--top-row-block, 2px)',
   minHeight: 0,
@@ -234,9 +233,9 @@ export const topRowPad = style({
 })
 
 // ── TopBar tone knobs — every pane header's four parts, one source. Leading (the ‹ back nav) reads
-// label-secondary; trailing (the current pane) reads label-tertiary, so the back destination sits a
-// step above the breadcrumb. Each knob colours the text/glyph itself, so it beats the surface's
-// dropdown-title (label-control) rule. All surfaces route here via MenuTopRow / MenuPaneTopRow.
+// brighter than trailing (the current pane), so the back destination sits a step above the breadcrumb.
+// Each knob colours the text/glyph itself, so it beats the surface's dropdown-title rule. All surfaces
+// route here via MenuTopRow / MenuPaneTopRow.
 export const topBarLeadingLabel = style([text.callout.emphasized, { color: c.label.secondary }])
 export const topBarLeadingSymbol = style({ display: 'inline-flex', color: c.label.secondary })
 export const topBarTrailingLabel = style([text.caption.emphasized, { color: c.label.tertiary }])
@@ -262,18 +261,18 @@ export const bottomRow = style([
 export const bottomBar = style({ marginTop: 'auto' })
 
 // ── Footing tone knobs — the pinned footer's parts (the Format control, the +/⋮ BottomRow). A footing
-// reads a step quieter than a body row: callout size + label-secondary, an ancillary action; its symbol
-// sits at 12 to match (the TopBar chevron is 14). One source; the Format row + MenuBottomRow route here.
+// reads a step quieter than a body row, an ancillary action; its symbol sits a step under the TopBar
+// chevron. One source; the Format row + MenuBottomRow route here.
 export const footingLabel = style([text.callout.emphasized, { color: c.label.secondary }])
 export const footingSymbol = style({
   display: 'inline-flex',
   selectors: { '&&&': { color: c.label.secondary } },
 })
-// A BottomRow's icon buttons read label-secondary (the footing tone), not the accessoryButton default
-// tertiary — the tripled class outranks accessoryButton's `&&`.
+// A BottomRow's icon buttons read the footing tone, not the accessoryButton default — the tripled
+// class outranks accessoryButton's `&&`.
 globalStyle(`${bottomRow} ${accessoryButton}${accessoryButton}`, { color: c.label.secondary })
-// A footing's value reads the footing tone (secondary) too — the row's own primary color yields
-// inside the bottom bar, so a footing's label + value + symbol all sit at one secondary tier.
+// A footing's value reads the footing tone too — the row's own default color yields inside the
+// bottom bar, so a footing's label + value + symbol all sit at one tier.
 globalStyle(`${bottomBar} ${detail}`, { color: c.label.secondary })
 
 // ── Scroll frame — the shared pinned-header/footer + scrolling-body primitive (MenuScrollFrame) ──

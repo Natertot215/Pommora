@@ -30,12 +30,8 @@
        heavier bottom seam, and short centered segment dividers between columns (vs the data rows'
        full-height hairlines). Each aliases a design-system token. — */
   --heading-fill: var(--fill-quinary);
-  --heading-text: var(
-    --label-control
-  ); /* the global on-control label token */
-  --heading-divider: var(
-    --border-heading
-  ); /* the global heading-seam token */
+  --heading-text: var(--label-control);
+  --heading-divider: var(--border-heading);
   --heading-segment: var(--label-tertiary);
   --heading-segment-height: 16px; /* shorter than the row — reads like a segmented control */
   --heading-segment-width: 1.5px;
@@ -48,7 +44,7 @@
   ); /* a sub-group bucket header sits at data-row height, not band height */
 
   /* — Column resize — */
-  --resizer-width: 8px; /* width of the invisible drag hit-strip at a column's right edge */
+  --resizer-width: 8px;
 
   /* — Drag — */
   --col-highlight: var(

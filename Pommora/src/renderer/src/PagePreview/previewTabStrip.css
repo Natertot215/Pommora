@@ -79,7 +79,7 @@
   /* The crumbs also hover-scroll, which reads its own knob. */
   --scroll-fade: 16px;
 }
-/* The trail reads tertiary; the page itself (the last crumb, icon + name) reads control. */
+/* The trail reads dimmer; the page itself (the last crumb, icon + name) reads brighter. */
 .pgpreview-crumbs .nav-path-name {
   color: var(--label-tertiary);
 }

@@ -81,10 +81,10 @@
 .blk-surface .cards-view {
   padding-inline: var(--surface-lane);
 }
-/* A block-based surface (Homepage, contexts): tiles run the tight --surface-inset (8px gutter lane)
-   instead of the content inset + fold-gutter — the tile handles supply the grip/chevron actions, so no
-   reserved lane is needed. Driven by kind (is-surface), so a context with no live block surface still
-   insets tight and its body stays aligned with its banner. */
+/* A block-based surface (Homepage, contexts): tiles run the tight --surface-inset instead of the
+   content inset + fold-gutter — the tile handles supply the grip/chevron actions, so no reserved lane
+   is needed. Driven by kind (is-surface), so a context with no live block surface still insets tight
+   and its body stays aligned with its banner. */
 .detail-scroll.is-surface .detail-body {
   padding-left: var(--surface-inset);
   padding-right: var(--surface-inset-right);

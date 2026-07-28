@@ -4,9 +4,8 @@
   min-height: 120px;
 }
 
-/* Block chassis knobs — Nathan tunes these live: border 2px separator,
-   radius 16px, inter-block spacing is the gap prop (8px). No background —
-   blocks sit transparent on the surface. */
+/* Block chassis — Nathan tunes these live. No background: blocks sit
+   transparent on the surface. */
 .spm-tile {
   position: absolute;
   top: 0;
@@ -58,7 +57,7 @@
   z-index: var(--z-lifted);
   cursor: grabbing;
   box-shadow: var(--shadow-lift);
-  /* The selected tone (5%) — a notch brighter than hover, still opaque over main-bg. */
+  /* The selected tone — a notch brighter than hover, still opaque over main-bg. */
   background: linear-gradient(var(--state-selected), var(--state-selected)), var(--main-bg);
 }
 

@@ -5,8 +5,8 @@ import { TINT_STEPS, tintAt } from '../../tokens/tint'
 import { font } from '../../tokens/typography.css'
 
 const c = vars.color
-// Selection tints: endpoints at tint-secondary, the in-between band a
-// step lighter at tint-tertiary — both off the live --accent.
+// Selection tints: endpoints at a stronger tint, the in-between band a
+// step lighter — both off the live --accent.
 const endpointFill = tintAt('var(--accent)', TINT_STEPS.secondary)
 const bandFill = tintAt('var(--accent)', TINT_STEPS.tertiary)
 
@@ -90,7 +90,7 @@ export const optionRow = style({
 })
 export const optionCheck = style({ flex: 'none', color: 'var(--accent)' })
 
-/* ── Week headings: Mon…Sun, label-secondary ── */
+/* ── Week headings: Mon…Sun ── */
 export const weekRow = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(7, 1fr)',
@@ -157,7 +157,7 @@ export const pill = style({
 export const pillToday = style({ boxShadow: `inset 0 0 0 1px ${c.label.tertiary}` })
 export const pillSelected = style({ background: `${endpointFill} !important` })
 export const daySelected = style({ fontWeight: font.weight.semibold })
-/* Range endpoints stay FULLY rounded pills; the tertiary band runs UNDERNEATH them (a half-width
+/* Range endpoints stay FULLY rounded pills; the band runs UNDERNEATH them (a half-width
    under-layer toward the range side), so the strip connects while the endpoint keeps both its
    rounded edges overlapping the under-tint. */
 export const bandUnderStart = style({

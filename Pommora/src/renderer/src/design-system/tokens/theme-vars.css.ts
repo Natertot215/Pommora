@@ -45,12 +45,12 @@ globalStyle(':root', {
     // Over-image legibility scrim for a title/search/icon sitting on a banner cover — one source for the
     // banner title, the NavView search, and the editor's banner overlay (text-shadow / drop-shadow).
     '--banner-shadow': '#0000008c',
-    // Interaction states (Figma "States") — system-grey at hover 2.5% / selected 5%.
+    // Interaction states (Figma "States") — a system-grey wash, hover lighter than selected.
     '--state-hover': colorVars.color.state.hover,
     '--state-selected': colorVars.color.state.selected,
-    '--state-muted': colorVars.color.state.muted, // black 10% de-emphasis veil (dimming)
+    '--state-muted': colorVars.color.state.muted, // black de-emphasis veil (dimming)
     // Ghost — the de-emphasis applied to a thing being reordered (table rows, editor blocks/list items):
-    // a fade to the primary tint opacity, the same treatment MarkdownPM's drag-source uses. An opacity,
+    // a fade to the same tint MarkdownPM's drag-source uses. An opacity,
     // not a colour — consumed via `opacity: var(--state-ghost)`.
     '--state-ghost': 'var(--tint-primary)',
     // Drag insertion line — the drop-target marker (accent line + leading dot) shared by every drop-line
@@ -69,7 +69,7 @@ globalStyle(':root', {
     '--list-outline-gap': '3px',
     // Accent: a pointer, never a baked color. The static seed is the default
     // spectrum solid (DEFAULT_ACCENT); applyAccent overrides --accent at runtime
-    // from settings — any spectrum color, or the OS accent. -fill is a 15% tint
+    // from settings — any spectrum color, or the OS accent. -fill is a tint
     // of whatever --accent currently is; tinted accent text IS --accent itself.
     '--accent': colorVars.color.solid[DEFAULT_ACCENT],
     '--accent-fill': 'color-mix(in srgb, var(--accent) 15%, transparent)',

@@ -23,11 +23,11 @@ const c = colorVars.color
 /** — COLOR — */
 const COLOR = {
   headingLabel: c.label.tertiary, // section-heading TEXT — "Options", "Format", "All Properties" (the dimmest tier)
-  actionLabel: c.label.tertiary, // interactive SYMBOLS (eye/palette add their own ghost-opacity rest; the glyph swaps open ↔ off)
-  allRow: c.label.secondary, // unassigned registry rows — dimmer than assigned (primary), brighter than the heading (tertiary)
+  actionLabel: c.label.tertiary, // eye/palette add their own ghost-opacity rest; the glyph swaps open ↔ off
+  allRow: c.label.secondary, // unassigned registry rows — dimmer than assigned, brighter than the heading
   iconHover: c.state.hover, // the shared fill behind any pane icon-button on hover (not a glyph shift)
   dragHighlight: c.state.hover, // the unassign area tint while dragging out
-  eyeHidden: c.label.tertiary, // a hidden row's eye: tertiary, riding the row's ghost (single dim)
+  eyeHidden: c.label.tertiary, // a hidden row's eye, riding the row's ghost (single dim)
 }
 
 /** — SIZING — (px boxes; the glyphs inside are ICON's) */
@@ -50,8 +50,8 @@ const OPTION = {
 /** — ICONS — glyph sizes, consumed by PropertiesPane/ViewPane TSX. The TopRow's own
  *  ‹ chevron is the shared MenuTopRow's (12, in Menu.tsx) — not a pane-local knob. */
 export const ICON = {
-  add: 14, // the header ⊕ (square-plus) — sized to the back-row heading (13px)
-  editorMenu: 14, // the editor header's ⋮ — sized to the back-row heading (13px)
+  add: 14, // the header ⊕ (square-plus) — sized to the back-row heading
+  editorMenu: 14, // the editor header's ⋮ — sized to the back-row heading
   doc: 12, // the property-type icon on every row (assigned · registry · type picker)
   rowChevron: 16, // the trailing › on navigable rows (root entries + assigned rows)
   rootEntry: 16, // the root menu's leading icons (Properties · Visibility · …)
@@ -74,8 +74,8 @@ export const anchor = style(dropdownAnchor('right', stack.local.lifted))
 // § TITLE HEADER — the root menu's icon + inline-rename title row
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** The icon + title header row. Its 2px left inset aligns the icon-button's centered dash with the
- *  row-icon column used elsewhere (which insets its dash by 8px). */
+/** The icon + title header row. Its left inset aligns the icon-button's centered dash with the
+ *  row-icon column used elsewhere. */
 export const header = style({
   display: 'flex',
   alignItems: 'center',
@@ -128,8 +128,8 @@ export const dashIcon = style({
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** The TopRow's trailing action (⊕ create / ⋮ menu) — the shared accessory recipe, retuned for the
- *  TopRow: width-only (height hugs the glyph), right-aligned to the gutter edge, secondary tone as a
- *  member of the back-row heading. The `&&` clears the `.app-toolbar button` control-tone default. */
+ *  TopRow: width-only (height hugs the glyph), right-aligned to the gutter edge, matching the back-row
+ *  heading's tone. The `&&` clears the `.app-toolbar button` control-tone default. */
 export const topRowAction = style([
   accessoryButton,
   {
@@ -157,7 +157,7 @@ export const allSpacerCollapsed = style({ flexGrow: 0 })
 
 /** The "All Properties" disclosure row — a bare clickable line whose LABEL rides `optionsLabel` (DRY
  *  with the "Options"/"Format" section headings), its chevron flush at the gutter edge. It's not a
- *  MenuItem, so its text escapes the surface's primary titleText tone and reads at the heading tier. */
+ *  MenuItem, so its text escapes the surface's titleText tone and reads at the heading tier. */
 export const allHeadingRow = style({
   // The pane's beat, not the disclosure beat: this row's chevron, its Reveal unfold and the elastic
   // spacer's height-resize all have to land together, and the other two run on `base`.
@@ -176,15 +176,15 @@ export const allHeadingRow = style({
 
 export const allRow = style({ color: COLOR.allRow })
 
-// The row's LABEL rides the surface's primary titleText global (`.surface .titleText`, 0-2-0); beat it
-// with a 0-3-0 scope so an unassigned row's title settles one tier down at secondary, matching its icon.
+// The row's LABEL rides the surface's titleText global (`.surface .titleText`, 0-2-0); beat it
+// with a 0-3-0 scope so an unassigned row's title settles one tier down, matching its icon.
 globalStyle(`.${surface} .${allRow} .${titleText}`, { color: c.label.secondary })
 
 /** The Layout / Cards toggle rows (Column Icons · Page Icons · …) — a marker class; their labels ride
- *  the surface's primary titleText tone like every other nav/settings row. */
+ *  the surface's titleText tone like every other nav/settings row. */
 export const toggleRow = style({})
 
-/** The per-row `+` promote affordance — the shared accessory recipe at the 16px box. */
+/** The per-row `+` promote affordance — the shared accessory recipe. */
 export const rowPlus = accessoryButton
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -281,12 +281,12 @@ export const optionsRow = style({
   justifyContent: 'space-between',
 })
 
-/** The "Options" heading + the Status group labels — footnote-semibold (a step heavier
- *  than the All Properties / back-row headings), the shared heading-label color. */
+/** The "Options" heading + the Status group labels — a step heavier than the All Properties /
+ *  back-row headings, the shared heading-label color. */
 export const optionsLabel = style([text.footnote.semibold, { color: COLOR.headingLabel }])
 
-/** The "All Properties" label — the optionsLabel look at SECONDARY, a tier up from the tertiary
- *  section headings (only this row, not every options-row). */
+/** The "All Properties" label — the optionsLabel look, a tier up from the section headings
+ *  (only this row, not every options-row). */
 export const allPropertiesLabel = style([optionsLabel, { color: c.label.secondary }])
 
 /** The always-shown + that appends an option — the shared action-symbol color, brightening on hover. */
@@ -296,8 +296,9 @@ export const optionsAdd = style([
 ])
 
 /** Status only — the per-group + . Reuses the "Options" + button, hidden until you hover the group
- *  (its heading or its chips). Tertiary at rest, a state-hover fill on direct
- *  hover; the `&&` clears `.app-toolbar button`'s control-tone default (0,1,1) so rest reads tertiary. */
+ *  (its heading or its chips), with a state-hover fill on direct hover; the `&&` clears
+ *  `.app-toolbar button`'s control-tone default (0,1,1) so it reads at its own rest tone, not the
+ *  toolbar's. */
 export const groupAdd = style([
   optionsAdd,
   {
@@ -375,7 +376,7 @@ export const configRow = style({
   minHeight: '24px',
 })
 
-/** The row label (Underline · Full URL · Color · Style) — emphasized, the primary label tone. */
+/** The row label — Underline · Full URL · Color · Style. */
 export const configLabel = style([text.control.emphasized, { color: c.label.control }])
 
 /** The Switch at pane density — shrunk to sit level with the emphasized labels + colour chip (the same
@@ -398,21 +399,21 @@ export const colorChip = style({
   display: 'flex',
 })
 
-/** The scoped-pane footer breadcrumb — the embed's source path, `(icon) Collection › (icon) Set`,
- *  wearing the house footing tone (menu.css footingLabel); the lock rides the trailing slot. */
+/** The scoped-pane footer breadcrumb — the embed's source path, `(icon) Collection › (icon) Set`;
+ *  the lock rides the trailing slot. */
 export const crumbRow = style([
   footingLabel,
   { display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 },
 ])
 
-/** The scoped footer's lock reads the footing TRAILING tone — label-tertiary, a
- *  step under the leading breadcrumb; quadrupled to outrank the BottomRow secondary bump. */
+/** The scoped footer's lock reads the footing TRAILING tone, a step under the leading breadcrumb;
+ *  quadrupled to outrank the BottomRow's own icon-tone bump. */
 export const footerLock = style({
   selectors: { '&&&&': { color: c.label.tertiary } },
 })
 
 /** Locked state — reads engaged via the active state fill alone (no color lift). `--state-active` isn't
- *  a token (state = hover / selected / muted); this is its `--state-selected` mapping. */
+ *  a token (state = hover / selected / muted) — this rides the mapped equivalent instead. */
 export const footerLockActive = style({
   background: 'var(--state-selected)',
 })
