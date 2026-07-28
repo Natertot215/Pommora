@@ -596,44 +596,33 @@ None. All 27 audited docs came back with at least one confirmed finding.
 
 ## Decisions For Nathan
 
-Consolidated from all 27 audits; the doc fix depends on the answer.
+Consolidated from all 27 audits; the doc fix depends on the answer. Decisions the code has since settled are gone from this list rather than marked — each one's answer now lives in the feature doc it governed.
 
-1. **Context registry seeding** — wire `readRegistry` into `prepareOpenedNexus`, retire the seeder and rewrite Structure/Configuration/Contexts/CLAUDE.md, or seed only on an explicit new-Nexus action. Either way `createContextGroup`'s strict-read failure needs fixing. *(Structure, Configuration, Contexts)*
-2. **Built-in non-deletable Status on Tasks/Events** — build the seed + a `deleteProp` reserved guard, or restate Properties.md and Agenda.md as pending. *(Properties, Agenda)*
-3. **`.trash` layout** — flat timestamped is the design (fix Architecture.md + PRD:97), or path preservation is unbuilt work. *(Architecture)*
-4. **`[[Title|alias]]`** — legacy id to discard, display alias to honor, or undefined. Four sources disagree: `shared/connections.ts:32` drops it, `cellStatic.tsx:38-40` renders it, `subfieldStats.ts:16` prefers it, Connections.md promises it as future. *(Connections, MarkdownPM)*
-5. **Column width caps** — restore UNCAPPED, keep the ceilings and fix `columnWidths.ts:17-19` + TableView.md, or uncap only the text-shaped types. *(TableView)*
-6. **Card drag under Group By: Location + Sort By: Location** — keep the cross-band move armed, or gate the whole drag on `!locationFsOrder`. *(CardView)*
-7. **User-minted Context singular** — "New \<Title\>" (fix the docs, delete the unreachable fallback) or "New Space" (loosen the schema). *(Sidebar, Contexts)*
-8. **`_pageset.json` `parent_id`** — heal on move, drop the field, or document it as a create-time breadcrumb and fix `mutate.ts:71`. *(PageSets)*
-9. **Sub-Set openability** — amend the doc, close the hole in nav/resolve indexes, or resolve a Sub-Set hit to its depth-1 ancestor. *(PageSets)*
-10. **Adoption-on-open vs. "leave a foreign vault alone"** — eager is the contract, make stamping lazy, or gate a never-opened folder behind an explicit Adopt action. *(Pages)*
-11. **Fenced-code copy button** — delete the claim, move it to Deferred, or treat it as a regression. *(MarkdownPM)*
-12. **Agenda item kind discriminator** — ratify the `.task.json`/`.event.json` extension (amend Structure.md + CLAUDE.md's "never the extension" rule), move to a JSON `kind` field, or mark provisional. *(Structure, Architecture)*
-13. **`--io` content-inset reflow** — register the inset so it rides the progress, or narrow the doc's claim to what `--io` genuinely carries. *(Interaction)*
-14. **Menu type authority** — Figma or code? Correcting the code shrinks every menu and sidebar row app-wide and discards the macOS-content-size rationale. *(Typography)*
-15. **Page Property Panel** — does the shipped `PreviewInspector` close the Pending item, rescope it to the main pane + Agenda, or does PagePreview.md own it outright? Interacts with the trailing inspector's Claude-chat reservation. *(Properties, Inspector, Pages)*
-16. **Subfield top divider** — lighter footer seam is deliberate (fix doc + `subfield.css:16` comment), consume `--border-heading`, or add a footer-seam token. *(Subfield)*
-17. **Quick Capture scope** — Page-only, or the agenda write path as a named prerequisite. *(QuickCapture)*
-18. **Compact card styling sign-off** — close it, or name the exact unsigned surface. *(CardView)*
-19. **Homepage as BlockHost** — permanent first-class host, still removable (and what replaces it as the landing surface), or demoted to a dev surface. *(SurfacePM, Structure)*
-20. **Insertion-line drag family** — a permanent peer treatment alongside the sort engines, or transitional pending an engine insertion-line mode. *(PommoraDND)*
-21. **Mobile-Readiness Invariants** — a record (strip the two unbuilt items), a spec (retitle as prospective), or build the delay activation + `touchmove` hedge. *(PommoraDND, Interaction)*
-22. **View-embed config lock ↔ geometry** — one key with the coupling documented and the button relabeled, a separate config-only key, or document the freeze as intentional. *(SurfacePM)*
-23. **`EdgeLensGlass`** — delete, wire into GlassLeaf and document as a third recipe, or strip from the barrel as archived. *(DesignPM)*
-24. **The ~120ms reveal beat** — add a `quick` token below `fast`, or normalize all three literals onto `fast`. *(Interaction)*
-25. **`structural_order_mode` shared by two Order pickers with opposite defaults** — document the sharing, give the cards Location sort its own key, or hide one control when the other applies. `GroupingPane.tsx:311` defaults 'custom', `SortingPane.tsx:266` defaults 'location', both write one key read at `resolveView.ts:35,52`. *(Views)*
-26. **`table`/`lock` curated keys shadow real Lucide ids** — the picker shows one glyph and the app renders another. Rename the curated keys with a read alias, filter shadowed ids from the picker, or accept and document. *(Icons)*
-27. **NavWindow vs preview tint** — `NavWindow.tsx:187` passes 90, `PreviewWindow.tsx:203` passes 85, and the morph is supposed to read as one window. Pick one, or rewrite the comment + doc. *(PagePreview)*
-28. **Contexts glyph kind** — `Ribbon.tsx:48` reads `'area'`, `Sidebar.tsx:526` reads `'space'`; identical until an override splits them. Point both at one kind, add a real `'context'` kind, or document the split. *(Sidebar)*
-29. **`components/` folder rule** — fix the loose files to match the doc, or narrow the doc to what the code practises. *(DesignPM)*
-30. **Space-to-Space tagging** — cross-Context only (add the guard) or any Space (drop "other"). *(Contexts)*
-31. **"No roll-up"** — no rollup *property type* (keep, disambiguate in PageSets.md, cut the three echoes) or no *parent aggregation* (false as written — `flattenContainer` walks the whole subtree, `pipeline/group.ts:82-87`). *(Collections, PageSets, Architecture, PRD)*
-32. **`link-2` for Connections** — keep the reservation and fix `Symbols.md:44`, drop it, or wire it. *(Icons)*
+1. **Built-in non-deletable Status on Tasks/Events** — build the seed + a `deleteProp` reserved guard, or restate Properties.md and Agenda.md as pending. *(Properties, Agenda)*
+2. **Card drag under Group By: Location + Sort By: Location** — keep the cross-band move armed, or gate the whole drag on `!locationFsOrder`. *(CardView)*
+3. **Sub-Set openability** — amend the doc, close the hole in nav/resolve indexes, or resolve a Sub-Set hit to its depth-1 ancestor. *(PageSets)*
+4. **Adoption-on-open vs. "leave a foreign vault alone"** — eager is the contract, make stamping lazy, or gate a never-opened folder behind an explicit Adopt action. *(Pages)*
+5. **Fenced-code copy button** — delete the claim, move it to Deferred, or treat it as a regression. *(MarkdownPM)*
+6. **`--io` content-inset reflow** — register the inset so it rides the progress, or narrow the doc's claim to what `--io` genuinely carries. *(Interaction)*
+7. **Menu type authority** — Figma or code? Correcting the code shrinks every menu and sidebar row app-wide and discards the macOS-content-size rationale. *(Typography)*
+8. **Page Property Panel** — does the shipped `PreviewInspector` close the Pending item, rescope it to the main pane + Agenda, or does PagePreview.md own it outright? Interacts with the trailing inspector's Claude-chat reservation. *(Properties, Inspector, Pages)*
+9. **Subfield top divider** — lighter footer seam is deliberate (fix doc + `subfield.css:16` comment), consume `--border-heading`, or add a footer-seam token. *(Subfield)*
+10. **Quick Capture scope** — Page-only, or the agenda write path as a named prerequisite. *(QuickCapture)*
+11. **Compact card styling sign-off** — close it, or name the exact unsigned surface. *(CardView)*
+12. **Homepage as BlockHost** — permanent first-class host, still removable (and what replaces it as the landing surface), or demoted to a dev surface. *(SurfacePM, Structure)*
+13. **Insertion-line drag family** — a permanent peer treatment alongside the sort engines, or transitional pending an engine insertion-line mode. *(PommoraDND)*
+14. **Mobile-Readiness Invariants** — a record (strip the two unbuilt items), a spec (retitle as prospective), or build the delay activation + `touchmove` hedge. *(PommoraDND, Interaction)*
+15. **View-embed config lock ↔ geometry** — one key with the coupling documented and the button relabeled, a separate config-only key, or document the freeze as intentional. *(SurfacePM)*
+16. **The ~120ms reveal beat** — add a `quick` token below `fast`, or normalize all three literals onto `fast`. *(Interaction)*
+17. **`table`/`lock` curated keys shadow real Lucide ids** — the picker shows one glyph and the app renders another. Rename the curated keys with a read alias, filter shadowed ids from the picker, or accept and document. *(Icons)*
+18. **NavWindow vs preview tint** — `NavWindow.tsx:187` passes 90, `PreviewWindow.tsx:203` passes 85, and the morph is supposed to read as one window. Pick one, or rewrite the comment + doc. *(PagePreview)*
+19. **Space-to-Space tagging** — cross-Context only (add the guard) or any Space (drop "other"). *(Contexts)*
 
 ### Open Questions
 
-Each needs a ruling before the affected doc can be rewritten.
+Each needs a ruling before the affected doc can be rewritten. Questions the code has since settled are gone from this list rather than marked — the answer lives in the feature doc it governed.
+
+Fifteen closed that way: the trash preserves its source path; the agenda extension IS the kind discriminator; the open path seeds the Contexts registry explicitly; the alias parses and survives a rename while a pipe can't be a title; a user-minted Context's Spaces read the flat "New Space"; the one-folder-per-component rule was deferred intent, not a held rule; `EdgeLensGlass` went with the dead code; `parent_id` is a create-time breadcrumb that folder position supersedes; the entity-icon kinds no longer ship the retired three; the per-type width caps stay; and "no roll-up" means no rollup *property type* — a Collection's view aggregates its whole subtree, which `flattenContainer` has always done.
 
 #### Q1 — Agenda
 
@@ -644,26 +633,6 @@ Each needs a ruling before the affected doc can be rewritten.
 - Build it: seed `_status` when an agenda config folder is created, and reject a reserved id in `deleteProp`. Docs stay as written.
 - Restate: mark the seed and the non-deletable rule as pending in Agenda.md and Properties.md, landing with the agenda write surface. No code changes.
 - Drop it: Status becomes an ordinary user-added property on agenda configs like any other, and all three doc assertions come out.
-
-#### Q2 — Architecture
-
-**Question:** Should the in-nexus trash preserve a deleted item's original path, or is the flat timestamped layout the intended design — i.e. do I fix the docs or file the layout-preserving trash as pending work?
-
-**Conflict:** Two docs promise path preservation and the code does the opposite. Architecture.md's layout diagram says `.trash/<Type>/<Page>.md ← preserves original relative path under the source Type`, and PommoraPRD.md:97 independently says "Deletions move to an in-Nexus trash that preserves each item's original location." The implementation (Pommora/src/main/io/atomicWrite.ts:153-163) moves everything to a single flat `.trash/<ISO-stamp>__<basename>`, de-colliding with a numeric infix, and its own comment states "The original's relative layout is not preserved." Because two independent docs assert the same intent, this reads like a real feature that was never built rather than a doc slip — but I can't tell from the code which side is wrong.
-
-- Docs are wrong — rewrite both Architecture.md and the PRD to describe the flat timestamped trash, and treat path preservation as never-intended.
-- Code is behind — keep the docs' promise, mark it explicitly as pending in both, and file the work (store the nexus-relative source path, either as a mirrored directory tree under `.trash/` or as a sidecar manifest, so a restore can put the item back where it came from).
-- Split the difference — flat storage stays, but the stamp filename gains the encoded source path so a future restore surface can reconstruct it; docs describe that shape.
-
-#### Q3 — Architecture
-
-**Question:** Is the `.task.json` / `.event.json` extension the settled on-disk kind discriminator for agenda items, or still a placeholder pending a different choice (filename prefix / frontmatter key)?
-
-**Conflict:** Architecture.md's Deferred block says "the on-disk discriminator choice is open" and "Not built now" — but the code has already shipped one and treats it as authoritative. Pommora/src/shared/agenda.ts:49-53 defines AGENDA_SUFFIX and documents it as "the item's kind authority + title boundary," with agendaKindOf and agendaTitleOf deriving both kind and title from it; Pommora/src/main/index/build.ts:289-296 walks agenda folders by that suffix. Meanwhile the deferral is genuine in one narrower sense: Pommora/src/main/adopt.ts:96-105 still classifies only at the folder level and skips agenda folders wholesale, so no individual file is ever scoped to a kind at adoption. I can't tell whether the shipped suffix is the decision or an interim convention.
-
-- The extension is the decision — rewrite the block to say so, and narrow the deferral to "adoption must apply the existing extension discriminator per file," which is a small, well-defined task rather than an open design question.
-- The extension is interim — keep "the choice is open," but say plainly that a suffix convention already ships and is load-bearing in the read and index paths, so changing it later is a data-format migration, not a greenfield pick.
-- Decide now against the alternatives (frontmatter `kind:` key, filename prefix) and record the reasoning in History.md, so the block collapses to a single settled sentence.
 
 #### Q4 — CardView
 
@@ -685,46 +654,6 @@ Each needs a ruling before the affected doc can be rewritten.
 - Not signed off: keep the entry but name the exact unsigned surface (flow density? imageless reserve height? footing clearance?) so it's actionable rather than a standing placeholder.
 - Partially: move the reviewed parts into the Features body and leave only the unreviewed knob in Pending.
 
-#### Q6 — Collections
-
-**Question:** What does "no roll-up" mean in the Collections/Sets model — no rollup PROPERTY type, or no aggregation of a Set's pages into its parent's view? The code does the second thing, so if the phrase means the latter it's false in four docs at once.
-
-**Conflict:** Collections.md:12 (and PommoraPRD.md:116, PageSets.md:8, Architecture.md:59) all assert "Nesting is unbounded, with no roll-up." But a Collection's container view flattens its ENTIRE descendant subtree into rows — `flattenContainer` walks `container.sets` recursively and emits every nested page as a ViewRow stamped with its immediate parent Set id (Pommora/src/renderer/src/Detail/Views/pipeline/group.ts:82-87), which the pipeline then renders as structural Set / Sub-Set bands. Separately, the property type catalog has no `rollup` entry (Pommora/src/shared/properties.ts:17-28), which would make the phrase true under the other reading.
-
-- It means "no rollup property type" — keep the phrase but disambiguate it once in PageSets.md (the owner) as "no rollup property" and delete it from the other three docs.
-- It means "a parent doesn't aggregate its children" — then it's false as written; replace it everywhere with the real behavior: "a container's view shows its whole subtree as structural Set / Sub-Set bands; no computed aggregation exists."
-- It means something narrower (e.g. no schema roll-up from Sets upward) — give me the intended sense and I'll restate it in one owning doc and cut the echoes.
-
-#### Q7 — Configuration
-
-**Question:** Should opening a Nexus that has no `.nexus/contexts.json` still auto-seed Areas / Topics / Projects from the labels — and if so, should the seeding read be re-wired into the open path, or has a fresh Nexus deliberately become Context-empty?
-
-**Conflict:** Three docs state seeding as current behaviour: Configuration.md ("the entity labels seed the Context registry's titles"), Features/Contexts.md line 3 ("the registry seeds three (Areas, Topics, Projects) as ordinary, fully manageable entries"), and the project CLAUDE.md ("a registry seeds Areas, Topics, and Projects as ordinary entries"). The code disagrees: the only seeding path is `readRegistry` at src/main/contextsRegistry.ts:24, which writes a `seededRegistry` when the file is missing, and it is imported by nothing but src/main/contextsRegistry.test.ts. `prepareOpenedNexus` (src/main/index.ts:555) ensures identity and settings only, so nothing seeds, and readNexus leaves `contexts` undefined for such a Nexus (src/main/readNexus.ts:476).
-
-- Restore the call — invoke the seeding read in `prepareOpenedNexus` alongside ensureIdentity/ensureSettings; all three docs then become true as written and only the "at migration" phrasing needs correcting.
-- Declare a fresh Nexus starts with zero Contexts (the user mints their own) — delete `readRegistry` + `seededRegistry` as dead, and rewrite the seeding sentence in Configuration.md, Contexts.md and CLAUDE.md.
-- Keep seeding but scope it narrowly (e.g. only when adopting a raw folder), and state that scope explicitly in Contexts.md so Configuration.md can just point at it.
-
-#### Q8 — Connections
-
-**Question:** What does the `|` segment in `[[Title|x]]` mean in Pommora — a legacy id to discard, a display alias to honor, or neither until the alias work lands?
-
-**Conflict:** Four sources disagree. (1) src/shared/connections.ts:32 and src/main/connections/rewrite.test.ts:12-16 treat it as a legacy id: the pattern drops it, and a rename rewrites `[[Old Page|01H]]` to `[[New]]`, destroying the tail. (2) src/renderer/src/MarkdownPM/Tables/cellStatic.tsx:38-40 calls it an alias and renders the tail as visible plain text beside the styled title. (3) src/renderer/src/Detail/Subfield/subfieldStats.ts:16 prefers the tail as the display text when counting words and characters. (4) Connections.md's Prospects promises `[[Title|alias]]` as future work — on a delimiter the parser has already reserved for something else.
-
-- Legacy id only — the doc states the tail is discarded on read, cellStatic stops rendering it, subfieldStats reads the title, and the alias prospect moves to a different delimiter.
-- Alias — the doc states the tail is a display alias already honored on read, the rename cascade preserves it instead of dropping it, and the prospect narrows to authoring plus autocomplete insertion.
-- Undefined for now — the doc states Pommora writes neither form, tolerates a tail on read, and leaves its display meaning unspecified until the alias work lands; the three render sites get aligned to one behavior in the meantime.
-
-#### Q9 — Contexts
-
-**Question:** When a user mints their own Context, should its Space-create entry read "New <the Context's own title>" (today's behavior, e.g. "New Classes"), or fall back to a flat "New Space" until per-Context Singular Editing ships?
-
-**Conflict:** The doc (Contexts.md, Creates bullet) says user-minted Contexts "read flat 'New Space'", and its Pending entry frames singulars as something only the seeded three have. The code disagrees: `createContextGroup` seeds `singular: title` on every user-minted entry (src/main/crud/contextWrite.ts:252), so `createSpaceLabel`'s `'New Space'` fallback (src/shared/contexts.ts:87) is unreachable and the menu reads "New <Title>".
-
-- Keep the code, correct the doc — a user-minted Context's singular starts as its own title, so the create entry reads "New Classes" and Singular Editing becomes purely about changing it later.
-- Keep the doc, change the code — leave `singular` unset on user-minted Contexts so the create entry reads "New Space" until the user sets one (requires making `singular` optional in the registry schema).
-- Split the difference — seed the singular from the title but naively de-pluralize it on create, so "Classes" yields "New Class".
-
 #### Q10 — Contexts
 
 **Question:** Is a Space allowed to tag Spaces inside its own Context (including itself), or is Space-to-Space strictly cross-Context?
@@ -734,26 +663,6 @@ Each needs a ruling before the affected doc can be rewritten.
 - Doc is right, add the guard — reject a target in the source Space's own Context (or at minimum reject self-tagging) in `setSpaceContext`.
 - Code is right, drop the word "other" — a Space tags whichever Spaces fit, same as any entity, and self-tagging is a user's problem.
 - Allow same-Context tagging but reject self-reference only, which is the one case that can never mean anything.
-
-#### Q11 — DesignPM
-
-**Question:** Is "one folder per component, each consuming semantic tokens only, never raw values" a rule the loose files in `components/` are violating and should be fixed to, or a description that was never true of shared primitives and should be narrowed?
-
-**Conflict:** DesignPM.md states it twice as settled fact ("Rule: components reference **semantic tokens only**, never raw values; one folder per component" and again under Components), and `design-system/components/README.md:3-13` repeats it. But `design-system/components/` holds seven files loose at its root — `NotchedPane.tsx` + `notchedPane.css.ts`, `InteractionField.tsx` + `interactionField.css.ts`, `OverflowScroll.tsx`, `Reveal.tsx`, plus the `dropdownAnchor.ts` / `fieldRing.ts` / `useDismiss.ts` helpers — and raw values are authored directly in `notchedPane.css.ts:13` (`drop-shadow(0 4px 14px #00000059)`) and `NotchedPane.tsx:250` (`stroke="#FFFFFF"`). NotchedPane in particular is exactly the folder shape, flattened.
-
-- Keep the rule as written and treat the loose files as debt — move NotchedPane and InteractionField into folders, and fold their raw hex into tokens (a shadow variant, an on-glass white).
-- Narrow the doc to what the code actually practises: a component with its own styles gets a folder; shared cross-component primitives and hooks live flat at the `components/` root. Keep "semantic tokens only" scoped to color and type, since spacing / radius / glass literals are explicitly not tokenized yet.
-- Split the difference — the folder rule stays absolute, the token rule gets a stated exception for glass optics and geometry until those scales exist.
-
-#### Q12 — DesignPM
-
-**Question:** Is `EdgeLensGlass` parked prospective work worth keeping, or dead code to delete?
-
-**Conflict:** DesignPM.md says "Two recipes in `materials/`" — frost and liquid — and describes the liquid one as `@samasante/liquid-glass`. But `materials/edge-lens.tsx` is a third, hand-rolled liquid implementation (SDF bevel map → `feDisplacementMap` with chromatic aberration), exported from `materials/index.ts:9-10` under the comment "used by the design-system glass lab." Nothing imports it. The glass lab it names — `showcase/leaves/GlassLeaf.tsx` — renders a CSS-frost tuner instead and never touches it. So either the doc's count is right and this file shouldn't exist, or the file is intentional and the doc is hiding a third recipe.
-
-- Delete `edge-lens.tsx` and its barrel export — `@samasante/liquid-glass` is the liquid recipe, and the doc's "two recipes" becomes true as written.
-- Keep it as the in-house fallback for a future non-Chromium target, wire it into GlassLeaf so the lab comment stops lying, and add it to the doc as a named third recipe with its status stated.
-- Keep the file but strip it from the barrel and mark it explicitly parked, so it reads as an archived experiment rather than part of the material vocabulary.
 
 #### Q13 — Icons
 
@@ -815,16 +724,6 @@ Each needs a ruling before the affected doc can be rewritten.
 - Move it to Deferred ("**fenced-code copy button** — not built") because you still want it, and leave the Constructs bullet describing only what renders today.
 - Treat it as a regression: the doc is right, the button was lost, and it should be rebuilt rather than documented away.
 
-#### Q19 — MarkdownPM
-
-**Question:** Are aliased connections `[[Title|alias]]` a closed question or a live one? The doc calls it an "open paradigm call"; the shared model treats the pipe form as legacy and drops it.
-
-**Conflict:** MarkdownPM.md (Tables → Connections in cells) frames aliases as undecided: "An aliased `[[Title|alias]]` collides with cell-pipe escaping, so autocomplete only inserts alias-free `[[Title]]` (open paradigm call)." `Pommora/src/shared/connections.ts:1-5` states connections carry "no id / pipe / alias", and :25 calls `|` "the legacy-alias delimiter" whose segment the pattern drops — matching the project ClaudeMD's title-only definition. Meanwhile `Tables/cellStatic.tsx:38-40` deliberately renders a `|alias` tail as plain visible text, so an aliased link today renders half-styled rather than being rejected.
-
-- Close it as out of paradigm: state that `[[Title|alias]]` is legacy syntax the resolver ignores and the renderer leaves as literal text, and drop the "open paradigm call".
-- Keep it open but move it out of the Tables bullet into Deferred as "**aliased connections** — undecided; the pipe form is parsed-and-dropped today."
-- Decide aliases are wanted, in which case the shared model's "no alias" comment and the cell-pipe escaping both need to change and this becomes a spec, not a parenthetical.
-
 #### Q20 — Navigation
 
 **Question:** Is the NavWindow rail as built — the Favorites list with the List / Gallery toggle beneath it — the intended rail, or a stand-in still pending your design call? And does the shipped hover pin marker count as settled, leaving only the current-item marker open?
@@ -854,16 +753,6 @@ Each needs a ruling before the affected doc can be rewritten.
 - Keep the code, amend the doc — Sub-Sets are sidebar-expand-only but openable from search / pins / Back-nav, where they render the container view without the view switcher.
 - Close the hole so the doc stands as written — exclude depth-2+ Sets from `buildNavIndex` and `buildResolveIndex`, and have `DetailPane` route a non-depth-1 `set` selection to its owning depth-1 ancestor.
 - Middle path — keep Sub-Sets findable in search (they're real folders a user will type the name of) but have the click resolve to the nearest depth-1 ancestor rather than opening the Sub-Set itself.
-
-#### Q23 — PageSets
-
-**Question:** Is `_pageset.json`'s `parent_id` meant to be a durable pointer that survives a move, or a create-time breadcrumb that folder position supersedes?
-
-**Conflict:** PageSets.md § Sidecar states `parent_id` IS "its immediate parent." `mutate.ts:70-72` asserts "Position is authoritative (both builds heal parent_id from it)" — but React never heals: `moveFolderEntity` (folderEntity.ts:61-73) is a bare `fs.rename`, and `adopt.ts:38` stamps `parent_id` only at mint. Nothing on the read path reads the field, so today it's inert data that silently goes wrong on the first move. Which of the two the doc should describe depends on whether cross-build (Swift Model A) compatibility still wants the field.
-
-- Heal it — have `moveSet` rewrite the moved Set's `parent_id` from its new parent's sidecar, making the doc's sentence true and the field trustworthy.
-- Drop it — remove `parent_id` from `pageSetSidecar` and the create path; position is already the only authority, and a field nothing reads is a data-loss surface for anyone who does trust it.
-- Keep as-is and document honestly — "a `parent_id` breadcrumb stamped at create; position is authoritative and a move doesn't rewrite it" — and fix the false comment at `mutate.ts:71`.
 
 #### Q24 — Pages
 
@@ -925,46 +814,6 @@ Each needs a ruling before the affected doc can be rewritten.
 - Keep all three kinds in scope and name the agenda write path (mutate ops + IPC + container creation) as an explicit prerequisite in Pending
 - Treat wiring the agenda write path as its own piece of work that lands first, and leave the doc's three-kind claim standing as the post-prerequisite design
 
-#### Q30 — Sidebar
-
-**Question:** Which entity kind should own the Contexts glyph now that the tier era is gone — and should `area`/`topic`/`project` come out of the icon-kind list entirely?
-
-**Conflict:** The ribbon's Contexts tab resolves its icon through `defaultEntityIcon('area', …)` (Pommora/src/renderer/src/Sidebar/Ribbon.tsx:48), while the Context group headers in the content column resolve through `defaultEntityIcon('space', …)` (Pommora/src/renderer/src/Sidebar/Sidebar.tsx:526). Both seed to the same glyph today (Pommora/src/renderer/src/design-system/symbols/index.tsx:174-182), so they look identical — but a personalization override on either kind splits them. Meanwhile `ENTITY_ICON_KINDS` still ships `area`, `topic`, and `project` (Pommora/src/shared/types.ts:95-97) even though Contexts are now ordinary user-defined registry entries with no fixed three. Sidebar.md asserts the mode icons "reuse each kind's own entity icon," which can't be made true while two surfaces of the same feature read two different kinds.
-
-- Point both at 'space' and drop area/topic/project from ENTITY_ICON_KINDS (smallest change; the Contexts tab then tracks the same override as the group rows)
-- Add a real 'context' icon kind, point the ribbon tab and the group-header fallback at it, and retire area/topic/project
-- Leave the split and document it: the ribbon tab and the group rows are independently overridable glyphs
-
-#### Q31 — Sidebar
-
-**Question:** Should a user-minted Context's Space-create item ever read "New Space," or is "New <Context title>" the intended label?
-
-**Conflict:** Sidebar.md says user-minted Contexts "read flat 'New Space'." `createSpaceLabel` does carry that fallback (Pommora/src/shared/contexts.ts:87), but `createContextGroup` seeds `singular: title` on every app-created Context (Pommora/src/main/crud/contextWrite.ts:252) and the registry schema forbids an empty singular (Pommora/src/shared/contexts.ts:18) — so the fallback can never fire. The doc and the seeding code encode opposite intents, and the fallback branch is currently unreachable code.
-
-- Doc follows code: a Context's singular defaults to its title, so the item reads "New <Title>" until Settings edits the singular — and delete the unreachable fallback
-- Code follows doc: leave singular unset for user-minted Contexts (loosening the schema to allow it) so the item reads "New Space" until the user names a singular
-- Keep singular = title on disk but have the create label fall back to "New Space" while singular still equals title
-
-#### Q32 — Structure
-
-**Question:** Should the Contexts registry seed Areas/Topics/Projects on open, or is a Context-less fresh Nexus the intended start?
-
-**Conflict:** Structure.md L5/L10-12/L17 and CLAUDE.md both state the registry seeds Areas, Topics, and Projects as ordinary entries. The code has the seeder (`seededRegistry` in src/shared/contexts.ts:71, `readRegistry` in src/main/contextsRegistry.ts:24, both covered by tests) but nothing in production calls it — `prepareOpenedNexus` (src/main/index.ts:555) never touches `.nexus/contexts.json`, and `walkNexus` returns `contexts: []` when the file is absent (src/main/readNexus.ts:483). I can't tell from the code whether the wiring was dropped with the tierN removal or whether an empty start is now deliberate.
-
-- Wire `readRegistry(root, labels)` into `prepareOpenedNexus` so a fresh Nexus seeds the three Contexts from its labels — both docs then become true as written, and the fix is one call.
-- Retire the seeder (`seededRegistry`, `readRegistry`, and their tests) and rewrite Structure.md + CLAUDE.md so Contexts start empty, with Areas/Topics/Projects named as the conventional first three a user creates rather than seeded entries.
-- Keep the seeder but fire it only from an explicit first-run/"new Nexus" action, so adopting an existing folder never writes Contexts into it — then scope the docs' seeding language to new Nexuses only.
-
-#### Q33 — Structure
-
-**Question:** Is an Agenda item's kind allowed to come from its filename extension, or does the "kind is the folder's sidecar, never the extension" rule apply to items too?
-
-**Conflict:** Structure.md L81 and CLAUDE.md both state kind authority is the folder's sidecar, never the extension. But src/shared/agenda.ts:49 comments `AGENDA_SUFFIX` as "the item's kind authority" and `agendaKindOf` (:56) decides task-vs-event purely from the `.task.json` / `.event.json` suffix. src/main/adopt.ts:95 explicitly flags this as unresolved: the folder-level guard is a placeholder and "the on-disk discriminator choice is open," pointing at Architecture.md § "Agenda discrimination." Which side is the rule and which is the temporary shape is a product decision.
-
-- Ratify the extension as the item-level kind authority: amend the rule in Structure.md and CLAUDE.md to "folder sidecar for containers, filename suffix for Agenda items," and close the adopt.ts DEFERRED note.
-- Hold the sidecar-only rule and move Agenda items to a discriminator inside the JSON (a `kind` field), making the suffix cosmetic — a larger change that touches collectAgenda, agendaEntity, contextWrite, and the index builder.
-- Leave the code as-is but mark the extension rule as provisional in Structure.md, deferring to Architecture.md § "Agenda discrimination" until the Agenda surfaces are built.
-
 #### Q34 — Subfield
 
 **Question:** The Subfield's top divider is a hand-rolled hairline, lighter than the app's shared heading seam token. Is the lighter footer seam the intended design (doc gets corrected), or is this drift that should consume the shared token (code gets corrected)?
@@ -994,16 +843,6 @@ Each needs a ruling before the affected doc can be rewritten.
 - Permanent — rewrite both the doc and the HomepageView comment to describe two first-class hosts (the Homepage singleton and any Space), and drop 'dev host' entirely.
 - Still removable — keep the framing but say in the doc what replaces the Homepage as the landing surface, so the removal isn't an unexplained loose end.
 - Demote — keep the Homepage reachable but state it as a developer surface, and make a Space (or a chosen default Space) the real landing host.
-
-#### Q37 — TableView
-
-**Question:** Should every column type resize without a ceiling, or do the per-type maxes stay and both the doc and the width-table comment get corrected to say so?
-
-**Conflict:** TableView.md's Overflow & Scroll section says "every type is uncapped; only the legibility mins clamp," and columnWidths.ts:17-19 carries the same statement attributed to you — "Max is UNCAPPED for every type (Nathan): a resize past the pane pushes the table into rightward h-scroll instead of hitting an immovable per-type wall." The width table three lines below contradicts both: only `title` and the unknown-type fallback use `UNCAPPED`; context, status, select, multi-select, checkbox, link, file, number, date and both timestamp columns all carry finite maxes, and clampWidth enforces them (columnWidths.ts:21-36, :80-89). I can't tell from the code whether the caps are a regression against a decision you made, or whether the decision was narrowed and the prose never caught up.
-
-- Treat the caps as the regression: set every type's max to UNCAPPED so a resize only ever meets its legibility min, and leave both the doc and the comment as written.
-- Treat the caps as intended: keep the width table, and rewrite the doc sentence and the code comment to say the Title column (and unknown types) resize freely while every other type also clamps to its own max.
-- Split it: uncap the wide text-shaped types (link, file, select, multi-select, number) and keep hard ceilings on the narrow control-shaped ones (checkbox, status, the timestamps), then state that rule in the doc.
 
 #### Q38 — Typography
 
