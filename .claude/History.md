@@ -4,13 +4,29 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 ### Completion Timeline (Descending)
 
+#### The Truing Campaign (2026-07-27)
+
+One agent per feature doc, each finding grounded against real code, produced 440 confirmed corrections and 39 questions worth Nathan's ruling. It also caught a regression the same session had introduced: removing the migration removed the de-facto fresh-nexus seeder, because a fresh nexus minted below the version and so always ran the migration that wrote the registry. Seeding became explicit, with an idempotence test.
+
+The audit's yield was a findings record rather than a rewrite, and working it surfaced one shape over and over: **a fact with two sources.** An order key read by two sites with opposite defaults. A Context column named one thing in one layer and another a layer down. Two page-value writers governing different key sets. A code mask the editor applied three ways and the write side not at all. Each read as a small inconsistency; each was a live defect.
+
+**Locked — a duplicated fact is a bug, not untidiness.** The fixes are subtractive by preference: narrow a type until the wrong call can't be written, delete the second source, route both callers through one. A guard that catches the bad case leaves the bad case reachable.
+
+What that produced: a filter whose structural bands come from surviving rows rather than the folder tree, so filtering visibly filters; positive comparisons that stop matching a row holding no value; `modified_at` answering to exactly four things, with a move and a property write no longer silent; a `[[link]]` inside a code fence that no rename touches; a pipe rejected in titles, since it opens the alias segment; and a trash that mirrors the folder chain a delete came from, so the layout is the restore record.
+
+Two defects were found after the record was written. The sidebar's mode-exit overlay mounts a second copy of the outgoing layer, and the Agenda list fetched its own data — so leaving Agenda painted an empty state over the list it was animating away. And the generic path-addressed rename accepted a Space, which would have moved the folder and stranded every title-keyed tag; its `kind` now excludes them.
+
+Then the whole source lost its plan-task tags, its retired Context vocabulary, and the comments that only restated the code beneath them. The word "tier" survives in exactly two places: the glass and tone layers, and a row-subordination prop.
+
 #### The tierN Era Closes (2026-07-27)
 
 Every nexus was confirmed on the registry shape — the real one had migrated through daily use, the test one was migrated and diffed against a pre-migration copy to prove no assignment was dropped. With nothing left to convert, the backward-compatibility surface came out entirely rather than staying as dormant weight: the migration and its resumable version handshake, the read-healing that ran inside every context write, the legacy key modeling in the page and agenda schemas, the walk's recognition of the old arrays, the registry's unmigrated-layout refusal, and the tier-level helpers.
 
 **Locked — a compatibility path is a liability once its last consumer is gone.** Keeping the conversion "just in case" would preserve a code path that can never again be exercised or tested against real input, and every future edit to the write layer would have to reason about a shape that no longer exists on disk. The consequence is accepted and stated plainly: a nexus left at the old shape can no longer be opened, because the conversion is gone rather than dormant.
 
-Two changes fell out of the removal. New nexuses are minted at the current schema version, instead of being stamped at the old one and relying on a migration to catch up — which was only ever correct while the migration existed. And a wrapper whose sole outside consumer was the migration collapsed into the shared reconcile it had been forwarding to. The reserved `_tier1`/`_tier2`/`_tier3` ids stay: they are the seeded Contexts' live identifiers, referenced by saved views and space orders, and are not legacy residue despite the name. → [[Contexts]].
+Two changes fell out of the removal. New nexuses are minted at the current schema version, instead of being stamped at the old one and relying on a migration to catch up — which was only ever correct while the migration existed. And a wrapper whose sole outside consumer was the migration collapsed into the shared reconcile it had been forwarding to.
+
+The seeded Contexts hold ordinary minted ULIDs like every other entry. A one-time converter rewrote their ids in place across both nexuses — the registry, every saved view's column and filter references, and the space orders — leaving nothing that resolves a Context by a reserved name. → [[Contexts]].
 
 #### Contexts & Spaces (2026-07-27)
 
