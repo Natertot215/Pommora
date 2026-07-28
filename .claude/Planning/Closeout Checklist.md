@@ -139,3 +139,29 @@ A full report covering the multi-session run. Must include:
 - Project state and continuation paths.
 
 He must finish reading it thinking about what to build next — not wondering what was left dangling.
+
+## Inventory for the SQL focus (gathered while agents ran)
+
+`.nexus/` config files today, from `main/paths.ts` `NEXUS_CONFIG_FILES`:
+
+| File | Nature |
+|---|---|
+| `nexus.json` | identity — canonical, stays a file |
+| `settings.json` | user settings — canonical, stays a file |
+| `properties.json` | the property registry — canonical, stays a file |
+| `homepage.json` · `navview.json` | composed block documents — canonical, stay files |
+| `state.json` · `sidebar-sections.json` | ordering + section structure — arguably canonical |
+| **`folds.json`** | heading fold state — device-local |
+| **`activeViews.json`** | container → active view — device-local |
+| **`viewOrders.json`** | per-machine manual row order — device-local |
+| **`tableHeadingColumns.json`** | per-table heading-column toggles — device-local |
+| **`linkTitles.json`** | derived title map — device-local, regeneratable |
+| `navRecents.json` · `navFavorites.json` · `tabs.json` · `page-previews.json` | session/nav state — device-local in nature, NOT currently in the exclude set |
+
+`DEVICE_LOCAL_NEXUS_FILES` already names the first five as never-sync. **The bolded rows plus the
+four nav/session files are the candidate set to move into SQLite** — none is content the user
+authored, and all of it is plumbing the legibility rule was never meant to cover.
+
+Worth noting for the rethink: `linkTitles.json` is *derived*, so it is a cache masquerading as a
+config file; `viewOrders.json` exists specifically to keep manual order out of the synced sidecar,
+which is a constraint the JSON shape imposes rather than one the product wants.

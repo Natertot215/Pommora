@@ -100,6 +100,8 @@ The index lives at `<nexus>/.nexus/index.db`, travelling with the Nexus so a mov
 
 **Update path — full rebuild per mutation.** There is no incremental updater and no per-entity delete. Every successful `mutate` op drops `index.db` and cold-rebuilds it from the files, which re-walks the nexus and re-reads every page body. The body-autosave channel is outside that contract — it lands on disk without touching the index — so a page Finder-dropped or typed into after a rebuild stays out of the index until the next mutation. This is a known violation of the never-rebuild-the-whole-Y rule, currently paid for no benefit; it resolves either by writing the query consumer that justifies it, or by suspending the refresh until one exists.
 
+A burst of edits costs **one** rebuild, not one each: at most a single rebuild runs at a time with at most one more queued behind it, and the follow-up sees the settled files however many writes landed while it waited. That guard is a correctness requirement rather than a tuning knob — the rebuild deletes `index.db` before rewriting it, so two overlapping passes would unlink the file the first was still filling.
+
 ---
 
 #### Atomic-write contract
