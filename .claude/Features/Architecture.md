@@ -8,9 +8,9 @@ The dynamics of Pommora's data layer — the on-disk Nexus, the read + state lay
 
 Every architectural choice below traces back to one of these.
 
-1. **Files are canonical (≠ everything is Markdown).** Only Pages are Markdown; Tasks, Events, sidecars, Contexts, Homepage, and Settings stay JSON. SQLite holds no content — only per-machine chrome — so no user data is trapped in it.
+1. **Files are canonical (≠ everything is Markdown).** Only Pages are Markdown; Tasks, Events, sidecars, Contexts, Homepage, and Settings stay JSON. The database is *reserved* for operational state rather than barred from content: it carries per-machine chrome today, and the standing invariant is that nothing is trapped in it — anything it ever holds must also be reconstructible from, or duplicated by, the files.
 
-2. **Agent legibility.** External agents (Claude via MCP, any filesystem tool, vim, Obsidian) read Pommora's entire structured graph — Pages, schemas, relations, properties — directly from plain text files. The bar is convention-aware, not stranger-instant: a file that abstracts a resolver, an id reference, or a path lookup still counts as legible once the agent has learned the convention. The firm line that never bends: no user data is trapped in a binary blob. Legibility is a claim about content, not about every byte the app stores — which is exactly why per-machine chrome belongs in the database and not in a file an agent would have to learn to ignore.
+2. **Agent legibility.** External agents (Claude via MCP, any filesystem tool, vim, Obsidian) read the content and understand the context of a user's Nexus — Pages, schemas, relations, properties — straight from plain files. The bar is convention-aware, not stranger-instant: a file that abstracts a resolver, an id reference, or a path lookup still counts as legible once the agent has learned the convention. The firm line holds: no user data is trapped in a binary blob. Legibility is a claim about content, not about every byte the app stores — which is why per-machine chrome belongs in the database rather than in a file an agent would have to learn to ignore.
 
 ---
 
@@ -94,9 +94,9 @@ Mutations are separate by construction: the write path never runs inside a read,
 
 `<nexus>/.nexus/nexus.db` travels with the Nexus so a moved or renamed one keeps it without re-pathing, and holds exactly one table of substance: `local_state`, keyed by `(scope, key)`. DDL is canonical in `src//main//db//schema.ts`; `node:sqlite` sits behind `driver.ts` as the swappable seam, so there is no native module to compile and no runtime ABI to match.
 
-**What lives here.** Per-machine chrome only — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, the recents stream, and every block host's document. None of it is authored content, and two machines interleaving any of it has no correct answer.
+**What lives here.** Per-machine chrome, which is the whole of what it is currently reserved for — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, the recents stream, and every block host's document. None of it is authored content, and two machines interleaving any of it has no correct answer.
 
-**What deliberately does not.** Favorites and pins stay files, because they are deliberate, rarely written, and the one part of Navigation worth following a user across machines. A markdown tile's body stays a file too — it is prose, it lives in the connections graph, and a rename cascade rewrites it. Everything canonical — the registry, Contexts, settings, schemas, and each host's own identity sidecar — stays a file by the first principle.
+**What deliberately does not.** Favorites and pins stay files, because they are deliberate, rarely written, and the one part of Navigation worth following a user across machines. A markdown tile's body stays a file too — it is prose, it lives in the connections graph, and a rename cascade rewrites it. Everything canonical — the registry, Contexts, settings, schemas, and each host's own identity sidecar — stays a file, because that is where a Nexus's meaning has to survive without Pommora.
 
 **Every action is one statement.** A change is a single-row upsert; an emptied value deletes its key. Nothing coalesces and nothing locks, which is what retired the debounce engine and its drain contract. Favorites are the one operational write still going to disk, so they keep the before-quit gate that defers the app's exit until a write settles.
 
