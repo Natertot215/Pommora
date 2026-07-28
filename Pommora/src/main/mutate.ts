@@ -50,7 +50,7 @@ import { ensureIdentity } from './identity'
 import { updateSettings } from './settings'
 import { newId } from './ids'
 import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
-import { ok, fail, type Result } from '@shared/result'
+import { ok, fail, errText, type Result } from '@shared/result'
 import type { MutateRequest, MutateResult } from '@shared/mutate'
 import type { TrashMode } from './appConfig'
 
@@ -153,7 +153,7 @@ export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promis
     if (result.ok) void refreshSessionIndex(root)
     return result
   } catch (e) {
-    return fault(e instanceof Error ? e.message : String(e))
+    return fault(errText(e))
   }
 }
 

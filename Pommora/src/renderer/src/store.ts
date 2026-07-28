@@ -18,6 +18,7 @@ import {
   type Tab,
 } from '@shared/types'
 import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/mutate'
+import { errText } from '@shared/result'
 import { buildReconcileIndex, reconcileSelection, reconcileWith } from './selection'
 import {
   insertCreatedInTree,
@@ -453,7 +454,7 @@ export const useSession = create<SessionState>((set, get) => {
         await get().load()
       }
     } catch (e) {
-      set({ status: 'error', error: e instanceof Error ? e.message : String(e) })
+      set({ status: 'error', error: errText(e) })
     }
   }
 
@@ -848,7 +849,7 @@ export const useSession = create<SessionState>((set, get) => {
       } catch (e) {
         // ipcRenderer.invoke rejects if the bridge/handler is absent — route it
         // to the designed error state instead of hanging on 'loading'.
-        set({ status: 'error', error: e instanceof Error ? e.message : String(e) })
+        set({ status: 'error', error: errText(e) })
       }
     },
 
@@ -1592,7 +1593,7 @@ export const useSession = create<SessionState>((set, get) => {
           try {
             res = await window.nexus.openPage(target.path)
           } catch (e) {
-            res = { ok: false, error: e instanceof Error ? e.message : String(e) }
+            res = { ok: false, error: errText(e) }
           }
           clearTimeout(fallback)
           if (seq !== pageFetchSeq) return

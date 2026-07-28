@@ -3,7 +3,6 @@
 
 import { join } from 'node:path'
 
-
 export type SidecarKind =
   | 'area'
   | 'topic'
@@ -50,7 +49,7 @@ export function spaceDir(root: string, contextTitle: string, spaceTitle: string)
 }
 
 /** A Space folder's sidecar filename (membership comes from the parent folder). */
-export const SPACE_SIDECAR = '_space.json'
+export const SPACE_SIDECAR = SIDECAR_FILENAME.space
 
 /** The homepage block host's content folder — its markdown-block `.md` files live here
  *  (distinct from the `homepage.json` config file). Real hosts use their own folders. */

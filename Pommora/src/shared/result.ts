@@ -24,6 +24,15 @@ export interface PommoraError {
 
 export type Result<T, E = PommoraError> = { ok: true; value: T } | { ok: false; error: E }
 
+/** The payload-free IPC envelope: an operation either took, or says why it didn't. */
+export type Ack = { ok: true } | { ok: false; error: string }
+
+/** The one narrowing of an unknown throw to a message — a caught value is only
+ *  guaranteed to be `unknown`, and every envelope reports it the same way. */
+export function errText(e: unknown): string {
+  return e instanceof Error ? e.message : String(e)
+}
+
 export function ok<T>(value: T): Result<T, never> {
   return { ok: true, value }
 }
