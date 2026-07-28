@@ -6,7 +6,7 @@ A Page is one Markdown file inside a [Collection](Collections.md) — the operat
 
 #### II. On-Disk Shape
 
-Frontmatter carries `id` (a ULID), an optional `icon`, the bracketed Context keys (`"[Projects]": [Pommora]` — Space titles at the root, resolved through the registry), `properties` (values keyed by property ID), `created_at` / `modified_at`, and `cover` (a Nexus-relative page-banner path). Property values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write: the writer re-serializes only the modeled keys and never reconstructs the object.
+Frontmatter carries `id`, an optional `icon`, the bracketed Context keys, `properties`, `created_at` / `modified_at`, and `cover` — a Nexus-relative page-banner path. Property values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write: the writer re-serializes only the modeled keys and never reconstructs the object.
 
 **Four things modify a Page**, and `modified_at` answers to exactly them: a property VALUE change, a text change, a location change, and a rename. A schema-level edit is not one of them — renaming a property definition or changing its type leaves every member page's stamp alone, because the page didn't change. A derived rewrite is likewise untouched: the `[[link]]` rename cascade edits bodies without claiming they were modified.
 
@@ -16,7 +16,7 @@ The filename minus `.md` is the title — there's no `title` field, and a rename
 
 #### II. Properties Surface
 
-A Page's property values live in its frontmatter, keyed by property ID, conforming to the Collection's schema — written and read straight off the file, with no query layer between. The one shipped surface that edits them is the Page Preview's front-matter inspector → `PagePreview.md`; the main pane renders no property rows. The catalog and schema mechanics → `Properties.md`.
+A Page's property values are written and read straight off the file, with no query layer between. The one shipped surface that edits them is the Page Preview's front-matter inspector → `PagePreview.md`; the main pane renders no property rows. The catalog and schema mechanics → `Properties.md`.
 
 #### II. Opening Behavior
 
@@ -24,7 +24,7 @@ Clicking a Page opens it in the active tab, replacing that tab's selection, and 
 
 #### II. Connections
 
-A Page's body can hold inline `[[Title]]` [[Studio/Pommora/II. Features/Connections|Connections]] — Obsidian-compatible wikilinks that render as styled colored inline text and navigate on click. Resolution runs on an in-memory map built from the page tree. Canonical spec → `Connections.md`; the bracketed Context-key counterpart → `Contexts.md` + `Properties.md`.
+A Page's body can hold inline `[[Title]]` [[Studio/Pommora/II. Features/Connections|Connections]] — Obsidian-compatible wikilinks that render as styled colored inline text and navigate on click. Canonical spec → `Connections.md`; the bracketed Context-key counterpart → `Contexts.md` + `Properties.md`.
 
 #### II. Editor UI State
 
@@ -38,7 +38,7 @@ A Page reads through a lenient envelope split — a missing or unterminated fron
 
 #### II. Adoption
 
-Opening a folder adopts it: every `.md` still lacking an `id` is stamped with a fresh ULID, so the index and every later write key off a stable identity rather than a transient placeholder. That stamp runs through the same preserving merge — foreign frontmatter, YAML comments, and the body all survive, and `id` is the only key added. The pass walks parents before children, skips excluded folders and Agenda singletons, and never fabricates a Collection out of an empty sidecar-less folder. Anything it skips still reads with a synthetic id hashed from the file's Nexus-relative path, stable across launches, and missing timestamps fall back to the file's own.
+Opening a folder adopts it: every `.md` still lacking an `id` is stamped with a fresh ULID, so the index and every later write key off a stable identity rather than a transient placeholder. That stamp runs through the same preserving merge — foreign frontmatter, YAML comments, and the body all survive, and `id` is the only key added. The pass walks parents before children. Anything it skips still reads with a synthetic id hashed from the file's Nexus-relative path, stable across launches, and missing timestamps fall back to the file's own.
 
 ### Pending
 

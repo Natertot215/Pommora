@@ -2,7 +2,7 @@
 
 Pommora is organized as **two layers** with PARA-aligned naming. The organization layer (Contexts) holds categorical anchors; the operational layer (Pages + Agenda) holds the data. Operational entities relate to organization entities through bracketed Context keys in their frontmatter or JSON root. Per-entity detail lives in the dedicated feature docs.
 
-The organization layer is user-defined **Context** groups holding **Spaces** (the registry seeds Areas, Topics, and Projects as ordinary entries); the operational layer is two kinds (Pages and Agenda); two singletons sit beside them. A **Nexus** is the root — one folder holding everything.
+The organization layer is user-defined **Context** groups holding **Spaces**, the registry seeding Areas, Topics, and Projects as ordinary entries; the operational layer is Pages and Agenda, with two singletons beside them. A **Nexus** is the root — one folder holding everything.
 
 | PARA term | Pommora term | Layer |
 |---|---|---|
@@ -17,7 +17,7 @@ The organization layer is user-defined **Context** groups holding **Spaces** (th
 
 #### II. Contexts
 
-A **Context** is a user-defined, free-standing group of **Spaces** — `.nexus/contexts.json` owns Context identity, and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar. No Context contains, parents, or is restricted to another; operational entities tag whichever Spaces fit, independently. Contexts carry no pages and no schema — Spaces are categorical anchors things point at (each with its own block surface). Full spec → `Contexts.md`.
+A **Context** is a user-defined, free-standing group of **Spaces**, owned by a registry at `.nexus/contexts.json`. No Context contains, parents, or is restricted to another; operational entities tag whichever Spaces fit, independently. Contexts carry no pages and no schema — Spaces are the categorical anchors things point at, each with its own block surface. Full spec → `Contexts.md`.
 
 ### Operational Layer
 
@@ -29,7 +29,7 @@ A **Context** is a user-defined, free-standing group of **Spaces** — `.nexus/c
 | **Page Set** | Recursive sub-folder inside a Collection (any depth); inherits the schema | "Set" / "Sub-Set" |
 | **Page** | Markdown document — prose plus frontmatter | "Page" |
 
-Property definitions live in the nexus-wide registry (`.nexus/properties.json`); a Collection assigns which ones its Pages validate, and that assigned schema applies at any depth — all Sets inherit it. On disk: a Collection is `_pagecollection.json`, every Set is `_pageset.json`, a Page is a `.md` file. The code-level names are `PageCollection` (top) and `PageSet` (recursive). Full spec → `Collections.md` + `PageSets.md` + `Pages.md`.
+Property definitions live in the nexus-wide registry; a Collection assigns which ones its Pages validate, and that assigned schema applies at any depth — all Sets inherit it. On disk: a Collection is `_pagecollection.json`, every Set is `_pageset.json`, a Page is a `.md` file. Full spec → `Collections.md` + `PageSets.md` + `Pages.md`.
 
 #### II. Agenda
 
@@ -44,11 +44,11 @@ Full spec → `Agenda.md`; the property catalog across all kinds → `Properties
 
 #### II. Homepage
 
-One per Nexus — always reachable and never user-deletable, with no `id`, Context links, or `parents` (the file location is its identity). Its `.nexus/homepage.json` config is written on the first block or banner edit. The **Homepage ribbon icon** (the Nexus's identity icon — a photo or a glyph — pinned at the top of the sidebar ribbon) is its entry point: selecting it opens the Homepage in the main pane, where its title doubles as the nexus rename affordance. It hosts a live block surface under its banner (→ [[SurfacePM]]).
+One per Nexus — always reachable and never user-deletable, with no `id`, Context links, or `parents`; the file location is its identity. Its `.nexus/homepage.json` config is written on the first block or banner edit. The **Homepage ribbon icon** is its entry point: selecting it opens the Homepage in the main pane, where its title doubles as the nexus rename affordance. It hosts a live block surface under its banner (→ [[SurfacePM]]).
 
 #### II. Settings
 
-Per-Nexus config at `.nexus/settings.json` — UI labels, a profile image and subtitle, the app's `subfield` (footer) key, and the `personalization` block. Labels feed every renameable surface. The full config model — the personalization block, its apply-map, write discipline, and the per-device app config → `Configuration.md`.
+Per-Nexus config at `.nexus/settings.json` — UI labels, a profile image and subtitle, the app's `subfield` key, and the `personalization` block. Labels feed every renameable surface. The full config model → `Configuration.md`.
 
 ### Identity + Linking
 
@@ -62,12 +62,12 @@ Names are unique within a folder (filename = title): a colliding Page create aut
 
 #### II. The Linking Model
 
-| Link | Stored as | Purpose |
-|---|---|---|
-| Page → Page (connection) | plain `[[Title]]` in the body, resolved by unique title | Inline reference |
+| Link                       | Stored as                                                        | Purpose                |
+| -------------------------- | ---------------------------------------------------------------- | ---------------------- |
+| Page → Page (connection)   | plain `[[Title]]` in the body, resolved by unique title          | Inline reference       |
 | Operational entity → Space | `"[<Context>]": [<Space titles>]` at the frontmatter / JSON root | Categorical assignment |
-| Space → Space | The same bracketed keys in the Space's own `_space.json` | Cross-Context links |
-| Page → Collection / Set | Implicit by file location | Membership |
+| Space → Space              | The same bracketed keys in the Space's own `_space.json`         | Cross-Context links    |
+| Page → Collection / Set    | Implicit by file location                                        | Membership             |
 
 Every link is stored as a title and resolved at read time — an id never reaches disk on either form. Context links are the only relation-type connection, resolved through the registry and held correct across a rename by a journaled cascade over every member file; body connections are held correct by a nexus-wide body rewrite. Full rules → `Contexts.md` + `Connections.md`.
 
@@ -75,7 +75,7 @@ Every link is stored as a title and resolved at read time — an id never reache
 
 #### II. On-Disk Model
 
-Files are canonical: Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, sidecars, and all config are JSON. **A container's kind is its folder's sidecar filename**, never a frontmatter field; an **Agenda item's kind is its file extension**. Foreign keys — and YAML comments on pages — are preserved by value on every write. A SQLite index is built and maintained beside the read path as a regeneratable accelerator; nothing queries it yet, so losing it costs nothing. Full on-disk spec + the read/IPC engine → `Architecture.md`.
+Files are canonical: Pages are `.md` (YAML frontmatter + body); Contexts, Agenda, sidecars, and all config are JSON. **A container's kind is its folder's sidecar filename**, never a frontmatter field; an **Agenda item's kind is its file extension**. Foreign keys — and YAML comments on pages — are preserved by value on every write. A SQLite index is built beside the read path as a regeneratable accelerator; nothing queries it yet, so losing it costs nothing. Full on-disk spec and the read/IPC engine → `Architecture.md`.
 
 #### II. The NexusTree Contract
 

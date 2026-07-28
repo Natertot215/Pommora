@@ -10,14 +10,14 @@ Where the web platform opens doors — richer motion, interaction, and layout �
 
 ### Source of Truth
 
-The Figma library is canonical for design *values*; this repo mirrors them as tokens. Values change in Figma first, then sync here. Figma is also the visual reference for components.
+The Figma library is canonical for design *values*; this repo mirrors them as tokens, and a value changes in Figma first. Figma is also the visual reference for components.
 
 ### Tooling
 
 - **vanilla-extract** — token files are `*.css.ts`; the theme primitives emit real CSS variables **and** a typed `vars` object, so a mistyped token is a compile error. The plugin is wired into the renderer Vite config.
 - **Inter** (variable font) covers the four weights the type ramp uses and is set as the app font.
 
-The design system lives in `src/renderer/src/design-system/`. Stacking is named rather than numbered: three separate ladders — the shell frame's in-flow chrome, a component's lift over its own siblings, and the fixed or portalled top layer — so a new surface picks a rung instead of inventing a z-index, and a step only ranks against others in its own ladder.
+The design system lives in `src/renderer/src/design-system/`. Stacking is named rather than numbered: separate ladders for the shell frame's in-flow chrome, a component's lift over its own siblings, and the fixed or portalled top layer — so a new surface picks a rung instead of inventing a z-index, and a step only ranks against others in its own ladder.
 
 ### Color
 
@@ -41,7 +41,7 @@ A fixed palette of named solids — the source colors for accents and chips. The
 
 #### Accent
 
-The accent is a **single user value**. Components reference one accent token plus two derivations: a **fixed-opacity tint** for accented fills, and the accent itself for accented text — so changing the accent recolors every accented surface at once. The per-Nexus choice is any spectrum solid or **`system`** (the OS accent), stored in `.nexus/settings.json`, validated on read, and applied on load. `system` resolves to the OS accent color (via Electron in the app, the CSS system-accent color in the web showcase); macOS has no live accent-change event, so it's read at load.
+The accent is a **single user value**. Components reference one accent token plus two derivations: a **fixed-opacity tint** for accented fills, and the accent itself for accented text — so changing the accent recolors every accented surface at once. The per-Nexus choice is any spectrum solid or **`system`**, stored in `.nexus/settings.json` and validated on read. `system` resolves to the OS accent color; macOS has no live accent-change event, so it's read at load.
 
 #### Chips
 
@@ -49,15 +49,15 @@ A chip's color is the picked base solid at fixed opacities — a heavier fill, a
 
 #### Labels
 
-Text color is separate from surface color: three label tones — primary, secondary, tertiary — are one near-white base at descending opacities. A fourth, **control** (primary at a high fixed opacity), is the chrome-glyph tint (toolbar clusters, editor markers) — one global `:root` `--label-control`.
+Text color is separate from surface color: three label tones — primary, secondary, tertiary — are one near-white base at descending opacities. A fourth, **control**, is the chrome-glyph tint, published once as a global `--label-control`.
 
 ### Glass
 
-Two recipes in `materials/`. **Frost** is a blur plus a slight dimming of what's behind, carrying the drop shadow from the one `--shadow-standard` token; it dresses the window tier, the panel / popover surfaces, and the dropdown pane, each kept as its own component so a tier can diverge later. The **liquid** recipe is Apple **"Liquid Glass"** via `@samasante/liquid-glass` (a real `feDisplacementMap` edge-refraction over the live app), worn by the in-use button controls and — at full brightness with its depth zeroed — by the small on-control segments, whose optics are spread from the controls' so the two stay one source. Layout (size / position / radius) is always the consumer's.
+Two recipes in `materials/`. **Frost** is a blur plus a slight dimming of what's behind, carrying the drop shadow from the one shadow token; it dresses the window tier, the panel and popover surfaces, and the dropdown pane, each kept as its own component so a tier can diverge later. The **liquid** recipe is Apple **"Liquid Glass"** — a real edge-refraction over the live app — worn by the in-use button controls and by the small on-control segments, whose optics are spread from the controls' so the two stay one source. Layout is always the consumer's.
 
-**Voiding Liquid Glass can't be done in place** — its `backdrop-filter` displacement is a dynamically-generated SVG filter id CSS can neither reconstruct nor interpolate. So the inspector "swallow" (the trio's glass fading as the pane absorbs it) renders the pill as a **two-layer** control — a fading glass layer behind a solid bare-button layer (`Toolbar/ToolbarTrio`), rather than fading one fused control. → `History.md`.
+**Voiding Liquid Glass can't be done in place** — its `backdrop-filter` displacement is a dynamically-generated SVG filter id CSS can neither reconstruct nor interpolate. So the inspector "swallow" renders the pill as a **two-layer** control, a fading glass layer behind a solid bare-button layer, rather than fading one fused control. → `History.md`.
 
-**Scrollbars are hidden app-wide** — Electron's default Chromium bar reads heavy and the native auto-hiding overlay isn't reliably available, so scrolling is trackpad/wheel only (a clean no-bar surface beat a styled always-visible one).
+**Scrollbars are hidden app-wide** — Electron's default Chromium bar reads heavy and the native auto-hiding overlay isn't reliably available, so scrolling is trackpad and wheel only.
 
 ### Icons
 
@@ -69,7 +69,7 @@ A data-driven design-system site (`npm run showcase`): each leaf iterates its ow
 
 ### Components
 
-The reusable pieces mirror the Figma library, built one at a time. The shape they're built toward is one folder per component consuming **semantic tokens only** — the intent the set converges on rather than a rule the folder already holds throughout. Shared helpers sit loose beside them by necessity: a vanilla-extract stylesheet may export only plain values, so a helper that *builds* a declaration lives next to the stylesheet rather than inside it — as with `--field-ring`, the input layer's one outline channel, where a consumer sets the ring's color and never its shadow. This doc governs the tokens and materials they consume, not the roster; a component's own behaviour lives in its spec (motion → `Interaction.md`; the editor → `MarkdownPM.md`; the table → `TableView.md`).
+The reusable pieces mirror the Figma library. The shape they're built toward is one folder per component consuming **semantic tokens only** — the intent the set converges on rather than a rule the folder already holds throughout. Shared helpers sit loose beside them by necessity: a vanilla-extract stylesheet may export only plain values, so a helper that *builds* a declaration lives next to the stylesheet rather than inside it. This doc governs the tokens and materials components consume, not the roster; a component's own behaviour lives in its spec (motion → `Interaction.md`; the editor → `MarkdownPM.md`; the table → `TableView.md`).
 
 ### Pending
 

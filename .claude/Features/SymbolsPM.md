@@ -30,7 +30,7 @@ The settings menu's root rows:
 
 ### Property Types
 
-The type glyphs, shown in the type picker and on each property row. Label + icon + the creatable set are one source — `PropertyTypes.tsx` (rendered via `PropertyTypeIcon`):
+The type glyphs, shown in the type picker and on each property row. Label, icon, and the creatable set are one source:
 
 | Type         | Icon             |
 | ------------ | ---------------- |
@@ -46,7 +46,7 @@ The type glyphs, shown in the type picker and on each property row. Label + icon
 
 **Link is the user-facing name for the `url` type** — the label is what the type picker shows and what a new property of that type is named; the on-disk type key stays `url`.
 
-**Title** wears `text-align-justify` — the reserved heading column isn't a user property type, but its glyph lives beside the type map (`PropertyTypes.tsx`) so every surface renders it from one source. The reserved timestamp columns carry header glyphs too: **Modified** rides the last-edited type's `history`, and **Created**, which has no property type, gets `clock-plus` at the table header.
+**Title** wears `text-align-justify` — the reserved heading column isn't a user property type, but its glyph lives beside the type map so every surface renders it from one source. The reserved timestamp columns carry header glyphs too: **Modified** rides the last-edited type's `history`, and **Created**, which has no property type, gets `clock-plus` at the table header.
 
 ### View Types
 
@@ -61,9 +61,9 @@ The saved-view type roster and its grid glyphs (the ViewSettings type picker):
 | Calendar | `calendar-days`    |
 | Timeline | `chart-gantt`      |
 
-`table` is THE table glyph wherever a table view is named — the view icon, the view rows, the dropdown button, and the grid's own tile all read one glyph per concept. `cards-grid` and `list-rounded` are the two customs, registry-conforming SVG components drawn at Lucide's stroke weight so they sit at the same height beside it.
+`table` is THE table glyph wherever a table view is named — one glyph per concept, on every surface that names it. `cards-grid` and `list-rounded` are the two customs, registry-conforming SVG components drawn at Lucide's stroke weight so they sit at the same height beside it.
 
-Every type carries a glyph, but only **Table and Cards have renderers** — the other four tiles show their glyph and don't select.
+Every type carries a glyph, but only **Table and Cards have renderers** — the remaining tiles show their glyph and don't select.
 
 ### Misc
 
@@ -71,7 +71,7 @@ Every type carries a glyph, but only **Table and Cards have renderers** — the 
 
 ### The Picker
 
-The curated registry above is the app's own **semantic vocabulary** — the fixed glyphs the UI reaches for by name. The **Icon Picker** (what the user opens to assign an entity's icon) is a separate, wider surface: it exposes the **entire Lucide set** (`design-system/symbols/AllSymbols` — every icon kebab-keyed, searchable), so a user isn't limited to the curated names. Favorites persist with the nexus's personalization. A picked id is stored as its bare Lucide kebab id, the same convention the curated keys follow, and resolution reads the curated registry first, then the full set.
+The curated registry above is the app's own **semantic vocabulary** — the fixed glyphs the UI reaches for by name. The **Icon Picker** the user opens to assign an entity's icon is a separate, wider surface: it exposes the **entire Lucide set**, kebab-keyed and searchable, so a user isn't limited to the curated names. Favorites persist with the nexus's personalization. A picked id is stored as its bare Lucide kebab id, the same convention the curated keys follow, and resolution reads the curated registry first, then the full set.
 
 ### Known Issues
 

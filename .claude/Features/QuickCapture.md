@@ -4,13 +4,13 @@
 
 A lightweight surface for adding **Pages, Tasks, and Events** from outside the main window, in the Things 3 / Drafts idiom. It's meant to be another entry point onto the existing data layer rather than a parallel one — the same create operations and property surfaces the main app uses.
 
-Capture is title-and-properties first, not a body editor — prose continues in the main window. A **Page** picks its Collection (optionally a Set); a **Task** or **Event** is top-level with no container to pick.
+Capture is title-and-properties first, not a body editor — prose continues in the main window.
 
 ### Features
 
 #### II. Single-Owner Principle
 
-Every Pommora write goes through the main process's atomic-write path, alongside the index that process maintains. Quick Capture is therefore a surface inside that process, not a second binary: it reuses the live data layer and the open index directly, with no second writer to coordinate. Any external source — a browser extension, a system share — acts as a **courier**: it gathers a payload and hands it to the running app, which performs the write. The courier never writes to the Nexus itself.
+Every Pommora write goes through the main process's atomic-write path, alongside the index that process maintains. Quick Capture is therefore a surface inside that process, not a second binary: it reuses the live data layer and the open index directly, with no second writer to coordinate. Any external source acts as a **courier** — it gathers a payload and hands it to the running app, which performs the write. The courier never writes to the Nexus itself.
 
 #### II. Capture Flow
 
@@ -20,7 +20,7 @@ Every Pommora write goes through the main process's atomic-write path, alongside
 
 #### II. Web Capture Routes
 
-Capture is meant to extend to web clipping — a page's title, URL, description, and selected text into a new Page (a Bookmarks Collection, say) or a Task / Event. The clipper is always a courier handing its payload to the running app. Candidate routes can coexist: a browser extension over native messaging, a system share target, or a `pommora://capture?…` URL.
+Capture is meant to extend to web clipping — a page's title, URL, description, and selected text into a new Page or a Task / Event. The clipper is always a courier handing its payload to the running app. Candidate routes can coexist: a browser extension over native messaging, a system share target, or a `pommora://capture?…` URL.
 
 ### Pending
 
