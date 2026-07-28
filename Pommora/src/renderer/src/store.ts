@@ -314,7 +314,7 @@ interface SessionState {
   openSettings: () => void
   closeSettings: () => void
 
-  /** The Page Preview floating window (Decision Log H): null = closed. One floating window
+  /** The Page Preview floating window: null = closed. One floating window
    *  total: opening either the preview or the NavWindow closes the other. */
   preview: PreviewState | null
   /** The in-memory mirror of `page-previews.json` — loaded once per nexus, updated on every
@@ -551,8 +551,8 @@ export const useSession = create<SessionState>((set, get) => {
     return { tabs, activeTab }
   }
 
-  // The preview and its derived target move in lockstep (previewTarget is a Phase-2 casualty); commit
-  // both from one place so no action can let them drift, and mirror the sidecar on every commit —
+  // The preview and its derived target move in lockstep; commit both from one place so no
+  // action can let them drift, and mirror the sidecar on every commit —
   // a window emptied or re-parented away from its origin retires the old key.
   const commitPreview = (
     next: PreviewState | null,
@@ -1253,7 +1253,7 @@ export const useSession = create<SessionState>((set, get) => {
       void window.nexus.capture.evict(live)
     },
     addFavorite: (target) => {
-      // v1 favorites are tree kinds only (R3-F2): an agenda favorite would resolve to null and render
+      // v1 favorites are tree kinds only: an agenda favorite would resolve to null and render
       // as an invisible, un-removable entry until the agenda resolver ships.
       if (target.kind === 'task' || target.kind === 'event') return
       const key = navKey(target)
