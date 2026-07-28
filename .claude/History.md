@@ -6,7 +6,7 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 #### The Cleanup Pass (2026-07-27)
 
-The merge's aftermath, audited rather than built on: one agent per feature doc, every claim opened at the code before it survived. It returned nine defects, most live before the session and none reported — filtering that looked inert, comparisons that passed valueless rows, a move that didn't count as modifying a page, a rename that rewrote `[[links]]` inside code samples. The behavioural outcomes live in the feature docs; two principles came out of it.
+The merge's aftermath, audited rather than built on: one agent per feature doc, every claim opened at the code before it survived. It returned a dozen defects, most live before the session and none reported — filtering that looked inert, comparisons that passed valueless rows, a move that didn't count as modifying a page, a rename that rewrote `[[links]]` inside code samples. The behavioural outcomes live in the feature docs; two principles came out of it.
 
 **Locked — a duplicated fact is a defect, not untidiness.** Nearly every one of those bugs was one fact with two sources: a key read by two sites with opposite defaults, a column named differently across layers, two writers governing different frontmatter keys, a rule the editor applied and the write side didn't. The fix removes the second source rather than reconciling the two — narrow a type until the wrong call can't be written, delete the duplicate, route both callers through one owner. A guard that catches the bad case leaves the bad case reachable.
 
