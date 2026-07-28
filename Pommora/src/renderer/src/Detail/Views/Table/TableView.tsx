@@ -16,7 +16,7 @@ import { parseStyleAction } from '@shared/columnMenu'
 import { type ColumnAlign, type SavedView, mintDefaultView } from '@shared/views'
 import { applyPropertyValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { isValidLink } from '@shared/links'
-import { flattenContainer, groupsStructurally } from '../pipeline/group'
+import { flattenContainer, groupsStructurally, subtreeIds } from '../pipeline/group'
 import { resolveView } from '../pipeline/resolveView'
 import { contextOptionsFor as contextOptionsForSpaces } from '../pipeline/contextOptions'
 import { contextIdsOf } from '../pipeline/contextIdentity'
@@ -37,7 +37,6 @@ import { writeContextValue } from '../contextCellWrite'
 import { buildSetIcons, buildSetNames, buildSetPaths } from './cellResolve'
 import { BandDnd, type BandDrop } from './bandDnd'
 import {
-  allStructuralIds,
   flattenBands,
   propertyOrderAfterDrop,
   reparentFsOrder,
@@ -417,9 +416,11 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       })
       return
     }
+    // The id universe is the SET TREE, never the rendered groups: a filter prunes emptied bands out
+    // of `groups`, and merging against that would drop their stored order along with them.
     const group_order = structuralOrderAfterDrop(
       liveView.group_order ?? [],
-      allStructuralIds(groups),
+      setTree.flatMap(subtreeIds),
       draggedId,
       drop.beforeId,
     )
