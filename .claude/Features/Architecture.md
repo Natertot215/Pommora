@@ -92,9 +92,9 @@ Mutations are separate by construction: the write path never runs inside a read,
 
 `<nexus>/.nexus/nexus.db` travels with the Nexus so a moved or renamed one keeps it without re-pathing, and holds exactly one table of substance: `local_state`, keyed by `(scope, key)`. DDL is canonical in `src//main//db//schema.ts`; `node:sqlite` sits behind `driver.ts` as the swappable seam, so there is no native module to compile and no runtime ABI to match.
 
-**What lives here.** Per-machine chrome only — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, and the recents stream. None of it is authored content, and two machines interleaving any of it has no correct answer.
+**What lives here.** Per-machine chrome only — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, the recents stream, and every block host's layout. None of it is authored content, and two machines interleaving any of it has no correct answer.
 
-**What deliberately does not.** Favorites and pins stay files, because they are deliberate, rarely written, and the one part of Navigation worth following a user across machines. Everything canonical — the registry, Contexts, Homepage, settings, schemas — stays a file by the first principle.
+**What deliberately does not.** Favorites and pins stay files, because they are deliberate, rarely written, and the one part of Navigation worth following a user across machines. A block host's `blocks[]` stays on its config too — those entries name real content, a markdown file per tile or an embedded page — while only the arrangement around them moves. Everything canonical — the registry, Contexts, Homepage, settings, schemas — stays a file by the first principle.
 
 **Every action is one statement.** A change is a single-row upsert; an emptied value deletes its key. Nothing coalesces, nothing locks, and nothing is owed at quit, which is what retired the debounce engine, its drain contract and the before-quit gate that once deferred the app's exit.
 

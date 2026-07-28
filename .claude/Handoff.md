@@ -1,11 +1,8 @@
 ## Handoff — Pommora React
 
-> **User Prompt:** Merge `contexts-spaces` into main and find the next focus — which became a full-day cleanup pass instead: a feature-doc audit against real code, the retirement of the `tierN` vocabulary from data and code, a live-driven filter investigation, a whole-tree comment and dead-code campaign, an IPC simplification, and an adversarial review of all of it.
+> **User Prompt:** Map the SQLite database and the `.nexus/` JSON plumbing, then scope moving the plumbing into the database — priority on cutting code, filesystem writes, and operational-write footprint. Which became the migration itself.
 
-> ⚡ **Cornerstone — carry into every handoff, unchanged (Nathan's voice).**
-> *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
-
-### Session Summary — the cleanup pass
+### Session Summary — operational state into the database
 
 **Session ID:** 65fae5a7-dad4-475d-902e-9bf624673db1
 **Dates:** 07-27-2026
@@ -13,53 +10,52 @@
 **Compactions:** 2
 **Connectors:** none
 **Commands:** /compact · /handoff
-**Agents:** a 26-agent feature-doc audit (one Workflow, the session's only explicit opt-in) · comment-killer-agent across several passes · code-simplifier · build-breaking-agent
+**Agents:** a 26-agent feature-doc audit (one Workflow, the session's only explicit opt-in) · comment-killer-agent across several passes · code-simplifier ×2 · build-breaking-agent ×2 · three read-only Explore sweeps
 **Skills:** none
 
-**What Started:** `contexts-spaces` was merged and `Context.md` needed truing. Nathan chose the doc audit and the `tierN` retirement, then drove the rest live from the running app.
+**What Started:** `contexts-spaces` was merged and `Context.md` needed truing. That became a doc audit, the `tierN` retirement, a live-driven filter investigation, a whole-tree comment campaign, and an IPC simplification. Nathan then asked where SQL belonged, and the answer turned into the session's second half.
 
-**What Happened Along the Way:** The audit put one agent on each feature doc, every finding grounded against real code, and the questions it couldn't answer went to Nathan for a ruling. It caught a regression of mine: removing `migrateContexts` had removed the de-facto fresh-nexus seeder, since a fresh nexus minted below the version and so always ran the migration that wrote the registry. Seeding became explicit, with an idempotence test.
+**What Happened Along the Way — the cleanup pass.** The audit put one agent on each feature doc, every finding grounded against real code. It caught a regression of mine: removing `migrateContexts` had removed the de-facto fresh-nexus seeder, since a fresh nexus minted below the version and so always ran the migration that wrote the registry. Nathan live-drove the filter and reported it "completely backwards" — three real problems, the worst being structural bands drawn from the container's Set tree rather than from surviving rows. A dozen defects were fixed, most pre-existing and unreported.
 
-Nathan live-drove the filter and reported it "completely backwards." It was four problems, three real: positive comparisons passed rows holding no value, the pane wired no scroll mechanism at all, and — the one that made it look inert — structural bands came from the container's Set tree rather than from surviving rows, so a filter could empty a Set and its band plus every sub-folder still drew.
+**What Happened Along the Way — the migration.** Scoping the SQL question found that the database had never run: `better-sqlite3` is compiled against Node's ABI, Electron needs its own, and `openDb`'s degradation path caught the failure on every launch. No nexus had ever contained the file. Vitest runs under plain Node, so every SQLite test passed against a database the product never had. `node:sqlite` removed the dependency and the failure class together.
 
-Nine defects were fixed in total, seven of them pre-existing and unreported. The last two came out of the review's own leftovers: an `ENOTEMPTY` that had been dismissed as test flake was really the fire-and-forget index rebuild racing a nexus teardown, and the NavWindow's search branch was tested before its view mode, so searching always listed even with the rail set to Gallery.
+Nine `.nexus/` files then moved into it, and the machinery compensating for whole-file writes — a coalescing engine, a drain contract, a quit gate — retired with them. An adversarial pass proved one of my stated premises false: `reconcileTabs` repairs entity references and returns an intact tab untouched, so the read-time normalization deleted with the JSON was load-bearing and came back. Both live nexuses were migrated by hand, so no migration code shipped.
 
-**What It Ended With:** 75 commits, every one gated green — closing state **typecheck 0 · lint 0 · 1917 tests / 185 files · build clean**, with the previously-flaky `mutate.test.ts` now passing consecutive full runs. Against the merge baseline (`05a98344`): **−1,918 comment lines, −1,125 code lines, −675 documentation lines** — the docs ended below where they started while gaining the modified-at rule, trash mirroring, the alias rule and a consolidated SymbolsPM.
+**What It Ended With:** 84 commits, every one gated green — closing state **typecheck 0 · lint 0 · 1871 tests / 176 files · build clean**. Verified end-to-end rather than asserted: the built app was launched against copies of both real nexuses and every migrated surface was read back through real IPC.
 
-The comment campaign finished as a per-file read of all 303 renderer files earlier passes had only pattern-matched. The yield ranged from 2.8% in the CodeMirror extensions to 32.7% in the design system, which is the honest shape: one guards engine traps, the other had accumulated prop docs naming their props.
-
-**Next Session:** Open. The pending focuses are in `Context.md`, and none of them is mid-flight — pick one or pick something else.
+**Next Session:** Open. `Context.md` carries the pending focuses; the content index for backlinks and full-text is the one with nothing else in front of it.
 
 **Lessons Learned**
 
-- **A fact with two sources is a defect, not untidiness.** Nearly every bug this session was that shape. The fix is to remove the second source — narrow a type until the wrong call can't be written, delete the duplicate, route both callers through one. A guard that catches the bad case leaves the bad case reachable.
-- **Test the path the UI takes, not the one that works.** The Context header bug survived four layers of verification because the helper was tested with its argument threaded through; the UI called it without.
-- **A subagent's completion notification does not mean its descendants stopped writing.** One dispatch became thirteen agents writing across ninety minutes. Forbid sub-agents in whole-tree briefs, and poll `git status` to stability before starting the next writer.
-- **"Is this a why?" is the wrong comment test.** Nathan's is *"would I know this without the comment?"* — he cuts prop docs that name the prop and architectural rationale a reader could reconstruct, even when it reads like genuine reasoning.
+- **A fact with two sources is a defect, not untidiness.** Nearly every bug in the first half was that shape. Remove the second source rather than reconciling the two.
+- **Guard code divides by what it defends against.** Validating a byte pattern dies with the file; reconciling an id against a missing entity survives any storage change, because foreign keys cannot reach the filesystem. They look identical at the call site.
+- **"Is this a why?" is the wrong comment test.** Nathan's is *"would I know this without the comment?"*
+- **A green suite can test a thing the product does not have.** The SQLite tests passed for months under a runtime the app never uses.
+- **Verify the premise, not just the diff.** The review's most valuable finding was not a bug in the code — it was a false claim in the reasoning that produced it.
 
 **Session Pointers**
 
-- **`Planning//Open Code Findings.md`** — verified, unactioned findings with the `file:line` each was confirmed at.
-- **The filter pipeline** — `Detail/Views/pipeline/`: `filter.ts` (abstain model — `null` abstains, only `false` excludes), `group.ts` (`pruneEmptyGroups`), `resolveView.ts` (the one layer that knows a filter actually bit).
-- **`main/ipc.ts`** — `handleEnvelope` and `handleWindowMenu`, the two shapes every IPC handler now takes.
+- **`main/db/`** — `driver.ts` (the `node:sqlite` seam), `schema.ts` (`meta` + `local_state`), `open.ts` (version handshake), `localState.ts` (the one keyed store).
+- **`main/io/tabsState.ts`** — `readTab` is deliberate and was restored after review; the renderer does not repair shape or lockstep.
+- **The filter pipeline** — `Detail/Views/pipeline/`: `filter.ts` (`null` abstains, only `false` excludes), `group.ts` (`pruneEmptyGroups`).
 
 **Landmines**
 
-- **The `.trash` layout changed.** A delete mirrors the folder chain it came from. Anything assuming a flat `.trash` won't find its file.
-- **`rename` no longer accepts a Space or a Context.** Their membership is title-keyed, so they cascade through their own ops; the generic op's `kind` excludes them at the type level.
-- **`ErrorCode` still can't reach the renderer** — the boundary flattens to a bare string at 31 sites. Main-side it's consumed at two.
+- **`nexus.db` is not regeneratable.** It holds the only copy of every machine's chrome. A schema bump drops it, which costs a user their folds and tab set once — the schema stays small so that trade stays obvious.
+- **It also lives inside the nexus folder.** A file syncer over a WAL database is a known corruption vector, and one event now costs eight surfaces where it used to cost one sidecar.
+- **The `.trash` layout mirrors the folder chain** a delete came from.
+- **`rename` no longer accepts a Space or a Context** — their membership is title-keyed.
 
 **User Feedback**
 
-- **"Modified Time should be property CHANGE or text change, or location change, or rename. Thats all."**
-- **"No safety guards or dead shit allowed for now obsolete stuff"** — a migration retires the code that supported the old shape, not just the data.
+- **"Whatever we do must ensure DB actions are cheap, scoped, and don't do a full-pass when they don't need to. HARD YAGNI here."**
+- **"Don't take this direction unless you've looked and it's the right move, I might be wrong"** — he was right about block layout, and asked to be checked rather than obeyed.
 - **"Reduce code where possible to fix these"** — a fix that adds a guard is usually the wrong fix.
-- **The comment standard is his own hand-edits** in `da096de5`. Read them before judging any comment.
+- **The comment standard is his own hand-edits** in `da096de5`.
 
 **Uncertain**
 
-- The filter's new comparison semantics overturned a deliberate Swift-parity behaviour three tests asserted. He asked for it; he can veto.
-- The `whatCell` rigidity fix and the NavView caret sizing were never screenshotted — his running instance predated both and carried no debug port.
+- The favorites quit gate is argued from the baseline's own drain code, not measured against Electron's real `before-quit` ordering.
 - `Compactions: 2` is best-effort.
 
 ---
