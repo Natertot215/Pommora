@@ -1,12 +1,22 @@
-// The block document lives on the host's own config — homepage.json for the dev host — and
-// every write is a locked read-merge-write, so layout/blocks/blocks_locked are the ONLY keys
-// touched and foreign keys (banner included) survive. All homepage.json writers serialize on
-// the config path: this module and setBanner's homepage branch share the lock, or a banner
-// write racing a debounced layout write becomes a whole-file lost update.
+// A block document is split by what it is. `blocks[]` and the host lock stay on the host's own
+// config — those entries name real content (a markdown file per tile, an embedded page, a view) —
+// while the layout is arrangement, so it lives in nexus.db where no hand-edit can mangle a host
+// into an unrenderable tree. Config writes are a locked read-merge-write touching only
+// blocks/blocks_locked, so foreign keys (banner included) survive; the layout no longer shares
+// that file, so a banner write and a layout drag can't lose each other.
 
 import { mkdir, readFile, rm, stat } from 'node:fs/promises'
 import { join } from 'node:path'
-import { knownBlock, type BlockDoc, type BlockDocPatch, type BlockHostRef } from '@shared/blocks'
+import {
+  blockHostKey,
+  knownBlock,
+  rawLayoutSchema,
+  type BlockDoc,
+  type BlockDocPatch,
+  type BlockHostRef,
+} from '@shared/blocks'
+import { readKey, writeKey } from './db/localState'
+import { sessionDb } from './sessionDb'
 import { normalizeTitle } from '@shared/connections'
 import { scanConnections } from './connections/scan'
 import { rewriteConnections } from './connections/rewrite'
@@ -96,11 +106,36 @@ async function healSplitDoc(root: string, host: BlockHostRef): Promise<void> {
   await rm(sidecarPath, { force: true })
 }
 
+/**
+ * The layout comes from the database; a host whose config still carries one is lifted here, on
+ * the read that finds it — no walk, and nothing to run for a host already migrated. A layout the
+ * schema rejects is left where it is rather than lifted, so nothing unreadable is destroyed, and
+ * with no database open the config is not touched at all.
+ */
+async function hostLayout(
+  root: string,
+  host: BlockHostRef,
+  raw: Record<string, unknown> | null,
+): Promise<unknown> {
+  const key = blockHostKey(host)
+  const stored = readKey<unknown>('layout', key)
+  if (stored !== null) return stored
+  const legacy = raw?.layout
+  if (legacy === undefined || sessionDb() === null) return legacy
+  if (!rawLayoutSchema.safeParse(legacy).success) {
+    console.error(`blocks: ${key} carries an unreadable layout — leaving it on disk`)
+    return legacy
+  }
+  writeKey('layout', key, legacy)
+  await mutateDoc(root, host, ({ layout: _lifted, ...rest }) => rest)
+  return legacy
+}
+
 export async function readBlockDoc(root: string, host: BlockHostRef): Promise<BlockDoc> {
   await healSplitDoc(root, host)
   const raw = await readJsonObject(await blockHostConfig(root, host))
   return {
-    layout: raw?.layout,
+    layout: await hostLayout(root, host, raw),
     blocks: Array.isArray(raw?.blocks) ? raw.blocks : [],
     locked: raw?.blocks_locked === true,
   }
@@ -111,9 +146,10 @@ export async function writeBlockDoc(
   host: BlockHostRef,
   patch: BlockDocPatch,
 ): Promise<void> {
+  if ('layout' in patch) writeKey('layout', blockHostKey(host), patch.layout ?? null)
+  if (!('blocks' in patch) && !('locked' in patch)) return
   await mutateDoc(root, host, (cur) => {
     const next = { ...cur }
-    if ('layout' in patch) next.layout = patch.layout
     if ('blocks' in patch) next.blocks = patch.blocks
     if ('locked' in patch) {
       if (patch.locked) next.blocks_locked = true

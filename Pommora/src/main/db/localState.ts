@@ -14,6 +14,7 @@ export type Scope =
   | 'viewOrder'
   | 'headingCols'
   | 'linkTitle'
+  | 'layout'
   | 'tabs'
   | 'previews'
   | 'recents'
@@ -79,15 +80,20 @@ export function replaceScope(scope: Scope, entries: Record<string, unknown>): vo
   }
 }
 
-/** A scope's singleton value, or null when unset. */
-export function readValue<T>(scope: Scope): T | null {
+/** One key's value, or null when unset. */
+export function readKey<T>(scope: Scope, key: string): T | null {
   const db = sessionDb()
   if (!db) return null
   const row = db
     .prepare('SELECT value FROM local_state WHERE scope = ? AND key = ?')
-    .get(scope, SINGLETON) as { value: string } | undefined
+    .get(scope, key) as { value: string } | undefined
   if (!row) return null
-  return decode<T>(scope, SINGLETON, row.value) ?? null
+  return decode<T>(scope, key, row.value) ?? null
+}
+
+/** A scope's singleton value, or null when unset. */
+export function readValue<T>(scope: Scope): T | null {
+  return readKey<T>(scope, SINGLETON)
 }
 
 export function writeValue(scope: Scope, value: unknown): void {

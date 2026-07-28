@@ -58,6 +58,11 @@ export const NEW_TILE_H = 160
  *  (homepage.json) or a Space (its `_space.json`). */
 export type BlockHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
 
+/** The key a host's layout stores under. Homepage is a singleton, so its bare kind suffices. */
+export function blockHostKey(host: BlockHostRef): string {
+  return host.kind === 'homepage' ? 'homepage' : `space:${host.id}`
+}
+
 export function coerceBlockHost(raw: unknown): BlockHostRef | null {
   if (typeof raw !== 'object' || raw === null) return null
   const { kind, id } = raw as { kind?: unknown; id?: unknown }
