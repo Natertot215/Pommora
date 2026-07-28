@@ -28,12 +28,13 @@ Since the baseline:
 - Cards — the second renderer, interaction hardening, the picker-host architecture
 - The certified cleanup campaign — one-walk mutations + shared interaction primitives
 - Contexts & Spaces — the registry model replacing the fixed three tiers, the shared floating-window chassis, and the filter authoring pane
+- The truing campaign — a doc audit against real code, the filter made to visibly filter, and the source stripped of a retired vocabulary
 
 ### II. Upcoming (v0.5.0 → v1.0.0)
 
 #### The prerequisite — a query consumer
 
-The SQLite index is built, schema-versioned, and rebuilt on every mutation, and **nothing reads it**: there is no query facade. Linked-From, backlinks, ContextView, and full-text search are all blocked on that one missing hop, and the rebuild currently costs a full nexus re-read per write for no benefit. Writing the query layer — or suspending the rebuild until it exists — precedes the features that depend on it.
+The SQLite index is built, schema-versioned, and rebuilt on every mutation, and **nothing reads it**: there is no query facade. Linked-From, backlinks, ContextView, and full-text search are all blocked on that one missing hop, and the rebuild still costs a full nexus re-read per write for no benefit — bursts now collapse onto one rebuild rather than racing each other, but the cost per burst stands. Writing the query layer — or suspending the rebuild until it exists — precedes the features that depend on it.
 
 #### v0.6.0 — The View Renderers
 
