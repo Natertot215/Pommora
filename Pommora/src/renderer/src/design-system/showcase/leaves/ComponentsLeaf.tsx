@@ -8,7 +8,7 @@ import { Chip } from '@renderer/Components/Chip'
 import { condensedDate, formatDate } from '@renderer/Detail/Views/PropertyEditing/formatValue'
 
 /** A button that pops the REAL component beneath it — the popup components demo as they
- *  actually behave, never as stubs (Nathan's call). */
+ *  actually behave, never as stubs. */
 function PopupButton({
   label,
   children,

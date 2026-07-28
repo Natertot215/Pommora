@@ -22,7 +22,7 @@ export const knob = style({
   zoom: 'var(--slider-knob-scale, 0.75)',
 })
 
-/** The knob fill — the Switch knob's exact aspect + fill (26×18 pill, label-control white). */
+/** The knob fill — the Switch knob's exact aspect + fill (a pill, label-control white). */
 export const knobFill = style({
   display: 'block',
   width: '26px',

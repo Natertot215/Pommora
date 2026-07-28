@@ -113,7 +113,7 @@ function TabBarBody({
     }
     return live
   }, [liveEntries, ghosts])
-  // Index of the first non-ghost tab — drives the leftmost-close segment handoff (F2).
+  // Index of the first non-ghost tab — drives the leftmost-close segment handoff.
   const firstLive = renderEntries.findIndex((e) => !e.ghost)
 
   // Ctrl+Tab / Ctrl+Shift+Tab cycles the full visual order, wrapping (the one signed-off
