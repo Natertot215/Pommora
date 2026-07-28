@@ -28,7 +28,7 @@
 
   /* — Heading row — the header band reads distinct from the body: a faint fill, dimmed control text, a
        heavier bottom seam, and short centered segment dividers between columns (vs the data rows'
-       full-height hairlines). Each aliases a design-system token. — */
+       full-height hairlines). */
   --heading-fill: var(--fill-quinary);
   --heading-text: var(--label-control);
   --heading-divider: var(--border-heading);
@@ -54,12 +54,7 @@
     --bg-window
   ); /* opaque backing so the dragged column glides as one solid band, not see-through */
   --col-shift-ease: var(--duration-fast) var(--ease-standard); /* neighbour columns slide to open the gap on this curve */
-  --drag-muted: var(
-    --state-ghost
-  ); /* the picked-up row fades to the ghost opacity — muted in place, never displaced */
-  /* The insertion line (--drag-line + --drop-line-thickness + --drop-dot-size) is a GLOBAL drag primitive
-     in theme-vars.css.ts, not a table-scoped knob: its .table-drop-line class is also used by the
-     settings-pane property reorder, which renders outside .table-view, so those vars must resolve there. */
+  --drag-muted: var(--state-ghost);
 
   /* — Empty state — */
   --empty-pad-y: 24px; /* vertical padding of the "No pages here" / "Loading…" placeholder */
