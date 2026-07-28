@@ -40,7 +40,7 @@ Typing inside `[[ ]]` filters Pages nexus-wide by title prefix; an empty query l
 
 #### II. Resolver + Index
 
-An in-memory map from normalized title to the Page IDs holding it resolves every link and drives the cascade, rebuilt whenever the page tree reloads. A `connections` table mirrors every scanned edge, page and block bodies distinguished by source kind, staging the shape a query facade would read; it regenerates by re-scanning, refreshes on `mutate` ops only (a body autosave doesn't touch it), and has no query consumer. Full data layer → `Architecture.md`.
+An in-memory map from normalized title to the Page IDs holding it resolves every link and drives the cascade, rebuilt whenever the page tree reloads. Nothing persists the edges: the map is the whole mechanism, and every consumer runs off it in memory. Backlinks and Linked-From are what a stored edge table would be *for*, and it gets written alongside the query layer that reads it. Full data layer → `Architecture.md`.
 
 ### Prospects
 

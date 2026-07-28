@@ -18,7 +18,7 @@ A pure model plus store slice, deliberately separate from the app tabs' model: i
 
 ### Persistence & Warmth
 
-One synced sidecar holds the NavWindow flavor's set, the per-origin page sets — re-keyed to the new origin on re-parent, retiring when emptied — and the open pointer, recorded but never auto-summoned at launch. Restores reconcile against the live tree before showing: dead paths drop, renames re-path, an emptied set falls back to the bare origin. It rides the shared debounced-sidecar machine and drains at quit and nexus switch. A foreign-root tree push wipes the per-nexus session state before any reconcile can leak one nexus's sets into another's sidecar.
+One device-local row holds the NavWindow flavor's set, the per-origin page sets — re-keyed to the new origin on re-parent, retiring when emptied — and the open pointer, recorded but never auto-summoned at launch. Two machines with different previews open have no correct merge, so each keeps its own. Restores reconcile against the live tree before showing: dead paths drop, renames re-path, an emptied set falls back to the bare origin. A save is one statement, so nothing coalesces and nothing is owed at quit. A foreign-root tree push wipes the per-nexus session state before any reconcile can leak one nexus's sets into another's sidecar.
 
 Warmth is session-only and per-tab: serialized editor state, undo included, plus the body's scroll, restored on switch-back with the fetch skipped entirely so the doc mounts synchronously. Captures are liveness-gated so a closed tab's trailing unmount capture can never resurrect its entry.
 

@@ -42,7 +42,7 @@ Some operations touch many files at once — renaming a page rewrites every inbo
 
 ### The Index Stays Local
 
-The SQLite index is a regeneratable accelerator, never a source of truth. It is excluded from sync and rebuilt per device — a binary database syncing across devices invites corruption and churn, and there is nothing in it the canonical files don't already hold.
+The database holds per-machine chrome — folds, view selection, tabs, layouts — and never content. It is excluded from sync: a binary database syncing across devices invites corruption and churn, and none of what it holds has a correct cross-device merge anyway. A device without one starts with default arrangement and a complete Nexus.
 
 ### When iCloud Isn't There
 

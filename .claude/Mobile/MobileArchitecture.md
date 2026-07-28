@@ -8,7 +8,7 @@ Pommora already splits into a Node "main" process that owns the filesystem and a
 
 ### The Native Contract
 
-The renderer needs a small, well-defined surface from its host: read the nexus tree (structure only — page bodies and property values load lazily), read one page, read a container's values, run the single mutation entry point, and receive a change-push when files change on disk. Most of the desktop main process behind that surface is thin filesystem wrappers, trivial to re-host on a native file API. A minority is genuinely platform-specific — native menus, dialogs, the file-watcher — and is rebuilt for the phone. The domain layer beneath both (the property codec, validation, the mutation orchestrator) already lives in shared, platform-agnostic code and moves over untouched. The regeneratable SQLite index is off the read path and is dropped for the phone's first version.
+The renderer needs a small, well-defined surface from its host: read the nexus tree (structure only — page bodies and property values load lazily), read one page, read a container's values, run the single mutation entry point, and receive a change-push when files change on disk. Most of the desktop main process behind that surface is thin filesystem wrappers, trivial to re-host on a native file API. A minority is genuinely platform-specific — native menus, dialogs, the file-watcher — and is rebuilt for the phone. The domain layer beneath both (the property codec, validation, the mutation orchestrator) already lives in shared, platform-agnostic code and moves over untouched. The device-local database is off the read path; the phone's first version does without it, which costs it remembered arrangement and no content.
 
 ### What Reuse Doesn't Cover
 
