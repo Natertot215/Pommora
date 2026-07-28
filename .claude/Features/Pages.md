@@ -8,6 +8,8 @@ A Page is one Markdown file inside a [Collection](Collections.md) — the operat
 
 Frontmatter carries `id` (a ULID), an optional `icon`, the bracketed Context keys (`"[Projects]": [Pommora]` — Space titles at the root, resolved through the registry), `properties` (values keyed by property ID), `created_at` / `modified_at`, and `cover` (a Nexus-relative page-banner path). Property values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write: the writer re-serializes only the modeled keys and never reconstructs the object.
 
+**Four things modify a Page**, and `modified_at` answers to exactly them: a property VALUE change, a text change, a location change, and a rename. A schema-level edit is not one of them — renaming a property definition or changing its type leaves every member page's stamp alone, because the page didn't change. A derived rewrite is likewise untouched: the `[[link]]` rename cascade edits bodies without claiming they were modified.
+
 #### II. Title + Membership
 
 The filename minus `.md` is the title — there's no `title` field, and a rename is a file rename. Within a folder, names must be unique: a colliding create auto-disambiguates with a numeric suffix, and a colliding rename is rejected. Titles aren't unique Nexus-wide, though — two Pages in different folders can share one, and a `[[Title]]` to a shared title resolves as ambiguous (→ `Connections.md`). Membership is purely positional: moving the file between [[Collections]] or [[Studio/Pommora/II. Features/PageSets|PageSets]] changes its membership, with no field to update. Moving across Collections brings the Page under the destination schema → `Collections.md`.
