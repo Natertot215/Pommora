@@ -66,7 +66,7 @@ import { applyPersonalization, applyPersonalizationKey } from './design-system/p
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './Detail/Scope'
 import { ensureContainerView } from './Detail/Views/viewMint'
 
-// Sidebar width bounds — Swift's min:180 / ideal:240, max widened +50 past Swift's 330 for extra drag room.
+// Widened past the ported Swift bounds for extra drag room.
 const SIDEBAR_MIN = 180
 const SIDEBAR_MAX = 380
 const SIDEBAR_DEFAULT = 240
@@ -82,7 +82,7 @@ function readStoredSidebarWidth(): number {
   }
 }
 
-// Inspector (right pane) width bounds — its own range, max carrying the same +50 headroom.
+// Inspector (right pane) width bounds — its own range, widened the same way.
 const INSPECTOR_MIN = 240
 const INSPECTOR_MAX = 420
 const INSPECTOR_DEFAULT = 300

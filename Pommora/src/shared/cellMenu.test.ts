@@ -85,7 +85,7 @@ describe('cellMenuModel', () => {
 
   it('hideable style-only with no base item (checkbox): Remove does NOT self-separate', () => {
     // main/cellMenu inserts the Style▸↔items divider once Remove lands in items, so Remove keying on
-    // its own separator too would double it (F-1). Style present + Remove, single divider.
+    // its own separator too would double it. Style present + Remove, single divider.
     const m = cellMenuModel({ kind: 'style-only', type: 'checkbox', current: {}, hideable: true })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([['Remove', 'cell:hide']])
     expect(m.items[0].separatorBefore).toBe(false)

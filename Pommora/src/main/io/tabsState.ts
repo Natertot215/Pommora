@@ -1,12 +1,8 @@
-// The tab set's per-nexus persistence: one SYNCED sidecar under `.nexus/` — `tabs.json`, the ordered
-// UNPINNED tab list + the active-tab pointer + each tab's Back/Forward targets. Pinned tabs
-// are never stored here — they derive from `.nexus/pins/` (a second synced copy would re-introduce
-// the whole-array-LWW desync the per-pin files dodge). Warm view-state (scroll/undo) is session-only
-// and never persisted.
-//
-// The renderer owns the in-memory set; main is the persister. Writes DEBOUNCE (every navigation mutates
-// the set), coalescing to one disk write; the quit/switch drain flushes immediately. The pending payload
-// carries its own root, so a late flush always lands in the nexus it was recorded for.
+// One SYNCED sidecar under `.nexus/` — `tabs.json`: the ordered UNPINNED tab list + the
+// active-tab pointer + each tab's Back/Forward targets. Pinned tabs are never stored here —
+// they derive from `.nexus/pins/` (a second synced copy would re-introduce the whole-array-LWW
+// desync the per-pin files dodge). The renderer owns the in-memory set; main is the persister,
+// and DEBOUNCEs writes, coalescing to one disk write per burst of navigation.
 
 import { isPlainObject } from '@shared/propertyValue'
 import type { SelectTarget, Tab, TabSet, TabTarget } from '@shared/types'

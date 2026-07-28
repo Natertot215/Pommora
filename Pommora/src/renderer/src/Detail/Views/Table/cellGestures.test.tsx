@@ -200,7 +200,7 @@ const statusCell = (): HTMLElement => {
   return cells[1] // property_order: _title, prop_status, prop_done
 }
 
-// The value picker is now ONE table-level self-managed pane portaled to document.body (escaping the
+// The value picker is ONE table-level self-managed pane portaled to document.body (escaping the
 // table's overflow clip) — its DOM lives outside `host`, so query it through the portal marker.
 const pickerButtons = (): HTMLButtonElement[] => [
   ...document.querySelectorAll<HTMLButtonElement>('[data-picker-portal] button'),
@@ -229,7 +229,7 @@ describe('status cell gestures', () => {
     await act(async () => {
       option?.click()
     })
-    // The exit presence holds the pane through its Bloom-out (380ms), then unmounts it.
+    // The exit presence holds the pane through its Bloom-out, then unmounts it.
     await act(async () => {
       await new Promise((r) => setTimeout(r, 450))
     })

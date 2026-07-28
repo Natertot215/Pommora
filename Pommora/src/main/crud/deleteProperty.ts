@@ -1,11 +1,9 @@
 // Global property delete — the one nexus-wide destructive fan-out. Snapshot-first (a
 // timestamped JSON of the def + every page value lands in `.trash`, so the scrub is
-// recoverable), then strips the value from every collection's page under its file lock (the
-// same lock the cell-write path takes), drops the id from every assignment, purges every
-// Remove-cache block, and finally removes the def from the registry. Per-file, not
-// cross-file atomic — the `.trash` snapshot is the recovery net, so a partial run re-runs
-// cleanly. The daily non-destructive op is Remove (crud/removeProperty); this is the rare
-// one, and it saves nothing restorable in-app.
+// recoverable), then strips the value from every collection's page under its file lock, drops
+// the id from every assignment, purges every Remove-cache block, and finally removes the def
+// from the registry. The daily non-destructive op is Remove (crud/removeProperty); this is the
+// rare one, and it saves nothing restorable in-app.
 
 import { join } from 'node:path'
 import { readFile, mkdir, writeFile } from 'node:fs/promises'

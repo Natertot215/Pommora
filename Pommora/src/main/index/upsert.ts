@@ -1,9 +1,8 @@
 // Per-entity index upserts — the shared write layer used by the cold build and (later)
-// incremental CRUD. One generic INSERT OR REPLACE core keeps the SQL DRY; typed wrappers
-// own the column mapping + the SQLite-binding conversions better-sqlite3 needs (undefined
-// → null, boolean → 0/1, object → JSON TEXT). Mirrors Swift's IndexUpdater, minus the
-// GRDB ceremony. Connections + context_links use replace-by-source (delete then insert),
-// matching Swift's per-source reconcile.
+// incremental CRUD. One generic INSERT OR REPLACE core keeps the SQL DRY; typed wrappers own
+// the column mapping + the SQLite-binding conversions better-sqlite3 needs (undefined → null,
+// boolean → 0/1, object → JSON TEXT). Connections + context_links use replace-by-source
+// (delete then insert).
 
 import type { Db } from './db'
 

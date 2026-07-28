@@ -318,7 +318,7 @@ function LocationField({
         onToggle={() => expanded.toggle(s.id)}
         onClick={() => toggle(s.id)}
         selected={picked}
-        // A Set row carries no colour of its own, so the 5% selected fill alone is easy to lose in a
+        // A Set row carries no colour of its own, so the selected fill alone is easy to lose in a
         // packed tree — the ring is what makes a pick obvious at a glance.
         className={picked ? optionRing : undefined}
       >

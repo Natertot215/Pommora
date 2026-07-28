@@ -1,7 +1,6 @@
 // Page-title resolution for URL properties in the `link-title` look. Main owns the network (the
-// renderer never fetches) and the authoritative in-memory cache; io/linkTitles.ts persists it. A title
-// is fetched at most once per URL per session — cache hits are instant, and a persisted title never
-// re-fetches. Off the read path entirely: nothing here runs during a nexus walk.
+// renderer never fetches) and the authoritative in-memory cache; io/linkTitles.ts persists it. A
+// title is fetched at most once per URL per session. Off the read path entirely.
 import { StringDecoder } from 'node:string_decoder'
 import { net } from 'electron'
 import { isHttpLink, normalizeLinkUrl } from '@shared/links'

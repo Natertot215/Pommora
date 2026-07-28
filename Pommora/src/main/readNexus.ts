@@ -77,9 +77,8 @@ function resolveAccent(raw: string | undefined): AccentSetting {
   return DEFAULT_ACCENT
 }
 
-// Coerce the on-disk `settings.personalization` blob into a validated Personalization, per-field
-// (absent/invalid → undefined = the built-in default). Accent is resolved separately into
-// tree.accent (back-compat with the legacy top-level accent_color), so it isn't surfaced here.
+// Per-field: absent/invalid → undefined = the built-in default. Accent is resolved
+// separately into tree.accent, so it isn't surfaced here.
 export function readPersonalization(raw: unknown): Personalization {
   const p =
     raw != null && typeof raw === 'object' && !Array.isArray(raw)

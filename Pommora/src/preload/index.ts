@@ -188,10 +188,8 @@ const api = {
       ipcRenderer.invoke('schema:changeType', containerPath, propertyId, newType, opts),
   },
   // Nexus-wide property ops (registry-level, no container scope). `property.delete` is the
-  // global destructive op — snapshot, scrub every collection, purge caches, drop the def;
-  // `schema.delete` above is the per-Collection Remove (strip + cache restorably). The option
-  // ops edit a Select/Multi property's options globally: setOptions (add/recolor/reorder),
-  // renameOption (cascades the value onto pages), removeOption/clearOption (strip pages).
+  // global destructive op (snapshot, scrub every collection, purge caches, drop the def);
+  // `schema.delete` above is the per-Collection Remove (strip + cache restorably).
   property: {
     delete: (propertyId: string): Promise<{ ok: true } | { ok: false; error: string }> =>
       ipcRenderer.invoke('property:delete', propertyId),
@@ -286,8 +284,7 @@ const api = {
   // Batch frontmatter read for a container's view pipeline (pageId → frontmatter), lazy on open.
   loadValues: (containerPath: string): Promise<Record<string, PageFrontmatter>> =>
     ipcRenderer.invoke('view:loadValues', containerPath),
-  // Table heading-column UI state — local `.nexus/tableHeadingColumns.json`, keyed by page id. Holds the
-  // indices of the tables whose first column renders as a heading (a Pommora-only visual, not in the .md).
+  // Which tables' first column renders as a heading (a Pommora-only visual, not in the .md).
   tableHeadingColumns: {
     get: (): Promise<Record<string, number[]>> => ipcRenderer.invoke('tableHeadingCols:get'),
     set: (
@@ -302,9 +299,8 @@ const api = {
     get: (host: BlockHostRef): Promise<BlocksGetResult> => ipcRenderer.invoke('blocks:get', host),
     save: (host: BlockHostRef, patch: BlockDocPatch): Promise<BlocksSaveResult> =>
       ipcRenderer.invoke('blocks:save', host, patch),
-    // Markdown-block lifecycle: create mints the ULID + file + entry (the renderer splices
-    // the layout after); remove drops the entry + trashes a markdown tile's file; the
-    // read/write pair is the tile editor's pure-body persistence.
+    // create mints the ULID + file + entry (the renderer splices the layout after); remove
+    // drops the entry + trashes the file; read/write is the tile editor's body persistence.
     createMarkdown: (
       host: BlockHostRef,
     ): Promise<{ ok: true; id: string } | { ok: false; error: string }> =>
@@ -325,15 +321,13 @@ const api = {
       pageId: string,
     ): Promise<BlocksSaveResult> =>
       ipcRenderer.invoke('blocks:convertToPage', host, tileId, pageId),
-    // Link View: the entry becomes a view embed carrying the COPIED config;
-    // main re-mints each config id payload-local.
+    // Link View: the entry becomes a view embed carrying the COPIED config.
     convertToView: (
       host: BlockHostRef,
       tileId: string,
       views: EmbeddedView[],
     ): Promise<BlocksSaveResult> => ipcRenderer.invoke('blocks:convertToView', host, tileId, views),
-    // Duplicate a tile — raw-entry copy under a fresh id; markdown copies its file,
-    // a view tile re-mints its config ids.
+    // Raw-entry copy under a fresh id; markdown copies its file, a view tile re-mints its config ids.
     duplicateTile: (
       host: BlockHostRef,
       tileId: string,
@@ -392,16 +386,14 @@ const api = {
     save: (file: PreviewsFile): Promise<{ ok: true } | { ok: false; error: string }> =>
       ipcRenderer.invoke('previews:save', file),
   },
-  // Gallery thumbnails — capture the detail-pane rect (main writes under .nexus/assets and returns the
-  // nexus-asset:// URL); evict prunes thumbnails outside the live recents∪pins set.
+  // capture returns the nexus-asset:// URL; evict prunes thumbnails outside the live recents∪pins set.
   capture: {
     thumbnail: (navKey: string, rect: ThumbRect, scaleFactor: number): Promise<ThumbResult> =>
       ipcRenderer.invoke('capture:thumbnail', navKey, rect, scaleFactor),
     evict: (liveKeys: string[]): Promise<{ ok: true } | { ok: false; error: string }> =>
       ipcRenderer.invoke('nav:evictThumbs', liveKeys),
   },
-  // Personalization (accent, connection color, interface toggles) — persist one key; the tree
-  // surfaces current values (state → tree.personalization), so there's no get.
+  // Persists one key; the tree surfaces current values, so there's no get.
   personalization: {
     set: <K extends keyof Personalization>(
       key: K,
@@ -416,21 +408,18 @@ const api = {
   // Push the editor's active formatting state so the native right-click menu renders accurate state.
   setEditorFormatState: (state: FormatState): void =>
     ipcRenderer.send('editor:format-state', state),
-  // JS window mover for hover-bearing chrome (the tab bar): a native app-region never delivers hover,
-  // so the bar drives the move itself — per-pointermove screen deltas, fire-and-forget. Double-click
-  // zooms, the macOS titlebar convention.
+  // JS window mover for hover-bearing chrome (the tab bar): a native app-region never delivers
+  // hover, so the bar drives the move itself via per-pointermove screen deltas.
   winDragBy: (dx: number, dy: number): void => ipcRenderer.send('win:dragBy', dx, dy),
   winZoom: (): void => ipcRenderer.send('win:zoom'),
-  // Pop a native "New …" menu (e.g. the Context groups); resolves with the picked request, or
-  // null if dismissed, for the renderer's store to run.
+  // Resolves with the picked request, for the renderer's store to run.
   popCreateMenu: (items: { label: string; req: MutateRequest }[]): Promise<MutateRequest | null> =>
     ipcRenderer.invoke('create-menu', items),
   // Surface a failure natively (renderer can't show a native dialog itself).
   showError: (message: string): Promise<void> => ipcRenderer.invoke('error:show', message),
   // Open an external link (http/https/mailto) in the OS default browser/app.
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('link:open', url),
-  // Fetched page-title cache for URL properties in the `link-title` look. `get` returns the whole
-  // cached map (hydrated into the store on open); `fetch` resolves one URL (cache hit or live fetch).
+  // `get` returns the whole cached map; `fetch` resolves one URL (cache hit or live fetch).
   linkTitles: {
     get: (): Promise<Record<string, string>> => ipcRenderer.invoke('linkTitles:get'),
     fetch: (
@@ -450,45 +439,44 @@ const api = {
     ipcRenderer.invoke('nexus:iconMenu', opts),
   // Open the native image picker directly → data URL (null if canceled). Banner Add / Change.
   pickImage: (): Promise<string | null> => ipcRenderer.invoke('nexus:pickImage'),
-  // Pop the native Change / Remove banner menu → the chosen action (null if dismissed).
   // `noRemove` drops the Remove item (an inherited banner has nothing of its own to remove).
   bannerMenu: (opts?: {
     noRemove?: boolean
     noun?: string
     add?: boolean
   }): Promise<'change' | 'remove' | null> => ipcRenderer.invoke('nexus:bannerMenu', opts),
-  // Pop the native Rename / Edit Icon menu for a detail title → the chosen action (null if dismissed).
+  // The Rename / Edit Icon menu for a detail title.
   titleMenu: (opts?: {
     toggleIcon?: boolean
     iconHidden?: boolean
     noEditIcon?: boolean
   }): Promise<'rename' | 'editIcon' | 'toggleIcon' | null> =>
     ipcRenderer.invoke('nexus:titleMenu', opts),
-  // Pop the table grip's native right-click menu → the chosen action (null if dismissed).
+  // The table grip's right-click menu.
   tableMenu: (ctx: TableMenuContext): Promise<TableMenuAction | null> =>
     ipcRenderer.invoke('table-menu', ctx),
-  // Pop the callout grip's native right-click menu → the chosen action (null if dismissed).
+  // The callout grip's right-click menu.
   calloutMenu: (): Promise<CalloutMenuAction | null> => ipcRenderer.invoke('callout-menu'),
-  // Pop the table-view column header's native right-click menu → the chosen action (null if dismissed).
+  // The table-view column header's right-click menu.
   columnMenu: (ctx: ColumnMenuContext): Promise<ColumnMenuAction | null> =>
     ipcRenderer.invoke('column-menu', ctx),
-  // Pop a table cell's native right-click menu (title meta / per-type Style / Edit) — same contract.
+  // A table cell's right-click menu (title meta / per-type Style / Edit).
   cellMenu: (ctx: CellMenuContext): Promise<CellMenuAction | null> =>
     ipcRenderer.invoke('cell-menu', ctx),
-  // Pop a card's native right-click menu (page meta + Add Property ▸) → the chosen action.
+  // A card's right-click menu (page meta + Add Property ▸).
   cardMenu: (ctx: CardMenuContext): Promise<CardMenuAction | null> =>
     ipcRenderer.invoke('card-menu', ctx),
   tabMenu: (ctx: TabMenuContext): Promise<TabMenuAction | null> =>
     ipcRenderer.invoke('tab-menu', ctx),
-  // Pop a NavWindow row/card's native right-click menu (Open · Pin · Favorite · Remove) → the action.
+  // A NavWindow row/card's right-click menu (Open · Pin · Favorite · Remove).
   navRowMenu: (ctx: NavRowMenuContext): Promise<NavRowMenuAction | null> =>
     ipcRenderer.invoke('nav-row-menu', ctx),
-  // Pop a wikilink's native right-click menu (Open in Preview) → the chosen action.
+  // A wikilink's right-click menu (Open in Preview).
   connMenu: (): Promise<ConnMenuAction | null> => ipcRenderer.invoke('conn-menu'),
-  // Pop a property's native menu (editor ⋮ / row right-click); Delete confirms in main first.
+  // A property's native menu (editor ⋮ / row right-click); Delete confirms in main first.
   propertyMenu: (ctx: PropertyMenuContext): Promise<PropertyMenuAction | null> =>
     ipcRenderer.invoke('property-menu', ctx),
-  // Pop an option chip's native menu (Rename / Remove / Clear); Remove + Clear confirm in main first.
+  // An option chip's native menu (Rename / Remove / Clear); Remove + Clear confirm in main first.
   optionMenu: (ctx: OptionMenuContext): Promise<OptionMenuAction | null> =>
     ipcRenderer.invoke('option-menu', ctx),
   // Flag (on hover) whether the pointer sits on a callout grip, so the generic editor menu stands down there.
@@ -504,8 +492,7 @@ const api = {
       ipcRenderer.removeListener('menu:action', listener)
     }
   },
-  // Main asks the renderer to start inline-renaming the row at this nexus-relative path
-  // (from the context-menu Rename item); returns an unsubscribe.
+  // Main asks the renderer to start inline-renaming the row at this path (context-menu Rename).
   onBeginRename: (cb: (path: string) => void): (() => void) => {
     const listener = (_e: IpcRendererEvent, path: string): void => cb(path)
     ipcRenderer.on('begin-rename', listener)

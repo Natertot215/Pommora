@@ -1,7 +1,7 @@
 // THE page-body autosave: one debounced writer PER PATH, shared by every host that edits a page
 // (the main pane's PageView, the preview/tile PageEmbed). Hosts never own a private debounce —
 // the same page open in two hosts would mean two uncoordinated writers to one file, last-writer-
-// wins across a 400ms window. A path-keyed module map means the newest edit from ANY host owns
+// wins across the debounce window. A path-keyed module map means the newest edit from ANY host owns
 // the file's single pending write, and every teardown path (host unmount, nexus adopt, window
 // close) flushes here instead of each host re-implementing the machinery.
 

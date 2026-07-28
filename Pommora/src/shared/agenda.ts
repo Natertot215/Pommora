@@ -1,9 +1,7 @@
-// Agenda item models — Tasks (EKReminder-shaped) + Events (EKEvent-shaped), stored as
-// pure JSON at `<Tasks>/<title>.task.json` / `<Events>/<title>.event.json`. One zod schema
-// per kind = codec = type, mirroring Swift's AgendaTask/AgendaEvent minus the Codable
-// ceremony. Loose ⇒ foreign keys ride through. `title` is derived from the filename (never
-// stored); dates are ISO strings. Reads are lenient (optional); the writer enforces the
-// required fields (an event needs start/end).
+// Agenda item models — Tasks (EKReminder-shaped) + Events (EKEvent-shaped), stored as pure JSON
+// at `<Tasks>/<title>.task.json` / `<Events>/<title>.event.json`. One zod schema per kind = codec
+// = type. Loose ⇒ foreign keys ride through. `title` is derived from the filename (never stored).
+// Reads are lenient; the writer enforces the required fields (an event needs start/end).
 
 import { z } from 'zod'
 

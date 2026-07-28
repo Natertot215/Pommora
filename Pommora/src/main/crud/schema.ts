@@ -1,10 +1,9 @@
 // Agenda property-schema CRUD — generalized over a "schema target" (kind + schema + member
-// enumeration + per-member value strip). Collections left this path in PropertiesV2: their
-// defs live in the nexus-wide registry (crud/registryProperty) with sidecar assignment ids
-// (crud/assignment); only Agenda configs still hold inline `property_definitions`.
-// `stripPageMember` stays exported — the registry's global delete fan-out reuses it.
-// add/rename/reorder are sidecar-only writes; delete + a lossy changeType also strip every
-// member, atomically via SchemaTransaction. Errors flow as Result, never thrown.
+// enumeration + per-member value strip). Collections left this path in PropertiesV2 (their defs
+// live in the nexus-wide registry); only Agenda configs still hold inline `property_definitions`.
+// `stripPageMember` stays exported — the registry's global delete fan-out reuses it. add/rename/
+// reorder are sidecar-only writes; delete + a lossy changeType also strip every member,
+// atomically via SchemaTransaction.
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'

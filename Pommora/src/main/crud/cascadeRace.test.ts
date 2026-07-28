@@ -1,8 +1,7 @@
-// F1 regression: the schema-op page cascades (option rename/remove/clear, [[link]] + Context
-// cascades, property delete/remove) and the cell-write path (mutate's setProperty/setContext) must
-// serialize on the SAME per-file lock. Before the fix the cascade rode SchemaTransaction (no
-// per-file guard) while cell-writes rode serializeOnFile — two independent locks, so a cascade
-// racing a cell edit on one page could silently clobber a value.
+// The schema-op page cascades (option rename/remove/clear, [[link]] + Context cascades, property
+// delete/remove) and the cell-write path (mutate's setProperty/setContext) must serialize on the
+// SAME per-file lock — two independent locks would let a cascade racing a cell edit on one page
+// silently clobber a value.
 //
 // This drives the REAL keys: the cell-write locks on resolveUnderRoot's output (realpath'd) and
 // the cascade keys off sessionRoot(). They match ONLY because openSession canonicalizes the root

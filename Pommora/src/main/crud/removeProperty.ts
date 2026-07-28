@@ -1,12 +1,9 @@
 // Remove — the daily non-destructive lifecycle op, and its restore half. Remove caches
 // { pageId: raw } + unassigns on the Collection's sidecar FIRST, then strips the property's value
-// from every member page under its file lock. Cache-before-strip keeps Remove RECOVERABLE:
-// the values are persisted before any page loses them, so an fs failure mid-strip never destroys
-// them. (The pre-strip snapshot is best-effort against a concurrent edit of the SAME property
-// mid-remove — the cache may then hold a value one edit stale; acceptable, since it's a restore
-// convenience for a value being intentionally cleared, never canonical data.) Re-assigning
-// restores each cached value that still conforms to the def's CURRENT type + options (per-value
-// reconciliation); the global Delete purges these caches.
+// from every member page under its file lock. Cache-before-strip keeps Remove RECOVERABLE: the
+// values are persisted before any page loses them, so an fs failure mid-strip never destroys
+// them. Re-assigning restores each cached value that still conforms to the def's CURRENT type +
+// options (per-value reconciliation); the global Delete purges these caches.
 
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'

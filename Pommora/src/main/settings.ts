@@ -1,8 +1,7 @@
 // Per-Nexus settings (`.nexus/settings.json`), Swift-compatible. Swift's decoder REQUIRES
 // `version` + `labels` + `modified_at`, so a partial settings.json (e.g. one React wrote with
 // only profile_image) makes Swift reseed and lose data. ensureSettings guarantees the file is
-// always a full, Swift-decodable shape — the settings half of opening the same folder in either
-// app with no conflict (the identity half is ensureIdentity).
+// always a full, Swift-decodable shape.
 
 import { mkdir } from 'node:fs/promises'
 import {

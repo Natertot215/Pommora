@@ -1,9 +1,8 @@
-// The BlockHost read/write path: the block document lives on the host's own
-// config — homepage.json for the dev host — and every write is a locked
-// read-merge-write, so layout/blocks/blocks_locked are the ONLY keys touched and
-// foreign keys (banner included) survive. All homepage.json writers serialize on
-// the config path: this module and setBanner's homepage branch share the lock, or
-// a banner write racing a debounced layout write becomes a whole-file lost update.
+// The block document lives on the host's own config — homepage.json for the dev host — and
+// every write is a locked read-merge-write, so layout/blocks/blocks_locked are the ONLY keys
+// touched and foreign keys (banner included) survive. All homepage.json writers serialize on
+// the config path: this module and setBanner's homepage branch share the lock, or a banner
+// write racing a debounced layout write becomes a whole-file lost update.
 
 import { mkdir, readFile, rm, stat } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -278,8 +277,7 @@ export async function writeMarkdownBlock(
 }
 
 /** Every block host with its resolved folder: the homepage singleton plus one per Space.
- *  A read-path walk, so it tolerates a failed world load (those hosts just skip this pass)
- *  and never writes. */
+ *  Tolerates a failed world load (those hosts just skip this pass). */
 async function listBlockHosts(root: string): Promise<{ config: string; dir: string }[]> {
   const homepage: BlockHostRef = { kind: 'homepage' }
   const hosts = [
@@ -300,9 +298,8 @@ async function listBlockHosts(root: string): Promise<{ config: string; dir: stri
 }
 
 /** Every markdown block across all hosts as `{ id, file }` — the shared walk under both the
- *  link-index read and the rename heal (a block id is globally unique, so the host isn't threaded
- *  out past the file path). Non-markdown tiles are filtered here; a missing backing file is left
- *  to each caller to tolerate. */
+ *  link-index read and the rename heal. Non-markdown tiles are filtered here; a missing
+ *  backing file is left to each caller to tolerate. */
 async function markdownBlockFiles(root: string): Promise<{ id: string; file: string }[]> {
   const out: { id: string; file: string }[] = []
   for (const host of await listBlockHosts(root)) {

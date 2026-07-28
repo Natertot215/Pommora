@@ -7,12 +7,8 @@ export function normalizeSeg(s: string): string {
   return s.normalize('NFC').toLocaleLowerCase()
 }
 
-/**
- * Should this directory be skipped while walking the nexus?
- * @param name    the directory's own name (basename)
- * @param relPath the directory path relative to the nexus root (POSIX-style, '/'-joined)
- * @param excluded user `excluded_folders` from settings.json (nexus-relative paths)
- */
+/** Should this directory be skipped while walking the nexus? `relPath` is POSIX-style,
+ *  '/'-joined; `excluded` is user `excluded_folders` from settings.json. */
 export function shouldSkipDir(name: string, relPath: string, excluded: string[]): boolean {
   // Convention skips: dot-prefixed (.nexus/.git/.trash), underscore-prefixed
   // (sidecars are files, but underscore folders are internal), and node_modules.

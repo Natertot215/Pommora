@@ -127,7 +127,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const selection = useSession((s) => s.selection)
   const select = useSession((s) => s.select)
   // The store's one write path — runs the op AND refetches immediately (load()), so a table reorder /
-  // reassign propagates to the sidebar right away instead of waiting on the fs watcher's settle (~1s).
+  // reassign propagates to the sidebar right away instead of waiting on the fs watcher to settle.
   const mutate = useSession((s) => s.mutate)
   const load = useSession((s) => s.load)
   const saveView = useSaveView(source, load)
@@ -555,8 +555,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       </span>
     )
   }
-  // A column's resolved display style: the live override keys, over the saved per-view
-  // entry, over the type default.
   const colStyle = (id: string): ColumnStyle => ({
     ...styleFor(id, schema, liveView),
     ...styleOverride[id],
@@ -1491,9 +1489,6 @@ function ColumnHeader({
   )
 }
 
-/** One data row + its hover-revealed drag grip. The grip sits in the lead cell's gutter
- *  lane — the same slot the group disclosure chevron occupies — so handles align with the chevrons and
- *  the row content lines up with the group headers. useTableRowDrag mutes the row while it's lifted. */
 /** One stable per-table handler set for the memoized rows — identities never change; calls read
  *  the freshest closures through a ref in TableView. */
 type RowCellApi = {
@@ -1514,9 +1509,12 @@ function gapShift(d: DragShift | null, ci: number): string | undefined {
   return undefined
 }
 
-// Memoized: a row re-renders only when ITS inputs change — every prop is identity-stable across
-// unrelated renders (tree pushes, another row's editing, drag frames). `overlayCol` flips only for the
-// row holding the inline editor, so only it re-renders on open/close.
+// One data row + its hover-revealed drag grip. Memoized so a row re-renders only when ITS inputs
+// change — every prop is identity-stable across unrelated renders (tree pushes, another row's editing,
+// drag frames); `overlayCol` flips only for the row holding the inline editor. The grip sits in the
+// lead cell's gutter lane, the same slot the group disclosure chevron occupies, so handles align with
+// the chevrons and the row content lines up with the group headers. useTableRowDrag mutes the row
+// while it's lifted.
 const DataRow = memo(function DataRow({
   row,
   columns,

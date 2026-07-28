@@ -134,7 +134,7 @@ let live: Live | null = null
 
 // Upper bound on a single frame's dt. A velocity×dt loop teleports if rAF stalls (a jank spike while
 // the window keeps focus, display sleep/wake with the pointer held) and resumes with a huge gap — cap
-// it so the worst case is one ~50ms step, not a thousand-pixel jump.
+// it so the worst case is one small step, not a thousand-pixel jump.
 const MAX_FRAME_MS = 50
 
 function readParams(el: HTMLElement): Params {

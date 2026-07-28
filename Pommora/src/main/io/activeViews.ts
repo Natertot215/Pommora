@@ -1,8 +1,7 @@
-// The per-machine active-view pointer: `.nexus/activeViews.json`, keyed by container id → the id of
-// the view currently selected for that Collection/Set. Deliberately NOT in the synced sidecar's
-// `views[]` — keeping the selection local avoids modified_at churn and cross-machine selection
-// conflicts. Inside `.nexus/` it's outside the content walk + any body-sync — per-machine by
-// construction. Mirrors folds.ts.
+// The per-machine active-view pointer: `.nexus/activeViews.json`, keyed by container id → the id
+// of the view currently selected for that Collection/Set. Deliberately NOT in the synced
+// sidecar's `views[]` — keeping the selection local avoids modified_at churn and cross-machine
+// selection conflicts. Per-machine by construction, same rationale as folds.ts.
 import { mkdir } from 'node:fs/promises'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../paths'
 import { readJsonObject, writeJson } from './atomicWrite'

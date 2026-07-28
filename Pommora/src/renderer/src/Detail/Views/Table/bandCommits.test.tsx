@@ -491,7 +491,7 @@ describe('band reparent', () => {
       op: 'moveSet',
       path: 'Col/B',
       newParentPath: 'Col/A',
-      order: ['sA1', 'sB'], // current children + APPEND — never the visual slot (C-4)
+      order: ['sA1', 'sB'], // current children + APPEND — never the visual slot
     })
     expect(saveSpy).toHaveBeenCalledOnce()
     expect(lastSavedView().group_order).toEqual(['sA', 'sA1', 'sB'])

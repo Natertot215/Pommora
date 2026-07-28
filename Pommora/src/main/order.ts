@@ -8,10 +8,8 @@ export interface Orderable {
   title: string
 }
 
-/**
- * @param fallback when there's no persisted order: 'id' (ULID = creation order,
- *   the Swift default) or 'title' (for adopted entities whose ids are hashes).
- */
+/** `fallback` when there's no persisted order: 'id' (ULID = creation order, the Swift default)
+ *  or 'title' (for adopted entities whose ids are hashes). */
 export function resolveOrder<T extends Orderable>(
   items: T[],
   order: string[] | undefined,

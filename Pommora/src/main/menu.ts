@@ -8,10 +8,8 @@ import { VIEW_SCALE_DEFAULT } from '@shared/types'
 
 type AdoptFn = (path: string) => Promise<void>
 
-// Build + install the native application menu. Renderer-driven items send a
-// 'menu:action' string the renderer handles (reusing its store actions); main-side
-// items (Open Recent, Reveal, Reload) act here. Rebuilt whenever the session or
-// recents change, so Open Recent + the session-gated items stay current.
+// Renderer-driven items send a 'menu:action' string the renderer handles; main-side items
+// (Open Recent, Reveal, Reload) act here. Rebuilt whenever the session or recents change.
 export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promise<void> {
   const userData = app.getPath('userData')
   const config = await readAppConfig(userData)
