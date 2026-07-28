@@ -2,7 +2,7 @@
 
 Pommora's type system. The token file is the source of truth for what ships — every size, line height, and weight lives there, and this doc names the styles and where they go. The Figma "Pommora - React" library is the visual reference the ramp was drawn from, not the arbiter of what renders. Family is **Inter**, loaded as a variable font, so any weight on its axis draws.
 
-> **Variant = weight.** Every style exposes the same four weights by name — **Standard · Emphasized · Semibold · Bold** — and a variant name *is* the weight it renders, uniformly across every style. `text.<style>.<variant>` composes the two: size and line height from the style, weight from the variant. There's no role-based remapping.
+> **Variant = weight.** Every style exposes the same weights by name — **Standard · Emphasized · Semibold · Bold** — and a variant name *is* the weight it renders. `text.<style>.<variant>` composes the two: size and line height from the style, weight from the variant. There's no role-based remapping.
 
 ### The Ramp
 
@@ -18,7 +18,7 @@ Pommora's type system. The token file is the source of truth for what ships — 
 | Footnote                        | small detail                                      |
 | Subline                         | footnote's size on a tighter line box             |
 
-The sizes are the macOS AppKit text scale drawn in Inter, with three edits. **Headline** is pinned to Body's size, so a headline is told apart by weight rather than scale. **Control** and **Subline** are renamed for what they actually drive here — control chrome and the Subfield. And **Body** is the macOS standard content size, which is why it carries the row primitive rather than a smaller step.
+The sizes are the macOS AppKit text scale drawn in Inter, with a few edits. **Headline** is pinned to Body's size, so a headline is told apart by weight rather than scale. **Control** and **Subline** are renamed for what they actually drive here — control chrome and the Subfield. And **Body** is the macOS standard content size, which is why it carries the row primitive rather than a smaller step.
 
 ### Where Each Style Goes
 
@@ -37,9 +37,9 @@ The **Markdown editor doesn't consume the ramp.** Its body scales from its own z
 
 ### In Code
 
-The type tokens are authored in vanilla-extract in two layers: **font primitives** — family, the weight ladder, and a size + line height per style — as the single source, and **composed text classes** (`text.<style>.<variant>`) that apply a whole style to a component. The family, the weight ladder, and the individual sizes plain CSS needs are bridged to `var(--…)` names so a stylesheet draws the same values.
+The type tokens are authored in vanilla-extract in two layers: **font primitives** — family, the weight ladder, and a size and line height per style — as the single source, and **composed text classes** that apply a whole style to a component. What plain CSS needs is bridged to `var(--…)` names so a stylesheet draws the same values.
 
-The same file holds the **capped label** — ellipsis at rest, scroll-on-hover with a mask fade at the leading edge — the one source for that behavior across chips, menu and sidebar rows, and the handle menu. The width cap is the consumer's.
+The same file holds the **capped label** — ellipsis at rest, scroll-on-hover with a mask fade at the leading edge — the one source for that behavior app-wide. The width cap is the consumer's.
 
 ### Not Yet Established
 

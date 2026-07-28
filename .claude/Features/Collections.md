@@ -14,21 +14,21 @@ Property definitions live in the nexus-wide registry (`.nexus/properties.json`);
 
 #### II. Sidecar + Schema
 
-`_pagecollection.json` holds the Collection's identity, its `properties` assignment (the registry prop-ids every Page's frontmatter conforms to), its children's order — the parent owns the order of both its child Sets and its root Pages — its saved views, its open-in mode, and its presentation keys. The sidecar's full shape is `shared/schemas.ts`. The title is the folder name, not a field, and foreign keys ride through on every write.
+`_pagecollection.json` holds the Collection's identity, its `properties` assignment, its children's order — the parent owns the order of both its child Sets and its root Pages — its saved views, its open-in mode, and its presentation keys. The sidecar's full shape is `shared/schemas.ts`. The title is the folder name, not a field, and foreign keys ride through on every write.
 
-Creating a Collection mints a ULID and seeds one default view — no properties. The user adds properties through Collection Settings. The full property catalog, value shapes, and schema mechanics → `Properties.md`.
+Creating a Collection mints a ULID and seeds one default view, with no properties. The full property catalog, value shapes, and schema mechanics → `Properties.md`.
 
 #### II. Collection Settings
 
-The schema editor — create properties (minted into the nexus-wide registry and assigned here), rename, reorder, change a property's type, and seed per-type options; renames, type changes, and option edits change the global definition for every assigning Collection. Removing a property lifts each member's value into a restore cache on the Collection's sidecar, then clears the key from every member's frontmatter; re-assigning replays the cached values that still validate against the definition's current type and options. A page carrying no `id` is cleared without being cached, so its value doesn't come back. The rare nexus-wide delete snapshots the definition and every value into `.trash` first and strips per file after — recoverable from that snapshot rather than atomic across the fan-out. The pane is the Properties leaf of the toolbar's Settings dropdown. Full schema behavior → `Properties.md`.
+The schema editor — create properties, rename, reorder, change a type, and seed per-type options; renames, type changes, and option edits change the global definition for every assigning Collection. Removing a property lifts each member's value into a restore cache on the Collection's sidecar, then clears the key from every member's frontmatter; re-assigning replays the cached values that still validate. A page carrying no `id` is cleared without being cached, so its value doesn't come back. The rare nexus-wide delete snapshots the definition and every value into `.trash` first and strips per file after — recoverable from that snapshot rather than atomic across the fan-out. The pane is the Properties leaf of the toolbar's Settings dropdown. Full schema behavior → `Properties.md`.
 
 #### II. Open-In Mode
 
-Each Collection carries an `open_in` field (`page-preview` | `full-page`; absent = `full-page`) deciding where its Pages open — the main detail pane, or the floating Page Preview window. Container-view title clicks and sidebar rows both honor it; ⌘-click is always the explicit full-page bypass to a new tab. The field is set from the SettingsPane's Configuration leaf. Opening behavior → `Pages.md`; the window → `PagePreview.md`.
+Each Collection carries an `open_in` field deciding where its Pages open — the main detail pane or the floating Page Preview window, defaulting to full-page when absent. Container-view title clicks and sidebar rows both honor it; ⌘-click is always the explicit full-page bypass to a new tab. The field is set from the SettingsPane's Configuration leaf. Opening behavior → `Pages.md`; the window → `PagePreview.md`.
 
 #### II. Move Semantics
 
-Moving a Page **within** a Collection — between its Sets, Sub-Sets, and root, at any depth — is a pure filesystem move with no property loss: the schema is shared and Sets carry none of their own. Moving a Page to a **different** Collection brings it under the destination's assigned schema — a move never strips values; properties the destination doesn't assign ride through as preserved foreign frontmatter rather than rendering, and assigning one there surfaces its values instantly. Pages and whole Sets both reparent by sidebar drag; a Set lands in any Collection or Set outside its own subtree, never at the top level.
+Moving a Page **within** a Collection is a pure filesystem move with no property loss: the schema is shared and Sets carry none of their own. Moving a Page to a **different** Collection brings it under the destination's assigned schema, and a move never strips values — properties the destination doesn't assign ride through as preserved foreign frontmatter rather than rendering, and assigning one there surfaces its values instantly. Pages and whole Sets both reparent by sidebar drag; a Set lands in any Collection or Set outside its own subtree, never at the top level.
 
 ### Architecture
 

@@ -11,7 +11,7 @@ Role is computed from depth at render time and never stored: the same folder bec
 
 #### II. Sidecar
 
-`_pageset.json` holds the Set's id, a `parent_id` breadcrumb, its icon, the orders for its Pages and child Sets, and the view-bearing fields. The shape is identical at every depth: an app-made Set is born with a default view wherever it sits, and the read path never consults depth. Position is authoritative for parentage: `parent_id` is stamped at create and healed from position on adoption, so a missing one is never a data problem and nothing on the read path consults it. The title is the folder name, and foreign keys ride through on every write.
+`_pageset.json` holds the Set's id, a `parent_id` breadcrumb, its icon, the orders for its Pages and child Sets, and the view-bearing fields. The shape is identical at every depth, and an app-made Set is born with a default view wherever it sits. Position is authoritative for parentage: `parent_id` is stamped at create and healed from position on adoption, so a missing one is never a data problem and nothing on the read path consults it. The title is the folder name, and foreign keys ride through on every write.
 
 #### II. Recursive Nesting
 
@@ -23,7 +23,7 @@ Only a depth-1 Set is offered the view switcher, and only it mints an active vie
 
 #### II. Selection + Navigation
 
-A selected depth-1 Set opens its own scoped view and carries its path for rename-safe reconciliation; a Sub-Set's row only toggles its disclosure. A Set's disclosure shows its child Sub-Sets and Pages. The depth rule is the sidebar's alone: nav search indexes every Set at any depth, and a `set` selection mounts the container view whatever its depth, so the view paths test for depth-1 rather than trusting it — a reparent plus a Back-nav replay can surface a Sub-Set as a selection. Sidebar layout → `Sidebar.md`.
+A selected depth-1 Set opens its own scoped view and carries its path for rename-safe reconciliation; a Sub-Set's row only toggles its disclosure. The depth rule is the sidebar's alone: nav search indexes every Set at any depth, and a `set` selection mounts the container view whatever its depth, so the view paths test for depth-1 rather than trusting it — a reparent plus a Back-nav replay can surface a Sub-Set as a selection. Sidebar layout → `Sidebar.md`.
 
 #### II. Moves
 
@@ -33,11 +33,11 @@ Within one Collection, moving a Page or a whole Set at any depth is a pure files
 
 #### II. CRUD
 
-Page Sets run through the same generic folder-entity CRUD as Collections and Spaces: create writes the folder plus its seeded sidecar, rename is a folder rename, move reparents the whole subtree, and delete sends the folder with its Sub-Sets and Pages to the configured delete target (→ `Configuration.md`). Reorder persists the parent's orders on each drag.
+Page Sets run through the same generic folder-entity CRUD as Collections and Spaces. A move reparents the whole subtree, and a delete sends the folder with its Sub-Sets and Pages to the configured delete target (→ `Configuration.md`). Reorder persists the parent's orders on each drag.
 
 #### II. Index (Model A)
 
-Each `page_sets` row references exactly one parent — its Collection at depth-1, its parent Set deeper. A page row records the owning Collection plus its immediate Set (null at the Collection root), both from the build's tree walk, so pages in Sets are ordinary page rows with no special-casing. Nothing queries the index yet. Full index → `Architecture.md`.
+Each `page_sets` row references exactly one parent — its Collection at depth-1, its parent Set deeper. A page row records the owning Collection plus its immediate Set, so pages in Sets are ordinary page rows with no special-casing. Nothing queries the index yet. Full index → `Architecture.md`.
 
 ### Pending
 
