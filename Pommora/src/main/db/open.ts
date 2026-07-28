@@ -13,13 +13,12 @@ import { nexusDir } from '../paths'
 
 export const DB_FILENAME = 'nexus.db'
 
-/** The file plus the WAL/SHM siblings SQLite writes beside it. */
-const dbFiles = (dbPath: string): string[] => ['', '-wal', '-shm'].map((s) => dbPath + s)
-
-export function removeDbFiles(nexusRoot: string): void {
-  for (const f of dbFiles(join(nexusDir(nexusRoot), DB_FILENAME))) {
+/** Drops the WAL/SHM siblings alongside the file — leaving them orphans a journal that SQLite
+ *  would replay into the next database created at this path. */
+function removeDbFiles(dbPath: string): void {
+  for (const suffix of ['', '-wal', '-shm']) {
     try {
-      rmSync(f, { force: true })
+      rmSync(dbPath + suffix, { force: true })
     } catch {
       /* best-effort */
     }
@@ -38,7 +37,7 @@ export function openNexusDb(nexusRoot: string): Db | null {
       if (readSchemaVersion(existing) === SCHEMA_VERSION) return existing
       existing.close()
     }
-    removeDbFiles(nexusRoot)
+    removeDbFiles(dbPath)
   }
 
   const db = openDb(dbPath)
