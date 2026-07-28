@@ -14,7 +14,7 @@ export type Scope =
   | 'viewOrder'
   | 'headingCols'
   | 'linkTitle'
-  | 'layout'
+  | 'blockDoc'
   | 'tabs'
   | 'previews'
   | 'recents'

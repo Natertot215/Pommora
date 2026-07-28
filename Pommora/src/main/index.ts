@@ -63,7 +63,7 @@ import { pathExists } from './io/atomicWrite'
 import { readAppConfig, writeAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { serializeOnFile } from './io/fileLock'
-import { openSessionDb, closeSessionDb } from './sessionDb'
+import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
 import { ensureIdentity } from './identity'
 import { ensureContextsRegistry } from './contextsRegistry'
@@ -1059,24 +1059,21 @@ handleEnvelope('navViewModes:set', async (modes: unknown): Promise<Ack> => {
   return { ok: true }
 })
 
-// The block document — a targeted per-host load + locked partial writes on the host's
-// config (homepage.json for the dev host), never woven into the tree walk.
-handleEnvelope('blocks:get', async (host: unknown): Promise<BlocksGetResult> => {
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
+// The block document — one row per host, loaded on host open and never woven into the tree walk.
+handleEnvelope('blocks:get', (host: unknown): BlocksGetResult => {
   const h = coerceBlockHost(host)
   if (!h) return { ok: false, error: 'Unknown block host.' }
-  return { ok: true, doc: await readBlockDoc(root, h) }
+  return { ok: true, doc: readBlockDoc(h) }
 })
-handleEnvelope('blocks:save', async (host: unknown, patch: unknown): Promise<BlocksSaveResult> => {
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
+handleEnvelope('blocks:save', (host: unknown, patch: unknown): BlocksSaveResult => {
+  if (adopting) return { ok: false, error: 'Nexus switching.' }
   const h = coerceBlockHost(host)
   if (!h) return { ok: false, error: 'Unknown block host.' }
   if (!patch || typeof patch !== 'object') return { ok: false, error: 'Invalid block-doc patch.' }
   const problem = blockPatchProblem(patch as BlockDocPatch)
   if (problem) return { ok: false, error: problem }
-  await writeBlockDoc(root, h, patch as BlockDocPatch)
+  if (sessionDb() === null) return { ok: false, error: 'No nexus is open.' }
+  writeBlockDoc(h, patch as BlockDocPatch)
   return { ok: true }
 })
 

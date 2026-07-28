@@ -1,9 +1,12 @@
-// A block document is split by what it is. `blocks[]` and the host lock stay on the host's own
-// config — those entries name real content (a markdown file per tile, an embedded page, a view) —
-// while the layout is arrangement, so it lives in nexus.db where no hand-edit can mangle a host
-// into an unrenderable tree. Config writes are a locked read-merge-write touching only
-// blocks/blocks_locked, so foreign keys (banner included) survive; the layout no longer shares
-// that file, so a banner write and a layout drag can't lose each other.
+// A block document — layout, entries, lock — is ONE row in nexus.db, keyed by host. It is an
+// arrangement of things that live elsewhere: every entry is a reference (a markdown file per tile,
+// an embedded page, a view onto a container), so the document creates nothing a Nexus would miss.
+// What each tile *says* stays a file: markdown bodies are prose, in the connections graph, and
+// rewritten by a rename cascade.
+//
+// A host's own sidecar keeps identity and appearance — homepage.json its banner and icon, a Space
+// its id and color — and no longer carries the document, so a block gesture and a banner write can
+// never lose each other, and no hand-edit can mangle a host into an unrenderable tree.
 
 import { mkdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -19,17 +22,10 @@ import { normalizeTitle } from '@shared/connections'
 import { scanConnections } from './connections/scan'
 import { rewriteConnections } from './connections/rewrite'
 import { newId } from './ids'
-import {
-  atomicWriteFile,
-  mutateJson,
-  pathExists,
-  readJsonObject,
-  rmwJsonStrict,
-  trashWithTimestamp,
-} from './io/atomicWrite'
+import { atomicWriteFile, pathExists, trashWithTimestamp } from './io/atomicWrite'
 import { serializeOnFile } from './io/fileLock'
 import { loadContextWorld } from './crud/contextWrite'
-import { blockHostDir, nexusConfig, NEXUS_CONFIG_FILES, SPACE_SIDECAR } from './paths'
+import { blockHostDir } from './paths'
 
 const EPOCH = '1970-01-01T00:00:00.000Z'
 
@@ -49,15 +45,6 @@ async function hostDir(root: string, host: BlockHostRef): Promise<string> {
   return host.kind === 'homepage' ? blockHostDir(root, host) : spaceHostDir(root, host.id)
 }
 
-/** The host's own config carries the block document (one file, one entity):
- *  homepage.json, or the Space's `_space.json`. Its writes don't cost a re-walk:
- *  the app's own writes are echo-suppressed at the watcher (io/writeEcho). */
-export async function blockHostConfig(root: string, host: BlockHostRef): Promise<string> {
-  return host.kind === 'homepage'
-    ? nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
-    : join(await spaceHostDir(root, host.id), SPACE_SIDECAR)
-}
-
 /** A markdown block's backing file: `<tile-ulid>.md` in the host's own folder. */
 export async function blockFilePath(
   root: string,
@@ -67,51 +54,31 @@ export async function blockFilePath(
   return join(await hostDir(root, host), `${tileId}.md`)
 }
 
-/** The one locked read-merge-write every doc mutation goes through. A Space's sidecar
- *  carries identity + relations other writers own, so its RMW is STRICT — a transiently
- *  unreadable `_space.json` fails the save rather than clobbering down to a near-empty
- *  object. Homepage keeps the from-nothing fallback (the config legitimately starts absent). */
-async function mutateDoc(
-  root: string,
-  host: BlockHostRef,
-  fn: (cur: Record<string, unknown>) => Record<string, unknown>,
-): Promise<void> {
-  const path = await blockHostConfig(root, host)
-  if (host.kind === 'space') {
-    await serializeOnFile(path, async () => {
-      const r = await rmwJsonStrict(path, fn)
-      if (!r.ok) throw new Error(r.error.message)
-    })
-    return
-  }
-  await serializeOnFile(path, () => mutateJson<Record<string, unknown>>(path, () => ({}), fn))
-}
-
-export async function readBlockDoc(root: string, host: BlockHostRef): Promise<BlockDoc> {
-  const raw = await readJsonObject(await blockHostConfig(root, host))
+/** The document for a host, or the empty one it opens with. */
+export function readBlockDoc(host: BlockHostRef): BlockDoc {
+  const row = readKey<Partial<BlockDoc>>('blockDoc', blockHostKey(host))
   return {
-    layout: readKey<unknown>('layout', blockHostKey(host)) ?? undefined,
-    blocks: Array.isArray(raw?.blocks) ? raw.blocks : [],
-    locked: raw?.blocks_locked === true,
+    layout: row?.layout,
+    blocks: Array.isArray(row?.blocks) ? row.blocks : [],
+    locked: row?.locked === true,
   }
 }
 
-export async function writeBlockDoc(
-  root: string,
-  host: BlockHostRef,
-  patch: BlockDocPatch,
-): Promise<void> {
-  if ('layout' in patch) writeKey('layout', blockHostKey(host), patch.layout ?? null)
-  if (!('blocks' in patch) && !('locked' in patch)) return
-  await mutateDoc(root, host, (cur) => {
-    const next = { ...cur }
-    if ('blocks' in patch) next.blocks = patch.blocks
-    if ('locked' in patch) {
-      if (patch.locked) next.blocks_locked = true
-      else delete next.blocks_locked
-    }
-    return next
+/** Patch the document. The read and the write are one synchronous pair, so two saves arriving
+ *  together — a layout debounce beside an entry op — cannot interleave and lose each other,
+ *  which is what the file lock used to buy. */
+export function writeBlockDoc(host: BlockHostRef, patch: BlockDocPatch): void {
+  const cur = readBlockDoc(host)
+  writeKey('blockDoc', blockHostKey(host), {
+    layout: 'layout' in patch ? patch.layout : cur.layout,
+    blocks: 'blocks' in patch ? patch.blocks : cur.blocks,
+    locked: 'locked' in patch ? patch.locked === true : cur.locked,
   })
+}
+
+/** Replace the entries through the given updater, leaving layout and lock alone. */
+function setBlocks(host: BlockHostRef, update: (blocks: unknown[]) => unknown[]): void {
+  writeBlockDoc(host, { blocks: update(readBlockDoc(host).blocks) })
 }
 
 /** Mint a markdown block: host dir, an empty `<ulid>.md`, then the `blocks[]` entry —
@@ -121,10 +88,7 @@ export async function createMarkdownBlock(root: string, host: BlockHostRef): Pro
   const id = newId()
   await mkdir(await hostDir(root, host), { recursive: true })
   await atomicWriteFile(await blockFilePath(root, host, id), '')
-  await mutateDoc(root, host, (cur) => {
-    const blocks = Array.isArray(cur.blocks) ? cur.blocks : []
-    return { ...cur, blocks: [...blocks, { id, type: 'markdown' }] }
-  })
+  setBlocks(host, (blocks) => [...blocks, { id, type: 'markdown' }])
   return id
 }
 
@@ -137,16 +101,14 @@ export async function removeBlockTile(
   tileId: string,
 ): Promise<void> {
   let wasMarkdown = false
-  await mutateDoc(root, host, (cur) => {
-    const blocks = Array.isArray(cur.blocks) ? cur.blocks : []
-    const kept = blocks.filter((b) => {
+  setBlocks(host, (blocks) =>
+    blocks.filter((b) => {
       const entry = knownBlock(b)
       if (entry?.id !== tileId) return true
       if (entry.type === 'markdown') wasMarkdown = true
       return false
-    })
-    return { ...cur, blocks: kept }
-  })
+    }),
+  )
   if (wasMarkdown) await trashTileFile(root, host, tileId)
 }
 
@@ -169,16 +131,14 @@ async function flipTile(
   patch: Record<string, unknown>,
 ): Promise<void> {
   let wasMarkdown = false
-  await mutateDoc(root, host, (cur) => {
-    const blocks = Array.isArray(cur.blocks) ? cur.blocks : []
-    const next = blocks.map((b) => {
+  setBlocks(host, (blocks) =>
+    blocks.map((b) => {
       const entry = knownBlock(b)
       if (entry?.id !== tileId) return b
       if (entry.type === 'markdown') wasMarkdown = true
       return { ...(b as Record<string, unknown>), ...patch }
-    })
-    return { ...cur, blocks: next }
-  })
+    }),
+  )
   if (wasMarkdown) await trashTileFile(root, host, tileId)
 }
 
@@ -222,7 +182,7 @@ export async function duplicateBlockTile(
   host: BlockHostRef,
   tileId: string,
 ): Promise<string | null> {
-  const doc = await readBlockDoc(root, host)
+  const doc = readBlockDoc(host)
   const src = doc.blocks.find((b) => knownBlock(b)?.id === tileId)
   const entry = src ? knownBlock(src) : null
   if (!src || !entry) return null
@@ -236,10 +196,7 @@ export async function duplicateBlockTile(
   if (entry.type === 'view' && Array.isArray(copy.views)) {
     copy = { ...copy, views: remintConfigIds(copy.views as unknown[]) }
   }
-  await mutateDoc(root, host, (cur) => ({
-    ...cur,
-    blocks: [...(Array.isArray(cur.blocks) ? cur.blocks : []), copy],
-  }))
+  setBlocks(host, (blocks) => [...blocks, copy])
   return id
 }
 
@@ -269,19 +226,16 @@ export async function writeMarkdownBlock(
 
 /** Every block host with its resolved folder: the homepage singleton plus one per Space.
  *  Tolerates a failed world load (those hosts just skip this pass). */
-async function listBlockHosts(root: string): Promise<{ config: string; dir: string }[]> {
+async function listBlockHosts(root: string): Promise<{ host: BlockHostRef; dir: string }[]> {
   const homepage: BlockHostRef = { kind: 'homepage' }
-  const hosts = [
-    {
-      config: nexusConfig(root, NEXUS_CONFIG_FILES.homepage),
-      dir: blockHostDir(root, homepage),
-    },
+  const hosts: { host: BlockHostRef; dir: string }[] = [
+    { host: homepage, dir: blockHostDir(root, homepage) },
   ]
   try {
     const world = await loadContextWorld(root)
     if (world.ok)
-      for (const ref of world.value.spaceById.values())
-        hosts.push({ config: join(ref.dir, SPACE_SIDECAR), dir: ref.dir })
+      for (const [id, ref] of world.value.spaceById)
+        hosts.push({ host: { kind: 'space', id }, dir: ref.dir })
   } catch {
     // registry unreadable — homepage only this pass
   }
@@ -293,13 +247,11 @@ async function listBlockHosts(root: string): Promise<{ config: string; dir: stri
  *  backing file is left to each caller to tolerate. */
 async function markdownBlockFiles(root: string): Promise<{ id: string; file: string }[]> {
   const out: { id: string; file: string }[] = []
-  for (const host of await listBlockHosts(root)) {
-    const raw = await readJsonObject(host.config)
-    const blocks = Array.isArray(raw?.blocks) ? raw.blocks : []
-    for (const b of blocks) {
+  for (const { host, dir } of await listBlockHosts(root)) {
+    for (const b of readBlockDoc(host).blocks) {
       const entry = knownBlock(b)
       if (entry?.type !== 'markdown') continue
-      out.push({ id: entry.id, file: join(host.dir, `${entry.id}.md`) })
+      out.push({ id: entry.id, file: join(dir, `${entry.id}.md`) })
     }
   }
   return out
