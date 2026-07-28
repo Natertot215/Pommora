@@ -1,85 +1,48 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { PreviewsFile } from '@shared/types'
-import {
-  EMPTY_PREVIEWS,
-  flushPreviewsWrites,
-  readPreviewsState,
-  schedulePreviewsWrite,
-} from './previewState'
+import { openSessionDb, closeSessionDb } from '../sessionDb'
+import { EMPTY_PREVIEWS, readPreviewsState, writePreviewsState } from './previewState'
 
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'previews-'))
+  openSessionDb(root)
 })
-afterEach(() => rm(root, { recursive: true, force: true }))
+afterEach(async () => {
+  closeSessionDb()
+  await rm(root, { recursive: true, force: true })
+})
 
-const filePath = (): string => join(root, '.nexus', 'page-previews.json')
-const seed = async (content: string): Promise<void> => {
-  await mkdir(join(root, '.nexus'), { recursive: true })
-  await writeFile(filePath(), content)
+const file: PreviewsFile = {
+  navSet: { tabs: [{ target: { kind: 'navwindow' } }], activeIndex: 0 },
+  origins: {
+    p1: { tabs: [{ target: { kind: 'page', id: 'p2', path: 'b.md' } }], activeIndex: 0 },
+  },
+  open: { flavor: 'page', originId: 'p1' },
 }
 
-const page = (id: string) => ({ kind: 'page' as const, id, path: `Notes/${id}.md` })
-
-describe('previewState — lenient read', () => {
-  it('absent and corrupt sidecars read as the empty shape', async () => {
-    expect(await readPreviewsState(root)).toEqual(EMPTY_PREVIEWS)
-    await seed('{{{{not json')
-    expect(await readPreviewsState(root)).toEqual(EMPTY_PREVIEWS)
+describe('readPreviewsState', () => {
+  it('reads the empty shape before anything is written', () => {
+    expect(readPreviewsState()).toEqual(EMPTY_PREVIEWS)
   })
 
-  it('drops junk tabs, clamps activeIndex, and reads an emptied record as absent', async () => {
-    await seed(
-      JSON.stringify({
-        navSet: { tabs: [{ target: { kind: 'navwindow' } }], activeIndex: 99 },
-        origins: {
-          x: { tabs: [{ target: page('x') }, { target: 'junk' }, 42], activeIndex: -3 },
-          bad: { tabs: [{ target: { kind: 'collection', id: 'c' } }], activeIndex: 0 },
-        },
-        open: { flavor: 'page', originId: 'x', extra: true },
-      }),
-    )
-    const f = await readPreviewsState(root)
-    expect(f.navSet).toEqual({ tabs: [{ target: { kind: 'navwindow' } }], activeIndex: 0 })
-    expect(f.origins).toEqual({ x: { tabs: [{ target: page('x') }], activeIndex: 0 } })
-    expect(f.open).toEqual({ flavor: 'page', originId: 'x' })
-  })
-})
-
-describe('previewState — the debounced write', () => {
-  it('round-trips the whole file (origins keys + the B-2 override intact) via the drain', async () => {
-    const file: PreviewsFile = {
-      navSet: { tabs: [{ target: { kind: 'navwindow' } }, { target: page('n') }], activeIndex: 1 },
-      origins: {
-        x: { tabs: [{ target: page('x') }, { target: page('y') }], activeIndex: 0 },
-        y: { tabs: [{ target: page('y') }], activeIndex: 0 },
-      },
-      open: { flavor: 'page', originId: 'x' },
-      navOverride: false,
-    }
-    schedulePreviewsWrite(root, file)
-    await flushPreviewsWrites()
-    expect(JSON.parse(await readFile(filePath(), 'utf8'))).toEqual(file)
-    expect(await readPreviewsState(root)).toEqual(file)
+  it('round-trips the nav set, the per-origin sets and the open pointer', () => {
+    writePreviewsState(file)
+    expect(readPreviewsState()).toEqual(file)
   })
 
-  it('a re-keyed write replaces the retired origin on disk (H-6)', async () => {
-    const before: PreviewsFile = {
-      navSet: null,
-      origins: { x: { tabs: [{ target: page('x') }, { target: page('y') }], activeIndex: 0 } },
-      open: { flavor: 'page', originId: 'x' },
-    }
-    schedulePreviewsWrite(root, before)
-    const after: PreviewsFile = {
-      navSet: null,
-      origins: { y: { tabs: [{ target: page('y') }], activeIndex: 0 } },
-      open: { flavor: 'page', originId: 'y' },
-    }
-    schedulePreviewsWrite(root, after)
-    await flushPreviewsWrites()
-    expect(await readPreviewsState(root)).toEqual(after)
+  it('a rewrite replaces the row', () => {
+    writePreviewsState(file)
+    writePreviewsState(EMPTY_PREVIEWS)
+    expect(readPreviewsState()).toEqual(EMPTY_PREVIEWS)
+  })
+
+  it('reads the empty shape with no database open', () => {
+    writePreviewsState(file)
+    closeSessionDb()
+    expect(readPreviewsState()).toEqual(EMPTY_PREVIEWS)
   })
 })

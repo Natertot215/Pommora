@@ -1,28 +1,23 @@
-// Two SYNCED sidecars under `.nexus/` — `navRecents.json` (the auto history stream, MRU) and
-// `navFavorites.json` (the durable favorites list). Unlike activeViews/folds these are NOT
-// device-local — a user's recents and favorites follow them across machines.
+// The two halves of Navigation state, stored differently on purpose.
 //
-// The renderer owns the in-memory arrays and the MRU/dedupe/cap/prune logic; main is the
-// persister. Recents writes DEBOUNCE (passive nav records fire on every selection); favorites
-// are deliberate user acts, so they always write immediately.
+// Recents are a device-local stream: written on every selection, and two machines interleaving
+// their histories has no correct answer. They live as one row in nexus.db.
+//
+// Favorites are a deliberate, rarely-written user act and the one part of Navigation worth
+// following a user across machines, so they stay a file — hand-editable, and validated on read
+// for exactly that reason.
+//
+// The renderer owns the in-memory arrays and all MRU/dedupe/cap/prune logic; main persists.
 
 import { mkdir } from 'node:fs/promises'
 import { isPlainObject } from '@shared/propertyValue'
 import type { NavFavorite, NavState, NavTarget, RecentEntry } from '@shared/types'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../paths'
 import { readJsonArray, writeJson } from './atomicWrite'
-import { debouncedSidecar } from './debouncedSidecar'
 import { serializeOnFile } from './fileLock'
+import { readValue, writeValue } from '../db/localState'
 
-const recentsPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.navRecents)
 const favoritesPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.navFavorites)
-
-/** Coalescing window for the passive nav-record write — long enough that a burst of selections
- *  (Back/Forward, rapid clicks) collapses to one write, short enough that a normal quit's flush
- *  rarely has work to do. */
-const RECENTS_DEBOUNCE_MS = 500
-
-// --- validation (lenient read) --------------------------------------------
 
 const NAV_KINDS = new Set(['homepage', 'context', 'collection', 'set', 'page', 'task', 'event'])
 
@@ -38,62 +33,24 @@ function isNavTarget(v: unknown): v is NavTarget {
   return true
 }
 
-function isRecentEntry(v: unknown): v is RecentEntry {
-  if (!isNavTarget(v)) return false
-  const { pinned } = v as { pinned?: unknown }
-  return pinned === undefined || typeof pinned === 'boolean'
-}
-
-// --- reads ----------------------------------------------------------------
-
-/** Both sidecars, read leniently in parallel: absent / corrupt → empty; invalid entries dropped. */
+/** Recents from the database, favorites read leniently from their file. */
 export async function readNavState(root: string): Promise<NavState> {
-  const [recentsRaw, favoritesRaw] = await Promise.all([
-    readJsonArray(recentsPath(root)),
-    readJsonArray(favoritesPath(root)),
-  ])
+  const favoritesRaw = await readJsonArray(favoritesPath(root))
   return {
-    recents: recentsRaw.filter(isRecentEntry),
+    recents: readValue<RecentEntry[]>('recents') ?? [],
     favorites: favoritesRaw.filter(isNavTarget),
   }
 }
 
-// --- writes ---------------------------------------------------------------
+export function writeRecents(entries: RecentEntry[]): void {
+  writeValue('recents', entries)
+}
 
-// Recents ride the shared debounce machine; favorites' immediate writes fold into the SAME drain
-// accounting via track() — without that they'd be the layer's least-durable writes despite being
-// its most deliberate.
-const sidecar = debouncedSidecar<RecentEntry[]>({
-  path: recentsPath,
-  debounceMs: RECENTS_DEBOUNCE_MS,
-  label: 'nav recents',
-})
-
-/** Favorites — immediate (a deliberate user act; loss is worse than a passive record's). */
+/** Favorites — a whole-file write, serialized so two toggles can't lose each other. */
 export async function writeFavorites(root: string, entries: NavFavorite[]): Promise<void> {
   const path = favoritesPath(root)
-  await sidecar.track(
-    serializeOnFile(path, async () => {
-      await mkdir(nexusDir(root), { recursive: true })
-      await writeJson(path, entries)
-    }),
-  )
+  await serializeOnFile(path, async () => {
+    await mkdir(nexusDir(root), { recursive: true })
+    await writeJson(path, entries)
+  })
 }
-
-/** Debounced recents write — the passive nav-record path. The newest payload supersedes any
- *  in-flight one, so only the last state in a burst reaches disk. */
-export function scheduleRecentsWrite(root: string, entries: RecentEntry[]): void {
-  sidecar.schedule(root, entries)
-}
-
-/** Immediate recents write (pin toggle). Supersedes and cancels any pending debounced write so a
- *  stale payload can't land after it. */
-export const writeRecentsNow = (root: string, entries: RecentEntry[]): Promise<void> =>
-  sidecar.writeNow(root, entries)
-
-/** Any nav write still owed to disk — a queued debounce OR an immediate write (favorite/pin) still
- *  settling. The quit gate + nexus-switch check this before deciding to wait. */
-export const hasPendingNavWrites = (): boolean => sidecar.hasPending()
-
-/** Drain EVERY owed nav write (before-quit + nexus switch). */
-export const flushNavWrites = (): Promise<void> => sidecar.flush()

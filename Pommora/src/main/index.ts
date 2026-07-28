@@ -80,26 +80,9 @@ import { startWatcher, stopWatcher } from './watcher'
 import { resolveUnderRoot } from './pathSafety'
 import { updatePageBody } from './crud/page'
 import { replayPendingRename } from './crud/contextCascade'
-import {
-  flushNavWrites,
-  hasPendingNavWrites,
-  readNavState,
-  scheduleRecentsWrite,
-  writeFavorites,
-  writeRecentsNow,
-} from './io/navState'
-import {
-  flushTabsWrites,
-  hasPendingTabsWrites,
-  readTabsState,
-  scheduleTabsWrite,
-} from './io/tabsState'
-import {
-  flushPreviewsWrites,
-  hasPendingPreviewsWrites,
-  readPreviewsState,
-  schedulePreviewsWrite,
-} from './io/previewState'
+import { readNavState, writeFavorites, writeRecents } from './io/navState'
+import { readTabsState, writeTabsState } from './io/tabsState'
+import { readPreviewsState, writePreviewsState } from './io/previewState'
 import { loadOrMigratePins, removePin, writePin } from './io/pinsState'
 import { captureThumbnail, evictThumbnails } from './io/thumbnails'
 import { saveView, reorderViews, deleteView } from './crud/views'
@@ -346,13 +329,10 @@ handleEnvelope('nav:load', async (): Promise<NavStateResult> => {
   return { ok: true, ...(await readNavState(root)) }
 })
 
-handleEnvelope('nav:saveRecents', async (entries: unknown, immediate?: unknown): Promise<Ack> => {
+handleEnvelope('nav:saveRecents', (entries: unknown): Ack => {
   if (adopting) return { ok: false, error: 'Nexus switching.' }
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
   if (!Array.isArray(entries)) return { ok: false, error: 'Recents entries must be an array.' }
-  if (immediate) await writeRecentsNow(root, entries as RecentEntry[])
-  else scheduleRecentsWrite(root, entries as RecentEntry[])
+  writeRecents(entries as RecentEntry[])
   return { ok: true }
 })
 
@@ -400,38 +380,30 @@ handleEnvelope('nav:removePin', async (target: unknown, order: unknown): Promise
   return { ok: true }
 })
 
-// A synced sidecar (`tabs.json`): ordered unpinned tabs + active pointer + per-tab history
-// targets. Saves debounce main-side; drained at before-quit + nexus switch with the nav writes.
-handleEnvelope('tabs:load', async (): Promise<TabsResult> => {
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus open' }
-  return { ok: true, set: await readTabsState(root) }
+// Ordered unpinned tabs + the active pointer + per-tab history targets, as one row in nexus.db.
+handleEnvelope('tabs:load', (): TabsResult => {
+  if (sessionRoot() === null) return { ok: false, error: 'No nexus open' }
+  return { ok: true, set: readTabsState() }
 })
 
 ipcMain.handle('tabs:save', (_e, set: unknown): Ack => {
   if (adopting) return { ok: false, error: 'Nexus switching.' }
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
   if (!isPlainObject(set) || !Array.isArray(set.tabs)) return { ok: false, error: 'Bad tab set.' }
-  scheduleTabsWrite(root, set as unknown as TabSet)
+  writeTabsState(set as unknown as TabSet)
   return { ok: true }
 })
 
-// A synced sidecar (`page-previews.json`): the NavWindow set, per-origin page sets, the open
-// pointer. Saves debounce main-side; drained with the nav/tab writes.
-handleEnvelope('previews:load', async (): Promise<PreviewsResult> => {
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus open' }
-  return { ok: true, file: await readPreviewsState(root) }
+// The NavWindow set, the per-origin page sets, and the open pointer, as one row in nexus.db.
+handleEnvelope('previews:load', (): PreviewsResult => {
+  if (sessionRoot() === null) return { ok: false, error: 'No nexus open' }
+  return { ok: true, file: readPreviewsState() }
 })
 
 ipcMain.handle('previews:save', (_e, file: unknown): Ack => {
   if (adopting) return { ok: false, error: 'Nexus switching.' }
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
   if (!isPlainObject(file) || !isPlainObject(file.origins))
     return { ok: false, error: 'Bad previews file.' }
-  schedulePreviewsWrite(root, file as unknown as PreviewsFile)
+  writePreviewsState(file as unknown as PreviewsFile)
   return { ok: true }
 })
 
@@ -503,9 +475,6 @@ async function adoptNexus(path: string): Promise<void> {
 }
 
 async function adoptNexusInner(path: string): Promise<void> {
-  // Drains the outgoing nexus's owed writes before the session root changes, so a rapid
-  // switch-away-and-back can't let a queued write clobber the freshly-loaded state.
-  await Promise.all([flushNavWrites(), flushTabsWrites(), flushPreviewsWrites()])
   await openSession(path)
   // openSession canonicalized the root (realpath); thread THAT everywhere below so the watcher's
   // session-match guard and the index/persistence key off the same string — a raw path here
@@ -1669,21 +1638,9 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// Quit cleanup. The index handle is regeneratable (a clean close just tidies + frees the WAL
-// files), but any owed nav, tab, or previews write — a queued debounce OR an in-flight favorite/pin
-// — is durable user state, so if one is outstanding we defer the quit, drain them all, then re-quit.
-// The guard makes the second pass fall straight through; the flushes loop so a record landing
-// mid-drain is caught before the re-quit.
-let flushingBeforeQuit = false
-app.on('before-quit', (e) => {
-  if (flushingBeforeQuit) return
+// Quit cleanup. Operational writes land synchronously in nexus.db, so nothing is owed at quit and
+// the close is only tidying: it flushes the WAL and frees its sibling files.
+app.on('before-quit', () => {
   stopWatcher()
   closeSessionDb()
-  if (!hasPendingNavWrites() && !hasPendingTabsWrites() && !hasPendingPreviewsWrites()) return
-  e.preventDefault()
-  flushingBeforeQuit = true
-  void Promise.all([flushNavWrites(), flushTabsWrites(), flushPreviewsWrites()]).then(
-    () => app.quit(),
-    () => app.quit(),
-  )
 })

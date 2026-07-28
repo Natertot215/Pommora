@@ -22,15 +22,12 @@ let debounce: ReturnType<typeof setTimeout> | null = null
 let navDebounce: ReturnType<typeof setTimeout> | null = null
 
 /** A Navigation sidecar / pin file — its changes push nav state only, never a tree re-walk (nav data
- *  isn't in the tree). Matches `.nexus/navRecents.json`, `.nexus/navFavorites.json`, `.nexus/pins/*`. */
+ *  isn't in the tree). Matches `.nexus/navFavorites.json` and `.nexus/pins/*` — the two halves of
+ *  Navigation that stay files precisely so another machine can sync them in. */
 export function isNavPath(root: string, path: string): boolean {
   const segs = relative(root, path).split(sep)
   if (segs[0] !== '.nexus') return false
-  return (
-    segs[1] === NEXUS_CONFIG_FILES.navRecents ||
-    segs[1] === NEXUS_CONFIG_FILES.navFavorites ||
-    segs[1] === 'pins'
-  )
+  return segs[1] === NEXUS_CONFIG_FILES.navFavorites || segs[1] === 'pins'
 }
 
 // Ignore only what ISN'T user-meaningful tree content: the SQLite databases (which thrash via
@@ -136,8 +133,9 @@ async function push(root: string, win: BrowserWindow): Promise<void> {
   }
 }
 
-/** Push nav state only (recents + favorites + pins) — no tree walk. Fires when a Nav sidecar / pin
- *  file changes externally (a cross-device sync), so a pin made on another machine surfaces live. */
+/** Push nav state only — no tree walk. Fires when a favorites or pin file changes externally (a
+ *  cross-device sync), so a pin made on another machine surfaces live. Recents ride along from the
+ *  database unchanged; the renderer takes the whole shape either way. */
 async function pushNav(root: string, win: BrowserWindow): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   try {
