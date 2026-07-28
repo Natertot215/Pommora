@@ -63,7 +63,7 @@ import { pathExists } from './io/atomicWrite'
 import { readAppConfig, writeAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { serializeOnFile } from './io/fileLock'
-import { openSessionIndex, closeSessionIndex } from './sessionIndex'
+import { openSessionDb, closeSessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
 import { ensureIdentity } from './identity'
 import { ensureContextsRegistry } from './contextsRegistry'
@@ -523,9 +523,8 @@ async function adoptNexusInner(path: string): Promise<void> {
   await prepareOpenedNexus(root)
   // Forward-completes a crashed rename, BEFORE anything reads contexts.
   await replayPendingRename(root)
-  // Best-effort + off the read path: the renderer's tree comes from readNexus, so a null index
-  // just means no live query acceleration until the next rebuild.
-  await openSessionIndex(root)
+  // Best-effort: a null handle costs the session its persisted chrome, never its content.
+  openSessionDb(root)
   // A user-initiated open always has a window; launch-restore starts its watcher after
   // createWindow below instead.
   if (mainWindow) void startWatcher(root, mainWindow)
@@ -1664,7 +1663,7 @@ handleEnvelope('nexus:rename', async (newName: unknown): Promise<Ack> => {
   if (await pathExists(newRoot))
     return { ok: false, error: 'A folder with that name already exists.' }
   await rename(root, newRoot)
-  // RE-POINT: adoptNexus does exactly the re-target work (openSession + openSessionIndex +
+  // RE-POINT: adoptNexus does exactly the re-target work (openSession + openSessionDb +
   // startWatcher + lastNexusPath/recents + addRecentDocument + refreshMenu) with no
   // adoption-only side effects to skip, so reuse it rather than replicate the calls.
   await adoptNexus(newRoot)
@@ -1686,7 +1685,7 @@ app
         const root = sessionRoot() ?? restore
         await prepareOpenedNexus(root)
         await replayPendingRename(root)
-        await openSessionIndex(root)
+        openSessionDb(root)
       }
     } catch (e) {
       console.error('Restore skipped (config unreadable):', e)
@@ -1731,7 +1730,7 @@ let flushingBeforeQuit = false
 app.on('before-quit', (e) => {
   if (flushingBeforeQuit) return
   stopWatcher()
-  closeSessionIndex()
+  closeSessionDb()
   if (!hasPendingNavWrites() && !hasPendingTabsWrites() && !hasPendingPreviewsWrites()) return
   e.preventDefault()
   flushingBeforeQuit = true
