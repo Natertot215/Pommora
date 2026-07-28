@@ -66,26 +66,6 @@ export function writeKey(scope: Scope, key: string, value: unknown): boolean {
   return true
 }
 
-/** Replace a whole scope atomically — for the callers that own the entire map in memory. */
-export function replaceScope(scope: Scope, entries: Record<string, unknown>): void {
-  const db = sessionDb()
-  if (!db) return
-  try {
-    db.exec('BEGIN')
-    db.prepare('DELETE FROM local_state WHERE scope = ?').run(scope)
-    const insert = db.prepare('INSERT INTO local_state (scope, key, value) VALUES (?, ?, ?)')
-    for (const [key, value] of Object.entries(entries)) insert.run(scope, key, JSON.stringify(value))
-    db.exec('COMMIT')
-  } catch (e) {
-    try {
-      db.exec('ROLLBACK')
-    } catch {
-      /* the transaction never opened */
-    }
-    console.error(`local_state: replacing ${scope} failed:`, errText(e))
-  }
-}
-
 /** One key's value, or null when unset. */
 export function readKey<T>(scope: Scope, key: string): T | null {
   const db = sessionDb()

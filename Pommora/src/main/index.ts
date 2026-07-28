@@ -1033,7 +1033,6 @@ handleEnvelope(
   },
 )
 
-
 // Subfield (footer) config — a React-owned `subfield` foreign key in `.nexus/settings.json`.
 ipcMain.handle('subfield:get', async (): Promise<SubfieldConfig | null> => {
   const root = sessionRoot()

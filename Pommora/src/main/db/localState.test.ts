@@ -3,7 +3,7 @@ import { chmod, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
-import { readScope, writeKey, replaceScope, readValue, writeValue } from './localState'
+import { readScope, writeKey, readValue, writeValue } from './localState'
 
 let root: string
 beforeEach(async () => {
@@ -41,21 +41,6 @@ describe('keyed scopes', () => {
   })
 })
 
-describe('replaceScope', () => {
-  it('swaps the whole scope, dropping absent keys', () => {
-    writeKey('linkTitle', 'https://a', 'A')
-    writeKey('linkTitle', 'https://b', 'B')
-    replaceScope('linkTitle', { 'https://c': 'C' })
-    expect(readScope<string>('linkTitle')).toEqual({ 'https://c': 'C' })
-  })
-
-  it('leaves sibling scopes untouched', () => {
-    writeKey('folds', 'p1', ['x'])
-    replaceScope('linkTitle', { 'https://a': 'A' })
-    expect(readScope<string[]>('folds')).toEqual({ p1: ['x'] })
-  })
-})
-
 describe('singleton scopes', () => {
   it('reads null before anything is written', () => {
     expect(readValue('tabs')).toBeNull()
@@ -80,7 +65,6 @@ describe('no database open', () => {
     expect(readValue('tabs')).toBeNull()
     expect(() => writeKey('folds', 'p1', ['x'])).not.toThrow()
     expect(() => writeValue('tabs', {})).not.toThrow()
-    expect(() => replaceScope('linkTitle', { a: 'b' })).not.toThrow()
   })
 
   it('writes report failure so a caller never acknowledges a lost write', () => {
