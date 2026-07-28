@@ -4,7 +4,6 @@
 
 import { errText } from '@shared/result'
 import { openNexusDb } from './db/open'
-import { importLegacySidecars } from './db/importLegacy'
 import type { Db } from './db/driver'
 
 let db: Db | null = null
@@ -20,7 +19,6 @@ export function openSessionDb(root: string): void {
   closeSessionDb()
   try {
     db = openNexusDb(root)
-    if (db) importLegacySidecars(root)
   } catch (e) {
     console.error('nexus.db: unavailable — operational state will not persist:', errText(e))
     db = null
