@@ -8,11 +8,11 @@ It lives in the body and nowhere else: the text is canonical and Obsidian-readab
 
 #### II. Syntax + Scope
 
-The parser matches on the title alone, so `[[Title|alias]]` resolves to the same Page while the piped tail renders as plain text beside the styled title. Because the pipe opens that tail, a title holding one could never be written as a connection that resolves back to it — so the shared name rule rejects it at creation, across Pages, containers, Agenda items and Contexts alike.
+The parser matches on the title alone, so `[[Title|alias]]` resolves to the same Page while the piped tail renders as plain text beside the styled title. **A pipe can't appear in a title** — it opens that tail, so a title holding one could never resolve back to itself; the shared name rule rejects it at creation everywhere.
 
-`![[ ]]` isn't a connection — the tokenizer claims it as an image embed and mutes its marker — and `{{ }}` renders as written. Nothing offers a Page its own title and the index drops a self-link, though a hand-typed one resolves and navigates normally.
+`![[ ]]` isn't a connection — the tokenizer claims it as an image embed — and `{{ }}` renders as written. Nothing offers a Page its own title and the index drops a self-link, though a hand-typed one navigates normally.
 
-**Code is never a connection.** A `[[Title]]` inside a fenced block or an inline span is a sample, not a link: it doesn't tokenize, doesn't index an edge, and no rename touches it. One shared mask over the body decides where code is, so the editor and the write side can't disagree about it.
+**Code is never a connection.** A `[[Title]]` inside a fence or an inline span is a sample: it doesn't tokenize, doesn't index an edge, and no rename touches it. One shared mask decides where code is, so the editor and the write side can't disagree.
 
 #### II. Resolution
 
@@ -24,7 +24,7 @@ One shared normalization matches titles everywhere, so no two surfaces disagree.
 
 #### II. Rename Cascade
 
-Identity is the title and the body carries no id, so a rename **cascades**: renaming a target rewrites every body holding its old title. An alias rides through it — a rename changes which Page a connection points at, never the words the author chose to show for it. Page bodies come from a walk of the nexus's markdown outside `.nexus` and `.trash`, skipping id-less files; the index plays no part. Markdown-block bodies sit inside `.nexus`, out of that walk's reach, so a second best-effort pass heals them afterward; its failure is swallowed and blocks stay stale until the next rewrite.
+Identity is the title and the body carries no id, so a rename **cascades**: renaming a target rewrites every body holding its old title. An alias rides through — a rename changes which Page a connection points at, never the words the author chose to show for it. Page bodies come from a walk of the nexus's markdown, the index playing no part. Markdown-block bodies sit inside `.nexus`, out of that walk's reach, so a second best-effort pass heals them afterward; its failure is swallowed and blocks stay stale until the next rewrite.
 
 Every file is rewritten under the same lock a live edit takes, frontmatter untouched — a derived link edit isn't a user modification. The cascade is per-file, not cross-file atomic: a page pass failing partway reverts the target's rename, leaving already-rewritten bodies pointing at a title no Page holds until the rename is re-run.
 
