@@ -33,7 +33,7 @@ import type {
 } from '@shared/types'
 import { isPlainObject } from '@shared/propertyValue'
 import { errText, type Ack } from '@shared/result'
-import { handleEnvelope, handleWindowMenu } from './ipc'
+import { handleEnvelope, handleLocalScope, handleWindowMenu } from './ipc'
 import { collectAgendaEntries } from './agenda/collectAgenda'
 import type { MutateRequest, MutateResult, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
@@ -80,8 +80,6 @@ import { startWatcher, stopWatcher } from './watcher'
 import { resolveUnderRoot } from './pathSafety'
 import { updatePageBody } from './crud/page'
 import { replayPendingRename } from './crud/contextCascade'
-import { readFolds, writeFolds, type FoldState } from './io/folds'
-import { readActiveViews, writeActiveViews, type ActiveViews } from './io/activeViews'
 import {
   flushNavWrites,
   hasPendingNavWrites,
@@ -104,7 +102,6 @@ import {
 } from './io/previewState'
 import { loadOrMigratePins, removePin, writePin } from './io/pinsState'
 import { captureThumbnail, evictThumbnails } from './io/thumbnails'
-import { readViewOrders, writeViewOrders, type ViewOrders } from './io/viewOrders'
 import { saveView, reorderViews, deleteView } from './crud/views'
 import { setContainerConfig, type ContainerConfigPatch } from './crud/containerConfig'
 import { loadValues } from './crud/loadValues'
@@ -132,11 +129,6 @@ import type { Option } from '@shared/optionModel'
 import { savedView } from '@shared/views'
 import { propertyDefinition, propertyType } from '@shared/properties'
 import type { PageFrontmatter } from '@shared/schemas'
-import {
-  readTableHeadingColumns,
-  writeTableHeadingColumns,
-  type TableHeadingColState,
-} from './io/tableHeadingColumns'
 import { handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
 import { installAppMenu } from './menu'
@@ -174,8 +166,7 @@ import { VIEW_SCALE_DEFAULT } from '@shared/types'
 import { installEditorContextMenu, setFormatState, setCalloutGrip } from './editorMenu'
 import type { FormatState } from '@shared/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
-import { getTitleCache, resolveTitle } from './linkTitles'
-import type { LinkTitleCache } from './io/linkTitles'
+import { getTitleCache, resolveTitle, type LinkTitleCache } from './linkTitles'
 
 // Dev affordance: opt-in CDP endpoint for headless screenshots / automation. Inert unless
 // POMMORA_DEBUG_PORT is set; must be appended before the app is ready.
@@ -613,50 +604,22 @@ handleEnvelope('page:updateBody', async (relPath: unknown, body: unknown): Promi
   return r.ok ? { ok: true } : { ok: false, error: r.error.message }
 })
 
-// Heading-fold UI state — local `.nexus/folds.json` (out of frontmatter + index).
-ipcMain.handle('folds:get', async (): Promise<FoldState> => {
-  const root = sessionRoot()
-  return root === null ? {} : readFolds(root)
-})
-handleEnvelope('folds:set', async (pageId: unknown, keys: unknown): Promise<Ack> => {
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
-  if (typeof pageId !== 'string') return { ok: false, error: 'A page id is required.' }
-  if (!Array.isArray(keys) || !keys.every((k) => typeof k === 'string')) {
-    return { ok: false, error: 'Fold keys must be a string array.' }
-  }
-  await writeFolds(root, pageId, keys)
-  return { ok: true }
-})
+// The keyed operational stores — one row per (scope, key) in nexus.db. Per-machine editor and view
+// chrome, kept out of the portable `.md` and out of the synced container sidecars.
+const isString = (v: unknown): v is string => typeof v === 'string'
+const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every(isString)
+const isIndexArray = (v: unknown): v is number[] =>
+  Array.isArray(v) && v.every((x) => Number.isInteger(x) && x >= 0)
 
-// Active-view pointer — local `.nexus/activeViews.json`, container id → active view id (per-machine).
-ipcMain.handle('activeViews:get', async (): Promise<ActiveViews> => {
-  const root = sessionRoot()
-  return root === null ? {} : readActiveViews(root)
-})
-handleEnvelope('activeViews:set', async (containerId: unknown, viewId: unknown): Promise<Ack> => {
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
-  if (typeof containerId !== 'string') return { ok: false, error: 'A container id is required.' }
-  if (typeof viewId !== 'string') return { ok: false, error: 'A view id is required.' }
-  await writeActiveViews(root, containerId, viewId)
-  return { ok: true }
-})
-
-// Sorted/grouped manual-order cache — local `.nexus/viewOrders.json`, view id → page-id tiebreaker (per-machine).
-ipcMain.handle('viewOrders:get', async (): Promise<ViewOrders> => {
-  const root = sessionRoot()
-  return root === null ? {} : readViewOrders(root)
-})
-handleEnvelope('viewOrders:set', async (viewId: unknown, order: unknown): Promise<Ack> => {
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
-  if (typeof viewId !== 'string') return { ok: false, error: 'A view id is required.' }
-  if (!Array.isArray(order) || !order.every((x) => typeof x === 'string'))
-    return { ok: false, error: 'An order array of page ids is required.' }
-  await writeViewOrders(root, viewId, order)
-  return { ok: true }
-})
+handleLocalScope('folds', 'folds', isStringArray, 'Fold keys must be a string array.')
+handleLocalScope('activeViews', 'activeView', isString, 'A view id is required.')
+handleLocalScope('viewOrders', 'viewOrder', isStringArray, 'An order of page ids is required.')
+handleLocalScope(
+  'tableHeadingCols',
+  'headingCols',
+  isIndexArray,
+  'Table indices must be a non-negative-integer array.',
+)
 
 // View persistence — save / reorder / delete a SavedView in a container's synced `views[]` sidecar.
 // (View SELECTION is the per-machine activeViews pointer above; this is the view DEFINITION.)
@@ -1094,21 +1057,6 @@ handleEnvelope(
   },
 )
 
-// Table heading-column UI state — local `.nexus/tableHeadingColumns.json` (out of frontmatter + index).
-ipcMain.handle('tableHeadingCols:get', async (): Promise<TableHeadingColState> => {
-  const root = sessionRoot()
-  return root === null ? {} : readTableHeadingColumns(root)
-})
-handleEnvelope('tableHeadingCols:set', async (pageId: unknown, indices: unknown): Promise<Ack> => {
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
-  if (typeof pageId !== 'string') return { ok: false, error: 'A page id is required.' }
-  if (!Array.isArray(indices) || !indices.every((i) => Number.isInteger(i) && i >= 0)) {
-    return { ok: false, error: 'Table indices must be a non-negative-integer array.' }
-  }
-  await writeTableHeadingColumns(root, pageId, indices)
-  return { ok: true }
-})
 
 // Subfield (footer) config — a React-owned `subfield` foreign key in `.nexus/settings.json`.
 ipcMain.handle('subfield:get', async (): Promise<SubfieldConfig | null> => {

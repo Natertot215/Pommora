@@ -1,10 +1,13 @@
 // Page-title resolution for URL properties in the `link-title` look. Main owns the network (the
-// renderer never fetches) and the authoritative in-memory cache; io/linkTitles.ts persists it. A
-// title is fetched at most once per URL per session. Off the read path entirely.
+// renderer never fetches) and the authoritative in-memory cache, persisted a row at a time in
+// nexus.db. A title is fetched at most once per URL per session. Off the read path entirely.
 import { StringDecoder } from 'node:string_decoder'
 import { net } from 'electron'
 import { isHttpLink, normalizeLinkUrl } from '@shared/links'
-import { type LinkTitleCache, persistLinkTitles, readLinkTitles } from './io/linkTitles'
+import { readScope, writeKey } from './db/localState'
+
+/** URL → fetched page title. Regeneratable from the network, so it never leaves the device. */
+export type LinkTitleCache = Record<string, string>
 
 const TIMEOUT_MS = 6000
 const MAX_BYTES = 65536 // the <title> lives in <head>; never pull a whole page down
@@ -109,24 +112,15 @@ function fetchPageTitle(rawUrl: string): Promise<string | null> {
 let cache: LinkTitleCache = {}
 let cacheRoot: string | null = null
 
-async function ensureCache(root: string): Promise<void> {
+function ensureCache(root: string): void {
   if (cacheRoot === root) return
-  cache = await readLinkTitles(root)
+  cache = readScope<string>('linkTitle')
   cacheRoot = root
 }
 
-// Persist writes are serialized (one atomic write at a time, each flushing the latest map) so
-// concurrent fetch completions can't clobber each other's disk state.
-let persistTail: Promise<unknown> = Promise.resolve()
-function schedulePersist(root: string): void {
-  persistTail = persistTail
-    .then(() => (cacheRoot === root ? persistLinkTitles(root, cache) : undefined))
-    .catch(() => {})
-}
-
 /** The full cached map for the current nexus — the renderer hydrates its store from this on open. */
-export async function getTitleCache(root: string): Promise<LinkTitleCache> {
-  await ensureCache(root)
+export function getTitleCache(root: string): LinkTitleCache {
+  ensureCache(root)
   return { ...cache }
 }
 
@@ -134,13 +128,13 @@ export async function getTitleCache(root: string): Promise<LinkTitleCache> {
  *  success, return it. A failed fetch returns null and caches nothing (the renderer won't re-ask this
  *  session; next session retries once). */
 export async function resolveTitle(root: string, url: string): Promise<string | null> {
-  await ensureCache(root)
+  ensureCache(root)
   const hit = cache[url]
   if (hit) return hit
   const title = await fetchPageTitle(url)
   if (title && cacheRoot === root) {
     cache[url] = title
-    schedulePersist(root)
+    writeKey('linkTitle', url, title)
   }
   return title
 }
