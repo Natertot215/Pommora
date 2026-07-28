@@ -87,7 +87,6 @@ export function buildIndex(tree: NexusTree): Index {
   }
   const collections = [
     ...(tree.collections ?? []),
-    ...tree.userSections.flatMap((s) => s.collections ?? []),
   ]
   for (const c of collections) walkCollection(c)
 

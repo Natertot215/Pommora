@@ -7,7 +7,6 @@ import {
   iconNameOr,
 } from '@renderer/design-system/symbols'
 import { lucideGlyph } from '@renderer/design-system/symbols/AllSymbols'
-import { text } from '@renderer/design-system/tokens'
 import { cx } from '@renderer/design-system/cx'
 import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
@@ -515,13 +514,6 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
   )
 }
 
-function SectionHeader({ label }: { label: string }): React.JSX.Element {
-  return (
-    <div className={cx('section-header', text.control.semibold)}>
-      <span>{label}</span>
-    </div>
-  )
-}
 
 export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const selection = useSession((s) => s.selection)
@@ -562,7 +554,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const onSelectPage = (page: PageNode, e?: React.MouseEvent): void => {
     // A page in a page-preview Collection opens the floating preview (resolved by path prefix —
     // the sidebar has no source prop); ⌘-click is the explicit full-page bypass.
-    const owner = [...tree.collections, ...tree.userSections.flatMap((s) => s.collections)].find(
+    const owner = tree.collections.find(
       (c) => page.path.startsWith(`${c.path}/`),
     )
     if (owner?.openIn === 'page-preview') {
@@ -644,22 +636,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
           />
         ))}
       </div>
-      {tree.userSections.map((sec) => (
-        <div className="section" key={sec.id}>
-          <SectionHeader label={sec.label} />
-          {(sec.collections ?? []).map((c) => (
-            <CollectionRow
-              key={c.id}
-              col={c}
-              depth={0}
-              selection={selection}
-              onSelectCollection={onSelectCollection}
-              onSelectSet={onSelectSet}
-              onSelectPage={onSelectPage}
-            />
-          ))}
-        </div>
-      ))}
     </SidebarDnd>
   )
 

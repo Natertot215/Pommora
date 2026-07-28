@@ -15,7 +15,6 @@ const basename = (path: string): string => (path.split('/').pop() ?? path).repla
 
 const allCollections = (tree: NexusTree): CollectionNode[] => [
   ...(tree.collections ?? []),
-  ...tree.userSections.flatMap((s) => s.collections ?? []),
 ]
 
 export function chainOf(

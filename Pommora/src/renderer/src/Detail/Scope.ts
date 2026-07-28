@@ -14,7 +14,7 @@ export interface BannerOwner {
 }
 
 function allCollections(tree: NexusTree): CollectionNode[] {
-  return [...(tree.collections ?? []), ...tree.userSections.flatMap((s) => s.collections ?? [])]
+  return tree.collections ?? []
 }
 
 export function findCollection(tree: NexusTree | null, id: string): CollectionNode | undefined {
