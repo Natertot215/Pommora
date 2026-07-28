@@ -3,7 +3,6 @@ import { vars as colorVars } from '../../design-system/tokens/color.css'
 
 const solid = colorVars.color.solid
 
-/** The 2×5 swatch grid — 16px swatches, 4px gaps, inside the PickerMenu shell's own padding. */
 export const grid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(2, 16px)',

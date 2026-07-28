@@ -2,7 +2,6 @@
   margin: 0.4em 0;
 }
 
-/* The wrap reserves a thin top + left gutter the hover grips live in (kept outside the table border). */
 .mdpm-tbl-wrap {
   --grip-gutter: 18px;
   position: relative;

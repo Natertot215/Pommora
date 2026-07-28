@@ -5,7 +5,7 @@
 
 import type { NavTarget, RecentEntry } from '@shared/types'
 
-/** Generous default history depth (D-8: deep history + a tunable cap, not a tight ~50). */
+/** Generous default history depth (deep history + a tunable cap, not a tight ~50). */
 export const RECENTS_CAP = 100
 
 /** Identity of a nav target — kind+id, or bare kind for the id-less homepage. Shared by the history

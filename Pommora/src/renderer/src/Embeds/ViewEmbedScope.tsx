@@ -1,5 +1,5 @@
-// The C-1 seam: inside a view-embed tile, view resolution reads the tile payload and
-// every view-CONFIG write lands on the payload (D-12: copied, never synced) — the
+// The seam: inside a view-embed tile, view resolution reads the tile payload and
+// every view-CONFIG write lands on the payload (copied, never synced) — the
 // source's saved views, per-machine active slot, and container config are untouchable
 // from scope. Gating is by EFFECT: surfaces write through useSaveView, which routes on
 // the scope's presence; outside a scope everything behaves exactly as before.
@@ -17,12 +17,12 @@ export interface ViewEmbedScopeValue {
   source: CollectionNode | SetNode
   view: SavedView
   /** Persist the tile's copied config — writes the block payload via the saveBlocks updater. Refuses
-   *  while `locked` (B-5): every config surface routes through here, so one gate freezes them all. */
+   *  while `locked`: every config surface routes through here, so one gate freezes them all. */
   persistConfig: (next: SavedView) => void
   /** Persist the tile's view STATE, folded onto the stored view. Never lock-gated, and never a route
    *  for config: it writes the state keys alone, so a refused override can't ride along with it. */
   persistState: (next: ViewState) => void
-  /** B-5 per-tile config lock. Frozen: view config + view CRUD. Live: data drags, value edits, and
+  /** Per-tile config lock. Frozen: view config + view CRUD. Live: data drags, value edits, and
    *  view state — collapsing a band says how you're reading the tile, not how it's configured. */
   locked: boolean
   /** Toggle the lock — writes the tile entry directly (never through the frozen persistConfig). */

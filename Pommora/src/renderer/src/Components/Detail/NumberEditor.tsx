@@ -37,8 +37,6 @@ const decimalsToPicker = (d: NumberConfig['number_decimals']): string =>
   typeof d === 'number' ? String(d) : 'hidden'
 const pickerToDecimals = (v: string): 'hidden' | number => (v === 'hidden' ? 'hidden' : Number(v))
 
-/** One labelled config row — label left, control (child) right. The shared configRow/configLabel
- *  primitive, wrapped once so each row below is just its label + control. */
 function Row({ label, children }: { label: string; children: React.ReactNode }): React.JSX.Element {
   return (
     <div className={cx(configRow, s.row)}>

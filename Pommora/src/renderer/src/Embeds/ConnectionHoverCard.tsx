@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ConnPage } from '@renderer/MarkdownPM/connections'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
 
-// B-7's hover card — the PLACEHOLDER contract: a hover-intent on a resolved connection blooms a
+// The hover card — the PLACEHOLDER contract: a hover-intent on a resolved connection blooms a
 // blank pane anchored to the link. NO dismiss backdrop (PickerMenu only renders one when given
 // onDismiss) — a hover affordance must never eat the next click, and `manageFocus={false}` is the
 // same law for the keyboard: passing the pointer over a link must never pull the caret out of the

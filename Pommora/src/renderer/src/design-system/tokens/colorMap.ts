@@ -1,6 +1,6 @@
 // The color-exchange layer — maps an external color name (a legacy Notion select color / the Swift
-// AreaColor palette) onto one of the app's render palettes. `chipColorFor` is the chip-palette accessor (Part 2
-// G-3); other exchanges add a sibling accessor here rather than re-deriving the mapping. Aligns at the
+// AreaColor palette) onto one of the app's render palettes. `chipColorFor` is the chip-palette accessor;
+// other exchanges add a sibling accessor here rather than re-deriving the mapping. Aligns at the
 // boundary — the app palette stays intact, the on-disk names map onto it. The 7 shared hues map 1:1;
 // brown/pink/indigo have no chip equivalent and take a nearest color (tunable); teal→cyan; gray→grey.
 // Absent/unknown → the neutral default.

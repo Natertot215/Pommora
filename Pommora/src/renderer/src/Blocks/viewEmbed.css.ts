@@ -31,7 +31,7 @@ export const tile = style({
   minHeight: 0,
 })
 
-/** H-5's title row — the editable heading over the switcher; its bottom hairline is the header's
+/** The title row — the editable heading over the switcher; its bottom hairline is the header's
  *  ONLY divider (none under the pills, none once the title row is hidden). The row establishes
  *  markdownPM's editor font-size as the em base, so the `.md-hN` class on the title resolves its
  *  `1.2em` (etc.) to the exact px a markdownPM heading would — same code, uniform result. */
@@ -112,7 +112,7 @@ export const pillActive = style({
   color: c.label.primary,
 })
 
-// Create/delete slide (H-5): a new pill grows in from the leading edge, a deleted one collapses
+// Create/delete slide: a new pill grows in from the leading edge, a deleted one collapses
 // out — max-width + opacity on the dropdown token, the negative margin swallowing the row gap so
 // siblings close up. No house horizontal-list primitive exists; this is the pill's own.
 const pillIn = keyframes({
@@ -161,7 +161,7 @@ export const newViewReveal = style({
 })
 globalStyle(`${switcherRow}:hover ${newViewReveal}`, { opacity: 1 })
 
-/** The config affordance — hover chrome (G-4's top-right family), same glyph as the toolbar Settings. */
+/** The config affordance — hover chrome (top-right family), same glyph as the toolbar Settings. */
 export const configBtn = style({
   border: 'none',
   background: 'none',

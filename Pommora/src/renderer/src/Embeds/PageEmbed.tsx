@@ -3,16 +3,16 @@ import { MarkdownEditor, type WarmSeam } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
 import './embeds.css'
-/** The embed's fixed zoom-out (G-10), as a LINEAR scale — converted once to the
+/** The embed's fixed zoom-out, as a LINEAR scale — converted once to the
  *  editor's exponential zoom. The knob. */
 import { EMBED_SCALE, EMBED_ZOOM } from './embedScale'
 
-// THE shared page-embed framework (G-11): a window onto a real Page inside a
+// THE shared page-embed framework: a window onto a real Page inside a
 // foreign surface — SurfacePM's page-embed tiles now, MarkdownPM's ![[Embed]]
 // later. It IS the CM6 view (a read-only portal at rest, full decorations);
 // entering edit reconfigures the SAME view's editability — no remount, no
 // jitter. An embed edit IS a page edit: body writes flow through the page's own
-// debounced save (H-2). Header chrome (banner + title) is parked — it returns
+// debounced save. Header chrome (banner + title) is parked — it returns
 // with the ⋮ toggle pass; entry fields stay wired.
 
 export function PageEmbed({
@@ -29,13 +29,13 @@ export function PageEmbed({
   editing: boolean
   onBeginEdit: () => void
   connections?: ConnectionsApi
-  /** B-5 content lock: a locked embed can't be entered for editing (stays a selectable portal). */
+  /** Content lock: a locked embed can't be entered for editing (stays a selectable portal). */
   locked?: boolean
   /** Opt-in live-body reporting: fires the current editor body on load and on every change. The
    *  floating preview uses it to drive its own Subfield stats from a LOCAL buffer — never the shared
    *  `liveBody` slot (single-owner; a second writer would evict the main pane's live count). */
   onBody?: (body: string) => void
-  /** Opt-in warmth (H-8): a restored entry mounts the editor synchronously (its doc IS the body —
+  /** Opt-in warmth: a restored entry mounts the editor synchronously (its doc IS the body —
    *  no fetch, no blank frame); capture fires at editor unmount. Block tiles mount cold. */
   warm?: WarmSeam
 }): React.JSX.Element {

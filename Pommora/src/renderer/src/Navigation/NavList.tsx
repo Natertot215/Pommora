@@ -39,11 +39,11 @@ export function NavCrumbs({
   )
 }
 
-/** Per-row context menu (Navigation spec: open / pin / favorite / remove live in a context menu, not
+/** Per-row context menu (open / pin / favorite / remove live in a context menu, not
  *  the row) — a NATIVE Electron menu (the tab/cell-menu pattern), popped at the cursor. The renderer
  *  sends the row's live membership; main returns the chosen action; the labels flip on that state.
  *  Renders nothing: it fires on mount and closes when the menu resolves. Shared by the NavWindow list
- *  AND gallery (the D-3 points). */
+ *  AND gallery. */
 export function NavRowMenu({
   item,
   onClose,
@@ -77,7 +77,7 @@ export function NavRowMenu({
             break
           case 'open-preview':
             if (target.kind === 'page') {
-              // B-2: inside the NavWindow the override routes this to a tab in THAT window
+              // Inside the NavWindow the override routes this to a tab in THAT window
               // (openPreviewTab lands in the open nav flavor); off → the floating preview.
               const ref = { id: target.id, path: target.path }
               if (st.navOpen && (st.previewsFile.navOverride ?? true)) st.openPreviewTab(ref)
@@ -108,7 +108,7 @@ export function NavRowMenu({
   return null
 }
 
-/** The hover-revealed pin toggle shared by the list rows and the gallery cards (D-3): fades in on the
+/** The hover-revealed pin toggle shared by the list rows and the gallery cards: fades in on the
  *  row/card hover to pin, holds solid in the accent once pinned. `stopPropagation` on pointerdown keeps
  *  the press off the row/card drag handle (a pin toggle must never arm a reorder). Position + reveal are
  *  the caller's `className`; the mechanism is one. Null for adopted entities — they re-mint their id on
@@ -216,7 +216,7 @@ export function NavList({
   /** Host override for the recents reorder (NavWindow rewrites its frozen snapshot too). */
   onReorderRecent?: (activeKey: string, overKey: string) => void
   onSelect: (target: NavTarget) => void
-  /** Wires the row menu's "Open in New Tab" (D-3); omitted = the item doesn't render. */
+  /** Wires the row menu's "Open in New Tab"; omitted = the item doesn't render. */
   onOpenNewTab?: (target: NavTarget) => void
 }): React.JSX.Element | null {
   const reorderPin = useSession((s) => s.reorderPin)

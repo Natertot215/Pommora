@@ -37,7 +37,7 @@ import { PageHeader } from './PageHeader'
 import { ZOOM_DEFAULT, zoomFontSize } from './zoom'
 import './Styles.css'
 
-/** The warm-tab seam (B-3): `restore` is read once at mount to seed the fresh EditorState (undo via
+/** The warm-tab seam: `restore` is read once at mount to seed the fresh EditorState (undo via
  *  the serialized historyField) + scroll; `capture` fires at unmount with the state to keep warm. The
  *  host binds both to a (tab, entity) identity at mount time — the mount-once effect freezes that
  *  binding, so a capture can never land under the NEXT tab's identity mid-switch. */
@@ -224,7 +224,7 @@ export function MarkdownEditor({
         if (u.docChanged || u.selectionSet) detectConnectionQuery(u.view, setAc)
       }),
     ]
-    // Warm rehydration (B-3): seed the fresh mount from the cached serialized state — doc + selection +
+    // Warm rehydration: seed the fresh mount from the cached serialized state — doc + selection +
     // undo history (historyField is the only serialized field; folds ride folds.json below). A corrupt
     // or cross-version payload falls back to a cold mount rather than throwing the editor away.
     const saved = warm?.restore()

@@ -32,7 +32,7 @@ export function splitSearch(results: SearchResult[]): {
   }
 }
 
-// Agenda kinds route nowhere until Agenda ships (E-9b) — search-listable, not selectable.
+// Agenda kinds route nowhere until Agenda ships — search-listable, not selectable.
 const isTreeTarget = (t: NavTarget): t is SelectTarget => t.kind !== 'task' && t.kind !== 'event'
 
 /** The shared read side both NavWindow + NavPane render from — one source, two presentations. The tree

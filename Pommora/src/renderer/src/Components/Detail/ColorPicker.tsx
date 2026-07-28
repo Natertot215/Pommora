@@ -4,7 +4,6 @@ import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
 import { cx } from '@renderer/design-system/cx'
 import * as s from './colorPicker.css'
 
-/** The ten solid-palette keys, laid out 2 columns × 5 rows. */
 const SWATCHES = [
   'red',
   'orange',
@@ -19,7 +18,7 @@ const SWATCHES = [
 ] as const
 
 /**
- * The 2×5 solid-colour picker (Planning 7-3, Phase 2) — a PickerMenu shell over the shared colour
+ * The 2×5 solid-colour picker — a PickerMenu shell over the shared colour
  * tokens. `selected` is the option's resolved chip colour; picking a swatch sets it, picking the
  * already-selected one clears to Default (`onPick(undefined)`). A larger picker over the same tokens
  * is a Prospect — the swatch list is the only thing that grows.

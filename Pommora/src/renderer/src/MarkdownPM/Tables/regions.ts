@@ -49,8 +49,8 @@ export function tableRegions(doc: string): TableRegion[] {
       continue
     }
     // Grab the contiguous non-blank block lexically, then confirm with a SINGLE parse — shrinking only
-    // if a non-table line is glued on without a blank separator (rare). The old per-line `isTable` made
-    // this O(rows²) parses per table on every keystroke; the common case is now one parse.
+    // if a non-table line is glued on without a blank separator (rare). Keeps the common case to one
+    // micromark parse per table instead of a per-line re-check.
     let last = i
     while (last + 1 < lines.length && lines[last + 1].text.trim() !== '') last++
     while (last > i && !isTable(doc.slice(header.from, lineTo(lines[last])))) last--

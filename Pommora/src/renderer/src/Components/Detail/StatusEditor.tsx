@@ -20,7 +20,7 @@ import { useStatusReorder } from './useStatusReorder'
 import * as s from './settingsPane.css'
 
 /**
- * The Status option editor (Planning 7-3) — the option list grouped by status group (Open / Active /
+ * The Status option editor — the option list grouped by status group (Open / Active /
  * Done): each group's heading (double-click to rename its label; the calendar-locked id stays) + its
  * option chips (pills, the exclusive status shape), defaulting to the group's colour. The per-group +
  * reveals on group hover and adds an inline-named option; a hover palette icon opens the shared

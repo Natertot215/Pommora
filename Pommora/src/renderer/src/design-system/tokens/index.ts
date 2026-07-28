@@ -39,11 +39,10 @@ export { text }
 
 /**
  * Chip primitives — one class per SHAPE, composed with one `chipColor.*`:
- * `${chipPill} ${chipColor.blue}` (status text) · `chipLabel` (select/multi, 6px
- * radius) · `chipContext` (Context references) · `chipCapsule` (icon-only) · `chipBox`
- * (the 17×17 rounded square). The unified tint: fill = base 60% ·
- * stroke = base 40% · text = label-primary + base 15%. `tint(base)` is the
- * raw recipe (e.g. an accent chip via `tint('var(--accent)')`). See chip.css.ts.
+ * `${chipPill} ${chipColor.blue}` (status text) · `chipLabel` (select/multi) ·
+ * `chipContext` (Context references) · `chipCapsule` (icon-only) · `chipBox`
+ * (the rounded-square checkbox shape). `tint(base)` is the unified tint's raw
+ * recipe (e.g. an accent chip via `tint('var(--accent)')`). See chip.css.ts.
  */
 export {
   chipPill,

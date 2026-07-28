@@ -1,8 +1,8 @@
 import type { PreviewTabTarget } from '@shared/types'
 
-// The preview window's tab model (Decision Log H) — pure functions, no store. The close/spawn
-// bodies are bespoke (NOT tabsModel's): the last tab closing kills the WINDOW (H-6, no NavView
-// reseed), and there are no pins (H-5).
+// The preview window's tab model — pure functions, no store. The close/spawn bodies are bespoke
+// (NOT tabsModel's): the last tab closing kills the WINDOW (no NavView reseed), and there are no
+// pins.
 
 export interface PreviewTab {
   id: string
@@ -12,7 +12,7 @@ export interface PreviewTab {
 export interface PreviewState {
   /** 'page' = summoned from a page open; 'nav' = the NavWindow flavor (map-tab sentinel first). */
   flavor: 'page' | 'nav'
-  /** The durable set's key (H-3); re-parents to the left-most survivor on origin close (H-6). */
+  /** The durable set's key; re-parents to the left-most survivor on origin close. */
   originId: string
   tabs: PreviewTab[]
   activeTabId: string
@@ -20,7 +20,7 @@ export interface PreviewState {
 
 const targetPageId = (t: PreviewTabTarget): string | null => (t.kind === 'page' ? t.id : null)
 
-/** Dedup-focus an existing tab for the page, else append + activate (H-1). */
+/** Dedup-focus an existing tab for the page, else append + activate. */
 export function openTabIn(
   p: PreviewState,
   makeId: () => string,
@@ -35,7 +35,7 @@ export function openTabIn(
 }
 
 /** Drag-reorder a page tab onto another's slot. The map sentinel is immovable AND un-landable —
- *  it holds slot 1 (H-2), so a move that names it either way is refused. */
+ *  it holds slot 1, so a move that names it either way is refused. */
 export function reorderTabIn(p: PreviewState, activeId: string, overId: string): PreviewState {
   const from = p.tabs.findIndex((t) => t.id === activeId)
   const to = p.tabs.findIndex((t) => t.id === overId)
@@ -52,7 +52,7 @@ export function reorderTabIn(p: PreviewState, activeId: string, overId: string):
 export function closeTabIn(p: PreviewState, id: string): PreviewState | null {
   const idx = p.tabs.findIndex((t) => t.id === id)
   if (idx === -1) return p
-  if (p.tabs[idx].target.kind === 'navwindow') return p // the map tab is perma-pinned (H-2)
+  if (p.tabs[idx].target.kind === 'navwindow') return p // the map tab is perma-pinned
   const tabs = p.tabs.filter((t) => t.id !== id)
   if (tabs.length === 0) return null
   const activeTabId = p.activeTabId === id ? tabs[Math.max(0, idx - 1)].id : p.activeTabId

@@ -74,7 +74,6 @@ export const MODIFIED_TARGET: PaneTarget = {
   icon: propertyTypeIconName('last_edited_time'),
 }
 
-/** Schema defs → targets, keeping the def's own icon and falling back to its type glyph. */
 export const schemaTargets = (
   schema: PropertyDefinition[],
   qualifies: (def: PropertyDefinition) => boolean,

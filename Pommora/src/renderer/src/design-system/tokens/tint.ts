@@ -11,7 +11,6 @@ const labelPrimary = colorVars.color.label.primary
  * a tint is an opacity, not a baked color). One source for every tinted surface —
  * chips, tinted segments, tinted buttons — where a component picks a step and the
  * base color is supplied at the call site.
- *   primary 60 · secondary 40 · tertiary 20 · quaternary 15 · solid 100
  */
 export const TINT_STEPS = {
   primary: 60,
@@ -29,8 +28,8 @@ export const tintAt = (base: string, step: number): string =>
   step >= 100 ? base : `color-mix(in srgb, ${base} ${step}%, transparent)`
 
 /**
- * Chip recipe — fill = tint-primary (60%), stroke = tint-secondary (40%), and
- * label-with-tint text: `label-primary` washed with a tint-quaternary (15%) amount
+ * Chip recipe — fill = tint-primary, stroke = tint-secondary, and
+ * label-with-tint text: `label-primary` washed with a tint-quaternary amount
  * of the base, so chip text reads as the label color rather than the assigned color.
  * Compose `${chip} ${chipColor.blue}`.
  */

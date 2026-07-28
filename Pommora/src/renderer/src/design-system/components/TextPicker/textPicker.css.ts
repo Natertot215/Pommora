@@ -16,11 +16,6 @@ export const content = style({
   alignItems: 'flex-start', // the field left-anchors in the pane so its caret sits at the left edge, never centred
 })
 
-/** The rename field — the shared input-field chrome at CalendarPicker's caret metrics (control size;
- *  the native caret scales with the font). `field-sizing` grows it to its text between a 100px floor
- *  and a 200px cap, then it scrolls internally. Focused, an `--accent` stroke at tint-secondary fades
- *  in over duration-fast; a consumer may scope `--accent` on the pane to tint it (a link wears its own
- *  colour), else it inherits the app accent. */
 /** Bar-number value editing: the shared field chrome as a fixed-width one-line box — the value fills the
  *  left and the "/ N" out-of hint pins to the right. Focus lights the accent stroke via :focus-within,
  *  since the bare inner input owns no chrome. */
@@ -68,6 +63,11 @@ export const trailing = style({
   lineHeight: font.scale.control.line,
 })
 
+/** The rename field — the shared input-field chrome at CalendarPicker's caret metrics (control size;
+ *  the native caret scales with the font). `field-sizing` grows it to its text between a 100px floor
+ *  and a 200px cap, then it scrolls internally. Focused, an `--accent` stroke at tint-secondary fades
+ *  in over duration-fast; a consumer may scope `--accent` on the pane to tint it (a link wears its own
+ *  colour), else it inherits the app accent. */
 export const input = style([
   field,
   {
