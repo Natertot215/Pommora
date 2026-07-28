@@ -108,11 +108,11 @@ The wikilink resolver is **wired** to `@shared/connections`: resolution, styling
 
 - **Connection detection reuses `@shared/connections`, not its own regex** — so the editor can't drift from the scanner / resolver / rename-cascade, and a connection re-resolves against the live layer with no doc reparse and no editor-local connection cache.
 
-- **Hot-path reads share one per-doc-version scan** — the doc string and the whole-doc line / fence / callout scan are computed once per document version and cached against the CM6 doc (`editor/docCache.ts`), so decoration builds, the callout guards, and autocomplete all read the same scan instead of re-walking the doc per keystroke. Inline tokenizing is deliberately *not* cached — it's scoped to the visible ranges, which is why a scroll rebuilds decorations too. The native menu's format state pushes to main only when a field of it actually changes.
+- **Hot-path reads share one per-doc-version scan** — the doc string and the whole-doc line / fence / callout scan are computed once per document version and cached against the CM6 doc, so decoration builds, callout guards and autocomplete read one scan instead of re-walking per keystroke. Inline tokenizing is deliberately *not* cached: it's scoped to the visible ranges, which is why a scroll rebuilds decorations too.
 
 - **All offsets are character offsets (UTF-16), never bytes** — micromark/mdast reports char offsets, dissolving the cmark byte-offset column-bug class; still guard astral-plane characters at parser boundaries.
 
-- **Box constructs float with an outer gap, never a line margin** — CM6 line margins break caret/arrow mapping (only padding is measured), so each box construct (blockquote, code block, callout) paints its fill as an inset `::after` and the first/last line pads by its own outer-gap knob, leaving empty space *outside* the fill so the box reads as separated from its neighbours even with no blank line between them. A code block nested inside a box drops its gap entirely (the surrounding box already owns the outer spacing).
+- **Box constructs float with an outer gap, never a line margin** — CM6 line margins break caret and arrow mapping, since only padding is measured. Each box paints its fill as an inset `::after` and pads its first and last line by its own gap knob, leaving space *outside* the fill so it reads as separated even with no blank line between neighbours. A box nested in a box drops its gap; the outer one already owns that spacing.
 
 ### Known Issues
 
@@ -122,7 +122,7 @@ The wikilink resolver is **wired** to `@shared/connections`: resolution, styling
 
 - **Image + LaTeX** render seams (detected + styled today, rendered later) · **fenced-code copy button** · **zoom slider** UI placement · **heading-fold inside a callout** (headings render in a callout, but the fold chevron isn't prefix-aware yet) · **table inside a callout** (renders as raw text; needs prefix-aware region detection).
 
-- **Aliased connections** — the pipe segment of `[[Title|alias]]` is a display alias the editor must honour, not a tail to discard. The shared pattern still drops it, so today the alias renders as plain text beside the styled title; honouring it end-to-end and the authoring gesture that writes one are both unbuilt.
+- **Aliased connections** — the pipe segment of `[[Title|alias]]` parses and survives every rewrite, but nothing renders it as the display text yet, so it shows as plain text beside the styled title. The display treatment and the authoring gesture are both unbuilt.
 
 - **Outliner rails on ordered / arrow / `+` lists** — the guide is bullets + checkboxes only; a right-aligned number and the arrow / `+` glyphs need their own glyph-centre and vertical-evenness maths before their rails read straight.
 
