@@ -64,7 +64,7 @@ Tasks and Events sit under the **Agenda** parent schema. The Page Collection's p
 - **`id`** — a stable ULID assigned at creation, never changing. Connections and the index are ID-keyed; Context links are the deliberate exception, stored as registry-resolved titles whose renames cascade.
 - **Title** — the display name, carried as the filename (minus extension), freely renameable. Renames are filesystem renames; ID-keyed references resolve to the current title at render time. Within a container, a colliding Page create auto-disambiguates and a rename is rejected. Titles aren't unique Nexus-wide — a connection to a title shared by two Pages resolves as ambiguous.
 
-Operational entities tag Spaces through quoted bracketed Context keys — `"[Projects]": [Pommora]`, arrays of Space titles at the frontmatter or JSON root, the **only** relation-type connection (legacy bare-ULID `tierN` arrays stay read-recognized and heal on the next governed write). Page-to-Page links are body `[[Title]]` connections. Full model and the linking catalog → `Features/Structure.md` plus the per-entity docs.
+Operational entities tag Spaces through quoted bracketed Context keys — `"[Projects]": [Pommora]`, arrays of Space titles at the frontmatter or JSON root, the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections. Full model and the linking catalog → `Features/Structure.md` plus the per-entity docs.
 
 ---
 
@@ -208,7 +208,6 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 **Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, sync, mobile, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, full Settings editing UI, and more — see **Prospects** below.
 
 #### What Items Were (historical pointer)
-
 Items were Pommora's second operational entity beside Pages until the two converged to redundancy — identical file format, property catalog, container shape, and tier relations. The per-collection open mode (preview vs. full page) absorbed the last difference onto a single Page entity; legacy Item folders adopt as ordinary Page Collections, and the retired item-link syntax is now plain preserved text. Full record → `History.md`.
 ---
 
