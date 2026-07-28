@@ -8,23 +8,15 @@ import { shadowStandardVar } from '../tokens/color.css'
  * --shadow-standard token.
  */
 export interface FrostParams {
-  /** backdrop blur radius, px. */
+
   blur: number
-  /** backdrop brightness, % (100 = neutral). */
   brightness: number
-  /** backdrop saturate, % (100 = neutral). */
   saturate: number
-  /** white border opacity, 0..1. */
   borderAlpha: number
-  /** top specular edge highlight opacity, 0..1. */
   topSpecular: number
-  /** hairline inner-ring opacity, 0..1. */
   innerRing: number
-  /** bottom-rim light pooling opacity, 0..1. */
   lowerRim: number
-  /** bottom-rim reach, px — how far the pooling rises from the lower edge (offset + negative spread). */
   depth: number
-  /** bottom-rim blur, px. */
   rimBlur: number
 }
 
