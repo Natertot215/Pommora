@@ -6,47 +6,13 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 #### The Cleanup Pass (2026-07-27)
 
-A day spent on the merge's aftermath instead of on features, and it returned nine defects — seven of
-them present before the session began and none of them reported. Filtering that looked inert because
-folder headings kept drawing after every row beneath them was filtered away. A comparison that
-passed rows holding no value, so "Modified is empty" matched everything. A move that didn't count as
-modifying a page, and a property edit through the table that didn't either. A rename that rewrote
-`[[links]]` inside fenced code samples — silent corruption of a user's own file. A sidebar that
-painted its empty state over the list it was animating away, and would have held a stale one across
-a nexus switch. A generic rename that could have moved a Space's folder and stranded every tag
-pointing at it. Two rapid edits racing the index rebuild, the second deleting the file the first was
-still writing. A search that ignored its own view toggle.
+The merge's aftermath, audited rather than built on: one agent per feature doc, every claim opened at the code before it survived. It returned nine defects, most live before the session and none reported — filtering that looked inert, comparisons that passed valueless rows, a move that didn't count as modifying a page, a rename that rewrote `[[links]]` inside code samples. The behavioural outcomes live in the feature docs; two principles came out of it.
 
-**Locked — a duplicated fact is a defect, not untidiness.** The pattern under nearly all of them was
-one fact with two sources, and the fix each time was to remove the second rather than reconcile the
-two: narrow a type until the wrong call cannot be written, delete the duplicate, route both callers
-through one owner. A guard that catches the bad case leaves the bad case reachable.
+**Locked — a duplicated fact is a defect, not untidiness.** Nearly every one of those bugs was one fact with two sources: a key read by two sites with opposite defaults, a column named differently across layers, two writers governing different frontmatter keys, a rule the editor applied and the write side didn't. The fix removes the second source rather than reconciling the two — narrow a type until the wrong call can't be written, delete the duplicate, route both callers through one owner. A guard that catches the bad case leaves the bad case reachable.
 
-That principle then ran forward as construction. Four repeated shapes across the IPC layer — the
-payload-free ack envelope, the narrowing of an unknown throw to a message, the try/catch that turns
-either into an envelope, and the sender's-window lookup — collapsed from **eighty-one sources to
-four owners**, with every one of the 102 channels verified byte-identical across the change. The
-whole tree lost its plan-task tags, its retired Context vocabulary, and the comments that only
-restated the code beneath them.
+That ran forward as construction: the repeated shapes across the IPC layer collapsed to single owners, every channel verified identical across the change.
 
-**Locked — a comment earns its place by being unrecoverable, not by being true.** The standard is
-*"would I know this without the comment?"* A prop doc that names the prop goes; so does architectural
-rationale a competent reader would reconstruct, even where it reads as genuine reasoning. `KNOB`
-markers and decision markers are exempt — they carry what the code cannot say about itself.
-
-#### The Truing Campaign (2026-07-27)
-
-One agent per feature doc, each finding grounded against real code, produced 440 confirmed corrections and 39 questions worth Nathan's ruling. It also caught a regression the same session had introduced: removing the migration removed the de-facto fresh-nexus seeder, because a fresh nexus minted below the version and so always ran the migration that wrote the registry. Seeding became explicit, with an idempotence test.
-
-The audit's yield was a findings record rather than a rewrite, and working it surfaced one shape over and over: **a fact with two sources.** An order key read by two sites with opposite defaults. A Context column named one thing in one layer and another a layer down. Two page-value writers governing different key sets. A code mask the editor applied three ways and the write side not at all. Each read as a small inconsistency; each was a live defect.
-
-**Locked — a duplicated fact is a bug, not untidiness.** The fixes are subtractive by preference: narrow a type until the wrong call can't be written, delete the second source, route both callers through one. A guard that catches the bad case leaves the bad case reachable.
-
-What that produced: a filter whose structural bands come from surviving rows rather than the folder tree, so filtering visibly filters; positive comparisons that stop matching a row holding no value; `modified_at` answering to exactly four things, with a move and a property write no longer silent; a `[[link]]` inside a code fence that no rename touches; a pipe rejected in titles, since it opens the alias segment; and a trash that mirrors the folder chain a delete came from, so the layout is the restore record.
-
-Two defects were found after the record was written. The sidebar's mode-exit overlay mounts a second copy of the outgoing layer, and the Agenda list fetched its own data — so leaving Agenda painted an empty state over the list it was animating away. And the generic path-addressed rename accepted a Space, which would have moved the folder and stranded every title-keyed tag; its `kind` now excludes them.
-
-Then the whole source lost its plan-task tags, its retired Context vocabulary, and the comments that only restated the code beneath them. The word "tier" survives in exactly two places: the glass and tone layers, and a row-subordination prop.
+**Locked — a comment earns its place by being unrecoverable, not by being true.** The standard is *"would I know this without the comment?"* A prop doc that names its prop goes, and so does architectural rationale a competent reader would reconstruct, even where it reads as genuine reasoning. `KNOB` markers and decision markers are exempt — they carry what the code cannot say about itself.
 
 #### The tierN Era Closes (2026-07-27)
 
