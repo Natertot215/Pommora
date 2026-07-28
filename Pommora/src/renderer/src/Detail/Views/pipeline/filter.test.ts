@@ -15,6 +15,7 @@ const schema: PropertyDefinition[] = [
     ],
   },
   { id: 'prop_num', name: 'Num', type: 'number' },
+  { id: 'prop_url', name: 'Link', type: 'url' },
   { id: 'prop_when', name: 'When', type: 'datetime' },
   { id: 'prop_done', name: 'Done', type: 'checkbox' },
   { id: 'prop_tags', name: 'Tags', type: 'multi_select' },
@@ -107,6 +108,39 @@ describe('applyFilter — match mode + recursion', () => {
 
   it('undefined filter passes everything', () => {
     expect(ids(rows, undefined)).toEqual(['r1', 'r2', 'r3'])
+  })
+})
+
+describe('applyFilter — a blank value answers no positive comparison', () => {
+  // The text ops sit one case-block from `is` and carry the identical shape. A Link column is the
+  // reachable path: url is the creatable type whose operator set is the text matrix.
+  const rows = [row('none', { props: {} }), row('has', { props: { prop_url: 'https://example.com' } })]
+
+  it('contains and starts_with exclude a row holding nothing', () => {
+    expect(
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_url', op: 'contains', value: 'example' }] }),
+    ).toEqual(['has'])
+    expect(
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_url', op: 'starts_with', value: 'https' }] }),
+    ).toEqual(['has'])
+  })
+
+  it('a row can no longer satisfy contains AND does_not_contain at once', () => {
+    expect(
+      ids(rows, {
+        match: 'all',
+        rules: [
+          { property_id: 'prop_url', op: 'contains', value: 'example' },
+          { property_id: 'prop_url', op: 'does_not_contain', value: 'example' },
+        ],
+      }),
+    ).toEqual([])
+  })
+
+  it('none-mode keeps the blank row instead of blanking the table', () => {
+    expect(
+      ids(rows, { match: 'none', rules: [{ property_id: 'prop_url', op: 'contains', value: 'example' }] }),
+    ).toEqual(['none'])
   })
 })
 
