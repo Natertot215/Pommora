@@ -11,7 +11,6 @@
 import { basename, dirname, join, relative, sep } from 'node:path'
 import { mkdir, readFile, realpath, rm } from 'node:fs/promises'
 import { sessionRoot } from './session'
-import { refreshSessionIndex } from './sessionIndex'
 import { resolveUnderRoot } from './pathSafety'
 import { createPage, renamePage, movePage, updatePageProperty } from './crud/page'
 import { setChildOrder, setStateOrder } from './crud/reorder'
@@ -147,11 +146,7 @@ export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promis
   // A CRUD/fs/trash throw (e.g. shell.trashItem rejecting, EACCES/ENOSPC) becomes a fault
   // Result here, not a rejected IPC promise callers would silently swallow.
   try {
-    const result = await dispatch(req, deps, root)
-    // One post-dispatch refresh instead of a copy in every case body — the index is a
-    // regeneratable mirror, so over-refreshing on a settings-only op is harmless.
-    if (result.ok) void refreshSessionIndex(root)
-    return result
+    return await dispatch(req, deps, root)
   } catch (e) {
     return fault(errText(e))
   }

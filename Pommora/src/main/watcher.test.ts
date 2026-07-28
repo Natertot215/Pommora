@@ -22,10 +22,11 @@ describe('ignoredUnder', () => {
     expect(ignored('/nexus/.nexus/contexts/Projects/Pommora')).toBe(false)
   })
 
-  it('ignores the churning index, the trash, and dotfile cruft', () => {
+  it('ignores the churning databases, the trash, and dotfile cruft', () => {
+    expect(ignored('/nexus/.nexus/nexus.db')).toBe(true)
+    expect(ignored('/nexus/.nexus/nexus.db-wal')).toBe(true)
+    expect(ignored('/nexus/.nexus/nexus.db-shm')).toBe(true)
     expect(ignored('/nexus/.nexus/index.db')).toBe(true)
-    expect(ignored('/nexus/.nexus/index.db-wal')).toBe(true)
-    expect(ignored('/nexus/.nexus/index.db-shm')).toBe(true)
     expect(ignored('/nexus/.trash/old.md')).toBe(true)
     expect(ignored('/nexus/.DS_Store')).toBe(true)
     expect(ignored('/nexus/Notes/.hidden/x.md')).toBe(true)

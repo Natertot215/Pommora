@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { handleMutate, type MutateDeps } from './mutate'
 import { openSession, closeSession } from './session'
-import { closeSessionIndex, indexIdle } from './sessionIndex'
 import { splitFrontmatter, readNexus } from './readNexus'
 import { pathExists } from './io/atomicWrite'
 
@@ -36,10 +35,6 @@ beforeEach(async () => {
   await openSession(root)
 })
 afterEach(async () => {
-  // mutate fires its index refresh without waiting, so the rebuild can still be writing into
-  // .nexus when the temp dir is removed — settle it before tearing the nexus down.
-  await indexIdle()
-  closeSessionIndex()
   closeSession()
   await rm(root, { recursive: true, force: true })
 })
