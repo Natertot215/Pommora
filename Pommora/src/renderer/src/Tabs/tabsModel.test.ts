@@ -224,7 +224,7 @@ describe('tabsModel — reconcileTabs (I-2a)', () => {
     )
     expect(r.changed).toBe(true)
     expect(r.activeTabId).toBe('t1')
-    expect(r.tabs[0]).toBe(tabs[0]) // untouched tab keeps its identity
+    expect(r.tabs[0]).toBe(tabs[0])
     expect(r.tabs[1].target).toEqual({ kind: 'page', id: 'b', path: '/renamed' })
     expect(r.tabs[1].navStack).toEqual([{ kind: 'page', id: 'b', path: '/renamed' }])
   })

@@ -38,9 +38,8 @@ import {
   twistySpacer,
 } from '@renderer/design-system/components/menu/menu.css'
 
-/** Right-click an entity → main pops the native context menu. Every PathNode (page +
- *  container + context) carries kind/id/path/title; the code-keyed saved rows don't, so they
- *  never wire this. Tab membership rides along so the menu's open item reads stateful. */
+/** Every PathNode carries kind/id/path/title; code-keyed saved rows don't, so they never wire
+ *  this. Tab membership rides along so the menu's open item reads stateful. */
 function showContextFor(node: {
   kind: MutableKind
   id: string
@@ -70,9 +69,6 @@ function ctxHandler(cb?: () => void): ((e: React.MouseEvent) => void) | undefine
 /** Addresses a row for inline rename — its path + kind, handed to the mutate op on commit. */
 type RenameTarget = { path: string; kind: MutableKind }
 
-/** A row's title: a static label, or an inline `<input>` while this row is being renamed
- *  (store.renamingPath === path). Commit on Enter / blur (skipped when unchanged or empty);
- *  cancel on Escape. The mutate op runs through the store. */
 function RowTitle({
   path,
   kind,
@@ -92,8 +88,6 @@ function RowTitle({
   )
 }
 
-// --- selection helpers ----------------------------------------------------
-
 function isCollectionSelected(sel: SelectionState, id: string): boolean {
   return sel.kind === 'collection' && sel.id === id
 }
@@ -106,8 +100,6 @@ function isPageSelected(sel: SelectionState, id: string): boolean {
   return sel.kind === 'page' && sel.id === id
 }
 
-// --- icon helper ----------------------------------------------------------
-
 function folderAwareIcons(
   custom: string | undefined,
   fallback: IconName,
@@ -116,8 +108,6 @@ function folderAwareIcons(
   const icon = custom && (custom in icons || lucideGlyph(custom) !== undefined) ? custom : fallback
   return { icon, openIcon: icon === 'folder-closed' ? 'folder-open' : undefined }
 }
-
-// --- primitive rows -------------------------------------------------------
 
 function Leaf({
   icon,
@@ -141,8 +131,8 @@ function Leaf({
   onContextMenu?: () => void
   rename?: RenameTarget
 }): React.JSX.Element {
-  // The row icon rides INSIDE the title's scroll box (not the fixed leading slot), so it ellipsizes and
-  // hover-scrolls as one unit with the title; only the chevron/spacer stays fixed in the gutter.
+  // The row icon rides INSIDE the title's scroll box (not the fixed leading slot), so it scrolls
+  // as one unit with the title.
   return (
     <MenuItem
       className="row"
@@ -158,10 +148,7 @@ function Leaf({
   )
 }
 
-// The draggable wrapper every sidebar row shares: registers the row with the DnD engine,
-// spreads the pointer handle, and mutes it while lifted. Its rect feeds the insertion-line
-// hit-testing, so it must wrap ONLY the row itself — never a subtree (a Disclosure's body
-// stays outside it).
+// Its rect feeds the insertion-line hit-testing, so it must wrap ONLY the row itself — never a subtree.
 function DragRow({ id, children }: { id: string; children: React.ReactNode }): React.JSX.Element {
   const drag = useSidebarDrag(id)
   return (
@@ -207,10 +194,8 @@ function Disclosure({
   onSelect?: () => void
   onContextMenu?: () => void
   rename?: RenameTarget
-  // The header row's id when this disclosure is a real entity — its OWN rect (not the subtree's)
-  // is what the engine hit-tests, so DragRow wraps only the header MenuItem; the <Reveal> body
-  // stays outside it. Omitted for structural disclosures (the Context groups), which aren't
-  // entities and so are never draggable or drop targets.
+  // Omitted for structural disclosures (the Context groups) — they aren't entities, so never
+  // draggable or drop targets.
   dragId?: string
   /** Right-click on the body's empty space (a row's own menu wins — it preventDefaults first). */
   onBodyContextMenu?: () => void
@@ -223,9 +208,8 @@ function Disclosure({
     setOpen(next)
     if (persistKey) saveOpen(window.localStorage, persistKey, next)
   }
-  // A click that settles this row's own inline rename (blur-commit) must not also toggle the
-  // disclosure. The commit clears renamingPath before the click event lands, so the renaming
-  // state is captured at pointerdown and consumed by the toggle.
+  // A click that settles an inline rename (blur-commit) must not also toggle the disclosure —
+  // renamingPath clears before the click lands, so state is captured at pointerdown instead.
   const settleClick = useRef(false)
   const onHeaderPointerDown = rename
     ? (): void => {
@@ -239,17 +223,16 @@ function Disclosure({
     }
     setAndSave(!open)
   }
-  // Every create flow begin-renames the new row — a child entering rename reveals it by forcing
-  // this (possibly collapsed) ancestor open, so a fresh entity never lands invisible.
+  // A child entering rename forces this (possibly collapsed) ancestor open, so a fresh entity
+  // never lands invisible.
   const renamingChild = useSession((s) =>
     rename ? s.renamingPath?.startsWith(`${rename.path}/`) === true : false,
   )
   useEffect(() => {
     if (renamingChild && !open) setAndSave(true)
   }, [renamingChild, open])
-  // Storage containers (vault/collection) carry an onSelect: clicking the icon or title opens the
-  // view, while the rest of the row (chevron, empty space) toggles. Rows with no onSelect (Context
-  // groups, sets) have no select zone, so a click anywhere toggles.
+  // Clicking the icon/title opens the view; the rest of the row toggles. Rows with no onSelect
+  // have no select zone, so a click anywhere toggles.
   const openView = onSelect
     ? (e: React.MouseEvent): void => {
         e.stopPropagation()
@@ -304,8 +287,6 @@ function Disclosure({
   )
 }
 
-// --- node renderers (typed arrays -> structural order) --------------------
-
 function PageRow({
   page,
   depth,
@@ -333,9 +314,6 @@ function PageRow({
   )
 }
 
-// Shared container header — folder-aware icon + drop-target registration + the
-// Disclosure shell. CollectionRow / SetRow differ only in default icon, children,
-// and which selection they carry.
 function ContainerRow({
   node,
   defaultIcon,
@@ -371,9 +349,8 @@ function ContainerRow({
   )
 }
 
-// A container's folders form one contiguous block, placed above or below its loose pages by the
-// nexus-wide placement knob. A full folder↔page interleave is the eventual model; this top/bottom
-// flag is the interim — folders stay a block, just relocatable.
+// A full folder↔page interleave is the eventual model; this top/bottom flag is the interim —
+// folders stay a block, just relocatable.
 function placeChildren(
   folders: React.JSX.Element[],
   pages: React.JSX.Element[],
@@ -382,9 +359,7 @@ function placeChildren(
   return placement === 'bottom' ? [...pages, ...folders] : [...folders, ...pages]
 }
 
-// A Set row. Only depth-1 Sets (direct children of a Collection, `selectable`) open a view; deeper
-// Sub-Sets are expand-only organizing folders. Renders its sub-sets and its pages, ordered by the
-// subSetPlacement knob.
+// Only depth-1 Sets (selectable) open a view; deeper Sub-Sets are expand-only organizing folders.
 function SetRow({
   set,
   depth,
@@ -437,8 +412,6 @@ function SetRow({
   )
 }
 
-// A top-level Collection — the schema-bearing container (Swift: PageCollection). Its direct Sets
-// render as selectable depth-1 rows, ordered against its loose pages by the setPlacement knob.
 function CollectionRow({
   col,
   depth,
@@ -491,7 +464,6 @@ function CollectionRow({
   )
 }
 
-// A registry Space — a draggable row reordered within its Context group's disclosure.
 function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
   const select = useSession((s) => s.select)
   const selected = useSession((s) => s.selection.kind === 'space' && s.selection.id === node.id)
@@ -511,9 +483,6 @@ function SpaceRow({ node }: { node: SpaceNode }): React.JSX.Element {
   )
 }
 
-// A registry Context group — a non-draggable disclosure holding its Spaces. Free-standing (no
-// containment), so the header is a pure expand/collapse toggle; its right-click pops the native
-// group menu (New <Singular> · Rename · Delete) built main-side from the registry.
 function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const path = `.nexus/contexts/${group.def.title}`
@@ -546,8 +515,6 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
   )
 }
 
-// --- sections -------------------------------------------------------------
-
 function SectionHeader({ label }: { label: string }): React.JSX.Element {
   return (
     <div className={cx('section-header', text.control.semibold)}>
@@ -575,8 +542,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   useEffect(() => {
     if (mode !== 'agenda') return undefined
     let live = true
-    // Clear first: the list belongs to the nexus that produced it, so a switch must not show the
-    // previous one's items while the new read is in flight — or indefinitely, if it fails.
+    // Clear first — a switch must not show the previous nexus's items while the new read is in
+    // flight, or indefinitely if it fails.
     setAgenda({ tasks: [], events: [] })
     void window.nexus.agenda.list().then((r) => {
       if (live && r.ok) setAgenda({ tasks: r.tasks, events: r.events })
@@ -593,8 +560,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     void select({ kind: 'set', id: set.id, path: set.path })
   }
   const onSelectPage = (page: PageNode, e?: React.MouseEvent): void => {
-    // a page in a page-preview Collection opens the floating preview (the sidebar resolves the
-    // owner by path prefix — it has no source prop); ⌘-click is the explicit full-page bypass.
+    // A page in a page-preview Collection opens the floating preview (resolved by path prefix —
+    // the sidebar has no source prop); ⌘-click is the explicit full-page bypass.
     const owner = [...tree.collections, ...tree.userSections.flatMap((s) => s.collections)].find(
       (c) => page.path.startsWith(`${c.path}/`),
     )
@@ -609,8 +576,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   // A drop resolves to a MutateRequest; the store's one write path applies it (refetch on ok).
   const onCommit = (req: MutateRequest): void => void mutate(req)
 
-  // Right-click a mode's empty area → a native create menu (never auto-create). Contexts offers
-  // a new group; in-group right-click scopes to a Space.
   const newContextMenu = (): void => {
     void useSession
       .getState()
@@ -627,11 +592,10 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     ])
   }
 
-  // One native capture-phase listener flags the row that's actually scrolled off its start, so the left-edge
-  // eclipse only shows once content slides under it — never on a bare hover. React doesn't delegate `scroll`
-  // (it binds onScroll straight to the node) and scroll doesn't bubble, so a prop on <nav> would never see a
-  // descendant .titleText's scroll — capture DOES traverse down to it. slideTitleBack's rAF drives scrollLeft
-  // to 0, re-firing this to clear the flag.
+  // React doesn't delegate `scroll` (onScroll binds straight to the node) and scroll doesn't
+  // bubble, so a prop on <nav> would never see a descendant .titleText's scroll — a native
+  // capture-phase listener does. slideTitleBack's rAF drives scrollLeft to 0, re-firing this to
+  // clear the flag.
   const navRef = useRef<HTMLElement>(null)
   useEffect(() => {
     const nav = navRef.current
@@ -645,7 +609,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     return () => nav.removeEventListener('scroll', onScroll, { capture: true })
   }, [])
 
-  // Contexts mode — every registry Context as its own disclosure of Spaces, one drag zone.
   const contextsLayer = (
     <SidebarDnd
       tree={tree}
@@ -661,7 +624,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     </SidebarDnd>
   )
 
-  // Collections mode — top-level Collections plus user-named sections (their headings stay), own zone.
   const collectionsLayer = (
     <SidebarDnd
       tree={tree}
@@ -701,8 +663,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     </SidebarDnd>
   )
 
-  // Right-click the empty mode area → its create menu. Fires only on the bare layer
-  // surface, so a row's own context menu still wins.
+  // Fires only on the bare layer surface (e.target === e.currentTarget), so a row's own context
+  // menu still wins.
   const modeCtx =
     (cb?: () => void) =>
     (e: React.MouseEvent): void => {
@@ -719,17 +681,16 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const onCreate =
     mode === 'contexts' ? newContextMenu : mode === 'agenda' ? undefined : newCollectionMenu
 
-  // Ribbon-mode switch: hold the outgoing mode as a clipped exit overlay while the incoming sweeps
-  // over it (Sidebar.css). The nav snaps to the top for the incoming; the exit layer counter-
-  // translates by the captured scroll so its visible window holds still while it's overtaken.
-  // The epoch keys the exit layer so a mid-transition switch remounts it (restarting the clip
-  // sweep) instead of swapping content under a half-run animation.
+  // Hold the outgoing mode as a clipped exit overlay while the incoming sweeps over it
+  // (Sidebar.css). The exit layer counter-translates by the captured scroll so its visible window
+  // holds still while overtaken. The epoch keys it so a mid-transition switch remounts (restarting
+  // the sweep) instead of swapping content under a half-run animation.
   const [exit, setExit] = useState<{ mode: SidebarMode; scroll: number; epoch: number } | null>(
     null,
   )
   const prevMode = useRef(mode)
-  // Layout effect: the capture + scroll snap must land BEFORE the switch's first paint, or one
-  // frame of the new mode flashes un-animated at the old scroll position.
+  // Must land BEFORE the switch's first paint (useLayoutEffect), or one frame of the new mode
+  // flashes un-animated at the old scroll position.
   useLayoutEffect(() => {
     if (prevMode.current === mode) return
     const from = prevMode.current
@@ -753,9 +714,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
           </div>
         )}
         <div key={mode} className={cx('sidebar-mode', exit !== null && 'mode-enter')}>
-          {/* The slide wrapper is permanent (class-only toggle) — swapping the element shape at
-              animation end would remount the whole mode tree. It fills the mode and carries the
-              empty-area create menu (modeCtx gates on target === currentTarget). */}
+          {/* Permanent (class-only toggle) — swapping the element shape at animation end would
+              remount the whole mode tree. */}
           {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
           <div
             className={cx('mode-body', exit !== null && 'mode-enter-slide')}

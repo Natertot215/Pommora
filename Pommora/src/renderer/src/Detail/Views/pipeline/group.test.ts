@@ -5,7 +5,6 @@ import type { PageFrontmatter } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
 import { dateBucketKey, flattenContainer, resolveGroups, subGroupKey } from './group'
 
-// ---- builders ----
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const set = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): SetNode => ({
   kind: 'set',

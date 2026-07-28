@@ -22,14 +22,10 @@ import { useSession } from '../store'
 import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import * as vd from './viewDropdown.css'
 
-// ── KNOB — the pane opens at least this square (width floor × the same as height floor). A sparse list
-// reserves the square with its footer pinned to the bottom; view rows fill the reserved space top-down
-// and only grow the pane once they'd exceed it. Tune the square edge here. ──
+// Width/height floor — a sparse list reserves the square (footer pinned to bottom); rows fill
+// top-down and only grow the pane past it.
 const PANE_SQUARE = 225
 
-// The view list is one flat reorderable list — no assign/hide zones, so every drop is a reorder within
-// it. Region-agnostic (the engine's snapshot still needs both region rects, but this ignores them): the
-// row mids alone pick the insertion index, in the without-dragged coordinates `views:reorder` splices at.
 const viewSlot: typeof paneSlot = (rows, _byId, _regions, pointerY, draggedId) => {
   const others = rows.filter((r) => r.id !== draggedId)
   let i = 0
@@ -43,9 +39,8 @@ const viewSlot: typeof paneSlot = (rows, _byId, _regions, pointerY, draggedId) =
   }
 }
 
-/** Registers the drag region on the rows container. A pure reorder has no assign/hide zones, so both of
- *  the engine's region refs ride the one element — its snapshot needs both non-null; `viewSlot` ignores
- *  their rects. */
+/** A pure reorder has no assign/hide zones, so both of the engine's region refs ride this one
+ *  element — its snapshot needs both non-null even though `viewSlot` ignores their rects. */
 function DragRegion({ children }: { children: ReactNode }): React.JSX.Element {
   const { assignedRef, allRef } = usePaneRegions()
   const region = (el: HTMLElement | null): void => {
@@ -59,12 +54,6 @@ function DragRegion({ children }: { children: ReactNode }): React.JSX.Element {
   )
 }
 
-/**
- * The ViewPane — the navigation dropdown the ViewDropdown discloses. A row per saved view (click
- * switches the active view + closes; the chevron pushes into ViewSettings; drag reorders; right-click
- * opens Rename / Edit Icon / Delete) over a footer BottomRow (+ create · … more), the two levels riding
- * one PaneSlider.
- */
 export function ViewPane({
   node,
   schema,
@@ -82,22 +71,20 @@ export function ViewPane({
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [iconOpen, setIconOpen] = useState(false)
   const scope = useViewEmbedScope()
-  // ViewPane never mounts inside a view embed until the payload switcher lands;
-  // its source-CRUD family (create/reorder/delete/switch) must route to the payload first.
+  // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
   if (scope) return null
   const views = node.views ?? []
-  // The list never renders empty: during the entry-mint beat (a legacy container's first open, before
-  // the refetch lands) show the in-memory sentinel default, same as the button + table.
+  // During the entry-mint beat (a legacy container's first open, before refetch lands) shows the
+  // in-memory sentinel default — same as the button + table.
   const rows = views.length ? views : [mintDefaultView(schema)]
-  // The active view whose row wears the outline — `pickView`'s fallback (a gone/unset pointer → the
-  // first row), so the ring always marks exactly one row.
+  // Fallback to the first row keeps the outline on exactly one row even with a gone/unset pointer.
   const activeId = rows.some((v) => v.id === storedActive) ? storedActive : rows[0]?.id
-  // Re-derive the edited view from the live tree so an edit (rename/type/format) shows fresh, not a
-  // stale snapshot; a gone id (deleted) collapses back to the list.
+  // Re-derived from the live tree each render so an edit shows fresh, not stale; a deleted id
+  // collapses back to the list.
   const editing = editingId ? rows.find((v) => v.id === editingId) : undefined
 
-  // Selecting a view switches the active view but leaves the dropdown open — the outline follows to the
-  // picked row so you can see (and keep switching) which view you're in. Dismiss closes it.
+  // Selecting switches the active view but leaves the dropdown open, so you can see (and keep
+  // switching) which view you're in.
   const switchTo = (id: string): void => void setActiveView(node.id, id)
   const createView = async (): Promise<void> => {
     await window.nexus.views.save(node.path, node.kind, mintNewView('Untitled', schema))
@@ -216,9 +203,6 @@ export function ViewPane({
     />
   ) : null
 
-  // The pane reserves a square (PANE_SQUARE via the slider's floors) so a sparse list doesn't collapse;
-  // the list's MenuScrollFrame fills it, pins the +/… footer at the bottom, and scrolls the rows once
-  // they'd exceed its ceiling. The slider only slides + resizes between the list and ViewSettings.
   return (
     <>
       <PaneSlider

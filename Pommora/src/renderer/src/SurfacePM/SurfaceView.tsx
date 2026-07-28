@@ -19,43 +19,32 @@ import { snapAxis, xCandidates, yCandidates } from './core/snap'
 import { startPointerDrag } from './sensors/pointerDrag'
 import './surfacepm.css'
 
-// The SurfacePM surface: a layout tree rendered as absolutely-positioned blocks,
-// with PommoraDND's interaction feel throughout. Moving a block lifts THE BLOCK
-// ITSELF under the pointer (shadowed, 1:1, no ghost) while its siblings reflow
-// through the shared Feel transition; releasing settles it into its slot as an
-// animation and the layout commits on transitionend (decide-then-animate, with
-// the engine's fallback timer). Resizing lives on each block's own edges and
-// corners — an edge drag moves the shared boundary it resolves to (core/edges),
-// tracking 1:1 with transitions gated off. Every gesture is snapshot → preview →
-// commit/abort against the frozen drag-origin layout; Esc settles home.
+// Moving a block lifts THE BLOCK ITSELF under the pointer (shadowed, 1:1, no ghost) while its
+// siblings reflow through the shared Feel transition; releasing settles it into its slot as an
+// animation and the layout commits on transitionend (decide-then-animate, with the engine's
+// fallback timer). Every gesture is snapshot → preview → commit/abort against the frozen
+// drag-origin layout; Esc settles home.
 
 export interface SurfaceViewProps {
   layout: SurfaceLayout
   onLayoutChange: (layout: SurfaceLayout) => void
-  /** MUST be identity-stable (useCallback) — tiles memoize on it. Corollary: it
-   *  must not close over mutable per-tile data (the memo would skip the update);
-   *  content that changes renders a component that subscribes to its own state. */
+  /** MUST be identity-stable (useCallback) — tiles memoize on it, and it must not close over
+   *  mutable per-tile data (the memo would skip the update). */
   renderTile: (id: string, rect: Rect) => React.ReactNode
   gap?: number
   minTilePx?: number
-  /** Band-targeting zone radius (above-first / between-band seams) — a live-tuning knob. */
   bandZonePx?: number
-  /** Extra empty room below the last band; dropping there appends a new band. */
+  /** Dropping in this space appends a new band. */
   bottomPadPx?: number
-  /** Resize boundaries magnetize to other blocks' edges within this many px. */
   snapPx?: number
-  /** The displacement feel (defaults to the engine's Smooth). */
   feel?: Feel
-  /** Per-tile chassis class (e.g. the host's style variants) — engine-agnostic. */
   tileClassName?: (id: string) => string | undefined
-  /** A tile that answers true is STATIC — its drag + resize gestures are frozen (its handle still
-   *  opens the menu). The host derives it (e.g. a locked block); the engine only gates the gesture. */
+  /** STATIC freezes drag + resize — the handle still opens the menu. The host derives this (e.g.
+   *  a locked block); the engine only gates the gesture. */
   isTileStatic?: (id: string) => boolean
-  /** Click / right-click on a tile's drag handle — the host's menu hook. */
   onHandleMenu?: (id: string, e: React.MouseEvent) => void
-  /** Right-click on the surface BACKGROUND — resolved to a semantic create target:
-   *  a ragged wedge under a tile (fill it flush to the row bottom) or a plain
-   *  append below all content. */
+  /** Resolved to a semantic create target: a ragged wedge under a tile (fill flush to the row
+   *  bottom), or a plain append. */
   onBackdrop?: (target: BackdropTarget, e: React.MouseEvent) => void
 }
 
@@ -74,10 +63,8 @@ interface Settle {
   next: SurfaceLayout | null
 }
 
-/** How close (px, from the tile's top-left corner) the pointer must be to reveal
- *  a caret-active tile's handle — the proximity affordance knob. */
+// Measured from the tile's top-left corner; only caret-active tiles reveal a handle by it.
 const HANDLE_REVEAL_PX = 240
-// How long the width-tracking flag holds after the ResizeObserver goes quiet (sidebar/inspector settle).
 const TRACK_SETTLE_MS = 160
 
 const EDGE_ZONES: Array<{ zone: string; edges: Edge[] }> = [
@@ -136,9 +123,7 @@ const TileShell = memo(
         : phase === 'reflow' || phase === 'settling'
           ? `transform ${feel.duration}ms ${feel.easing}, width ${feel.duration}ms ${feel.easing}, height ${feel.duration}ms ${feel.easing}`
           : undefined
-    // Proximity reveal: distance from the tile's top-left corner, rect cached on
-    // enter (no per-move layout reads), state flips only on threshold crossing.
-    // CSS decides who uses it (caret-active tiles reveal their handle by it).
+    // Rect cached on enter (no per-move layout reads); state flips only on threshold crossing.
     const [handleNear, setHandleNear] = useState(false)
     const cornerRef = useRef<{ x: number; y: number } | null>(null)
     return (
@@ -177,8 +162,7 @@ const TileShell = memo(
             onSettled(id)
         }}
       >
-        {/* Unarmed clicks pass through the sensor (suppressNextClick fires only on
-            armed drags) — click and right-click both open the host's handle menu. */}
+        {/* Unarmed clicks pass through — suppressNextClick fires only on armed drags. */}
         {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented */}
         <div
           className="spm-handle"
@@ -239,9 +223,8 @@ export function SurfaceView({
   const [settle, setSettle] = useState<Settle | null>(null)
   const [resizingId, setResizingId] = useState<string | null>(null)
 
-  // While the surface WIDTH is animating (sidebar/inspector toggling), tiles must
-  // track 1:1 — their own width transition would lag the pane. `tracking` holds
-  // until the observer goes quiet.
+  // While the surface WIDTH is animating, tiles must track 1:1 — their own width transition
+  // would lag the pane. `tracking` holds until the observer goes quiet.
   const [tracking, setTracking] = useState(false)
   const trackingSettle = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
@@ -295,10 +278,8 @@ export function SurfaceView({
   const isTileStaticRef = useRef(isTileStatic)
   isTileStaticRef.current = isTileStatic
 
-  // Decide-then-animate: the settle transition ends (or the engine's fallback
-  // timer fires) → the decided layout commits and the gesture state clears. The
-  // ref mirrors the state so the commit runs as a plain event side effect —
-  // never inside a state updater (React forbids cross-component updates there).
+  // The ref mirrors the state so the commit runs as a plain event side effect — never inside a
+  // state updater (React forbids cross-component updates there).
   const settleRef = useRef<Settle | null>(null)
   const finishSettle = useCallback((id: string) => {
     const s = settleRef.current
@@ -353,10 +334,9 @@ export function SurfaceView({
     const dividerX = new Map(g.dividers.map((d) => [refKey(d.ref), d.x]))
     const snapX = xCandidates(g)
     const snapY = yCandidates(g)
-    // South edges STRETCH — exactly one tile grows, the page flows. North edges
-    // negotiate the stacked boundary above; east/west move the row splitter.
-    // Each action carries its boundary's start px + own-edge-filtered candidates
-    // so its delta can magnetize to OTHER blocks' edges (the alignment form-lock).
+    // South edges STRETCH — exactly one tile grows. North edges negotiate the stacked boundary
+    // above; east/west move the row splitter. Each action's candidates are own-edge-filtered so
+    // its delta can magnetize to OTHER blocks' edges.
     type Action =
       | { edge: Edge; kind: 'stretch'; start: number; cands: number[] }
       | { edge: Edge; kind: 'divider'; ref: DividerRef; start: number; cands: number[] }
@@ -440,11 +420,8 @@ export function SurfaceView({
       x: e.clientX - downBox.left - rect.x,
       y: e.clientY - downBox.top - rect.y,
     }
-    // Scroll compensation reads the REAL scroll ancestor's delta (the host never
-    // scrolls itself) — cheap per move, no forced layout, and it also folds our
-    // own autoscroll back into the pointer math. A mid-gesture WIDTH change stays
-    // deliberately frozen (the origin-snapshot semantics; rare, self-corrects on
-    // the next gesture).
+    // Reads the REAL scroll ancestor's delta (the host never scrolls itself) — cheap per move, no
+    // forced layout, and it folds our own autoscroll back into the pointer math.
     const scroller = findScroller(host, 'xy')
     const scroll0 = { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0 }
     let latest: SurfaceLayout = origin
@@ -453,9 +430,8 @@ export function SurfaceView({
     const lastPoint = { x: e.clientX, y: e.clientY }
     let stopScroll: (() => void) | null = null
 
-    // Resolve the drop target from a viewport point + the scroller's live delta. Called on every
-    // pointer move AND on every auto-scrolled frame (via onScrolled) so a held-still drag near an
-    // edge keeps re-targeting as content flows past.
+    // Called on every pointer move AND on every auto-scrolled frame (via onScrolled) so a
+    // held-still drag near an edge keeps re-targeting as content flows past.
     const resolve = (clientX: number, clientY: number): void => {
       const dsx = (scroller?.scrollLeft ?? 0) - scroll0.x
       const dsy = (scroller?.scrollTop ?? 0) - scroll0.y
@@ -472,9 +448,8 @@ export function SurfaceView({
         moved = true
         lastPoint.x = ev.clientX
         lastPoint.y = ev.clientY
-        // Start the loop at ACTIVATION — onMove only fires once armed — matching the engine: the dampen
-        // ramp measures from the drag, not the press, and a tap never spins the loop. The returned
-        // instance-scoped stopper (not the global) is what onEnd calls, so no teardown can cross drags.
+        // The instance-scoped stopper (not the global) is what onEnd calls, so no teardown can
+        // cross drags.
         if (!stopScroll && scroller) {
           stopScroll = startAutoScroll({
             getPoint: () => lastPoint,
@@ -509,9 +484,7 @@ export function SurfaceView({
   const dragId = tileDrag?.id ?? settle?.id ?? null
   const interacting = resizingId !== null || tracking
 
-  // A background right-click resolves to a semantic create target: the ragged
-  // wedge under the tile above the point (fill flush to the row bottom), or a
-  // plain append when nothing sits above. Tiles swallow their own right-clicks.
+  // Tiles swallow their own right-clicks.
   const onSurfaceContextMenu = (e: React.MouseEvent): void => {
     if (!onBackdrop || e.target !== e.currentTarget) return
     e.preventDefault()
@@ -588,8 +561,7 @@ export function SurfaceView({
           )
         })}
 
-      {/* The placement preview — the area the lifted block will occupy, washed in
-          the accent tint. Reads off the draft geometry, so it IS the future slot. */}
+      {/* Reads off the draft geometry, so it IS the future slot, not an approximation. */}
       {tileDrag &&
         draft &&
         (() => {

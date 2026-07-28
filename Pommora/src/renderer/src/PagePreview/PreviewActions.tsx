@@ -1,8 +1,7 @@
 import { Icon } from '@renderer/design-system/symbols'
 
-/** The trailing button pair both floating windows carry, left of the pane's ×. The surface's
- *  swallow math sizes itself for exactly this pair, so it stays one component rather than a shape
- *  each window re-declares. */
+// The surface's swallow math sizes itself for exactly this pair — stays one component rather than
+// a shape each window re-declares.
 export function PreviewActions({
   inspectorOpen,
   onToggleInspector,
@@ -12,8 +11,7 @@ export function PreviewActions({
 }): React.JSX.Element {
   return (
     <>
-      {/* Parked: this toolbar's own settings surface hasn't landed. The ribbon's Settings glyph is
-          the live one. Inert here rather than a button that silently does nothing. */}
+      {/* Parked — this toolbar's own settings surface hasn't landed; the ribbon's Settings glyph is the live one. */}
       <button type="button" className="ppane-action" title="Settings" disabled>
         <Icon name="sliders-horizontal" size={13} />
       </button>

@@ -19,7 +19,7 @@ describe('warmCache', () => {
 
   it('evicts the stalest entry past the per-tab cap (I-7), sparing recently-captured ones', () => {
     for (let i = 0; i < 21; i++) captureWarm('t1', `page:p${i}`, { scrollTop: i })
-    expect(readWarm('t1', 'page:p0')).toBeUndefined() // the 21st capture rolled the oldest off
+    expect(readWarm('t1', 'page:p0')).toBeUndefined()
     expect(readWarm('t1', 'page:p20')?.scrollTop).toBe(20)
     // Re-capturing an old key refreshes its slot, so the NEXT eviction takes the now-stalest instead.
     captureWarm('t1', 'page:p1', { scrollTop: 99 })

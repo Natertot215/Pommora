@@ -23,30 +23,28 @@ import { PreviewTabStrip } from './PreviewTabStrip'
 import { usePreviewWarm } from './usePreviewWarm'
 import './previewWindow.css'
 
-// The bare surfaces a window-move may start from, beyond the pane's own. The tab wrap's bare space
-// moves too (a press on a .tab is not the wrap and never arms).
+// The tab wrap's bare space moves too — a press on a .tab is not the wrap and never arms.
 const DRAG_SURFACES =
   '.pgpreview-body, .pgpreview-tabwrap, .pgpreview-tabscroll, .pgpreview-tabstrip'
 
-// The tab-switch content slide: the DetailPane's view-slide values on the preview's own stamp.
+// The DetailPane's view-slide value, on the preview's own stamp.
 const SLIDE_PX = 14
 
-// The live-stats debounce (mirrors PageView) — edits coalesce before the count recomputes.
+// Mirrors PageView — edits coalesce before the count recomputes.
 const STATS_DEBOUNCE_MS = 120
 
-// The promote and nav-swap exits are WAAPI/CSS-driven; the class tells the stylesheet to suppress
-// the shell's default scale-out so one motion owns the window. A plain dismiss keeps it.
+// The class tells the stylesheet to suppress the shell's default scale-out so one motion owns the
+// window; a plain dismiss keeps it.
 const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
 
 export function PreviewWindow(): React.JSX.Element | null {
-  // The window's existence keys on the PAGE flavor, not the derived target — the nav flavor renders
-  // in NavWindow's chrome, and its map tab nulls the target without closing anything.
-  // A page-flavor window always has an active page tab, so the target is non-null while open.
+  // Keys on the PAGE flavor, not the derived target — the nav flavor renders in NavWindow's
+  // chrome, and its map tab nulls the target without closing anything.
   const open = useSession((s) => s.preview?.flavor === 'page')
   const target = useSession((s) => s.previewTarget)
   const { mounted, closing } = useExitPresence(open)
-  // Hold the last real target through the exit animation (the store nulls it at close). The body is
-  // NOT keyed by target: an overtake swaps contents in place — the window never jumps.
+  // Held through the exit animation (the store nulls target at close). Not keyed by target — an
+  // overtake swaps contents in place, the window never jumps.
   const held = useRef(target)
   if (target) held.current = target
   if (!mounted || !held.current) return null
@@ -70,10 +68,8 @@ function PreviewWindowBody({
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [target.path])
 
-  // The preview's Subfield counts a LOCAL body — never the shared `liveBody` slot (single-owner; a
-  // second writer would evict the main pane's live count to its saved snapshot). PageEmbed reports
-  // the body via onBody (load-seed + edits): the first body for a path seeds immediately, edits
-  // debounce like PageView's stats buffer. Collapse is session-only (a transient floating surface).
+  // Counts a LOCAL body — never the shared `liveBody` slot (single-owner; a second writer would
+  // evict the main pane's live count).
   const [previewBody, setPreviewBody] = useState('')
   const statsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const seededPath = useRef<string | null>(null)
@@ -101,11 +97,10 @@ function PreviewWindowBody({
     () => ({ target: { id: target.id, path: target.path }, body: previewBody }),
     [target.id, target.path, previewBody],
   )
-  // Inspector: overlay-mounted right; Escape closes it FIRST, then the window.
+  // Escape closes the inspector first, then the window.
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
-  // Wiki-links inside the preview stay inside it — a click opens (or dedup-focuses) a tab.
-  // ⌘-click is ADDITIVE: a new app tab opens behind, the preview stays.
+  // ⌘-click (bypass) is ADDITIVE — a new app tab opens behind, the preview stays.
   const openPreviewTab = useSession((s) => s.openPreviewTab)
   const { hover, card: hoverCard } = useConnectionHover()
   const connections = useMemo<ConnectionsApi | undefined>(() => {
@@ -123,16 +118,14 @@ function PreviewWindowBody({
 
   const resolveIndex = useMemo(() => (tree ? buildResolveIndex(tree) : null), [tree])
 
-  // The breadcrumb: the page's container chain + the page itself as the last crumb.
   const crumbs = useMemo(() => {
     if (!resolveIndex) return []
     const res = resolveWith(resolveIndex, { kind: 'page', id: target.id, path: target.path })
     return res ? [...res.path, { icon: res.icon, title: res.title }] : []
   }, [resolveIndex, target])
 
-  // Tab-switch slide: the incoming page slides in from the strip direction (the DetailPane WAAPI
-  // pattern on the preview's own stamp), and the open inspector RIDES the same keyframes — the
-  // one-motion push (transform only: the pane never blinks).
+  // The open inspector RIDES the same keyframes as the body — one motion, transform only, so the
+  // pane never blinks.
   const previewSlide = useSession((s) => s.previewSlide)
   const bodyRef = useRef<HTMLDivElement>(null)
   const prevPath = useRef(target.path)
@@ -157,18 +150,16 @@ function PreviewWindowBody({
         ?.animate([{ transform: `translateX(${x}px)` }, { transform: 'translateX(0)' }], timing)
   }, [target.path, previewSlide, inspectorOpen])
 
-  // Warmth: the shared seam — editor state per tab id + body-scroll capture/restore.
   const warmSeam = usePreviewWarm(bodyRef, target.path)
 
-  // Promotion: open for real through the normal select; the window ENGULFS into the pane.
+  // Opens for real through the normal select; the window ENGULFS into the pane.
   const promote = (): void => {
     closePreview('engulf')
     void select({ kind: 'page', id: target.id, path: target.path })
   }
 
-  // The engulf exit: a FLIP from the window's live rect onto the detail pane's — translate to
-  // its center, scale to its box, fade — on the base/standard tokens. WAAPI owns it (the rects are
-  // runtime values); the css .engulfing class only suppresses the default scale-out.
+  // FLIP from the window's live rect onto the detail pane's. WAAPI owns it (the rects are runtime
+  // values); the css .engulfing class only suppresses the default scale-out.
   const exitReason = useSession((s) => s.previewExit)
   useEffect(() => {
     if (!closing || useSession.getState().previewExit !== 'engulf') return

@@ -1,9 +1,7 @@
-// The layout tree's persistence codec. Decoding REPAIRS rather than rejects —
-// drifted row ratios renormalize, ratio/child count mismatches rebuild uniform,
-// single-child splits collapse, tile heights floor, duplicate tile ids drop
-// (later occurrences; the space closes up) — so a hand-edited or foreign-written
-// tree renders sanely instead of blanking the host. Unknown keys and the
-// surrounding block document are the block-doc layer's concern, not this codec's.
+// Decoding REPAIRS rather than rejects — drifted row ratios renormalize, ratio/child count
+// mismatches rebuild uniform, single-child splits collapse, tile heights floor, duplicate tile
+// ids drop (later occurrences; the space closes up) — so a hand-edited or foreign-written tree
+// renders sanely instead of blanking the host.
 
 import { rawLayoutSchema, type RawColumn, type RawRow, type RawTile } from '@shared/blocks'
 import type { LayoutNode, SurfaceLayout, TileLeaf } from './model'

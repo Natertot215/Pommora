@@ -1,7 +1,5 @@
-// The per-block Scale model: a fixed set of discrete zoom factors a tile can carry. The factor
-// is user-facing and RELATIVE to the tile's natural size (1.0 = no change). It rides ONE CSS var
-// --block-zoom (keyed off `cls`); the font + glyphs + handle all derive from it. No JS font math — the
-// factor is applied linearly in CSS, so it never touches the editor's clamped zoom curve.
+// Rides ONE CSS var --block-zoom; font + glyphs + handle all derive from it. Applied linearly in
+// CSS — never touches the editor's own clamped zoom curve.
 
 export const DEFAULT_ZOOM = 1
 export const ZOOM_FACTORS: readonly number[] = [1.25, 1, 0.85, 0.65, 0.5]
@@ -26,9 +24,9 @@ const step = (factor: number): ZoomStep => ({
 
 export const ZOOM_STEPS: ZoomStep[] = ZOOM_FACTORS.map(step)
 
-/** Resolve a stored factor to its step. Absent → 1.0; any other value SNAPS to the nearest ratified
- *  step, so an off-grid factor (a hand-edit or foreign import) still renders + reads as its closest
- *  step and is clearable through the picker — never silently stuck at a scale the picker can't show. */
+/** Absent → 1.0; any other value snaps to the nearest ratified step, so a hand-edited or foreign
+ *  off-grid factor still renders and is clearable through the picker — never silently stuck at a
+ *  scale the picker can't show. */
 export function zoomStep(factor?: number): ZoomStep {
   const target = factor ?? DEFAULT_ZOOM
   return ZOOM_STEPS.reduce((best, s) =>

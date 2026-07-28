@@ -23,7 +23,7 @@ describe('blockZoom', () => {
   })
 
   it('snaps an off-grid factor to the nearest step (hand-edit / import safety)', () => {
-    expect(zoomStep(0.77).factor).toBe(0.85) // closer to 0.85 than 0.65
+    expect(zoomStep(0.77).factor).toBe(0.85)
     expect(zoomStep(0.6).factor).toBe(0.65)
     expect(zoomStep(2).factor).toBe(1.25) // above the max clamps down
     expect(zoomStep(0.1).factor).toBe(0.5) // below the min clamps up

@@ -13,8 +13,8 @@ import type { ResolvedNav } from './navResolve'
 import { EntityGlyph } from './EntityGlyph'
 import './navList.css'
 
-/** The location breadcrumb (icon › name › …) shared by the list rows and the gallery cards — same
- *  markup + shared nav-path-* classes, differing only by wrapper class + glyph size. Null when at root. */
+/** Shared by the list rows and the gallery cards — differing only by wrapper class + glyph size.
+ *  Null when at root. */
 export function NavCrumbs({
   path,
   className,
@@ -39,11 +39,8 @@ export function NavCrumbs({
   )
 }
 
-/** Per-row context menu (open / pin / favorite / remove live in a context menu, not
- *  the row) — a NATIVE Electron menu (the tab/cell-menu pattern), popped at the cursor. The renderer
- *  sends the row's live membership; main returns the chosen action; the labels flip on that state.
- *  Renders nothing: it fires on mount and closes when the menu resolves. Shared by the NavWindow list
- *  AND gallery. */
+/** A NATIVE Electron menu (the tab/cell-menu pattern) — renders nothing, fires on mount, closes
+ *  when the menu resolves. Shared by the NavWindow list AND gallery. */
 export function NavRowMenu({
   item,
   onClose,
@@ -77,8 +74,7 @@ export function NavRowMenu({
             break
           case 'open-preview':
             if (target.kind === 'page') {
-              // Inside the NavWindow the override routes this to a tab in THAT window
-              // (openPreviewTab lands in the open nav flavor); off → the floating preview.
+              // Inside the NavWindow the override routes this to a tab in THAT window; off → the floating preview.
               const ref = { id: target.id, path: target.path }
               if (st.navOpen && (st.previewsFile.navOverride ?? true)) st.openPreviewTab(ref)
               else st.openPreview(ref)
@@ -108,11 +104,9 @@ export function NavRowMenu({
   return null
 }
 
-/** The hover-revealed pin toggle shared by the list rows and the gallery cards: fades in on the
- *  row/card hover to pin, holds solid in the accent once pinned. `stopPropagation` on pointerdown keeps
- *  the press off the row/card drag handle (a pin toggle must never arm a reorder). Position + reveal are
- *  the caller's `className`; the mechanism is one. Null for adopted entities — they re-mint their id on
- *  adoption, so they can't hold a durable pin. */
+/** `stopPropagation` on pointerdown keeps the press off the row/card drag handle — a pin toggle
+ *  must never arm a reorder. Null for adopted entities — they re-mint their id on adoption, so
+ *  they can't hold a durable pin. */
 export function NavPinButton({
   it,
   className,
@@ -143,10 +137,8 @@ export function NavPinButton({
 
 type RowDrag = ReturnType<typeof useTableRowDrag>
 
-// One row: (icon)(title) … (path). Title takes the slack and eclipse-scrolls under the path when long;
-// the path is right-aligned, grows left to a max, then eclipse-scrolls itself — both via OverflowScroll.
-// The whole row is the drag surface + click target (the drop-line gesture suppresses the post-drag
-// click itself); every row is a button-role focusable row, draggable or not.
+// The whole row is the drag surface + click target — the drop-line gesture suppresses the
+// post-drag click itself.
 function NavRow({
   it,
   drag,
@@ -192,10 +184,7 @@ function DraggableRow(props: {
   return <NavRow {...props} drag={drag} />
 }
 
-// The row list NavWindow renders. `reorderable` runs the app's drop-line gesture (the table/settings
-// row drag): an accent insertion line marks the slot, the lifted row mutes in place, nothing displaces.
-// Pins and recents are separate groups — reassign is off, so a drag never crosses the boundary. Otherwise
-// a plain, static list (favorites rail, search results).
+// Pins and recents are separate groups — reassign is off, so a drag never crosses the boundary.
 export function NavList({
   items,
   pins,
@@ -206,17 +195,15 @@ export function NavList({
   onOpenNewTab,
 }: {
   items: ResolvedNav[]
-  /** Reorderable only: the durable pins, rendered as their own group above `items` (the recents) —
-   *  membership comes from the caller's pin set, never a flag on the rows (mirrors NavGallery). */
+  /** Membership comes from the caller's pin set, never a flag on the rows (mirrors NavGallery). */
   pins?: ResolvedNav[]
   /** Unresolvable hits (agenda kinds) — listed inert until Agenda routing ships. */
   extras?: { key: string; title: string; kind: string }[]
-  /** Run the drop-line drag: pins→reorderPin, recents→reorderRecent, never across the boundary. */
   reorderable?: boolean
   /** Host override for the recents reorder (NavWindow rewrites its frozen snapshot too). */
   onReorderRecent?: (activeKey: string, overKey: string) => void
   onSelect: (target: NavTarget) => void
-  /** Wires the row menu's "Open in New Tab"; omitted = the item doesn't render. */
+  /** omitted = the item doesn't render. */
   onOpenNewTab?: (target: NavTarget) => void
 }): React.JSX.Element | null {
   const reorderPin = useSession((s) => s.reorderPin)
@@ -228,8 +215,8 @@ export function NavList({
   if (items.length === 0 && pinRows.length === 0 && !extras?.length) return null
   const recents = reorderable ? items : []
 
-  // Translate the gesture's order-shaped commit into the stores' (active, over) shape: `over` is the
-  // old order's occupant of the index the dragged row landed on — the exact splice the stores perform.
+  // `over` is the old order's occupant of the index the dragged row landed on — the exact splice
+  // the stores perform.
   const commitReorder = (orderIds: string[], groupKey: string, activeId: string): void => {
     const group = groupKey === 'pins' ? pinRows : recents
     const keys = new Set(group.map((g) => g.key))

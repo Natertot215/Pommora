@@ -1,6 +1,5 @@
-// Selection reconciliation against a freshly-read tree. After a mutation refetch, the prior
-// selection can be stale: the entity was deleted (its id is gone) or renamed/moved (its id
-// survives but its path changed). Pure + dependency-free so it's unit-tested without a DOM.
+// After a mutation refetch, the prior selection can be stale: the entity was deleted (its id is
+// gone) or renamed/moved (its id survives but its path changed).
 
 import type {
   CollectionNode,
@@ -42,8 +41,7 @@ export function allSpaces(tree: NexusTree): SpaceNode[] {
   return (tree.contexts ?? []).flatMap((g) => g.spaces)
 }
 
-/** One tree flatten, reusable across many reconciles — the shape `applyTree` builds ONCE per push to
- *  reconcile the selection plus every tab's target + history without a per-call tree walk. */
+/** Reusable across many reconciles — `applyTree` builds this ONCE per push instead of a per-call tree walk. */
 export interface ReconcileIndex {
   contexts: ReadonlySet<string>
   collections: ReadonlySet<string>
@@ -60,12 +58,7 @@ export function buildReconcileIndex(tree: NexusTree): ReconcileIndex {
   }
 }
 
-/**
- * Reconcile `selection` against a prebuilt index. Returns the SAME reference when nothing changed
- * (so callers can skip a redundant state update); a fresh entry with the updated path when a
- * selected set/page was renamed/moved; or `{ kind: 'none' }` when the selected entity is gone.
- * Selection is id-keyed (rename-safe); only the path is refreshed.
- */
+/** Returns the SAME reference when nothing changed, so callers can skip a redundant state update. */
 export function reconcileWith(index: ReconcileIndex, selection: SelectionState): SelectionState {
   switch (selection.kind) {
     case 'none':
