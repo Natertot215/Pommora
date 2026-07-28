@@ -7,9 +7,9 @@ both through the `SurfaceView` props seam.
 
 #### Provenance
 
-Built after a full teardown of **react-grid-layout v2.2.3** (`.claude/Planning/7-10 - SurfacePM
-— RGL Teardown.md`). RGL was studied for its patterns — collision semantics, resize-handle
-geometry, controlled-layout data flow — and then retired: **no RGL code was copied**. Its
+Built after a full teardown of **react-grid-layout**. RGL was studied for its patterns —
+collision semantics, resize-handle geometry, controlled-layout data flow — and then retired:
+**no RGL code was copied**. Its
 grid-cell model (units + compaction + tetris holes) was rejected in favor of a split tree,
 and its synthetic drag core was replaced by PommoraDND's capture discipline.
 
