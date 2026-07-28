@@ -13,6 +13,7 @@ import {
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { registerDiscloseTarget } from '@renderer/design-system/interactions/dragDisclose'
 import { Chip, chipShapeForType } from '@renderer/Components/Chip'
+import { ContextChip } from '@renderer/Components/ContextChip'
 import { RenamableTitle } from '@renderer/Components/RenamableTitle'
 import { declaredType } from './pipeline/value'
 import { findOption, groupLabel } from './Table/cellResolve'
@@ -79,6 +80,18 @@ export function resolveBandHead(
   const label = groupLabel(group, view, ctx, setNames)
   if (!propId) return { label, glyph: <span className="group-name">{group.key}</span> }
   const value = group.bucket ?? group.key
+
+  // A Context band names a Space, so it wears that Space's own icon, read from the identity map the
+  // cells already use. Routing it through the type registry instead would give every Context one
+  // shared glyph, and declaredType classifies a Context column only when handed the registry ids.
+  if (ctx.contexts.has(propId)) {
+    const space = ctx.contextsById.get(value)
+    const title = space?.title ?? value
+    return {
+      label: title,
+      glyph: <ContextChip color={chipColorFor(space?.color)} title={title} icon={space?.icon} />,
+    }
+  }
 
   const groupType = declaredType(propId, ctx.schema)
   const def = ctx.schema.find((d) => d.id === propId)
