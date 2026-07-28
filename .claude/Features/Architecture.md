@@ -45,7 +45,6 @@ A Nexus is a single folder. Pommora opens it via picker and treats it as canonic
     properties.json                     ← nexus-wide property registry (propId → definition)
     homepage.json                       ← the Homepage's own identity + banner
     navview.json                        ← the NavView's banner
-    sidebar-sections.json               ← user Collection sections
     navFavorites.json                   ← the favorites list (synced)
     pins/<kind>-<id>.json               ← one file per durable pin (synced)
     nexus.db                            ← device-local operational state (schema-versioned)
