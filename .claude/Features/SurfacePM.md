@@ -1,10 +1,10 @@
 ## SurfacePM
 
-Pommora's composable dashboard layer: any **BlockHost** — an entity whose config carries the block document — renders a mosaic of draggable, resizable tiles holding real content. It's deliberately **host-agnostic**: the document load keys on host *identity* rather than kind. The layout engine beneath is **SurfacePM**, [[PommoraDND]]'s sibling.
+Pommora's composable dashboard layer: any **BlockHost** — an entity that owns a block document — renders a mosaic of draggable, resizable tiles holding real content. It's deliberately **host-agnostic**: the document load keys on host *identity* rather than kind. The layout engine beneath is **SurfacePM**, [[PommoraDND]]'s sibling.
 
 ### The Block Document
 
-A host's config carries the block entries and the lock under the shared zod contract; the `layout` — a split tree of row and column bands with tiles as leaves — is arrangement rather than content, so it is a row in `nexus.db` that no hand-edit can reach. Config writes are a locked read-merge-write touching only their own keys, so foreign keys survive by construction, and a layout write opens no file at all. A Space's sidecar carries identity other writers own, so its merge is strict: an unreadable sidecar fails the save rather than clobbering it.
+A block document — the `layout` (a split tree of row and column bands with tiles as leaves), the entries, and the host lock — is one row in `nexus.db`, keyed by host, under the shared zod contract. It is an arrangement of things that live elsewhere: every entry is a reference, so the document creates nothing a Nexus would miss, and nothing an external writer touches can leave a host unrenderable. Reading and writing the row are one synchronous pair, so two saves arriving together cannot interleave — there is no lock because there is no file. The host's own sidecar keeps only identity and appearance.
 
 Robustness is render-inert rather than strip: an entry this build doesn't recognize, a dead page reference, and a layout leaf whose entry is gone all hold their space until the user removes the tile. The layout itself needs no repair — the ops renormalize ratios and collapse single-child splits on every mutation, and the boundary rejects a malformed tree before it can be stored.
 
@@ -48,7 +48,7 @@ An embedded **page** signals itself with an accent border under the pointer or w
 
 ### Storage + Host Rules
 
-Two hosts carry a block document: the Homepage's `homepage.json` and a Space's own `_space.json`, both under `.nexus/`, each paired with its layout row. The document loads per-host on open — never in the tree walk — and layout writes debounce on gesture end; the watcher ignores host content folders while host configs stay watched, so block edits never cost a re-walk. Markdown-block bodies write pure, with no frontmatter envelope and no stamp, locked per file.
+Two hosts carry a block document: the Homepage singleton and each Space, identified by their own sidecars under `.nexus/`. The document loads per-host on open — never in the tree walk — and layout writes debounce on gesture end; the watcher ignores host content folders while host configs stay watched, so block edits never cost a re-walk. Markdown-block bodies write pure, with no frontmatter envelope and no stamp, locked per file.
 
 #### Pending
 
