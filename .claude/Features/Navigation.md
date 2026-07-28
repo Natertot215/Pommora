@@ -14,7 +14,7 @@ The shared wayfinding store beneath every navigation surface — built once, rea
 
 - **Favorites** — the durable, explicitly-curated list. Mutated only by an explicit add / remove / reorder, never automatically.
 
-Entries store only their identity — every title, icon, and location resolves **live** against the current tree at render, so a rename or move is never cached stale. An entry that no longer resolves is hidden at render but never deleted from storage, so a Nexus switch can't silently wipe pins or favorites. All three **sync** per-Nexus, last-writer-wins, so they follow you across machines.
+Entries store only their identity — every title, icon, and location resolves **live** against the current tree at render, so a rename or move is never cached stale. An entry that no longer resolves is hidden at render but never deleted from storage, so a Nexus switch can't silently wipe pins or favorites. Favorites and pins are files and **sync** per-Nexus, last-writer-wins, so they follow you across machines; recents are a device-local row, because two machines interleaving one history has no correct answer.
 
 **Search** is a client-side, title-based fuzzy scan over the in-memory tree, plus a cached Agenda snapshot so Tasks and Events are findable. A Context isn't itself a hit — it's the path crumb its Spaces resolve under. The index is memoized per tree, so typing filters without re-walking it.
 
@@ -32,7 +32,7 @@ The navigation model: a tab bar in the toolbar holding your open working set, ea
 
 - **Pinned tabs** dock left as compact, label-less entity icons, the full name revealing on hover; they are the pin set, persist, and are *protected* — navigating while a pinned tab is active opens a new tab rather than replacing it. **Unpinned tabs** sit to the right as scratch tabs, where navigating replaces the active one in place unless "Open in New Tab" is used.
 
-- **The full tab set persists and syncs** — closing Pommora never resets your tabs; they reopen cold on relaunch and travel across devices. Warm view-state is session-only; heading folds re-fold from their durable per-page store.
+- **The full tab set persists per machine** — closing Pommora never resets your tabs; they reopen cold on relaunch. Two machines with different tabs open have no correct merge, so each keeps its own. Warm view-state is session-only; heading folds re-fold from their durable per-page store.
 
 - **Lifecycle:** closing the active tab focuses the most-recently-used tab; the close `×` shows only on unpinned tabs; a deleted entity's unpinned tab closes while its pinned tab render-hides, the pin file staying. The last tab closing drops to NavView, and opening an entity already in a tab focuses that tab rather than duplicating it.
 

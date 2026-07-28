@@ -38,13 +38,16 @@ A Nexus is a single folder. Pommora opens it via picker and treats it as canonic
     _eventconfig.json
     <title>.event.json
 
-  .nexus/                               ← app-internal config + index
+  .nexus/                               ← app-internal config + the device-local database
     nexus.json                          ← nexus ULID + createdAt + schema version
     state.json                          ← top-level ordering (Collections, per-Context Space order)
     settings.json                       ← per-Nexus UI labels + accent + excluded_folders + profile
     properties.json                     ← nexus-wide property registry (propId → definition)
-    saved-config.json                   ← Saved-section entry labels
-    homepage.json                       ← singleton Homepage entity (composed blocks)
+    homepage.json                       ← the Homepage's own identity + banner
+    navview.json                        ← the NavView's banner
+    sidebar-sections.json               ← user Collection sections
+    navFavorites.json                   ← the favorites list (synced)
+    pins/<kind>-<id>.json               ← one file per durable pin (synced)
     nexus.db                            ← device-local operational state (schema-versioned)
     contexts.json                       ← the Context registry (order = display)
     contexts/<Context>/<Space>/_space.json ← one Space per folder
@@ -96,11 +99,9 @@ Mutations are separate by construction: the write path never runs inside a read,
 
 **What deliberately does not.** Favorites and pins stay files, because they are deliberate, rarely written, and the one part of Navigation worth following a user across machines. A markdown tile's body stays a file too — it is prose, it lives in the connections graph, and a rename cascade rewrites it. Everything canonical — the registry, Contexts, settings, schemas, and each host's own identity sidecar — stays a file by the first principle.
 
-**Every action is one statement.** A change is a single-row upsert; an emptied value deletes its key. Nothing coalesces, nothing locks, and nothing is owed at quit, which is what retired the debounce engine, its drain contract and the before-quit gate that once deferred the app's exit.
+**Every action is one statement.** A change is a single-row upsert; an emptied value deletes its key. Nothing coalesces and nothing locks, which is what retired the debounce engine and its drain contract. Favorites are the one operational write still going to disk, so they keep the before-quit gate that defers the app's exit until a write settles.
 
 **Versioned, not migrated.** A schema mismatch on open deletes the file and starts clean. That costs a machine its chrome once — the same outcome a corrupt sidecar always had — and is why the schema stays small enough that the trade is obviously worth it.
-
-A burst of edits costs **one** rebuild. At most a single rebuild runs at a time with one more queued behind it, and that follow-up sees the settled files. The guard is correctness rather than tuning: the rebuild deletes the database before rewriting it, so two overlapping passes would unlink the file the first was still filling.
 
 ---
 
@@ -120,7 +121,7 @@ Every file write goes through an atomic path — temp-file + rename, so a crash 
 
 #### File-watcher
 
-Out-of-band changes — Obsidian, vim, Finder, cloud-sync — reach the sidebar without a restart, through a recursive watch on the Nexus root. The index, `.trash`, dotfile cruft and the user's `excluded_folders` are ignored at intake so their churn never costs a reconcile.
+Out-of-band changes — Obsidian, vim, Finder, cloud-sync — reach the sidebar without a restart, through a recursive watch on the Nexus root. The database and its WAL siblings, `.trash`, dotfile cruft and the user's `excluded_folders` are ignored at intake so their churn never costs a reconcile.
 
 **The watcher exists for external changes; the app's own writes must not re-trigger it.** Every in-app write records itself and the watcher skips recorded paths, which is what holds a mutation to exactly one walk — the store's confirming reload — instead of a second watcher-triggered one. Between writes, authority is recency: the newest on-disk state wins.
 

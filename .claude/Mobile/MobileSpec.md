@@ -26,7 +26,6 @@ Cheap, behavior-preserving changes already on `main` that shrink the eventual po
 
 - **App build target** — `vite.config.app.ts` + `dev:app` / `build:app`: builds the renderer standalone (`dev:app` runs the real UI in any browser; `build:app` → `dist-app/` is Capacitor's `webDir`). Verified — 2,250 modules build clean.
 - **`assetUrl.ts`** — one shared `nexus-asset://` image-URL helper (was 3 identical copies) so the mobile host swaps a single function.
-- **`DEVICE_LOCAL_NEXUS_FILES`** (`paths.ts`) — names the four per-machine `.nexus` files so iCloud sync-exclusion references one constant (C-4c).
 - **Editor input attributes** (MarkdownPM) — iOS soft-keyboard `autocapitalize` / `autocorrect` / `spellcheck` / `enterkeyhint`; inert on desktop.
 - **`viewport-fit=cover` + `--safe-*` vars** — the safe-area tokens the drawers and Liquid-Glass bottom bar mount to; all `0px` on desktop.
 - **`.shell` `100dvh`** — the shell tracks the live viewport (keyboard-safe on mobile; identical on desktop).
@@ -46,7 +45,7 @@ Build order:
 
 ### Deferred
 
-- Container **views** (Table, Board, List, Cards, Gallery) and Context detail views — until the browse-and-edit core is done. With views deferred, the sidebar tree is the v1 way to reach a page.
+- Container **views** and Context detail views — until the browse-and-edit core is done. With views deferred, the sidebar tree is the v1 way to reach a page.
 - Any navigation beyond the sidebar (Pinned/Recents, history) — this waits until the desktop's own navigation surface is built, so the phone never gets ahead of the desktop.
 - The inspector's tab content and its Claude-chat mechanism — the inspector is a substantial surface of its own and gets its own brainstorm; mobile only reserves the pane.
 

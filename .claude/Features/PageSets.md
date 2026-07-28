@@ -15,7 +15,7 @@ Role is computed from depth at render time and never stored: the same folder bec
 
 #### II. Recursive Nesting
 
-Discovery, rendering, navigation, and the index all recurse on the real folder tree: depth is literal directory depth, uncapped, and a folder tree can't cycle.
+Discovery, rendering, and navigation all recurse on the real folder tree: depth is literal directory depth, uncapped, and a folder tree can't cycle.
 
 #### II. Depth-1 View Rule
 

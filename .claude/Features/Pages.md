@@ -28,7 +28,7 @@ A Page's body can hold inline `[[Title]]` [[Studio/Pommora/II. Features/Connecti
 
 #### II. Editor UI State
 
-Per-page editor UI state lives in per-machine files under `.nexus/`, never in the portable `.md`: heading-fold state and per-table heading-column choices, each keyed by page ID. Keeping this state out of the frontmatter leaves the `.md` out of cloud-sync churn.
+Per-page editor UI state lives per-machine in the database, never in the portable `.md`: heading-fold state and per-table heading-column choices, each keyed by page ID. Keeping this state out of the frontmatter leaves the `.md` out of cloud-sync churn.
 
 ### Architecture
 

@@ -12,10 +12,6 @@ re-ground it before acting. Landed items are deleted rather than marked.
 - **`trashMode` has no renderer writer.** Live in main and settable only by hand-editing
   `pommora.json`; absent from Settings.
 
-- **The index rebuilds cold on every mutation.** A burst now collapses to one rebuild, but each one
-  still re-walks the nexus and re-reads every page body to fill tables nothing queries. Resolves
-  either by writing the query consumer or by suspending the refresh until one exists.
-
 - **`PommoraError.code` can't reach the renderer.** The boundary flattens to `.error.message` at 31
   sites in `main/index.ts`, so the closed `ErrorCode` union is unreachable client-side. It IS
   consumed main-side, at `mutate.ts` (the `'exists'` retry) and `crud/contextWrite.ts`

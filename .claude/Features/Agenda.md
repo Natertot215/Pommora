@@ -29,7 +29,7 @@ Tasks and Events run through one generic agenda CRUD: create mints a ULID, renam
 
 ### Pending
 
-**Agenda Surfacing:** The sidebar's **Agenda mode** renders a read-only list of Tasks then Events over its own channel, which keeps agenda files off the tree walk — but not off every read: opening a navigation surface warms the same snapshot so search can list agenda entries, and the index rebuild that follows any mutation re-reads every agenda file.
+**Agenda Surfacing:** The sidebar's **Agenda mode** renders a read-only list of Tasks then Events over its own channel, which keeps agenda files off the tree walk — but not off every read: opening a navigation surface warms the same snapshot so search can list agenda entries, and the snapshot is re-warmed rather than held across a tree push.
 
 What's pending is interactivity. No selection kind routes an agenda entity, so a sidebar row opens nothing and a search hit renders inert; there's no detail surface and no calendar or date-grouped layout. There's no write channel either — the mutate ops and IPC that would reach the existing CRUD are unbuilt.
 

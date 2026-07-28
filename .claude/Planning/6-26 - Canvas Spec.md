@@ -72,7 +72,7 @@ A small **hover-to-reveal toolbar** in the canvas's top-right (Pommora's own pla
 
 ### Persistence
 
-File-per-canvas, owned by main. A `main/io/canvases.ts` module reads/writes a single `.canvas` file, modeled on the `folds` seam (`main/io/folds.ts`) but **per-entity, not a registry blob** — a canvas is user content, so it gets its own file. Surfaced over a `canvases:get` / `canvases:set` IPC pair returning the standard `{ ok }` envelope; the path-registry entry lives in `main/paths.ts`, the subfolder built like the existing context-tier dirs. Writes are debounced; the directory is created on first write; reads build the id → file index.
+File-per-canvas, owned by main. A `main/io/canvases.ts` module reads/writes a single `.canvas` file, modeled on the keyed operational stores (`main/db/localState.ts`) but **per-entity, not a registry blob** — a canvas is user content, so it gets its own file. Surfaced over a `canvases:get` / `canvases:set` IPC pair returning the standard `{ ok }` envelope; the path-registry entry lives in `main/paths.ts`, the subfolder built like the existing context-tier dirs. Writes are debounced; the directory is created on first write; reads build the id → file index.
 
 ### Theming
 

@@ -10,7 +10,7 @@ It lives in the body and nowhere else: the text is canonical and Obsidian-readab
 
 The parser matches on the title alone, so `[[Title|alias]]` resolves to the same Page while the piped tail renders as plain text beside the styled title. **A pipe can't appear in a title** — it opens that tail, so a title holding one could never resolve back to itself; the shared name rule rejects it at creation everywhere.
 
-`![[ ]]` isn't a connection — the tokenizer claims it as an image embed — and `{{ }}` renders as written. Nothing offers a Page its own title and the index drops a self-link, though a hand-typed one navigates normally.
+`![[ ]]` isn't a connection — the tokenizer claims it as an image embed — and `{{ }}` renders as written. Nothing offers a Page its own title and a self-link is dropped, though a hand-typed one navigates normally.
 
 **Code is never a connection.** A `[[Title]]` inside a fence or an inline span is a sample: it doesn't tokenize, doesn't index an edge, and no rename touches it. One shared mask decides where code is, so the editor and the write side can't disagree.
 
@@ -48,6 +48,6 @@ An in-memory map from normalized title to the Page IDs holding it resolves every
 
 **Duplicate Disambiguation:** id-scoping so a connection to an ambiguous title can pick its target inline.
 
-**Backlinks Panel:** a surface listing every Page that links to the current one; the edges are already indexed.
+**Backlinks Panel:** a surface listing every Page that links to the current one. It needs the reverse lookup a content index would answer, and no index exists — this and Linked-From are what one would be built for.
 
 **Wider Targets + Embeds:** Tasks and Events as targets, heading and block anchors (`#`, `#^`), and transclusion (`![[ ]]`).
