@@ -197,7 +197,7 @@ const readSidecar = (absPath: string): Promise<Json | null> =>
 
 // ---------- page reads ----------
 
-/** Raw context keys retained off the parse each entity read already does — the bracketed root
+/** Raw context keys retained off the parse each entity read already does — the parenthesized root
  *  keys, keyed by the cached node object. Registry-INDEPENDENT
  *  data, so the parse cache never needs busting for registry changes; resolution runs at
  *  tree assembly each walk. */

@@ -4,7 +4,7 @@
 //
 // Cascade policy, owned here so no call site re-invents it: a page rename reverts if
 // renameCascade's inbound-[[links]] rewrite fails; a context/space delete unlinks the
-// bracketed key/value everywhere BEFORE the folder is removed, so no member file keeps a
+// parenthesized key/value everywhere BEFORE the folder is removed, so no member file keeps a
 // dangling reference. System-trash is injected (deps.trashToSystem) so this stays testable.
 
 import { basename, dirname, join, relative, sep } from 'node:path'
@@ -228,7 +228,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
       }
       if (req.kind === 'context') {
-        // Unlink the bracketed key everywhere, then drop the registry entry; the folder
+        // Unlink the parenthesized key everywhere, then drop the registry entry; the folder
         // tree (its Spaces included) trashes recoverably below.
         const title = basename(abs)
         await unlinkContextKey(root, title)

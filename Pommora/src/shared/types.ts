@@ -182,7 +182,7 @@ export interface PathNode extends BaseNode {
 export interface PageNode extends PathNode {
   kind: 'page'
   /** Resolved context links — contextId → the member's Space ids, attached at walk
-   *  assembly from the raw bracketed keys the parse retains. Absent = no links. */
+   *  assembly from the raw parenthesized keys the parse retains. Absent = no links. */
   contextValues?: Record<string, string[]>
 }
 

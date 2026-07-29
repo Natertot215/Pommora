@@ -64,7 +64,7 @@ export const pageSetSidecar = baseSidecar.extend({
 /** `_space.json` — one Space under `.nexus/contexts/<Context>/<Space>/`. Membership comes
  *  from the parent folder, never a field. `color` is an open chip-solid key validated
  *  through the chip map at read (an unknown value degrades to the neutral Default). Loose
- *  ⇒ blocks/layout/blocks_locked and the Space's own bracketed relation keys ride through. */
+ *  ⇒ blocks/layout/blocks_locked and the Space's own parenthesized relation keys ride through. */
 export const spaceSidecar = baseSidecar.extend({
   banner: z.string().optional(),
   color: z.string().optional().catch(undefined),

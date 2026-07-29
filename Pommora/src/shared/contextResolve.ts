@@ -24,8 +24,8 @@ function spacesByTitle(spaces: SpaceNode[] | undefined): Map<string, SpaceNode> 
   return m
 }
 
-/** Resolve an entity root's bracketed keys to registered links only: the key must
- *  exact-match a registry Context title (after the bracket parse) and each value a Space
+/** Resolve an entity root's parenthesized keys to registered links only: the key must
+ *  exact-match a registry Context title (after the wrap is stripped) and each value a Space
  *  title in that Context through the shared value coercion. Anything else never
  *  registers (inert-on-read). */
 export function resolveContextKeys(
@@ -53,7 +53,7 @@ export function resolveContextKeys(
 
 /** Per-value repair for a root about to be rewritten anyway: a coercion-only near-miss
  *  (case/whitespace/NFC/scalar) repairs to the canonical Space title, a genuinely unknown
- *  value drops, and a key left empty drops with it (no empties). Unknown bracketed keys
+ *  value drops, and a key left empty drops with it (no empties). Unknown parenthesized keys
  *  and non-context keys pass through verbatim — this never guesses. */
 export function reconcileContextKeys(
   root: Record<string, unknown>,
