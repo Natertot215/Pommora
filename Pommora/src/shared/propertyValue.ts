@@ -126,10 +126,15 @@ export function encodeValue(value: PropertyValue): unknown {
   }
 }
 
-/** True when a value carries nothing — an empty array or empty string. Checkbox `false` and
- *  number `0` are real values and stay. */
-function isEmptyValue(value: PropertyValue): boolean {
+/** A value a clear would actually remove — an explicit `null`, the null kind, or an empty
+ *  collection/string. Checkbox `false` and number `0` carry meaning and are never blank. The
+ *  set/clear write rule and the "is this cell filled (worth offering a Clear action)" check share
+ *  this one predicate; a filled cell is simply `!isBlankValue`. */
+export function isBlankValue(value: PropertyValue | null): boolean {
+  if (value === null) return true
   switch (value.kind) {
+    case 'null':
+      return true
     case 'multiSelect':
     case 'context':
     case 'file':
@@ -141,13 +146,6 @@ function isEmptyValue(value: PropertyValue): boolean {
     default:
       return false
   }
-}
-
-/** A value a clear would actually remove — an explicit `null`, the null kind, or an empty
- *  collection/string. The set/clear write rule and the "is this cell filled (worth offering a Clear
- *  action)" check share this one predicate; a filled cell is simply `!isBlankValue`. */
-export function isBlankValue(value: PropertyValue | null): boolean {
-  return value === null || value.kind === 'null' || isEmptyValue(value)
 }
 
 /** A property definition → the frontmatter key its values live under. The Context layer's

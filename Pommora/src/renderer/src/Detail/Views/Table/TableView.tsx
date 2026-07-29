@@ -18,6 +18,7 @@ import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/prop
 import { isValidLink } from '@shared/links'
 import { flattenContainer, groupsStructurally, subtreeIds } from '../pipeline/group'
 import { resolveView } from '../pipeline/resolveView'
+import { useValuesEpoch } from '../useValuesEpoch'
 import { contextOptionsFor as contextOptionsForSpaces } from '../pipeline/contextOptions'
 import { contextIdsOf } from '../pipeline/contextIdentity'
 import { declaredType, resolveFieldValue } from '../pipeline/value'
@@ -152,32 +153,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
   }, [source.path])
 
-  // A rename changes the key a value lives under, not the container — so the open-container
-  // effect never re-fires. Refetch here, and RE-KEY the optimistic overrides rather than
-  // clearing them: clearing revives the assign-vanish the container effect's comment describes.
-  const valuesEpoch = useSession((st) => st.valuesEpoch)
-  useEffect(() => {
-    if (!valuesEpoch) return
-    let cancelled = false
-    void window.nexus.loadValues(source.path).then((v) => {
-      if (!cancelled) setValues(v)
-    })
-    const { oldKey, newKey } = valuesEpoch
-    setValueOverride((prev) => {
-      if (!prev) return prev
-      return Object.fromEntries(
-        Object.entries(prev).map(([id, fm]) => {
-          const root = fm as unknown as Record<string, unknown>
-          if (!(oldKey in root)) return [id, fm]
-          const { [oldKey]: moved, ...rest } = root
-          return [id, { ...rest, [newKey]: moved } as typeof fm]
-        }),
-      )
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [valuesEpoch, source.path])
+  useValuesEpoch(source.path, setValues, setValueOverride)
 
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
   const { view } = useActiveView(source, schema)
