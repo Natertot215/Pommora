@@ -29,7 +29,7 @@ beforeEach(async () => {
   await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'col' }))
   await writeFile(
     join(root, 'Notes', 'Daily', 'Alpha.md'),
-    '---\nid: a\n"[Areas]":\n  - Work\n---\n\nSee [[Beta]] for more.',
+    '---\nid: a\n(Areas):\n  - Work\n---\n\nSee [[Beta]] for more.',
   )
   await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), '---\nid: b\n---\n\nbody')
   await openSession(root)

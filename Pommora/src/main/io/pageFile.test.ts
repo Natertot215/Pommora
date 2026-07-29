@@ -63,7 +63,7 @@ describe('mergeFrontmatter — foreign preservation (the contract)', () => {
   })
 
   it('writes modeled keys + body for a new (empty) file', () => {
-    const out = mergeFrontmatter('', { id: 'X', '[Areas]': ['A', 'B'] }, ['id', '[Areas]'], 'Hello')
+    const out = mergeFrontmatter('', { id: 'X', '(Areas)': ['A', 'B'] }, ['id', '(Areas)'], 'Hello')
     expect(out.startsWith('---\n')).toBe(true)
     const { frontmatter, body } = splitEnvelope(out)
     expect(frontmatter).toContain('id: X')
@@ -72,8 +72,8 @@ describe('mergeFrontmatter — foreign preservation (the contract)', () => {
   })
 
   it('is idempotent — re-saving identical input yields identical bytes', () => {
-    const first = mergeFrontmatter('', { id: 'X', '[Areas]': ['T'] }, ['id', '[Areas]'], 'Body')
-    const second = mergeFrontmatter(first, { id: 'X', '[Areas]': ['T'] }, ['id', '[Areas]'], 'Body')
+    const first = mergeFrontmatter('', { id: 'X', '(Areas)': ['T'] }, ['id', '(Areas)'], 'Body')
+    const second = mergeFrontmatter(first, { id: 'X', '(Areas)': ['T'] }, ['id', '(Areas)'], 'Body')
     expect(second).toBe(first)
   })
 })
@@ -89,7 +89,7 @@ describe('writePageFile (fs)', () => {
 
   it('writes a new page atomically', async () => {
     const p = join(dir, 'page.md')
-    await writePageFile(p, { id: 'X', '[Areas]': ['T'] }, ['id', '[Areas]'], 'Hello')
+    await writePageFile(p, { id: 'X', '(Areas)': ['T'] }, ['id', '(Areas)'], 'Hello')
     const content = await readFile(p, 'utf8')
     expect(content).toContain('id: X')
     expect(splitEnvelope(content).body).toBe('Hello')

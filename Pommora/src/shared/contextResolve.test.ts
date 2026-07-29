@@ -24,9 +24,9 @@ const spacesByContext = new Map<string, SpaceNode[]>([
 ])
 
 describe('resolveContextKeys', () => {
-  it('resolves a valid bracketed key + exact values to ids', () => {
+  it('resolves a valid wrapped key + exact values to ids', () => {
     const links = resolveContextKeys(
-      { '[Projects]': ['Pommora', 'CS 161'] },
+      { '(Projects)': ['Pommora', 'CS 161'] },
       registry,
       spacesByContext,
     )
@@ -35,7 +35,7 @@ describe('resolveContextKeys', () => {
 
   it('ignores unbracketed keys and unknown titles', () => {
     const links = resolveContextKeys(
-      { Projects: ['Pommora'], '[Nonexistent]': ['Pommora'] },
+      { Projects: ['Pommora'], '(Nonexistent)': ['Pommora'] },
       registry,
       spacesByContext,
     )
@@ -44,7 +44,7 @@ describe('resolveContextKeys', () => {
 
   it('matches values through coercion + NFC (scalars, case, whitespace)', () => {
     const links = resolveContextKeys(
-      { '[Classes]': [2024, true], '[Projects]': [' pommora '] },
+      { '(Classes)': [2024, true], '(Projects)': [' pommora '] },
       registry,
       spacesByContext,
     )
@@ -54,7 +54,7 @@ describe('resolveContextKeys', () => {
 
   it('drops only the unmatched values, keeping valid siblings', () => {
     const links = resolveContextKeys(
-      { '[Projects]': ['Pommora', 'Pomora'] },
+      { '(Projects)': ['Pommora', 'Pomora'] },
       registry,
       spacesByContext,
     )
@@ -65,45 +65,45 @@ describe('resolveContextKeys', () => {
 describe('reconcileContextKeys', () => {
   it('repairs near-misses, drops unknowns, keeps exacts', () => {
     const { root, changed } = reconcileContextKeys(
-      { '[Projects]': ['pommora', 'Pomora', 'CS 161'] },
+      { '(Projects)': ['pommora', 'Pomora', 'CS 161'] },
       registry,
       spacesByContext,
     )
-    expect(root['[Projects]']).toEqual(['Pommora', 'CS 161'])
+    expect(root['(Projects)']).toEqual(['Pommora', 'CS 161'])
     expect(changed).toBe(true)
   })
 
   it('repairs scalar-typed values to their canonical string titles', () => {
     const { root, changed } = reconcileContextKeys(
-      { '[Classes]': [2024, true] },
+      { '(Classes)': [2024, true] },
       registry,
       spacesByContext,
     )
-    expect(root['[Classes]']).toEqual(['2024', 'true'])
+    expect(root['(Classes)']).toEqual(['2024', 'true'])
     expect(changed).toBe(true)
   })
 
   it('removes a key whose values all drop (no empties)', () => {
     const { root, changed } = reconcileContextKeys(
-      { '[Projects]': ['Pomora'], '[Classes]': [] },
+      { '(Projects)': ['Pomora'], '(Classes)': [] },
       registry,
       spacesByContext,
     )
-    expect('[Projects]' in root).toBe(false)
-    expect('[Classes]' in root).toBe(false)
+    expect('(Projects)' in root).toBe(false)
+    expect('(Classes)' in root).toBe(false)
     expect(changed).toBe(true)
   })
 
-  it('leaves unknown bracketed keys and non-context keys verbatim', () => {
+  it('leaves unknown wrapped keys and non-context keys verbatim', () => {
     const input = {
-      '[Nonexistent]': ['Whatever'],
+      '(Nonexistent)': ['Whatever'],
       title_note: 'keep',
-      '[Projects]': ['Pommora'],
+      '(Projects)': ['Pommora'],
     }
     const { root, changed } = reconcileContextKeys(input, registry, spacesByContext)
-    expect(root['[Nonexistent]']).toEqual(['Whatever'])
+    expect(root['(Nonexistent)']).toEqual(['Whatever'])
     expect(root.title_note).toBe('keep')
-    expect(root['[Projects]']).toEqual(['Pommora'])
+    expect(root['(Projects)']).toEqual(['Pommora'])
     expect(changed).toBe(false)
   })
 })

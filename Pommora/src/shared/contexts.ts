@@ -1,9 +1,11 @@
 // The Contexts registry contract — `.nexus/contexts.json` is the one identity source
-// (id, title, singular, icon per Context); member files speak bracketed TITLE keys only.
+// (id, title, singular, icon per Context); member files speak wrapped TITLE keys only.
+// The sigil itself lives in `governedKeys`, which both layers read from.
 // Pure: no fs, no React — both processes import it.
 
 import { z } from 'zod'
 import type { NexusLabels } from './types'
+import { isGovernedKey, parseGovernedKey, wrapKey } from './governedKeys'
 
 /** `singular` is the seeded three's only (Areas/Topics/Projects) — set once at registry
  *  creation. Any other Context has none; its Spaces read "New Space". */
@@ -23,34 +25,31 @@ export const contextsRegistry: z.ZodType<ContextsRegistry> = z.looseObject({
   ),
 })
 
-/** A Context title → its bracketed frontmatter/JSON root key. Always written quoted on disk
- *  (unquoted `[…]:` parses as a YAML flow-sequence complex key and never registers). */
+/** A Context title → its frontmatter/JSON root key. */
 export function contextKey(title: string): string {
-  return `[${title}]`
+  return wrapKey('context', title)
 }
 
-/** A frontmatter/JSON root key the Contexts layer governs when it rewrites a root: any
- *  bracketed key — malformed ones included, so a rewrite still sweeps them. */
+/** A frontmatter/JSON root key the Contexts layer governs when it rewrites a root: a Context-wrapped
+ *  key, malformed ones included, so a rewrite still sweeps them. Scoped to the layer — a blind check
+ *  would claim the property layer's keys, and a Context and a property may share a name. */
 export function isGovernedContextKey(key: string): boolean {
-  return key.startsWith('[')
+  return isGovernedKey(key, 'context')
 }
 
-/** '[Projects]' → 'Projects'; anything unbracketed, empty, or with interior brackets → null. */
+/** '(Projects)' → 'Projects'. A property key, an unwrapped key, or an empty name → null. */
 export function parseContextKey(key: string): string | null {
-  if (key.length < 3 || !key.startsWith('[') || !key.endsWith(']')) return null
-  const inner = key.slice(1, -1)
-  return inner.includes('[') || inner.includes(']') ? null : inner
+  const parsed = parseGovernedKey(key)
+  return parsed?.layer === 'context' ? parsed.name : null
 }
 
-/** Context titles follow the shared file-basename rules (titles name folders under
- *  `.nexus/contexts/`) plus the bracket ban — brackets are the key sigil (registry-side
- *  enforcement only; Page/Space titles may still contain them). */
+/** Context titles follow the shared file-basename rules — titles name folders under
+ *  `.nexus/contexts/`. The sigil needs no ban of its own: a key is stripped positionally, so a
+ *  title carrying the closing glyph round-trips intact. */
 export function invalidContextTitle(title: string): boolean {
   const trimmed = title.trim()
   return (
     !trimmed ||
-    title.includes('[') ||
-    title.includes(']') ||
     title.includes('/') ||
     title.includes('\\') ||
     title.includes('\0') ||

@@ -252,7 +252,7 @@ describe('readNexus — registry-backed contexts', () => {
     d(join(reg, '.nexus', 'contexts', 'Projects', 'Pommora'))
     w(
       join(reg, '.nexus', 'contexts', 'Projects', 'Pommora', '_space.json'),
-      JSON.stringify({ id: 'sp-pom', color: 'cyan', '[Classes]': ['CS 161'] }),
+      JSON.stringify({ id: 'sp-pom', color: 'cyan', '(Classes)': ['CS 161'] }),
     )
     d(join(reg, '.nexus', 'contexts', 'Projects', 'CS Project'))
     w(
@@ -266,7 +266,7 @@ describe('readNexus — registry-backed contexts', () => {
     )
     d(join(reg, 'Notes'))
     w(join(reg, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
-    w(join(reg, 'Notes', 'Linked.md'), '---\nid: pg-linked\n"[Projects]":\n  - Pommora\n---\nbody')
+    w(join(reg, 'Notes', 'Linked.md'), '---\nid: pg-linked\n(Projects):\n  - Pommora\n---\nbody')
     w(join(reg, 'Notes', 'Plain.md'), '---\nid: pg-plain\n---\nbody')
   })
   afterAll(() => rmSync(reg, { recursive: true, force: true }))
@@ -283,7 +283,7 @@ describe('readNexus — registry-backed contexts', () => {
     expect(pom?.path).toBe('.nexus/contexts/Projects/Pommora')
   })
 
-  it('resolves bracketed page keys onto the node contextValues', async () => {
+  it('resolves wrapped page keys onto the node contextValues', async () => {
     const t = await readNexus(reg)
     const page = t.collections![0].pages.find((p) => p.id === 'pg-linked')
     expect(page?.contextValues).toEqual({ ctx_projects: ['sp-pom'] })
@@ -292,7 +292,7 @@ describe('readNexus — registry-backed contexts', () => {
   })
 
 
-  it('resolves a space sidecar own bracketed keys (space-to-space, cross-context)', async () => {
+  it('resolves a space sidecar own wrapped keys (space-to-space, cross-context)', async () => {
     const t = await readNexus(reg)
     const pom = t.contexts
       ?.find((g) => g.def.id === 'ctx_projects')
