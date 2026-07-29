@@ -12,7 +12,7 @@ import {
   type NexusLabels,
   type SubfieldConfig,
 } from '@shared/types'
-import { readJsonObject, writeJson } from './io/atomicWrite'
+import { readJsonObject, readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
 import { serializeOnFile } from './io/fileLock'
 import { swiftISODate } from './identity'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
@@ -56,12 +56,16 @@ export function defaultSettingsSeed(): Record<string, unknown> {
 export function ensureSettings(root: string): Promise<void> {
   const path = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
   return serializeOnFile(path, async () => {
-    const existing = await readJsonObject(path)
-    if (!existing) {
+    const read = await readJsonStrict(path)
+    if (!read.ok) {
+      // Absent seeds; unreadable does nothing — an ensure must never replace a file it
+      // merely failed to read.
+      if (read.error.code !== 'not-found') return
       await mkdir(nexusDir(root), { recursive: true })
       await writeJson(path, defaultSettingsSeed())
       return
     }
+    const existing = read.value
     const patch: Record<string, unknown> = {}
     if (typeof existing.version !== 'number') patch.version = 1
     if (typeof existing.defaults_version !== 'number')
@@ -75,15 +79,16 @@ export function ensureSettings(root: string): Promise<void> {
 
 /** Serialized read-modify-write of settings.json — the one primitive every settings writer funnels
  *  through, so concurrent writes to different keys can't clobber each other. A missing file
- *  starts from the full seed (parity with the prior mutateJson fallback). */
+ *  starts from the full seed; an unreadable one fails the write (the throw lands as the
+ *  operation's error envelope) rather than replacing the user's settings with the seed. */
 export function updateSettings(
   root: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
 ): Promise<void> {
   const path = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
   return serializeOnFile(path, async () => {
-    const current = (await readJsonObject(path)) ?? defaultSettingsSeed()
-    await writeJson(path, mutate(current))
+    const written = await rmwJsonStrict(path, mutate, defaultSettingsSeed)
+    if (!written.ok) throw new Error(written.error.message)
   })
 }
 
