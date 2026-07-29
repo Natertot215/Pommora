@@ -113,7 +113,7 @@
 }
 
 .detail-error {
-  color: #ff453a;
+  color: var(--error);
 }
 
 .detail-detail {

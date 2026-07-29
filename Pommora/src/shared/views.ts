@@ -13,7 +13,7 @@
 //     `card_size` still decodes, mapped to its factor.
 //
 // Each enum has ONE source: an `as const` array drives both the TS type (indexed access) and
-// the zod codec / runtime membership Set — never re-listed (the CHIP_SOLID_COLORS idiom in types.ts).
+// the zod codec / runtime membership Set — never re-listed (the SOLID_COLORS idiom in types.ts).
 
 import { z } from 'zod'
 import { columnStyle, type ColumnStyle } from './columnStyles'
