@@ -43,6 +43,7 @@ import { CREATABLE_TYPES, PropertyTypeIcon, propertyTypeLabel } from './Property
 import { cx } from '../../design-system/cx'
 import * as s from './settingsPane.css'
 import { twisty, twistyOpen } from '../../design-system/components/menu/menu.css'
+import { wrapKey } from '@shared/governedKeys'
 
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
@@ -184,6 +185,7 @@ export function PropertiesPane({
   const saveView = useSaveView(source, load)
   const { view: activeView } = useActiveView(source, schema)
   const registry = useSession((st) => st.tree?.registry) ?? []
+  const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
   const accent = useSession((st) => st.tree?.accent)
   const renamingProperty = useSession((st) => st.renamingProperty)
   const beginPropertyRename = useSession((st) => st.beginPropertyRename)
@@ -255,7 +257,12 @@ export function PropertiesPane({
     } else await window.nexus.showError(res.error)
   }
   const rename = async (id: string, name: string): Promise<void> => {
-    await commit(await window.nexus.schema.rename(collectionPath, id, name))
+    // The second of the two rename entry points; both must tell mounted views to refetch, or the
+    // renamed column reads blank until the container is switched.
+    const before = registry.find((d) => d.id === id)?.name
+    if (await commit(await window.nexus.schema.rename(collectionPath, id, name)))
+      if (before !== undefined && before !== name)
+        bumpValuesEpoch(wrapKey('property', before), wrapKey('property', name))
   }
   const remove = async (id: string): Promise<void> => {
     if (await commit(await window.nexus.schema.delete(collectionPath, id))) backToList()
