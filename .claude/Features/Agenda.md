@@ -7,7 +7,7 @@ The operational layer's calendar-anchored side. Agenda is the parent schema hold
 
 > **The on-disk layer only.** The file format and the CRUD behind it are written and tested; no production caller reaches the write path. What ships is a read-only list feeding display-only rows — everything under *Pending* is unbuilt.
 
-Both carry the same property type catalog and the same bracketed Context keys as Pages, with the same property mechanics. The only differences are the on-disk shape and the EventKit target.
+Both carry the same property type catalog and the same parenthesized Context keys as Pages, and their values speak names the same way. The definitions differ: an agenda item's properties resolve against its own kind's `property_definitions`, a separate namespace from the nexus registry — so an agenda property and a page property may share a name with no collision, and a rename on either side never reaches the other's files.
 
 Each kind lives in its own singleton folder discovered by a config sidecar; the layout and the discrimination rules are `Architecture.md`'s. EventKit's reminder and event APIs are separate, so the two kinds stay separate singletons rather than sharing one wrapper folder.
 
@@ -15,7 +15,7 @@ Each kind lives in its own singleton folder discovered by a config sidecar; the 
 
 #### II. Shared Fields
 
-Both kinds carry `id`, an optional `icon`, a plain-text `description`, the bracketed Context keys at the JSON root, a `properties` object, `created_at` / `modified_at`, a `recurrence` object that round-trips but is never edited, relative alarm offsets, and `calendar_id` + `eventkit_uuid` for sync state. Foreign keys are preserved by value on every write.
+Both kinds carry `id`, an optional `icon`, a plain-text `description`, the wrapped keys at the JSON root — `(Context)` keys naming Spaces and one `<Property>` key per value — `created_at` / `modified_at`, a `recurrence` object that round-trips but is never edited, relative alarm offsets, and `calendar_id` + `eventkit_uuid` for sync state. Foreign keys are preserved by value on every write.
 
 #### II. Schema
 

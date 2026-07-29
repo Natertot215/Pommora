@@ -52,7 +52,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **CommonJS main/preload** (package is NOT `type: module`) — Electron's `require('electron')` fails on ESM named imports; CJS also lets the preload stay sandboxed. **`sandbox: true` + `contextIsolation: true` + `nodeIntegration: false`.**
 - **Single-window now, multi-window-ready seams** — data is main-owned + Query/store-cached per renderer; the live-refresh bus is a swappable transport; windows identified by serializable refs. No global singleton holding shared mutable client state.
 - **Most recent wins** is the primary philosophy around handling multi-tab, future cross-device, and outside editing conflicts.
-- **TS-native on-disk format** (tagged PropertyValue, zod-validated) — built and tested against a dedicated **test nexus at `~/test`** (override via `TEST_NEXUS_PATH`).
+- **TS-native on-disk format** (bare, natively-typed values under wrapped title keys, zod-validated) — built and tested against a dedicated **test nexus at `~/test`** (override via `TEST_NEXUS_PATH`).
 
 ### Run Gotcha (Read Before Launching)
 

@@ -98,7 +98,9 @@ Mutations are separate by construction: the write path never runs inside a read,
 
 **What deliberately does not.** Favorites and pins stay files, because they are deliberate, rarely written, and the one part of Navigation worth following a user across machines. A markdown tile's body stays a file too — it is prose, it lives in the connections graph, and a rename cascade rewrites it. Everything canonical — the registry, Contexts, settings, schemas, and each host's own identity sidecar — stays a file, because that is where a Nexus's meaning has to survive without Pommora.
 
-**What the line at assignment costs.** A Page's frontmatter keys its values by `prop_<ulid>`, so the name and type behind a key live only in the definition. Move the registry into the database and a files-only reader still sees a Collection's assignment list and each Page's values, but reads both as opaque ids — the dictionary is the part that stops being on disk. That is the trade the current line accepts, and it is why the line sits where it does rather than one layer further out.
+**What the line at assignment buys.** A Page's frontmatter names its own properties, so a files-only reader gets the entity's attributes in plain language with no lookup of any kind. Move the registry into the database and that reader loses the presentation config — type, options, colours, formats — but never the ability to read a value. A Collection's assignment list and its remove-cache stay id-keyed, which is what makes them immune to a rename and keeps the sweep to `.md` files alone.
+
+**A Pommora-governed frontmatter key is recognized by its wrap alone** — `(Context)` for the organization layer, `<Property>` for the attribute layer. That partitions the keyspace with no reserved-name blocklist, keeps the walk's key retention registry-independent so a registry edit never busts the parse cache, and lets a root rewrite sweep governed keys by shape while every foreign key and comment survives. One module owns the pair, the key build and parse, the governed-key predicate, the reserved leading `$`, and every refusal message; changing a glyph is a one-line edit. Recognizing a key is not the same as resolving one: a key registers as a live value only on a registry title match.
 
 **Every action is one statement.** A change is a single-row upsert; an emptied value deletes its key. Nothing coalesces and nothing locks, which is what retired the debounce engine and its drain contract. Favorites are the one operational write still going to disk, so they keep the before-quit gate that defers the app's exit until a write settles.
 
@@ -142,7 +144,7 @@ Opening a folder as a Nexus stamps every un-adopted entity with a real ULID: a r
 
 **Database-side** — covered above: a version mismatch deletes the file and starts clean, no per-user data migration.
 
-**File-side** — `nexus.json` carries the nexus schema version; folder sidecars accept an optional `schema_version` Pommora doesn't write. There is no property-ID migration pass: the build is ID-first — values are `prop_<ulid>`-keyed from creation and definitions live in the nexus-wide registry — so entity files never need rewriting.
+**File-side** — `nexus.json` carries the nexus schema version; folder sidecars accept an optional `schema_version` Pommora doesn't write. The file side runs no schema migration. Property values are name-keyed at the frontmatter root, so a rename rewrites them in place through its own sweep rather than through a versioned pass. A frontmatter key naming nothing the registry knows rides through as an ordinary foreign key — preserved by value, read by nothing.
 
 **Settings** — `settings.json` carries a `defaults_version`, and the open-time ensure backfills only the keys a decoder requires, leaving a complete file byte-identical. Pommora runs no settings migration of its own.
 

@@ -1,6 +1,6 @@
 ### Structure (Domain Model)
 
-Pommora is organized as **two layers** with PARA-aligned naming. The organization layer (Contexts) holds categorical anchors; the operational layer (Pages + Agenda) holds the data. Operational entities relate to organization entities through bracketed Context keys in their frontmatter or JSON root. Per-entity detail lives in the dedicated feature docs.
+Pommora is organized as **two layers** with PARA-aligned naming. The organization layer (Contexts) holds categorical anchors; the operational layer (Pages + Agenda) holds the data. Operational entities relate to organization entities through parenthesized Context keys in their frontmatter or JSON root. Per-entity detail lives in the dedicated feature docs.
 
 The organization layer is user-defined **Context** groups holding **Spaces**, the registry seeding Areas, Topics, and Projects as ordinary entries; the operational layer is Pages and Agenda, with two singletons beside them. A **Nexus** is the root — one folder holding everything.
 
@@ -65,11 +65,11 @@ Names are unique within a folder (filename = title): a colliding Page create aut
 | Link                       | Stored as                                                        | Purpose                |
 | -------------------------- | ---------------------------------------------------------------- | ---------------------- |
 | Page → Page (connection)   | plain `[[Title]]` in the body, resolved by unique title          | Inline reference       |
-| Operational entity → Space | `"[<Context>]": [<Space titles>]` at the frontmatter / JSON root | Categorical assignment |
-| Space → Space              | The same bracketed keys in the Space's own `_space.json`         | Cross-Context links    |
+| Operational entity → Space | `(<Context>):` at the frontmatter / JSON root, over bare Space titles | Categorical assignment |
+| Space → Space              | The same parenthesized keys in the Space's own `_space.json`     | Cross-Context links    |
 | Page → Collection / Set    | Implicit by file location                                        | Membership             |
 
-Every link is stored as a title and resolved at read time — an id never reaches disk on either form. Context links are the only relation-type connection, resolved through the registry and held correct across a rename by a journaled cascade over every member file; body connections are held correct by a nexus-wide body rewrite. Full rules → `Contexts.md` + `Connections.md`.
+Every link form is stored as a title and resolved at read time; no link on disk carries an id. Property values follow the same discipline — a value writes under its property's name — so the whole of a member file speaks plain language. Context links are the only relation-type connection, resolved through the registry and held correct across a rename by a journaled cascade over every member file; body connections are held correct by a nexus-wide body rewrite. Full rules → `Contexts.md` + `Connections.md`.
 
 ### Architecture
 
