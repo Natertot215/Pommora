@@ -9,11 +9,10 @@ import { newId } from '../ids'
 import { writePageFile, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { atomicWriteFile } from '../io/atomicWrite'
 import { recordWrite } from '../io/writeEcho'
-import { encodeValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
+import { encodeValue, isBlankValue, propertyKey, type PropertyValue } from '@shared/propertyValue'
 import { PAGE_MODELED_KEYS } from '@shared/schemas'
 import { ok, fail, type Result } from '@shared/result'
 import { pathExists, invalidName, nowIso } from './util'
-import { wrapKey } from '@shared/governedKeys'
 import { setGovernedRootKeys } from './governedWrite'
 import type { PropertyDefinition } from '@shared/properties'
 
@@ -82,8 +81,8 @@ export async function updatePageBody(absFile: string, body: string): Promise<Res
 }
 
 /** Move a page to a different container folder (same filename), bumping modified_at — a location
- *  change is an edit. A Page's Collection membership is its folder location, so its prop_<ulid>
- *  frontmatter values re-join the destination schema on next read (unrecognized keys stay as
+ *  change is an edit. A Page's Collection membership is its folder location, so its wrapped
+ *  name-keyed values re-join the destination schema on next read (unrecognized keys stay as
  *  preserved foreign frontmatter); no strip, no schema logic lives in the move. */
 export async function movePage(
   absFile: string,
@@ -110,7 +109,7 @@ export async function updatePageProperty(
   value: PropertyValue | null,
 ): Promise<Result<null>> {
   if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.', 'page')
-  const key = wrapKey('property', def.name)
+  const key = propertyKey(def)
   const clear = value === null || isBlankValue(value)
   await setGovernedRootKeys(absFile, clear ? {} : { [key]: encodeValue(value) }, [key])
   return ok(null)

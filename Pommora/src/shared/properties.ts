@@ -157,6 +157,15 @@ export function statusOptions(
   )
 }
 
+/** Every option value a definition offers, whichever list holds them. Keyed on the DECLARED type,
+ *  never on which array happens to be present: a type change retains the array it moved away from,
+ *  so a Status property can still carry select_options and shape inference would read the stale one. */
+export function optionValues(def: Pick<PropertyDefinition, 'type' | 'status_groups' | 'select_options'>): string[] {
+  return def.type === 'status'
+    ? (def.status_groups ?? []).flatMap((g) => g.options.map((o) => o.value))
+    : (def.select_options ?? []).map((o) => o.value)
+}
+
 /** Default 3-group seed written when a Status property is first added. Group IDs stay fixed
  *  (calendar sync); labels are Open / Active / Done, and each group seeds one option whose
  *  value=label=its group label, carrying the group color. */

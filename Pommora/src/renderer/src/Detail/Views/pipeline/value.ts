@@ -4,11 +4,11 @@
 //     'last_edited_time') plus the synthetic 'title'/'context' sentinels for reserved columns. This
 //     is what sort/group/filter switch on to choose type-aware behavior.
 //   - resolveFieldValue: the row's VALUE as a PropertyValue, whose `.kind` is camelCase (e.g.
-//     'multiSelect', 'lastEditedTime'). The shape-parse is trusted for the unambiguous kinds, but
-//     the three plain-string kinds (url/select/datetime — identical on disk) are re-tagged to the
-//     column's DECLARED type: a url column always reads url, a select column select. The shape
-//     guess only decides when there's no schema (the raw codec). This is the fix for the type-erased
-//     format's shape ambiguity — without it a Renamed link (`[alias](url)`) read back as a select pill.
+//     'multiSelect', 'lastEditedTime'). Resolution is definition-first: the definition supplies the
+//     key, the frontmatter is read at it, and `decodeValue` decides by the DECLARED type. Nothing is
+//     inferred from a value's shape, so a url column always reads url and a select column select
+//     even though both are plain strings on disk. Without a definition the field reads null — an
+//     unknown column has no value, rather than a guessed one.
 // Pure: no fs, no React.
 
 import type { ViewRow } from '@shared/types'
