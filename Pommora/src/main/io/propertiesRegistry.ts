@@ -23,8 +23,11 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   // always emits. A legacy bare-Record can collide on one (a def keyed "defs", junk keyed
   // "order") but never both-with-these-shapes; and no per-VALUE check belongs here, because
   // that's what let one junk entry misclassify a whole real file as legacy.
-  const isFileShape = isPlainObject(obj.defs) && Array.isArray(obj.order)
-  const rawDefs = isFileShape ? (obj.defs as Record<string, unknown>) : obj
+  const fileShape: { defs: Record<string, unknown>; order: unknown[] } | null =
+    isPlainObject(obj.defs) && Array.isArray(obj.order)
+      ? { defs: obj.defs, order: obj.order }
+      : null
+  const rawDefs = fileShape ? fileShape.defs : obj
   const defs: PropertyRegistry = {}
   const unparsed: Record<string, unknown> = {}
   for (const [id, value] of Object.entries(rawDefs)) {
@@ -34,8 +37,9 @@ function normalizeRegistry(obj: Record<string, unknown>): {
     // is corrupt noise, and re-writing it is what would break the file-shape check above.
     else if (isPlainObject(value)) unparsed[id] = value
   }
-  const rawOrder = isFileShape && Array.isArray(obj.order) ? obj.order : []
-  const order = rawOrder.filter((x): x is string => typeof x === 'string' && x in defs)
+  const order = (fileShape?.order ?? []).filter(
+    (x): x is string => typeof x === 'string' && x in defs,
+  )
   return { registry: { order, defs }, unparsed }
 }
 

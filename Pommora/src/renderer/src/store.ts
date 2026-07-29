@@ -545,6 +545,7 @@ export const useSession = create<SessionState>((set, get) => {
         switch (res.status) {
           case 'open':
             await get().applyTree(res.tree)
+            set({ pins: [] })
             // Six independent fetches, one round of latency — each arm keeps its own
             // fallback, so one failing never costs the others.
             await Promise.all([
@@ -578,10 +579,7 @@ export const useSession = create<SessionState>((set, get) => {
                   ),
                 )
                 .catch(() => set({ recents: [], favorites: [] })),
-              (() => {
-                set({ pins: [] })
-                return get().loadPins()
-              })(),
+              get().loadPins(),
             ])
             set({ agendaSnapshot: null })
             // A mutation refetch must NOT re-read the sidecar here — its debounced write trails

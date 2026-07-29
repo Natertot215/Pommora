@@ -123,7 +123,9 @@ describe('an unreadable settings.json is never replaced', () => {
 
   it('updateSettings fails the write and leaves the file byte-identical', async () => {
     await corrupt()
-    await expect(updateSettings(root, (cur) => ({ ...cur, profile_subtitle: 'x' }))).rejects.toThrow()
+    await expect(
+      updateSettings(root, (cur) => ({ ...cur, profile_subtitle: 'x' })),
+    ).rejects.toThrow()
     expect(await readFile(path(), 'utf8')).toBe('{ corrupt')
   })
 })

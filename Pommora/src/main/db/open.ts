@@ -33,7 +33,9 @@ export function openNexusDb(nexusRoot: string): Db | null {
     // session runs without persisted state and the next launch retries. Only a successful
     // open reporting the wrong schema version earns the drop-and-recreate.
     if (!existing) {
-      console.error(`nexus.db exists but could not be opened — running without persisted state: ${dbPath}`)
+      console.error(
+        `nexus.db exists but could not be opened — running without persisted state: ${dbPath}`,
+      )
       return null
     }
     if (readSchemaVersion(existing) === SCHEMA_VERSION) return existing

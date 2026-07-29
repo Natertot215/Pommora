@@ -197,6 +197,11 @@ export function splitFrontmatter(content: string): Json {
 const readSidecar = (absPath: string): Promise<Json | null> =>
   cachedParse(absPath, () => readJsonObject(absPath))
 
+/** A `.nexus` config file as a record — absent and unreadable both read as empty, because the
+ *  walk has no field of its own to lose. The one exception (nexus.json) reads strict below. */
+const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
+  readJsonObject(absPath).then((v) => v ?? {})
+
 // ---------- page reads ----------
 
 /** Raw context keys retained off the parse each entity read already does — the parenthesized root
@@ -369,6 +374,29 @@ async function readPageCollection(
 
 // ---------- contexts ----------
 
+async function readSpace(
+  absDir: string,
+  relDir: string,
+  name: string,
+  contextId: string,
+): Promise<SpaceNode | null> {
+  const sc = await readSidecar(join(absDir, SPACE_SIDECAR))
+  if (!sc) return null // a Space IS its sidecar
+  const node: SpaceNode = {
+    kind: 'space',
+    id: asString(sc.id) ?? adoptedId(relDir),
+    title: name,
+    icon: asString(sc.icon),
+    path: relDir,
+    banner: asString(sc.banner),
+    headingIconHidden: sc.heading_icon_hidden === true,
+    color: asString(sc.color),
+    contextId,
+  }
+  retainContextKeys(node, sc)
+  return node
+}
+
 /** The registry-backed Space tree: one group per registry entry (registry order), spaces
  *  from `.nexus/contexts/<Title>/` gated on `_space.json`, ordered by `space_orders`. */
 async function readContextGroups(
@@ -381,29 +409,12 @@ async function readContextGroups(
   return Promise.all(
     registry.contexts.map(async (def) => {
       const dir = join(contextsDir(root), def.title)
-      const dirs = (await listEntries(dir)).filter(
-        (e) =>
-          e.isDirectory() && !shouldSkipDir(e.name, `.nexus/contexts/${def.title}/${e.name}`, excluded),
-      )
+      const entries = (await listEntries(dir))
+        .filter((e) => e.isDirectory())
+        .map((e) => ({ name: e.name, rel: `.nexus/contexts/${def.title}/${e.name}` }))
+        .filter(({ name, rel }) => !shouldSkipDir(name, rel, excluded))
       const read = await Promise.all(
-        dirs.map(async (e) => {
-          const rel = `.nexus/contexts/${def.title}/${e.name}`
-          const sc = await readSidecar(join(dir, e.name, SPACE_SIDECAR))
-          if (!sc) return null // a Space IS its sidecar
-          const node: SpaceNode = {
-            kind: 'space',
-            id: asString(sc.id) ?? adoptedId(rel),
-            title: e.name,
-            icon: asString(sc.icon),
-            path: rel,
-            banner: asString(sc.banner),
-            headingIconHidden: sc.heading_icon_hidden === true,
-            color: asString(sc.color),
-            contextId: def.id,
-          }
-          retainContextKeys(node, sc)
-          return node
-        }),
+        entries.map(({ name, rel }) => readSpace(join(dir, name), rel, name, def.id)),
       )
       const spaces = read.filter((n): n is SpaceNode => n !== null)
       return { def, spaces: resolveOrder(spaces, asStringArray(spaceOrders[def.id]), fb) }
@@ -424,13 +435,13 @@ export async function readNexus(root: string): Promise<NexusTree> {
 }
 
 async function walkNexus(root: string): Promise<NexusTree> {
-  const [identityRead, settingsRead, state, homepageConfig, navviewConfig, registry, ctxRegistryRaw] =
+  const [identityRead, settings, state, homepageConfig, navviewConfig, registry, ctxRegistryRaw] =
     await Promise.all([
       readJsonStrict(nexusConfig(root, NEXUS_CONFIG_FILES.identity)),
-      readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings)),
-      readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state)).then((s) => s ?? {}),
-      readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)).then((h) => h ?? {}),
-      readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.navview)).then((n) => n ?? {}),
+      readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.settings)),
+      readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.state)),
+      readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)),
+      readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.navview)),
       readRegistry(root),
       readSidecar(contextsRegistryFile(root)),
     ])
@@ -445,7 +456,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const id = sidecarMode ? (identity!.id as string) : adoptedId(root)
   const fb: Fallback = sidecarMode ? 'id' : 'title'
 
-  const settings = settingsRead ?? {}
   const excluded = asStringArray(settings.excluded_folders) ?? []
   const labels = readLabels(settings.labels)
   const rawPersonalization =
