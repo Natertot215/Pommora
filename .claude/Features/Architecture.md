@@ -104,7 +104,7 @@ Mutations are separate by construction: the write path never runs inside a read,
 
 **Every action is one statement.** A change is a single-row upsert; an emptied value deletes its key. Nothing coalesces and nothing locks, which is what retired the debounce engine and its drain contract. Favorites are the one operational write still going to disk, so they keep the before-quit gate that defers the app's exit until a write settles.
 
-**Versioned, not migrated.** A schema mismatch on open deletes the file and starts clean. That costs a machine its chrome once — the same outcome a corrupt sidecar always had — and is why the schema stays small enough that the trade is obviously worth it.
+**Versioned, not migrated.** A schema mismatch on open deletes the file and starts clean. That costs a machine its chrome once — the same outcome a corrupt sidecar always had — and is why the schema stays small enough that the trade is obviously worth it. Only a healthy open reporting the wrong version earns that drop: a file that fails to open at all (locked, mid-sync) stays put, and the session just runs without persisted state until a later launch reads it.
 
 ---
 
