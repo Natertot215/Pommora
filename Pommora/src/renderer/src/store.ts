@@ -545,40 +545,44 @@ export const useSession = create<SessionState>((set, get) => {
         switch (res.status) {
           case 'open':
             await get().applyTree(res.tree)
-            try {
-              const cfg = await window.nexus.subfield.get()
-              if (cfg) set({ subfieldExpanded: cfg.expanded, subfieldOrder: cfg.order })
-            } catch {
-              // keep the in-memory defaults
-            }
-            try {
-              const modes = await window.nexus.navViewModes.get()
-              if (modes) set({ navWindowMode: modes.window, navViewMode: modes.view })
-            } catch {
-              // keep the in-memory defaults
-            }
-            try {
-              set({ linkTitles: await window.nexus.linkTitles.get() })
-            } catch {
-              // url cells fall back to the domain
-            }
-            try {
-              set({ activeViews: await window.nexus.activeViews.get() })
-            } catch {
-              // surfaces fall back to the first saved view
-            }
-            try {
-              const nav = await window.nexus.nav.load()
-              set(
-                nav.ok
-                  ? { recents: nav.recents, favorites: nav.favorites }
-                  : { recents: [], favorites: [] },
-              )
-            } catch {
-              set({ recents: [], favorites: [] })
-            }
-            set({ pins: [] })
-            await get().loadPins()
+            // Six independent fetches, one round of latency — each arm keeps its own
+            // fallback, so one failing never costs the others.
+            await Promise.all([
+              window.nexus.subfield
+                .get()
+                .then((cfg) => {
+                  if (cfg) set({ subfieldExpanded: cfg.expanded, subfieldOrder: cfg.order })
+                })
+                .catch(() => undefined), // keep the in-memory defaults
+              window.nexus.navViewModes
+                .get()
+                .then((modes) => {
+                  if (modes) set({ navWindowMode: modes.window, navViewMode: modes.view })
+                })
+                .catch(() => undefined), // keep the in-memory defaults
+              window.nexus.linkTitles
+                .get()
+                .then((titles) => set({ linkTitles: titles }))
+                .catch(() => undefined), // url cells fall back to the domain
+              window.nexus.activeViews
+                .get()
+                .then((views) => set({ activeViews: views }))
+                .catch(() => undefined), // surfaces fall back to the first saved view
+              window.nexus.nav
+                .load()
+                .then((nav) =>
+                  set(
+                    nav.ok
+                      ? { recents: nav.recents, favorites: nav.favorites }
+                      : { recents: [], favorites: [] },
+                  ),
+                )
+                .catch(() => set({ recents: [], favorites: [] })),
+              (() => {
+                set({ pins: [] })
+                return get().loadPins()
+              })(),
+            ])
             set({ agendaSnapshot: null })
             // A mutation refetch must NOT re-read the sidecar here — its debounced write trails
             // the in-memory tab set, so a re-read would roll the tabs backward.
