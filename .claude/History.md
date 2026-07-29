@@ -1,5 +1,13 @@
 ### Pommora — History
 
+#### One Source For The Spectrum (07-29)
+
+The solid palette was written three times: eleven hexes in the colour tokens, and the same ten key names as two byte-identical arrays in the cross-process contract, one named for accents and one for chips. An accent, an option colour and a Space colour are one vocabulary, so they read one list.
+
+**A value main must validate and CSS must render belongs to neither.** The palette sits with the window background, which had already established that seam — the main process can't read a vanilla-extract token, so a plain shared constant is what both sides can hold. The `:root` vars are built from it and the key list derives its members from it, which is what makes adding a colour to one and missing it in the other impossible rather than merely unlikely. Error text was the last hardcoded value and reads a token now.
+
+**The three-tier kinds left the type system.** Areas, Topics and Projects stopped being entity kinds when Contexts became a registry, but three unions still listed them and three sidecar filenames still had names on disk with no reader. `NexusLabels.area/.topic/.project` stay: they are the label pairs that seed the three ordinary registry rows, not kinds.
+
 #### Property Syntax Unification (07-29)
 
 Page and agenda property values left the ULID-keyed `properties:` map and became wrapped, name-keyed entries at the frontmatter root — `<Status>: Complete` — the shape Contexts already used, which moved from square brackets to parentheses so one module owns both. Values stay bare, so a number is a number and a date a timestamp to any tool that reads the vault.

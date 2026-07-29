@@ -28,6 +28,14 @@ Naming the key removed the reason four different decoders existed, and they beca
 
 **Deferred:** definitions into `nexus.db` + SavedViews into `nexus.db` + an inline field-error surface + duplicate property names.
 
+#### The pass after the syntax arc (07-29)
+
+Shipping the syntax change left the usual residue, and a sweep across the property surface turned up more than expected. The real find was a group-by that picked a property's option list by asking which array was *present* rather than what the property declares — and a type change deliberately keeps the array it moved away from, so a converted Status property ordered by its stale select options while every other reader used the status groups. That's the exact shape inference the new decoder exists to replace, and it now shares that decoder's list.
+
+A dozen comments described systems that were no longer there — a view pipeline still explaining a shape-parse and a re-tagger, a move doc still naming ULID-keyed frontmatter, an ordering rule crediting a database consumer with no code behind it. Contexts were still called "bracketed" in a dozen places including two doc lines written `(<Context>)`, which parses as a Context literally titled that.
+
+**The spectrum is written once now.** Eleven solid hexes sat hand-written in the colour tokens while their key names sat twice more as byte-identical arrays in the shared contract — once called the accent palette, once the chip palette. They were always one vocabulary. The palette moved beside `WINDOW_BG`, which already existed for exactly this reason: main validates a stored colour and can't read a vanilla-extract token. `:root` is built from it and the key list derives from it, so a colour can't be added to one and missed by the other. → [[Properties]] · `History.md`.
+
 #### The cleanup pass (07-27)
 
 The merge's aftermath, audited rather than built on. Every feature doc was re-grounded against real code, which surfaced a run of defects — most live before the session and none reported. The behavioural outcomes are in the feature docs; what's durable here is the shape they shared.
@@ -44,11 +52,13 @@ The dangerous parts got their own machinery: renames cascade titles across all t
 
 A Space became the second BlockHost — it owns a block document, tiles live in its folder, and the doc load keys on host identity rather than kind. The sidebar renders every registry Context as its own disclosure of Space rows, with scoped creation landing directly in a rename field and group headers dragging to reorder. → [[Contexts]].
 
-#### Closing the tierN era (07-27)
+#### Closing the tierN era (07-27 → 07-29)
 
 With both nexuses confirmed on the registry shape, the entire backward-compatibility surface came out rather than staying as dormant weight — the migration, the read-healing, the legacy key modelling, the tier helpers. The seeded Contexts took ordinary minted ULIDs, so nothing is named after the model that replaced it. **A compatibility path is a liability once its last consumer is gone:** it can never again be exercised against real input, and every future edit has to reason about a shape that no longer exists on disk. The stated consequence is that a nexus left at the old shape can no longer be opened.
 
 **A Context column's vocabulary followed.** The pipeline resolved one as a `tier` sentinel while the property type it renders is `context`, so surfaces translated between the two and the filter carried them as separate arms. It is one name now.
+
+The type system was the last of it. Three unions still listed `area`/`topic`/`project` as entity kinds and three sidecar filenames still had names on disk, none of them read by anything — the one reference keeping `_area.json` alive was a test exercising the generic folder factory, where the kind was arbitrary. What stays is `NexusLabels.area/.topic/.project`, which are not kinds at all: they're the label pairs the seeder turns into the three ordinary registry rows a fresh nexus opens with.
 
 #### The Docs Meet the Code (07-27)
 
