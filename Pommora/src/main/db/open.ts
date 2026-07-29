@@ -29,10 +29,12 @@ export function openNexusDb(nexusRoot: string): Db | null {
 
   if (existsSync(dbPath)) {
     const existing = openDb(dbPath)
-    if (existing) {
-      if (readSchemaVersion(existing) === SCHEMA_VERSION) return existing
-      existing.close()
-    }
+    // A file that failed to OPEN (locked, mid-sync, transient I/O) is left intact — the
+    // session runs without persisted state and the next launch retries. Only a successful
+    // open reporting the wrong schema version earns the drop-and-recreate.
+    if (!existing) return null
+    if (readSchemaVersion(existing) === SCHEMA_VERSION) return existing
+    existing.close()
     removeDbFiles(dbPath)
   }
 

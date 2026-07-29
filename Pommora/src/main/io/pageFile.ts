@@ -53,9 +53,19 @@ export function mergeFrontmatter(
 ): string {
   const { frontmatter } = splitEnvelope(existingContent)
   // Empty frontmatter ⇒ contents is null; doc.set auto-creates a block map below.
-  // A non-map (corrupt) frontmatter can't be page frontmatter — discard, start fresh.
-  let doc = parseDocument(frontmatter)
-  if (doc.contents != null && !isMap(doc.contents)) doc = parseDocument('')
+  const doc = parseDocument(frontmatter)
+  // Broken frontmatter (parse errors, or a non-map) must never be re-serialized — the yaml
+  // doc holds only what the parser recovered, so writing it back destroys the rest. The body
+  // still saves with the original frontmatter bytes passed through verbatim (a body-only
+  // write governs no key a broken map can lose); a field write refuses instead.
+  if (doc.errors.length > 0 || (doc.contents != null && !isMap(doc.contents))) {
+    if (modeledKeys.some((k) => k !== 'modified_at')) {
+      throw new Error(
+        'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.',
+      )
+    }
+    return assembleEnvelope(frontmatter, body)
+  }
 
   for (const key of modeledKeys) {
     if (key in modeled && modeled[key] !== undefined) doc.set(key, modeled[key])

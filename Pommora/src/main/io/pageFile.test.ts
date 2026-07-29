@@ -105,3 +105,21 @@ describe('writePageFile (fs)', () => {
     expect(splitEnvelope(content).body).toBe('Body')
   })
 })
+
+describe('mergeFrontmatter — broken frontmatter is never re-serialized', () => {
+  const broken = '---\nbad: [unclosed\n---\nold prose'
+
+  it('refuses a field write, so a partial recovery can never replace the file', () => {
+    expect(() => mergeFrontmatter(broken, { icon: 'x' }, ['icon'], 'old prose')).toThrow()
+  })
+
+  it('refuses a field write into non-map frontmatter', () => {
+    const nonMap = '---\n- just\n- a list\n---\nprose'
+    expect(() => mergeFrontmatter(nonMap, { id: 'X' }, ['id'], 'prose')).toThrow()
+  })
+
+  it('a body-only write passes the frontmatter bytes through verbatim', () => {
+    const out = mergeFrontmatter(broken, { modified_at: 'now' }, ['modified_at'], 'new prose')
+    expect(out).toBe('---\nbad: [unclosed\n---\nnew prose')
+  })
+})

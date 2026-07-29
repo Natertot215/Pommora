@@ -5,7 +5,7 @@ import { join, basename } from 'node:path'
 import {
   atomicWriteFile,
   writeJson,
-  mutateJson,
+  rmwJsonStrict,
   stableStringify,
   trashWithTimestamp,
 } from './atomicWrite'
@@ -52,38 +52,45 @@ describe('writeJson', () => {
   })
 })
 
-describe('mutateJson', () => {
-  it('read-modify-writes an existing file', async () => {
+describe('rmwJsonStrict', () => {
+  it('read-modify-writes an existing file, preserving sibling keys', async () => {
     const p = join(dir, 'state.json')
     await writeJson(p, { count: 1, keep: 'me' })
-    const result = await mutateJson<{ count: number; keep?: string }>(
-      p,
-      () => ({ count: 0 }),
-      (cur) => ({ ...cur, count: cur.count + 1 }),
-    )
-    expect(result.count).toBe(2)
+    const written = await rmwJsonStrict(p, (cur) => ({ ...cur, count: 2 }))
+    expect(written.ok).toBe(true)
     expect(JSON.parse(await readFile(p, 'utf8'))).toEqual({ count: 2, keep: 'me' })
   })
 
-  it('falls back when the file is missing', async () => {
+  it('seeds a missing file when a seed is given', async () => {
     const p = join(dir, 'absent.json')
-    const result = await mutateJson<{ items: string[] }>(
-      p,
-      () => ({ items: [] }),
-      (cur) => ({ items: [...cur.items, 'x'] }),
-    )
-    expect(result).toEqual({ items: ['x'] })
+    const written = await rmwJsonStrict(p, (cur) => ({ ...cur, added: true }), () => ({ seed: 1 }))
+    expect(written.ok).toBe(true)
+    expect(JSON.parse(await readFile(p, 'utf8'))).toEqual({ seed: 1, added: true })
   })
 
-  it('falls back when the file is unreadable JSON', async () => {
+  it('fails on a missing file without a seed, writing nothing', async () => {
+    const p = join(dir, 'absent.json')
+    const written = await rmwJsonStrict(p, (cur) => cur)
+    expect(written.ok).toBe(false)
+    if (!written.ok) expect(written.error.code).toBe('not-found')
+    await expect(stat(p)).rejects.toThrow()
+  })
+
+  it('fails on corrupt JSON and leaves the file byte-identical — a seed never applies', async () => {
     const p = join(dir, 'corrupt.json')
     await writeFile(p, '{ not valid', 'utf8')
-    const result = await mutateJson<{ n: number }>(
-      p,
-      () => ({ n: 9 }),
-      (cur) => ({ n: cur.n + 1 }),
-    )
-    expect(result).toEqual({ n: 10 })
+    const written = await rmwJsonStrict(p, (cur) => ({ ...cur, n: 1 }), () => ({}))
+    expect(written.ok).toBe(false)
+    if (!written.ok) expect(written.error.code).toBe('operation-failed')
+    expect(await readFile(p, 'utf8')).toBe('{ not valid')
+  })
+
+  it('fails on a non-object file and leaves it byte-identical', async () => {
+    const p = join(dir, 'array.json')
+    await writeFile(p, '[1, 2]', 'utf8')
+    const written = await rmwJsonStrict(p, (cur) => cur, () => ({}))
+    expect(written.ok).toBe(false)
+    expect(await readFile(p, 'utf8')).toBe('[1, 2]')
   })
 })
 

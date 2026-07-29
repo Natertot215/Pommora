@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, readFile, mkdir } from 'node:fs/promises'
+import { mkdtemp, rm, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { setStateOrder, setSpaceOrder, setContainerOrder, setChildOrder } from './reorder'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
-import { nexusConfig, NEXUS_CONFIG_FILES } from '../paths'
+import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from '../paths'
 
 let root: string
 beforeEach(async () => {
@@ -45,6 +45,15 @@ describe('setStateOrder', () => {
     const orders = (await readState()).space_orders as Record<string, unknown>
     expect(orders.ctx_projects).toEqual(['s2', 's1'])
     expect(orders.ctxC).toEqual(['x'])
+  })
+
+  it('fails against an unreadable state.json and leaves it byte-identical', async () => {
+    const statePath = nexusConfig(root, NEXUS_CONFIG_FILES.state)
+    await mkdir(nexusDir(root), { recursive: true })
+    await writeFile(statePath, '{ corrupt', 'utf8')
+    const r = await setStateOrder(root, 'collection_order', ['a'])
+    expect(r.ok).toBe(false)
+    expect(await readFile(statePath, 'utf8')).toBe('{ corrupt')
   })
 })
 

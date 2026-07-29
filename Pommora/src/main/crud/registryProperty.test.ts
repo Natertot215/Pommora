@@ -12,6 +12,7 @@ import { assignProperty } from './assignment'
 import { createFolderEntity } from './folderEntity'
 import { createPage, updatePageProperty } from './page'
 import { readRegistry } from '../io/propertiesRegistry'
+import { nexusConfig, NEXUS_CONFIG_FILES } from '../paths'
 import type { PropertyDefinition } from '@shared/properties'
 
 let root: string
@@ -25,6 +26,32 @@ afterEach(async () => {
 const def = (
   over: Partial<PropertyDefinition> & { name: string; type: PropertyDefinition['type'] },
 ) => ({ id: '', ...over }) as PropertyDefinition
+
+const registryFilePath = () => nexusConfig(root, NEXUS_CONFIG_FILES.properties)
+
+describe('the registry file is never replaced by a failed read', () => {
+  it('a mutation against an unreadable registry fails and writes nothing', async () => {
+    const a = await createProperty(root, def({ name: 'Real', type: 'number' }))
+    expect(a.ok).toBe(true)
+    await writeFile(registryFilePath(), '{ corrupt', 'utf8')
+    await expect(createProperty(root, def({ name: 'Casualty', type: 'number' }))).rejects.toThrow()
+    expect(await readFile(registryFilePath(), 'utf8')).toBe('{ corrupt')
+  })
+
+  it('an entry that does not parse as a def rides through a write untouched', async () => {
+    const a = await createProperty(root, def({ name: 'Real', type: 'number' }))
+    if (!a.ok) throw new Error('setup failed')
+    const raw = JSON.parse(await readFile(registryFilePath(), 'utf8'))
+    raw.defs.prop_mystery = { garbage: true }
+    await writeFile(registryFilePath(), JSON.stringify(raw), 'utf8')
+
+    const b = await createProperty(root, def({ name: 'Another', type: 'number' }))
+    expect(b.ok).toBe(true)
+    const after = JSON.parse(await readFile(registryFilePath(), 'utf8'))
+    expect(after.defs.prop_mystery).toEqual({ garbage: true }) // carried through, unmodeled
+    expect((await readRegistry(root)).defs.prop_mystery).toBeUndefined() // readers skip it
+  })
+})
 
 describe('createProperty', () => {
   it('mints a prop_ id, seeds status groups, and persists to the registry', async () => {

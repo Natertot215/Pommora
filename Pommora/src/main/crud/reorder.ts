@@ -6,7 +6,7 @@
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { z } from 'zod'
-import { mutateJson, pathExists } from '../io/atomicWrite'
+import { rmwJsonStrict, pathExists } from '../io/atomicWrite'
 import {
   nexusDir,
   nexusConfig,
@@ -37,11 +37,12 @@ export async function setStateOrder(
 ): Promise<Result<string[]>> {
   const clean = persistable(ids)
   await mkdir(nexusDir(nexusRoot), { recursive: true })
-  await mutateJson<Record<string, unknown>>(
+  const written = await rmwJsonStrict(
     nexusConfig(nexusRoot, NEXUS_CONFIG_FILES.state),
-    () => ({}),
     (state) => ({ ...state, [key]: clean }),
+    () => ({}),
   )
+  if (!written.ok) return written
   return ok(clean)
 }
 
@@ -54,9 +55,8 @@ export async function setSpaceOrder(
 ): Promise<Result<string[]>> {
   const clean = persistable(ids)
   await mkdir(nexusDir(nexusRoot), { recursive: true })
-  await mutateJson<Record<string, unknown>>(
+  const written = await rmwJsonStrict(
     nexusConfig(nexusRoot, NEXUS_CONFIG_FILES.state),
-    () => ({}),
     (state) => {
       const orders =
         state.space_orders != null && typeof state.space_orders === 'object'
@@ -64,7 +64,9 @@ export async function setSpaceOrder(
           : {}
       return { ...state, space_orders: { ...orders, [contextId]: clean } }
     },
+    () => ({}),
   )
+  if (!written.ok) return written
   return ok(clean)
 }
 
