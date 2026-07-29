@@ -6,16 +6,16 @@
 // `import type` keeps this module runtime-pure (the vanilla-extract `chip.css` is never loaded
 // here), so it stays unit-testable while the name list still single-sources from the chip palette.
 
-import { CHIP_SOLID_COLORS, LEGACY_CHIP_COLOR_MAP } from '@shared/types'
+import { LEGACY_CHIP_COLOR_MAP, SOLID_COLORS } from '@shared/types'
 import type { ChipColorName } from './chip.css'
 
 const MAP: Record<string, ChipColorName> = LEGACY_CHIP_COLOR_MAP
 
-// The render-palette keys (ChipColorName minus 'default') — runtime-pure via CHIP_SOLID_COLORS
+// The render-palette keys (ChipColorName minus 'default') — runtime-pure via SOLID_COLORS
 // (chip.css is never loaded here). An option's stored color IS a solid key now, so a key already
 // in the palette passes through before consulting the legacy Notion map, which only covers old
 // on-disk names.
-const PALETTE: ReadonlySet<string> = new Set(CHIP_SOLID_COLORS)
+const PALETTE: ReadonlySet<string> = new Set(SOLID_COLORS)
 
 export function chipColorFor(color: string | undefined): ChipColorName {
   if (color && PALETTE.has(color)) return color as ChipColorName

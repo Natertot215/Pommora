@@ -7,7 +7,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { parse as parseYaml } from 'yaml'
 import type {
-  AccentColor,
+  SolidColor,
   AccentSetting,
   CollectionNode,
   ContextGroup,
@@ -30,7 +30,7 @@ import {
 } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
 import {
-  ACCENT_COLORS,
+  SOLID_COLORS,
   DEFAULT_ACCENT,
   DEFAULT_COMMANDS,
   DEFAULT_LABELS,
@@ -60,18 +60,18 @@ import {
 type Json = Record<string, unknown>
 type Fallback = 'id' | 'title'
 
-const ACCENT_COLOR_SET = new Set<string>(ACCENT_COLORS)
+const ACCENT_COLOR_SET = new Set<string>(SOLID_COLORS)
 
 // ---------- low-level helpers ----------
 
 // Swift `accent_color` values that aren't in React's own palette → nearest React token.
 // React's own values (including the 6 that overlap Swift) pass through unchanged; React
 // keeps its own accent vocabulary, this only maps Swift's extras on read.
-const SWIFT_ONLY_ACCENT: Record<string, AccentColor> = { pink: 'purple', gray: 'grey' }
+const SWIFT_ONLY_ACCENT: Record<string, SolidColor> = { pink: 'purple', gray: 'grey' }
 
 function resolveAccent(raw: string | undefined): AccentSetting {
   if (raw === 'system') return 'system'
-  if (raw != null && ACCENT_COLOR_SET.has(raw)) return raw as AccentColor
+  if (raw != null && ACCENT_COLOR_SET.has(raw)) return raw as SolidColor
   if (raw != null && raw in SWIFT_ONLY_ACCENT) return SWIFT_ONLY_ACCENT[raw]
   return DEFAULT_ACCENT
 }

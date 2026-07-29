@@ -2,7 +2,7 @@ import { useState, type CSSProperties } from 'react'
 import { vars, chipPill, tint, tintAt, TINT_STEPS } from '@renderer/design-system/tokens'
 import { SortableZone, useDragItem, reorder } from '@renderer/design-system/interactions/drag'
 import { applyAccent, readCssAccentColor } from '../../accent'
-import { ACCENT_COLORS, type AccentSetting } from '@shared/types'
+import { SOLID_COLORS, type AccentSetting } from '@shared/types'
 import { humanize, formatColor, useComputedStyleText, useIsCompact } from './helpers'
 
 // Primitives first (the base palette), then the derived token groups. Accent is
@@ -95,7 +95,7 @@ function SwatchGroup({
   )
 }
 
-const ACCENT_OPTIONS: AccentSetting[] = [...ACCENT_COLORS, 'system']
+const ACCENT_OPTIONS: AccentSetting[] = [...SOLID_COLORS, 'system']
 
 // Live accent picker: sets --accent on :root (fill / text derive). Samples read the
 // CSS vars, so they recolor in place. Resets to the bridge default on reload.

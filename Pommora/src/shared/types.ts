@@ -1,6 +1,7 @@
 // Single source of truth for the cross-process contract.
 // Imported by main, preload, and renderer — NO fs, NO React here.
 
+import { SPECTRUM } from './theme'
 import type { ContextDef } from './contexts'
 import type { PropertyDefinition } from './properties'
 import type { PageFrontmatter } from './schemas'
@@ -9,45 +10,19 @@ import type { SavedView } from './views'
 export type NodeKind = 'area' | 'topic' | 'project' | 'space' | 'collection' | 'set' | 'page'
 
 // The spectrum solids the app accent can be set to, plus `system` (follow the OS accent).
-// Names mirror the renderer's vars.color.solid keys; greyDefault is excluded (the chip
-// "Default" neutral, not an accent).
-export const ACCENT_COLORS = [
-  'red',
-  'orange',
-  'yellow',
-  'green',
-  'lightBlue',
-  'cyan',
-  'blue',
-  'purple',
-  'lavender',
-  'grey',
-] as const
-export type AccentColor = (typeof ACCENT_COLORS)[number]
+// The selectable spectrum, straight off the palette that builds the :root vars — an accent, an
+// option color and a Space color are one vocabulary, so they read one list. greyDefault is absent
+// by construction: it lives beside SPECTRUM, not in it.
+export const SOLID_COLORS = Object.keys(SPECTRUM) as SolidColor[]
+export type SolidColor = keyof typeof SPECTRUM
 
 /** The `accent` value in .nexus/settings.json: a spectrum solid, or follow-the-OS. */
-export type AccentSetting = AccentColor | 'system'
-
-// The chip palette's solid keys, shared by option colors and Space colors. Main validates
-// Space color writes against it; the renderer's chip palette accessor keys off the same list.
-export const CHIP_SOLID_COLORS = [
-  'red',
-  'orange',
-  'yellow',
-  'green',
-  'lightBlue',
-  'cyan',
-  'blue',
-  'purple',
-  'lavender',
-  'grey',
-] as const
-export type ChipSolidColor = (typeof CHIP_SOLID_COLORS)[number]
+export type AccentSetting = SolidColor | 'system'
 
 /** Legacy external color names (Notion select colors / the Swift Area palette) → their chip
  *  solid — most hues map 1:1; brown/pink/indigo take a nearest color; teal→cyan; gray→grey.
  *  `accent` and unknowns are deliberately absent (→ unset). */
-export const LEGACY_CHIP_COLOR_MAP: Record<string, ChipSolidColor> = {
+export const LEGACY_CHIP_COLOR_MAP: Record<string, SolidColor> = {
   gray: 'grey',
   brown: 'orange',
   orange: 'orange',
@@ -63,11 +38,11 @@ export const LEGACY_CHIP_COLOR_MAP: Record<string, ChipSolidColor> = {
 
 /** Default when settings.json omits or has an invalid `accent`. A concrete spectrum color
  *  (never `system`) so it always resolves to a hex; users opt into `system` explicitly. */
-export const DEFAULT_ACCENT: AccentColor = 'lavender'
+export const DEFAULT_ACCENT: SolidColor = 'lavender'
 
 /** Connection color — the inline [[Title]] connection link color. `'accent'` (the default) tracks
  *  the app accent live via `--connection: var(--accent)`; a spectrum solid pins it to that color. */
-export type ConnectionColorSetting = AccentColor | 'accent'
+export type ConnectionColorSetting = SolidColor | 'accent'
 
 /** The `time_format` value in .nexus/settings.json — the nexus-wide clock for the datetime
  *  picker (twelveHour = AM/PM segments, the default; twentyFourHour = flat HH:MM). */
