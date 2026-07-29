@@ -1,6 +1,6 @@
 // Per-value page primitives — strip or rewrite ONE option's value on a page, distinct from
 // stripPageMember (which deletes a whole property key). Type-switched over the on-disk value
-// shapes: select = bare string, multi_select = string array, status = { $status }. Multi arrays
+// shapes: multi_select = string array; every single-option kind, Status included, = bare string. Multi arrays
 // are edited IN PLACE (filter/map on the raw array), never decode-to-strings→re-encode: a page
 // may carry foreign / non-string elements, and an op must touch only its target.
 
@@ -35,11 +35,7 @@ function rewriteRaw(
     const filtered = raw.filter((el) => el !== target)
     return filtered.length ? filtered : null
   }
-  if (type === 'status') {
-    if (!isPlainObject(raw) || raw.$status !== target) return SKIP
-    return edit.op === 'replace' ? { $status: edit.to } : null
-  }
-  // select
+  // select and status alike — both store the bare option label.
   if (raw !== target) return SKIP
   return edit.op === 'replace' ? edit.to : null
 }

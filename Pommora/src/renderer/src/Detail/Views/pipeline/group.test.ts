@@ -232,9 +232,9 @@ describe('flat grouping', () => {
 
 describe('property grouping — status manual order', () => {
   const values: Record<string, PageFrontmatter> = {
-    p1: { id: 'p1', properties: { prop_status: { $status: 'done' } } },
-    p2: { id: 'p2', properties: { prop_status: { $status: 'in_progress' } } },
-    p3: { id: 'p3', properties: { prop_status: { $status: 'not_started' } } },
+    p1: { id: 'p1', properties: { prop_status: 'done' } },
+    p2: { id: 'p2', properties: { prop_status: 'in_progress' } },
+    p3: { id: 'p3', properties: { prop_status: 'not_started' } },
     p4: { id: 'p4', properties: {} },
   }
   const col = collection([], [page('p1'), page('p2'), page('p3'), page('p4')])
@@ -295,9 +295,9 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
   const structural: GroupConfig = { kind: 'structural' }
   const sub = { property_id: 'prop_status', order_mode: 'configured' as const }
   const values: Record<string, PageFrontmatter> = {
-    p_a: { id: 'p_a', properties: { prop_status: { $status: 'not_started' } } },
-    p_sub: { id: 'p_sub', properties: { prop_status: { $status: 'done' } } },
-    p_b: { id: 'p_b', properties: { prop_status: { $status: 'done' } } },
+    p_a: { id: 'p_a', properties: { prop_status: 'not_started' } },
+    p_sub: { id: 'p_sub', properties: { prop_status: 'done' } },
+    p_b: { id: 'p_b', properties: { prop_status: 'done' } },
   }
   const col = collection(
     [set('setA', [page('p_a')], [set('setA1', [page('p_sub')])]), set('setB', [page('p_b')])],
@@ -340,7 +340,7 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     const values2: Record<string, PageFrontmatter> = {
       ...values,
       p_nv: { id: 'p_nv', properties: {} },
-      p_loose: { id: 'p_loose', properties: { prop_status: { $status: 'done' } } },
+      p_loose: { id: 'p_loose', properties: { prop_status: 'done' } },
     }
     const col2 = collection(
       [
@@ -366,8 +366,8 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
 
   it('sorts within each sub-bucket', () => {
     const values3: Record<string, PageFrontmatter> = {
-      p_z: { id: 'p_z', properties: { prop_status: { $status: 'done' } } },
-      p_a2: { id: 'p_a2', properties: { prop_status: { $status: 'done' } } },
+      p_z: { id: 'p_z', properties: { prop_status: 'done' } },
+      p_a2: { id: 'p_a2', properties: { prop_status: 'done' } },
     }
     const col3 = collection([set('setA', [page('p_z'), page('p_a2')])], [])
     const byId = (r: ViewRow[]): ViewRow[] => [...r].sort((x, y) => (x.id < y.id ? -1 : 1))
@@ -401,7 +401,7 @@ describe('ungrouped placement (the view-level knob)', () => {
 
   it('property: top placement leads with the no-value band', () => {
     const values: Record<string, PageFrontmatter> = {
-      p1: { id: 'p1', properties: { prop_status: { $status: 'done' } } },
+      p1: { id: 'p1', properties: { prop_status: 'done' } },
       p2: { id: 'p2', properties: {} },
     }
     const { rows, setTree } = flattenContainer(collection([], [page('p1'), page('p2')]), values)

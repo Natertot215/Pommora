@@ -85,9 +85,9 @@ describe('resolveView — full pipeline over the fixture', () => {
       propertyDefinition.parse((registry as Record<string, unknown>)[id]),
     )
     const values: Record<string, PageFrontmatter> = {
-      p1: { id: 'p1', properties: { prop_status: { $status: 'in_progress' } } },
-      p2: { id: 'p2', properties: { prop_status: { $status: 'opt_open' } } },
-      p3: { id: 'p3', properties: { prop_status: { $status: 'not_started' } } },
+      p1: { id: 'p1', properties: { prop_status: 'in_progress' } },
+      p2: { id: 'p2', properties: { prop_status: 'opt_open' } },
+      p3: { id: 'p3', properties: { prop_status: 'not_started' } },
       p4: { id: 'p4', properties: {} },
     }
     const { rows, setTree } = flattenContainer(
@@ -156,8 +156,8 @@ describe('resolveView — full pipeline over the fixture', () => {
       sort: [{ property_id: '_title', direction: 'descending' }],
     }
     const values: Record<string, PageFrontmatter> = {
-      a: { id: 'a', properties: { prop_status: { $status: 'in_progress' } } },
-      b: { id: 'b', properties: { prop_status: { $status: 'in_progress' } } },
+      a: { id: 'a', properties: { prop_status: 'in_progress' } },
+      b: { id: 'b', properties: { prop_status: 'in_progress' } },
     }
     const { rows, setTree } = flattenContainer(collection([page('a'), page('b')]), values)
     const { groups } = resolveView({ rows, setTree, view, schema })
@@ -272,7 +272,7 @@ describe('resolveView — group_order', () => {
       },
     ]
     const values: Record<string, PageFrontmatter> = {
-      p1: { id: 'p1', properties: { prop_status: { $status: 'todo' } } },
+      p1: { id: 'p1', properties: { prop_status: 'todo' } },
       p2: { id: 'p2', properties: {} },
       root1: { id: 'root1', properties: {} },
     }

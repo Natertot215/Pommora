@@ -6,6 +6,7 @@ import { declaredType, resolveFieldValue } from './value'
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },
   { id: 'prop_sel', name: 'Sel', type: 'select' },
+  { id: 'prop_s', name: 'S', type: 'select' },
   { id: 'prop_when', name: 'When', type: 'datetime' },
   { id: 'prop_num', name: 'Num', type: 'number' },
 ]
@@ -23,7 +24,7 @@ const row: ViewRow = {
     id: '01ROW',
     modified_at: '2026-06-20T10:00:00Z',
     properties: {
-      prop_status: { $status: 'in_progress' },
+      prop_status: 'in_progress',
       prop_sel: 'opt_a',
       prop_when: '2026-06-15T09:00:00Z',
       prop_num: 42,
@@ -68,7 +69,7 @@ describe('resolveFieldValue', () => {
   })
 
   it('routes user properties through the on-disk codec, trusting its kind', () => {
-    expect(rfv(row, 'prop_status')).toEqual({ kind: 'status', value: 'in_progress' })
+    expect(rfv(row, 'prop_status')).toEqual({ kind: 'select', value: 'in_progress' })
     expect(rfv(row, 'prop_sel')).toEqual({ kind: 'select', value: 'opt_a' })
     expect(rfv(row, 'prop_when')).toEqual({
       kind: 'datetime',
@@ -98,7 +99,7 @@ describe('resolveFieldValue memoization', () => {
       id: 'p1',
       title: 'One',
       path: 'C/One.md',
-      frontmatter: { id: 'p1', properties: { prop_s: { $status: 'open' } }, '(Areas)': ['a'] },
+      frontmatter: { id: 'p1', properties: { prop_s: 'open' }, '(Areas)': ['a'] },
     }
     // Identity-stability holds for NON-coerced kinds (the cached parse is returned as-is, tested here).
     // A coerced plain-string kind (url/select/datetime re-tagged to the column) returns a FRESH object
@@ -109,8 +110,8 @@ describe('resolveFieldValue memoization', () => {
   })
 
   it('a fresh frontmatter identity re-resolves (the optimistic-patch / reload contract)', () => {
-    const fm1 = { id: 'p1', properties: { prop_s: { $status: 'open' } } }
-    const fm2 = { id: 'p1', properties: { prop_s: { $status: 'done' } } }
+    const fm1 = { id: 'p1', properties: { prop_s: 'open' } }
+    const fm2 = { id: 'p1', properties: { prop_s: 'done' } }
     const rowAt = (frontmatter: ViewRow['frontmatter']): ViewRow => ({
       id: 'p1',
       title: 'One',
@@ -119,8 +120,8 @@ describe('resolveFieldValue memoization', () => {
     })
     const before = rfv(rowAt(fm1), 'prop_s')
     const after = rfv(rowAt(fm2), 'prop_s')
-    expect(before).toMatchObject({ kind: 'status', value: 'open' })
-    expect(after).toMatchObject({ kind: 'status', value: 'done' })
+    expect(before).toMatchObject({ kind: 'select', value: 'open' })
+    expect(after).toMatchObject({ kind: 'select', value: 'done' })
   })
 
   it('_title never caches — a rename with an unchanged frontmatter object shows the new title', () => {

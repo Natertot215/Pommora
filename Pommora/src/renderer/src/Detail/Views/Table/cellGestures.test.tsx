@@ -91,7 +91,7 @@ const VALUES = {
   p1: {
     id: 'p1',
     properties: {
-      prop_status: { $status: 'active' },
+      prop_status: 'active',
       prop_done: false,
       prop_n: 42,
       prop_link: 'https://old.com',
@@ -249,7 +249,7 @@ describe('status cell gestures', () => {
       op: 'setProperty',
       path: 'Col/Page One.md',
       propertyId: 'prop_status',
-      value: { kind: 'status', value: 'complete' },
+      value: { kind: 'select', value: 'complete' },
     })
   })
 
@@ -263,7 +263,7 @@ describe('status cell gestures', () => {
       op: 'setProperty',
       path: 'Col/Page One.md',
       propertyId: 'prop_status',
-      value: { kind: 'status', value: 'complete' }, // active (in_progress) → done's first option
+      value: { kind: 'select', value: 'complete' }, // active (in_progress) → done's first option
     })
   })
 
@@ -608,7 +608,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
       p1: {
         id: 'p1',
         '(Areas)': ['area_work', 'area_life'],
-        properties: { prop_status: { $status: 'active' }, prop_tags: ['a', 'b'] },
+        properties: { prop_status: 'active', prop_tags: ['a', 'b'] },
       },
     })
     await mountTable(chipSource())
@@ -684,7 +684,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
 
   it('capsule + checkbox status looks carry NO × — Clear lives in their menu', async () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () => ({
-      p1: { id: 'p1', properties: { prop_status: { $status: 'active' } } },
+      p1: { id: 'p1', properties: { prop_status: 'active' } },
     })
     const styled = chipSource()
     ;(styled.views as Array<{ column_styles?: unknown }>)[0].column_styles = {

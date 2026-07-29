@@ -51,8 +51,8 @@ beforeEach(async () => {
   if (!a.ok || !b.ok) throw new Error('setup failed')
   pageA = a.value.path
   pageB = b.value.path
-  await updatePageProperty(pageA, propId, { kind: 'status', value: 'active' })
-  await updatePageProperty(pageB, propId, { kind: 'status', value: 'done' })
+  await updatePageProperty(pageA, propId, { kind: 'select', value: 'active' })
+  await updatePageProperty(pageB, propId, { kind: 'select', value: 'done' })
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
@@ -85,7 +85,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     expect(typeof block?.removed_at).toBe('string')
     const vals = Object.values(block?.values ?? {})
     expect(vals).toHaveLength(2)
-    expect(vals).toEqual(expect.arrayContaining([{ $status: 'active' }, { $status: 'done' }]))
+    expect(vals).toEqual(expect.arrayContaining(['active', 'done']))
   })
 
   it('is a no-op when the property is not assigned — never overwrites a cache with emptiness (E-6)', async () => {
@@ -102,8 +102,8 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await removeProperty(folder, propId)
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
-    expect(await pageProps(pageA)).toEqual({ [propId]: { $status: 'active' } })
-    expect(await pageProps(pageB)).toEqual({ [propId]: { $status: 'done' } })
+    expect(await pageProps(pageA)).toEqual({ [propId]: 'active' })
+    expect(await pageProps(pageB)).toEqual({ [propId]: 'done' })
     expect(await cacheBlock()).toBeUndefined()
     expect((await sidecar())?.properties).toContain(propId)
   })
@@ -122,7 +122,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     } as Partial<PropertyDefinition>)
     await assignProperty(root, folder, propId)
     expect(await pageProps(pageA)).toEqual({}) // 'active' is no longer a live option
-    expect(await pageProps(pageB)).toEqual({ [propId]: { $status: 'done' } })
+    expect(await pageProps(pageB)).toEqual({ [propId]: 'done' })
     expect(await cacheBlock()).toBeUndefined()
   })
 
@@ -140,7 +140,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await rm(pageA)
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
-    expect(await pageProps(pageB)).toEqual({ [propId]: { $status: 'done' } })
+    expect(await pageProps(pageB)).toEqual({ [propId]: 'done' })
     expect(await cacheBlock()).toBeUndefined()
   })
 
@@ -168,7 +168,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
 
   it('a member page without an id still gets STRIPPED on Remove — only the caching needs identity (breaker L-2)', async () => {
     const orphan = join(folder, 'Orphan.md')
-    await writeFile(orphan, `---\nproperties:\n  ${propId}:\n    $status: active\n---\n\nbody\n`)
+    await writeFile(orphan, `---\nproperties:\n  ${propId}:\n    active\n---\n\nbody\n`)
     await removeProperty(folder, propId)
     expect(await pageProps(orphan)).toEqual({})
   })

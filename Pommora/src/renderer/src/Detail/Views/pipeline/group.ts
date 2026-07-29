@@ -139,7 +139,7 @@ export function bucketKey(
   switch (declaredType(propertyId, schema)) {
     case 'select':
     case 'status':
-      return v.kind === 'select' || v.kind === 'status' ? v.value : null
+      return v.kind === 'select' ? v.value : null
     case 'checkbox':
       return v.kind === 'checkbox' ? (v.value ? 'true' : 'false') : null
     case 'datetime':

@@ -11,10 +11,10 @@ describe('stripPageValue', () => {
     expect(stripPageValue(page('  prop_s: Other\n'), 'prop_s', 'Urgent', 'select')).toBeNull()
   })
 
-  it('status: matches the $status object', () => {
-    const c = stripPageValue(page('  prop_s:\n    $status: Active\n'), 'prop_s', 'Active', 'status')
+  it('status: strips the bare label, same as select', () => {
+    const c = stripPageValue(page('  prop_s: Active\n'), 'prop_s', 'Active', 'status')
     expect(c).not.toBeNull()
-    expect(c).not.toContain('$status')
+    expect(c).not.toContain('Active')
   })
 
   it('multi_select: filters the array, deletes the key only when empty', () => {
@@ -53,9 +53,9 @@ describe('replacePageValue (rename cascade)', () => {
     ).toContain('Critical')
   })
 
-  it('status: swaps inside the $status object', () => {
+  it('status: swaps the bare label, same as select', () => {
     const c = replacePageValue(
-      page('  prop_s:\n    $status: Active\n'),
+      page('  prop_s: Active\n'),
       'prop_s',
       'Active',
       'Doing',

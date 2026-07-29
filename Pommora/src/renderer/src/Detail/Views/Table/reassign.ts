@@ -12,7 +12,7 @@ export function groupKeyToValue(groupKey: string, type: string | undefined): Pro
   if (groupKey === UNGROUPED) return null
   switch (type) {
     case 'status':
-      return { kind: 'status', value: groupKey }
+      return { kind: 'select', value: groupKey }
     case 'select':
       return { kind: 'select', value: groupKey }
     case 'checkbox':

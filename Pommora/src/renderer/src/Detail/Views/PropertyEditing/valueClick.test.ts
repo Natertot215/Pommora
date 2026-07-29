@@ -27,10 +27,10 @@ describe('sharedValueClickAction', () => {
     const a = sharedValueClickAction(
       'status',
       'checkbox',
-      { kind: 'status', value: 'todo' },
+      { kind: 'select', value: 'todo' },
       statusDef,
     )
-    expect(a).toEqual({ kind: 'commit', value: { kind: 'status', value: 'done' } })
+    expect(a).toEqual({ kind: 'commit', value: { kind: 'select', value: 'done' } })
   })
 
   it('an empty checkbox-look status assigns via picker — never a blind write', () => {

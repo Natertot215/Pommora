@@ -101,9 +101,9 @@ describe('makeSorter — type-aware single criterion', () => {
 
   it('status sorts by flattened group-option order, and descending flips', () => {
     const rows = [
-      makeRow('r1', { props: { prop_status: { $status: 'done' } } }),
-      makeRow('r2', { props: { prop_status: { $status: 'not_started' } } }),
-      makeRow('r3', { props: { prop_status: { $status: 'in_progress' } } }),
+      makeRow('r1', { props: { prop_status: 'done' } }),
+      makeRow('r2', { props: { prop_status: 'not_started' } }),
+      makeRow('r3', { props: { prop_status: 'in_progress' } }),
     ]
     expect(
       ids(makeSorter([{ property_id: 'prop_status', direction: 'ascending' }], schema)!(rows)),
