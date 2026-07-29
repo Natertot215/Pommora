@@ -217,8 +217,9 @@ export function wrapKey(layer: GovernedLayer, name: string): string {
 
 /** Any wrapped key, malformed ones included — governance is by shape, so a root rewrite still
  *  sweeps a key it cannot parse. */
-export function isGovernedKey(key: string): boolean {
-  return Object.values(SIGIL).some(([open]) => key.startsWith(open))
+export function isGovernedKey(key: string, layer?: GovernedLayer): boolean {
+  const pairs = layer ? [SIGIL[layer]] : Object.values(SIGIL)
+  return pairs.some(([open]) => key.startsWith(open))
 }
 
 /** Positional strip, so a name containing the closing glyph round-trips. */
@@ -361,7 +362,7 @@ Two write paths become one, and the loser is deleted. (`I-4`)
 ```ts
 it('writes one governed key and preserves foreign keys and comments', async () => {
   await writeFile(p, '---\nid: p1\n# keep me\nfoo: bar\n---\nbody\n')
-  await setGovernedRootKey(p, '<Status>', 'Done')
+  await setGovernedRootKeys(p, { '<Status>': 'Done' }, ['<Status>'])
   const out = await readFile(p, 'utf8')
   expect(out).toContain('<Status>: Done')
   expect(out).toContain('# keep me')
@@ -388,7 +389,9 @@ it('a Context unassign deletes its key', async () => {
 
   **But a change-set alone cannot express a delete, and `null` is not the sentinel.** Verified by execution: `mergeFrontmatter` sets when `modeled[key] !== undefined`, so `null` writes `<Status>: null`; only `undefined` or absence deletes. And a Context *unassign* is signalled by the key being **omitted** from the reconciled root — with only a change-set, nothing records that it used to be there, so the key survives and the unassign silently no-ops.
 
-  So the signature carries **both halves**: `govern` is the key set the write owns, `next` is the values. **A key in `govern` and absent from `next` is deleted.** A property write passes `govern=[key], next={key: v}`; a property clear passes `govern=[key], next={}`; a Context write passes `govern = every governed key across the original and reconciled roots, next = the reconciled root`. `modeledKeys` is `govern` plus `modified_at`.
+  So the signature carries **both halves**: `govern` is the key set the write owns, `next` is the values. **A key in `govern` and absent from `next` is deleted.** A property write passes `govern=[key], next={key: v}`; a property clear passes `govern=[key], next={}`; a Context write passes `govern = every governed key across the original and reconciled roots, next = the reconciled root`. `modeledKeys` is `govern` plus `modified_at`, **and the writer supplies the stamp itself** — `mergeFrontmatter(existing, { ...next, modified_at: nowIso() }, [...govern, 'modified_at'], body)`.
+
+  **This is the same two-contract trap one field over.** `modeledKeys` deletes anything it lists that the value map does not carry, so leaving the stamp to the caller means a property write **deletes `modified_at` from the page** (verified) and a Context write freezes it at the reconciled root's stale value. The Last-Edited column blanks and `_modified_at` sorts collapse. This writer replaces all four of the stamping sites Step 6.3a enumerates, so it inherits their job.
 
   That is `governedContextKeys` **generalized to both sigils, not deleted** — its raw ∪ next union *is* the delete mechanism, and Step 4.5 must not remove it as "subsumed".
 
@@ -403,6 +406,7 @@ it('leaves the other layer alone', async () => {
   expect(out).toContain('<Due>: 2026-08-01')   // survives
   expect(out).toContain('(Projects)')          // survives
   expect(out).toContain('# keep')
+  expect(out).toMatch(/modified_at:/)   // the writer stamps; none of the other assertions catch its loss
 })
 ```
 
@@ -412,7 +416,7 @@ it('leaves the other layer alone', async () => {
 
 - [ ] **Step 4.5a — Convert `pageValue.ts`. This file is the plan's biggest blind spot.** `rewriteRaw` (`:20-45`) is a **fourth decoder** — it switches on `PropertyType` and reads the raw shapes directly, including `{ $status }` at `:38-41`. `applyEdit` (`:47-68`) reads and writes the nested map. All six option ops reach it through `cascadePages`.
 
-  Leave it unconverted and **every option rename, clear and remove silently no-ops on every migrated page** — no error, green suite. Verified by execution. Neither the typecheck (loose-typed via `splitFrontmatter`) nor the straggler grep can see it. Convert to wrapped keys through `setGovernedRootKey`, resolve id→name in main, and delete the `type === 'status'` branch — status and select become the same path.
+  Leave it unconverted and **every option rename, clear and remove silently no-ops on every migrated page** — no error, green suite. Verified by execution. Neither the typecheck (loose-typed via `splitFrontmatter`) nor the straggler grep can see it. Convert to wrapped keys through `setGovernedRootKeys`, resolve id→name in main, and delete the `type === 'status'` branch — status and select become the same path.
 
 - [ ] **Step 4.5b — Convert the four remaining IO-seam readers**, same loose-typed blind spot, same consequence:
   - `crud/schema.ts:54-66` `stripPageMember` → **stays a pure `(content) => string | null` transform, presence check intact.** Only the key it looks up changes: nested-map-by-id becomes wrapped-root-key. Do not route it through the async writer — it returns `null` to mean *skip*, and `rewritePageSerialized` writes nothing on null. Replace that with an unconditional write and one property Delete **re-dates every page in the nexus**, because the delete walks every collection. It is also a sync callback held under a non-reentrant per-file lock, so an async writer inside it deadlocks.
@@ -431,7 +435,11 @@ it('leaves the other layer alone', async () => {
 
 Free today: zero wrapped context keys exist on disk in either nexus, and this is the last moment that is true. (`F-4`)
 
-- [ ] **Step 5.1** — `contexts.ts:26-43`'s `contextKey`/`parseContextKey`/`isGovernedContextKey` become thin re-exports of Phase 1's module; delete the local implementations. **Note the inversion:** `parseContextKey:42` rejects interior brackets today, which would reject the new form — Phase 1's positional strip replaces that logic rather than amending it.
+- [ ] **Step 5.1** — `contexts.ts:26-43`'s `contextKey`/`parseContextKey`/`isGovernedContextKey` become **layer-scoped** wrappers over Phase 1's module; delete the local implementations.
+
+  **They must pass `layer: 'context'`, never re-export bare.** A blind `parseGovernedKey(k)?.name ?? null` makes `reconcileContextKeys` read `<Projects>` as the Context "Projects" — and since a Context and a property may legally share a name (`B-1`), one Context assign then **deletes that property's values off disk**. Verified. The same blind parse would also start retaining every property value at walk, which is exactly what Phase 3's "Not touched" paragraph refuses.
+
+  So: `parseContextKey = (k) => { const r = parseGovernedKey(k); return r?.layer === 'context' ? r.name : null }` and `isGovernedContextKey = (k) => isGovernedKey(k, 'context')`. **Note the inversion:** `parseContextKey:42` rejects interior brackets today, which would reject the new form — Phase 1's positional strip replaces that logic rather than amending it.
 - [ ] **Step 5.2** — `invalidContextTitle`'s bracket ban goes (`contexts.ts:52-53`); `contexts.test.ts:32-33` pins it and **inverts**. Intended behaviour change, not a regression. (`D-4`)
 - [ ] **Step 5.3** — *(No separate gate, commit or review — this phase runs inside Phase 1 and shares its Step 1.5.)*
 
@@ -441,10 +449,11 @@ Free today: zero wrapped context keys exist on disk in either nexus, and this is
 
 Registry first, then one sweep. (`H-2`, `H-3`)
 
-**Files:** `crud/registryProperty.ts:41-59` · `main/index.ts:726-737` · `store.ts:1410-1424` · `Table/TableView.tsx:141-153` · `Cards/CardsView.tsx:87-96` · `registryProperty.test.ts:40-43` (**inverts**)
+**Files:** `crud/registryProperty.ts:41-59` · `main/index.ts:726-737` · `store.ts:1410-1424` · `Table/TableView.tsx:141-153` · `Cards/CardsView.tsx:87-96` · `registryProperty.test.ts:40-43` (**inverts**) · `Components/Detail/PropertiesPane.tsx:257-258,413` (the second rename entry point) · `PagePreview/PreviewInspector.tsx:47` · `crud/optionOps.ts:176-185` (hoist `cascadePages`) · `properties/schema.ts:46,50` (refusal messages). **Stage every one** — explicit-path staging drops what is not listed, and this phase's commit would otherwise ship half the change.
 
 **Interfaces:**
-- Consumes: `wrapKey`, `parseGovernedKey`, `normalizePropertyName`, `invalidPropertyName` (Phase 1) · `setGovernedRootKey` (Phase 4)
+- Consumes: `wrapKey`, `parseGovernedKey`, `normalizePropertyName`, `invalidPropertyName` (Phase 1) · `cascadePages` (hoisted in Step 6.3)
+- **Not** the governed writer — it stamps `modified_at`, and Step 6.3a rules that a key-only rename must not. The sweep is a pure `(content) => string | null` transform.
 - Produces: `renameSweep(root: string, oldName: string, newName: string): Promise<void>` — the single pass, exported for its test; `editProperty` calls it after the registry commits.
 
 - [ ] **Step 6.1 — Write the failing tests**
@@ -489,14 +498,14 @@ it('leaves an unmatched wrapped key inert — never dropped', async () => {
 
 - [ ] **Step 6.3a — The sweep does NOT stamp `modified_at`.** Every other page rewrite in the codebase stamps it (`pageValue.ts:64`, `schema.ts:62`, `contextWrite.ts:163`, `removeProperty.ts:174`), so the house pattern points the wrong way here and an implementer will follow it. A key-only rename is not a content edit — the spec already rules that a schema edit never moves a page's stamp. Stamping would re-date **every page in the nexus** on a rename, scrambling `_modified_at` sorts and the Last-Edited column. It also makes Step 6.1's idempotence test fail on the timestamp. Return null when nothing changed; that is what makes that test meaningful.
 - [ ] **Step 6.4 — Order the rename.** Wrap the handler in `serializeSchemaOp`. It currently runs on the registry file's own chain while remove, delete, assign and the option cascades run on the shared one — harmless while a rename touched no files, unsafe the moment it sweeps. One line closes rename-against-remove, delete, option-cascade and rename. (`H-3c`)
-- [ ] **Step 6.5 — Uniqueness, normalization, and the `$` ban.** Drop `{ unique: false }` at `registryProperty.ts:28,51`; normalize through Phase 1 before persisting; **call `invalidPropertyName` and source every message from `KEY_REFUSAL`.** Without this the `$` reservation ships dead and the module owns nothing — the exact failure D-1 exists to prevent. `properties/schema.ts:46,50` hold inline strings byte-identical to `KEY_REFUSAL.empty` and `.duplicate`; replace them. Rename onto a taken name fails; create disambiguates. (`C-5`, `C-7`, `D-2`, `D-6`)
+- [ ] **Step 6.5 — Uniqueness, normalization, and the `$` ban.** Drop `{ unique: false }` at `registryProperty.ts:28,51`; normalize through Phase 1 before persisting; **call `invalidPropertyName` and source every message from `KEY_REFUSAL`.** Without this the `$` reservation ships dead and the module owns nothing — the exact failure D-1 exists to prevent. `properties/schema.ts:50`'s duplicate message is byte-identical to `KEY_REFUSAL.duplicate`. **`:46` is not** — it reads "A property name cannot be empty." against the module's "A name cannot be empty." Swapping it changes user-visible copy, so either widen the module's string or keep a property-scoped one; do not silently re-word. Rename onto a taken name fails; create disambiguates. (`C-5`, `C-7`, `D-2`, `D-6`)
 - [ ] **Step 6.6 — Refetch values when a rename lands, from BOTH entry points, via a named mechanism.**
 
   The values snapshot loads once per container open keyed on `source.path`, and the file's own comment says it never re-reads mid-session. A rename does not change that path, so **the whole column reads blank until the user navigates away and back** — 100% reproducible, not a race. (`H-3d`)
 
   **Two renderer paths reach `schema:rename`**, and the obvious one is only half of it: `store.ts:1410-1424` (the inline row rename) *and* `PropertiesPane.tsx:257-258`, called from the editor header at `:413`. Both end in `load()`, which refreshes tree and schema only.
 
-  **The mechanism, because both obvious ones are wrong:** add a `valuesEpoch` counter to the store, bumped on a successful rename, and consume it in a **separate** effect that only calls `loadValues` + `setValues`. Do not add it to the existing `[source.path]` effect — that also runs `setValueOverride(null)`, which `TableView.tsx:239-244` documents as the cause of the fixed "~1/10 assign-vanish". Do not key on `[source.path, schema]` — that refetches on every tree write, which is the "never reload the entire Y" rule.
+  **The mechanism, because both obvious ones are wrong:** add a `valuesEpoch: { n: number; oldKey: string; newKey: string } | null` slice to the store, set on a successful rename — **a bare counter cannot carry the re-key below**, since the old→new pair is in the store and the effect would receive only a number, and consume it in a **separate** effect that only calls `loadValues` + `setValues`. Do not add it to the existing `[source.path]` effect — that also runs `setValueOverride(null)`, which `TableView.tsx:239-244` documents as the cause of the fixed "~1/10 assign-vanish". Do not key on `[source.path, schema]` — that refetches on every tree write, which is the "never reload the entire Y" rule.
 
   **The epoch effect must re-key `valueOverride`, not ignore it.** The table merges `{ ...values, ...valueOverride }` as a *per-page replacement*, and an override built before the rename still carries the old key — so a fresh `values` is masked for exactly the rows the user just edited, which are the rows they are watching. Clearing it reintroduces the fixed assign-vanish; re-keying does not, and the old→new pair is in hand at the rename.
 
@@ -525,12 +534,21 @@ Nothing here is optional or deferred. This phase is what makes the change a redu
 ```bash
 cd Pommora && for t in '.properties' 'properties:' 'folded_headings' '$status' '$ctx' \
   'parsePropertyValue' 'coerceToDeclaredType' 'reconcileCachedValue' 'applyPropertyValue' \
-  'STRING_KIND_FOR_TYPE' 'stripPageMember' 'stripAgendaMember'; do
+  'STRING_KIND_FOR_TYPE'; do
   printf '%s: ' "$t"; grep -rnF "$t" src/ --include='*.ts' --include='*.tsx' | wc -l
 done
 ```
 
-**Expected: 0 for the removed tokens only.** `.properties` and `properties:` have a **permanent floor of ~30 non-test sites** — the Collection **assignment list**, which the spec deliberately keeps ULID-keyed. Chasing those two to zero would delete the assignment list. Use the discriminating forms instead — `splitFrontmatter(…).properties`, `fields.properties`, `readFrontmatterFields(…).properties` — and treat the bare tokens as informational. `-F` per token, never one quoted alternation — a `$`-leading token in double quotes is read as an end-of-line anchor and that branch silently matches nothing. **Sanity-check the gate itself first**: grep a token you know is present and confirm a non-zero count, or a clean run proves nothing. Run it over tests too; a test still pinning the outgoing shape is the same failure.
+**Expected: 0 for the removed tokens only.** `.properties` and `properties:` have a **permanent floor of ~30 non-test sites** — the Collection **assignment list**, which the spec deliberately keeps ULID-keyed. Chasing those two to zero would delete the assignment list. Use the discriminating forms instead, and treat the bare tokens as informational:
+
+```bash
+grep -rnE 'splitFrontmatter\(.*\)\.properties|readFrontmatterFields\(.*\)\.properties' src/ --include='*.ts'
+grep -rnF 'fields.properties' src/ --include='*.ts'
+```
+
+The first is **the one regex exception to the `-F` rule** — it needs `-E` for the wildcard. Written with a literal `…` and run under `-F` it returns 0 by construction, which is a false clean in the step that carries the phase's whole deliverable.
+
+**`stripPageMember` and `stripAgendaMember` are NOT in this gate** — Step 4.5b keeps both as pure transforms. Only the key they look up changes. `-F` per token, never one quoted alternation — a `$`-leading token in double quotes is read as an end-of-line anchor and that branch silently matches nothing. **Sanity-check the gate itself first**: grep a token you know is present and confirm a non-zero count, or a clean run proves nothing. Run it over tests too; a test still pinning the outgoing shape is the same failure.
 
 - [ ] **Step 7.7 — Gates, commit, phase review.**
 
