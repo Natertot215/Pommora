@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from './properties'
-import {
-  applyPropertyValue,
-  decodeValue,
-  encodeValue,
-  isBlankValue,
-  type PropertyValue,
-} from './propertyValue'
+import { decodeValue, encodeValue, isBlankValue, type PropertyValue } from './propertyValue'
 
 const def = (over: Partial<PropertyDefinition>): PropertyDefinition =>
   ({ id: 'p', name: 'P', type: 'select', ...over }) as PropertyDefinition
@@ -144,11 +138,9 @@ describe('encodeValue — bare on disk', () => {
 })
 
 describe('the no-empties rule — no value, no key', () => {
-  const base = { keep: 'stays' }
-
-  it('null and the null kind delete the key', () => {
-    expect(applyPropertyValue({ ...base, p: 'x' }, 'p', null)).toEqual(base)
-    expect(applyPropertyValue({ ...base, p: 'x' }, 'p', { kind: 'null' })).toEqual(base)
+  it('null and the null kind read as blank', () => {
+    expect(isBlankValue(null)).toBe(true)
+    expect(isBlankValue({ kind: 'null' })).toBe(true)
   })
 
   const empties: PropertyValue[] = [
@@ -161,16 +153,12 @@ describe('the no-empties rule — no value, no key', () => {
   ]
   for (const v of empties) {
     it(`an empty ${v.kind} deletes the key — never writes []/''`, () => {
-      expect(applyPropertyValue({ ...base, p: ['x'] }, 'p', v)).toEqual(base)
       expect(isBlankValue(v)).toBe(true)
     })
   }
 
-  it('checkbox false and number 0 are real values and stay', () => {
-    expect(applyPropertyValue(base, 'p', { kind: 'checkbox', value: false })).toEqual({
-      ...base,
-      p: false,
-    })
-    expect(applyPropertyValue(base, 'p', { kind: 'number', value: 0 })).toEqual({ ...base, p: 0 })
+  it('checkbox false and number 0 are real values, not blanks', () => {
+    expect(isBlankValue({ kind: 'checkbox', value: false })).toBe(false)
+    expect(isBlankValue({ kind: 'number', value: 0 })).toBe(false)
   })
 })

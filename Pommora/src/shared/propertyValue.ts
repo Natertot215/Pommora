@@ -150,21 +150,6 @@ export function isBlankValue(value: PropertyValue | null): boolean {
   return value === null || value.kind === 'null' || isEmptyValue(value)
 }
 
-/** Set or clear one property on a (possibly malformed) properties record, returning the next
- *  record. A null value (the `null` kind) OR an empty value clears the key — a page without a
- *  value has no key at all, never a null/[]/'' placeholder. The single owner of the page + agenda
- *  property set/clear rule. */
-export function applyPropertyValue(
-  current: unknown,
-  propertyId: string,
-  value: PropertyValue | null,
-): Record<string, unknown> {
-  const next: Record<string, unknown> = isPlainObject(current) ? { ...current } : {}
-  if (value === null || isBlankValue(value)) delete next[propertyId]
-  else next[propertyId] = encodeValue(value)
-  return next
-}
-
 /** A property definition → the frontmatter key its values live under. The Context layer's
  *  `contextKey(title)` in the same shape; no caller builds this by hand. */
 export function propertyKey(def: PropertyDefinition): string {

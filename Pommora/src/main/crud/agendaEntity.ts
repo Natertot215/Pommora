@@ -7,10 +7,11 @@ import { rename } from 'node:fs/promises'
 import { newId } from '../ids'
 import { writeJson, trashWithTimestamp, readJsonObject } from '../io/atomicWrite'
 import { serializeOnFile } from '../io/fileLock'
-import { applyPropertyValue, type PropertyValue } from '@shared/propertyValue'
+import { encodeValue, isBlankValue, propertyKey, type PropertyValue } from '@shared/propertyValue'
 import { AGENDA_SUFFIX, agendaKindOf, type AgendaKind } from '@shared/agenda'
 import { pathExists, invalidName, nowIso } from './util'
 import { ok, fail, type Result } from '@shared/result'
+import type { PropertyDefinition } from '@shared/properties'
 
 type Raw = Record<string, unknown>
 
@@ -30,7 +31,6 @@ export async function createAgendaItem(
   const base: Raw = {
     id,
     description: '',
-    properties: {},
     alarm_offsets: [],
     created_at: now,
     modified_at: now,
@@ -98,16 +98,23 @@ export async function updateAgendaItem(absFile: string, patch: Raw): Promise<Res
 
 /** Set or clear one property value on an agenda item (encoded via the codec). A null
  *  value (or `null` kind) removes the key; siblings + foreign keys are preserved. */
+/** An agenda value writes under its property's own name, exactly as a page's does — but the
+ *  definition comes from the kind's own `property_definitions`, a separate namespace from the
+ *  nexus registry, so an agenda property and a page property may share a name with no collision.
+ *  JSON quotes every key, so the plain-key property of the YAML side does not apply here. */
 export async function updateAgendaProperty(
   absFile: string,
-  propertyId: string,
+  def: PropertyDefinition,
   value: PropertyValue | null,
 ): Promise<Result<null>> {
   return serializeOnFile(absFile, async () => {
     const raw = await readJsonObject(absFile)
     if (!raw) return fail('not-found', 'Agenda item not found.', 'agenda')
-    const props = applyPropertyValue(raw.properties, propertyId, value)
-    await writeJson(absFile, { ...raw, properties: props, modified_at: nowIso() })
+    const key = propertyKey(def)
+    const next: Record<string, unknown> = { ...raw, modified_at: nowIso() }
+    if (value === null || isBlankValue(value)) delete next[key]
+    else next[key] = encodeValue(value)
+    await writeJson(absFile, next)
     return ok(null)
   })
 }

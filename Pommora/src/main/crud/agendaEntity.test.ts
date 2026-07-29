@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { PropertyDefinition } from '@shared/properties'
 import {
   createAgendaItem,
   renameAgendaItem,
@@ -37,7 +38,6 @@ describe('createAgendaItem', () => {
       due_floating: false,
       completed: false,
       priority: 0,
-      properties: {},
     })
     expect('(Areas)' in t).toBe(false)
     expect(t.created_at).toBeTruthy()
@@ -121,13 +121,20 @@ describe('updates preserve foreign keys + siblings', () => {
     expect(t.id).toBe(c.value.id)
   })
 
+  const statusDef = { id: '_status', name: 'Status', type: 'select' } as PropertyDefinition
+  const countDef = { id: 'prop_n', name: 'Count', type: 'number' } as PropertyDefinition
+
   it('updateAgendaProperty sets, writes bare, and clears', async () => {
     const c = await createAgendaItem(tasks, 'task', 'P')
     if (!c.ok) throw new Error('setup')
-    await updateAgendaProperty(c.value.path, '_status', { kind: 'select', value: 'todo' })
-    await updateAgendaProperty(c.value.path, 'prop_n', { kind: 'number', value: 3 })
-    expect((await read(c.value.path)).properties).toEqual({ _status: 'todo', prop_n: 3 })
-    await updateAgendaProperty(c.value.path, '_status', null)
-    expect((await read(c.value.path)).properties).toEqual({ prop_n: 3 })
+    await updateAgendaProperty(c.value.path, statusDef, { kind: 'select', value: 'todo' })
+    await updateAgendaProperty(c.value.path, countDef, { kind: 'number', value: 3 })
+    const root = (await read(c.value.path)) as Record<string, unknown>
+    expect(root['<Status>']).toBe('todo')
+    expect(root['<Count>']).toBe(3)
+    await updateAgendaProperty(c.value.path, statusDef, null)
+    const after = (await read(c.value.path)) as Record<string, unknown>
+    expect(after['<Status>']).toBeUndefined()
+    expect(after['<Count>']).toBe(3)
   })
 })

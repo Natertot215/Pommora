@@ -37,7 +37,7 @@ const defs = async (): Promise<PropertyDefinition[]> =>
     (await readSidecar(tasks, 'taskConfig', agendaConfigSidecar))?.property_definitions,
   )
 const props = async (p: string): Promise<Record<string, unknown>> =>
-  (JSON.parse(await readFile(p, 'utf8')).properties ?? {}) as Record<string, unknown>
+  JSON.parse(await readFile(p, 'utf8')) as Record<string, unknown>
 
 describe('agenda config schema CRUD', () => {
   it('adds + renames a property on the task config (sidecar-only)', async () => {
@@ -62,8 +62,9 @@ describe('agenda config schema CRUD', () => {
     if (!a.ok) return
     const t1 = await createAgendaItem(tasks, 'task', 'T1')
     if (!t1.ok) return
-    await updateAgendaProperty(t1.value.path, a.value.id, { kind: 'number', value: 3 })
-    expect((await props(t1.value.path))[a.value.id]).toBe(3)
+    const aDef = { id: a.value.id, name: 'Count', type: 'number' as const }
+    await updateAgendaProperty(t1.value.path, aDef, { kind: 'number', value: 3 })
+    expect((await props(t1.value.path))['<Count>']).toBe(3)
 
     expect((await deleteAgendaProperty(tasks, 'task', a.value.id)).ok).toBe(true)
     expect((await defs()).some((d) => d.id === a.value.id)).toBe(false)
@@ -79,7 +80,8 @@ describe('agenda config schema CRUD', () => {
     if (!a.ok) return
     const t1 = await createAgendaItem(tasks, 'task', 'T1')
     if (!t1.ok) return
-    await updateAgendaProperty(t1.value.path, a.value.id, { kind: 'number', value: 3 })
+    const aDef = { id: a.value.id, name: 'Count', type: 'number' as const }
+    await updateAgendaProperty(t1.value.path, aDef, { kind: 'number', value: 3 })
 
     expect((await changeAgendaPropertyType(tasks, 'task', a.value.id, 'url')).ok).toBe(false)
     expect(

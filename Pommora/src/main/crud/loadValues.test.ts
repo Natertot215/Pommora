@@ -17,18 +17,16 @@ describe('loadValues', () => {
     await mkdir(join(root, 'Col', 'SetA'), { recursive: true })
     await writeFile(
       join(root, 'Col', 'p1.md'),
-      '---\nid: p1\n(Areas):\n  - Work\nproperties:\n  prop_status: in_progress\n---\n\nbody\n',
+      '---\nid: p1\n(Areas):\n  - Work\n<Status>: in_progress\n---\n\nbody\n',
     )
-    await writeFile(
-      join(root, 'Col', 'SetA', 'p2.md'),
-      '---\nid: p2\nproperties:\n  prop_num: 7\n---\n\nbody\n',
-    )
+    await writeFile(join(root, 'Col', 'SetA', 'p2.md'), '---\nid: p2\n<Count>: 7\n---\n\nbody\n')
 
     const values = await loadValues(root, 'Col')
     expect(Object.keys(values).sort()).toEqual(['p1', 'p2'])
     expect(values.p1['(Areas)']).toEqual(['Work'])
-    expect(values.p1.properties?.prop_status).toEqual('in_progress')
-    expect(values.p2.properties?.prop_num).toBe(7)
+    // Wrapped keys ride the loose frontmatter unmodeled — the batch read needs no schema at all.
+    expect((values.p1 as Record<string, unknown>)['<Status>']).toBe('in_progress')
+    expect((values.p2 as Record<string, unknown>)['<Count>']).toBe(7)
   })
 
   it('keys an id-less page by its adopted id', async () => {

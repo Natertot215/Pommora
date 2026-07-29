@@ -19,7 +19,7 @@ import type { PropertyDefinition } from '@shared/properties'
 
 const MD = '.md'
 
-/** Create a `.md` page in `parentDir` with a fresh ULID, an empty properties map, and
+/** Create a `.md` page in `parentDir` with a fresh ULID and
  *  created/modified timestamps (no context keys — presence is value-driven). Optional
  *  icon + initial body. */
 export async function createPage(
@@ -34,7 +34,6 @@ export async function createPage(
   const now = nowIso()
   const modeled: Record<string, unknown> = {
     id,
-    properties: {},
     created_at: now,
     modified_at: now,
   }

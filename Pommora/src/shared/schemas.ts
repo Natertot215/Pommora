@@ -82,27 +82,17 @@ export const agendaConfigSidecar = baseSidecar.extend({
 /** Page (.md) frontmatter. Context links are bracketed TITLE keys (`"[Projects]": [...]`)
  *  riding the loose object as retained raw keys — resolved against the registry at walk
  *  assembly, never modeled here (per-nexus dynamic keys can't be schema fields).
- *  `properties` maps property-id to an encoded PropertyValue. Loose ⇒ foreign keys
- *  ride through. */
+ *  A property value rides the same way, under its own wrapped name key. Loose ⇒ every wrapped
+ *  key and every foreign key rides through unmodeled. */
 export const pageFrontmatter = z.looseObject({
   id: z.string(),
   icon: z.string().optional(),
-  properties: z.record(z.string(), z.unknown()).optional(),
   created_at: z.string().optional(),
   modified_at: z.string().optional(),
-  folded_headings: z.array(z.string()).optional(),
   cover: z.string().optional(),
 })
 export type PageFrontmatter = z.infer<typeof pageFrontmatter>
 
 /** The modeled top-level page keys a FULL page rewrite governs (set if present, else
  *  delete). Partial updates pass a narrower key set so they touch nothing else. */
-export const PAGE_MODELED_KEYS = [
-  'id',
-  'icon',
-  'properties',
-  'created_at',
-  'modified_at',
-  'folded_headings',
-  'cover',
-] as const
+export const PAGE_MODELED_KEYS = ['id', 'icon', 'created_at', 'modified_at', 'cover'] as const
