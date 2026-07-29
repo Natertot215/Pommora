@@ -214,7 +214,14 @@ function retainContextKeys(node: object, raw: Json): void {
   if (kept) rawContextByNode.set(node, kept)
 }
 
-async function readPage(absFile: string, relFile: string): Promise<PageNode> {
+export interface PageRecord {
+  node: PageNode
+  fm: Json
+}
+
+/** THE per-page read: one stat-gated parse serves the walk (the node) and the view
+ *  pipeline's value batch (the frontmatter) — the same bytes are never read twice. */
+export async function readPageRecord(absFile: string, relFile: string): Promise<PageRecord> {
   return cachedParse(absFile, async () => {
     const fm = splitFrontmatter(await readFile(absFile, 'utf8'))
     const node: PageNode = {
@@ -225,23 +232,25 @@ async function readPage(absFile: string, relFile: string): Promise<PageNode> {
       path: relFile,
     }
     retainContextKeys(node, fm)
-    return node
+    return { node, fm }
   })
 }
 
+async function readPage(absFile: string, relFile: string): Promise<PageNode> {
+  return (await readPageRecord(absFile, relFile)).node
+}
+
 async function readDirectPages(absDir: string, relDir: string): Promise<PageNode[]> {
-  const out: PageNode[] = []
-  for (const e of await listEntries(absDir)) {
-    if (!e.isFile() || e.name.startsWith('_')) continue
-    if (!e.name.toLowerCase().endsWith('.md')) continue
-    const rel = relDir ? `${relDir}/${e.name}` : e.name
-    try {
-      out.push(await readPage(join(absDir, e.name), rel))
-    } catch {
-      /* unreadable page -> skip gracefully */
-    }
-  }
-  return out
+  const files = (await listEntries(absDir)).filter(
+    (e) => e.isFile() && !e.name.startsWith('_') && e.name.toLowerCase().endsWith('.md'),
+  )
+  const out = await Promise.all(
+    files.map((e) => {
+      const rel = relDir ? `${relDir}/${e.name}` : e.name
+      return readPage(join(absDir, e.name), rel).catch(() => null) // unreadable page -> skip
+    }),
+  )
+  return out.filter((n): n is PageNode => n !== null)
 }
 
 // ---------- container reads (Collection -> recursive Set) ----------
@@ -267,14 +276,14 @@ async function readChildSets(
   excluded: string[],
   fb: Fallback,
 ): Promise<SetNode[]> {
-  const sets: SetNode[] = []
-  for (const e of await listEntries(absDir)) {
-    if (!e.isDirectory()) continue
-    const rel = `${relDir}/${e.name}`
-    if (shouldSkipDir(e.name, rel, excluded)) continue
-    sets.push(await readSet(join(absDir, e.name), rel, e.name, sidecarMode, excluded, fb))
-  }
-  return sets
+  const dirs = (await listEntries(absDir)).filter(
+    (e) => e.isDirectory() && !shouldSkipDir(e.name, `${relDir}/${e.name}`, excluded),
+  )
+  return Promise.all(
+    dirs.map((e) =>
+      readSet(join(absDir, e.name), `${relDir}/${e.name}`, e.name, sidecarMode, excluded, fb),
+    ),
+  )
 }
 
 async function readSet(
@@ -285,9 +294,13 @@ async function readSet(
   excluded: string[],
   fb: Fallback,
 ): Promise<SetNode> {
-  const meta = sidecarMode ? ((await readSidecar(join(absDir, SIDECAR_FILENAME.set))) ?? {}) : {}
-  const sets = await readChildSets(absDir, relDir, sidecarMode, excluded, fb)
-  const pages = await readDirectPages(absDir, relDir)
+  const [meta, sets, pages] = await Promise.all([
+    sidecarMode
+      ? readSidecar(join(absDir, SIDECAR_FILENAME.set)).then((m) => m ?? {})
+      : Promise.resolve<Json>({}),
+    readChildSets(absDir, relDir, sidecarMode, excluded, fb),
+    readDirectPages(absDir, relDir),
+  ])
   return {
     kind: 'set',
     id: asString(meta.id) ?? adoptedId(relDir),
@@ -327,11 +340,13 @@ async function readPageCollection(
   fb: Fallback,
   registry: PropertyRegistry,
 ): Promise<CollectionNode> {
-  const meta = sidecarMode
-    ? ((await readSidecar(join(absDir, SIDECAR_FILENAME.collection))) ?? {})
-    : {}
-  const sets = await readChildSets(absDir, relDir, sidecarMode, excluded, fb)
-  const pages = await readDirectPages(absDir, relDir)
+  const [meta, sets, pages] = await Promise.all([
+    sidecarMode
+      ? readSidecar(join(absDir, SIDECAR_FILENAME.collection)).then((m) => m ?? {})
+      : Promise.resolve<Json>({}),
+    readChildSets(absDir, relDir, sidecarMode, excluded, fb),
+    readDirectPages(absDir, relDir),
+  ])
   return {
     kind: 'collection',
     id: asString(meta.id) ?? adoptedId(relDir),
@@ -361,33 +376,37 @@ async function readContextGroups(
   excluded: string[],
   fb: Fallback,
 ): Promise<ContextGroup[]> {
-  const groups: ContextGroup[] = []
-  for (const def of registry.contexts) {
-    const dir = join(contextsDir(root), def.title)
-    const spaces: SpaceNode[] = []
-    for (const e of await listEntries(dir)) {
-      if (!e.isDirectory()) continue
-      const rel = `.nexus/contexts/${def.title}/${e.name}`
-      if (shouldSkipDir(e.name, rel, excluded)) continue
-      const sc = await readSidecar(join(dir, e.name, SPACE_SIDECAR))
-      if (!sc) continue // a Space IS its sidecar
-      const node: SpaceNode = {
-        kind: 'space',
-        id: asString(sc.id) ?? adoptedId(rel),
-        title: e.name,
-        icon: asString(sc.icon),
-        path: rel,
-        banner: asString(sc.banner),
-        headingIconHidden: sc.heading_icon_hidden === true,
-        color: asString(sc.color),
-        contextId: def.id,
-      }
-      retainContextKeys(node, sc)
-      spaces.push(node)
-    }
-    groups.push({ def, spaces: resolveOrder(spaces, asStringArray(spaceOrders[def.id]), fb) })
-  }
-  return groups
+  return Promise.all(
+    registry.contexts.map(async (def) => {
+      const dir = join(contextsDir(root), def.title)
+      const dirs = (await listEntries(dir)).filter(
+        (e) =>
+          e.isDirectory() && !shouldSkipDir(e.name, `.nexus/contexts/${def.title}/${e.name}`, excluded),
+      )
+      const read = await Promise.all(
+        dirs.map(async (e) => {
+          const rel = `.nexus/contexts/${def.title}/${e.name}`
+          const sc = await readSidecar(join(dir, e.name, SPACE_SIDECAR))
+          if (!sc) return null // a Space IS its sidecar
+          const node: SpaceNode = {
+            kind: 'space',
+            id: asString(sc.id) ?? adoptedId(rel),
+            title: e.name,
+            icon: asString(sc.icon),
+            path: rel,
+            banner: asString(sc.banner),
+            headingIconHidden: sc.heading_icon_hidden === true,
+            color: asString(sc.color),
+            contextId: def.id,
+          }
+          retainContextKeys(node, sc)
+          return node
+        }),
+      )
+      const spaces = read.filter((n): n is SpaceNode => n !== null)
+      return { def, spaces: resolveOrder(spaces, asStringArray(spaceOrders[def.id]), fb) }
+    }),
+  )
 }
 
 // ---------- top level ----------
@@ -403,12 +422,21 @@ export async function readNexus(root: string): Promise<NexusTree> {
 }
 
 async function walkNexus(root: string): Promise<NexusTree> {
-  const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
+  const [identity, settingsRead, state, homepageConfig, navviewConfig, registry, ctxRegistryRaw] =
+    await Promise.all([
+      readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity)),
+      readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings)),
+      readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state)).then((s) => s ?? {}),
+      readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)).then((h) => h ?? {}),
+      readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.navview)).then((n) => n ?? {}),
+      readRegistry(root),
+      readSidecar(contextsRegistryFile(root)),
+    ])
   const sidecarMode = !!asString(identity?.id)
   const id = sidecarMode ? (identity!.id as string) : adoptedId(root)
   const fb: Fallback = sidecarMode ? 'id' : 'title'
 
-  const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
+  const settings = settingsRead ?? {}
   const excluded = asStringArray(settings.excluded_folders) ?? []
   const labels = readLabels(settings.labels)
   const rawPersonalization =
@@ -431,17 +459,10 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const profileImage = asString(settings.profile_image) ?? null
   const profileIcon = asString(settings.profile_icon)
   const profileSubtitle = asString(settings.profile_subtitle) ?? ''
-  const state = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {}
-  const homepageConfig =
-    (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.homepage))) ?? {}
-  const navviewConfig = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.navview))) ?? {}
-  const registry = await readRegistry(root)
-
   // Contexts. Registry-backed when `.nexus/contexts.json` parses (the walk never writes —
   // seeding/migration are open-path mutations). No registry (raw/unmigrated) → `contexts`
   // is [] — the open path migrates + seeds BEFORE anything renders, so the walk never
   // reads the legacy area/topic/project dirs itself.
-  const ctxRegistryRaw = await readSidecar(contextsRegistryFile(root))
   const ctxParsed = ctxRegistryRaw ? contextsRegistrySchema.safeParse(ctxRegistryRaw) : null
   const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null
   const spaceOrders =
@@ -455,23 +476,22 @@ async function walkNexus(root: string): Promise<NexusTree> {
   // Top-level Collections (gated by `_pagecollection.json`; raw mode treats every root folder
   // as a Collection). Agenda singletons are identified ONLY by their config sidecar
   // (`_taskconfig`/`_eventconfig`) — never by folder name — and are not surfaced as Collections.
-  const allCollections: CollectionNode[] = []
-  for (const e of await listEntries(root)) {
-    if (!e.isDirectory()) continue
-    if (shouldSkipDir(e.name, e.name, excluded)) continue
-    const abs = join(root, e.name)
-    const hasAgendaSidecar =
-      (await pathExists(join(abs, SIDECAR_FILENAME.taskConfig))) ||
-      (await pathExists(join(abs, SIDECAR_FILENAME.eventConfig)))
-    if (hasAgendaSidecar) continue
-    const isCollection = sidecarMode
-      ? await pathExists(join(abs, SIDECAR_FILENAME.collection))
-      : true
-    if (isCollection)
-      allCollections.push(
-        await readPageCollection(abs, e.name, e.name, sidecarMode, excluded, fb, registry.defs),
-      )
-  }
+  const rootDirs = (await listEntries(root)).filter(
+    (e) => e.isDirectory() && !shouldSkipDir(e.name, e.name, excluded),
+  )
+  const maybeCollections = await Promise.all(
+    rootDirs.map(async (e) => {
+      const abs = join(root, e.name)
+      const [hasTask, hasEvent, hasCollection] = await Promise.all([
+        pathExists(join(abs, SIDECAR_FILENAME.taskConfig)),
+        pathExists(join(abs, SIDECAR_FILENAME.eventConfig)),
+        sidecarMode ? pathExists(join(abs, SIDECAR_FILENAME.collection)) : true,
+      ])
+      if (hasTask || hasEvent || !hasCollection) return null
+      return readPageCollection(abs, e.name, e.name, sidecarMode, excluded, fb, registry.defs)
+    }),
+  )
+  const allCollections = maybeCollections.filter((c): c is CollectionNode => c !== null)
   const orderedCollections = resolveOrder(allCollections, asStringArray(state.collection_order), fb)
 
   const collections = orderedCollections
