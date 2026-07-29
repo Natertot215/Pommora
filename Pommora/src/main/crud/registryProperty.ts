@@ -64,7 +64,12 @@ export function renameSweep(root: string, oldName: string, newName: string): Pro
   return cascadePages(root, (content) => {
     const { frontmatter, body } = splitEnvelope(content)
     const doc = parseDocument(frontmatter)
-    if (!isMap(doc.contents)) return null
+    // A page whose YAML won't parse is skipped, never thrown on. Every sibling cascade reads
+    // through splitFrontmatter, which swallows a parse error; this one parses directly to keep a
+    // key's position and comments, so it has to refuse the same cases itself. Without this one
+    // hand-edited page ends the walk after the registry has already committed, leaving half the
+    // nexus on the old key and reporting the rename as a failure it partly performed.
+    if (doc.errors.length > 0 || !isMap(doc.contents)) return null
     const pair = doc.contents.items.find((i) => String(i.key) === oldKey)
     if (!pair) return null
     if (doc.get(newKey) === undefined) {

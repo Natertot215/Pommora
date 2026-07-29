@@ -62,13 +62,13 @@ describe('agenda config schema CRUD', () => {
     if (!a.ok) return
     const t1 = await createAgendaItem(tasks, 'task', 'T1')
     if (!t1.ok) return
-    const aDef = { id: a.value.id, name: 'Count', type: 'number' as const }
+    const aDef = { id: a.value.id, name: 'Effort', type: 'number' as const }
     await updateAgendaProperty(t1.value.path, aDef, { kind: 'number', value: 3 })
-    expect((await props(t1.value.path))['<Count>']).toBe(3)
+    expect((await props(t1.value.path))['<Effort>']).toBe(3)
 
     expect((await deleteAgendaProperty(tasks, 'task', a.value.id)).ok).toBe(true)
     expect((await defs()).some((d) => d.id === a.value.id)).toBe(false)
-    expect((await props(t1.value.path))[a.value.id]).toBeUndefined() // stripped from the item
+    expect((await props(t1.value.path))['<Effort>']).toBeUndefined()
   })
 
   it('gates a lossy type change, then strips on confirm', async () => {
@@ -80,8 +80,9 @@ describe('agenda config schema CRUD', () => {
     if (!a.ok) return
     const t1 = await createAgendaItem(tasks, 'task', 'T1')
     if (!t1.ok) return
-    const aDef = { id: a.value.id, name: 'Count', type: 'number' as const }
+    const aDef = { id: a.value.id, name: 'Effort', type: 'number' as const }
     await updateAgendaProperty(t1.value.path, aDef, { kind: 'number', value: 3 })
+    expect((await props(t1.value.path))['<Effort>']).toBe(3)
 
     expect((await changeAgendaPropertyType(tasks, 'task', a.value.id, 'url')).ok).toBe(false)
     expect(
@@ -92,6 +93,6 @@ describe('agenda config schema CRUD', () => {
       ).ok,
     ).toBe(true)
     expect((await defs()).find((d) => d.id === a.value.id)?.type).toBe('url')
-    expect((await props(t1.value.path))[a.value.id]).toBeUndefined()
+    expect((await props(t1.value.path))['<Effort>']).toBeUndefined()
   })
 })

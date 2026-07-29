@@ -11,15 +11,15 @@ import { createPage, updatePageProperty } from './page'
 import { readRegistry } from '../io/propertiesRegistry'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
-import type { PropertyDefinition, PropertyType } from '@shared/properties'
+import type { PropertyDefinition } from '@shared/properties'
 
-/** The writer takes a definition, not an id — tests name the property and this supplies the rest.
- *  The type only has to be one the value's kind can hold; the key comes from the name. */
-const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => ({
-  id,
-  name: id.replace(/^prop_/, ''),
-  type,
-})
+/** The writer takes a definition, and the registry's copy is the ONLY one that addresses the same
+ *  key the strip path resolves — a def invented here would write somewhere no cascade ever looks. */
+const liveDef = async (id: string): Promise<PropertyDefinition> => {
+  const def = (await readRegistry(root)).defs[id]
+  if (!def) throw new Error(`no registry def for ${id}`)
+  return def
+}
 
 let root: string
 let notes: string
@@ -52,8 +52,8 @@ describe('deleteProperty', () => {
     const p1 = await createPage(notes, 'A', { body: 'b' })
     const p2 = await createPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) return
-    await updatePageProperty(p1.value.path, defOf(id), { kind: 'select', value: 'hi' })
-    await updatePageProperty(p2.value.path, defOf(id), { kind: 'select', value: 'hi' })
+    await updatePageProperty(p1.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
+    await updatePageProperty(p2.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
@@ -66,7 +66,7 @@ describe('deleteProperty', () => {
     // frontmatter scrubbed in both, other keys preserved
     for (const path of [p1.value.path, p2.value.path]) {
       const content = await readFile(path, 'utf8')
-      expect(content).not.toContain(id)
+      expect(content).not.toContain('<Priority>')
       expect(content).toContain('id:')
     }
     // a recovery snapshot landed in .trash
@@ -90,13 +90,16 @@ describe('deleteProperty', () => {
     await assignProperty(root, notes, id)
     const p = await createPage(notes, 'A', { body: 'b' })
     if (!p.ok) return
-    await updatePageProperty(p.value.path, defOf(id), { kind: 'select', value: 'hi' })
+    await updatePageProperty(p.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
     await removeProperty(root, notes, id) // notes now holds a cache block and is NOT an assigner
+    const before = await readSidecar(notes, 'collection', pageCollectionSidecar)
+    expect((before?.property_cache as Record<string, unknown>)[id]).toBeDefined()
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
     const sc = await readSidecar(notes, 'collection', pageCollectionSidecar)
     expect((sc?.property_cache as Record<string, unknown> | undefined)?.[id]).toBeUndefined()
+    expect(sc?.property_cache).toBeUndefined() // the last block goes, and so does the empty map
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
   })
 })
