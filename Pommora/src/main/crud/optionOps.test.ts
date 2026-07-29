@@ -62,14 +62,14 @@ async function mkStatus(): Promise<string> {
   return c.value.id
 }
 
-/** A collection assigning the Status property `id`, holding one page whose `$status` is `value`. */
+/** A collection assigning the Status property `id`, holding one page whose status value is `value`. */
 async function statusPageHolding(id: string, value: string): Promise<string> {
   const col = await createFolderEntity(root, 'collection', 'Col')
   if (!col.ok) throw new Error('folder failed')
   await assignProperty(root, col.value.path, id)
   const p = await createPage(col.value.path, 'One', { body: 'b' })
   if (!p.ok) throw new Error('page failed')
-  await updatePageProperty(p.value.path, id, { kind: 'status', value })
+  await updatePageProperty(p.value.path, id, { kind: 'select', value })
   return p.value.path
 }
 
@@ -226,7 +226,7 @@ describe('status ops reject non-status properties', () => {
 })
 
 describe('renameStatusOption', () => {
-  it('rewrites the group option and cascades the value onto $status pages', async () => {
+  it('rewrites the group option and cascades the value onto assigning pages', async () => {
     const id = await mkStatus()
     const page = await statusPageHolding(id, 'Open')
 

@@ -252,10 +252,9 @@ describe('applyFilter — per-type matrix', () => {
     ).toEqual(['t', 'f', 'n'])
   })
 
-  it('a Context AND a user relation filter by id-list membership', () => {
+  it('a Context filters by id-list membership', () => {
     const rA = row('rA', { areas: ['area1'] })
     const rB = row('rB', { areas: ['area2'] })
-    const rRel = row('rRel', { props: { prop_rel: [{ $ctx: 'x' }] } })
     expect(
       ids([rA, rB], {
         match: 'all',
@@ -263,17 +262,8 @@ describe('applyFilter — per-type matrix', () => {
       }),
     ).toEqual(['rA'])
     expect(
-      ids([rA, rRel], { match: 'all', rules: [{ property_id: 'prop_rel', op: 'is', value: 'x' }] }),
-    ).toEqual(['rRel'])
-    expect(
-      ids([rA, rRel], {
-        match: 'all',
-        rules: [{ property_id: 'prop_rel', op: 'contains_any', values: ['x', 'y'] }],
-      }),
-    ).toEqual(['rRel'])
-    expect(
-      ids([rA, rRel], { match: 'all', rules: [{ property_id: 'prop_rel', op: 'is_not_empty' }] }),
-    ).toEqual(['rRel'])
+      ids([rA, rB], { match: 'all', rules: [{ property_id: 'ctx_areas', op: 'is_not_empty' }] }),
+    ).toEqual(['rA', 'rB'])
   })
 
   it('_modified_at filters as a date, falling back to created_at', () => {

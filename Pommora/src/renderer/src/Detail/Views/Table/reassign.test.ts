@@ -4,7 +4,7 @@ import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from './reassign'
 
 describe('groupKeyToValue — destination group key → PropertyValue', () => {
   it('status: the key is the status value', () => {
-    expect(groupKeyToValue('done', 'status')).toEqual({ kind: 'status', value: 'done' })
+    expect(groupKeyToValue('done', 'status')).toEqual({ kind: 'select', value: 'done' })
   })
 
   it('select: the key is the select value', () => {

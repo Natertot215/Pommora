@@ -608,7 +608,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
         op: 'setProperty',
         path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
-        value: { kind: 'status', value: 'done' },
+        value: { kind: 'select', value: 'done' },
       },
       nexusDeps,
     )
@@ -616,7 +616,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     const md = await read('Notes/Daily/Beta.md')
     expect(md).toContain('body')
     expect(splitFrontmatter(md).id).toBe('b')
-    expect(splitFrontmatter(md).properties).toEqual({ prop_s: { $status: 'done' } })
+    expect(splitFrontmatter(md).properties).toEqual({ prop_s: 'done' })
   })
 
   it('stamps modified_at — a property VALUE change is an edit', async () => {
@@ -625,7 +625,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
         op: 'setProperty',
         path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
-        value: { kind: 'status', value: 'done' },
+        value: { kind: 'select', value: 'done' },
       },
       nexusDeps,
     )
@@ -640,7 +640,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
         op: 'setProperty',
         path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
-        value: { kind: 'status', value: 'done' },
+        value: { kind: 'select', value: 'done' },
       },
       nexusDeps,
     )

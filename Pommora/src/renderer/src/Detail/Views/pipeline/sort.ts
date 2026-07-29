@@ -52,7 +52,7 @@ function rank(
   schema: PropertyDefinition[],
 ): number {
   const v = resolveFieldValue(row, propertyId, schema)
-  const key = v.kind === 'select' || v.kind === 'status' ? v.value : undefined
+  const key = v.kind === 'select' ? v.value : undefined
   return key !== undefined && order[key] !== undefined ? order[key] : Number.MAX_SAFE_INTEGER
 }
 

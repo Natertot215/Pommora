@@ -123,8 +123,8 @@ const propertySource = (): CollectionNode =>
   }) as unknown as CollectionNode
 
 const VALUES = {
-  p1: { id: 'p1', properties: { prop_status: { $status: 'active' } } },
-  p2: { id: 'p2', properties: { prop_status: { $status: 'complete' } } },
+  p1: { id: 'p1', properties: { prop_status: 'active' } },
+  p2: { id: 'p2', properties: { prop_status: 'complete' } },
 }
 
 let host: HTMLDivElement
@@ -366,9 +366,9 @@ const subGroupSource = (view?: Partial<SavedView>): CollectionNode =>
   }) as unknown as CollectionNode
 
 const SUB_VALUES = {
-  pA1: { id: 'pA1', properties: { prop_status: { $status: 'active' } } },
-  pA2: { id: 'pA2', properties: { prop_status: { $status: 'complete' } } },
-  pB: { id: 'pB', properties: { prop_status: { $status: 'active' } } },
+  pA1: { id: 'pA1', properties: { prop_status: 'active' } },
+  pA2: { id: 'pA2', properties: { prop_status: 'complete' } },
+  pB: { id: 'pB', properties: { prop_status: 'active' } },
 }
 
 describe('sub-group bucket band drag', () => {
@@ -448,7 +448,7 @@ describe('sub-group row drop (the set × bucket matrix)', () => {
       op: 'setProperty',
       path: 'Col/A/A Two.md',
       propertyId: 'prop_status',
-      value: { kind: 'status', value: 'active' },
+      value: { kind: 'select', value: 'active' },
     })
     expect(mutateSpy).toHaveBeenNthCalledWith(2, {
       op: 'movePage',
@@ -465,7 +465,7 @@ describe('sub-group row drop (the set × bucket matrix)', () => {
       op: 'setProperty',
       path: 'Col/A/A Two.md',
       propertyId: 'prop_status',
-      value: { kind: 'status', value: 'active' },
+      value: { kind: 'select', value: 'active' },
     })
   })
 

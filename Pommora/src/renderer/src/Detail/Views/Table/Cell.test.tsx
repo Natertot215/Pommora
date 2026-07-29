@@ -80,7 +80,7 @@ const mount = (row: ViewRow, columnId: string, style: ColumnStyle): void => {
 }
 
 describe('status looks', () => {
-  const row = rowWith({ prop_status: { $status: 'active' } })
+  const row = rowWith({ prop_status: 'active' })
 
   it('pill renders the labeled chip', () => {
     mount(row, 'prop_status', { look: 'pill' })
@@ -94,9 +94,9 @@ describe('status looks', () => {
   })
 
   it('checkbox renders the square with the group glyph — empty for upcoming, filled past it', () => {
-    mount(rowWith({ prop_status: { $status: 'not_started' } }), 'prop_status', { look: 'checkbox' })
+    mount(rowWith({ prop_status: 'not_started' }), 'prop_status', { look: 'checkbox' })
     expect(host.querySelector('svg')).toBeNull()
-    mount(rowWith({ prop_status: { $status: 'complete' } }), 'prop_status', { look: 'checkbox' })
+    mount(rowWith({ prop_status: 'complete' }), 'prop_status', { look: 'checkbox' })
     expect(host.querySelector('svg')).toBeTruthy()
     expect(host.textContent).not.toContain('Complete')
   })

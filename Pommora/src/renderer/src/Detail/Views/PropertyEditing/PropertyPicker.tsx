@@ -21,7 +21,7 @@ const optionsOf = (
 const selectedValues = (current: PropertyValue | null): string[] => {
   if (!current) return []
   if (current.kind === 'multiSelect' || current.kind === 'context') return current.value
-  if (current.kind === 'select' || current.kind === 'status') return [current.value]
+  if (current.kind === 'select') return [current.value]
   return []
 }
 
@@ -175,7 +175,7 @@ export function pickSemantics(
       )
       return
     }
-    onCommit(def.type === 'status' ? { kind: 'status', value } : { kind: 'select', value })
+    onCommit({ kind: 'select', value })
     onSinglePicked()
   }
   return { options, selected, pick }

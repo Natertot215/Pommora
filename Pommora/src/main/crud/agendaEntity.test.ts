@@ -121,17 +121,14 @@ describe('updates preserve foreign keys + siblings', () => {
     expect(t.id).toBe(c.value.id)
   })
 
-  it('updateAgendaProperty sets, encodes a relation, and clears', async () => {
+  it('updateAgendaProperty sets, writes bare, and clears', async () => {
     const c = await createAgendaItem(tasks, 'task', 'P')
     if (!c.ok) throw new Error('setup')
-    await updateAgendaProperty(c.value.path, '_status', { kind: 'status', value: 'todo' })
-    await updateAgendaProperty(c.value.path, 'prop_rel', { kind: 'context', value: ['01H'] })
-    expect((await read(c.value.path)).properties).toEqual({
-      _status: { $status: 'todo' },
-      prop_rel: [{ $ctx: '01H' }],
-    })
+    await updateAgendaProperty(c.value.path, '_status', { kind: 'select', value: 'todo' })
+    await updateAgendaProperty(c.value.path, 'prop_n', { kind: 'number', value: 3 })
+    expect((await read(c.value.path)).properties).toEqual({ _status: 'todo', prop_n: 3 })
     await updateAgendaProperty(c.value.path, '_status', null)
-    expect((await read(c.value.path)).properties).toEqual({ prop_rel: [{ $ctx: '01H' }] })
+    expect((await read(c.value.path)).properties).toEqual({ prop_n: 3 })
   })
 
 })

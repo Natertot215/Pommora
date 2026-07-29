@@ -172,32 +172,22 @@ describe('updatePageProperty', () => {
     const props = async (): Promise<Record<string, unknown>> =>
       (splitFrontmatter(await readFile(f, 'utf8')).properties ?? {}) as Record<string, unknown>
 
-    await updatePageProperty(f, 'prop_status', { kind: 'status', value: 'todo' })
+    await updatePageProperty(f, 'prop_status', { kind: 'select', value: 'todo' })
     await updatePageProperty(f, 'prop_tags', { kind: 'multiSelect', value: ['a', 'b'] })
-    expect(await props()).toEqual({ prop_status: { $status: 'todo' }, prop_tags: ['a', 'b'] })
+    expect(await props()).toEqual({ prop_status: 'todo', prop_tags: ['a', 'b'] })
     expect(splitFrontmatter(await readFile(f, 'utf8')).id).toBe(c.value.id)
 
-    await updatePageProperty(f, 'prop_status', { kind: 'status', value: 'done' })
-    expect((await props()).prop_status).toEqual({ $status: 'done' })
+    await updatePageProperty(f, 'prop_status', { kind: 'select', value: 'done' })
+    expect((await props()).prop_status).toEqual('done')
 
     await updatePageProperty(f, 'prop_status', null)
     expect(await props()).toEqual({ prop_tags: ['a', 'b'] })
   })
 
-  it('encodes a context as a tagged array', async () => {
-    const c = await createPage(typeDir, 'Rel', { body: 'x' })
-    if (!c.ok) throw new Error('setup failed')
-    await updatePageProperty(c.value.path, 'prop_link', { kind: 'context', value: ['01H', '01J'] })
-    const fm = splitFrontmatter(await readFile(c.value.path, 'utf8'))
-    expect((fm.properties as Record<string, unknown>).prop_link).toEqual([
-      { $ctx: '01H' },
-      { $ctx: '01J' },
-    ])
-  })
 
   it('errors when the page is missing', async () => {
     const r = await updatePageProperty(join(typeDir, 'nope.md'), 'p', {
-      kind: 'status',
+      kind: 'select',
       value: 'x',
     })
     expect(r.ok).toBe(false)

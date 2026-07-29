@@ -52,7 +52,7 @@ export function recolorStatusOption(
 }
 
 /** Rename a status option (by its OLD value, wherever it lives); value + label both become the new
- *  title (value=title). The page cascade (main-process) rewrites `$status` on every assigning page. */
+ *  title (value=title). The page cascade (main-process) rewrites the stored label on every assigning page. */
 export function renameStatusOption(
   groups: StatusGroup[],
   oldValue: string,
