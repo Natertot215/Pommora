@@ -56,7 +56,7 @@ describe('createPage', () => {
     const fm = splitFrontmatter(content)
     expect(isUlid(fm.id as string)).toBe(true)
     // Nothing but the modeled keys — Context membership is value-driven, never seeded.
-    expect(Object.keys(fm).sort()).toEqual(['created_at', 'id', 'modified_at', 'properties'])
+    expect(Object.keys(fm).sort()).toEqual(['created_at', 'id', 'modified_at'])
     expect(splitEnvelope(content).body).toBe('Hello')
   })
 

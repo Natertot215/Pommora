@@ -1,3 +1,4 @@
+import { wrapKey } from '@shared/governedKeys'
 import { it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -80,10 +81,11 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
     expect(assigned).toContain(pB)
     expect(assigned).not.toContain(pC)
     expect(Object.values(cached?.values ?? {})).toEqual([7])
-    const props = readFrontmatterFields(await readFile(page.value.path, 'utf8')).properties as
-      | Record<string, unknown>
-      | undefined
-    expect(props?.[pC]).toBeUndefined()
+    const fm = readFrontmatterFields(await readFile(page.value.path, 'utf8')) as Record<
+      string,
+      unknown
+    >
+    expect(fm[wrapKey('property', 'Gone')]).toBeUndefined()
     // reset for the next round: re-assign restores the value, unassign pB
     await assignProperty(root, notes, pC)
     await removeProperty(root, notes, pB)

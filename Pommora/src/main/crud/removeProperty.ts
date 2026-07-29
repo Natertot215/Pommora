@@ -63,16 +63,19 @@ async function removeInner(
     if (typeof fields.id === 'string') values[fields.id] = raw
   }
   const cache = { ...(sidecar.property_cache as Record<string, unknown> | undefined) }
-  cache[propertyId] = { removed_at: nowIso(), values }
+  // No value, no key — a block with nothing in it is the same violation as an empty map.
+  if (Object.keys(values).length) cache[propertyId] = { removed_at: nowIso(), values }
   // Cache + unassign FIRST (the sidecar is never raced by a cell-write), THEN strip each page
   // under its file lock. Cache-before-strip keeps the values safely persisted before any page
   // loses them, so a failure mid-strip is recoverable, never lossy.
-  await writeJson(join(collectionFolder, SIDECAR_FILENAME.collection), {
+  const nextSidecar: Record<string, unknown> = {
     ...sidecar,
     properties: ids.filter((id) => id !== propertyId),
     property_cache: cache,
     modified_at: nowIso(),
-  })
+  }
+  if (Object.keys(cache).length === 0) delete nextSidecar.property_cache
+  await writeJson(join(collectionFolder, SIDECAR_FILENAME.collection), nextSidecar)
   for (const file of files) {
     await rewritePageSerialized(file, (content) => stripPageMember(content, key))
   }

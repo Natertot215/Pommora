@@ -186,11 +186,15 @@ describe('setAgendaContext + the agenda lock', () => {
   it('concurrent agenda RMWs on one file serialize (no lost update)', async () => {
     await Promise.all([
       updateAgendaItem(task(), { priority: 5 }),
-      updateAgendaProperty(task(), 'prop_x', { kind: 'url', value: 'https://x.dev' }),
+      updateAgendaProperty(
+        task(),
+        { id: 'prop_x', name: 'Prop_x', type: 'url' as const },
+        { kind: 'url', value: 'https://x.dev' },
+      ),
     ])
     const raw = JSON.parse(await readFile(task(), 'utf8'))
     expect(raw.priority).toBe(5)
-    expect(raw.properties.prop_x).toBeDefined()
+    expect((raw as Record<string, unknown>)['<Prop_x>']).toBeDefined()
   })
 })
 
