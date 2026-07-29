@@ -62,9 +62,7 @@ describe('resolveWith — single entry', () => {
 
   it('resolves an entry icon for each kind', () => {
     const t = makeTree()
-    expect(
-      resolveOne(t, { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' })?.icon,
-    ).toBeTruthy()
+    expect(resolveOne(t, { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' })?.icon).toBeTruthy()
     expect(resolveOne(t, { kind: 'collection', id: 'c1' })?.icon).toBeTruthy()
   })
 

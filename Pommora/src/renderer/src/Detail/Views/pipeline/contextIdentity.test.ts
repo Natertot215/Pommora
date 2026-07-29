@@ -102,7 +102,10 @@ describe('context accessors', () => {
 // sidebar — a nexus that sets its own default otherwise wears two different icons for one Space.
 // The override must name a CURATED glyph; `defaultEntityIcon` rejects anything else and keeps the seed.
 it('an icon-less Space takes the USER default glyph, not the curated seed', () => {
-  const personalized = { ...mkTree(), personalization: { defaultIcons: { space: 'folder-open' } } } as NexusTree
+  const personalized = {
+    ...mkTree(),
+    personalization: { defaultIcons: { space: 'folder-open' } },
+  } as NexusTree
   expect(spaceIdentityOf(personalized, 'a1')?.icon).toBe('folder-open')
   expect(contextIdentityOf(personalized, 'ctx_topics')?.icon).toBe('folder-open')
   // A Space carrying its OWN icon still wins over the default.

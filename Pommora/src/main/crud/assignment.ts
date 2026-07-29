@@ -93,10 +93,7 @@ export async function allCollectionFolders(root: string): Promise<string[]> {
     if (node.kind === 'collection') out.push(join(root, node.path))
     for (const s of node.sets ?? []) visit(s)
   }
-  for (const c of [
-    ...(tree.collections ?? []),
-  ])
-    visit(c)
+  for (const c of [...(tree.collections ?? [])]) visit(c)
   return out
 }
 

@@ -2,11 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import {
-  createFolderEntity,
-  renameFolderEntity,
-  updateFolderSidecar,
-} from './folderEntity'
+import { createFolderEntity, renameFolderEntity, updateFolderSidecar } from './folderEntity'
 import { readSidecar } from '../sidecarIO'
 import { spaceSidecar, pageCollectionSidecar } from '@shared/schemas'
 import { isUlid } from '../ids'

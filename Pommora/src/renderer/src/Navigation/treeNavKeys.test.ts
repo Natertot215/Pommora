@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type {
-  CollectionNode,
-  NexusTree,
-  PageNode,
-  SetNode,
-} from '@shared/types'
+import type { CollectionNode, NexusTree, PageNode, SetNode } from '@shared/types'
 import { existingNavKeys } from './treeNavKeys'
 
 const page = (id: string): PageNode => ({ id, kind: 'page', title: id, path: `${id}.md` })
@@ -28,7 +23,7 @@ const collection = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): C
 // Only the slices existingNavKeys reads; the rest of NexusTree is irrelevant to this unit.
 const tree = (over: Partial<NexusTree>): NexusTree =>
   ({
-        collections: [],
+    collections: [],
     contexts: [],
     ...over,
   }) as unknown as NexusTree
@@ -44,7 +39,6 @@ describe('existingNavKeys', () => {
     for (const k of ['collection:c1', 'page:p1', 'set:s1', 'page:p2', 'set:s2', 'page:p3'])
       expect(keys.has(k)).toBe(true)
   })
-
 
   it('always includes the id-less homepage singleton', () => {
     expect(existingNavKeys(tree({}))).toContain('homepage')

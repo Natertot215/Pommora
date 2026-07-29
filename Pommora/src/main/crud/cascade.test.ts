@@ -54,4 +54,3 @@ describe('renameCascade', () => {
     if (r.ok) expect(r.value.touched).toEqual([])
   })
 })
-

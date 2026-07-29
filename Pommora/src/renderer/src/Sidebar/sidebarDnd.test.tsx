@@ -17,7 +17,7 @@ import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 stubPointerCapture()
 
 const tree = {
-    collections: [
+  collections: [
     {
       kind: 'collection',
       id: 'c1',
@@ -131,7 +131,7 @@ describe('sidebar drag — Esc abort', () => {
 // Geometry is stubbed; the seam decision is the truth.
 describe('sidebar drag — page↔Set seam', () => {
   const seamTree = {
-        collections: [
+    collections: [
       {
         kind: 'collection',
         id: 'c1',
@@ -204,7 +204,7 @@ describe('sidebar drag — page↔Set seam', () => {
 
   it('still reparents a page into a Set in a DIFFERENT container', async () => {
     const crossTree = {
-            collections: [
+      collections: [
         {
           kind: 'collection',
           id: 'c1',

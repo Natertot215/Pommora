@@ -6,7 +6,10 @@ import { wrapKey } from '@shared/governedKeys'
 
 /** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
  *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
-const propsAtRoot = (props: Record<string, unknown>, defs: PropertyDefinition[]): Record<string, unknown> =>
+const propsAtRoot = (
+  props: Record<string, unknown>,
+  defs: PropertyDefinition[],
+): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(props).map(([id, v]) => {
       const d = defs.find((x) => x.id === id)
@@ -325,7 +328,9 @@ describe('resolvedSortCount', () => {
     expect(resolvedSortCount([{ property_id: 'prop_gone', direction: 'ascending' }], schema)).toBe(
       0,
     )
-    expect(resolvedSortCount([{ property_id: 'ctx_areas', direction: 'ascending' }], schema)).toBe(0)
+    expect(resolvedSortCount([{ property_id: 'ctx_areas', direction: 'ascending' }], schema)).toBe(
+      0,
+    )
     expect(
       resolvedSortCount(
         [

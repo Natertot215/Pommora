@@ -130,5 +130,4 @@ describe('updates preserve foreign keys + siblings', () => {
     await updateAgendaProperty(c.value.path, '_status', null)
     expect((await read(c.value.path)).properties).toEqual({ prop_n: 3 })
   })
-
 })

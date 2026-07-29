@@ -19,6 +19,7 @@ import { serializeSchemaOp } from './schemaChain'
 import { readRegistry } from '../io/propertiesRegistry'
 import type { PropertyDefinition } from '@shared/properties'
 
+
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-opt-'))
@@ -47,7 +48,9 @@ async function pageHolding(id: string, value: string): Promise<string> {
   await assignProperty(root, col.value.path, id)
   const p = await createPage(col.value.path, 'One', { body: 'b' })
   if (!p.ok) throw new Error('page failed')
-  await updatePageProperty(p.value.path, id, { kind: 'select', value })
+  const def = (await readRegistry(root)).defs[id]
+  if (!def) throw new Error('definition missing')
+  await updatePageProperty(p.value.path, def, { kind: 'select', value })
   return p.value.path
 }
 
@@ -69,7 +72,9 @@ async function statusPageHolding(id: string, value: string): Promise<string> {
   await assignProperty(root, col.value.path, id)
   const p = await createPage(col.value.path, 'One', { body: 'b' })
   if (!p.ok) throw new Error('page failed')
-  await updatePageProperty(p.value.path, id, { kind: 'select', value })
+  const def = (await readRegistry(root)).defs[id]
+  if (!def) throw new Error('definition missing')
+  await updatePageProperty(p.value.path, def, { kind: 'select', value })
   return p.value.path
 }
 

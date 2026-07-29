@@ -11,7 +11,10 @@ import { wrapKey } from '@shared/governedKeys'
 
 /** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
  *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
-const propsAtRoot = (props: Record<string, unknown>, defs: PropertyDefinition[]): Record<string, unknown> =>
+const propsAtRoot = (
+  props: Record<string, unknown>,
+  defs: PropertyDefinition[],
+): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(props).map(([id, v]) => {
       const d = defs.find((x) => x.id === id)
@@ -66,14 +69,7 @@ const multiDef: PropertyDefinition = {
   ],
 }
 
-const allDefs: PropertyDefinition[] = [
-  statusDef,
-  checkboxDef,
-  numberDef,
-  urlDef,
-  fileDef,
-  multiDef,
-]
+const allDefs: PropertyDefinition[] = [statusDef, checkboxDef, numberDef, urlDef, fileDef, multiDef]
 
 const sourceWith = (columnStyles?: Record<string, { look?: string }>): CollectionNode =>
   ({

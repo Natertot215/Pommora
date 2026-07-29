@@ -40,4 +40,3 @@ describe('folder sidecar schemas', () => {
     expect(pageSetSidecar.parse(v)).toMatchObject(v)
   })
 })
-

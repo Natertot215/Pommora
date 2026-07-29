@@ -41,7 +41,6 @@ export function declaredType(
   }
 }
 
-
 /** The row's value for a column, as a PropertyValue. Reserved columns read intrinsic/frontmatter
  *  fields; a user column decodes against the type its own definition declares, so nothing is ever
  *  inferred from the bytes. The decode is cached (the measured grouped-view hot spot) and keyed on

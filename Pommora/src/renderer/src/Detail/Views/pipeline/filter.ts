@@ -381,7 +381,9 @@ function evaluateText(v: PropertyValue, op: Op, expected: Expected, values?: str
     case FILTER_OPS.doesNotContain:
       return expected == null ? true : !(s?.toLowerCase().includes(expected.toLowerCase()) ?? false)
     case FILTER_OPS.startsWith:
-      return expected == null ? true : (s?.toLowerCase().startsWith(expected.toLowerCase()) ?? false)
+      return expected == null
+        ? true
+        : (s?.toLowerCase().startsWith(expected.toLowerCase()) ?? false)
     default:
       return true
   }

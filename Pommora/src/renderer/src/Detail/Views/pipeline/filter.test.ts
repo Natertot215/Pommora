@@ -128,14 +128,23 @@ describe('applyFilter — match mode + recursion', () => {
 describe('applyFilter — a blank value answers no positive comparison', () => {
   // The text ops sit one case-block from `is` and carry the identical shape. A Link column is the
   // reachable path: url is the creatable type whose operator set is the text matrix.
-  const rows = [row('none', { props: {} }), row('has', { props: { prop_url: 'https://example.com' } })]
+  const rows = [
+    row('none', { props: {} }),
+    row('has', { props: { prop_url: 'https://example.com' } }),
+  ]
 
   it('contains and starts_with exclude a row holding nothing', () => {
     expect(
-      ids(rows, { match: 'all', rules: [{ property_id: 'prop_url', op: 'contains', value: 'example' }] }),
+      ids(rows, {
+        match: 'all',
+        rules: [{ property_id: 'prop_url', op: 'contains', value: 'example' }],
+      }),
     ).toEqual(['has'])
     expect(
-      ids(rows, { match: 'all', rules: [{ property_id: 'prop_url', op: 'starts_with', value: 'https' }] }),
+      ids(rows, {
+        match: 'all',
+        rules: [{ property_id: 'prop_url', op: 'starts_with', value: 'https' }],
+      }),
     ).toEqual(['has'])
   })
 
@@ -153,7 +162,10 @@ describe('applyFilter — a blank value answers no positive comparison', () => {
 
   it('none-mode keeps the blank row instead of blanking the table', () => {
     expect(
-      ids(rows, { match: 'none', rules: [{ property_id: 'prop_url', op: 'contains', value: 'example' }] }),
+      ids(rows, {
+        match: 'none',
+        rules: [{ property_id: 'prop_url', op: 'contains', value: 'example' }],
+      }),
     ).toEqual(['none'])
   })
 })
@@ -408,7 +420,11 @@ describe('applyFilter — location presence', () => {
         many,
         { match: 'all', rules: [{ property_id: '_location', op, values: ['set_a', 'set_b'] }] },
         [],
-        [{ id: 'set_a', children: [] }, { id: 'set_b', children: [] }, { id: 'set_c', children: [] }],
+        [
+          { id: 'set_a', children: [] },
+          { id: 'set_b', children: [] },
+          { id: 'set_c', children: [] },
+        ],
       ).map((r) => r.id)
     expect(run('is')).toEqual(['a', 'b'])
     expect(run('is_not')).toEqual(['c'])
@@ -420,9 +436,12 @@ describe('applyFilter — location presence', () => {
     const deep: ViewRow[] = [{ ...row('deep'), parentSetId: 'set_child' }]
     const tree = [{ id: 'set_a', children: [{ id: 'set_child', children: [] }] }]
     const run = (op: string): string[] =>
-      applyFilter(deep, { match: 'all', rules: [{ property_id: '_location', op, value: 'set_a' }] }, [], tree).map(
-        (r) => r.id,
-      )
+      applyFilter(
+        deep,
+        { match: 'all', rules: [{ property_id: '_location', op, value: 'set_a' }] },
+        [],
+        tree,
+      ).map((r) => r.id)
     expect(run('is')).toEqual([])
     expect(run('is_inside')).toEqual(['deep'])
     expect(run('is_not')).toEqual(['deep'])

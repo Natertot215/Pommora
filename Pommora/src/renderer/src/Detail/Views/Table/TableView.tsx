@@ -611,7 +611,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     })
     if (action === 'column:hide') hideColumn(id)
     else if (action === 'column:toggle-icons')
-      persistView({ hide_column_icons: !(liveView.hide_column_icons ?? true) }, { skipRefetch: false })
+      persistView(
+        { hide_column_icons: !(liveView.hide_column_icons ?? true) },
+        { skipRefetch: false },
+      )
     else if (action?.startsWith('align:'))
       setColumnAlign(id, action.slice('align:'.length) as ColumnAlign)
     else if (action?.startsWith('style:')) {
@@ -642,7 +645,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     writeContextValue(row, colId, ids, row.frontmatter, setValueOverride, mutate)
   }
   const removeCellValue = (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null): void => {
-    if (col.kind === 'context' && next?.kind === 'context') commitContextValue(row, col.id, next.value)
+    if (col.kind === 'context' && next?.kind === 'context')
+      commitContextValue(row, col.id, next.value)
     else commitCellValue(row, col.id, next)
   }
   // Acting stops propagation so the row's select doesn't also fire; anything else bubbles.

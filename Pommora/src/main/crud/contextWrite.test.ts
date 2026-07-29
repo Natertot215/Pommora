@@ -171,10 +171,7 @@ describe('setAgendaContext + the agenda lock', () => {
   const task = () => join(root, 'Tasks', 'T.task.json')
   beforeEach(async () => {
     await mkdir(join(root, 'Tasks'), { recursive: true })
-    await writeFile(
-      task(),
-      JSON.stringify({ id: 't1', '(Projects)': ['pommora'], foreign: true }),
-    )
+    await writeFile(task(), JSON.stringify({ id: 't1', '(Projects)': ['pommora'], foreign: true }))
   })
 
   it('writes the wrapped key, repairs siblings, preserves foreign keys', async () => {

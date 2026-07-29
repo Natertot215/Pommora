@@ -6,6 +6,8 @@ import { assignProperty, reorderAssignment, allCollectionFolders } from './assig
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
+import type { PropertyDefinition } from '@shared/properties'
+
 
 let root: string
 let notes: string
@@ -58,12 +60,16 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
   await assignProperty(root, notes, pC)
   const page = await createPage(notes, 'A', { body: 'b' })
   if (!page.ok) throw new Error('setup failed')
-  await updatePageProperty(page.value.path, pC, { kind: 'number', value: 7 })
+  await updatePageProperty(
+    page.value.path,
+    { id: pC, name: 'Gone', type: 'number' } as PropertyDefinition,
+    { kind: 'number', value: 7 },
+  )
 
   // Interleave 20 rounds — under the serialized chain the end state is always coherent:
   // pC unassigned WITH its cache block intact, pB assigned.
   for (let round = 0; round < 20; round++) {
-    await Promise.all([removeProperty(notes, pC), assignProperty(root, notes, pB)])
+    await Promise.all([removeProperty(root, notes, pC), assignProperty(root, notes, pB)])
     const sc = (await readSidecar(notes, 'collection', pageCollectionSidecar)) as Record<
       string,
       unknown
@@ -81,6 +87,6 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
     expect(props?.[pC]).toBeUndefined()
     // reset for the next round: re-assign restores the value, unassign pB
     await assignProperty(root, notes, pC)
-    await removeProperty(notes, pB)
+    await removeProperty(root, notes, pB)
   }
 })

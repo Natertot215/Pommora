@@ -51,17 +51,17 @@ interface SchemaTarget {
 
 // MARK: - Member strip strategies
 
-export function stripPageMember(content: string, propertyId: string): string | null {
-  const props = splitFrontmatter(content).properties
-  if (!isPlainObject(props) || !(propertyId in props)) return null
-  const next = { ...props }
-  delete next[propertyId]
-  const body = splitEnvelope(content).body
+/** Null means the page didn't hold it — the caller writes nothing, so an unrelated page is never
+ *  re-dated. The key arrives resolved; a property's values live under its own name. */
+export function stripPageMember(content: string, key: string): string | null {
+  const root = splitFrontmatter(content) as Record<string, unknown>
+  if (!(key in root)) return null
+  // The key is governed but not supplied, which is how the merge is told to delete it.
   return mergeFrontmatter(
     content,
-    { properties: next, modified_at: nowIso() },
-    ['properties', 'modified_at'],
-    body,
+    { modified_at: nowIso() },
+    [key, 'modified_at'],
+    splitEnvelope(content).body,
   )
 }
 

@@ -476,7 +476,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
 
   const collections = orderedCollections
 
-
   // Resolve each entity's retained raw context keys onto its own node — a cheap in-memory
   // pass over already-parsed data, so a pre-existing inert key lights up on the first walk
   // after its Space registers.

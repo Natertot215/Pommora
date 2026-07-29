@@ -6,6 +6,7 @@ import { handleMutate, type MutateDeps } from './mutate'
 import { openSession, closeSession } from './session'
 import { splitFrontmatter, readNexus } from './readNexus'
 import { pathExists } from './io/atomicWrite'
+import { createProperty } from './crud/registryProperty'
 
 let root: string
 const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
@@ -602,6 +603,13 @@ describe('handleMutate — setBanner', () => {
 })
 
 describe('handleMutate — setProperty (the D-4 cross-group reassignment write)', () => {
+  // A value only writes for a property the registry knows — the key carries a name, and an
+  // unknown name is inert by construction.
+  beforeEach(async () => {
+    await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
+    await createProperty(root, { id: 'prop_m', name: 'Tags', type: 'multi_select' })
+  })
+
   it('writes a typed property into the page frontmatter, preserving id + body', async () => {
     const r = await handleMutate(
       {
@@ -616,7 +624,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     const md = await read('Notes/Daily/Beta.md')
     expect(md).toContain('body')
     expect(splitFrontmatter(md).id).toBe('b')
-    expect(splitFrontmatter(md).properties).toEqual({ prop_s: 'done' })
+    expect(splitFrontmatter(md)['<Stage>']).toBe('done')
   })
 
   it('stamps modified_at — a property VALUE change is an edit', async () => {
@@ -649,7 +657,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(splitFrontmatter(await read('Notes/Daily/Beta.md')).properties).toEqual({})
+    expect(splitFrontmatter(await read('Notes/Daily/Beta.md'))['<Stage>']).toBeUndefined()
   })
 
   it('an emptied value clears the key on disk — the file never holds a [] placeholder', async () => {
@@ -673,8 +681,8 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     )
     expect(r.ok).toBe(true)
     const md = await read('Notes/Daily/Beta.md')
-    expect(splitFrontmatter(md).properties).toEqual({})
-    expect(md).not.toContain('prop_m')
+    expect(splitFrontmatter(md)['<Tags>']).toBeUndefined()
+    expect(md).not.toContain('<Tags>')
   })
 
   it('never throws on a missing page — returns ok:false', async () => {

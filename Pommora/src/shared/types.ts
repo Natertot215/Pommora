@@ -6,14 +6,7 @@ import type { PropertyDefinition } from './properties'
 import type { PageFrontmatter } from './schemas'
 import type { SavedView } from './views'
 
-export type NodeKind =
-  | 'area'
-  | 'topic'
-  | 'project'
-  | 'space'
-  | 'collection'
-  | 'set'
-  | 'page'
+export type NodeKind = 'area' | 'topic' | 'project' | 'space' | 'collection' | 'set' | 'page'
 
 // The spectrum solids the app accent can be set to, plus `system` (follow the OS accent).
 // Names mirror the renderer's vars.color.solid keys; greyDefault is excluded (the chip
@@ -247,7 +240,6 @@ export interface CollectionNode extends PathNode {
   viewButton?: ViewButton
   viewStyle?: ViewStyle
 }
-
 
 /** A user-facing entity name in both forms (mirrors Swift `LabelPair`). */
 export interface LabelPair {

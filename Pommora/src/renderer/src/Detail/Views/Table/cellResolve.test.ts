@@ -1,17 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import {
-  buildSetIcons,
-  buildSetNames,
-  findOption,
-  groupLabel,
-  optionLabel,
-} from './cellResolve'
-import {
-  DEFAULT_LABELS,
-  UNGROUPED,
-  type CollectionNode,
-  type ResolvedGroup,
-} from '@shared/types'
+import { buildSetIcons, buildSetNames, findOption, groupLabel, optionLabel } from './cellResolve'
+import { DEFAULT_LABELS, UNGROUPED, type CollectionNode, type ResolvedGroup } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { ResolveContext } from './resolveContext'
 

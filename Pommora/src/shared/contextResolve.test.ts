@@ -19,7 +19,10 @@ const registry: ContextsRegistry = {
 }
 
 const spacesByContext = new Map<string, SpaceNode[]>([
-  ['ctx_projects', [space('sp1', 'Pommora', 'ctx_projects'), space('sp2', 'CS 161', 'ctx_projects')]],
+  [
+    'ctx_projects',
+    [space('sp1', 'Pommora', 'ctx_projects'), space('sp2', 'CS 161', 'ctx_projects')],
+  ],
   ['ctxA', [space('sp3', '2024', 'ctxA'), space('sp4', 'true', 'ctxA')]],
 ])
 
@@ -107,4 +110,3 @@ describe('reconcileContextKeys', () => {
     expect(changed).toBe(false)
   })
 })
-

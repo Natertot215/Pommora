@@ -94,7 +94,8 @@ export function CardPickerHost({
   const vStyle = vColumn ? styleFor(vColumn.id, ctx.schema, view) : {}
   // The resolved kind is the only reliable Context test here — declaredType can't tell without
   // the registry ids, which this context doesn't carry.
-  const vType = vColumn?.kind === 'context' ? 'context' : declaredType(vColumn?.id ?? '', ctx.schema)
+  const vType =
+    vColumn?.kind === 'context' ? 'context' : declaredType(vColumn?.id ?? '', ctx.schema)
   const vContextOptions = vColumn ? contextOptionsFor(vColumn) : null
 
   // A row that vanished (deleted) or a value Compact just dropped (emptied multi/context — the

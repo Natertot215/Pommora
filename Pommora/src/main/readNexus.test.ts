@@ -273,7 +273,12 @@ describe('readNexus — registry-backed contexts', () => {
 
   it('builds contexts in registry order with ordered spaces', async () => {
     const t = await readNexus(reg)
-    expect(t.contexts?.map((g) => g.def.id)).toEqual(['ctx_areas', 'ctx_topics', 'ctx_projects', 'ctxC'])
+    expect(t.contexts?.map((g) => g.def.id)).toEqual([
+      'ctx_areas',
+      'ctx_topics',
+      'ctx_projects',
+      'ctxC',
+    ])
     const projects = t.contexts?.find((g) => g.def.id === 'ctx_projects')
     expect(projects?.spaces.map((s) => s.id)).toEqual(['sp-cs-proj', 'sp-pom'])
     const pom = projects?.spaces.find((s) => s.id === 'sp-pom')
@@ -290,7 +295,6 @@ describe('readNexus — registry-backed contexts', () => {
     const plain = t.collections![0].pages.find((p) => p.id === 'pg-plain')
     expect(plain?.contextValues).toBeUndefined()
   })
-
 
   it('resolves a space sidecar own wrapped keys (space-to-space, cross-context)', async () => {
     const t = await readNexus(reg)

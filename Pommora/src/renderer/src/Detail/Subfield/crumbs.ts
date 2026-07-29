@@ -13,9 +13,7 @@ export interface Crumb {
 
 const basename = (path: string): string => (path.split('/').pop() ?? path).replace(/\.md$/, '')
 
-const allCollections = (tree: NexusTree): CollectionNode[] => [
-  ...(tree.collections ?? []),
-]
+const allCollections = (tree: NexusTree): CollectionNode[] => [...(tree.collections ?? [])]
 
 export function chainOf(
   tree: NexusTree,

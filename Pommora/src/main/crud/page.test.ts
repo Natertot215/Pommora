@@ -2,16 +2,20 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import {
-  createPage,
-  renamePage,
-  updatePageBody,
-  movePage,
-  updatePageProperty,
-} from './page'
+import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } from './page'
 import { splitEnvelope, assembleEnvelope } from '../io/pageFile'
 import { splitFrontmatter } from '../readNexus'
 import { isUlid } from '../ids'
+import type { PropertyDefinition, PropertyType } from '@shared/properties'
+import { wrapKey } from '@shared/governedKeys'
+
+/** The writer takes a definition, not an id — tests name the property and this supplies the rest.
+ *  The type only has to be one the value's kind can hold; the key comes from the name. */
+const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => ({
+  id,
+  name: id.replace(/^prop_/, ''),
+  type,
+})
 
 let root: string
 let typeDir: string
@@ -169,28 +173,33 @@ describe('updatePageProperty', () => {
     const c = await createPage(typeDir, 'Props', { body: 'x' })
     if (!c.ok) throw new Error('setup failed')
     const f = c.value.path
-    const props = async (): Promise<Record<string, unknown>> =>
-      (splitFrontmatter(await readFile(f, 'utf8')).properties ?? {}) as Record<string, unknown>
+    const at = async (name: string): Promise<unknown> =>
+      (splitFrontmatter(await readFile(f, 'utf8')) as Record<string, unknown>)[
+        wrapKey('property', name)
+      ]
 
-    await updatePageProperty(f, 'prop_status', { kind: 'select', value: 'todo' })
-    await updatePageProperty(f, 'prop_tags', { kind: 'multiSelect', value: ['a', 'b'] })
-    expect(await props()).toEqual({ prop_status: 'todo', prop_tags: ['a', 'b'] })
+    await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'todo' })
+    await updatePageProperty(f, defOf('prop_tags', 'multi_select'), {
+      kind: 'multiSelect',
+      value: ['a', 'b'],
+    })
+    expect(await at('status')).toBe('todo')
+    expect(await at('tags')).toEqual(['a', 'b'])
     expect(splitFrontmatter(await readFile(f, 'utf8')).id).toBe(c.value.id)
 
-    await updatePageProperty(f, 'prop_status', { kind: 'select', value: 'done' })
-    expect((await props()).prop_status).toEqual('done')
+    await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'done' })
+    expect(await at('status')).toBe('done')
 
-    await updatePageProperty(f, 'prop_status', null)
-    expect(await props()).toEqual({ prop_tags: ['a', 'b'] })
+    await updatePageProperty(f, defOf('prop_status'), null)
+    expect(await at('status')).toBeUndefined()
+    expect(await at('tags')).toEqual(['a', 'b'])
   })
 
-
   it('errors when the page is missing', async () => {
-    const r = await updatePageProperty(join(typeDir, 'nope.md'), 'p', {
+    const r = await updatePageProperty(join(typeDir, 'nope.md'), defOf('p'), {
       kind: 'select',
       value: 'x',
     })
     expect(r.ok).toBe(false)
   })
 })
-
