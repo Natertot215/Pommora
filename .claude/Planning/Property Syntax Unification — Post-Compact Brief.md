@@ -9,7 +9,7 @@ Read both before touching anything. They are the contract; this file never overr
 - **`.claude/Planning/Property Syntax Unification — Decision Log.md`** — the ratified spec. Survived three adversarial rounds. Decisions are referenced as `B-2`, `H-3`, `K-1a`.
 - **`.claude/Planning/Property Syntax Unification — Implementation Plan.md`** — phases, steps, gates. Its **Execution Order — Authoritative** section overrides the document's own section order. Its **Nathan's Instructions — Verbatim** section is his exact words on execution, docs, and the final deliverable. Its **Working While Nathan Is Unreachable** section is the decision procedure when you are stuck.
 
-**In one sentence:** page and agenda property values leave the ULID-keyed `properties:` map and become `<Property>` keys at the frontmatter root, Contexts move from `[Context]` to `(Context)`, values stay bare, and the removal of the old path is half the work rather than cleanup.
+**In one sentence:** page and agenda property values leave the ULID-keyed `properties:` map and become `{Property}` keys at the frontmatter root, Contexts move from `[Context]` to `[Context]`, values stay bare, and the removal of the old path is half the work rather than cleanup.
 
 ## Working Rules Nathan Set This Session
 

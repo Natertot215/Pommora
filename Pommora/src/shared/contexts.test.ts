@@ -11,34 +11,44 @@ import {
 import { DEFAULT_LABELS } from './types'
 
 describe('contextKey / parseContextKey', () => {
-  it('wraps a title in brackets', () => {
-    expect(contextKey('Projects')).toBe('[Projects]')
+  it('wraps a title in its layer sigil', () => {
+    expect(contextKey('Projects')).toBe('(Projects)')
   })
 
   it('round-trips through parseContextKey', () => {
     expect(parseContextKey(contextKey('Projects'))).toBe('Projects')
   })
 
-  it('rejects non-bracketed and malformed keys', () => {
+  it('round-trips a title carrying the closing glyph — the strip is positional', () => {
+    expect(parseContextKey(contextKey('Q3 (Draft)'))).toBe('Q3 (Draft)')
+  })
+
+  it('rejects unwrapped and empty keys', () => {
     expect(parseContextKey('Projects')).toBeNull()
-    expect(parseContextKey('[Pro]ject]')).toBeNull()
     expect(parseContextKey('')).toBeNull()
-    expect(parseContextKey('[]')).toBeNull()
+    expect(parseContextKey('()')).toBeNull()
+  })
+
+  it('refuses the property layer, so a same-named Context and property never collide', () => {
+    expect(parseContextKey('<Projects>')).toBeNull()
   })
 })
 
 describe('invalidContextTitle', () => {
-  it('rejects brackets, separators, and empties', () => {
-    expect(invalidContextTitle('Pro[ject')).toBe(true)
-    expect(invalidContextTitle('Pro]ject')).toBe(true)
+  it('rejects path separators and empties', () => {
     expect(invalidContextTitle('a/b')).toBe(true)
+    expect(invalidContextTitle('a\\b')).toBe(true)
     expect(invalidContextTitle('')).toBe(true)
     expect(invalidContextTitle('  ')).toBe(true)
   })
 
-  it('accepts ordinary titles', () => {
+  it('accepts ordinary titles, and titles carrying a sigil glyph', () => {
     expect(invalidContextTitle('Projects')).toBe(false)
     expect(invalidContextTitle('Side Projects')).toBe(false)
+    // The sigil needs no ban of its own — a key is stripped positionally, so a title
+    // carrying a glyph round-trips intact.
+    expect(invalidContextTitle('Q3 (Draft)')).toBe(false)
+    expect(invalidContextTitle('Pro[ject')).toBe(false)
   })
 })
 

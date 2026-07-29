@@ -29,7 +29,7 @@ The skill's default shape assumes a greenfield feature built by an engineer with
 Every task's requirements implicitly include these.
 
 - **Values on disk are bare.** Native YAML types survive; nothing is wrapped or tagged. (`B-4`)
-- **Keys are `(Context)` and `<Property>`** — single delimiters, written plain and unquoted. Never `[[…]]`, reserved for Connections-in-frontmatter. (`B-1`, `B-3`)
+- **Keys are `[Context]` and `{Property}`** — single delimiters, **always quoted on disk**; the serializer adds the quotes and no caller manages them. Never `[[…]]`, reserved for Connections-in-frontmatter. (`B-1`, `B-2`, `B-3`)
 - **No migration code.** Nothing reads, detects, or converts the outgoing shape. The live nexus is converted by hand. (`F-1`)
 - **Every merge names its loser.** A replaced implementation is deleted in the same phase, never left beside its replacement. (`I-4`)
 - **YAGNI.** No guard, retry, rollback or reporting path for an event needing a coincidence chain. (`H-5a`)
@@ -122,7 +122,9 @@ Everything downstream reads from this, so it ships first and no consumer hard-co
 
 **Files:** Create `src/shared/governedKeys.ts` + `src/shared/governedKeys.test.ts` · **and, because Phase 5 runs inside this phase:** `src/shared/contexts.ts:26-60`, `contexts.test.ts`, `contextWrite.test.ts`, `contextCascade.test.ts`, `contextResolve.test.ts`, `io/pageFile.test.ts`. Stage all of them — explicit-path staging drops whatever is not listed.
 
-**Produces:** `wrapKey(layer, name)` · `parseGovernedKey(key)` · `isGovernedKey(key)` · `normalizePropertyName(raw)` · `invalidPropertyName(name)` · `KEY_REFUSAL`
+**Produces:** `wrapKey(layer, name)` · `parseGovernedKey(key)` → `{layer, name} | null` · `isGovernedKey(key, layer?)` · `normalizePropertyName(raw)` · `invalidPropertyName(name)` · `KEY_REFUSAL`
+
+**Both layer-aware forms are load-bearing.** `parseGovernedKey` returns the layer so a caller governing one layer can refuse the other's keys, and `isGovernedKey` takes an optional layer for the same reason. A layer-blind check lets one layer's rewrite claim the other's keys, and `B-1` makes a same-named Context and property legal.
 
 - [ ] **Step 1.1 — Write the failing test**
 
@@ -135,8 +137,8 @@ import {
 
 describe('governedKeys', () => {
   it('wraps each layer in its own sigil', () => {
-    expect(wrapKey('context', 'Projects')).toBe('(Projects)')
-    expect(wrapKey('property', 'Status')).toBe('<Status>')
+    expect(wrapKey('context', 'Projects')).toBe('[Projects]')
+    expect(wrapKey('property', 'Status')).toBe('{Status}')
   })
 
   it('round-trips a name containing the closing glyph', () => {
@@ -145,7 +147,7 @@ describe('governedKeys', () => {
   })
 
   it('rejects unwrapped, mismatched, empty and legacy keys', () => {
-    for (const k of ['Projects', '(Projects>', '<>', '()', '[Projects]', '[[Projects]]'])
+    for (const k of ['Projects', '(Projects>', '{}', '()', '[Projects]', '[[Projects]]'])
       expect(parseGovernedKey(k)).toBeNull()
   })
 
@@ -191,14 +193,15 @@ describe('governedKeys', () => {
 // The one owner of Pommora's reserved frontmatter syntax: which glyphs wrap which layer, how a key
 // is built and read, what a name may not be, and what a refusal says. Every consumer reads from
 // here, so changing a glyph is a one-line edit. Both sigils are deliberately NOT YAML flow
-// indicators — a wrapped key writes plain and unquoted, so what Pommora emits and what a person
-// types by hand are byte-identical.
+// Both glyphs open a YAML flow collection, so a wrapped key is ALWAYS written quoted — the
+// serializer does that on its own, and an unquoted hand-write parses into a spaced collection node
+// that never matches. JSON quotes every key already, so agenda and sidecar roots are unaffected.
 
 export type GovernedLayer = 'context' | 'property'
 
 const SIGIL: Record<GovernedLayer, readonly [string, string]> = {
-  context: ['(', ')'],
-  property: ['<', '>'],
+  context: ['[', ']'],
+  property: ['{', '}'],
 }
 
 /** Reserved for system-assigned roles — a user name may not start with it. */
@@ -331,7 +334,7 @@ git commit -m "refactor(properties): one decoder that reads the type instead of 
 
 ```ts
 it('resolves a value from its wrapped root key', () => {
-  const fm = { id: 'p1', '<Status>': 'Done' } as unknown as PageFrontmatter
+  const fm = { id: 'p1', '{Status}': 'Done' } as unknown as PageFrontmatter
   const schema = [{ id: 'prop_1', name: 'Status', type: 'status' }] as PropertyDefinition[]
   expect(resolveFieldValue(rowWith(fm), 'prop_1', schema))
     .toEqual({ kind: 'select', value: 'Done' })
@@ -345,7 +348,7 @@ it('resolves a value from its wrapped root key', () => {
 
   While the index exists, it retires roughly two dozen per-cell `schema.find(d => d.id === …)` scans — `Cell.tsx:65,85,156,173`, `TableView.tsx:589,680,769,820,856,878`, `CardValue.tsx:60`, `cellResolve.ts:17`, `columnLabel.ts:21`. Convert the sites that already hold a `ResolveContext`; leave the pane sites alone.
 
-  **Trap:** `syntheticContextDef` (`PropertyPicker.tsx:33-37`) returns `{ name: '' }`, and `wrapKey('property','')` is `<>`, which `parseGovernedKey` rejects by design. The existing Context short-circuit at `value.ts:87-95` runs first — do not move the def lookup above it.
+  **Trap:** `syntheticContextDef` (`PropertyPicker.tsx:33-37`) returns `{ name: '' }`, and `wrapKey('property','')` is `{}`, which `parseGovernedKey` rejects by design. The existing Context short-circuit at `value.ts:87-95` runs first — do not move the def lookup above it.
 - [ ] **Step 3.4 — Re-key the value memo.** `resolvedByFm` (`pipeline/value.ts:113`) keys on frontmatter identity + property id; add the resolved **name**, or a rename that does not swap the frontmatter identity serves a stale value. (`G-3`)
 - [ ] **Step 3.5 — Fix the preview inspector's raw presence read** (`PreviewInspector.tsx:111`) — it has the schema one line away at `:42`.
 - [ ] **Step 3.6 — The agenda read path takes the same keys.** Agenda item values resolve against their kind's own `property_definitions`, not the registry — a separate namespace, so an agenda property and a page property may share a name with no collision. The *shape* is identical (wrapped keys at the JSON root) and the writer is shared, but the definition lookup is not: agenda resolves through `_taskconfig.json` / `_eventconfig.json`. **JSON quotes every key, so the unquoted-key property is YAML-only and does not apply here.** Zero agenda items exist in either nexus, so this is code-only with nothing to convert. (`B-8`)
@@ -364,23 +367,23 @@ Two write paths become one, and the loser is deleted. (`I-4`)
 ```ts
 it('writes one governed key and preserves foreign keys and comments', async () => {
   await writeFile(p, '---\nid: p1\n# keep me\nfoo: bar\n---\nbody\n')
-  await setGovernedRootKeys(p, { '<Status>': 'Done' }, ['<Status>'])
+  await setGovernedRootKeys(p, { '{Status}': 'Done' }, ['{Status}'])
   const out = await readFile(p, 'utf8')
-  expect(out).toContain('<Status>: Done')
+  expect(out).toContain('{Status}: Done')
   expect(out).toContain('# keep me')
   expect(out).toContain('foo: bar')
 })
 
 it('an emptied value deletes its key — never a placeholder', async () => {
-  // Governed-but-omitted. Passing null here writes `<Status>: null` — verified.
-  await setGovernedRootKeys(p, {}, ['<Status>'])
-  expect(await readFile(p, 'utf8')).not.toContain('<Status>')
+  // Governed-but-omitted. Passing null here writes `{Status}: null` — verified.
+  await setGovernedRootKeys(p, {}, ['{Status}'])
+  expect(await readFile(p, 'utf8')).not.toContain('{Status}')
 })
 
 it('a Context unassign deletes its key', async () => {
-  await writeFile(p, '---\nid: p1\n(Projects):\n  - Pommora\n---\n')
-  await setGovernedRootKeys(p, {}, ['(Projects)'])
-  expect(await readFile(p, 'utf8')).not.toContain('(Projects)')
+  await writeFile(p, '---\nid: p1\n[Projects]:\n  - Pommora\n---\n')
+  await setGovernedRootKeys(p, {}, ['[Projects]'])
+  expect(await readFile(p, 'utf8')).not.toContain('[Projects]')
 })
 ```
 
@@ -389,7 +392,7 @@ it('a Context unassign deletes its key', async () => {
 
   **The signature is the whole finding.** `mergeFrontmatter` is set-if-present-**else-delete** over `modeledKeys` (`pageFile.ts:60-63`), and `isGovernedKey` spans *both* layers. So "governed keys computed by shape" plus a single-key write deletes every other governed key on the page — writing a property value wipes the page's Context links, and comments attached to them go too. Verified by execution.
 
-  **But a change-set alone cannot express a delete, and `null` is not the sentinel.** Verified by execution: `mergeFrontmatter` sets when `modeled[key] !== undefined`, so `null` writes `<Status>: null`; only `undefined` or absence deletes. And a Context *unassign* is signalled by the key being **omitted** from the reconciled root — with only a change-set, nothing records that it used to be there, so the key survives and the unassign silently no-ops.
+  **But a change-set alone cannot express a delete, and `null` is not the sentinel.** Verified by execution: `mergeFrontmatter` sets when `modeled[key] !== undefined`, so `null` writes `{Status}: null`; only `undefined` or absence deletes. And a Context *unassign* is signalled by the key being **omitted** from the reconciled root — with only a change-set, nothing records that it used to be there, so the key survives and the unassign silently no-ops.
 
   So the signature carries **both halves**: `govern` is the key set the write owns, `next` is the values. **A key in `govern` and absent from `next` is deleted.** A property write passes `govern=[key], next={key: v}`; a property clear passes `govern=[key], next={}`; a Context write passes `govern = every governed key across the original and reconciled roots, next = the reconciled root`. `modeledKeys` is `govern` plus `modified_at`, **and the writer supplies the stamp itself** — `mergeFrontmatter(existing, { ...next, modified_at: nowIso() }, [...govern, 'modified_at'], body)`.
 
@@ -401,12 +404,12 @@ it('a Context unassign deletes its key', async () => {
 
 ```ts
 it('leaves the other layer alone', async () => {
-  await writeFile(p, '---\nid: p1\n# keep\n<Status>: Active\n<Due>: 2026-08-01\n(Projects):\n  - Pommora\n---\n')
-  await setGovernedRootKeys(p, { '<Status>': 'Live' }, ['<Status>'])
+  await writeFile(p, '---\nid: p1\n# keep\n{Status}: Active\n{Due}: 2026-08-01\n[Projects]:\n  - Pommora\n---\n')
+  await setGovernedRootKeys(p, { '{Status}': 'Live' }, ['{Status}'])
   const out = await readFile(p, 'utf8')
-  expect(out).toContain('<Status>: Live')
-  expect(out).toContain('<Due>: 2026-08-01')   // survives
-  expect(out).toContain('(Projects)')          // survives
+  expect(out).toContain('{Status}: Live')
+  expect(out).toContain('{Due}: 2026-08-01')   // survives
+  expect(out).toContain('[Projects]')          // survives
   expect(out).toContain('# keep')
   expect(out).toMatch(/modified_at:/)   // the writer stamps; none of the other assertions catch its loss
 })
@@ -462,23 +465,23 @@ Registry first, then one sweep. (`H-2`, `H-3`)
 
 ```ts
 it('drops the old key where the new one already exists', async () => {
-  await writeFile(p, '---\nid: p1\n<Status>: Old\n<Stage>: New\n---\n')
+  await writeFile(p, '---\nid: p1\n{Status}: Old\n{Stage}: New\n---\n')
   await renameSweep(root, 'Status', 'Stage')
   const out = await readFile(p, 'utf8')
-  expect(out).toContain('<Stage>: New')
-  expect(out).not.toContain('<Status>')
+  expect(out).toContain('{Stage}: New')
+  expect(out).not.toContain('{Status}')
 })
 
 it('renames in place where only the old key exists', async () => {
-  await writeFile(p, '---\nid: p1\n<Status>: Old\n---\n')
+  await writeFile(p, '---\nid: p1\n{Status}: Old\n---\n')
   await renameSweep(root, 'Status', 'Stage')
-  expect(await readFile(p, 'utf8')).toContain('<Stage>: Old')
+  expect(await readFile(p, 'utf8')).toContain('{Stage}: Old')
 })
 
 it('is idempotent', async () => {
   // Seeds its own file — inheriting the previous test's leaves no old key, so both sweeps
   // no-op and the test proves nothing.
-  await writeFile(p, '---\nid: p1\n<Status>: Old\n---\n')
+  await writeFile(p, '---\nid: p1\n{Status}: Old\n---\n')
   await renameSweep(root, 'Status', 'Stage')
   const once = await readFile(p, 'utf8')
   await renameSweep(root, 'Status', 'Stage')
@@ -487,10 +490,10 @@ it('is idempotent', async () => {
 
 it('leaves an unmatched wrapped key inert — never dropped', async () => {
   // H-5 is what makes the no-journal design safe and the sweep re-runnable. Nothing tested it.
-  await writeFile(p, '---\nid: p1\n<Status>: Old\n<Retired>: keep\nforeign: keep\n---\n')
+  await writeFile(p, '---\nid: p1\n{Status}: Old\n{Retired}: keep\nforeign: keep\n---\n')
   await renameSweep(root, 'Status', 'Stage')
   const out = await readFile(p, 'utf8')
-  expect(out).toContain('<Retired>: keep')
+  expect(out).toContain('{Retired}: keep')
   expect(out).toContain('foreign: keep')
 })
 ```
@@ -561,9 +564,9 @@ The first is **the one regex exception to the `-F` rule** — it needs `-E` for 
 No helper code. (`F-1`) This closes the broken window opened in Phase 3.
 
 - [ ] **Step 8.1** — `tar` the affected files to `~/Pommora-premigration-backups/`, verify the archive lists them, before touching anything.
-- [ ] **Step 8.2** — Convert the pages carrying real values: each `properties.prop_X: v` becomes `<Name>: v` at the root, the name resolved from `.nexus/properties.json`. Use the repo's own `yaml` through a throwaway script mirroring `pageFile.ts` — `doc.set`/`doc.delete` only, never regex, so comments and foreign keys survive.
+- [ ] **Step 8.2** — Convert the pages carrying real values: each `properties.prop_X: v` becomes `{Name}: v` at the root, the name resolved from `.nexus/properties.json`. Use the repo's own `yaml` through a throwaway script mirroring `pageFile.ts` — `doc.set`/`doc.delete` only, never regex, so comments and foreign keys survive.
 
-  **The wrapped key wins where both exist.** Between the write path switching and this conversion, the app writes `<Name>: newvalue` onto pages still carrying `properties.prop_X: oldvalue`. An unconditional conversion overwrites the newer value with the stale one — and the spec's own reasoning says a user seeing an empty column retypes it, so this is the expected case rather than the rare one. Same rule as the rename sweep: **if the wrapped key is already present, drop the legacy entry and keep what is already there.**
+  **The wrapped key wins where both exist.** Between the write path switching and this conversion, the app writes `{Name}: newvalue` onto pages still carrying `properties.prop_X: oldvalue`. An unconditional conversion overwrites the newer value with the stale one — and the spec's own reasoning says a user seeing an empty column retypes it, so this is the expected case rather than the rare one. Same rule as the rename sweep: **if the wrapped key is already present, drop the legacy entry and keep what is already there.**
 - [ ] **Step 8.3** — Strip the empty `properties: {}` maps. **Count them at the time — 35 on disk now, and the number moves with every page created before this lands.**
 - [ ] **Step 8.4** — Convert any `property_cache` block holding cached values. **Dropping the empty ones moves to 8.3's slot after Phase 7** — `removeInner` keeps writing them until Step 7.3.
 - [ ] **Step 8.5 — Verify, split the way 8.2/8.3 are.** At **8a**: every converted value renders in the running app (screenshot), bodies byte-identical, Obsidian's own bare keys untouched. **After Phase 7, with 8.3**: zero `properties:` in any frontmatter — asserting that at 8a is guaranteed false, because the empty maps are deliberately still there and `createPage` keeps writing them until Step 7.1.
@@ -660,7 +663,7 @@ He is asleep for the execution run. The project rule to ask before designing is 
 
 Every phase-review agent gets this verbatim above its scope. Without it, reviewers re-raise settled decisions and the findings are mostly noise.
 
-> **Already decided — do not re-raise.** Single delimiters `(Context)` / `<Property>`, not doubled, not square brackets; `[[…]]` reserved for Connections-in-frontmatter. Values are bare — wrapping destroys native YAML types. No journal, no replay, no rollback on rename: the registry commits first and one sweep follows, so the new key always wins with no comparison needed. Collection sidecars and SavedView configs stay ULID-keyed — the sidecar's `properties` assignment list is a different key from the frontmatter wrapper and is deliberately kept. Property titles are unique nexus-wide and duplicates are not allowed; the title is the resolution key, so this is structural. Registration is a registry title match, never the sigil alone. No migration code by design — the live nexus is hand-converted. `$status` and `$ctx` removed; no live file carries either. Agenda definitions stay a separate namespace, their rename sweep defers. `kind: 'context'` is deliberately kept while `kind: 'status'` goes.
+> **Already decided — do not re-raise.** Single delimiters `[Context]` / `{Property}`, not doubled, not square brackets; `[[…]]` reserved for Connections-in-frontmatter. Values are bare — wrapping destroys native YAML types. No journal, no replay, no rollback on rename: the registry commits first and one sweep follows, so the new key always wins with no comparison needed. Collection sidecars and SavedView configs stay ULID-keyed — the sidecar's `properties` assignment list is a different key from the frontmatter wrapper and is deliberately kept. Property titles are unique nexus-wide and duplicates are not allowed; the title is the resolution key, so this is structural. Registration is a registry title match, never the sigil alone. No migration code by design — the live nexus is hand-converted. `$status` and `$ctx` removed; no live file carries either. Agenda definitions stay a separate namespace, their rename sweep defers. `kind: 'context'` is deliberately kept while `kind: 'status'` goes.
 >
 > **Explicitly accepted, not defects.** An orphaned key surviving a crash and later being inherited by a reused name — a three-step coincidence, guardable only by a full-nexus scan per create. A page too malformed to parse being skipped by the sweep. A value briefly unresolvable between the registry commit and its page being swept. Property values not rendering between Phase 3 and Phase 8.
 >
