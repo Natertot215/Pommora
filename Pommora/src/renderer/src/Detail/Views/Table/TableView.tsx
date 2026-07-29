@@ -14,7 +14,7 @@ import type { ColumnStyle } from '@shared/columnStyles'
 import { cellMenuContextFor } from '@shared/cellMenu'
 import { parseStyleAction } from '@shared/columnMenu'
 import { type ColumnAlign, type SavedView, mintDefaultView } from '@shared/views'
-import { applyPropertyValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
+import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { isValidLink } from '@shared/links'
 import { flattenContainer, groupsStructurally, subtreeIds } from '../pipeline/group'
 import { resolveView } from '../pipeline/resolveView'
@@ -622,10 +622,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // One typed property write: patch the row's loaded frontmatter optimistically
   // (loadValues never re-runs mid-session), then setProperty — the reassignRow pattern.
   const commitCellValue = (row: ViewRow, propertyId: string, value: PropertyValue | null): void => {
-    const patched: PageFrontmatter = {
-      ...row.frontmatter,
-      properties: applyPropertyValue(row.frontmatter.properties, propertyId, value),
-    }
+    const def = schema.find((d) => d.id === propertyId)
+    if (!def) return
+    const patched = applyValueAtRoot(
+      row.frontmatter as Record<string, unknown>,
+      def,
+      value,
+    ) as PageFrontmatter
     setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
     void mutate({ op: 'setProperty', path: row.path, propertyId, value })
   }
@@ -1190,6 +1193,18 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // Under sub-grouping the destination key is COMPOSITE (set/bucket), so the drop carries two
   // dimensions: a bucket change writes the property; a set change is a REAL movePage into
   // that set — the property write lands first, while the page still has its current path.
+  // Both band drops patch the same key the same way — the group property's own value on that row.
+  const patchBandValue = (pageId: string, value: PropertyValue | null): void => {
+    const def = schema.find((d) => d.id === groupPropId)
+    if (!def) return
+    const prior = values[pageId]
+    const patched = applyValueAtRoot(
+      (prior ?? { id: pageId }) as Record<string, unknown>,
+      def,
+      value,
+    ) as PageFrontmatter
+    setValueOverride((prev) => ({ ...prev, [pageId]: patched }))
+  }
   const reassignRow = (pageId: string, destGroupKey: string): void => {
     const path = rowPath.get(pageId)
     if (!groupPropId || !path) return
@@ -1203,12 +1218,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       const setChanged = dest.setId !== (cur?.setId ?? null)
       const value = groupKeyToValue(dest.bucket ?? UNGROUPED, groupPropType)
       if (bucketChanged) {
-        const prior = values[pageId]
-        const patched: PageFrontmatter = {
-          ...(prior ?? { id: pageId }),
-          properties: applyPropertyValue(prior?.properties, groupPropId, value),
-        }
-        setValueOverride((prev) => ({ ...prev, [pageId]: patched }))
+        patchBandValue(pageId, value)
       }
       void (async () => {
         if (
@@ -1221,12 +1231,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       return
     }
     const value = groupKeyToValue(destGroupKey, groupPropType)
-    const prior = values[pageId]
-    const patched: PageFrontmatter = {
-      ...(prior ?? { id: pageId }),
-      properties: applyPropertyValue(prior?.properties, groupPropId, value),
-    }
-    setValueOverride((prev) => ({ ...prev, [pageId]: patched }))
+    patchBandValue(pageId, value)
     void mutate({ op: 'setProperty', path, propertyId: groupPropId, value })
   }
   // Cross-folder move (plain location grouping): a row dropped into a DIFFERENT location band relocates

@@ -7,6 +7,17 @@ import type { CollectionNode } from '@shared/types'
 import { useSession } from '../../../store'
 import { PropertyPicker } from '../PropertyEditing/PropertyPicker'
 import { TableView } from './TableView'
+import { wrapKey } from '@shared/governedKeys'
+
+/** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
+ *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
+const propsAtRoot = (props: Record<string, unknown>, defs: PropertyDefinition[]): Record<string, unknown> =>
+  Object.fromEntries(
+    Object.entries(props).map(([id, v]) => {
+      const d = defs.find((x) => x.id === id)
+      return [d ? wrapKey('property', d.name) : id, v]
+    }),
+  )
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -55,6 +66,15 @@ const multiDef: PropertyDefinition = {
   ],
 }
 
+const allDefs: PropertyDefinition[] = [
+  statusDef,
+  checkboxDef,
+  numberDef,
+  urlDef,
+  fileDef,
+  multiDef,
+]
+
 const sourceWith = (columnStyles?: Record<string, { look?: string }>): CollectionNode =>
   ({
     kind: 'collection',
@@ -90,15 +110,18 @@ const sourceWith = (columnStyles?: Record<string, { look?: string }>): Collectio
 const VALUES = {
   p1: {
     id: 'p1',
-    properties: {
-      prop_status: 'active',
-      prop_done: false,
-      prop_n: 42,
-      prop_link: 'https://old.com',
-      prop_files: [{ path: 'Assets/trip.png' }],
-    },
+    ...propsAtRoot(
+      {
+        prop_status: 'active',
+        prop_done: false,
+        prop_n: 42,
+        prop_link: 'https://old.com',
+        prop_files: [{ path: 'Assets/trip.png' }],
+      },
+      allDefs,
+    ),
   },
-  p2: { id: 'p2', properties: {} },
+  p2: { id: 'p2', ...propsAtRoot({}, allDefs) },
 }
 
 // React intercepts the value property — commit through the native setter so the change event carries.
@@ -301,8 +324,8 @@ describe('checkbox cell gestures', () => {
   it('unchecking a checked box strips the property — no stored false', async () => {
     ;(window as unknown as { nexus: { loadValues: () => Promise<unknown> } }).nexus.loadValues =
       async () => ({
-        p1: { id: 'p1', properties: { prop_done: true } },
-        p2: { id: 'p2', properties: {} },
+        p1: { id: 'p1', ...propsAtRoot({ prop_done: true }, allDefs) },
+        p2: { id: 'p2', ...propsAtRoot({}, allDefs) },
       })
     await mountTable(sourceWith())
     await act(async () => {
@@ -608,7 +631,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
       p1: {
         id: 'p1',
         '(Areas)': ['area_work', 'area_life'],
-        properties: { prop_status: 'active', prop_tags: ['a', 'b'] },
+        ...propsAtRoot({ prop_status: 'active', prop_tags: ['a', 'b'] }, allDefs),
       },
     })
     await mountTable(chipSource())
@@ -652,7 +675,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
 
   it('removing the LAST multi option commits the emptied value (whose write deletes the key)', async () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () => ({
-      p1: { id: 'p1', properties: { prop_tags: ['a'] } },
+      p1: { id: 'p1', ...propsAtRoot({ prop_tags: ['a'] }, allDefs) },
     })
     await mountTable(chipSource())
     const [x] = removesIn(cell(2))
@@ -684,7 +707,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
 
   it('capsule + checkbox status looks carry NO × — Clear lives in their menu', async () => {
     ;(window.nexus as { loadValues: unknown }).loadValues = async () => ({
-      p1: { id: 'p1', properties: { prop_status: 'active' } },
+      p1: { id: 'p1', ...propsAtRoot({ prop_status: 'active' }, allDefs) },
     })
     const styled = chipSource()
     ;(styled.views as Array<{ column_styles?: unknown }>)[0].column_styles = {

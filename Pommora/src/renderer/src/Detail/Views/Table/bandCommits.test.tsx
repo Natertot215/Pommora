@@ -18,6 +18,17 @@ import {
 } from '@renderer/testing/pointerHarness'
 import { useSession } from '../../../store'
 import { TableView } from './TableView'
+import { wrapKey } from '@shared/governedKeys'
+
+/** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
+ *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
+const propsAtRoot = (props: Record<string, unknown>, defs: PropertyDefinition[]): Record<string, unknown> =>
+  Object.fromEntries(
+    Object.entries(props).map(([id, v]) => {
+      const d = defs.find((x) => x.id === id)
+      return [d ? wrapKey('property', d.name) : id, v]
+    }),
+  )
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -123,8 +134,8 @@ const propertySource = (): CollectionNode =>
   }) as unknown as CollectionNode
 
 const VALUES = {
-  p1: { id: 'p1', properties: { prop_status: 'active' } },
-  p2: { id: 'p2', properties: { prop_status: 'complete' } },
+  p1: { id: 'p1', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+  p2: { id: 'p2', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
 }
 
 let host: HTMLDivElement
@@ -366,9 +377,9 @@ const subGroupSource = (view?: Partial<SavedView>): CollectionNode =>
   }) as unknown as CollectionNode
 
 const SUB_VALUES = {
-  pA1: { id: 'pA1', properties: { prop_status: 'active' } },
-  pA2: { id: 'pA2', properties: { prop_status: 'complete' } },
-  pB: { id: 'pB', properties: { prop_status: 'active' } },
+  pA1: { id: 'pA1', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+  pA2: { id: 'pA2', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
+  pB: { id: 'pB', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
 }
 
 describe('sub-group bucket band drag', () => {
