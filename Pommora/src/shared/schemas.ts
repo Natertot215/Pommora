@@ -79,7 +79,7 @@ export const agendaConfigSidecar = baseSidecar.extend({
   default_sort: z.looseObject({}).optional(),
 })
 
-/** Page (.md) frontmatter. Context links are bracketed TITLE keys (`"[Projects]": [...]`)
+/** Page (.md) frontmatter. Context links are parenthesized TITLE keys (`(Projects):`)
  *  riding the loose object as retained raw keys — resolved against the registry at walk
  *  assembly, never modeled here (per-nexus dynamic keys can't be schema fields).
  *  A property value rides the same way, under its own wrapped name key. Loose ⇒ every wrapped

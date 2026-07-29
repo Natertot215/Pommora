@@ -86,8 +86,10 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
       properties: assigned.filter((id) => id !== propertyId),
       modified_at: nowIso(),
     }
-    if (hadCache) Object.assign(next, withoutCacheBlock(next, propertyId))
-    await writeJson(join(folder, SIDECAR_FILENAME.collection), next)
+    // Spread, never Object.assign: dropping the last block is encoded by the key's ABSENCE from
+    // the returned object, and assign only copies keys that are present.
+    const scrubbed = hadCache ? withoutCacheBlock(next, propertyId) : next
+    await writeJson(join(folder, SIDECAR_FILENAME.collection), scrubbed)
   }
   return removeFromRegistry(root, propertyId)
 }

@@ -33,6 +33,7 @@ import {
 } from '../properties/schema'
 import { nowIso } from './util'
 import { ok, fail, type Result } from '@shared/result'
+import { wrapKey } from '@shared/governedKeys'
 
 type Sidecar = Record<string, unknown>
 
@@ -45,8 +46,9 @@ interface SchemaTarget {
    *  agenda configs use `property_definitions`. */
   schemaKey: string
   members: (folder: string) => Promise<string[]>
-  /** Stripped content, or null if the member doesn't carry the property (skip it). */
-  strip: (content: string, propertyId: string) => string | null
+  /** Stripped content, or null if the member doesn't carry the key (skip it). Both targets take
+   *  the RESOLVED key — a value is addressed by its property's name on either side. */
+  strip: (content: string, key: string) => string | null
 }
 
 // MARK: - Member strip strategies
@@ -65,19 +67,17 @@ export function stripPageMember(content: string, key: string): string | null {
   )
 }
 
-function stripAgendaMember(content: string, propertyId: string): string | null {
+function stripAgendaMember(content: string, key: string): string | null {
   let raw: unknown
   try {
     raw = JSON.parse(content)
   } catch {
     return null
   }
-  if (!isPlainObject(raw)) return null
-  const props = raw.properties
-  if (!isPlainObject(props) || !(propertyId in props)) return null
-  const next = { ...props }
-  delete next[propertyId]
-  return serializeJson({ ...raw, properties: next, modified_at: nowIso() })
+  if (!isPlainObject(raw) || !(key in raw)) return null
+  const next: Record<string, unknown> = { ...raw, modified_at: nowIso() }
+  delete next[key]
+  return serializeJson(next)
 }
 
 function agendaTarget(kind: AgendaKind): SchemaTarget {
@@ -110,7 +110,7 @@ async function stageMemberStrips(
   tx: SchemaTransaction,
   target: SchemaTarget,
   folder: string,
-  propertyId: string,
+  key: string,
 ): Promise<void> {
   for (const file of await target.members(folder)) {
     let content: string
@@ -119,7 +119,7 @@ async function stageMemberStrips(
     } catch {
       continue
     }
-    const stripped = target.strip(content, propertyId)
+    const stripped = target.strip(content, key)
     if (stripped !== null) tx.stage(file, stripped)
   }
 }
@@ -175,15 +175,15 @@ async function deleteProp(
 ): Promise<Result<null>> {
   const s = await readSchema(target, folder)
   if (!s) return fail('not-found', 'Schema not found.', target.kind)
-  if (!s.defs.some((d) => d.id === propertyId))
-    return fail('not-found', 'Property not found.', target.kind)
+  const doomed = s.defs.find((d) => d.id === propertyId)
+  if (!doomed) return fail('not-found', 'Property not found.', target.kind)
   const next = s.defs.filter((d) => d.id !== propertyId)
   const tx = new SchemaTransaction()
   tx.stage(
     join(folder, SIDECAR_FILENAME[target.kind]),
     serializeJson(nextSidecar(s.sidecar, next, target.schemaKey)),
   )
-  await stageMemberStrips(tx, target, folder, propertyId)
+  await stageMemberStrips(tx, target, folder, wrapKey('property', doomed.name))
   await tx.commit()
   return ok(null)
 }
@@ -216,7 +216,7 @@ async function changeType(
     join(folder, SIDECAR_FILENAME[target.kind]),
     serializeJson(nextSidecar(s.sidecar, next, target.schemaKey)),
   )
-  await stageMemberStrips(tx, target, folder, propertyId)
+  await stageMemberStrips(tx, target, folder, wrapKey('property', s.defs[idx].name))
   await tx.commit()
   return ok(null)
 }
