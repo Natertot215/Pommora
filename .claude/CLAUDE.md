@@ -63,7 +63,7 @@ The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set
 ### Important Information 
 
 - **Formatting is Biome's** (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align or run Biome yourself — an Edit failing on whitespace means Biome reformatted, so re-read and retry. `npm run typecheck` stays the *only* type gate (the build strips types unchecked). 
-- **Connections** are in-line `[[Title]]`, resolved against an in-memory title map built from the page tree, and **aren’t** displayed in any container views *(tables, galleries, lists…)*. **Contexts** resolve via bracketed title keys in front-matter through the registry; content ↔ content relational properties **don’t** exist. 
+- **Connections** are in-line `[[Title]]`, resolved against an in-memory title map built from the page tree, and **aren’t** displayed in any container views *(tables, galleries, lists…)*. **Contexts** resolve via parenthesized title keys in front-matter through the registry; content ↔ content relational properties **don’t** exist. 
 - **Swift Origins:** Pommora was first built as a native SwiftUI app — that build was active for around one month and designed and versioned the entire paradigm; React was initially scoped as an alternative contingency. The decision to switch to React mostly came down to frustrations and limitations with SwiftUI, and to Claude's greater competency with TypeScript. The Swift build is archived at `// The Studio // Archive // Pommora` — source, External packages, and `.claude/` docs; its git history lives on the `swift` branch.
 
 #### II. Project Sapphire

@@ -26,7 +26,7 @@ A Page's values are wrapped title keys at its frontmatter root; a Task's or Even
 | **Multi-select**      | `<Tags>:` over a block sequence                                         | Bare array; tag-style multi-pick.               |
 | **Status**            | `<Status>: Complete`                                                    | Bare label — the option's own value; grouped by workflow phase. |
 | **URL**               | `<Link>: https://…`                                                     | A string with a scheme.                         |
-| **Context**           | `(<Context>):` at the root, over a block sequence of bare Space titles   | One column per registry Context, synthesized at runtime — never a schema definition. |
+| **Context**           | `(Context):` at the root, over a block sequence of bare Space titles   | One column per registry Context, synthesized at runtime — never a schema definition. |
 | **Last Edited Time**  | *(derived from `modified_at`)*                                          | Virtual — never persisted.                      |
 | **File / Attachment** | `[{ "path", "original_name", "added_at", "mime_type" }, ...]`           | Array; files copy into the Nexus.               |
 
