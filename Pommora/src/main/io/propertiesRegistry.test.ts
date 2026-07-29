@@ -70,6 +70,20 @@ describe('hostile hand-edited files (breaker M-2/L-1)', () => {
     const reg = { order: ['prop_a'], defs: { prop_a: desynced } } // map key prop_a, internal id prop_b
     expect(orderedDefs(reg)).toHaveLength(1)
   })
+
+  it('one junk entry inside a real file never flips it to legacy — every def stays visible', async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_a'],
+        defs: { prop_a: def('prop_a', 'Real'), junk: 'a stray string' },
+      }),
+    )
+    const reg = await readRegistry(root)
+    expect(reg.defs.prop_a?.name).toBe('Real')
+    expect(reg.order).toEqual(['prop_a'])
+  })
 })
 
 describe('RegistryFile shape — { order, defs } with legacy migration', () => {

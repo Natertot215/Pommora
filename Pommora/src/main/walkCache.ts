@@ -53,6 +53,9 @@ export async function cachedParse<T>(absPath: string, parse: () => Promise<T>): 
     return e.value as T
   }
   const value = await parse()
-  entries.set(absPath, { mtimeMs: s.mtimeMs, size: s.size, verifiedAt: Date.now(), gen, value })
+  // null is a non-answer (absent OR transiently unreadable) — caching it against a healthy
+  // (mtime, size) would serve the failure until the file next changes. Re-read each pass.
+  if (value !== null)
+    entries.set(absPath, { mtimeMs: s.mtimeMs, size: s.size, verifiedAt: Date.now(), gen, value })
   return value
 }

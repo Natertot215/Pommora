@@ -5,7 +5,7 @@
 
 import { readdir, readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { parse as parseYaml } from 'yaml'
+import { parseDocument } from 'yaml'
 import type {
   SolidColor,
   AccentSetting,
@@ -42,7 +42,7 @@ import { savedView, type SavedView } from '@shared/views'
 import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
 import { adoptedId } from './ids'
-import { pathExists, readJsonObject } from './io/atomicWrite'
+import { pathExists, readJsonObject, readJsonStrict } from './io/atomicWrite'
 import { orderedDefs, readRegistry, type PropertyRegistry } from './io/propertiesRegistry'
 import { asString, asStringArray, basenameNoMd } from './coerce'
 import { shouldSkipDir } from './exclusion'
@@ -176,18 +176,20 @@ async function listEntries(dir: string): Promise<import('node:fs').Dirent[]> {
   }
 }
 
-/** Lenient frontmatter split — mirrors AtomicYAMLMarkdown read semantics. */
+/** Lenient frontmatter split — the same recovering parser the page writer reads with
+ *  (`parseDocument`), so the walk and the write side can never disagree about which keys a
+ *  page holds (a duplicate key recovers here exactly as it does there). */
 export function splitFrontmatter(content: string): Json {
   if (!content.startsWith('---')) return {}
   const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)
   if (!m) return {} // opening fence with no close -> treat whole file as body
   try {
-    const parsed = parseYaml(m[1])
+    const parsed: unknown = parseDocument(m[1]).toJSON()
     return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
       ? (parsed as Json)
       : {}
   } catch {
-    return {} // malformed YAML -> still a valid page, empty frontmatter
+    return {} // unrecoverable YAML -> still a valid page, empty frontmatter
   }
 }
 
@@ -422,9 +424,9 @@ export async function readNexus(root: string): Promise<NexusTree> {
 }
 
 async function walkNexus(root: string): Promise<NexusTree> {
-  const [identity, settingsRead, state, homepageConfig, navviewConfig, registry, ctxRegistryRaw] =
+  const [identityRead, settingsRead, state, homepageConfig, navviewConfig, registry, ctxRegistryRaw] =
     await Promise.all([
-      readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity)),
+      readJsonStrict(nexusConfig(root, NEXUS_CONFIG_FILES.identity)),
       readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings)),
       readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state)).then((s) => s ?? {}),
       readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)).then((h) => h ?? {}),
@@ -432,6 +434,13 @@ async function walkNexus(root: string): Promise<NexusTree> {
       readRegistry(root),
       readSidecar(contextsRegistryFile(root)),
     ])
+  // Absent nexus.json is real raw mode; an UNREADABLE one is an error — a lenient null here
+  // would flip the whole nexus to raw mode, ignoring every sidecar's identity, views and
+  // schema for the session. Fail the walk instead; the tree stays as last-read.
+  if (!identityRead.ok && identityRead.error.code !== 'not-found') {
+    throw new Error(`The nexus identity file could not be read: ${identityRead.error.message}`)
+  }
+  const identity = identityRead.ok ? identityRead.value : null
   const sidecarMode = !!asString(identity?.id)
   const id = sidecarMode ? (identity!.id as string) : adoptedId(root)
   const fb: Fallback = sidecarMode ? 'id' : 'title'

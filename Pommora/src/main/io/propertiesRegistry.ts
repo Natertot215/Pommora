@@ -13,23 +13,26 @@ export type RegistryFile = { order: string[]; defs: PropertyRegistry }
 const registryPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.properties)
 
 /** Normalize a raw registry object: a legacy bare-Record file reads as `{ order: [], defs }`;
- *  entries that fail the def schema land in `unparsed` (raw, by id) instead of the defs map,
- *  and the order is element-filtered — non-strings and ids without defs dropped. */
+ *  plain-object entries that fail the def schema land in `unparsed` (raw, by id) instead of
+ *  the defs map, and the order is element-filtered — non-strings and ids without defs dropped. */
 function normalizeRegistry(obj: Record<string, unknown>): {
   registry: RegistryFile
   unparsed: Record<string, unknown>
 } {
-  // File-shape iff `defs` is a map of OBJECTS — a legacy bare-Record file holding a def that
-  // happens to be keyed "defs"/"order" must not masquerade as the container (its values are
-  // the def's scalar fields, so this check reads it as legacy and nothing vanishes).
-  const isFileShape = isPlainObject(obj.defs) && Object.values(obj.defs).every(isPlainObject)
+  // File-shape iff `defs` is a plain object AND `order` is an array — both keys our writer
+  // always emits. A legacy bare-Record can collide on one (a def keyed "defs", junk keyed
+  // "order") but never both-with-these-shapes; and no per-VALUE check belongs here, because
+  // that's what let one junk entry misclassify a whole real file as legacy.
+  const isFileShape = isPlainObject(obj.defs) && Array.isArray(obj.order)
   const rawDefs = isFileShape ? (obj.defs as Record<string, unknown>) : obj
   const defs: PropertyRegistry = {}
   const unparsed: Record<string, unknown> = {}
   for (const [id, value] of Object.entries(rawDefs)) {
     const parsed = propertyDefinition.safeParse(value)
     if (parsed.success) defs[id] = parsed.data
-    else unparsed[id] = value
+    // Only a plausible def (a plain object) rides through writes — a scalar under an id key
+    // is corrupt noise, and re-writing it is what would break the file-shape check above.
+    else if (isPlainObject(value)) unparsed[id] = value
   }
   const rawOrder = isFileShape && Array.isArray(obj.order) ? obj.order : []
   const order = rawOrder.filter((x): x is string => typeof x === 'string' && x in defs)
@@ -92,7 +95,10 @@ export function mutateRegistry<T>(
     if (next) {
       const defs: Record<string, unknown> = { ...next.defs }
       for (const [id, raw] of Object.entries(unparsed)) if (!(id in defs)) defs[id] = raw
-      await writeRegistry(root, { order: next.order, defs })
+      // Unparsed ids keep their order membership too (appended — a repaired def re-lists
+      // rather than vanishing from the pane), while fn's own ordering stays authoritative.
+      const order = [...next.order, ...Object.keys(unparsed).filter((id) => !next.order.includes(id))]
+      await writeRegistry(root, { order, defs })
     }
     return result
   })
