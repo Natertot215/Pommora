@@ -19,8 +19,7 @@ function readViewSidecar(folder: string, kind: ViewContainerKind) {
     : readSidecar(folder, 'set', pageSetSidecar)
 }
 
-const viewsOf = (sidecar: { views?: SavedView[] }): SavedView[] =>
-  Array.isArray(sidecar.views) ? sidecar.views : []
+const viewsOf = (sidecar: { views?: SavedView[] }): SavedView[] => sidecar.views ?? []
 
 /** Upsert a view by id. A `view_default` sentinel id is swapped for a real `view_<ulid>` and the
  *  assigned id is returned. Other views + foreign keys ride through untouched. */

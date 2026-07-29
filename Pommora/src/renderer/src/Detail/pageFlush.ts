@@ -26,12 +26,10 @@ export function flushPageSave(path: string): Promise<void> {
   if (!p) return Promise.resolve()
   clearTimeout(p.timer)
   pending.delete(path)
-  const requeue = (): void => {
-    if (!pending.has(path)) schedulePageSave(path, p.body)
-  }
+  // The envelope channel never rejects — a failed save arrives as { ok: false }.
   return window.nexus.updatePageBody(path, p.body).then((ack) => {
-    if (!ack.ok) requeue()
-  }, requeue)
+    if (!ack.ok && !pending.has(path)) schedulePageSave(path, p.body)
+  })
 }
 
 /** Flush every pending page write. The nexus-adopt path (store.openVia) awaits this while the OLD

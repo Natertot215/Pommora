@@ -9,8 +9,7 @@ import type { FilterGroup, FilterRule, MatchMode } from '@shared/views'
 export type { MatchMode }
 import type { NexusTree } from '@shared/types'
 import type { Icon } from '@renderer/design-system/symbols'
-import { entityIcon } from '@renderer/design-system/symbols'
-import { contextIdentityOf, contextIdsOf } from '../../Detail/Views/pipeline/contextIdentity'
+import { contextsByIdOf } from '../../Detail/Views/pipeline/contextIdentity'
 import { declaredType } from '../../Detail/Views/pipeline/value'
 import { FILTER_OPS } from '../../Detail/Views/pipeline/filter'
 import { MODIFIED_TARGET, schemaTargets, TITLE_TARGET } from './PropertyTypes'
@@ -221,7 +220,8 @@ export function filterTargets(
   tree: NexusTree | null,
   hasSets = true,
 ): FilterTarget[] {
-  const contextIds = contextIdsOf(tree)
+  const contextsById = contextsByIdOf(tree)
+  const contextIds = [...contextsById.keys()]
   return [
     TITLE_TARGET,
     // Every Location operator needs a Set to point at, so on a container with none it's a target
@@ -230,14 +230,11 @@ export function filterTargets(
       ? [{ id: RESERVED_PROPERTY_ID.location, label: 'Location', icon: 'folder' as const }]
       : []),
     MODIFIED_TARGET,
-    ...contextIds.map((id) => {
-      const identity = contextIdentityOf(tree, id)
-      return {
-        id,
-        label: identity?.title ?? id,
-        icon: identity?.icon ?? entityIcon('space', undefined, tree?.personalization.defaultIcons),
-      }
-    }),
+    ...[...contextsById].map(([id, identity]) => ({
+      id,
+      label: identity.title,
+      icon: identity.icon,
+    })),
     ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0),
   ]
 }

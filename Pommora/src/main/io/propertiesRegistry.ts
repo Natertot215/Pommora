@@ -61,7 +61,7 @@ export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
     ...Object.entries(reg.defs)
       .filter(([key]) => !listed.has(key))
       .map(([, d]) => d),
-  ].filter((d): d is PropertyDefinition => d !== undefined)
+  ]
 }
 
 /** Overwrite the whole registry file. Prefer `mutateRegistry` — a bare write outside the
