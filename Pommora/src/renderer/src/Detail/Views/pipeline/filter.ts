@@ -16,7 +16,7 @@ import {
   type PropertyType,
   RESERVED_PROPERTY_ID,
 } from '@shared/properties'
-import type { PropertyValue } from '@shared/propertyValue'
+import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { declaredType, modifiedStampString, resolveFieldValue } from './value'
 import { type SetTreeNode, subtreeIds } from './group'
 import { linkDisplayText } from '../Table/linkValue'
@@ -441,7 +441,7 @@ function evaluateList(ids: string[], op: Op, expected: Expected, values?: string
 
 /** File: presence only (is/contains/etc. are no-op passes). */
 function evaluatePresence(v: PropertyValue, op: Op): boolean {
-  const empty = v.kind === 'context' || v.kind === 'file' ? v.value.length === 0 : v.kind === 'null'
+  const empty = isBlankValue(v)
   switch (op) {
     case FILTER_OPS.isEmpty:
       return empty

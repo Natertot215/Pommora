@@ -70,7 +70,7 @@ function ListGroups({
   onOpenEditor: (id: string) => void
   onAssign: (id: string) => void
   onRowMenu: (d: PropertyDefinition, group: 'assigned' | 'all') => void
-  onRenameCommit: (next: string, current: string) => void
+  onRenameCommit: (next: string) => void
   onRenameCancel: () => void
 }): React.JSX.Element {
   const { assignedRef, allRef, allHighlighted } = usePaneRegions()
@@ -82,7 +82,7 @@ function ListGroups({
         value={d.name}
         className={cx(titleInput, 'row-title-input')}
         onCommit={(next) => {
-          if (next && next !== d.name) onRenameCommit(next, d.name)
+          if (next && next !== d.name) onRenameCommit(next)
           else onRenameCancel()
         }}
         onCancel={onRenameCancel}

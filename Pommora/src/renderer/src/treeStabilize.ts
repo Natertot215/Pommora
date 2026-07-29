@@ -3,8 +3,7 @@
 // the new content is deep-equal: an unchanged container keeps reference identity, and an echo
 // push returns the previous tree itself (a zustand no-op — zero re-renders).
 
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v)
+import { isPlainObject } from '@shared/propertyValue'
 
 export function stabilize<T>(next: T, prev: unknown): T {
   if (Object.is(next, prev)) return next
