@@ -127,6 +127,8 @@ export async function restoreCachedValues(
     if (!file) continue
     const value = decodeValue(def, raw, { strict: true })
     if (value.kind === 'null') continue
+    // rewritePageSerialized RESOLVES false for a page it couldn't read — only a landed write
+    // resolves true — so the resolved boolean is the spend signal, with a refusal mapped in.
     const wrote = await rewritePageSerialized(file, (content) =>
       mergeFrontmatter(
         content,
@@ -134,10 +136,7 @@ export async function restoreCachedValues(
         [key, 'modified_at'],
         splitEnvelope(content).body,
       ),
-    ).then(
-      () => true,
-      () => false,
-    )
+    ).catch(() => false)
     if (wrote) delete survivors[pageId]
   }
   const written = await rmwJsonStrict(join(collectionFolder, SIDECAR_FILENAME.collection), (cur) =>
