@@ -19,6 +19,7 @@ import {
   RESERVED_PROPERTY_ID,
 } from '@shared/properties'
 import { decodeValue, type PropertyValue } from '@shared/propertyValue'
+import { wrapKey } from '@shared/governedKeys'
 
 /** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
  *  a synthetic sentinel: `_title`→'title', any registry Context id→'context', `_modified_at`→
@@ -73,8 +74,9 @@ export function resolveFieldValue(
     resolvedByFm.set(row.frontmatter, m)
   }
   const def = schema.find((d) => d.id === propertyId)
-  // Keyed by type as well as id: a type change must re-resolve rather than serve the old kind.
-  const cacheKey = def ? `${propertyId}\u0000${def.type}` : propertyId
+  // Keyed by the NAME the value is stored under plus the type it decodes as — a rename or a type
+  // change must re-resolve, and neither swaps the frontmatter identity the outer map is keyed on.
+  const cacheKey = def ? `${def.name}\u0000${def.type}` : propertyId
   let v = m.get(cacheKey)
   if (!v) {
     v = computeFieldValue(row.frontmatter, propertyId, def)
@@ -99,8 +101,11 @@ function computeFieldValue(
       ? { kind: 'datetime', value: fm.modified_at }
       : { kind: 'null' }
   }
-  // No definition means the key names nothing the registry knows — inert, never guessed at.
-  return def ? decodeValue(def, fm.properties?.[propertyId]) : { kind: 'null' }
+  // Definition-first: the definition supplies the key its values are stored under. Never walk the
+  // frontmatter's wrapped keys looking for definitions — that inverts the rule and would let any
+  // wrapped key claim to be a property. A key naming nothing the registry knows is inert.
+  if (!def) return { kind: 'null' }
+  return decodeValue(def, (fm as Record<string, unknown>)[wrapKey('property', def.name)])
 }
 
 /** The `_modified_at` SORT/FILTER stamp: modified_at, falling back to created_at (Swift

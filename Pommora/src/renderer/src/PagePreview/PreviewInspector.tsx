@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
-import { applyPropertyValue } from '@shared/propertyValue'
+import { applyValueAtRoot } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { cx } from '@renderer/design-system/cx'
@@ -30,6 +30,7 @@ import { isValidLink } from '@shared/links'
 import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
 import { useSession, type PreviewTarget } from '../store'
+import { wrapKey } from '@shared/governedKeys'
 
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/
 // CalendarPicker, PropertyEditor). Writes ride the table's optimistic-patch pattern; the reconcile
@@ -108,14 +109,17 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   const isAssigned = (id: string): boolean => {
     if (revealed.has(id)) return true
     if (contextRows.some((c) => c.id === id)) return (contextValues?.[id]?.length ?? 0) > 0
-    return fm?.properties?.[id] !== undefined
+    const def = schema.find((d) => d.id === id)
+    return def ? (fm as Record<string, unknown> | undefined)?.[wrapKey('property', def.name)] !== undefined : false
   }
 
   const closeEditing = (): void => setEditing(null)
 
   const commitValue = (propertyId: string, value: PropertyValue | null): void => {
+    const def = schema.find((d) => d.id === propertyId)
+    if (!def) return
     setFm((prev) =>
-      prev ? { ...prev, properties: applyPropertyValue(prev.properties, propertyId, value) } : prev,
+      prev ? (applyValueAtRoot(prev as Record<string, unknown>, def, value) as typeof prev) : prev,
     )
     void mutate({ op: 'setProperty', path: target.path, propertyId, value })
   }

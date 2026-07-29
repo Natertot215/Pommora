@@ -2,6 +2,17 @@ import { describe, it, expect } from 'vitest'
 import type { ViewRow } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { declaredType, resolveFieldValue } from './value'
+import { wrapKey } from '@shared/governedKeys'
+
+/** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
+ *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
+const propsAtRoot = (props: Record<string, unknown>, defs: PropertyDefinition[]): Record<string, unknown> =>
+  Object.fromEntries(
+    Object.entries(props).map(([id, v]) => {
+      const d = defs.find((x) => x.id === id)
+      return [d ? wrapKey('property', d.name) : id, v]
+    }),
+  )
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },
@@ -23,13 +34,13 @@ const row: ViewRow = {
   frontmatter: {
     id: '01ROW',
     modified_at: '2026-06-20T10:00:00Z',
-    properties: {
+    ...propsAtRoot({
       prop_status: 'in_progress',
       prop_sel: 'opt_a',
       prop_when: '2026-06-15T09:00:00Z',
       prop_num: 42,
       prop_bad: [1, 'mixed'],
-    },
+    }, schema),
   },
 }
 
@@ -99,7 +110,7 @@ describe('resolveFieldValue memoization', () => {
       id: 'p1',
       title: 'One',
       path: 'C/One.md',
-      frontmatter: { id: 'p1', properties: { prop_s: 'open' }, '(Areas)': ['a'] },
+      frontmatter: { id: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema), '(Areas)': ['a'] },
     }
     // Identity-stability holds for NON-coerced kinds (the cached parse is returned as-is, tested here).
     // A coerced plain-string kind (url/select/datetime re-tagged to the column) returns a FRESH object
@@ -110,8 +121,8 @@ describe('resolveFieldValue memoization', () => {
   })
 
   it('a fresh frontmatter identity re-resolves (the optimistic-patch / reload contract)', () => {
-    const fm1 = { id: 'p1', properties: { prop_s: 'open' } }
-    const fm2 = { id: 'p1', properties: { prop_s: 'done' } }
+    const fm1 = { id: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema) }
+    const fm2 = { id: 'p1', ...propsAtRoot({ prop_s: 'done' }, schema) }
     const rowAt = (frontmatter: ViewRow['frontmatter']): ViewRow => ({
       id: 'p1',
       title: 'One',
@@ -133,7 +144,7 @@ describe('resolveFieldValue memoization', () => {
   })
 })
 
-describe('resolveFieldValue — declared-type coercion (the plain-string kinds follow the column)', () => {
+describe('resolveFieldValue — the declared type is obeyed, never inferred from the value', () => {
   const typedSchema: PropertyDefinition[] = [
     { id: 'prop_link', name: 'Link', type: 'url' },
     { id: 'prop_tag', name: 'Tag', type: 'select' },
@@ -142,10 +153,10 @@ describe('resolveFieldValue — declared-type coercion (the plain-string kinds f
     id: 'r',
     title: 'R',
     path: 'C/r.md',
-    frontmatter: { id: 'r', properties },
+    frontmatter: { id: 'r', ...propsAtRoot(properties, typedSchema) },
   })
 
-  it('a url column reads an aliased [alias](url) value as url, not a select pill', () => {
+  it('a url column reads an aliased [alias](url) value as url — no shape ever votes', () => {
     expect(
       resolveFieldValue(
         rowOf({ prop_link: '[Docs](https://example.com)' }),
@@ -158,7 +169,7 @@ describe('resolveFieldValue — declared-type coercion (the plain-string kinds f
     })
   })
 
-  it('a url column reads a bare URL as url (shape already agrees — no re-tag)', () => {
+  it('a url column reads a bare URL as url', () => {
     expect(
       resolveFieldValue(rowOf({ prop_link: 'https://example.com' }), 'prop_link', typedSchema),
     ).toEqual({
@@ -167,7 +178,7 @@ describe('resolveFieldValue — declared-type coercion (the plain-string kinds f
     })
   })
 
-  it('a select column keeps a link-shaped value as select (never stolen to url)', () => {
+  it('a select column keeps a link-shaped value as select — never stolen to url', () => {
     expect(
       resolveFieldValue(rowOf({ prop_tag: '[URGENT](tel:911)' }), 'prop_tag', typedSchema),
     ).toEqual({

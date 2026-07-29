@@ -8,6 +8,17 @@ import type { ResolvedColumn, ViewRow } from '@shared/types'
 import { chipColor } from '@renderer/design-system/tokens'
 import { Cell } from './Cell'
 import type { ResolveContext } from './resolveContext'
+import { wrapKey } from '@shared/governedKeys'
+
+/** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
+ *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
+const propsAtRoot = (props: Record<string, unknown>, defs: PropertyDefinition[]): Record<string, unknown> =>
+  Object.fromEntries(
+    Object.entries(props).map(([id, v]) => {
+      const d = defs.find((x) => x.id === id)
+      return [d ? wrapKey('property', d.name) : id, v]
+    }),
+  )
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 // The Switch's GlassSegment (liquid glass) measures itself; jsdom has no ResizeObserver.
@@ -58,7 +69,7 @@ const rowWith = (properties: Record<string, unknown>): ViewRow =>
     id: 'p1',
     title: 'Page',
     path: 'X/Page.md',
-    frontmatter: { id: 'p1', properties },
+    frontmatter: { id: 'p1', ...propsAtRoot(properties, schema) },
   }) as unknown as ViewRow
 
 let host: HTMLDivElement
