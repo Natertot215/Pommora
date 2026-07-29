@@ -119,6 +119,29 @@ const fault = (message: string): MutateResult => ({
   error: { code: 'operation-failed', message },
 })
 
+/** Set one field on a config/sidecar record, or drop the key when there's no value — the
+ *  no-empties rule the banner, heading-icon and icon writers all follow. */
+function setOrDrop(
+  cur: Record<string, unknown>,
+  key: string,
+  value: unknown,
+): Record<string, unknown> {
+  const next = { ...cur }
+  if (value) next[key] = value
+  else delete next[key]
+  return next
+}
+
+/** Strict read-modify-write of one config file, locked on the file itself — the block-doc
+ *  writers share homepage.json, and two unlocked read-merge-writes lose whole keys. */
+function patchConfig(
+  cfgPath: string,
+  patch: (cur: Record<string, unknown>) => Record<string, unknown>,
+  seed: () => Record<string, unknown>,
+): Promise<Result<Record<string, unknown>>> {
+  return serializeOnFile(cfgPath, () => rmwJsonStrict(cfgPath, patch, seed))
+}
+
 /**
  * Create with a base name, disambiguating on collision: base, "base 2", "base 3", … The
  * "New …" UX — a fresh entity should always appear, never silently fail on a name clash.
@@ -351,24 +374,18 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (!rel) return fault('Unsupported image data.')
         // Set the field first; only THEN delete a replaced file, so a failed write never
         // leaves `banner` pointing at a deleted file (mirrors the cover/photo ordering).
-        // Locked on the config path — the block-doc writers share this file (homepage.json
-        // carries layout/blocks), and two unlocked read-merge-writes lose whole keys.
-        const written = await serializeOnFile(cfgPath, () =>
-          rmwJsonStrict(cfgPath, (cur) => ({ ...cur, banner: rel }), () => fallback),
+        const written = await patchConfig(
+          cfgPath,
+          (cur) => setOrDrop(cur, 'banner', rel),
+          () => fallback,
         )
         if (!written.ok) return relay(written)
         if (prev && prev !== rel) await rm(join(root, prev), { force: true }).catch(() => {})
       } else {
-        const written = await serializeOnFile(cfgPath, () =>
-          rmwJsonStrict(
-            cfgPath,
-            (cur) => {
-              const next = { ...cur }
-              delete next.banner
-              return next
-            },
-            () => fallback,
-          ),
+        const written = await patchConfig(
+          cfgPath,
+          (cur) => setOrDrop(cur, 'banner', undefined),
+          () => fallback,
         )
         if (!written.ok) return relay(written)
         if (prev) await rm(join(root, prev), { force: true }).catch(() => {})
@@ -378,8 +395,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
 
     case 'setHeadingIconHidden': {
       // The banner-heading icon show/hide flag → `heading_icon_hidden` in the owner's config
-      // (homepage.json for the singleton, the folder sidecar otherwise). Locked on the config path —
-      // homepage.json is shared with the block-doc writers. Absent = shown.
+      // (homepage.json for the singleton, the folder sidecar otherwise). Absent = shown.
       let cfgPath: string
       let fallback: Record<string, unknown>
       if (req.kind === 'homepage' || req.kind === 'navview') {
@@ -395,17 +411,10 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (typeof id !== 'string') return fault('That item has no id.')
         fallback = { id }
       }
-      const written = await serializeOnFile(cfgPath, () =>
-        rmwJsonStrict(
-          cfgPath,
-          (cur) => {
-            const next = { ...cur }
-            if (req.hidden) next.heading_icon_hidden = true
-            else delete next.heading_icon_hidden
-            return next
-          },
-          () => fallback,
-        ),
+      const written = await patchConfig(
+        cfgPath,
+        (cur) => setOrDrop(cur, 'heading_icon_hidden', req.hidden),
+        () => fallback,
       )
       if (!written.ok) return relay(written)
       return { ok: true }
@@ -453,14 +462,9 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const existing = await readJsonObject(cfgPath)
       const id = typeof existing?.id === 'string' ? existing.id : null
       if (!id) return fault('That item has no id.')
-      const written = await rmwJsonStrict(
+      const written = await patchConfig(
         cfgPath,
-        (cur) => {
-          const next = { ...cur }
-          if (req.icon) next.icon = req.icon
-          else delete next.icon
-          return next
-        },
+        (cur) => setOrDrop(cur, 'icon', req.icon),
         () => ({ id }),
       )
       if (!written.ok) return relay(written)

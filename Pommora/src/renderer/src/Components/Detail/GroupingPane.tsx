@@ -9,11 +9,7 @@ import type {
   StructuralOrderMode,
   SubGroupConfig,
 } from '@shared/views'
-import {
-  Icon,
-  asRenderableIcon,
-  type IconName,
-} from '@renderer/design-system/symbols'
+import { Icon, asRenderableIcon, type IconName } from '@renderer/design-system/symbols'
 import {
   DisclosureRow,
   MenuItem,

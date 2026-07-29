@@ -99,7 +99,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     }
   }, [source.path])
 
-
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
   const { view } = useActiveView(source, schema)
   const saveView = useSaveView(source, load)
@@ -987,21 +986,24 @@ const PageCard = memo(function PageCard({
   // Right-click the image band → the page-banner menu (the PageHeader flow), worded for the view's
   // display config: Cover mode says Cover, Preview says Banner (it edits the page banner either way —
   // the one settable image; a Preview thumb itself is a capture, not a pickable file).
-  const onThumbContextMenu = useCallback(async (e: React.MouseEvent): Promise<void> => {
-    e.preventDefault()
-    e.stopPropagation()
-    const noun = banner === 'cover' ? 'Cover' : 'Banner'
-    const action = await window.nexus.bannerMenu(cover ? { noun } : { noun, add: true })
-    if (!action) return
-    if (action === 'remove') {
-      if (await mutate({ op: 'setBanner', path: row.path, kind: 'page', dataUrl: null }))
+  const onThumbContextMenu = useCallback(
+    async (e: React.MouseEvent): Promise<void> => {
+      e.preventDefault()
+      e.stopPropagation()
+      const noun = banner === 'cover' ? 'Cover' : 'Banner'
+      const action = await window.nexus.bannerMenu(cover ? { noun } : { noun, add: true })
+      if (!action) return
+      if (action === 'remove') {
+        if (await mutate({ op: 'setBanner', path: row.path, kind: 'page', dataUrl: null }))
+          onRefreshValues()
+        return
+      }
+      const dataUrl = await window.nexus.pickImage()
+      if (dataUrl && (await mutate({ op: 'setBanner', path: row.path, kind: 'page', dataUrl })))
         onRefreshValues()
-      return
-    }
-    const dataUrl = await window.nexus.pickImage()
-    if (dataUrl && (await mutate({ op: 'setBanner', path: row.path, kind: 'page', dataUrl })))
-      onRefreshValues()
-  }, [banner, cover, mutate, row.path, onRefreshValues])
+    },
+    [banner, cover, mutate, row.path, onRefreshValues],
+  )
   const src =
     banner === 'cover'
       ? cover && assetUrl(cover)
