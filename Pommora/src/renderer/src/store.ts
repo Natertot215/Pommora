@@ -68,6 +68,7 @@ import { applyAccent, applySystemAccent } from './design-system/accent'
 import { applyPersonalization, applyPersonalizationKey } from './design-system/personalization'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './Detail/Scope'
 import { ensureContainerView } from './Detail/Views/viewMint'
+import { wrapKey } from '@shared/governedKeys'
 
 const SIDEBAR_MIN = 180
 const SIDEBAR_MAX = 380
@@ -256,6 +257,12 @@ interface SessionState {
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
 
   renamingProperty: { collectionPath: string; propertyId: string } | null
+  /** Set when a property rename lands. A mounted view's values snapshot is fetched once per
+   *  container open and never re-reads, so without this the renamed column reads blank until the
+   *  user navigates away. Carries the key pair because the effect must RE-KEY the optimistic
+   *  overrides too — clearing them would revive the assign-vanish this codebase already fixed. */
+  valuesEpoch: { n: number; oldKey: string; newKey: string } | null
+  bumpValuesEpoch: (oldKey: string, newKey: string) => void
   beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
   cancelPropertyRename: () => void
   submitPropertyRename: (newName: string) => Promise<boolean>
@@ -1402,6 +1409,9 @@ export const useSession = create<SessionState>((set, get) => {
     },
 
     renamingProperty: null,
+    valuesEpoch: null,
+    bumpValuesEpoch: (oldKey, newKey) =>
+      set((st) => ({ valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, oldKey, newKey } })),
     beginPropertyRename: (target) => set({ renamingProperty: target }),
     cancelPropertyRename: () => set({ renamingProperty: null }),
     submitPropertyRename: async (newName) => {
@@ -1417,7 +1427,10 @@ export const useSession = create<SessionState>((set, get) => {
         await window.nexus.showError(res.error)
         return false
       }
+      const before = get().tree?.registry.find((d) => d.id === target.propertyId)?.name
       await get().load()
+      if (before !== undefined && before !== newName)
+        get().bumpValuesEpoch(wrapKey('property', before), wrapKey('property', newName))
       return true
     },
     mutate: async (req, onCreated) => {

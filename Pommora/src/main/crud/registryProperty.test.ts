@@ -37,9 +37,20 @@ describe('createProperty', () => {
     ])
   })
 
-  it('allows duplicate names on create — the flat D-3 policy (ids keep twins mechanically safe)', async () => {
+  it('refuses a duplicate title, folding case — the title IS the key values write under', async () => {
     await createProperty(root, def({ name: 'Priority', type: 'select' }))
-    expect((await createProperty(root, def({ name: 'priority', type: 'number' }))).ok).toBe(true)
+    expect((await createProperty(root, def({ name: 'priority', type: 'number' }))).ok).toBe(false)
+  })
+
+  it('refuses a leading $, which is reserved for system-assigned roles', async () => {
+    expect((await createProperty(root, def({ name: '$Status', type: 'select' }))).ok).toBe(false)
+    expect((await createProperty(root, def({ name: 'Budget ($)', type: 'number' }))).ok).toBe(true)
+  })
+
+  it('normalizes the stored name, so an untrimmed one can never reach a key', async () => {
+    const r = await createProperty(root, def({ name: '  Spaced  ', type: 'number' }))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect((await readRegistry(root)).defs[r.value.id]?.name).toBe('Spaced')
   })
 
   it('a blank name still rejects', async () => {
@@ -77,11 +88,12 @@ describe('editProperty', () => {
     expect((await readRegistry(root)).defs[c.value.id].name).toBe('New')
   })
 
-  it('allows renaming onto another def name — the flat D-3 policy on BOTH write paths', async () => {
+  it('refuses renaming onto a taken title — create disambiguates, a rename reports', async () => {
     await createProperty(root, def({ name: 'Alpha', type: 'number' }))
     const b = await createProperty(root, def({ name: 'Beta', type: 'number' }))
     if (!b.ok) return
-    expect((await editProperty(root, b.value.id, { name: 'Alpha' })).ok).toBe(true)
+    expect((await editProperty(root, b.value.id, { name: 'Alpha' })).ok).toBe(false)
+    expect((await editProperty(root, b.value.id, { name: 'Gamma' })).ok).toBe(true)
   })
 
   it('writes and then clears a checkbox property color in place', async () => {
