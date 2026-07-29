@@ -39,6 +39,7 @@ export function createProperty(
       name: normalizePropertyName(def.name ?? ''),
       id: def.id || mintPropertyId(),
     })
+    if (!candidate.name) return { result: fail('invalid-property', KEY_REFUSAL.empty) }
     if (invalidPropertyName(candidate.name))
       return { result: fail('invalid-property', KEY_REFUSAL.reservedPrefix) }
     const v = validateDefinition(candidate, Object.values(registry.defs))
@@ -101,6 +102,7 @@ export function editProperty(
       if (typeof changed.name === 'string') changed.name = normalizePropertyName(changed.name)
       const next = seeded({ ...current, ...changed, id: propertyId })
       if (next.name !== current.name) {
+        if (!next.name) return { result: fail('invalid-property', KEY_REFUSAL.empty) }
         if (invalidPropertyName(next.name))
           return { result: fail('invalid-property', KEY_REFUSAL.reservedPrefix) }
         const v = validateName(next.name, Object.values(registry.defs), propertyId)

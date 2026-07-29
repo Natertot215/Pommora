@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Icon, icons, type IconName, entityIcon } from '@renderer/design-system/symbols'
-import { lucideGlyph } from '@renderer/design-system/symbols/AllSymbols'
+import { Icon, type IconName, entityIcon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
@@ -87,15 +86,6 @@ function isSetSelected(sel: SelectionState, id: string): boolean {
 
 function isPageSelected(sel: SelectionState, id: string): boolean {
   return sel.kind === 'page' && sel.id === id
-}
-
-function folderAwareIcons(
-  custom: string | undefined,
-  fallback: string,
-): { icon: string; openIcon?: IconName } {
-  // Keep any renderable Lucide id (curated OR the full set — a user's arbitrary pick), else the default.
-  const icon = custom && (custom in icons || lucideGlyph(custom) !== undefined) ? custom : fallback
-  return { icon, openIcon: icon === 'folder-closed' ? 'folder-open' : undefined }
 }
 
 function Leaf({
@@ -305,20 +295,20 @@ function PageRow({
 
 function ContainerRow({
   node,
-  defaultIcon,
   depth,
   selected,
   onSelect,
   children,
 }: {
   node: { id: string; icon?: string; title: string; path: string; kind: MutableKind }
-  defaultIcon: string
   depth: number
   selected?: boolean
   onSelect?: () => void
   children: React.ReactNode
 }): React.JSX.Element {
-  const { icon, openIcon } = folderAwareIcons(node.icon, defaultIcon)
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const icon = entityIcon(node.kind === 'collection' ? 'collection' : 'set', node.icon, defaultIcons)
+  const openIcon: IconName | undefined = icon === 'folder-closed' ? 'folder-open' : undefined
   return (
     <Disclosure
       dragId={node.id}
@@ -364,12 +354,10 @@ function SetRow({
   onSelectSet: (set: SetNode) => void
   onSelectPage: (page: PageNode) => void
 }): React.JSX.Element {
-  const setDefaultIcons = useSession((s) => s.personalization.defaultIcons)
   const subSetPlacement = useSession((s) => s.personalization.subSetPlacement ?? 'top')
   return (
     <ContainerRow
       node={set}
-      defaultIcon={entityIcon('set', undefined, setDefaultIcons)}
       depth={depth}
       selected={selectable && isSetSelected(selection, set.id)}
       onSelect={selectable ? () => onSelectSet(set) : undefined}
@@ -416,12 +404,10 @@ function CollectionRow({
   onSelectSet: (set: SetNode) => void
   onSelectPage: (page: PageNode) => void
 }): React.JSX.Element {
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const setPlacement = useSession((s) => s.personalization.setPlacement ?? 'top')
   return (
     <ContainerRow
       node={col}
-      defaultIcon={entityIcon('collection', undefined, defaultIcons)}
       depth={depth}
       selected={isCollectionSelected(selection, col.id)}
       onSelect={() => onSelectCollection(col)}

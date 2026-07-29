@@ -47,8 +47,7 @@ describe('droppingUserContexts', () => {
 describe('validateName', () => {
   const existing = [def({ id: 'p1', name: 'Stage', type: 'status' })]
 
-  it('rejects empty + case-insensitive duplicate names', () => {
-    expect(validateName('   ', existing).ok).toBe(false)
+  it('rejects a case-insensitive duplicate name (empty is the callers\u2019 gate)', () => {
     expect(validateName('stage', existing).ok).toBe(false)
   })
 

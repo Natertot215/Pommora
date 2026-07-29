@@ -45,7 +45,7 @@ export function buildResolveIndex(tree: NexusTree): ResolveIndex {
     title: tree.nexus.name,
     path: [],
   })
-  for (const g of tree.contexts ?? []) {
+  for (const g of tree.contexts) {
     const groupCrumb: PathCrumb = {
       icon: entityIcon('space', g.def.icon, di),
       title: g.def.title,

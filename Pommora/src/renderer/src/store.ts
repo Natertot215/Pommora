@@ -546,21 +546,15 @@ export const useSession = create<SessionState>((set, get) => {
           case 'open':
             await get().applyTree(res.tree)
             set({ pins: [] })
-            // Six independent fetches, one round of latency — each arm keeps its own
-            // fallback, so one failing never costs the others.
+            // Six independent fetches, one round of latency. The two raw database reads keep
+            // a catch; the envelope channels structurally cannot reject.
             await Promise.all([
-              window.nexus.subfield
-                .get()
-                .then((cfg) => {
-                  if (cfg) set({ subfieldExpanded: cfg.expanded, subfieldOrder: cfg.order })
-                })
-                .catch(() => undefined), // keep the in-memory defaults
-              window.nexus.navViewModes
-                .get()
-                .then((modes) => {
-                  if (modes) set({ navWindowMode: modes.window, navViewMode: modes.view })
-                })
-                .catch(() => undefined), // keep the in-memory defaults
+              window.nexus.subfield.get().then((cfg) => {
+                if (cfg) set({ subfieldExpanded: cfg.expanded, subfieldOrder: cfg.order })
+              }),
+              window.nexus.navViewModes.get().then((modes) => {
+                if (modes) set({ navWindowMode: modes.window, navViewMode: modes.view })
+              }),
               window.nexus.linkTitles
                 .get()
                 .then((titles) => set({ linkTitles: titles }))
@@ -577,8 +571,7 @@ export const useSession = create<SessionState>((set, get) => {
                       ? { recents: nav.recents, favorites: nav.favorites }
                       : { recents: [], favorites: [] },
                   ),
-                )
-                .catch(() => set({ recents: [], favorites: [] })),
+                ),
               get().loadPins(),
             ])
             set({ agendaSnapshot: null })
@@ -759,7 +752,7 @@ export const useSession = create<SessionState>((set, get) => {
       const systemColor = systemAccentCache
       applyAccent(tree.accent, systemColor)
       applySystemAccent(systemColor)
-      set({ personalization: tree.personalization, commands: tree.commands ?? DEFAULT_COMMANDS })
+      set({ personalization: tree.personalization, commands: tree.commands })
       applyPersonalization(tree.personalization)
       if (get().agendaSnapshot) set({ agendaSnapshot: null })
     },
@@ -837,7 +830,7 @@ export const useSession = create<SessionState>((set, get) => {
             : s.tree,
       }))
       applyPersonalizationKey(key, value)
-      void window.nexus.personalization.set(key, value).catch(() => undefined)
+      void window.nexus.personalization.set(key, value)
     },
     trail: {},
     recordTrail: (containerId, entry) =>
@@ -991,8 +984,8 @@ export const useSession = create<SessionState>((set, get) => {
       void window.nexus.nav.reorderPin(moved)
     },
     loadPins: async () => {
-      const res = await window.nexus.nav.loadPins().catch(() => null)
-      if (res?.ok) set({ pins: [...res.pins].sort(byOrder) })
+      const res = await window.nexus.nav.loadPins()
+      if (res.ok) set({ pins: [...res.pins].sort(byOrder) })
     },
     // Only pins swap on a live refresh — recents are debounce-written so in-memory leads disk; replacing
     // them from a pin/favorite-triggered push would clobber the user's latest (unsaved) navigations.

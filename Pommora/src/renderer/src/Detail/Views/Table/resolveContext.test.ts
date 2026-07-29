@@ -23,6 +23,7 @@ const tree = {
     },
   ],
   labels: DEFAULT_LABELS,
+  personalization: {},
 } as unknown as NexusTree
 
 describe('buildResolveContext', () => {

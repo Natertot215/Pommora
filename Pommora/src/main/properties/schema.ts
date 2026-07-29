@@ -33,22 +33,18 @@ export function droppingUserContexts(defs: PropertyDefinition[]): PropertyDefini
 
 // MARK: - Validation (mirrors Swift PropertyDefinitionValidator)
 
-/** A property name in the context of a schema: non-empty after trim + unique
- *  case-insensitively, excluding the def identified by `excludeId` (for rename).
- *  `unique: false` skips the clash check; no caller passes it, so uniqueness holds throughout. */
+/** A property name in the context of a schema: unique case-insensitively, excluding the def
+ *  identified by `excludeId` (for rename). Empty and reserved-prefix names are refused before
+ *  this — `invalidPropertyName` owns that gate at the callers. */
 export function validateName(
   name: string,
   existing: PropertyDefinition[],
   excludeId?: string,
-  opts: { unique?: boolean } = {},
 ): Result<null> {
   const trimmed = name.trim()
-  if (!trimmed) return fail('invalid-property', KEY_REFUSAL.empty)
-  if (opts.unique !== false) {
-    const lower = trimmed.toLowerCase()
-    const clash = existing.some((d) => d.id !== excludeId && d.name.trim().toLowerCase() === lower)
-    if (clash) return fail('invalid-property', KEY_REFUSAL.duplicate(trimmed))
-  }
+  const lower = trimmed.toLowerCase()
+  const clash = existing.some((d) => d.id !== excludeId && d.name.trim().toLowerCase() === lower)
+  if (clash) return fail('invalid-property', KEY_REFUSAL.duplicate(trimmed))
   return ok(null)
 }
 
@@ -57,9 +53,8 @@ export function validateName(
 export function validateDefinition(
   def: PropertyDefinition,
   existing: PropertyDefinition[],
-  opts?: { unique?: boolean },
 ): Result<null> {
-  const nameCheck = validateName(def.name, existing, def.id, opts)
+  const nameCheck = validateName(def.name, existing, def.id)
   if (!nameCheck.ok) return nameCheck
   if (isReservedPropertyId(def.id)) return fail('invalid-property', 'That property id is reserved.')
   if (existing.some((d) => d.id === def.id)) {

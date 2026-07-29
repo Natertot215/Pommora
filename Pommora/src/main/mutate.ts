@@ -137,7 +137,7 @@ function setOrDrop(
 function patchConfig(
   cfgPath: string,
   patch: (cur: Record<string, unknown>) => Record<string, unknown>,
-  seed: () => Record<string, unknown>,
+  seed?: () => Record<string, unknown>,
 ): Promise<Result<Record<string, unknown>>> {
   return serializeOnFile(cfgPath, () => rmwJsonStrict(cfgPath, patch, seed))
 }
@@ -350,12 +350,14 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // assets/<id>/).
       let cfgPath: string
       let assetKey: string
-      let fallback: Record<string, unknown>
+      // The singletons legitimately seed from nothing; a folder sidecar never does — one that
+      // vanishes mid-op fails not-found rather than being re-minted around a banner.
+      let seed: (() => Record<string, unknown>) | undefined
       let existing: Record<string, unknown> | null
       if (req.kind === 'homepage' || req.kind === 'navview') {
         cfgPath = nexusConfig(root, NEXUS_CONFIG_FILES[req.kind])
         assetKey = req.kind
-        fallback = {}
+        seed = () => ({})
         existing = await readJsonObject(cfgPath)
       } else {
         const resolved = await resolveUnderRoot(root, req.path)
@@ -366,7 +368,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         const id = typeof existing?.id === 'string' ? existing.id : null
         if (!id) return fault('That item has no id to key its banner.')
         assetKey = id
-        fallback = { id }
       }
       const prev = typeof existing?.banner === 'string' ? existing.banner : null
       if (req.dataUrl) {
@@ -374,18 +375,14 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (!rel) return fault('Unsupported image data.')
         // Set the field first; only THEN delete a replaced file, so a failed write never
         // leaves `banner` pointing at a deleted file (mirrors the cover/photo ordering).
-        const written = await patchConfig(
-          cfgPath,
-          (cur) => setOrDrop(cur, 'banner', rel),
-          () => fallback,
-        )
+        const written = await patchConfig(cfgPath, (cur) => setOrDrop(cur, 'banner', rel), seed)
         if (!written.ok) return relay(written)
         if (prev && prev !== rel) await rm(join(root, prev), { force: true }).catch(() => {})
       } else {
         const written = await patchConfig(
           cfgPath,
           (cur) => setOrDrop(cur, 'banner', undefined),
-          () => fallback,
+          seed,
         )
         if (!written.ok) return relay(written)
         if (prev) await rm(join(root, prev), { force: true }).catch(() => {})
@@ -459,14 +456,12 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         )
       }
       const cfgPath = `${resolved.value}/${SIDECAR_FILENAME[req.kind]}`
-      const existing = await readJsonObject(cfgPath)
-      const id = typeof existing?.id === 'string' ? existing.id : null
-      if (!id) return fault('That item has no id.')
-      const written = await patchConfig(
-        cfgPath,
-        (cur) => setOrDrop(cur, 'icon', req.icon),
-        () => ({ id }),
-      )
+      // One strict read: the id gate rides inside the mutator (the throw lands as the op's
+      // fault), and a vanished sidecar fails not-found rather than being reseeded.
+      const written = await patchConfig(cfgPath, (cur) => {
+        if (typeof cur.id !== 'string') throw new Error('That item has no id.')
+        return setOrDrop(cur, 'icon', req.icon)
+      })
       if (!written.ok) return relay(written)
       return { ok: true }
     }
