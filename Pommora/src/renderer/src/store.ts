@@ -68,7 +68,7 @@ import { applyAccent, applySystemAccent } from './design-system/accent'
 import { applyPersonalization, applyPersonalizationKey } from './design-system/personalization'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './Detail/Scope'
 import { ensureContainerView } from './Detail/Views/viewMint'
-import { wrapKey } from '@shared/governedKeys'
+import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
 
 const SIDEBAR_MIN = 180
 const SIDEBAR_MAX = 380
@@ -1428,9 +1428,10 @@ export const useSession = create<SessionState>((set, get) => {
         return false
       }
       const before = get().tree?.registry.find((d) => d.id === target.propertyId)?.name
+      const after = normalizePropertyName(newName)
       await get().load()
-      if (before !== undefined && before !== newName)
-        get().bumpValuesEpoch(wrapKey('property', before), wrapKey('property', newName))
+      if (before !== undefined && before !== after)
+        get().bumpValuesEpoch(wrapKey('property', before), wrapKey('property', after))
       return true
     },
     mutate: async (req, onCreated) => {

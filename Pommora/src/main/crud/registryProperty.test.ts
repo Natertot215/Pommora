@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -8,6 +8,9 @@ import {
   removeFromRegistry,
   reorderRegistry,
 } from './registryProperty'
+import { assignProperty } from './assignment'
+import { createFolderEntity } from './folderEntity'
+import { createPage, updatePageProperty } from './page'
 import { readRegistry } from '../io/propertiesRegistry'
 import type { PropertyDefinition } from '@shared/properties'
 
@@ -94,6 +97,33 @@ describe('editProperty', () => {
     if (!b.ok) return
     expect((await editProperty(root, b.value.id, { name: 'Alpha' })).ok).toBe(false)
     expect((await editProperty(root, b.value.id, { name: 'Gamma' })).ok).toBe(true)
+  })
+
+  it('sweeps every page, and one unparseable page never ends the walk', async () => {
+    const c = await createProperty(root, def({ name: 'Old', type: 'number' }))
+    if (!c.ok) return
+    const col = await createFolderEntity(root, 'collection', 'Col')
+    if (!col.ok) return
+    await assignProperty(root, col.value.path, c.value.id)
+    const live = (await readRegistry(root)).defs[c.value.id]
+    const pages: string[] = []
+    for (const title of ['A', 'B', 'C']) {
+      const p = await createPage(col.value.path, title, { body: 'b' })
+      if (!p.ok) return
+      pages.push(p.value.path)
+      await updatePageProperty(p.value.path, live, { kind: 'number', value: 1 })
+    }
+    // Hand-edited into unparseable YAML — an unterminated flow mapping. It sorts between the two
+    // healthy pages, so a sweep that throws on it leaves C behind on the old key.
+    await writeFile(pages[1], '---\ntitle: B\n<Old>: 1\nbroken: {oops\n---\nb\n', 'utf8')
+
+    expect((await editProperty(root, c.value.id, { name: 'New' })).ok).toBe(true)
+    for (const path of [pages[0], pages[2]]) {
+      const content = await readFile(path, 'utf8')
+      expect(content).toContain('<New>')
+      expect(content).not.toContain('<Old>')
+    }
+    expect(await readFile(pages[1], 'utf8')).toContain('broken: {oops') // left exactly as found
   })
 
   it('writes and then clears a checkbox property color in place', async () => {

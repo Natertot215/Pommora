@@ -25,9 +25,11 @@ import type { PropertyDefinition, PropertyType } from '@shared/properties'
 
 /** The writer takes a definition, not an id — tests name the property and this supplies the rest.
  *  The type only has to be one the value's kind can hold; the key comes from the name. */
+/** Must carry the name the registry holds — the cascade resolves its key from there, so a
+ *  divergent name would leave it rewriting a page that holds nothing. */
 const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => ({
   id,
-  name: id.replace(/^prop_/, ''),
+  name: 'P',
   type,
 })
 
