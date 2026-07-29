@@ -9,6 +9,7 @@ import {
   type PropertyDefinition,
 } from '@shared/properties'
 import { fail, ok, type Result } from '@shared/result'
+import { KEY_REFUSAL } from '@shared/governedKeys'
 
 /** Parse a raw `property_definitions` array, dropping any entry that fails to parse (resilient —
  *  one malformed def never sinks the whole schema, matching Swift's per-def tolerance). A retired
@@ -34,8 +35,7 @@ export function droppingUserContexts(defs: PropertyDefinition[]): PropertyDefini
 
 /** A property name in the context of a schema: non-empty after trim + unique
  *  case-insensitively, excluding the def identified by `excludeId` (for rename).
- *  `unique: false` skips the clash check — the registry paths allow twin names;
- *  Agenda's callers pass nothing, so uniqueness holds there. */
+ *  `unique: false` skips the clash check; no caller passes it, so uniqueness holds throughout. */
 export function validateName(
   name: string,
   existing: PropertyDefinition[],
@@ -43,11 +43,11 @@ export function validateName(
   opts: { unique?: boolean } = {},
 ): Result<null> {
   const trimmed = name.trim()
-  if (!trimmed) return fail('invalid-property', 'A property name cannot be empty.')
+  if (!trimmed) return fail('invalid-property', KEY_REFUSAL.empty)
   if (opts.unique !== false) {
     const lower = trimmed.toLowerCase()
     const clash = existing.some((d) => d.id !== excludeId && d.name.trim().toLowerCase() === lower)
-    if (clash) return fail('invalid-property', `A property named "${trimmed}" already exists.`)
+    if (clash) return fail('invalid-property', KEY_REFUSAL.duplicate(trimmed))
   }
   return ok(null)
 }

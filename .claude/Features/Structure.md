@@ -65,7 +65,7 @@ Names are unique within a folder (filename = title): a colliding Page create aut
 | Link                       | Stored as                                                        | Purpose                |
 | -------------------------- | ---------------------------------------------------------------- | ---------------------- |
 | Page → Page (connection)   | plain `[[Title]]` in the body, resolved by unique title          | Inline reference       |
-| Operational entity → Space | `(<Context>):` at the frontmatter / JSON root, over bare Space titles | Categorical assignment |
+| Operational entity → Space | `(Context):` at the frontmatter / JSON root, over bare Space titles | Categorical assignment |
 | Space → Space              | The same parenthesized keys in the Space's own `_space.json`     | Cross-Context links    |
 | Page → Collection / Set    | Implicit by file location                                        | Membership             |
 

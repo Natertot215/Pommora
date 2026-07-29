@@ -90,7 +90,7 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 **Files are canonical.** Everything a user creates lives as a plain file in a folder they pick, and that folder is the whole product — it can sit in any synced location and travels intact. Pages are Markdown with YAML frontmatter; Agenda entries, Contexts, and all configuration are JSON. Databases are used sparingly, but aren't prohibited as a means of carrying information; they're currently reserved as operational-only, and a future information-bearing functionality isn't out of the question. **The line runs at assignment.** A property *definition* — its name, type, options and formats — may move into the database, and the file format is what makes that safe: because a Page's frontmatter names its own properties, losing the registry costs presentation config rather than the ability to read a value. An *assignment* (which properties a Collection carries) stays on that Collection's sidecar, and a *value* stays in its Page's frontmatter, so a Nexus's structure and its content both remain readable from the files alone.
 
-**Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_area.json` / `_topic.json` / `_project.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar — folder names stay freely renameable, and classification never depends on a file extension or a frontmatter field. App-internal config and the device-local database live under a hidden `.nexus/` folder that travels with the Nexus.
+**Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_space.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar — folder names stay freely renameable, and classification never depends on a file extension or a frontmatter field. App-internal config and the device-local database live under a hidden `.nexus/` folder that travels with the Nexus.
 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault leaves notes byte-identical until the user edits them.
 
@@ -130,7 +130,7 @@ The calendar layer, split into two distinct entities mirroring EventKit, each st
 - **Tasks** (`.task.json`) — optional due date, an optional "not before" start, completion, priority, recurrence, and alarms.
 - **Events** (`.event.json`) — required start and end, optional location, all-day, recurrence, and alarms.
 
-Both carry the shared property catalog and the same parenthesized Context keys as Pages, plus a built-in, non-deletable **Status** whose three groups (Upcoming / In Progress / Done) map cleanly onto reminder/calendar semantics. EventKit sync is opt-in. Full detail → `Features/Agenda.md`.
+Both carry the shared property catalog and the same parenthesized Context keys as Pages, plus a built-in, non-deletable **Status** whose three seeded groups (Open / Active / Done) map cleanly onto reminder/calendar semantics. EventKit sync is opt-in. Full detail → `Features/Agenda.md`.
 
 #### Properties
 

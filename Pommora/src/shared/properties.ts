@@ -125,8 +125,8 @@ export type NumberConfig = Pick<
 // MARK: - Reserved property IDs
 
 /** Built-in property IDs use a `_` prefix; user properties use `prop_<ulid>` (minted by
- *  `mintPropertyId` in ids.ts). Only the ID is reserved — display names are
- *  unrestricted. Mirrors Swift `ReservedPropertyID`. */
+ *  `mintPropertyId` in ids.ts). A display name carries its own rules — unique nexus-wide and
+ *  no leading `$` — because the name is the key its values write under. */
 export const RESERVED_PROPERTY_ID = {
   id: '_id',
   title: '_title',
