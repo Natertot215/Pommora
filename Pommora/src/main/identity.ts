@@ -50,6 +50,6 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
 
   await mkdir(nexusDir(root), { recursive: true })
   const identity = defaultIdentity()
-  await writeJson(path, existing ? { ...existing, ...identity } : identity)
+  await writeJson(path, { ...existing, ...identity })
   return { id: identity.id, created: true }
 }

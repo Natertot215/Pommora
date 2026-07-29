@@ -63,7 +63,11 @@ describe('rmwJsonStrict', () => {
 
   it('seeds a missing file when a seed is given', async () => {
     const p = join(dir, 'absent.json')
-    const written = await rmwJsonStrict(p, (cur) => ({ ...cur, added: true }), () => ({ seed: 1 }))
+    const written = await rmwJsonStrict(
+      p,
+      (cur) => ({ ...cur, added: true }),
+      () => ({ seed: 1 }),
+    )
     expect(written.ok).toBe(true)
     expect(JSON.parse(await readFile(p, 'utf8'))).toEqual({ seed: 1, added: true })
   })
@@ -79,7 +83,11 @@ describe('rmwJsonStrict', () => {
   it('fails on corrupt JSON and leaves the file byte-identical — a seed never applies', async () => {
     const p = join(dir, 'corrupt.json')
     await writeFile(p, '{ not valid', 'utf8')
-    const written = await rmwJsonStrict(p, (cur) => ({ ...cur, n: 1 }), () => ({}))
+    const written = await rmwJsonStrict(
+      p,
+      (cur) => ({ ...cur, n: 1 }),
+      () => ({}),
+    )
     expect(written.ok).toBe(false)
     if (!written.ok) expect(written.error.code).toBe('operation-failed')
     expect(await readFile(p, 'utf8')).toBe('{ not valid')
@@ -88,7 +96,11 @@ describe('rmwJsonStrict', () => {
   it('fails on a non-object file and leaves it byte-identical', async () => {
     const p = join(dir, 'array.json')
     await writeFile(p, '[1, 2]', 'utf8')
-    const written = await rmwJsonStrict(p, (cur) => cur, () => ({}))
+    const written = await rmwJsonStrict(
+      p,
+      (cur) => cur,
+      () => ({}),
+    )
     expect(written.ok).toBe(false)
     expect(await readFile(p, 'utf8')).toBe('[1, 2]')
   })

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { OpenIn } from '@shared/types'
 import { Icon, entityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { EntityIcon } from '@renderer/Components/EntityIcon'
 import {
   detail as detailText,
   flushTrailing,
@@ -203,20 +204,14 @@ export function SettingsPane(): React.JSX.Element | null {
           leading={
             <span className={crumbRow}>
               <span className={footingSymbol}>
-                <Icon
-                  name={entityIcon('collection', schemaCollection.icon, defaultIcons)}
-                  size={12}
-                />
+                <EntityIcon kind="collection" icon={schemaCollection.icon} size={12} />
               </span>
               <span>{schemaCollection.title}</span>
               {node.kind === 'set' && (
                 <>
                   <span>›</span>
                   <span className={footingSymbol}>
-                    <Icon
-                      name={entityIcon('set', node.icon, defaultIcons)}
-                      size={12}
-                    />
+                    <EntityIcon kind="set" icon={node.icon} size={12} />
                   </span>
                   <span>{node.title}</span>
                 </>

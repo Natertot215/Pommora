@@ -65,7 +65,11 @@ export function buildResolveIndex(tree: NexusTree): ResolveIndex {
       ix.set(`set:${s.id}`, { icon: setIcon(s), title: s.title, path: parents })
       const chain = [...parents, { icon: setIcon(s), title: s.title }]
       for (const p of s.pages)
-        ix.set(`page:${p.id}`, { icon: entityIcon('page', p.icon, di), title: p.title, path: chain })
+        ix.set(`page:${p.id}`, {
+          icon: entityIcon('page', p.icon, di),
+          title: p.title,
+          path: chain,
+        })
       walkSets(s.sets, chain)
     }
   }
