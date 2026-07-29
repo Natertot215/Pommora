@@ -18,8 +18,7 @@ import {
   type PropertyType,
   RESERVED_PROPERTY_ID,
 } from '@shared/properties'
-import { decodeValue, type PropertyValue } from '@shared/propertyValue'
-import { wrapKey } from '@shared/governedKeys'
+import { decodeValue, type PropertyValue, propertyKey } from '@shared/propertyValue'
 
 /** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
  *  a synthetic sentinel: `_title`→'title', any registry Context id→'context', `_modified_at`→
@@ -104,7 +103,7 @@ function computeFieldValue(
   // frontmatter's wrapped keys looking for definitions — that inverts the rule and would let any
   // wrapped key claim to be a property. A key naming nothing the registry knows is inert.
   if (!def) return { kind: 'null' }
-  return decodeValue(def, (fm as Record<string, unknown>)[wrapKey('property', def.name)])
+  return decodeValue(def, (fm as Record<string, unknown>)[propertyKey(def)])
 }
 
 /** The `_modified_at` SORT/FILTER stamp: modified_at, falling back to created_at (Swift

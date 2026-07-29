@@ -115,7 +115,6 @@ export function encodeValue(value: PropertyValue): unknown {
     case 'datetime':
     case 'multiSelect':
     case 'file':
-      return value.value
     case 'context':
       return value.value
     case 'null':
@@ -166,6 +165,12 @@ export function applyPropertyValue(
   return next
 }
 
+/** A property definition → the frontmatter key its values live under. The Context layer's
+ *  `contextKey(title)` in the same shape; no caller builds this by hand. */
+export function propertyKey(def: PropertyDefinition): string {
+  return wrapKey('property', def.name)
+}
+
 /** Patch one property onto a frontmatter ROOT, returning the next root. The renderer's optimistic
  *  mirror of the main-side write: same key, same no-empties rule, so a cell reads the same value
  *  whether the commit has landed yet or not. */
@@ -174,7 +179,7 @@ export function applyValueAtRoot(
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Record<string, unknown> {
-  const key = wrapKey('property', def.name)
+  const key = propertyKey(def)
   const next = { ...root }
   if (value === null || isBlankValue(value)) delete next[key]
   else next[key] = encodeValue(value)

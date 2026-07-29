@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
-import { applyValueAtRoot } from '@shared/propertyValue'
+import { applyValueAtRoot, propertyKey } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { cx } from '@renderer/design-system/cx'
@@ -30,7 +30,6 @@ import { isValidLink } from '@shared/links'
 import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
 import { useSession, type PreviewTarget } from '../store'
-import { wrapKey } from '@shared/governedKeys'
 
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/
 // CalendarPicker, PropertyEditor). Writes ride the table's optimistic-patch pattern; the reconcile
@@ -111,7 +110,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     if (contextRows.some((c) => c.id === id)) return (contextValues?.[id]?.length ?? 0) > 0
     const def = schema.find((d) => d.id === id)
     return def
-      ? (fm as Record<string, unknown> | undefined)?.[wrapKey('property', def.name)] !== undefined
+      ? (fm as Record<string, unknown> | undefined)?.[propertyKey(def)] !== undefined
       : false
   }
 
