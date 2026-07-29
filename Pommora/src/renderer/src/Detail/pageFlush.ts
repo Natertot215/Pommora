@@ -18,13 +18,20 @@ export function schedulePageSave(path: string, body: string): void {
 }
 
 /** Write the path's pending body now (no-op without one) — awaitable, so a host's close path
- *  can land the write before the world changes. */
+ *  can land the write before the world changes. A failed save re-queues the body (unless a
+ *  newer edit already owns the slot), so typed prose retries on the next flush instead of
+ *  being silently dropped. */
 export function flushPageSave(path: string): Promise<void> {
   const p = pending.get(path)
   if (!p) return Promise.resolve()
   clearTimeout(p.timer)
   pending.delete(path)
-  return window.nexus.updatePageBody(path, p.body).then(() => undefined)
+  const requeue = (): void => {
+    if (!pending.has(path)) schedulePageSave(path, p.body)
+  }
+  return window.nexus.updatePageBody(path, p.body).then((ack) => {
+    if (!ack.ok) requeue()
+  }, requeue)
 }
 
 /** Flush every pending page write. The nexus-adopt path (store.openVia) awaits this while the OLD

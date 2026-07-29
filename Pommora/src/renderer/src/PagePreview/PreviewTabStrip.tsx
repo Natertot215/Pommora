@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
-import { entityIcon, Icon } from '@renderer/design-system/symbols'
+import { DEFAULT_ENTITY_ICONS, Icon } from '@renderer/design-system/symbols'
 import { duration, text } from '@renderer/design-system/tokens'
 import { EntityGlyph } from '../Navigation/EntityGlyph'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../Navigation/navResolve'
@@ -154,14 +154,13 @@ function PreviewTabItem({
   onActivate: () => void
   onClose: () => void
 }): React.JSX.Element {
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const isMap = entry.tab.target.kind === 'navwindow'
   const label = isMap ? 'Navigation' : (entry.res?.title ?? '')
   // A page tab whose own icon is ALSO the map glyph renders its type icon instead — nothing
   // masquerades as the perma-pinned NavWindow tab.
   const res =
     navFlavor && entry.res?.icon === 'map'
-      ? { ...entry.res, icon: entityIcon('page', undefined, defaultIcons) }
+      ? { ...entry.res, icon: DEFAULT_ENTITY_ICONS.page }
       : entry.res
   // Inert unless this id is in the zone's item set (map + ghosts never are).
   const drag = useDragItem(entry.tab.id)
