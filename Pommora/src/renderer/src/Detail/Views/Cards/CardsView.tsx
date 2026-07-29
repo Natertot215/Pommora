@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   CollectionNode,
   NexusLabels,
@@ -49,6 +49,9 @@ import { GroupBand, resolveBandHead } from '../GroupBand'
 import { buildResolveContext, type ResolveContext } from '../Table/resolveContext'
 import { NavCrumbs } from '../../../Navigation/NavList'
 import type { PathCrumb } from '../../../Navigation/navResolve'
+
+/** One identity for "no location trail", so a crumb-less card's CardFace can still compare equal. */
+const NO_CRUMBS: PathCrumb[] = []
 import { type AddPickerRequest, CardPickerHost, type ValuePickerRequest } from './CardPickerHost'
 import { CardValue } from './CardValue'
 import { bandShowsAdd } from './cardsBand'
@@ -502,7 +505,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                     banner={banner}
                     ctx={ctx}
                     labels={labels}
-                    crumbs={locByRow.get(id) ?? []}
+                    crumbs={locByRow.get(id) ?? NO_CRUMBS}
                     src={oSrc}
                     iconName={iconNameOr(r.icon, defaultEntityIcon('page'))}
                     columns={columns}
@@ -913,6 +916,9 @@ const PageCard = memo(function PageCard({
   // so the card renders inert — no handle armed.
   const gdrag = useGroupedDragItem(row.id)
   const drag = draggable ? gdrag : null
+  // The boolean, not the object: `gdrag` is a fresh object per slot flip, so a handler keyed on it
+  // would rebuild on every drag frame — which is exactly when CardFace's memo has to hold.
+  const isDragging = drag?.isDragging ?? false
   const version = useSession((s) => s.thumbVersions[`page:${row.id}`] ?? 0)
   const tree = useSession((s) => s.tree)
   const [failed, setFailed] = useState(false)
@@ -922,16 +928,18 @@ const PageCard = memo(function PageCard({
   // This card's text-area ref anchors the add-picker for both the property zone's empty space
   // and the location row.
   const textRef = useRef<HTMLDivElement>(null)
-  const openAdd = (e: React.MouseEvent): void => {
-    e.stopPropagation()
-    // Nothing addable → don't pop a dead-end empty picker (the native menu already omits its submenu).
-    if (!drag?.isDragging && addable.length > 0 && textRef.current)
-      onOpenAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: null })
-  }
-  // The grid-level host recomputes the same addEntriesFor when its picker opens for this row.
-  const addable = useMemo<AddEntry[]>(
-    () => (ctx && labels ? addEntriesFor(row, view, ctx, columns, tree) : []),
-    [ctx, view, row, labels, columns, tree],
+  // Built where it's read — both consumers are event handlers, and computing it in render walked
+  // the schema per card for a list only a click ever looks at. The grid-level host builds its own.
+  const addableNow = (): AddEntry[] =>
+    ctx && labels ? addEntriesFor(row, view, ctx, columns, tree) : []
+  const openAdd = useCallback(
+    (e: React.MouseEvent): void => {
+      e.stopPropagation()
+      // Nothing addable → don't pop a dead-end empty picker (the native menu already omits its submenu).
+      if (!isDragging && addableNow().length > 0 && textRef.current)
+        onOpenAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: null })
+    },
+    [isDragging, onOpenAddPicker, row, ctx, labels, view, columns, tree],
   )
   const mutate = useSession((s) => s.mutate)
   const [renameOpen, setRenameOpen] = useState(false)
@@ -945,6 +953,7 @@ const PageCard = memo(function PageCard({
     if (!ctx || drag?.isDragging) return
     const { tabs, pins, tree } = useSession.getState()
     const alreadyOpen = isOpenInTabs(tabs, pins, { kind: 'page', id: row.id, path: row.path })
+    const addable = addableNow()
     const menuAddable = orderAddableEntries(addable).map((e) => ({ id: e.id, name: e.name }))
     const currentParentPath = row.path.slice(0, row.path.lastIndexOf('/'))
     const moveTargets = tree ? buildMoveTargets(tree.collections) : []
@@ -969,13 +978,14 @@ const PageCard = memo(function PageCard({
         onOpenAddPicker({ rowId: row.id, anchor: textRef.current, initialEntry: entry })
     }
   }
-  const crumbs = loc ?? []
+  const crumbs = loc ?? NO_CRUMBS
 
   const cover = typeof row.frontmatter.cover === 'string' ? row.frontmatter.cover : undefined
+  const onImgError = useCallback(() => setFailed(true), [])
   // Right-click the image band → the page-banner menu (the PageHeader flow), worded for the view's
   // display config: Cover mode says Cover, Preview says Banner (it edits the page banner either way —
   // the one settable image; a Preview thumb itself is a capture, not a pickable file).
-  const onThumbContextMenu = async (e: React.MouseEvent): Promise<void> => {
+  const onThumbContextMenu = useCallback(async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
     const noun = banner === 'cover' ? 'Cover' : 'Banner'
@@ -989,7 +999,7 @@ const PageCard = memo(function PageCard({
     const dataUrl = await window.nexus.pickImage()
     if (dataUrl && (await mutate({ op: 'setBanner', path: row.path, kind: 'page', dataUrl })))
       onRefreshValues()
-  }
+  }, [banner, cover, mutate, row.path, onRefreshValues])
   const src =
     banner === 'cover'
       ? cover && assetUrl(cover)
@@ -1039,7 +1049,7 @@ const PageCard = memo(function PageCard({
           iconName={iconName}
           columns={columns}
           allowInlineRemove={allowInlineRemove}
-          onImgError={() => setFailed(true)}
+          onImgError={onImgError}
           textRef={textRef}
           onThumbContextMenu={onThumbContextMenu}
           onZoneClick={openAdd}
