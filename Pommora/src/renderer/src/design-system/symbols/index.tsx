@@ -171,13 +171,16 @@ export const DEFAULT_ENTITY_ICONS: Record<EntityIconKind, IconName> = {
   page: 'file-text',
 }
 
-/** A kind's default icon: the nexus's personalization override when it's a real icon, else the seed.
- *  A per-entity `icon` is layered on by the caller (iconNameOr / folderAwareIcons). */
-export function defaultEntityIcon(
+/** An entity's glyph, resolved from its two facts: the user-assigned `own` icon when it's
+ *  renderable, else the type's default — the nexus's `defaults` override when it names a
+ *  curated icon, else the seed. Both facts are required arguments: a surface says
+ *  `own: undefined` to mean "type-level glyph", never by omission. */
+export function entityIcon(
   kind: EntityIconKind,
-  overrides?: Partial<Record<EntityIconKind, string>>,
-): IconName {
-  return asIconName(overrides?.[kind]) ?? DEFAULT_ENTITY_ICONS[kind]
+  own: unknown,
+  defaults: Partial<Record<EntityIconKind, string>> | undefined,
+): string {
+  return iconNameOr(own, asIconName(defaults?.[kind]) ?? DEFAULT_ENTITY_ICONS[kind])
 }
 
 const iconSizeVars = sizeTokens.icon

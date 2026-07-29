@@ -3,7 +3,7 @@
 // resolves everything to null; auto-deleting would wipe durable favorites). Resolution goes
 // through a display index built in ONE tree walk — the gallery must never re-flatten the tree per row.
 
-import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { entityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import type { NavTarget, NexusTree, PinEntry, RecentEntry } from '@shared/types'
 import { allCollections } from '../selection'
 import { navKey } from './navRecents'
@@ -37,9 +37,8 @@ export type ResolveIndex = Map<string, NavCore>
 export function buildResolveIndex(tree: NexusTree): ResolveIndex {
   const ix: ResolveIndex = new Map()
   const di = tree.personalization.defaultIcons
-  const colIcon = (n: { icon?: string }): string =>
-    iconNameOr(n.icon, defaultEntityIcon('collection', di))
-  const setIcon = (n: { icon?: string }): string => iconNameOr(n.icon, defaultEntityIcon('set', di))
+  const colIcon = (n: { icon?: string }): string => entityIcon('collection', n.icon, di)
+  const setIcon = (n: { icon?: string }): string => entityIcon('set', n.icon, di)
 
   ix.set('homepage', {
     icon: iconNameOr(tree.nexus.profileIcon, 'house'),
@@ -48,12 +47,12 @@ export function buildResolveIndex(tree: NexusTree): ResolveIndex {
   })
   for (const g of tree.contexts ?? []) {
     const groupCrumb: PathCrumb = {
-      icon: iconNameOr(g.def.icon, defaultEntityIcon('space', di)),
+      icon: entityIcon('space', g.def.icon, di),
       title: g.def.title,
     }
     for (const s of g.spaces)
       ix.set(`space:${s.id}`, {
-        icon: iconNameOr(s.icon, defaultEntityIcon('space', di)),
+        icon: entityIcon('space', s.icon, di),
         title: s.title,
         path: [groupCrumb],
       })
@@ -66,7 +65,7 @@ export function buildResolveIndex(tree: NexusTree): ResolveIndex {
       ix.set(`set:${s.id}`, { icon: setIcon(s), title: s.title, path: parents })
       const chain = [...parents, { icon: setIcon(s), title: s.title }]
       for (const p of s.pages)
-        ix.set(`page:${p.id}`, { icon: defaultEntityIcon('page', di), title: p.title, path: chain })
+        ix.set(`page:${p.id}`, { icon: entityIcon('page', p.icon, di), title: p.title, path: chain })
       walkSets(s.sets, chain)
     }
   }
@@ -75,7 +74,7 @@ export function buildResolveIndex(tree: NexusTree): ResolveIndex {
     const colCrumb: PathCrumb = { icon: colIcon(col), title: col.title }
     for (const p of col.pages)
       ix.set(`page:${p.id}`, {
-        icon: defaultEntityIcon('page', di),
+        icon: entityIcon('page', p.icon, di),
         title: p.title,
         path: [colCrumb],
       })

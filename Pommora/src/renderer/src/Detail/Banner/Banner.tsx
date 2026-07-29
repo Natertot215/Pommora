@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { MutableKind } from '@shared/mutate'
-import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { Icon, entityIcon } from '@renderer/design-system/symbols'
 import { IconPicker } from '@renderer/Components/IconPicker'
 import { useSession } from '../../store'
 import { isSurfaceKind, type BannerOwner } from '../Scope'
@@ -84,7 +84,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   const titleHeader = owner.kind !== 'homepage' && (
     <DetailTitleHeader
       title={owner.name}
-      icon={iconNameOr(owner.icon, defaultEntityIcon(owner.kind, defaultIcons))}
+      icon={entityIcon(owner.kind, owner.icon, defaultIcons)}
       iconHidden={iconHidden}
       iconRef={iconRef}
       onRename={(newName) => submitRename(owner.path, owner.kind as MutableKind, newName)}

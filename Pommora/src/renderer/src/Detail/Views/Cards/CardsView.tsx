@@ -12,7 +12,7 @@ import type { PageFrontmatter } from '@shared/schemas'
 import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
 import { type CardBanner, isCompact, isLocationFsOrder, type SavedView } from '@shared/views'
 import type { ColumnStyle } from '@shared/columnStyles'
-import { defaultEntityIcon, Icon, iconNameOr } from '@renderer/design-system/symbols'
+import { entityIcon, Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens/typography.css'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import {
@@ -236,12 +236,13 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     [view, schema, contextIds],
   )
   const labels = tree?.labels
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   // Set id → its within-container location trail (Set › Sub-set crumbs) — one walk, read per card.
   const setChains = useMemo(() => {
     const m = new Map<string, PathCrumb[]>()
     const walk = (sets: SetNode[] | undefined, trail: PathCrumb[]): void => {
       for (const s of sets ?? []) {
-        const t = [...trail, { icon: iconNameOr(s.icon, defaultEntityIcon('set')), title: s.title }]
+        const t = [...trail, { icon: entityIcon('set', s.icon, defaultIcons), title: s.title }]
         m.set(s.id, t)
         walk(s.sets, t)
       }
@@ -507,7 +508,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                     labels={labels}
                     crumbs={locByRow.get(id) ?? NO_CRUMBS}
                     src={oSrc}
-                    iconName={iconNameOr(r.icon, defaultEntityIcon('page'))}
+                    iconName={entityIcon('page', r.icon, defaultIcons)}
                     columns={columns}
                     allowInlineRemove={false}
                     onCommitValue={NOOP}
@@ -623,7 +624,8 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
   const load = useSession((s) => s.load)
   const [failed, setFailed] = useState(false)
   const src = set.banner ? assetUrl(set.banner) : undefined
-  const iconName = iconNameOr(set.icon, defaultEntityIcon('set'))
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const iconName = entityIcon('set', set.icon, defaultIcons)
   // Right-click the set's image band → the native banner menu (Add when unset, Change/Remove when
   // set), the same setBanner flow the page cards use — kind 'set', reloading the tree on the write.
   const onThumbContextMenu = async (e: React.MouseEvent): Promise<void> => {
@@ -1010,7 +1012,8 @@ const PageCard = memo(function PageCard({
     lastSrc.current = src
     if (failed) setFailed(false)
   }
-  const iconName = iconNameOr(row.icon, defaultEntityIcon('page'))
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const iconName = entityIcon('page', row.icon, defaultIcons)
 
   // The drag engine fires a synthesized click after a pointer drag — a reorder-drop must not
   // navigate (NavGallery's `!isDragging` guard).

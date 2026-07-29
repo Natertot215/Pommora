@@ -1,15 +1,11 @@
+import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { type ReactNode, useEffect, useRef } from 'react'
 import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
 import { text } from '@renderer/design-system/tokens'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { cx } from '@renderer/design-system/cx'
-import {
-  asRenderableIcon,
-  defaultEntityIcon,
-  Icon,
-  iconNameOr,
-} from '@renderer/design-system/symbols'
+import { asRenderableIcon, Icon } from '@renderer/design-system/symbols'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { registerDiscloseTarget } from '@renderer/design-system/interactions/dragDisclose'
 import { Chip, chipShapeForType } from '@renderer/Components/Chip'
@@ -41,11 +37,9 @@ export function resolveBandHead(
       label,
       glyph: (
         <span className="group-name">
-          <Icon
-            name={iconNameOr(
-              source.icon,
-              defaultEntityIcon(source.kind === 'collection' ? 'collection' : 'set'),
-            )}
+          <EntityIcon
+            kind={source.kind === 'collection' ? 'collection' : 'set'}
+            icon={source.icon}
             size={13}
           />
           {label}
@@ -59,7 +53,7 @@ export function resolveBandHead(
       label: title,
       glyph: (
         <span className="group-name">
-          <Icon name={iconNameOr(setIcons.get(group.key), defaultEntityIcon('set'))} size={13} />
+          <EntityIcon kind="set" icon={setIcons.get(group.key)} size={13} />
           {setPath ? (
             <RenamableTitle path={setPath} kind="set" title={title} className="band-title-input" />
           ) : (

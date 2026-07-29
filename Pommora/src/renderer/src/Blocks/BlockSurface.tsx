@@ -17,7 +17,7 @@ import { useConnectionHover } from '@renderer/Embeds/ConnectionHoverCard'
 import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/core/ops'
 import { getTile } from '@renderer/SurfacePM/core/model'
 import { SurfaceView, type BackdropTarget } from '@renderer/SurfacePM/SurfaceView'
-import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { entityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import type { EntityIconKind } from '@shared/types'
 import { useSession } from '@renderer/store'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
@@ -37,17 +37,17 @@ function pagePickerItems(
 ): PagePickerItem[] {
   const pageItem = (p: { id: string; title: string; icon?: string }): PagePickerItem => ({
     label: p.title,
-    icon: iconNameOr(p.icon, defaultEntityIcon('page', defaultIcons)),
+    icon: entityIcon('page', p.icon, defaultIcons),
     pick: p.id,
   })
   const setItem = (s: SetNode): PagePickerItem => ({
     label: s.title,
-    icon: iconNameOr(s.icon, defaultEntityIcon('set', defaultIcons)),
+    icon: entityIcon('set', s.icon, defaultIcons),
     submenu: [...(s.sets ?? []).map(setItem), ...s.pages.map(pageItem)],
   })
   const collectionItem = (c: CollectionNode): PagePickerItem => ({
     label: c.title,
-    icon: iconNameOr(c.icon, defaultEntityIcon('collection', defaultIcons)),
+    icon: entityIcon('collection', c.icon, defaultIcons),
     submenu: [...c.sets.map(setItem), ...c.pages.map(pageItem)],
   })
   return tree.collections.map(collectionItem)
@@ -68,13 +68,13 @@ function viewPickerItems(
   ]
   const collectionItem = (c: CollectionNode): ViewPickerItem => ({
     label: c.title,
-    icon: iconNameOr(c.icon, defaultEntityIcon('collection', defaultIcons)),
+    icon: entityIcon('collection', c.icon, defaultIcons),
     // The collection's own views sit ABOVE its Sets (Nathan's call); + Custom stays the pinned footer.
     submenu: [
       ...containerViews(c),
       ...c.sets.map((s) => ({
         label: s.title,
-        icon: iconNameOr(s.icon, defaultEntityIcon('set', defaultIcons)),
+        icon: entityIcon('set', s.icon, defaultIcons),
         submenu: containerViews(s),
       })),
     ],
@@ -372,7 +372,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   const menuPageInfo = menuPage
     ? {
         title: menuPage.title,
-        icon: iconNameOr(menuPage.icon, defaultEntityIcon('page', defaultIcons)),
+        icon: entityIcon('page', menuPage.icon, defaultIcons),
       }
     : undefined
   const menuLoc = menuPage
@@ -381,7 +381,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   const menuLocInfo = menuLoc
     ? {
         title: menuLoc.title,
-        icon: iconNameOr(menuLoc.icon, defaultEntityIcon(menuLoc.kind, defaultIcons)),
+        icon: entityIcon(menuLoc.kind, menuLoc.icon, defaultIcons),
       }
     : undefined
   return (
