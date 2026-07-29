@@ -3,6 +3,16 @@ import { validateDefinition, validateName } from '../properties/schema'
 import { mintPropertyId } from '../ids'
 import { defaultStatusSeed, defaultSelectSeed, type PropertyDefinition } from '@shared/properties'
 import { ok, fail, type Result } from '@shared/result'
+import { parseDocument, isMap } from 'yaml'
+import { assembleEnvelope, splitEnvelope } from '../io/pageFile'
+import {
+  wrapKey,
+  normalizePropertyName,
+  invalidPropertyName,
+  KEY_REFUSAL,
+} from '@shared/governedKeys'
+import { cascadePages } from './optionOps'
+import { serializeSchemaOp } from './schemaChain'
 
 // Seed defaults for a def that has NONE (the field is undefined — a fresh create, or a type-change
 // into select/status). An EMPTY array is a deliberate state (the user deleted every option), never
@@ -24,8 +34,14 @@ export function createProperty(
   def: PropertyDefinition,
 ): Promise<Result<{ id: string }>> {
   return mutateRegistry<Result<{ id: string }>>(root, (registry) => {
-    const candidate = seeded({ ...def, id: def.id || mintPropertyId() })
-    const v = validateDefinition(candidate, Object.values(registry.defs), { unique: false })
+    const candidate = seeded({
+      ...def,
+      name: normalizePropertyName(def.name ?? ''),
+      id: def.id || mintPropertyId(),
+    })
+    if (invalidPropertyName(candidate.name))
+      return { result: fail('invalid-property', KEY_REFUSAL.reservedPrefix) }
+    const v = validateDefinition(candidate, Object.values(registry.defs))
     if (!v.ok) return { result: v }
     return {
       next: {
@@ -38,23 +54,64 @@ export function createProperty(
 }
 
 /** Edit the global definition in place — every assigning Collection sees the change on next read. */
+/** Rewrite one property's key across every page that holds it. The new key always wins: the
+ *  registry has already switched, so any value written while this runs used the new name and is
+ *  the fresher of the two. Returns null for a page holding neither key, so an untouched page is
+ *  never rewritten — and never re-dated, because a key-only rename is not a content edit. */
+export function renameSweep(root: string, oldName: string, newName: string): Promise<void> {
+  const oldKey = wrapKey('property', oldName)
+  const newKey = wrapKey('property', newName)
+  return cascadePages(root, (content) => {
+    const { frontmatter, body } = splitEnvelope(content)
+    const doc = parseDocument(frontmatter)
+    if (!isMap(doc.contents)) return null
+    const pair = doc.contents.items.find((i) => String(i.key) === oldKey)
+    if (!pair) return null
+    if (doc.get(newKey) === undefined) {
+      // Rename the key in place rather than delete-and-set: the pair keeps its position and any
+      // comment attached to it, which a re-add would drop.
+      ;(pair.key as { value: string }).value = newKey
+    } else {
+      // Already present ⇒ a write landed under the new name while this ran, and it is the fresher
+      // of the two. Drop the stale one.
+      doc.delete(oldKey)
+    }
+    return assembleEnvelope(doc.toString({ lineWidth: 0 }), body)
+  })
+}
+
 export function editProperty(
   root: string,
   propertyId: string,
   changes: Partial<PropertyDefinition>,
 ): Promise<Result<null>> {
-  return mutateRegistry<Result<null>>(root, (registry) => {
-    const current = registry.defs[propertyId]
-    if (!current) return { result: fail('not-found', 'Property not found.') }
-    const next = seeded({ ...current, ...changes, id: propertyId })
-    if (next.name !== current.name) {
-      const v = validateName(next.name, Object.values(registry.defs), propertyId, { unique: false })
-      if (!v.ok) return { result: v }
+  return serializeSchemaOp(async () => {
+    let renamedFrom: string | null = null
+    const edit = await mutateRegistry<Result<null>>(root, (registry) => {
+      const current = registry.defs[propertyId]
+      if (!current) return { result: fail('not-found', 'Property not found.') }
+      const changed = { ...changes }
+      if (typeof changed.name === 'string') changed.name = normalizePropertyName(changed.name)
+      const next = seeded({ ...current, ...changed, id: propertyId })
+      if (next.name !== current.name) {
+        if (invalidPropertyName(next.name))
+          return { result: fail('invalid-property', KEY_REFUSAL.reservedPrefix) }
+        const v = validateName(next.name, Object.values(registry.defs), propertyId)
+        if (!v.ok) return { result: v }
+        renamedFrom = current.name
+      }
+      return {
+        next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
+        result: ok(null),
+      }
+    })
+    if (!edit.ok) return edit
+    // Registry first, then one sweep: every write during it resolves the new name, so the new
+    // key is always the fresher of the two and no comparison is needed.
+    if (renamedFrom !== null) {
+      await renameSweep(root, renamedFrom, normalizePropertyName(changes.name as string))
     }
-    return {
-      next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-      result: ok(null),
-    }
+    return ok(null)
   })
 }
 

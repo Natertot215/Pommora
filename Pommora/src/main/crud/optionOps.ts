@@ -177,7 +177,7 @@ export function removeStatusOption(
  *  takes — so a cascade and a concurrent cell edit on one page can't clobber each other. Per
  *  file, not all-or-nothing across pages: a partly-applied rename/strip is recoverable by re-running
  *  and each page stays individually valid. Shared by rename (replace) and remove/clear (strip). */
-async function cascadePages(
+export async function cascadePages(
   root: string,
   rewrite: (content: string) => string | null,
 ): Promise<void> {
