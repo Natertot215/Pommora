@@ -12,9 +12,8 @@ import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
 import { SIDECAR_FILENAME } from '../paths'
-import { readTextOrNull, writeJson } from '../io/atomicWrite'
+import { readTextOrNull, rmwJsonStrict } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
-import { withoutCacheBlock } from './assignment'
 import { readRegistry } from '../io/propertiesRegistry'
 import { decodeValue, encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
 import { serializeSchemaOp } from './schemaChain'
@@ -57,24 +56,39 @@ async function removeInner(
     // just isn't restorable; Remove must not leak the value it exists to clear.
     if (typeof fields.id === 'string') values[fields.id] = raw
   }
-  const cache = { ...(sidecar.property_cache as Record<string, unknown> | undefined) }
-  // No value, no key — a block with nothing in it is the same violation as an empty map.
-  if (Object.keys(values).length) cache[propertyId] = { removed_at: nowIso(), values }
-  // Cache + unassign FIRST (the sidecar is never raced by a cell-write), THEN strip each page
-  // under its file lock. Cache-before-strip keeps the values safely persisted before any page
-  // loses them, so a failure mid-strip is recoverable, never lossy.
-  const nextSidecar: Record<string, unknown> = {
-    ...sidecar,
-    properties: ids.filter((id) => id !== propertyId),
-    property_cache: cache,
-    modified_at: nowIso(),
-  }
-  if (Object.keys(cache).length === 0) delete nextSidecar.property_cache
-  await writeJson(join(collectionFolder, SIDECAR_FILENAME.collection), nextSidecar)
+  // Cache + unassign FIRST (through the strict RMW, so the page-read window above can't
+  // revert a concurrent icon/banner/view write), THEN strip each page under its file lock.
+  // Cache-before-strip keeps the values safely persisted before any page loses them, so a
+  // failure mid-strip is recoverable, never lossy.
+  const written = await rmwJsonStrict(join(collectionFolder, SIDECAR_FILENAME.collection), (cur) =>
+    patchCacheBlock(
+      { ...cur, properties: ids.filter((id) => id !== propertyId) },
+      propertyId,
+      // No value, no key — a block with nothing in it is the same violation as an empty map.
+      Object.keys(values).length ? { removed_at: nowIso(), values } : undefined,
+    ),
+  )
+  if (!written.ok) return written
   for (const file of files) {
     await rewritePageSerialized(file, (content) => stripPageMember(content, key))
   }
   return ok(null)
+}
+
+/** One shape for both cache writers: set (or clear, on undefined) a property's cache block on a
+ *  fresh sidecar read, stamping the edit — the no-empties rule drops an emptied map's key. */
+function patchCacheBlock(
+  cur: Record<string, unknown>,
+  propertyId: string,
+  blockValue: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+  const cache = { ...(isPlainObject(cur.property_cache) ? cur.property_cache : {}) }
+  if (blockValue) cache[propertyId] = blockValue
+  else delete cache[propertyId]
+  const next: Record<string, unknown> = { ...cur, modified_at: nowIso() }
+  if (Object.keys(cache).length) next.property_cache = cache
+  else delete next.property_cache
+  return next
 }
 
 /** Restore the Remove-cache on re-assign: write each reconciled value back to the page
@@ -126,16 +140,13 @@ export async function restoreCachedValues(
     )
     if (wrote) delete survivors[pageId]
   }
-  const nextSidecar = Object.keys(survivors).length
-    ? {
-        ...sidecar,
-        property_cache: {
-          ...(sidecar.property_cache as Record<string, unknown>),
-          [propertyId]: { ...block, values: survivors },
-        },
-        modified_at: nowIso(),
-      }
-    : { ...withoutCacheBlock(sidecar, propertyId), modified_at: nowIso() }
-  await writeJson(join(collectionFolder, SIDECAR_FILENAME.collection), nextSidecar)
+  const written = await rmwJsonStrict(join(collectionFolder, SIDECAR_FILENAME.collection), (cur) =>
+    patchCacheBlock(
+      cur,
+      propertyId,
+      Object.keys(survivors).length ? { ...block, values: survivors } : undefined,
+    ),
+  )
+  if (!written.ok) return written
   return ok(null)
 }

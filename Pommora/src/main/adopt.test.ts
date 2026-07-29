@@ -100,13 +100,15 @@ describe('stampAdopted', () => {
     expect((await coll(join(root, 'Tasks')))?.id).toBeTruthy() // adopted as a normal Collection
   })
 
-  it('never mints over a sidecar it could not read — the folder waits for a later open', async () => {
+  it('never mints over a sidecar it could not read — the subtree still adopts around it', async () => {
     const sidecar = join(root, 'Notes', SIDECAR_FILENAME.collection)
     await writeFile(sidecar, '{ corrupt', 'utf8')
     await stampAdopted(root)
     expect(await readFile(sidecar, 'utf8')).toBe('{ corrupt') // byte-identical
-    // The subtree waits with it — a child stamped now would hang its parent_id on nothing.
-    expect(await set(join(root, 'Notes', 'Daily'))).toBeNull()
+    // Children mint without a parent_id (it only heals at mint time) rather than waiting.
+    const daily = await set(join(root, 'Notes', 'Daily'))
+    expect(daily?.id).toBeTruthy()
+    expect((daily as { parent_id?: string } | null)?.parent_id).toBeUndefined()
   })
 
   it('a page whose frontmatter refuses the id write is skipped, not clobbered', async () => {

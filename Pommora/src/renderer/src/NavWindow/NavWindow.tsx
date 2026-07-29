@@ -93,7 +93,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
   const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
-  const closeOnSelect = useSession((s) => s.tree?.personalization.navCloseOnSelect !== false)
+  const closeOnSelect = useSession((s) => s.personalization.navCloseOnSelect !== false)
   const onSelected = closeOnSelect ? closeNav : undefined
   const goClose = (target: NavTarget): void => go(target, onSelected)
   const goNewTab = (target: NavTarget): void => go(target, onSelected, { newTab: true })

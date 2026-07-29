@@ -827,15 +827,16 @@ export const useSession = create<SessionState>((set, get) => {
     },
     personalization: {},
     setPersonalization: (key, value) => {
-      // One writer, both projections: the slice for cheap subscriptions AND the tree copy —
-      // tree-keyed derivations (nav icons, context identity, the NavWindow toggle) memoize on
-      // the tree object, so an optimistic change must re-identify it or they serve stale until
-      // the next walk lands.
+      // One writer, both projections — but the tree copy re-identifies only for defaultIcons,
+      // the one key tree-keyed derivations (nav icons, context identity) actually resolve:
+      // a new tree identity re-runs every tree memo, thumbnail gate and pipeline, which a
+      // boolean toggle must never cost. Everything else reads the slice.
       set((s) => ({
         personalization: { ...s.personalization, [key]: value },
-        tree: s.tree
-          ? { ...s.tree, personalization: { ...s.tree.personalization, [key]: value } }
-          : s.tree,
+        tree:
+          s.tree && key === 'defaultIcons'
+            ? { ...s.tree, personalization: { ...s.tree.personalization, [key]: value } }
+            : s.tree,
       }))
       applyPersonalizationKey(key, value)
       void window.nexus.personalization.set(key, value).catch(() => undefined)

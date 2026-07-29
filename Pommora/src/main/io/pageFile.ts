@@ -54,26 +54,29 @@ export function mergeFrontmatter(
   const { frontmatter } = splitEnvelope(existingContent)
   // Empty frontmatter ⇒ contents is null; doc.set auto-creates a block map below.
   const doc = parseDocument(frontmatter)
-  // Broken frontmatter (parse errors, or a non-map) must never be re-serialized — the yaml
-  // doc holds only what the parser recovered, so writing it back destroys the rest. The body
-  // still saves with the original frontmatter bytes passed through verbatim (a body-only
-  // write governs no key a broken map can lose); a field write refuses instead.
-  if (doc.errors.length > 0 || (doc.contents != null && !isMap(doc.contents))) {
-    if (modeledKeys.some((k) => k !== 'modified_at')) {
-      throw new Error(
-        'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.',
-      )
+  // Broken frontmatter must never be re-serialized — the yaml doc holds only what the parser
+  // recovered, so writing it back destroys the rest. Broken is anything that can't round-trip:
+  // parse errors, a non-map, or a doc that parses clean yet refuses to serialize (an alias
+  // token like `*word` is exactly that). The body still saves with the original frontmatter
+  // bytes passed through verbatim (a body-only write governs no key a broken map can lose);
+  // a field write refuses instead.
+  if (doc.errors.length === 0 && (doc.contents == null || isMap(doc.contents))) {
+    for (const key of modeledKeys) {
+      if (key in modeled && modeled[key] !== undefined) doc.set(key, modeled[key])
+      else doc.delete(key)
     }
-    return assembleEnvelope(frontmatter, body)
+    try {
+      return assembleEnvelope(doc.toString({ lineWidth: 0 }), body)
+    } catch {
+      /* unserializable — fall through to the broken branch */
+    }
   }
-
-  for (const key of modeledKeys) {
-    if (key in modeled && modeled[key] !== undefined) doc.set(key, modeled[key])
-    else doc.delete(key)
+  if (modeledKeys.some((k) => k !== 'modified_at')) {
+    throw new Error(
+      'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.',
+    )
   }
-
-  const fm = doc.toString({ lineWidth: 0 })
-  return assembleEnvelope(fm, body)
+  return assembleEnvelope(frontmatter, body)
 }
 
 /** Read the existing page (if any), merge modeled fields preserving foreign data,

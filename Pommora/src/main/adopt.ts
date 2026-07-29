@@ -66,8 +66,7 @@ async function stampTree(
   excluded: string[],
 ): Promise<number> {
   const self = await stampFolder(absDir, kind, parentId)
-  if (!self) return 0
-  let count = self.wrote ? 1 : 0
+  let count = self?.wrote ? 1 : 0
 
   for (const e of await listEntries(absDir)) {
     if (e.isFile() && !e.name.startsWith('_') && e.name.toLowerCase().endsWith('.md')) {
@@ -76,8 +75,10 @@ async function stampTree(
       if (await stampPage(join(absDir, e.name)).catch(() => false)) count++
     } else if (e.isDirectory()) {
       const childRel = `${relDir}/${e.name}`
+      // A skipped folder (unreadable sidecar) still adopts its subtree — children just mint
+      // without a parent_id, which only ever heals at mint time anyway.
       if (!shouldSkipDir(e.name, childRel, excluded))
-        count += await stampTree(join(absDir, e.name), childRel, 'set', self.id, excluded)
+        count += await stampTree(join(absDir, e.name), childRel, 'set', self?.id ?? null, excluded)
     }
   }
   return count
