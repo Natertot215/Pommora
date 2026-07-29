@@ -139,7 +139,7 @@ function governedContextKeys(raw: Raw, next: Raw, targetKey: string): string[] {
   return [...keys]
 }
 
-/** setContext on a `.md` page — the bracketed key merges through the governed rewrite
+/** setContext on a `.md` page — the parenthesized key merges through the governed rewrite
  *  (foreign frontmatter + body untouched), under the page's own file lock. */
 export async function setPageContext(
   absFile: string,

@@ -1,5 +1,5 @@
 // The three-scope title cascade behind Context/Space renames, plus the rename ops and the
-// on-open journal replay. A Context rename rewrites the bracketed KEY in every member root; a
+// on-open journal replay. A Context rename rewrites the parenthesized KEY in every member root; a
 // Space rename rewrites its exact canonical title as a VALUE under its Context's key
 // (near-miss forms stay — the reconcile owns those). Scopes: every `.md` frontmatter, every
 // agenda `*.json` root, every `_space.json` root — each under its own file lock.
@@ -134,7 +134,7 @@ export async function cascadeTitle(
   return ok(await sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j)))
 }
 
-/** Strip a deleted Context's bracketed KEY from every root in all three scopes. */
+/** Strip a deleted Context's parenthesized KEY from every root in all three scopes. */
 export async function unlinkContextKey(
   root: string,
   contextTitle: string,

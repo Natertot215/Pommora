@@ -55,8 +55,8 @@ export type MutateRequest =
   // A page carries it in `.md` frontmatter `icon`; a container/context in its JSON sidecar.
   // `null` clears it. Property + view icons ride their own writers, not this op.
   | { op: 'setIcon'; path: string; kind: MutableKind; icon: string | null }
-  // One property in a page's `.md` frontmatter `properties` map (id-keyed PropertyValue);
-  // `null` clears the key. Drives table cross-group reassignment + inline edits.
+  // One property on a page's `.md` frontmatter root, under the wrapped key its definition's
+  // name builds; `null` clears it. Drives table cross-group reassignment + inline edits.
   | { op: 'setProperty'; path: string; propertyId: string; value: PropertyValue | null }
   // `order`: the destination container's full page-id order after the drop (renderer-computed).
   // Absent = legacy append. Stale ids in a source container self-drop on the next read.
