@@ -7,12 +7,12 @@
 import type { CollectionNode, PageNode, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
 import type { DateGranularity, EmptyPlacement, GroupConfig, SubGroupConfig } from '@shared/views'
 import type { PageFrontmatter } from '@shared/schemas'
-import type { PropertyDefinition } from '@shared/properties'
+import { optionValues, type PropertyDefinition } from '@shared/properties'
 import { UNGROUPED } from '@shared/types'
 import { declaredType, resolveFieldValue } from './value'
 
 /** Only these declared types group; everything else falls back to structural. */
-const GROUPABLE = new Set<string>(['select', 'status', 'checkbox', 'date', 'datetime'])
+const GROUPABLE = new Set<string>(['select', 'status', 'checkbox', 'datetime'])
 
 type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>
 type Sorter = (rows: ViewRow[]) => ViewRow[]
@@ -155,9 +155,8 @@ export function bucketKey(
 
 function schemaOptionOrder(def: PropertyDefinition | undefined): string[] | null {
   if (!def) return null
-  if (def.select_options) return def.select_options.map((o) => o.value)
-  if (def.status_groups) return def.status_groups.flatMap((g) => g.options.map((o) => o.value))
-  return null
+  const values = optionValues(def)
+  return values.length ? values : null
 }
 
 /** `base` followed by any present keys not in it, sorted (present date keys sort chronologically). */

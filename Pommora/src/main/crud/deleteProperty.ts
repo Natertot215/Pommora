@@ -20,10 +20,9 @@ import { listMarkdownFiles } from '../io/walk'
 import { SIDECAR_FILENAME } from '../paths'
 import { serializeJson, writeJson } from '../io/atomicWrite'
 import { splitFrontmatter } from '../readNexus'
-import { isPlainObject } from '@shared/propertyValue'
+import { isPlainObject, propertyKey } from '@shared/propertyValue'
 import { nowIso } from './util'
 import { fail, type Result } from '@shared/result'
-import { wrapKey } from '@shared/governedKeys'
 
 async function snapshot(
   root: string,
@@ -31,7 +30,7 @@ async function snapshot(
   def: PropertyRegistry[string],
   folders: string[],
 ): Promise<void> {
-  const key = wrapKey('property', def.name)
+  const key = propertyKey(def)
   const values: Record<string, unknown> = {}
   for (const folder of folders) {
     for (const file of await listMarkdownFiles(folder)) {
@@ -58,10 +57,9 @@ export function deleteProperty(root: string, propertyId: string): Promise<Result
 }
 
 async function deleteInner(root: string, propertyId: string): Promise<Result<null>> {
-  const registry = await readRegistry(root)
-  const key = wrapKey('property', registry.defs[propertyId]?.name ?? '')
-  const def = registry.defs[propertyId]
+  const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return fail('not-found', 'Property not found.')
+  const key = propertyKey(def)
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a
   // sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
