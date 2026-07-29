@@ -11,9 +11,12 @@ import { readSidecar } from '../sidecarIO'
 import { readFrontmatterFields } from '../io/pageFile'
 import { pageCollectionSidecar } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
+import { wrapKey } from '@shared/governedKeys'
+
 
 let root: string
 let folder: string
+let liveDef: PropertyDefinition
 let propId: string
 let pageA: string
 let pageB: string
@@ -45,23 +48,25 @@ beforeEach(async () => {
   if (!c.ok || !p.ok) throw new Error('setup failed')
   folder = c.value.path
   propId = p.value.id
+  liveDef = { ...stageDef, id: propId } as PropertyDefinition
   await assignProperty(root, folder, propId)
   const a = await createPage(folder, 'A', { body: 'b' })
   const b = await createPage(folder, 'B', { body: 'b' })
   if (!a.ok || !b.ok) throw new Error('setup failed')
   pageA = a.value.path
   pageB = b.value.path
-  await updatePageProperty(pageA, propId, { kind: 'select', value: 'active' })
-  await updatePageProperty(pageB, propId, { kind: 'select', value: 'done' })
+  await updatePageProperty(pageA, liveDef, { kind: 'select', value: 'active' })
+  await updatePageProperty(pageB, liveDef, { kind: 'select', value: 'done' })
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-const pageProps = async (path: string): Promise<Record<string, unknown>> =>
-  (readFrontmatterFields(await readFile(path, 'utf8')).properties as
-    | Record<string, unknown>
-    | undefined) ?? {}
+/** The value a page holds for the property under test, read at its own key. */
+const pageValue = async (path: string): Promise<unknown> =>
+  (readFrontmatterFields(await readFile(path, 'utf8')) as Record<string, unknown>)[
+    wrapKey('property', liveDef.name)
+  ]
 const sidecar = async (): Promise<Record<string, unknown> | null> =>
   (await readSidecar(folder, 'collection', pageCollectionSidecar)) as Record<string, unknown> | null
 const cacheBlock = async (): Promise<
@@ -75,10 +80,10 @@ const cacheBlock = async (): Promise<
 
 describe('removeProperty — strip + cache (C-3/C-6)', () => {
   it('strips the value from every member page, caches {pageId: raw}, and unassigns — one transaction', async () => {
-    const r = await removeProperty(folder, propId)
+    const r = await removeProperty(root, folder, propId)
     expect(r.ok).toBe(true)
-    expect(await pageProps(pageA)).toEqual({})
-    expect(await pageProps(pageB)).toEqual({})
+    expect(await pageValue(pageA)).toBeUndefined()
+    expect(await pageValue(pageB)).toBeUndefined()
     const sc = await sidecar()
     expect((sc?.properties as string[] | undefined) ?? []).not.toContain(propId)
     const block = await cacheBlock()
@@ -89,9 +94,9 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
   })
 
   it('is a no-op when the property is not assigned — never overwrites a cache with emptiness (E-6)', async () => {
-    await removeProperty(folder, propId)
+    await removeProperty(root, folder, propId)
     const before = await cacheBlock()
-    const again = await removeProperty(folder, propId)
+    const again = await removeProperty(root, folder, propId)
     expect(again.ok).toBe(true)
     expect(await cacheBlock()).toEqual(before)
   })
@@ -99,17 +104,17 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
 
 describe('restore on re-assign — per-value schema-currency reconciliation (C-3)', () => {
   it('restores cached values to pages still present and clears the block', async () => {
-    await removeProperty(folder, propId)
+    await removeProperty(root, folder, propId)
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
-    expect(await pageProps(pageA)).toEqual({ [propId]: 'active' })
-    expect(await pageProps(pageB)).toEqual({ [propId]: 'done' })
+    expect(await pageValue(pageA)).toBe('active')
+    expect(await pageValue(pageB)).toBe('done')
     expect(await cacheBlock()).toBeUndefined()
     expect((await sidecar())?.properties).toContain(propId)
   })
 
   it('drops a value whose option no longer exists; keeps conforming siblings', async () => {
-    await removeProperty(folder, propId)
+    await removeProperty(root, folder, propId)
     await editProperty(root, propId, {
       status_groups: [
         {
@@ -121,26 +126,26 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
       ],
     } as Partial<PropertyDefinition>)
     await assignProperty(root, folder, propId)
-    expect(await pageProps(pageA)).toEqual({}) // 'active' is no longer a live option
-    expect(await pageProps(pageB)).toEqual({ [propId]: 'done' })
+    expect(await pageValue(pageA)).toBeUndefined() // 'active' is no longer a live option
+    expect(await pageValue(pageB)).toBe('done')
     expect(await cacheBlock()).toBeUndefined()
   })
 
   it('drops a value whose def type changed since caching', async () => {
-    await removeProperty(folder, propId)
+    await removeProperty(root, folder, propId)
     await editProperty(root, propId, { type: 'number' })
     await assignProperty(root, folder, propId)
-    expect(await pageProps(pageA)).toEqual({})
-    expect(await pageProps(pageB)).toEqual({})
+    expect(await pageValue(pageA)).toBeUndefined()
+    expect(await pageValue(pageB)).toBeUndefined()
     expect(await cacheBlock()).toBeUndefined()
   })
 
   it('a page deleted while cached is skipped — entry dropped, no error', async () => {
-    await removeProperty(folder, propId)
+    await removeProperty(root, folder, propId)
     await rm(pageA)
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
-    expect(await pageProps(pageB)).toEqual({ [propId]: 'done' })
+    expect(await pageValue(pageB)).toBe('done')
     expect(await cacheBlock()).toBeUndefined()
   })
 
@@ -160,16 +165,21 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await assignProperty(root, folder, id)
     const c = await createPage(folder, 'C', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
-    await updatePageProperty(c.value.path, id, { kind: 'select', value: '2024-01-01' })
-    await removeProperty(folder, id)
+    const selDef = { ...sel.value, id } as PropertyDefinition
+    await updatePageProperty(c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
+    await removeProperty(root, folder, id)
     await assignProperty(root, folder, id)
-    expect(((await pageProps(c.value.path)) as Record<string, unknown>)[id]).toBe('2024-01-01')
+    const root2 = readFrontmatterFields(await readFile(c.value.path, 'utf8')) as Record<
+      string,
+      unknown
+    >
+    expect(root2[wrapKey('property', selDef.name)]).toBe('2024-01-01')
   })
 
   it('a member page without an id still gets STRIPPED on Remove — only the caching needs identity (breaker L-2)', async () => {
     const orphan = join(folder, 'Orphan.md')
-    await writeFile(orphan, `---\nproperties:\n  ${propId}:\n    active\n---\n\nbody\n`)
-    await removeProperty(folder, propId)
-    expect(await pageProps(orphan)).toEqual({})
+    await writeFile(orphan, `---\n${wrapKey('property', liveDef.name)}: active\n---\n\nbody\n`)
+    await removeProperty(root, folder, propId)
+    expect(await pageValue(orphan)).toBeUndefined()
   })
 })

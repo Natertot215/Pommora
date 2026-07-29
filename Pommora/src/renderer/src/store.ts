@@ -112,9 +112,7 @@ export interface TrailEntry {
 }
 
 function findContainerPath(tree: NexusTree, id: string): string | null {
-  const cols = [
-    ...(tree.collections ?? []),
-  ]
+  const cols = [...(tree.collections ?? [])]
   const inSets = (sets: SetNode[] | undefined): string | null => {
     for (const s of sets ?? []) {
       if (s.id === id) return s.path
@@ -343,7 +341,6 @@ export const useSession = create<SessionState>((set, get) => {
     const to = cur.tabs.findIndex((t) => t.id === nextId)
     return { dir: to < from ? 'back' : 'fwd', seq: ++previewSlideSeq }
   }
-
 
   const toPreviewRecord = (p: PreviewState): PreviewSetRecord => ({
     tabs: p.tabs.map((t) => ({ target: t.target })),

@@ -227,8 +227,12 @@ export function GroupBand({
               onPointerDown={(e) => e.stopPropagation()}
               aria-label={collapsed ? 'Expand group' : 'Collapse group'}
             >
-              <Icon name="chevron-right" size={12} className={cx(twisty, !collapsed && twistyOpen)}
-                data-twisty />
+              <Icon
+                name="chevron-right"
+                size={12}
+                className={cx(twisty, !collapsed && twistyOpen)}
+                data-twisty
+              />
             </button>
             {/* biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content */}
             <span

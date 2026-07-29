@@ -11,7 +11,15 @@ import { createPage, updatePageProperty } from './page'
 import { readRegistry } from '../io/propertiesRegistry'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
-import type { PropertyDefinition } from '@shared/properties'
+import type { PropertyDefinition, PropertyType } from '@shared/properties'
+
+/** The writer takes a definition, not an id — tests name the property and this supplies the rest.
+ *  The type only has to be one the value's kind can hold; the key comes from the name. */
+const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => ({
+  id,
+  name: id.replace(/^prop_/, ''),
+  type,
+})
 
 let root: string
 let notes: string
@@ -44,8 +52,8 @@ describe('deleteProperty', () => {
     const p1 = await createPage(notes, 'A', { body: 'b' })
     const p2 = await createPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) return
-    await updatePageProperty(p1.value.path, id, { kind: 'select', value: 'hi' })
-    await updatePageProperty(p2.value.path, id, { kind: 'select', value: 'hi' })
+    await updatePageProperty(p1.value.path, defOf(id), { kind: 'select', value: 'hi' })
+    await updatePageProperty(p2.value.path, defOf(id), { kind: 'select', value: 'hi' })
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
@@ -82,8 +90,8 @@ describe('deleteProperty', () => {
     await assignProperty(root, notes, id)
     const p = await createPage(notes, 'A', { body: 'b' })
     if (!p.ok) return
-    await updatePageProperty(p.value.path, id, { kind: 'select', value: 'hi' })
-    await removeProperty(notes, id) // notes now holds a cache block and is NOT an assigner
+    await updatePageProperty(p.value.path, defOf(id), { kind: 'select', value: 'hi' })
+    await removeProperty(root, notes, id) // notes now holds a cache block and is NOT an assigner
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
 

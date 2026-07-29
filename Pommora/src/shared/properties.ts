@@ -146,7 +146,6 @@ export function isReservedPropertyId(id: string): boolean {
   return RESERVED_SET.has(id)
 }
 
-
 /** A status def's options flattened for display — an option without its own color wears its
  *  GROUP's (the on-disk contract: group color is the default, option color the override). THE
  *  read for status chips anywhere the group isn't separately in scope. */

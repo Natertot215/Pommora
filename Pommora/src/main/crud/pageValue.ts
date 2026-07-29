@@ -5,7 +5,6 @@
 // may carry foreign / non-string elements, and an op must touch only its target.
 
 import type { PropertyType } from '@shared/properties'
-import { isPlainObject } from '@shared/propertyValue'
 import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'
 import { nowIso } from './util'
@@ -42,44 +41,41 @@ function rewriteRaw(
 
 function applyEdit(
   content: string,
-  propertyId: string,
+  key: string,
   type: PropertyType,
   target: string,
   edit: ValueEdit,
 ): string | null {
-  const rawProps = splitFrontmatter(content).properties
-  const props = isPlainObject(rawProps) ? rawProps : {}
-  const nextValue = rewriteRaw(props[propertyId], type, target, edit)
+  const root = splitFrontmatter(content)
+  const nextValue = rewriteRaw((root as Record<string, unknown>)[key], type, target, edit)
   if (nextValue === SKIP) return null
-  const next = { ...props }
-  if (nextValue === null) delete next[propertyId]
-  else next[propertyId] = nextValue
-  const body = splitEnvelope(content).body
   return mergeFrontmatter(
     content,
-    { properties: next, modified_at: nowIso() },
-    ['properties', 'modified_at'],
-    body,
+    // A null next value means the option left this page: the key is governed but not supplied,
+    // which is how the merge is told to delete it.
+    nextValue === null ? { modified_at: nowIso() } : { [key]: nextValue, modified_at: nowIso() },
+    [key, 'modified_at'],
+    splitEnvelope(content).body,
   )
 }
 
 /** Remove one option's value from a page. Returns null if the page didn't hold it. */
 export function stripPageValue(
   content: string,
-  propertyId: string,
+  key: string,
   value: string,
   type: PropertyType,
 ): string | null {
-  return applyEdit(content, propertyId, type, value, { op: 'strip' })
+  return applyEdit(content, key, type, value, { op: 'strip' })
 }
 
 /** Rename cascade: swap oldValue → newValue in place. Returns null if the page didn't hold it. */
 export function replacePageValue(
   content: string,
-  propertyId: string,
+  key: string,
   oldValue: string,
   newValue: string,
   type: PropertyType,
 ): string | null {
-  return applyEdit(content, propertyId, type, oldValue, { op: 'replace', to: newValue })
+  return applyEdit(content, key, type, oldValue, { op: 'replace', to: newValue })
 }

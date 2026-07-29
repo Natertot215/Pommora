@@ -29,7 +29,7 @@
   zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
 }
 .cards-view.is-compact {
-  --band-gap: 14px; 
+  --band-gap: 14px;
   --card-row-h: 17px; /* KNOB — a compact property-value row (chip height × --chip-zoom) */
   --card-foot-h: calc(
     1.5px +

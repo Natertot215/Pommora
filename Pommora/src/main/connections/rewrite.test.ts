@@ -41,9 +41,15 @@ describe('rewriteConnections', () => {
 
 describe('rewriteConnections — code is a sample, never a connection', () => {
   it('leaves a link inside a fenced block alone while rewriting the prose around it', () => {
-    const body = ['see [[Old]]', '', '```md', 'write [[Old]] to link it', '```', '', 'and [[Old]]'].join(
-      '\n',
-    )
+    const body = [
+      'see [[Old]]',
+      '',
+      '```md',
+      'write [[Old]] to link it',
+      '```',
+      '',
+      'and [[Old]]',
+    ].join('\n')
     expect(rewriteConnections(body, 'Old', 'New')).toBe(
       ['see [[New]]', '', '```md', 'write [[Old]] to link it', '```', '', 'and [[New]]'].join('\n'),
     )

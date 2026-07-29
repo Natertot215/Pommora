@@ -50,9 +50,7 @@ function pagePickerItems(
     icon: iconNameOr(c.icon, defaultEntityIcon('collection', defaultIcons)),
     submenu: [...c.sets.map(setItem), ...c.pages.map(pageItem)],
   })
-  return tree.collections.map(
-    collectionItem,
-  )
+  return tree.collections.map(collectionItem)
 }
 
 // Sub-Sets carry no views, so only depth-1 Sets drill here.
@@ -81,9 +79,7 @@ function viewPickerItems(
       })),
     ],
   })
-  return tree.collections.map(
-    collectionItem,
-  )
+  return tree.collections.map(collectionItem)
 }
 
 // A leaf whose id has no entry — or an entry this build doesn't know — renders inert and keeps
@@ -100,9 +96,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const select = useSession((s) => s.select)
   // The store is the cross-subtree source — settings surfaces toggle this from elsewhere.
-  const hostLocked = useSession((s) =>
-    s.hostLocks[blockHostKey(host)] ?? false,
-  )
+  const hostLocked = useSession((s) => s.hostLocks[blockHostKey(host)] ?? false)
 
   const entries = useMemo(() => {
     const map = new Map<string, BlockEntry>()
@@ -129,10 +123,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
       map.set(c.path, { title: c.title, icon: c.icon, kind: 'collection' })
       for (const s of c.sets) addSet(s)
     }
-    for (const c of [
-      ...(tree?.collections ?? []),
-    ])
-      addCol(c)
+    for (const c of [...(tree?.collections ?? [])]) addCol(c)
     return map
   }, [tree])
 

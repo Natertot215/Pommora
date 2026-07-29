@@ -5,7 +5,7 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion } from '@shared/views'
-import { Icon, } from '@renderer/design-system/symbols'
+import { Icon } from '@renderer/design-system/symbols'
 import { MenuItem, MenuPaneTopRow, MenuSeparator } from '../../design-system/components/menu'
 import { flushTrailing } from '../../design-system/components/menu/menu.css'
 import { Reveal } from '../../design-system/components/Reveal'
@@ -154,7 +154,8 @@ export function SortingPane({
     const fresh: SortCriterion = { property_id: id, direction: 'ascending' }
     const next = sub && sub.property_id !== id ? [fresh, sub] : [fresh]
     // Picking Location seeds its Order at Location (filesystem) — the flatten's default.
-    if (id === LOCATION_SORT) void saveView({ ...view, sort: next, location_order_mode: 'location' })
+    if (id === LOCATION_SORT)
+      void saveView({ ...view, sort: next, location_order_mode: 'location' })
     else save(next)
   }
 

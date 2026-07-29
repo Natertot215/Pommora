@@ -57,8 +57,7 @@ export function Reveal({
         // transition would otherwise settle its parent mid-animation and unclip a still-growing box.
         if (e.target !== e.currentTarget) return
         if (e.propertyName !== 'grid-template-rows') return
-        if (open)
-          setSettled(true)
+        if (open) setSettled(true)
         else setMounted(false)
       }}
     >

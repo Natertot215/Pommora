@@ -6,7 +6,10 @@ import { wrapKey } from '@shared/governedKeys'
 
 /** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
  *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
-const propsAtRoot = (props: Record<string, unknown>, defs: PropertyDefinition[]): Record<string, unknown> =>
+const propsAtRoot = (
+  props: Record<string, unknown>,
+  defs: PropertyDefinition[],
+): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(props).map(([id, v]) => {
       const d = defs.find((x) => x.id === id)
@@ -34,13 +37,16 @@ const row: ViewRow = {
   frontmatter: {
     id: '01ROW',
     modified_at: '2026-06-20T10:00:00Z',
-    ...propsAtRoot({
-      prop_status: 'in_progress',
-      prop_sel: 'opt_a',
-      prop_when: '2026-06-15T09:00:00Z',
-      prop_num: 42,
-      prop_bad: [1, 'mixed'],
-    }, schema),
+    ...propsAtRoot(
+      {
+        prop_status: 'in_progress',
+        prop_sel: 'opt_a',
+        prop_when: '2026-06-15T09:00:00Z',
+        prop_num: 42,
+        prop_bad: [1, 'mixed'],
+      },
+      schema,
+    ),
   },
 }
 

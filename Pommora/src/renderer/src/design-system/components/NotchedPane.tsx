@@ -228,7 +228,13 @@ export function NotchedPane({
       </GlassPane>
       {d && (
         <svg className={cx(s.frame, animationClass)} width={w} height={h} aria-hidden="true">
-          <path d={d} fill="none" strokeWidth={1} stroke="#FFFFFF" strokeOpacity={PANE_FROST.borderAlpha} />
+          <path
+            d={d}
+            fill="none"
+            strokeWidth={1}
+            stroke="#FFFFFF"
+            strokeOpacity={PANE_FROST.borderAlpha}
+          />
         </svg>
       )}
     </div>

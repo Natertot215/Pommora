@@ -85,9 +85,7 @@ export function buildIndex(tree: NexusTree): Index {
     addPages(c.pages, c.id, c.path, 1)
     for (const s of c.sets) walkSet(s, c.id, c.path, 1)
   }
-  const collections = [
-    ...(tree.collections ?? []),
-  ]
+  const collections = [...(tree.collections ?? [])]
   for (const c of collections) walkCollection(c)
 
   const spaceIdsByContext = new Map<string, string[]>()

@@ -269,7 +269,6 @@ describe('renameNodeInTree', () => {
     expect(set?.pages[0].path).toBe('Notes/Nested/B.md')
   })
 
-
   it('returns null for an unknown path', () => {
     expect(renameNodeInTree(tree(), 'Ghost', 'X')).toBeNull()
   })
@@ -285,7 +284,6 @@ describe('removeNodeInTree', () => {
     const t = removeNodeInTree(tree(), 'Work')
     expect(t?.collections.map((c) => c.id)).toEqual(['c1'])
   })
-
 })
 
 describe('patchNodeInTree', () => {
@@ -307,7 +305,6 @@ describe('reorder transforms', () => {
     const t = reorderTopInTree(tree(), 'collection_order', ['c2'])
     expect(t.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
   })
-
 
   it("reorderChildren reorders a collection's sets", () => {
     const base = tree()

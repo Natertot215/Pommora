@@ -58,7 +58,10 @@ describe('readTabsState', () => {
   it('degrades a target absent from its history to a single-entry stack', () => {
     const a = { kind: 'page', id: 'p1', path: 'a.md' } as const
     const b = { kind: 'page', id: 'p2', path: 'b.md' } as const
-    writeValue('tabs', { tabs: [{ id: 't1', target: a, navStack: [b], navIndex: 0 }], activeTabId: 't1' })
+    writeValue('tabs', {
+      tabs: [{ id: 't1', target: a, navStack: [b], navIndex: 0 }],
+      activeTabId: 't1',
+    })
     const tab = readTabsState()?.tabs[0]
     expect(tab?.navStack).toEqual([a])
     expect(tab?.navIndex).toBe(0)

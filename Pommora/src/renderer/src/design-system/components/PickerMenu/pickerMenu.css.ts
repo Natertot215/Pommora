@@ -116,7 +116,7 @@ export const option = style([
     cursor: 'default',
     selectors: {
       '&:hover': { background: c.state.hover },
-    
+
       '&:focus-visible': {
         outline: 'none',
         boxShadow: fieldRing(ROW_RING),

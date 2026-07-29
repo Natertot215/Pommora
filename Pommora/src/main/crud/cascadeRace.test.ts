@@ -21,7 +21,15 @@ import { createPage, updatePageProperty } from './page'
 import { serializeOnFile } from '../io/fileLock'
 import { openSession, closeSession, sessionRoot } from '../session'
 import { resolveUnderRoot } from '../pathSafety'
-import type { PropertyDefinition } from '@shared/properties'
+import type { PropertyDefinition, PropertyType } from '@shared/properties'
+
+/** The writer takes a definition, not an id — tests name the property and this supplies the rest.
+ *  The type only has to be one the value's kind can hold; the key comes from the name. */
+const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => ({
+  id,
+  name: id.replace(/^prop_/, ''),
+  type,
+})
 
 let rawRoot: string
 beforeEach(async () => {
@@ -47,7 +55,7 @@ async function setup(root: string, value: string): Promise<{ propertyId: string;
   await assignProperty(root, col.value.path, c.value.id)
   const p = await createPage(col.value.path, 'Target', { body: 'b' })
   if (!p.ok) throw new Error('page failed')
-  await updatePageProperty(p.value.path, c.value.id, { kind: 'select', value })
+  await updatePageProperty(p.value.path, defOf(c.value.id), { kind: 'select', value })
   return { propertyId: c.value.id, rel: relative(root, p.value.path) }
 }
 

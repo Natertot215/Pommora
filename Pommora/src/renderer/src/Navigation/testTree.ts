@@ -12,9 +12,27 @@ export function makeTree(): NexusTree {
       {
         def: { id: 'g1', title: 'Realms', singular: 'Realm' },
         spaces: [
-          { kind: 'space', id: 'a1', title: 'Work', path: '.nexus/contexts/Realms/Work', contextId: 'g1' },
-          { kind: 'space', id: 't1', title: 'Reading', path: '.nexus/contexts/Realms/Reading', contextId: 'g1' },
-          { kind: 'space', id: 'pr1', title: 'Pommora', path: '.nexus/contexts/Realms/Pommora', contextId: 'g1' },
+          {
+            kind: 'space',
+            id: 'a1',
+            title: 'Work',
+            path: '.nexus/contexts/Realms/Work',
+            contextId: 'g1',
+          },
+          {
+            kind: 'space',
+            id: 't1',
+            title: 'Reading',
+            path: '.nexus/contexts/Realms/Reading',
+            contextId: 'g1',
+          },
+          {
+            kind: 'space',
+            id: 'pr1',
+            title: 'Pommora',
+            path: '.nexus/contexts/Realms/Pommora',
+            contextId: 'g1',
+          },
         ],
       },
     ],

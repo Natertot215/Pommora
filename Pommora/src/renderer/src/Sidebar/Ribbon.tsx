@@ -50,8 +50,7 @@ export function Ribbon(): React.JSX.Element {
   const onIcon = (k: RibbonKey): void => {
     const m = MODE_FOR[k]
     if (m) setPersonalization('sidebarMode', m)
-    else if (k === 'navigation')
-      openNav()
+    else if (k === 'navigation') openNav()
     else if (k === 'settings') openSettings()
   }
 

@@ -16,9 +16,9 @@ afterEach(async () => {
 })
 
 const seed = (db: Db, key: string): void => {
-  db.prepare("INSERT OR REPLACE INTO local_state (scope, key, value) VALUES ('folds', ?, '[]')").run(
-    key,
-  )
+  db.prepare(
+    "INSERT OR REPLACE INTO local_state (scope, key, value) VALUES ('folds', ?, '[]')",
+  ).run(key)
 }
 const keys = (db: Db): string[] =>
   (db.prepare('SELECT key FROM local_state').all() as { key: string }[]).map((r) => r.key)

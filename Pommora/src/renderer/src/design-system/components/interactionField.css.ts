@@ -5,7 +5,6 @@ import { fieldRing } from './fieldRing'
 
 const c = colorVars.color
 
-
 /** The rounded input surface. The OutlineTint channel: any ancestor (or the
  *  component's `outline` prop) sets `--field-ring` and the field paints the house inset ring
  *  in that color — unset stays ringless. */

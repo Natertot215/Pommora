@@ -60,12 +60,9 @@ describe('placeInShown', () => {
 
   it('anchors the section slot inside the full order — Title and Contexts hold their places', () => {
     const v = view([title, 'a', projects, 'b'], [])
-    expect(placeInShown(v, [title, 'a', projects, 'b'], ['a', 'b'], 'b', 0).property_order).toEqual([
-      title,
-      'b',
-      'a',
-      projects,
-    ])
+    expect(placeInShown(v, [title, 'a', projects, 'b'], ['a', 'b'], 'b', 0).property_order).toEqual(
+      [title, 'b', 'a', projects],
+    )
   })
 
   it('unhides a dragged-in row at the slot and lifts its flag', () => {

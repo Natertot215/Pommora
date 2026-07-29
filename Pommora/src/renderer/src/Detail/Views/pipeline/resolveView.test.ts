@@ -18,7 +18,10 @@ import { wrapKey } from '@shared/governedKeys'
 
 /** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
  *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
-const propsAtRoot = (props: Record<string, unknown>, defs: PropertyDefinition[]): Record<string, unknown> =>
+const propsAtRoot = (
+  props: Record<string, unknown>,
+  defs: PropertyDefinition[],
+): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(props).map(([id, v]) => {
       const d = defs.find((x) => x.id === id)
@@ -370,7 +373,9 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
     const { groups } = resolveView({
       rows,
       setTree,
-      view: view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is_not_empty' }] } }),
+      view: view({
+        filter: { match: 'all', rules: [{ property_id: '_title', op: 'is_not_empty' }] },
+      }),
       schema: [],
     })
     expect(keys(groups)).toEqual(['sOuter', 'sBare'])
@@ -381,7 +386,9 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
     const { groups } = resolveView({
       rows,
       setTree,
-      view: view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'nothing' }] } }),
+      view: view({
+        filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'nothing' }] },
+      }),
       schema: [],
     })
     expect(groups).toEqual([])
@@ -392,7 +399,9 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
     const { groups } = resolveView({
       rows,
       setTree,
-      view: view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'p_outer' }] } }),
+      view: view({
+        filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'p_outer' }] },
+      }),
       schema: [],
     })
     expect(keys(groups)).toEqual(['sOuter'])
@@ -404,7 +413,9 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
     const { groups } = resolveView({
       rows,
       setTree,
-      view: view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'p_inner' }] } }),
+      view: view({
+        filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'p_inner' }] },
+      }),
       schema: [],
     })
     expect(keys(groups)).toEqual(['sOuter'])

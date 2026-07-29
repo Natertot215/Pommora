@@ -4,7 +4,6 @@ import { shadowStandardVar } from '../tokens/color.css'
 /** Same recipe as the static frostMaterial (glass-material.ts) — a dimmed blur with a glassy
  *  edge — but with its own pane-tuned params (PANE_FROST). */
 export interface FrostParams {
-
   blur: number
   brightness: number
   saturate: number

@@ -31,11 +31,7 @@ import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../store'
 import { contextTargetToSelect, isOpenInTabs } from '../Tabs/tabsModel'
 import { RenamableTitle } from '../Components/RenamableTitle'
-import {
-  twisty,
-  twistyOpen,
-  twistySpacer,
-} from '@renderer/design-system/components/menu/menu.css'
+import { twisty, twistyOpen, twistySpacer } from '@renderer/design-system/components/menu/menu.css'
 
 /** Every PathNode carries kind/id/path/title; code-keyed saved rows don't, so they never wire
  *  this. Tab membership rides along so the menu's open item reads stateful. */
@@ -514,7 +510,6 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
   )
 }
 
-
 export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const selection = useSession((s) => s.selection)
   const select = useSession((s) => s.select)
@@ -554,9 +549,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const onSelectPage = (page: PageNode, e?: React.MouseEvent): void => {
     // A page in a page-preview Collection opens the floating preview (resolved by path prefix —
     // the sidebar has no source prop); ⌘-click is the explicit full-page bypass.
-    const owner = tree.collections.find(
-      (c) => page.path.startsWith(`${c.path}/`),
-    )
+    const owner = tree.collections.find((c) => page.path.startsWith(`${c.path}/`))
     if (owner?.openIn === 'page-preview') {
       if (e?.metaKey) void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true })
       else useSession.getState().openPreview({ id: page.id, path: page.path })
