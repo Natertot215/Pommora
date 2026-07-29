@@ -30,16 +30,17 @@ async function snapshot(
   def: PropertyRegistry[string],
   folders: string[],
 ): Promise<void> {
+  const key = wrapKey('property', def.name)
   const values: Record<string, unknown> = {}
   for (const folder of folders) {
     for (const file of await listMarkdownFiles(folder)) {
-      let props: unknown
+      let fm: Record<string, unknown>
       try {
-        props = splitFrontmatter(await readFile(file, 'utf8')).properties
+        fm = splitFrontmatter(await readFile(file, 'utf8')) as Record<string, unknown>
       } catch {
         continue
       }
-      if (isPlainObject(props) && propertyId in props) values[file] = props[propertyId]
+      if (key in fm) values[file] = fm[key]
     }
   }
   const trash = join(root, '.trash')
