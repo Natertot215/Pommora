@@ -6,9 +6,9 @@ A Page is one Markdown file inside a [Collection](Collections.md) — the operat
 
 #### II. On-Disk Shape
 
-Frontmatter carries `id`, an optional `icon`, the bracketed Context keys, `properties`, `created_at` / `modified_at`, and `cover` — a Nexus-relative page-banner path. Property values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write: the writer re-serializes only the modeled keys and never reconstructs the object.
+Frontmatter carries `id`, an optional `icon`, `created_at` / `modified_at`, and `cover` — a Nexus-relative page-banner path — plus the wrapped keys: `(Context)` keys naming Spaces, and one `<Property>` key per value the page holds. The wrap is what separates a property from a modeled root field, which is why `cover` is not a property and never appears in a properties surface. Property values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write: the writer re-serializes only the modeled keys and never reconstructs the object.
 
-**Four things modify a Page**, and `modified_at` answers to exactly them: a property VALUE change, a text change, a location change, and a rename. A schema-level edit is not one of them — renaming a property definition or changing its type leaves every member page's stamp alone, because the page didn't change. A derived rewrite is likewise untouched: the `[[link]]` rename cascade edits bodies without claiming they were modified.
+**Four things modify a Page**, and `modified_at` answers to exactly them: a property VALUE change, a text change, a location change, and a rename. A schema-level edit is not one of them. Renaming a property rewrites the key on every page holding it and changing its type rewrites nothing — neither moves a stamp, because a derived rewrite is not a user modification. The `[[link]]` rename cascade runs under the same rule. A derived rewrite is likewise untouched: the `[[link]]` rename cascade edits bodies without claiming they were modified.
 
 #### II. Title + Membership
 

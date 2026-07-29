@@ -62,7 +62,7 @@ Eight `.nexus/` files then moved into it, along with the block document buried i
 
 ### Recent Sessions
 
-- 07-22 · `contexts-spaces` · Contexts & Spaces: the registry model, bracketed title-keyed frontmatter, the three-scope rename cascade.
+- 07-22 · `contexts-spaces` · Contexts & Spaces: the registry model, title-keyed frontmatter, the three-scope rename cascade.
 - 07-14 → 20 · `1968ae09` · Cards view end-to-end plus the certified cleanup campaign.
 - 07-14 → 16 · `nav-gallery-pins` · Navigation surface + NavPane/NavWindow redesign, then Multi-Tab Nexus.
 

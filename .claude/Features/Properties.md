@@ -11,7 +11,7 @@ A **property** is a typed field defined once in the nexus-wide registry and popu
 | Task | `<Tasks>/_taskconfig.json` → `property_definitions[]` (own defs — separate from the registry) |
 | Event | `<Events>/_eventconfig.json` → `property_definitions[]` (own defs — separate from the registry) |
 
-Page values live in `.md` frontmatter; Task and Event values live in a `properties` JSON object. [[Studio/Pommora/II. Features/PageSets|PageSets]] don't carry their own schema — they inherit the Collection's. A definition — options included — is one shared object everywhere it's assigned; genuinely divergent needs get a separate property, never per-Collection option forks.
+A Page's values are wrapped title keys at its frontmatter root; a Task's or Event's are the same wrapped keys at its JSON root, resolved against that kind's own `property_definitions` rather than the nexus registry. [[Studio/Pommora/II. Features/PageSets|PageSets]] don't carry their own schema — they inherit the Collection's. A definition — options included — is one shared object everywhere it's assigned; genuinely divergent needs get a separate property, never per-Collection option forks.
 
 ### Features
 
@@ -19,14 +19,14 @@ Page values live in `.md` frontmatter; Task and Event values live in a `properti
 
 | Type                  | On-disk value                                                           | Notes                                           |
 | --------------------- | ----------------------------------------------------------------------- | ----------------------------------------------- |
-| **Number**            | `42` or `3.14`                                                          | Bare number.                                    |
-| **Checkbox**          | `true` / `false`                                                        | Bare boolean.                                   |
+| **Number**            | `<Count>: 42`                                                           | Bare number.                                    |
+| **Checkbox**          | `<Done>: true`                                                          | Bare boolean.                                   |
 | **Date**              | `"2026-06-15"` (date-only, UTC) or `"2026-06-15T14:30:00Z"` (with time) | A bare date-only value folds into Date on read. |
-| **Select**            | `"<value>"`                                                             | Bare string; one colored chip.                  |
-| **Multi-select**      | `["<value>", ...]`                                                      | Bare array; tag-style multi-pick.               |
-| **Status**            | `{"$status": "<value>"}`                                                | Tagged object; grouped by workflow phase.       |
-| **URL**               | `"https://..."`                                                         | A string with a scheme.                         |
-| **Context**           | `"[<Context>]": [<Space titles>]` at the entity ROOT                    | Not under `properties`; one column per registry Context, synthesized at runtime. |
+| **Select**            | `<Stage>: Active`                                                       | Bare string; one colored chip.                  |
+| **Multi-select**      | `<Tags>:` over a block sequence                                         | Bare array; tag-style multi-pick.               |
+| **Status**            | `<Status>: Complete`                                                    | Bare label — the option's own value; grouped by workflow phase. |
+| **URL**               | `<Link>: https://…`                                                     | A string with a scheme.                         |
+| **Context**           | `(<Context>):` at the root, over a block sequence of bare Space titles   | One column per registry Context, synthesized at runtime — never a schema definition. |
 | **Last Edited Time**  | *(derived from `modified_at`)*                                          | Virtual — never persisted.                      |
 | **File / Attachment** | `[{ "path", "original_name", "added_at", "mime_type" }, ...]`           | Array; files copy into the Nexus.               |
 
@@ -36,17 +36,19 @@ There's no free-form text type — the filename is the title, and text-shaped va
 
 Every property carries two independent identifiers:
 
-- **`id`** — a stable identity, never changing. User properties mint a `prop_<ulid>`; built-ins use a reserved `_`-prefixed id. This is the key used in member-file values and in cross-property references.
+- **`id`** — a stable identity, never changing. User properties mint a `prop_<ulid>`; built-ins use a reserved `_`-prefixed id. This is the key used in `.nexus/properties.json`, in a Collection's assignment list and its remove-cache, and in every SavedView config. Member files never carry it.
 
-- **`name`** — the user-facing display label, renameable freely. A rename is registry-only — member files are keyed by ID, so nothing cascades; every assigning Collection sees the new name.
+- **`name`** — the key a value writes under, and therefore unique nexus-wide, folded for case, trimmed and NFC-normalized once at write so an untrimmed name can never reach a key. A rename is instant and cascades: the registry commits first, then one sweep rewrites the key on every page holding it. The new key always wins where both appear, because the registry has already switched and any value written during the sweep used the new name. A rename onto a taken title is refused rather than disambiguated.
 
 Reserved property IDs (`_id`, `_title`, `_created_at`, `_modified_at`, `_status`, `_type`, `_location`) are blocked from user properties. The page `cover` is a root frontmatter field, not a property, and never appears in any properties UI.
 
 #### II. On-Disk Value Shapes
 
-A value is recovered from raw JSON by **shape** — the declared type lives in the schema, and the on-disk value is type-erased. Status uses a tagged object so an agent can identify it from a single file without the schema; Select and Multi-select stay bare because their shapes don't collide.
+A value is decoded against the type its definition declares. The key names the property, so the definition is in hand before the value is read. Values are bare and natively typed: a number is a number, a checkbox a boolean, a date a timestamp, and every one stays legible to any YAML tool. The key names the property and the registry names the type, so nothing is ever inferred from a value's shape — a Select option spelled `2024-01-01` stays a Select, which shape inference could never guarantee.
 
-**No value, no key.** Setting a property to null, or to any empty value, clears its key from the member file — a member without a value never carries a placeholder. Checkbox false and number zero are real values and stay. Context keys follow the same rule.
+**No value, no key.** Setting a property to null, or to any empty value, clears its key from the member file — a member without a value never carries a placeholder, and the rule reaches the Remove-cache the same way. Checkbox false and number zero are real values and stay. Every wrapped key follows it.
+
+**An unmatched wrapped key persists inert and is never dropped.** A key naming no registry entry is preserved by value and read by nothing. This is what lets an interrupted rename sit on disk in plain language rather than vanish, and what makes every pass of one safe to re-run.
 
 #### II. Status
 
@@ -94,7 +96,14 @@ A per-value **alias** (right-click → Rename, stored markdown-native as `[alias
 
 #### II. Context Links
 
-Context links are the only relation-type connection. They store as **quoted bracketed title keys at the entity root** (`"[Projects]": [Pommora]`), not under `properties`. They're never schema definitions: each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it, and every entry — seeded or user-created — carries an ordinary minted ULID. Full cross-layer behavior → `Contexts.md`.
+Context links are the only relation-type connection. They store as **parenthesized title keys at the entity root**, over a block sequence of bare Space titles:
+
+```yaml
+(Projects):
+  - Pommora
+```
+
+In a Task, an Event or a `_space.json` the same key rides the JSON root, quoted there because JSON quotes every key. They're never schema definitions: each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it, and every entry — seeded or user-created — carries an ordinary minted ULID. Full cross-layer behavior → `Contexts.md`.
 
 #### II. Auto-Managed Properties
 
@@ -115,21 +124,23 @@ Three layers, deliberately separate: a **definition** (the nexus-wide registry, 
 | Create a property          | Mints a nexus-wide definition (appending its id to the nexus order) and assigns it to the creating Collection; appears empty on every member — no member writes until a value is set.                                                                                                                                                  |
 | Assign a property          | Adds this Collection's reference to an existing definition — idempotent, no name check — then restores any Remove-cache: each cached value that still conforms to the definition's current type and options writes back to the page that held it; non-conforming values drop per-value, and the cache block clears either way.         |
 | Remove a property          | Caches each member's value (with which pages held it) on the Collection's own sidecar and unassigns, THEN strips the value from every member page — cache-before-strip, so a failure mid-strip is recoverable rather than lossy. A page carrying no `id` is stripped without a cache entry. Re-assigning restores what was cached; the definition and other Collections are untouched. |
-| Rename a property          | Registry-only — members are keyed by ID; every assigner sees the new name.                                                                                                                                                                                                                                                             |
+| Rename a property          | Commits the registry, then sweeps every page holding the old key in one pass — the new key wins wherever both appear. Instant to the eye; the sweep runs behind it and never re-dates a page, because a key-only rename is not a content edit. Collections are untouched: the assignment list and the remove-cache are id-keyed and therefore rename-immune. |
 | Reorder properties         | Per-Collection assignment order (sidecar-only); the All Properties group reorders the nexus-wide display order instead (registry-file-only).                                                                                                                                                                                           |
 | Change a property's type   | A global definition edit — a value whose shape no longer matches stops rendering but stays in frontmatter.                                                                                                                                                                                                                             |
 | Delete a property (global) | A timestamped recovery snapshot of the definition and every value lands in `.trash`, then the value is stripped across every collection's pages and assignment lists, every Remove-cache block for it is purged (a cache without its definition is corrupt state), and the definition leaves the registry — nothing restorable in-app. |
-| Edit options               | Global — adding, reordering, and recoloring are registry-only; renaming an option cascades its new value onto every assigning page's `$status` (value=title), and removing or clearing one strips that value from those pages.                                                                                                                                                                                                   |
+| Edit options               | Global — adding, reordering, and recoloring are registry-only; renaming an option rewrites its stored label on every assigning page — a Select's bare string, one element of a Multi-select's array, or a Status's bare label alike, and removing or clearing one strips that value from those pages.                                                                                                                                                                                                   |
 
 Neither Remove nor the global delete is cross-file atomic: each is a per-file fan-out whose safety net is written first — the sidecar cache for Remove, the `.trash` snapshot for delete — so a partial run re-runs cleanly. Registry mutations serialize through one write chain, so overlapping edits never lose an update. Remove is the daily path; the global delete is the rare destructive one, reachable only inside the property's own editor pane behind a native confirm.
 
 #### II. Validation
 
-At every write: a created property's `name` is non-empty and its `id` is unique and not a reserved one. Select and Multi-select option titles must be unique within the property — there's no minimum count, so a zero-option Select is legal. **Names need not be unique** — definitions are ID-keyed, so twin names are mechanically safe on both create and rename (a deliberate quirk; the visible All Properties list makes accidental twins unlikely). Agenda's own definitions keep the unique-name rule. Assigning runs no name check — it's a reference to an existing definition, not a new one. Each member value's shape must match its schema entry's type.
+At every write: a created property's `name` is non-empty and its `id` is unique and not a reserved one. Select and Multi-select option titles must be unique within the property — there's no minimum count, so a zero-option Select is legal. **Names are unique nexus-wide**, compared case-folded, because the name is the on-disk key: two definitions sharing a title would leave that key unresolvable. A leading `$` is refused, reserving `$`-prefixed keys for system-assigned roles — a leading `_` is not, because the wrap is the namespace boundary and a property named `_title` writes `<_title>`, which can never meet the reserved id. Agenda's own definitions keep their own unique-name rule over their own namespace. Assigning runs no name check — it's a reference to an existing definition, not a new one. Each member value's shape must match its schema entry's type.
 
 #### II. Index
 
-Nothing mirrors the registry into a database: filter, sort, and group all run renderer-side over the frontmatter the walk already carries, and the registry file is the single source. Full data layer → `Architecture.md`.
+Nothing mirrors the registry into a database: filter, sort, and group all run renderer-side over the frontmatter the walk already carries, and the registry file is the single source.
+
+**The sigil governs; the registry registers.** A wrapped key is Pommora's — that is what makes it safe to sweep, safe for Sapphire to hide, and distinguishable from foreign frontmatter. It does not make it a property. A key registers as a live value only when its name matches a definition, so resolution runs definition-first: the schema supplies the key, and the frontmatter is read at it. Context keys resolve at walk assembly, being cheap and registry-independent; property values load when a container opens, and each container builds one id→definition index rather than scanning per cell. Full data layer → `Architecture.md`.
 
 ### Pending
 

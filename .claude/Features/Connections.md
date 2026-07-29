@@ -1,6 +1,6 @@
 ## Connections
 
-A **Connection** is an inline `[[Title]]` link in a Markdown body pointing to another Page — the sole connection syntax, distinct from the bracketed Context keys that bind entities to Spaces.
+A **Connection** is an inline `[[Title]]` link in a Markdown body pointing to another Page — the sole connection syntax. `[[…]]` appears only in a body and is deliberately unused as a frontmatter key sigil, so the wikilink form carries one meaning in Markdown and never has to carry a second in YAML — where it would parse as a nested flow sequence.
 
 It lives in the body and nowhere else: the text is canonical and Obsidian-readable, with no frontmatter mirror, and resolution is computed at read time. Only a Page's body and a markdown block tile author connections. Pages are the only targets — Spaces come through Context links, and Tasks and Events are never targets.
 
