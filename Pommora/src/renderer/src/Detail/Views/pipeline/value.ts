@@ -18,7 +18,7 @@ import {
   type PropertyType,
   RESERVED_PROPERTY_ID,
 } from '@shared/properties'
-import { type PropertyValue, parsePropertyValue } from '@shared/propertyValue'
+import { decodeValue, type PropertyValue } from '@shared/propertyValue'
 
 /** The declared type a column sorts/groups/filters by. Reserved columns map to a PropertyType or
  *  a synthetic sentinel: `_title`→'title', any registry Context id→'context', `_modified_at`→
@@ -40,38 +40,12 @@ export function declaredType(
   }
 }
 
-/** The plain-string PropertyValue kinds — indistinguishable on disk (a URL, a select option, and a
- *  bare date are all just strings), so the codec's shape guess for these is overridden by the column's
- *  declared type. Every other kind (arrays / tagged objects / bool / number) is unambiguous. */
-const STRING_KIND_FOR_TYPE: Partial<Record<PropertyType, 'url' | 'select' | 'datetime'>> = {
-  url: 'url',
-  select: 'select',
-  datetime: 'datetime',
-}
-
-/** Re-tag a shape-guessed plain-string value to what its column actually declares (a url column reads
- *  url, a select column select). A no-op for every unambiguous kind and for reserved/typeless columns.
- *  The value string is unchanged — only the `.kind` tag. */
-function coerceToDeclaredType(
-  v: PropertyValue,
-  dt: PropertyType | 'title' | undefined,
-): PropertyValue {
-  const want = dt && dt !== 'title' ? STRING_KIND_FOR_TYPE[dt] : undefined
-  if (
-    want &&
-    (v.kind === 'url' || v.kind === 'select' || v.kind === 'datetime') &&
-    v.kind !== want
-  ) {
-    return { kind: want, value: v.value }
-  }
-  return v
-}
 
 /** The row's value for a column, as a PropertyValue. Reserved columns read intrinsic/frontmatter
- *  fields; user `prop_*` columns route through the on-disk codec (`parsePropertyValue`). The shape
- *  parse is cached (the measured grouped-view hot spot); the declared-type coercion rides on top,
- *  fresh + O(1), so the cache stays schema-free and a schema type-change reflects at once. Absent OR
- *  malformed ⇒ `{ kind: 'null' }` — a single bad cell never poisons a view.
+ *  fields; a user column decodes against the type its own definition declares, so nothing is ever
+ *  inferred from the bytes. The decode is cached (the measured grouped-view hot spot) and keyed on
+ *  the definition, so a schema type-change re-resolves rather than serving a stale kind. Absent OR
+ *  unreadable ⇒ `{ kind: 'null' }` — a single bad cell never poisons a view.
  *
  *  A CONTEXT column bypasses the cache: its ids resolve at walk assembly onto the row's own
  *  `contextValues` (the tree node's field), with the optimistic write layer's `contextValues`
@@ -98,33 +72,35 @@ export function resolveFieldValue(
     m = new Map()
     resolvedByFm.set(row.frontmatter, m)
   }
-  let v = m.get(propertyId)
+  const def = schema.find((d) => d.id === propertyId)
+  // Keyed by type as well as id: a type change must re-resolve rather than serve the old kind.
+  const cacheKey = def ? `${propertyId}\u0000${def.type}` : propertyId
+  let v = m.get(cacheKey)
   if (!v) {
-    v = computeFieldValue(row.frontmatter, propertyId)
-    m.set(propertyId, v)
+    v = computeFieldValue(row.frontmatter, propertyId, def)
+    m.set(cacheKey, v)
   }
-  return coerceToDeclaredType(v, declaredType(propertyId, schema))
+  return v
 }
 
 // MEMOIZED per frontmatter object: the grouped pipeline resolves every row per run and every
-// Cell resolves the same value again per render — the shape-inference parse was the measured
+// Cell resolves the same value again per render — the decode was the measured
 // grouped-view hot spot. A value write swaps the page's frontmatter identity (loadValues / the
 // optimistic patch), so entries self-expire; resolved values are shared and treated immutable.
 const resolvedByFm = new WeakMap<PageFrontmatter, Map<string, PropertyValue>>()
 
-function computeFieldValue(fm: PageFrontmatter, propertyId: string): PropertyValue {
-  switch (propertyId) {
-    case RESERVED_PROPERTY_ID.modifiedAt:
-      return typeof fm.modified_at === 'string' && fm.modified_at
-        ? { kind: 'datetime', value: fm.modified_at }
-        : { kind: 'null' }
-    default:
-      try {
-        return parsePropertyValue(fm.properties?.[propertyId])
-      } catch {
-        return { kind: 'null' }
-      }
+function computeFieldValue(
+  fm: PageFrontmatter,
+  propertyId: string,
+  def: PropertyDefinition | undefined,
+): PropertyValue {
+  if (propertyId === RESERVED_PROPERTY_ID.modifiedAt) {
+    return typeof fm.modified_at === 'string' && fm.modified_at
+      ? { kind: 'datetime', value: fm.modified_at }
+      : { kind: 'null' }
   }
+  // No definition means the key names nothing the registry knows — inert, never guessed at.
+  return def ? decodeValue(def, fm.properties?.[propertyId]) : { kind: 'null' }
 }
 
 /** The `_modified_at` SORT/FILTER stamp: modified_at, falling back to created_at (Swift

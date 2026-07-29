@@ -56,7 +56,7 @@ export function setOptions(
 
 /** Replace a Status property's `status_groups` wholesale — the registry-only path behind add / recolor
  *  / reorder (the Status analog of setOptions). Validates unique option values PROPERTY-WIDE (a page's
- *  `$status` references the value across all groups), then writes verbatim. Rides serializeSchemaOp so
+ *  the value is referenced across all groups), then writes verbatim. Rides serializeSchemaOp so
  *  it can't interleave with a concurrent page cascade. */
 export function setStatusGroups(
   root: string,
@@ -91,7 +91,7 @@ function requireStatusType(type: PropertyType): Result<null> {
 }
 
 /** Rename a status option (value=title, like Select's renameOption) and cascade the new value onto every
- *  assigning page's `$status`. Validates unique values property-wide before any page is touched. */
+ *  assigning page's stored label. Validates unique values property-wide before any page is touched. */
 export function renameStatusOption(
   root: string,
   propertyId: string,

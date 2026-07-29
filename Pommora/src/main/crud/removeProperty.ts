@@ -16,13 +16,7 @@ import { SIDECAR_FILENAME } from '../paths'
 import { writeJson } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
-import {
-  applyPropertyValue,
-  isPlainObject,
-  type FileRef,
-  type PropertyValue,
-} from '@shared/propertyValue'
-import type { PropertyDefinition } from '@shared/properties'
+import { applyPropertyValue, decodeValue, isPlainObject } from '@shared/propertyValue'
 import { serializeSchemaOp } from './schemaChain'
 import { nowIso } from './util'
 import { ok, type Result } from '@shared/result'
@@ -74,65 +68,6 @@ async function removeInner(collectionFolder: string, propertyId: string): Promis
   return ok(null)
 }
 
-/** Per-value schema-currency gate — type-DIRECTED, never shape-inferred: the
- *  shape-blind codec would re-infer a select value like "2024-01-01" or "https://acme.io" as
- *  datetime/url and destroy it, so the RAW on-disk encoding validates against the def's
- *  CURRENT type + options directly. select/status need a live option; multiSelect intersects
- *  (an empty intersection drops). Restore never plants a value the schema can't validate. */
-export function reconcileCachedValue(def: PropertyDefinition, raw: unknown): PropertyValue | null {
-  const options =
-    def.type === 'status'
-      ? (def.status_groups ?? []).flatMap((g) => g.options.map((o) => o.value))
-      : (def.select_options ?? []).map((o) => o.value)
-  switch (def.type) {
-    case 'number':
-      return typeof raw === 'number' ? { kind: 'number', value: raw } : null
-    case 'checkbox':
-      return typeof raw === 'boolean' ? { kind: 'checkbox', value: raw } : null
-    case 'url':
-      return typeof raw === 'string' && raw ? { kind: 'url', value: raw } : null
-    case 'datetime':
-      return typeof raw === 'string' && raw ? { kind: 'datetime', value: raw } : null
-    case 'select':
-      return typeof raw === 'string' && options.includes(raw)
-        ? { kind: 'select', value: raw }
-        : null
-    case 'status': {
-      const v = isPlainObject(raw) && typeof raw.$status === 'string' ? raw.$status : null
-      return v !== null && options.includes(v) ? { kind: 'status', value: v } : null
-    }
-    case 'multi_select': {
-      if (!Array.isArray(raw) || !raw.every((x): x is string => typeof x === 'string')) return null
-      const kept = raw.filter((v) => options.includes(v))
-      return kept.length ? { kind: 'multiSelect', value: kept } : null
-    }
-    case 'context': {
-      if (isPlainObject(raw) && typeof raw.$ctx === 'string')
-        return { kind: 'context', value: [raw.$ctx] }
-      if (
-        Array.isArray(raw) &&
-        raw.length &&
-        raw.every((x) => isPlainObject(x) && typeof x.$ctx === 'string')
-      ) {
-        return { kind: 'context', value: raw.map((x) => (x as { $ctx: string }).$ctx) }
-      }
-      return null
-    }
-    case 'file': {
-      if (
-        Array.isArray(raw) &&
-        raw.length &&
-        raw.every((x) => isPlainObject(x) && typeof x.path === 'string')
-      ) {
-        return { kind: 'file', value: raw as FileRef[] }
-      }
-      return null
-    }
-    default:
-      return null // last_edited_time — computed, never restored
-  }
-}
-
 /** Restore the Remove-cache on re-assign: write each reconciled value back to the page
  *  (matched by frontmatter id) that held it — deleted/moved-out pages drop their entries —
  *  then clear the block. Pages first (under their file lock), cache cleared last. No block → no-op. */
@@ -164,8 +99,10 @@ export async function restoreCachedValues(
     for (const [pageId, raw] of Object.entries(block.values)) {
       const file = byId.get(pageId)
       if (!file) continue
-      const value = reconcileCachedValue(def, raw)
-      if (value === null) continue
+      // Strict: a restore never plants a value the definition's CURRENT type and options
+      // cannot validate. That gate is the decoder's `strict` mode, not a second decoder.
+      const value = decodeValue(def, raw, { strict: true })
+      if (value.kind === 'null') continue
       await rewritePageSerialized(file, (content) => {
         const fields = readFrontmatterFields(content)
         const properties = applyPropertyValue(fields.properties, propertyId, value)

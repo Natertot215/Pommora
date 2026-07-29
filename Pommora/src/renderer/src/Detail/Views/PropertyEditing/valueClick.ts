@@ -22,10 +22,10 @@ export function sharedValueClickAction(
   def: PropertyDefinition | undefined,
 ): ValueClickAction {
   if (type === 'status' && look === 'checkbox') {
-    const current = value.kind === 'status' || value.kind === 'select' ? value.value : undefined
+    const current = value.kind === 'select' ? value.value : undefined
     if (!current) return { kind: 'picker' }
     const next = nextCycleValue(current, def)
-    return next !== null ? { kind: 'commit', value: { kind: 'status', value: next } } : null
+    return next !== null ? { kind: 'commit', value: { kind: 'select', value: next } } : null
   }
   if (type === 'checkbox') {
     const checked = value.kind === 'checkbox' && value.value

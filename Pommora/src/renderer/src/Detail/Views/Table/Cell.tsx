@@ -56,13 +56,17 @@ export function Cell({
   }
 
   const v = resolveFieldValue(row, column.id, ctx.schema)
+  // The declared type drives every per-type look. A status value is a bare label on disk and in
+  // memory, indistinguishable from a select, so the schema is the only thing that knows.
+  const dt = declaredType(column.id, ctx.schema)
+  const def = ctx.schema.find((d) => d.id === column.id)
 
   // A checkbox column ALWAYS shows its box — even on a page with no stored value — so it toggles in
   // place without first assigning the property. The box keys off the column's schema TYPE, not the
   // value's presence; unchecked means no frontmatter value at all (the toggle strips the key).
-  if (declaredType(column.id, ctx.schema) === 'checkbox') {
+  if (dt === 'checkbox') {
     const checked = v.kind === 'checkbox' && v.value
-    const color = ctx.schema.find((d) => d.id === column.id)?.checkbox_color
+    const color = def?.checkbox_color
     return style.look === 'switch' ? (
       <span
         className="cell-switch"
@@ -76,14 +80,10 @@ export function Cell({
   }
 
   switch (v.kind) {
-    case 'select':
-    case 'status': {
+    case 'select': {
       const opt = findOption(column.id, v.value, ctx.schema)
-      if (v.kind === 'status' && (style.look === 'capsule' || style.look === 'checkbox')) {
-        const group = statusGroupOf(
-          v.value,
-          ctx.schema.find((d) => d.id === column.id),
-        )
+      if (dt === 'status' && (style.look === 'capsule' || style.look === 'checkbox')) {
+        const group = statusGroupOf(v.value, def)
         return style.look === 'capsule' ? (
           <StatusCapsule color={opt?.color} group={group} />
         ) : (
@@ -99,7 +99,7 @@ export function Cell({
           <Chip
             color={chipColorFor(opt?.color)}
             label={opt?.label ?? v.value}
-            shape={chipShapeForType(v.kind)}
+            shape={chipShapeForType(dt ?? '')}
             {...(remove ? { onRemove: () => remove(null) } : {})}
           />
         </OverflowScroll>
@@ -115,7 +115,7 @@ export function Cell({
                 key={val}
                 color={chipColorFor(o?.color)}
                 label={o?.label ?? val}
-                shape={chipShapeForType(v.kind)}
+                shape={chipShapeForType(dt ?? '')}
                 {...(remove
                   ? {
                       onRemove: () =>

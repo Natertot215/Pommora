@@ -198,7 +198,6 @@ function evaluateByType(
     case 'checkbox':
       return evaluateCheckbox(v, op, expected)
     case 'select':
-    case 'status':
     case 'url':
       return evaluateText(v, op, expected, values)
     case 'multi_select':
@@ -245,7 +244,6 @@ function parseBool(s: Expected): boolean | null {
 function textValue(v: PropertyValue): string | null {
   switch (v.kind) {
     case 'select':
-    case 'status':
       return v.value
     case 'url':
       // Match the SHOWN text (alias, else URL) — the same parse Cell renders, so a `contains`/`is` on an
