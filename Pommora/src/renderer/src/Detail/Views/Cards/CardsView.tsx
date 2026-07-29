@@ -9,7 +9,7 @@ import type {
 } from '@shared/types'
 import { UNGROUPED } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
-import { applyPropertyValue, type PropertyValue } from '@shared/propertyValue'
+import { applyValueAtRoot, type PropertyValue } from '@shared/propertyValue'
 import { type CardBanner, isCompact, isLocationFsOrder, type SavedView } from '@shared/views'
 import type { ColumnStyle } from '@shared/columnStyles'
 import { defaultEntityIcon, Icon, iconNameOr } from '@renderer/design-system/symbols'
@@ -108,11 +108,14 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     [values, valueOverride],
   )
   const setProperty = (row: ViewRow, propertyId: string, value: PropertyValue | null): void => {
+    const def = schema.find((d) => d.id === propertyId)
+    if (!def) return
     const prior = effectiveValues[row.id]
-    const patched: PageFrontmatter = {
-      ...(prior ?? { id: row.id }),
-      properties: applyPropertyValue(prior?.properties, propertyId, value),
-    }
+    const patched = applyValueAtRoot(
+      (prior ?? { id: row.id }) as Record<string, unknown>,
+      def,
+      value,
+    ) as PageFrontmatter
     setValueOverride((prev) => ({ ...prev, [row.id]: patched }))
     void mutate({ op: 'setProperty', path: row.path, propertyId, value })
   }

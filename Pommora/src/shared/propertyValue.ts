@@ -12,6 +12,7 @@
 //
 // Pure: no fs, no Node — importable by both main and renderer.
 
+import { wrapKey } from './governedKeys'
 import type { PropertyDefinition } from './properties'
 
 /** On-disk file-attachment shape (snake_case = the on-disk DTO). Round-trips as-is;
@@ -162,5 +163,20 @@ export function applyPropertyValue(
   const next: Record<string, unknown> = isPlainObject(current) ? { ...current } : {}
   if (value === null || isBlankValue(value)) delete next[propertyId]
   else next[propertyId] = encodeValue(value)
+  return next
+}
+
+/** Patch one property onto a frontmatter ROOT, returning the next root. The renderer's optimistic
+ *  mirror of the main-side write: same key, same no-empties rule, so a cell reads the same value
+ *  whether the commit has landed yet or not. */
+export function applyValueAtRoot(
+  root: Record<string, unknown>,
+  def: PropertyDefinition,
+  value: PropertyValue | null,
+): Record<string, unknown> {
+  const key = wrapKey('property', def.name)
+  const next = { ...root }
+  if (value === null || isBlankValue(value)) delete next[key]
+  else next[key] = encodeValue(value)
   return next
 }
