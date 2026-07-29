@@ -13,7 +13,7 @@
 // Pure: no fs, no Node — importable by both main and renderer.
 
 import { wrapKey } from './governedKeys'
-import type { PropertyDefinition } from './properties'
+import { optionValues, type PropertyDefinition } from './properties'
 
 /** On-disk file-attachment shape (snake_case = the on-disk DTO). Round-trips as-is;
  *  unknown keys on a file object are preserved (the decoder passes the object through). */
@@ -46,13 +46,6 @@ export function isPlainObject(v: unknown): v is Record<string, unknown> {
 
 function isFileRef(v: unknown): v is FileRef {
   return isPlainObject(v) && typeof v.path === 'string'
-}
-
-/** Every option value a definition offers, whichever list holds them. */
-function optionValues(def: PropertyDefinition): string[] {
-  return def.type === 'status'
-    ? (def.status_groups ?? []).flatMap((g) => g.options.map((o) => o.value))
-    : (def.select_options ?? []).map((o) => o.value)
 }
 
 const NULL: PropertyValue = { kind: 'null' }
@@ -149,7 +142,7 @@ export function isBlankValue(value: PropertyValue | null): boolean {
 }
 
 /** A property definition → the frontmatter key its values live under. The Context layer's
- *  `contextKey(title)` in the same shape; no caller builds this by hand. */
+ *  `contextKey(title)` in the same shape. */
 export function propertyKey(def: PropertyDefinition): string {
   return wrapKey('property', def.name)
 }

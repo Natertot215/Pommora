@@ -34,7 +34,7 @@ export async function readRegistry(root: string): Promise<RegistryFile> {
 }
 
 /** Every def in the nexus-wide cosmetic order — order-listed first, unlisted appended.
- *  ONE ordering rule for every consumer (readNexus + the SQLite mirror). Both halves key on
+ *  ONE ordering rule, so a consumer never re-derives it. Both halves key on
  *  the MAP KEY, so a hand-edited key≠id desync lists once, never twice. */
 export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
   const listed = new Set(reg.order)

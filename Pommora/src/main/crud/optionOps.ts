@@ -29,8 +29,8 @@ function requireOptionType(type: PropertyType): Result<null> {
 }
 
 /** Replace a Select / Multi-Select property's options wholesale. Validates unique titles and writes
- *  the array verbatim — an emptied array stays empty (no re-seed; the >=1 floor is gone), unlike the
- *  create path's editProperty which seeds a default on an empty list. Rides serializeSchemaOp (like
+ *  the array verbatim — an emptied array stays empty (no re-seed; the >=1 floor is gone), matching
+ *  createProperty and editProperty, which seed only a field that is absent. Rides serializeSchemaOp (like
  *  the page-touching ops) so it can't land inside a concurrent renameOption's cascade and desync the
  *  registry from pages; the actual registry write still goes through mutateRegistry inside. */
 export function setOptions(

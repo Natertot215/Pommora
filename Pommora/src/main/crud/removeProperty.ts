@@ -16,11 +16,10 @@ import { readTextOrNull, writeJson } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { withoutCacheBlock } from './assignment'
 import { readRegistry } from '../io/propertiesRegistry'
-import { decodeValue, encodeValue, isPlainObject } from '@shared/propertyValue'
+import { decodeValue, encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
 import { serializeSchemaOp } from './schemaChain'
 import { nowIso } from './util'
 import { ok, type Result } from '@shared/result'
-import { wrapKey } from '@shared/governedKeys'
 
 export function removeProperty(
   root: string,
@@ -42,7 +41,7 @@ async function removeInner(
   // A property's values live under its own name, so the strip needs the registry's key.
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return ok(null)
-  const key = wrapKey('property', def.name)
+  const key = propertyKey(def)
 
   const files = await listMarkdownFiles(collectionFolder)
   // Snapshot each page's value for the restore cache — read BEFORE stripping so the cache is
@@ -94,6 +93,7 @@ export async function restoreCachedValues(
 
   const def = (await readRegistry(root)).defs[propertyId]
   if (def) {
+    const key = propertyKey(def)
     // Map page id → file; the value write re-reads fresh inside the file lock.
     const byId = new Map<string, string>()
     for (const file of await listMarkdownFiles(collectionFolder)) {
@@ -109,7 +109,6 @@ export async function restoreCachedValues(
       // cannot validate. That gate is the decoder's `strict` mode, not a second decoder.
       const value = decodeValue(def, raw, { strict: true })
       if (value.kind === 'null') continue
-      const key = wrapKey('property', def.name)
       await rewritePageSerialized(file, (content) =>
         mergeFrontmatter(
           content,

@@ -1,9 +1,9 @@
 // Agenda property-schema CRUD — generalized over a "schema target" (kind + schema + member
 // enumeration + per-member value strip). Collections left this path in PropertiesV2 (their defs
 // live in the nexus-wide registry); only Agenda configs still hold inline `property_definitions`.
-// `stripPageMember` stays exported — the registry's global delete fan-out reuses it. add/rename/
-// reorder are sidecar-only writes; delete + a lossy changeType also strip every member,
-// atomically via SchemaTransaction.
+// `stripPageMember` stays exported — the registry's global delete fan-out reuses it. add and
+// rename are sidecar-only writes; delete + a lossy changeType also strip every member, atomically
+// via SchemaTransaction.
 
 import { join } from 'node:path'
 import type { z } from 'zod'
@@ -14,7 +14,7 @@ import {
   type PropertyDefinition,
   type PropertyType,
 } from '@shared/properties'
-import { isPlainObject } from '@shared/propertyValue'
+import { isPlainObject, propertyKey } from '@shared/propertyValue'
 import { AGENDA_SUFFIX, type AgendaKind } from '@shared/agenda'
 import { mintPropertyId } from '../ids'
 import { readSidecar, writeSidecar } from '../sidecarIO'
@@ -32,7 +32,6 @@ import {
 } from '../properties/schema'
 import { nowIso } from './util'
 import { ok, fail, type Result } from '@shared/result'
-import { wrapKey } from '@shared/governedKeys'
 
 type Sidecar = Record<string, unknown>
 
@@ -41,12 +40,11 @@ type Sidecar = Record<string, unknown>
 interface SchemaTarget {
   kind: SidecarKind
   schema: z.ZodType
-  /** The sidecar JSON key holding the schema array. Collections use Swift's `properties`;
-   *  agenda configs use `property_definitions`. */
+  /** The sidecar JSON key holding the schema array — `property_definitions` on an agenda config. */
   schemaKey: string
   members: (folder: string) => Promise<string[]>
-  /** Stripped content, or null if the member doesn't carry the key (skip it). Both targets take
-   *  the RESOLVED key — a value is addressed by its property's name on either side. */
+  /** Stripped content, or null if the member doesn't carry the key (skip it). The key arrives
+   *  RESOLVED — a value is addressed by its property's name, never by its id. */
   strip: (content: string, key: string) => string | null
 }
 
@@ -178,7 +176,7 @@ async function deleteProp(
     join(folder, SIDECAR_FILENAME[target.kind]),
     serializeJson(nextSidecar(s.sidecar, next, target.schemaKey)),
   )
-  await stageMemberStrips(tx, target, folder, wrapKey('property', doomed.name))
+  await stageMemberStrips(tx, target, folder, propertyKey(doomed))
   await tx.commit()
   return ok(null)
 }
@@ -211,7 +209,7 @@ async function changeType(
     join(folder, SIDECAR_FILENAME[target.kind]),
     serializeJson(nextSidecar(s.sidecar, next, target.schemaKey)),
   )
-  await stageMemberStrips(tx, target, folder, wrapKey('property', s.defs[idx].name))
+  await stageMemberStrips(tx, target, folder, propertyKey(s.defs[idx]))
   await tx.commit()
   return ok(null)
 }
