@@ -17,7 +17,7 @@ import {
   type Option,
 } from '@shared/optionModel'
 import type { PropertyType, StatusGroup } from '@shared/properties'
-import { wrapKey } from '@shared/governedKeys'
+import { propertyKey } from '@shared/propertyValue'
 
 /** These ops edit `select_options`, so they apply to Select / Multi-Select only. A Status property's
  *  options live in `status_groups` (its own per-group ops below); other types have none. Reject anything
@@ -84,6 +84,20 @@ export function setStatusGroups(
   )
 }
 
+/** The opening move every page-touching option op makes: resolve the property, refuse a type the
+ *  op doesn't apply to, and hand back the frontmatter key its values live under. */
+async function resolveForCascade(
+  root: string,
+  propertyId: string,
+  requireType: (type: PropertyType) => Result<null>,
+): Promise<Result<{ type: PropertyType; key: string }>> {
+  const def = (await readRegistry(root)).defs[propertyId]
+  if (!def) return fail('not-found', 'Property not found.')
+  const typeCheck = requireType(def.type)
+  if (!typeCheck.ok) return typeCheck
+  return ok({ type: def.type, key: propertyKey(def) })
+}
+
 /** These ops edit a Status property's `status_groups`; reject anything else up front. */
 function requireStatusType(type: PropertyType): Result<null> {
   return type === 'status'
@@ -100,7 +114,7 @@ export function renameStatusOption(
   newTitle: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    const edit = await mutateRegistry<Result<null>>(root, (registry) => {
+    const edit = await mutateRegistry<Result<string>>(root, (registry) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: fail('not-found', 'Property not found.') }
       const typeCheck = requireStatusType(def.type)
@@ -111,13 +125,12 @@ export function renameStatusOption(
       const next = { ...def, status_groups: nextGroups }
       return {
         next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-        result: ok(null),
+        result: ok(propertyKey(def)),
       }
     })
     if (!edit.ok) return edit
-    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
     await cascadePages(root, (content) =>
-      replacePageValue(content, key, oldValue, newTitle, 'status'),
+      replacePageValue(content, edit.value, oldValue, newTitle, 'status'),
     )
     return ok(null)
   })
@@ -130,12 +143,9 @@ export function clearStatusOption(
   value: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    const def = (await readRegistry(root)).defs[propertyId]
-    if (!def) return fail('not-found', 'Property not found.')
-    const typeCheck = requireStatusType(def.type)
-    if (!typeCheck.ok) return typeCheck
-    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
-    await cascadePages(root, (content) => stripPageValue(content, key, value, 'status'))
+    const r = await resolveForCascade(root, propertyId, requireStatusType)
+    if (!r.ok) return r
+    await cascadePages(root, (content) => stripPageValue(content, r.value.key, value, r.value.type))
     return ok(null)
   })
 }
@@ -148,12 +158,9 @@ export function removeStatusOption(
   value: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    const def = (await readRegistry(root)).defs[propertyId]
-    if (!def) return fail('not-found', 'Property not found.')
-    const typeCheck = requireStatusType(def.type)
-    if (!typeCheck.ok) return typeCheck
-    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
-    await cascadePages(root, (content) => stripPageValue(content, key, value, 'status'))
+    const r = await resolveForCascade(root, propertyId, requireStatusType)
+    if (!r.ok) return r
+    await cascadePages(root, (content) => stripPageValue(content, r.value.key, value, r.value.type))
     return mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
       if (!current) return { result: fail('not-found', 'Property not found.') }
@@ -188,6 +195,10 @@ export async function cascadePages(
   }
 }
 
+/** What a rename's registry edit hands to its page cascade: the key the values sit under, and the
+ *  type the replace must speak. Resolved from the authoritative def inside the edit, never re-read. */
+type RenameTarget = { type: PropertyType; key: string }
+
 /** Rename an option (value=label → newTitle) and cascade the new value onto every page that held the
  *  old one. The registry edit rides mutateRegistry and validates unique titles — a collision fails
  *  before any page is touched; the page cascade rides this serializeSchemaOp. */
@@ -198,7 +209,7 @@ export function renameOption(
   newTitle: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    const edit = await mutateRegistry<Result<PropertyType>>(root, (registry) => {
+    const edit = await mutateRegistry<Result<RenameTarget>>(root, (registry) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: fail('not-found', 'Property not found.') }
       const typeCheck = requireOptionType(def.type)
@@ -209,13 +220,12 @@ export function renameOption(
       const next = { ...def, select_options: nextOptions }
       return {
         next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-        result: ok(def.type),
+        result: ok({ type: def.type, key: propertyKey(def) }),
       }
     })
     if (!edit.ok) return edit
-    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
     await cascadePages(root, (content) =>
-      replacePageValue(content, key, oldValue, newTitle, edit.value),
+      replacePageValue(content, edit.value.key, oldValue, newTitle, edit.value.type),
     )
     return ok(null)
   })
@@ -229,12 +239,9 @@ export function clearOption(
   value: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    const def = (await readRegistry(root)).defs[propertyId]
-    if (!def) return fail('not-found', 'Property not found.')
-    const typeCheck = requireOptionType(def.type)
-    if (!typeCheck.ok) return typeCheck
-    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
-    await cascadePages(root, (content) => stripPageValue(content, key, value, def.type))
+    const r = await resolveForCascade(root, propertyId, requireOptionType)
+    if (!r.ok) return r
+    await cascadePages(root, (content) => stripPageValue(content, r.value.key, value, r.value.type))
     return ok(null)
   })
 }
@@ -247,12 +254,9 @@ export function removeOption(
   value: string,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    const def = (await readRegistry(root)).defs[propertyId]
-    if (!def) return fail('not-found', 'Property not found.')
-    const typeCheck = requireOptionType(def.type)
-    if (!typeCheck.ok) return typeCheck
-    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
-    await cascadePages(root, (content) => stripPageValue(content, key, value, def.type))
+    const r = await resolveForCascade(root, propertyId, requireOptionType)
+    if (!r.ok) return r
+    await cascadePages(root, (content) => stripPageValue(content, r.value.key, value, r.value.type))
     return mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
       if (!current) return { result: fail('not-found', 'Property not found.') }

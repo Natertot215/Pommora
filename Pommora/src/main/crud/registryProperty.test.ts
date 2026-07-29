@@ -91,7 +91,7 @@ describe('editProperty', () => {
     expect((await readRegistry(root)).defs[c.value.id].name).toBe('New')
   })
 
-  it('refuses renaming onto a taken title — create disambiguates, a rename reports', async () => {
+  it('refuses renaming onto a taken title, the same as creating one', async () => {
     await createProperty(root, def({ name: 'Alpha', type: 'number' }))
     const b = await createProperty(root, def({ name: 'Beta', type: 'number' }))
     if (!b.ok) return

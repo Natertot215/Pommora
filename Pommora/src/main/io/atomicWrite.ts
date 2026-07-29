@@ -94,6 +94,17 @@ export async function rmwJsonStrict(
   return ok(next)
 }
 
+/** Read a file's text, or null if it's missing or unreadable. The text-side analog of
+ *  `readJsonObject`, for the walks that skip a page they can't read rather than failing the
+ *  whole fan-out. */
+export async function readTextOrNull(absPath: string): Promise<string | null> {
+  try {
+    return await readFile(absPath, 'utf8')
+  } catch {
+    return null
+  }
+}
+
 /** Read + JSON-parse a file to a plain object, or null if missing / unreadable / not an
  *  object. The one owner of "parse a JSON file to a record" — used by sidecar, agenda, and
  *  index reads (the JSON-side analog of pageFile's mergeFrontmatter). */

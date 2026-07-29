@@ -27,8 +27,8 @@ function seeded(def: PropertyDefinition): PropertyDefinition {
   return d
 }
 
-/** Mint + persist a nexus-wide definition, appending its id to the nexus order.
- *  Duplicate names are allowed — the flat policy; ids keep twins mechanically safe. */
+/** Mint + persist a nexus-wide definition, appending its id to the nexus order. A title already
+ *  taken is refused, case-folded: the title IS the key a property's values write under. */
 export function createProperty(
   root: string,
   def: PropertyDefinition,
@@ -53,7 +53,6 @@ export function createProperty(
   })
 }
 
-/** Edit the global definition in place — every assigning Collection sees the change on next read. */
 /** Rewrite one property's key across every page that holds it. The new key always wins: the
  *  registry has already switched, so any value written while this runs used the new name and is
  *  the fresher of the two. Returns null for a page holding neither key, so an untouched page is
@@ -82,14 +81,20 @@ export function renameSweep(root: string, oldName: string, newName: string): Pro
   })
 }
 
+/** The old and new names a committed rename has to sweep across the pages, or null when the edit
+ *  left the name alone. */
+type Rename = { from: string; to: string }
+
+/** Edit the global definition in place — every assigning Collection sees the change on next read.
+ *  A name change commits the registry first, then sweeps the pages once. */
 export function editProperty(
   root: string,
   propertyId: string,
   changes: Partial<PropertyDefinition>,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
-    let renamedFrom: string | null = null
-    const edit = await mutateRegistry<Result<null>>(root, (registry) => {
+    const edit = await mutateRegistry<Result<Rename | null>>(root, (registry) => {
+      let rename: Rename | null = null
       const current = registry.defs[propertyId]
       if (!current) return { result: fail('not-found', 'Property not found.') }
       const changed = { ...changes }
@@ -100,19 +105,17 @@ export function editProperty(
           return { result: fail('invalid-property', KEY_REFUSAL.reservedPrefix) }
         const v = validateName(next.name, Object.values(registry.defs), propertyId)
         if (!v.ok) return { result: v }
-        renamedFrom = current.name
+        rename = { from: current.name, to: next.name }
       }
       return {
         next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-        result: ok(null),
+        result: ok(rename),
       }
     })
     if (!edit.ok) return edit
     // Registry first, then one sweep: every write during it resolves the new name, so the new
     // key is always the fresher of the two and no comparison is needed.
-    if (renamedFrom !== null) {
-      await renameSweep(root, renamedFrom, normalizePropertyName(changes.name as string))
-    }
+    if (edit.value) await renameSweep(root, edit.value.from, edit.value.to)
     return ok(null)
   })
 }

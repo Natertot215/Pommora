@@ -6,14 +6,13 @@
 // options (per-value reconciliation); the global Delete purges these caches.
 
 import { join } from 'node:path'
-import { readFile } from 'node:fs/promises'
 import { rewritePageSerialized } from '../io/fileLock'
 import { stripPageMember } from './schema'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
 import { SIDECAR_FILENAME } from '../paths'
-import { writeJson } from '../io/atomicWrite'
+import { readTextOrNull, writeJson } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { withoutCacheBlock } from './assignment'
 import { readRegistry } from '../io/propertiesRegistry'
@@ -50,12 +49,8 @@ async function removeInner(
   // written first (below): a failure mid-strip can then never lose a value it didn't capture.
   const values: Record<string, unknown> = {}
   for (const file of files) {
-    let content: string
-    try {
-      content = await readFile(file, 'utf8')
-    } catch {
-      continue
-    }
+    const content = await readTextOrNull(file)
+    if (content === null) continue
     const fields = readFrontmatterFields(content)
     const raw = (fields as Record<string, unknown>)[key]
     if (raw === undefined) continue
@@ -102,12 +97,8 @@ export async function restoreCachedValues(
     // Map page id → file; the value write re-reads fresh inside the file lock.
     const byId = new Map<string, string>()
     for (const file of await listMarkdownFiles(collectionFolder)) {
-      let content: string
-      try {
-        content = await readFile(file, 'utf8')
-      } catch {
-        continue
-      }
+      const content = await readTextOrNull(file)
+      if (content === null) continue
       const id = readFrontmatterFields(content).id
       if (typeof id === 'string') byId.set(id, file)
     }
