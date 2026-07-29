@@ -29,8 +29,7 @@ export function buildNavIndex(
 ): SearchEntry[] {
   const { collections, sets, pages, spaces } = flattenTree(tree)
   const out: SearchEntry[] = [entry({ kind: 'homepage' }, tree.nexus.name)]
-  if (tree.contexts)
-    for (const s of spaces) out.push(entry({ kind: 'space', id: s.id }, s.title))
+  if (tree.contexts) for (const s of spaces) out.push(entry({ kind: 'space', id: s.id }, s.title))
   for (const c of collections) out.push(entry({ kind: 'collection', id: c.id }, c.title))
   for (const s of sets) out.push(entry({ kind: 'set', id: s.id, path: s.path }, s.title))
   for (const p of pages) out.push(entry({ kind: 'page', id: p.id, path: p.path }, p.title))

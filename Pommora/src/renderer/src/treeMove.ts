@@ -248,11 +248,7 @@ function reorderById<T>(items: T[], ids: string[], idOf: (item: T) => string): T
   )
 }
 
-type TreeEntity =
-  | PageNode
-  | SetNode
-  | CollectionNode
-  | SpaceNode
+type TreeEntity = PageNode | SetNode | CollectionNode | SpaceNode
 
 /** `fn` returns the replacement — or null to remove it. */
 export function updateNodeInTree(

@@ -70,7 +70,7 @@ const derived = createGlobalTheme(':root', {
       quinary: greyA('4%'),
     },
     // Interaction states — system-grey. `muted` is a  de-emphasis veil for dimming a surface a step darker.
-  
+
     state: {
       hover: greyA('2.5%'),
       selected: greyA('5%'),

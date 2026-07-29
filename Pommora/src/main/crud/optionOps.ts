@@ -17,6 +17,7 @@ import {
   type Option,
 } from '@shared/optionModel'
 import type { PropertyType, StatusGroup } from '@shared/properties'
+import { wrapKey } from '@shared/governedKeys'
 
 /** These ops edit `select_options`, so they apply to Select / Multi-Select only. A Status property's
  *  options live in `status_groups` (its own per-group ops below); other types have none. Reject anything
@@ -114,8 +115,9 @@ export function renameStatusOption(
       }
     })
     if (!edit.ok) return edit
+    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
     await cascadePages(root, (content) =>
-      replacePageValue(content, propertyId, oldValue, newTitle, 'status'),
+      replacePageValue(content, key, oldValue, newTitle, 'status'),
     )
     return ok(null)
   })
@@ -132,7 +134,8 @@ export function clearStatusOption(
     if (!def) return fail('not-found', 'Property not found.')
     const typeCheck = requireStatusType(def.type)
     if (!typeCheck.ok) return typeCheck
-    await cascadePages(root, (content) => stripPageValue(content, propertyId, value, 'status'))
+    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
+    await cascadePages(root, (content) => stripPageValue(content, key, value, 'status'))
     return ok(null)
   })
 }
@@ -149,7 +152,8 @@ export function removeStatusOption(
     if (!def) return fail('not-found', 'Property not found.')
     const typeCheck = requireStatusType(def.type)
     if (!typeCheck.ok) return typeCheck
-    await cascadePages(root, (content) => stripPageValue(content, propertyId, value, 'status'))
+    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
+    await cascadePages(root, (content) => stripPageValue(content, key, value, 'status'))
     return mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
       if (!current) return { result: fail('not-found', 'Property not found.') }
@@ -209,8 +213,9 @@ export function renameOption(
       }
     })
     if (!edit.ok) return edit
+    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
     await cascadePages(root, (content) =>
-      replacePageValue(content, propertyId, oldValue, newTitle, edit.value),
+      replacePageValue(content, key, oldValue, newTitle, edit.value),
     )
     return ok(null)
   })
@@ -228,7 +233,8 @@ export function clearOption(
     if (!def) return fail('not-found', 'Property not found.')
     const typeCheck = requireOptionType(def.type)
     if (!typeCheck.ok) return typeCheck
-    await cascadePages(root, (content) => stripPageValue(content, propertyId, value, def.type))
+    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
+    await cascadePages(root, (content) => stripPageValue(content, key, value, def.type))
     return ok(null)
   })
 }
@@ -245,7 +251,8 @@ export function removeOption(
     if (!def) return fail('not-found', 'Property not found.')
     const typeCheck = requireOptionType(def.type)
     if (!typeCheck.ok) return typeCheck
-    await cascadePages(root, (content) => stripPageValue(content, propertyId, value, def.type))
+    const key = wrapKey('property', (await readRegistry(root)).defs[propertyId]?.name ?? '')
+    await cascadePages(root, (content) => stripPageValue(content, key, value, def.type))
     return mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
       if (!current) return { result: fail('not-found', 'Property not found.') }

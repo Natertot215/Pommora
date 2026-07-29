@@ -110,7 +110,9 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     if (revealed.has(id)) return true
     if (contextRows.some((c) => c.id === id)) return (contextValues?.[id]?.length ?? 0) > 0
     const def = schema.find((d) => d.id === id)
-    return def ? (fm as Record<string, unknown> | undefined)?.[wrapKey('property', def.name)] !== undefined : false
+    return def
+      ? (fm as Record<string, unknown> | undefined)?.[wrapKey('property', def.name)] !== undefined
+      : false
   }
 
   const closeEditing = (): void => setEditing(null)

@@ -22,6 +22,7 @@ import { splitFrontmatter } from '../readNexus'
 import { isPlainObject } from '@shared/propertyValue'
 import { nowIso } from './util'
 import { fail, type Result } from '@shared/result'
+import { wrapKey } from '@shared/governedKeys'
 
 async function snapshot(
   root: string,
@@ -56,6 +57,7 @@ export function deleteProperty(root: string, propertyId: string): Promise<Result
 
 async function deleteInner(root: string, propertyId: string): Promise<Result<null>> {
   const registry = await readRegistry(root)
+  const key = wrapKey('property', registry.defs[propertyId]?.name ?? '')
   const def = registry.defs[propertyId]
   if (!def) return fail('not-found', 'Property not found.')
 
@@ -67,7 +69,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   for (const folder of folders) {
     // Strip the value from every page under its file lock (shared with the cell-write path).
     for (const file of await listMarkdownFiles(folder)) {
-      await rewritePageSerialized(file, (content) => stripPageMember(content, propertyId))
+      await rewritePageSerialized(file, (content) => stripPageMember(content, key))
     }
     // Then unassign + purge the Remove-cache on the collection sidecar (JSON, never raced by a
     // cell-write). The .trash snapshot above is the recovery net, so this needn't be atomic.

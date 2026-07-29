@@ -51,6 +51,7 @@ import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
 import { ok, fail, errText, type Result } from '@shared/result'
 import type { MutateRequest, MutateResult } from '@shared/mutate'
 import type { TrashMode } from './appConfig'
+import { readRegistry } from './io/propertiesRegistry'
 
 /** What the orchestration needs from the Electron layer (injected to keep this testable). */
 export interface MutateDeps {
@@ -471,8 +472,10 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // page identically. Drives table cross-group reassignment.
       const resolved = await resolveUnderRoot(root, req.path)
       if (!resolved.ok) return relay(resolved)
+      const def = (await readRegistry(root)).defs[req.propertyId]
+      if (!def) return relay(fail('not-found', 'Property not found.'))
       return serializeOnFile(resolved.value, () =>
-        updatePageProperty(resolved.value, req.propertyId, req.value).then(relay),
+        updatePageProperty(resolved.value, def, req.value).then(relay),
       )
     }
 

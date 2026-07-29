@@ -40,7 +40,6 @@
   transition: none;
 }
 
-
 /* Align the footer content with the embed's text column — its left/right insets scale off the same
    --mdpm-scale the embed uses, so the crumbs sit under the body like the detail footer. */
 .pgpreview .ppane-footer .subfield {

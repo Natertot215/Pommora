@@ -9,11 +9,13 @@ import { newId } from '../ids'
 import { writePageFile, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { atomicWriteFile } from '../io/atomicWrite'
 import { recordWrite } from '../io/writeEcho'
-import { splitFrontmatter } from '../readNexus'
-import { applyPropertyValue, type PropertyValue } from '@shared/propertyValue'
+import { encodeValue, isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { PAGE_MODELED_KEYS } from '@shared/schemas'
 import { ok, fail, type Result } from '@shared/result'
 import { pathExists, invalidName, nowIso } from './util'
+import { wrapKey } from '@shared/governedKeys'
+import { setGovernedRootKeys } from './governedWrite'
+import type { PropertyDefinition } from '@shared/properties'
 
 const MD = '.md'
 
@@ -97,27 +99,20 @@ export async function movePage(
 }
 
 /**
- * Set or clear one property value on a page. Governs only `properties` + `modified_at`,
- * so all other frontmatter (id, Contexts, foreign keys, comments) is preserved. A null
- * value (or the `null` kind) removes the key; otherwise the value is encoded to its
- * on-disk shape via the codec. Sibling properties are untouched.
+ * Set or clear one property value on a page. Governs only that property's own key, so every other
+ * key — id, Contexts, sibling properties, foreign frontmatter, comments — is preserved. A null
+ * value (or the `null` kind) or an empty one removes the key entirely; a page without a value
+ * carries no key at all. The definition arrives resolved: main builds the key inside the file
+ * lock, and no key is ever built renderer-side except for the optimistic patch.
  */
 export async function updatePageProperty(
   absFile: string,
-  propertyId: string,
+  def: PropertyDefinition,
   value: PropertyValue | null,
 ): Promise<Result<null>> {
   if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.', 'page')
-  const existing = await readFile(absFile, 'utf8')
-  const props = applyPropertyValue(splitFrontmatter(existing).properties, propertyId, value)
-  const body = splitEnvelope(existing).body
-  const content = mergeFrontmatter(
-    existing,
-    { properties: props, modified_at: nowIso() },
-    ['properties', 'modified_at'],
-    body,
-  )
-  await atomicWriteFile(absFile, content)
+  const key = wrapKey('property', def.name)
+  const clear = value === null || isBlankValue(value)
+  await setGovernedRootKeys(absFile, clear ? {} : { [key]: encodeValue(value) }, [key])
   return ok(null)
 }
-

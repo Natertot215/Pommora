@@ -755,7 +755,7 @@ handleEnvelope(
     const c = await resolveSchemaFolder(containerPath)
     if (!c.ok) return c
     if (typeof propertyId !== 'string') return { ok: false, error: 'A property id is required.' }
-    const r = await removeProperty(c.folder, propertyId)
+    const r = await removeProperty(c.root, c.folder, propertyId)
     return r.ok ? { ok: true } : { ok: false, error: r.error.message }
   },
 )

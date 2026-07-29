@@ -16,22 +16,33 @@ import { SIDECAR_FILENAME } from '../paths'
 import { writeJson } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
-import { applyPropertyValue, decodeValue, isPlainObject } from '@shared/propertyValue'
+import { decodeValue, encodeValue, isPlainObject } from '@shared/propertyValue'
 import { serializeSchemaOp } from './schemaChain'
 import { nowIso } from './util'
 import { ok, type Result } from '@shared/result'
+import { wrapKey } from '@shared/governedKeys'
 
 export function removeProperty(
+  root: string,
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<null>> {
-  return serializeSchemaOp(() => removeInner(collectionFolder, propertyId))
+  return serializeSchemaOp(() => removeInner(root, collectionFolder, propertyId))
 }
 
-async function removeInner(collectionFolder: string, propertyId: string): Promise<Result<null>> {
+async function removeInner(
+  root: string,
+  collectionFolder: string,
+  propertyId: string,
+): Promise<Result<null>> {
   const sidecar = await readSidecar(collectionFolder, 'collection', pageCollectionSidecar)
   const ids = (sidecar?.properties as string[] | undefined) ?? []
   if (!sidecar || !ids.includes(propertyId)) return ok(null) // not assigned → no-op
+
+  // A property's values live under its own name, so the strip needs the registry's key.
+  const def = (await readRegistry(root)).defs[propertyId]
+  if (!def) return ok(null)
+  const key = wrapKey('property', def.name)
 
   const files = await listMarkdownFiles(collectionFolder)
   // Snapshot each page's value for the restore cache — read BEFORE stripping so the cache is
@@ -45,7 +56,7 @@ async function removeInner(collectionFolder: string, propertyId: string): Promis
       continue
     }
     const fields = readFrontmatterFields(content)
-    const raw = isPlainObject(fields.properties) ? fields.properties[propertyId] : undefined
+    const raw = (fields as Record<string, unknown>)[key]
     if (raw === undefined) continue
     // Only the CACHE needs identity — an id-less page still gets stripped (below), its value
     // just isn't restorable; Remove must not leak the value it exists to clear.
@@ -63,7 +74,7 @@ async function removeInner(collectionFolder: string, propertyId: string): Promis
     modified_at: nowIso(),
   })
   for (const file of files) {
-    await rewritePageSerialized(file, (content) => stripPageMember(content, propertyId))
+    await rewritePageSerialized(file, (content) => stripPageMember(content, key))
   }
   return ok(null)
 }
@@ -103,16 +114,15 @@ export async function restoreCachedValues(
       // cannot validate. That gate is the decoder's `strict` mode, not a second decoder.
       const value = decodeValue(def, raw, { strict: true })
       if (value.kind === 'null') continue
-      await rewritePageSerialized(file, (content) => {
-        const fields = readFrontmatterFields(content)
-        const properties = applyPropertyValue(fields.properties, propertyId, value)
-        return mergeFrontmatter(
+      const key = wrapKey('property', def.name)
+      await rewritePageSerialized(file, (content) =>
+        mergeFrontmatter(
           content,
-          { properties, modified_at: nowIso() },
-          ['properties', 'modified_at'],
+          { [key]: encodeValue(value), modified_at: nowIso() },
+          [key, 'modified_at'],
           splitEnvelope(content).body,
-        )
-      })
+        ),
+      )
     }
   }
   // Clear the cache block LAST — restore the pages first, so a failure mid-restore leaves the
