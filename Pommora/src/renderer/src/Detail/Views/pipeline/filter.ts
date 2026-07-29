@@ -197,6 +197,9 @@ function evaluateByType(
       return evaluateDate(v, op, expected)
     case 'checkbox':
       return evaluateCheckbox(v, op, expected)
+    // Status stores its bare label like a select, but this switch reads the DECLARED TYPE, not
+    // the value's kind — dropping the case here sends every Status rule to the no-op default.
+    case 'status':
     case 'select':
     case 'url':
       return evaluateText(v, op, expected, values)

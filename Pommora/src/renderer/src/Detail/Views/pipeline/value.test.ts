@@ -2,20 +2,7 @@ import { describe, it, expect } from 'vitest'
 import type { ViewRow } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { declaredType, resolveFieldValue } from './value'
-import { wrapKey } from '@shared/governedKeys'
-
-/** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
- *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
-const propsAtRoot = (
-  props: Record<string, unknown>,
-  defs: PropertyDefinition[],
-): Record<string, unknown> =>
-  Object.fromEntries(
-    Object.entries(props).map(([id, v]) => {
-      const d = defs.find((x) => x.id === id)
-      return [d ? wrapKey('property', d.name) : id, v]
-    }),
-  )
+import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },
@@ -85,7 +72,7 @@ describe('resolveFieldValue', () => {
     expect(rfv(row, 'ctx_topics')).toEqual({ kind: 'null' })
   })
 
-  it('routes user properties through the on-disk codec, trusting its kind', () => {
+  it('decodes a user property against the type its definition declares', () => {
     expect(rfv(row, 'prop_status')).toEqual({ kind: 'select', value: 'in_progress' })
     expect(rfv(row, 'prop_sel')).toEqual({ kind: 'select', value: 'opt_a' })
     expect(rfv(row, 'prop_when')).toEqual({
@@ -118,10 +105,9 @@ describe('resolveFieldValue memoization', () => {
       path: 'C/One.md',
       frontmatter: { id: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema), '(Areas)': ['a'] },
     }
-    // Identity-stability holds for NON-coerced kinds (the cached parse is returned as-is, tested here).
-    // A coerced plain-string kind (url/select/datetime re-tagged to the column) returns a FRESH object
-    // each call — the expensive parse stays cached, only the O(1) re-tag is per-call. No consumer keys
-    // identity on the resolved value (Cell resolves fresh; rowById keys on row.id), so this is contractual.
+    // Every kind returns the cached object now — there is no per-call re-tag left to make a fresh
+    // one. No consumer keys identity on the resolved value (Cell resolves fresh; rowById keys on
+    // row.id), so this is contractual rather than incidental.
     expect(rfv(row, 'prop_s')).toBe(rfv(row, 'prop_s'))
     expect(rfv(row, 'ctx_areas')).toBe(rfv(row, 'ctx_areas'))
   })

@@ -5,9 +5,8 @@
 // Neither glyph is a YAML flow indicator, so a wrapped key writes plain and unquoted and what
 // Pommora emits is byte-identical to what a person would type by hand. Swapping SIGIL to a pair
 // that IS an indicator (`[`/`{`) still works — the serializer quotes those on its own — so the
-// pair is a genuine one-line decision. Nothing outside this file may hardcode a glyph; every
-// consumer builds and reads keys through wrapKey/parseGovernedKey, and the tests derive their
-// fixtures from wrapKey so they follow a swap automatically.
+// pair is a genuine one-line decision. No consumer builds a key by hand — every one goes
+// through wrapKey/parseGovernedKey, or through contextKey/propertyKey above them.
 // No fs, no React: both processes import it.
 
 export type GovernedLayer = 'context' | 'property'
@@ -16,6 +15,8 @@ const SIGIL: Record<GovernedLayer, readonly [string, string]> = {
   context: ['(', ')'],
   property: ['<', '>'],
 }
+
+const SIGIL_ENTRIES = Object.entries(SIGIL) as [GovernedLayer, readonly [string, string]][]
 
 /** Reserved for system-assigned roles — a user name may not start with it. */
 export const RESERVED_NAME_PREFIX = '$'
@@ -35,17 +36,14 @@ export function wrapKey(layer: GovernedLayer, name: string): string {
  *  sweeps a key it cannot parse. Pass `layer` to scope it: a layer-blind check lets one layer's
  *  rewrite claim the other's keys, and a Context and a property may legally share a name. */
 export function isGovernedKey(key: string, layer?: GovernedLayer): boolean {
-  const pairs = layer ? [SIGIL[layer]] : Object.values(SIGIL)
-  return pairs.some(([open]) => key.startsWith(open))
+  if (layer) return key.startsWith(SIGIL[layer][0])
+  return SIGIL_ENTRIES.some(([, [open]]) => key.startsWith(open))
 }
 
 /** Positional strip, so a name containing the closing glyph round-trips. The layer comes back
  *  with the name — callers that govern one layer must check it. */
 export function parseGovernedKey(key: string): { layer: GovernedLayer; name: string } | null {
-  for (const [layer, [open, close]] of Object.entries(SIGIL) as [
-    GovernedLayer,
-    readonly [string, string],
-  ][]) {
+  for (const [layer, [open, close]] of SIGIL_ENTRIES) {
     if (key.length > open.length + close.length && key.startsWith(open) && key.endsWith(close)) {
       return { layer, name: key.slice(open.length, -close.length) }
     }

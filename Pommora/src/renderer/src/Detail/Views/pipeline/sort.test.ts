@@ -2,20 +2,7 @@ import { describe, it, expect } from 'vitest'
 import type { ViewRow } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { makeSorter, resolveManualOrder, resolvedSortCount } from './sort'
-import { wrapKey } from '@shared/governedKeys'
-
-/** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
- *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
-const propsAtRoot = (
-  props: Record<string, unknown>,
-  defs: PropertyDefinition[],
-): Record<string, unknown> =>
-  Object.fromEntries(
-    Object.entries(props).map(([id, v]) => {
-      const d = defs.find((x) => x.id === id)
-      return [d ? wrapKey('property', d.name) : id, v]
-    }),
-  )
+import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 
 const schema: PropertyDefinition[] = [
   {
@@ -172,8 +159,8 @@ describe('makeSorter — type-aware single criterion', () => {
 
   it('relation extracts to "" — a usable but no-op sorter that holds input order', () => {
     const rows = [
-      makeRow('r1', { props: { prop_rel: [{ $ctx: 'z' }] } }),
-      makeRow('r2', { props: { prop_rel: [{ $ctx: 'a' }] } }),
+      makeRow('r1', { props: { prop_rel: ['z'] } }),
+      makeRow('r2', { props: { prop_rel: ['a'] } }),
     ]
     const sorter = makeSorter([{ property_id: 'prop_rel', direction: 'ascending' }], schema)
     expect(sorter).not.toBeNull()

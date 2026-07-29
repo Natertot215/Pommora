@@ -14,20 +14,7 @@ import { propertyDefinition, type PropertyDefinition } from '@shared/properties'
 import type { PageFrontmatter } from '@shared/schemas'
 import { flattenContainer } from './group'
 import { resolveView } from './resolveView'
-import { wrapKey } from '@shared/governedKeys'
-
-/** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
- *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
-const propsAtRoot = (
-  props: Record<string, unknown>,
-  defs: PropertyDefinition[],
-): Record<string, unknown> =>
-  Object.fromEntries(
-    Object.entries(props).map(([id, v]) => {
-      const d = defs.find((x) => x.id === id)
-      return [d ? wrapKey('property', d.name) : id, v]
-    }),
-  )
+import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const collection = (pages: PageNode[]): CollectionNode => ({
@@ -102,7 +89,7 @@ describe('resolveView — full pipeline over the fixture', () => {
       p1: { id: 'p1', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
       p2: { id: 'p2', ...propsAtRoot({ prop_status: 'opt_open' }, schema) },
       p3: { id: 'p3', ...propsAtRoot({ prop_status: 'not_started' }, schema) },
-      p4: { id: 'p4', ...propsAtRoot({}, schema) },
+      p4: { id: 'p4' },
     }
     const { rows, setTree } = flattenContainer(
       collection([page('p1'), page('p2'), page('p3'), page('p4')]),
@@ -253,7 +240,7 @@ describe('resolveView — group_order', () => {
       propertyDefinition.parse((registry as Record<string, unknown>)[id]),
     )
     const { rows, setTree } = flattenContainer(collection([page('p1')]), {
-      p1: { id: 'p1', ...propsAtRoot({}, schema) },
+      p1: { id: 'p1' },
     })
     expect(() => resolveView({ rows, setTree, view, schema })).not.toThrow()
   })
@@ -287,8 +274,8 @@ describe('resolveView — group_order', () => {
     ]
     const values: Record<string, PageFrontmatter> = {
       p1: { id: 'p1', ...propsAtRoot({ prop_status: 'todo' }, schema) },
-      p2: { id: 'p2', ...propsAtRoot({}, schema) },
-      root1: { id: 'root1', ...propsAtRoot({}, schema) },
+      p2: { id: 'p2' },
+      root1: { id: 'root1' },
     }
     const base: SavedView = {
       id: 'v',

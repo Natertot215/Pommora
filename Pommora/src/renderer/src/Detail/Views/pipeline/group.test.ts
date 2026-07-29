@@ -4,20 +4,7 @@ import type { GroupConfig } from '@shared/views'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
 import { dateBucketKey, flattenContainer, resolveGroups, subGroupKey } from './group'
-import { wrapKey } from '@shared/governedKeys'
-
-/** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
- *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
-const propsAtRoot = (
-  props: Record<string, unknown>,
-  defs: PropertyDefinition[],
-): Record<string, unknown> =>
-  Object.fromEntries(
-    Object.entries(props).map(([id, v]) => {
-      const d = defs.find((x) => x.id === id)
-      return [d ? wrapKey('property', d.name) : id, v]
-    }),
-  )
+import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const set = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): SetNode => ({
@@ -249,7 +236,7 @@ describe('property grouping — status manual order', () => {
     p1: { id: 'p1', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
     p2: { id: 'p2', ...propsAtRoot({ prop_status: 'in_progress' }, statusSchema) },
     p3: { id: 'p3', ...propsAtRoot({ prop_status: 'not_started' }, statusSchema) },
-    p4: { id: 'p4', ...propsAtRoot({}, statusSchema) },
+    p4: { id: 'p4' },
   }
   const col = collection([], [page('p1'), page('p2'), page('p3'), page('p4')])
   const base: GroupConfig = {
@@ -353,7 +340,7 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     const manual = { ...sub, order_mode: 'manual' as const, order: ['done', 'not_started'] }
     const values2: Record<string, PageFrontmatter> = {
       ...values,
-      p_nv: { id: 'p_nv', ...propsAtRoot({}, statusSchema) },
+      p_nv: { id: 'p_nv' },
       p_loose: { id: 'p_loose', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
     }
     const col2 = collection(
@@ -416,7 +403,7 @@ describe('ungrouped placement (the view-level knob)', () => {
   it('property: top placement leads with the no-value band', () => {
     const values: Record<string, PageFrontmatter> = {
       p1: { id: 'p1', ...propsAtRoot({ prop_status: 'done' }, statusSchema) },
-      p2: { id: 'p2', ...propsAtRoot({}, statusSchema) },
+      p2: { id: 'p2' },
     }
     const { rows, setTree } = flattenContainer(collection([], [page('p1'), page('p2')]), values)
     const group: GroupConfig = {
@@ -485,7 +472,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
     const values = {
       p1: { id: 'p1', ...propsAtRoot({ prop_done: true }, cbSchema) },
       p2: { id: 'p2', ...propsAtRoot({ prop_done: false }, cbSchema) },
-      p3: { id: 'p3', ...propsAtRoot({}, statusSchema) },
+      p3: { id: 'p3' },
     }
     const { rows, setTree } = flattenContainer(
       collection([], [page('p1'), page('p2'), page('p3')]),

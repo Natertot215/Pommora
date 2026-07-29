@@ -3,22 +3,10 @@ import type { ViewRow } from '@shared/types'
 import type { FilterGroup } from '@shared/views'
 import type { PropertyDefinition } from '@shared/properties'
 import { applyFilter, FILTER_OPS } from './filter'
-import { wrapKey } from '@shared/governedKeys'
-
-/** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
- *  under its property's NAME. This keeps the fixtures declarative while the storage shape changes. */
-const propsAtRoot = (
-  props: Record<string, unknown>,
-  defs: PropertyDefinition[],
-): Record<string, unknown> =>
-  Object.fromEntries(
-    Object.entries(props).map(([id, v]) => {
-      const d = defs.find((x) => x.id === id)
-      return [d ? wrapKey('property', d.name) : id, v]
-    }),
-  )
+import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 
 const schema: PropertyDefinition[] = [
+  { id: 'prop_st', name: 'Stage', type: 'status' },
   {
     id: 'prop_sel',
     name: 'Sel',
@@ -278,6 +266,31 @@ describe('applyFilter — per-type matrix', () => {
     ).toEqual(['t', 'f', 'n'])
   })
 
+  it('status filters as text — the declared type routes it, not the value kind', () => {
+    const done = row('done', { props: { prop_st: 'Done' } })
+    const open = row('open', { props: { prop_st: 'Open' } })
+    expect(
+      ids([done, open], {
+        match: 'all',
+        rules: [{ property_id: 'prop_st', op: 'is', value: 'Done' }],
+      }),
+    ).toEqual(['done'])
+    expect(
+      ids([done, open], {
+        match: 'all',
+        rules: [{ property_id: 'prop_st', op: 'contains', value: 'pe' }],
+      }),
+    ).toEqual(['open'])
+    // The regression this pins: a dropped case sends every rule to the no-op default, which
+    // matches every row rather than none.
+    expect(
+      ids([done, open], {
+        match: 'all',
+        rules: [{ property_id: 'prop_st', op: 'is', value: 'Nothing' }],
+      }),
+    ).toEqual([])
+  })
+
   it('a Context filters by id-list membership', () => {
     const rA = row('rA', { areas: ['area1'] })
     const rB = row('rB', { areas: ['area2'] })
@@ -287,8 +300,14 @@ describe('applyFilter — per-type matrix', () => {
         rules: [{ property_id: 'ctx_areas', op: 'contains', value: 'area1' }],
       }),
     ).toEqual(['rA'])
+    // rC holds no areas, so is_not_empty must exclude something — otherwise the assertion
+    // cannot tell a working evaluator from a no-op that passes every row.
+    const rC = row('rC', {})
     expect(
-      ids([rA, rB], { match: 'all', rules: [{ property_id: 'ctx_areas', op: 'is_not_empty' }] }),
+      ids([rA, rB, rC], {
+        match: 'all',
+        rules: [{ property_id: 'ctx_areas', op: 'is_not_empty' }],
+      }),
     ).toEqual(['rA', 'rB'])
   })
 

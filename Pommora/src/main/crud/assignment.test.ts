@@ -8,7 +8,6 @@ import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
 
-
 let root: string
 let notes: string
 beforeEach(async () => {
