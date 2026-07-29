@@ -15,17 +15,13 @@ const read = async (rel: string): Promise<string> => readFile(join(root, rel), '
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-mutate-'))
-  await mkdir(join(root, '.nexus', 'areas', 'Work'), { recursive: true })
+  await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'nexus.json'),
     JSON.stringify({ schemaVersion: 1, id: 'nx', createdAt: '2026' }),
   )
   await writeFile(join(root, '.nexus', 'settings.json'), '{}')
-  await writeFile(
-    join(root, '.nexus', 'areas', 'Work', '_area.json'),
-    JSON.stringify({ id: 'area-1' }),
-  )
   await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'pt' }))
   await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'col' }))
   await writeFile(
