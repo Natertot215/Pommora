@@ -12,8 +12,6 @@ import type {
 import {
   Icon,
   asRenderableIcon,
-  defaultEntityIcon,
-  iconNameOr,
   type IconName,
 } from '@renderer/design-system/symbols'
 import {
@@ -39,6 +37,7 @@ import { NUMERIC_FORMATS } from '../../Detail/Views/PropertyEditing/formatValue'
 import type { Band } from '../../Detail/Views/Table/bandDndModel'
 import { reparentFsOrder, structuralOrderAfterDrop } from '../../Detail/Views/Table/bandDndModel'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
+import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { Chip, chipShapeForType } from '../Chip'
 import { chipColorFor } from '../../design-system/tokens/colorMap'
 import { cx } from '../../design-system/cx'
@@ -650,7 +649,7 @@ function LocationHierarchy({
       <DisclosureRow
         key={s.id}
         title={s.title}
-        icon={<Icon name={iconNameOr(s.icon, defaultEntityIcon('set'))} size={13} />}
+        icon={<EntityIcon kind="set" icon={s.icon} size={13} />}
         twisty={disclosable && !hideChevrons ? 'chevron' : 'none'}
         open={expanded.has(s.id)}
         onToggle={() => expanded.toggle(s.id)}

@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Icon, defaultEntityIcon } from '@renderer/design-system/symbols'
+import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { GlassControls } from '@renderer/design-system/materials'
 import { dropdownOpen, dropdownClose } from '@renderer/design-system/animations.css'
 import { useExitPresence } from '@renderer/design-system/useExitPresence'
@@ -61,7 +61,7 @@ export function AutocompletePanel({
             onPick(p)
           }}
         >
-          <Icon name={defaultEntityIcon('page')} size={14} className="mdpm-ac-icon" />
+          <EntityIcon kind="page" size={14} className="mdpm-ac-icon" />
           <span className="mdpm-ac-title">
             <span className="mdpm-ac-match">{p.title.slice(0, matchLen)}</span>
             {p.title.slice(matchLen)}

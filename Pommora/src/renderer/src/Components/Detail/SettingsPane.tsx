@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { OpenIn } from '@shared/types'
-import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { Icon, entityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import {
   detail as detailText,
   flushTrailing,
@@ -169,7 +169,7 @@ export function SettingsPane(): React.JSX.Element | null {
         icon={
           scope
             ? iconNameOr(view.icon, 'table')
-            : iconNameOr(node.icon, defaultEntityIcon(node.kind, defaultIcons))
+            : entityIcon(node.kind, node.icon, defaultIcons)
         }
         iconRef={iconRef}
         onIconClick={() => setIconOpen(true)}
@@ -204,10 +204,7 @@ export function SettingsPane(): React.JSX.Element | null {
             <span className={crumbRow}>
               <span className={footingSymbol}>
                 <Icon
-                  name={iconNameOr(
-                    schemaCollection.icon,
-                    defaultEntityIcon('collection', defaultIcons),
-                  )}
+                  name={entityIcon('collection', schemaCollection.icon, defaultIcons)}
                   size={12}
                 />
               </span>
@@ -217,7 +214,7 @@ export function SettingsPane(): React.JSX.Element | null {
                   <span>›</span>
                   <span className={footingSymbol}>
                     <Icon
-                      name={iconNameOr(node.icon, defaultEntityIcon('set', defaultIcons))}
+                      name={entityIcon('set', node.icon, defaultIcons)}
                       size={12}
                     />
                   </span>

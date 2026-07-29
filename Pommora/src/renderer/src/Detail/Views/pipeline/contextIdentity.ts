@@ -5,7 +5,7 @@
 // Pure: no fs, no React.
 
 import type { NexusTree } from '@shared/types'
-import { defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { entityIcon } from '@renderer/design-system/symbols'
 
 export interface ContextIdentity {
   title: string
@@ -41,19 +41,19 @@ function mapsFor(tree: NexusTree): IdentityMaps {
     // resolving through this seam lands on the same icon the sidebar shows. Resolving without the
     // overrides is what let a personalized nexus wear one glyph in the sidebar and another in a
     // table chip. The memo keys on the tree, so a settings change invalidates with the push.
-    const fallback = defaultEntityIcon('space', tree.personalization?.defaultIcons)
+    const di = tree.personalization?.defaultIcons
     const contexts = new Map<string, ContextIdentity>()
     const spaces = new Map<string, SpaceIdentity>()
     for (const g of tree.contexts ?? []) {
       contexts.set(g.def.id, {
         title: g.def.title,
         singular: g.def.singular,
-        icon: iconNameOr(g.def.icon, fallback),
+        icon: entityIcon('space', g.def.icon, di),
       })
       for (const s of g.spaces) {
         spaces.set(s.id, {
           title: s.title,
-          icon: iconNameOr(s.icon, fallback),
+          icon: entityIcon('space', s.icon, di),
           color: s.color,
           contextId: g.def.id,
         })

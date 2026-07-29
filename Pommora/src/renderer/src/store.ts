@@ -823,7 +823,16 @@ export const useSession = create<SessionState>((set, get) => {
     },
     personalization: {},
     setPersonalization: (key, value) => {
-      set((s) => ({ personalization: { ...s.personalization, [key]: value } }))
+      // One writer, both projections: the slice for cheap subscriptions AND the tree copy —
+      // tree-keyed derivations (nav icons, context identity, the NavWindow toggle) memoize on
+      // the tree object, so an optimistic change must re-identify it or they serve stale until
+      // the next walk lands.
+      set((s) => ({
+        personalization: { ...s.personalization, [key]: value },
+        tree: s.tree
+          ? { ...s.tree, personalization: { ...s.tree.personalization, [key]: value } }
+          : s.tree,
+      }))
       applyPersonalizationKey(key, value)
       void window.nexus.personalization.set(key, value).catch(() => undefined)
     },

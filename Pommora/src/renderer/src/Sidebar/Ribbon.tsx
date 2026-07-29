@@ -1,5 +1,5 @@
 import type { SidebarMode } from '@shared/types'
-import { Icon, defaultEntityIcon } from '@renderer/design-system/symbols'
+import { Icon, entityIcon } from '@renderer/design-system/symbols'
 import { reorder, SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
 import { useSession } from '../store'
 import { NexusPhoto } from './NexusPhoto'
@@ -42,9 +42,9 @@ export function Ribbon(): React.JSX.Element {
 
   const iconFor = (k: RibbonKey): string =>
     k === 'collections'
-      ? defaultEntityIcon('collection', defaultIcons)
+      ? entityIcon('collection', undefined, defaultIcons)
       : k === 'contexts'
-        ? defaultEntityIcon('space', defaultIcons)
+        ? entityIcon('space', undefined, defaultIcons)
         : STATIC_ICON[k]
 
   const onIcon = (k: RibbonKey): void => {

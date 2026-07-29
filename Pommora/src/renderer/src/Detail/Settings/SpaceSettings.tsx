@@ -1,7 +1,7 @@
 import { blockHostKey } from '@shared/blocks'
 import { useRef, useState } from 'react'
 import { SOLID_COLORS, type SolidColor } from '@shared/types'
-import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { Icon, entityIcon } from '@renderer/design-system/symbols'
 import { MenuBottomRow, MenuScrollFrame } from '@renderer/design-system/components/menu'
 import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
@@ -74,7 +74,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
         >
           <InlineEditHeader
             value={node.name}
-            icon={iconNameOr(node.icon, defaultEntityIcon('space', defaultIcons))}
+            icon={entityIcon('space', node.icon, defaultIcons)}
             iconRef={iconRef}
             outline={solid ? tintAt(solid, TINT_STEPS.secondary) : undefined}
             onIconClick={() => setPickerOpen(true)}

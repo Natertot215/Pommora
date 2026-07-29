@@ -4,7 +4,8 @@ import type { PropertyValue } from '@shared/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
 import { chipBox, chipColor } from '@renderer/design-system/tokens'
 import { cx } from '@renderer/design-system/cx'
-import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
+import { Icon } from '@renderer/design-system/symbols'
+import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { Switch } from '@renderer/design-system/components/Switches/Switch'
 import { ProgressBar } from '@renderer/design-system/components/ProgressBar/ProgressBar'
 import { Chip, chipShapeForType } from '@renderer/Components/Chip'
@@ -46,10 +47,9 @@ export function Cell({
   remove?: (next: PropertyValue | null) => void
 }): React.JSX.Element | null {
   if (column.kind === 'title') {
-    const iconName = hideIcon ? undefined : iconNameOr(row.icon, defaultEntityIcon('page'))
     return (
       <OverflowScroll className="cell-title">
-        {iconName ? <Icon name={iconName} size={14} /> : null}
+        {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size={14} />}
         <span className="cell-title-text">{row.title}</span>
       </OverflowScroll>
     )

@@ -5,7 +5,7 @@ import {
 } from '@renderer/design-system/components/Segmented-Controls'
 import { useDismiss } from '@renderer/design-system/components/useDismiss'
 import { MenuSurface } from '@renderer/design-system/components/menu'
-import { defaultEntityIcon } from '@renderer/design-system/symbols'
+import { entityIcon } from '@renderer/design-system/symbols'
 import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import { useSession } from '../store'
 import * as s from './viewDropdown.css'
@@ -23,7 +23,7 @@ export function SpaceDropdown(): React.JSX.Element | null {
   if (selection.kind !== 'space') return null
 
   const segment: Segment = {
-    icon: defaultEntityIcon('space', defaultIcons),
+    icon: entityIcon('space', undefined, defaultIcons),
     title: 'Space',
     active: open,
     onClick: () => setOpen((o) => !o),
