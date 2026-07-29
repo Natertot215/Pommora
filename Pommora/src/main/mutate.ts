@@ -472,9 +472,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // page identically. Drives table cross-group reassignment.
       const resolved = await resolveUnderRoot(root, req.path)
       if (!resolved.ok) return relay(resolved)
-      // The registry read sits INSIDE the lock: a rename commits and sweeps on its own chain, so
-      // a name resolved before the lock can be the old one by the time the write lands — and the
-      // value would go to a key the sweep has already passed.
+      // Resolved inside the lock: a rename sweeps on its own chain, so a name read before the
+      // lock can send the write to a key the sweep has already passed.
       return serializeOnFile(resolved.value, async () => {
         const def = (await readRegistry(root)).defs[req.propertyId]
         if (!def) return relay(fail('not-found', 'Property not found.'))
