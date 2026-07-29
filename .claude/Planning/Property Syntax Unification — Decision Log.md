@@ -29,6 +29,7 @@
 - **A-3:** [confirmed] A property rename is a **single registry write with zero cascade**; members are ULID-keyed so nothing propagates.
 - **A-4:** [confirmed] Contexts are name-keyed at the frontmatter root behind a sigil; values are **bare Space titles in an array**, never ids.
 - **A-5:** [confirmed] **Context values carry no wrapper.** The docs' `"[Projects]": [Pommora]` is YAML flow shorthand for a one-element array; the serializer emits a block sequence of bare titles.
+- **A-6a:** [confirmed] **The sigil governs; the registry registers. They are different questions and the sigil answers only the first.** A wrapped key is *Pommora's* — that is what makes it safe to sweep, safe to hide from Obsidian's panel, and distinguishable from foreign frontmatter. It does **not** make it a property. A key registers as a live property value only when its name matches a definition in `.nexus/properties.json`, whose ULID is what every other layer then references. `<Whatever>` with no matching definition is inert: preserved by value, read by nothing (`H-5`). This mirrors the Contexts rule exactly — a bracketed key registers only on an exact registry title match — and it is why C-5's uniqueness is structural rather than cosmetic.
 - **A-6:** [confirmed] The sigil buys four things, all load-bearing: it partitions the keyspace so no reserved-word blocklist is needed; it keeps the walk's key retention **registry-independent**, so a registry edit never busts the parse cache; it lets a root rewrite sweep governed keys by shape alone, preserving foreign keys and comments; and it gives Sapphire a single prefix rule to hide them all.
 - **A-7:** [confirmed] Today's Context rename is a journaled three-scope cascade with crash replay — the price paid for name-keying, and the thing S-3 shows a property rename does not need.
 - **A-8:** [confirmed] `properties: {}` is written into every new page — an empty map violating the no-empties rule, present on 33 live pages.
@@ -54,7 +55,7 @@
 - **C-2:** [confirmed] **Only page frontmatter and agenda item values speak names.** Collection sidecar assignment lists, `property_cache`, and SavedView configs all stay ULID-keyed. The view configs are **nine** propId-keyed fields — column order, hidden set, widths, alignments, styles, sort criteria, the recursive filter rule tree, group, and sub-group — and they are also embedded in block documents inside `nexus.db`, so name-keying them would make a file sweep write into the database. Two of those fields carry sentinels rather than real ids, so propId-keyed never implies a registry lookup succeeds.
 - **C-3:** [confirmed] **`property_cache` is already rename-immune, for free** — keyed by property id with page ids inside, and restore fetches the definition by id and revalidates against its current type. Name-keying it would make a rename-proof structure fragile and then require cascade scope to manage the fragility. It is also a derived cache, which the storage line places in the database rather than in hand-readable JSON.
 - **C-4:** [confirmed] **The sidecar's shape does not change.** Within the id constraint there is nothing legible to gain: a name stored beside each id reintroduces the drift ids prevent, and a regenerated display hint is stale the moment anything renames. The `prop_` prefix says what the id is and the registry sits one file away holding the mapping.
-- **C-5:** [confirmed] **Property names become unique nexus-wide**, case-folded. Restoring duplicate names is a Prospect, not a requirement.
+- **C-5:** [confirmed] **Property titles are unique nexus-wide, case-folded. Duplicates are not allowed, and this is not a tradeoff.** The title *is* the resolution key: a frontmatter key carries a name and nothing else, so two definitions sharing a title would leave that key unresolvable. Uniqueness is what makes the format work, not a policy accepted alongside it. It is enforced on create and on rename, against the whole registry.
 - **C-6:** [confirmed] **Option values are siloed per property** — two properties may each carry an option named "Active", because options live on their own definition and resolve only through it. Already true; no change.
 - **C-7:** [confirmed] **A name is trimmed and NFC-normalized once, at write.** Validation already computes the trimmed form and discards it, persisting the raw string. Normalizing at the single write point means an untrimmed name cannot exist, which retires any question of whether key parsing trims. Contexts share the rule.
 - **C-8:** [confirmed] The registry's `order` array **stays**; it drives pickers and column ordering.
@@ -138,7 +139,7 @@ The rework's second half. Cutting what the change makes obsolete is not cleanup 
 
 - The reserved-syntax module (D-1) — first, because everything else reads from it.
 - Wrapped name keys at the frontmatter root: `(Context)` and `<Property>`, values bare. Contexts migrate off square brackets.
-- Property names unique nexus-wide, case-folded, normalized once at write; the `$` reservation; three validators collapsed to one core.
+- Property titles unique nexus-wide, case-folded, normalized once at write — enforced on create and rename. Registration is a registry title match, never the sigil alone (`A-6a`). The `$` reservation; three validators collapsed to one core.
 - ULIDs everywhere except page frontmatter and agenda values.
 - One governed-root-key writer serving both sigils, replacing the two separate write paths.
 - A rename over `.md`: the registry commits first, then one sweep where the new key always wins. No journal, no replay, no rollback.
@@ -151,7 +152,6 @@ The rework's second half. Cutting what the change makes obsolete is not cleanup 
 - **Definitions in `nexus.db`** — sanctioned and made safer by this change; gated on E-2. Don't-foreclose: leave `properties.json`'s shape alone so the table replaces it wholesale.
 - **SavedViews in `nexus.db`**, and the database↔sidecar interaction it introduces. Don't-foreclose: keeping views ULID-keyed means no sweep reaches into the database, so the move stays additive.
 - **Connections in frontmatter** — why `[[…]]` stays reserved (B-3).
-- **Duplicate property names** — reversed by C-5 as an accepted loss; restoring them would need a disambiguator in the key, not a policy flip.
 - **Agenda's own definitions** (B-8).
 - **A `$`-prefixed system role on an ordinary property** — the reservation D-2 protects.
 - **An inline field-error surface** (D-7) — its own spec.
