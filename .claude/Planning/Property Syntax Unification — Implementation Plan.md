@@ -68,7 +68,7 @@ The phases below are written in dependency groups, but **run them in this order*
 
 - **Phase 5 runs inside Phase 1.** Phase 1 creates the syntax module while `contexts.ts:26-43` keeps three live duplicate implementations — which the Global Constraint "a replaced implementation is deleted in the same phase" forbids. Worse, Phase 4 deletes `governedContextKeys` (the only thing that recognises `[…]`) while contexts still write `[Title]`, so **context writes would silently no-op for one phase.** Merging closes both.
 - **The value conversion (8.1, 8.2, 8.4, 8.5) moves to sit immediately after Phase 4.** It depends on Phase 3 and Phase 4 and on nothing in 5, 6 or 7. Moving it shortens the window where values do not render from five phases to one — and, more importantly, **Phase 6 is otherwise unverifiable**: Step 6.6 exists because a rename blanks the column, but during Phases 3-7 every column is already blank, so the bug and the scheduled window are indistinguishable and screenshot verification is worthless for the phase that needs it most.
-- **Step 8.3** (strip `properties: {}` from the 33 pages) stays **after** Phase 7, because `createPage` keeps writing the empty map until Step 7.1 lands.
+- **Step 8.3** (strip the empty `properties: {}` maps) stays **after** Phase 7, because `createPage` keeps writing the empty map until Step 7.1 lands.
 - **Phase 7 splits.** 7a is mechanical removal, grep-gated: 7.1, 7.2, 7.3, 7.6. 7b is two behaviour-changing consolidations that each invert a pinning test: 7.4 and 7.5. They are different modes and the phase currently claims only one.
 
 ---
@@ -89,7 +89,7 @@ Everything that touches the outgoing shape. The straggler gate in Phase 7 checks
 
 **The IO seam — loose-typed, invisible to the compiler, each with a named step in Phase 4:** `crud/pageValue.ts` (`rewriteRaw` + `applyEdit`) · `crud/schema.ts:54-66` `stripPageMember` · `crud/schema.ts:68-81` `stripAgendaMember` · `crud/deleteProperty.ts:37,41` · `crud/removeProperty.ts:54`. All five read `.properties` off a `Json`, so removing the key from `pageFrontmatter` produces **zero** type errors here.
 
-**Tests pinning the outgoing shape — 27 files, not the ~15 first estimated.** Phase 0's corrected grep finds 18; the rest pin behaviour without naming a token: `registryProperty.test.ts` (duplicate names legal), `properties/schema.test.ts:105` (uniqueness), `io/pageFile.test.ts:66,75,92`, `contextResolve.test.ts`, `contextWrite.test.ts`, `contextCascade.test.ts`, `deleteProperty.test.ts`, `assignment.test.ts:78-81`, `readNexus.test.ts`. **`assignment.test.ts:78-81` is the trap** — it asserts `readFrontmatterFields(...).properties` is `undefined`, so after the change it passes vacuously while asserting nothing.
+**Tests pinning the outgoing shape.** Run Step 0.1 and take the count from the run — do not trust a number quoted here. The broad `properties` token over-matches (it pulls in unrelated suites), so classification is triage, not a to-do list. These pin behaviour without naming any token and must be added by hand: `registryProperty.test.ts` (duplicate names legal), `properties/schema.test.ts:105` (uniqueness), `io/pageFile.test.ts:66,75,92`, `contextResolve.test.ts`, `contextWrite.test.ts`, `contextCascade.test.ts`, `deleteProperty.test.ts`, `assignment.test.ts:78-81`, `readNexus.test.ts`. **`assignment.test.ts:78-81` is the trap** — it asserts `readFrontmatterFields(...).properties` is `undefined`, so after the change it passes vacuously while asserting nothing.
 
 ---
 
@@ -102,7 +102,7 @@ Not busywork. Tests are the one consumer the compiler cannot find for us, and a 
 ```bash
 cd Pommora && for t in 'properties' 'prop_0' '$status' '$ctx' 'parsePropertyValue' 'applyPropertyValue' \
   'coerceToDeclaredType' 'reconcileCachedValue' 'contextKey' 'parseContextKey' 'splitFrontmatter' \
-  '[Areas]' '[Projects]' 'unique' 'kind: \'status\''; do
+  '[Areas]' '[Projects]' 'unique' "kind: 'status'"; do
   grep -rlF "$t" src/ --include="*.test.ts" --include="*.test.tsx"
 done | sort -u
 ```
@@ -120,7 +120,7 @@ done | sort -u
 
 Everything downstream reads from this, so it ships first and no consumer hard-codes a glyph. Mode: **new behaviour, TDD.** (`D-1`)
 
-**Files:** Create `src/shared/governedKeys.ts` + `src/shared/governedKeys.test.ts`
+**Files:** Create `src/shared/governedKeys.ts` + `src/shared/governedKeys.test.ts` · **and, because Phase 5 runs inside this phase:** `src/shared/contexts.ts:26-60`, `contexts.test.ts`, `contextWrite.test.ts`, `contextCascade.test.ts`, `contextResolve.test.ts`, `io/pageFile.test.ts`. Stage all of them — explicit-path staging drops whatever is not listed.
 
 **Produces:** `wrapKey(layer, name)` · `parseGovernedKey(key)` · `isGovernedKey(key)` · `normalizePropertyName(raw)` · `invalidPropertyName(name)` · `KEY_REFUSAL`
 
@@ -369,24 +369,35 @@ it('writes one governed key and preserves foreign keys and comments', async () =
 })
 
 it('an emptied value deletes its key — never a placeholder', async () => {
-  await setGovernedRootKey(p, '<Status>', null)
+  // Governed-but-omitted. Passing null here writes `<Status>: null` — verified.
+  await setGovernedRootKeys(p, {}, ['<Status>'])
   expect(await readFile(p, 'utf8')).not.toContain('<Status>')
+})
+
+it('a Context unassign deletes its key', async () => {
+  await writeFile(p, '---\nid: p1\n(Projects):\n  - Pommora\n---\n')
+  await setGovernedRootKeys(p, {}, ['(Projects)'])
+  expect(await readFile(p, 'utf8')).not.toContain('(Projects)')
 })
 ```
 
 - [ ] **Step 4.2 — Run it, confirm it fails.**
-- [ ] **Step 4.3 — Write `setGovernedRootKey(absFile, changes: Record<string, unknown | null>)`.**
+- [ ] **Step 4.3 — Write `setGovernedRootKeys(absFile, next: Record<string, unknown>, govern: readonly string[])`.**
 
   **The signature is the whole finding.** `mergeFrontmatter` is set-if-present-**else-delete** over `modeledKeys` (`pageFile.ts:60-63`), and `isGovernedKey` spans *both* layers. So "governed keys computed by shape" plus a single-key write deletes every other governed key on the page — writing a property value wipes the page's Context links, and comments attached to them go too. Verified by execution.
 
-  The fix: **`modeledKeys` is exactly the keys in `changes`, plus `modified_at`.** A property write passes one entry. A Context write passes its whole reconciled set, which is how its repair-and-drop semantics survive. One function, one signature, no mode flag.
+  **But a change-set alone cannot express a delete, and `null` is not the sentinel.** Verified by execution: `mergeFrontmatter` sets when `modeled[key] !== undefined`, so `null` writes `<Status>: null`; only `undefined` or absence deletes. And a Context *unassign* is signalled by the key being **omitted** from the reconciled root — with only a change-set, nothing records that it used to be there, so the key survives and the unassign silently no-ops.
+
+  So the signature carries **both halves**: `govern` is the key set the write owns, `next` is the values. **A key in `govern` and absent from `next` is deleted.** A property write passes `govern=[key], next={key: v}`; a property clear passes `govern=[key], next={}`; a Context write passes `govern = every governed key across the original and reconciled roots, next = the reconciled root`. `modeledKeys` is `govern` plus `modified_at`.
+
+  That is `governedContextKeys` **generalized to both sigils, not deleted** — its raw ∪ next union *is* the delete mechanism, and Step 4.5 must not remove it as "subsumed".
 
   **The Phase 4.1 test above cannot catch this** — its fixture has no pre-existing governed keys. Add the test that does:
 
 ```ts
 it('leaves the other layer alone', async () => {
   await writeFile(p, '---\nid: p1\n# keep\n<Status>: Active\n<Due>: 2026-08-01\n(Projects):\n  - Pommora\n---\n')
-  await setGovernedRootKey(p, { '<Status>': 'Live' })
+  await setGovernedRootKeys(p, { '<Status>': 'Live' }, ['<Status>'])
   const out = await readFile(p, 'utf8')
   expect(out).toContain('<Status>: Live')
   expect(out).toContain('<Due>: 2026-08-01')   // survives
@@ -397,17 +408,18 @@ it('leaves the other layer alone', async () => {
 
 - [ ] **Step 4.4 — Resolve the name in main, inside the file lock.** `updatePageProperty` gains the registry and builds the key there. Preserve the locking asymmetry: `setPageContext` takes its own lock; `updatePageProperty` is wrapped by its caller at `mutate.ts:474`. A naive merge drops one.
 
-- [ ] **Step 4.5 — Route Contexts through the same writer.** `applyTarget` (`contextWrite.ts:115-128`) has **three** call sites and does more than build a key — it resolves `defById` and runs `reconcileContextKeys`. Only its key-building half moves; deleting it wholesale breaks `setAgendaContext` and `setSpaceContext`. Delete `governedContextKeys` (`:132-146`), which `setGovernedRootKey` now subsumes.
+- [ ] **Step 4.5 — Route Contexts through the same writer.** `applyTarget` (`contextWrite.ts:115-128`) has **three** call sites and does more than build a key — it resolves `defById` and runs `reconcileContextKeys`. Only its key-building half moves; deleting it wholesale breaks `setAgendaContext` and `setSpaceContext`. **Keep `governedContextKeys`'s union logic** — generalize it to both sigils and let it compute `govern`. Deleting it removes the only code that knows which keys must go.
 
 - [ ] **Step 4.5a — Convert `pageValue.ts`. This file is the plan's biggest blind spot.** `rewriteRaw` (`:20-45`) is a **fourth decoder** — it switches on `PropertyType` and reads the raw shapes directly, including `{ $status }` at `:38-41`. `applyEdit` (`:47-68`) reads and writes the nested map. All six option ops reach it through `cascadePages`.
 
   Leave it unconverted and **every option rename, clear and remove silently no-ops on every migrated page** — no error, green suite. Verified by execution. Neither the typecheck (loose-typed via `splitFrontmatter`) nor the straggler grep can see it. Convert to wrapped keys through `setGovernedRootKey`, resolve id→name in main, and delete the `type === 'status'` branch — status and select become the same path.
 
-- [ ] **Step 4.5b — Convert the three remaining IO-seam readers**, same loose-typed blind spot, same consequence:
-  - `crud/schema.ts:54-66` `stripPageMember` → collapses to `setGovernedRootKey(file, { [key]: null })`. Its reason to exist was reaching into a nested map by id.
+- [ ] **Step 4.5b — Convert the four remaining IO-seam readers**, same loose-typed blind spot, same consequence:
+  - `crud/schema.ts:54-66` `stripPageMember` → **stays a pure `(content) => string | null` transform, presence check intact.** Only the key it looks up changes: nested-map-by-id becomes wrapped-root-key. Do not route it through the async writer — it returns `null` to mean *skip*, and `rewritePageSerialized` writes nothing on null. Replace that with an unconditional write and one property Delete **re-dates every page in the nexus**, because the delete walks every collection. It is also a sync callback held under a non-reentrant per-file lock, so an async writer inside it deadlocks.
   - `crud/deleteProperty.ts:37,41` — the `.trash` snapshot. Unconverted it writes an **empty** recovery set while leaving every value on disk.
   - `crud/removeProperty.ts:54` `removeInner` — the cache snapshot. Unconverted it caches nothing and strips nothing. Needs the registry added for id→name; `restoreCachedValues` already reads it at `:150`.
-  - `crud/schema.ts:68-81` `stripAgendaMember` — same shape, agenda side.
+  - `crud/schema.ts:68-81` `stripAgendaMember` — agenda side. **JSON, and consumed by a staging transaction, not a file writer** — same key change, different plumbing.
+  - `crud/removeProperty.ts:171` `restoreCachedValues`' write-back — uses `applyPropertyValue`, which Phase 4 deletes. Compiler-visible, so it fails loud, but what it becomes is specified here: `setGovernedRootKeys` with the wrapped key.
 
   **This is not tidiness.** Left undone, every deleted property leaves its full value set orphaned on disk — which converts H-5a's accepted-YAGNI ("an orphan needs a crash inside a sub-second sweep") into the ordinary path. That is a different risk than the one signed off, so it does not get to ride along unfixed.
 - [ ] **Step 4.6 — Update the optimistic patch sites** (TableView ×3, CardsView, PreviewInspector) to build keys through `wrapKey`, the same rider treatment `contextValues` already has.
@@ -421,7 +433,7 @@ Free today: zero wrapped context keys exist on disk in either nexus, and this is
 
 - [ ] **Step 5.1** — `contexts.ts:26-43`'s `contextKey`/`parseContextKey`/`isGovernedContextKey` become thin re-exports of Phase 1's module; delete the local implementations. **Note the inversion:** `parseContextKey:42` rejects interior brackets today, which would reject the new form — Phase 1's positional strip replaces that logic rather than amending it.
 - [ ] **Step 5.2** — `invalidContextTitle`'s bracket ban goes (`contexts.ts:52-53`); `contexts.test.ts:32-33` pins it and **inverts**. Intended behaviour change, not a regression. (`D-4`)
-- [ ] **Step 5.3** — Gates, commit, phase review.
+- [ ] **Step 5.3** — *(No separate gate, commit or review — this phase runs inside Phase 1 and shares its Step 1.5.)*
 
 ---
 
@@ -486,6 +498,8 @@ it('leaves an unmatched wrapped key inert — never dropped', async () => {
 
   **The mechanism, because both obvious ones are wrong:** add a `valuesEpoch` counter to the store, bumped on a successful rename, and consume it in a **separate** effect that only calls `loadValues` + `setValues`. Do not add it to the existing `[source.path]` effect — that also runs `setValueOverride(null)`, which `TableView.tsx:239-244` documents as the cause of the fixed "~1/10 assign-vanish". Do not key on `[source.path, schema]` — that refetches on every tree write, which is the "never reload the entire Y" rule.
 
+  **The epoch effect must re-key `valueOverride`, not ignore it.** The table merges `{ ...values, ...valueOverride }` as a *per-page replacement*, and an override built before the rename still carries the old key — so a fresh `values` is masked for exactly the rows the user just edited, which are the rows they are watching. Clearing it reintroduces the fixed assign-vanish; re-keying does not, and the old→new pair is in hand at the rename.
+
   `PreviewInspector` holds its own `fm` state (`:47`) with the same staleness — add it to this phase's files.
 - [ ] **Step 6.7 — Gates, commit, phase review.** Restart the dev process.
 
@@ -516,7 +530,7 @@ cd Pommora && for t in '.properties' 'properties:' 'folded_headings' '$status' '
 done
 ```
 
-Expected: **0 for every token.** `-F` per token, never one quoted alternation — a `$`-leading token in double quotes is read as an end-of-line anchor and that branch silently matches nothing. **Sanity-check the gate itself first**: grep a token you know is present and confirm a non-zero count, or a clean run proves nothing. Run it over tests too; a test still pinning the outgoing shape is the same failure.
+**Expected: 0 for the removed tokens only.** `.properties` and `properties:` have a **permanent floor of ~30 non-test sites** — the Collection **assignment list**, which the spec deliberately keeps ULID-keyed. Chasing those two to zero would delete the assignment list. Use the discriminating forms instead — `splitFrontmatter(…).properties`, `fields.properties`, `readFrontmatterFields(…).properties` — and treat the bare tokens as informational. `-F` per token, never one quoted alternation — a `$`-leading token in double quotes is read as an end-of-line anchor and that branch silently matches nothing. **Sanity-check the gate itself first**: grep a token you know is present and confirm a non-zero count, or a clean run proves nothing. Run it over tests too; a test still pinning the outgoing shape is the same failure.
 
 - [ ] **Step 7.7 — Gates, commit, phase review.**
 
@@ -530,9 +544,9 @@ No helper code. (`F-1`) This closes the broken window opened in Phase 3.
 - [ ] **Step 8.2** — Convert the pages carrying real values: each `properties.prop_X: v` becomes `<Name>: v` at the root, the name resolved from `.nexus/properties.json`. Use the repo's own `yaml` through a throwaway script mirroring `pageFile.ts` — `doc.set`/`doc.delete` only, never regex, so comments and foreign keys survive.
 
   **The wrapped key wins where both exist.** Between the write path switching and this conversion, the app writes `<Name>: newvalue` onto pages still carrying `properties.prop_X: oldvalue`. An unconditional conversion overwrites the newer value with the stale one — and the spec's own reasoning says a user seeing an empty column retypes it, so this is the expected case rather than the rare one. Same rule as the rename sweep: **if the wrapped key is already present, drop the legacy entry and keep what is already there.**
-- [ ] **Step 8.3** — Strip `properties: {}` from the 33 pages carrying it.
-- [ ] **Step 8.4** — Convert any `property_cache` block holding cached values; drop the empty ones.
-- [ ] **Step 8.5 — Verify:** zero `properties:` in any frontmatter; bodies byte-identical; Obsidian's own bare keys untouched; every converted value rendering in the running app, confirmed by screenshot.
+- [ ] **Step 8.3** — Strip the empty `properties: {}` maps. **Count them at the time — 35 on disk now, and the number moves with every page created before this lands.**
+- [ ] **Step 8.4** — Convert any `property_cache` block holding cached values. **Dropping the empty ones moves to 8.3's slot after Phase 7** — `removeInner` keeps writing them until Step 7.3.
+- [ ] **Step 8.5 — Verify, split the way 8.2/8.3 are.** At **8a**: every converted value renders in the running app (screenshot), bodies byte-identical, Obsidian's own bare keys untouched. **After Phase 7, with 8.3**: zero `properties:` in any frontmatter — asserting that at 8a is guaranteed false, because the empty maps are deliberately still there and `createPage` keeps writing them until Step 7.1.
 - [ ] **Step 8.6** — Nothing to commit — the nexus is not the repo. Report counts.
 
 ---
