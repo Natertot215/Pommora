@@ -71,6 +71,29 @@ describe('agenda config schema CRUD', () => {
     expect((await props(t1.value.path))['<Effort>']).toBeUndefined()
   })
 
+  it('a rename carries the stored value onto the new key — values are keyed by NAME', async () => {
+    const a = await addAgendaProperty(tasks, 'task', {
+      id: '',
+      name: 'Effort',
+      type: 'number',
+    } as PropertyDefinition)
+    if (!a.ok) return
+    const t1 = await createAgendaItem(tasks, 'task', 'T1')
+    if (!t1.ok) return
+    await updateAgendaProperty(
+      t1.value.path,
+      { id: a.value.id, name: 'Effort', type: 'number' },
+      { kind: 'number', value: 3 },
+    )
+    expect((await props(t1.value.path))['<Effort>']).toBe(3)
+
+    expect((await renameAgendaProperty(tasks, 'task', a.value.id, 'Points')).ok).toBe(true)
+
+    const after = await props(t1.value.path)
+    expect(after['<Points>']).toBe(3)
+    expect(after['<Effort>']).toBeUndefined()
+  })
+
   it('gates a lossy type change, then strips on confirm', async () => {
     const a = await addAgendaProperty(tasks, 'task', {
       id: '',

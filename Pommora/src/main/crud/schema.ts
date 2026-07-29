@@ -1,9 +1,9 @@
 // Agenda property-schema CRUD — generalized over a "schema target" (kind + schema + member
 // enumeration + per-member value strip). Collections left this path in PropertiesV2 (their defs
 // live in the nexus-wide registry); only Agenda configs still hold inline `property_definitions`.
-// `stripPageMember` stays exported — the registry's global delete fan-out reuses it. add and
-// rename are sidecar-only writes; delete + a lossy changeType also strip every member, atomically
-// via SchemaTransaction.
+// `stripPageMember` stays exported — the registry's global delete fan-out reuses it. add is a
+// sidecar-only write; rename, delete and a lossy changeType also rewrite every member, atomically
+// via SchemaTransaction — a value is keyed by its property's NAME, so a rename moves it.
 
 import { join } from 'node:path'
 import type { z } from 'zod'
@@ -43,9 +43,10 @@ interface SchemaTarget {
   /** The sidecar JSON key holding the schema array — `property_definitions` on an agenda config. */
   schemaKey: string
   members: (folder: string) => Promise<string[]>
-  /** Stripped content, or null if the member doesn't carry the key (skip it). The key arrives
-   *  RESOLVED — a value is addressed by its property's name, never by its id. */
-  strip: (content: string, key: string) => string | null
+  /** Content with `key` moved to `to`, or removed when `to` is null — null return means the member
+   *  doesn't carry the key, so it is skipped and never re-dated. Keys arrive RESOLVED: a value is
+   *  addressed by its property's name, which is why a rename has to reach the members at all. */
+  rewrite: (content: string, key: string, to: string | null) => string | null
 }
 
 // MARK: - Member strip strategies
@@ -64,7 +65,7 @@ export function stripPageMember(content: string, key: string): string | null {
   )
 }
 
-function stripAgendaMember(content: string, key: string): string | null {
+function rewriteAgendaMember(content: string, key: string, to: string | null): string | null {
   let raw: unknown
   try {
     raw = JSON.parse(content)
@@ -73,7 +74,10 @@ function stripAgendaMember(content: string, key: string): string | null {
   }
   if (!isPlainObject(raw) || !(key in raw)) return null
   const next: Record<string, unknown> = { ...raw, modified_at: nowIso() }
+  const value = next[key]
   delete next[key]
+  // The destination wins if it somehow already holds one — the same rule the page sweep follows.
+  if (to !== null && !(to in raw)) next[to] = value
   return serializeJson(next)
 }
 
@@ -83,7 +87,7 @@ function agendaTarget(kind: AgendaKind): SchemaTarget {
     schema: agendaConfigSidecar,
     schemaKey: 'property_definitions',
     members: (folder) => listFilesBySuffix(folder, AGENDA_SUFFIX[kind]),
-    strip: stripAgendaMember,
+    rewrite: rewriteAgendaMember,
   }
 }
 
@@ -103,17 +107,18 @@ function nextSidecar(sidecar: Sidecar, defs: PropertyDefinition[], schemaKey: st
   return { ...sidecar, [schemaKey]: defs, modified_at: nowIso() }
 }
 
-async function stageMemberStrips(
+async function stageMemberRewrites(
   tx: SchemaTransaction,
   target: SchemaTarget,
   folder: string,
   key: string,
+  to: string | null,
 ): Promise<void> {
   for (const file of await target.members(folder)) {
     const content = await readTextOrNull(file)
     if (content === null) continue
-    const stripped = target.strip(content, key)
-    if (stripped !== null) tx.stage(file, stripped)
+    const next = target.rewrite(content, key, to)
+    if (next !== null) tx.stage(file, next)
   }
 }
 
@@ -157,7 +162,13 @@ async function renameProp(
   const v = validateName(newName, s.defs, propertyId)
   if (!v.ok) return v
   const next = s.defs.map((d, i) => (i === idx ? { ...d, name: newName } : d))
-  await writeSidecar(folder, target.kind, nextSidecar(s.sidecar, next, target.schemaKey))
+  const tx = new SchemaTransaction()
+  tx.stage(
+    join(folder, SIDECAR_FILENAME[target.kind]),
+    serializeJson(nextSidecar(s.sidecar, next, target.schemaKey)),
+  )
+  await stageMemberRewrites(tx, target, folder, propertyKey(s.defs[idx]), propertyKey(next[idx]))
+  await tx.commit()
   return ok(null)
 }
 
@@ -176,7 +187,7 @@ async function deleteProp(
     join(folder, SIDECAR_FILENAME[target.kind]),
     serializeJson(nextSidecar(s.sidecar, next, target.schemaKey)),
   )
-  await stageMemberStrips(tx, target, folder, propertyKey(doomed))
+  await stageMemberRewrites(tx, target, folder, propertyKey(doomed), null)
   await tx.commit()
   return ok(null)
 }
@@ -209,7 +220,7 @@ async function changeType(
     join(folder, SIDECAR_FILENAME[target.kind]),
     serializeJson(nextSidecar(s.sidecar, next, target.schemaKey)),
   )
-  await stageMemberStrips(tx, target, folder, propertyKey(s.defs[idx]))
+  await stageMemberRewrites(tx, target, folder, propertyKey(s.defs[idx]), null)
   await tx.commit()
   return ok(null)
 }
