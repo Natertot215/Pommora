@@ -6,7 +6,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { join } from 'node:path'
 import { newId } from './ids'
-import { atomicWriteFile, readJsonObject, pathExists } from './io/atomicWrite'
+import { atomicWriteFile, readJsonObject, readJsonStrict, pathExists } from './io/atomicWrite'
 import { writeSidecar } from './sidecarIO'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { asString, asStringArray } from './coerce'
@@ -35,13 +35,17 @@ async function stampPage(absFile: string): Promise<boolean> {
 
 /** Resolve a folder's id, minting + persisting one when it has none. A Set heals its
  *  `parent_id` to `parentId` only at mint time (so an already-adopted folder is untouched).
- *  Returns `{ id, wrote }` — `id` is what children hang their `parent_id` on. */
+ *  Returns `{ id, wrote }` — `id` is what children hang their `parent_id` on — or null for a
+ *  sidecar that exists but couldn't be read: minting over it would replace the Collection's
+ *  views, schema and cache with a bare id, so the folder waits for a later open instead. */
 async function stampFolder(
   absDir: string,
   kind: FolderKind,
   parentId: string | null,
-): Promise<{ id: string; wrote: boolean }> {
-  const existing = (await readJsonObject(join(absDir, SIDECAR_FILENAME[kind]))) ?? {}
+): Promise<{ id: string; wrote: boolean } | null> {
+  const read = await readJsonStrict(join(absDir, SIDECAR_FILENAME[kind]))
+  if (!read.ok && read.error.code !== 'not-found') return null
+  const existing = read.ok ? read.value : {}
   const existingId = asString(existing.id)
   if (existingId) return { id: existingId, wrote: false }
 
@@ -62,11 +66,14 @@ async function stampTree(
   excluded: string[],
 ): Promise<number> {
   const self = await stampFolder(absDir, kind, parentId)
+  if (!self) return 0
   let count = self.wrote ? 1 : 0
 
   for (const e of await listEntries(absDir)) {
     if (e.isFile() && !e.name.startsWith('_') && e.name.toLowerCase().endsWith('.md')) {
-      if (await stampPage(join(absDir, e.name))) count++
+      // An unreadable page, or one whose frontmatter refuses a field write, skips — adoption
+      // is idempotent, so the next open retries it.
+      if (await stampPage(join(absDir, e.name)).catch(() => false)) count++
     } else if (e.isDirectory()) {
       const childRel = `${relDir}/${e.name}`
       if (!shouldSkipDir(e.name, childRel, excluded))

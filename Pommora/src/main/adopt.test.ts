@@ -7,7 +7,7 @@ import { readSidecar } from './sidecarIO'
 import { readFrontmatterFields } from './io/pageFile'
 import { isUlid } from './ids'
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
-import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from './paths'
+import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from './paths'
 
 let root: string
 
@@ -98,5 +98,21 @@ describe('stampAdopted', () => {
     await writeFile(join(root, 'Tasks', 'Note.md'), '# a real page')
     await stampAdopted(root)
     expect((await coll(join(root, 'Tasks')))?.id).toBeTruthy() // adopted as a normal Collection
+  })
+
+  it('never mints over a sidecar it could not read — the folder waits for a later open', async () => {
+    const sidecar = join(root, 'Notes', SIDECAR_FILENAME.collection)
+    await writeFile(sidecar, '{ corrupt', 'utf8')
+    await stampAdopted(root)
+    expect(await readFile(sidecar, 'utf8')).toBe('{ corrupt') // byte-identical
+    // The subtree waits with it — a child stamped now would hang its parent_id on nothing.
+    expect(await set(join(root, 'Notes', 'Daily'))).toBeNull()
+  })
+
+  it('a page whose frontmatter refuses the id write is skipped, not clobbered', async () => {
+    const page = join(root, 'Notes', 'Broken.md')
+    await writeFile(page, '---\nbad: [unclosed\n---\nprose', 'utf8')
+    await stampAdopted(root)
+    expect(await readFile(page, 'utf8')).toBe('---\nbad: [unclosed\n---\nprose')
   })
 })

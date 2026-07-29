@@ -112,7 +112,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     expect((await sidecar())?.properties).toContain(propId)
   })
 
-  it('drops a value whose option no longer exists; keeps conforming siblings', async () => {
+  it('a value whose option no longer exists stays cached; conforming siblings restore', async () => {
     await removeProperty(root, folder, propId)
     await editProperty(root, propId, {
       status_groups: [
@@ -127,25 +127,31 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toBeUndefined() // 'active' is no longer a live option
     expect(await pageValue(pageB)).toBe('done')
-    expect(await cacheBlock()).toBeUndefined()
+    // The entry leaves the cache only by restoring — a rejected value waits for its option
+    // to come back rather than being spent on a restore that never happened.
+    const block = (await cacheBlock()) as { values: Record<string, unknown> }
+    expect(Object.keys(block.values)).toHaveLength(1)
+    expect(Object.values(block.values)).toEqual(['active'])
   })
 
-  it('drops a value whose def type changed since caching', async () => {
+  it('a value whose def type changed stays cached, restoring nothing', async () => {
     await removeProperty(root, folder, propId)
     await editProperty(root, propId, { type: 'number' })
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toBeUndefined()
     expect(await pageValue(pageB)).toBeUndefined()
-    expect(await cacheBlock()).toBeUndefined()
+    const block = (await cacheBlock()) as { values: Record<string, unknown> }
+    expect(Object.keys(block.values)).toHaveLength(2)
   })
 
-  it('a page deleted while cached is skipped — entry dropped, no error', async () => {
+  it('a page deleted while cached is skipped — its entry stays cached, no error', async () => {
     await removeProperty(root, folder, propId)
     await rm(pageA)
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
     expect(await pageValue(pageB)).toBe('done')
-    expect(await cacheBlock()).toBeUndefined()
+    const block = (await cacheBlock()) as { values: Record<string, unknown> }
+    expect(Object.keys(block.values)).toHaveLength(1)
   })
 
   it('restores select values whose STRINGS look like dates or URLs — type-directed, never shape-inferred (breaker H-1)', async () => {

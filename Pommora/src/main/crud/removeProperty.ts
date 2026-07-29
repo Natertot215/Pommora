@@ -91,37 +91,51 @@ export async function restoreCachedValues(
   const block = cacheAll?.[propertyId]
   if (!isPlainObject(block) || !isPlainObject(block.values)) return ok(null)
 
+  // No readable definition → the cache stays whole: a restore can only spend an entry it
+  // actually wrote back, and a def that reappears later still finds everything waiting.
   const def = (await readRegistry(root)).defs[propertyId]
-  if (def) {
-    const key = propertyKey(def)
-    // Map page id → file; the value write re-reads fresh inside the file lock.
-    const byId = new Map<string, string>()
-    for (const file of await listMarkdownFiles(collectionFolder)) {
-      const content = await readTextOrNull(file)
-      if (content === null) continue
-      const id = readFrontmatterFields(content).id
-      if (typeof id === 'string') byId.set(id, file)
-    }
-    for (const [pageId, raw] of Object.entries(block.values)) {
-      const file = byId.get(pageId)
-      if (!file) continue
-      // Strict: a restore never plants a value the definition's CURRENT type and options
-      // cannot validate. That gate is the decoder's `strict` mode, not a second decoder.
-      const value = decodeValue(def, raw, { strict: true })
-      if (value.kind === 'null') continue
-      await rewritePageSerialized(file, (content) =>
-        mergeFrontmatter(
-          content,
-          { [key]: encodeValue(value), modified_at: nowIso() },
-          [key, 'modified_at'],
-          splitEnvelope(content).body,
-        ),
-      )
-    }
+  if (!def) return ok(null)
+  const key = propertyKey(def)
+  // Map page id → file; the value write re-reads fresh inside the file lock.
+  const byId = new Map<string, string>()
+  for (const file of await listMarkdownFiles(collectionFolder)) {
+    const content = await readTextOrNull(file)
+    if (content === null) continue
+    const id = readFrontmatterFields(content).id
+    if (typeof id === 'string') byId.set(id, file)
   }
-  // Clear the cache block LAST — restore the pages first, so a failure mid-restore leaves the
-  // cache intact for a re-run rather than dropping the values it hadn't restored yet.
-  const nextSidecar = { ...withoutCacheBlock(sidecar, propertyId), modified_at: nowIso() }
+  // Each entry leaves the cache only as its page write lands; what didn't restore — a page
+  // that vanished, a value the def's CURRENT type/options reject (the decoder's strict mode,
+  // not a second decoder), a page whose frontmatter refuses the write — stays cached.
+  const survivors = { ...block.values }
+  for (const [pageId, raw] of Object.entries(block.values)) {
+    const file = byId.get(pageId)
+    if (!file) continue
+    const value = decodeValue(def, raw, { strict: true })
+    if (value.kind === 'null') continue
+    const wrote = await rewritePageSerialized(file, (content) =>
+      mergeFrontmatter(
+        content,
+        { [key]: encodeValue(value), modified_at: nowIso() },
+        [key, 'modified_at'],
+        splitEnvelope(content).body,
+      ),
+    ).then(
+      () => true,
+      () => false,
+    )
+    if (wrote) delete survivors[pageId]
+  }
+  const nextSidecar = Object.keys(survivors).length
+    ? {
+        ...sidecar,
+        property_cache: {
+          ...(sidecar.property_cache as Record<string, unknown>),
+          [propertyId]: { ...block, values: survivors },
+        },
+        modified_at: nowIso(),
+      }
+    : { ...withoutCacheBlock(sidecar, propertyId), modified_at: nowIso() }
   await writeJson(join(collectionFolder, SIDECAR_FILENAME.collection), nextSidecar)
   return ok(null)
 }

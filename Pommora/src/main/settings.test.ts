@@ -108,3 +108,22 @@ describe('readDefaultViewScale', () => {
     expect(await readDefaultViewScale(root)).toBe(1)
   })
 })
+
+describe('an unreadable settings.json is never replaced', () => {
+  const corrupt = async (): Promise<void> => {
+    await mkdir(nexusDir(root), { recursive: true })
+    await writeFile(path(), '{ corrupt', 'utf8')
+  }
+
+  it('ensureSettings does nothing', async () => {
+    await corrupt()
+    await ensureSettings(root)
+    expect(await readFile(path(), 'utf8')).toBe('{ corrupt')
+  })
+
+  it('updateSettings fails the write and leaves the file byte-identical', async () => {
+    await corrupt()
+    await expect(updateSettings(root, (cur) => ({ ...cur, profile_subtitle: 'x' }))).rejects.toThrow()
+    expect(await readFile(path(), 'utf8')).toBe('{ corrupt')
+  })
+})

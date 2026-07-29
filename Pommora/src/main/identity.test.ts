@@ -52,4 +52,22 @@ describe('ensureIdentity', () => {
     expect(r.created).toBe(false)
     expect(await readFile(idPath(), 'utf8')).toBe(before) // untouched
   })
+
+  it('runs the session on a throwaway id when nexus.json is unreadable — file untouched', async () => {
+    await mkdir(nexusDir(root), { recursive: true })
+    await writeFile(idPath(), '{ corrupt', 'utf8')
+    const r = await ensureIdentity(root)
+    expect(r.created).toBe(false)
+    expect(isUlid(r.id)).toBe(true)
+    expect(await readFile(idPath(), 'utf8')).toBe('{ corrupt')
+  })
+
+  it('minting over a readable id-less file preserves its foreign keys', async () => {
+    await writeId({ note: 'keep me' })
+    const r = await ensureIdentity(root)
+    expect(r.created).toBe(true)
+    const j = await readId()
+    expect(j.note).toBe('keep me')
+    expect(typeof j.id === 'string' && isUlid(j.id as string)).toBeTruthy()
+  })
 })

@@ -35,7 +35,7 @@ import {
   trashWithTimestamp,
   pathExists,
   readJsonObject,
-  mutateJson,
+  rmwJsonStrict,
   atomicWriteBinary,
   atomicWriteFile,
 } from './io/atomicWrite'
@@ -353,26 +353,24 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         // leaves `banner` pointing at a deleted file (mirrors the cover/photo ordering).
         // Locked on the config path — the block-doc writers share this file (homepage.json
         // carries layout/blocks), and two unlocked read-merge-writes lose whole keys.
-        await serializeOnFile(cfgPath, () =>
-          mutateJson<Record<string, unknown>>(
-            cfgPath,
-            () => fallback,
-            (cur) => ({ ...cur, banner: rel }),
-          ),
+        const written = await serializeOnFile(cfgPath, () =>
+          rmwJsonStrict(cfgPath, (cur) => ({ ...cur, banner: rel }), () => fallback),
         )
+        if (!written.ok) return relay(written)
         if (prev && prev !== rel) await rm(join(root, prev), { force: true }).catch(() => {})
       } else {
-        await serializeOnFile(cfgPath, () =>
-          mutateJson<Record<string, unknown>>(
+        const written = await serializeOnFile(cfgPath, () =>
+          rmwJsonStrict(
             cfgPath,
-            () => fallback,
             (cur) => {
               const next = { ...cur }
               delete next.banner
               return next
             },
+            () => fallback,
           ),
         )
+        if (!written.ok) return relay(written)
         if (prev) await rm(join(root, prev), { force: true }).catch(() => {})
       }
       return { ok: true }
@@ -397,18 +395,19 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (typeof id !== 'string') return fault('That item has no id.')
         fallback = { id }
       }
-      await serializeOnFile(cfgPath, () =>
-        mutateJson<Record<string, unknown>>(
+      const written = await serializeOnFile(cfgPath, () =>
+        rmwJsonStrict(
           cfgPath,
-          () => fallback,
           (cur) => {
             const next = { ...cur }
             if (req.hidden) next.heading_icon_hidden = true
             else delete next.heading_icon_hidden
             return next
           },
+          () => fallback,
         ),
       )
+      if (!written.ok) return relay(written)
       return { ok: true }
     }
 
@@ -454,16 +453,17 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const existing = await readJsonObject(cfgPath)
       const id = typeof existing?.id === 'string' ? existing.id : null
       if (!id) return fault('That item has no id.')
-      await mutateJson<Record<string, unknown>>(
+      const written = await rmwJsonStrict(
         cfgPath,
-        () => ({ id }),
         (cur) => {
           const next = { ...cur }
           if (req.icon) next.icon = req.icon
           else delete next.icon
           return next
         },
+        () => ({ id }),
       )
+      if (!written.ok) return relay(written)
       return { ok: true }
     }
 

@@ -5,7 +5,7 @@
 
 import { mkdir } from 'node:fs/promises'
 import { newId } from './ids'
-import { readJsonObject, writeJson } from './io/atomicWrite'
+import { readJsonStrict, writeJson } from './io/atomicWrite'
 import { asString } from './coerce'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
@@ -32,7 +32,12 @@ export function defaultIdentity(): { schemaVersion: number; id: string; createdA
  *  so re-opening never churns it. */
 export async function ensureIdentity(root: string): Promise<{ id: string; created: boolean }> {
   const path = nexusConfig(root, NEXUS_CONFIG_FILES.identity)
-  const existing = await readJsonObject(path)
+  const read = await readJsonStrict(path)
+  // A nexus.json that exists but can't be read must not be re-minted over — the id it holds
+  // keys the asset folders. The session runs on a throwaway id, nothing is written, and the
+  // next open reads the real one.
+  if (!read.ok && read.error.code !== 'not-found') return { id: newId(), created: false }
+  const existing = read.ok ? read.value : null
   const existingId = existing && asString(existing.id)
 
   if (existing && existingId) {
@@ -45,6 +50,6 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
 
   await mkdir(nexusDir(root), { recursive: true })
   const identity = defaultIdentity()
-  await writeJson(path, identity)
+  await writeJson(path, existing ? { ...existing, ...identity } : identity)
   return { id: identity.id, created: true }
 }

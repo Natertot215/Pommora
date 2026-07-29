@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -35,6 +35,7 @@ describe('openNexusDb', () => {
 
   it('reuses an existing file at the current version, data intact', () => {
     const first = openNexusDb(root)
+    expect(first).not.toBeNull()
     if (!first) return
     seed(first, 'p1')
     first.close()
@@ -46,6 +47,7 @@ describe('openNexusDb', () => {
 
   it('drops and recreates on a version mismatch', () => {
     const first = openNexusDb(root)
+    expect(first).not.toBeNull()
     if (!first) return
     seed(first, 'stale')
     first.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '0')").run()
@@ -59,6 +61,7 @@ describe('openNexusDb', () => {
 
   it('recreates when the version was never stamped', () => {
     const first = openNexusDb(root)
+    expect(first).not.toBeNull()
     if (!first) return
     seed(first, 'half')
     first.prepare("DELETE FROM meta WHERE key = 'schema_version'").run()
@@ -67,5 +70,14 @@ describe('openNexusDb', () => {
     const second = openNexusDb(root)
     expect(second && keys(second)).toEqual([])
     second?.close()
+  })
+
+  it('leaves a file it could not open intact — only a version mismatch earns the drop', async () => {
+    const dbPath = join(root, '.nexus', DB_FILENAME)
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(dbPath, 'not a database', 'utf8')
+    const db = openNexusDb(root)
+    expect(db).toBeNull() // the session runs without persistence
+    expect(await readFile(dbPath, 'utf8')).toBe('not a database') // byte-identical
   })
 })

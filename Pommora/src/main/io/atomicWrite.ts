@@ -35,28 +35,6 @@ export async function writeJson(filePath: string, value: unknown): Promise<void>
   await atomicWriteFile(filePath, serializeJson(value))
 }
 
-/**
- * Read a JSON file, apply `mutate` to the parsed value, write the result back
- * atomically. Read-modify-write so concurrent sibling writers don't clobber each
- * other's keys. A missing/unreadable file starts from `fallback()`. Returns the
- * value that was written.
- */
-export async function mutateJson<T>(
-  filePath: string,
-  fallback: () => T,
-  mutate: (current: T) => T,
-): Promise<T> {
-  let current: T
-  try {
-    current = JSON.parse(await readFile(filePath, 'utf8')) as T
-  } catch {
-    current = fallback()
-  }
-  const next = mutate(current)
-  await writeJson(filePath, next)
-  return next
-}
-
 /** STRICT JSON read: a missing file is `not-found`, anything else unreadable/non-object is
  *  `operation-failed` — never a fallback. The read half of `rmwJsonStrict`, exposed for
  *  callers that branch on the failure kind (the registry's seed-vs-unmigrated split). */
@@ -78,18 +56,23 @@ export async function readJsonStrict(absPath: string): Promise<Result<Record<str
   }
 }
 
-/** STRICT read-modify-write: a read failure is a `fail` and NO write happens — never a
- *  fallback-to-empty (a transiently-unreadable file, e.g. an evicted iCloud placeholder,
- *  must fail the save rather than be clobbered down to a near-empty object). The one
- *  chokepoint for every sidecar whose fields other writers own concurrently; callers
- *  needing serialization wrap this in their own `serializeOnFile`. */
+/** STRICT read-modify-write — the ONE way to write a JSON file based on a prior read.
+ *  Absent is a fact: with `seedOnAbsent` the mutation starts from the seed (first-run),
+ *  without it a missing file is a `fail`. Unreadable is ignorance: any other read failure
+ *  (an evicted iCloud placeholder, a corrupt file) is a `fail` and NO write happens —
+ *  never a fallback-to-empty clobber. Callers needing serialization wrap this in their
+ *  own `serializeOnFile`. */
 export async function rmwJsonStrict(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
+  seedOnAbsent?: () => Record<string, unknown>,
 ): Promise<Result<Record<string, unknown>>> {
   const current = await readJsonStrict(absPath)
-  if (!current.ok) return current
-  const next = mutate(current.value)
+  let base: Record<string, unknown>
+  if (current.ok) base = current.value
+  else if (current.error.code === 'not-found' && seedOnAbsent) base = seedOnAbsent()
+  else return current
+  const next = mutate(base)
   await writeJson(absPath, next)
   return ok(next)
 }
@@ -106,8 +89,9 @@ export async function readTextOrNull(absPath: string): Promise<string | null> {
 }
 
 /** Read + JSON-parse a file to a plain object, or null if missing / unreadable / not an
- *  object. The one owner of "parse a JSON file to a record" — used by sidecar, agenda, and
- *  index reads (the JSON-side analog of pageFile's mergeFrontmatter). */
+ *  object. READ PATH ONLY — null conflates absent with unreadable, so a write based on it
+ *  would clobber a file it merely failed to read; anything that writes back goes through
+ *  `rmwJsonStrict`. */
 export async function readJsonObject(absPath: string): Promise<Record<string, unknown> | null> {
   try {
     const v: unknown = JSON.parse(await readFile(absPath, 'utf8'))
