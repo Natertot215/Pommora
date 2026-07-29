@@ -5,8 +5,9 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import type { FilterRule, SavedView } from '@shared/views'
-import { defaultEntityIcon, Icon, iconNameOr } from '@renderer/design-system/symbols'
+import { Icon } from '@renderer/design-system/symbols'
 import { Chip, ChipRemoveButton, chipShapeForType } from '@renderer/Components/Chip'
+import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { ContextChip } from '@renderer/Components/ContextChip'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import {
@@ -301,7 +302,7 @@ function LocationField({
       <DisclosureRow
         key={s.id}
         title={s.title}
-        icon={<Icon name={setGlyph(s)} size={13} />}
+        icon={<EntityIcon kind="set" icon={s.icon} size={13} />}
         // The row picks a value here, so the chevron is the only way into a child Set — it survives
         // the Hide Chevrons personalization, and a leaf holds its width so glyphs stay in one column.
         twisty={kids.length > 0 ? 'chevron' : 'spacer'}
@@ -331,11 +332,7 @@ function LocationField({
                 <Fragment key={v}>
                   {i > 0 && <span className={fp.segmentDivider} />}
                   <span className={fp.segment}>
-                    <Icon
-                      name={set ? setGlyph(set) : defaultEntityIcon('set')}
-                      size={13}
-                      className={fp.segmentIcon}
-                    />
+                    <EntityIcon kind="set" icon={set?.icon} size={13} className={fp.segmentIcon} />
                     {/* The chip's own label + remove, at their defaults: the melt machinery is what
                         blurs the title tail under the ×, and it only ever needed a `chipRemovable`
                         host and this label — never a chip's fill. */}
@@ -454,11 +451,6 @@ function ChipsField({
 function flattenSets(sets: SetNode[] | undefined): SetNode[] {
   return (sets ?? []).flatMap((s) => [s, ...flattenSets(s.sets)])
 }
-
-/** A Set's glyph, defaulted — a Set without its own icon still shows the entity default rather than
- *  a bare title, so a segment and its picker row always read the same. */
-const setGlyph = (s: SetNode): React.ComponentProps<typeof Icon>['name'] =>
-  iconNameOr(s.icon, defaultEntityIcon('set'))
 
 export function FilterPane({
   source,

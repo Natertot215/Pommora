@@ -100,7 +100,7 @@ describe('context accessors', () => {
 
 // A personalized Space glyph must reach every surface that resolves through the seam, not just the
 // sidebar — a nexus that sets its own default otherwise wears two different icons for one Space.
-// The override must name a CURATED glyph; `defaultEntityIcon` rejects anything else and keeps the seed.
+// The override must name a CURATED glyph; `entityIcon` rejects anything else and keeps the seed.
 it('an icon-less Space takes the USER default glyph, not the curated seed', () => {
   const personalized = {
     ...mkTree(),

@@ -5,7 +5,7 @@ import { applyValueAtRoot, propertyKey } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { cx } from '@renderer/design-system/cx'
-import { asRenderableIcon, defaultEntityIcon, Icon } from '@renderer/design-system/symbols'
+import { asRenderableIcon, entityIcon, Icon } from '@renderer/design-system/symbols'
 import { propertyTypeIconName } from '../Components/Detail/PropertyTypes'
 import { text } from '@renderer/design-system/tokens'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
@@ -47,6 +47,7 @@ type Editing = { id: string; mode: 'picker' | 'editor' | 'date' } | null
 export function PreviewInspector({ target }: { target: PreviewTarget }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const [fm, setFm] = useState<PageFrontmatter | null>(null)
   const [title, setTitle] = useState('')
   const [editing, setEditing] = useState<Editing>(null)
@@ -219,8 +220,11 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                             ? (asRenderableIcon(def.icon) ??
                               propertyTypeIconName(def.type) ??
                               'tag')
-                            : (asRenderableIcon(contextRows.find((c) => c.id === id)?.icon) ??
-                              defaultEntityIcon('space'))
+                            : entityIcon(
+                                'space',
+                                contextRows.find((c) => c.id === id)?.icon,
+                                defaultIcons,
+                              )
                         }
                         size={12}
                       />
@@ -332,7 +336,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             .map((t) => (
               <PickerOption key={t.id} onClick={() => revealAndEdit(t.id)}>
                 <span className={iconOption}>
-                  <Icon name={asRenderableIcon(t.icon) ?? defaultEntityIcon('space')} size={13} />
+                  <Icon name={entityIcon('space', t.icon, defaultIcons)} size={13} />
                   {t.label}
                 </span>
               </PickerOption>
