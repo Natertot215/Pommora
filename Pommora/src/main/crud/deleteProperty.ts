@@ -7,6 +7,7 @@
 
 import { join } from 'node:path'
 import { readFile, mkdir, writeFile } from 'node:fs/promises'
+import { withoutCacheBlock } from './assignment'
 import { readRegistry, type PropertyRegistry } from '../io/propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
 import { allCollectionFolders } from './assignment'
@@ -85,12 +86,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
       properties: assigned.filter((id) => id !== propertyId),
       modified_at: nowIso(),
     }
-    if (hadCache) {
-      const cache = { ...cacheAll }
-      delete cache[propertyId]
-      if (Object.keys(cache).length) next.property_cache = cache
-      else delete next.property_cache
-    }
+    if (hadCache) Object.assign(next, withoutCacheBlock(next, propertyId))
     await writeJson(join(folder, SIDECAR_FILENAME.collection), next)
   }
   return removeFromRegistry(root, propertyId)

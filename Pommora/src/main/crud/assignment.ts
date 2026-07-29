@@ -28,6 +28,23 @@ const write = async (
   ids: string[],
 ): Promise<void> => writeSidecar(folder, 'collection', { ...sidecar, properties: ids })
 
+/** Drop one property's Remove-cache block, and the whole `property_cache` key with it once the
+ *  last block goes. The no-empties rule reaches the cache too, and it lived in two spellings
+ *  across the remove and delete paths before this. */
+export function withoutCacheBlock(
+  sidecar: Record<string, unknown>,
+  propertyId: string,
+): Record<string, unknown> {
+  const all = sidecar.property_cache
+  const next = { ...sidecar }
+  if (typeof all !== 'object' || all === null) return next
+  const cache = { ...(all as Record<string, unknown>) }
+  delete cache[propertyId]
+  if (Object.keys(cache).length) next.property_cache = cache
+  else delete next.property_cache
+  return next
+}
+
 // Unchained internals — the chained publics compose them; a chained fn awaiting another
 // chained fn would deadlock the schema chain.
 async function assignInner(

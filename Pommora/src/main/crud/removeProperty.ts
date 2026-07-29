@@ -15,6 +15,7 @@ import { listMarkdownFiles } from '../io/walk'
 import { SIDECAR_FILENAME } from '../paths'
 import { writeJson } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
+import { withoutCacheBlock } from './assignment'
 import { readRegistry } from '../io/propertiesRegistry'
 import { decodeValue, encodeValue, isPlainObject } from '@shared/propertyValue'
 import { serializeSchemaOp } from './schemaChain'
@@ -130,14 +131,7 @@ export async function restoreCachedValues(
   }
   // Clear the cache block LAST — restore the pages first, so a failure mid-restore leaves the
   // cache intact for a re-run rather than dropping the values it hadn't restored yet.
-  const cache = { ...cacheAll }
-  delete cache[propertyId]
-  const nextSidecar: Record<string, unknown> = {
-    ...sidecar,
-    property_cache: cache,
-    modified_at: nowIso(),
-  }
-  if (Object.keys(cache).length === 0) delete nextSidecar.property_cache
+  const nextSidecar = { ...withoutCacheBlock(sidecar, propertyId), modified_at: nowIso() }
   await writeJson(join(collectionFolder, SIDECAR_FILENAME.collection), nextSidecar)
   return ok(null)
 }
