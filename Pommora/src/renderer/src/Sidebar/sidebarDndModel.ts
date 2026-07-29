@@ -8,9 +8,6 @@ export type Kind =
   | 'collection'
   | 'set'
   | 'page'
-  | 'area'
-  | 'topic'
-  | 'project'
   | 'space'
   | 'contextGroup'
 export type Entry = {

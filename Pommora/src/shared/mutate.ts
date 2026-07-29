@@ -22,9 +22,8 @@ export type BannerOwnerKind = 'collection' | 'set' | 'space' | 'homepage' | 'nav
  *  SidecarKind names exactly, so main passes them straight to createFolderEntity. */
 export type MutableContainerKind = 'collection' | 'set'
 
-/** Top-level order groups, persisted in `.nexus/state.json` — top Collections + the three
- *  Contexts. Single source for the union spelled across the engine, store, and IPC
- *  (and re-used in main). */
+/** Top-level order persisted in `.nexus/state.json`. Contexts carry their own order in the
+ *  registry and reorder through `reorderContexts`, so only the Collections belong here. */
 export type StateOrderKey = 'collection_order'
 /** Within-container child-order keys carried by reorderChildren — collections on a vault, sets on a collection. */
 export type ChildOrderKey = 'collection_order' | 'set_order'
