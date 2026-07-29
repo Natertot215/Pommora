@@ -4,9 +4,6 @@
 import { join } from 'node:path'
 
 export type SidecarKind =
-  | 'area'
-  | 'topic'
-  | 'project'
   | 'space'
   | 'collection'
   | 'set'
@@ -15,9 +12,6 @@ export type SidecarKind =
 
 /** Per-kind sidecar filenames (the kind authority on disk). */
 export const SIDECAR_FILENAME: Record<SidecarKind, string> = {
-  area: '_area.json',
-  topic: '_topic.json',
-  project: '_project.json',
   space: '_space.json',
   collection: '_pagecollection.json',
   set: '_pageset.json',

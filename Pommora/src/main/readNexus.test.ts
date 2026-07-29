@@ -70,16 +70,12 @@ beforeAll(() => {
 
   // --- sidecar-driven nexus (_pagecollection.json at the top, recursive _pageset.json below) ---
   sidecar = mkdtempSync(join(tmpdir(), 'pom-sc-'))
-  d(join(sidecar, '.nexus', 'areas', 'Work'))
+  d(join(sidecar, '.nexus'))
   w(
     join(sidecar, '.nexus', 'nexus.json'),
     JSON.stringify({ schemaVersion: 1, id: 'nx1', createdAt: '2026' }),
   )
   w(join(sidecar, '.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Archive'] }))
-  w(
-    join(sidecar, '.nexus', 'areas', 'Work', '_area.json'),
-    JSON.stringify({ id: 'area-work', color: 'blue' }),
-  )
   w(
     join(sidecar, '.nexus', 'properties.json'),
     JSON.stringify({
@@ -519,10 +515,7 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
   let root: string
   beforeAll(() => {
     root = mkdtempSync(join(tmpdir(), 'pom-paths-'))
-    // Contexts (one per area/topic/project, under .nexus/<name>/).
-    d(join(root, '.nexus', 'areas', 'Work'))
-    d(join(root, '.nexus', 'topics', 'Health'))
-    d(join(root, '.nexus', 'projects', 'Launch'))
+    d(join(root, '.nexus'))
     // Collection -> Set -> Sub-Set -> Page.
     d(join(root, 'Notes', 'Daily', 'Morning'))
     w(
@@ -530,9 +523,6 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
       JSON.stringify({ schemaVersion: 1, id: 'nxp', createdAt: '2026' }),
     )
     w(join(root, '.nexus', 'settings.json'), '{}')
-    w(join(root, '.nexus', 'areas', 'Work', '_area.json'), JSON.stringify({ id: 'a1' }))
-    w(join(root, '.nexus', 'topics', 'Health', '_topic.json'), JSON.stringify({ id: 't1' }))
-    w(join(root, '.nexus', 'projects', 'Launch', '_project.json'), JSON.stringify({ id: 'p1' }))
     w(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'c-notes' }))
     w(
       join(root, 'Notes', 'Daily', '_pageset.json'),

@@ -9,9 +9,9 @@ describe('ignoredUnder', () => {
   it('watches normal entities, _underscore sidecars, AND .nexus contexts/settings', () => {
     expect(ignored('/nexus')).toBe(false)
     expect(ignored('/nexus/Notes/Page.md')).toBe(false)
-    expect(ignored('/nexus/Areas/Work/_area.json')).toBe(false)
+    expect(ignored('/nexus/Notes/Daily/_pageset.json')).toBe(false)
     // .nexus holds user-meaningful config — Contexts + settings must auto-refresh externally.
-    expect(ignored('/nexus/.nexus/areas/Work/_area.json')).toBe(false)
+    expect(ignored('/nexus/.nexus/contexts/Areas/Work/_space.json')).toBe(false)
     expect(ignored('/nexus/.nexus/settings.json')).toBe(false)
     expect(ignored('/nexus/.nexus/state.json')).toBe(false)
   })

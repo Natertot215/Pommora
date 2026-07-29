@@ -17,11 +17,11 @@ afterEach(async () => {
 
 describe('createFolderEntity', () => {
   it('creates a folder + sidecar with a fresh ULID (one factory for all kinds)', async () => {
-    const r = await createFolderEntity(root, 'area', 'Health', { icon: 'folder', color: 'green' })
+    const r = await createFolderEntity(root, 'space', 'Health', { icon: 'folder', color: 'green' })
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(isUlid(r.value.id)).toBe(true)
-    expect(await readSidecar(r.value.path, 'area', spaceSidecar)).toMatchObject({
+    expect(await readSidecar(r.value.path, 'space', spaceSidecar)).toMatchObject({
       id: r.value.id,
       icon: 'folder',
       color: 'green',
@@ -70,16 +70,16 @@ describe('renameFolderEntity', () => {
 
 describe('updateFolderSidecar', () => {
   it('merges a patch while preserving foreign keys', async () => {
-    const c = await createFolderEntity(root, 'area', 'Money', {
+    const c = await createFolderEntity(root, 'space', 'Money', {
       icon: 'folder',
       color: 'blue',
       plugin: 'keep',
     })
     if (!c.ok) throw new Error('setup failed')
     expect(
-      (await updateFolderSidecar(c.value.path, 'area', spaceSidecar, { color: 'red' })).ok,
+      (await updateFolderSidecar(c.value.path, 'space', spaceSidecar, { color: 'red' })).ok,
     ).toBe(true)
-    expect(await readSidecar(c.value.path, 'area', spaceSidecar)).toMatchObject({
+    expect(await readSidecar(c.value.path, 'space', spaceSidecar)).toMatchObject({
       id: c.value.id,
       icon: 'folder',
       color: 'red',
@@ -88,7 +88,7 @@ describe('updateFolderSidecar', () => {
   })
 
   it('errors when the sidecar is missing', async () => {
-    const r = await updateFolderSidecar(join(root, 'nope'), 'area', spaceSidecar, { color: 'red' })
+    const r = await updateFolderSidecar(join(root, 'nope'), 'space', spaceSidecar, { color: 'red' })
     expect(r.ok).toBe(false)
   })
 })

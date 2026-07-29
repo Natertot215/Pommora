@@ -7,7 +7,7 @@ import type { PropertyDefinition } from './properties'
 import type { PageFrontmatter } from './schemas'
 import type { SavedView } from './views'
 
-export type NodeKind = 'area' | 'topic' | 'project' | 'space' | 'collection' | 'set' | 'page'
+export type NodeKind = 'space' | 'collection' | 'set' | 'page'
 
 // The spectrum solids the app accent can be set to, plus `system` (follow the OS accent).
 // The selectable spectrum, straight off the palette that builds the :root vars — an accent, an
@@ -248,10 +248,9 @@ export interface NexusTree {
     profileIcon?: string
     profileSubtitle: string
   }
-  /** Homepage singleton (`.nexus/homepage.json`) — its optional banner plus the board
-   *  lock: the block doc's heavy layout/blocks stay off the walk (loaded lazily by
-   *  useBlockDoc), but the single `blocks_locked` boolean rides here like `banner` so the
-   *  store can seed the freeze without a second read. Absent = unlocked. */
+  /** Homepage singleton (`.nexus/homepage.json`) — its optional banner and whether its heading
+   *  icon is hidden. The block doc's heavy layout/blocks stay off the walk, loaded lazily by
+   *  useBlockDoc. */
   homepage: { banner?: string; headingIconHidden: boolean }
   /** NavView singleton (`.nexus/navview.json`) — its own banner; absent, the NavView inherits
    *  the homepage's. */
