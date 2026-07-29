@@ -83,6 +83,8 @@ globalStyle(':root', {
     '--link': 'var(--system-accent)',
     '--connection': 'var(--accent)',
     '--code': `color-mix(in srgb, ${colorVars.color.solid.red} 85%, transparent)`,
+    // Refusal / failure text, wherever a surface reports one.
+    '--error': colorVars.color.solid.red,
     '--font-family': font.family,
     // Weight ladder — so plain CSS single-sources the same numbers as the text styles.
     '--weight-standard': font.weight.standard,

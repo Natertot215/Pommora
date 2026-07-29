@@ -1,5 +1,5 @@
 import { createGlobalTheme, globalStyle } from '@vanilla-extract/css'
-import { WINDOW_BG } from '@shared/theme'
+import { GREY_DEFAULT, SPECTRUM, WINDOW_BG } from '@shared/theme'
 
 // Primitives — the base system palette. Grey/white/black are the single source for
 // every derived tone: labels are system-white at an opacity, and fills / states /
@@ -28,19 +28,7 @@ const blackA = (pct: string): string =>
 // Derived tokens mirrored from the Figma color collection.
 const derived = createGlobalTheme(':root', {
   color: {
-    solid: {
-      red: '#FF453A',
-      orange: '#FF9F0A',
-      yellow: '#FFD60A',
-      green: '#32D74B',
-      lightBlue: '#7EC8E3',
-      cyan: '#41959F',
-      blue: '#0A84FF',
-      purple: '#BF5AF2',
-      lavender: '#A78BCC',
-      grey: '#8E8E93',
-      greyDefault: '#48484A',
-    },
+    solid: { ...SPECTRUM, greyDefault: GREY_DEFAULT },
     // Label tones — system-white at varying opacity steps (separate from the type ramp). `control` is
     // the on-control label worn by control chrome — toolbar / subfield / editor / switches / the
     // table heading — bright but a step under primary.

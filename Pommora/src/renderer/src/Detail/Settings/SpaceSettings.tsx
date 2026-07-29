@@ -1,6 +1,6 @@
 import { blockHostKey } from '@shared/blocks'
 import { useRef, useState } from 'react'
-import { CHIP_SOLID_COLORS, type ChipSolidColor } from '@shared/types'
+import { SOLID_COLORS, type SolidColor } from '@shared/types'
 import { Icon, defaultEntityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import { MenuBottomRow, MenuScrollFrame } from '@renderer/design-system/components/menu'
 import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
@@ -28,8 +28,8 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
   if (!node) return null
 
   const resolved = chipColorFor(color)
-  const solid = (CHIP_SOLID_COLORS as readonly string[]).includes(resolved)
-    ? colorVars.color.solid[resolved as ChipSolidColor]
+  const solid = (SOLID_COLORS as readonly string[]).includes(resolved)
+    ? colorVars.color.solid[resolved as SolidColor]
     : null
 
   return (

@@ -206,7 +206,7 @@ textarea,
 }
 
 .state-error {
-  color: #ff453a;
+  color: var(--error);
 }
 
 .state-detail {
