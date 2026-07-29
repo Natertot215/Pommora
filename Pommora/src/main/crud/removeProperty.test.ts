@@ -13,7 +13,6 @@ import { pageCollectionSidecar } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
 import { wrapKey } from '@shared/governedKeys'
 
-
 let root: string
 let folder: string
 let liveDef: PropertyDefinition

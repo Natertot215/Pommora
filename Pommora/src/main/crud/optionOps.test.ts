@@ -19,7 +19,6 @@ import { serializeSchemaOp } from './schemaChain'
 import { readRegistry } from '../io/propertiesRegistry'
 import type { PropertyDefinition } from '@shared/properties'
 
-
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-opt-'))

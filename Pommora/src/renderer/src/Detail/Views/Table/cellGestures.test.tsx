@@ -7,20 +7,8 @@ import type { CollectionNode } from '@shared/types'
 import { useSession } from '../../../store'
 import { PropertyPicker } from '../PropertyEditing/PropertyPicker'
 import { TableView } from './TableView'
-import { wrapKey } from '@shared/governedKeys'
+import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 
-/** Fixtures name a property by ID because that is what a view addresses; on disk a value lives
- *  under its property's NAME. This translates one to the other so the fixtures stay declarative. */
-const propsAtRoot = (
-  props: Record<string, unknown>,
-  defs: PropertyDefinition[],
-): Record<string, unknown> =>
-  Object.fromEntries(
-    Object.entries(props).map(([id, v]) => {
-      const d = defs.find((x) => x.id === id)
-      return [d ? wrapKey('property', d.name) : id, v]
-    }),
-  )
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -117,7 +105,7 @@ const VALUES = {
       allDefs,
     ),
   },
-  p2: { id: 'p2', ...propsAtRoot({}, allDefs) },
+  p2: { id: 'p2' },
 }
 
 // React intercepts the value property — commit through the native setter so the change event carries.
@@ -321,7 +309,7 @@ describe('checkbox cell gestures', () => {
     ;(window as unknown as { nexus: { loadValues: () => Promise<unknown> } }).nexus.loadValues =
       async () => ({
         p1: { id: 'p1', ...propsAtRoot({ prop_done: true }, allDefs) },
-        p2: { id: 'p2', ...propsAtRoot({}, allDefs) },
+        p2: { id: 'p2' },
       })
     await mountTable(sourceWith())
     await act(async () => {
