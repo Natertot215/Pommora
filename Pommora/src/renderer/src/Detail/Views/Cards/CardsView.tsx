@@ -36,6 +36,7 @@ import { flattenContainer, groupsStructurally } from '../pipeline/group'
 import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
 import { declaredType } from '../pipeline/value'
 import { resolveView } from '../pipeline/resolveView'
+import { useValuesEpoch } from '../useValuesEpoch'
 import { useActiveView } from '../useActiveView'
 import { columnLabel } from '../Table/columnLabel'
 import { contextIdsOf } from '../pipeline/contextIdentity'
@@ -95,32 +96,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     }
   }, [source.path])
 
-  // A rename changes the key a value lives under, not the container — so the open-container
-  // effect never re-fires. Refetch here, and RE-KEY the optimistic overrides rather than
-  // clearing them: clearing revives the assign-vanish the container effect's comment describes.
-  const valuesEpoch = useSession((st) => st.valuesEpoch)
-  useEffect(() => {
-    if (!valuesEpoch) return
-    let cancelled = false
-    void window.nexus.loadValues(source.path).then((v) => {
-      if (!cancelled) setValues(v)
-    })
-    const { oldKey, newKey } = valuesEpoch
-    setValueOverride((prev) => {
-      if (!prev) return prev
-      return Object.fromEntries(
-        Object.entries(prev).map(([id, fm]) => {
-          const root = fm as unknown as Record<string, unknown>
-          if (!(oldKey in root)) return [id, fm]
-          const { [oldKey]: moved, ...rest } = root
-          return [id, { ...rest, [newKey]: moved } as typeof fm]
-        }),
-      )
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [valuesEpoch, source.path])
 
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
   const { view } = useActiveView(source, schema)
@@ -130,6 +105,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // Optimistic property patches keyed by page id (the table's pattern): loadValues never re-reads
   // mid-session, so an add-picker commit re-renders only because this patch feeds the pipeline.
   const [valueOverride, setValueOverride] = useState<Record<string, PageFrontmatter> | null>(null)
+  useValuesEpoch(source.path, setValues, setValueOverride)
   const effectiveValues = useMemo(
     () => (valueOverride ? { ...values, ...valueOverride } : values),
     [values, valueOverride],

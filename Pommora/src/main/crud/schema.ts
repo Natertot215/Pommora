@@ -5,7 +5,6 @@
 // reorder are sidecar-only writes; delete + a lossy changeType also strip every member,
 // atomically via SchemaTransaction.
 
-import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { z } from 'zod'
 import { agendaConfigSidecar } from '@shared/schemas'
@@ -22,7 +21,7 @@ import { readSidecar, writeSidecar } from '../sidecarIO'
 import { SIDECAR_FILENAME, type SidecarKind } from '../paths'
 import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'
-import { serializeJson } from '../io/atomicWrite'
+import { readTextOrNull, serializeJson } from '../io/atomicWrite'
 import { listFilesBySuffix } from '../io/walk'
 import { SchemaTransaction } from '../io/schemaTransaction'
 import {
@@ -113,12 +112,8 @@ async function stageMemberStrips(
   key: string,
 ): Promise<void> {
   for (const file of await target.members(folder)) {
-    let content: string
-    try {
-      content = await readFile(file, 'utf8')
-    } catch {
-      continue
-    }
+    const content = await readTextOrNull(file)
+    if (content === null) continue
     const stripped = target.strip(content, key)
     if (stripped !== null) tx.stage(file, stripped)
   }
