@@ -161,6 +161,7 @@ beforeEach(() => {
     tree: {
       collections: [],
       contexts: [],
+      personalization: {},
       labels: {
         area: pair('Area', 'Areas'),
         topic: pair('Topic', 'Topics'),

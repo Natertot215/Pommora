@@ -151,6 +151,7 @@ beforeEach(() => {
   })
   useSession.setState({
     tree: {
+      personalization: {},
       contexts: [
         {
           def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' },

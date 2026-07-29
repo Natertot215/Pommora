@@ -81,7 +81,7 @@ export function Ribbon(): React.JSX.Element {
             key={k}
             tabKey={k}
             icon={iconFor(k)}
-            active={MODE_FOR[k] != null && MODE_FOR[k] === mode}
+            active={MODE_FOR[k] === mode}
             onClick={() => onIcon(k)}
           />
         ))}

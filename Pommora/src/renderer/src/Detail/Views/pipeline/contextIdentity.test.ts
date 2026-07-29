@@ -37,6 +37,7 @@ const mkTree = (): NexusTree =>
         spaces: [{ id: 't1', kind: 'space', title: 'Reading', path: 'R', contextId: 'ctx_topics' }],
       },
     ],
+    personalization: {},
   }) as unknown as NexusTree
 
 const tree = mkTree()
@@ -69,7 +70,7 @@ describe('spacesByIdOf', () => {
   })
 
   it('is empty on an unmigrated tree', () => {
-    expect(spacesByIdOf({ contexts: [] } as unknown as NexusTree).size).toBe(0)
+    expect(spacesByIdOf({ contexts: [], personalization: {} } as unknown as NexusTree).size).toBe(0)
   })
 })
 

@@ -154,6 +154,7 @@ describe('vocabulary', () => {
         { def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' }, spaces: [] },
         { def: { id: 'ctx-crew', title: 'Crew', singular: 'Member' }, spaces: [] },
       ],
+      personalization: {},
     } as unknown as NexusTree
     expect(filterTargets(schema, tree).map((t) => t.label)).toEqual([
       'Title',
@@ -170,6 +171,7 @@ describe('vocabulary', () => {
   it('a user-defined Context is a target on the same footing as a seeded one', () => {
     const tree = {
       contexts: [{ def: { id: 'ctx-crew', title: 'Crew', singular: 'Member' }, spaces: [] }],
+      personalization: {},
     } as unknown as NexusTree
     const crew = filterTargets(schema, tree).find((t) => t.id === 'ctx-crew')
     expect(crew?.label).toBe('Crew')

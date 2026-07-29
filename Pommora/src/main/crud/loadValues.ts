@@ -8,8 +8,6 @@
 import { join, relative, sep } from 'node:path'
 import { pageFrontmatter, type PageFrontmatter } from '@shared/schemas'
 import { readPageRecord } from '../readNexus'
-import { adoptedId } from '../ids'
-import { asString } from '../coerce'
 import { listMarkdownFiles } from '../io/walk'
 
 export async function loadValues(
@@ -19,19 +17,18 @@ export async function loadValues(
   const absFolder = join(rootPath, containerRelPath)
   const files = await listMarkdownFiles(absFolder)
   const records = await Promise.all(
-    files.map(async (absFile) => {
+    files.map((absFile) => {
       const relFile = relative(rootPath, absFile).split(sep).join('/')
       // Unreadable page → skip (its row falls back to a minimal frontmatter).
-      const rec = await readPageRecord(absFile, relFile).catch(() => null)
-      return rec ? { relFile, fm: rec.fm } : null
+      return readPageRecord(absFile, relFile).catch(() => null)
     }),
   )
   const out: Record<string, PageFrontmatter> = {}
-  for (const r of records) {
-    if (!r) continue
-    const id = asString(r.fm.id) ?? adoptedId(r.relFile)
-    const parsed = pageFrontmatter.safeParse({ ...r.fm, id })
-    if (parsed.success) out[id] = parsed.data
+  for (const rec of records) {
+    if (!rec) continue
+    // The record's node.id IS the id rule — frontmatter id, else the adopted one.
+    const parsed = pageFrontmatter.safeParse({ ...rec.fm, id: rec.node.id })
+    if (parsed.success) out[rec.node.id] = parsed.data
   }
   return out
 }
