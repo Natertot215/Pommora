@@ -45,7 +45,7 @@
 - **B-6:** [confirmed] **Foreign frontmatter stays invisible on purpose.** A bare `Projects:` from Obsidian never resolves. The sigil is the isolation boundary in both directions, and Sapphire's hide rule covers Pommora's keys by prefix.
 - **B-7:** [confirmed] The new keys need **no schema work** — page frontmatter is a loose object already carrying dynamic per-nexus keys unmodeled, which is how Context keys ride today.
 - **B-8:** [confirmed] **Agenda item values take the same wrapped keys; agenda's definitions stay a separate namespace.** The shape change is free — agenda values run through the same writer as pages, and **neither nexus holds a single agenda item**, so there is nothing to convert. What stays separate is the *resolution*: an agenda value resolves against its kind's own `property_definitions`, so an agenda property and a page property may share a name with no collision, and a rename on either side never reaches the other's files. JSON quotes every key, so the unquoted-key property is YAML-only.
-- **B-9:** [confirmed] **An agenda-definition rename needs its own sweep over `.task.json` / `.event.json`, and it defers.** Agenda's schema ops have no IPC handler at all — they are parked scaffold for the pending Agenda Status feature — so no reachable path can rename an agenda definition today. The sweep lands with those ops, using the same expand-then-merge passes.
+- **B-9:** [confirmed] **An agenda-definition rename needs its own sweep over `.task.json` / `.event.json`, and it defers.** Agenda's schema ops have no IPC handler at all — they are parked scaffold for the pending Agenda Status feature — so no reachable path can rename an agenda definition today. The sweep lands with those ops, using the same commit-then-sweep shape.
 - **B-10:** [confirmed] **`folded_headings` leaves the modeled page keys with `properties`.** It is declared in the frontmatter schema and listed in the modeled set with **no reader and no writer** anywhere in the source; folds live in `nexus.db`, and no file in either nexus carries the key. It is inert rather than hazardous — the modeled set has a single consumer, page creation, and every other write path passes its own inline key list — but a schema field nothing reads or writes is dead weight in a list this change is already opening.
 
 #### C — Identity & Keying
@@ -85,7 +85,7 @@
 #### G — Read Path
 
 - **G-1:** [confirmed] **Values keep loading lazily per container, not at walk.** The walk resolves Context keys for every entity because they are cheap and registry-independent; property values load when a container opens. Resolving them at walk would be more uniform and is the trap — it puts per-entity work on the read path the hard rules forbid.
-- **G-2:** [confirmed] **One name→definition index per container, built once**, riding the existing resolve context. A per-cell linear scan is already the measured hot spot.
+- **G-2:** [confirmed] **One id→definition index per container, built once**, riding the existing resolve context. The direction matters: value resolution is called *with* a property id and needs the definition to learn the name it writes under, so a name→definition map would be unusable. A per-cell linear scan of the schema is already the measured hot spot, and the same index retires roughly two dozen of them.
 - **G-3:** [confirmed] **The value memo needs its key revisited.** It is keyed by frontmatter object identity plus property id; once the read goes through a name, a rename that does not swap the frontmatter identity would serve a stale value.
 
 #### H — Rename
@@ -141,7 +141,7 @@ The rework's second half. Cutting what the change makes obsolete is not cleanup 
 - Property names unique nexus-wide, case-folded, normalized once at write; the `$` reservation; three validators collapsed to one core.
 - ULIDs everywhere except page frontmatter and agenda values.
 - One governed-root-key writer serving both sigils, replacing the two separate write paths.
-- Expand-then-merge rename over `.md`, registry committed between passes, merge-not-delete, no journal.
+- A rename over `.md`: the registry commits first, then one sweep where the new key always wins. No journal, no replay, no rollback.
 - `$status` and `$ctx` out of the codec **and** out of `reconcileCachedValue`.
 - A per-container name→definition index; the value memo re-keyed.
 - **The removal half (I-1 … I-7)**, run once the new path is green. It is not follow-up work; it is what makes the change a reduction rather than an addition.
@@ -172,7 +172,8 @@ The rework's second half. Cutting what the change makes obsolete is not cleanup 
 - **Name-keying SavedView configs** — nine fields including a recursive filter tree, and they live in block documents inside the database.
 - **Name-keying the sidecar assignment list and `property_cache`** — makes a rename-immune structure fragile (C-3) and adds sweep scope to manage it.
 - **Reshaping `properties.json` to an ordered list** — correct in isolation, thrown away against the database move.
-- **A journal and replay for the property rename** — inherited from an operation that renames a folder; expand-then-merge makes it unnecessary (H-4).
+- **A journal and replay for the property rename** — inherited from an operation that renames a folder. Committing the registry before the sweep, plus the rule that an unmatched key persists inert, makes it unnecessary (`H-4`, `H-5`).
+- **Expand-then-merge** — planting the new key everywhere, committing, then folding the old value back. Rejected: it creates two windows with opposite correct answers and no information on disk to tell them apart, so the fold destroys every post-commit edit and resurrects every post-commit clear (`H-3a`).
 - **Doing nothing** — take the independent cleanups, keep ULID-keyed values. Rejected: it leaves two answers to one question permanently, and the Context half of the migration is free today and never will be again.
 
 #### Lessons
