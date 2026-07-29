@@ -27,3 +27,8 @@ graphify-out/
 # route, which resolves on every machine. Genuinely machine-bound overrides
 # (absolute paths, per-host hooks) belong in the .local overlay instead.
 .claude/settings.local.json
+
+# Skill discovery reads the project root's .claude/skills and ~/.claude/skills,
+# never an ancestor's — so the Studio-wide skills are reached through a symlink.
+# No trailing slash: a dir-pattern ignore does not match a symlink.
+.claude/skills
