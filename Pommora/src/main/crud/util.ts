@@ -1,3 +1,4 @@
+import { invalidBasename } from '@shared/contexts'
 // Shared helpers for the CRUD layer — the one home for the small primitives every
 // mutation needs, so they aren't re-implemented per file. `pathExists` is re-exported
 // from the io layer (its real owner); name + timestamp rules live here.
@@ -11,15 +12,10 @@ export { pathExists } from '../io/atomicWrite'
 export function invalidName(name: string): boolean {
   const trimmed = name.trim()
   return (
-    !trimmed ||
-    name.includes('/') ||
-    name.includes('\\') ||
-    name.includes('\0') || // a NUL byte throws in fs calls — reject as a clean invalid-name
+    invalidBasename(name) ||
     // `|` opens the alias segment of `[[Title|alias]]`, so a title holding one can never be
     // written as a connection that resolves back to it. The filesystem would take it; we don't.
     name.includes('|') ||
-    name === '.' ||
-    name === '..' ||
     // The walk hides both prefixes, so accepting one would write a real file the tree can never
     // show again — a rename that reads to the user as a delete.
     trimmed.startsWith('_') ||

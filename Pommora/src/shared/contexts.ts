@@ -43,19 +43,25 @@ export function parseContextKey(key: string): string | null {
   return parsed?.layer === 'context' ? parsed.name : null
 }
 
-/** Context titles follow the shared file-basename rules — titles name folders under
- *  `.nexus/contexts/`. The sigil needs no ban of its own: a key is stripped positionally, so a
- *  title carrying the closing glyph round-trips intact. */
-export function invalidContextTitle(title: string): boolean {
-  const trimmed = title.trim()
+/** The one path-safety core every entity title shares — a name that cannot be a folder or file
+ *  basename. Callers add whatever their own layer forbids on top of it. */
+export function invalidBasename(name: string): boolean {
+  const trimmed = name.trim()
   return (
     !trimmed ||
-    title.includes('/') ||
-    title.includes('\\') ||
-    title.includes('\0') ||
+    name.includes('/') ||
+    name.includes('\\') ||
+    name.includes('\0') || // a NUL byte throws in fs calls — reject as a clean invalid-name
     trimmed === '.' ||
     trimmed === '..'
   )
+}
+
+/** A Context title names a folder under `.nexus/contexts/`, so it carries the basename rules and
+ *  nothing more. The sigil needs no ban of its own: a key is stripped positionally, so a title
+ *  carrying either glyph round-trips intact. */
+export function invalidContextTitle(title: string): boolean {
+  return invalidBasename(title)
 }
 
 /** Read-side value coercion before any registry match: an outside write of `- 2024` / `- true`
