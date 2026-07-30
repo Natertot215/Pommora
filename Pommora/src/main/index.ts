@@ -68,7 +68,6 @@ import { stampAdopted } from './adopt'
 import { ensureIdentity } from './identity'
 import { ensureContextsRegistry } from './contextsRegistry'
 import {
-  ensureSettings,
   readDefaultViewScale,
   readNavViewModes,
   readSubfield,
@@ -444,15 +443,13 @@ handleEnvelope('nav:evictThumbs', async (liveKeys: unknown): Promise<Ack> => {
   return { ok: true }
 })
 
-// Shared by every path that opens a nexus, run after openSession and before anything reads the nexus
-// anything: ensures `.nexus/nexus.json` + `settings.json` exist in Swift's shape (a full settings
-// file keeps Swift's decoder from reseeding and losing data when it later opens the folder), then
-// stamps any un-adopted entity with a real ULID so every later write gets a stable
-// id instead of a transient `adopted-` placeholder. Best-effort: never blocks opening the folder.
+// Shared by every path that opens a nexus, run after openSession and before anything reads it:
+// ensures `.nexus/nexus.json` exists so sidecar mode has an identity, then stamps any un-adopted
+// entity with a real ULID so every later write gets a stable id instead of a transient
+// `adopted-` placeholder. Best-effort: never blocks opening the folder.
 async function prepareOpenedNexus(path: string): Promise<void> {
   try {
     await ensureIdentity(path)
-    await ensureSettings(path)
     await ensureContextsRegistry(path)
   } catch (e) {
     console.error('ensure config-on-open failed:', e)
