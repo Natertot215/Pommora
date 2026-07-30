@@ -1,7 +1,6 @@
 import type { BrowserWindow } from 'electron'
+import type { ViewRowMenuAction } from '@shared/viewMenus'
 import { popReturningMenu } from './returningMenu'
-
-export type ViewRowMenuAction = 'view:rename' | 'view:edit-icon' | 'view:delete'
 
 /** A ViewPane view row's right-click menu — Rename / Edit Icon / Delete. Delete disables on a
  *  container's only view (the deleteView handler refuses the last one; the menu mirrors the rule). */

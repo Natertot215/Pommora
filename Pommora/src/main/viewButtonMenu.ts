@@ -3,9 +3,8 @@
 // writes it through the one container-config op (view_button / view_style).
 import type { BrowserWindow } from 'electron'
 import type { ViewButton, ViewStyle } from '@shared/types'
+import type { ViewButtonMenuAction } from '@shared/viewMenus'
 import { popReturningMenu } from './returningMenu'
-
-export type ViewButtonMenuAction = 'toggle-title' | 'style-dropdown' | 'style-toolbar'
 
 export function popViewButtonMenu(
   win: BrowserWindow,
