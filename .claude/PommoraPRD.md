@@ -138,7 +138,7 @@ Property **definitions** live in one nexus-wide registry (`.nexus/properties.jso
 
 - **Number**, **Checkbox**, **Date** (date-only or with-time), **Select**, **Multi-select**, **Status**, **URL**, **Context** (registry-minted, one per Context), **Last Edited Time** (derived), and **File / Attachment**.
 
-There is no free-form text type — the filename is the title, and text-shaped values use creatable Select options. **Status** uses three fixed structural groups for calendar compatibility, with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, never typed inline. Values are bare — a Status stores its label, a Number a number, a Date a timestamp — because the key already says which property the value belongs to. Context values are parenthesized title keys at the entity root over bare Space titles. Full catalog → `Features/Properties.md`.
+There is no free-form text type — the filename is the title, and text-shaped values use creatable Select options. **Status** groups are an open set — seeded with three whose completion semantics drive calendar compatibility — with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, never typed inline. Values are bare — a Status stores its label, a Number a number, a Date a timestamp — because the key already says which property the value belongs to. Context values are parenthesized title keys at the entity root over bare Space titles. Full catalog → `Features/Properties.md`.
 
 #### Views
 
@@ -170,7 +170,7 @@ Every entity opens under a consistent header. Containers can set an optional **b
 
 #### Navigation History
 
-The main pane is single-pane. **Back / Forward** step a navigation history, and a footer **breadcrumb** — with a dimmed forward ghost-crumb for the last-visited page — tracks location. A toolbar **dropdown** with a user-curated **Pinned** list and an auto-tracked **Recents** list (LRU, capped) is the fuller history surface. Full spec → `Features/Navigation.md`.
+The main pane is **multi-tab**: warm, state-preserving toolbar tabs, one view mounted at a time, with **Back / Forward** stepping each tab's own history. Pinned refs dock left as compact icon tabs, an auto-tracked **Recents** stream feeds the **NavView** gallery (the new-tab page) and the floating **NavWindow**, and a footer **breadcrumb** — with a dimmed forward ghost-crumb for the last-visited page — tracks location. Full spec → `Features/Navigation.md`.
 
 #### First-Launch Experience
 

@@ -8,7 +8,7 @@ Nexus-wide interface config, stored as the `personalization` object in `.nexus/s
 
 #### II. Knobs
 
-- **accent** — the app-wide accent: a spectrum solid, or `system` to follow the OS. Back-compatible with the legacy top-level `accent_color`.
+- **accent** — the app-wide accent: a spectrum solid, or `system` to follow the OS.
 
 - **connectionColor** — the inline `[[Title]]` connection colour; tracks the accent live by default, or pins a specific solid.
 

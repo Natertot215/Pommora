@@ -29,12 +29,19 @@ Since the baseline:
 - The certified cleanup campaign — one-walk mutations + shared interaction primitives
 - Contexts & Spaces — the registry model replacing the fixed three tiers, the shared floating-window chassis, and the filter authoring pane
 - The truing campaign — a doc audit against real code, the filter made to visibly filter, and the source stripped of a retired vocabulary
+- One syntax for every Pommora-owned key — wrapped title keys at the frontmatter root, operational state moved into `nexus.db`, and one palette source
+- The hardening campaign and its inverse — one strict read-modify-write, one glyph rule, the parallel walk, the guard audit, and the HOIST design-system consolidation
+- The erasure campaigns — Swift parity out wholesale, navigation persistence consolidated onto one `navigation.json` contract
 
 ### II. Upcoming (v0.5.0 → v1.0.0)
 
 #### The prerequisite — a query consumer
 
 Linked-From, backlinks, ContextView, and full-text search all need a content index, and none exists. The prior one was deleted rather than repaired: nothing queried it, and its only update path was a full nexus re-walk per write. Its replacement gets written alongside the query layer that reads it, updating a row at a time; the database, the driver seam, and the version handshake are already in place for it.
+
+#### Between versions — the working queue
+
+The near-term queue rides `Context.md`'s Pending Focuses rather than a version number: the IPC channel map and the store split (the two structural sessions, in that order), and the Pages-in-DB storage-model session that inherits the tree-reload ceiling as its design constraint. Feature clusters resume below once those land.
 
 #### v0.6.0 — The View Renderers
 

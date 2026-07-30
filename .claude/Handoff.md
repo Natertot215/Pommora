@@ -36,7 +36,7 @@ That totality pass caught a leak the review missed: live targets passed to pin/f
 
 **Session Pointers**
 
-- [[Navigation Consolidation — Decision Log]] holds every ruling the campaigns executed; the Features docs describe the new design.
+- The ratified design lives in [[Navigation]] and [[Architecture]]; `History.md` carries the campaign record and its rulings.
 - The published how-Pommora-works artifact: https://claude.ai/code/artifact/7c7da95f-a42f-4cbb-9bec-d378355a188a
 
 **Landmines**
