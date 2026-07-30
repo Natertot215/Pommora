@@ -10,12 +10,13 @@ import { PageEmbed } from '../Embeds/PageEmbed'
 import { EMBED_SCALE } from '../Embeds/embedScale'
 import { Subfield } from '../Detail/Subfield/Subfield'
 import type { SubfieldScope } from '../Detail/Subfield/subfieldItems'
-import { buildPageIndex, flattenPages, type ConnectionsApi } from '../MarkdownPM/connections'
+import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
 import { useConnectionHover } from '../Embeds/ConnectionHoverCard'
 import { getDetailPaneRect } from '../Detail/DetailPane'
 import { NavCrumbs } from '../Navigation/NavList'
-import { buildResolveIndex, resolveWith } from '../Navigation/navResolve'
+import { resolveWith } from '../Navigation/navResolve'
+import { pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { useSession, type PreviewTarget } from '../store'
 import { PreviewActions } from './PreviewActions'
 import { PreviewInspector } from './PreviewInspector'
@@ -105,7 +106,7 @@ function PreviewWindowBody({
   const { hover, card: hoverCard } = useConnectionHover()
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
-    const idx = buildPageIndex(flattenPages(tree))
+    const idx = pageIndexOf(tree)
     return {
       ...idx,
       open: (page) => openPreviewTab({ id: page.id, path: page.path }),
@@ -116,7 +117,7 @@ function PreviewWindowBody({
     }
   }, [tree, openPreviewTab, select, hover])
 
-  const resolveIndex = useMemo(() => (tree ? buildResolveIndex(tree) : null), [tree])
+  const resolveIndex = tree ? resolveIndexOf(tree) : null
 
   const crumbs = useMemo(() => {
     if (!resolveIndex) return []

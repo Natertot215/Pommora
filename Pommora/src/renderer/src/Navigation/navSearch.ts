@@ -5,7 +5,7 @@
 // memoizes buildNavIndex over (tree, agenda) and re-runs filterNav per keystroke.
 
 import type { AgendaEntry, NavRef, NexusTree } from '@shared/types'
-import { flattenTree } from '../selection'
+import { searchEntriesOf } from '../treeIndex'
 import { navKey } from './navRecents'
 
 export interface SearchEntry {
@@ -27,14 +27,11 @@ export function buildNavIndex(
   tree: NexusTree,
   agenda?: { tasks: AgendaEntry[]; events: AgendaEntry[] },
 ): SearchEntry[] {
-  const { collections, sets, pages, spaces } = flattenTree(tree)
-  const out: SearchEntry[] = [entry({ kind: 'homepage' }, tree.nexus.name)]
-  if (tree.contexts) for (const s of spaces) out.push(entry({ kind: 'space', id: s.id }, s.title))
-  for (const c of collections) out.push(entry({ kind: 'collection', id: c.id }, c.title))
-  for (const s of sets) out.push(entry({ kind: 'set', id: s.id }, s.title))
-  for (const p of pages) out.push(entry({ kind: 'page', id: p.id }, p.title))
-  for (const t of agenda?.tasks ?? []) out.push(entry({ kind: 'task', id: t.id }, t.title))
-  for (const e of agenda?.events ?? []) out.push(entry({ kind: 'event', id: e.id }, e.title))
+  const treeEntries = searchEntriesOf(tree)
+  if (!agenda) return treeEntries
+  const out = [...treeEntries]
+  for (const t of agenda.tasks) out.push(entry({ kind: 'task', id: t.id }, t.title))
+  for (const e of agenda.events) out.push(entry({ kind: 'event', id: e.id }, e.title))
   return out
 }
 

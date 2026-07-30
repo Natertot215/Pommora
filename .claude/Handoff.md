@@ -5,13 +5,13 @@
 > ⚡ **Cornerstone — carry into every handoff, unchanged (Nathan's voice).**
 > *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
 
-### Session Summary — the landing verified, the record trued, the bridge built
+### Session Summary — the landing verified, the record trued, the bridge built, the tree index consolidated
 
 **Session ID:** 6dc9212b-b419-4b10-9e15-aa2fb5aedb6e
 **Dates:** 07-30-2026
 **Model:** Fable 5
 **Connectors:** none
-**Agents:** Explore (9x — six-lens scoping sweep + four-lens IPC census) · build-breaking (3x — fix-batch attack, spec plan-attack, bridge context) · code-simplifier (2x — fix-batch pass, bridge prove-me-wrong pass) · general-purpose (2x — the two serialized bridge implementers)
+**Agents:** Explore (12x — six-lens scoping sweep, four-lens IPC census, three-lens index census) · build-breaking (4x — fix-batch attack, spec plan-attack, bridge context, treeIndex attack) · code-simplifier (3x — fix-batch pass, bridge prove-me-wrong, treeIndex prove-me-wrong) · general-purpose (2x — the two serialized bridge implementers)
 
 **What Started:** Nathan asked for a verified state-of-the-project and a ranked map of where his focus buys the most. Six Explore lenses swept the codebase and docs; every load-bearing claim was re-verified at the cited lines before ranking. The verification found the overnight campaigns genuinely green — and nine loose ends, including two Fix Log lies (a bug recorded as open that was already fixed, and a fix recorded as landed that never covered the op the drag actually emits).
 
@@ -19,13 +19,15 @@
 
 **The main event:** the IPC bridge. Four census lenses mapped all 97+4+6 channels, the type zoo, the house idioms, and the build constraints (the sandboxed preload may require only `electron`; preload type-checks under both tsconfig projects). The spec was written, trimmed to correction-only on Nathan's directive — no nice-to-haves, the adopting-coverage extension parked as its own future behavior call — then plan-attacked: ten findings, the mechanism compiled and held, the folds adopted the reviewer's verified fixes (Stage A preserves rejections exactly; a load-bearing sentinel is never a throw disguise). Built in two independently green stages: `shared/bridge.ts` declaring every channel once with the preload deriving and main answering through one exhaustive literal; then the envelope flip — one structured `Result` everywhere, `relay` and all 31 flatten sites dissolved, five refusal spellings down to two shared constants (`no-nexus`, `busy`), the ten orphaned menu unions moved to shared. The prove-me-wrong simplifier pass Nathan mandated then found real residue (three hand-rolled menu chassis, nine passthrough arrows, ten repeated refusal strings, a redundant catch) and the claim "as clean as possible" was correctly falsified before the pass landed it.
 
-**What It Ended With:** closing state **typecheck 0 · lint 0 (zero warnings) · 1865 tests / 175 files · build clean**, every commit gated. The bridge arc: **+1,921 / −1,723 raw** — the triple declaration died into one 311-line map, the preload halved, the docs record trued. Still unpushed with everything before it.
+**The closing arc — the tree index.** Nathan pointed at the Four Sibling Indexes ledger entry; a three-lens census found it understated — the reconcile index was rebuilt per *gesture* at nine sites (once per Back/Forward loop iteration), the resolve index lived as four per-component copies, the connections map as one per mounted Space, plus two walks the ledger never counted. His three-month-regret lens settled the design: unify the source, keep the surfaces. `treeIndex.ts` now walks once per tree identity into a record list (WeakMap-keyed on the tree object, the identity `stabilize` preserves), and every table — reconcile, resolve, search, connections, thumbnail keys — is a lazily cached projection with its prior shape, so consumers only swapped builder calls for accessors. Nathan flipped the closing order — simplifier first, then breaker. The simplifier falsified "as clean as possible" (four memos wrapping WeakMap hits, two justified only by fresh-literal fallbacks, a hand-rolled `PageNode` re-typing) and flagged the navKey format duplication, folded as a fix. The breaker then executed HEAD's dead builders against the new accessors and found the one real regression before it shipped — a Map-keyed record set let a duplicated page id (an ordinary file copy; the id rides in frontmatter) silently erase a page from search and wikilink resolution — plus a reconcile/resolve layer split on the reserved `context` kind. Both fixed at the root: the record list is the source, duplicates stay listed, keyed projections collapse last-wins; a Context-group ref reconciles dead by declaration until ContextView exists.
+
+**What It Ended With:** closing state **typecheck 0 · lint 0 (zero warnings) · 1875 tests / 175 files · build clean**, every commit gated. The bridge arc: **+1,921 / −1,723 raw**. The index arc: five hand-rolled walks and their per-gesture rebuilds died into one owner module plus projections, net-flat production code, with new duplicate-id and context-refusal regression tests. The index commit is unpushed; everything before it is on origin.
 
 **Next Session:**
 
-- The live UIX pass on a fresh dev launch — now covering BOTH arcs: the navigation checklist plus the bridge (any native menu, any write failing gracefully, a Set-Card drag holding, a row icon change reaching the open page header).
-- Push `main` when Nathan says so — the stack is long now.
-- The Pages-in-DB storage-model session (its own conversation); the store split is the remaining dedicated Boring Work session.
+- The live UIX pass on a fresh dev launch — covering all three arcs: the navigation checklist, the bridge (any native menu, any write failing gracefully, a Set-Card drag holding, a row icon change reaching the open page header), and the index (nav search results, tab titles after a rename, [[link]] resolution, autocomplete).
+- Push `main` when Nathan says so.
+- The Pages-in-DB storage-model session (its own conversation); the store split is the remaining dedicated Boring Work session. The index accessors are the seam a future DB query layer repoints — one accessor per question, not nine call sites.
 
 **Landmines**
 
@@ -37,11 +39,13 @@
 - "Same definitions in multiple places, and hand-rolled mechanisms that duplicate are errors and must be consolidated cleanly."
 - "This is about cleanup, not more architecture. It's correction" — the directive that cut every nice-to-have from the bridge spec.
 - "Go back and make sure what you did fixes the issue without patching it; the cause needs the fix, not the symptom" — which turned a renderer gate into a detection-layer fix.
-- The prove-me-wrong dispatch pattern: state the "as clean as possible" claim, send an agent to falsify it. It worked; keep it.
+- The prove-me-wrong dispatch pattern: state the "as clean as possible" claim, send an agent to falsify it. It falsified twice this session; keep it.
+- "What would we wish we would have done 3 months from now?" — Nathan's design lens for scope calls; it selected unify-the-source-keep-the-surfaces over both derivation-only and a consumer rewrite.
+- "Simplifier first, then breaker" — the closing-loop order Nathan wants: clean the diff, then attack the settled tree, so the breaker's findings survive the cleanup.
 
 **Uncertain**
 
-- The bridge is verified headlessly only (gates + 1865 tests); no live launch has run the new wire end-to-end.
+- The bridge and the index are verified headlessly only (gates + 1875 tests + the breaker's executed old-vs-new parity harness); no live launch has run either end-to-end.
 - The spec's review round was singular — the folds adopted the reviewer's own verified fixes, so a second round was judged manufacture-risk rather than value.
 
 ---

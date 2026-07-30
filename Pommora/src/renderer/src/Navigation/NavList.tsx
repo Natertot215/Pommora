@@ -8,7 +8,7 @@ import { TableRowDnd, useTableRowDrag } from '../Detail/Views/Table/tableDnd'
 import type { NavRef, SelectTarget } from '@shared/types'
 import { useSession } from '../store'
 import { isOpenInTabs, liveTarget } from '../Tabs/tabsModel'
-import { buildReconcileIndex } from '../selection'
+import { reconcileIndexOf } from '../treeIndex'
 import { navKey } from './navRecents'
 import type { ResolvedNav } from './navResolve'
 import { EntityGlyph } from './EntityGlyph'
@@ -76,7 +76,7 @@ export function NavRowMenu({
           case 'open-preview':
             if (target.kind === 'page' && st.tree) {
               // A stored ref carries no path — mint one against the live tree, exactly as go() does.
-              const livePage = liveTarget(buildReconcileIndex(st.tree), target)
+              const livePage = liveTarget(reconcileIndexOf(st.tree), target)
               if (livePage?.kind !== 'page') break
               // Inside the NavWindow the override routes this to a tab in THAT window; off → the floating preview.
               const ref = { id: livePage.id, path: livePage.path }

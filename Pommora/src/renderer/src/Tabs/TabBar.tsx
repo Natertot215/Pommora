@@ -8,7 +8,8 @@ import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { suppressNextClick } from '@renderer/design-system/interactions/shared'
 import type { Tab } from '@shared/types'
 import { useSession } from '../store'
-import { buildResolveIndex, resolveWith, type ResolvedNav } from '../Navigation/navResolve'
+import { resolveWith, type ResolvedNav } from '../Navigation/navResolve'
+import { resolveIndexOf } from '../treeIndex'
 import { EntityGlyph } from '../Navigation/EntityGlyph'
 import { cycle } from './tabsModel'
 import './tabStrip.css'
@@ -34,7 +35,7 @@ export function TabBar(): React.JSX.Element | null {
   const tree = useSession((s) => s.tree)
 
   // Titles + icons resolve live off the nav index — a rename is current on the next push, never cached stale.
-  const index = useMemo(() => (tree ? buildResolveIndex(tree) : null), [tree])
+  const index = tree ? resolveIndexOf(tree) : null
   const pinnedEntries = useMemo<TabEntry[]>(() => {
     if (!index) return []
     // A pinned entity that no longer resolves render-hides (render-prune, never storage-prune).

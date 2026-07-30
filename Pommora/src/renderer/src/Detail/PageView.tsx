@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { useSession } from '../store'
 import { MarkdownEditor } from '../MarkdownPM'
-import { buildPageIndex, flattenPages, type ConnectionsApi } from '../MarkdownPM/connections'
+import type { ConnectionsApi } from '../MarkdownPM/connections'
+import { pageIndexOf } from '../treeIndex'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
 import { useConnectionHover } from '../Embeds/ConnectionHoverCard'
 import { IconPicker } from '../Components/IconPicker'
@@ -31,7 +32,7 @@ export function PageView(): React.JSX.Element {
   const { hover, card: hoverCard } = useConnectionHover()
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
-    const idx = buildPageIndex(flattenPages(tree))
+    const idx = pageIndexOf(tree)
     return {
       ...idx,
       open: (page) =>
