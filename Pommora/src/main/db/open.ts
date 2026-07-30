@@ -1,5 +1,5 @@
 // The database travels inside the Nexus so a moved or renamed one keeps it, but it is device-local
-// and excluded from the watcher; `index.db` (Swift's) is a different file and is left alone.
+// and excluded from the watcher.
 
 import { rmSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'

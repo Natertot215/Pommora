@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { condensedDate, fileLabel, formatDate, formatNumber, numberDivisor } from './formatValue'
 
 describe('formatDate', () => {
-  it('renders the four Swift date formats', () => {
+  it('renders the four date formats', () => {
     expect(formatDate('2026-03-01', 'short', 'none')).toBe('March 1st')
     expect(formatDate('2026-03-01', 'full', 'none')).toBe('March 1st, 2026')
     expect(formatDate('2026-03-01', 'dayMonthYear', 'none')).toBe('01/03/2026')

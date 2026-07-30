@@ -211,7 +211,7 @@ export const fieldValue = style({
   color: c.label.primary,
 })
 export const fieldEmpty = style({ color: c.label.tertiary })
-/* Equal halves everywhere (the Swift-DatePicker grid) — the time field just tightens its own
+/* Equal halves everywhere — the time field just tightens its own
    metrics so [hh]:[mm] AM/PM fits its half. */
 export const fieldTime = style({ flex: 1, gap: '4px', paddingLeft: '6px', paddingRight: '6px' })
 /* The time cluster reads as ONE flush value — "4:20 PM" tight, the WHOLE reading right-aligned in

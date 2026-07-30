@@ -129,7 +129,7 @@ const TREE_SEED: Node[] = [
         id: 'pommora',
         label: 'Pommora',
         children: [
-          { id: 'swift', label: 'Swift' },
+          { id: 'atlas', label: 'Atlas' },
           { id: 'react', label: 'React' },
         ],
       },

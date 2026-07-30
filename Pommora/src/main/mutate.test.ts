@@ -19,7 +19,7 @@ beforeEach(async () => {
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'nexus.json'),
-    JSON.stringify({ schemaVersion: 1, id: 'nx', createdAt: '2026' }),
+    JSON.stringify({ id: 'nx', createdAt: '2026' }),
   )
   await writeFile(join(root, '.nexus', 'settings.json'), '{}')
   await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'pt' }))
@@ -171,14 +171,14 @@ describe('handleMutate — move + guards', () => {
     expect(JSON.parse(await read('Notes/_pagecollection.json')).page_order).toEqual(['b'])
   })
 
-  it('round-trip: in-set reorder writes page_order to a Swift-era sidecar AND readNexus applies it', async () => {
-    // Replicate the real on-disk shape: a Swift-era set sidecar with views and
+  it('round-trip: in-set reorder writes page_order to a foreign-keyed sidecar AND readNexus applies it', async () => {
+    // Replicate the real on-disk shape: a set sidecar with views and
     // NO page_order, plus a third page.
     await writeFile(
       join(root, 'Notes', 'Daily', '_pageset.json'),
       JSON.stringify({
         id: 'col',
-        schema_version: 0,
+        outside_field: 0,
         modified_at: '2026-05-24T22:00:44Z',
         views: [{ id: 'v1', type: 'table' }],
       }),
@@ -369,7 +369,7 @@ describe('handleMutate — review-round hardening', () => {
   it('setProfileSubtitle writes settings.profile_subtitle, preserving other settings keys', async () => {
     await writeFile(
       join(root, '.nexus', 'settings.json'),
-      JSON.stringify({ version: 1, accent_color: 'blue' }),
+      JSON.stringify({ version: 1, outside_key: 'blue' }),
     )
     const r = await handleMutate(
       { op: 'setProfileSubtitle', subtitle: 'A second brain.' },
@@ -378,7 +378,7 @@ describe('handleMutate — review-round hardening', () => {
     expect(r.ok).toBe(true)
     const cfg = JSON.parse(await read('.nexus/settings.json'))
     expect(cfg.profile_subtitle).toBe('A second brain.')
-    expect(cfg.accent_color).toBe('blue') // foreign keys preserved (no Swift migration churn)
+    expect(cfg.outside_key).toBe('blue') // foreign keys preserved
     expect(cfg.version).toBe(1)
   })
 
@@ -410,10 +410,10 @@ describe('handleMutate — review-round hardening', () => {
     expect(await pathExists(join(root, prevPath))).toBe(false)
   })
 
-  it('homepage setBanner preserves blocks/icon/schemaVersion (read-merge-write)', async () => {
+  it('homepage setBanner preserves blocks/icon/foreign keys (read-merge-write)', async () => {
     await writeFile(
       join(root, '.nexus', 'homepage.json'),
-      JSON.stringify({ schemaVersion: 2, icon: 'house', blocks: [{ t: 'x' }] }),
+      JSON.stringify({ outside_field: 2, icon: 'house', blocks: [{ t: 'x' }] }),
     )
     const r = await handleMutate(
       {
@@ -427,9 +427,9 @@ describe('handleMutate — review-round hardening', () => {
     expect(r.ok).toBe(true)
     const cfg = JSON.parse(await read('.nexus/homepage.json'))
     expect(cfg.banner).toMatch(/^\.nexus\/assets\/homepage\/banner-.+\.png$/)
-    expect(cfg.blocks).toEqual([{ t: 'x' }]) // Swift's blocks round-trip untouched
+    expect(cfg.blocks).toEqual([{ t: 'x' }]) // foreign blocks round-trip untouched
     expect(cfg.icon).toBe('house')
-    expect(cfg.schemaVersion).toBe(2)
+    expect(cfg.outside_field).toBe(2)
   })
 
   it('navview setBanner writes + clears its own singleton, never homepage.json', async () => {

@@ -1,7 +1,7 @@
 // Pure body scanner: extract `[[Title]]` page connections from Markdown, aggregating
 // repeats to the same normalized title into `multiplicity`. `[[ ]]` is the only syntax;
 // `![[ ]]` embeds and `{{ }}` are excluded (handled by the pattern), and anything inside
-// code is a sample rather than a connection. Mirrors Swift's ConnectionScanner — no I/O.
+// code is a sample rather than a connection. No I/O.
 
 import { normalizeTitle, pageLinkPattern, type ScannedConnection } from '@shared/connections'
 import { codeMask } from '@shared/markdownCode'

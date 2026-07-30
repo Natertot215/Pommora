@@ -272,8 +272,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setProfileImage': {
-      // Profile avatar → `.nexus/assets/<nexusID>/profile-<token>.<ext>` (Swift's per-nexus asset
-      // dir), path recorded in settings.profile_image (read-merge-write, other keys preserved).
+      // Profile avatar → `.nexus/assets/<nexusID>/profile-<token>.<ext>`; the path is recorded
+      // in settings.profile_image (read-merge-write, other keys preserved).
       const settingsPath = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
       const existing = await readJsonObject(settingsPath)
       const prev = typeof existing?.profile_image === 'string' ? existing.profile_image : null
@@ -309,7 +309,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setBanner': {
-      // A page's banner is the Swift-compatible `cover` key in its `.md` frontmatter (not a JSON
+      // A page's banner is the `cover` key in its `.md` frontmatter (not a JSON
       // sidecar); the asset folder is keyed by the page id. Foreign frontmatter + body survive.
       if (req.kind === 'page') {
         const resolved = await resolveUnderRoot(root, req.path)
@@ -345,8 +345,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       }
       // Resolve the config holding the banner field + the asset-folder key, per owner kind. The
       // homepage and the NavView are singletons (.nexus/homepage.json / navview.json, keyed by
-      // kind); the rest are folder sidecars keyed by their entity id (matches Swift's per-entity
-      // assets/<id>/).
+      // kind); the rest are folder sidecars keyed by their entity id (assets/<id>/).
       let cfgPath: string
       let assetKey: string
       // The singletons legitimately seed from nothing; a folder sidecar never does — one that

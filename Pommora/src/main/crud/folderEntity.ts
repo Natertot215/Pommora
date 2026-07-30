@@ -1,5 +1,5 @@
 // ONE generic CRUD for every folder-shaped entity — Spaces, Page Collections, Page Sets and the
-// agenda configs — replacing Swift's several managers with copy-pasted ladders.
+// agenda configs.
 // Invariants: filename = title (rename = folder rename); a fresh entity gets a real ULID;
 // foreign sidecar keys are preserved on update.
 

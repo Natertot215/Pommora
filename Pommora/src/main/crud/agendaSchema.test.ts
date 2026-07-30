@@ -23,7 +23,7 @@ beforeEach(async () => {
     property_definitions: [
       { id: '_status', name: 'Status', type: 'status', status_groups: defaultStatusSeed() },
     ],
-    schema_version: 1,
+    outside_field: 1,
   })
   if (!cfg.ok) throw new Error('setup')
   tasks = cfg.value.path

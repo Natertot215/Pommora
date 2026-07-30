@@ -1,5 +1,4 @@
-// Per-view column display styles — the `column_styles` record on a SavedView (a deliberate
-// divergence from Swift's def-level format keys, which ride through defs as foreign keys).
+// Per-view column display styles — the `column_styles` record on a SavedView.
 
 import { z } from 'zod'
 

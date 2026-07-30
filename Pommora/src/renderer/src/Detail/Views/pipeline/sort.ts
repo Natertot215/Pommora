@@ -1,6 +1,5 @@
-// Multi-key view sort. Ports Swift's ViewSortComparator — decorate-sort, select/status by schema
-// option order, a type-complete property branch per PropertyType — and EXTENDS it to multiple
-// criteria: Swift sorts by a single criterion; here `sort[]` is honored in array
+// Multi-key view sort — decorate-sort, select/status by schema option order, a type-complete
+// property branch per PropertyType. `sort[]` is honored in array
 // order (priority = index), each criterion compared until one breaks the tie, then stable input
 // order. Pure: no fs, no React.
 
@@ -77,8 +76,7 @@ function boolRank(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
 
 /** Orderable text for the text-ish types `buildCriterion` routes here (url, multiSelect).
  *  select/status sort via `rank()` (schema option order) and never reach this; relation/file/
- *  absent have no orderable text → "". (Swift's sortText keeps unreachable select/status arms;
- *  dropped here.) */
+ *  absent have no orderable text → "". */
 function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): string {
   const v = resolveFieldValue(row, propertyId, schema)
   switch (v.kind) {
@@ -103,7 +101,7 @@ function modifiedStamp(row: ViewRow): number {
 }
 
 /** Resolve one criterion to an extract+less pair, or null when the property isn't sortable
- *  (unknown id, or a Context column — Swift returns nil for non-schema properties). */
+ *  (unknown id, or a Context column). */
 function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): ResolvedCriterion | null {
   const ascending = c.direction !== 'descending'
   switch (c.property_id) {

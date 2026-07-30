@@ -24,9 +24,9 @@ describe('knownBlock', () => {
       knownBlock({
         id: 'c',
         type: 'view',
-        views: [{ source_id: 's1', config: {}, swift_key: true }],
+        views: [{ source_id: 's1', config: {}, outside_key: true }],
       }),
-    ).toMatchObject({ views: [{ swift_key: true }] })
+    ).toMatchObject({ views: [{ outside_key: true }] })
   })
 
   it('a view entry needs a non-empty views list; a bad active index degrades, not rejects', () => {

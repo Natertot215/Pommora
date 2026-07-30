@@ -131,7 +131,7 @@ describe('markdown block lifecycle', () => {
   it('convert to view stamps a payload-local config id and trashes the markdown file', async () => {
     const id = await createMarkdownBlock(root, HOST)
     writeBlockDoc(HOST, {
-      blocks: [{ id, type: 'markdown', style: 'borderless', swift_key: 1 }],
+      blocks: [{ id, type: 'markdown', style: 'borderless', outside_key: 1 }],
     })
     await convertTileToView(root, HOST, id, [
       { source_id: 'src1', config: { id: 'source-view-id', name: 'Table', foreign: true } },
@@ -139,7 +139,7 @@ describe('markdown block lifecycle', () => {
     const entry = entries()[0]
     expect(entry.type).toBe('view')
     expect(entry.style).toBe('borderless')
-    expect(entry.swift_key).toBe(1)
+    expect(entry.outside_key).toBe(1)
     expect(entry.active).toBe(0)
     const view = (entry.views as Array<Record<string, unknown>>)[0]
     expect(view.source_id).toBe('src1')

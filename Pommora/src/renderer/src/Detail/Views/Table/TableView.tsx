@@ -474,7 +474,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   }
 
   // Persist the saved view + every live override (order + collapse) + a patch, so no one mutation
-  // clobbers another's unsaved state — the exact Swift reorder/resize data-loss bug this guards against.
+  // clobbers another's unsaved state — the reorder/resize data-loss class this guards against.
   // Adopt-only: if this fires while the entry-mint is still in flight, it awaits the minted id and
   // saves against it — never mints a rival default from its own sentinel. skipRefetch defaults true:
   // order/width/align/collapse/style all show through a live override, so a refetch would only repaint

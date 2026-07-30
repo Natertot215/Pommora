@@ -67,9 +67,9 @@ describe('columnStyle codec', () => {
   })
 
   it('lets unknown keys ride through', () => {
-    expect(columnStyle.parse({ look: 'pill', swift_only: true })).toEqual({
+    expect(columnStyle.parse({ look: 'pill', outside_key: true })).toEqual({
       look: 'pill',
-      swift_only: true,
+      outside_key: true,
     })
   })
 })

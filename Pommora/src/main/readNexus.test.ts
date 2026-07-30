@@ -73,7 +73,7 @@ beforeAll(() => {
   d(join(sidecar, '.nexus'))
   w(
     join(sidecar, '.nexus', 'nexus.json'),
-    JSON.stringify({ schemaVersion: 1, id: 'nx1', createdAt: '2026' }),
+    JSON.stringify({ id: 'nx1', createdAt: '2026' }),
   )
   w(join(sidecar, '.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Archive'] }))
   w(
@@ -180,7 +180,7 @@ describe('readNexus — agenda is config-driven, never name-reserved', () => {
     d(join(root, '.nexus'))
     w(
       join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ schemaVersion: 1, id: 'nxg', createdAt: '2026' }),
+      JSON.stringify({ id: 'nxg', createdAt: '2026' }),
     )
     build(root)
     return root
@@ -223,7 +223,7 @@ describe('readNexus — registry-backed contexts', () => {
     d(join(reg, '.nexus'))
     w(
       join(reg, '.nexus', 'nexus.json'),
-      JSON.stringify({ schemaVersion: 1, id: 'nxr', createdAt: '2026' }),
+      JSON.stringify({ id: 'nxr', createdAt: '2026' }),
     )
     w(
       join(reg, '.nexus', 'contexts.json'),
@@ -318,7 +318,7 @@ describe('readNexus — personalization', () => {
     d(join(root, '.nexus'))
     w(
       join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ schemaVersion: 1, id: 'nxp', createdAt: '2026' }),
+      JSON.stringify({ id: 'nxp', createdAt: '2026' }),
     )
     w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
     return root
@@ -337,7 +337,7 @@ describe('readNexus — personalization', () => {
     expect((await readNexus(mk({ personalization: { accent: 'chartreuse' } }))).accent).toBe(
       'lavender',
     )
-    expect((await readNexus(mk({ accent_color: 'red' }))).accent).toBe('lavender')
+    expect((await readNexus(mk({ outside_accent: 'red' }))).accent).toBe('lavender')
   })
   it('reads the block, dropping invalid fields + unknown icon kinds', async () => {
     const t = await readNexus(
@@ -377,7 +377,7 @@ describe('readNexus — personalization', () => {
   })
 })
 
-describe('readNexus — structured labels (Swift SettingsLabels shape)', () => {
+describe('readNexus — structured labels', () => {
   const roots: string[] = []
   const mk = (settings: object): string => {
     const root = mkdtempSync(join(tmpdir(), 'pom-labels-'))
@@ -385,7 +385,7 @@ describe('readNexus — structured labels (Swift SettingsLabels shape)', () => {
     d(join(root, '.nexus'))
     w(
       join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ schemaVersion: 1, id: 'nxl', createdAt: '2026' }),
+      JSON.stringify({ id: 'nxl', createdAt: '2026' }),
     )
     w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
     return root
@@ -423,7 +423,7 @@ describe('readNexus — structured labels (Swift SettingsLabels shape)', () => {
         labels: {
           area: { singular: 'Zone', plural: 'Zones' },
           topic: { singular: 'Theme', plural: 'Themes' },
-          sidebar_sections: { areas: 'IGNORED', topics: 'IGNORED' },
+          outside_sections: { areas: 'IGNORED', topics: 'IGNORED' },
         },
       }),
     )
@@ -441,7 +441,7 @@ describe('readNexus — structured labels (Swift SettingsLabels shape)', () => {
   })
 })
 
-describe('readNexus — profile (from settings, Swift parity)', () => {
+describe('readNexus — profile (from settings)', () => {
   const roots: string[] = []
   const mk = (settings: object): string => {
     const root = mkdtempSync(join(tmpdir(), 'pom-profile-'))
@@ -449,7 +449,7 @@ describe('readNexus — profile (from settings, Swift parity)', () => {
     d(join(root, '.nexus'))
     w(
       join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ schemaVersion: 1, id: 'nxp', createdAt: '2026' }),
+      JSON.stringify({ id: 'nxp', createdAt: '2026' }),
     )
     w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
     return root
@@ -484,7 +484,7 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
     d(join(root, 'Notes', 'Daily', 'Morning'))
     w(
       join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ schemaVersion: 1, id: 'nxp', createdAt: '2026' }),
+      JSON.stringify({ id: 'nxp', createdAt: '2026' }),
     )
     w(join(root, '.nexus', 'settings.json'), '{}')
     w(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'c-notes' }))
