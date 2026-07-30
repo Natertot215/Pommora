@@ -39,6 +39,14 @@ export function readWarm(tabId: string, navKey: string): WarmEntry | undefined {
   return cache.get(tabId)?.get(navKey)
 }
 
+/** Drop every warm `pageDetail` captured for `path`, across all tabs — a frontmatter fact changed
+ *  outside the open copy, and a warm return would resurrect the pre-write value. Editor state and
+ *  scroll stay warm; only the detail refetches. */
+export function dropWarmDetail(path: string): void {
+  for (const tabMap of cache.values())
+    for (const entry of tabMap.values()) if (entry.pageDetail?.path === path) delete entry.pageDetail
+}
+
 export function dropWarmTab(tabId: string): void {
   cache.delete(tabId)
 }
