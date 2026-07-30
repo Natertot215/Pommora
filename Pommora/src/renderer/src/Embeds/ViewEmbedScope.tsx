@@ -43,8 +43,7 @@ export function useSaveView(
     // An embed re-renders off its own tile payload — persistConfig updates it in place, no refetch path.
     return (view, opts) => {
       if (scope.locked) {
-        if (!opts?.viewState)
-          return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
+        if (!opts?.viewState) return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
         scope.persistState(pickViewState(view))
         return Promise.resolve(ok({ id: view.id }))
       }

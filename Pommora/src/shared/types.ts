@@ -262,7 +262,6 @@ export type NexusState =
   | { status: 'open'; tree: NexusTree }
   | { status: 'error'; error: string }
 
-
 /** What the renderer currently has open: a container, a page, or nothing. */
 export type SelectionState =
   | { kind: 'none' }
@@ -301,7 +300,6 @@ export interface NavigationState {
   /** The NavView's banner — a nexus-relative asset path. */
   banner?: string
 }
-
 
 /** The new-tab sentinel — a tab target that maps to NavView (the `'none'` detail branch); it is NOT a
  *  `SelectionState` kind, so it bypasses `select` entirely. */
@@ -343,9 +341,6 @@ export interface StoredTabSet {
   activeTabId: string
 }
 
-/** The `tabs:load` IPC envelope — `set` is null when the row doesn't exist yet (the store seeds
- *  fresh). */
-
 /** A persisted preview tab set: bare refs only — ids are session-local and re-minted at
  *  restore; `activeIndex` points into `tabs` by strip order. The NavWindow's gallery sentinel
  *  never persists — opening the nav flavor re-seeds it as tab 1. */
@@ -370,7 +365,6 @@ export interface PreviewsFile {
  *  renderer's reset can't drift into two different "empty". */
 export const EMPTY_PREVIEWS: PreviewsFile = { navSet: null, origins: {}, open: null }
 
-
 /** A detail-pane rectangle (DIP, viewport-relative) the renderer measures for a thumbnail capture. */
 export interface ThumbRect {
   x: number
@@ -383,7 +377,6 @@ export interface ThumbRect {
   maskTop?: number
   maskFill?: 'banner' | 'window'
 }
-
 
 /** Per-nexus Subfield (footer) config — persisted as a foreign `subfield` key in settings.json. */
 export interface SubfieldConfig {

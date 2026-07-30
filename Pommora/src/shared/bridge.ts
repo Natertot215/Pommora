@@ -106,10 +106,19 @@ export interface Asks {
     args: [containerPath: string, def: PropertyDefinition]
     reply: Result<{ id: string }>
   }
-  'schema:rename': { args: [containerPath: string, propertyId: string, newName: string]; reply: Result<null> }
-  'schema:reorder': { args: [containerPath: string, propertyId: string, toIndex: number]; reply: Result<null> }
+  'schema:rename': {
+    args: [containerPath: string, propertyId: string, newName: string]
+    reply: Result<null>
+  }
+  'schema:reorder': {
+    args: [containerPath: string, propertyId: string, toIndex: number]
+    reply: Result<null>
+  }
   'schema:delete': { args: [containerPath: string, propertyId: string]; reply: Result<null> }
-  'schema:assign': { args: [containerPath: string, propertyId: string, toIndex?: number]; reply: Result<null> }
+  'schema:assign': {
+    args: [containerPath: string, propertyId: string, toIndex?: number]
+    reply: Result<null>
+  }
   'schema:changeType': {
     args: [
       containerPath: string,
@@ -125,15 +134,25 @@ export interface Asks {
     args: [propertyId: string, options: { value: string; label: string; color?: string }[]]
     reply: Result<null>
   }
-  'property:setStatusGroups': { args: [propertyId: string, groups: StatusGroup[]]; reply: Result<null> }
+  'property:setStatusGroups': {
+    args: [propertyId: string, groups: StatusGroup[]]
+    reply: Result<null>
+  }
   'property:setLinkConfig': {
     args: [
       propertyId: string,
-      patch: { link_underline?: boolean; link_display?: 'link-url' | 'link-title'; link_color?: string },
+      patch: {
+        link_underline?: boolean
+        link_display?: 'link-url' | 'link-title'
+        link_color?: string
+      },
     ]
     reply: Result<null>
   }
-  'property:setCheckboxColor': { args: [propertyId: string, color: string | undefined]; reply: Result<null> }
+  'property:setCheckboxColor': {
+    args: [propertyId: string, color: string | undefined]
+    reply: Result<null>
+  }
   'property:setIcon': { args: [propertyId: string, icon: string | undefined]; reply: Result<null> }
   'property:setNumberFormat': {
     args: [
@@ -149,7 +168,10 @@ export interface Asks {
     ]
     reply: Result<null>
   }
-  'property:renameOption': { args: [propertyId: string, oldValue: string, newTitle: string]; reply: Result<null> }
+  'property:renameOption': {
+    args: [propertyId: string, oldValue: string, newTitle: string]
+    reply: Result<null>
+  }
   'property:removeOption': { args: [propertyId: string, value: string]; reply: Result<null> }
   'property:clearOption': { args: [propertyId: string, value: string]; reply: Result<null> }
   'property:renameStatusOption': {
@@ -164,7 +186,10 @@ export interface Asks {
   'blocks:save': { args: [host: BlockHostRef, patch: BlockDocPatch]; reply: Result<null> }
   'blocks:createMarkdown': { args: [host: BlockHostRef]; reply: Result<{ id: string }> }
   'blocks:removeTile': { args: [host: BlockHostRef, tileId: string]; reply: Result<null> }
-  'blocks:readMarkdown': { args: [host: BlockHostRef, tileId: string]; reply: Result<{ body: string }> }
+  'blocks:readMarkdown': {
+    args: [host: BlockHostRef, tileId: string]
+    reply: Result<{ body: string }>
+  }
   'blocks:writeMarkdown': {
     args: [host: BlockHostRef, tileId: string, body: string]
     reply: Result<null>
@@ -177,7 +202,10 @@ export interface Asks {
     args: [host: BlockHostRef, tileId: string, views: EmbeddedView[]]
     reply: Result<null>
   }
-  'blocks:duplicateTile': { args: [host: BlockHostRef, tileId: string]; reply: Result<{ id: string }> }
+  'blocks:duplicateTile': {
+    args: [host: BlockHostRef, tileId: string]
+    reply: Result<{ id: string }>
+  }
   'blocks:confirmRemove': { args: []; reply: boolean }
 
   // Settings / personalization / theme

@@ -35,8 +35,7 @@ const api = {
   choose: ask('nexus:choose'),
   // Resolve a dropped folder's path here (the renderer can't) and send only the
   // path to main — the absolute path never enters web content.
-  openDropped: (file: File): Promise<Result<boolean>> =>
-    ipcRenderer.invoke('nexus:openPath', webUtils.getPathForFile(file)),
+  openDropped: (file: File) => ask('nexus:openPath')(webUtils.getPathForFile(file)),
   openPage: ask('page:open'),
   // Debounced editor body write (relative path); main resolves under the session root + preserves frontmatter.
   updatePageBody: ask('page:updateBody'),
