@@ -17,7 +17,7 @@ function isTabRef(v: unknown): v is NavRef {
   if (!isPlainObject(v)) return false
   const kind = v.kind
   if (typeof kind !== 'string' || !TAB_KINDS.has(kind)) return false
-  return kind === 'homepage' || typeof v.id === 'string'
+  return kind === 'homepage' ? !('id' in v) : typeof v.id === 'string' && v.id.length > 0
 }
 
 function isTargetRef(v: unknown): v is NavRef | NewTabSentinel {
