@@ -140,5 +140,4 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 - The link-rename field shows a leading empty space — a visual inset, not a stored character (deprioritized).
 - Block-math drag corrupts the doc: a multi-line `$$…$$` span with a blank line inside parses as two halves with orphaned `$$` (`blockModel.ts`, test-pinned but unguarded).
 - A single-word bullet that wraps drops the word below the marker — only the `line-height` cap made it in so far. → [[MarkdownPM]].
-- Inside a quote-nested fence, `>` levels beyond the fence's own depth are literal code but still render as quote chrome — the box gate in `decorations/intent.ts` is per-block, not per-level (rare, cosmetic). → [[MarkdownPM]].
 - The Set-Card drag flash (drop snaps back, then jumps on reload) — the optimistic moveSet order patch landed; wants one live drag before this line drops. → [[CardView]].

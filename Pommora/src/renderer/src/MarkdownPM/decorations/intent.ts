@@ -5,11 +5,12 @@ import {
   isBlockquoteLine,
   parseListMarker,
   blockquotePrefixRe,
-  quoteDepth,
   calloutLines,
   headingParts,
-  lineOffsets,
+  scanFencedCode,
+  splitWithOffsets,
   type CalloutLine,
+  type FenceInfo,
   type ListMarker,
 } from '../detect'
 
@@ -26,99 +27,20 @@ function calloutNestedQuote(
   return blockquotePrefixRe.test(inner) && isBlockquoteLine(inner)
 }
 
+// Width of the first `levels` quote levels (leading indent, then each `>` with its optional space) —
+// inside a fence this is the chrome extent; anything past it is code bytes.
+function quotePrefixWidth(line: string, levels: number): number {
+  if (levels === 0) return 0
+  let w = /^[ \t]*/.exec(line)?.[0].length ?? 0
+  for (let k = 0; k < levels && line[w] === '>'; k++)
+    w += line[w + 1] === ' ' || line[w + 1] === '\t' ? 2 : 1
+  return w
+}
+
 // Shared marker class on all three list glyphs (bullet • / checkbox box / ordered number). The drag
 // extension targets this one class, and `.md-li-glyph { cursor: pointer }` paints the pointer cursor —
 // so any future list syntax that adopts it inherits both the cursor and drag-to-reorder for free.
 export const GLYPH_CLASS = 'md-li-glyph'
-
-// A ``` fence, capturing its `>` prefix so open/close pair by quote-DEPTH: a `> ``` opens a callout/quote-internal
-// block closed only by another `> ``` (a bare ``` is a separate top-level block), and a quoted fence ends when its
-// blockquote does. Without the depth match, a top-level code block quoting a ``` (`> ```` as content) corrupts.
-const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(```|~~~)/
-// A fence line's quote depth AND marker char — a block pairs by BOTH, so a `~~~` line inside a ``` block
-// reads as content, not a close (matches isInsideCode's marker pairing; the two layers must agree).
-const fenceOf = (line: string): { depth: number; marker: string } | null => {
-  const m = FENCE_RE.exec(line)
-  return m ? { depth: m[1].match(/>/g)?.length ?? 0, marker: m[2][0] } : null
-}
-interface FenceInfo {
-  role: 'open' | 'content' | 'close'
-  from: number
-  to: number
-  /** The block's quote depth (from its opening fence) — 0 = an unquoted, top-level block. */
-  depth: number
-  /** False while the fence is still being typed — an unclosed block claims every line to EOF, so
-   *  suppressing box chrome on it would flatten the whole document below the caret. */
-  closed: boolean
-}
-
-interface FenceBlock {
-  from: number
-  to: number
-  open: number
-  close: number
-  closed: boolean
-  depth: number
-}
-
-function splitWithOffsets(text: string): { lines: string[]; lineStarts: number[] } {
-  const lines = text.split('\n')
-  return { lines, lineStarts: lineOffsets(lines) }
-}
-
-// One scan of ``` fences → block extents. Shared by the per-line role map (scanFencedCode) and the flat
-// range list (fencedCodeRanges) so the two never drift on what counts as a code block.
-function fenceBlocks(lines: string[], lineStarts: number[]): FenceBlock[] {
-  const blocks: FenceBlock[] = []
-  let i = 0
-  while (i < lines.length) {
-    const open = fenceOf(lines[i])
-    if (open === null) {
-      i++
-      continue
-    }
-    // The close is a fence at the SAME depth AND same marker char; the block also ends if the surrounding
-    // blockquote drops below that depth (a quoted fence can't outlive its `>` lines).
-    const isClose = (line: string): boolean => {
-      const f = fenceOf(line)
-      return f !== null && f.depth === open.depth && f.marker === open.marker
-    }
-    let j = i + 1
-    while (j < lines.length && !isClose(lines[j]) && quoteDepth(lines[j]) >= open.depth) j++
-    const closed = j < lines.length && isClose(lines[j])
-    const close = closed ? j : j - 1 // unclosed → the last line still in the block (the open itself if j === i+1)
-    blocks.push({
-      from: lineStarts[i],
-      to: lineStarts[close] + lines[close].length,
-      open: i,
-      close,
-      closed,
-      depth: open.depth,
-    })
-    i = closed ? j + 1 : j
-  }
-  return blocks
-}
-
-function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInfo | undefined)[] {
-  const out: (FenceInfo | undefined)[] = new Array(lines.length)
-  for (const blk of fenceBlocks(lines, lineStarts)) {
-    const base = { from: blk.from, to: blk.to, depth: blk.depth, closed: blk.closed }
-    out[blk.open] = { role: 'open', ...base }
-    const contentEnd = blk.closed ? blk.close : blk.close + 1 // unclosed → the last line is content too
-    for (let k = blk.open + 1; k < contentEnd; k++) out[k] = { role: 'content', ...base }
-    if (blk.closed) out[blk.close] = { role: 'close', ...base }
-  }
-  return out
-}
-
-// Absolute [from, to) ranges of fenced code blocks across the whole doc. The decoration builder drops
-// inline tokens that land inside a fence opened above the viewport — which a viewport-only tokenize
-// can't see. `to` reaches the end of the closing fence line (or EOF for an unclosed fence).
-export function fencedCodeRanges(text: string): [number, number][] {
-  const { lines, lineStarts } = splitWithOffsets(text)
-  return fenceBlocks(lines, lineStarts).map((b) => [b.from, b.to])
-}
 
 /** Every whole-doc scan the decoration pass reads — pure on `text`, so a caller that runs per
  *  keystroke/caret-move caches one per doc VERSION (docCache.docScan) instead of re-splitting and
@@ -133,12 +55,13 @@ export interface DocScan {
 
 export function scanDoc(text: string): DocScan {
   const { lines, lineStarts } = splitWithOffsets(text)
+  const fences = scanFencedCode(lines, lineStarts)
   return {
     lines,
     lineStarts,
-    fences: scanFencedCode(lines, lineStarts),
-    callouts: calloutLines(lines),
-    fencedRanges: fenceBlocks(lines, lineStarts).map((b) => [b.from, b.to]),
+    fences,
+    callouts: calloutLines(lines, fences),
+    fencedRanges: fences.flatMap((f) => (f?.role === 'open' ? [[f.from, f.to] as [number, number]] : [])),
   }
 }
 
@@ -208,6 +131,14 @@ export function decorationsFor(
 
   const { lines, lineStarts, fences, callouts } = scan ?? scanDoc(text)
 
+  // A line is literal code — content of a CLOSED unquoted fence — exactly when quote chrome must not
+  // touch it. An unclosed fence claims every line to EOF while being typed, so it keeps chrome.
+  const literalQuoteAt = (k: number): boolean => {
+    const f = fences[k]
+    return f?.closed === true && f.depth === 0
+  }
+  const quoteChromeAt = (k: number): boolean => isBlockquoteLine(lines[k]) && !literalQuoteAt(k)
+
   // Per-line list nesting depth (-1 = not a rendered list line) + the rail type-class of the marker there.
   // Fed by pushConstruct's return; the outliner-rail pass below reads them to find run boundaries per level.
   const listLevels = new Array<number>(lines.length).fill(-1)
@@ -220,14 +151,11 @@ export function decorationsFor(
 
     // Box chrome (callout/quote) is independent of what's inside it: a `> - item` gets BOTH the box line-class
     // AND the bullet, a `> ```` code block keeps its box. `base` is where the inner content begins, so every
-    // construct renders identically whether it's top-level or behind a `>` prefix. The one exception: a `>`
-    // line inside a CLOSED unquoted fence is literal code, so the box branches skip it. An unclosed fence
-    // keeps chrome (it claims every line to EOF while being typed), and inside a quoted fence the prefix
-    // levels BEYOND the fence's own depth are literal too but still render as chrome — a known cosmetic gap.
+    // construct renders identically whether it's top-level or behind a `>` prefix. Inside a CLOSED fence,
+    // chrome extends exactly to the fence's own quote depth — every `>` beyond it is code bytes.
     const fence = fences[i]
-    const boxChrome = fence === undefined || fence.depth > 0 || !fence.closed
     let base = 0
-    const co = boxChrome ? callouts[i] : undefined
+    const co = callouts[i]
     if (co) {
       intents.push({
         kind: 'line',
@@ -239,7 +167,9 @@ export function decorationsFor(
       // + bar + fill) rather than flattening it to plain callout body. first/last come from the quote depth.
       const inner = line.slice(base)
       const qm = blockquotePrefixRe.exec(inner) // all remaining `>` levels → one inset quote (depth flattens)
-      if (qm && isBlockquoteLine(inner)) {
+      // Inside a closed fence, an inset quote is chrome only if the fence itself was opened behind one
+      // (depth ≥ 2 — callout level + inset level); a shallower fence's extra `>`s are code bytes.
+      if (qm && isBlockquoteLine(inner) && (fence === undefined || !fence.closed || fence.depth > 1)) {
         // first/last span the contiguous run of nested-quote lines (not a depth match — a run can vary in depth
         // yet flatten to one block), mirroring how the plain-quote branch tests its neighbours.
         const first = !calloutNestedQuote(lines, callouts, i - 1)
@@ -254,11 +184,11 @@ export function decorationsFor(
         intents.push({ kind: 'lineWidget', from: ls, className: 'md-bq-in-bar' })
         base += qm[0].length
       }
-    } else if (boxChrome && isBlockquoteLine(line)) {
+    } else if (!literalQuoteAt(i) && isBlockquoteLine(line)) {
       const bm = blockquotePrefixRe.exec(line)
       if (bm) {
-        const first = i === 0 || !isBlockquoteLine(lines[i - 1])
-        const last = i === lines.length - 1 || !isBlockquoteLine(lines[i + 1])
+        const first = i === 0 || !quoteChromeAt(i - 1)
+        const last = i === lines.length - 1 || !quoteChromeAt(i + 1)
         intents.push({
           kind: 'line',
           from: ls,
@@ -269,7 +199,9 @@ export function decorationsFor(
     }
 
     if (fence) {
-      // Code block (composes with box chrome).
+      // Code block (composes with box chrome). Only the fence's own quote depth hides as prefix
+      // chrome — a deeper `>` run is code bytes and stays visible.
+      if (fence.closed && base > 0) base = Math.min(base, quotePrefixWidth(line, fence.depth))
       const innerStart = ls + base
       const caretInBlock = selStart >= fence.from && selStart <= fence.to
       intents.push({
