@@ -249,7 +249,7 @@ describe('applyFilter — per-type matrix', () => {
     ).toEqual(['c'])
   })
 
-  it('checkbox supports is / is_empty; is_not_empty is a no-op pass (Swift parity)', () => {
+  it('checkbox supports is / is_empty; is_not_empty is a no-op pass', () => {
     const rows = [
       row('t', { props: { prop_done: true } }),
       row('f', { props: { prop_done: false } }),

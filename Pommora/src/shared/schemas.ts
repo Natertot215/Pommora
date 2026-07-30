@@ -1,7 +1,6 @@
 // zod schemas for the JSON sidecars. Each schema IS the codec AND the type (`z.infer`) — one
-// source of truth. `z.looseObject` ⇒ FOREIGN keys survive a rewrite, unlike Swift's Codable,
-// which silently dropped unknown keys on JSON sidecars — this closes that cloud-sync /
-// agent-legibility data-loss gap.
+// source of truth. `z.looseObject` ⇒ FOREIGN keys survive a rewrite — outside tools and agents
+// can add keys to a sidecar without Pommora erasing them.
 
 import { z } from 'zod'
 import { savedView } from './views'

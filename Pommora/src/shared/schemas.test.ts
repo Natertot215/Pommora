@@ -6,7 +6,7 @@ describe('folder sidecar schemas', () => {
     expect(pageCollectionSidecar.parse({ id: 'T1' })).toEqual({ id: 'T1' })
   })
 
-  it('retains foreign keys (looseObject) — the key enhancement over Swift', () => {
+  it('retains foreign keys (looseObject) — outside keys survive a rewrite', () => {
     const parsed = pageCollectionSidecar.parse({ id: 'T1', plugin_field: 'keep', nested: { a: 1 } })
     expect(parsed).toMatchObject({ id: 'T1', plugin_field: 'keep', nested: { a: 1 } })
   })

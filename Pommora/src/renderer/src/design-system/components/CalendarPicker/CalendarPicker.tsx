@@ -498,7 +498,7 @@ export function CalendarPicker({
           timeOptions(which, part)}
       </button>
     )
-  // The Swift-style meridiem segment — a plain click-toggle, no affordance glyph
+  // The meridiem segment — a plain click-toggle, no affordance glyph
   // (two values never earn a dropdown either).
   const ampmSegment = (which: 'start' | 'end', mins: number): React.JSX.Element => {
     const setMins = setMinsFor(which)
@@ -680,7 +680,7 @@ export function CalendarPicker({
         </div>
         <div className={s.divider} />
         <div className={s.fields}>
-          {/* Grid logic (Nathan, Swift-DatePicker model): equal halves everywhere — a range is
+          {/* Grid logic (Nathan's spec): equal halves everywhere — a range is
             [Date][Date] with times on their own [Time][Time] row; single date+time is [Date][Time].
             Equal sizing buys the AM/PM segment its room. Range fields take the picker-only
             condensed form (year rejoins only across years); single-date stays verbatim. */}

@@ -1,5 +1,5 @@
 // Transient UI chrome — regeneratable, not portable content — so it lives in app-level
-// localStorage (mirrors Swift IconFavorites → UserDefaults), not `.nexus/`. Storage is a
+// localStorage, not `.nexus/`. Storage is a
 // parameter so behavior is testable without a DOM.
 
 type OpenMap = Record<string, boolean>

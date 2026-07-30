@@ -49,7 +49,6 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
         (seg) =>
           seg === '.trash' ||
           seg.startsWith('nexus.db') || // our store + its WAL/SHM
-          seg.startsWith('index.db') || // the Swift build's index, in a nexus shared with it
           (seg.startsWith('.') && seg !== '.nexus'), // dotfile cruft, but .nexus holds contexts + settings
       ) ||
       // Block-host content loads through blocks:get, never the tree walk —

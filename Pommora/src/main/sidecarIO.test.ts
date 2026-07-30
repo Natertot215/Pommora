@@ -24,7 +24,7 @@ describe('sidecar read/write', () => {
     })
   })
 
-  it('preserves foreign keys across write + read (Swift dropped these)', async () => {
+  it('preserves foreign keys across write + read', async () => {
     await writeSidecar(dir, 'collection', { id: 'T1', plugin: 'keep', meta: { v: 2 } })
     const back = await readSidecar(dir, 'collection', pageCollectionSidecar)
     expect(back).toMatchObject({ id: 'T1', plugin: 'keep', meta: { v: 2 } })

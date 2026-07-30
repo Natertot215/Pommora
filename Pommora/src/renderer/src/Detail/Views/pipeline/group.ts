@@ -1,6 +1,5 @@
-// Grouping + container flattening for the view pipeline. Ports Swift GroupResolver (collection
-// scope) + DateBucket. React renders ONE container, so Swift's vault scope + isStructuralAnchor
-// machinery are dropped: the setTree is built from node.sets (the real folder walk), so empty Sets
+// Grouping + container flattening for the view pipeline. The setTree is built from node.sets
+// (the real folder walk), so empty Sets
 // still appear as disclosure groups, and a CollectionNode and a SetNode container flow through the
 // identical structural path. Pure: no fs, no React.
 
@@ -100,7 +99,7 @@ function isoWeek(year: number, month: number, day: number): [year: number, week:
 }
 
 /** Date → a stable, zero-padded bucket key (lexicographic order == chronological). A datetime is an
- *  absolute instant bucketed display-local (Swift parity); a date-only value (`utc`) is a no-time
+ *  absolute instant bucketed display-local; a date-only value (`utc`) is a no-time
  *  calendar date that must NOT shift across timezones, so it buckets by its stored (UTC) date — the
  *  date the user picked, for every viewer. Null for an unparseable date. */
 export function dateBucketKey(

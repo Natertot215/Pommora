@@ -199,7 +199,7 @@ export interface CollectionNode extends PathNode {
   viewStyle?: ViewStyle
 }
 
-/** A user-facing entity name in both forms (mirrors Swift `LabelPair`). */
+/** A user-facing entity name in both forms. */
 export interface LabelPair {
   singular: string
   plural: string
@@ -222,7 +222,7 @@ export interface NexusLabels {
 export interface NexusTree {
   /** `name` is the root folder's basename (filename = title). `profileImage` is a
    *  nexus-relative path into `.nexus/assets/<id>/` (or null) and `profileSubtitle` a
-   *  ≤30-char blurb — both from `.nexus/settings.json`, matching Swift (not nexus.json). */
+   *  ≤30-char blurb — both from `.nexus/settings.json`. */
   nexus: {
     id: string
     rootPath: string
@@ -250,8 +250,7 @@ export interface NexusTree {
    *  segment set. Defaults to twelveHour (AM/PM). */
   timeFormat: TimeFormatSetting
   /** Nexus-wide interface personalization (`settings.json` `personalization`) — the DRY config the
-   *  renderer's apply-map consumes. Accent is surfaced separately as `accent` above (resolved,
-   *  back-compat with the legacy top-level `accent_color`). */
+   *  renderer's apply-map consumes. Accent is surfaced separately as `accent` above (resolved). */
   personalization: Personalization
   /** Nexus-wide keyboard commands (`settings.json` `commands`) — DEFAULT_COMMANDS overlaid with
    *  the user's on-disk overrides, so every id always resolves to a spec. */
@@ -395,8 +394,7 @@ export interface NavState {
 /** The `nav:load` IPC envelope — never throws across the boundary. */
 export type NavStateResult = ({ ok: true } & NavState) | { ok: false; error: string }
 
-/** Per-nexus Subfield (footer) config — persisted as a foreign `subfield` key in settings.json
- *  (Swift ignores unknown keys, so it round-trips safely). */
+/** Per-nexus Subfield (footer) config — persisted as a foreign `subfield` key in settings.json. */
 export interface SubfieldConfig {
   /** Per-view-kind ordered item ids; absent kinds fall back to the built-in defaults. */
   order: Partial<Record<SelectionState['kind'], string[]>>
@@ -490,7 +488,7 @@ export const DEFAULT_LABELS: NexusLabels = {
   agendaEvent: { singular: 'Event', plural: 'Events' },
 }
 
-/** The derived Sub-Set label (deeper Sets); never stored — Swift derives it the same way. */
+/** The derived Sub-Set label (deeper Sets); never stored. */
 export function subSetLabel(labels: NexusLabels): string {
   return `Sub-${labels.pageSet.singular}`
 }

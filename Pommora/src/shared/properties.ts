@@ -1,10 +1,10 @@
 // One schema entry inside a Type / agenda-config sidecar's `property_definitions[]`. The zod
-// schema IS the codec AND the type (z.infer), mirroring Swift's PropertyDefinition.
+// schema IS the codec AND the type (z.infer).
 //
 // Snake_case keys = the on-disk shape. Loose ⇒ foreign keys within a def survive a rewrite.
-// Display formats live per-VIEW in SavedView `column_styles` (a deliberate divergence from
-// Swift's def-level keys); Swift's def-level riders (number_format, date_format, time_format,
-// display_as, date_includes_time) stay inert foreign keys that round-trip but are never read.
+// Display formats live per-VIEW in SavedView `column_styles`; the def-level riders
+// (number_format, date_format, time_format, display_as, date_includes_time) stay inert
+// foreign keys that round-trip but are never read.
 // The renderable structure (type, options, context target, Context reverse labels, icons) IS
 // modeled because the write path + Context synthesis read it.
 
@@ -95,7 +95,7 @@ export const propertyDefinition = z.looseObject({
   // tinting both looks — the box fill (checkbox look) and the on-track (switch look). Absent = Default
   // = the system accent. The checkbox/switch LOOK itself is per-VIEW (column_styles), not here.
   checkbox_color: z.string().optional().catch(undefined),
-  // Def-level number format config — a deliberate divergence from Swift, whose format rode as an
+  // Def-level number format config — kept per-def rather than per-view because a format rode as an
   // inert foreign key. `number_family` picks plain/percent/currency; percent stores the LITERAL
   // (30 → "30%"); fraction renders "N out of number_denominator" (Number/Currency only). Loose
   // .catch ⇒ a bad value drops the field, never the def.

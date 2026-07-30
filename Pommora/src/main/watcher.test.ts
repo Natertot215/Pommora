@@ -26,7 +26,6 @@ describe('ignoredUnder', () => {
     expect(ignored('/nexus/.nexus/nexus.db')).toBe(true)
     expect(ignored('/nexus/.nexus/nexus.db-wal')).toBe(true)
     expect(ignored('/nexus/.nexus/nexus.db-shm')).toBe(true)
-    expect(ignored('/nexus/.nexus/index.db')).toBe(true)
     expect(ignored('/nexus/.trash/old.md')).toBe(true)
     expect(ignored('/nexus/.DS_Store')).toBe(true)
     expect(ignored('/nexus/Notes/.hidden/x.md')).toBe(true)
