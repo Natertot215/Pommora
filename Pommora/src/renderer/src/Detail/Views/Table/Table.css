@@ -270,8 +270,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  border: var(--table-border-width) solid
-    color-mix(in srgb, var(--accent) var(--tint-secondary), transparent);
+  border: var(--table-border-width) solid var(--accent-stroke);
   border-radius: var(--cell-active-radius);
   opacity: 0;
   transition: opacity var(--duration-base) var(--ease-standard);

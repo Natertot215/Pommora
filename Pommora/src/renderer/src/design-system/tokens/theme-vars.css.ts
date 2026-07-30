@@ -42,6 +42,10 @@ globalStyle(':root', {
     // heading↔rows, banner↔body, editor heading↔content). One global source so the seam is uniform
     // app-wide; consume as a full border shorthand: `border-bottom: var(--border-heading)`.
     '--border-heading': '1.75px solid var(--separator-border)',
+    // Box seam — the border an outlined box/card draws around itself (gallery + page cards, the icon
+    // picker's favorites strip). One global source so the outline weight is uniform app-wide; consume
+    // as a full border shorthand: `border: var(--border-cell)`.
+    '--border-cell': '1.5px solid var(--separator-border)',
     // Over-image legibility scrim for a title/search/icon sitting on a banner cover — one source for the
     // banner title, the NavView search, and the editor's banner overlay (text-shadow / drop-shadow).
     '--banner-shadow': '#0000008c',
@@ -73,6 +77,10 @@ globalStyle(':root', {
     // of whatever --accent currently is; tinted accent text IS --accent itself.
     '--accent': colorVars.color.solid[DEFAULT_ACCENT],
     '--accent-fill': 'color-mix(in srgb, var(--accent) 15%, transparent)',
+    // Active stroke — the accent-tint border COLOR every "this is the live one" outline wears
+    // (hovered page embeds, the active table cell, the open gallery card, the handle menu's title
+    // field). Color only, one global source; each surface keeps its own border width.
+    '--accent-stroke': 'color-mix(in srgb, var(--accent) var(--tint-secondary), transparent)',
     '--accent-text': 'var(--accent)',
     // The OS/system accent, always reflected (applySystemAccent overrides it at
     // runtime from the OS, independent of the Pommora --accent setting). Seeded

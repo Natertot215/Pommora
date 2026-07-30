@@ -19,8 +19,7 @@ import { useSession } from '@renderer/store'
 import { cx } from '@renderer/design-system/cx'
 import * as s from './iconPicker.css'
 
-const CELL = 34
-const ICON_SIZE = 18
+const { CELL } = s
 
 interface Props {
   open: boolean
@@ -131,7 +130,6 @@ export function IconPicker({
       triggerRef={triggerRef}
       direction={direction}
       origin="center"
-      notchHeight={7}
       bareSurface
       contentClassName={cx(s.content, beak)}
     >
@@ -210,7 +208,7 @@ function GridCell({
       onClick={() => onPick(entry.id)}
       onContextMenu={(e) => onContext(e, entry.id)}
     >
-      <Glyph size={ICON_SIZE} />
+      <Glyph size="1em" />
     </button>
   )
 }
@@ -239,7 +237,7 @@ function FavCell({
       onClick={() => onPick(id)}
       onContextMenu={(e) => onContext(e, id)}
     >
-      {Glyph ? <Glyph size={ICON_SIZE} /> : <Icon name="square-dashed" size={ICON_SIZE} />}
+      {Glyph ? <Glyph size="1em" /> : <Icon name="square-dashed" size="1em" />}
     </button>
   )
 }

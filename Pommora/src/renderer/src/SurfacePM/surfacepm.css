@@ -202,7 +202,7 @@
   .spm-tile.spm-tile:not(.is-locked):has(.pgembed).is-editing-tile:not(.is-resizing):not(
     :has(> .spm-edge:hover)
   ) {
-  border-color: color-mix(in srgb, var(--accent) var(--tint-secondary), transparent);
+  border-color: var(--accent-stroke);
 }
 
 /* Resize zones ride the block's own edges and corners (window-style), straddling
