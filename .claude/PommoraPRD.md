@@ -180,7 +180,7 @@ On launch Pommora restores the last opened Nexus or opens empty — never a laun
 
 A two-tier token system — primitives (one neutral base at opacities, accent, tints, the type ramp) feeding semantic aliases — authored in code and sourced from a Figma library. Colors are authored as hex; the token layer is the single source. Glass uses two materials: a CSS **frost** for Window and Surface, and Apple **"Liquid Glass"** for Controls. Motion is tokenized, with a canonical bloom-and-retract for panes and menus. V1 ships one scheme plus in-app accent customization. Full philosophy → `Features/DesignPM.md`; type → `Features/Typography.md`; motion → `Features/Interaction.md`.
 
-#### macOS Integration
+#### MacOS Integration
 
 First-party where Electron reaches it — the native menu bar and dark mode ship today; `pommora://` deep links, notifications, and a tray icon are targets, not built. QuickLook previews, a Share Extension, and deep Spotlight indexing require a companion Swift bundle shipped alongside. Finder file-promise drag-out, true sidebar vibrancy, and Spaces-aware window restoration are Electron ceilings to ship a companion for or accept. Detail → `Resources/Mac-Integration.md`.
 
@@ -206,17 +206,3 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 - One design scheme plus in-app accent customization.
 
 **Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, sync, mobile, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, full Settings editing UI, and more — see **Prospects** below.
-
-#### What Items Were (historical pointer)
-Items were Pommora's second operational entity beside Pages until the two converged to redundancy — identical file format, property catalog, container shape, and tier relations. The per-collection open mode (preview vs. full page) absorbed the last difference onto a single Page entity; legacy Item folders adopt as ordinary Page Collections, and the retired item-link syntax is now plain preserved text. Full record → `History.md`.
----
-
-### Prospects
-
-Ideas considered and deliberately parked — not on the active roadmap (`Framework.md`), not yet planned. Each notes what it is and why it's waiting; promote one into `Planning/` when it becomes active.
-
-**Animated Syntax Reveal (Editor):** A quick slide/fade as MarkdownPM reveals a line's raw syntax under the caret, instead of the instant snap.
-
-**Parked — not cleanly achievable against the current design.** The editor hides markers with a zero-width `Decoration.replace` (no DOM element — deliberately, so surrounding text never shifts), so there is nothing to animate *out* when the caret leaves; and revealed inline markers (`**`, `_`) are bare document text with no class to animate *in*. A true in-and-out slide would mean keeping every marker permanently mounted and animating its **width**, which jiggles the whole line's text on every caret move — worse than the clean snap, and it fights the no-shift design the editor is built around.
-
-The realistic version is an **entry-only fade-in**: wrap revealed markers in a shared class and play a keyframe on mount, reusing the motion tokens; exit stays instant (CodeMirror removes the element with no exit hook). Revisit only if the soft-reveal feel is wanted enough to accept the entry-only asymmetry.

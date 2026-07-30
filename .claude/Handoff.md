@@ -42,9 +42,7 @@ That totality pass caught a leak the review missed: live targets passed to pin/f
 
 **Landmines**
 
-- **A parallel session owns `MarkdownPM/Styles.css`** — modified, uncommitted, deliberately excluded from every commit here. Don't sweep it.
 - **The settings/identity backfills re-seed on every app open** — hand-cleaning those disks before their code deletion ships silently reverts (proven by execution in the review). The plans order this correctly; don't reorder.
-- **`tablecells` and `"gray"` are live on both real disks** — their read tolerances can't be deleted before the hand-sweeps inside their tasks run.
 
 **User Feedback**
 
