@@ -1,6 +1,6 @@
 ## Handoff — Pommora React
 
-> **User Prompt:** Complete rewrite — remove stale ledgers, fix wrong details in Handoff.md and Context.md.
+> **User Prompt:** Verify the landing, true the record, then consolidate the IPC bridge around one shared mechanism — clean, correction-only, proven by an agent sent to falsify it.
 
 > ⚡ **Cornerstone — carry into every handoff, unchanged (Nathan's voice).**
 > *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
