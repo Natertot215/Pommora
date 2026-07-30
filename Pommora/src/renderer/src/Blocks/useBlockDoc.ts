@@ -51,10 +51,10 @@ export function useBlockDoc(host: BlockHostRef): BlockDocSession {
     let cancelled = false
     void window.nexus.blocks.get(hostRef.current).then((r) => {
       if (cancelled || !r.ok) return
-      const layout = decodeLayout(r.doc.layout) ?? emptyLayout()
+      const layout = decodeLayout(r.value.layout) ?? emptyLayout()
       liveLayout.current = layout
-      setState({ layout, blocks: r.doc.blocks, ready: true })
-      seedHostLock(hostRef.current, r.doc.locked)
+      setState({ layout, blocks: r.value.blocks, ready: true })
+      seedHostLock(hostRef.current, r.value.locked)
     })
     return () => {
       cancelled = true
@@ -99,7 +99,7 @@ export function useBlockDoc(host: BlockHostRef): BlockDocSession {
   /** Re-pull the entry list after a main-side blocks[] mutation; the local layout stays. */
   const refreshEntries = useCallback(() => {
     void window.nexus.blocks.get(hostRef.current).then((r) => {
-      if (r.ok) setState((s) => ({ ...s, blocks: r.doc.blocks }))
+      if (r.ok) setState((s) => ({ ...s, blocks: r.value.blocks }))
     })
   }, [])
 

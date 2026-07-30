@@ -47,7 +47,7 @@ export function PageEmbed({
     if (body !== null) return
     let live = true
     void window.nexus.openPage(path).then((r) => {
-      if (live) setLoaded({ path, body: r.ok ? r.page.body : '' })
+      if (live) setLoaded({ path, body: r.ok ? r.value.body : '' })
     })
     return () => {
       live = false

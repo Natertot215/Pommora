@@ -247,7 +247,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
       void window.nexus.blocks.duplicateTile(host, id).then((r) => {
         if (!r.ok) return
         refreshEntries()
-        commitLayout((cur) => attachBelow(cur, id, r.id, getTile(cur, id)?.h ?? NEW_TILE_H))
+        commitLayout((cur) => attachBelow(cur, id, r.value.id, getTile(cur, id)?.h ?? NEW_TILE_H))
       })
     },
     [refreshEntries, commitLayout, host],
@@ -357,8 +357,8 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
         refreshEntries()
         commitLayout((cur) =>
           target.kind === 'wedge'
-            ? attachBelow(cur, target.above, r.id, target.fillPx)
-            : insertBand(cur, cur.bands.length, r.id, NEW_TILE_H),
+            ? attachBelow(cur, target.above, r.value.id, target.fillPx)
+            : insertBand(cur, cur.bands.length, r.value.id, NEW_TILE_H),
         )
       })
     },

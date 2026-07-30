@@ -3,8 +3,11 @@
 // by path, never by a renderer-supplied absolute path. Kept in its own shared file (not
 // types.ts) so it can import the data-layer Result/error shape.
 
-import type { PommoraError } from './result'
+import type { Result } from './result'
 import type { PropertyValue } from './propertyValue'
+
+/** The mutate channel's reply — `created` appears only on the create ops. */
+export type MutateReply = Result<{ created?: { id: string; path: string } }>
 
 /** The base name a "New …" action gives a fresh entity (main disambiguates collisions). */
 export const DEFAULT_NEW_NAME = 'Untitled'
@@ -85,14 +88,6 @@ export type MutateRequest =
   // Registry array order IS the display order; `space_orders[contextId]` lives in state.json.
   | { op: 'reorderContexts'; ids: string[] }
   | { op: 'reorderSpaces'; contextId: string; ids: string[] }
-
-/**
- * The mutate result envelope (never throws across IPC). On a create, returns the new
- * entity's id + nexus-relative path so the renderer can select it after refetching the tree.
- */
-export type MutateResult =
-  | { ok: true; created?: { id: string; path: string } }
-  | { ok: false; error: PommoraError }
 
 /** What the renderer hands main to pop a native context menu for one sidebar entity. */
 export interface ContextTarget {

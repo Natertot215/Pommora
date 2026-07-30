@@ -18,7 +18,7 @@ import {
   type Tab,
 } from '@shared/types'
 import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/mutate'
-import { errText } from '@shared/result'
+import { errText, fail, type Result } from '@shared/result'
 import { buildReconcileIndex, reconcileSelection, reconcileWith } from './selection'
 import {
   insertCreatedInTree,
@@ -326,7 +326,7 @@ export const useSession = create<SessionState>((set, get) => {
     clearPreviewWarm()
   }
 
-  const openVia = async (attempt: () => Promise<boolean>): Promise<void> => {
+  const openVia = async (attempt: () => Promise<Result<boolean>>): Promise<void> => {
     try {
       // Close before the root can flip, even if the adopt is then cancelled — data safety
       // beats window persistence.
@@ -335,7 +335,12 @@ export const useSession = create<SessionState>((set, get) => {
       // else a debounce timer or an embed's exit flush landing after the flip binds the NEW nexus
       // and overwrites a same-relative-path file there. Awaited so main binds the old root.
       await flushAllPageSaves()
-      if (await attempt()) {
+      const opened = await attempt()
+      if (!opened.ok) {
+        set({ status: 'error', error: opened.error.message })
+        return
+      }
+      if (opened.value) {
         resetNexusSession()
         await get().load()
       }
@@ -506,7 +511,7 @@ export const useSession = create<SessionState>((set, get) => {
   // silently-dropped ack would be the only witness.
   const writeNav = (patch: Partial<NavigationState>): void => {
     void window.nexus.nav.write(patch).then((ack) => {
-      if (!ack.ok) console.error('navigation write failed:', ack.error)
+      if (!ack.ok) console.error('navigation write failed:', ack.error.message)
     })
   }
 
@@ -631,7 +636,7 @@ export const useSession = create<SessionState>((set, get) => {
               // mutation-driven load() never re-reads navigation, so a just-made change can't
               // roll back.
               const read = await window.nexus.nav.read().catch(() => null)
-              const nav = read?.ok ? read.nav : null
+              const nav = read?.ok ? read.value : null
               const pinned = nav?.pinned ?? []
               const restoreTree = get().tree
               const restoreIndex = restoreTree ? buildReconcileIndex(restoreTree) : null
@@ -644,9 +649,9 @@ export const useSession = create<SessionState>((set, get) => {
               })
               get().evictThumbs()
               const previews = await window.nexus.previews?.load().catch(() => null)
-              if (previews?.ok) set({ previewsFile: previews.file })
+              if (previews?.ok) set({ previewsFile: previews.value })
               const stored = await window.nexus.tabs.load().catch(() => null)
-              const storedSet = stored?.ok ? stored.set : null
+              const storedSet = stored?.ok ? stored.value : null
               const seen = new Set<string>()
               const storedTabs = (storedSet?.tabs ?? []).filter((t) => {
                 if (t.target.kind !== 'newtab' && isPinned(t.target, pinned)) return false
@@ -877,7 +882,7 @@ export const useSession = create<SessionState>((set, get) => {
         .then((res) => {
           // A late fetch resolving after a nexus switch merges into the new map harmlessly: a URL's
           // <title> is identical in any nexus, and main won't persist it cross-nexus (cacheRoot === root).
-          const title = res.ok ? res.title : null
+          const title = res.ok ? res.value.title : null
           if (title) set((s) => ({ linkTitles: { ...s.linkTitles, [url]: title } }))
           else failedTitles.add(url)
         })
@@ -1079,7 +1084,7 @@ export const useSession = create<SessionState>((set, get) => {
       if (get().agendaSnapshot) return
       try {
         const res = await window.nexus.agenda.list()
-        if (res.ok) set({ agendaSnapshot: { tasks: res.tasks, events: res.events } })
+        if (res.ok) set({ agendaSnapshot: { tasks: res.value.tasks, events: res.value.events } })
       } catch {
         // search runs over the tree alone until the next attempt
       }
@@ -1323,7 +1328,7 @@ export const useSession = create<SessionState>((set, get) => {
           try {
             res = await window.nexus.openPage(target.path)
           } catch (e) {
-            res = { ok: false, error: errText(e) }
+            res = fail('operation-failed', errText(e))
           }
           clearTimeout(fallback)
           if (seq !== pageFetchSeq) return
@@ -1331,7 +1336,7 @@ export const useSession = create<SessionState>((set, get) => {
             set({
               selection: pageSel,
               pageStatus: 'ready',
-              pageDetail: res.page,
+              pageDetail: res.value,
               pageError: undefined,
               pageFrozen: false,
             })
@@ -1340,7 +1345,7 @@ export const useSession = create<SessionState>((set, get) => {
               selection: pageSel,
               pageStatus: 'error',
               pageDetail: null,
-              pageError: res.error,
+              pageError: res.error.message,
               pageFrozen: false,
             })
           }
@@ -1353,7 +1358,7 @@ export const useSession = create<SessionState>((set, get) => {
       const { selection } = get()
       if (selection.kind !== 'page') return
       const res = await window.nexus.openPage(selection.path).catch(() => null)
-      if (res?.ok) set({ pageDetail: res.page })
+      if (res?.ok) set({ pageDetail: res.value })
     },
 
     newPage: async () => {
@@ -1417,7 +1422,7 @@ export const useSession = create<SessionState>((set, get) => {
         newName,
       )
       if (!res.ok) {
-        await window.nexus.showError(res.error)
+        await window.nexus.showError(res.error.message)
         return false
       }
       const before = get().tree?.registry.find((d) => d.id === target.propertyId)?.name
@@ -1502,11 +1507,11 @@ export const useSession = create<SessionState>((set, get) => {
       // Without this optimistic create, the rename input only mounts after the full re-walk,
       // eating the user's first keystrokes on a large vault.
       let createdShown = false
-      if (cur && res.created && onCreated) {
-        const optimistic = insertCreatedInTree(cur, req, res.created)
+      if (cur && res.value.created && onCreated) {
+        const optimistic = insertCreatedInTree(cur, req, res.value.created)
         if (optimistic) {
           await get().applyTree(optimistic)
-          await onCreated(res.created)
+          await onCreated(res.value.created)
           createdShown = true
         }
       }
@@ -1514,7 +1519,7 @@ export const useSession = create<SessionState>((set, get) => {
       // change) — skip the full-nexus re-walk for them, the "reload the entire Y" hot path this
       // codebase forbids.
       if (req.op !== 'setProperty' && req.op !== 'setContext') await get().load()
-      if (!createdShown && res.created && onCreated) await onCreated(res.created)
+      if (!createdShown && res.value.created && onCreated) await onCreated(res.value.created)
       return true
     },
   }

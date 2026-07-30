@@ -141,7 +141,7 @@ beforeEach(() => {
   document.body.appendChild(host)
   root = createRoot(host)
   mutateSpy = vi.fn(async () => true) // the reparent router gates its view write on this
-  saveSpy = vi.fn(async () => ({ ok: true }))
+  saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   selectSpy = vi.fn(async () => {})
   contextMenuSpy = vi.fn(async () => {})
   ;(window as unknown as { nexus: unknown }).nexus = {

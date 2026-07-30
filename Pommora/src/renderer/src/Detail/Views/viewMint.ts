@@ -7,6 +7,7 @@
 // the app's own writes, so that load is the sole confirm the shown view reflects the change.
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
+import type { Result } from '@shared/result'
 import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@shared/views'
 
 const inFlight = new Map<string, Promise<string>>()
@@ -22,11 +23,11 @@ export function ensureContainerView(
   if ((source.views?.length ?? 0) > 0 || inFlight.has(source.id)) return
   const mint = (async () => {
     const res = await window.nexus.views.save(source.path, source.kind, mintDefaultView(schema))
-    if (!res.ok) throw new Error(res.error)
+    if (!res.ok) throw new Error(res.error.message)
     // A refetch failure must NOT un-guard: the view IS on disk, so re-minting would double it. The
     // stale tree self-heals on the next successful load; the guard stays so no second default is born.
     await refetch().catch(() => {})
-    return res.id
+    return res.value.id
   })()
   inFlight.set(source.id, mint)
   // Clear the guard ONLY when the save itself failed (allow a retry); a successful mint keeps it.
@@ -45,7 +46,7 @@ export async function saveViewAdopting(
   view: SavedView,
   refetch: () => Promise<void>,
   opts?: { skipRefetch?: boolean },
-): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+): Promise<Result<{ id: string }>> {
   const wasSentinel = view.id === DEFAULT_VIEW_ID
   let toSave = view
   if (wasSentinel) {
@@ -57,7 +58,7 @@ export async function saveViewAdopting(
     // A sentinel save adopts its real id (freshly minted, or the in-flight entry-mint's) as the active
     // view so the writer's edits stay on the view they see — keyed off the ORIGINAL id, since toSave.id
     // has already been swapped to the minted id by here.
-    if (wasSentinel) await window.nexus.activeViews.set(source.id, res.id)
+    if (wasSentinel) await window.nexus.activeViews.set(source.id, res.value.id)
     if (wasSentinel || !opts?.skipRefetch) await refetch()
   }
   return res

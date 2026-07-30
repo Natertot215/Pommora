@@ -81,7 +81,7 @@ beforeEach(() => {
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
-  saveSpy = vi.fn(async () => ({ ok: true }))
+  saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = {
     views: { save: saveSpy },
     activeViews: { set: vi.fn(async () => {}) },
