@@ -39,14 +39,12 @@ A Nexus is a single folder. Pommora opens it via picker and treats it as canonic
     <title>.event.json
 
   .nexus/                               ← app-internal config + the device-local database
-    nexus.json                          ← nexus ULID + createdAt + schema version
+    nexus.json                          ← nexus ULID + createdAt
     state.json                          ← top-level ordering (Collections, per-Context Space order)
     settings.json                       ← per-Nexus UI labels + accent + excluded_folders + profile
     properties.json                     ← nexus-wide property registry (propId → definition)
     homepage.json                       ← the Homepage's own identity + banner
-    navview.json                        ← the NavView's banner
-    navFavorites.json                   ← the favorites list (synced)
-    pins/<kind>-<id>.json               ← one file per durable pin (synced)
+    navigation.json                     ← pinned + favorites (ordered ID-only arrays) + the NavView banner
     nexus.db                            ← device-local operational state (schema-versioned)
     contexts.json                       ← the Context registry (order = display)
     contexts/<Context>/<Space>/_space.json ← one Space per folder
@@ -96,13 +94,13 @@ Mutations are separate by construction: the write path never runs inside a read,
 
 **What lives here.** Per-machine chrome, which is the whole of what it is currently reserved for — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, the recents stream, and every block host's document. None of it is authored content, and two machines interleaving any of it has no correct answer.
 
-**What deliberately does not.** Favorites and pins stay files, because they are deliberate, rarely written, and the one part of Navigation worth following a user across machines. A markdown tile's body stays a file too — it is prose, it lives in the connections graph, and a rename cascade rewrites it. Everything canonical — the registry, Contexts, settings, schemas, and each host's own identity sidecar — stays a file, because that is where a Nexus's meaning has to survive without Pommora.
+**What deliberately does not.** Pinned and favorites live in `navigation.json`, because they are deliberate, rarely written, and the one part of Navigation worth following a user across machines — ordered arrays of bare `{kind, id}` refs beside the NavView's banner pointer, written as a serialized patch so no writer can drop another's key. A markdown tile's body stays a file too — it is prose, it lives in the connections graph, and a rename cascade rewrites it. Everything canonical — the registry, Contexts, settings, schemas, and each host's own identity sidecar — stays a file, because that is where a Nexus's meaning has to survive without Pommora.
 
 **What the line at assignment buys.** A Page's frontmatter names its own properties, so a files-only reader gets the entity's attributes in plain language with no lookup of any kind. Move the registry into the database and that reader loses the presentation config — type, options, colours, formats — but never the ability to read a value. A Collection's assignment list and its remove-cache stay id-keyed, which is what makes them immune to a rename and keeps the sweep to `.md` files alone.
 
 **A Pommora-governed frontmatter key is recognized by its wrap alone** — `(Context)` for the organization layer, `<Property>` for the attribute layer. That partitions the keyspace with no reserved-name blocklist, keeps the walk's key retention registry-independent so a registry edit never busts the parse cache, and lets a root rewrite sweep governed keys by shape while every foreign key and comment survives. One module owns the pair, the key build and parse, the governed-key predicate, the reserved leading `$`, and every refusal message; changing a glyph is a one-line edit. Recognizing a key is not the same as resolving one: a key registers as a live value only on a registry title match.
 
-**Every action is one statement.** A change is a single-row upsert; an emptied value deletes its key. Nothing coalesces and nothing locks, which is what retired the debounce engine and its drain contract. Favorites are the one operational write still going to disk, so they keep the before-quit gate that defers the app's exit until a write settles.
+**Every action is one statement.** A change is a single-row upsert; an emptied value deletes its key. Nothing coalesces and nothing locks, which is what retired the debounce engine and its drain contract. Navigation intent is the one operational write still going to disk, so it keeps the before-quit gate that defers the app's exit until a write settles.
 
 **Versioned, not migrated.** A schema mismatch on open deletes the file and starts clean. That costs a machine its chrome once — the same outcome a corrupt sidecar always had — and is why the schema stays small enough that the trade is obviously worth it. Only a healthy open reporting the wrong version earns that drop: a file that fails to open at all (locked, mid-sync) stays put, and the session just runs without persisted state until a later launch reads it.
 
