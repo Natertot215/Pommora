@@ -20,6 +20,96 @@ export function stripQuotePrefix(line: string): string {
 export const quoteDepth = (line: string): number =>
   /^[ \t]*(?:>[ \t]?)*/.exec(line)?.[0].match(/>/g)?.length ?? 0
 
+// A ``` fence, capturing its `>` prefix so open/close pair by quote-DEPTH: a `> ``` opens a callout/quote-internal
+// block closed only by another `> ``` (a bare ``` is a separate top-level block), and a quoted fence ends when its
+// blockquote does. Without the depth match, a top-level code block quoting a ``` (`> ```` as content) corrupts.
+const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(```|~~~)/
+// A fence line's quote depth AND marker char — a block pairs by BOTH, so a `~~~` line inside a ``` block
+// reads as content, not a close (matches isInsideCode's marker pairing; the two layers must agree).
+const fenceOf = (line: string): { depth: number; marker: string } | null => {
+  const m = FENCE_RE.exec(line)
+  return m ? { depth: m[1].match(/>/g)?.length ?? 0, marker: m[2][0] } : null
+}
+
+export interface FenceInfo {
+  role: 'open' | 'content' | 'close'
+  from: number
+  to: number
+  /** The block's quote depth (from its opening fence) — 0 = an unquoted, top-level block. */
+  depth: number
+  /** False while the fence is still being typed — an unclosed block claims every line to EOF, so
+   *  treating it as settled code would restyle the whole document below the caret. */
+  closed: boolean
+}
+
+interface FenceBlock {
+  from: number
+  to: number
+  open: number
+  close: number
+  closed: boolean
+  depth: number
+}
+
+export function splitWithOffsets(text: string): { lines: string[]; lineStarts: number[] } {
+  const lines = text.split('\n')
+  return { lines, lineStarts: lineOffsets(lines) }
+}
+
+// One scan of ``` fences → block extents. Shared by the per-line role map (scanFencedCode) and the flat
+// range list (fencedCodeRanges) so the two never drift on what counts as a code block.
+function fenceBlocks(lines: string[], lineStarts: number[]): FenceBlock[] {
+  const blocks: FenceBlock[] = []
+  let i = 0
+  while (i < lines.length) {
+    const open = fenceOf(lines[i])
+    if (open === null) {
+      i++
+      continue
+    }
+    // The close is a fence at the SAME depth AND same marker char; the block also ends if the surrounding
+    // blockquote drops below that depth (a quoted fence can't outlive its `>` lines).
+    const isClose = (line: string): boolean => {
+      const f = fenceOf(line)
+      return f !== null && f.depth === open.depth && f.marker === open.marker
+    }
+    let j = i + 1
+    while (j < lines.length && !isClose(lines[j]) && quoteDepth(lines[j]) >= open.depth) j++
+    const closed = j < lines.length && isClose(lines[j])
+    const close = closed ? j : j - 1 // unclosed → the last line still in the block (the open itself if j === i+1)
+    blocks.push({
+      from: lineStarts[i],
+      to: lineStarts[close] + lines[close].length,
+      open: i,
+      close,
+      closed,
+      depth: open.depth,
+    })
+    i = closed ? j + 1 : j
+  }
+  return blocks
+}
+
+export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInfo | undefined)[] {
+  const out: (FenceInfo | undefined)[] = new Array(lines.length)
+  for (const blk of fenceBlocks(lines, lineStarts)) {
+    const base = { from: blk.from, to: blk.to, depth: blk.depth, closed: blk.closed }
+    out[blk.open] = { role: 'open', ...base }
+    const contentEnd = blk.closed ? blk.close : blk.close + 1 // unclosed → the last line is content too
+    for (let k = blk.open + 1; k < contentEnd; k++) out[k] = { role: 'content', ...base }
+    if (blk.closed) out[blk.close] = { role: 'close', ...base }
+  }
+  return out
+}
+
+// Absolute [from, to) ranges of fenced code blocks across the whole doc. The decoration builder drops
+// inline tokens that land inside a fence opened above the viewport — which a viewport-only tokenize
+// can't see. `to` reaches the end of the closing fence line (or EOF for an unclosed fence).
+export function fencedCodeRanges(text: string): [number, number][] {
+  const { lines, lineStarts } = splitWithOffsets(text)
+  return fenceBlocks(lines, lineStarts).map((b) => [b.from, b.to])
+}
+
 // A callout HEAD tags a type: `> [!callout] …`. The tag is the discriminator vs a plain quote and is invisible
 // chrome (hidden at render) — `||` is the typing shorthand. Detection is per-HEAD, not per-run: any `[!type]`
 // line starts its own callout, so adjacent / hand-typed / pasted heads never merge into one box with a raw tag.
@@ -37,17 +127,27 @@ export interface CalloutLine {
 }
 
 /** Per-line callout membership for the whole doc. A callout starts at each `[!type]` head and extends through
- *  the following blockquote lines that aren't themselves heads (a new head, or a non-quote line, ends it). */
-export function calloutLines(lines: string[]): (CalloutLine | undefined)[] {
+ *  the following blockquote lines that aren't themselves heads (a new head, or a non-quote line, ends it).
+ *  A `[!type]` lookalike inside a CLOSED fence is code, never a head — it neither starts a callout nor
+ *  terminates the run it sits in. Callers holding a fence scan pass it; otherwise one is computed here. */
+export function calloutLines(
+  lines: string[],
+  fences: (FenceInfo | undefined)[] = scanFencedCode(lines, lineOffsets(lines)),
+): (CalloutLine | undefined)[] {
+  const codeAt = (k: number): boolean => {
+    const f = fences[k]
+    return f?.closed === true && f.role === 'content'
+  }
   const out: (CalloutLine | undefined)[] = new Array(lines.length)
   let i = 0
   while (i < lines.length) {
-    if (!isCalloutHead(lines[i])) {
+    if (!isCalloutHead(lines[i]) || codeAt(i)) {
       i++
       continue
     }
     let j = i + 1
-    while (j < lines.length && isBlockquoteLine(lines[j]) && !isCalloutHead(lines[j])) j++
+    while (j < lines.length && isBlockquoteLine(lines[j]) && !(isCalloutHead(lines[j]) && !codeAt(j)))
+      j++
     const headPrefix = blockquotePrefixRe.exec(lines[i])?.[0] ?? ''
     const tag = calloutTagRe.exec(lines[i].slice(headPrefix.length))
     for (let k = i; k < j; k++) {

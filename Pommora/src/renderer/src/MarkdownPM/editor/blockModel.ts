@@ -16,7 +16,7 @@ import {
   parseListMarkerPrefixed,
   type CalloutLine,
 } from '../detect'
-import { fencedCodeRanges } from '../decorations/intent'
+import { fencedCodeRanges } from '../detect'
 import { tableRegions } from '../Tables/regions'
 import { headingSections } from './folding'
 
