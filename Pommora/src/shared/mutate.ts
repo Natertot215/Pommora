@@ -14,7 +14,7 @@ export const DEFAULT_NEW_NAME = 'Untitled'
 export type MutableKind = 'page' | 'collection' | 'set' | 'space' | 'context'
 
 /** The entities that can own a banner image: Collections + Sets + Spaces (folder sidecars),
- *  the homepage + NavView singletons (`.nexus/homepage.json` / `.nexus/navview.json`), and a
+ *  the homepage singleton (`.nexus/homepage.json`), the NavView (its banner rides `navigation.json`), and a
  *  page (whose banner is the `cover` field in its `.md` frontmatter). */
 export type BannerOwnerKind = 'collection' | 'set' | 'space' | 'homepage' | 'navview' | 'page'
 
