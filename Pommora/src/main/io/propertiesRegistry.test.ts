@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { orderedDefs, readRegistry, writeRegistry } from './propertiesRegistry'
+import { mutateRegistry, orderedDefs, readRegistry } from './propertiesRegistry'
 import type { PropertyDefinition } from '@shared/properties'
 
 let root: string
@@ -26,12 +26,12 @@ describe('propertiesRegistry', () => {
     expect(await readRegistry(root)).toEqual({ order: [], defs: {} })
   })
 
-  it('round-trips a written registry file', async () => {
+  it('round-trips a registry written through the mutation chain', async () => {
     const reg = {
       order: ['prop_b', 'prop_a'],
       defs: { prop_a: def('prop_a', 'Priority'), prop_b: def('prop_b', 'Status') },
     }
-    await writeRegistry(root, reg)
+    await mutateRegistry(root, () => ({ next: reg, result: undefined }))
     expect(await readRegistry(root)).toEqual(reg)
   })
 
