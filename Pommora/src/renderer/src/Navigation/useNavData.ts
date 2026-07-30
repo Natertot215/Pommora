@@ -33,8 +33,6 @@ export function splitSearch(results: SearchResult[]): {
   }
 }
 
-// Agenda kinds route nowhere until Agenda ships — search-listable, not selectable.
-
 /** The shared read side both NavWindow + NavPane render from — one source, two presentations. The tree
  *  index is memoized on (tree, agenda), so search filters per keystroke WITHOUT re-walking the tree. */
 export function useNavData(): {

@@ -38,7 +38,14 @@ import {
   type PreviewState,
   type PreviewTab,
 } from './PagePreview/previewTabs'
-import { navKey, recordRecent, removeRecentByKey, toNavRef, RECENTS_CAP } from './Navigation/navRecents'
+import {
+  moveByKey,
+  navKey,
+  recordRecent,
+  removeRecentByKey,
+  toNavRef,
+  RECENTS_CAP,
+} from './Navigation/navRecents'
 import { existingNavKeys } from './Navigation/treeNavKeys'
 import {
   activeUnpinnedTab,
@@ -465,6 +472,19 @@ export const useSession = create<SessionState>((set, get) => {
     persistTabs()
   }
 
+  // The pin gestures' writer — one of pinnedTabs' four (load, tree push, nav push, here).
+  const commitPinned = (pinned: NavRef[]): void => {
+    const tree = get().tree
+    set({ pinned, pinnedTabs: derivePinnedTabs(pinned, tree ? buildReconcileIndex(tree) : null) })
+    void window.nexus.nav.write({ pinned })
+  }
+
+  // In-memory recents lead disk everywhere; the persist rides along so the two can't part.
+  const commitRecents = (recents: NavRef[]): void => {
+    set({ recents })
+    void window.nexus.nav.write({ recents })
+  }
+
   const graduatePinCovered = (): void => {
     const s = get()
     const covered = s.tabs.filter((t) => t.target.kind !== 'newtab' && isPinned(t.target, s.pinned))
@@ -572,14 +592,17 @@ export const useSession = create<SessionState>((set, get) => {
               // Disk leads exactly here (the first load) and on the external-edit push — a
               // mutation-driven load() never re-reads navigation, so a just-made change can't
               // roll back.
-              const nav = await window.nexus.nav.read().catch(() => null)
-              const pinned = nav?.ok ? (nav.nav.pinned ?? []) : []
+              const read = await window.nexus.nav.read().catch(() => null)
+              const nav = read?.ok ? read.nav : null
+              const pinned = nav?.pinned ?? []
+              const restoreTree = get().tree
+              const restoreIndex = restoreTree ? buildReconcileIndex(restoreTree) : null
               set({
                 pinned,
-                pinnedTabs: derivePinnedTabs(pinned, get().tree),
-                favorites: nav?.ok ? (nav.nav.favorites ?? []) : [],
-                recents: nav?.ok ? (nav.nav.recents ?? []) : [],
-                navBanner: nav?.ok ? nav.nav.banner : undefined,
+                pinnedTabs: derivePinnedTabs(pinned, restoreIndex),
+                favorites: nav?.favorites ?? [],
+                recents: nav?.recents ?? [],
+                navBanner: nav?.banner,
               })
               get().evictThumbs()
               const previews = await window.nexus.previews?.load().catch(() => null)
@@ -596,7 +619,7 @@ export const useSession = create<SessionState>((set, get) => {
               })
               // ONE hydration pass owns the restore: dead refs prune, paths mint, the history
               // pointer recomputes. The derived pinned set is already live by construction.
-              const tabs = hydrateTabs(storedTabs, get().tree)
+              const tabs = hydrateTabs(storedTabs, restoreIndex)
               const livePinnedTabs = get().pinnedTabs
               const storedActive = storedSet?.activeTabId ?? ''
               const liveIds = new Set([...livePinnedTabs, ...tabs].map((t) => t.id))
@@ -637,7 +660,7 @@ export const useSession = create<SessionState>((set, get) => {
       set({ status: 'ready', tree })
       const index = buildReconcileIndex(tree)
       // Tree push = pinned hydration writer #2: renames re-title, moves re-path, deletes drop.
-      set({ pinnedTabs: derivePinnedTabs(get().pinned, tree) })
+      set({ pinnedTabs: derivePinnedTabs(get().pinned, index) })
       const prev = get().selection
       const next = reconcileWith(index, prev)
       if (next !== prev) {
@@ -931,33 +954,25 @@ export const useSession = create<SessionState>((set, get) => {
       const ref = toNavRef(target)
       const key = navKey(ref)
       if (get().pinned.some((p) => navKey(p) === key)) return
-      const pinned = [...get().pinned, ref]
-      set({ pinned, pinnedTabs: derivePinnedTabs(pinned, get().tree) })
-      void window.nexus.nav.write({ pinned })
+      commitPinned([...get().pinned, ref])
       graduatePinCovered()
     },
     unpinTarget: (key) => {
       if (!get().pinned.some((p) => navKey(p) === key)) return
-      const pinned = get().pinned.filter((p) => navKey(p) !== key)
-      set({ pinned, pinnedTabs: derivePinnedTabs(pinned, get().tree) })
-      void window.nexus.nav.write({ pinned })
+      commitPinned(get().pinned.filter((p) => navKey(p) !== key))
     },
     reorderPin: (activeKey, overKey) => {
-      const pinned = [...get().pinned]
-      const from = pinned.findIndex((p) => navKey(p) === activeKey)
-      const to = pinned.findIndex((p) => navKey(p) === overKey)
-      if (from === -1 || to === -1 || from === to) return
-      pinned.splice(to, 0, pinned.splice(from, 1)[0])
-      set({ pinned, pinnedTabs: derivePinnedTabs(pinned, get().tree) })
-      void window.nexus.nav.write({ pinned })
+      const pinned = moveByKey(get().pinned, navKey, activeKey, overKey)
+      if (pinned) commitPinned(pinned)
     },
     // The push carries the FILE's keys (an external edit): pinned, favorites, banner. Recents
     // aren't in the file — the in-memory stream always leads.
     applyNavChanged: (nav) => {
       const pinned = nav.pinned ?? []
+      const tree = get().tree
       set({
         pinned,
-        pinnedTabs: derivePinnedTabs(pinned, get().tree),
+        pinnedTabs: derivePinnedTabs(pinned, tree ? buildReconcileIndex(tree) : null),
         favorites: nav.favorites ?? [],
         navBanner: nav.banner,
       })
@@ -1021,19 +1036,11 @@ export const useSession = create<SessionState>((set, get) => {
     removeRecent: (key) => {
       const next = removeRecentByKey(get().recents, key)
       if (next === get().recents) return
-      set({ recents: next })
-      void window.nexus.nav.write({ recents: next })
+      commitRecents(next)
     },
     reorderRecent: (activeKey, overKey) => {
-      const recents = get().recents
-      const from = recents.findIndex((r) => navKey(r) === activeKey)
-      const to = recents.findIndex((r) => navKey(r) === overKey)
-      if (from === -1 || to === -1 || from === to) return
-      const next = [...recents]
-      const [moved] = next.splice(from, 1)
-      next.splice(to, 0, moved)
-      set({ recents: next })
-      void window.nexus.nav.write({ recents: next })
+      const next = moveByKey(get().recents, navKey, activeKey, overKey)
+      if (next) commitRecents(next)
     },
     setRecentsOrder: (keys) => {
       const s = get()
@@ -1042,8 +1049,7 @@ export const useSession = create<SessionState>((set, get) => {
       listed.sort((a, b) => (pos.get(navKey(a)) ?? 0) - (pos.get(navKey(b)) ?? 0))
       const next = [...s.recents.filter((r) => !pos.has(navKey(r))), ...listed]
       if (next.every((r, i) => r === s.recents[i])) return
-      set({ recents: next })
-      void window.nexus.nav.write({ recents: next })
+      commitRecents(next)
     },
     agendaSnapshot: null,
     ensureAgendaSnapshot: async () => {
@@ -1205,11 +1211,7 @@ export const useSession = create<SessionState>((set, get) => {
                 },
               }),
         })
-        if (opened) {
-          const recents = recordRecent(s.recents, target, RECENTS_CAP)
-          set({ recents })
-          void window.nexus.nav.write({ recents })
-        }
+        if (opened) commitRecents(recordRecent(s.recents, target, RECENTS_CAP))
         persistTabs()
       }
       switch (target.kind) {
