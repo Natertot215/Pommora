@@ -417,9 +417,9 @@ describe('store — applyTree reconciles the preview tabs (D-6)', () => {
         origins: {
           x: {
             tabs: [
-              { target: { kind: 'page', id: 'x', path: 'Notes/x.md' } },
-              { target: { kind: 'page', id: 'y', path: 'Notes/y.md' } },
-              { target: { kind: 'page', id: 'z', path: 'Notes/z.md' } },
+              { target: { kind: 'page', id: 'x' } },
+              { target: { kind: 'page', id: 'y' } },
+              { target: { kind: 'page', id: 'z' } },
             ],
             activeIndex: 2,
           },

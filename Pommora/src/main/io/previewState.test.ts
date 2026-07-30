@@ -19,7 +19,7 @@ afterEach(async () => {
 const file: PreviewsFile = {
   navSet: { tabs: [{ target: { kind: 'navwindow' } }], activeIndex: 0 },
   origins: {
-    p1: { tabs: [{ target: { kind: 'page', id: 'p2', path: 'b.md' } }], activeIndex: 0 },
+    p1: { tabs: [{ target: { kind: 'page', id: 'p2' } }], activeIndex: 0 },
   },
   open: { flavor: 'page', originId: 'p1' },
 }

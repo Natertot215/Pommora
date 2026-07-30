@@ -45,7 +45,9 @@ import {
   closeTab as closeTabModel,
   derivePinnedTabs,
   insertUnpinned,
+  hydrateTabs,
   isPinned,
+  liveTarget,
   newTabTab,
   openNewTab as openNewTabModel,
   openTab as openTabModel,
@@ -345,7 +347,9 @@ export const useSession = create<SessionState>((set, get) => {
   }
 
   const toPreviewRecord = (p: PreviewState): PreviewSetRecord => ({
-    tabs: p.tabs.map((t) => ({ target: t.target })),
+    tabs: p.tabs.map((t) => ({
+      target: t.target.kind === 'navwindow' ? t.target : toNavRef(t.target),
+    })),
     activeIndex: Math.max(
       0,
       p.tabs.findIndex((t) => t.id === p.activeTabId),
@@ -393,13 +397,9 @@ export const useSession = create<SessionState>((set, get) => {
     const tabs: PreviewTab[] = []
     let activeTab: PreviewTab | null = null
     rec.tabs.forEach((t, i) => {
-      if (t.target.kind !== 'page') return
-      let target = t.target
-      if (index) {
-        const r = reconcileWith(index, target)
-        if (r.kind === 'none') return
-        if (r.kind === 'page' && r.path !== target.path) target = { ...target, path: r.path }
-      }
+      if (t.target.kind !== 'page' || !index) return
+      const target = liveTarget(index, t.target)
+      if (target?.kind !== 'page') return
       if (seen.has(target.id)) return
       seen.add(target.id)
       const tab = { id: makeTabId(), target }
@@ -448,7 +448,14 @@ export const useSession = create<SessionState>((set, get) => {
 
   const persistTabs = (): void => {
     const s = get()
-    void window.nexus.tabs.save({ tabs: s.tabs, activeTabId: s.activeTabId }).catch(() => undefined)
+    // Identity only at rest — paths are minted back at restore, so nothing stored can go stale.
+    const tabs = s.tabs.map((t) => ({
+      id: t.id,
+      target: t.target.kind === 'newtab' ? t.target : toNavRef(t.target),
+      navStack: t.navStack.map(toNavRef),
+      navIndex: t.navIndex,
+    }))
+    void window.nexus.tabs.save({ tabs, activeTabId: s.activeTabId }).catch(() => undefined)
   }
 
   const applyTabResult = (r: { tabs: Tab[]; activeTabId: string; mru: string[] }): void => {
@@ -580,18 +587,17 @@ export const useSession = create<SessionState>((set, get) => {
               const stored = await window.nexus.tabs.load().catch(() => null)
               const storedSet = stored?.ok ? stored.set : null
               const seen = new Set<string>()
-              const tabs = (storedSet?.tabs ?? []).filter((t) => {
+              const storedTabs = (storedSet?.tabs ?? []).filter((t) => {
                 if (t.target.kind !== 'newtab' && isPinned(t.target, pinned)) return false
                 const k = tabKey(t.target)
                 if (seen.has(k)) return false
                 seen.add(k)
                 return true
               })
-              // Hydration already dropped any pin whose entity vanished while closed — the
-              // derived set IS the live set.
+              // ONE hydration pass owns the restore: dead refs prune, paths mint, the history
+              // pointer recomputes. The derived pinned set is already live by construction.
+              const tabs = hydrateTabs(storedTabs, get().tree)
               const livePinnedTabs = get().pinnedTabs
-              const tree = get().tree
-              const index = tree ? buildReconcileIndex(tree) : null
               const storedActive = storedSet?.activeTabId ?? ''
               const liveIds = new Set([...livePinnedTabs, ...tabs].map((t) => t.id))
               const active = liveIds.has(storedActive)
@@ -601,30 +607,7 @@ export const useSession = create<SessionState>((set, get) => {
                 const seeded = newTabTab(makeTabId())
                 set({ tabs: [seeded], activeTabId: seeded.id, tabMru: [seeded.id] })
               } else {
-                let restored = { tabs, activeTabId: active, mru: [active] }
-                if (index) {
-                  const rec = reconcileTabs(
-                    tabs,
-                    active,
-                    [active],
-                    livePinnedTabs.map((t) => t.id),
-                    (t) => {
-                      const r = reconcileWith(index, t)
-                      return r.kind === 'none' ? null : r
-                    },
-                    makeTabId(),
-                  )
-                  restored = {
-                    tabs: rec.tabs,
-                    activeTabId: rec.activeTabId,
-                    mru: rec.mru.length ? rec.mru : [rec.activeTabId],
-                  }
-                }
-                set({
-                  tabs: restored.tabs,
-                  activeTabId: restored.activeTabId,
-                  tabMru: restored.mru,
-                })
+                set({ tabs, activeTabId: active, tabMru: [active] })
               }
               syncActiveDetail()
             }
@@ -720,13 +703,9 @@ export const useSession = create<SessionState>((set, get) => {
           }
         }
         const file = get().previewsFile
-        const dead = Object.keys(file.origins).filter((id) => {
-          const own = file.origins[id].tabs.find(
-            (t) => t.target.kind === 'page' && t.target.id === id,
-          )?.target
-          const path = own?.kind === 'page' ? own.path : ''
-          return reconcileWith(index, { kind: 'page', id, path }).kind === 'none'
-        })
+        const dead = Object.keys(file.origins).filter(
+          (id) => reconcileWith(index, { kind: 'page', id, path: '' }).kind === 'none',
+        )
         if (dead.length > 0) {
           const origins = { ...file.origins }
           for (const id of dead) delete origins[id]
