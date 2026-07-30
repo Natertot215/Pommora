@@ -129,9 +129,9 @@ export function ViewSettings({
         id: DEFAULT_VIEW_ID,
       })
       if (res.ok) {
-        const ids = views.map((v) => v.id).filter((id) => id !== res.id)
+        const ids = views.map((v) => v.id).filter((id) => id !== res.value.id)
         const at = ids.indexOf(view.id)
-        ids.splice(at < 0 ? ids.length : at + 1, 0, res.id)
+        ids.splice(at < 0 ? ids.length : at + 1, 0, res.value.id)
         await window.nexus.views.reorder(source.path, source.kind, ids)
       }
       await load()

@@ -133,13 +133,13 @@ beforeEach(() => {
   root = createRoot(host)
   mutateSpy = vi.fn(async () => {})
   selectSpy = vi.fn(async () => {})
-  openFileSpy = vi.fn(async () => ({ ok: true }))
+  openFileSpy = vi.fn(async () => ({ ok: true, value: null }))
   openExternalSpy = vi.fn(async () => {})
   ;(window as unknown as { nexus: unknown }).nexus = {
     loadValues: async () => VALUES,
     activeViews: { get: async () => ({}) },
     viewOrders: { get: async () => ({}) },
-    views: { save: vi.fn(async () => ({ ok: true })) },
+    views: { save: vi.fn(async () => ({ ok: true, value: { id: 'v1' } })) },
     cellMenu: vi.fn(async () => null),
     columnMenu: vi.fn(async () => null),
     openFile: openFileSpy,

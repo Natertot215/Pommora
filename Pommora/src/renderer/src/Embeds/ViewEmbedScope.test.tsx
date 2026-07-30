@@ -91,7 +91,7 @@ beforeEach(() => {
   root = createRoot(host)
   persistConfig = vi.fn()
   persistState = vi.fn()
-  sourceSave = vi.fn(async () => ({ ok: true }))
+  sourceSave = vi.fn(async () => ({ ok: true, value: { id: view.id } }))
   ;(window as unknown as { nexus: unknown }).nexus = {
     views: { save: sourceSave },
     activeViews: { set: vi.fn(async () => {}) },
@@ -131,7 +131,9 @@ describe('a locked view-embed scope', () => {
         <Probe onResult={(r) => results.push(r)} />
       </ViewEmbedScopeProvider>,
     )
-    expect(results).toEqual([{ ok: false, error: VIEW_CONFIG_LOCKED }])
+    expect(results).toEqual([
+      { ok: false, error: { code: 'operation-failed', message: VIEW_CONFIG_LOCKED } },
+    ])
     expect(persistConfig).not.toHaveBeenCalled()
   })
 
@@ -142,7 +144,7 @@ describe('a locked view-embed scope', () => {
         <Probe onResult={(r) => results.push(r)} />
       </ViewEmbedScopeProvider>,
     )
-    expect(results).toEqual([{ ok: true, id: view.id }])
+    expect(results).toEqual([{ ok: true, value: { id: view.id } }])
     expect(persistConfig).toHaveBeenCalledWith({ ...view, name: 'Renamed' })
   })
 
@@ -153,7 +155,7 @@ describe('a locked view-embed scope', () => {
         <StateProbe onResult={(r) => results.push(r)} />
       </ViewEmbedScopeProvider>,
     )
-    expect(results).toEqual([{ ok: true, id: view.id }])
+    expect(results).toEqual([{ ok: true, value: { id: view.id } }])
     expect(persistState).toHaveBeenCalledWith({ collapsed_groups: ['Done'] })
   })
 

@@ -50,7 +50,8 @@ import { updateSettings } from './settings'
 import { newId } from './ids'
 import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
 import { ok, fail, errText, type Result } from '@shared/result'
-import type { MutateRequest, MutateResult } from '@shared/mutate'
+import type { MutateReply, MutateRequest } from '@shared/mutate'
+import { NO_NEXUS } from './ipc'
 import type { TrashMode } from './appConfig'
 import { readRegistry } from './io/propertiesRegistry'
 
@@ -111,14 +112,7 @@ async function isReserved(root: string, abs: string): Promise<boolean> {
   return rel === '' || rel === '.nexus' || rel === '.trash' || rel.startsWith(`.trash${sep}`)
 }
 
-function relay<T>(r: Result<T>): MutateResult {
-  return r.ok ? { ok: true } : { ok: false, error: r.error }
-}
-
-const fault = (message: string): MutateResult => ({
-  ok: false,
-  error: { code: 'operation-failed', message },
-})
+const fault = (message: string): Result<never> => fail('operation-failed', message)
 
 /** Set one field on a config/sidecar record, or drop the key when there's no value — the
  *  no-empties rule the banner, heading-icon and icon writers all follow. */
@@ -159,9 +153,9 @@ async function createDisambiguated(
   return last
 }
 
-export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promise<MutateResult> {
+export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promise<MutateReply> {
   const root = sessionRoot()
-  if (root === null) return fault('No nexus is open.')
+  if (root === null) return NO_NEXUS
   // A CRUD/fs/trash throw (e.g. shell.trashItem rejecting, EACCES/ENOSPC) becomes a fault
   // Result here, not a rejected IPC promise callers would silently swallow.
   try {
@@ -171,25 +165,24 @@ export async function handleMutate(req: MutateRequest, deps: MutateDeps): Promis
   }
 }
 
-async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Promise<MutateResult> {
+async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Promise<MutateReply> {
   switch (req.op) {
     case 'createPage': {
       // '' parentPath = the nexus root (e.g. a page directly under an adopted root); '.'
       // is the existing dir resolveUnderRoot validates. relJoin keeps '' for the rel path.
       const parent = await resolveUnderRoot(root, req.parentPath || '.')
-      if (!parent.ok) return relay(parent)
+      if (!parent.ok) return parent
       const r = await createDisambiguated(req.name, (name) => createPage(parent.value, name))
-      if (!r.ok) return relay(r)
-      return {
-        ok: true,
+      if (!r.ok) return r
+      return ok({
         created: { id: r.value.id, path: relJoin(req.parentPath, basename(r.value.path)) },
-      }
+      })
     }
 
     case 'createContainer': {
       // '' parentPath = the nexus root (new top-level Collection). See createPage.
       const parent = await resolveUnderRoot(root, req.parentPath || '.')
-      if (!parent.ok) return relay(parent)
+      if (!parent.ok) return parent
       const extra: Record<string, unknown> = {}
       if (req.kind === 'set') {
         const pid = await parentContainerId(parent.value)
@@ -201,28 +194,27 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const r = await createDisambiguated(req.name, (name) =>
         createFolderEntity(parent.value, req.kind, name, extra),
       )
-      if (!r.ok) return relay(r)
-      return {
-        ok: true,
+      if (!r.ok) return r
+      return ok({
         created: { id: r.value.id, path: relJoin(req.parentPath, basename(r.value.path)) },
-      }
+      })
     }
 
     case 'rename': {
       const resolved = await resolveUnderRoot(root, req.path)
-      if (!resolved.ok) return relay(resolved)
+      if (!resolved.ok) return resolved
       const abs = resolved.value
       if (await isReserved(root, abs)) return fault('That item can’t be renamed.')
       if (req.kind === 'page') {
         const oldTitle = basenameNoMd(basename(abs))
         const r = await renamePage(abs, req.newName)
-        if (!r.ok) return relay(r)
+        if (!r.ok) return r
         // renameCascade rewrites inbound [[links]] nexus-wide.
         try {
           const cascade = await renameCascade(root, oldTitle, req.newName)
           if (!cascade.ok) {
             await renamePage(r.value.path, oldTitle)
-            return relay(cascade)
+            return cascade
           }
         } catch {
           await renamePage(r.value.path, oldTitle)
@@ -234,17 +226,17 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         try {
           await rewriteBlockConnections(root, oldTitle, req.newName)
         } catch {}
-        return { ok: true }
+        return ok({})
       }
       // No link cascade — [[links]] target pages, and a container's title is referenced nowhere else.
       const r = await renameFolderEntity(abs, req.newName)
-      if (!r.ok) return relay(r)
-      return { ok: true }
+      if (!r.ok) return r
+      return ok({})
     }
 
     case 'delete': {
       const resolved = await resolveUnderRoot(root, req.path)
-      if (!resolved.ok) return relay(resolved)
+      if (!resolved.ok) return resolved
       const abs = resolved.value
       if (await isReserved(root, abs)) return fault('That item can’t be deleted.')
       if (req.kind === 'space') {
@@ -261,15 +253,15 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         }))
       }
       const removed = await removeViaMode(root, abs, deps)
-      if (!removed.ok) return relay(removed)
-      return { ok: true }
+      if (!removed.ok) return removed
+      return ok({})
     }
 
     case 'setProfileSubtitle': {
       // Read-merge-write settings.json (≤30 chars), preserving every foreign key.
       const subtitle = req.subtitle.slice(0, 30)
       await updateSettings(root, (cur) => ({ ...cur, profile_subtitle: subtitle }))
-      return { ok: true }
+      return ok({})
     }
 
     case 'setProfileImage': {
@@ -294,7 +286,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         })
         if (prev) await rm(join(root, prev), { force: true }).catch(() => {})
       }
-      return { ok: true }
+      return ok({})
     }
 
     case 'setProfileIcon': {
@@ -306,7 +298,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         else delete next.profile_icon
         return next
       })
-      return { ok: true }
+      return ok({})
     }
 
     case 'setBanner': {
@@ -314,7 +306,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // sidecar); the asset folder is keyed by the page id. Foreign frontmatter + body survive.
       if (req.kind === 'page') {
         const resolved = await resolveUnderRoot(root, req.path)
-        if (!resolved.ok) return relay(resolved)
+        if (!resolved.ok) return resolved
         // Under the page's file lock — a banner (cover) write and a property cascade both rewrite
         // this page's frontmatter, so they must serialize rather than clobber from a stale read.
         return serializeOnFile(resolved.value, async () => {
@@ -341,7 +333,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
             await atomicWriteFile(resolved.value, mergeFrontmatter(existing, {}, ['cover'], body))
             if (prev) await rm(join(root, prev), { force: true }).catch(() => {})
           }
-          return { ok: true }
+          return ok({})
         })
       }
       // The NavView's banner rides navigation.json — the pointer is the only linkage, so the
@@ -359,7 +351,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         }
         await writeNavigationState(root, { banner: next })
         if (prevNav && prevNav !== next) await rm(join(root, prevNav), { force: true }).catch(() => {})
-        return { ok: true }
+        return ok({})
       }
       // Resolve the config holding the banner field + the asset-folder key, per owner kind. The
       // homepage is a singleton (.nexus/homepage.json); the rest are folder sidecars keyed by
@@ -377,7 +369,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         existing = await readJsonObject(cfgPath)
       } else {
         const resolved = await resolveUnderRoot(root, req.path)
-        if (!resolved.ok) return relay(resolved)
+        if (!resolved.ok) return resolved
         if (await isReserved(root, resolved.value)) return fault('That item can’t take a banner.')
         cfgPath = `${resolved.value}/${SIDECAR_FILENAME[req.kind]}`
         existing = await readJsonObject(cfgPath)
@@ -392,7 +384,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         // Set the field first; only THEN delete a replaced file, so a failed write never
         // leaves `banner` pointing at a deleted file (mirrors the cover/photo ordering).
         const written = await patchConfig(cfgPath, (cur) => setOrDrop(cur, 'banner', rel), seed)
-        if (!written.ok) return relay(written)
+        if (!written.ok) return written
         if (prev && prev !== rel) await rm(join(root, prev), { force: true }).catch(() => {})
       } else {
         const written = await patchConfig(
@@ -400,10 +392,10 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           (cur) => setOrDrop(cur, 'banner', undefined),
           seed,
         )
-        if (!written.ok) return relay(written)
+        if (!written.ok) return written
         if (prev) await rm(join(root, prev), { force: true }).catch(() => {})
       }
-      return { ok: true }
+      return ok({})
     }
 
     case 'setHeadingIconHidden': {
@@ -418,7 +410,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         fallback = {}
       } else {
         const resolved = await resolveUnderRoot(root, req.path)
-        if (!resolved.ok) return relay(resolved)
+        if (!resolved.ok) return resolved
         cfgPath = `${resolved.value}/${SIDECAR_FILENAME[req.kind]}`
         const id = (await readJsonObject(cfgPath))?.id
         if (typeof id !== 'string') return fault('That item has no id.')
@@ -429,8 +421,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         (cur) => setOrDrop(cur, 'heading_icon_hidden', req.hidden),
         () => fallback,
       )
-      if (!written.ok) return relay(written)
-      return { ok: true }
+      if (!written.ok) return written
+      return ok({})
     }
 
     case 'setIcon': {
@@ -439,7 +431,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // asset file).
       if (req.kind === 'page') {
         const resolved = await resolveUnderRoot(root, req.path)
-        if (!resolved.ok) return relay(resolved)
+        if (!resolved.ok) return resolved
         return serializeOnFile(resolved.value, async () => {
           let existing: string
           try {
@@ -450,26 +442,25 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           const { body } = splitEnvelope(existing)
           const fields = req.icon ? { icon: req.icon } : {}
           await atomicWriteFile(resolved.value, mergeFrontmatter(existing, fields, ['icon'], body))
-          return { ok: true }
+          return ok({})
         })
       }
       const resolved = await resolveUnderRoot(root, req.path)
-      if (!resolved.ok) return relay(resolved)
+      if (!resolved.ok) return resolved
       if (await isReserved(root, resolved.value)) return fault('That item can’t take an icon.')
       if (req.kind === 'context') {
         // A Context's icon lives on its registry entry, not a folder sidecar.
         const title = basename(resolved.value)
-        return relay(
-          await mutateRegistryFile(root, (cur) => ({
-            contexts: cur.contexts.map((c) => {
-              if (c.title !== title) return c
-              const next = { ...c }
-              if (req.icon) next.icon = req.icon
-              else delete next.icon
-              return next
-            }),
-          })),
-        )
+        const r = await mutateRegistryFile(root, (cur) => ({
+          contexts: cur.contexts.map((c) => {
+            if (c.title !== title) return c
+            const next = { ...c }
+            if (req.icon) next.icon = req.icon
+            else delete next.icon
+            return next
+          }),
+        }))
+        return r.ok ? ok({}) : r
       }
       const cfgPath = `${resolved.value}/${SIDECAR_FILENAME[req.kind]}`
       // One strict read: the id gate rides inside the mutator (the throw lands as the op's
@@ -478,100 +469,108 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (typeof cur.id !== 'string') throw new Error('That item has no id.')
         return setOrDrop(cur, 'icon', req.icon)
       })
-      if (!written.ok) return relay(written)
-      return { ok: true }
+      if (!written.ok) return written
+      return ok({})
     }
 
     case 'setProperty': {
       // Routed through the one page-value writer so a cell edit and an option cascade stamp the
       // page identically. Drives table cross-group reassignment.
       const resolved = await resolveUnderRoot(root, req.path)
-      if (!resolved.ok) return relay(resolved)
+      if (!resolved.ok) return resolved
       // Resolved inside the lock: a rename sweeps on its own chain, so a name read before the
       // lock can send the write to a key the sweep has already passed.
       return serializeOnFile(resolved.value, async () => {
         const def = (await readRegistry(root)).defs[req.propertyId]
-        if (!def) return relay(fail('not-found', 'Property not found.'))
-        return updatePageProperty(resolved.value, def, req.value).then(relay)
+        if (!def) return fail('not-found', 'Property not found.')
+        const r = await updatePageProperty(resolved.value, def, req.value)
+        return r.ok ? ok({}) : r
       })
     }
 
     case 'movePage': {
       const src = await resolveUnderRoot(root, req.path)
-      if (!src.ok) return relay(src)
+      if (!src.ok) return src
       const dst = await resolveUnderRoot(root, req.newParentPath)
-      if (!dst.ok) return relay(dst)
+      if (!dst.ok) return dst
       const r = await movePage(src.value, dst.value)
-      if (!r.ok) return relay(r)
+      if (!r.ok) return r
       // Persist the destination's new page order (reorder + drop-at-position). The source's
       // stale id self-drops on the next read, so only the destination is rewritten.
       if (req.order) {
         const o = await setChildOrder(dst.value, 'page_order', req.order)
-        if (!o.ok) return relay(o)
+        if (!o.ok) return o
       }
-      return { ok: true }
+      return ok({})
     }
 
     case 'moveSet': {
       // The set's pages travel inside the folder.
       const src = await resolveUnderRoot(root, req.path)
-      if (!src.ok) return relay(src)
+      if (!src.ok) return src
       const dst = await resolveUnderRoot(root, req.newParentPath)
-      if (!dst.ok) return relay(dst)
+      if (!dst.ok) return dst
       const r = await moveFolderEntity(src.value, dst.value)
-      if (!r.ok) return relay(r)
+      if (!r.ok) return r
       const o = await setChildOrder(dst.value, 'set_order', req.order)
-      if (!o.ok) return relay(o)
-      return { ok: true }
+      if (!o.ok) return o
+      return ok({})
     }
 
     case 'reorderChildren': {
       // Reorder collections within a vault / sets within a collection — order-only, no move.
       const parent = await resolveUnderRoot(root, req.parentPath)
-      if (!parent.ok) return relay(parent)
+      if (!parent.ok) return parent
       const o = await setChildOrder(parent.value, req.key, req.order)
-      if (!o.ok) return relay(o)
-      return { ok: true }
+      if (!o.ok) return o
+      return ok({})
     }
 
     case 'reorderTop': {
       // Reorder top Collections / a Context group — persisted to .nexus/state.json.
       const o = await setStateOrder(root, req.key, req.order)
-      if (!o.ok) return relay(o)
-      return { ok: true }
+      if (!o.ok) return o
+      return ok({})
     }
 
     case 'createContextGroup': {
       const r = await createContextGroup(root, req.name)
-      if (!r.ok) return relay(r)
-      return { ok: true, created: r.value }
+      if (!r.ok) return r
+      return ok({ created: r.value })
     }
 
     case 'createSpace': {
       const r = await createDisambiguated(req.name, (name) =>
         createSpace(root, req.contextId, name),
       )
-      if (!r.ok) return relay(r)
-      return { ok: true, created: r.value }
+      if (!r.ok) return r
+      return ok({ created: r.value })
     }
 
     case 'setContext': {
       const resolved = await resolveUnderRoot(root, req.path)
-      if (!resolved.ok) return relay(resolved)
+      if (!resolved.ok) return resolved
       if (await isReserved(root, resolved.value)) return fault('That item can’t take contexts.')
       const world = await loadContextWorld(root)
-      if (!world.ok) return relay(world)
-      return relay(await setContextOnPath(resolved.value, world.value, req.contextId, req.spaceIds))
+      if (!world.ok) return world
+      const r = await setContextOnPath(resolved.value, world.value, req.contextId, req.spaceIds)
+      return r.ok ? ok({}) : r
     }
 
-    case 'setSpaceColor':
-      return relay(await setSpaceColor(root, req.spaceId, req.color))
+    case 'setSpaceColor': {
+      const r = await setSpaceColor(root, req.spaceId, req.color)
+      return r.ok ? ok({}) : r
+    }
 
-    case 'renameContext':
-      return relay(await renameContextOp(root, req.contextId, req.newName))
+    case 'renameContext': {
+      const r = await renameContextOp(root, req.contextId, req.newName)
+      return r.ok ? ok({}) : r
+    }
 
-    case 'renameSpace':
-      return relay(await renameSpaceOp(root, req.spaceId, req.newName))
+    case 'renameSpace': {
+      const r = await renameSpaceOp(root, req.spaceId, req.newName)
+      return r.ok ? ok({}) : r
+    }
 
     case 'reorderContexts': {
       // Registry array position IS the order; ids the renderer missed keep their
@@ -582,11 +581,13 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         const rest = cur.contexts.filter((c) => !req.ids.includes(c.id))
         return { contexts: [...ordered, ...rest] }
       })
-      return relay(r)
+      return r.ok ? ok({}) : r
     }
 
-    case 'reorderSpaces':
-      return relay(await setSpaceOrder(root, req.contextId, req.ids))
+    case 'reorderSpaces': {
+      const r = await setSpaceOrder(root, req.contextId, req.ids)
+      return r.ok ? ok({}) : r
+    }
 
     default: {
       const _exhaustive: never = req

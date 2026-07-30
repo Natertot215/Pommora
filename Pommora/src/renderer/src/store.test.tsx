@@ -12,11 +12,11 @@ import { clearWarm, readWarm } from './Tabs/warmCache'
 beforeEach(() => {
   clearWarm() // module state — never leaks across tests
   ;(window as unknown as { nexus: unknown }).nexus = {
-    openPage: vi.fn(async () => ({ ok: true, page: {} })),
-    nav: { write: vi.fn(async () => ({ ok: true })) },
+    openPage: vi.fn(async () => ({ ok: true, value: {} })),
+    nav: { write: vi.fn(async () => ({ ok: true, value: null })) },
     tabs: {
-      save: vi.fn(async () => ({ ok: true })),
-      load: vi.fn(async () => ({ ok: true, set: null })),
+      save: vi.fn(async () => ({ ok: true, value: null })),
+      load: vi.fn(async () => ({ ok: true, value: null })),
     },
     systemAccent: vi.fn(async () => '#000000'),
   }
@@ -181,7 +181,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
       path === '/b'
         ? new Promise((r) => (resolveB = r))
-        : Promise.resolve({ ok: true, page: detail('a') }),
+        : Promise.resolve({ ok: true, value: detail('a') }),
     )
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0), uTab('t2', pg('b'), [pg('b')], 0)],
@@ -193,7 +193,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     useSession.getState().activateTab('t2') // cold fetch of /b now in flight; A captured warm
     useSession.getState().activateTab('t1') // warm-instant back to A
     expect(useSession.getState().pageDetail?.id).toBe('a')
-    resolveB({ ok: true, page: detail('b') }) // the stale response lands last
+    resolveB({ ok: true, value: detail('b') }) // the stale response lands last
     await new Promise((r) => setTimeout(r, 0))
     const s = useSession.getState()
     expect(s.pageDetail?.id).toBe('a') // fence held — B never clobbered the shown page
@@ -205,7 +205,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
       path === '/b'
         ? new Promise((r) => (resolveB = r))
-        : Promise.resolve({ ok: true, page: detail('a') }),
+        : Promise.resolve({ ok: true, value: detail('a') }),
     )
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
@@ -220,7 +220,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     expect(s.selection).toEqual(pg('a')) // outgoing view still shown
     expect(s.pageStatus).toBe('ready') // never passes through 'loading'
     expect(s.pageFrozen).toBe(true) // ...but it's a held frame, not a live surface
-    resolveB({ ok: true, page: detail('b') })
+    resolveB({ ok: true, value: detail('b') })
     await p
     s = useSession.getState()
     expect(s.selection).toEqual(pg('b'))
@@ -234,7 +234,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
       path === '/b'
         ? new Promise((r) => (resolveB = r))
-        : Promise.resolve({ ok: true, page: detail('a') }),
+        : Promise.resolve({ ok: true, value: detail('a') }),
     )
     seed({
       tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
@@ -249,7 +249,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
     let s = useSession.getState()
     expect(s.selection).toEqual({ kind: 'homepage' })
     expect(s.pageFrozen).toBe(false)
-    resolveB({ ok: true, page: detail('b') })
+    resolveB({ ok: true, value: detail('b') })
     await p
     s = useSession.getState()
     expect(s.selection).toEqual({ kind: 'homepage' }) // the stale B response was dropped
@@ -263,7 +263,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
       ;(window.nexus.openPage as ReturnType<typeof vi.fn>).mockImplementation((path: string) =>
         path === '/b'
           ? new Promise((r) => (resolveB = r))
-          : Promise.resolve({ ok: true, page: detail('a') }),
+          : Promise.resolve({ ok: true, value: detail('a') }),
       )
       seed({
         tabs: [uTab('t1', pg('a'), [pg('a')], 0)],
@@ -280,7 +280,7 @@ describe('store — warm tabs (B-2/B-3)', () => {
       expect(s.selection).toEqual(pg('b'))
       expect(s.pageStatus).toBe('loading')
       expect(s.pageFrozen).toBe(false)
-      resolveB({ ok: true, page: detail('b') })
+      resolveB({ ok: true, value: detail('b') })
       await p
       s = useSession.getState()
       expect(s.pageStatus).toBe('ready')

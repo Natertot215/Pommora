@@ -35,18 +35,18 @@ beforeEach(() => {
   document.body.appendChild(host)
   root = createRoot(host)
   loadSpy = vi.fn(async () => {})
-  assignSpy = vi.fn(async () => ({ ok: true }))
-  renameSpy = vi.fn(async () => ({ ok: true }))
+  assignSpy = vi.fn(async () => ({ ok: true, value: null }))
+  renameSpy = vi.fn(async () => ({ ok: true, value: null }))
   propertyMenuSpy = vi.fn(async () => null)
-  destroySpy = vi.fn(async () => ({ ok: true }))
+  destroySpy = vi.fn(async () => ({ ok: true, value: null }))
   ;(window as unknown as { nexus: unknown }).nexus = {
     schema: {
-      add: vi.fn(async () => ({ ok: true, id: 'prop_new' })),
+      add: vi.fn(async () => ({ ok: true, value: { id: 'prop_new' } })),
       rename: renameSpy,
-      reorder: vi.fn(async () => ({ ok: true })),
-      delete: vi.fn(async () => ({ ok: true })),
+      reorder: vi.fn(async () => ({ ok: true, value: null })),
+      delete: vi.fn(async () => ({ ok: true, value: null })),
       assign: assignSpy,
-      changeType: vi.fn(async () => ({ ok: true })),
+      changeType: vi.fn(async () => ({ ok: true, value: null })),
     },
     property: { delete: destroySpy },
     propertyMenu: propertyMenuSpy,

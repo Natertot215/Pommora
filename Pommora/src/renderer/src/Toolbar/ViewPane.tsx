@@ -99,7 +99,7 @@ export function ViewPane({
     order.splice(drop.toIndex, 0, drop.propId)
     void (async () => {
       const res = await window.nexus.views.reorder(node.path, node.kind, order)
-      if (!res.ok) return void window.nexus.showError(res.error)
+      if (!res.ok) return void window.nexus.showError(res.error.message)
       await load()
     })()
   }
@@ -115,7 +115,7 @@ export function ViewPane({
     else if (action === 'view:edit-icon') setIconOpen(true)
     else if (action === 'view:delete') {
       const res = await window.nexus.views.delete(node.path, node.kind, v.id)
-      if (!res.ok) return void window.nexus.showError(res.error)
+      if (!res.ok) return void window.nexus.showError(res.error.message)
       await load()
     }
   }

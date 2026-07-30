@@ -513,7 +513,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     // flight, or indefinitely if it fails.
     setAgenda({ tasks: [], events: [] })
     void window.nexus.agenda.list().then((r) => {
-      if (live && r.ok) setAgenda({ tasks: r.tasks, events: r.events })
+      if (live && r.ok) setAgenda({ tasks: r.value.tasks, events: r.value.events })
     })
     return () => {
       live = false

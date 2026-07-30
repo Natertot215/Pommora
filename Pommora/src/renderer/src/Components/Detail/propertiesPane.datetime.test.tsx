@@ -29,17 +29,17 @@ beforeEach(() => {
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
-  saveSpy = vi.fn(async () => ({ ok: true, id: 'v1' }))
+  saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = {
     schema: {
-      add: vi.fn(async () => ({ ok: true, id: 'x' })),
-      rename: vi.fn(async () => ({ ok: true })),
-      reorder: vi.fn(async () => ({ ok: true })),
-      delete: vi.fn(async () => ({ ok: true })),
-      assign: vi.fn(async () => ({ ok: true })),
-      changeType: vi.fn(async () => ({ ok: true })),
+      add: vi.fn(async () => ({ ok: true, value: { id: 'x' } })),
+      rename: vi.fn(async () => ({ ok: true, value: null })),
+      reorder: vi.fn(async () => ({ ok: true, value: null })),
+      delete: vi.fn(async () => ({ ok: true, value: null })),
+      assign: vi.fn(async () => ({ ok: true, value: null })),
+      changeType: vi.fn(async () => ({ ok: true, value: null })),
     },
-    property: { delete: vi.fn(async () => ({ ok: true })) },
+    property: { delete: vi.fn(async () => ({ ok: true, value: null })) },
     views: { save: saveSpy },
     activeViews: { set: vi.fn(async () => {}) },
     propertyMenu: vi.fn(async () => null),

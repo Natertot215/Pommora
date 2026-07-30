@@ -33,7 +33,7 @@ export function MarkdownBlock({
   useEffect(() => {
     let live = true
     void window.nexus.blocks.readMarkdown(host, tileId).then((r) => {
-      if (live) setBody(r.ok ? r.body : '')
+      if (live) setBody(r.ok ? r.value.body : '')
     })
     return () => {
       live = false

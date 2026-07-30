@@ -44,7 +44,7 @@ describe('handleMutate — create', () => {
     )
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.created?.path).toBe('Notes/Daily/New.md')
+    expect(r.value.created?.path).toBe('Notes/Daily/New.md')
     expect(await pathExists(join(root, 'Notes/Daily/New.md'))).toBe(true)
   })
 
@@ -55,7 +55,7 @@ describe('handleMutate — create', () => {
     )
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.created?.path).toBe('Notes/Weekly')
+    expect(r.value.created?.path).toBe('Notes/Weekly')
     expect(await pathExists(join(root, 'Notes/Weekly/_pageset.json'))).toBe(true)
   })
 
@@ -68,8 +68,8 @@ describe('handleMutate — create', () => {
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
       nexusDeps,
     )
-    expect(first.ok && first.created?.path).toBe('Notes/Daily/Untitled.md')
-    expect(second.ok && second.created?.path).toBe('Notes/Daily/Untitled 2.md')
+    expect(first.ok && first.value.created?.path).toBe('Notes/Daily/Untitled.md')
+    expect(second.ok && second.value.created?.path).toBe('Notes/Daily/Untitled 2.md')
     expect(await pathExists(join(root, 'Notes/Daily/Untitled 2.md'))).toBe(true)
   })
 })
@@ -292,7 +292,8 @@ describe('handleMutate — move + guards', () => {
     const r = await handleMutate({ op: 'createPage', parentPath: 'Notes', name: 'X' }, nexusDeps)
     expect(r.ok).toBe(false)
     if (r.ok) return
-    expect(r.error.code).toBe('operation-failed')
+    expect(r.error.code).toBe('no-nexus')
+    expect(r.error.message).toBe('No nexus is open.')
   })
 })
 
@@ -302,7 +303,7 @@ describe('handleMutate — review-round hardening', () => {
       { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Inbox' },
       nexusDeps,
     )
-    expect(r.ok && r.created?.path).toBe('Inbox')
+    expect(r.ok && r.value.created?.path).toBe('Inbox')
     expect(await pathExists(join(root, 'Inbox/_pagecollection.json'))).toBe(true)
   })
 
@@ -562,7 +563,7 @@ describe('handleMutate — setBanner', () => {
     )
     expect(created.ok).toBe(true)
     if (!created.ok) return
-    const pagePath = created.created!.path
+    const pagePath = created.value.created!.path
     const r = await handleMutate(
       { op: 'setBanner', path: pagePath, kind: 'page', dataUrl: PNG },
       nexusDeps,

@@ -8,36 +8,26 @@
 // bundle may require only 'electron') consumes it freely from both tsconfig projects.
 
 import type {
-  AgendaListResult,
-  NavigationResult,
+  AgendaEntry,
   NavigationState,
   NavViewModes,
   NexusState,
   NexusTree,
   OpenIn,
-  PageResult,
+  PageDetail,
   Personalization,
   PreviewsFile,
-  PreviewsResult,
   SubfieldConfig,
   StoredTabSet,
-  TabsResult,
   ThumbRect,
-  ThumbResult,
   ViewButton,
   ViewStyle,
 } from './types'
-import type { ContextTarget, MutateRequest, MutateResult } from './mutate'
-import type { Ack } from './result'
+import type { ContextTarget, MutateReply, MutateRequest } from './mutate'
+import type { Result } from './result'
 import type { FormatState } from './editorMenu'
 import type { SavedView } from './views'
-import type {
-  BlockDocPatch,
-  BlockHostRef,
-  BlocksGetResult,
-  BlocksSaveResult,
-  EmbeddedView,
-} from './blocks'
+import type { BlockDoc, BlockDocPatch, BlockHostRef, EmbeddedView } from './blocks'
 import type { PropertyDefinition, PropertyType, StatusGroup } from './properties'
 import type { PageFrontmatter } from './schemas'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
@@ -70,36 +60,36 @@ import type {
 export interface Asks {
   // Nexus / session
   'nexus:state': { args: []; reply: NexusState }
-  'nexus:choose': { args: []; reply: boolean }
-  'nexus:openPath': { args: [path: string]; reply: boolean }
-  'nexus:rename': { args: [newName: string]; reply: Ack }
+  'nexus:choose': { args: []; reply: Result<boolean> }
+  'nexus:openPath': { args: [path: string]; reply: Result<boolean> }
+  'nexus:rename': { args: [newName: string]; reply: Result<null> }
 
   // Pages
-  'page:open': { args: [relPath: string]; reply: PageResult }
-  'page:updateBody': { args: [relPath: string, body: string]; reply: Ack }
+  'page:open': { args: [relPath: string]; reply: Result<PageDetail> }
+  'page:updateBody': { args: [relPath: string, body: string]; reply: Result<null> }
 
   // Per-machine scopes (nexus.db rows)
   'folds:get': { args: []; reply: Record<string, string[]> }
-  'folds:set': { args: [pageId: string, keys: string[]]; reply: Ack }
+  'folds:set': { args: [pageId: string, keys: string[]]; reply: Result<null> }
   'activeViews:get': { args: []; reply: Record<string, string> }
-  'activeViews:set': { args: [containerId: string, viewId: string]; reply: Ack }
+  'activeViews:set': { args: [containerId: string, viewId: string]; reply: Result<null> }
   'viewOrders:get': { args: []; reply: Record<string, string[]> }
-  'viewOrders:set': { args: [viewId: string, order: string[]]; reply: Ack }
+  'viewOrders:set': { args: [viewId: string, order: string[]]; reply: Result<null> }
   'tableHeadingCols:get': { args: []; reply: Record<string, number[]> }
-  'tableHeadingCols:set': { args: [pageId: string, indices: number[]]; reply: Ack }
+  'tableHeadingCols:set': { args: [pageId: string, indices: number[]]; reply: Result<null> }
 
   // Views + container config
   'views:save': {
     args: [containerPath: string, kind: 'collection' | 'set', view: SavedView]
-    reply: { ok: true; id: string } | { ok: false; error: string }
+    reply: Result<{ id: string }>
   }
   'views:reorder': {
     args: [containerPath: string, kind: 'collection' | 'set', orderedIds: string[]]
-    reply: Ack
+    reply: Result<null>
   }
   'views:delete': {
     args: [containerPath: string, kind: 'collection' | 'set', viewId: string]
-    reply: Ack
+    reply: Result<null>
   }
   'container:configure': {
     args: [
@@ -107,19 +97,19 @@ export interface Asks {
       kind: 'collection' | 'set',
       patch: { open_in?: OpenIn; view_button?: ViewButton; view_style?: ViewStyle },
     ]
-    reply: Ack
+    reply: Result<null>
   }
   'view:loadValues': { args: [containerPath: string]; reply: Record<string, PageFrontmatter> }
 
   // Schema (container-scoped) + registry-wide property ops
   'schema:add': {
     args: [containerPath: string, def: PropertyDefinition]
-    reply: { ok: true; id: string } | { ok: false; error: string }
+    reply: Result<{ id: string }>
   }
-  'schema:rename': { args: [containerPath: string, propertyId: string, newName: string]; reply: Ack }
-  'schema:reorder': { args: [containerPath: string, propertyId: string, toIndex: number]; reply: Ack }
-  'schema:delete': { args: [containerPath: string, propertyId: string]; reply: Ack }
-  'schema:assign': { args: [containerPath: string, propertyId: string, toIndex?: number]; reply: Ack }
+  'schema:rename': { args: [containerPath: string, propertyId: string, newName: string]; reply: Result<null> }
+  'schema:reorder': { args: [containerPath: string, propertyId: string, toIndex: number]; reply: Result<null> }
+  'schema:delete': { args: [containerPath: string, propertyId: string]; reply: Result<null> }
+  'schema:assign': { args: [containerPath: string, propertyId: string, toIndex?: number]; reply: Result<null> }
   'schema:changeType': {
     args: [
       containerPath: string,
@@ -127,24 +117,24 @@ export interface Asks {
       newType: PropertyType,
       opts?: { dropConflictingValues?: boolean },
     ]
-    reply: Ack
+    reply: Result<null>
   }
-  'registry:reorder': { args: [propertyId: string, toIndex: number]; reply: Ack }
-  'property:delete': { args: [propertyId: string]; reply: Ack }
+  'registry:reorder': { args: [propertyId: string, toIndex: number]; reply: Result<null> }
+  'property:delete': { args: [propertyId: string]; reply: Result<null> }
   'property:setOptions': {
     args: [propertyId: string, options: { value: string; label: string; color?: string }[]]
-    reply: Ack
+    reply: Result<null>
   }
-  'property:setStatusGroups': { args: [propertyId: string, groups: StatusGroup[]]; reply: Ack }
+  'property:setStatusGroups': { args: [propertyId: string, groups: StatusGroup[]]; reply: Result<null> }
   'property:setLinkConfig': {
     args: [
       propertyId: string,
       patch: { link_underline?: boolean; link_display?: 'link-url' | 'link-title'; link_color?: string },
     ]
-    reply: Ack
+    reply: Result<null>
   }
-  'property:setCheckboxColor': { args: [propertyId: string, color: string | undefined]; reply: Ack }
-  'property:setIcon': { args: [propertyId: string, icon: string | undefined]; reply: Ack }
+  'property:setCheckboxColor': { args: [propertyId: string, color: string | undefined]; reply: Result<null> }
+  'property:setIcon': { args: [propertyId: string, icon: string | undefined]; reply: Result<null> }
   'property:setNumberFormat': {
     args: [
       propertyId: string,
@@ -157,75 +147,66 @@ export interface Asks {
         number_denominator?: number
       },
     ]
-    reply: Ack
+    reply: Result<null>
   }
-  'property:renameOption': { args: [propertyId: string, oldValue: string, newTitle: string]; reply: Ack }
-  'property:removeOption': { args: [propertyId: string, value: string]; reply: Ack }
-  'property:clearOption': { args: [propertyId: string, value: string]; reply: Ack }
+  'property:renameOption': { args: [propertyId: string, oldValue: string, newTitle: string]; reply: Result<null> }
+  'property:removeOption': { args: [propertyId: string, value: string]; reply: Result<null> }
+  'property:clearOption': { args: [propertyId: string, value: string]; reply: Result<null> }
   'property:renameStatusOption': {
     args: [propertyId: string, oldValue: string, newTitle: string]
-    reply: Ack
+    reply: Result<null>
   }
-  'property:removeStatusOption': { args: [propertyId: string, value: string]; reply: Ack }
-  'property:clearStatusOption': { args: [propertyId: string, value: string]; reply: Ack }
+  'property:removeStatusOption': { args: [propertyId: string, value: string]; reply: Result<null> }
+  'property:clearStatusOption': { args: [propertyId: string, value: string]; reply: Result<null> }
 
   // Blocks
-  'blocks:get': { args: [host: BlockHostRef]; reply: BlocksGetResult }
-  'blocks:save': { args: [host: BlockHostRef, patch: BlockDocPatch]; reply: BlocksSaveResult }
-  'blocks:createMarkdown': {
-    args: [host: BlockHostRef]
-    reply: { ok: true; id: string } | { ok: false; error: string }
-  }
-  'blocks:removeTile': { args: [host: BlockHostRef, tileId: string]; reply: BlocksSaveResult }
-  'blocks:readMarkdown': {
-    args: [host: BlockHostRef, tileId: string]
-    reply: { ok: true; body: string } | { ok: false; error: string }
-  }
+  'blocks:get': { args: [host: BlockHostRef]; reply: Result<BlockDoc> }
+  'blocks:save': { args: [host: BlockHostRef, patch: BlockDocPatch]; reply: Result<null> }
+  'blocks:createMarkdown': { args: [host: BlockHostRef]; reply: Result<{ id: string }> }
+  'blocks:removeTile': { args: [host: BlockHostRef, tileId: string]; reply: Result<null> }
+  'blocks:readMarkdown': { args: [host: BlockHostRef, tileId: string]; reply: Result<{ body: string }> }
   'blocks:writeMarkdown': {
     args: [host: BlockHostRef, tileId: string, body: string]
-    reply: BlocksSaveResult
+    reply: Result<null>
   }
   'blocks:convertToPage': {
     args: [host: BlockHostRef, tileId: string, pageId: string]
-    reply: BlocksSaveResult
+    reply: Result<null>
   }
   'blocks:convertToView': {
     args: [host: BlockHostRef, tileId: string, views: EmbeddedView[]]
-    reply: BlocksSaveResult
+    reply: Result<null>
   }
-  'blocks:duplicateTile': {
-    args: [host: BlockHostRef, tileId: string]
-    reply: { ok: true; id: string } | { ok: false; error: string }
-  }
+  'blocks:duplicateTile': { args: [host: BlockHostRef, tileId: string]; reply: Result<{ id: string }> }
   'blocks:confirmRemove': { args: []; reply: boolean }
 
   // Settings / personalization / theme
   'subfield:get': { args: []; reply: SubfieldConfig | null }
-  'subfield:set': { args: [config: SubfieldConfig]; reply: Ack }
+  'subfield:set': { args: [config: SubfieldConfig]; reply: Result<null> }
   'navViewModes:get': { args: []; reply: NavViewModes | null }
-  'navViewModes:set': { args: [modes: NavViewModes]; reply: Ack }
+  'navViewModes:set': { args: [modes: NavViewModes]; reply: Result<null> }
   'personalization:set': {
     args: [key: keyof Personalization, value: Personalization[keyof Personalization]]
-    reply: Ack
+    reply: Result<null>
   }
   'theme:systemAccent': { args: []; reply: string | null }
 
   // Agenda / navigation / tabs / previews / thumbnails
-  'agenda:list': { args: []; reply: AgendaListResult }
-  'nav:read': { args: []; reply: NavigationResult }
-  'nav:write': { args: [patch: Partial<NavigationState>]; reply: Ack }
-  'tabs:load': { args: []; reply: TabsResult }
-  'tabs:save': { args: [set: StoredTabSet]; reply: Ack }
-  'previews:load': { args: []; reply: PreviewsResult }
-  'previews:save': { args: [file: PreviewsFile]; reply: Ack }
+  'agenda:list': { args: []; reply: Result<{ tasks: AgendaEntry[]; events: AgendaEntry[] }> }
+  'nav:read': { args: []; reply: Result<NavigationState> }
+  'nav:write': { args: [patch: Partial<NavigationState>]; reply: Result<null> }
+  'tabs:load': { args: []; reply: Result<StoredTabSet | null> }
+  'tabs:save': { args: [set: StoredTabSet]; reply: Result<null> }
+  'previews:load': { args: []; reply: Result<PreviewsFile> }
+  'previews:save': { args: [file: PreviewsFile]; reply: Result<null> }
   'capture:thumbnail': {
     args: [navKey: string, rect: ThumbRect, scaleFactor: number]
-    reply: ThumbResult
+    reply: Result<{ url: string }>
   }
-  'nav:evictThumbs': { args: [liveKeys: string[]]; reply: Ack }
+  'nav:evictThumbs': { args: [liveKeys: string[]]; reply: Result<null> }
 
   // The write path + dialogs + external
-  mutate: { args: [req: MutateRequest]; reply: MutateResult }
+  mutate: { args: [req: MutateRequest]; reply: MutateReply }
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'context-menu': { args: [target: ContextTarget]; reply: void }
   'create-menu': {
@@ -236,12 +217,9 @@ export interface Asks {
   'error:show': { args: [message: string]; reply: void }
   // biome-ignore lint/suspicious/noConfusingVoidType: the wire resolves nothing — void IS the reply
   'link:open': { args: [url: string]; reply: void }
-  'file:open': { args: [path: string]; reply: Ack }
+  'file:open': { args: [path: string]; reply: Result<null> }
   'linkTitles:get': { args: []; reply: Record<string, string> }
-  'linkTitles:fetch': {
-    args: [url: string]
-    reply: { ok: true; title: string | null } | { ok: false; error: string }
-  }
+  'linkTitles:fetch': { args: [url: string]; reply: Result<{ title: string | null }> }
 
   // Native menus — each resolves the picked action, or null on dismiss
   'view-button-menu': {

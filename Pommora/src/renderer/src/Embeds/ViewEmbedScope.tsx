@@ -4,6 +4,7 @@
 
 import { createContext, useContext } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
+import { fail, ok, type Result } from '@shared/result'
 import { pickViewState, type SavedView, type ViewState } from '@shared/views'
 import { saveViewAdopting } from '@renderer/Detail/Views/viewMint'
 
@@ -36,19 +37,19 @@ export function useSaveView(
 ): (
   view: SavedView,
   opts?: { skipRefetch?: boolean; viewState?: boolean },
-) => Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+) => Promise<Result<{ id: string }>> {
   const scope = useViewEmbedScope()
   if (scope) {
     // An embed re-renders off its own tile payload — persistConfig updates it in place, no refetch path.
     return (view, opts) => {
       if (scope.locked) {
         if (!opts?.viewState)
-          return Promise.resolve({ ok: false as const, error: VIEW_CONFIG_LOCKED })
+          return Promise.resolve(fail('operation-failed', VIEW_CONFIG_LOCKED))
         scope.persistState(pickViewState(view))
-        return Promise.resolve({ ok: true as const, id: view.id })
+        return Promise.resolve(ok({ id: view.id }))
       }
       scope.persistConfig(view)
-      return Promise.resolve({ ok: true as const, id: view.id })
+      return Promise.resolve(ok({ id: view.id }))
     }
   }
   return (view, opts) => saveViewAdopting(source, view, refetch, opts)
