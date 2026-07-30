@@ -20,13 +20,11 @@ let watcher: FSWatcher | null = null
 let debounce: ReturnType<typeof setTimeout> | null = null
 let navDebounce: ReturnType<typeof setTimeout> | null = null
 
-/** A Navigation sidecar / pin file — its changes push nav state only, never a tree re-walk (nav data
- *  isn't in the tree). Matches `.nexus/navFavorites.json` and `.nexus/pins/*` — the two halves of
- *  Navigation that stay files precisely so another machine can sync them in. */
+/** The navigation file — its changes push nav state only, never a tree re-walk (nav data isn't
+ *  in the tree). */
 export function isNavPath(root: string, path: string): boolean {
   const segs = relative(root, path).split(sep)
-  if (segs[0] !== '.nexus') return false
-  return segs[1] === NEXUS_CONFIG_FILES.navFavorites || segs[1] === 'pins'
+  return segs[0] === '.nexus' && segs[1] === NEXUS_CONFIG_FILES.navigation
 }
 
 // Ignore only what ISN'T user-meaningful tree content: the SQLite databases (which thrash via
@@ -80,15 +78,19 @@ export async function startWatcher(root: string, win: BrowserWindow): Promise<vo
     atomic: true, // coalesce the mv-_tmp atomic writes our writers use
   })
   const onEvent = (path: string): void => {
-    // The app's own atomic writes echo back here — skip them: every tree-relevant
-    // in-app write refetches explicitly, so the echo only buys a wasted full walk
-    // (hot under block gestures + embed typing). External edits still walk.
-    if (isRecentWrite(path)) return
+    // Navigation events skip the echo suppression BELOW it — the window exists to spare wasted
+    // full tree walks, and a nav event never walks the tree. A hand-edit landing right after the
+    // app's own write is therefore never swallowed; a self-write's echo is one debounced re-read
+    // of a small file whose content the renderer already holds.
     if (isNavPath(root, path)) {
       if (navDebounce) clearTimeout(navDebounce)
       navDebounce = setTimeout(() => void pushNav(root, win), SETTLE_MS)
       return
     }
+    // The app's own atomic writes echo back here — skip them: every tree-relevant
+    // in-app write refetches explicitly, so the echo only buys a wasted full walk
+    // (hot under block gestures + embed typing). External edits still walk.
+    if (isRecentWrite(path)) return
     if (debounce) clearTimeout(debounce)
     debounce = setTimeout(() => void push(root, win), SETTLE_MS)
   }
@@ -130,9 +132,9 @@ async function push(root: string, win: BrowserWindow): Promise<void> {
   }
 }
 
-/** Push nav state only — no tree walk. Fires when a favorites or pin file changes externally (a
- *  cross-device sync), so a pin made on another machine surfaces live. Recents ride along from the
- *  database unchanged; the renderer takes the whole shape either way. */
+/** Push the navigation file's keys only — no tree walk. Fires on ANY navigation.json change,
+ *  the app's own included; the renderer adopts pinned/favorites/banner (recents aren't in the
+ *  file), so an external or synced-in edit surfaces live. */
 async function pushNav(root: string, win: BrowserWindow): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   try {
