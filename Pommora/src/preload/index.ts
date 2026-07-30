@@ -13,7 +13,7 @@ import type {
   PreviewsFile,
   PreviewsResult,
   SubfieldConfig,
-  TabSet,
+  StoredTabSet,
   TabsResult,
   ThumbRect,
   ThumbResult,
@@ -286,10 +286,10 @@ const api = {
     read: (): Promise<NavigationResult> => ipcRenderer.invoke('nav:read'),
     write: (patch: Partial<NavigationState>): Promise<Ack> => ipcRenderer.invoke('nav:write', patch),
   },
-  // The tab set — synced tabs.json (unpinned tabs + active + per-tab history targets); saves debounce main-side.
+  // The tab set — one device-local db row (unpinned tabs + active + per-tab history refs).
   tabs: {
     load: (): Promise<TabsResult> => ipcRenderer.invoke('tabs:load'),
-    save: (set: TabSet): Promise<Ack> => ipcRenderer.invoke('tabs:save', set),
+    save: (set: StoredTabSet): Promise<Ack> => ipcRenderer.invoke('tabs:save', set),
   },
   // The preview tab sets — synced page-previews.json (nav set + per-origin sets + open pointer).
   previews: {

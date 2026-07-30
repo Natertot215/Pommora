@@ -317,13 +317,22 @@ export type TabTarget = SelectTarget | NewTabSentinel
 /** A page, or the NavWindow flavor's tab-1 sentinel — the gallery itself; no id/path, never warmed. */
 export type PreviewTabTarget = SelectTarget | { kind: 'navwindow' }
 
-/** One toolbar tab. Carries its OWN Back/Forward history (`navStack`/`navIndex`). `isPinned` is
- *  never stored — it's derived from the pins set (a tab's navKey ∈ pins). Only unpinned tabs are
- *  persisted; pinned tabs are derived live from `.nexus/pins/`. */
+/** One LIVE toolbar tab. Carries its OWN Back/Forward history (`navStack`/`navIndex`). `isPinned`
+ *  is never stored — it's derived from the pinned refs (a tab's navKey ∈ pinned). Only unpinned
+ *  tabs persist, as bare refs; restore hydrates them against the tree. */
 export interface Tab {
   id: string
   target: TabTarget
   navStack: SelectTarget[]
+  navIndex: number
+}
+
+/** A persisted tab — identity only. Paths are minted at restore; the history pointer is
+ *  recomputed as dead refs prune, so nothing stored can go stale or desync. */
+export interface StoredTab {
+  id: string
+  target: NavRef | NewTabSentinel
+  navStack: NavRef[]
   navIndex: number
 }
 
@@ -333,13 +342,20 @@ export interface TabSet {
   activeTabId: string
 }
 
-/** The `tabs:load` IPC envelope — `set` is null when no sidecar exists yet (the store seeds fresh). */
-export type TabsResult = { ok: true; set: TabSet | null } | { ok: false; error: string }
+/** The persisted row's shape — StoredTab entries under the same pointer. */
+export interface StoredTabSet {
+  tabs: StoredTab[]
+  activeTabId: string
+}
 
-/** A persisted preview tab set: targets only — ids are session-local and re-minted at
+/** The `tabs:load` IPC envelope — `set` is null when the row doesn't exist yet (the store seeds
+ *  fresh). */
+export type TabsResult = { ok: true; set: StoredTabSet | null } | { ok: false; error: string }
+
+/** A persisted preview tab set: bare refs only — ids are session-local and re-minted at
  *  restore; `activeIndex` points into `tabs` by strip order. */
 export interface PreviewSetRecord {
-  tabs: { target: PreviewTabTarget }[]
+  tabs: { target: NavRef | { kind: 'navwindow' } }[]
   activeIndex: number
 }
 

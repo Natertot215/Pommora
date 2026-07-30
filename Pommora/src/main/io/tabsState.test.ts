@@ -45,26 +45,23 @@ describe('readTabsState', () => {
     expect(readTabsState()).toEqual(set('t2'))
   })
 
-  it('re-points a desynced navIndex at the target — reconcileTabs never touches lockstep', () => {
-    const a = { kind: 'page', id: 'p1', path: 'a.md' } as const
-    const b = { kind: 'page', id: 'p2', path: 'b.md' } as const
+  it('passes a stored index through raw — the restore hydrator owns lockstep, not the reader', () => {
+    const a = { kind: 'page', id: 'p1' } as const
+    const b = { kind: 'page', id: 'p2' } as const
     writeValue('tabs', {
       tabs: [{ id: 't1', target: a, navStack: [a, b], navIndex: 1 }],
       activeTabId: 't1',
     })
-    expect(readTabsState()?.tabs[0].navIndex).toBe(0)
+    expect(readTabsState()?.tabs[0].navIndex).toBe(1)
   })
 
-  it('degrades a target absent from its history to a single-entry stack', () => {
-    const a = { kind: 'page', id: 'p1', path: 'a.md' } as const
-    const b = { kind: 'page', id: 'p2', path: 'b.md' } as const
+  it('a stored ref with extra fields still reads (the hydrator strips at the boundary)', () => {
+    const a = { kind: 'page', id: 'p1' } as const
     writeValue('tabs', {
-      tabs: [{ id: 't1', target: a, navStack: [b], navIndex: 0 }],
+      tabs: [{ id: 't1', target: { ...a, path: 'stale.md' }, navStack: [a], navIndex: 0 }],
       activeTabId: 't1',
     })
-    const tab = readTabsState()?.tabs[0]
-    expect(tab?.navStack).toEqual([a])
-    expect(tab?.navIndex).toBe(0)
+    expect(readTabsState()?.tabs[0].target).toMatchObject(a)
   })
 
   it('drops a tab with no target or no history rather than crashing the restore', () => {
@@ -80,10 +77,10 @@ describe('readTabsState', () => {
     expect(readTabsState()?.tabs.map((t) => t.id)).toEqual(['ok'])
   })
 
-  it('a stackless tab gets one rather than an undefined navStack', () => {
-    const a = { kind: 'page', id: 'p1', path: 'a.md' } as const
+  it('a stackless tab reads with an empty stack (the hydrator seeds a single entry)', () => {
+    const a = { kind: 'page', id: 'p1' } as const
     writeValue('tabs', { tabs: [{ id: 't1', target: a }], activeTabId: 't1' })
-    expect(readTabsState()?.tabs[0].navStack).toEqual([a])
+    expect(readTabsState()?.tabs[0].navStack).toEqual([])
   })
 
   it('dedupes ids — closeTab drops by id, so a shared one would close two tabs', () => {

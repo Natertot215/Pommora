@@ -1,15 +1,33 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
+import type { NexusTree } from '@shared/types'
 import { useSession } from '../store'
 import { capturePreviewWarm, clearPreviewWarm, readPreviewWarm } from './previewWarm'
 
 const page = (id: string) => ({ id, path: `Notes/${id}.md` })
+
+// Restore hydrates bare refs against the live tree, so the fixtures carry one holding x/y/z.
+const tree = {
+  contexts: [],
+  collections: [
+    {
+      kind: 'collection',
+      id: 'col',
+      title: 'Notes',
+      path: 'Notes',
+      pages: ['x', 'y', 'z', 'n'].map((id) => ({ kind: 'page', id, title: id, path: `Notes/${id}.md` })),
+      sets: [],
+    },
+  ],
+  personalization: {},
+} as unknown as NexusTree
 
 beforeEach(() => {
   clearPreviewWarm()
   useSession.setState({
     preview: null,
     navOpen: false,
+    tree,
     previewsFile: { navSet: null, origins: {}, open: null },
   })
 })
@@ -97,8 +115,8 @@ describe('previewTabs — durable sets (H-3/H-6/H-10)', () => {
         origins: {
           x: {
             tabs: [
-              { target: { kind: 'page', id: 'x', path: 'Notes/x.md' } },
-              { target: { kind: 'page', id: 'y', path: 'Notes/y.md' } },
+              { target: { kind: 'page', id: 'x' } },
+              { target: { kind: 'page', id: 'y' } },
             ],
             activeIndex: 1,
           },
@@ -136,7 +154,7 @@ describe('previewTabs — durable sets (H-3/H-6/H-10)', () => {
     useSession.setState({
       previewsFile: {
         navSet: {
-          tabs: [{ target: { kind: 'page', id: 'x', path: 'Notes/x.md' } }],
+          tabs: [{ target: { kind: 'page', id: 'x' } }],
           activeIndex: 0,
         },
         origins: {},
@@ -160,7 +178,7 @@ describe('previewTabs — durable sets (H-3/H-6/H-10)', () => {
     const file = useSession.getState().previewsFile
     expect(file.origins.x).toBeUndefined()
     expect(file.origins.y?.tabs).toEqual([
-      { target: { kind: 'page', id: 'y', path: 'Notes/y.md' } },
+      { target: { kind: 'page', id: 'y' } },
     ])
     expect(file.open).toEqual({ flavor: 'page', originId: 'y' })
   })
@@ -233,7 +251,7 @@ describe('previewTabs — the NavWindow flavor entry (H-2/H-3)', () => {
     useSession.setState({
       previewsFile: {
         navSet: {
-          tabs: [{ target: { kind: 'page', id: 'n', path: 'Notes/n.md' } }],
+          tabs: [{ target: { kind: 'page', id: 'n' } }],
           activeIndex: 0,
         },
         origins: {},

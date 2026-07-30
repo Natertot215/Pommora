@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import type { NavRef, NexusTree, SelectTarget, Tab } from '@shared/types'
 import {
   activeUnpinnedTab,
+  hydrateTabs,
   closeTab,
   cycle,
   derivePinnedTabs,
@@ -309,6 +310,41 @@ describe('tabsModel — isPinned', () => {
     expect(isPinned(pt('a'), pinned)).toBe(true)
     expect(isPinned(pt('b'), pinned)).toBe(false)
     expect(isPinned({ kind: 'newtab' }, pinned)).toBe(false)
+  })
+})
+
+describe('tabsModel — hydrateTabs (the lockstep owner)', () => {
+  const stored = (id: string, targetId: string, stack: string[], navIndex: number) => ({
+    id,
+    target: { kind: 'page' as const, id: targetId },
+    navStack: stack.map((s) => ({ kind: 'page' as const, id: s })),
+    navIndex,
+  })
+
+  it('mints paths and preserves a pointer that survives pruning', () => {
+    const [t] = hydrateTabs([stored('t1', 'b', ['a', 'gone', 'b'], 2)], mkTree('a', 'b'))
+    expect(t.target).toEqual(pt('b'))
+    expect(t.navStack).toEqual([pt('a'), pt('b')])
+    expect(t.navIndex).toBe(1) // 'gone' pruned ahead of it — the pointer re-based, not re-found
+  })
+
+  it('re-points a desynced stored index at the target by key', () => {
+    const [t] = hydrateTabs([stored('t1', 'a', ['a', 'b'], 1)], mkTree('a', 'b'))
+    expect(t.navIndex).toBe(0)
+  })
+
+  it('degrades a target absent from its history to a single-entry stack', () => {
+    const [t] = hydrateTabs([stored('t1', 'a', ['b'], 0)], mkTree('a', 'b'))
+    expect(t.navStack).toEqual([pt('a')])
+    expect(t.navIndex).toBe(0)
+  })
+
+  it('drops a tab whose target no longer resolves; newtab passes through empty', () => {
+    const tabs = hydrateTabs(
+      [stored('t1', 'gone', ['gone'], 0), { id: 'n', target: { kind: 'newtab' as const }, navStack: [], navIndex: -1 }],
+      mkTree('a'),
+    )
+    expect(tabs.map((t) => t.id)).toEqual(['n'])
   })
 })
 
