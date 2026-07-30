@@ -1,17 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import type { NavRef } from '@shared/types'
-import {
-  buildResolveIndex,
-  resolveFavorites,
-  resolvePins,
-  resolveRecents,
-  resolveWith,
-} from './navResolve'
+import { resolveFavorites, resolvePins, resolveRecents, resolveWith } from './navResolve'
+import { resolveIndexOf } from '../treeIndex'
 import { makeTree } from './testTree'
 
 describe('resolveWith — single entry', () => {
-  const resolveOne = (tree: Parameters<typeof buildResolveIndex>[0], entry: NavRef) =>
-    resolveWith(buildResolveIndex(tree), entry)
+  const resolveOne = (tree: Parameters<typeof resolveIndexOf>[0], entry: NavRef) =>
+    resolveWith(resolveIndexOf(tree), entry)
 
   const pathTitles = (r: { path: { title: string }[] } | null): string[] =>
     (r?.path ?? []).map((c) => c.title)
@@ -82,12 +77,10 @@ describe('resolveWith — single entry', () => {
   })
 })
 
-describe('buildResolveIndex + resolveWith (index built once, O(1) per entry)', () => {
+describe('resolveIndexOf + resolveWith (index built once, O(1) per entry)', () => {
   it('resolves against a prebuilt index and prunes absent keys', () => {
-    const index = buildResolveIndex(makeTree())
-    expect(resolveWith(index, { kind: 'page', id: 'p1' })?.title).toBe(
-      'Alpha',
-    )
+    const index = resolveIndexOf(makeTree())
+    expect(resolveWith(index, { kind: 'page', id: 'p1' })?.title).toBe('Alpha')
     expect(resolveWith(index, { kind: 'page', id: 'ghost' })).toBeNull()
     expect(resolveWith(index, { kind: 'task', id: 'tk1' })).toBeNull() // agenda absent from the index
   })
@@ -100,7 +93,7 @@ describe('resolveRecents', () => {
       { kind: 'page', id: 'p2' },
       { kind: 'collection', id: 'c1' },
     ]
-    expect(resolveRecents(buildResolveIndex(makeTree()), recents).map((r) => r.key)).toEqual([
+    expect(resolveRecents(resolveIndexOf(makeTree()), recents).map((r) => r.key)).toEqual([
       'page:p1',
       'page:p2',
       'collection:c1',
@@ -112,7 +105,7 @@ describe('resolveRecents', () => {
       { kind: 'page', id: 'p1' },
       { kind: 'page', id: 'ghost' },
     ]
-    expect(resolveRecents(buildResolveIndex(makeTree()), recents).map((r) => r.key)).toEqual([
+    expect(resolveRecents(resolveIndexOf(makeTree()), recents).map((r) => r.key)).toEqual([
       'page:p1',
     ])
   })
@@ -125,7 +118,7 @@ describe('resolveFavorites', () => {
       { kind: 'collection', id: 'ghost' },
       { kind: 'context', id: 'a1' },
     ]
-    expect(resolveFavorites(buildResolveIndex(makeTree()), favorites).map((r) => r.key)).toEqual([
+    expect(resolveFavorites(resolveIndexOf(makeTree()), favorites).map((r) => r.key)).toEqual([
       'collection:c1',
     ])
   })
@@ -138,7 +131,7 @@ describe('resolvePins', () => {
       { kind: 'collection', id: 'ghost' },
       { kind: 'context', id: 'a1' },
     ]
-    const out = resolvePins(buildResolveIndex(makeTree()), pins)
+    const out = resolvePins(resolveIndexOf(makeTree()), pins)
     expect(out.map((r) => r.key)).toEqual(['collection:c1'])
     expect(out.every((r) => r.pinned === true)).toBe(true)
   })

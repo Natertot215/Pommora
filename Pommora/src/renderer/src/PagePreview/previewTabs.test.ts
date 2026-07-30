@@ -8,6 +8,7 @@ const page = (id: string) => ({ id, path: `Notes/${id}.md` })
 
 // Restore hydrates bare refs against the live tree, so the fixtures carry one holding x/y/z.
 const tree = {
+  nexus: { name: 'T' },
   contexts: [],
   collections: [
     {
