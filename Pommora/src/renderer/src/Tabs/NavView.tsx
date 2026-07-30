@@ -27,7 +27,7 @@ export function NavView(): React.JSX.Element {
     next.splice(to, 0, moved)
     setRecentsOrder(next.map((r) => r.key))
   }
-  const ownBanner = useSession((s) => s.tree?.navView.banner)
+  const ownBanner = useSession((s) => s.navBanner)
   const homeBanner = useSession((s) => s.tree?.homepage.banner)
   const banner = ownBanner ?? homeBanner
   const mutate = useSession((s) => s.mutate)
