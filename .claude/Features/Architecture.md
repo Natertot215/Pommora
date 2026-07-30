@@ -84,6 +84,8 @@ There is no per-kind manager layer. The read side is **one eager, read-only walk
 
 Three seams keep that single walk cheap. A **mtime-gated parse cache** reuses decoded sidecars and frontmatter for files that haven't changed. **Self-write suppression** makes the watcher ignore the app's own writes, so a mutation costs exactly one walk instead of two. A **structural-sharing stabilize pass** in the renderer collapses an unchanged subtree back to its previous object identity, so a refetch re-renders only what actually moved.
 
+**Every renderer lookup over the tree is a projection of one record set.** `treeIndex` walks the tree once per identity, producing a record per entity (kind, id, title, resolved icon, path, breadcrumbs), cached against the tree object itself — the same identity `stabilize` preserves, so an echo push invalidates nothing and a real push invalidates everything at once. The record *list* is the source and duplicate ids stay listed — a copied `.md` carries its id in frontmatter, and title resolution must still answer "ambiguous" — while the keyed projections collapse last-wins. The reconcile, resolve, search, connections, and thumbnail-key tables all derive from those records lazily and share the cache; no consumer walks the tree for a lookup, and a new lookup belongs there as another projection, never as its own walk. The reserved `context` selection kind reconciles dead by declaration — a Context group is a disclosure, not a destination, and no stored ref may outlive what no surface can render — until ContextView gives it one.
+
 Mutations are separate by construction: the write path never runs inside a read, and every write is followed by one refetch.
 
 ---
