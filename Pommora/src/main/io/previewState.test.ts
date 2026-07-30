@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { EMPTY_PREVIEWS, type PreviewsFile } from '@shared/types'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
-import { readPreviewsState, writePreviewsState } from './previewState'
+import { readPreviewsState, sanitizePreviews, writePreviewsState } from './previewState'
 
 let root: string
 beforeEach(async () => {
@@ -17,7 +17,7 @@ afterEach(async () => {
 })
 
 const file: PreviewsFile = {
-  navSet: { tabs: [{ target: { kind: 'navwindow' } }], activeIndex: 0 },
+  navSet: { tabs: [{ target: { kind: 'page', id: 'p3' } }], activeIndex: 0 },
   origins: {
     p1: { tabs: [{ target: { kind: 'page', id: 'p2' } }], activeIndex: 0 },
   },
@@ -44,5 +44,28 @@ describe('readPreviewsState', () => {
     writePreviewsState(file)
     closeSessionDb()
     expect(readPreviewsState()).toEqual(EMPTY_PREVIEWS)
+  })
+})
+
+describe('sanitizePreviews', () => {
+  it('refuses a payload that is not a previews file', () => {
+    expect(sanitizePreviews(null)).toBeNull()
+    expect(sanitizePreviews({ navSet: null })).toBeNull()
+  })
+
+  it('strips display fields and drops refs of no storable kind', () => {
+    const clean = sanitizePreviews({
+      navSet: {
+        tabs: [
+          { target: { kind: 'navwindow' } },
+          { target: { kind: 'page', id: 'p1', path: 'stale.md' } },
+        ],
+        activeIndex: 0,
+      },
+      origins: {},
+      open: { flavor: 'weird', originId: 'p1' },
+    })
+    expect(clean?.navSet?.tabs).toEqual([{ target: { kind: 'page', id: 'p1' } }])
+    expect(clean?.open).toBeNull()
   })
 })

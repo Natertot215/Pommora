@@ -19,10 +19,8 @@ import type {
   NavViewModes,
   NexusState,
   PageResult,
-  PreviewsFile,
   PreviewsResult,
   SubfieldConfig,
-  TabSet,
   TabsResult,
   ThumbRect,
   ThumbResult,
@@ -81,8 +79,8 @@ import {
   readNavigationState,
   writeNavigationState,
 } from './io/navigationFile'
-import { readTabsState, writeTabsState } from './io/tabsState'
-import { readPreviewsState, writePreviewsState } from './io/previewState'
+import { readTabsState, sanitizeTabSet, writeTabsState } from './io/tabsState'
+import { readPreviewsState, sanitizePreviews, writePreviewsState } from './io/previewState'
 import { captureThumbnail, evictThumbnails } from './io/thumbnails'
 import { saveView, reorderViews, deleteView } from './crud/views'
 import { setContainerConfig, type ContainerConfigPatch } from './crud/containerConfig'
@@ -346,8 +344,9 @@ handleEnvelope('tabs:load', (): TabsResult => {
 
 ipcMain.handle('tabs:save', (_e, set: unknown): Ack => {
   if (adopting) return { ok: false, error: 'Nexus switching.' }
-  if (!isPlainObject(set) || !Array.isArray(set.tabs)) return { ok: false, error: 'Bad tab set.' }
-  if (!writeTabsState(set as unknown as TabSet)) return { ok: false, error: 'No nexus is open.' }
+  const clean = sanitizeTabSet(set)
+  if (!clean) return { ok: false, error: 'Bad tab set.' }
+  if (!writeTabsState(clean)) return { ok: false, error: 'No nexus is open.' }
   return { ok: true }
 })
 
@@ -359,10 +358,9 @@ handleEnvelope('previews:load', (): PreviewsResult => {
 
 ipcMain.handle('previews:save', (_e, file: unknown): Ack => {
   if (adopting) return { ok: false, error: 'Nexus switching.' }
-  if (!isPlainObject(file) || !isPlainObject(file.origins))
-    return { ok: false, error: 'Bad previews file.' }
-  if (!writePreviewsState(file as unknown as PreviewsFile))
-    return { ok: false, error: 'No nexus is open.' }
+  const clean = sanitizePreviews(file)
+  if (!clean) return { ok: false, error: 'Bad previews file.' }
+  if (!writePreviewsState(clean)) return { ok: false, error: 'No nexus is open.' }
   return { ok: true }
 })
 
