@@ -309,43 +309,6 @@ describe('readNexus — real test nexus (optional smoke)', () => {
   })
 })
 
-describe('readNexus — accent setting', () => {
-  const roots: string[] = []
-  const mk = (settings: object): string => {
-    const root = mkdtempSync(join(tmpdir(), 'pom-accent-'))
-    roots.push(root)
-    d(join(root, '.nexus'))
-    w(
-      join(root, '.nexus', 'nexus.json'),
-      JSON.stringify({ schemaVersion: 1, id: 'nxa', createdAt: '2026' }),
-    )
-    w(join(root, '.nexus', 'settings.json'), JSON.stringify(settings))
-    return root
-  }
-  afterAll(() =>
-    roots.forEach((r) => {
-      rmSync(r, { recursive: true, force: true })
-    }),
-  )
-
-  it('reads the shared accent_color key (React-native value passes through)', async () => {
-    expect((await readNexus(mk({ accent_color: 'blue' }))).accent).toBe('blue')
-    expect((await readNexus(mk({ accent_color: 'lavender' }))).accent).toBe('lavender')
-  })
-  it('maps Swift-only accent values onto React tokens', async () => {
-    expect((await readNexus(mk({ accent_color: 'gray' }))).accent).toBe('grey')
-    expect((await readNexus(mk({ accent_color: 'pink' }))).accent).toBe('purple')
-  })
-  it('passes through system', async () => {
-    expect((await readNexus(mk({ accent_color: 'system' }))).accent).toBe('system')
-  })
-  it('defaults when the accent is invalid', async () => {
-    expect((await readNexus(mk({ accent_color: 'chartreuse' }))).accent).toBe('lavender')
-  })
-  it('defaults when accent_color is absent', async () => {
-    expect((await readNexus(mk({}))).accent).toBe('lavender')
-  })
-})
 
 describe('readNexus — personalization', () => {
   const roots: string[] = []
@@ -366,13 +329,15 @@ describe('readNexus — personalization', () => {
     }),
   )
 
-  it('reads accent from personalization.accent (the new home)', async () => {
+  it('reads accent from personalization.accent — its one home', async () => {
     expect((await readNexus(mk({ personalization: { accent: 'blue' } }))).accent).toBe('blue')
+    expect((await readNexus(mk({ personalization: { accent: 'system' } }))).accent).toBe('system')
   })
-  it('personalization.accent wins over the legacy top-level accent_color', async () => {
-    expect(
-      (await readNexus(mk({ accent_color: 'red', personalization: { accent: 'blue' } }))).accent,
-    ).toBe('blue')
+  it('an unknown accent name or a foreign top-level key resolves the default', async () => {
+    expect((await readNexus(mk({ personalization: { accent: 'chartreuse' } }))).accent).toBe(
+      'lavender',
+    )
+    expect((await readNexus(mk({ accent_color: 'red' }))).accent).toBe('lavender')
   })
   it('reads the block, dropping invalid fields + unknown icon kinds', async () => {
     const t = await readNexus(
@@ -431,11 +396,10 @@ describe('readNexus — structured labels (Swift SettingsLabels shape)', () => {
     }),
   )
 
-  it('parses a Swift labels blob into the structured shape', async () => {
+  it('parses the labels blob into the structured shape, defaulting absent pairs', async () => {
     const t = await readNexus(
       mk({
         labels: {
-          sidebar_sections: { areas: 'Spaces', topics: 'Themes', pages: 'Libraries' },
           page_collection: { singular: 'Library', plural: 'Libraries' },
           page_set: { singular: 'Shelf', plural: 'Shelves' },
           project: { singular: 'Initiative', plural: 'Initiatives' },
@@ -444,8 +408,8 @@ describe('readNexus — structured labels (Swift SettingsLabels shape)', () => {
         },
       }),
     )
-    expect(t.labels.area).toEqual({ singular: 'Area', plural: 'Spaces' })
-    expect(t.labels.topic).toEqual({ singular: 'Topic', plural: 'Themes' })
+    expect(t.labels.area).toEqual({ singular: 'Area', plural: 'Areas' })
+    expect(t.labels.topic).toEqual({ singular: 'Topic', plural: 'Topics' })
     expect(t.labels.pageCollection).toEqual({ singular: 'Library', plural: 'Libraries' })
     expect(t.labels.pageSet).toEqual({ singular: 'Shelf', plural: 'Shelves' })
     expect(t.labels.project).toEqual({ singular: 'Initiative', plural: 'Initiatives' })
@@ -453,7 +417,7 @@ describe('readNexus — structured labels (Swift SettingsLabels shape)', () => {
     expect(t.labels.agendaEvent).toEqual({ singular: 'Happening', plural: 'Happenings' })
   })
 
-  it('reads new-shape area/topic LabelPairs directly, ignoring legacy sidebar_sections', async () => {
+  it('reads area/topic LabelPairs directly; a foreign key inside labels is inert', async () => {
     const t = await readNexus(
       mk({
         labels: {

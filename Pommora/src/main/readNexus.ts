@@ -64,15 +64,9 @@ const ACCENT_COLOR_SET = new Set<string>(SOLID_COLORS)
 
 // ---------- low-level helpers ----------
 
-// Swift `accent_color` values that aren't in React's own palette → nearest React token.
-// React's own values (including the 6 that overlap Swift) pass through unchanged; React
-// keeps its own accent vocabulary, this only maps Swift's extras on read.
-const SWIFT_ONLY_ACCENT: Record<string, SolidColor> = { pink: 'purple', gray: 'grey' }
-
 function resolveAccent(raw: string | undefined): AccentSetting {
   if (raw === 'system') return 'system'
   if (raw != null && ACCENT_COLOR_SET.has(raw)) return raw as SolidColor
-  if (raw != null && raw in SWIFT_ONLY_ACCENT) return SWIFT_ONLY_ACCENT[raw]
   return DEFAULT_ACCENT
 }
 
@@ -138,8 +132,8 @@ export function readCommands(raw: unknown): Record<string, string> {
   return commands
 }
 
-// Parse Swift's nested snake_case `settings.labels` into the structured camelCase
-// NexusLabels, defaulting per-field so a partial/absent blob still yields full labels.
+// Parse the on-disk `settings.labels` blob into the structured camelCase NexusLabels,
+// defaulting per-field so a partial/absent blob still yields full labels.
 export function readLabels(raw: unknown): NexusLabels {
   const obj = (v: unknown): Record<string, unknown> =>
     v != null && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {}
@@ -151,15 +145,9 @@ export function readLabels(raw: unknown): NexusLabels {
     }
   }
   const L = obj(raw)
-  // Migrate a legacy `sidebar_sections.{areas,topics}` blob into the area/topic label plurals when the
-  // new LabelPairs are absent (singular defaults). The old `pages` header is dropped — the Collections
-  // sidebar header now derives from pageCollection.plural.
-  const ss = obj(L.sidebar_sections)
-  const labelled = (key: string, legacyPlural: unknown, fallback: LabelPair): LabelPair =>
-    pair(L[key], { singular: fallback.singular, plural: asString(legacyPlural) ?? fallback.plural })
   return {
-    area: labelled('area', ss.areas, DEFAULT_LABELS.area),
-    topic: labelled('topic', ss.topics, DEFAULT_LABELS.topic),
+    area: pair(L.area, DEFAULT_LABELS.area),
+    topic: pair(L.topic, DEFAULT_LABELS.topic),
     project: pair(L.project, DEFAULT_LABELS.project),
     pageCollection: pair(L.page_collection, DEFAULT_LABELS.pageCollection),
     pageSet: pair(L.page_set, DEFAULT_LABELS.pageSet),
@@ -464,17 +452,13 @@ async function walkNexus(root: string): Promise<NexusTree> {
     !Array.isArray(settings.personalization)
       ? (settings.personalization as Record<string, unknown>)
       : {}
-  // Accent's new home is personalization.accent; the legacy top-level accent_color is the back-compat
-  // fallback for un-migrated nexuses. resolveAccent normalizes either into an AccentSetting.
-  const accent = resolveAccent(
-    asString(rawPersonalization.accent) ?? asString(settings.accent_color),
-  )
+  const accent = resolveAccent(asString(rawPersonalization.accent))
   const personalization = readPersonalization(rawPersonalization)
   const commands = readCommands(settings.commands)
   const timeFormat =
     settings.time_format === 'twentyFourHour' ? 'twentyFourHour' : DEFAULT_TIME_FORMAT
-  // Profile image + subtitle live in settings (Swift parity), not nexus.json. profileImage is a
-  // nexus-relative asset path the renderer serves via nexus-asset://; subtitle is plain text.
+  // Profile image + subtitle live in settings, not nexus.json — they're preferences, not identity.
+  // profileImage is a nexus-relative asset path the renderer serves via nexus-asset://.
   const profileImage = asString(settings.profile_image) ?? null
   const profileIcon = asString(settings.profile_icon)
   const profileSubtitle = asString(settings.profile_subtitle) ?? ''
