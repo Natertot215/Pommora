@@ -1,8 +1,11 @@
 import { style } from '@vanilla-extract/css'
-import { vars } from '@renderer/design-system/tokens'
-import { tintAt, TINT_STEPS } from '@renderer/design-system/tokens'
+import { text, TINT_STEPS, tintAt, vars } from '@renderer/design-system/tokens'
+import { inputFieldVar } from '@renderer/design-system/tokens/color.css'
+import { fieldRing, focusRing } from '@renderer/design-system/components/fieldRing'
+import { separatorLine } from '@renderer/design-system/components/menu/menu.css'
 
-const CELL = 34
+export const CELL = 34
+const GUTTER = 8
 
 /** The pane's SOLE surface class (PickerMenu `bareSurface`) — owns 100% of the gutter. Padding equals
  *  the inter-row gap, so the search sits with the same space above it as below it to the divider; the
@@ -11,8 +14,8 @@ export const content = style({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'stretch',
-  gap: 8,
-  padding: 8,
+  gap: GUTTER,
+  padding: GUTTER,
   width: 'var(--icon-picker-w, 224px)',
   boxSizing: 'border-box',
 })
@@ -20,40 +23,33 @@ export const content = style({
 // The beak eats into the gutter on the edge it rides, so add its depth (`--notch-h`) back to that
 // side — the search/content then sits a full, uniform gap in from the visible pane body on every edge.
 // Keyed to the requested direction (the near-edge auto-flip case is a minor cosmetic exception).
-export const beakDown = style({ paddingTop: 'calc(8px + var(--notch-h, 0px))' })
-export const beakUp = style({ paddingBottom: 'calc(8px + var(--notch-h, 0px))' })
-export const beakLeft = style({ paddingLeft: 'calc(8px + var(--notch-h, 0px))' })
-export const beakRight = style({ paddingRight: 'calc(8px + var(--notch-h, 0px))' })
+export const beakDown = style({ paddingTop: `calc(${GUTTER}px + var(--notch-h, 0px))` })
+export const beakUp = style({ paddingBottom: `calc(${GUTTER}px + var(--notch-h, 0px))` })
+export const beakLeft = style({ paddingLeft: `calc(${GUTTER}px + var(--notch-h, 0px))` })
+export const beakRight = style({ paddingRight: `calc(${GUTTER}px + var(--notch-h, 0px))` })
 
-export const search = style({
-  width: '100%',
-  padding: '6px 8px',
-  boxSizing: 'border-box',
-  textAlign: 'left',
-  // The body portal escapes the app's type context, so pin font + line-height (else the caret inherits
-  // an oversized line box and sits misaligned).
-  fontFamily: 'inherit',
-  fontSize: 13,
-  lineHeight: 1.2,
-  color: vars.color.label.primary,
-  background: vars.color.fill.secondary,
-  // `--icon-search-ring` = the focus-highlight border WIDTH knob (transparent at rest so no shift).
-  vars: { '--icon-search-ring': '1px' },
-  border: 'var(--icon-search-ring) solid transparent',
-  borderRadius: 8,
-  outline: 'none',
-  selectors: {
-    '&::placeholder': { color: vars.color.label.tertiary },
-    '&:focus': { borderColor: tintAt('var(--accent)', TINT_STEPS.secondary) },
+// The body portal escapes the app's type context, so the ramp is pinned explicitly.
+export const search = style([
+  text.body.standard,
+  {
+    width: '100%',
+    padding: '6px 8px',
+    boxSizing: 'border-box',
+    textAlign: 'left',
+    color: vars.color.label.primary,
+    background: inputFieldVar,
+    border: 'none',
+    borderRadius: 8,
+    outline: 'none',
+    boxShadow: fieldRing(1), // the argument is the ring-width knob
+    selectors: {
+      '&::placeholder': { color: vars.color.label.tertiary },
+    },
   },
-})
+  focusRing(),
+])
 
-export const separator = style({
-  width: '100%',
-  height: 1,
-  flex: '0 0 auto',
-  background: vars.color.separator.border,
-})
+export const separator = style([separatorLine, { flex: '0 0 auto' }])
 
 /** Favorites: a rounded, outlined box — a second input field holding the favorite icons. Its
  *  divider-color outline replaces the flanking dividers; `overflow: hidden` clips the inner scroll to
@@ -63,7 +59,7 @@ export const favorites = style({
   flex: '0 0 auto',
   boxSizing: 'border-box',
   padding: '2px 4px',
-  border: `1.5px solid ${vars.color.separator.border}`,
+  border: 'var(--border-cell)',
   borderRadius: 8,
   overflow: 'hidden',
 })
@@ -77,7 +73,6 @@ export const favScroll = style({
   overflowY: 'hidden',
   scrollbarWidth: 'none',
   vars: { '--edge-fade': '16px' },
-  selectors: { '&::-webkit-scrollbar': { display: 'none' } },
 })
 
 /** The vertical scroll region — holds the favorites strip AND the full-set grid, so favorites scroll
@@ -94,7 +89,6 @@ export const grid = style({
   overflowX: 'hidden',
   scrollbarWidth: 'none',
   vars: { '--edge-fade': '20px' },
-  selectors: { '&::-webkit-scrollbar': { display: 'none' } },
 })
 
 /** The virtualized icon list inside the scroll region — its height is the full virtual extent; rows are
@@ -113,9 +107,10 @@ export const cell = style({
   background: 'transparent',
   borderRadius: 8,
   color: vars.color.label.control,
+  fontSize: vars.size.icon.lg, // glyphs render at 1em, so the cell's font-size is the icon size
   cursor: 'pointer',
   selectors: {
-    '&:hover': { background: vars.color.fill.secondary },
+    '&:hover': { background: vars.color.state.hover },
   },
 })
 

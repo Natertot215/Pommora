@@ -51,7 +51,7 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  border: 1.5px solid var(--separator-border);
+  border: var(--border-cell);
   border-radius: 10px;
   overflow: hidden;
   background: none;
@@ -61,7 +61,7 @@
 }
 /* Open entity — same accent-tint border as an active SurfacePM embed/resize. */
 .nav-gallery-card.is-active .nav-gallery-card-body {
-  border-color: color-mix(in srgb, var(--accent) var(--tint-secondary), transparent);
+  border-color: var(--accent-stroke);
 }
 
 .nav-gallery-thumb {
@@ -128,7 +128,7 @@
   /* The muted dimming veil over the pane glass — reads as a slightly-darker glass shelf, mirroring the
      glass's own dimming. (A nested backdrop-filter wouldn't: Chromium doesn't stack frost-in-frost.) */
   background: var(--state-muted);
-  border-top: 1.5px solid var(--separator-border);
+  border-top: var(--border-cell);
 }
 .nav-gallery-title,
 .nav-gallery-loc {

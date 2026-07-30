@@ -98,6 +98,5 @@ export const truncateHoverScroll = style({
       maskImage: 'linear-gradient(to right, transparent 0, #000 var(--scroll-fade, 0px))',
       WebkitMaskImage: 'linear-gradient(to right, transparent 0, #000 var(--scroll-fade, 0px))',
     },
-    '&::-webkit-scrollbar': { display: 'none' },
   },
 })

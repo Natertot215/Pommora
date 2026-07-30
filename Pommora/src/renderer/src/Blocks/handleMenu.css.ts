@@ -63,7 +63,7 @@ export const titleField = style({
   boxSizing: 'border-box',
   margin: '0 0 3px',
   padding: '3px 6px',
-  border: '1px solid color-mix(in srgb, var(--accent) var(--tint-secondary), transparent)',
+  border: '1px solid var(--accent-stroke)',
   borderRadius: '5px',
   background: 'none',
   textAlign: 'left',
