@@ -40,6 +40,7 @@ import {
   atomicWriteFile,
 } from './io/atomicWrite'
 import { recordWrite } from './io/writeEcho'
+import { readNavigationFile, writeNavigationState } from './io/navigationFile'
 import { serializeOnFile } from './io/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { basenameNoMd } from './coerce'
@@ -92,7 +93,7 @@ async function writeImageAsset(
   const decoded = decodeImageDataUrl(dataUrl)
   if (!decoded) return null
   const file = `${prefix}-${Math.random().toString(36).slice(2, 10)}.${decoded.ext}`
-  const rel = `.nexus/assets/${assetKey}/${file}`
+  const rel = assetKey ? `.nexus/assets/${assetKey}/${file}` : `.nexus/assets/${file}`
   const absAsset = join(root, '.nexus', 'assets', assetKey, file)
   await mkdir(dirname(absAsset), { recursive: true })
   await atomicWriteBinary(absAsset, decoded.buffer)
@@ -343,17 +344,32 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           return { ok: true }
         })
       }
+      // The NavView's banner rides navigation.json — the pointer is the only linkage, so the
+      // image sits in shared assets with no per-owner folder, and the one serialized patch-writer
+      // is what keeps the arrays and the banner from dropping each other.
+      if (req.kind === 'navview') {
+        const prevNav = (await readNavigationFile(root)).banner ?? null
+        let next: string | undefined
+        if (req.dataUrl) {
+          const rel = await writeImageAsset(root, '', req.dataUrl, 'banner')
+          if (!rel) return fault('Unsupported image data.')
+          next = rel
+        }
+        await writeNavigationState(root, { banner: next })
+        if (prevNav && prevNav !== next) await rm(join(root, prevNav), { force: true }).catch(() => {})
+        return { ok: true }
+      }
       // Resolve the config holding the banner field + the asset-folder key, per owner kind. The
-      // homepage and the NavView are singletons (.nexus/homepage.json / navview.json, keyed by
-      // kind); the rest are folder sidecars keyed by their entity id (assets/<id>/).
+      // homepage is a singleton (.nexus/homepage.json); the rest are folder sidecars keyed by
+      // their entity id (assets/<id>/).
       let cfgPath: string
       let assetKey: string
-      // The singletons legitimately seed from nothing; a folder sidecar never does — one that
+      // The singleton legitimately seeds from nothing; a folder sidecar never does — one that
       // vanishes mid-op fails not-found rather than being re-minted around a banner.
       let seed: (() => Record<string, unknown>) | undefined
       let existing: Record<string, unknown> | null
-      if (req.kind === 'homepage' || req.kind === 'navview') {
-        cfgPath = nexusConfig(root, NEXUS_CONFIG_FILES[req.kind])
+      if (req.kind === 'homepage') {
+        cfgPath = nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
         assetKey = req.kind
         seed = () => ({})
         existing = await readJsonObject(cfgPath)
@@ -394,7 +410,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       let cfgPath: string
       let fallback: Record<string, unknown>
       if (req.kind === 'homepage' || req.kind === 'navview') {
-        cfgPath = nexusConfig(root, NEXUS_CONFIG_FILES[req.kind])
+        if (req.kind === 'navview') return fault('The NavView has no heading icon.')
+        cfgPath = nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
         fallback = {}
       } else if (req.kind === 'page') {
         return fault('A page has no heading icon.')

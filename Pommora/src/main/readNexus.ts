@@ -423,13 +423,12 @@ export async function readNexus(root: string): Promise<NexusTree> {
 }
 
 async function walkNexus(root: string): Promise<NexusTree> {
-  const [identityRead, settings, state, homepageConfig, navviewConfig, registry, ctxRegistryRaw] =
+  const [identityRead, settings, state, homepageConfig, registry, ctxRegistryRaw] =
     await Promise.all([
       readJsonStrict(nexusConfig(root, NEXUS_CONFIG_FILES.identity)),
       readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.settings)),
       readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.state)),
       readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)),
-      readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.navview)),
       readRegistry(root),
       readSidecar(contextsRegistryFile(root)),
     ])
@@ -529,7 +528,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
       banner: asString(homepageConfig.banner),
       headingIconHidden: homepageConfig.heading_icon_hidden === true,
     },
-    navView: { banner: asString(navviewConfig.banner) },
     contexts: contexts ?? [],
     collections,
     labels,

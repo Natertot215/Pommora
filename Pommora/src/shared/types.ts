@@ -237,7 +237,6 @@ export interface NexusTree {
   homepage: { banner?: string; headingIconHidden: boolean }
   /** NavView singleton (`.nexus/navview.json`) — its own banner; absent, the NavView inherits
    *  the homepage's. */
-  navView: { banner?: string }
   /** Registry-backed Context groups in registry order, each with its Spaces ([] on a
    *  raw/unmigrated tree — the open path migrates + seeds before anything renders). */
   collections: CollectionNode[]
