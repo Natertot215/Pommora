@@ -356,9 +356,10 @@ export interface StoredTabSet {
 export type TabsResult = { ok: true; set: StoredTabSet | null } | { ok: false; error: string }
 
 /** A persisted preview tab set: bare refs only — ids are session-local and re-minted at
- *  restore; `activeIndex` points into `tabs` by strip order. */
+ *  restore; `activeIndex` points into `tabs` by strip order. The NavWindow's gallery sentinel
+ *  never persists — opening the nav flavor re-seeds it as tab 1. */
 export interface PreviewSetRecord {
-  tabs: { target: NavRef | { kind: 'navwindow' } }[]
+  tabs: { target: NavRef }[]
   activeIndex: number
 }
 
