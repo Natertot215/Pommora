@@ -291,11 +291,6 @@ export type SelectionState =
  *  kinds (they have no click destination in v1). */
 export type SelectTarget = Exclude<SelectionState, { kind: 'none' }>
 
-/** A navigable target for the Navigation layer: a `SelectTarget` widened with the agenda kinds
- *  (`task`/`event` — find-only in v1, no click destination yet). Recents and favorites are both stored
- *  as these and resolved live against the tree at render, so they carry no cached display fields. */
-export type NavTarget = SelectTarget | { kind: 'task'; id: string } | { kind: 'event'; id: string }
-
 /** A durable navigation reference — identity only; titles, icons, and paths resolve live. */
 export type NavRef =
   | { kind: 'homepage' }
@@ -313,19 +308,6 @@ export interface NavigationState {
 }
 
 export type NavigationResult = { ok: true; nav: NavigationState } | { ok: false; error: string }
-
-/** A recents-stream entry: a nav target plus a transient `pinned` flag that floats it to the top
- *  of history (the "open tabs" feel). Absent `pinned` = un-pinned. */
-export type RecentEntry = NavTarget & { pinned?: boolean }
-
-/** A durable favorite. Same shape as a nav target — v1's add path is tree-kinds only, but the type
- *  stays permissive so agenda favorites slot in with their resolver later. */
-export type NavFavorite = NavTarget
-
-/** A durable, user-ordered pin. Persisted one file per pin under `.nexus/pins/` so concurrent
- *  cross-device adds never collide (filesystem-as-merge, no whole-array LWW loss). `order` is a
- *  numeric fractional key; `deleted` is a tombstone (unpin) reaped from the in-memory set on load. */
-export type PinEntry = NavTarget & { order: number; deleted?: boolean }
 
 /** The new-tab sentinel — a tab target that maps to NavView (the `'none'` detail branch); it is NOT a
  *  `SelectionState` kind, so it bypasses `select` entirely. */
@@ -381,12 +363,6 @@ export const EMPTY_PREVIEWS: PreviewsFile = { navSet: null, origins: {}, open: n
 /** The `previews:load` IPC envelope — a nexus with nothing stored reads as the empty shape, never null. */
 export type PreviewsResult = { ok: true; file: PreviewsFile } | { ok: false; error: string }
 
-/** The `nav:loadPins` IPC envelope. */
-export type PinsResult = { ok: true; pins: PinEntry[] } | { ok: false; error: string }
-
-/** The `nav:changed` watcher push — full nav state after an external/synced sidecar or pin change. */
-export type NavChanged = NavState & { pins: PinEntry[] }
-
 /** A detail-pane rectangle (DIP, viewport-relative) the renderer measures for a thumbnail capture. */
 export interface ThumbRect {
   x: number
@@ -402,15 +378,6 @@ export interface ThumbRect {
 
 /** The `capture:thumbnail` envelope — the written thumbnail's `nexus-asset://` URL. */
 export type ThumbResult = { ok: true; url: string } | { ok: false; error: string }
-
-/** The two Navigation sidecars read together (`.nexus/navRecents.json` + `navFavorites.json`). */
-export interface NavState {
-  recents: RecentEntry[]
-  favorites: NavFavorite[]
-}
-
-/** The `nav:load` IPC envelope — never throws across the boundary. */
-export type NavStateResult = ({ ok: true } & NavState) | { ok: false; error: string }
 
 /** Per-nexus Subfield (footer) config — persisted as a foreign `subfield` key in settings.json. */
 export interface SubfieldConfig {

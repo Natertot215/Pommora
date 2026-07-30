@@ -4,16 +4,14 @@ import {
   EMPTY_PREVIEWS,
   DEFAULT_COMMANDS,
   type AgendaEntry,
-  type NavFavorite,
-  type NavTarget,
+  type NavigationState,
+  type NavRef,
   type NavViewMode,
   type NexusTree,
   type PageDetail,
   type Personalization,
-  type PinEntry,
   type PreviewSetRecord,
   type PreviewsFile,
-  type RecentEntry,
   type SelectionState,
   type SelectTarget,
   type SetNode,
@@ -40,9 +38,8 @@ import {
   type PreviewState,
   type PreviewTab,
 } from './PagePreview/previewTabs'
-import { navKey, recordRecent, removeRecentByKey, RECENTS_CAP } from './Navigation/navRecents'
+import { navKey, recordRecent, removeRecentByKey, toNavRef, RECENTS_CAP } from './Navigation/navRecents'
 import { existingNavKeys } from './Navigation/treeNavKeys'
-import { byOrder, cleanPinTarget, pinFor, reorderTo } from './Navigation/navPins'
 import {
   activeUnpinnedTab,
   closeTab as closeTabModel,
@@ -201,24 +198,22 @@ interface SessionState {
     source: 'history' | 'tab' | 'select'
   } | null
 
-  recents: RecentEntry[]
-  favorites: NavFavorite[]
-  pins: PinEntry[]
-  pinTarget: (target: NavTarget) => void
+  recents: NavRef[]
+  favorites: NavRef[]
+  pinned: NavRef[]
+  /** The pinned refs hydrated against the live tree — derived state with exactly four writers
+   *  (load, tree push, nav push, pin gestures), so hot readers never rebuild the index. */
+  pinnedTabs: Tab[]
+  navBanner: string | undefined
+  pinTarget: (target: NavRef | SelectTarget) => void
   unpinTarget: (key: string) => void
   reorderPin: (activeKey: string, overKey: string) => void
-  loadPins: () => Promise<void>
-  applyNavChanged: (nav: {
-    recents: RecentEntry[]
-    favorites: NavFavorite[]
-    pins: PinEntry[]
-  }) => void
+  applyNavChanged: (nav: Omit<NavigationState, 'recents'>) => void
   thumbVersions: Record<string, number>
   bumpThumb: (key: string) => void
   evictThumbs: () => void
-  addFavorite: (target: NavTarget) => void
+  addFavorite: (target: NavRef | SelectTarget) => void
   removeFavorite: (key: string) => void
-  reorderFavorites: (from: number, to: number) => void
   removeRecent: (key: string) => void
   reorderRecent: (activeKey: string, overKey: string) => void
   setRecentsOrder: (keys: string[]) => void
@@ -429,7 +424,7 @@ export const useSession = create<SessionState>((set, get) => {
     const s = get()
     return (
       s.tabs.find((t) => t.id === s.activeTabId) ??
-      derivePinnedTabs(s.pins).find((t) => t.id === s.activeTabId)
+      s.pinnedTabs.find((t) => t.id === s.activeTabId)
     )
   }
 
@@ -465,7 +460,7 @@ export const useSession = create<SessionState>((set, get) => {
 
   const graduatePinCovered = (): void => {
     const s = get()
-    const covered = s.tabs.filter((t) => t.target.kind !== 'newtab' && isPinned(t.target, s.pins))
+    const covered = s.tabs.filter((t) => t.target.kind !== 'newtab' && isPinned(t.target, s.pinned))
     if (covered.length === 0) return
     const activeCovered = covered.find((t) => t.id === s.activeTabId)
     set({
@@ -545,7 +540,6 @@ export const useSession = create<SessionState>((set, get) => {
         switch (res.status) {
           case 'open':
             await get().applyTree(res.tree)
-            set({ pins: [] })
             // Six independent fetches, one round of latency. The two raw database reads keep
             // a catch; the envelope channels structurally cannot reject.
             await Promise.all([
@@ -563,46 +557,41 @@ export const useSession = create<SessionState>((set, get) => {
                 .get()
                 .then((views) => set({ activeViews: views }))
                 .catch(() => undefined), // surfaces fall back to the first saved view
-              window.nexus.nav
-                .load()
-                .then((nav) =>
-                  set(
-                    nav.ok
-                      ? { recents: nav.recents, favorites: nav.favorites }
-                      : { recents: [], favorites: [] },
-                  ),
-                ),
-              get().loadPins(),
             ])
             set({ agendaSnapshot: null })
             // A mutation refetch must NOT re-read the sidecar here — its debounced write trails
             // the in-memory tab set, so a re-read would roll the tabs backward.
             if (get().activeTabId === '') {
+              // Disk leads exactly here (the first load) and on the external-edit push — a
+              // mutation-driven load() never re-reads navigation, so a just-made change can't
+              // roll back.
+              const nav = await window.nexus.nav.read().catch(() => null)
+              const pinned = nav?.ok ? (nav.nav.pinned ?? []) : []
+              set({
+                pinned,
+                pinnedTabs: derivePinnedTabs(pinned, get().tree),
+                favorites: nav?.ok ? (nav.nav.favorites ?? []) : [],
+                recents: nav?.ok ? (nav.nav.recents ?? []) : [],
+                navBanner: nav?.ok ? nav.nav.banner : undefined,
+              })
               get().evictThumbs()
               const previews = await window.nexus.previews?.load().catch(() => null)
               if (previews?.ok) set({ previewsFile: previews.file })
               const stored = await window.nexus.tabs.load().catch(() => null)
               const storedSet = stored?.ok ? stored.set : null
-              const pins = get().pins
               const seen = new Set<string>()
               const tabs = (storedSet?.tabs ?? []).filter((t) => {
-                if (t.target.kind !== 'newtab' && isPinned(t.target, pins)) return false
+                if (t.target.kind !== 'newtab' && isPinned(t.target, pinned)) return false
                 const k = tabKey(t.target)
                 if (seen.has(k)) return false
                 seen.add(k)
                 return true
               })
-              const pinnedTabs = derivePinnedTabs(pins)
-              // A pin whose entity vanished while closed render-hides — it must not count as live,
-              // or a stored active pointer at it dangles onto an error pane.
+              // Hydration already dropped any pin whose entity vanished while closed — the
+              // derived set IS the live set.
+              const livePinnedTabs = get().pinnedTabs
               const tree = get().tree
               const index = tree ? buildReconcileIndex(tree) : null
-              const livePinnedTabs = index
-                ? pinnedTabs.filter(
-                    (t) =>
-                      t.target.kind === 'newtab' || reconcileWith(index, t.target).kind !== 'none',
-                  )
-                : pinnedTabs
               const storedActive = storedSet?.activeTabId ?? ''
               const liveIds = new Set([...livePinnedTabs, ...tabs].map((t) => t.id))
               const active = liveIds.has(storedActive)
@@ -664,6 +653,8 @@ export const useSession = create<SessionState>((set, get) => {
       const tree = stabilize(incoming, get().tree)
       set({ status: 'ready', tree })
       const index = buildReconcileIndex(tree)
+      // Tree push = pinned hydration writer #2: renames re-title, moves re-path, deletes drop.
+      set({ pinnedTabs: derivePinnedTabs(get().pinned, tree) })
       const prev = get().selection
       const next = reconcileWith(index, prev)
       if (next !== prev) {
@@ -686,11 +677,7 @@ export const useSession = create<SessionState>((set, get) => {
           s.tabs,
           s.activeTabId,
           s.tabMru,
-          derivePinnedTabs(s.pins)
-            .filter(
-              (t) => t.target.kind === 'newtab' || reconcileWith(index, t.target).kind !== 'none',
-            )
-            .map((t) => t.id),
+          s.pinnedTabs.map((t) => t.id),
           (t) => {
             const r = reconcileWith(index, t)
             return r.kind === 'none' ? null : r
@@ -876,7 +863,7 @@ export const useSession = create<SessionState>((set, get) => {
       const s = get()
       if (s.activeTabId === id) return
       captureOutgoingDetail()
-      const order = [...derivePinnedTabs(s.pins).map((t) => t.id), ...s.tabs.map((t) => t.id)]
+      const order = [...s.pinnedTabs.map((t) => t.id), ...s.tabs.map((t) => t.id)]
       const dir: 'back' | 'forward' =
         order.indexOf(id) < order.indexOf(s.activeTabId) ? 'back' : 'forward'
       set((st) => ({
@@ -912,7 +899,7 @@ export const useSession = create<SessionState>((set, get) => {
     },
     closeTab: (id) => {
       const s = get()
-      const pinnedIds = derivePinnedTabs(s.pins).map((t) => t.id)
+      const pinnedIds = s.pinnedTabs.map((t) => t.id)
       const res = closeTabModel(s.tabs, s.activeTabId, s.tabMru, pinnedIds, id, makeTabId())
       dropWarmTab(id)
       applyTabResult(res)
@@ -932,7 +919,7 @@ export const useSession = create<SessionState>((set, get) => {
       get().pinTarget(tab.target)
     },
     unpinTab: (pinId) => {
-      const pinnedTab = derivePinnedTabs(get().pins).find((t) => t.id === pinId)
+      const pinnedTab = get().pinnedTabs.find((t) => t.id === pinId)
       if (!pinnedTab || pinnedTab.target.kind === 'newtab') return
       const target = pinnedTab.target
       get().unpinTarget(navKey(target))
@@ -955,53 +942,57 @@ export const useSession = create<SessionState>((set, get) => {
 
     recents: [],
     favorites: [],
-    pins: [],
+    pinned: [],
+    pinnedTabs: [],
+    navBanner: undefined,
     pinTarget: (target) => {
-      // Agenda kinds have no durable resolver yet; adopted ids would orphan their pin file on re-mint.
+      // Agenda kinds have no durable resolver yet; adopted ids would re-mint under a new id.
       if (target.kind === 'task' || target.kind === 'event') return
       if ('id' in target && target.id.startsWith('adopted-')) return
-      const key = navKey(target)
-      if (get().pins.some((p) => navKey(p) === key)) return
-      const pin = pinFor(target, get().pins)
-      set({ pins: [...get().pins, pin].sort(byOrder) })
-      void window.nexus.nav.addPin(pin)
+      const ref = toNavRef(target)
+      const key = navKey(ref)
+      if (get().pinned.some((p) => navKey(p) === key)) return
+      const pinned = [...get().pinned, ref]
+      set({ pinned, pinnedTabs: derivePinnedTabs(pinned, get().tree) })
+      void window.nexus.nav.write({ pinned })
       graduatePinCovered()
     },
     unpinTarget: (key) => {
-      const pin = get().pins.find((p) => navKey(p) === key)
-      if (!pin) return
-      set({ pins: get().pins.filter((p) => navKey(p) !== key) })
-      void window.nexus.nav.removePin(cleanPinTarget(pin), pin.order)
+      if (!get().pinned.some((p) => navKey(p) === key)) return
+      const pinned = get().pinned.filter((p) => navKey(p) !== key)
+      set({ pinned, pinnedTabs: derivePinnedTabs(pinned, get().tree) })
+      void window.nexus.nav.write({ pinned })
     },
     reorderPin: (activeKey, overKey) => {
-      const moved = reorderTo(get().pins, activeKey, overKey)
-      if (!moved) return
-      set({
-        pins: get()
-          .pins.map((p) => (navKey(p) === activeKey ? moved : p))
-          .sort(byOrder),
-      })
-      void window.nexus.nav.reorderPin(moved)
+      const pinned = [...get().pinned]
+      const from = pinned.findIndex((p) => navKey(p) === activeKey)
+      const to = pinned.findIndex((p) => navKey(p) === overKey)
+      if (from === -1 || to === -1 || from === to) return
+      pinned.splice(to, 0, pinned.splice(from, 1)[0])
+      set({ pinned, pinnedTabs: derivePinnedTabs(pinned, get().tree) })
+      void window.nexus.nav.write({ pinned })
     },
-    loadPins: async () => {
-      const res = await window.nexus.nav.loadPins()
-      if (res.ok) set({ pins: [...res.pins].sort(byOrder) })
-    },
-    // Only pins swap on a live refresh — recents are debounce-written so in-memory leads disk; replacing
-    // them from a pin/favorite-triggered push would clobber the user's latest (unsaved) navigations.
+    // The push carries the FILE's keys (an external edit): pinned, favorites, banner. Recents
+    // aren't in the file — the in-memory stream always leads.
     applyNavChanged: (nav) => {
-      set({ pins: [...nav.pins].sort(byOrder) })
+      const pinned = nav.pinned ?? []
+      set({
+        pinned,
+        pinnedTabs: derivePinnedTabs(pinned, get().tree),
+        favorites: nav.favorites ?? [],
+        navBanner: nav.banner,
+      })
       graduatePinCovered()
       // A synced-in unpin can orphan the active pointer (graduatePinCovered only handles the add
       // case) — refocus MRU-top so it doesn't dangle onto a stale pane.
       const s = get()
       const live = new Set([
-        ...derivePinnedTabs(s.pins).map((t) => t.id),
+        ...s.pinnedTabs.map((t) => t.id),
         ...s.tabs.map((t) => t.id),
       ])
       if (!live.has(s.activeTabId)) {
         const focus =
-          s.tabMru.find((id) => live.has(id)) ?? s.tabs[0]?.id ?? derivePinnedTabs(s.pins)[0]?.id
+          s.tabMru.find((id) => live.has(id)) ?? s.tabs[0]?.id ?? s.pinnedTabs[0]?.id
         if (focus !== undefined) {
           set({
             activeTabId: focus,
@@ -1027,7 +1018,7 @@ export const useSession = create<SessionState>((set, get) => {
       const live = [
         ...existingNavKeys(tree),
         ...get().recents.map(navKey),
-        ...get().pins.map(navKey),
+        ...get().pinned.map(navKey),
       ]
       dropCapturedOutside(new Set(live))
       void window.nexus.capture.evict(live)
@@ -1036,30 +1027,23 @@ export const useSession = create<SessionState>((set, get) => {
       // v1 favorites are tree kinds only — an agenda favorite would resolve to null and render
       // as an invisible, un-removable entry until the agenda resolver ships.
       if (target.kind === 'task' || target.kind === 'event') return
-      const key = navKey(target)
+      const ref = toNavRef(target)
+      const key = navKey(ref)
       if (get().favorites.some((f) => navKey(f) === key)) return
-      const favorites = [...get().favorites, target]
+      const favorites = [...get().favorites, ref]
       set({ favorites })
-      void window.nexus.nav.saveFavorites(favorites)
+      void window.nexus.nav.write({ favorites })
     },
     removeFavorite: (key) => {
       const favorites = get().favorites.filter((f) => navKey(f) !== key)
       set({ favorites })
-      void window.nexus.nav.saveFavorites(favorites)
-    },
-    reorderFavorites: (from, to) => {
-      const favorites = [...get().favorites]
-      const [moved] = favorites.splice(from, 1)
-      if (!moved) return
-      favorites.splice(to, 0, moved)
-      set({ favorites })
-      void window.nexus.nav.saveFavorites(favorites)
+      void window.nexus.nav.write({ favorites })
     },
     removeRecent: (key) => {
       const next = removeRecentByKey(get().recents, key)
       if (next === get().recents) return
       set({ recents: next })
-      void window.nexus.nav.saveRecents(next)
+      void window.nexus.nav.write({ recents: next })
     },
     reorderRecent: (activeKey, overKey) => {
       const recents = get().recents
@@ -1070,7 +1054,7 @@ export const useSession = create<SessionState>((set, get) => {
       const [moved] = next.splice(from, 1)
       next.splice(to, 0, moved)
       set({ recents: next })
-      void window.nexus.nav.saveRecents(next)
+      void window.nexus.nav.write({ recents: next })
     },
     setRecentsOrder: (keys) => {
       const s = get()
@@ -1080,7 +1064,7 @@ export const useSession = create<SessionState>((set, get) => {
       const next = [...s.recents.filter((r) => !pos.has(navKey(r))), ...listed]
       if (next.every((r, i) => r === s.recents[i])) return
       set({ recents: next })
-      void window.nexus.nav.saveRecents(next)
+      void window.nexus.nav.write({ recents: next })
     },
     agendaSnapshot: null,
     ensureAgendaSnapshot: async () => {
@@ -1217,7 +1201,7 @@ export const useSession = create<SessionState>((set, get) => {
       if (opts?.record !== false) {
         captureOutgoingDetail()
         const s = get()
-        const pinned = derivePinnedTabs(s.pins)
+        const pinned = s.pinnedTabs
         const res = openTabModel(
           s.tabs,
           s.activeTabId,
@@ -1245,7 +1229,7 @@ export const useSession = create<SessionState>((set, get) => {
         if (opened) {
           const recents = recordRecent(s.recents, target, RECENTS_CAP)
           set({ recents })
-          void window.nexus.nav.saveRecents(recents)
+          void window.nexus.nav.write({ recents })
         }
         persistTabs()
       }

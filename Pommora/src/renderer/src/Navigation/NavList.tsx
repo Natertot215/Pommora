@@ -5,9 +5,10 @@ import { text } from '@renderer/design-system/tokens'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { TableRowDnd, useTableRowDrag } from '../Detail/Views/Table/tableDnd'
-import type { NavTarget, SelectTarget } from '@shared/types'
+import type { NavRef, SelectTarget } from '@shared/types'
 import { useSession } from '../store'
-import { isOpenInTabs } from '../Tabs/tabsModel'
+import { isOpenInTabs, liveTarget } from '../Tabs/tabsModel'
+import { buildReconcileIndex } from '../selection'
 import { navKey } from './navRecents'
 import type { ResolvedNav } from './navResolve'
 import { EntityGlyph } from './EntityGlyph'
@@ -48,18 +49,18 @@ export function NavRowMenu({
 }: {
   item: ResolvedNav
   onClose: () => void
-  onOpenNewTab?: (target: NavTarget) => void
+  onOpenNewTab?: (target: NavRef) => void
 }): null {
   useEffect(() => {
     let live = true
     const s = useSession.getState()
     const target = item.target
-    const isPinned = s.pins.some((p) => navKey(p) === item.key)
+    const isPinned = s.pinned.some((p) => navKey(p) === item.key)
     const isFavorite = s.favorites.some((f) => navKey(f) === item.key)
     void window.nexus
       .navRowMenu({
         canOpenNewTab: onOpenNewTab !== undefined,
-        alreadyOpen: isOpenInTabs(s.tabs, s.pins, target as SelectTarget),
+        alreadyOpen: isOpenInTabs(s.tabs, s.pinned, target as SelectTarget),
         isPage: target.kind === 'page',
         isPinned,
         isFavorite,
@@ -73,9 +74,12 @@ export function NavRowMenu({
             onOpenNewTab?.(target)
             break
           case 'open-preview':
-            if (target.kind === 'page') {
+            if (target.kind === 'page' && st.tree) {
+              // A stored ref carries no path — mint one against the live tree, exactly as go() does.
+              const livePage = liveTarget(buildReconcileIndex(st.tree), target)
+              if (livePage?.kind !== 'page') break
               // Inside the NavWindow the override routes this to a tab in THAT window; off → the floating preview.
-              const ref = { id: target.id, path: target.path }
+              const ref = { id: livePage.id, path: livePage.path }
               if (st.navOpen && (st.previewsFile.navOverride ?? true)) st.openPreviewTab(ref)
               else st.openPreview(ref)
             }
@@ -147,7 +151,7 @@ function NavRow({
 }: {
   it: ResolvedNav
   drag?: RowDrag
-  onSelect: (t: NavTarget) => void
+  onSelect: (t: NavRef) => void
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
 }): React.JSX.Element {
   return (
@@ -177,7 +181,7 @@ function NavRow({
 
 function DraggableRow(props: {
   it: ResolvedNav
-  onSelect: (t: NavTarget) => void
+  onSelect: (t: NavRef) => void
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
 }): React.JSX.Element {
   const drag = useTableRowDrag(props.it.key)
@@ -202,9 +206,9 @@ export function NavList({
   reorderable?: boolean
   /** Host override for the recents reorder (NavWindow rewrites its frozen snapshot too). */
   onReorderRecent?: (activeKey: string, overKey: string) => void
-  onSelect: (target: NavTarget) => void
+  onSelect: (target: NavRef) => void
   /** omitted = the item doesn't render. */
-  onOpenNewTab?: (target: NavTarget) => void
+  onOpenNewTab?: (target: NavRef) => void
 }): React.JSX.Element | null {
   const reorderPin = useSession((s) => s.reorderPin)
   const reorderRecentStore = useSession((s) => s.reorderRecent)

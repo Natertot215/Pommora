@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import type { NavTarget } from '@shared/types'
-import { useSession, type SelectTarget } from '../store'
-import { reconcileSelection } from '../selection'
+import type { NavRef } from '@shared/types'
+import { useSession } from '../store'
+import { buildReconcileIndex } from '../selection'
+import { liveTarget } from '../Tabs/tabsModel'
 import {
   buildResolveIndex,
   resolveFavorites,
@@ -33,7 +34,6 @@ export function splitSearch(results: SearchResult[]): {
 }
 
 // Agenda kinds route nowhere until Agenda ships — search-listable, not selectable.
-const isTreeTarget = (t: NavTarget): t is SelectTarget => t.kind !== 'task' && t.kind !== 'event'
 
 /** The shared read side both NavWindow + NavPane render from — one source, two presentations. The tree
  *  index is memoized on (tree, agenda), so search filters per keystroke WITHOUT re-walking the tree. */
@@ -42,12 +42,12 @@ export function useNavData(): {
   resolvedFavorites: ResolvedNav[]
   resolvedPins: ResolvedNav[]
   search: (query: string) => SearchResult[]
-  go: (target: NavTarget, onDone?: () => void, opts?: { newTab?: boolean }) => void
+  go: (target: NavRef, onDone?: () => void, opts?: { newTab?: boolean }) => void
 } {
   const tree = useSession((s) => s.tree)
   const recents = useSession((s) => s.recents)
   const favorites = useSession((s) => s.favorites)
-  const pins = useSession((s) => s.pins)
+  const pinned = useSession((s) => s.pinned)
   const agenda = useSession((s) => s.agendaSnapshot)
   const select = useSession((s) => s.select)
   const ensureAgendaSnapshot = useSession((s) => s.ensureAgendaSnapshot)
@@ -64,8 +64,8 @@ export function useNavData(): {
     [tree, agenda],
   )
   const resolvedPins = useMemo(
-    () => (resolveIndex ? resolvePins(resolveIndex, pins) : []),
-    [resolveIndex, pins],
+    () => (resolveIndex ? resolvePins(resolveIndex, pinned) : []),
+    [resolveIndex, pinned],
   )
   const pinnedKeys = useMemo(() => new Set(resolvedPins.map((p) => p.key)), [resolvedPins])
   // Recents dedupe against pins — a pinned entity shows once, in the pins section, not twice.
@@ -93,17 +93,13 @@ export function useNavData(): {
   )
 
   const go = useCallback(
-    (target: NavTarget, onDone?: () => void, opts?: { newTab?: boolean }): void => {
-      if (!isTreeTarget(target)) return
-      // A durable pin's stored path can be stale (its entity moved/renamed since) — reconcile by id
-      // against the live tree before opening, as Back/Forward do. If reconcile can't resolve it
-      // (`none` — a genuinely-gone entity, or a reconcile miss), fall back to the original target so
-      // the click still navigates rather than silently doing nothing.
-      const reconciled = tree ? reconcileSelection(tree, target) : target
-      void select(
-        reconciled.kind === 'none' ? target : reconciled,
-        opts?.newTab ? { newTab: true } : undefined,
-      )
+    (target: NavRef, onDone?: () => void, opts?: { newTab?: boolean }): void => {
+      // A stored ref carries no path — the click mints one against the live tree. A ref that
+      // fails to resolve does not navigate: there is nothing to fall back to.
+      if (!tree) return
+      const live = liveTarget(buildReconcileIndex(tree), target)
+      if (!live) return
+      void select(live, opts?.newTab ? { newTab: true } : undefined)
       onDone?.()
     },
     [select, tree],

@@ -10,7 +10,7 @@ import type { Tab } from '@shared/types'
 import { useSession } from '../store'
 import { buildResolveIndex, resolveWith, type ResolvedNav } from '../Navigation/navResolve'
 import { EntityGlyph } from '../Navigation/EntityGlyph'
-import { cycle, derivePinnedTabs } from './tabsModel'
+import { cycle } from './tabsModel'
 import './tabStrip.css'
 import './tabBar.css'
 
@@ -30,7 +30,7 @@ interface TabEntry {
 // bar actually shows.
 export function TabBar(): React.JSX.Element | null {
   const tabs = useSession((s) => s.tabs)
-  const pins = useSession((s) => s.pins)
+  const pinnedTabs = useSession((s) => s.pinnedTabs)
   const tree = useSession((s) => s.tree)
 
   // Titles + icons resolve live off the nav index — a rename is current on the next push, never cached stale.
@@ -38,12 +38,12 @@ export function TabBar(): React.JSX.Element | null {
   const pinnedEntries = useMemo<TabEntry[]>(() => {
     if (!index) return []
     // A pinned entity that no longer resolves render-hides (render-prune, never storage-prune).
-    return derivePinnedTabs(pins).flatMap((tab) => {
+    return pinnedTabs.flatMap((tab) => {
       if (tab.target.kind === 'newtab') return []
       const res = resolveWith(index, tab.target)
       return res ? [{ tab, res }] : []
     })
-  }, [index, pins])
+  }, [index, pinnedTabs])
   const unpinnedEntries = useMemo<TabEntry[]>(
     () =>
       tabs.map((tab) => ({

@@ -6,7 +6,7 @@ import {
   PREVIEW_PANE_INSPECTOR,
   PreviewPane,
 } from '@renderer/design-system/components/PreviewPane/PreviewPane'
-import type { NavTarget } from '@shared/types'
+import type { NavRef } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import { buildPageIndex, flattenPages, type ConnectionsApi } from '../MarkdownPM/connections'
@@ -95,8 +95,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
   const closeOnSelect = useSession((s) => s.personalization.navCloseOnSelect !== false)
   const onSelected = closeOnSelect ? closeNav : undefined
-  const goClose = (target: NavTarget): void => go(target, onSelected)
-  const goNewTab = (target: NavTarget): void => go(target, onSelected, { newTab: true })
+  const goClose = (target: NavRef): void => go(target, onSelected)
+  const goNewTab = (target: NavRef): void => go(target, onSelected, { newTab: true })
   const viewMode = useSession((s) => s.navWindowMode)
   const setNavWindowMode = useSession((s) => s.setNavWindowMode)
   const toggleViewMode = (): void => setNavWindowMode(viewMode === 'list' ? 'gallery' : 'list')
