@@ -235,8 +235,6 @@ export interface NexusTree {
    *  icon is hidden. The block doc's heavy layout/blocks stay off the walk, loaded lazily by
    *  useBlockDoc. */
   homepage: { banner?: string; headingIconHidden: boolean }
-  /** NavView singleton (`.nexus/navview.json`) — its own banner; absent, the NavView inherits
-   *  the homepage's. */
   /** Registry-backed Context groups in registry order, each with its Spaces ([] on a
    *  raw/unmigrated tree — the open path migrates + seeds before anything renders). */
   collections: CollectionNode[]
@@ -286,8 +284,7 @@ export type SelectionState =
   | { kind: 'set'; id: string; path: string }
   | { kind: 'page'; id: string; path: string }
 
-/** Every `SelectionState` except the transient `none`. Narrower than `NavTarget`: no agenda
- *  kinds (they have no click destination in v1). */
+/** Every `SelectionState` except the transient `none` — the live, path-carrying targets. */
 export type SelectTarget = Exclude<SelectionState, { kind: 'none' }>
 
 /** A durable navigation reference — identity only; titles, icons, and paths resolve live. */

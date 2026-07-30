@@ -1,5 +1,5 @@
 export type NavDir = 'next' | 'prev' | 'down'
-export type NavTarget = { row: number; col: number } | 'before' | 'after'
+export type CellNavTarget = { row: number; col: number } | 'before' | 'after'
 
 // Pure cell-to-cell navigation. Visual-row convention: row 0 = header, rows 1..totalRows-1 = body.
 // 'next' = Tab, 'prev' = Shift-Tab, 'down' = Enter. Returns the target cell, or 'before'/'after' to exit
@@ -10,7 +10,7 @@ export function nextCell(
   row: number,
   col: number,
   dir: NavDir,
-): NavTarget {
+): CellNavTarget {
   if (dir === 'next') {
     if (col + 1 < cols) return { row, col: col + 1 }
     if (row + 1 < totalRows) return { row: row + 1, col: 0 }
