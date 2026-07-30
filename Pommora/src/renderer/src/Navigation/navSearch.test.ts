@@ -24,10 +24,10 @@ describe('buildNavIndex', () => {
     expect(index.find((e) => e.target.kind === 'event')?.title).toBe('Design Review')
   })
 
-  it('carries a ready-to-select NavTarget with the right key', () => {
+  it('carries a ready-to-select ref with the right key', () => {
     const index = buildNavIndex(makeTree())
     const alpha = index.find((e) => e.title === 'Alpha')
-    expect(alpha?.target).toEqual({ kind: 'page', id: 'p1', path: 'Notes/Alpha.md' })
+    expect(alpha?.target).toEqual({ kind: 'page', id: 'p1' })
     expect(alpha?.key).toBe('page:p1')
   })
 })

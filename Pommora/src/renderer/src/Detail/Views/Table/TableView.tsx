@@ -919,8 +919,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const ctx = cellMenuContextFor(col, dt, colStyle(col.id), filled, false, barCapable)
     if (!ctx) return
     if (ctx.kind === 'title') {
-      const { tabs, pins } = useSession.getState()
-      ctx.alreadyOpen = isOpenInTabs(tabs, pins, { kind: 'page', id: row.id, path: row.path })
+      const { tabs, pinned } = useSession.getState()
+      ctx.alreadyOpen = isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path })
     }
     const action = await window.nexus.cellMenu(ctx)
     if (!action) return

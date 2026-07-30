@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
-import type { NavTarget } from '@shared/types'
+import type { NavRef } from '@shared/types'
 import { useSession } from '../store'
 import { assetUrl } from '../assetUrl'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
@@ -33,8 +33,8 @@ export function NavView(): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
   const [query, setQuery] = useState('')
   const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])
-  const open = (target: NavTarget): void => go(target)
-  const openNew = (target: NavTarget): void => go(target, undefined, { newTab: true })
+  const open = (target: NavRef): void => go(target)
+  const openNew = (target: NavRef): void => go(target, undefined, { newTab: true })
 
   // Remove clears only NavView's own override (falls back to the homepage banner) — offered only
   // while an override exists.

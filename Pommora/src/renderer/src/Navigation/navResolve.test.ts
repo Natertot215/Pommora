@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { PinEntry, RecentEntry } from '@shared/types'
+import type { NavRef } from '@shared/types'
 import {
   buildResolveIndex,
   resolveFavorites,
@@ -10,20 +10,20 @@ import {
 import { makeTree } from './testTree'
 
 describe('resolveWith — single entry', () => {
-  const resolveOne = (tree: Parameters<typeof buildResolveIndex>[0], entry: RecentEntry) =>
+  const resolveOne = (tree: Parameters<typeof buildResolveIndex>[0], entry: NavRef) =>
     resolveWith(buildResolveIndex(tree), entry)
 
   const pathTitles = (r: { path: { title: string }[] } | null): string[] =>
     (r?.path ?? []).map((c) => c.title)
 
   it('resolves a page to title + its container-chain path', () => {
-    const r = resolveOne(makeTree(), { kind: 'page', id: 'p2', path: 'Notes/Ideas/Beta.md' })
+    const r = resolveOne(makeTree(), { kind: 'page', id: 'p2' })
     expect(r).toMatchObject({ kind: 'page', title: 'Nested Beta' })
     expect(pathTitles(r)).toEqual(['Notes', 'Ideas'])
   })
 
   it('resolves a set to its parent chain (excluding itself)', () => {
-    const r = resolveOne(makeTree(), { kind: 'set', id: 's1', path: 'Notes/Ideas' })
+    const r = resolveOne(makeTree(), { kind: 'set', id: 's1' })
     expect(r).toMatchObject({ kind: 'set', title: 'Ideas' })
     expect(pathTitles(r)).toEqual(['Notes'])
   })
@@ -62,12 +62,12 @@ describe('resolveWith — single entry', () => {
 
   it('resolves an entry icon for each kind', () => {
     const t = makeTree()
-    expect(resolveOne(t, { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' })?.icon).toBeTruthy()
+    expect(resolveOne(t, { kind: 'page', id: 'p1' })?.icon).toBeTruthy()
     expect(resolveOne(t, { kind: 'collection', id: 'c1' })?.icon).toBeTruthy()
   })
 
   it('render-prunes a gone entry (returns null) — never mutates storage', () => {
-    expect(resolveOne(makeTree(), { kind: 'page', id: 'ghost', path: 'x.md' })).toBeNull()
+    expect(resolveOne(makeTree(), { kind: 'page', id: 'ghost' })).toBeNull()
     expect(resolveOne(makeTree(), { kind: 'collection', id: 'ghost' })).toBeNull()
   })
 
@@ -76,44 +76,28 @@ describe('resolveWith — single entry', () => {
     expect(resolveOne(makeTree(), { kind: 'event', id: 'ev1' })).toBeNull()
   })
 
-  it('carries the pinned flag through', () => {
-    const r = resolveOne(makeTree(), {
-      kind: 'page',
-      id: 'p1',
-      path: 'Notes/Alpha.md',
-      pinned: true,
-    })
-    expect(r?.pinned).toBe(true)
-  })
-
-  it('exposes a CLEAN target (no pinned key leaks into what gets selected/favorited)', () => {
-    const r = resolveOne(makeTree(), {
-      kind: 'page',
-      id: 'p1',
-      path: 'Notes/Alpha.md',
-      pinned: true,
-    })
-    expect(r?.target).toEqual({ kind: 'page', id: 'p1', path: 'Notes/Alpha.md' })
-    expect('pinned' in (r?.target ?? {})).toBe(false)
+  it('hands back the bare ref as the click target', () => {
+    const r = resolveOne(makeTree(), { kind: 'page', id: 'p1' })
+    expect(r?.target).toEqual({ kind: 'page', id: 'p1' })
   })
 })
 
 describe('buildResolveIndex + resolveWith (index built once, O(1) per entry)', () => {
   it('resolves against a prebuilt index and prunes absent keys', () => {
     const index = buildResolveIndex(makeTree())
-    expect(resolveWith(index, { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' })?.title).toBe(
+    expect(resolveWith(index, { kind: 'page', id: 'p1' })?.title).toBe(
       'Alpha',
     )
-    expect(resolveWith(index, { kind: 'page', id: 'ghost', path: 'x.md' })).toBeNull()
+    expect(resolveWith(index, { kind: 'page', id: 'ghost' })).toBeNull()
     expect(resolveWith(index, { kind: 'task', id: 'tk1' })).toBeNull() // agenda absent from the index
   })
 })
 
 describe('resolveRecents', () => {
   it('preserves MRU order (pins are their own list now — no float)', () => {
-    const recents: RecentEntry[] = [
-      { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' },
-      { kind: 'page', id: 'p2', path: 'Notes/Ideas/Beta.md' },
+    const recents: NavRef[] = [
+      { kind: 'page', id: 'p1' },
+      { kind: 'page', id: 'p2' },
       { kind: 'collection', id: 'c1' },
     ]
     expect(resolveRecents(buildResolveIndex(makeTree()), recents).map((r) => r.key)).toEqual([
@@ -124,9 +108,9 @@ describe('resolveRecents', () => {
   })
 
   it('drops gone entries from the render list only', () => {
-    const recents: RecentEntry[] = [
-      { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' },
-      { kind: 'page', id: 'ghost', path: 'x.md' },
+    const recents: NavRef[] = [
+      { kind: 'page', id: 'p1' },
+      { kind: 'page', id: 'ghost' },
     ]
     expect(resolveRecents(buildResolveIndex(makeTree()), recents).map((r) => r.key)).toEqual([
       'page:p1',
@@ -136,7 +120,7 @@ describe('resolveRecents', () => {
 
 describe('resolveFavorites', () => {
   it('preserves stored order and prunes gone entries', () => {
-    const favorites: RecentEntry[] = [
+    const favorites: NavRef[] = [
       { kind: 'collection', id: 'c1' },
       { kind: 'collection', id: 'ghost' },
       { kind: 'context', id: 'a1' },
@@ -149,10 +133,10 @@ describe('resolveFavorites', () => {
 
 describe('resolvePins', () => {
   it('marks each pinned, preserves caller order, prunes gone entries', () => {
-    const pins: PinEntry[] = [
-      { kind: 'collection', id: 'c1', order: 0 },
-      { kind: 'collection', id: 'ghost', order: 1 },
-      { kind: 'context', id: 'a1', order: 2 },
+    const pins: NavRef[] = [
+      { kind: 'collection', id: 'c1' },
+      { kind: 'collection', id: 'ghost' },
+      { kind: 'context', id: 'a1' },
     ]
     const out = resolvePins(buildResolveIndex(makeTree()), pins)
     expect(out.map((r) => r.key)).toEqual(['collection:c1'])

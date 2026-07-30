@@ -13,7 +13,7 @@ beforeEach(() => {
   clearWarm() // module state — never leaks across tests
   ;(window as unknown as { nexus: unknown }).nexus = {
     openPage: vi.fn(async () => ({ ok: true, page: {} })),
-    nav: { saveRecents: vi.fn(async () => ({ ok: true })) },
+    nav: { write: vi.fn(async () => ({ ok: true })) },
     tabs: {
       save: vi.fn(async () => ({ ok: true })),
       load: vi.fn(async () => ({ ok: true, set: null })),
@@ -41,7 +41,8 @@ const seed = (partial: Partial<State>): void => {
     tabs: [],
     activeTabId: '',
     tabMru: [],
-    pins: [],
+    pinned: [],
+    pinnedTabs: [],
     recents: [],
     selection: { kind: 'none' },
     tree: null,
@@ -451,8 +452,8 @@ describe('store — applyTree reconciles the preview tabs (D-6)', () => {
 
 describe('store — recents reorder + batched close', () => {
   const savedRecents = (): unknown =>
-    (window as unknown as { nexus: { nav: { saveRecents: { mock: { calls: unknown[][] } } } } })
-      .nexus.nav.saveRecents
+    (window as unknown as { nexus: { nav: { write: { mock: { calls: unknown[][] } } } } }).nexus
+      .nav.write
 
   it('reorderRecent rewrites the order to the source and persists immediately (drag)', () => {
     const a = ctx('a')
@@ -461,7 +462,7 @@ describe('store — recents reorder + batched close', () => {
     seed({ recents: [a, b, c] })
     useSession.getState().reorderRecent(navKey(a), navKey(c)) // drop a onto c's slot
     expect(useSession.getState().recents).toEqual([b, c, a])
-    expect(savedRecents()).toHaveBeenCalledWith([b, c, a])
+    expect(savedRecents()).toHaveBeenCalledWith({ recents: [b, c, a] })
   })
 
   it('reorderRecent is a no-op on same/unknown key (no state churn, no write)', () => {

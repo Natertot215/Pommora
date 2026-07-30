@@ -120,7 +120,7 @@ function PreviewWindowBody({
 
   const crumbs = useMemo(() => {
     if (!resolveIndex) return []
-    const res = resolveWith(resolveIndex, { kind: 'page', id: target.id, path: target.path })
+    const res = resolveWith(resolveIndex, { kind: 'page', id: target.id })
     return res ? [...res.path, { icon: res.icon, title: res.title }] : []
   }, [resolveIndex, target])
 

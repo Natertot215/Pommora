@@ -14,17 +14,13 @@ import { basename, dirname, extname, join, sep } from 'node:path'
 import { readFile, rename } from 'node:fs/promises'
 import type {
   AgendaListResult,
-  NavFavorite,
-  NavStateResult,
-  NavTarget,
+  NavigationResult,
+  NavigationState,
   NavViewModes,
   NexusState,
   PageResult,
-  PinEntry,
-  PinsResult,
   PreviewsFile,
   PreviewsResult,
-  RecentEntry,
   SubfieldConfig,
   TabSet,
   TabsResult,
@@ -80,15 +76,13 @@ import { resolveUnderRoot } from './pathSafety'
 import { updatePageBody } from './crud/page'
 import { replayPendingRename } from './crud/contextCascade'
 import {
-  flushFavorites,
-  hasPendingFavorites,
-  readNavState,
-  writeFavorites,
-  writeRecents,
-} from './io/navState'
+  flushNavigation,
+  hasPendingNavigation,
+  readNavigationState,
+  writeNavigationState,
+} from './io/navigationFile'
 import { readTabsState, writeTabsState } from './io/tabsState'
 import { readPreviewsState, writePreviewsState } from './io/previewState'
-import { loadOrMigratePins, removePin, writePin } from './io/pinsState'
 import { captureThumbnail, evictThumbnails } from './io/thumbnails'
 import { saveView, reorderViews, deleteView } from './crud/views'
 import { setContainerConfig, type ContainerConfigPatch } from './crud/containerConfig'
@@ -326,62 +320,21 @@ handleEnvelope('agenda:list', async (): Promise<AgendaListResult> => {
   return { ok: true, tasks, events }
 })
 
-// The renderer owns the in-memory recents/favorites arrays and all MRU/dedupe/cap/prune logic;
-// main only persists. Recents debounce (fired on every selection); favorites write immediately.
-handleEnvelope('nav:load', async (): Promise<NavStateResult> => {
+// Navigation intent — one contract over two stores (navigationFile routes each key). The
+// renderer owns the arrays; main persists. Writes are refused mid-adopt so a gesture on the old
+// nexus's still-open UI can't land in the new one.
+handleEnvelope('nav:read', async (): Promise<NavigationResult> => {
   const root = sessionRoot()
   if (root === null) return { ok: false, error: 'No nexus open' }
-  return { ok: true, ...(await readNavState(root)) }
+  return { ok: true, nav: await readNavigationState(root) }
 })
 
-handleEnvelope('nav:saveRecents', (entries: unknown): Ack => {
-  if (adopting) return { ok: false, error: 'Nexus switching.' }
-  if (!Array.isArray(entries)) return { ok: false, error: 'Recents entries must be an array.' }
-  if (!writeRecents(entries as RecentEntry[])) return { ok: false, error: 'No nexus is open.' }
-  return { ok: true }
-})
-
-handleEnvelope('nav:saveFavorites', async (entries: unknown): Promise<Ack> => {
+handleEnvelope('nav:write', async (patch: unknown): Promise<Ack> => {
   if (adopting) return { ok: false, error: 'Nexus switching.' }
   const root = sessionRoot()
   if (root === null) return { ok: false, error: 'No nexus is open.' }
-  if (!Array.isArray(entries)) return { ok: false, error: 'Favorites entries must be an array.' }
-  await writeFavorites(root, entries as NavFavorite[])
-  return { ok: true }
-})
-
-// Durable pins — per-pin files under `.nexus/pins/`. add + reorder are one-file writes; remove is a
-// tombstone-write (pinsState). Each writes immediately (a deliberate act) and lands in the quit gate.
-handleEnvelope('nav:loadPins', async (): Promise<PinsResult> => {
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus open' }
-  return { ok: true, pins: await loadOrMigratePins(root) }
-})
-
-const savePin = async (pin: unknown): Promise<Ack> => {
-  try {
-    // Mid-adopt, sessionRoot() is already the NEW nexus — a pin gesture on the old nexus's still-open UI
-    // would write a foreign entity into the new nexus's synced pins. Drop it, like the recents/tabs saves.
-    if (adopting) return { ok: false, error: 'Nexus switching.' }
-    const root = sessionRoot()
-    if (root === null) return { ok: false, error: 'No nexus is open.' }
-    if (!isPlainObject(pin)) return { ok: false, error: 'Pin must be an object.' }
-    await writePin(root, pin as PinEntry)
-    return { ok: true }
-  } catch (e) {
-    return { ok: false, error: errText(e) }
-  }
-}
-ipcMain.handle('nav:addPin', (_e, pin: unknown) => savePin(pin))
-ipcMain.handle('nav:reorderPin', (_e, pin: unknown) => savePin(pin))
-
-handleEnvelope('nav:removePin', async (target: unknown, order: unknown): Promise<Ack> => {
-  if (adopting) return { ok: false, error: 'Nexus switching.' }
-  const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
-  if (!isPlainObject(target) || typeof order !== 'number')
-    return { ok: false, error: 'Bad remove-pin args.' }
-  await removePin(root, target as NavTarget, order)
+  if (!isPlainObject(patch)) return { ok: false, error: 'Navigation patch must be an object.' }
+  await writeNavigationState(root, patch as Partial<NavigationState>)
   return { ok: true }
 })
 
@@ -1639,19 +1592,19 @@ app.on('window-all-closed', () => {
 })
 
 // Quit cleanup. Database writes commit synchronously, so the close is only tidying — it flushes
-// the WAL and frees its sibling files. Favorites are the one operational write still going to
-// disk, so they are the one thing that can still be owed: defer the quit, settle it, re-quit.
+// the WAL and frees its sibling files. Navigation intent is the one operational write still going
+// to disk, so it is the one thing that can still be owed: defer the quit, settle it, re-quit.
 let flushingBeforeQuit = false
 app.on('before-quit', (e) => {
   if (flushingBeforeQuit) return
   stopWatcher()
-  if (!hasPendingFavorites()) {
+  if (!hasPendingNavigation()) {
     closeSessionDb()
     return
   }
   e.preventDefault()
   flushingBeforeQuit = true
-  void flushFavorites().then(() => {
+  void flushNavigation().then(() => {
     closeSessionDb()
     app.quit()
   })

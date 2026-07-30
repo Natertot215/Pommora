@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { PinEntry, SelectTarget, Tab } from '@shared/types'
+import type { NavRef, NexusTree, SelectTarget, Tab } from '@shared/types'
 import {
   activeUnpinnedTab,
   closeTab,
@@ -23,7 +23,23 @@ const tab = (id: string, targetId: string): Tab => ({
   navStack: [pt(targetId)],
   navIndex: 0,
 })
-const pin = (id: string, order: number): PinEntry => ({ kind: 'page', id, path: `/${id}`, order })
+const pin = (id: string): NavRef => ({ kind: 'page', id })
+// A minimal tree holding the given page ids at `/${id}` — hydration mints exactly pt(id).
+const mkTree = (...ids: string[]): NexusTree =>
+  ({
+    contexts: [],
+    collections: [
+      {
+        kind: 'collection',
+        id: 'col',
+        title: 'C',
+        path: '',
+        pages: ids.map((id) => ({ kind: 'page', id, title: id, path: `/${id}` })),
+        sets: [],
+      },
+    ],
+    personalization: {},
+  }) as unknown as NexusTree
 const navTab = (id: string): Tab => newTabTab(id)
 
 describe('tabsModel — openTab', () => {
@@ -57,7 +73,7 @@ describe('tabsModel — openTab', () => {
   })
 
   it('spawns a new tab when the active tab is pinned (D-2)', () => {
-    const pinned = derivePinnedTabs([pin('p', 0)])
+    const pinned = derivePinnedTabs([pin('p')], mkTree('p'))
     const r = openTab([], pinTabId(pt('p')), pinned, pt('b'), {}, 'NEW')
     expect(r.tabs).toHaveLength(1)
     expect(r.tabs[0].id).toBe('NEW')
@@ -71,7 +87,7 @@ describe('tabsModel — openTab', () => {
   })
 
   it('focuses a pinned tab when opening its entity from a scratch tab — never replaces the scratch (I-1)', () => {
-    const pinned = derivePinnedTabs([pin('p', 0)])
+    const pinned = derivePinnedTabs([pin('p')], mkTree('p'))
     const tabs = [tab('t1', 'a')]
     const r = openTab(tabs, 't1', pinned, pt('p'), {}, 'NEW')
     expect(r.tabs).toBe(tabs)
@@ -288,24 +304,27 @@ describe('tabsModel — activeUnpinnedTab', () => {
 })
 
 describe('tabsModel — isPinned', () => {
-  it('derives membership from the pins set; never the newtab sentinel', () => {
-    const pins = [pin('a', 0)]
-    expect(isPinned(pt('a'), pins)).toBe(true)
-    expect(isPinned(pt('b'), pins)).toBe(false)
-    expect(isPinned({ kind: 'newtab' }, pins)).toBe(false)
+  it('derives membership from the pinned refs; never the newtab sentinel', () => {
+    const pinned = [pin('a')]
+    expect(isPinned(pt('a'), pinned)).toBe(true)
+    expect(isPinned(pt('b'), pinned)).toBe(false)
+    expect(isPinned({ kind: 'newtab' }, pinned)).toBe(false)
   })
 })
 
 describe('tabsModel — derivePinnedTabs', () => {
-  it('sorts by order and derives stable ids + a one-entry history', () => {
-    const tabs = derivePinnedTabs([pin('b', 1), pin('a', 0)])
+  it('hydrates in array order with minted paths, stable ids + a one-entry history', () => {
+    const tabs = derivePinnedTabs([pin('a'), pin('b')], mkTree('a', 'b'))
     expect(tabs.map((t) => t.id)).toEqual(['pin:page:a', 'pin:page:b'])
+    expect(tabs[0].target).toEqual(pt('a'))
     expect(tabs[0].navStack).toEqual([pt('a')])
     expect(tabs[0].navIndex).toBe(0)
   })
 
-  it('skips agenda pins (legacy migration) — select cannot drive them', () => {
-    const agendaPin = { kind: 'task', id: 'tk', order: 0 } as PinEntry
-    expect(derivePinnedTabs([agendaPin, pin('a', 1)]).map((t) => t.id)).toEqual(['pin:page:a'])
+  it('drops agenda refs and refs that no longer resolve', () => {
+    const agendaRef: NavRef = { kind: 'task', id: 'tk' }
+    expect(
+      derivePinnedTabs([agendaRef, pin('gone'), pin('a')], mkTree('a')).map((t) => t.id),
+    ).toEqual(['pin:page:a'])
   })
 })

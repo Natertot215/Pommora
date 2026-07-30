@@ -34,8 +34,8 @@ function showContextFor(node: {
   path: string
   title: string
 }): void {
-  const { tabs, pins } = useSession.getState()
-  const alreadyOpen = isOpenInTabs(tabs, pins, contextTargetToSelect(node))
+  const { tabs, pinned } = useSession.getState()
+  const alreadyOpen = isOpenInTabs(tabs, pinned, contextTargetToSelect(node))
   void window.nexus.contextMenu({
     kind: node.kind,
     id: node.id,

@@ -1,22 +1,22 @@
 // Client-side title search over the live tree (+ a cached agenda snapshot). v1 is title/kind only —
 // full-text/body search is a deferred Prospect (needs a SQLite FTS layer that doesn't exist yet). The
-// index carries a ready-to-select NavTarget per hit; agenda hits (task/event) are find-only in v1 (no
+// index carries a ready-to-select NavRef per hit; agenda hits (task/event) are find-only in v1 (no
 // click destination yet), but ride the same index so search can already surface them. Pure — the UI
 // memoizes buildNavIndex over (tree, agenda) and re-runs filterNav per keystroke.
 
-import type { AgendaEntry, NavTarget, NexusTree } from '@shared/types'
+import type { AgendaEntry, NavRef, NexusTree } from '@shared/types'
 import { flattenTree } from '../selection'
 import { navKey } from './navRecents'
 
 export interface SearchEntry {
   key: string
-  target: NavTarget
+  target: NavRef
   title: string
   /** Lowercased once at build — filterNav scores EVERY entry on every keystroke. */
   lower: string
 }
 
-const entry = (target: NavTarget, title: string): SearchEntry => ({
+const entry = (target: NavRef, title: string): SearchEntry => ({
   key: navKey(target),
   target,
   title,
@@ -31,8 +31,8 @@ export function buildNavIndex(
   const out: SearchEntry[] = [entry({ kind: 'homepage' }, tree.nexus.name)]
   if (tree.contexts) for (const s of spaces) out.push(entry({ kind: 'space', id: s.id }, s.title))
   for (const c of collections) out.push(entry({ kind: 'collection', id: c.id }, c.title))
-  for (const s of sets) out.push(entry({ kind: 'set', id: s.id, path: s.path }, s.title))
-  for (const p of pages) out.push(entry({ kind: 'page', id: p.id, path: p.path }, p.title))
+  for (const s of sets) out.push(entry({ kind: 'set', id: s.id }, s.title))
+  for (const p of pages) out.push(entry({ kind: 'page', id: p.id }, p.title))
   for (const t of agenda?.tasks ?? []) out.push(entry({ kind: 'task', id: t.id }, t.title))
   for (const e of agenda?.events ?? []) out.push(entry({ kind: 'event', id: e.id }, e.title))
   return out
