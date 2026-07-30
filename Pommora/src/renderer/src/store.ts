@@ -65,7 +65,7 @@ import {
   reorderWithinZone,
   tabKey,
 } from './Tabs/tabsModel'
-import { captureWarm, clearWarm, dropWarmTab, readWarm } from './Tabs/warmCache'
+import { captureWarm, clearWarm, dropWarmDetail, dropWarmTab, readWarm } from './Tabs/warmCache'
 import { clearPreviewWarm, dropPreviewWarm } from './PagePreview/previewWarm'
 import { stashWindowMorph } from './PagePreview/WindowMorph'
 import { flushAllPageSaves } from './Detail/pageFlush'
@@ -359,15 +359,20 @@ export const useSession = create<SessionState>((set, get) => {
     return { dir: to < from ? 'back' : 'fwd', seq: ++previewSlideSeq }
   }
 
-  const toPreviewRecord = (p: PreviewState): PreviewSetRecord => ({
-    tabs: p.tabs.map((t) => ({
-      target: t.target.kind === 'navwindow' ? t.target : toNavRef(t.target),
-    })),
-    activeIndex: Math.max(
-      0,
-      p.tabs.findIndex((t) => t.id === p.activeTabId),
-    ),
-  })
+  // The gallery sentinel never persists — openNavPreview re-seeds it as tab 1 on every open, so
+  // only the page tabs write, and activeIndex counts by the stored (page-only) order.
+  const toPreviewRecord = (p: PreviewState): PreviewSetRecord => {
+    const pages = p.tabs.filter(
+      (t): t is PreviewTab & { target: SelectTarget } => t.target.kind !== 'navwindow',
+    )
+    return {
+      tabs: pages.map((t) => ({ target: toNavRef(t.target) })),
+      activeIndex: Math.max(
+        0,
+        pages.findIndex((t) => t.id === p.activeTabId),
+      ),
+    }
+  }
 
   const mirrorPreviews = (retire?: string): void => {
     const s = get()
@@ -1435,9 +1440,15 @@ export const useSession = create<SessionState>((set, get) => {
       if (cur) {
         switch (req.op) {
           case 'movePage':
-          case 'moveSet':
             patched = relocateNodeInTree(cur, req.path, req.newParentPath)
             break
+          case 'moveSet': {
+            // A same-parent moveSet is a pure reorder — relocate no-ops, so the order patch is
+            // what keeps the drop from snapping back until the confirm walk lands.
+            const moved = relocateNodeInTree(cur, req.path, req.newParentPath)
+            patched = reorderChildrenInTree(moved ?? cur, req.newParentPath, req.order) ?? moved
+            break
+          }
           case 'rename':
             patched = renameNodeInTree(cur, req.path, req.newName)
             break
@@ -1450,8 +1461,25 @@ export const useSession = create<SessionState>((set, get) => {
           case 'reorderTop':
             patched = reorderTopInTree(cur, req.key, req.order)
             break
-          case 'setIcon':
+          case 'setIcon': {
             patched = patchNodeInTree(cur, req.path, { icon: req.icon })
+            // The page's detail is a separate copy of the same fact — patch the open one and drop
+            // any warm one, or the header re-reads the pre-write value until the page refetches.
+            if (req.kind === 'page') {
+              dropWarmDetail(req.path)
+              const detail = get().pageDetail
+              if (detail && detail.path === req.path) {
+                const frontmatter = { ...detail.frontmatter }
+                if (req.icon === null) delete frontmatter.icon
+                else frontmatter.icon = req.icon
+                set({ pageDetail: { ...detail, frontmatter } })
+              }
+            }
+            break
+          }
+          case 'setBanner':
+            // The open page reloads itself post-write; the warm copies of `cover` don't.
+            if (req.kind === 'page') dropWarmDetail(req.path)
             break
           case 'setHeadingIconHidden':
             patched =

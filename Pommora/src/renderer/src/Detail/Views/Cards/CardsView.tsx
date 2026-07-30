@@ -211,8 +211,8 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   }, [source, effectiveValues, view, schema, manualOrder, contextIds])
 
   // Set-Card reorder — writes the container's set_order via moveSet (the sidebar's mechanism); the
-  // dragged set stays under the same parent (a pure reorder, not a reparent). No optimistic reorder,
-  // so the fresh order lands on the load() that moveSet triggers.
+  // dragged set stays under the same parent (a pure reorder, not a reparent), and the store's
+  // moveSet arm shows the new order optimistically until the confirm walk lands.
   const reorderSets = (activeId: string, overId: string): void => {
     const order = reorderIds(
       sets.map((s) => s.id),
