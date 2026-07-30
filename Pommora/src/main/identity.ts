@@ -9,12 +9,6 @@ import { readJsonStrict, writeJson } from './io/atomicWrite'
 import { asString } from './coerce'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
-/** A fresh identity: the keying id + the nexus's birth date. Single source for both the
- *  open-time ensure and the lazy create on the first description/photo write. */
-export function defaultIdentity(): { id: string; createdAt: string } {
-  return { id: newId(), createdAt: nowIso() }
-}
-
 /** Ensure `.nexus/nexus.json` exists and carries an id. Absent → mint a fresh identity.
  *  Present with an id → returned untouched, byte-identical, whatever else it holds or lacks.
  *  Present without one → mint an id over it, preserving its foreign keys. */
@@ -31,7 +25,7 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
   if (existing && existingId) return { id: existingId, created: false }
 
   await mkdir(nexusDir(root), { recursive: true })
-  const identity = defaultIdentity()
-  await writeJson(path, { ...existing, ...identity })
-  return { id: identity.id, created: true }
+  const id = newId()
+  await writeJson(path, { ...existing, id, createdAt: nowIso() })
+  return { id, created: true }
 }

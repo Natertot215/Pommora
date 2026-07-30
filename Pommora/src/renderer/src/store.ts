@@ -38,12 +38,12 @@ import {
   type PreviewState,
   type PreviewTab,
 } from './PagePreview/previewTabs'
+import { toNavRef } from '@shared/types'
 import {
   moveByKey,
   navKey,
   recordRecent,
   removeRecentByKey,
-  toNavRef,
   RECENTS_CAP,
 } from './Navigation/navRecents'
 import { existingNavKeys } from './Navigation/treeNavKeys'
@@ -54,6 +54,7 @@ import {
   insertUnpinned,
   hydrateTabs,
   isPinned,
+  sameTabs,
   liveTarget,
   newTabTab,
   openNewTab as openNewTabModel,
@@ -310,6 +311,11 @@ export const useSession = create<SessionState>((set, get) => {
       previewsFile: EMPTY_PREVIEWS,
       previewTarget: null,
       previewSlide: null,
+      pinned: [],
+      pinnedTabs: [],
+      favorites: [],
+      recents: [],
+      navBanner: undefined,
       // Defaults here so a nexus without the setting can't inherit the previous one's.
       subfieldExpanded: true,
       subfieldOrder: {},
@@ -472,17 +478,44 @@ export const useSession = create<SessionState>((set, get) => {
     persistTabs()
   }
 
+  /** The active pointer's one keeper: whenever the live tab set may have shrunk (a tree push
+   *  dropping a pinned entity, a synced-in unpin), re-point a dangling active at MRU-top — and
+   *  when NOTHING is live, seed a fresh NavView tab rather than strand the app at zero tabs. */
+  const ensureLiveActive = (): void => {
+    const s = get()
+    // '' is the never-seeded sentinel — load()'s restore owns seeding, so the keeper stands down.
+    if (s.activeTabId === '') return
+    const live = new Set([...s.pinnedTabs.map((t) => t.id), ...s.tabs.map((t) => t.id)])
+    if (live.has(s.activeTabId)) return
+    const focus = s.tabMru.find((id) => live.has(id)) ?? s.tabs[0]?.id ?? s.pinnedTabs[0]?.id
+    if (focus !== undefined) {
+      set({ activeTabId: focus, tabMru: pushMru(s.tabMru.filter((id) => live.has(id)), focus) })
+    } else {
+      const seeded = newTabTab(makeTabId())
+      set({ tabs: [seeded], activeTabId: seeded.id, tabMru: [seeded.id] })
+    }
+    syncActiveDetail()
+  }
+
+  // A failed persist is a fact the console must hold — the envelope never rejects, so a
+  // silently-dropped ack would be the only witness.
+  const writeNav = (patch: Partial<NavigationState>): void => {
+    void window.nexus.nav.write(patch).then((ack) => {
+      if (!ack.ok) console.error('navigation write failed:', ack.error)
+    })
+  }
+
   // The pin gestures' writer — one of pinnedTabs' four (load, tree push, nav push, here).
   const commitPinned = (pinned: NavRef[]): void => {
     const tree = get().tree
     set({ pinned, pinnedTabs: derivePinnedTabs(pinned, tree ? buildReconcileIndex(tree) : null) })
-    void window.nexus.nav.write({ pinned })
+    writeNav({ pinned })
   }
 
   // In-memory recents lead disk everywhere; the persist rides along so the two can't part.
   const commitRecents = (recents: NavRef[]): void => {
     set({ recents })
-    void window.nexus.nav.write({ recents })
+    writeNav({ recents })
   }
 
   const graduatePinCovered = (): void => {
@@ -660,7 +693,9 @@ export const useSession = create<SessionState>((set, get) => {
       set({ status: 'ready', tree })
       const index = buildReconcileIndex(tree)
       // Tree push = pinned hydration writer #2: renames re-title, moves re-path, deletes drop.
-      set({ pinnedTabs: derivePinnedTabs(get().pinned, index) })
+      // Identity-preserving, like stabilize(): an echo push keeps the same array, so memos hold.
+      const nextPinnedTabs = derivePinnedTabs(get().pinned, index)
+      if (!sameTabs(get().pinnedTabs, nextPinnedTabs)) set({ pinnedTabs: nextPinnedTabs })
       const prev = get().selection
       const next = reconcileWith(index, prev)
       if (next !== prev) {
@@ -694,6 +729,9 @@ export const useSession = create<SessionState>((set, get) => {
           for (const t of s.tabs) if (!rec.tabs.some((n) => n.id === t.id)) dropWarmTab(t.id)
           applyTabResult({ tabs: rec.tabs, activeTabId: rec.activeTabId, mru: rec.mru })
         }
+        // reconcileTabs only re-points when an UNPINNED tab changed — a deleted pinned entity
+        // with nothing else open leaves the pointer dangling, so the keeper always runs.
+        ensureLiveActive()
       }
       // A deleted page's flush would hit a dead path, which the crud guard refuses — the stale
       // body is never written anywhere.
@@ -977,27 +1015,7 @@ export const useSession = create<SessionState>((set, get) => {
         navBanner: nav.banner,
       })
       graduatePinCovered()
-      // A synced-in unpin can orphan the active pointer (graduatePinCovered only handles the add
-      // case) — refocus MRU-top so it doesn't dangle onto a stale pane.
-      const s = get()
-      const live = new Set([
-        ...s.pinnedTabs.map((t) => t.id),
-        ...s.tabs.map((t) => t.id),
-      ])
-      if (!live.has(s.activeTabId)) {
-        const focus =
-          s.tabMru.find((id) => live.has(id)) ?? s.tabs[0]?.id ?? s.pinnedTabs[0]?.id
-        if (focus !== undefined) {
-          set({
-            activeTabId: focus,
-            tabMru: pushMru(
-              s.tabMru.filter((id) => live.has(id)),
-              focus,
-            ),
-          })
-          syncActiveDetail()
-        }
-      }
+      ensureLiveActive()
     },
     thumbVersions: {},
     bumpThumb: (key) =>
@@ -1026,12 +1044,12 @@ export const useSession = create<SessionState>((set, get) => {
       if (get().favorites.some((f) => navKey(f) === key)) return
       const favorites = [...get().favorites, ref]
       set({ favorites })
-      void window.nexus.nav.write({ favorites })
+      writeNav({ favorites })
     },
     removeFavorite: (key) => {
       const favorites = get().favorites.filter((f) => navKey(f) !== key)
       set({ favorites })
-      void window.nexus.nav.write({ favorites })
+      writeNav({ favorites })
     },
     removeRecent: (key) => {
       const next = removeRecentByKey(get().recents, key)

@@ -2,6 +2,7 @@
 // (newest first) — durable pins and favorites are their own arrays in navigation.json. All
 // functions are pure (no store, no IPC) so they unit-test without a DOM.
 
+import { toNavRef } from '@shared/types'
 import type { NavRef, SelectTarget } from '@shared/types'
 
 /** Generous default history depth (deep history + a tunable cap, not a tight ~50). */
@@ -12,12 +13,6 @@ export const RECENTS_CAP = 100
  *  same targets. */
 export function navKey(t: NavRef | SelectTarget): string {
   return 'id' in t ? `${t.kind}:${t.id}` : t.kind
-}
-
-/** Identity only — the one strip between a live target and anything stored, so in-memory arrays,
- *  the persist payload, and the file are one shape. */
-export function toNavRef(t: NavRef | SelectTarget): NavRef {
-  return 'id' in t ? { kind: t.kind, id: t.id } : { kind: t.kind }
 }
 
 /** Record a visit: dedupe by key, move-to-front, then roll off the oldest beyond `cap`. */

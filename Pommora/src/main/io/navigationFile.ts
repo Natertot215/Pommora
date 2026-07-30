@@ -5,10 +5,11 @@
 
 import { mkdir } from 'node:fs/promises'
 import { isPlainObject } from '@shared/propertyValue'
+import { toNavRef } from '@shared/types'
 import type { NavRef, NavigationState } from '@shared/types'
 import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../paths'
 import { readValue, writeValue } from '../db/localState'
-import { readJsonObject, writeJson } from './atomicWrite'
+import { readJsonObject, readJsonStrict, writeJson } from './atomicWrite'
 import { serializeOnFile } from './fileLock'
 
 const NAV_KINDS = new Set([
@@ -27,15 +28,27 @@ const navigationPath = (root: string): string =>
 
 function isNavRef(v: unknown): v is NavRef {
   if (!isPlainObject(v) || typeof v.kind !== 'string' || !NAV_KINDS.has(v.kind)) return false
-  return v.kind === 'homepage' || typeof v.id === 'string'
+  // Exhaustive, never short-circuited: the id-less homepage must carry NO id (one it smuggled
+  // through would mint a second tab under the same derived id), and every other kind needs a
+  // real one.
+  return v.kind === 'homepage' ? !('id' in v) : typeof v.id === 'string' && v.id.length > 0
 }
 
-/** Identity only — a ref arriving with extra fields (a live target's `path`, a hand-edited
- *  stray) stores as bare `{kind, id}`; nothing at rest can re-grow display or path fields. */
-const cleanRef = (r: NavRef): NavRef => ('id' in r ? { kind: r.kind, id: r.id } : { kind: r.kind })
+/** The banner pointer's own gate: a nexus-relative path INSIDE the shared assets folder, nothing
+ *  else — the pointer feeds a real file delete on replace, so a hand-edited or synced-in string
+ *  must never be able to name a file outside `.nexus/assets/`. */
+export function isAssetPath(v: unknown): v is string {
+  return (
+    typeof v === 'string' &&
+    v.startsWith('.nexus/assets/') &&
+    !v.split('/').includes('..') &&
+    !v.includes('\\')
+  )
+}
 
-/** THE gate every ref crosses in either direction — junk drops, survivors are bare identity. */
-const cleanRefs = (v: unknown[]): NavRef[] => v.filter(isNavRef).map(cleanRef)
+/** THE gate every ref crosses in either direction — junk drops, survivors are bare identity
+ *  (`toNavRef`, the strip both processes share). */
+const cleanRefs = (v: unknown[]): NavRef[] => v.filter(isNavRef).map(toNavRef)
 
 const refList = (v: unknown): NavRef[] | undefined => {
   if (!Array.isArray(v)) return undefined
@@ -45,6 +58,8 @@ const refList = (v: unknown): NavRef[] | undefined => {
 
 const FILE_KEYS = ['pinned', 'favorites'] as const
 
+const asList = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
+
 /** The file's keys, element-filtered — hand-edited junk drops, never crashes. */
 export async function readNavigationFile(root: string): Promise<Omit<NavigationState, 'recents'>> {
   const obj = (await readJsonObject(navigationPath(root))) ?? {}
@@ -53,7 +68,7 @@ export async function readNavigationFile(root: string): Promise<Omit<NavigationS
     const refs = refList(obj[key])
     if (refs) file[key] = refs
   }
-  if (typeof obj.banner === 'string') file.banner = obj.banner
+  if (isAssetPath(obj.banner)) file.banner = obj.banner
   return file
 }
 
@@ -82,15 +97,22 @@ export async function writeNavigationState(
   if (!touchesFile) return
   const path = navigationPath(root)
   const write = serializeOnFile(path, async () => {
-    const current = await readNavigationFile(root)
-    const out: Record<string, unknown> = {}
+    // The write's read-half is STRICT — absent is a fact (start empty), unreadable is ignorance,
+    // and a write may act on a fact, never on ignorance. The lenient reader serves reads only.
+    const read = await readJsonStrict(path)
+    if (!read.ok && read.error.code !== 'not-found')
+      throw new Error(`navigation.json is unreadable: ${read.error.message}`)
+    const base = read.ok ? read.value : {}
+    // Foreign keys ride through untouched — the file honors the same looseness every sidecar does.
+    const out: Record<string, unknown> = { ...base }
     for (const key of FILE_KEYS) {
-      // `current` crossed the gate on the way in, so only the patch's arrays need it here.
-      const refs = key in patch ? cleanRefs(patch[key] ?? []) : current[key]
-      if (refs?.length) out[key] = refs
+      const refs = key in patch ? cleanRefs(patch[key] ?? []) : cleanRefs(asList(base[key]))
+      if (refs.length) out[key] = refs
+      else delete out[key]
     }
-    const banner = 'banner' in patch ? patch.banner : current.banner
-    if (banner) out.banner = banner
+    const banner = 'banner' in patch ? patch.banner : base.banner
+    if (isAssetPath(banner)) out.banner = banner
+    else delete out.banner
     await mkdir(nexusDir(root), { recursive: true })
     await writeJson(path, out)
   })
