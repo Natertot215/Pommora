@@ -33,6 +33,23 @@ function capRecents(recents: NavRef[], cap: number): NavRef[] {
   return recents.length <= cap ? recents : recents.slice(0, cap)
 }
 
+/** Move the entry keyed `activeKey` into `overKey`'s slot — the drop every nav list commits (pins,
+ *  recents, and the NavWindow's frozen snapshot). Null when either key is missing or the move is a
+ *  no-op, so the caller can skip a needless persist. */
+export function moveByKey<T>(
+  list: T[],
+  keyOf: (item: T) => string,
+  activeKey: string,
+  overKey: string,
+): T[] | null {
+  const from = list.findIndex((i) => keyOf(i) === activeKey)
+  const to = list.findIndex((i) => keyOf(i) === overKey)
+  if (from === -1 || to === -1 || from === to) return null
+  const next = [...list]
+  next.splice(to, 0, next.splice(from, 1)[0])
+  return next
+}
+
 /** Drop the entry whose navKey matches `key` — the NavList row's Remove action. Returns the same list
  *  reference when nothing matched, so the caller can skip a needless persist. */
 export function removeRecentByKey(recents: NavRef[], key: string): NavRef[] {

@@ -4,6 +4,7 @@ import { text } from '@renderer/design-system/tokens'
 import type { NavRef } from '@shared/types'
 import { useSession } from '../store'
 import { assetUrl } from '../assetUrl'
+import { moveByKey } from '../Navigation/navRecents'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavGallery } from '../NavWindow/NavGallery'
 import { NavList } from '../Navigation/NavList'
@@ -19,13 +20,8 @@ export function NavView(): React.JSX.Element {
   // isn't needed here.
   const setRecentsOrder = useSession((s) => s.setRecentsOrder)
   const reorderRecent = (activeKey: string, overKey: string): void => {
-    const from = resolvedRecents.findIndex((r) => r.key === activeKey)
-    const to = resolvedRecents.findIndex((r) => r.key === overKey)
-    if (from === -1 || to === -1 || from === to) return
-    const next = [...resolvedRecents]
-    const [moved] = next.splice(from, 1)
-    next.splice(to, 0, moved)
-    setRecentsOrder(next.map((r) => r.key))
+    const next = moveByKey(resolvedRecents, (r) => r.key, activeKey, overKey)
+    if (next) setRecentsOrder(next.map((r) => r.key))
   }
   const ownBanner = useSession((s) => s.navBanner)
   const homeBanner = useSession((s) => s.tree?.homepage.banner)

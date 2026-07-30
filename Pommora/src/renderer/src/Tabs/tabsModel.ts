@@ -4,7 +4,6 @@
 import type {
   NavRef,
   NewTabSentinel,
-  NexusTree,
   SelectTarget,
   StoredTab,
   Tab,
@@ -48,9 +47,8 @@ export function liveTarget(index: ReconcileIndex, ref: NavRef): SelectTarget | n
  *  that do, and carry the history pointer through the pruning (re-pointed by key if it lands
  *  wrong, degraded to a single-entry stack if its target vanished) — restored lockstep is
  *  established here or nowhere. */
-export function hydrateTabs(stored: StoredTab[], tree: NexusTree | null): Tab[] {
-  if (!tree) return []
-  const index = buildReconcileIndex(tree)
+export function hydrateTabs(stored: StoredTab[], index: ReconcileIndex | null): Tab[] {
+  if (!index) return []
   const tabs: Tab[] = []
   for (const t of stored) {
     if (t.target.kind === 'newtab') {
@@ -78,12 +76,11 @@ export function hydrateTabs(stored: StoredTab[], tree: NexusTree | null): Tab[] 
   return tabs
 }
 
-/** The pinned tabs, hydrated in pin order — array position IS the order. Callers hold the result
- *  (the store keeps it as derived state) rather than re-deriving per read: the index build walks
- *  the tree. */
-export function derivePinnedTabs(pinned: NavRef[], tree: NexusTree | null): Tab[] {
-  if (!tree) return []
-  const index = buildReconcileIndex(tree)
+/** The pinned tabs, hydrated in pin order — array position IS the order. Callers pass the push's
+ *  own reconcile index and hold the result (the store keeps it as derived state), so no read or
+ *  push ever walks the tree twice. */
+export function derivePinnedTabs(pinned: NavRef[], index: ReconcileIndex | null): Tab[] {
+  if (!index) return []
   return pinned
     .map((ref) => liveTarget(index, ref))
     .filter((t): t is SelectTarget => t !== null)

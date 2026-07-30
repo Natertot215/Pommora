@@ -12,6 +12,7 @@ import { PageEmbed } from '../Embeds/PageEmbed'
 import { buildPageIndex, flattenPages, type ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
 import { useConnectionHover } from '../Embeds/ConnectionHoverCard'
+import { moveByKey } from '../Navigation/navRecents'
 import { buildResolveIndex } from '../Navigation/navResolve'
 import { useSession } from '../store'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
@@ -55,12 +56,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   // store's live order can lag the frozen view, so splicing against it would land elsewhere than the drop showed.
   const setRecentsOrder = useSession((s) => s.setRecentsOrder)
   const reorderShownRecent = (activeKey: string, overKey: string): void => {
-    const from = frozenRecents.findIndex((r) => r.key === activeKey)
-    const to = frozenRecents.findIndex((r) => r.key === overKey)
-    if (from === -1 || to === -1 || from === to) return
-    const next = [...frozenRecents]
-    const [moved] = next.splice(from, 1)
-    next.splice(to, 0, moved)
+    const next = moveByKey(frozenRecents, (r) => r.key, activeKey, overKey)
+    if (!next) return
     setFrozenRecents(next)
     setRecentsOrder(next.map((r) => r.key))
   }

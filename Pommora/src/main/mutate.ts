@@ -409,12 +409,11 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // (homepage.json for the singleton, the folder sidecar otherwise). Absent = shown.
       let cfgPath: string
       let fallback: Record<string, unknown>
-      if (req.kind === 'homepage' || req.kind === 'navview') {
-        if (req.kind === 'navview') return fault('The NavView has no heading icon.')
+      if (req.kind === 'navview') return fault('The NavView has no heading icon.')
+      if (req.kind === 'page') return fault('A page has no heading icon.')
+      if (req.kind === 'homepage') {
         cfgPath = nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
         fallback = {}
-      } else if (req.kind === 'page') {
-        return fault('A page has no heading icon.')
       } else {
         const resolved = await resolveUnderRoot(root, req.path)
         if (!resolved.ok) return relay(resolved)
