@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** All durable navigation intent lives in one `.nexus/navigation.json` — three ID-only ordered arrays plus the NavView banner pointer — with every stored reference structurally incapable of going stale, and every trace of the previous design erased.
+**Goal:** Deliberate navigation intent — pinned, favorites, the NavView banner — lives in one `.nexus/navigation.json`; the recents trail stays its one db row; every stored reference everywhere is a bare `{kind, id}` structurally incapable of going stale; and every trace of the previous design is erased.
 
-**Architecture:** One shared `NavigationFile` contract, one main-process IO module (one validated read, one serialized whole-file write, one quit gate), two IPC channels replacing seven, and a renderer store that owns three plain arrays where position is the order. Persisted tabs/previews go ID-only with a single restore-time hydrator that prunes dead refs, mints paths, and recomputes the history pointer. The decisions, sign-offs, and locked-decision reconciliations live in [[Navigation Consolidation — Decision Log]]; the Swift Parity Removal plan runs first.
+**Architecture:** One shared `NavigationState` contract over one read and one write channel, with **one validation boundary** — the IO module routes `recents` to the db row and the other keys to the file internally, and every ref entering or leaving either store passes the same validator/cleaner. The file write is a serialized patch (each writer owns its keys); the recents row stays a synchronous upsert needing no debounce, no flush, no ordering rules. The renderer store owns three plain arrays where position is the order. Persisted tabs/previews go ID-only with a single restore-time hydrator that prunes dead refs, mints paths, and recomputes the history pointer. The decisions and locked-decision reconciliations live in [[Navigation Consolidation — Decision Log]]; the Swift Parity Removal plan runs first.
 
 **Tech Stack:** Electron main + React renderer, TypeScript, zod-free hand validation for this file (matching the nav layer's idiom), Zustand store, Vitest. Repo root for all commands: `Pommora/`.
 
@@ -12,8 +12,9 @@
 
 - Gates after every task, exit codes read directly (never piped): `npm run typecheck` · `npx biome lint src` · `npx vitest run`. All must be 0.
 - IPC never throws across the boundary — envelopes only. Main owns the filesystem; the renderer sends whole values.
-- The no-empties rule: an emptied array deletes its key from `navigation.json`; a fileless nexus reads as the empty state.
-- Whole-file writes are most-recent-wins; both writers of `navigation.json` (the nav IPC write and main's banner mutation) MUST route through the one serialized writer.
+- The no-empties rule: an emptied array deletes its key from `navigation.json`, and an emptied recents list deletes its row; a nexus with neither reads as the empty state.
+- The file write is a **serialized patch** — each writer sends only the keys it owns (the renderer: `pinned`/`favorites`; main's banner mutation: `banner`), applied read-modify-write inside the one per-file lock, so neither writer can drop the other's key. The recents key routes to the db row — a synchronous single-statement upsert, exactly as fast and rule-free as today.
+- **The renderer leads the arrays in-session.** Disk leads exactly twice: the first load, and an external-edit push (which adopts the file's keys — `pinned`, `favorites`, `banner`; recents aren't in the file, so no exception exists). A mutation-driven `load()` never re-reads navigation.
 - A PostToolUse hook runs Biome on every write; stage explicit paths; commit style: lowercase `type(scope): descriptive sentence`, ending `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
 - Hand-edits to `~/NexusOS` and `~/test` are one-off commands inside their task — no migration code ships, no fallback read of any old location.
 - **Do not touch:** live `SelectionState` (keeps `path`); live-selection reconciliation in `selection.ts` and `applyTree`; the `adopted-` machinery; `nav:evictThumbs` (thumbnail eviction — shares the prefix, not the fate).
@@ -23,7 +24,7 @@
 ### Task 1: The Contract and the IO Module
 
 **Files:**
-- Modify: `src/shared/types.ts` (add `NavRef`, `NavigationFile`, `NavigationResult` beside the nav types; the old family dies in Tasks 2–4 as its consumers migrate)
+- Modify: `src/shared/types.ts` (add `NavRef`, `NavigationState`, `NavigationResult` beside the nav types; the old family dies in Tasks 2–4 as its consumers migrate)
 - Modify: `src/main/paths.ts` (`NEXUS_CONFIG_FILES` gains `navigation: 'navigation.json'`)
 - Create: `src/main/io/navigationFile.ts`
 - Test: `src/main/io/navigationFile.test.ts`
@@ -37,8 +38,10 @@ export type NavRef =
   | { kind: 'homepage' }
   | { kind: 'context' | 'space' | 'collection' | 'set' | 'page' | 'task' | 'event'; id: string }
 
-/** `.nexus/navigation.json` — array position IS the order; an absent key is an empty list. */
-export interface NavigationFile {
+/** The one navigation contract both processes speak — where each key persists is the IO
+ *  module's business: pinned/favorites/banner in `.nexus/navigation.json`, recents in the
+ *  device-local db row. Array position IS the order; an absent key is an empty list. */
+export interface NavigationState {
   pinned?: NavRef[]
   favorites?: NavRef[]
   recents?: NavRef[]
@@ -46,44 +49,64 @@ export interface NavigationFile {
   banner?: string
 }
 
-export type NavigationResult = { ok: true; file: NavigationFile } | { ok: false; error: string }
+export type NavigationResult = { ok: true; nav: NavigationState } | { ok: false; error: string }
 ```
 
-- Produces (IO): `readNavigationFile(root: string): Promise<NavigationFile>` (absent file → `{}`; junk elements dropped, never crash — the file is hand-editable), `writeNavigationFile(root: string, file: NavigationFile): Promise<void>` (strips empty arrays per no-empties, serialized per-file, tracked for the quit gate), `hasPendingNavigation(): boolean`, `flushNavigation(): Promise<void>` (never rejects). Note: the ref validator's kind set is the full `NavRef` union — including `space`, which the old validator omitted, so Space entries now survive validation like every other kind.
+- Produces (IO): `readNavigationState(root: string): Promise<NavigationState>` (the file's keys merged with the recents row; absent sources → absent keys; junk elements dropped, never crash — the file is hand-editable) and `writeNavigationState(root: string, patch: Partial<NavigationState>): Promise<void>` — **the router**: a `recents` key upserts the db row synchronously; file keys apply as a **serialized read-modify-write** on `navigation.json`, so the renderer (arrays) and main's banner mutation (banner) can never drop each other's keys; an empty array deletes its key/row per no-empties. Plus `hasPendingNavigation(): boolean` and `flushNavigation(): Promise<void>` (never rejects) for the quit gate — file writes only; the row needs no gate. **One validation boundary:** both stores, both directions, every element through the same `isNavRef` + `cleanRef` pair — nothing else in the app validates or shapes navigation refs. Note: the validator's kind set is the full `NavRef` union — including `space`, which the old validator omitted, so Space entries now survive validation like every other kind.
 
 - [ ] **Step 1: Write the failing tests** in `navigationFile.test.ts` (mirror `navState.test.ts`'s tmp-dir setup):
 
 ```ts
 it('reads the empty state from a fileless nexus', async () => {
-  expect(await readNavigationFile(root)).toEqual({})
+  expect(await readNavigationState(root)).toEqual({})
 })
 
 it('round-trips refs and drops junk elements on read', async () => {
-  await writeNavigationFile(root, { pinned: [{ kind: 'page', id: 'p1' }], banner: 'assets/b.jpg' })
   await writeFile(navPath(root), JSON.stringify({
     pinned: [{ kind: 'page', id: 'p1' }, { kind: 'nope' }, 42],
-    favorites: [{ kind: 'homepage' }],
+    favorites: [{ kind: 'homepage' }, { kind: 'space', id: 's1' }],
     banner: 'assets/b.jpg',
   }))
   expect(await readNavigationFile(root)).toEqual({
     pinned: [{ kind: 'page', id: 'p1' }],
-    favorites: [{ kind: 'homepage' }],
+    favorites: [{ kind: 'homepage' }, { kind: 'space', id: 's1' }],
     banner: 'assets/b.jpg',
   })
 })
 
 it('an emptied array deletes its key', async () => {
-  await writeNavigationFile(root, { pinned: [{ kind: 'page', id: 'p1' }] })
-  await writeNavigationFile(root, { pinned: [] })
+  await writeNavigationState(root, { pinned: [{ kind: 'page', id: 'p1' }] })
+  await writeNavigationState(root, { pinned: [] })
   const raw = JSON.parse(await readFile(navPath(root), 'utf8'))
   expect('pinned' in raw).toBe(false)
 })
 
-it('a space ref survives validation', async () => {
-  await writeNavigationFile(root, { recents: [{ kind: 'space', id: 's1' }] })
-  expect((await readNavigationFile(root)).recents).toEqual([{ kind: 'space', id: 's1' }])
+it('a patch touches only its own keys — the banner survives an arrays write and vice versa', async () => {
+  await writeNavigationState(root, { banner: 'assets/b.jpg' })
+  await writeNavigationState(root, { pinned: [{ kind: 'page', id: 'p1' }], favorites: [] })
+  expect(await readNavigationFile(root)).toEqual({
+    pinned: [{ kind: 'page', id: 'p1' }],
+    banner: 'assets/b.jpg',
+  })
+})
+
+it('recents route to the row, never the file', async () => {
+  await writeNavigationState(root, { recents: [{ kind: 'space', id: 's1' }], pinned: [{ kind: 'homepage' }] })
+  expect((await readNavigationState(root)).recents).toEqual([{ kind: 'space', id: 's1' }])
+  const raw = JSON.parse(await readFile(navPath(root), 'utf8'))
+  expect('recents' in raw).toBe(false)
+})
+
+it('a live target stores as a bare ref — no path, no display fields', async () => {
+  await writeNavigationState(root, {
+    pinned: [{ kind: 'page', id: 'p1', path: 'A/b.md', title: 'B' } as unknown as NavRef],
+  })
+  const raw = JSON.parse(await readFile(navPath(root), 'utf8'))
+  expect(raw.pinned).toEqual([{ kind: 'page', id: 'p1' }])
 })
 ```
+
+(The recents-routing case needs an open test db — mirror `navState.test.ts`'s existing session-db setup.)
 
 - [ ] **Step 2: Run `npx vitest run src/main/io/navigationFile.test.ts` — expect FAIL** (module not found).
 - [ ] **Step 3: Implement** `navigationFile.ts`:
@@ -91,8 +114,9 @@ it('a space ref survives validation', async () => {
 ```ts
 import { mkdir } from 'node:fs/promises'
 import { isPlainObject } from '@shared/propertyValue'
-import type { NavigationFile, NavRef } from '@shared/types'
+import type { NavigationState, NavRef } from '@shared/types'
 import { NEXUS_CONFIG_FILES, nexusConfig, nexusDir } from '../paths'
+import { readValue, writeValue } from '../db/localState'
 import { readJsonObject, writeJson } from './atomicWrite'
 import { serializeOnFile } from './fileLock'
 
@@ -105,39 +129,57 @@ function isNavRef(v: unknown): v is NavRef {
   return v.kind === 'homepage' || typeof v.id === 'string'
 }
 
+/** Identity only — a ref arriving with extra fields (a live target's `path`, a hand-edited
+ *  stray) stores as bare `{kind, id}`; the file can never re-grow display or path fields. */
+const cleanRef = (r: NavRef): NavRef => ('id' in r ? { kind: r.kind, id: r.id } : { kind: r.kind })
+
 const refList = (v: unknown): NavRef[] | undefined => {
   if (!Array.isArray(v)) return undefined
-  const refs = v.filter(isNavRef)
+  const refs = v.filter(isNavRef).map(cleanRef)
   return refs.length ? refs : undefined
 }
 
-/** The whole navigation surface, element-filtered — hand-edited junk drops, never crashes. */
-export async function readNavigationFile(root: string): Promise<NavigationFile> {
+const FILE_KEYS = ['pinned', 'favorites'] as const
+
+/** The file's keys, element-filtered — hand-edited junk drops, never crashes. */
+export async function readNavigationFile(root: string): Promise<Omit<NavigationState, 'recents'>> {
   const obj = (await readJsonObject(navigationPath(root))) ?? {}
-  const file: NavigationFile = {}
-  const pinned = refList(obj.pinned)
-  const favorites = refList(obj.favorites)
-  const recents = refList(obj.recents)
-  if (pinned) file.pinned = pinned
-  if (favorites) file.favorites = favorites
-  if (recents) file.recents = recents
+  const file: Omit<NavigationState, 'recents'> = {}
+  for (const key of FILE_KEYS) {
+    const refs = refList(obj[key])
+    if (refs) file[key] = refs
+  }
   if (typeof obj.banner === 'string') file.banner = obj.banner
   return file
 }
 
+/** The one contract: the file's deliberate intent merged with the device-local recents row. */
+export function readNavigationState(root: string): Promise<NavigationState> {
+  return readNavigationFile(root).then((file) => {
+    const recents = refList(readValue<unknown[]>('recents'))
+    return recents ? { ...file, recents } : file
+  })
+}
+
 let inFlight: Promise<unknown> | null = null
 
-/** ONE serialized whole-file writer — every mutation of navigation.json routes through here,
- *  so two writers can never interleave. An emptied array deletes its key. */
-export async function writeNavigationFile(root: string, file: NavigationFile): Promise<void> {
+/** THE writer — routes each key to its store. Recents upsert the db row synchronously; file
+ *  keys apply as a serialized read-modify-write, so the arrays writer and the banner writer can
+ *  never drop each other's key. Empties delete; every ref passes the one cleaner both stores share. */
+export async function writeNavigationState(root: string, patch: Partial<NavigationState>): Promise<void> {
+  if ('recents' in patch) writeValue('recents', (patch.recents ?? []).map(cleanRef))
+  const fileKeys = FILE_KEYS.filter((k) => k in patch)
+  if (!fileKeys.length && !('banner' in patch)) return
   const path = navigationPath(root)
-  const out: Record<string, unknown> = {}
-  for (const key of ['pinned', 'favorites', 'recents'] as const) {
-    const refs = file[key]
-    if (refs?.length) out[key] = refs
-  }
-  if (file.banner) out.banner = file.banner
   const write = serializeOnFile(path, async () => {
+    const current = await readNavigationFile(root)
+    const out: Record<string, unknown> = {}
+    for (const key of FILE_KEYS) {
+      const refs = key in patch ? patch[key] : current[key]
+      if (refs?.length) out[key] = refs.map(cleanRef)
+    }
+    const banner = 'banner' in patch ? patch.banner : current.banner
+    if (banner) out.banner = banner
     await mkdir(nexusDir(root), { recursive: true })
     await writeJson(path, out)
   })
@@ -168,9 +210,10 @@ const noop = (): void => {}
 
 **Files:**
 - Modify: `src/main/index.ts` (delete the seven handlers at 330–387 — `nav:load`, `nav:saveRecents`, `nav:saveFavorites`, `nav:loadPins`, `nav:addPin`, `nav:reorderPin`, `nav:removePin` — and `savePin`; add the two below; retarget the quit gate at 1644–1661 from `hasPendingFavorites`/`flushFavorites` to `hasPendingNavigation`/`flushNavigation`; prune the dead imports)
-- Modify: `src/preload/index.ts` (the `nav` bridge at 290–301 becomes `read` + `write`; `onNavChanged` (438–443) retypes to `NavigationFile`; header comments restated)
+- Modify: `src/preload/index.ts` (the `nav` bridge at 290–301 becomes `read` + `write`; `onNavChanged` (438–443) retypes to the file's keys of `NavigationState`; header comments restated)
 - Delete: `src/main/io/pinsState.ts`, `src/main/io/pinsState.test.ts`, `src/main/io/navState.ts`, `src/main/io/navState.test.ts`
-- Modify: `src/main/db/localState.ts` (the `'recents'` scope arm and its mention in the singleton doc), `src/main/db/localState.test.ts` (the recents case), `src/main/watcher.ts` (see Task 6 — only the imports break here; point them at `readNavigationFile` now so the build stays green)
+- Modify: `src/main/io/atomicWrite.ts` (delete `readJsonArray` (104–115) — its sole consumer repo-wide is the dying `navState.ts:48`)
+- Modify: `src/main/watcher.ts` (see Task 6 — only the imports break here; point them at `readNavigationFile` now so the build stays green). The `'recents'` scope in `localState.ts` STAYS — the row remains recents' home.
 - Modify: `src/shared/types.ts` (delete `NavState`, `NavStateResult`, `NavFavorite`, `PinEntry`, `PinsResult`, `NavChanged`; `RecentEntry` dies with its last consumer in Task 3 — leave it this task if the renderer still compiles against it)
 
 **Interfaces:**
@@ -180,18 +223,18 @@ const noop = (): void => {}
 handleEnvelope('nav:read', async (): Promise<NavigationResult> => {
   const root = sessionRoot()
   if (!root) return { ok: false, error: 'No nexus is open.' }
-  return { ok: true, file: await readNavigationFile(root) }
+  return { ok: true, nav: await readNavigationState(root) }
 })
 
-handleEnvelope('nav:write', async (file: unknown): Promise<Ack> => {
+handleEnvelope('nav:write', async (patch: unknown): Promise<Ack> => {
   const root = sessionRoot()
   if (!root) return { ok: false, error: 'No nexus is open.' }
-  await writeNavigationFile(root, file as NavigationFile)
+  await writeNavigationState(root, patch as Partial<NavigationState>)
   return { ok: true }
 })
 ```
 
-- Produces (bridge): `nav.read(): Promise<NavigationResult>`, `nav.write(file: NavigationFile): Promise<Ack>`, `onNavChanged(cb: (file: NavigationFile) => void)`.
+- Produces (bridge): `nav.read(): Promise<NavigationResult>`, `nav.write(patch: Partial<NavigationState>): Promise<Ack>`, `onNavChanged(cb: (file: Omit<NavigationState, 'recents'>) => void)`. The handler forwards the patch as-is — the IO module's single validation boundary is what shapes it, and its router decides where each key lands; no second validator appears anywhere.
 
 - [ ] **Step 1: Make the cuts and additions above.** The renderer store still calls the old bridge — expect typecheck to name every call site; that list is Task 3's worklist, so this task ends mid-red ONLY if Task 3 is executed in the same working session. If tasks are dispatched separately, Tasks 2 and 3 are one commit boundary — do both before the gates.
 - [ ] **Step 2: (with Task 3 done) Full gates — all 0.**
@@ -202,9 +245,11 @@ handleEnvelope('nav:write', async (file: unknown): Promise<Ack> => {
 
 **Files:**
 - Modify: `src/renderer/src/store.ts` (the nav slice: state becomes `pinned: NavRef[]`, `favorites: NavRef[]`, `recents: NavRef[]`, `navBanner: string | undefined`; every action below; `load()`'s nav fetch becomes one `nav.read()`; delete the dead `reorderFavorites` (221, 1050–1057) — zero call sites, verified)
-- Modify: `src/renderer/src/Navigation/navRecents.ts` (entries retype `RecentEntry` → `NavRef`; `navKey` unchanged — it is the one identity rule; `RECENTS_CAP = 100` stays exactly where it is, the cap's only home; header restated)
+- Modify: `src/renderer/src/Navigation/navRecents.ts` (entries retype `RecentEntry` → `NavRef`; `navKey` retypes to `NavRef | SelectTarget` — same body, the one identity rule; gains `toNavRef` below; `RECENTS_CAP = 100` stays exactly where it is, the cap's only home; header restated)
+- Modify: `src/renderer/src/Navigation/navSearch.ts` (search hits retype to `NavRef` — a hit needs identity only, since `go()` mints the path at click; the shared `NavTarget` union then has no consumer and deletes from `types.ts`)
+- Modify: `src/renderer/src/MarkdownPM/Tables/navigate.ts` (its local, unrelated `NavTarget` — table-cell coordinates — renames to `CellNavTarget`, so the erasure grep reads zero)
 - Delete: `src/renderer/src/Navigation/navPins.ts` + test, `src/renderer/src/Navigation/order.ts` + test (`keyBetween` verified pins-only)
-- Modify: `src/renderer/src/Navigation/navResolve.ts` (`cleanTarget` and the `pinned` pass-through die; `resolveWith` takes `NavRef`; `resolvePins` keeps setting `pinned: true` itself), `useNavData.ts` (slice reads; `go()` below), `NavList.tsx`, `NavGallery.tsx`, `NavWindow.tsx`, `TabBar.tsx`, `NavView.tsx` (call-site retypes; NavView's banner reads `navBanner`), `App.tsx` (`applyNavChanged` wiring)
+- Modify: `src/renderer/src/Navigation/navResolve.ts` (`cleanTarget` and the `pinned` pass-through die; `resolveWith` takes `NavRef`; `resolvePins` keeps setting `pinned: true` itself), `useNavData.ts` (slice reads; `go()` below; the dead-entry fallback drops), `NavList.tsx` (call-site retypes; the preview action mints its path — rule 4 below), `NavGallery.tsx`, `NavWindow.tsx`, `TabBar.tsx`, `App.tsx` (`applyNavChanged` wiring). NavView's banner stays on the tree field this task — it moves in Task 4, atomically.
 - Modify: `src/shared/types.ts` (delete `RecentEntry` — last consumers gone)
 - Test: `src/renderer/src/Navigation/navRecents.test.ts`, `navResolve.test.ts`, `store.test.tsx` (fixtures lose `path`/`pinned`; recents-reorder suite retargets; the `nav.saveRecents` mock becomes `nav.write`)
 
@@ -213,15 +258,21 @@ handleEnvelope('nav:write', async (file: unknown): Promise<Ack> => {
 - Produces (store actions — every mutation is a splice + one persist):
 
 ```ts
+/** In-memory arrays hold BARE refs — toNavRef strips at the action boundary, so store state,
+ *  the persist payload, and the file are one shape. (navRecents.ts exports it beside navKey.) */
+export const toNavRef = (t: NavRef | SelectTarget): NavRef =>
+  'id' in t ? { kind: t.kind, id: t.id } : { kind: t.kind }
+
 persistNav: () => {
-  const { pinned, favorites, recents, navBanner } = get()
-  void window.nexus.nav.write({ pinned, favorites, recents, banner: navBanner })
+  const { pinned, favorites } = get()
+  void window.nexus.nav.write({ pinned, favorites }) // the banner is main's key
 },
-togglePin: (target: NavRef) => {
-  const key = navKey(target)
+togglePin: (target: NavRef | SelectTarget) => {
+  const ref = toNavRef(target)
+  const key = navKey(ref)
   const pinned = get().pinned.some((p) => navKey(p) === key)
     ? get().pinned.filter((p) => navKey(p) !== key)
-    : [...get().pinned, target]
+    : [...get().pinned, ref]
   set({ pinned }); get().persistNav()
 },
 reorderPin: (activeKey: string, overKey: string) => {
@@ -233,7 +284,12 @@ reorderPin: (activeKey: string, overKey: string) => {
   set({ pinned }); get().persistNav()
 },
 ```
-  with `toggleFavorite`/`removeRecent` following `togglePin`'s shape and the recents recorder unchanged in spirit: `recordRecent(recents, target)` (dedupe-to-front, cap 100) then persist.
+  with `toggleFavorite`/`removeRecent` following `togglePin`'s shape. The recents recorder keeps `recordRecent(recents, toNavRef(target))` (dedupe-to-front, cap 100 — the cap's only home) and persists with `void window.nexus.nav.write({ recents })` — the router lands it in the db row as one synchronous statement, so a click needs no debounce, no flush, and no quit ceremony, exactly as today.
+- Produces (the four sequencing rules, stated once):
+  1. `load()` reads navigation **only inside the first-load gate** (the same `activeTabId === ''` rule the tabs already document) — a mutation-driven `load()` never re-reads, so the renderer's just-made change can never roll back.
+  2. `applyNavChanged` (the external-edit push) adopts the file's keys — `pinned`, `favorites`, `banner`. Recents aren't in the file; no exception exists.
+  3. `useNavData.go`'s dead-entry fallback becomes a drop — with ID-only entries there is nothing to fall back to; a ref that fails to resolve does not navigate.
+  4. `NavList`'s "Open in Preview" row action mints its path through the same reconcile index as `go()` before handing a ref to the preview — no consumer anywhere reads a stored path.
 - Produces (`go()` mints the path at click time — the display index stays display-only):
 
 ```ts
@@ -254,20 +310,23 @@ const go = (ref: NavRef): void => {
 
 ---
 
-### Task 4: The Banner Rides the Navigation File
+### Task 4: The Banner Rides the Navigation File — Atomically
+
+The whole banner move lands in ONE commit: retarget, tree-field deletion, NavView rewire, and the hand-move of both nexuses' banner values. No interim commit exists where the NavView banner has no producer.
 
 **Files:**
-- Modify: `src/main/mutate.ts` (the `req.kind === 'navview'` arms at 357–361 and 398–400 split from homepage: the navview banner value writes through `writeNavigationFile(root, { ...await readNavigationFile(root), banner: value })` — read-modify-write INSIDE the one serialized writer path; the asset copy for this owner lands in `.nexus/assets/` with no per-owner folder; comments restated)
+- Modify: `src/main/mutate.ts` (the `req.kind === 'navview'` arms at 357–361 and 398–400 split from homepage: the navview banner value writes `writeNavigationState(root, { banner: value })` — a patch; the serialized read-modify-write inside the writer is what preserves the arrays; the asset copy for this owner lands in `.nexus/assets/` with no per-owner folder; comments restated)
 - Modify: `src/main/readNexus.ts` (the `navviewConfig` fetch (438, 444) and `navView` tree field (548) delete), `src/shared/types.ts` (`NexusTree.navView` deletes; `BannerOwnerKind` keeps its `'navview'` arm — it names the surface), `src/main/paths.ts` (`navview` + `navFavorites` registry entries delete)
-- Modify: `src/renderer/src/Tabs/NavView.tsx:30` (banner reads the store's `navBanner` — wired in Task 3), fixtures at `Navigation/testTree.ts:10`, `selection.test.ts:10`, `store.test.tsx:298`, `treeMove.test.ts:45` (the `navView` field leaves the tree shape)
+- Modify: `src/renderer/src/Tabs/NavView.tsx:30` (banner reads the store's `navBanner`, populated by `nav.read` at load and by the push), fixtures at `Navigation/testTree.ts:10`, `selection.test.ts:10`, `store.test.tsx:298`, `treeMove.test.ts:45` (the `navView` field leaves the tree shape)
 - Test: `src/main/mutate.test.ts:435–448` (the navview setBanner case asserts the `banner` key in `navigation.json` and the asset path `.nexus/assets/banner-*.png`)
 
 **Interfaces:**
-- Consumes: `readNavigationFile`/`writeNavigationFile` — main-side banner writes and renderer-driven nav writes serialize on the same file lock, so neither can lose the other; last write wins on the whole file by design.
+- Consumes: `writeNavigationState(root, patch)` — the banner writer sends only its key; the one serialized patch-writer is why neither it nor the arrays writer can lose the other.
 
 - [ ] **Step 1: True `mutate.test.ts`'s navview case** to the new storage. Run it — expect FAIL.
-- [ ] **Step 2: Implement the retarget and deletions.** Re-run — PASS. Full gates — all 0.
-- [ ] **Step 3: Commit** `refactor(nav): the navview banner joins its surface's file`.
+- [ ] **Step 2: Implement the retarget, deletions, and NavView rewire.** Re-run — PASS.
+- [ ] **Step 3: Hand-move the disks in the same sitting** (dev app closed): for each nexus with a `navview.json`, copy its `banner` value into `navigation.json`'s `banner` key; move the image out of `assets/navview/` into `.nexus/assets/` and update the stored path; delete `navview.json` and the emptied folder.
+- [ ] **Step 4: Full gates — all 0.** Commit `refactor(nav): the navview banner joins its surface's file`.
 
 ---
 
@@ -317,12 +376,13 @@ export function hydrateTabs(stored: StoredTab[], activeTabId: string, tree: Nexu
 ### Task 6: The Watcher Watches One File
 
 **Files:**
-- Modify: `src/main/watcher.ts` (`isNavPath` (27–31) matches only `NEXUS_CONFIG_FILES.navigation`; `pushNav` (138–146) reads `readNavigationFile` and pushes it whole; comments restated)
-- Test: `src/main/watcher.test.ts` (the navFavorites/pins cases become one navigation.json case)
+- Modify: `src/main/watcher.ts` (`isNavPath` (27–31) matches only `NEXUS_CONFIG_FILES.navigation`; **the nav branch moves ABOVE the `isRecentWrite` echo check** at 88 — the time-window suppression exists to spare wasted full tree walks, and a nav event never walks the tree, so navigation events skip suppression entirely; `pushNav` (138–146) reads `readNavigationFile` and pushes it whole; comments restated)
+- Test: `src/main/watcher.test.ts` (the navFavorites/pins cases become one navigation.json case, plus one case proving a nav event inside the echo window still pushes)
 
-- [ ] **Step 1: Verify the echo suppression** before wiring: confirm `writeJson` registers its path with `io/writeEcho.ts` so the app's own navigation writes (every recents click) do NOT round-trip through the watcher as external edits. Run: `grep -n "writeEcho\|registerEcho" src/main/io/atomicWrite.ts src/main/io/writeEcho.ts` and read the mechanism. Expected: self-writes are suppressed; if they are NOT, the task adds the registration to `writeNavigationFile` and a test proving a self-write fires no `nav:changed`.
-- [ ] **Step 2: True the watcher test, run — FAIL; implement; PASS. Full gates — all 0.**
-- [ ] **Step 3: Commit** `refactor(watch): outside edits to one navigation file`.
+The sequencing this buys, for free: an external hand-edit is never swallowed by the app's own write echo (the old window opened for two seconds after every recents write); a self-write's echo push is a debounced re-read of one small file whose content matches what the renderer already holds for the adopted keys — a harmless refresh, not a mechanism.
+
+- [ ] **Step 1: True the watcher test, run — FAIL; implement; PASS. Full gates — all 0.**
+- [ ] **Step 2: Commit** `refactor(watch): outside edits to one navigation file`.
 
 ---
 
@@ -349,19 +409,16 @@ for root in ['/Users/nathantaichman/NexusOS', '/Users/nathantaichman/test']:
     if ff.exists():
         favs = [{k: v for k, v in e.items() if k in ('kind', 'id')} for e in json.load(open(ff)) if isinstance(e, dict)]
     out = {}
+    nav = nx / 'navigation.json'
+    if nav.exists(): out = json.load(open(nav))   # Task 4 already parked the banner here
     if pins: out['pinned'] = pins
     if favs: out['favorites'] = favs
-    bf = nx / 'navview.json'
-    if bf.exists():
-        b = json.load(open(bf)).get('banner')
-        if b: out['banner'] = b
-    json.dump(out, open(nx / 'navigation.json', 'w'), indent=2)
+    json.dump(out, open(nav, 'w'), indent=2)
     print(root, '->', out)
 EOF
 ```
 
-- [ ] **Step 2: Move each banner image out of its per-owner folder** (`mv ~/NexusOS/.nexus/assets/navview/banner-*.* ~/NexusOS/.nexus/assets/` — then update the `banner` value in that nexus's `navigation.json` to the new relative path; same for `~/test` if present; delete the emptied `assets/navview/` folders).
-- [ ] **Step 3: Delete the old world from both disks:** `rm -r .nexus/pins .nexus/navFavorites.json .nexus/navview.json` (whichever exist), `sqlite3 .nexus/nexus.db "DELETE FROM local_state WHERE scope = 'recents';"`, and hand-clean `state.json` down to its live keys:
+- [ ] **Step 2: Delete the old world from both disks** (the banner value and image already moved in Task 4): `rm -r .nexus/pins .nexus/navFavorites.json` (whichever exist), `sqlite3 .nexus/nexus.db "DELETE FROM local_state WHERE scope = 'recents';"`, and hand-clean `state.json` down to its live keys:
 
 ```bash
 python3 - <<'EOF'
@@ -379,7 +436,7 @@ EOF
 
 ### Task 8: The Erasure Pass
 
-**Files (docs):** `Features/Navigation.md` (restated first — the file, the arrays, the live resolution), `Features/Architecture.md` (the storage tree gains `navigation.json`, loses three lines; the db contract loses recents), `Features/PagePreview.md:21` (mint-or-drop), `Context.md` (109, 119), `Handoff.md` (22, 76), `History.md` (the two locked entries resolve per the Decision Log's sign-offs; the multi-tab entry's tabs-sync claim trues to device-local; merged in place per History's own convention).
+**Files (docs):** `Features/Navigation.md` (restated first — the file, the arrays, the live resolution), `Features/Architecture.md` (the storage tree gains `navigation.json`, loses three lines; the db contract loses recents), `Features/PagePreview.md:21` (mint-or-drop), `Features/Configuration.md` + `Features/SurfacePM.md` + `Mobile/MobileDecisionLog.md` + `Mobile/FormFactor.md` (each swept for the old vocabulary — note `Configuration.md`'s `recents` is the app-level recently-opened-nexus list in `pommora.json`, a different thing that stays), `Context.md` (109, 119), `Handoff.md` (22, 76), `History.md` (the two locked entries resolve per the Decision Log's sign-offs; the multi-tab entry's tabs-sync claim trues to device-local; merged in place per History's own convention).
 
 **Files (comments):** the ~40 sites in the blast-radius report's C1 table — every comment asserting per-pin files, tombstones, fractional orders, the favorites-only quit gate, recents-in-db, `navRecents.json` (`types.ts:406` is the sole survivor naming it), or stored-path repair, restated or deleted with the code that made them true.
 
@@ -387,11 +444,12 @@ EOF
 - [ ] **Step 2: The grep gate — every command prints 0:**
 
 ```bash
-grep -rn "navFavorites\|navRecents\|navview\.json\|loadOrMigratePins\|pinsState\|keyBetween\|PinEntry\|PinsResult\|NavChanged\|NavStateResult\|RecentEntry\|hasPendingFavorites\|flushFavorites\|targetKey" src ../.claude | wc -l
-grep -rn "'recents'" src/main/db | wc -l
+grep -rn "navFavorites\|navRecents\|navview\.json\|loadOrMigratePins\|pinsState\|keyBetween\|PinEntry\|PinsResult\|NavChanged\b\|NavStateResult\|RecentEntry\|NavTarget\|hasPendingFavorites\|flushFavorites\|targetKey\|readNavState\|writeRecents\|writeFavorites\|readPins\b\|writePin\b\|removePin\b\|pinFileName\|cleanPinTarget\|pinFor\b\|readJsonArray" src ../.claude | wc -l
 grep -rn "\.nexus/pins\|tombstone" src | wc -l
 grep -rn "nav:saveRecents\|nav:saveFavorites\|nav:loadPins\|nav:addPin\|nav:reorderPin\|nav:removePin\|nav:load\b" src | wc -l
 ```
+
+(`NavTarget` reads zero because Task 3 renamed the unrelated table-cell type; the app-level `recents` list in `appConfig.ts`/`pommora.json` is out of scope by the `src/main/db` scoping; `reorderTo`/`byOrder` are excluded — both survive as unrelated symbols, the DnD prop name and `treeMove`'s private string-order helper.)
 
 - [ ] **Step 3: Full gates + `env -u ELECTRON_RUN_AS_NODE npm run build` — all 0.**
 - [ ] **Step 4: Commit** `refactor(nav): the old design leaves no shadow` (docs bundled).
@@ -408,4 +466,4 @@ grep -rn "nav:saveRecents\|nav:saveFavorites\|nav:loadPins\|nav:addPin\|nav:reor
 
 #### Self-Review Record
 
-Spec coverage: every Decision Log ruling maps to a task — the file and its contract (1), the channel collapse and quit gate (2), arrays-as-order and the cap's home (3), the banner's two-writers answer (4), hydration as the lockstep owner (5), watcher echo (6), no-migration hand-authoring (7), total erasure (8). Type consistency: `NavRef`/`NavigationFile`/`StoredTab` are defined once in Task 1/5 and consumed by name everywhere after. Known open verification: Task 6 Step 1 is a real check with both outcomes specified, not a placeholder.
+Spec coverage: every Decision Log ruling maps to a task — the file, its contract, and the one validation boundary (1), the channel collapse and quit gate (2), arrays-as-order, the cap's home, and the four sequencing rules (3), the atomic banner move through the patch-writer (4), hydration as the lockstep owner (5), the watcher's echo-free nav branch (6), no-migration hand-authoring (7), total erasure with a scoped, achievable-zero gate (8). Type consistency: `NavRef`/`NavigationState`/`StoredTab`/`toNavRef` are defined once and consumed by name everywhere after. The adversarial review's nine findings are folded: the load-gate rule (F1), the patch-writer (F2), the atomic Task 4 (F3), the per-key push-adoption rule (F4), the echo-exempt nav branch (F5), the three stored-path consumers (F6), hand-clean ordering (F7, both plans), recents kept on the synchronous row so no write policy is needed (F8), and the gate/doc scoping (F9).

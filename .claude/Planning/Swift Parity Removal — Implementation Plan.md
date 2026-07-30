@@ -13,7 +13,7 @@
 - Gates after every task, exit codes read directly (never piped): `npm run typecheck` · `npx biome lint src` · `npx vitest run`. All must be 0.
 - A PostToolUse hook runs Biome on every write — never hand-format or run Biome; an Edit failing on whitespace means re-read and retry.
 - Stage explicit paths only (parallel sessions share the tree); commit style: lowercase `type(scope): descriptive sentence`, ending `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
-- The two real nexuses are `~/NexusOS` and `~/test`. Hand-edits to them are part of the named task, done with a one-off command, never with shipped migration code.
+- The two real nexuses are `~/NexusOS` and `~/test`. Hand-edits to them are part of the named task, done with a one-off command, never with shipped migration code — and always **after** the commit that deletes the code re-creating what they clean (the settings/identity backfills re-seed a cleaned file on every app open until they're gone), with the dev app closed.
 - Rewritten comments state the durable truth in native voice — no supersedes framing, no "was Swift's" phrasing, no reference to this plan.
 - **Do not touch:** the `adopted-` id machinery (`ids.ts`, `adopt.ts`, `reorder.ts`'s `persistable`); general hand-edit validation (files are a public interface); the on-disk snake_case key names; anything under `.nexus/pins/`, `navState.ts`, `pinsState.ts`, or `RecentEntry.pinned` (those die in the Navigation Consolidation plan, as whole modules).
 
@@ -35,12 +35,13 @@
 
 ```ts
 it('a write to a missing settings.json creates it holding only the patch', async () => {
-  const written = await updateSettings(root, (cur) => ({ ...cur, time_format: 'twentyFourHour' }))
-  expect(written.ok).toBe(true)
+  await updateSettings(root, (cur) => ({ ...cur, time_format: 'twentyFourHour' }))
   const onDisk = JSON.parse(await readFile(join(root, '.nexus', 'settings.json'), 'utf8'))
   expect(onDisk).toEqual({ time_format: 'twentyFourHour' })
 })
 ```
+
+(`updateSettings` resolves void and throws on an unreadable file — the throw lands as the caller's error envelope; that contract is unchanged.)
 
 - [ ] **Step 2: Run `npx vitest run src/main/settings.test.ts` — expect FAIL** (the new test sees the full Swift seed on disk, not the bare patch).
 - [ ] **Step 3: Delete the machinery.** Remove the items listed under Files. In `updateSettings`, replace the `defaultSettingsSeed` seed argument with `() => ({})`. Rewrite the module header to the surviving truth: per-nexus settings live in `.nexus/settings.json`; reads tolerate absence; writes create on demand and preserve foreign keys.
@@ -188,6 +189,8 @@ grep -rl tablecells ~/NexusOS ~/test --include="*.json" | wc -l   # expect 0
 ---
 
 ### Task 7: The Comment Sweep and the Grep Gate
+
+The sweep measures at ~106 non-test comment lines across ~37 files — the list below plus CSS strays (`styles.css`, `Detail/Banner/Banner.css`); treat the list as the map and the grep as the territory. The gate's `swift` zero applies to `Pommora/src` — the `.claude` docs' Swift Origins section is Nathan's deliberate product history and stays.
 
 **Files:**
 - Modify (comments only — code unchanged): `src/main/mutate.ts` (276, 313, 349) · `src/main/watcher.ts:52` (delete the `index.db` clause — this one IS code — and `src/main/db/open.ts:1–2`'s mention) · the pipeline quartet `filter.ts`/`sort.ts`/`group.ts`/`value.ts` · `src/main/properties/schema.ts` (including the `// MARK: -` idiom) · `src/main/exclusion.ts` · `src/main/order.ts` · `src/main/paths.ts:2` · `src/main/connections/rewrite.ts`, `scan.ts` · `src/main/crud/folderEntity.ts`, `cascade.ts:20` · `src/shared/connections.ts`, `mutate.ts:18`, `properties.ts`, `columnStyles.ts:2`, `types.ts` (22–24, 219, 242, 271, 416, 496, 510) · `src/renderer/src/Detail/Views/Table/TableView.tsx:477`, `viewMerge.ts:8`, `columnReorder.ts:6` · `src/renderer/src/MarkdownPM/PageHeader.tsx:17` · `design-system/tokens/colorMap.ts` (done in Task 4 — verify) · `Sidebar/disclosureState.ts:2` · `CalendarPicker/CalendarPicker.tsx` (501, 683), `calendarPicker.css.ts:215` — each rewritten to state the design intent with no attribution

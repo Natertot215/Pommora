@@ -1,6 +1,6 @@
 ## Navigation Consolidation — Decision Log
 
-**Status:** Decisions ratified; execution split into two task plans — [[Swift Parity Removal — Implementation Plan]] (runs first, independently shippable) and [[Navigation Consolidation — Implementation Plan]]. Both pending adversarial review.
+**Status:** Decisions ratified; adversarial review complete and folded (nine findings, all resolved — the storage split for recents is the reviewed shape). Execution split into two task plans — [[Swift Parity Removal — Implementation Plan]] (runs first, independently shippable) and [[Navigation Consolidation — Implementation Plan]]. Awaiting Nathan's execution-mode call.
 
 #### The Law This Plan Serves
 
@@ -8,18 +8,19 @@ Structure supplies the information; mechanisms don't. Everything Navigation pers
 
 #### Ratified Decisions
 
-- **One `.nexus/navigation.json`** holds all durable navigation intent as three plain ordered arrays: `pinned`, `favorites`, `recents`. Array position is the order — no `order` numbers, no fractional keys, no tombstones, no per-pin files.
+- **One `.nexus/navigation.json`** holds the *deliberate* navigation intent — `pinned` and `favorites` as plain ordered arrays, plus the NavView `banner` pointer. Array position is the order — no `order` numbers, no fractional keys, no tombstones, no per-pin files. Deliberate intent is rare-written, synced, and hand-editable; that is exactly what earns a file.
+- **Recents stay the `nexus.db` row** — a per-click trail is device-local ambient chrome (the locked decision stands), written as one synchronous statement with no debounce, no flush, no read-ordering rules. Only its *shape* changes: bare refs, like everything else.
+- **One contract, one validation, storage routed inside.** The renderer speaks one `NavigationState` (all four keys) over one read and one write channel; the IO layer routes `recents` to the row and the rest to the file. Every ref entering or leaving either store passes the same validator/cleaner — nothing else shapes navigation refs anywhere.
 - **Entries are ID-only:** `{kind, id}`, with the id-less homepage as `{kind: "homepage"}`. No titles, no paths, no display fields at rest.
-- **Whole-file writes, most-recent-wins** — consistent with the locked conflict philosophy. The no-empties rule applies: an emptied array deletes its key.
-- **Recents leave `nexus.db`.** The database keeps only true per-machine chrome (tabs, previews, folds, view selections, link titles, block layouts). Navigation intent lives in the one hand-readable, agent-legible file.
+- **The file write is a serialized patch** — each writer sends only the keys it owns, applied read-modify-write inside one per-file lock; most-recent-wins applies per key-owner. The no-empties rule applies: an emptied array deletes its key.
 - **Persisted tabs and previews go ID-only too:** their stored targets drop `path`; paths are minted at restore from the live tree. The live in-memory `SelectionState` keeps its `path` — it is the address the app actively operates on; only persistence changes.
 - **`navview.json` is deleted.** Its lone banner pointer moves into `navigation.json` as the NavView's own key — the file already owns everything the NavView surface is. The banner image loses its dedicated asset folder: the pointer is the only linkage, so the image sits in shared assets and `navigation.json` names its path. `state.json` stays purely the orders file; `settings.json` stays purely "what the user chose."
 - **Swift parity is removed wholesale.** Pommora is the sole reader and writer of `.nexus/` configs; Sapphire shares interpretation conventions only and reads nothing here.
 - **No migration code.** Exactly two nexuses exist in the world; their files are hand-authored/hand-cleaned during implementation. No lift, no sentinel, no fallback read of the old locations.
 
-#### Conflicts With Locked Decisions — Stated and Signed Off
+#### Locked-Decision Reconciliations
 
-- **"Favorites and pins stay files" (History)** records that *"recents, tabs and previews are ambient state whose cross-device merge has no correct answer."* Moving recents into the synced `navigation.json` overturns that clause for recents (tabs and previews stay in the db). The overturn is deliberate — one file, one read, one write, structure over mechanism, most-recent-wins accepted — and **Nathan signed it off explicitly (2026-07-29)**. The History entry resolves to the new truth in the erasure pass.
+- **"Favorites and pins stay files" (History)** — upheld in both halves: favorites and pins consolidate *within* the file world (one file instead of many), and its clause that *"recents, tabs and previews are ambient state whose cross-device merge has no correct answer"* stands — all three remain db rows. Nathan ruled on the recents placement explicitly (2026-07-29) with least-moving-parts as the deciding criterion.
 - **"Guard code divides by what it defends against" (History)** proved the tab-history lockstep repair load-bearing after a premature deletion. This plan does not delete that guard — it changes its form: restore-time hydration prunes refs that no longer resolve, mints paths for those that do, and **recomputes the history pointer as it prunes** (pruning shifts indices, so the recompute is structurally unavoidable, not optional hardening). The lockstep invariant keeps exactly one owner: the hydrator.
 
 #### End State On Disk
