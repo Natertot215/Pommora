@@ -134,6 +134,16 @@ Alongside it, every drag's edge-scroll collapsed onto one shared primitive acros
 
 ### Pending Focuses
 
+#### “For Nathan” Pending Boring Work
+
+Architectural cleanups with no user-visible payoff and permanent editing payoff — deliberately separate from the feature backlog. None is broken; each is a shape that taxes every future edit.
+
+- **The IPC bridge, declared once.** Every channel is hand-written three times (handler, preload, type), which is how seven nav channels accumulated, two refusal phrasings coexist, and the structured error flattens to a bare string at ~34 handler tails. One typed channel map deriving the other two sides deletes the drift *category*. Highest leverage-per-effort; first of these worth a dedicated session.
+- **The store split.** `store.ts` is ~1,300 lines holding tabs, previews, nav, selection, pages, and thumbnails in one closure — every feature pays its comprehension tax. Split into domain modules composing the same single store; behavior identical, editing risk collapses. Do it right *before* the next store-heavy feature, not as its own ceremony.
+- **One index registry per tree push.** Four siblings (ReconcileIndex, the nav ResolveIndex, the search index, the connections page-index) each re-walk the same tree for overlapping facts, and the visible pattern invites walk number five. Consolidate into one per-push registry the others derive from — ride it along with whatever next needs a lookup.
+- **`mutate.ts` staffing consistency.** Some ops are tidy `crud//` modules, others are hundred-line arms inline in the switch — where an op lives depends on when it was written. Move inline arms out opportunistically as each is next touched; the single dispatch funnel itself stays.
+- **The tree-reload ceiling.** Every mutation re-reads the whole nexus, made cheap by the parallel walk + `stabilize` — correct today, the felt-lag ceiling at thousands of pages. Not a task: a constraint to hand the Pages-in-DB session, whose targeted-update design is the real fix (the optimistic move-patch already proves the surgical path).
+
 - **Revisit how Pages and their data are stored in the DB** — Nathan wants a dedicated upcoming session on it. The content index below is the adjacent question; this one is about the Page storage model itself.
 - **In-view page creation.** Creating a page from inside a view is sparse across every surface — the item that would be felt daily; wants a brainstorm loop, not a patch.
 - **PagePreview hover.** Unbuilt, self-contained, no dependencies.
