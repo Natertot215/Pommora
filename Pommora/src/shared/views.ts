@@ -29,14 +29,6 @@ export type ViewFormat = (typeof VIEW_FORMATS)[number]
 export const isCompact = (view: { format?: ViewFormat }): boolean =>
   (view.format ?? 'standard') === 'compact'
 
-// Legacy card_size enum — decode-only; a stored name maps onto the slider's scale factor.
-const CARD_SIZES = ['small', 'medium', 'large'] as const
-const LEGACY_CARD_SIZE: Record<(typeof CARD_SIZES)[number], number> = {
-  small: 0.75,
-  medium: 1,
-  large: 1.25,
-}
-
 const CARD_BANNERS = ['cover', 'preview', 'none'] as const
 export type CardBanner = (typeof CARD_BANNERS)[number]
 
@@ -230,9 +222,8 @@ export function decodeSubGroup(raw: unknown): SubGroupConfig | undefined {
   }
 }
 
-/** Lenient group decode mirroring Swift GroupConfig.init(from:) — it never throws; an
- *  unknown or malformed shape degrades to `structural` (a throw would poison the whole
- *  sidecar decode). A bare legacy `{property_id}` (no `kind`) is read as a property group. */
+/** Lenient group decode — it never throws; an unknown or malformed shape degrades to
+ *  `structural` (a throw would poison the whole sidecar decode). */
 export function decodeGroupConfig(raw: unknown): GroupConfig {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return { kind: 'structural' }
   const obj = raw as Record<string, unknown>
@@ -261,8 +252,6 @@ export function decodeGroupConfig(raw: unknown): GroupConfig {
       return { kind: 'flat' }
     case 'property':
       return asProperty()
-    case undefined:
-      return 'property_id' in obj ? asProperty() : { kind: 'structural' }
     default:
       return { kind: 'structural' }
   }
@@ -281,10 +270,7 @@ export const savedView = z.looseObject({
   column_alignments: z.record(z.string(), z.enum(COLUMN_ALIGNS)).optional(),
   column_styles: z.record(z.string(), columnStyle).catch({}).optional(),
   collapsed_groups: z.array(z.string()).optional(),
-  card_size: z
-    .union([z.number(), z.enum(CARD_SIZES).transform((v) => LEGACY_CARD_SIZE[v])])
-    .optional()
-    .catch(undefined),
+  card_size: z.number().optional().catch(undefined),
   card_banner: z.enum(CARD_BANNERS).optional().catch(undefined),
   hide_location: z.boolean().optional(),
   wrap_titles: z.boolean().optional(),
