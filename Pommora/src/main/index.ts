@@ -325,7 +325,7 @@ handleEnvelope('agenda:list', async (): Promise<AgendaListResult> => {
 // nexus's still-open UI can't land in the new one.
 handleEnvelope('nav:read', async (): Promise<NavigationResult> => {
   const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus open' }
+  if (root === null) return { ok: false, error: 'No nexus is open.' }
   return { ok: true, nav: await readNavigationState(root) }
 })
 
