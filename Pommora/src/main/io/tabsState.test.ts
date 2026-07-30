@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { TabSet } from '@shared/types'
+import type { StoredTabSet } from '@shared/types'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
 import { writeValue } from '../db/localState'
-import { readTabsState, writeTabsState } from './tabsState'
+import { readTabsState, sanitizeTabSet, writeTabsState } from './tabsState'
 
 let root: string
 beforeEach(async () => {
@@ -17,12 +17,12 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-const set = (id: string): TabSet => ({
+const set = (id: string): StoredTabSet => ({
   tabs: [
     {
       id,
-      target: { kind: 'page', id: 'p1', path: 'a.md' },
-      navStack: [{ kind: 'page', id: 'p1', path: 'a.md' }],
+      target: { kind: 'page', id: 'p1' },
+      navStack: [{ kind: 'page', id: 'p1' }],
       navIndex: 0,
     },
   ],
@@ -55,17 +55,26 @@ describe('readTabsState', () => {
     expect(readTabsState()?.tabs[0].navIndex).toBe(1)
   })
 
-  it('a stored ref with extra fields still reads (the hydrator strips at the boundary)', () => {
+  it('a ref carrying display fields strips to bare identity — no path, no title survives the row', () => {
     const a = { kind: 'page', id: 'p1' } as const
     writeValue('tabs', {
-      tabs: [{ id: 't1', target: { ...a, path: 'stale.md' }, navStack: [a], navIndex: 0 }],
+      tabs: [
+        {
+          id: 't1',
+          target: { ...a, path: 'stale.md', title: 'Stale' },
+          navStack: [{ ...a, path: 'stale.md' }],
+          navIndex: 0,
+        },
+      ],
       activeTabId: 't1',
     })
-    expect(readTabsState()?.tabs[0].target).toMatchObject(a)
+    const tab = readTabsState()?.tabs[0]
+    expect(tab?.target).toEqual(a)
+    expect(tab?.navStack).toEqual([a])
   })
 
   it('drops a tab with no target or no history rather than crashing the restore', () => {
-    const a = { kind: 'page', id: 'p1', path: 'a.md' } as const
+    const a = { kind: 'page', id: 'p1' } as const
     writeValue('tabs', {
       tabs: [
         { id: 'bad' },
@@ -84,7 +93,7 @@ describe('readTabsState', () => {
   })
 
   it('dedupes ids — closeTab drops by id, so a shared one would close two tabs', () => {
-    const a = { kind: 'page', id: 'p1', path: 'a.md' } as const
+    const a = { kind: 'page', id: 'p1' } as const
     writeValue('tabs', {
       tabs: [
         { id: 'dup', target: a, navStack: [a], navIndex: 0 },
@@ -99,5 +108,13 @@ describe('readTabsState', () => {
     writeTabsState(set('t1'))
     closeSessionDb()
     expect(readTabsState()).toBeNull()
+  })
+})
+
+describe('sanitizeTabSet', () => {
+  it('refuses a payload that is not a tab set', () => {
+    expect(sanitizeTabSet(null)).toBeNull()
+    expect(sanitizeTabSet('tabs')).toBeNull()
+    expect(sanitizeTabSet({ activeTabId: 't1' })).toBeNull()
   })
 })

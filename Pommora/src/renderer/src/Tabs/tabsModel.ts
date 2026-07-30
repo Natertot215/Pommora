@@ -11,7 +11,7 @@ import type {
 } from '@shared/types'
 import type { MutableKind } from '@shared/mutate'
 import { navKey } from '../Navigation/navRecents'
-import { buildReconcileIndex, reconcileWith, type ReconcileIndex } from '../selection'
+import { reconcileWith, type ReconcileIndex } from '../selection'
 
 /** The new-tab sentinel value (maps to NavView / the `'none'` detail branch). */
 export const NEWTAB: TabTarget = { kind: 'newtab' }
