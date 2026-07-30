@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ensureIdentity, NEXUS_SCHEMA_VERSION } from './identity'
+import { ensureIdentity } from './identity'
 import { isUlid } from './ids'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
@@ -23,34 +23,30 @@ const writeId = async (v: object): Promise<void> => {
 }
 
 describe('ensureIdentity', () => {
-  it('creates nexus.json in Swift shape when absent', async () => {
+  it('mints { id, createdAt } when absent', async () => {
     const r = await ensureIdentity(root)
     expect(r.created).toBe(true)
     const j = await readId()
-    expect(j.schemaVersion).toBe(NEXUS_SCHEMA_VERSION)
+    expect(Object.keys(j).sort()).toEqual(['createdAt', 'id'])
     expect(typeof j.id === 'string' && isUlid(j.id as string)).toBeTruthy()
-    // ISO-8601 with NO fractional seconds — Swift's .iso8601 decoder rejects milliseconds.
-    expect(j.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)
+    expect(Number.isNaN(Date.parse(j.createdAt as string))).toBe(false)
   })
 
-  it('backfills missing schemaVersion/createdAt without touching an existing id', async () => {
+  it('returns an id-carrying file untouched, whatever else it holds or lacks', async () => {
     await writeId({ id: 'existing-ulid', description: 'keep me' })
-    const r = await ensureIdentity(root)
-    expect(r.created).toBe(false)
-    expect(r.id).toBe('existing-ulid')
-    const j = await readId()
-    expect(j.id).toBe('existing-ulid') // unchanged
-    expect(j.schemaVersion).toBe(NEXUS_SCHEMA_VERSION) // backfilled
-    expect(j.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/) // backfilled
-    expect(j.description).toBe('keep me') // foreign key preserved
-  })
-
-  it('leaves a complete file byte-identical (no churn on re-open)', async () => {
-    await writeId({ schemaVersion: 1, id: 'nx', createdAt: '2026-06-24T20:00:00Z' })
     const before = await readFile(idPath(), 'utf8')
     const r = await ensureIdentity(root)
     expect(r.created).toBe(false)
-    expect(await readFile(idPath(), 'utf8')).toBe(before) // untouched
+    expect(r.id).toBe('existing-ulid')
+    expect(await readFile(idPath(), 'utf8')).toBe(before)
+  })
+
+  it('leaves a complete file byte-identical (no churn on re-open)', async () => {
+    await writeId({ id: 'nx', createdAt: '2026-06-24T20:00:00Z' })
+    const before = await readFile(idPath(), 'utf8')
+    const r = await ensureIdentity(root)
+    expect(r.created).toBe(false)
+    expect(await readFile(idPath(), 'utf8')).toBe(before)
   })
 
   it('runs the session on a throwaway id when nexus.json is unreadable — file untouched', async () => {
