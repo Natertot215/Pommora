@@ -1,7 +1,15 @@
 // `tabs` is the UNPINNED set (the persisted row) — pinned tabs are derived live from the
 // pinned refs against the tree and passed in separately wherever a decision must see them.
 
-import type { NavRef, NexusTree, SelectTarget, Tab, TabTarget } from '@shared/types'
+import type {
+  NavRef,
+  NewTabSentinel,
+  NexusTree,
+  SelectTarget,
+  StoredTab,
+  Tab,
+  TabTarget,
+} from '@shared/types'
 import type { MutableKind } from '@shared/mutate'
 import { navKey } from '../Navigation/navRecents'
 import { buildReconcileIndex, reconcileWith, type ReconcileIndex } from '../selection'
@@ -11,7 +19,7 @@ export const NEWTAB: TabTarget = { kind: 'newtab' }
 
 /** Identity key for a tab target — reuses navKey; the newtab sentinel collapses to a single 'newtab'
  *  key so dedup keeps at most one NavView tab. */
-export function tabKey(target: TabTarget): string {
+export function tabKey(target: TabTarget | NavRef | NewTabSentinel): string {
   return target.kind === 'newtab' ? 'newtab' : navKey(target)
 }
 
@@ -34,6 +42,40 @@ export function liveTarget(index: ReconcileIndex, ref: NavRef): SelectTarget | n
         : { kind: ref.kind, id: ref.id }
   const r = reconcileWith(index, probe)
   return r.kind === 'none' ? null : r
+}
+
+/** Stored tabs made live at restore — prune refs that no longer resolve, mint paths for those
+ *  that do, and carry the history pointer through the pruning (re-pointed by key if it lands
+ *  wrong, degraded to a single-entry stack if its target vanished) — restored lockstep is
+ *  established here or nowhere. */
+export function hydrateTabs(stored: StoredTab[], tree: NexusTree | null): Tab[] {
+  if (!tree) return []
+  const index = buildReconcileIndex(tree)
+  const tabs: Tab[] = []
+  for (const t of stored) {
+    if (t.target.kind === 'newtab') {
+      tabs.push({ id: t.id, target: t.target, navStack: [], navIndex: -1 })
+      continue
+    }
+    const target = liveTarget(index, t.target)
+    if (!target) continue
+    const navStack: SelectTarget[] = []
+    let navIndex = -1
+    t.navStack.forEach((ref, i) => {
+      const live = liveTarget(index, ref)
+      if (!live) return
+      if (i === t.navIndex) navIndex = navStack.length
+      navStack.push(live)
+    })
+    if (navIndex === -1 || navKey(navStack[navIndex]) !== navKey(target))
+      navIndex = navStack.findIndex((s) => navKey(s) === navKey(target))
+    if (navIndex === -1) {
+      navStack.splice(0, navStack.length, target)
+      navIndex = 0
+    }
+    tabs.push({ id: t.id, target, navStack, navIndex })
+  }
+  return tabs
 }
 
 /** The pinned tabs, hydrated in pin order — array position IS the order. Callers hold the result
@@ -83,7 +125,7 @@ export function activeUnpinnedTab(tabs: Tab[], activeTabId: string): Tab | undef
   return tabs.find((t) => t.id === activeTabId)
 }
 
-export function isPinned(target: TabTarget, pinned: NavRef[]): boolean {
+export function isPinned(target: TabTarget | NavRef | NewTabSentinel, pinned: NavRef[]): boolean {
   if (target.kind === 'newtab') return false
   const key = navKey(target)
   return pinned.some((p) => navKey(p) === key)
