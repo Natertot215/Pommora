@@ -321,8 +321,7 @@ export const VIEW_ID_PREFIX = 'view_'
  *  this for a real `view_<ulid>` on first save (see crud/views). */
 export const DEFAULT_VIEW_ID = `${VIEW_ID_PREFIX}default`
 
-/** The fields every minted view shares — sentinel id, table type, structural grouping, table glyph.
- *  Legacy `'tablecells'` sidecars still resolve via each consumer's `iconNameOr(view.icon, 'table')`. */
+/** The fields every minted view shares — sentinel id, table type, structural grouping, table glyph. */
 const mintBase = (name: string) => ({
   id: DEFAULT_VIEW_ID,
   name,

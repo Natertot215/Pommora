@@ -18,8 +18,7 @@ describe('iconForTypeSwitch', () => {
     expect(iconForTypeSwitch('cards-grid', 'cards', 'table', GLYPH)).toBe('table')
   })
 
-  it('treats the legacy tablecells glyph and an absent icon as the default', () => {
-    expect(iconForTypeSwitch('tablecells', 'table', 'cards', GLYPH)).toBe('cards-grid')
+  it('treats an absent icon as the default', () => {
     expect(iconForTypeSwitch(undefined, 'table', 'cards', GLYPH)).toBe('cards-grid')
   })
 

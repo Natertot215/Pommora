@@ -57,7 +57,7 @@ function coerceConfig(raw: unknown, schema: PropertyDefinition[], fallbackId: st
 const rawViews = (raw: Record<string, unknown>): unknown[] =>
   Array.isArray(raw.views) ? [...(raw.views as unknown[])] : []
 
-/** A view's leading glyph, falling back to the table icon when unset (legacy `'tablecells'` too). */
+/** A view's leading glyph, falling back to the table icon when unset. */
 const viewIcon = (v: SavedView): string => iconNameOr(v.icon, 'table')
 
 /** Sized by markdownPM's own `.md-h{level}` class so a title reads uniform with any heading.
