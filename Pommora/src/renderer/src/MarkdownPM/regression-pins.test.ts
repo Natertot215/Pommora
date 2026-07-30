@@ -16,7 +16,7 @@ import { setHeading, setList } from './input/format'
 import { subBlockAt, renumberOrderedRun } from './editor/listDragModel'
 import { calloutDeleteVerdict } from './editor/calloutGuard'
 import { headingSections } from './editor/folding'
-import { fencedCodeRanges } from './decorations/intent'
+import { fencedCodeRanges } from './detect'
 
 describe('isInsideCode — tilde fences + inline spans', () => {
   it('treats ~~~ fences as code', () => {

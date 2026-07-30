@@ -57,6 +57,28 @@ describe('decoration intents', () => {
     expect(intents.some((d) => d.kind === 'hide' && d.from === 6 && d.to === 8)).toBe(true)
   })
 
+  it('a quoted fence hides only its own depth — a callout-lookalike tag inside is code, not a new box', () => {
+    const t = '> [!note] T\n> ```\n> [!warning] inner\n> ```'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 0)
+    // line 3 (offset 18): only the 2-char `> ` prefix hides; `[!warning] inner` stays visible
+    expect(intents.some((d) => d.kind === 'hide' && d.from === 18 && d.to === 20)).toBe(true)
+    expect(intents.some((d) => d.kind === 'hide' && d.from === 18 && d.to > 20)).toBe(false)
+    // and it stays inside the OUTER callout's box — no phantom head starts mid-fence
+    const lineClass = (cls: string): boolean =>
+      intents.some((d) => d.kind === 'line' && d.from === 18 && d.className.includes(cls))
+    expect(lineClass('md-callout-first')).toBe(false)
+    expect(lineClass('md-callout')).toBe(true)
+  })
+
+  it('a > deeper than its quoted fence is code — the prefix hide stops at the fence depth', () => {
+    const t = '> ```\n> > literal\n> ```'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 0)
+    // line 2 (offset 6): hide covers `> ` only, and no inset-quote chrome appears
+    expect(intents.some((d) => d.kind === 'hide' && d.from === 6 && d.to === 8)).toBe(true)
+    expect(intents.some((d) => d.kind === 'hide' && d.from === 6 && d.to === 10)).toBe(false)
+    expect(intents.some((d) => d.kind === 'line' && d.className.includes('md-bq-in'))).toBe(false)
+  })
+
   it('leaves wikilinks untouched — they are rendered in decorations.ts by resolution status', () => {
     const t = '[[Page]]'
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
