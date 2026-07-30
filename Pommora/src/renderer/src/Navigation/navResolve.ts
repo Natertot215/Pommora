@@ -1,11 +1,10 @@
 // An entry that no longer resolves (deleted, or a cross-nexus target against the wrong tree) is
 // RENDER-PRUNED — dropped from the returned list, NEVER from storage (a cross-nexus switch
 // resolves everything to null; auto-deleting would wipe durable favorites). Resolution goes
-// through a display index built in ONE tree walk — the gallery must never re-flatten the tree per row.
+// through the display index projected from the tree's records — the gallery must never
+// re-flatten the tree per row.
 
-import { entityIcon, iconNameOr } from '@renderer/design-system/symbols'
-import type { NavRef, NexusTree } from '@shared/types'
-import { allCollections } from '../selection'
+import type { NavRef } from '@shared/types'
 import { navKey } from './navRecents'
 
 /** One container in an entry's path — its resolved icon glyph + title (chevron-joined at render). */
@@ -27,65 +26,9 @@ export interface ResolvedNav {
   pinned?: boolean
 }
 
-type NavCore = { icon: string; title: string; path: PathCrumb[] }
-/** navKey → display core. Built once per tree; resolution is then an O(1) lookup per entry. */
+export type NavCore = { icon: string; title: string; path: PathCrumb[] }
+/** navKey → display core. Projected once per tree; resolution is then an O(1) lookup per entry. */
 export type ResolveIndex = Map<string, NavCore>
-
-/** Flatten the tree into the display index in a single walk: homepage, every Space (its Context as
- *  the path), every Collection, every Set + Page (their resolved container chain). Icons resolve
- *  against the Nexus's default-icon overrides, matching the sidebar. */
-export function buildResolveIndex(tree: NexusTree): ResolveIndex {
-  const ix: ResolveIndex = new Map()
-  const di = tree.personalization.defaultIcons
-  const colIcon = (n: { icon?: string }): string => entityIcon('collection', n.icon, di)
-  const setIcon = (n: { icon?: string }): string => entityIcon('set', n.icon, di)
-
-  ix.set('homepage', {
-    icon: iconNameOr(tree.nexus.profileIcon, 'house'),
-    title: tree.nexus.name,
-    path: [],
-  })
-  for (const g of tree.contexts) {
-    const groupCrumb: PathCrumb = {
-      icon: entityIcon('space', g.def.icon, di),
-      title: g.def.title,
-    }
-    for (const s of g.spaces)
-      ix.set(`space:${s.id}`, {
-        icon: entityIcon('space', s.icon, di),
-        title: s.title,
-        path: [groupCrumb],
-      })
-  }
-  const walkSets = (
-    sets: NexusTree['collections'][number]['sets'] | undefined,
-    parents: PathCrumb[],
-  ): void => {
-    for (const s of sets ?? []) {
-      ix.set(`set:${s.id}`, { icon: setIcon(s), title: s.title, path: parents })
-      const chain = [...parents, { icon: setIcon(s), title: s.title }]
-      for (const p of s.pages)
-        ix.set(`page:${p.id}`, {
-          icon: entityIcon('page', p.icon, di),
-          title: p.title,
-          path: chain,
-        })
-      walkSets(s.sets, chain)
-    }
-  }
-  for (const col of allCollections(tree)) {
-    ix.set(`collection:${col.id}`, { icon: colIcon(col), title: col.title, path: [] })
-    const colCrumb: PathCrumb = { icon: colIcon(col), title: col.title }
-    for (const p of col.pages)
-      ix.set(`page:${p.id}`, {
-        icon: entityIcon('page', p.icon, di),
-        title: p.title,
-        path: [colCrumb],
-      })
-    walkSets(col.sets, [colCrumb])
-  }
-  return ix
-}
 
 /** Resolve one entry against a prebuilt index, or null when it no longer resolves (render-prune). */
 export function resolveWith(index: ResolveIndex, entry: NavRef): ResolvedNav | null {

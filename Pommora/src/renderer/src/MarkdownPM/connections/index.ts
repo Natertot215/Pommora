@@ -1,5 +1,4 @@
 import { normalizeTitle, type LinkStatus } from '@shared/connections'
-import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 
 export interface ConnPage {
   id: string
@@ -28,31 +27,15 @@ export interface ConnectionsApi extends PageIndex {
   hover?: (page: ConnPage, rect: DOMRect) => void
 }
 
-export function flattenPages(tree: NexusTree): ConnPage[] {
-  const out: ConnPage[] = []
-  const add = (p: { id: string; title: string; path: string; icon?: string }): void => {
-    out.push({ id: p.id, title: p.title, path: p.path, icon: p.icon })
-  }
-  const walkSet = (s: SetNode): void => {
-    s.pages.forEach(add)
-    for (const sub of s.sets ?? []) walkSet(sub)
-  }
-  const walkCollection = (c: CollectionNode): void => {
-    c.pages.forEach(add)
-    for (const s of c.sets) walkSet(s)
-  }
-  ;(tree.collections ?? []).forEach(walkCollection)
-  return out
-}
-
 export function buildPageIndex(pages: ConnPage[]): PageIndex {
+  // Titles normalize ONCE at build — candidates() runs per autocomplete keystroke.
+  const entries = pages.map((p) => ({ p, norm: normalizeTitle(p.title) }))
   const byTitle = new Map<string, ConnPage[]>()
-  for (const p of pages) {
-    const key = normalizeTitle(p.title)
-    if (!key) continue
-    const holders = byTitle.get(key)
+  for (const { p, norm } of entries) {
+    if (!norm) continue
+    const holders = byTitle.get(norm)
     if (holders) holders.push(p)
-    else byTitle.set(key, [p])
+    else byTitle.set(norm, [p])
   }
   return {
     resolve(rawTitle) {
@@ -64,8 +47,7 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
     candidates(query, limit = 20) {
       const q = normalizeTitle(query)
       if (!q) return []
-      return pages
-        .map((p) => ({ p, norm: normalizeTitle(p.title) }))
+      return entries
         .filter((x) => x.norm.startsWith(q))
         .sort((a, b) => {
           const exact = (a.norm === q ? 0 : 1) - (b.norm === q ? 0 : 1)

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import type { NavRef } from '@shared/types'
 import { useSession } from '../store'
-import { buildReconcileIndex } from '../selection'
+import { reconcileIndexOf, resolveIndexOf } from '../treeIndex'
 import { liveTarget } from '../Tabs/tabsModel'
 import {
-  buildResolveIndex,
   resolveFavorites,
   resolvePins,
   resolveRecents,
@@ -56,7 +55,7 @@ export function useNavData(): {
     if (agenda === null) void ensureAgendaSnapshot()
   }, [agenda, ensureAgendaSnapshot])
 
-  const resolveIndex = useMemo(() => (tree ? buildResolveIndex(tree) : null), [tree])
+  const resolveIndex = tree ? resolveIndexOf(tree) : null
   const searchIndex = useMemo(
     () => (tree ? buildNavIndex(tree, agenda ?? undefined) : []),
     [tree, agenda],
@@ -95,7 +94,7 @@ export function useNavData(): {
       // A stored ref carries no path — the click mints one against the live tree. A ref that
       // fails to resolve does not navigate: there is nothing to fall back to.
       if (!tree) return
-      const live = liveTarget(buildReconcileIndex(tree), target)
+      const live = liveTarget(reconcileIndexOf(tree), target)
       if (!live) return
       void select(live, opts?.newTab ? { newTab: true } : undefined)
       onDone?.()

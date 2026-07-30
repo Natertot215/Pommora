@@ -19,7 +19,8 @@ import {
 } from '@shared/types'
 import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/mutate'
 import { errText, fail, type Result } from '@shared/result'
-import { buildReconcileIndex, reconcileSelection, reconcileWith } from './selection'
+import { reconcileSelection, reconcileWith } from './selection'
+import { navKeysOf, reconcileIndexOf } from './treeIndex'
 import {
   insertCreatedInTree,
   patchContextGroupsInTree,
@@ -46,7 +47,6 @@ import {
   removeRecentByKey,
   RECENTS_CAP,
 } from './Navigation/navRecents'
-import { existingNavKeys } from './Navigation/treeNavKeys'
 import {
   activeUnpinnedTab,
   closeTab as closeTabModel,
@@ -415,7 +415,7 @@ export const useSession = create<SessionState>((set, get) => {
   ): { tabs: PreviewTab[]; activeTab: PreviewTab | null } => {
     if (!rec) return { tabs: [], activeTab: null }
     const tree = get().tree
-    const index = tree ? buildReconcileIndex(tree) : null
+    const index = tree ? reconcileIndexOf(tree) : null
     const seen = new Set<string>()
     const tabs: PreviewTab[] = []
     let activeTab: PreviewTab | null = null
@@ -518,7 +518,7 @@ export const useSession = create<SessionState>((set, get) => {
   // The pin gestures' writer — one of pinnedTabs' four (load, tree push, nav push, here).
   const commitPinned = (pinned: NavRef[]): void => {
     const tree = get().tree
-    set({ pinned, pinnedTabs: derivePinnedTabs(pinned, tree ? buildReconcileIndex(tree) : null) })
+    set({ pinned, pinnedTabs: derivePinnedTabs(pinned, tree ? reconcileIndexOf(tree) : null) })
     writeNav({ pinned })
   }
 
@@ -639,7 +639,7 @@ export const useSession = create<SessionState>((set, get) => {
               const nav = read?.ok ? read.value : null
               const pinned = nav?.pinned ?? []
               const restoreTree = get().tree
-              const restoreIndex = restoreTree ? buildReconcileIndex(restoreTree) : null
+              const restoreIndex = restoreTree ? reconcileIndexOf(restoreTree) : null
               set({
                 pinned,
                 pinnedTabs: derivePinnedTabs(pinned, restoreIndex),
@@ -701,7 +701,7 @@ export const useSession = create<SessionState>((set, get) => {
       // container's identity and its memoized pipeline.
       const tree = stabilize(incoming, get().tree)
       set({ status: 'ready', tree })
-      const index = buildReconcileIndex(tree)
+      const index = reconcileIndexOf(tree)
       // Tree push = pinned hydration writer #2: renames re-title, moves re-path, deletes drop.
       // Identity-preserving, like stabilize(): an echo push keeps the same array, so memos hold.
       const nextPinnedTabs = derivePinnedTabs(get().pinned, index)
@@ -1020,7 +1020,7 @@ export const useSession = create<SessionState>((set, get) => {
       const tree = get().tree
       set({
         pinned,
-        pinnedTabs: derivePinnedTabs(pinned, tree ? buildReconcileIndex(tree) : null),
+        pinnedTabs: derivePinnedTabs(pinned, tree ? reconcileIndexOf(tree) : null),
         favorites: nav.favorites ?? [],
         navBanner: nav.banner,
       })
@@ -1037,11 +1037,7 @@ export const useSession = create<SessionState>((set, get) => {
       if (!tree) return
       // recents/pins backstop the tree's fs walk, which can read a subtree as empty on a
       // transient error — this keeps a just-visited entity from a false-empty eviction.
-      const live = [
-        ...existingNavKeys(tree),
-        ...get().recents.map(navKey),
-        ...get().pinned.map(navKey),
-      ]
+      const live = [...navKeysOf(tree), ...get().recents.map(navKey), ...get().pinned.map(navKey)]
       dropCapturedOutside(new Set(live))
       void window.nexus.capture.evict(live)
     },

@@ -9,11 +9,11 @@ import {
 import type { NavRef } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
-import { buildPageIndex, flattenPages, type ConnectionsApi } from '../MarkdownPM/connections'
+import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
 import { useConnectionHover } from '../Embeds/ConnectionHoverCard'
 import { moveByKey } from '../Navigation/navRecents'
-import { buildResolveIndex } from '../Navigation/navResolve'
+import { pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { useSession } from '../store'
 import { splitSearch, useNavData } from '../Navigation/useNavData'
 import { NavList } from '../Navigation/NavList'
@@ -124,7 +124,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     openNewTab()
   }
   const hasTabs = preview?.flavor === 'nav' && preview.tabs.length > 1
-  const resolveIndex = useMemo(() => (tree ? buildResolveIndex(tree) : null), [tree])
+  const resolveIndex = tree ? resolveIndexOf(tree) : null
 
   const [editing, setEditing] = useState(false)
   useEffect(() => setEditing(false), [pageTarget?.path])
@@ -133,7 +133,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const { hover, card: hoverCard } = useConnectionHover()
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
-    const idx = buildPageIndex(flattenPages(tree))
+    const idx = pageIndexOf(tree)
     return {
       ...idx,
       open: (page) => openPreviewTab({ id: page.id, path: page.path }),

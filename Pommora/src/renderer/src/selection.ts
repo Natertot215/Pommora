@@ -1,62 +1,15 @@
 // After a mutation refetch, the prior selection can be stale: the entity was deleted (its id is
 // gone) or renamed/moved (its id survives but its path changed).
 
-import type {
-  CollectionNode,
-  NexusTree,
-  PageNode,
-  SelectionState,
-  SetNode,
-  SpaceNode,
-} from '@shared/types'
+import type { NexusTree, SelectionState } from '@shared/types'
+import { reconcileIndexOf } from './treeIndex'
 
-export function allCollections(tree: NexusTree): CollectionNode[] {
-  return tree.collections ?? []
-}
-
-export interface FlatTree {
-  collections: CollectionNode[]
-  sets: SetNode[]
-  pages: PageNode[]
-  spaces: SpaceNode[]
-}
-
-/** One recursive walk yielding every flattened list. Per-kind helpers stacked together each re-walk
- *  from the Collections down, and every caller here wants three of them at once. */
-export function flattenTree(tree: NexusTree): FlatTree {
-  const collections = allCollections(tree)
-  const sets: SetNode[] = []
-  const walk = (list: SetNode[] | undefined): void => {
-    for (const s of list ?? []) {
-      sets.push(s)
-      walk(s.sets)
-    }
-  }
-  for (const c of collections) walk(c.sets)
-  return {
-    collections,
-    sets,
-    pages: [...collections.flatMap((c) => c.pages), ...sets.flatMap((s) => s.pages)],
-    spaces: (tree.contexts ?? []).flatMap((g) => g.spaces),
-  }
-}
-
-/** Reusable across many reconciles — `applyTree` builds this ONCE per push instead of a per-call tree walk. */
+/** Existence + live-path lookup per entity kind — projected from the tree's records once per push. */
 export interface ReconcileIndex {
-  contexts: ReadonlySet<string>
+  spaces: ReadonlySet<string>
   collections: ReadonlySet<string>
   sets: ReadonlyMap<string, string>
   pages: ReadonlyMap<string, string>
-}
-
-export function buildReconcileIndex(tree: NexusTree): ReconcileIndex {
-  const { collections, sets, pages, spaces } = flattenTree(tree)
-  return {
-    contexts: new Set(spaces.map((c) => c.id)),
-    collections: new Set(collections.map((c) => c.id)),
-    sets: new Map(sets.map((s) => [s.id, s.path])),
-    pages: new Map(pages.map((p) => [p.id, p.path])),
-  }
 }
 
 /** Returns the SAME reference when nothing changed, so callers can skip a redundant state update. */
@@ -67,8 +20,11 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
       // Homepage is a singleton (always present) — never reconciled away.
       return selection
     case 'context':
+      // A Context group is a disclosure, not a destination — until ContextView exists, a stored
+      // group ref reconciles dead so no layer holds what none can render.
+      return { kind: 'none' }
     case 'space':
-      return index.contexts.has(selection.id) ? selection : { kind: 'none' }
+      return index.spaces.has(selection.id) ? selection : { kind: 'none' }
     case 'collection':
       return index.collections.has(selection.id) ? selection : { kind: 'none' }
     case 'set': {
@@ -84,8 +40,8 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
   }
 }
 
-/** One-shot reconcile (a single selection against a tree) — Back/Forward steps and click-time pin
- *  resolution. Anything reconciling MANY refs per push builds the index once instead. */
+/** One-shot reconcile (a single selection against a tree) — the index behind it is cached per
+ *  tree, so this is a lookup, never a walk. */
 export function reconcileSelection(tree: NexusTree, selection: SelectionState): SelectionState {
-  return reconcileWith(buildReconcileIndex(tree), selection)
+  return reconcileWith(reconcileIndexOf(tree), selection)
 }

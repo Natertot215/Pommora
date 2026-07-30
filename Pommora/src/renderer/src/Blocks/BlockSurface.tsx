@@ -11,7 +11,13 @@ import {
   type ViewPickerItem,
 } from '@shared/blocks'
 import { FEEL_PRESETS } from '@renderer/design-system/interactions/feel'
-import { buildPageIndex, flattenPages, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import type { ConnPage, ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import {
+  containersByPathOf,
+  pageIndexOf,
+  pagesByIdOf,
+  type ContainerCore,
+} from '@renderer/treeIndex'
 import { showConnectionMenu } from '@renderer/Embeds/connectionMenu'
 import { useConnectionHover } from '@renderer/Embeds/ConnectionHoverCard'
 import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/core/ops'
@@ -82,6 +88,10 @@ function viewPickerItems(
   return tree.collections.map(collectionItem)
 }
 
+// Stable empties for a tree-less render, so the projections need no memo to hold identity.
+const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
+const NO_CONTAINERS: ReadonlyMap<string, ContainerCore> = new Map()
+
 // A leaf whose id has no entry — or an entry this build doesn't know — renders inert and keeps
 // its space, never crashes the host.
 
@@ -107,25 +117,10 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
     return map
   }, [blocks])
 
-  // One tree flatten per push, shared by the connections index and every page-embed lookup —
-  // never per-embed walks.
-  const flatPages = useMemo(() => (tree ? flattenPages(tree) : []), [tree])
-  const pagesById = useMemo(() => new Map(flatPages.map((p) => [p.id, p])), [flatPages])
-
-  // Built once per tree push, never per menu-open.
-  const containersByPath = useMemo(() => {
-    const map = new Map<string, { title: string; icon?: string; kind: 'collection' | 'set' }>()
-    const addSet = (sNode: SetNode): void => {
-      map.set(sNode.path, { title: sNode.title, icon: sNode.icon, kind: 'set' })
-      for (const sub of sNode.sets ?? []) addSet(sub)
-    }
-    const addCol = (c: CollectionNode): void => {
-      map.set(c.path, { title: c.title, icon: c.icon, kind: 'collection' })
-      for (const s of c.sets) addSet(s)
-    }
-    for (const c of [...(tree?.collections ?? [])]) addCol(c)
-    return map
-  }, [tree])
+  // Shared per-tree projections — the connections index and every page-embed lookup read the
+  // same cached tables, never per-embed walks.
+  const pagesById = tree ? pagesByIdOf(tree) : NO_PAGES
+  const containersByPath = tree ? containersByPathOf(tree) : NO_CONTAINERS
 
   const openPreview = useSession((s) => s.openPreview)
   const { hover, card: hoverCard } = useConnectionHover()
@@ -133,7 +128,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   const openInPreview = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
-    const idx = buildPageIndex(flatPages)
+    const idx = pageIndexOf(tree)
     return {
       ...idx,
       open: (page) =>
@@ -145,7 +140,7 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
       hover,
       menu: showConnectionMenu,
     }
-  }, [tree, flatPages, select, openPreview, openInPreview, hover])
+  }, [tree, select, openPreview, openInPreview, hover])
 
   useEffect(() => {
     if (!editingId) return
