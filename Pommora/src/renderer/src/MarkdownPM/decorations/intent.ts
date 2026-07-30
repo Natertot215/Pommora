@@ -45,6 +45,11 @@ interface FenceInfo {
   role: 'open' | 'content' | 'close'
   from: number
   to: number
+  /** The block's quote depth (from its opening fence) — 0 = an unquoted, top-level block. */
+  depth: number
+  /** False while the fence is still being typed — an unclosed block claims every line to EOF, so
+   *  suppressing box chrome on it would flatten the whole document below the caret. */
+  closed: boolean
 }
 
 interface FenceBlock {
@@ -53,6 +58,7 @@ interface FenceBlock {
   open: number
   close: number
   closed: boolean
+  depth: number
 }
 
 function splitWithOffsets(text: string): { lines: string[]; lineStarts: number[] } {
@@ -87,6 +93,7 @@ function fenceBlocks(lines: string[], lineStarts: number[]): FenceBlock[] {
       open: i,
       close,
       closed,
+      depth: open.depth,
     })
     i = closed ? j + 1 : j
   }
@@ -96,11 +103,11 @@ function fenceBlocks(lines: string[], lineStarts: number[]): FenceBlock[] {
 function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInfo | undefined)[] {
   const out: (FenceInfo | undefined)[] = new Array(lines.length)
   for (const blk of fenceBlocks(lines, lineStarts)) {
-    out[blk.open] = { role: 'open', from: blk.from, to: blk.to }
+    const base = { from: blk.from, to: blk.to, depth: blk.depth, closed: blk.closed }
+    out[blk.open] = { role: 'open', ...base }
     const contentEnd = blk.closed ? blk.close : blk.close + 1 // unclosed → the last line is content too
-    for (let k = blk.open + 1; k < contentEnd; k++)
-      out[k] = { role: 'content', from: blk.from, to: blk.to }
-    if (blk.closed) out[blk.close] = { role: 'close', from: blk.from, to: blk.to }
+    for (let k = blk.open + 1; k < contentEnd; k++) out[k] = { role: 'content', ...base }
+    if (blk.closed) out[blk.close] = { role: 'close', ...base }
   }
   return out
 }
@@ -213,9 +220,14 @@ export function decorationsFor(
 
     // Box chrome (callout/quote) is independent of what's inside it: a `> - item` gets BOTH the box line-class
     // AND the bullet, a `> ```` code block keeps its box. `base` is where the inner content begins, so every
-    // construct renders identically whether it's top-level or behind a `>` prefix.
+    // construct renders identically whether it's top-level or behind a `>` prefix. The one exception: a `>`
+    // line inside a CLOSED unquoted fence is literal code, so the box branches skip it. An unclosed fence
+    // keeps chrome (it claims every line to EOF while being typed), and inside a quoted fence the prefix
+    // levels BEYOND the fence's own depth are literal too but still render as chrome — a known cosmetic gap.
+    const fence = fences[i]
+    const boxChrome = fence === undefined || fence.depth > 0 || !fence.closed
     let base = 0
-    const co = callouts[i]
+    const co = boxChrome ? callouts[i] : undefined
     if (co) {
       intents.push({
         kind: 'line',
@@ -242,7 +254,7 @@ export function decorationsFor(
         intents.push({ kind: 'lineWidget', from: ls, className: 'md-bq-in-bar' })
         base += qm[0].length
       }
-    } else if (isBlockquoteLine(line)) {
+    } else if (boxChrome && isBlockquoteLine(line)) {
       const bm = blockquotePrefixRe.exec(line)
       if (bm) {
         const first = i === 0 || !isBlockquoteLine(lines[i - 1])
@@ -256,7 +268,6 @@ export function decorationsFor(
       }
     }
 
-    const fence = fences[i]
     if (fence) {
       // Code block (composes with box chrome).
       const innerStart = ls + base
