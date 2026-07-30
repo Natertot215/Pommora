@@ -87,6 +87,22 @@ export function derivePinnedTabs(pinned: NavRef[], index: ReconcileIndex | null)
     .map((target) => tabFor(pinTabId(target), target))
 }
 
+/** Element-wise tab equality (id + target identity + path) — lets a derive writer keep the
+ *  previous array when nothing changed, so an echo push invalidates no memo. */
+export function sameTabs(a: Tab[], b: Tab[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((t, i) => {
+      const o = b[i]
+      if (t.id !== o.id || t.target.kind !== o.target.kind) return false
+      if (t.target.kind === 'newtab' || o.target.kind === 'newtab') return true
+      if (navKey(t.target) !== navKey(o.target)) return false
+      const pathOf = (x: typeof t.target): string => ('path' in x ? x.path : '')
+      return pathOf(t.target) === pathOf(o.target)
+    })
+  )
+}
+
 /** Drives the stateful "Open" vs "Open in New Tab" menu labels. */
 export function isOpenInTabs(tabs: Tab[], pinned: NavRef[], target: SelectTarget): boolean {
   const key = navKey(target)

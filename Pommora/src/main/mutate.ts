@@ -40,7 +40,7 @@ import {
   atomicWriteFile,
 } from './io/atomicWrite'
 import { recordWrite } from './io/writeEcho'
-import { readNavigationFile, writeNavigationState } from './io/navigationFile'
+import { isAssetPath, readNavigationFile, writeNavigationState } from './io/navigationFile'
 import { serializeOnFile } from './io/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { basenameNoMd } from './coerce'
@@ -277,7 +277,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // in settings.profile_image (read-merge-write, other keys preserved).
       const settingsPath = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
       const existing = await readJsonObject(settingsPath)
-      const prev = typeof existing?.profile_image === 'string' ? existing.profile_image : null
+      const prev = isAssetPath(existing?.profile_image) ? existing.profile_image : null
       if (req.dataUrl) {
         const { id: nexusId } = await ensureIdentity(root)
         const rel = await writeImageAsset(root, nexusId, req.dataUrl, 'profile')
@@ -328,7 +328,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           const fields = readFrontmatterFields(existing)
           const id = typeof fields.id === 'string' ? fields.id : null
           if (!id) return fault('That page has no id to key its banner.')
-          const prev = typeof fields.cover === 'string' ? fields.cover : null
+          const prev = isAssetPath(fields.cover) ? fields.cover : null
           if (req.dataUrl) {
             const rel = await writeImageAsset(root, id, req.dataUrl, 'banner')
             if (!rel) return fault('Unsupported image data.')
@@ -348,6 +348,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // image sits in shared assets with no per-owner folder, and the one serialized patch-writer
       // is what keeps the arrays and the banner from dropping each other.
       if (req.kind === 'navview') {
+        // The read gate (isAssetPath) already vetted this pointer — the rm below can only
+        // ever aim inside shared assets.
         const prevNav = (await readNavigationFile(root)).banner ?? null
         let next: string | undefined
         if (req.dataUrl) {
@@ -383,7 +385,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (!id) return fault('That item has no id to key its banner.')
         assetKey = id
       }
-      const prev = typeof existing?.banner === 'string' ? existing.banner : null
+      const prev = isAssetPath(existing?.banner) ? existing.banner : null
       if (req.dataUrl) {
         const rel = await writeImageAsset(root, assetKey, req.dataUrl, 'banner')
         if (!rel) return fault('Unsupported image data.')

@@ -292,6 +292,12 @@ export type NavRef =
   | { kind: 'homepage' }
   | { kind: 'context' | 'space' | 'collection' | 'set' | 'page' | 'task' | 'event'; id: string }
 
+/** Identity only — the ONE strip between a live target and anything stored, shared by both
+ *  processes so the in-memory arrays, the persist payload, and the file are one shape. */
+export function toNavRef(t: NavRef | SelectTarget): NavRef {
+  return t.kind === 'homepage' ? { kind: 'homepage' } : { kind: t.kind, id: t.id }
+}
+
 /** The one navigation contract both processes speak — where each key persists is the IO
  *  module's business: pinned/favorites/banner in `.nexus/navigation.json`, recents in the
  *  device-local db row. Array position IS the order; an absent key is an empty list. */
