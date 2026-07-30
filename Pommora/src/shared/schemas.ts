@@ -8,13 +8,8 @@ import { savedView } from './views'
 
 const ulidList = z.array(z.string()).optional()
 
-// `open_in` renames from Swift's `compact | window` to `full-page | page-preview`; legacy
-// values coerce on read. Each field doubles as the read-side coercer for readNexus.
-const OPEN_IN_LEGACY: Record<string, string> = { window: 'full-page', compact: 'page-preview' }
-export const openInField = z.preprocess(
-  (v) => (typeof v === 'string' ? (OPEN_IN_LEGACY[v] ?? v) : v),
-  z.enum(['full-page', 'page-preview']).optional().catch(undefined),
-)
+// Each field doubles as the read-side coercer for readNexus.
+export const openInField = z.enum(['full-page', 'page-preview']).optional().catch(undefined)
 export const viewButtonField = z.enum(['icon', 'labeled']).optional().catch(undefined)
 export const viewStyleField = z.enum(['dropdown', 'toolbar']).optional().catch(undefined)
 
@@ -29,7 +24,6 @@ export const coerceViewStyle = (raw: unknown): 'dropdown' | 'toolbar' | undefine
 const baseSidecar = z.looseObject({
   id: z.string(),
   icon: z.string().optional(),
-  schema_version: z.number().optional(),
   modified_at: z.string().optional(),
 })
 
