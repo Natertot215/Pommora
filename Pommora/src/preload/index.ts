@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcRendererEvent } from 'electron'
 import type { Asks, Pushes, Tells } from '@shared/bridge'
 import type { Personalization } from '@shared/types'
-import type { Ack } from '@shared/result'
+import type { Result } from '@shared/result'
 
 // Every dialer derives from the bridge map — the channel key is the only thing written here,
 // and its signature (arg names included) flows from `Asks`. A typo'd or drifted channel is a
@@ -35,7 +35,7 @@ const api = {
   choose: ask('nexus:choose'),
   // Resolve a dropped folder's path here (the renderer can't) and send only the
   // path to main — the absolute path never enters web content.
-  openDropped: (file: File): Promise<boolean> =>
+  openDropped: (file: File): Promise<Result<boolean>> =>
     ipcRenderer.invoke('nexus:openPath', webUtils.getPathForFile(file)),
   openPage: ask('page:open'),
   // Debounced editor body write (relative path); main resolves under the session root + preserves frontmatter.
@@ -146,7 +146,7 @@ const api = {
   // Persists one key; the tree surfaces current values, so there's no get. Hand-typed so the
   // key↔value correlation the map's tuple can't express survives for callers.
   personalization: {
-    set: <K extends keyof Personalization>(key: K, value: Personalization[K]): Promise<Ack> =>
+    set: <K extends keyof Personalization>(key: K, value: Personalization[K]): Promise<Result<null>> =>
       ipcRenderer.invoke('personalization:set', key, value),
   },
   // Renderer-initiated write (relative paths only); main resolves under the session root.

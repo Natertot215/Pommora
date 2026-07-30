@@ -65,8 +65,8 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
     setEditing(null)
     void window.nexus.openPage(target.path).then((r) => {
       if (!live || !r.ok) return
-      setFm(r.page.frontmatter as PageFrontmatter)
-      setTitle(r.page.title)
+      setFm(r.value.frontmatter as PageFrontmatter)
+      setTitle(r.value.title)
     })
     return () => {
       live = false

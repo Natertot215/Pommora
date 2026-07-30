@@ -13,6 +13,8 @@ export type ErrorCode =
   | 'not-agenda'
   | 'lossy-change-requires-confirmation'
   | 'operation-failed'
+  | 'no-nexus'
+  | 'busy'
 
 /** A structured, serializable error. `scope` names the entity/kind domain (free-form: an
  *  entity name like "page"/"agenda" or a SidecarKind), used for message context only. */
@@ -23,9 +25,6 @@ export interface PommoraError {
 }
 
 export type Result<T, E = PommoraError> = { ok: true; value: T } | { ok: false; error: E }
-
-/** The payload-free IPC envelope: an operation either took, or says why it didn't. */
-export type Ack = { ok: true } | { ok: false; error: string }
 
 /** The one narrowing of an unknown throw to a message — a caught value is only
  *  guaranteed to be `unknown`, and every envelope reports it the same way. */

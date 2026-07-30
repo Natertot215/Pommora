@@ -163,7 +163,7 @@ export function VisibilityList({
 
   const save = async (patch: Partial<SavedView>): Promise<void> => {
     const res = await saveView({ ...view, ...patch })
-    if (!res.ok) await window.nexus.showError(res.error)
+    if (!res.ok) await window.nexus.showError(res.error.message)
   }
   // The positional kinds are the ONE placeInShown write — a shown reorder and a drag-in unhide
   // differ only in whether the hidden filter bites; the membership kind ('unassign') is a hide.

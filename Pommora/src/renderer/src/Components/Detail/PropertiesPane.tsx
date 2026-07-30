@@ -9,7 +9,7 @@ import {
   type StatusGroup,
 } from '@shared/properties'
 import type { Option } from '@shared/optionModel'
-import type { Ack } from '@shared/result'
+import type { Result } from '@shared/result'
 import type { ColumnStyle } from '@shared/columnStyles'
 import type { CollectionNode, SetNode } from '@shared/types'
 import { useActiveView } from '../../Detail/Views/useActiveView'
@@ -47,7 +47,7 @@ import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
 
 type DetailView = { kind: 'type' } | { kind: 'edit'; id: string }
 type SubView = { kind: 'list' } | DetailView
-type WriteResult = Ack
+type WriteResult = Result<null>
 
 /** Lives outside PropertiesPane so rows never remount on its re-renders. */
 function ListGroups({
@@ -238,7 +238,7 @@ export function PropertiesPane({
 
   const commit = async (res: WriteResult): Promise<boolean> => {
     if (!res.ok) {
-      await window.nexus.showError(res.error)
+      await window.nexus.showError(res.error.message)
       return false
     }
     await load()
@@ -253,8 +253,8 @@ export function PropertiesPane({
     })
     if (res.ok) {
       await load()
-      openDetail({ kind: 'edit', id: res.id })
-    } else await window.nexus.showError(res.error)
+      openDetail({ kind: 'edit', id: res.value.id })
+    } else await window.nexus.showError(res.error.message)
   }
   const rename = async (id: string, name: string): Promise<void> => {
     // The second of the two rename entry points; both must tell mounted views to refetch, or the
@@ -305,7 +305,7 @@ export function PropertiesPane({
       ...activeView,
       column_styles: { ...activeView.column_styles, [propId]: next },
     })
-    if (!res.ok) await window.nexus.showError(res.error)
+    if (!res.ok) await window.nexus.showError(res.error.message)
   }
   const renameOption = async (id: string, oldValue: string, newTitle: string): Promise<void> => {
     await commit(await window.nexus.property.renameOption(id, oldValue, newTitle))

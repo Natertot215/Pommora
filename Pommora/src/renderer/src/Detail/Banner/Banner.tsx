@@ -44,7 +44,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
     setEditingHome(false)
     if (!next || next === owner.name) return
     void window.nexus.renameNexus(next).then(async (res) => {
-      if (!res.ok) await window.nexus.showError(res.error)
+      if (!res.ok) await window.nexus.showError(res.error.message)
       else await load()
     })
   }

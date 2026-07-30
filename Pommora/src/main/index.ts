@@ -12,23 +12,17 @@ import type { OpenDialogOptions } from 'electron'
 import { basename, dirname, extname, join, sep } from 'node:path'
 import { readFile, rename } from 'node:fs/promises'
 import type {
-  AgendaListResult,
-  NavigationResult,
   NavigationState,
   NavViewModes,
   NexusState,
-  PageResult,
-  PreviewsResult,
   SubfieldConfig,
-  TabsResult,
   ThumbRect,
-  ThumbResult,
 } from '@shared/types'
 import { isPlainObject } from '@shared/propertyValue'
-import { errText, type Ack } from '@shared/result'
-import { push, scopeGet, scopeSet, serveBridge } from './ipc'
+import { errText, fail, ok, type Result } from '@shared/result'
+import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import { collectAgendaEntries } from './agenda/collectAgenda'
-import type { MutateRequest, MutateResult, ContextTarget } from '@shared/mutate'
+import type { MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { readNexus } from './readNexus'
 import { readPage } from './readPage'
@@ -49,8 +43,6 @@ import {
   coerceBlockHost,
   type BlockDocPatch,
   type BlockHostRef,
-  type BlocksGetResult,
-  type BlocksSaveResult,
 } from '@shared/blocks'
 import { pathExists } from './io/atomicWrite'
 import { readAppConfig, writeAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
@@ -393,22 +385,20 @@ const isIndexArray = (v: unknown): v is number[] =>
 
 // View persistence — save / reorder / delete a SavedView in a container's synced `views[]` sidecar.
 // (View SELECTION is the per-machine activeViews pointer above; this is the view DEFINITION.)
-type ResolvedViewContainer =
-  | { ok: true; folder: string; kind: 'collection' | 'set' }
-  | { ok: false; error: string }
+type ResolvedViewContainer = Result<{ folder: string; kind: 'collection' | 'set' }>
 async function resolveViewContainer(
   containerPath: unknown,
   kind: unknown,
 ): Promise<ResolvedViewContainer> {
   const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
+  if (root === null) return NO_NEXUS
   if (typeof containerPath !== 'string')
-    return { ok: false, error: 'A container path is required.' }
+    return fail('operation-failed', 'A container path is required.')
   if (kind !== 'collection' && kind !== 'set')
-    return { ok: false, error: 'kind must be "collection" or "set".' }
+    return fail('operation-failed', 'kind must be "collection" or "set".')
   const resolved = await resolveUnderRoot(root, containerPath)
-  if (!resolved.ok) return { ok: false, error: resolved.error.message }
-  return { ok: true, folder: resolved.value, kind }
+  if (!resolved.ok) return resolved
+  return ok({ folder: resolved.value, kind })
 }
 
 // Registry+assignment-backed: defs live nexus-wide in `.nexus/properties.json`; a Collection's
@@ -419,15 +409,13 @@ async function resolveViewContainer(
 // Collection's folder — a Set inherits the schema, so the renderer passes the ancestor's path.
 async function resolveSchemaFolder(
   containerPath: unknown,
-): Promise<{ ok: true; root: string; folder: string } | { ok: false; error: string }> {
+): Promise<Result<{ root: string; folder: string }>> {
   const root = sessionRoot()
-  if (root === null) return { ok: false, error: 'No nexus is open.' }
+  if (root === null) return NO_NEXUS
   if (typeof containerPath !== 'string')
-    return { ok: false, error: 'A container path is required.' }
+    return fail('operation-failed', 'A container path is required.')
   const resolved = await resolveUnderRoot(root, containerPath)
-  return resolved.ok
-    ? { ok: true, root, folder: resolved.value }
-    : { ok: false, error: resolved.error.message }
+  return resolved.ok ? ok({ root, folder: resolved.value }) : resolved
 }
 
 // Registry-level option edits, cascading to pages. No-container-scope siblings of
@@ -450,14 +438,14 @@ function isOptionArray(v: unknown): v is Option[] {
 const blockHostAnd = (
   host: unknown,
   tileId?: unknown,
-): { root: string; h: BlockHostRef } | string => {
+): Result<{ root: string; h: BlockHostRef }> => {
   const root = sessionRoot()
-  if (root === null) return 'No nexus is open.'
+  if (root === null) return NO_NEXUS
   const h = coerceBlockHost(host)
-  if (!h) return 'Unknown block host.'
+  if (!h) return fail('not-found', 'Unknown block host.')
   if (tileId !== undefined && (typeof tileId !== 'string' || !isUlid(tileId)))
-    return 'Invalid tile id.'
-  return { root, h }
+    return fail('not-found', 'Invalid tile id.')
+  return ok({ root, h })
 }
 
 // The Electron-side bits the write orchestration needs: trashMode from app config +
@@ -508,11 +496,11 @@ serveBridge(
     // Called only when the sidebar's Agenda mode is active, so agenda files never join the tree walk.
     'agenda:list': {
       kind: 'envelope',
-      fn: async (): Promise<AgendaListResult> => {
+      fn: async () => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus open' }
+        if (root === null) return NO_NEXUS
         const { tasks, events } = await collectAgendaEntries(root)
-        return { ok: true, tasks, events }
+        return ok({ tasks, events })
       },
     },
 
@@ -521,121 +509,121 @@ serveBridge(
     // nexus's still-open UI can't land in the new one.
     'nav:read': {
       kind: 'envelope',
-      fn: async (): Promise<NavigationResult> => {
+      fn: async () => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
-        return { ok: true, nav: await readNavigationState(root) }
+        if (root === null) return NO_NEXUS
+        return ok(await readNavigationState(root))
       },
     },
 
     'nav:write': {
       kind: 'envelope',
-      fn: async (patch: unknown): Promise<Ack> => {
-        if (adopting) return { ok: false, error: 'Nexus switching.' }
+      fn: async (patch: unknown) => {
+        if (adopting) return BUSY
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
-        if (!isPlainObject(patch)) return { ok: false, error: 'Navigation patch must be an object.' }
+        if (root === null) return NO_NEXUS
+        if (!isPlainObject(patch))
+          return fail('operation-failed', 'Navigation patch must be an object.')
         await writeNavigationState(root, patch as Partial<NavigationState>)
-        return { ok: true }
+        return ok(null)
       },
     },
 
     // Ordered unpinned tabs + the active pointer + per-tab history targets, as one row in nexus.db.
     'tabs:load': {
       kind: 'envelope',
-      fn: (): TabsResult => {
-        if (sessionRoot() === null) return { ok: false, error: 'No nexus open' }
-        return { ok: true, set: readTabsState() }
+      fn: () => {
+        if (sessionRoot() === null) return NO_NEXUS
+        return ok(readTabsState())
       },
     },
 
     'tabs:save': {
       kind: 'raw',
-      fn: (set: unknown): Ack => {
-        if (adopting) return { ok: false, error: 'Nexus switching.' }
+      fn: (set: unknown) => {
+        if (adopting) return BUSY
         const clean = sanitizeTabSet(set)
-        if (!clean) return { ok: false, error: 'Bad tab set.' }
-        if (!writeTabsState(clean)) return { ok: false, error: 'No nexus is open.' }
-        return { ok: true }
+        if (!clean) return fail('operation-failed', 'Bad tab set.')
+        if (!writeTabsState(clean)) return NO_NEXUS
+        return ok(null)
       },
     },
 
     // The NavWindow set, the per-origin page sets, and the open pointer, as one row in nexus.db.
     'previews:load': {
       kind: 'envelope',
-      fn: (): PreviewsResult => {
-        if (sessionRoot() === null) return { ok: false, error: 'No nexus open' }
-        return { ok: true, file: readPreviewsState() }
+      fn: () => {
+        if (sessionRoot() === null) return NO_NEXUS
+        return ok(readPreviewsState())
       },
     },
 
     'previews:save': {
       kind: 'raw',
-      fn: (file: unknown): Ack => {
-        if (adopting) return { ok: false, error: 'Nexus switching.' }
+      fn: (file: unknown) => {
+        if (adopting) return BUSY
         const clean = sanitizePreviews(file)
-        if (!clean) return { ok: false, error: 'Bad previews file.' }
-        if (!writePreviewsState(clean)) return { ok: false, error: 'No nexus is open.' }
-        return { ok: true }
+        if (!clean) return fail('operation-failed', 'Bad previews file.')
+        if (!writePreviewsState(clean)) return NO_NEXUS
+        return ok(null)
       },
     },
 
     'capture:thumbnail': {
       kind: 'window',
-      fn: async (
-        win: BrowserWindow | null,
-        navKey: unknown,
-        rect: unknown,
-        scaleFactor: unknown,
-      ): Promise<ThumbResult> => {
+      fn: async (win: BrowserWindow | null, navKey: unknown, rect: unknown, scaleFactor: unknown) => {
         try {
           const root = sessionRoot()
-          if (root === null) return { ok: false, error: 'No nexus is open.' }
+          if (root === null) return NO_NEXUS
           if (
             !win ||
             typeof navKey !== 'string' ||
             !isRect(rect) ||
             typeof scaleFactor !== 'number'
           )
-            return { ok: false, error: 'Bad capture args.' }
+            return fail('operation-failed', 'Bad capture args.')
           const url = await captureThumbnail(win, root, navKey, rect, scaleFactor)
-          return url ? { ok: true, url } : { ok: false, error: 'Capture produced no image.' }
+          return url ? ok({ url }) : fail('operation-failed', 'Capture produced no image.')
         } catch (err) {
-          return { ok: false, error: errText(err) }
+          return fail('operation-failed', errText(err))
         }
       },
     },
 
     'nav:evictThumbs': {
       kind: 'envelope',
-      fn: async (liveKeys: unknown): Promise<Ack> => {
+      fn: async (liveKeys: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
-        if (!Array.isArray(liveKeys)) return { ok: false, error: 'Live keys must be an array.' }
+        if (root === null) return NO_NEXUS
+        if (!Array.isArray(liveKeys)) return fail('operation-failed', 'Live keys must be an array.')
         await evictThumbnails(
           root,
           liveKeys.filter((k): k is string => typeof k === 'string'),
         )
-        return { ok: true }
+        return ok(null)
       },
     },
 
     // A sheet on the calling window; on success the renderer re-reads nexus:state.
     'nexus:choose': {
       kind: 'window',
-      fn: async (win: BrowserWindow | null): Promise<boolean> => {
+      fn: async (win: BrowserWindow | null) => {
         const opts = {
           properties: ['openDirectory', 'createDirectory'],
           message: 'Choose a nexus folder',
         } satisfies OpenDialogOptions
-        const result = win
-          ? await dialog.showOpenDialog(win, opts)
-          : await dialog.showOpenDialog(opts)
-        if (result.canceled) return false
-        const [chosen] = result.filePaths
-        if (!chosen) return false
-        await adoptNexus(chosen)
-        return true
+        try {
+          const result = win
+            ? await dialog.showOpenDialog(win, opts)
+            : await dialog.showOpenDialog(opts)
+          if (result.canceled) return ok(false)
+          const [chosen] = result.filePaths
+          if (!chosen) return ok(false)
+          await adoptNexus(chosen)
+          return ok(true)
+        } catch (e) {
+          return fail('operation-failed', errText(e))
+        }
       },
     },
 
@@ -643,11 +631,15 @@ serveBridge(
     // the one place a renderer-origin path enters. Accepted only if it's an existing directory.
     'nexus:openPath': {
       kind: 'raw',
-      fn: async (p: unknown): Promise<boolean> => {
-        if (typeof p !== 'string' || p.length === 0) return false
-        if (!(await isExistingDir(p))) return false
-        await adoptNexus(p)
-        return true
+      fn: async (p: unknown) => {
+        try {
+          if (typeof p !== 'string' || p.length === 0) return ok(false)
+          if (!(await isExistingDir(p))) return ok(false)
+          await adoptNexus(p)
+          return ok(true)
+        } catch (e) {
+          return fail('operation-failed', errText(e))
+        }
       },
     },
 
@@ -655,23 +647,23 @@ serveBridge(
     // and rejects anything that escapes (traversal, absolute, or an in-nexus symlink pointing out).
     'page:open': {
       kind: 'envelope',
-      fn: async (relPath: unknown): Promise<PageResult> => {
+      fn: async (relPath: unknown) => {
         const root = sessionRoot()
         if (root === null) {
-          return { ok: false, error: 'No nexus is open.' }
+          return NO_NEXUS
         }
         if (typeof relPath !== 'string') {
-          return { ok: false, error: 'A page path is required.' }
+          return fail('operation-failed', 'A page path is required.')
         }
         const resolved = await resolveUnderRoot(root, relPath)
         if (!resolved.ok) {
-          return { ok: false, error: resolved.error.message }
+          return resolved
         }
         // resolveUnderRoot is the guard; readPage re-joins root + relPath and keeps the
         // relative path as the page's identity (PageDetail.path), so pass relPath, not
         // the canonical absolute (which would leak an abs path + mis-key the detail).
         const page = await readPage(root, relPath)
-        return { ok: true, page }
+        return ok(page)
       },
     },
 
@@ -679,17 +671,17 @@ serveBridge(
     // Structurally distinct from the one-shot `mutate` ops, so it gets its own channel.
     'page:updateBody': {
       kind: 'envelope',
-      fn: async (relPath: unknown, body: unknown): Promise<Ack> => {
+      fn: async (relPath: unknown, body: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
-        if (typeof relPath !== 'string') return { ok: false, error: 'A page path is required.' }
-        if (typeof body !== 'string') return { ok: false, error: 'A body string is required.' }
+        if (root === null) return NO_NEXUS
+        if (typeof relPath !== 'string') return fail('operation-failed', 'A page path is required.')
+        if (typeof body !== 'string') return fail('operation-failed', 'A body string is required.')
         const resolved = await resolveUnderRoot(root, relPath)
-        if (!resolved.ok) return { ok: false, error: resolved.error.message }
+        if (!resolved.ok) return resolved
         // Under the page's file lock — the editor autosave and a link-rename cascade both rewrite
         // this page's body, so they must serialize rather than clobber each other.
         const r = await serializeOnFile(resolved.value, () => updatePageBody(resolved.value, body))
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
@@ -720,39 +712,38 @@ serveBridge(
 
     'views:save': {
       kind: 'envelope',
-      fn: async (
-        containerPath: unknown,
-        kind: unknown,
-        view: unknown,
-      ): Promise<{ ok: true; id: string } | { ok: false; error: string }> => {
+      fn: async (containerPath: unknown, kind: unknown, view: unknown) => {
         const c = await resolveViewContainer(containerPath, kind)
         if (!c.ok) return c
         const parsed = savedView.safeParse(view)
-        if (!parsed.success) return { ok: false, error: 'Invalid view payload.' }
-        const r = await serializeOnFile(c.folder, () => saveView(c.folder, c.kind, parsed.data))
-        return r.ok ? { ok: true, id: r.value.id } : { ok: false, error: r.error.message }
+        if (!parsed.success) return fail('operation-failed', 'Invalid view payload.')
+        const { folder, kind: k } = c.value
+        const r = await serializeOnFile(folder, () => saveView(folder, k, parsed.data))
+        return r.ok ? ok({ id: r.value.id }) : r
       },
     },
     'views:reorder': {
       kind: 'envelope',
-      fn: async (containerPath: unknown, kind: unknown, orderedIds: unknown): Promise<Ack> => {
+      fn: async (containerPath: unknown, kind: unknown, orderedIds: unknown) => {
         const c = await resolveViewContainer(containerPath, kind)
         if (!c.ok) return c
         if (!Array.isArray(orderedIds) || !orderedIds.every((x) => typeof x === 'string')) {
-          return { ok: false, error: 'orderedIds must be a string array.' }
+          return fail('operation-failed', 'orderedIds must be a string array.')
         }
-        const r = await serializeOnFile(c.folder, () => reorderViews(c.folder, c.kind, orderedIds))
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        const { folder, kind: k } = c.value
+        const r = await serializeOnFile(folder, () => reorderViews(folder, k, orderedIds))
+        return r.ok ? ok(null) : r
       },
     },
     'views:delete': {
       kind: 'envelope',
-      fn: async (containerPath: unknown, kind: unknown, viewId: unknown): Promise<Ack> => {
+      fn: async (containerPath: unknown, kind: unknown, viewId: unknown) => {
         const c = await resolveViewContainer(containerPath, kind)
         if (!c.ok) return c
-        if (typeof viewId !== 'string') return { ok: false, error: 'A view id is required.' }
-        const r = await serializeOnFile(c.folder, () => deleteView(c.folder, c.kind, viewId))
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        if (typeof viewId !== 'string') return fail('operation-failed', 'A view id is required.')
+        const { folder, kind: k } = c.value
+        const r = await serializeOnFile(folder, () => deleteView(folder, k, viewId))
+        return r.ok ? ok(null) : r
       },
     },
 
@@ -760,15 +751,16 @@ serveBridge(
     // behind the ViewDropdown context menu + the Configuration/Open In row. Serialized like the view writes.
     'container:configure': {
       kind: 'envelope',
-      fn: async (containerPath: unknown, kind: unknown, patch: unknown): Promise<Ack> => {
+      fn: async (containerPath: unknown, kind: unknown, patch: unknown) => {
         const c = await resolveViewContainer(containerPath, kind)
         if (!c.ok) return c
         if (patch === null || typeof patch !== 'object')
-          return { ok: false, error: 'A config patch is required.' }
-        const r = await serializeOnFile(c.folder, () =>
-          setContainerConfig(c.folder, c.kind, patch as ContainerConfigPatch),
+          return fail('operation-failed', 'A config patch is required.')
+        const { folder, kind: k } = c.value
+        const r = await serializeOnFile(folder, () =>
+          setContainerConfig(folder, k, patch as ContainerConfigPatch),
         )
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
@@ -786,114 +778,106 @@ serveBridge(
 
     'schema:add': {
       kind: 'envelope',
-      fn: async (
-        containerPath: unknown,
-        def: unknown,
-      ): Promise<{ ok: true; id: string } | { ok: false; error: string }> => {
+      fn: async (containerPath: unknown, def: unknown) => {
         const c = await resolveSchemaFolder(containerPath)
         if (!c.ok) return c
         const parsed = propertyDefinition.safeParse(def)
-        if (!parsed.success) return { ok: false, error: 'Invalid property definition.' }
-        const created = await createProperty(c.root, parsed.data)
-        if (!created.ok) return { ok: false, error: created.error.message }
-        const assigned = await assignProperty(c.root, c.folder, created.value.id)
+        if (!parsed.success) return fail('operation-failed', 'Invalid property definition.')
+        const created = await createProperty(c.value.root, parsed.data)
+        if (!created.ok) return created
+        const assigned = await assignProperty(c.value.root, c.value.folder, created.value.id)
         if (!assigned.ok) {
           // Don't orphan the just-created def in the registry when the assign leg fails.
-          await removeFromRegistry(c.root, created.value.id)
-          return { ok: false, error: assigned.error.message }
+          await removeFromRegistry(c.value.root, created.value.id)
+          return assigned
         }
-        return { ok: true, id: created.value.id }
+        return ok({ id: created.value.id })
       },
     },
 
     'schema:rename': {
       kind: 'envelope',
-      fn: async (containerPath: unknown, propertyId: unknown, newName: unknown): Promise<Ack> => {
+      fn: async (containerPath: unknown, propertyId: unknown, newName: unknown) => {
         const c = await resolveSchemaFolder(containerPath)
         if (!c.ok) return c
         if (typeof propertyId !== 'string' || typeof newName !== 'string') {
-          return { ok: false, error: 'propertyId and newName must be strings.' }
+          return fail('operation-failed', 'propertyId and newName must be strings.')
         }
-        const r = await editProperty(c.root, propertyId, { name: newName })
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        const r = await editProperty(c.value.root, propertyId, { name: newName })
+        return r.ok ? ok(null) : r
       },
     },
 
     'schema:reorder': {
       kind: 'envelope',
-      fn: async (containerPath: unknown, propertyId: unknown, toIndex: unknown): Promise<Ack> => {
+      fn: async (containerPath: unknown, propertyId: unknown, toIndex: unknown) => {
         const c = await resolveSchemaFolder(containerPath)
         if (!c.ok) return c
         if (typeof propertyId !== 'string' || typeof toIndex !== 'number') {
-          return { ok: false, error: 'propertyId (string) and toIndex (number) are required.' }
+          return fail('operation-failed', 'propertyId (string) and toIndex (number) are required.')
         }
-        const r = await reorderAssignment(c.folder, propertyId, toIndex)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        const r = await reorderAssignment(c.value.folder, propertyId, toIndex)
+        return r.ok ? ok(null) : r
       },
     },
 
     'schema:delete': {
       kind: 'envelope',
-      fn: async (containerPath: unknown, propertyId: unknown): Promise<Ack> => {
+      fn: async (containerPath: unknown, propertyId: unknown) => {
         const c = await resolveSchemaFolder(containerPath)
         if (!c.ok) return c
         if (typeof propertyId !== 'string')
-          return { ok: false, error: 'A property id is required.' }
-        const r = await removeProperty(c.root, c.folder, propertyId)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+          return fail('operation-failed', 'A property id is required.')
+        const r = await removeProperty(c.value.root, c.value.folder, propertyId)
+        return r.ok ? ok(null) : r
       },
     },
 
     'schema:assign': {
       kind: 'envelope',
-      fn: async (containerPath: unknown, propertyId: unknown, toIndex: unknown): Promise<Ack> => {
+      fn: async (containerPath: unknown, propertyId: unknown, toIndex: unknown) => {
         const c = await resolveSchemaFolder(containerPath)
         if (!c.ok) return c
         if (typeof propertyId !== 'string')
-          return { ok: false, error: 'A property id is required.' }
+          return fail('operation-failed', 'A property id is required.')
         // One chain slot covers a drag-assign: append + restore + slot placement land atomically.
         const r = await assignPropertyAt(
-          c.root,
-          c.folder,
+          c.value.root,
+          c.value.folder,
           propertyId,
           typeof toIndex === 'number' ? toIndex : undefined,
         )
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'registry:reorder': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, toIndex: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, toIndex: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string' || typeof toIndex !== 'number') {
-          return { ok: false, error: 'propertyId (string) and toIndex (number) are required.' }
+          return fail('operation-failed', 'propertyId (string) and toIndex (number) are required.')
         }
         const r = await reorderRegistry(root, propertyId, toIndex)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'schema:changeType': {
       kind: 'envelope',
-      fn: async (
-        containerPath: unknown,
-        propertyId: unknown,
-        newType: unknown,
-        opts: unknown,
-      ): Promise<Ack> => {
+      fn: async (containerPath: unknown, propertyId: unknown, newType: unknown, opts: unknown) => {
         const c = await resolveSchemaFolder(containerPath)
         if (!c.ok) return c
         if (typeof propertyId !== 'string')
-          return { ok: false, error: 'A property id is required.' }
+          return fail('operation-failed', 'A property id is required.')
         const parsedType = propertyType.safeParse(newType)
-        if (!parsedType.success) return { ok: false, error: 'Invalid property type.' }
+        if (!parsedType.success) return fail('operation-failed', 'Invalid property type.')
         // V2: a global def edit — values keep their old shape until the lossy cross-assigner
         // strip lands with the assign-surface UI (opts.dropConflictingValues is accepted, unused).
         void opts
-        const r = await editProperty(c.root, propertyId, { type: parsedType.data })
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        const r = await editProperty(c.value.root, propertyId, { type: parsedType.data })
+        return r.ok ? ok(null) : r
       },
     },
 
@@ -901,52 +885,52 @@ serveBridge(
     // The rare destructive op; unassign is the daily path.
     'property:delete': {
       kind: 'envelope',
-      fn: async (propertyId: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string')
-          return { ok: false, error: 'A property id is required.' }
+          return fail('operation-failed', 'A property id is required.')
         const r = await deletePropertyGlobal(root, propertyId)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:setOptions': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, options: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, options: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string')
-          return { ok: false, error: 'A property id is required.' }
+          return fail('operation-failed', 'A property id is required.')
         if (!isOptionArray(options))
-          return { ok: false, error: 'Options must be an array of { value, label }.' }
+          return fail('operation-failed', 'Options must be an array of { value, label }.')
         const r = await setOptions(root, propertyId, options)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:setStatusGroups': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, groups: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, groups: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string')
-          return { ok: false, error: 'A property id is required.' }
-        if (!Array.isArray(groups)) return { ok: false, error: 'Status groups must be an array.' }
+          return fail('operation-failed', 'A property id is required.')
+        if (!Array.isArray(groups)) return fail('operation-failed', 'Status groups must be an array.')
         const r = await setStatusGroups(root, propertyId, groups as StatusGroup[])
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:setLinkConfig': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, patch: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, patch: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string')
-          return { ok: false, error: 'A property id is required.' }
+          return fail('operation-failed', 'A property id is required.')
         if (patch === null || typeof patch !== 'object')
-          return { ok: false, error: 'A config patch is required.' }
+          return fail('operation-failed', 'A config patch is required.')
         // Whitelist only the link display fields — a config write must not patch arbitrary def fields
         // (type, options, id) through here. Registry-only: display config doesn't touch page values.
         const p = patch as Record<string, unknown>
@@ -961,50 +945,50 @@ serveBridge(
         if ('link_color' in p)
           changes.link_color = typeof p.link_color === 'string' ? p.link_color : undefined
         const r = await editProperty(root, propertyId, changes)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:setCheckboxColor': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, color: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, color: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string')
-          return { ok: false, error: 'A property id is required.' }
+          return fail('operation-failed', 'A property id is required.')
         // The def-level color is the ONLY field this writes — a non-string clears it to Default (the
         // system accent). Registry-only: display config never touches page values.
         const r = await editProperty(root, propertyId, {
           checkbox_color: typeof color === 'string' ? color : undefined,
         })
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:setIcon': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, icon: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, icon: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string')
-          return { ok: false, error: 'A property id is required.' }
+          return fail('operation-failed', 'A property id is required.')
         // Registry-only: the def's symbol id (a non-string clears it to the type's default glyph).
         const r = await editProperty(root, propertyId, {
           icon: typeof icon === 'string' ? icon : undefined,
         })
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:setNumberFormat': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, patch: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, patch: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string')
-          return { ok: false, error: 'A property id is required.' }
+          return fail('operation-failed', 'A property id is required.')
         if (patch === null || typeof patch !== 'object')
-          return { ok: false, error: 'A config patch is required.' }
+          return fail('operation-failed', 'A config patch is required.')
         // Whitelist ONLY the number format fields — a config write must not patch arbitrary def fields
         // (type, options, id). Registry-only: display config never touches page values. An `in p` check
         // lets a caller clear a field by passing undefined.
@@ -1030,93 +1014,93 @@ serveBridge(
           changes.number_denominator =
             typeof p.number_denominator === 'number' ? p.number_denominator : undefined
         const r = await editProperty(root, propertyId, changes)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:renameOption': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, oldValue: unknown, newTitle: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, oldValue: unknown, newTitle: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (
           typeof propertyId !== 'string' ||
           typeof oldValue !== 'string' ||
           typeof newTitle !== 'string'
         ) {
-          return { ok: false, error: 'propertyId, oldValue, and newTitle are required.' }
+          return fail('operation-failed', 'propertyId, oldValue, and newTitle are required.')
         }
         const r = await renameOption(root, propertyId, oldValue, newTitle)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:removeOption': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, value: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, value: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string' || typeof value !== 'string') {
-          return { ok: false, error: 'A property id and value are required.' }
+          return fail('operation-failed', 'A property id and value are required.')
         }
         const r = await removeOption(root, propertyId, value)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:clearOption': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, value: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, value: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string' || typeof value !== 'string') {
-          return { ok: false, error: 'A property id and value are required.' }
+          return fail('operation-failed', 'A property id and value are required.')
         }
         const r = await clearOption(root, propertyId, value)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:renameStatusOption': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, oldValue: unknown, newTitle: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, oldValue: unknown, newTitle: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (
           typeof propertyId !== 'string' ||
           typeof oldValue !== 'string' ||
           typeof newTitle !== 'string'
         ) {
-          return { ok: false, error: 'propertyId, oldValue, and newTitle are required.' }
+          return fail('operation-failed', 'propertyId, oldValue, and newTitle are required.')
         }
         const r = await renameStatusOption(root, propertyId, oldValue, newTitle)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:removeStatusOption': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, value: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, value: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string' || typeof value !== 'string') {
-          return { ok: false, error: 'A property id and value are required.' }
+          return fail('operation-failed', 'A property id and value are required.')
         }
         const r = await removeStatusOption(root, propertyId, value)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
     'property:clearStatusOption': {
       kind: 'envelope',
-      fn: async (propertyId: unknown, value: unknown): Promise<Ack> => {
+      fn: async (propertyId: unknown, value: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof propertyId !== 'string' || typeof value !== 'string') {
-          return { ok: false, error: 'A property id and value are required.' }
+          return fail('operation-failed', 'A property id and value are required.')
         }
         const r = await clearStatusOption(root, propertyId, value)
-        return r.ok ? { ok: true } : { ok: false, error: r.error.message }
+        return r.ok ? ok(null) : r
       },
     },
 
@@ -1130,13 +1114,13 @@ serveBridge(
     },
     'subfield:set': {
       kind: 'envelope',
-      fn: async (config: unknown): Promise<Ack> => {
+      fn: async (config: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (!config || typeof config !== 'object')
-          return { ok: false, error: 'Invalid subfield config.' }
+          return fail('operation-failed', 'Invalid subfield config.')
         await writeSubfield(root, config as SubfieldConfig)
-        return { ok: true }
+        return ok(null)
       },
     },
 
@@ -1150,117 +1134,109 @@ serveBridge(
     },
     'navViewModes:set': {
       kind: 'envelope',
-      fn: async (modes: unknown): Promise<Ack> => {
+      fn: async (modes: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (!modes || typeof modes !== 'object')
-          return { ok: false, error: 'Invalid nav view modes.' }
+          return fail('operation-failed', 'Invalid nav view modes.')
         await writeNavViewModes(root, modes as NavViewModes)
-        return { ok: true }
+        return ok(null)
       },
     },
 
     // The block document — one row per host, loaded on host open and never woven into the tree walk.
     'blocks:get': {
       kind: 'envelope',
-      fn: (host: unknown): BlocksGetResult => {
+      fn: (host: unknown) => {
         const h = coerceBlockHost(host)
-        if (!h) return { ok: false, error: 'Unknown block host.' }
-        return { ok: true, doc: readBlockDoc(h) }
+        if (!h) return fail('not-found', 'Unknown block host.')
+        return ok(readBlockDoc(h))
       },
     },
     'blocks:save': {
       kind: 'envelope',
-      fn: (host: unknown, patch: unknown): BlocksSaveResult => {
-        if (adopting) return { ok: false, error: 'Nexus switching.' }
+      fn: (host: unknown, patch: unknown) => {
+        if (adopting) return BUSY
         const h = coerceBlockHost(host)
-        if (!h) return { ok: false, error: 'Unknown block host.' }
+        if (!h) return fail('not-found', 'Unknown block host.')
         if (!patch || typeof patch !== 'object')
-          return { ok: false, error: 'Invalid block-doc patch.' }
+          return fail('operation-failed', 'Invalid block-doc patch.')
         const problem = blockPatchProblem(patch as BlockDocPatch)
-        if (problem) return { ok: false, error: problem }
-        if (sessionDb() === null) return { ok: false, error: 'No nexus is open.' }
+        if (problem) return fail('operation-failed', problem)
+        if (sessionDb() === null) return NO_NEXUS
         writeBlockDoc(h, patch as BlockDocPatch)
-        return { ok: true }
+        return ok(null)
       },
     },
 
     'blocks:createMarkdown': {
       kind: 'envelope',
-      fn: async (
-        host: unknown,
-      ): Promise<{ ok: true; id: string } | { ok: false; error: string }> => {
+      fn: async (host: unknown) => {
         const ctx = blockHostAnd(host)
-        if (typeof ctx === 'string') return { ok: false, error: ctx }
-        return { ok: true, id: await createMarkdownBlock(ctx.root, ctx.h) }
+        if (!ctx.ok) return ctx
+        return ok({ id: await createMarkdownBlock(ctx.value.root, ctx.value.h) })
       },
     },
     'blocks:removeTile': {
       kind: 'envelope',
-      fn: async (host: unknown, tileId: unknown): Promise<BlocksSaveResult> => {
+      fn: async (host: unknown, tileId: unknown) => {
         const ctx = blockHostAnd(host, tileId)
-        if (typeof ctx === 'string') return { ok: false, error: ctx }
-        await removeBlockTile(ctx.root, ctx.h, tileId as string)
-        return { ok: true }
+        if (!ctx.ok) return ctx
+        await removeBlockTile(ctx.value.root, ctx.value.h, tileId as string)
+        return ok(null)
       },
     },
     'blocks:readMarkdown': {
       kind: 'envelope',
-      fn: async (
-        host: unknown,
-        tileId: unknown,
-      ): Promise<{ ok: true; body: string } | { ok: false; error: string }> => {
+      fn: async (host: unknown, tileId: unknown) => {
         const ctx = blockHostAnd(host, tileId)
-        if (typeof ctx === 'string') return { ok: false, error: ctx }
-        const body = await readMarkdownBlock(ctx.root, ctx.h, tileId as string)
-        return body === null ? { ok: false, error: 'Block file not found.' } : { ok: true, body }
+        if (!ctx.ok) return ctx
+        const body = await readMarkdownBlock(ctx.value.root, ctx.value.h, tileId as string)
+        return body === null ? fail('not-found', 'Block file not found.') : ok({ body })
       },
     },
     'blocks:writeMarkdown': {
       kind: 'envelope',
-      fn: async (host: unknown, tileId: unknown, body: unknown): Promise<BlocksSaveResult> => {
+      fn: async (host: unknown, tileId: unknown, body: unknown) => {
         const ctx = blockHostAnd(host, tileId)
-        if (typeof ctx === 'string') return { ok: false, error: ctx }
-        if (typeof body !== 'string') return { ok: false, error: 'Body must be a string.' }
-        await writeMarkdownBlock(ctx.root, ctx.h, tileId as string, body)
-        return { ok: true }
+        if (!ctx.ok) return ctx
+        if (typeof body !== 'string') return fail('operation-failed', 'Body must be a string.')
+        await writeMarkdownBlock(ctx.value.root, ctx.value.h, tileId as string, body)
+        return ok(null)
       },
     },
     'blocks:convertToPage': {
       kind: 'envelope',
-      fn: async (host: unknown, tileId: unknown, pageId: unknown): Promise<BlocksSaveResult> => {
+      fn: async (host: unknown, tileId: unknown, pageId: unknown) => {
         const ctx = blockHostAnd(host, tileId)
-        if (typeof ctx === 'string') return { ok: false, error: ctx }
+        if (!ctx.ok) return ctx
         if (typeof pageId !== 'string' || pageId.length === 0)
-          return { ok: false, error: 'Invalid page id.' }
-        await convertTileToPage(ctx.root, ctx.h, tileId as string, pageId)
-        return { ok: true }
+          return fail('operation-failed', 'Invalid page id.')
+        await convertTileToPage(ctx.value.root, ctx.value.h, tileId as string, pageId)
+        return ok(null)
       },
     },
     'blocks:convertToView': {
       kind: 'envelope',
-      fn: async (host: unknown, tileId: unknown, views: unknown): Promise<BlocksSaveResult> => {
+      fn: async (host: unknown, tileId: unknown, views: unknown) => {
         const ctx = blockHostAnd(host, tileId)
-        if (typeof ctx === 'string') return { ok: false, error: ctx }
+        if (!ctx.ok) return ctx
         const list = Array.isArray(views) ? views : null
         const valid =
           list?.length &&
           list.every((v) => typeof (v as { source_id?: unknown })?.source_id === 'string')
-        if (!valid) return { ok: false, error: 'Invalid view list.' }
-        await convertTileToView(ctx.root, ctx.h, tileId as string, list as unknown[])
-        return { ok: true }
+        if (!valid) return fail('operation-failed', 'Invalid view list.')
+        await convertTileToView(ctx.value.root, ctx.value.h, tileId as string, list as unknown[])
+        return ok(null)
       },
     },
     'blocks:duplicateTile': {
       kind: 'envelope',
-      fn: async (
-        host: unknown,
-        tileId: unknown,
-      ): Promise<{ ok: true; id: string } | { ok: false; error: string }> => {
+      fn: async (host: unknown, tileId: unknown) => {
         const ctx = blockHostAnd(host, tileId)
-        if (typeof ctx === 'string') return { ok: false, error: ctx }
-        const id = await duplicateBlockTile(ctx.root, ctx.h, tileId as string)
-        return id ? { ok: true, id } : { ok: false, error: 'No such tile.' }
+        if (!ctx.ok) return ctx
+        const id = await duplicateBlockTile(ctx.value.root, ctx.value.h, tileId as string)
+        return id ? ok({ id }) : fail('not-found', 'No such tile.')
       },
     },
     // Delete keeps the native confirm (Nathan's call) — the in-app menu asks main first.
@@ -1285,13 +1261,13 @@ serveBridge(
     // the value is validated on read.
     'personalization:set': {
       kind: 'envelope',
-      fn: async (key: unknown, value: unknown): Promise<Ack> => {
+      fn: async (key: unknown, value: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
+        if (root === null) return NO_NEXUS
         if (typeof key !== 'string' || !key)
-          return { ok: false, error: 'Invalid personalization key.' }
+          return fail('operation-failed', 'Invalid personalization key.')
         await writePersonalization(root, key, value)
-        return { ok: true }
+        return ok(null)
       },
     },
 
@@ -1299,8 +1275,7 @@ serveBridge(
     // orchestration.
     mutate: {
       kind: 'raw',
-      fn: async (req: MutateRequest): Promise<MutateResult> =>
-        handleMutate(req, await mutateDeps()),
+      fn: async (req: MutateRequest) => handleMutate(req, await mutateDeps()),
     },
 
     // A right-clicked sidebar entity's menu; its items act main-side (handleMutate / confirm /
@@ -1378,13 +1353,11 @@ serveBridge(
     },
     'linkTitles:fetch': {
       kind: 'envelope',
-      fn: async (
-        url: unknown,
-      ): Promise<{ ok: true; title: string | null } | { ok: false; error: string }> => {
-        if (typeof url !== 'string') return { ok: false, error: 'invalid url' }
+      fn: async (url: unknown) => {
+        if (typeof url !== 'string') return fail('operation-failed', 'invalid url')
         const root = sessionRoot()
-        if (!root) return { ok: false, error: 'no nexus open' }
-        return { ok: true, title: await resolveTitle(root, url) }
+        if (!root) return NO_NEXUS
+        return ok({ title: await resolveTitle(root, url) })
       },
     },
 
@@ -1670,13 +1643,13 @@ serveBridge(
     // session root (resolveUnderRoot) — a `..` climb or symlink smuggle never reaches shell.openPath.
     'file:open': {
       kind: 'raw',
-      fn: async (relPath: unknown): Promise<Ack> => {
+      fn: async (relPath: unknown) => {
         const root = sessionRoot()
-        if (!root) return { ok: false, error: 'No open nexus.' }
+        if (!root) return NO_NEXUS
         const r = await resolveUnderRoot(root, relPath)
-        if (!r.ok) return { ok: false, error: r.error.message }
+        if (!r.ok) return r
         const err = await shell.openPath(r.value)
-        return err ? { ok: false, error: err } : { ok: true }
+        return err ? fail('operation-failed', err) : ok(null)
       },
     },
 
@@ -1686,24 +1659,25 @@ serveBridge(
     // path. Never throws across the boundary.
     'nexus:rename': {
       kind: 'envelope',
-      fn: async (newName: unknown): Promise<Ack> => {
+      fn: async (newName: unknown) => {
         const root = sessionRoot()
-        if (root === null) return { ok: false, error: 'No nexus is open.' }
-        if (typeof newName !== 'string') return { ok: false, error: 'A name is required.' }
+        if (root === null) return NO_NEXUS
+        if (typeof newName !== 'string') return fail('operation-failed', 'A name is required.')
         const trimmed = newName.trim()
-        if (trimmed.length === 0) return { ok: false, error: 'The name can’t be empty.' }
+        if (trimmed.length === 0) return fail('operation-failed', 'The name can’t be empty.')
         if (trimmed.includes('/') || trimmed.includes('\\'))
-          return { ok: false, error: 'The name can’t contain a slash.' }
-        if (trimmed === basename(root)) return { ok: false, error: 'That’s already the nexus name.' }
+          return fail('operation-failed', 'The name can’t contain a slash.')
+        if (trimmed === basename(root))
+          return fail('operation-failed', 'That’s already the nexus name.')
         const newRoot = join(dirname(root), trimmed)
         if (await pathExists(newRoot))
-          return { ok: false, error: 'A folder with that name already exists.' }
+          return fail('operation-failed', 'A folder with that name already exists.')
         await rename(root, newRoot)
         // RE-POINT: adoptNexus does exactly the re-target work (openSession + openSessionDb +
         // startWatcher + lastNexusPath/recents + addRecentDocument + refreshMenu) with no
         // adoption-only side effects to skip, so reuse it rather than replicate the calls.
         await adoptNexus(newRoot)
-        return { ok: true }
+        return ok(null)
       },
     },
   },

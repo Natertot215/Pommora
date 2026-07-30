@@ -55,11 +55,6 @@ export interface AgendaEntry {
   endAt?: string
 }
 
-/** The `agenda:list` IPC envelope — tasks + events, or an error. */
-export type AgendaListResult =
-  | { ok: true; tasks: AgendaEntry[]; events: AgendaEntry[] }
-  | { ok: false; error: string }
-
 /** Nexus-wide interface personalization — the `personalization` object in `.nexus/settings.json`
  *  (canonical, synced). Every field optional; absent = the built-in default. One schema behind one
  *  apply-map + one setter — a new toggle is a field here plus an apply-map row. Icon names are bare
@@ -267,8 +262,6 @@ export type NexusState =
   | { status: 'open'; tree: NexusTree }
   | { status: 'error'; error: string }
 
-/** On-demand single-page read result envelope — never throws across the boundary. */
-export type PageResult = { ok: true; page: PageDetail } | { ok: false; error: string }
 
 /** What the renderer currently has open: a container, a page, or nothing. */
 export type SelectionState =
@@ -309,7 +302,6 @@ export interface NavigationState {
   banner?: string
 }
 
-export type NavigationResult = { ok: true; nav: NavigationState } | { ok: false; error: string }
 
 /** The new-tab sentinel — a tab target that maps to NavView (the `'none'` detail branch); it is NOT a
  *  `SelectionState` kind, so it bypasses `select` entirely. */
@@ -353,7 +345,6 @@ export interface StoredTabSet {
 
 /** The `tabs:load` IPC envelope — `set` is null when the row doesn't exist yet (the store seeds
  *  fresh). */
-export type TabsResult = { ok: true; set: StoredTabSet | null } | { ok: false; error: string }
 
 /** A persisted preview tab set: bare refs only — ids are session-local and re-minted at
  *  restore; `activeIndex` points into `tabs` by strip order. The NavWindow's gallery sentinel
@@ -379,8 +370,6 @@ export interface PreviewsFile {
  *  renderer's reset can't drift into two different "empty". */
 export const EMPTY_PREVIEWS: PreviewsFile = { navSet: null, origins: {}, open: null }
 
-/** The `previews:load` IPC envelope — a nexus with nothing stored reads as the empty shape, never null. */
-export type PreviewsResult = { ok: true; file: PreviewsFile } | { ok: false; error: string }
 
 /** A detail-pane rectangle (DIP, viewport-relative) the renderer measures for a thumbnail capture. */
 export interface ThumbRect {
@@ -395,8 +384,6 @@ export interface ThumbRect {
   maskFill?: 'banner' | 'window'
 }
 
-/** The `capture:thumbnail` envelope — the written thumbnail's `nexus-asset://` URL. */
-export type ThumbResult = { ok: true; url: string } | { ok: false; error: string }
 
 /** Per-nexus Subfield (footer) config — persisted as a foreign `subfield` key in settings.json. */
 export interface SubfieldConfig {

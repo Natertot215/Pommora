@@ -1,7 +1,12 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import type { Asks, Pushes, Tells } from '@shared/bridge'
-import { errText, type Ack } from '@shared/result'
+import { errText, fail, ok, type Result } from '@shared/result'
 import { readScope, writeKey, type Scope } from './db/localState'
+
+/** THE two session refusals — one spelling, one code, everywhere. A handler refuses through
+ *  these or not at all. */
+export const NO_NEXUS = fail('no-nexus', 'No nexus is open.')
+export const BUSY = fail('busy', 'Nexus switching.')
 
 type Args<K extends keyof Asks> = Asks[K]['args']
 type Reply<K extends keyof Asks> = Asks[K]['reply']
@@ -38,7 +43,7 @@ export function serveBridge(asks: BridgeAsks, tells: BridgeTells): void {
           try {
             return await entry.fn(...(args as Args<keyof Asks>))
           } catch (err) {
-            return { ok: false, error: errText(err) }
+            return fail('operation-failed', errText(err))
           }
         case 'menu': {
           const win = BrowserWindow.fromWebContents(e.sender)
@@ -83,13 +88,12 @@ export function scopeSet<T>(
   scope: Scope,
   valid: (v: unknown) => v is T,
   expected: string,
-): (key: string, value: T) => Ack {
+): (key: string, value: T) => Result<null> {
   return (key, value) => {
-    if (typeof key !== 'string') return { ok: false, error: 'A key is required.' }
-    if (!valid(value)) return { ok: false, error: expected }
-    if (!writeKey(scope, key, isEmptyValue(value) ? null : value))
-      return { ok: false, error: 'No nexus is open.' }
-    return { ok: true }
+    if (typeof key !== 'string') return fail('operation-failed', 'A key is required.')
+    if (!valid(value)) return fail('operation-failed', expected)
+    if (!writeKey(scope, key, isEmptyValue(value) ? null : value)) return NO_NEXUS
+    return ok(null)
   }
 }
 
