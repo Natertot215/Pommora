@@ -35,31 +35,35 @@ export type BridgeTells = { [K in keyof Tells]: TellEntry<K> }
 export function serveBridge(asks: BridgeAsks, tells: BridgeTells): void {
   for (const channel of Object.keys(asks) as (keyof Asks)[]) {
     const entry = asks[channel] as AskEntry<keyof Asks>
-    ipcMain.handle(channel, async (e, ...args) => {
+    ipcMain.handle(channel, async (e, ...raw) => {
+      // The wire hands back `any[]`; the map's tuple is the declared truth for this channel,
+      // and the per-kind `fn` unions can't be correlated to it without the assertion.
+      const args = raw as Args<keyof Asks>
       switch (entry.kind) {
         case 'raw':
-          return entry.fn(...(args as Args<keyof Asks>))
+          return entry.fn(...args)
         case 'envelope':
           try {
-            return await entry.fn(...(args as Args<keyof Asks>))
+            return await entry.fn(...args)
           } catch (err) {
             return fail('operation-failed', errText(err))
           }
         case 'menu': {
           const win = BrowserWindow.fromWebContents(e.sender)
-          return win ? entry.fn(win, ...(args as Args<keyof Asks>)) : null
+          return win ? entry.fn(win, ...args) : null
         }
         case 'window':
-          return entry.fn(BrowserWindow.fromWebContents(e.sender), ...(args as Args<keyof Asks>))
+          return entry.fn(BrowserWindow.fromWebContents(e.sender), ...args)
       }
     })
   }
   for (const channel of Object.keys(tells) as (keyof Tells)[]) {
     const entry = tells[channel] as TellEntry<keyof Tells>
-    ipcMain.on(channel, (e, ...args) => {
-      if (entry.kind === 'raw') return entry.fn(...(args as Tells[keyof Tells]))
+    ipcMain.on(channel, (e, ...raw) => {
+      const args = raw as Tells[keyof Tells]
+      if (entry.kind === 'raw') return entry.fn(...args)
       const win = BrowserWindow.fromWebContents(e.sender)
-      if (win) entry.fn(win, ...(args as Tells[keyof Tells]))
+      if (win) entry.fn(win, ...args)
     })
   }
 }
@@ -96,4 +100,3 @@ export function scopeSet<T>(
     return ok(null)
   }
 }
-

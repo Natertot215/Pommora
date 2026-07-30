@@ -221,7 +221,6 @@ export interface BlockDocPatch {
   locked?: boolean
 }
 
-
 /** Main-side gate for a blocks:save patch (the views:save convention) — a shape CHECK
  *  only: the ORIGINAL values are what get written, since zod's parse output strips
  *  unknown keys and foreign keys must survive. Returns the problem, or null. */

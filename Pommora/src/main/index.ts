@@ -104,16 +104,10 @@ import { handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
 import { installAppMenu } from './menu'
 import { popTableMenu } from './tableMenu'
-import type { TableMenuContext } from '@shared/tableMenu'
-import type { ColumnMenuContext } from '@shared/columnMenu'
-import type { CellMenuContext } from '@shared/cellMenu'
-import type { PropertyMenuContext } from '@shared/propertyMenu'
-import type { OptionMenuContext } from '@shared/optionMenu'
 import { popCalloutMenu } from './calloutMenu'
 import { popColumnMenu } from './columnMenu'
 import { popCellMenu } from './cellMenu'
 import { popCardMenu } from './cardMenu'
-import type { CardMenuContext } from '@shared/cardMenu'
 import { popConnMenu } from './connMenu'
 import { popTabMenu } from './tabMenu'
 import type { TabMenuContext } from '@shared/tabMenu'
@@ -418,6 +412,12 @@ async function resolveSchemaFolder(
   return resolved.ok ? ok({ root, folder: resolved.value }) : resolved
 }
 
+// The bad-payload refusals more than one handler speaks — one spelling each, alongside the
+// session refusals (NO_NEXUS / BUSY) the ipc module owns.
+const NEEDS_PROPERTY_ID = fail('operation-failed', 'A property id is required.')
+const NEEDS_ID_AND_VALUE = fail('operation-failed', 'A property id and value are required.')
+const NEEDS_CONFIG_PATCH = fail('operation-failed', 'A config patch is required.')
+
 // Registry-level option edits, cascading to pages. No-container-scope siblings of
 // property:delete; the confirm dialog for remove/clear lives in the option menu, not here.
 function isOptionArray(v: unknown): v is Option[] {
@@ -571,7 +571,12 @@ serveBridge(
 
     'capture:thumbnail': {
       kind: 'window',
-      fn: async (win: BrowserWindow | null, navKey: unknown, rect: unknown, scaleFactor: unknown) => {
+      fn: async (
+        win: BrowserWindow | null,
+        navKey: unknown,
+        rect: unknown,
+        scaleFactor: unknown,
+      ) => {
         try {
           const root = sessionRoot()
           if (root === null) return NO_NEXUS
@@ -630,16 +635,12 @@ serveBridge(
     // The preload resolves the dropped File to an absolute path (webUtils) and sends it here —
     // the one place a renderer-origin path enters. Accepted only if it's an existing directory.
     'nexus:openPath': {
-      kind: 'raw',
+      kind: 'envelope',
       fn: async (p: unknown) => {
-        try {
-          if (typeof p !== 'string' || p.length === 0) return ok(false)
-          if (!(await isExistingDir(p))) return ok(false)
-          await adoptNexus(p)
-          return ok(true)
-        } catch (e) {
-          return fail('operation-failed', errText(e))
-        }
+        if (typeof p !== 'string' || p.length === 0) return ok(false)
+        if (!(await isExistingDir(p))) return ok(false)
+        await adoptNexus(p)
+        return ok(true)
       },
     },
 
@@ -754,8 +755,7 @@ serveBridge(
       fn: async (containerPath: unknown, kind: unknown, patch: unknown) => {
         const c = await resolveViewContainer(containerPath, kind)
         if (!c.ok) return c
-        if (patch === null || typeof patch !== 'object')
-          return fail('operation-failed', 'A config patch is required.')
+        if (patch === null || typeof patch !== 'object') return NEEDS_CONFIG_PATCH
         const { folder, kind: k } = c.value
         const r = await serializeOnFile(folder, () =>
           setContainerConfig(folder, k, patch as ContainerConfigPatch),
@@ -826,8 +826,7 @@ serveBridge(
       fn: async (containerPath: unknown, propertyId: unknown) => {
         const c = await resolveSchemaFolder(containerPath)
         if (!c.ok) return c
-        if (typeof propertyId !== 'string')
-          return fail('operation-failed', 'A property id is required.')
+        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
         const r = await removeProperty(c.value.root, c.value.folder, propertyId)
         return r.ok ? ok(null) : r
       },
@@ -838,8 +837,7 @@ serveBridge(
       fn: async (containerPath: unknown, propertyId: unknown, toIndex: unknown) => {
         const c = await resolveSchemaFolder(containerPath)
         if (!c.ok) return c
-        if (typeof propertyId !== 'string')
-          return fail('operation-failed', 'A property id is required.')
+        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
         // One chain slot covers a drag-assign: append + restore + slot placement land atomically.
         const r = await assignPropertyAt(
           c.value.root,
@@ -869,8 +867,7 @@ serveBridge(
       fn: async (containerPath: unknown, propertyId: unknown, newType: unknown, opts: unknown) => {
         const c = await resolveSchemaFolder(containerPath)
         if (!c.ok) return c
-        if (typeof propertyId !== 'string')
-          return fail('operation-failed', 'A property id is required.')
+        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
         const parsedType = propertyType.safeParse(newType)
         if (!parsedType.success) return fail('operation-failed', 'Invalid property type.')
         // V2: a global def edit — values keep their old shape until the lossy cross-assigner
@@ -888,8 +885,7 @@ serveBridge(
       fn: async (propertyId: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string')
-          return fail('operation-failed', 'A property id is required.')
+        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
         const r = await deletePropertyGlobal(root, propertyId)
         return r.ok ? ok(null) : r
       },
@@ -900,8 +896,7 @@ serveBridge(
       fn: async (propertyId: unknown, options: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string')
-          return fail('operation-failed', 'A property id is required.')
+        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
         if (!isOptionArray(options))
           return fail('operation-failed', 'Options must be an array of { value, label }.')
         const r = await setOptions(root, propertyId, options)
@@ -914,9 +909,9 @@ serveBridge(
       fn: async (propertyId: unknown, groups: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string')
-          return fail('operation-failed', 'A property id is required.')
-        if (!Array.isArray(groups)) return fail('operation-failed', 'Status groups must be an array.')
+        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
+        if (!Array.isArray(groups))
+          return fail('operation-failed', 'Status groups must be an array.')
         const r = await setStatusGroups(root, propertyId, groups as StatusGroup[])
         return r.ok ? ok(null) : r
       },
@@ -927,10 +922,8 @@ serveBridge(
       fn: async (propertyId: unknown, patch: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string')
-          return fail('operation-failed', 'A property id is required.')
-        if (patch === null || typeof patch !== 'object')
-          return fail('operation-failed', 'A config patch is required.')
+        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
+        if (patch === null || typeof patch !== 'object') return NEEDS_CONFIG_PATCH
         // Whitelist only the link display fields — a config write must not patch arbitrary def fields
         // (type, options, id) through here. Registry-only: display config doesn't touch page values.
         const p = patch as Record<string, unknown>
@@ -954,8 +947,7 @@ serveBridge(
       fn: async (propertyId: unknown, color: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string')
-          return fail('operation-failed', 'A property id is required.')
+        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
         // The def-level color is the ONLY field this writes — a non-string clears it to Default (the
         // system accent). Registry-only: display config never touches page values.
         const r = await editProperty(root, propertyId, {
@@ -970,8 +962,7 @@ serveBridge(
       fn: async (propertyId: unknown, icon: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string')
-          return fail('operation-failed', 'A property id is required.')
+        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
         // Registry-only: the def's symbol id (a non-string clears it to the type's default glyph).
         const r = await editProperty(root, propertyId, {
           icon: typeof icon === 'string' ? icon : undefined,
@@ -985,10 +976,8 @@ serveBridge(
       fn: async (propertyId: unknown, patch: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string')
-          return fail('operation-failed', 'A property id is required.')
-        if (patch === null || typeof patch !== 'object')
-          return fail('operation-failed', 'A config patch is required.')
+        if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
+        if (patch === null || typeof patch !== 'object') return NEEDS_CONFIG_PATCH
         // Whitelist ONLY the number format fields — a config write must not patch arbitrary def fields
         // (type, options, id). Registry-only: display config never touches page values. An `in p` check
         // lets a caller clear a field by passing undefined.
@@ -1040,9 +1029,7 @@ serveBridge(
       fn: async (propertyId: unknown, value: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string' || typeof value !== 'string') {
-          return fail('operation-failed', 'A property id and value are required.')
-        }
+        if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
         const r = await removeOption(root, propertyId, value)
         return r.ok ? ok(null) : r
       },
@@ -1053,9 +1040,7 @@ serveBridge(
       fn: async (propertyId: unknown, value: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string' || typeof value !== 'string') {
-          return fail('operation-failed', 'A property id and value are required.')
-        }
+        if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
         const r = await clearOption(root, propertyId, value)
         return r.ok ? ok(null) : r
       },
@@ -1083,9 +1068,7 @@ serveBridge(
       fn: async (propertyId: unknown, value: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string' || typeof value !== 'string') {
-          return fail('operation-failed', 'A property id and value are required.')
-        }
+        if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
         const r = await removeStatusOption(root, propertyId, value)
         return r.ok ? ok(null) : r
       },
@@ -1096,9 +1079,7 @@ serveBridge(
       fn: async (propertyId: unknown, value: unknown) => {
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
-        if (typeof propertyId !== 'string' || typeof value !== 'string') {
-          return fail('operation-failed', 'A property id and value are required.')
-        }
+        if (typeof propertyId !== 'string' || typeof value !== 'string') return NEEDS_ID_AND_VALUE
         const r = await clearStatusOption(root, propertyId, value)
         return r.ok ? ok(null) : r
       },
@@ -1444,7 +1425,10 @@ serveBridge(
     // the favoriteIcons write.
     'icon-favorite-menu': {
       kind: 'menu',
-      fn: async (win: BrowserWindow, favorited: unknown): Promise<IconFavoriteMenuAction | null> => {
+      fn: async (
+        win: BrowserWindow,
+        favorited: unknown,
+      ): Promise<IconFavoriteMenuAction | null> => {
         return popIconFavoriteMenu(win, favorited === true)
       },
     },
@@ -1455,37 +1439,19 @@ serveBridge(
       kind: 'menu',
       fn: async (win: BrowserWindow, arg: unknown): Promise<NexusIconAction | null> => {
         const opts = (arg ?? {}) as { hasPhoto?: boolean; hasGlyph?: boolean }
-        return await new Promise<NexusIconAction | null>((resolve) => {
-          let acted = false
-          const pick = (v: NexusIconAction) => () => {
-            acted = true
-            resolve(v)
-          }
-          const menu = Menu.buildFromTemplate([
-            { label: 'Change Icon', click: pick('changeIcon') },
-            { label: opts.hasPhoto ? 'Change Photo' : 'Add Photo', click: pick('addPhoto') },
-            ...(opts.hasPhoto || opts.hasGlyph ? [{ type: 'separator' as const }] : []),
-            ...(opts.hasPhoto ? [{ label: 'Remove Photo', click: pick('removePhoto') }] : []),
-            ...(opts.hasGlyph ? [{ label: 'Remove Icon', click: pick('removeIcon') }] : []),
-          ])
-          menu.popup({
-            window: win,
-            callback: () => {
-              if (!acted) resolve(null)
-            },
-          })
-        })
+        return popReturningMenu<NexusIconAction>(win, (pick) => [
+          { label: 'Change Icon', click: pick('changeIcon') },
+          { label: opts.hasPhoto ? 'Change Photo' : 'Add Photo', click: pick('addPhoto') },
+          ...(opts.hasPhoto || opts.hasGlyph ? [{ type: 'separator' as const }] : []),
+          ...(opts.hasPhoto ? [{ label: 'Remove Photo', click: pick('removePhoto') }] : []),
+          ...(opts.hasGlyph ? [{ label: 'Remove Icon', click: pick('removeIcon') }] : []),
+        ])
       },
     },
 
     // The banner's Add/Change affordances use this directly (the photo's "Add Photo" menu wraps
     // the same picker).
-    'nexus:pickImage': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow): Promise<string | null> => {
-        return pickImageDataUrl(win)
-      },
-    },
+    'nexus:pickImage': { kind: 'menu', fn: pickImageDataUrl },
 
     // Change/Remove for an existing image, a single Add item when `add`. The noun follows the
     // surface's vocabulary (Banner by default; the cards' Cover-mode thumb passes "Cover").
@@ -1497,29 +1463,14 @@ serveBridge(
         opts?: { noRemove?: boolean; noun?: string; add?: boolean },
       ): Promise<BannerMenuAction | null> => {
         const noun = opts?.noun ?? 'Banner'
-        return await new Promise<BannerMenuAction | null>((resolve) => {
-          let acted = false
-          const choose = (action: BannerMenuAction): void => {
-            acted = true
-            resolve(action)
-          }
-          const menu = Menu.buildFromTemplate(
-            opts?.add
-              ? [{ label: `Add ${noun}`, click: () => choose('change') }]
-              : [
-                  { label: `Change ${noun}`, click: () => choose('change') },
-                  ...(opts?.noRemove
-                    ? []
-                    : [{ label: `Remove ${noun}`, click: () => choose('remove') }]),
-                ],
-          )
-          menu.popup({
-            window: win,
-            callback: () => {
-              if (!acted) resolve(null)
-            },
-          })
-        })
+        return popReturningMenu<BannerMenuAction>(win, (pick) =>
+          opts?.add
+            ? [{ label: `Add ${noun}`, click: pick('change') }]
+            : [
+                { label: `Change ${noun}`, click: pick('change') },
+                ...(opts?.noRemove ? [] : [{ label: `Remove ${noun}`, click: pick('remove') }]),
+              ],
+        )
       },
     },
 
@@ -1533,79 +1484,36 @@ serveBridge(
           iconHidden?: boolean
           noEditIcon?: boolean
         }
-        return await new Promise<TitleMenuAction | null>((resolve) => {
-          let acted = false
-          const choose = (action: TitleMenuAction) => () => {
-            acted = true
-            resolve(action)
-          }
-          const menu = Menu.buildFromTemplate([
-            { label: 'Rename', click: choose('rename') },
-            ...(opts.noEditIcon ? [] : [{ label: 'Change Icon', click: choose('editIcon') }]),
-            ...(opts.toggleIcon
-              ? [
-                  {
-                    label: opts.iconHidden ? 'Show Icon' : 'Hide Icon',
-                    click: choose('toggleIcon'),
-                  },
-                ]
-              : []),
-          ])
-          menu.popup({
-            window: win,
-            callback: () => {
-              if (!acted) resolve(null)
-            },
-          })
-        })
+        return popReturningMenu<TitleMenuAction>(win, (pick) => [
+          { label: 'Rename', click: pick('rename') },
+          ...(opts.noEditIcon ? [] : [{ label: 'Change Icon', click: pick('editIcon') }]),
+          ...(opts.toggleIcon
+            ? [{ label: opts.iconHidden ? 'Show Icon' : 'Hide Icon', click: pick('toggleIcon') }]
+            : []),
+        ])
       },
     },
 
     // The table grip's right-click menu.
-    'table-menu': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow, ctx: TableMenuContext) => {
-        return popTableMenu(win, ctx)
-      },
-    },
+    'table-menu': { kind: 'menu', fn: popTableMenu },
 
     // The callout grip's right-click menu.
-    'callout-menu': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow) => {
-        return popCalloutMenu(win)
-      },
-    },
+    'callout-menu': { kind: 'menu', fn: popCalloutMenu },
 
     // The table-view column header's right-click menu.
-    'column-menu': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow, ctx: ColumnMenuContext) => {
-        return popColumnMenu(win, ctx)
-      },
-    },
+    'column-menu': { kind: 'menu', fn: popColumnMenu },
 
     // A table cell's right-click menu (title meta / per-type Style / Edit).
-    'cell-menu': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow, ctx: CellMenuContext) => {
-        return popCellMenu(win, ctx)
-      },
-    },
+    'cell-menu': { kind: 'menu', fn: popCellMenu },
 
     // A card's right-click menu (page meta + Add Property ▸).
-    'card-menu': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow, ctx: CardMenuContext) => {
-        return popCardMenu(win, ctx)
-      },
-    },
+    'card-menu': { kind: 'menu', fn: popCardMenu },
 
     // A tab's right-click menu (Pin/Unpin · Close · Close to the Right).
     'tab-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, ctx: TabMenuContext) => {
-        return isPlainObject(ctx) ? popTabMenu(win, ctx as unknown as TabMenuContext) : null
+        return isPlainObject(ctx) ? popTabMenu(win, ctx) : null
       },
     },
 
@@ -1613,31 +1521,16 @@ serveBridge(
     'nav-row-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, ctx: NavRowMenuContext) => {
-        return isPlainObject(ctx) ? popNavRowMenu(win, ctx as unknown as NavRowMenuContext) : null
+        return isPlainObject(ctx) ? popNavRowMenu(win, ctx) : null
       },
     },
 
     // A wikilink's right-click menu (Open in Preview).
-    'conn-menu': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow) => {
-        return popConnMenu(win)
-      },
-    },
+    'conn-menu': { kind: 'menu', fn: popConnMenu },
 
-    'property-menu': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow, ctx: PropertyMenuContext) => {
-        return popPropertyMenu(win, ctx)
-      },
-    },
+    'property-menu': { kind: 'menu', fn: popPropertyMenu },
 
-    'option-menu': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow, ctx: OptionMenuContext) => {
-        return popOptionMenu(win, ctx)
-      },
-    },
+    'option-menu': { kind: 'menu', fn: popOptionMenu },
 
     // Open a page-attached file in its OS default app. The renderer-supplied path validates under the
     // session root (resolveUnderRoot) — a `..` climb or symlink smuggle never reaches shell.openPath.
