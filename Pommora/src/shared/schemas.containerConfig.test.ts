@@ -8,11 +8,7 @@ import {
 } from './schemas'
 
 describe('open_in coercion', () => {
-  it('coerces legacy window/compact to the new enum', () => {
-    expect(coerceOpenIn('window')).toBe('full-page')
-    expect(coerceOpenIn('compact')).toBe('page-preview')
-  })
-  it('passes new values through and drops junk / absent', () => {
+  it('passes valid values through and drops junk / absent', () => {
     expect(coerceOpenIn('full-page')).toBe('full-page')
     expect(coerceOpenIn('page-preview')).toBe('page-preview')
     expect(coerceOpenIn('nonsense')).toBeUndefined()
@@ -30,10 +26,10 @@ describe('view_button / view_style coercion', () => {
 })
 
 describe('container sidecar round-trip', () => {
-  it('collection keeps open_in (coerced) + view_button + view_style + foreign keys', () => {
+  it('collection keeps open_in + view_button + view_style + foreign keys', () => {
     const c = pageCollectionSidecar.parse({
       id: 'c1',
-      open_in: 'window',
+      open_in: 'full-page',
       view_button: 'labeled',
       view_style: 'toolbar',
       foreign: 'kept',

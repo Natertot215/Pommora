@@ -59,7 +59,7 @@ describe('SavedView decode', () => {
     expect(v.group).toEqual({ kind: 'structural' })
   })
 
-  it('decodes a legacy bare {property_id} group to property WITH injected defaults', () => {
+  it('a kind-less group object degrades to structural like any other malformed shape', () => {
     const v = savedView.parse({
       id: 'view_y',
       name: 'Y',
@@ -68,13 +68,7 @@ describe('SavedView decode', () => {
       hidden_properties: [],
       group: { property_id: 'p' },
     })
-    expect(v.group).toEqual({
-      kind: 'property',
-      property_id: 'p',
-      order_mode: 'configured',
-      empty_placement: 'bottom',
-      hide_empty_groups: false,
-    })
+    expect(v.group).toEqual({ kind: 'structural' })
   })
 
   it('round-trips group_order and drops non-string entries alone (element-filtering, not whole-array catch)', () => {
@@ -155,7 +149,7 @@ describe('view-level grouping fields', () => {
       date_granularity: 'week',
     })
   })
-  it('a legacy view decodes with all four absent', () => {
+  it('a minimal view decodes with all four absent', () => {
     const v = savedView.parse(base)
     expect(v.structural_order_mode).toBeUndefined()
     expect(v.sub_group).toBeUndefined()
@@ -180,7 +174,7 @@ describe('view-level grouping fields', () => {
   })
 })
 
-describe('decodeGroupConfig (lenient, mirrors Swift)', () => {
+describe('decodeGroupConfig (lenient, never throws)', () => {
   it('passes structural and flat through', () => {
     expect(decodeGroupConfig({ kind: 'structural' })).toEqual({ kind: 'structural' })
     expect(decodeGroupConfig({ kind: 'flat' })).toEqual({ kind: 'flat' })
@@ -212,8 +206,8 @@ describe('card_size codec', () => {
   it('round-trips a finite scale factor', () => {
     expect(savedView.parse({ ...base, card_size: 0.75 }).card_size).toBe(0.75)
   })
-  it('maps a legacy size name to its factor', () => {
-    expect(savedView.parse({ ...base, card_size: 'large' }).card_size).toBe(1.25)
+  it('drops a non-numeric card_size', () => {
+    expect(savedView.parse({ ...base, card_size: 'large' }).card_size).toBeUndefined()
   })
   it('drops a non-finite card_size instead of persisting Infinity/NaN', () => {
     expect(
