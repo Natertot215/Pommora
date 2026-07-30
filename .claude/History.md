@@ -4,6 +4,12 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 ### Completion Timeline (Descending)
 
+#### The Bridge Map — Every Channel Declared Once (2026-07-30)
+
+The IPC surface — 97 request channels, 4 sends, 6 pushes — had every channel hand-written at both ends with its types in a third place, and the drift that invited was the defect class: five spellings of one refusal, three coexisting failure encodings, rich errors flattened to sentences at 31 sites, and the never-throw rule enforced on fewer than half the channels. The correction: one map in `shared/bridge.ts` declares each channel's name, direction, argument tuple, and reply; the preload derives its dialers from it and main answers through one exhaustive handler object, so a missing, extra, duplicate, or mismatched channel is a compile error. The envelope unified on the shared `Result` — the structured error crosses the wire whole, `relay` and the flatten one-liners dissolved rather than moved, and the session refusals became two shared constants with their own codes (`no-nexus`, `busy`). The ten menu-action unions preload had re-typed inline moved to `shared/`, finishing the convention the other twelve menus already followed.
+
+Landed in two independently green stages — the wiring with types verbatim (rejections included, so Stage A changed zero behavior), then the envelope flip whose renderer sweep the compiler itself enumerated by deleting the old `*Result` type zoo. An adversarial pass then proved "as clean as possible" wrong: three hand-rolled menu chassis collapsed onto `popReturningMenu`, nine passthrough arrows went bare, the repeated payload refusals became named constants, and a redundant hand-rolled catch died to its own new `kind`. `nexus:choose`/`openPath` joined the envelope, so a failed open surfaces instead of silently closing panes. → [[Architecture]].
+
 #### The Erasure Campaigns — Swift Parity Out, Navigation Consolidated (2026-07-29 → 07-30)
 
 Two campaigns ran back-to-back under one law: structure supplies the information, and nothing at rest may go stale. The Swift-compatibility layer came out wholesale — the settings seed and its backfills, the decoder date shim, the accent and color exchange maps, the legacy view vocabulary, every Swift-citing comment, and the on-disk residue across both real nexuses (forty-seven sidecar version stamps, forty view-icon aliases, nine legacy color words) — because a compatibility path whose last consumer is archived can never again be exercised against real input.

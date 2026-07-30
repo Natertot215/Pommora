@@ -76,7 +76,7 @@ Pommora is an Electron desktop app — a React + TypeScript renderer over a Node
 
 **No dependency lock-in.** Every library sits behind a thin seam — the editor, YAML, IDs, SQLite, the glass material, the drag engine — so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 
-The main process is the sole filesystem owner; the renderer never touches Node. One shared types module is the cross-process contract both sides import, and IPC never throws across the boundary — handlers return a result envelope. Full architecture → `Features/Architecture.md`.
+The main process is the sole filesystem owner; the renderer never touches Node. One shared bridge map declares every IPC channel once — both sides derive from it, and IPC never throws across the boundary: data channels return one structured result envelope. Full architecture → `Features/Architecture.md`.
 
 #### Three load-bearing constraints
 
