@@ -25,6 +25,8 @@ export function setCalloutGrip(on: boolean): void {
   calloutGripHot = on
 }
 
+// raw send: the context-menu event hands over a bare WebContents, not a BrowserWindow,
+// so the typed push (which takes a window) can't be used here.
 const dispatch = (wc: WebContents, action: string) => () =>
   wc.send('menu:action', EDITOR_ACTION_PREFIX + action)
 

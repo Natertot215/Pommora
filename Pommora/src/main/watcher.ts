@@ -11,6 +11,7 @@ import { readJsonObject } from './io/atomicWrite'
 import { readNavigationFile } from './io/navigationFile'
 import { isRecentWrite } from './io/writeEcho'
 import { HOMEPAGE_HOST_DIRNAME, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
+import { push as pushToWindow } from './ipc'
 import { readNexus } from './readNexus'
 import { sessionRoot } from './session'
 
@@ -126,7 +127,7 @@ async function push(root: string, win: BrowserWindow): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   try {
     const tree = await readNexus(root)
-    if (!win.isDestroyed()) win.webContents.send('nexus:changed', tree)
+    pushToWindow(win, 'nexus:changed', tree)
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
   }
@@ -139,7 +140,7 @@ async function pushNav(root: string, win: BrowserWindow): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   try {
     const nav = await readNavigationFile(root)
-    if (!win.isDestroyed()) win.webContents.send('nav:changed', nav)
+    pushToWindow(win, 'nav:changed', nav)
   } catch {
     // Transient FS state mid-sync — the next settle re-reads.
   }

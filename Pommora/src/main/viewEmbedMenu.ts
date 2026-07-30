@@ -4,9 +4,8 @@
 // while the title row is hidden: with the row gone, its own right-click target is gone too.
 import type { BrowserWindow } from 'electron'
 import type { ViewButton, ViewStyle } from '@shared/types'
+import type { EmbedAreaMenuAction, EmbedTitleMenuAction } from '@shared/viewMenus'
 import { popReturningMenu } from './returningMenu'
-
-export type EmbedTitleMenuAction = 'toggle-icon' | 'hide-title' | `size-${number}`
 
 const TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const
 
@@ -30,13 +29,6 @@ export function popEmbedTitleMenu(
     { label: 'Hide Title', click: pick('hide-title') },
   ])
 }
-
-export type EmbedAreaMenuAction =
-  | 'toggle-pill-titles'
-  | 'show-title'
-  | 'new-view'
-  | 'style-dropdown'
-  | 'style-toolbar'
 
 export function popEmbedAreaMenu(
   win: BrowserWindow,
