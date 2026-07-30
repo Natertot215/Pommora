@@ -2,21 +2,16 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcRendererEvent } from 'electron'
 import type {
   AgendaListResult,
-  NavChanged,
-  NavFavorite,
-  NavStateResult,
-  NavTarget,
+  NavigationResult,
+  NavigationState,
   NavViewModes,
   NexusState,
   NexusTree,
   OpenIn,
   PageResult,
   Personalization,
-  PinEntry,
-  PinsResult,
   PreviewsFile,
   PreviewsResult,
-  RecentEntry,
   SubfieldConfig,
   TabSet,
   TabsResult,
@@ -285,19 +280,11 @@ const api = {
   agenda: {
     list: (): Promise<AgendaListResult> => ipcRenderer.invoke('agenda:list'),
   },
-  // Navigation layer — recents/favorites persistence. The renderer owns the arrays; main persists.
-  // Recents are a device-local row in nexus.db; favorites stay a synced file.
+  // Navigation intent — one contract over two stores; the IO layer routes each key. The
+  // renderer owns the arrays and sends only the keys it means to change.
   nav: {
-    load: (): Promise<NavStateResult> => ipcRenderer.invoke('nav:load'),
-    saveRecents: (entries: RecentEntry[]): Promise<Ack> =>
-      ipcRenderer.invoke('nav:saveRecents', entries),
-    saveFavorites: (entries: NavFavorite[]): Promise<Ack> =>
-      ipcRenderer.invoke('nav:saveFavorites', entries),
-    loadPins: (): Promise<PinsResult> => ipcRenderer.invoke('nav:loadPins'),
-    addPin: (pin: PinEntry): Promise<Ack> => ipcRenderer.invoke('nav:addPin', pin),
-    reorderPin: (pin: PinEntry): Promise<Ack> => ipcRenderer.invoke('nav:reorderPin', pin),
-    removePin: (target: NavTarget, order: number): Promise<Ack> =>
-      ipcRenderer.invoke('nav:removePin', target, order),
+    read: (): Promise<NavigationResult> => ipcRenderer.invoke('nav:read'),
+    write: (patch: Partial<NavigationState>): Promise<Ack> => ipcRenderer.invoke('nav:write', patch),
   },
   // The tab set — synced tabs.json (unpinned tabs + active + per-tab history targets); saves debounce main-side.
   tabs: {
@@ -435,8 +422,8 @@ const api = {
     }
   },
   // The live watcher pushed fresh nav state (external/synced sidecar or pin change) — no tree walk.
-  onNavChanged: (cb: (nav: NavChanged) => void): (() => void) => {
-    const listener = (_e: IpcRendererEvent, nav: NavChanged): void => cb(nav)
+  onNavChanged: (cb: (nav: Omit<NavigationState, 'recents'>) => void): (() => void) => {
+    const listener = (_e: IpcRendererEvent, nav: Omit<NavigationState, 'recents'>): void => cb(nav)
     ipcRenderer.on('nav:changed', listener)
     return () => {
       ipcRenderer.removeListener('nav:changed', listener)

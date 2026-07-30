@@ -3,7 +3,7 @@ import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { SortableZone, useDragItem, type DragItem } from '@renderer/design-system/interactions/drag'
-import type { NavTarget } from '@shared/types'
+import type { NavRef } from '@shared/types'
 import { useSession } from '../store'
 import { navKey } from '../Navigation/navRecents'
 import type { ResolvedNav } from '../Navigation/navResolve'
@@ -26,8 +26,8 @@ export function NavGallery({
   items: ResolvedNav[]
   frozenLayout?: boolean
   onReorderRecent?: (activeKey: string, overKey: string) => void
-  onSelect: (target: NavTarget) => void
-  onOpenNewTab?: (target: NavTarget) => void
+  onSelect: (target: NavRef) => void
+  onOpenNewTab?: (target: NavRef) => void
 }): React.JSX.Element {
   const reorderPin = useSession((s) => s.reorderPin)
   const reorderRecentStore = useSession((s) => s.reorderRecent)
@@ -78,7 +78,7 @@ export function NavGallery({
 function DraggableCard(props: {
   it: ResolvedNav
   nexusId: string
-  onSelect: (t: NavTarget) => void
+  onSelect: (t: NavRef) => void
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
 }): React.JSX.Element {
   const drag = useDragItem(props.it.key)
@@ -94,7 +94,7 @@ function GalleryCard({
 }: {
   it: ResolvedNav
   nexusId: string
-  onSelect: (t: NavTarget) => void
+  onSelect: (t: NavRef) => void
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
   drag?: DragItem
 }): React.JSX.Element {

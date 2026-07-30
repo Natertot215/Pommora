@@ -952,8 +952,8 @@ const PageCard = memo(function PageCard({
     e.preventDefault()
     e.stopPropagation()
     if (!ctx || drag?.isDragging) return
-    const { tabs, pins, tree } = useSession.getState()
-    const alreadyOpen = isOpenInTabs(tabs, pins, { kind: 'page', id: row.id, path: row.path })
+    const { tabs, pinned, tree } = useSession.getState()
+    const alreadyOpen = isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path })
     const addable = addableNow()
     const menuAddable = orderAddableEntries(addable).map((e) => ({ id: e.id, name: e.name }))
     const currentParentPath = row.path.slice(0, row.path.lastIndexOf('/'))

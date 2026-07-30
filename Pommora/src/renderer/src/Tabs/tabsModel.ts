@@ -1,10 +1,10 @@
-// `tabs` is the UNPINNED set (what tabs.json persists) — pinned tabs are derived live from the
-// pins slice and passed in separately wherever a decision must see them.
+// `tabs` is the UNPINNED set (the persisted row) — pinned tabs are derived live from the
+// pinned refs against the tree and passed in separately wherever a decision must see them.
 
-import type { PinEntry, SelectTarget, Tab, TabTarget } from '@shared/types'
+import type { NavRef, NexusTree, SelectTarget, Tab, TabTarget } from '@shared/types'
 import type { MutableKind } from '@shared/mutate'
 import { navKey } from '../Navigation/navRecents'
-import { byOrder, cleanPinTarget } from '../Navigation/navPins'
+import { buildReconcileIndex, reconcileWith, type ReconcileIndex } from '../selection'
 
 /** The new-tab sentinel value (maps to NavView / the `'none'` detail branch). */
 export const NEWTAB: TabTarget = { kind: 'newtab' }
@@ -21,22 +21,39 @@ export function pinTabId(target: SelectTarget): string {
   return `pin:${navKey(target)}`
 }
 
-/** Agenda pins (a legacy migration can hold them) are skipped — `select` can't drive task/event,
- *  so they'd be unrenderable tabs. */
-export function derivePinnedTabs(pins: PinEntry[]): Tab[] {
-  return [...pins]
-    .sort(byOrder)
-    .map(cleanPinTarget)
-    .filter((t): t is SelectTarget => t.kind !== 'task' && t.kind !== 'event')
+/** A stored ref made live against the tree: agenda kinds have no click destination, a ref that no
+ *  longer resolves drops, and a resolving set/page gets its path minted — nothing stored carries
+ *  one. */
+export function liveTarget(index: ReconcileIndex, ref: NavRef): SelectTarget | null {
+  if (ref.kind === 'task' || ref.kind === 'event') return null
+  const probe: SelectTarget =
+    ref.kind === 'set' || ref.kind === 'page'
+      ? { kind: ref.kind, id: ref.id, path: '' }
+      : ref.kind === 'homepage'
+        ? { kind: 'homepage' }
+        : { kind: ref.kind, id: ref.id }
+  const r = reconcileWith(index, probe)
+  return r.kind === 'none' ? null : r
+}
+
+/** The pinned tabs, hydrated in pin order — array position IS the order. Callers hold the result
+ *  (the store keeps it as derived state) rather than re-deriving per read: the index build walks
+ *  the tree. */
+export function derivePinnedTabs(pinned: NavRef[], tree: NexusTree | null): Tab[] {
+  if (!tree) return []
+  const index = buildReconcileIndex(tree)
+  return pinned
+    .map((ref) => liveTarget(index, ref))
+    .filter((t): t is SelectTarget => t !== null)
     .map((target) => tabFor(pinTabId(target), target))
 }
 
 /** Drives the stateful "Open" vs "Open in New Tab" menu labels. */
-export function isOpenInTabs(tabs: Tab[], pins: PinEntry[], target: SelectTarget): boolean {
+export function isOpenInTabs(tabs: Tab[], pinned: NavRef[], target: SelectTarget): boolean {
   const key = navKey(target)
   return (
     tabs.some((t) => t.target.kind !== 'newtab' && navKey(t.target) === key) ||
-    pins.some((p) => navKey(p) === key)
+    pinned.some((p) => navKey(p) === key)
   )
 }
 
@@ -66,10 +83,10 @@ export function activeUnpinnedTab(tabs: Tab[], activeTabId: string): Tab | undef
   return tabs.find((t) => t.id === activeTabId)
 }
 
-export function isPinned(target: TabTarget, pins: PinEntry[]): boolean {
+export function isPinned(target: TabTarget, pinned: NavRef[]): boolean {
   if (target.kind === 'newtab') return false
   const key = navKey(target)
-  return pins.some((p) => navKey(p) === key)
+  return pinned.some((p) => navKey(p) === key)
 }
 
 function tabFor(id: string, target: SelectTarget): Tab {

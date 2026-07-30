@@ -8,8 +8,7 @@ import type { BrowserWindow } from 'electron'
 import { asStringArray } from './coerce'
 import { excludedMatcher } from './exclusion'
 import { readJsonObject } from './io/atomicWrite'
-import { readNavState } from './io/navState'
-import { readPins } from './io/pinsState'
+import { readNavigationFile } from './io/navigationFile'
 import { isRecentWrite } from './io/writeEcho'
 import { HOMEPAGE_HOST_DIRNAME, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { readNexus } from './readNexus'
@@ -137,8 +136,8 @@ async function push(root: string, win: BrowserWindow): Promise<void> {
 async function pushNav(root: string, win: BrowserWindow): Promise<void> {
   if (sessionRoot() !== root || win.isDestroyed()) return
   try {
-    const [nav, pins] = await Promise.all([readNavState(root), readPins(root)])
-    if (!win.isDestroyed()) win.webContents.send('nav:changed', { ...nav, pins })
+    const nav = await readNavigationFile(root)
+    if (!win.isDestroyed()) win.webContents.send('nav:changed', nav)
   } catch {
     // Transient FS state mid-sync — the next settle re-reads.
   }
