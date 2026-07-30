@@ -265,8 +265,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     }
 
     case 'setProfileSubtitle': {
-      // Read-merge-write settings.json (≤30 chars), preserving every other key so Swift's
-      // version/defaults_version/labels/modified_at survive (no migration churn on re-open).
+      // Read-merge-write settings.json (≤30 chars), preserving every foreign key.
       const subtitle = req.subtitle.slice(0, 30)
       await updateSettings(root, (cur) => ({ ...cur, profile_subtitle: subtitle }))
       return { ok: true }
