@@ -1,6 +1,6 @@
 ## Navigation Consolidation — Decision Log
 
-**Status:** Decisions ratified; adversarial review complete and folded (nine findings, all resolved — the storage split for recents is the reviewed shape). Execution split into two task plans — [[Swift Parity Removal — Implementation Plan]] (runs first, independently shippable) and [[Navigation Consolidation — Implementation Plan]]. Awaiting Nathan's execution-mode call.
+**Status:** Executed in full — both task plans ([[Swift Parity Removal — Implementation Plan]], [[Navigation Consolidation — Implementation Plan]]) ran task-by-task with per-task gates, then the closing loop: a simplifier pass, an adversarial review whose six confirmed findings were all fixed the same night, a cross-task reconciliation sweep, and the final explicit pass. The one open item is the live UIX pass, which waits on the next fresh dev launch (the running session pre-dates the main-process changes).
 
 #### The Law This Plan Serves
 

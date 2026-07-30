@@ -8,12 +8,12 @@
 ### Session Summary — the hardening campaign, then the navigation reckoning
 
 **Session ID:** b0a43ec0-7809-4558-9904-cbd299902272
-**Dates:** 07-29-2026
+**Dates:** 07-29-2026 → 07-30-2026
 **Model:** Fable 5
-**Compactions:** 2
+**Compactions:** 3
 **Connectors:** none
 **Commands:** /compact · /handoff
-**Agents:** Explore (~16x - discovery lenses, Swift inventory, HOIST investigation, blast radius) · build-breaking (~4x - refactor breakers + plan attack) · code-simplifier (1x) · general-purpose (1x - HOIST implementer)
+**Agents:** Explore (~16x - discovery lenses, Swift inventory, HOIST investigation, blast radius) · build-breaking (~5x - refactor breakers, plan attack, campaign attack) · code-simplifier (2x) · general-purpose (1x - HOIST implementer)
 **Skills:** artifact-design · writing-plans · handoff · project-context
 
 **What Started:** A ten-lens state-of-the-app discovery mission, every agent claim personally verified before ranking. Nathan picked three systemic candidates and demanded their minimal root-cause shapes: S1 (lenient reads feeding writes), S5 (two glyph resolution rules), S6 (the serial walk tax). Mid-session he pivoted to the Navigation persistence layer — "sidecars carrying tabs, data, and more that seem like they should exist as one" — and that exploration became the session's second, larger half.
@@ -26,23 +26,22 @@
 
 That totality pass caught a leak the review missed: live targets passed to pin/favorite actions would have smuggled `path` fields into the file — refs now strip to bare `{kind, id}` at both the action and write boundaries, test-pinned.
 
-**What It Ended With:** Twelve commits on local `main`, every one gated green (typecheck 0 · lint 0 · 1879 tests / 178 files · build clean) — **none pushed**. Three review-certified planning docs: [[Navigation Consolidation — Decision Log]] + [[Swift Parity Removal — Implementation Plan]] + [[Navigation Consolidation — Implementation Plan]], written to the writing-plans skill's task shape with real code in every step. Execution is greenlit, Swift parity first, under Nathan's discipline: each green task re-reviewed from an absolute unbiased stance — treat it as if I never wrote it — then the remaining plan re-read for compounding changes.
+**What It Ended With:** BOTH campaigns executed overnight, ~30 commits on local `main`, every one gated green — closing state **typecheck 0 · lint 0 · 1857 tests / 175 files · build clean** — none pushed. Swift parity is gone (grep reads zero in every casing), navigation persists through one contract with one validation boundary, both real nexuses were hand-migrated with zero migration code, and the closing loop ran in full: simplifier (its one flagged perf regression fixed — the tree walks once per push), a build-breaking review whose six confirmed findings were all fixed the same night (the two High ones were real data-loss paths: an ungated banner pointer feeding a file delete, and a patch-writer reading through the lenient reader — my own violation of the session's S1 law), Nathan's cross-task reconciliation sweep (three findings, fixed), and the final explicit pass (one refusal-string unification). Session net over `src`: **−147 raw / −103 code-only** across 150 files.
 
 **Next Session:**
 
-- Execute [[Swift Parity Removal — Implementation Plan]] task-by-task (the future-proofing scratchpad exists first — read it before any task).
-- Between phases: write the memory doc of Swift-era facts that stop being facts, then execute [[Navigation Consolidation — Implementation Plan]].
-- Push `main` when Nathan says so — twelve commits are waiting.
+- The live UIX pass on a fresh dev launch — pin/unpin/reorder, recents restarting, tab restore across relaunch, rename-then-relaunch, the NavView banner from navigation.json, an outside edit to navigation.json refreshing live.
+- Push `main` when Nathan says so — ~30 commits are waiting.
+- The Pages-in-DB storage-model session Nathan queued (its own conversation).
 
 **Session Pointers**
 
-- The three planning docs in `Planning/` are the working truth for navigation until the erasure task lands — the Features docs still describe the old design on purpose until then.
-- The plans' `file:line` cites were verified at writing time but drift as commits land — re-verify each against the file before cutting, per task.
+- [[Navigation Consolidation — Decision Log]] holds every ruling the campaigns executed; the Features docs describe the new design.
 - The published how-Pommora-works artifact: https://claude.ai/code/artifact/7c7da95f-a42f-4cbb-9bec-d378355a188a
 
 **Landmines**
 
-- **The settings/identity backfills re-seed on every app open** — hand-cleaning those disks before their code deletion ships silently reverts (proven by execution in the review). The plans order this correctly; don't reorder.
+- **Nathan's overnight dev session ran a pre-refactor main process** — if it's still open, its renderer is a post-refactor HMR hybrid whose nav calls hit missing channels. The first fresh dev launch runs the new world end-to-end; nothing the old main can write survives contact (its old channels are gone and the disks are migrated).
 
 **User Feedback**
 
@@ -52,8 +51,8 @@ That totality pass caught a leak the review missed: live targets passed to pin/f
 
 **Uncertain**
 
-- `Compactions: 2` is best-effort.
-- The Swift comment-line estimate was corrected by the review from ~55 to ~106 lines across ~37 files — the plan carries the corrected figure, but the sweep itself will find the real number.
+- `Compactions: 3` is best-effort.
+- Two breaker PLAUSIBLEs were parked as watched, not fixed: an adopt-throw path leaking old nav arrays (no real throw path was established, and `resetNexusSession` now covers the switch surface) and a sub-frame ⌘Q-vs-in-flight-write IPC ordering window (structural, human-untriggerable as far as either of us could construct).
 
 ---
 
