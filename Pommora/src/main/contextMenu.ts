@@ -6,6 +6,7 @@
 import { Menu, dialog, shell } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { basename } from 'node:path'
+import { push } from './ipc'
 import { sessionRoot } from './session'
 import { resolveUnderRoot } from './pathSafety'
 import { handleMutate, type MutateDeps } from './mutate'
@@ -61,7 +62,7 @@ export async function showContextMenu(
     if (res.ok) {
       onChanged()
       // A create lands in its rename field — same contract as the renderer's own create menus.
-      if (res.created && !win.isDestroyed()) win.webContents.send('begin-rename', res.created.path)
+      if (res.created) push(win, 'begin-rename', res.created.path)
     } else
       await dialog.showMessageBox(win, {
         type: 'error',
@@ -77,17 +78,13 @@ export async function showContextMenu(
   if (target.id) {
     items.push({
       label: target.alreadyOpen ? 'Open' : 'Open in New Tab',
-      click: () => {
-        if (!win.isDestroyed()) win.webContents.send('open-in-new-tab', target)
-      },
+      click: () => push(win, 'open-in-new-tab', target),
     })
     // Open in Preview (page-only) — like Open in New Tab, the action runs renderer-side.
     if (target.kind === 'page') {
       items.push({
         label: 'Open in Preview',
-        click: () => {
-          if (!win.isDestroyed()) win.webContents.send('open-in-preview', target)
-        },
+        click: () => push(win, 'open-in-preview', target),
       })
     }
     items.push({ type: 'separator' })
@@ -101,9 +98,7 @@ export async function showContextMenu(
   // the renderer to put the matching row into edit mode; the commit goes through mutate.
   items.push({
     label: 'Rename',
-    click: () => {
-      if (!win.isDestroyed()) win.webContents.send('begin-rename', target.path)
-    },
+    click: () => push(win, 'begin-rename', target.path),
   })
 
   items.push({

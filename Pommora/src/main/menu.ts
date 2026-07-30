@@ -2,6 +2,7 @@ import { Menu, app, shell, BrowserWindow } from 'electron'
 import type { MenuItemConstructorOptions } from 'electron'
 import { basename } from 'node:path'
 import { readAppConfig, writeAppConfig } from './appConfig'
+import { push } from './ipc'
 import { pruneRecents, sessionRoot } from './session'
 import { readDefaultViewScale } from './settings'
 import { VIEW_SCALE_DEFAULT } from '@shared/types'
@@ -20,9 +21,7 @@ export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promis
     await writeAppConfig(userData, { ...config, recents })
   }
   const hasSession = sessionRoot() !== null
-  const send = (action: string): void => {
-    if (!win.isDestroyed()) win.webContents.send('menu:action', action)
-  }
+  const send = (action: string): void => push(win, 'menu:action', action)
 
   const recentItems: MenuItemConstructorOptions[] = recents?.length
     ? recents.map((p) => ({

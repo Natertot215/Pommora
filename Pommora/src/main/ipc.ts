@@ -1,52 +1,95 @@
 import { BrowserWindow, ipcMain } from 'electron'
+import type { Asks, Pushes, Tells } from '@shared/bridge'
 import { errText, type Ack } from '@shared/result'
 import { readScope, writeKey, type Scope } from './db/localState'
 
-/** Registers a handler that needs the sender's window — a native menu has nothing to hang off
- *  without one, so a senderless invoke resolves null instead of reaching the popup. */
-export function handleWindowMenu<A extends unknown[], T>(
-  channel: string,
-  fn: (win: BrowserWindow, ...args: A) => T | Promise<T>,
-): void {
-  ipcMain.handle(channel, async (e, ...args): Promise<T | null> => {
-    const win = BrowserWindow.fromWebContents(e.sender)
-    return win ? await fn(win, ...(args as A)) : null
-  })
+type Args<K extends keyof Asks> = Asks[K]['args']
+type Reply<K extends keyof Asks> = Asks[K]['reply']
+
+/** One entry per ask channel — the `kind` is the boundary policy, declared beside the handler:
+ *  `envelope` catches a throw into `{ok:false,error}`; `raw` lets it reject (the sentinel reads
+ *  the renderer already catches); `menu` injects the sender's window and resolves null without
+ *  one; `window` injects window-or-null and leaves the rest to the handler. */
+export type AskEntry<K extends keyof Asks> =
+  | { kind: 'envelope' | 'raw'; fn: (...args: Args<K>) => Reply<K> | Promise<Reply<K>> }
+  | { kind: 'menu'; fn: (win: BrowserWindow, ...args: Args<K>) => Reply<K> | Promise<Reply<K>> }
+  | {
+      kind: 'window'
+      fn: (win: BrowserWindow | null, ...args: Args<K>) => Reply<K> | Promise<Reply<K>>
+    }
+
+export type TellEntry<K extends keyof Tells> =
+  | { kind: 'raw'; fn: (...args: Tells[K]) => void }
+  | { kind: 'window'; fn: (win: BrowserWindow, ...args: Tells[K]) => void }
+
+export type BridgeAsks = { [K in keyof Asks]: AskEntry<K> }
+export type BridgeTells = { [K in keyof Tells]: TellEntry<K> }
+
+/** Registers the whole ask + tell surface from the exhaustive handler objects — a declared
+ *  channel with no handler, a handler with no channel, or a duplicate key is a compile error. */
+export function serveBridge(asks: BridgeAsks, tells: BridgeTells): void {
+  for (const channel of Object.keys(asks) as (keyof Asks)[]) {
+    const entry = asks[channel] as AskEntry<keyof Asks>
+    ipcMain.handle(channel, async (e, ...args) => {
+      switch (entry.kind) {
+        case 'raw':
+          return entry.fn(...(args as Args<keyof Asks>))
+        case 'envelope':
+          try {
+            return await entry.fn(...(args as Args<keyof Asks>))
+          } catch (err) {
+            return { ok: false, error: errText(err) }
+          }
+        case 'menu': {
+          const win = BrowserWindow.fromWebContents(e.sender)
+          return win ? entry.fn(win, ...(args as Args<keyof Asks>)) : null
+        }
+        case 'window':
+          return entry.fn(BrowserWindow.fromWebContents(e.sender), ...(args as Args<keyof Asks>))
+      }
+    })
+  }
+  for (const channel of Object.keys(tells) as (keyof Tells)[]) {
+    const entry = tells[channel] as TellEntry<keyof Tells>
+    ipcMain.on(channel, (e, ...args) => {
+      if (entry.kind === 'raw') return entry.fn(...(args as Tells[keyof Tells]))
+      const win = BrowserWindow.fromWebContents(e.sender)
+      if (win) entry.fn(win, ...(args as Tells[keyof Tells]))
+    })
+  }
 }
 
-/** Registers an envelope handler. The boundary must never reject into the renderer, so a
- *  throw out of the body lands as `{ ok: false, error }` here rather than in each handler. */
-export function handleEnvelope<A extends unknown[], T extends { ok: true } | Ack>(
-  channel: string,
-  fn: (...args: A) => T | Promise<T>,
+/** The typed sending half of a push — the map declares the payload, every sender speaks it. */
+export function push<K extends keyof Pushes>(
+  win: BrowserWindow,
+  channel: K,
+  payload: Pushes[K],
 ): void {
-  ipcMain.handle(channel, async (_e, ...args): Promise<T | Ack> => {
-    try {
-      return await fn(...(args as A))
-    } catch (e) {
-      return { ok: false, error: errText(e) }
-    }
-  })
+  if (!win.isDestroyed()) win.webContents.send(channel, payload)
 }
 
 /** An emptied value — no fold keys, no manual order, an unset pointer — deletes its key rather
  *  than persisting an empty container, matching the properties map and contexts. */
 const isEmptyValue = (v: unknown): boolean => v === '' || (Array.isArray(v) && v.length === 0)
 
-/** The store is app-owned, so the only validation is here at the boundary, where the renderer's
- *  payload is still untrusted. */
-export function handleLocalScope<T>(
-  channel: string,
+/** The per-machine scope pair's handlers. The store is app-owned, so the only validation is
+ *  here at the boundary, where the renderer's payload is still untrusted — one guard ladder
+ *  and one emptiness rule for all four scopes. */
+export function scopeGet<T>(scope: Scope): () => Record<string, T> {
+  return () => readScope<T>(scope)
+}
+
+export function scopeSet<T>(
   scope: Scope,
   valid: (v: unknown) => v is T,
   expected: string,
-): void {
-  ipcMain.handle(`${channel}:get`, (): Record<string, T> => readScope<T>(scope))
-  handleEnvelope(`${channel}:set`, (key: unknown, value: unknown): Ack => {
+): (key: string, value: T) => Ack {
+  return (key, value) => {
     if (typeof key !== 'string') return { ok: false, error: 'A key is required.' }
     if (!valid(value)) return { ok: false, error: expected }
     if (!writeKey(scope, key, isEmptyValue(value) ? null : value))
       return { ok: false, error: 'No nexus is open.' }
     return { ok: true }
-  })
+  }
 }
+

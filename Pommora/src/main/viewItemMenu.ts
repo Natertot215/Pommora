@@ -2,9 +2,8 @@
 // sentinel), matching deleteView's refuse-last rule. Returning-picker: resolves the action, the
 // renderer performs it.
 import type { BrowserWindow } from 'electron'
+import type { ViewItemMenuAction } from '@shared/viewMenus'
 import { popReturningMenu } from './returningMenu'
-
-export type ViewItemMenuAction = 'view:duplicate' | 'view:delete'
 
 export function popViewItemMenu(
   win: BrowserWindow,
