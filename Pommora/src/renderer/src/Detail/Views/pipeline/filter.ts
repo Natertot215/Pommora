@@ -1,4 +1,4 @@
-// Type-aware view filter. Extends Swift FilterEvaluator's per-rule, per-type operator matrix with
+// Type-aware view filter. A per-rule, per-type operator matrix with
 // nested groups (a rule child may itself be a FilterGroup, expressing mixed AND/OR like
 // `(A AND B) OR C`), title + context + any-depth location matrices, and multi-operand `values[]`
 // chip ops. `op` raw strings are snake_case (on-disk parity). Match modes are all = AND, any = OR,
@@ -21,7 +21,7 @@ import { declaredType, modifiedStampString, resolveFieldValue } from './value'
 import { type SetTreeNode, subtreeIds } from './group'
 import { linkDisplayText } from '../Table/linkValue'
 
-/** Operator raw strings — snake_case = the on-disk `op` values (parity with Swift FilterOperator). */
+/** Operator raw strings — snake_case = the on-disk `op` values. */
 export const FILTER_OPS = {
   is: 'is',
   isNot: 'is_not',
@@ -414,9 +414,8 @@ function evaluateMulti(v: PropertyValue, op: Op, expected: Expected, values?: st
   }
 }
 
-/** Context-column / id-list membership + presence (Swift evaluateList). DELIBERATE asymmetry, stated so
- *  nobody "fixes" it: is/contains with a missing SINGLE operand → false (cannot match, Swift
- *  parity) — while the chip-shaped set ops (matchesSet + values[]) pass on an empty operand set,
+/** Context-column / id-list membership + presence. DELIBERATE asymmetry, stated so
+ *  nobody "fixes" it: is/contains with a missing SINGLE operand → false (cannot match) — while the chip-shaped set ops (matchesSet + values[]) pass on an empty operand set,
  *  because a mid-authoring chip row must never blank the table. */
 function evaluateList(ids: string[], op: Op, expected: Expected, values?: string[]): boolean {
   const want = values ?? (expected != null ? [expected] : [])

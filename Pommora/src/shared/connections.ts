@@ -2,7 +2,6 @@
 // (page→page) — no on-disk store, no frontmatter mirror, no id. Resolution is computed at
 // read time: normalized body-title → the unique page holding that title → its id; the id
 // never touches disk. `![[ ]]` and `{{ }}` are not connections. Obsidian/GitHub-compatible.
-// Mirrors Swift's ConnectionTitle/Scanner.
 //
 // `[[Title|alias]]` parses: the TITLE alone resolves, and the alias is carried through every
 // rewrite rather than dropped. Nothing authors or renders an alias yet — a title is what a

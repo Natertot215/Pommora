@@ -1,6 +1,5 @@
 // Pure title rewrite over a body: replace every `[[oldTitle]]` (case-insensitive
-// normalized match) with `[[newTitle]]`. The rename-cascade primitive. Mirrors Swift's
-// ConnectionRewriter (shares the pattern).
+// normalized match) with `[[newTitle]]`. The rename-cascade primitive.
 
 import { normalizeTitle, pageLinkPattern } from '@shared/connections'
 import { codeMask } from '@shared/markdownCode'

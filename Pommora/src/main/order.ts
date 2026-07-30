@@ -1,4 +1,4 @@
-// Verbatim TS port of the Swift OrderResolver semantics.
+// Order resolution semantics:
 // - no/empty persisted order  -> sort by id ascending (ULIDs are time-sortable)
 // - persisted array           -> known-in-array-order (tombstones dropped),
 //                                then unreferenced appended by title (localeCompare)
@@ -8,7 +8,7 @@ export interface Orderable {
   title: string
 }
 
-/** `fallback` when there's no persisted order: 'id' (ULID = creation order, the Swift default)
+/** `fallback` when there's no persisted order: 'id' (ULID = creation order, the default)
  *  or 'title' (for adopted entities whose ids are hashes). */
 export function resolveOrder<T extends Orderable>(
   items: T[],

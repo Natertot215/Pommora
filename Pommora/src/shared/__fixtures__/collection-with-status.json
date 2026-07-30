@@ -1,7 +1,7 @@
 {
   "id": "col_fixture_status",
   "icon": "rectangle.stack",
-  "schema_version": 2,
+  "outside_field": 2,
   "_foreign_collection_key": "preserved",
   "properties": [
     "prop_status",

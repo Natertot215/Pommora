@@ -1,16 +1,6 @@
 // SavedView — the portable, on-disk view config stored in a Collection/Set sidecar's
-// `views[]`. Keys mirror the Swift build's SavedView key-for-key (snake_case on disk) so a
-// view round-trips across both builds. `savedView` (zod) is the codec; the exported
+// `views[]` (snake_case keys on disk). `savedView` (zod) is the codec; the exported
 // interfaces are the canonical types consumers use.
-//
-// Deliberate React-ahead supersets of Swift, documented here (not "ports"):
-//   - `sort` is the full array (multi-key, priority = array order). Swift's pipeline reads
-//     only the first criterion today; a multi-key array still round-trips its decode.
-//   - `filter.rules` may nest a FilterGroup for mixed AND/OR; Swift's rules are flat. A flat
-//     filter is byte-identical across builds; a nested one is React-ahead until Swift aligns.
-//   - The cards-view keys (`card_banner`, `hide_location`, `wrap_titles`, `set_cards`, and the
-//     numeric `card_size` scale factor) are React-ahead; Swift's small/medium/large
-//     `card_size` still decodes, mapped to its factor.
 //
 // Each enum has ONE source: an `as const` array drives both the TS type (indexed access) and
 // the zod codec / runtime membership Set — never re-listed (the SOLID_COLORS idiom in types.ts).
@@ -64,7 +54,7 @@ export interface SubGroupConfig {
   date_granularity?: DateGranularity
 }
 
-/** One sort criterion; `direction` raw strings match Swift on-disk. `order` is the Custom option
+/** One sort criterion; `direction` raw strings are the on-disk values. `order` is the Custom option
  *  ranking for select/status — present means rank by this sequence (unknowns last), direction moot. */
 export interface SortCriterion {
   property_id: string
@@ -84,14 +74,14 @@ export interface FilterRule {
 
 /** A group of filter rules combined by `match`: all = AND, any = OR, none = NOR. RECURSIVE: a
  *  child may itself be a FilterGroup, expressing mixed AND/OR like `(A AND B) OR C`
- *  (React-ahead of Swift's flat rules). Whether the filter APPLIES is a separate axis —
+ *  Whether the filter APPLIES is a separate axis —
  *  `SavedView.filter_enabled` — so turning it off never costs it its authored mode. */
 export interface FilterGroup {
   match: MatchMode
   rules: Array<FilterRule | FilterGroup>
 }
 
-/** Group-by config — a tagged union on `kind` (matches Swift's GroupConfig). */
+/** Group-by config — a tagged union on `kind`. */
 export type GroupConfig =
   | { kind: 'structural' }
   | { kind: 'flat' }
@@ -258,7 +248,7 @@ export function decodeGroupConfig(raw: unknown): GroupConfig {
 }
 
 /** The sidecar `views[]` element. Loose ⇒ foreign keys survive a rewrite (cloud-sync /
- *  agent-legibility); scalar fields mirror Swift's defensive `try? … ?? default` decode. */
+ *  agent-legibility); scalar fields decode defensively (`catch` → default). */
 export const savedView = z.looseObject({
   id: z.string().catch(''),
   name: z.string().catch('Table'),

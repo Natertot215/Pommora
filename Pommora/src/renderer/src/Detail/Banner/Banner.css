@@ -3,7 +3,7 @@
 
 .banner {
   position: relative;
-  height: 230px; /* Swift ContainerBannerView.bannerHeight */
+  height: 230px;
   border-bottom: var(
     --border-heading
   ); /* the shared heading↔body seam (same token as the table heading) */
@@ -12,10 +12,10 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* aspect-fill, center-cropped (Swift .aspectRatio(.fill).clipped()) */
+  object-fit: cover; /* aspect-fill, center-cropped */
 }
 /* The name sits at the content's left margin (clear of the sidebar), not the full-bleed image
-   edge — so it reads on the visible part of the banner (Swift's bottom-leading title). */
+   edge — so it reads on the visible part of the banner. */
 /* One container-title size for the banner overlay AND the banner-less header (DRY) — a
    non-banner view's title must not differ in size from a banner view's, and collections + sets
    (same Banner) stay identical. */
@@ -156,7 +156,7 @@
   color: var(--text);
 }
 
-/* The hover-revealed Add-Banner button (mirrors Swift's opacity-on-hover affordance). The strip is a
+/* The hover-revealed Add-Banner button. The strip is a
    fixed-height zone between the floating toolbar and the title; the button sits centered within it so
    the affordance reads in the gap, not jammed under the toolbar. (--add-banner-zone set by the header.) */
 .add-banner-strip {

@@ -16,8 +16,8 @@ import { ok, type Result } from '@shared/result'
 const SKIP_TOP_LEVEL = ['.nexus', '.trash']
 
 /** Rewrite every page body that links `oldTitle` to link `newTitle`, nexus-wide, atomically.
- *  Body-only rewrite — frontmatter (incl. `modified_at`) is preserved untouched, matching
- *  Swift's cascade (a derived link edit isn't a user modification). Only real pages (with
+ *  Body-only rewrite — frontmatter (incl. `modified_at`) is preserved untouched
+ *  (a derived link edit isn't a user modification). Only real pages (with
  *  an `id`) are touched. Returns the touched page paths. The caller renames the target's
  *  own file and reverts that rename if this throws. */
 export async function renameCascade(

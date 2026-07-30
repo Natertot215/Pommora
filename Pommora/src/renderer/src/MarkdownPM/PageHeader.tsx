@@ -14,7 +14,7 @@ interface Props {
 }
 
 /**
- * The page editor's header: a full-bleed cover band (the Swift-compatible `cover`) with the title
+ * The page editor's header: a full-bleed cover band (the frontmatter `cover` key) with the title
  * overlaid bottom-left, or — with no cover — a hover Add-Banner strip above the title. The title is
  * the shared DetailTitleHeader (right-click → Rename / Edit Icon); the banner has its own
  * right-click → Change / Remove. Both menus are native + separate, never overlapping.

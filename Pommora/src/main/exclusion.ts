@@ -1,6 +1,4 @@
 // One pure predicate unifying convention skips + user folder exclusions.
-// Collapses what the Swift app spreads across Filesystem, IndexBuilder,
-// NexusAdopter, and FolderFilter into a single testable function.
 
 /** NFC-normalize + case-fold a single path segment for comparison. */
 export function normalizeSeg(s: string): string {

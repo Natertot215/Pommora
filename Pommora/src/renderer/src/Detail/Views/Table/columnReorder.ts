@@ -3,7 +3,7 @@ import { reorder } from '@renderer/design-system/interactions/drag'
 /**
  * Translate a header drag into a new `property_order`. The visible columns reorder; any hidden
  * property (present in `property_order` but filtered out of the rendered columns) is preserved at the
- * tail so a later hide/show toggle can't drop it — the exact Swift persistence failure this guards against.
+ * tail so a later hide/show toggle can't drop it — the drop-on-toggle persistence failure this guards against.
  *
  * The full visible order is written explicitly, so default-on reserved columns (Context columns, title) persist
  * the slot they were dragged to instead of snapping back to their resolver-default placement.

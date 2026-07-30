@@ -1,5 +1,4 @@
-// Pure path module — the one place that knows the on-disk layout.
-// Mirrors the Swift NexusPaths. node:path only; no fs.
+// Pure path module — the one place that knows the on-disk layout. node:path only; no fs.
 
 import { join } from 'node:path'
 

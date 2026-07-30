@@ -1,6 +1,5 @@
-// Pure transforms over a PropertyDefinition[] — the per-def parsing + validation Swift spread
-// across PropertyDefinition.init(from:), the user-context-dropping Array extension, and
-// PropertyDefinitionValidator. No I/O. The single typed gate between a raw sidecar array and a
+// Pure transforms over a PropertyDefinition[] — per-def parsing + validation. No I/O.
+// The single typed gate between a raw sidecar array and a
 // usable schema.
 
 import {
@@ -12,7 +11,7 @@ import { fail, ok, type Result } from '@shared/result'
 import { KEY_REFUSAL } from '@shared/governedKeys'
 
 /** Parse a raw `property_definitions` array, dropping any entry that fails to parse (resilient —
- *  one malformed def never sinks the whole schema, matching Swift's per-def tolerance). A retired
+ *  one malformed def never sinks the whole schema). A retired
  *  type (the removed `date`, or a user `relation`/`context`) simply fails the enum and is dropped.
  *  Non-array input → []. */
 export function parseDefinitions(raw: unknown): PropertyDefinition[] {
@@ -31,7 +30,7 @@ export function droppingUserContexts(defs: PropertyDefinition[]): PropertyDefini
   return defs.filter((d) => d.type !== 'context')
 }
 
-// MARK: - Validation (mirrors Swift PropertyDefinitionValidator)
+// ---------- validation ----------
 
 /** A property name in the context of a schema: unique case-insensitively, excluding the def
  *  identified by `excludeId` (for rename). Empty and reserved-prefix names are refused before
