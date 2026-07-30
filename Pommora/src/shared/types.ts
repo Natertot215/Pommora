@@ -296,6 +296,24 @@ export type SelectTarget = Exclude<SelectionState, { kind: 'none' }>
  *  as these and resolved live against the tree at render, so they carry no cached display fields. */
 export type NavTarget = SelectTarget | { kind: 'task'; id: string } | { kind: 'event'; id: string }
 
+/** A durable navigation reference — identity only; titles, icons, and paths resolve live. */
+export type NavRef =
+  | { kind: 'homepage' }
+  | { kind: 'context' | 'space' | 'collection' | 'set' | 'page' | 'task' | 'event'; id: string }
+
+/** The one navigation contract both processes speak — where each key persists is the IO
+ *  module's business: pinned/favorites/banner in `.nexus/navigation.json`, recents in the
+ *  device-local db row. Array position IS the order; an absent key is an empty list. */
+export interface NavigationState {
+  pinned?: NavRef[]
+  favorites?: NavRef[]
+  recents?: NavRef[]
+  /** The NavView's banner — a nexus-relative asset path. */
+  banner?: string
+}
+
+export type NavigationResult = { ok: true; nav: NavigationState } | { ok: false; error: string }
+
 /** A recents-stream entry: a nav target plus a transient `pinned` flag that floats it to the top
  *  of history (the "open tabs" feel). Absent `pinned` = un-pinned. */
 export type RecentEntry = NavTarget & { pinned?: boolean }
