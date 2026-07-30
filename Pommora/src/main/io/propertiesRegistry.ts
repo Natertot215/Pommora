@@ -64,10 +64,10 @@ export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
   ]
 }
 
-/** Overwrite the whole registry file. Prefer `mutateRegistry` — a bare write outside the
- *  chain can lose a concurrent mutation's update. Takes the on-disk shape (defs loosely
- *  typed) so the chain can carry unparsed entries through unmodeled. */
-export async function writeRegistry(
+/** Overwrite the whole registry file — module-private, so every write rides `mutateRegistry`'s
+ *  chain (a bare write outside it can lose a concurrent mutation's update). Takes the on-disk
+ *  shape (defs loosely typed) so the chain can carry unparsed entries through unmodeled. */
+async function writeRegistry(
   root: string,
   registry: { order: string[]; defs: Record<string, unknown> },
 ): Promise<void> {
