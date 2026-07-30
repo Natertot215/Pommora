@@ -34,9 +34,12 @@ function isNavRef(v: unknown): v is NavRef {
  *  stray) stores as bare `{kind, id}`; nothing at rest can re-grow display or path fields. */
 const cleanRef = (r: NavRef): NavRef => ('id' in r ? { kind: r.kind, id: r.id } : { kind: r.kind })
 
+/** THE gate every ref crosses in either direction — junk drops, survivors are bare identity. */
+const cleanRefs = (v: unknown[]): NavRef[] => v.filter(isNavRef).map(cleanRef)
+
 const refList = (v: unknown): NavRef[] | undefined => {
   if (!Array.isArray(v)) return undefined
-  const refs = v.filter(isNavRef).map(cleanRef)
+  const refs = cleanRefs(v)
   return refs.length ? refs : undefined
 }
 
@@ -55,11 +58,10 @@ export async function readNavigationFile(root: string): Promise<Omit<NavigationS
 }
 
 /** The one contract: the file's deliberate intent merged with the device-local recents row. */
-export function readNavigationState(root: string): Promise<NavigationState> {
-  return readNavigationFile(root).then((file) => {
-    const recents = refList(readValue<unknown[]>('recents'))
-    return recents ? { ...file, recents } : file
-  })
+export async function readNavigationState(root: string): Promise<NavigationState> {
+  const file = await readNavigationFile(root)
+  const recents = refList(readValue<unknown[]>('recents'))
+  return recents ? { ...file, recents } : file
 }
 
 let inFlight: Promise<unknown> | null = null
@@ -73,7 +75,7 @@ export async function writeNavigationState(
   patch: Partial<NavigationState>,
 ): Promise<void> {
   if ('recents' in patch) {
-    const recents = (patch.recents ?? []).filter(isNavRef).map(cleanRef)
+    const recents = cleanRefs(patch.recents ?? [])
     writeValue('recents', recents.length ? recents : null) // an emptied list deletes its row
   }
   const touchesFile = FILE_KEYS.some((k) => k in patch) || 'banner' in patch
@@ -83,8 +85,9 @@ export async function writeNavigationState(
     const current = await readNavigationFile(root)
     const out: Record<string, unknown> = {}
     for (const key of FILE_KEYS) {
-      const refs = key in patch ? patch[key]?.filter(isNavRef) : current[key]
-      if (refs?.length) out[key] = refs.map(cleanRef)
+      // `current` crossed the gate on the way in, so only the patch's arrays need it here.
+      const refs = key in patch ? cleanRefs(patch[key] ?? []) : current[key]
+      if (refs?.length) out[key] = refs
     }
     const banner = 'banner' in patch ? patch.banner : current.banner
     if (banner) out.banner = banner
