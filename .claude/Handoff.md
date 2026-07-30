@@ -1,95 +1,76 @@
 ## Handoff — Pommora React
 
-> **User Prompt:** Reconcile how properties are keyed against how Contexts are, then unify the two — one wrapped, name-keyed syntax at the frontmatter root, and the removal of the old path as half the work.
+> **User Prompt:** Complete rewrite — remove stale ledgers, fix wrong details in Handoff.md and Context.md.
 
-### Session Summary — one syntax for every Pommora-owned key
+> ⚡ **Cornerstone — carry into every handoff, unchanged (Nathan's voice).**
+> *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
 
-**Session ID:** 65fae5a7-dad4-475d-902e-9bf624673db1
-**Dates:** 07-27-2026 → 07-29-2026
-**Model:** Opus 5 (1M context)
-**Compactions:** 3
+### Session Summary — the hardening campaign, then the navigation reckoning
+
+**Session ID:** b0a43ec0-7809-4558-9904-cbd299902272
+**Dates:** 07-29-2026
+**Model:** Fable 5
+**Compactions:** 2
 **Connectors:** none
-**Commands:** /compact ×2 · /handoff · /studio-brainstorm
-**Agents:** a 26-agent feature-doc audit (one Workflow, the session's only explicit opt-in) · build-breaking-agent ×7 (three spec rounds, three plan rounds, one final) · code-simplifier ×3 · comment-killer-agent across several passes · Explore ×5
-**Skills:** studio-brainstorm · superpowers:writing-plans
+**Commands:** /compact · /handoff
+**Agents:** Explore (~16x - discovery lenses, Swift inventory, HOIST investigation, blast radius) · build-breaking (~4x - refactor breakers + plan attack) · code-simplifier (1x) · general-purpose (1x - HOIST implementer)
+**Skills:** artifact-design · writing-plans · handoff · project-context
 
-**What Started:** `contexts-spaces` was merged and `Context.md` needed truing. That became a doc audit, the `tierN` retirement, a live-driven filter investigation, a whole-tree comment campaign, and an IPC simplification. Nathan then asked where SQL belonged, and the answer turned into the session's second half.
+**What Started:** A ten-lens state-of-the-app discovery mission, every agent claim personally verified before ranking. Nathan picked three systemic candidates and demanded their minimal root-cause shapes: S1 (lenient reads feeding writes), S5 (two glyph resolution rules), S6 (the serial walk tax). Mid-session he pivoted to the Navigation persistence layer — "sidecars carrying tabs, data, and more that seem like they should exist as one" — and that exploration became the session's second, larger half.
 
-**What Happened Along the Way — the cleanup pass.** The audit put one agent on each feature doc, every finding grounded against real code. It caught a regression of mine: removing `migrateContexts` had removed the de-facto fresh-nexus seeder, since a fresh nexus minted below the version and so always ran the migration that wrote the registry. Nathan live-drove the filter and reported it "completely backwards" — three real problems, the worst being structural bands drawn from the container's Set tree rather than from surviving rows. A dozen defects were fixed, most pre-existing and unreported.
+**What Happened Along the Way — the shipped code:** The three refactors landed with breaker passes folded (nine findings) — `rmwJsonStrict` became the one read-modify-write with the law "a write may act on a fact, never on ignorance"; `entityIcon(kind, own, defaults)` became the one glyph rule; the walk went parallel with a stat-gated per-page cache. The inverse pass followed: a guard audit cut ~34 lines defending against impossible states, and a spend-signal bug the audit itself surfaced got fixed (`.catch(() => false)`, commit `7e5dc791`). Nathan's HOIST markers then drove a design-system consolidation — `--border-cell` (six sites), `--accent-stroke` (four sites, color-only because the weights genuinely differ), the house focus-ring channel replacing a hand-rolled twin, and the `CELL` single-sourcing — implemented by a write-enabled agent, verified line-by-line, committed `b6270097`.
 
-**What Happened Along the Way — the migration.** Scoping the SQL question found that the database had never run: `better-sqlite3` is compiled against Node's ABI, Electron needs its own, and `openDb`'s degradation path caught the failure on every launch. No nexus had ever contained the file. Vitest runs under plain Node, so every SQLite test passed against a database the product never had. `node:sqlite` removed the dependency and the failure class together.
+**What Happened Along the Way — the navigation design:** Manual exploration killed one premise and confirmed a sharper one: the React layer stores no titles anywhere (the `title` fields Nathan saw were dead Swift-era bytes in a 25.7 KB `state.json` whose live content is ~460 bytes of orders), but stored *paths* were the real duplicate identity, with genuine repair scaffolding. The ratified design: one `navigation.json` (pinned + favorites as ID-only ordered arrays + the NavView banner), Swift parity removed wholesale, `navview.json` and the pins folder dissolved, tabs/previews stored ID-only with one restore hydrator. An adversarial plan review returned nine findings (three proven by execution — the load/write race, the echo-swallow window, the backfill re-seeding a hand-cleaned file); folding them under Nathan's "least moving parts, one shared validation" ruling flipped recents BACK to the db row — which evaporated three of the four High findings outright and kept the locked ambient-state clause intact rather than overturned.
 
-Eight `.nexus/` files then moved into it, along with the block document buried inside two more, and the machinery compensating for whole-file writes — a coalescing engine, a drain contract, a quit gate — retired with them. An adversarial pass proved one of my stated premises false: `reconcileTabs` repairs entity references and returns an intact tab untouched, so the read-time normalization deleted with the JSON was load-bearing and came back. Both live nexuses were migrated by hand, so no migration code shipped.
+> Nathan: "go back and verify all removal is absolute, and all implementation is absolutely necessary. Simplicity is key, totality is required."
 
-**What Happened Along the Way — the property syntax.** Nathan asked why properties key by ULID inside a nested map while Contexts key by name at the root. The answer was that the two are mirror images: Contexts pay a rename cascade to buy file legibility, properties pay file illegibility to buy free renames, and they share no code. He'd already chosen legibility once, for Contexts; this was the symmetric half.
+That totality pass caught a leak the review missed: live targets passed to pin/favorite actions would have smuggled `path` fields into the file — refs now strip to bare `{kind, id}` at both the action and write boundaries, test-pinned.
 
-The brainstorm ran three adversarial rounds and the plan another three, and the pattern across all six was consistent: the architecture held every time, while every claim of the form *"this reuses existing machinery"* turned out to carry a constraint that didn't transfer. The rename borrowed its ordering from an operation that renames a folder; the delete sentinel was `null` where the writer only honours `undefined`; the straggler gate's `$`-leading tokens never executed because a `$` in double quotes is an end-of-line anchor. Each was caught before code, one of them twice.
-
-Nine phases shipped. The one regression that reached a commit was mine and the simplifier caught it: five switches lost their `case 'status'`, four correctly — they discriminate on the value's kind — and the fifth wrongly, because it discriminates on the declared type. Every Status filter matched every row, silently, with a green suite and no Status filter test in existence to notice.
-
-**What It Ended With:** 93 commits, every one gated green — closing state **typecheck 0 · lint 0 · 1857 tests / 177 files · build clean**. `main` is pushed. The live nexus was hand-converted and verified on disk: zero `properties:` keys, zero ULIDs on any page, zero empty cache blocks. Production code is **+97 lines** against a spec that committed to a net reduction — the removal half landed in full, the additions were simply larger than estimated.
+**What It Ended With:** Twelve commits on local `main`, every one gated green (typecheck 0 · lint 0 · 1879 tests / 178 files · build clean) — **none pushed**. Three review-certified planning docs: [[Navigation Consolidation — Decision Log]] + [[Swift Parity Removal — Implementation Plan]] + [[Navigation Consolidation — Implementation Plan]], written to the writing-plans skill's task shape with real code in every step. Execution is greenlit, Swift parity first, under Nathan's discipline: each green task re-reviewed from an absolute unbiased stance — treat it as if I never wrote it — then the remaining plan re-read for compounding changes.
 
 **Next Session:**
 
-- **Live-verify the app against the converted nexus.** Every gate is green and the disk is right, but no screenshot was taken of a table rendering the new keys — the one thing asserted rather than seen.
-- **The redundant-identity sweep** logged in `Context.md`. The Status tag was one instance; the pattern is anywhere "what this is" resolves from two places.
-- **Definitions into `nexus.db`** is now materially safer — frontmatter is self-describing, so losing the registry costs presentation config rather than readable values. Gated on the database gaining a real migration path.
-
-**Lessons Learned**
-
-- **A fact with two sources is a defect, not untidiness.** Nearly every bug in the first half was that shape. Remove the second source rather than reconciling the two.
-- **Guard code divides by what it defends against.** Validating a byte pattern dies with the file; reconciling an id against a missing entity survives any storage change, because foreign keys cannot reach the filesystem. They look identical at the call site.
-- **"Is this a why?" is the wrong comment test.** Nathan's is *"would I know this without the comment?"*
-- **A green suite can test a thing the product does not have.** The SQLite tests passed for months under a runtime the app never uses.
-- **Verify the premise, not just the diff.** The review's most valuable finding was not a bug in the code — it was a false claim in the reasoning that produced it.
-- **The compiler is blind at the IO seam.** `splitFrontmatter` returns `Json`, so every `.properties` access through it survives a schema change untouched. Four files depended on named steps rather than a gate, and one of them would have made every option rename silently no-op.
-- **A `$`-leading token in shell double quotes is an end-of-line anchor.** `"\$status"` finds nothing; `-F '$status'` finds 54. Sanity-check a gate against a token you know is present before trusting a clean exit.
-- **A mechanical sweep across test files needs a verification pass, not just a careful pattern.** One regex would have rewritten `[Docs](url)` and `[[Beta]]`; another under-matched a multi-line fixture and failed three steps from its cause.
+- Execute [[Swift Parity Removal — Implementation Plan]] task-by-task (the future-proofing scratchpad exists first — read it before any task).
+- Between phases: write the memory doc of Swift-era facts that stop being facts, then execute [[Navigation Consolidation — Implementation Plan]].
+- Push `main` when Nathan says so — twelve commits are waiting.
 
 **Session Pointers**
 
-- **`main/db/`** — `driver.ts` (the `node:sqlite` seam), `schema.ts` (`meta` + `local_state`), `open.ts` (version handshake), `localState.ts` (the one keyed store).
-- **`main/io/tabsState.ts`** — `readTab` is deliberate and was restored after review; the renderer does not repair shape or lockstep.
-- **The filter pipeline** — `Detail/Views/pipeline/`: `filter.ts` (`null` abstains, only `false` excludes), `group.ts` (`pruneEmptyGroups`).
+- The three planning docs in `Planning/` are the working truth for navigation until the erasure task lands — the Features docs still describe the old design on purpose until then.
+- The plans' `file:line` cites were verified at writing time but drift as commits land — re-verify each against the file before cutting, per task.
+- The published how-Pommora-works artifact: https://claude.ai/code/artifact/7c7da95f-a42f-4cbb-9bec-d378355a188a
 
 **Landmines**
 
-- **`nexus.db` is not regeneratable.** It holds the only copy of every machine's chrome. A schema bump drops it, which costs a user their folds and tab set once — the schema stays small so that trade stays obvious.
-- **It also lives inside the nexus folder.** A file syncer over a WAL database is a known corruption vector, and one event now costs eight surfaces where it used to cost one sidecar.
-- **The `.trash` layout mirrors the folder chain** a delete came from.
-- **`rename` no longer accepts a Space, a Context, or a property** — all three are title-keyed and rename through their own cascade.
-- **The straggler gate cannot return zero for `.properties`.** Roughly sixteen non-test sites are the Collection assignment list, which this change deliberately keeps. Chasing it to zero deletes what the change preserves.
-- **The Context key wrappers must pass `layer: 'context'`.** A layer-blind parse reads `<Projects>` as the Context "Projects", and since the two layers may share a name, one assign would delete that property's values off disk.
+- **A parallel session owns `MarkdownPM/Styles.css`** — modified, uncommitted, deliberately excluded from every commit here. Don't sweep it.
+- **The settings/identity backfills re-seed on every app open** — hand-cleaning those disks before their code deletion ships silently reverts (proven by execution in the review). The plans order this correctly; don't reorder.
+- **`tablecells` and `"gray"` are live on both real disks** — their read tolerances can't be deleted before the hand-sweeps inside their tasks run.
 
 **User Feedback**
 
-- **"Whatever we do must ensure DB actions are cheap, scoped, and don't do a full-pass when they don't need to. HARD YAGNI here."**
-- **"Don't take this direction unless you've looked and it's the right move, I might be wrong"** — he was right about block layout, and asked to be checked rather than obeyed.
-- **"Reduce code where possible to fix these"** — a fix that adds a guard is usually the wrong fix.
-- **The comment standard is his own hand-edits** in `da096de5`.
-- **"Are these flags actual issues or is this over-protection that would only be dust in a month?"** — he was right about one of three, and the guard came out.
-- **"stop pausing"** and **"stop writing code with bugs"** — phase-boundary reports were costing more than they returned, and two of my own edit scripts shipped defects.
-- **"[Context] + {Property}, not (Context) + <Property>"** — then, shown that both bracket forms only parse quoted, he chose no-quotes over the shapes.
+- "The simplest, cleanest, and minimal possible refactor... Less code is better" — then "Simplicity is key, totality is required" — then "as least moving parts as possible... around one shared validation." The through-line: every mechanism must justify itself; deletion beats machinery.
+- "When a task is completed, treat it as if you never wrote it — its correctness is verified via an absolute unbiased stance."
+- He reversed his own signed-off recents ruling when shown the moving-parts arithmetic — presenting the honest counter-case beat executing the earlier sign-off.
 
 **Uncertain**
 
-- The favorites quit gate is argued from the baseline's own drain code, not measured against Electron's real `before-quit` ordering.
-- `Compactions: 3` is best-effort.
-- **No live-app verification of the converted nexus.** Gates are green and disk state is confirmed, but nothing was rendered and looked at.
-- **The `+97` production line count** is measured with comments and blanks excluded; the boundary between "production" and "test" is a filename match on `.test.`.
+- `Compactions: 2` is best-effort.
+- The Swift comment-line estimate was corrected by the review from ~55 to ~106 lines across ~37 files — the plan carries the corrected figure, but the sweep itself will find the real number.
 
 ---
 
 ### Recent Sessions
 
+- 07-27 → 29 · `65fae5a7` · One syntax for every Pommora-owned key: `<Status>:`/`(Areas):` wrapped title keys at the frontmatter root, the SQLite migration (`node:sqlite`, eight files → `nexus.db`), 93 gated commits, pushed.
 - 07-22 · `contexts-spaces` · Contexts & Spaces: the registry model, title-keyed frontmatter, the three-scope rename cascade.
 - 07-14 → 20 · `1968ae09` · Cards view end-to-end plus the certified cleanup campaign.
 - 07-14 → 16 · `nav-gallery-pins` · Navigation surface + NavPane/NavWindow redesign, then Multi-Tab Nexus.
 
 ### Working Notes
 
-- **Gates:** `env -u ELECTRON_RUN_AS_NODE npm run typecheck` (the ONLY type gate) + `npx biome lint src` + `npx vitest run` + `… npm run build`; read the summary line, never a piped exit code (`set -o pipefail`). Biome auto-formats on write — never run it, never hand-align.
+- **Gates:** `env -u ELECTRON_RUN_AS_NODE npm run typecheck` (the ONLY type gate) + `npx biome lint src` + `npx vitest run` + `… npm run build`; read exit codes directly, never through a pipe. Biome auto-formats on write — never run it, never hand-align.
 - **Serialize every tree-touching agent.** One writer at a time, and confirm the tree has actually stopped changing before starting the next.
+- **Launch:** `env -u ELECTRON_RUN_AS_NODE npm run dev` — this env sets `ELECTRON_RUN_AS_NODE=1`, which crashes the GUI if not unset.
 
 ### Rules
 

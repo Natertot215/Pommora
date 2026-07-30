@@ -8,15 +8,27 @@ The React rebuild of the Swift paradigm reached its finish line at v0.5.0 — Pa
 
 **Properties and Contexts now share one syntax.** A page's frontmatter carries `(Areas):` and `<Status>: Complete` — wrapped title keys at the root, bare values under them, no ULID anywhere on a page. That closed the last place the two organization layers disagreed with each other, and it's on `main` and pushed. The live nexus was converted by hand, so nothing shipped to read the old shape.
 
-**Nothing is mid-flight.** Every gate is green, the disk state is confirmed, and the new keys were rendered and looked at — the Ideas table draws all five property and Context columns with its Status bands intact, and a migrated date reads correctly in both the cell and the Inspector. So the next focus is open, and the list below is what came to mind rather than a mandate — if something else matters more, take that instead.
+**Two review-certified plans sit in `Planning/`, and executing them is the focus.** [[Swift Parity Removal — Implementation Plan]] runs first — every helper, translator, seed, and comment still serving the archived Swift app comes out, around a hundred code lines and rather more prose, with the two real nexuses hand-swept where legacy values still live on disk. Then [[Navigation Consolidation — Implementation Plan]]: durable navigation intent — pins, favorites, the NavView banner — collapses into one `navigation.json` of bare `{kind, id}` refs where array position is the order, while recents stay their db row because moving them bought four mechanisms for zero gain. [[Navigation Consolidation — Decision Log]] holds the rulings both plans execute.
 
-- **In-view page creation.** Creating a page from inside a view is sparse across every surface. The one on this list that would be felt daily; wants a brainstorm loop, not a patch.
-- **PagePreview hover.** Unbuilt, self-contained, no dependencies.
-- **Cross-location card reordering** in views — scoped and mechanical.
-
-Behind those sit two smaller knowns: the IPC boundary flattens its structured error to a bare string at thirty-four handler tails, so the closed error union can't reach the renderer; and a property type-change flow is built end-to-end in main with no way in.
+Execution runs task-by-task under a strict discipline: each task's passing state gets re-reviewed from an unbiased stance — as if I never wrote it — and the rest of the plan gets re-read before the next task so one mistake can't compound. Twelve commits from the hardening session sit on local `main`, none pushed yet.
 
 ### Recent Work
+
+#### The Hardening Campaign & Its Inverse (07-29)
+
+A ten-lens state-of-the-app pass ranked the systemic risks, and three of them got their root-cause fixes rather than patches. Every read-modify-write now goes through one strict primitive under one law — absent is a fact, unreadable is ignorance, and a write may act on a fact, never on ignorance — which closed the class where a transiently-unreadable file got silently replaced by a default. Glyph resolution collapsed to one rule (`entityIcon`: the user's own icon if renderable, else the nexus default, else the seed), ending the two-resolvers-drift that had a personalized Space wearing different icons on different surfaces. And the nexus walk went parallel with a stat-gated per-page cache, so an untouched file costs no read at all.
+
+Then the inverse pass: an audit of guards defending against states that can't occur, traced path-by-path. Around thirty-four lines came out — resurrection seeds for sidecars only deletion could remove, re-validations of invariants established lines earlier, catch-arms on channels that structurally cannot reject — and the audit's own tracing surfaced one real bug worth having (a restore loop reading "unreadable" as "written"). → `History.md`.
+
+#### The HOIST Consolidation (07-29)
+
+Two HOIST markers I'd left in the icon picker turned into a design-system pass: the outlined-box border six surfaces hand-rolled became `--border-cell` beside `--border-heading`, the accent-tint active stroke four surfaces restated became `--accent-stroke` (color only — the weights genuinely differ per surface), the picker's hand-rolled focus ring moved onto the house `fieldRing` channel, and the virtualizer's cell size single-sourced out of its silent-drift pair. The picker also dropped its one-off notch override and now rides the default. → [[DesignPM]].
+
+#### The Navigation Reckoning — Design (07-29)
+
+Asking why tabs, pins, and favorites were "needlessly spread" found the consolidation mostly already done — tabs, previews, and recents were db rows — but surfaced what was actually rotten: 19 KB of dead Swift-era keys in `state.json` that nothing reads, a pins folder of per-file tombstones engineering *around* the locked most-recent-wins philosophy, and stored paths as the one duplicate identity left, with real repair scaffolding tending it. Titles were never the problem — the layer already resolves those live by ID.
+
+The ratified design went through an adversarial review that returned nine findings, three proven by execution, and the deciding ruling came out of the moving-parts arithmetic: recents stay the db row, so three of the four worst findings evaporate instead of needing machinery. One contract, one validation boundary, storage routed inside. → [[Navigation Consolidation — Decision Log]].
 
 #### One Syntax For Every Pommora-Owned Key (07-28 → 07-29)
 
@@ -121,6 +133,11 @@ A per-nexus nav-state layer — recents, pins, favorites, all resolved live agai
 Alongside it, every drag's edge-scroll collapsed onto one shared primitive across seven surfaces, resolving its scroller once at drag start rather than chasing the pointer each frame. → [[Navigation]] · [[PommoraDND]] §II · `History.md`.
 
 ### Pending Focuses
+
+- **Revisit how Pages and their data are stored in the DB** — Nathan wants a dedicated upcoming session on it. The content index below is the adjacent question; this one is about the Page storage model itself.
+- **In-view page creation.** Creating a page from inside a view is sparse across every surface — the item that would be felt daily; wants a brainstorm loop, not a patch.
+- **PagePreview hover.** Unbuilt, self-contained, no dependencies.
+- **Cross-location card reordering** in views — scoped and mechanical.
 
 **Backlinks and full-text.** Linked-From, backlinks, ContextView and body search are the features with no route off the in-memory tree, and they are what a content index would be *for*. The previous one was deleted rather than repaired: it had no query consumer, and its only entry point was a full nexus re-walk on every mutation, which no amount of tuning makes cheap. Whatever replaces it gets written alongside the code that reads it and updates a row at a time — the primitives (`nexus.db`, the driver seam, the version handshake) are already in place. Full-text needs an FTS table and a body column, neither of which has ever existed.
 
