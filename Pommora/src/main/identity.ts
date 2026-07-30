@@ -1,35 +1,23 @@
-// Per-Nexus identity (`.nexus/nexus.json`), Swift-compatible. Swift creates this eagerly
-// on open (NexusManager.openPicked); React must too, or a React-touched folder stays in
-// "raw mode" (its stamped sidecars ignored) and drifts from Swift's expected shape —
-// breaking the goal of opening the same folder in either app with no conflict.
+// Per-Nexus identity (`.nexus/nexus.json`) — the id that keys the asset folders and flips the
+// walk into sidecar mode. Created eagerly on open, or a touched folder would stay in "raw mode"
+// with its stamped sidecars ignored.
 
 import { mkdir } from 'node:fs/promises'
 import { newId } from './ids'
+import { nowIso } from './crud/util'
 import { readJsonStrict, writeJson } from './io/atomicWrite'
 import { asString } from './coerce'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
-// Swift `AtomicJSON` uses `.iso8601` (ISO8601DateFormatter, internet-date-time, NO
-// fractional seconds). JS `toISOString()` appends milliseconds, which Swift's default
-// .iso8601 decoder rejects — strip them so Swift can read our timestamp. Shared by every
-// .nexus config writer that emits a Swift-decodable date.
-export function swiftISODate(): string {
-  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+/** A fresh identity: the keying id + the nexus's birth date. Single source for both the
+ *  open-time ensure and the lazy create on the first description/photo write. */
+export function defaultIdentity(): { id: string; createdAt: string } {
+  return { id: newId(), createdAt: nowIso() }
 }
 
-/** The on-disk shape every nexus is written at: Contexts are a registry of Spaces. */
-export const NEXUS_SCHEMA_VERSION = 2
-
-/** A fresh identity in Swift's shape. Single source for both the open-time ensure and the
- *  lazy create-defaults on the first description/photo write. */
-export function defaultIdentity(): { schemaVersion: number; id: string; createdAt: string } {
-  return { schemaVersion: NEXUS_SCHEMA_VERSION, id: newId(), createdAt: swiftISODate() }
-}
-
-/** Ensure `.nexus/nexus.json` exists in Swift's `{ schemaVersion, id, createdAt }` shape.
- *  Absent → create with a fresh ULID. Present → backfill only missing schemaVersion/
- *  createdAt (foreign keys + existing id untouched); a complete file is left byte-identical,
- *  so re-opening never churns it. */
+/** Ensure `.nexus/nexus.json` exists and carries an id. Absent → mint a fresh identity.
+ *  Present with an id → returned untouched, byte-identical, whatever else it holds or lacks.
+ *  Present without one → mint an id over it, preserving its foreign keys. */
 export async function ensureIdentity(root: string): Promise<{ id: string; created: boolean }> {
   const path = nexusConfig(root, NEXUS_CONFIG_FILES.identity)
   const read = await readJsonStrict(path)
@@ -40,13 +28,7 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
   const existing = read.ok ? read.value : null
   const existingId = existing && asString(existing.id)
 
-  if (existing && existingId) {
-    const patch: Record<string, unknown> = {}
-    if (typeof existing.schemaVersion !== 'number') patch.schemaVersion = NEXUS_SCHEMA_VERSION
-    if (!asString(existing.createdAt)) patch.createdAt = swiftISODate()
-    if (Object.keys(patch).length > 0) await writeJson(path, { ...existing, ...patch })
-    return { id: existingId, created: false }
-  }
+  if (existing && existingId) return { id: existingId, created: false }
 
   await mkdir(nexusDir(root), { recursive: true })
   const identity = defaultIdentity()
