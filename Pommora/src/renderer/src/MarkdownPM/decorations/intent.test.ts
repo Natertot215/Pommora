@@ -29,6 +29,34 @@ describe('decoration intents', () => {
     expect(on.some((d) => d.kind === 'widget' && d.spec.type === 'hr')).toBe(false)
   })
 
+  it('a literal > inside an unquoted fence keeps its bytes — no quote chrome, no prefix hide', () => {
+    const t = '```\n> quoted\n```'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 0) // caret on line 1
+    expect(
+      intents.some((d) => d.kind === 'line' && d.className.startsWith('md-bq')),
+    ).toBe(false)
+    // the `> ` prefix (offset 4) is content, never hidden as chrome
+    expect(intents.some((d) => d.kind === 'hide' && d.from === 4)).toBe(false)
+  })
+
+  it('an UNCLOSED fence keeps box chrome below it — typing ``` must not flatten the document', () => {
+    const t = '```\n> a quote'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 0)
+    expect(
+      intents.some((d) => d.kind === 'line' && d.className.startsWith('md-bq')),
+    ).toBe(true)
+  })
+
+  it('a fence nested in a blockquote keeps the box chrome and hides the quote prefix', () => {
+    const t = '> ```\n> code\n> ```'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 0)
+    // line 2 ("> code", offset 6) carries both the quote line-class and the prefix hide
+    expect(
+      intents.some((d) => d.kind === 'line' && d.from === 6 && d.className.startsWith('md-bq')),
+    ).toBe(true)
+    expect(intents.some((d) => d.kind === 'hide' && d.from === 6 && d.to === 8)).toBe(true)
+  })
+
   it('leaves wikilinks untouched — they are rendered in decorations.ts by resolution status', () => {
     const t = '[[Page]]'
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
