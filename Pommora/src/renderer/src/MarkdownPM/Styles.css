@@ -460,8 +460,6 @@
   -webkit-user-select: none;
 }
 
-/* The dragged item dims its text in place (a ghosted / lifted look) while it's being moved — the
-   shared row-drag ghost token (same as the sidebar row + table row). */
 .mdpm-editor .cm-line.md-li-drag-source {
   opacity: var(--state-ghost);
 }
