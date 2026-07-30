@@ -2,12 +2,14 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ensureSettings, readDefaultViewScale, updateSettings } from './settings'
+import { readDefaultViewScale, updateSettings } from './settings'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
 let root: string
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-settings-'))
+  // The open path guarantees `.nexus/` exists before any settings write (identity mkdirs it).
+  await mkdir(nexusDir(root), { recursive: true })
 })
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
@@ -17,57 +19,16 @@ const path = () => nexusConfig(root, NEXUS_CONFIG_FILES.settings)
 const readSettings = async (): Promise<Record<string, unknown>> =>
   JSON.parse(await readFile(path(), 'utf8'))
 const write = async (v: object): Promise<void> => {
-  await mkdir(nexusDir(root), { recursive: true })
   await writeFile(path(), JSON.stringify(v))
 }
 
-// The on-disk settings shape our writer must always produce: version + modified_at + full labels,
-// every label a {singular, plural} LabelPair (all three Contexts now first-class).
-const assertFullSettings = (s: Record<string, unknown>): void => {
-  expect(typeof s.version).toBe('number')
-  expect(typeof s.modified_at).toBe('string')
-  expect(s.modified_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/) // iso8601, no ms
-  const labels = s.labels as Record<string, unknown>
-  for (const k of [
-    'area',
-    'topic',
-    'project',
-    'page_collection',
-    'page_set',
-    'agenda_task',
-    'agenda_event',
-  ]) {
-    const pair = labels[k] as Record<string, unknown>
-    expect(typeof pair.singular).toBe('string')
-    expect(typeof pair.plural).toBe('string')
-  }
-}
-
-describe('ensureSettings', () => {
-  it('writes a full Swift-decodable seed when absent', async () => {
-    await ensureSettings(root)
-    assertFullSettings(await readSettings())
-  })
-
-  it('backfills a partial settings.json (only profile_image) without dropping it', async () => {
-    await write({ profile_image: '.nexus/assets/x/profile-a.png' })
-    await ensureSettings(root)
-    const s = await readSettings()
-    assertFullSettings(s)
-    expect(s.profile_image).toBe('.nexus/assets/x/profile-a.png') // preserved
-  })
-
-  it('leaves a complete file byte-identical (no churn on re-open)', async () => {
-    await ensureSettings(root) // seed once → complete
-    const before = await readFile(path(), 'utf8')
-    await ensureSettings(root) // second pass
-    expect(await readFile(path(), 'utf8')).toBe(before)
-  })
-})
-
 describe('updateSettings — serialized RMW (G-1)', () => {
+  it('a write to a missing settings.json creates it holding only the patch', async () => {
+    await updateSettings(root, (cur) => ({ ...cur, time_format: 'twentyFourHour' }))
+    expect(await readSettings()).toEqual({ time_format: 'twentyFourHour' })
+  })
+
   it('concurrent writes to different keys never clobber', async () => {
-    await ensureSettings(root)
     // Fired together: unserialized read-modify-writes each merge onto the SAME stale snapshot and
     // the last write wins, dropping the others. serializeOnFile forces them to queue, so all land.
     await Promise.all([
@@ -78,7 +39,6 @@ describe('updateSettings — serialized RMW (G-1)', () => {
     ])
     const s = await readSettings()
     expect([s.a, s.b, s.c, s.d]).toEqual([1, 2, 3, 4])
-    assertFullSettings(s) // the seed keys survived the concurrent writes too
   })
 })
 
@@ -110,19 +70,8 @@ describe('readDefaultViewScale', () => {
 })
 
 describe('an unreadable settings.json is never replaced', () => {
-  const corrupt = async (): Promise<void> => {
-    await mkdir(nexusDir(root), { recursive: true })
-    await writeFile(path(), '{ corrupt', 'utf8')
-  }
-
-  it('ensureSettings does nothing', async () => {
-    await corrupt()
-    await ensureSettings(root)
-    expect(await readFile(path(), 'utf8')).toBe('{ corrupt')
-  })
-
   it('updateSettings fails the write and leaves the file byte-identical', async () => {
-    await corrupt()
+    await writeFile(path(), '{ corrupt', 'utf8')
     await expect(
       updateSettings(root, (cur) => ({ ...cur, profile_subtitle: 'x' })),
     ).rejects.toThrow()

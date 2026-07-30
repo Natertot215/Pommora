@@ -1,93 +1,28 @@
-// Per-Nexus settings (`.nexus/settings.json`), Swift-compatible. Swift's decoder REQUIRES
-// `version` + `labels` + `modified_at`, so a partial settings.json (e.g. one React wrote with
-// only profile_image) makes Swift reseed and lose data. ensureSettings guarantees the file is
-// always a full, Swift-decodable shape.
+// Per-Nexus settings (`.nexus/settings.json`) — user preferences, hand-editable. Reads tolerate
+// an absent file; a write creates it holding only what was written, and every writer preserves
+// the foreign keys it doesn't own.
 
-import { mkdir } from 'node:fs/promises'
 import {
   coerceViewScale,
-  DEFAULT_LABELS,
   type NavViewMode,
   type NavViewModes,
-  type NexusLabels,
   type SubfieldConfig,
 } from '@shared/types'
-import { readJsonObject, readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
+import { readJsonObject, rmwJsonStrict } from './io/atomicWrite'
 import { serializeOnFile } from './io/fileLock'
-import { swiftISODate } from './identity'
-import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
-
-// Tracks Swift's `Settings.currentDefaultsVersion` — written so Swift's auto-migration sees a
-// current file and is a no-op (no churn). If Swift later bumps it, Swift runs one harmless
-// migration on first open and rewrites this value.
-const SWIFT_DEFAULTS_VERSION = 6
-
-/** React's structured (camelCase) labels → Swift's snake_case on-disk shape. */
-function labelsToDisk(l: NexusLabels): Record<string, unknown> {
-  return {
-    area: { singular: l.area.singular, plural: l.area.plural },
-    topic: { singular: l.topic.singular, plural: l.topic.plural },
-    project: { singular: l.project.singular, plural: l.project.plural },
-    page_collection: { singular: l.pageCollection.singular, plural: l.pageCollection.plural },
-    page_set: { singular: l.pageSet.singular, plural: l.pageSet.plural },
-    agenda_task: { singular: l.agendaTask.singular, plural: l.agendaTask.plural },
-    agenda_event: { singular: l.agendaEvent.singular, plural: l.agendaEvent.plural },
-  }
-}
-
-/** A full, Swift-decodable settings seed. The default for any settings write so the file can
- *  never go partial, and the body of the absent-file branch in ensureSettings. */
-export function defaultSettingsSeed(): Record<string, unknown> {
-  return {
-    version: 1,
-    defaults_version: SWIFT_DEFAULTS_VERSION,
-    labels: labelsToDisk(DEFAULT_LABELS),
-    show_page_icon: false,
-    excluded_folders: [],
-    profile_subtitle: '',
-    modified_at: swiftISODate(),
-  }
-}
-
-/** Ensure `.nexus/settings.json` is a full, Swift-decodable shape. Absent → write the seed.
- *  Present → backfill only the keys Swift's decoder REQUIRES (version, labels, modified_at) +
- *  defaults_version (avoids a migration rewrite) when missing; a complete file is left
- *  byte-identical (no churn). Foreign + user keys are always preserved. */
-export function ensureSettings(root: string): Promise<void> {
-  const path = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
-  return serializeOnFile(path, async () => {
-    const read = await readJsonStrict(path)
-    if (!read.ok) {
-      // Absent seeds; unreadable does nothing — an ensure must never replace a file it
-      // merely failed to read.
-      if (read.error.code !== 'not-found') return
-      await mkdir(nexusDir(root), { recursive: true })
-      await writeJson(path, defaultSettingsSeed())
-      return
-    }
-    const existing = read.value
-    const patch: Record<string, unknown> = {}
-    if (typeof existing.version !== 'number') patch.version = 1
-    if (typeof existing.defaults_version !== 'number')
-      patch.defaults_version = SWIFT_DEFAULTS_VERSION
-    if (!existing.labels || typeof existing.labels !== 'object')
-      patch.labels = labelsToDisk(DEFAULT_LABELS)
-    if (typeof existing.modified_at !== 'string') patch.modified_at = swiftISODate()
-    if (Object.keys(patch).length > 0) await writeJson(path, { ...existing, ...patch })
-  })
-}
+import { nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
 /** Serialized read-modify-write of settings.json — the one primitive every settings writer funnels
  *  through, so concurrent writes to different keys can't clobber each other. A missing file
- *  starts from the full seed; an unreadable one fails the write (the throw lands as the
- *  operation's error envelope) rather than replacing the user's settings with the seed. */
+ *  starts empty; an unreadable one fails the write (the throw lands as the operation's error
+ *  envelope) rather than replacing the user's settings. */
 export function updateSettings(
   root: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
 ): Promise<void> {
   const path = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
   return serializeOnFile(path, async () => {
-    const written = await rmwJsonStrict(path, mutate, defaultSettingsSeed)
+    const written = await rmwJsonStrict(path, mutate, () => ({}))
     if (!written.ok) throw new Error(written.error.message)
   })
 }
@@ -117,10 +52,9 @@ export async function readSubfield(root: string): Promise<SubfieldConfig | null>
   }
 }
 
-/** Write the `subfield` key, preserving every other (Swift-required + foreign) key in settings.json. */
-export async function writeSubfield(root: string, config: SubfieldConfig): Promise<void> {
-  await ensureSettings(root)
-  await updateSettings(root, (cur) => ({ ...cur, subfield: config }))
+/** Write the `subfield` key, preserving every other foreign key in settings.json. */
+export function writeSubfield(root: string, config: SubfieldConfig): Promise<void> {
+  return updateSettings(root, (cur) => ({ ...cur, subfield: config }))
 }
 
 /** Read the React-owned `navViewModes` foreign key from settings.json (null when absent/malformed). */
@@ -133,22 +67,16 @@ export async function readNavViewModes(root: string): Promise<NavViewModes | nul
   return { window: mode(s.window), view: mode(s.view) }
 }
 
-/** Write the `navViewModes` key, preserving every other (Swift-required + foreign) key. */
-export async function writeNavViewModes(root: string, modes: NavViewModes): Promise<void> {
-  await ensureSettings(root)
-  await updateSettings(root, (cur) => ({ ...cur, navViewModes: modes }))
+/** Write the `navViewModes` key, preserving every other foreign key. */
+export function writeNavViewModes(root: string, modes: NavViewModes): Promise<void> {
+  return updateSettings(root, (cur) => ({ ...cur, navViewModes: modes }))
 }
 
 /** Merge one personalization key into `settings.json` `personalization` (serialized; foreign +
  *  sibling keys preserved). An `undefined` value resets the key to its built-in default — JSON
  *  omits it on write. The read-side coercion + renderer apply-map own validation. */
-export async function writePersonalization(
-  root: string,
-  key: string,
-  value: unknown,
-): Promise<void> {
-  await ensureSettings(root)
-  await updateSettings(root, (cur) => {
+export function writePersonalization(root: string, key: string, value: unknown): Promise<void> {
+  return updateSettings(root, (cur) => {
     const p =
       cur.personalization != null &&
       typeof cur.personalization === 'object' &&
