@@ -113,7 +113,7 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  border: 1.5px solid var(--separator-border);
+  border: var(--border-cell);
   border-radius: 10px;
   overflow: hidden;
   background: none;
@@ -163,7 +163,7 @@
   padding: 8px 9px;
   min-width: 0;
   background: var(--state-muted);
-  border-top: 1.5px solid var(--separator-border);
+  border-top: var(--border-cell);
 }
 .cards-view.is-compact .page-card .page-card-text {
   border-top: none;
@@ -283,6 +283,6 @@
   display: flex;
   min-width: 0;
   margin-top: auto;
-  border-top: 1.5px solid var(--separator-border);
+  border-top: var(--border-cell);
   padding-top: 5px; /* KNOB — divider-to-crumbs clearance */
 }

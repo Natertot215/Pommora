@@ -74,7 +74,6 @@ export const menuList = style({
   maxHeight: '136px', // ≈6 option rows before it over-scrolls (rides the shared edge-fade)
   overflowY: 'auto',
   scrollbarWidth: 'none',
-  selectors: { '&::-webkit-scrollbar': { display: 'none' } },
 })
 /* Option rows: left-aligned label-control text; the selected row shows an accent check at its
    right edge. */

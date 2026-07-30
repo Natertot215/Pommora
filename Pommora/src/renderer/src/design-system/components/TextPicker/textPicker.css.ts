@@ -50,7 +50,6 @@ export const suffixInput = style({
   fontWeight: font.weight.emphasized,
   color: c.label.primary,
   vars: { '--edge-fade': '12px' },
-  selectors: { '&::-webkit-scrollbar': { display: 'none' } },
 })
 
 /** The "/ N" out-of hint pinned to the field's right — never scrolling. */
