@@ -10,11 +10,11 @@ The shared wayfinding store beneath every navigation surface — built once, rea
 
 - **Recents** — an auto history stream, most-recent-first, deduped, capped by a generous roll-off. A navigation records only when it actually opens a tab, whether that's a spawn or an in-place replace; re-surfacing an entity already open, stepping Back or Forward, and switching tabs all record nothing. It records through the shared selection path, so anything you can open lands in recents.
 
-- **Pins** — the durable, user-ordered working set, stored one file per pin under `.nexus/pins/`. Pins **are** the pinned tabs (left-docked in the tab bar) and also float to the top of the NavWindow gallery — one working set surfaced in two places. Pinning a tab writes a pin; unpinning removes it.
+- **Pins** — the durable, user-ordered working set. Pins **are** the pinned tabs (left-docked in the tab bar) and also float to the top of the NavWindow gallery — one working set surfaced in two places. Pinning a tab writes a pin; unpinning removes it.
 
-- **Favorites** — the durable, explicitly-curated list. Mutated only by an explicit add / remove / reorder, never automatically.
+- **Favorites** — the durable, explicitly-curated list. Mutated only by an explicit add / remove, never automatically.
 
-Entries store only their identity — every title, icon, and location resolves **live** against the current tree at render, so a rename or move is never cached stale. An entry that no longer resolves is hidden at render but never deleted from storage, so a Nexus switch can't silently wipe pins or favorites. Favorites and pins are files and **sync** per-Nexus, last-writer-wins, so they follow you across machines; recents are a device-local row, because two machines interleaving one history has no correct answer.
+Everything the layer persists is a bare identity ref — `{kind, id}`, nothing else — under one contract with one validation boundary: pins and favorites as ordered arrays in `.nexus/navigation.json` (array position IS the order, alongside the NavView's banner pointer), recents as a device-local database row, because two machines interleaving one history has no correct answer. The renderer speaks one read and one write; the IO layer routes each key to its store, and the file writes as a serialized patch so the arrays and the banner can never drop each other. Every title, icon, and path resolves **live** against the current tree at the moment of use — a rename or move, even while the app is closed, cannot leave anything stale, because nothing stale is stored. An entry that no longer resolves is hidden at render but never deleted from storage, so a Nexus switch can't silently wipe pins or favorites. The navigation file is hand-editable and follows the nexus, last-writer-wins; an outside edit to it refreshes the open app live.
 
 **Search** is a client-side, title-based fuzzy scan over the in-memory tree, plus a cached Agenda snapshot so Tasks and Events are findable. A Context isn't itself a hit — it's the path crumb its Spaces resolve under. The index is memoized per tree, so typing filters without re-walking it.
 
@@ -34,7 +34,7 @@ The navigation model: a tab bar in the toolbar holding your open working set, ea
 
 - **The full tab set persists per machine** — closing Pommora never resets your tabs; they reopen cold on relaunch. Two machines with different tabs open have no correct merge, so each keeps its own. Warm view-state is session-only; heading folds re-fold from their durable per-page store.
 
-- **Lifecycle:** closing the active tab focuses the most-recently-used tab; the close `×` shows only on unpinned tabs; a deleted entity's unpinned tab closes while its pinned tab render-hides, the pin file staying. The last tab closing drops to NavView, and opening an entity already in a tab focuses that tab rather than duplicating it.
+- **Lifecycle:** closing the active tab focuses the most-recently-used tab; the close `×` shows only on unpinned tabs; a deleted entity's unpinned tab closes while its pinned tab render-hides, the pin staying stored. The last tab closing drops to NavView, and opening an entity already in a tab focuses that tab rather than duplicating it.
 
 - **Interaction:** within-zone drag reorders, pinned among pinned and unpinned among unpinned; `Ctrl`+`Tab` cycles all tabs; a tab's right-click menu offers Pin/Unpin · Close. A reveal-on-hover setting can hide the bar when idle.
 
