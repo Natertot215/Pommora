@@ -185,7 +185,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // NOT the cursor delta — that changes per pointermove and rides a grid-level CSS var instead
   // (--col-drag-x), so a drag frame never re-renders the unmemoized row/cell tree. Transient —
   // set on grab + slot flips, cleared on drop; column indices into the resolved `columns`.
-  const [colDrag, setColDrag] = useState<{ from: number; to: number } | null>(null)
+  const [colDrag, setColDrag] = useState<{ from: number; to: number; id: string } | null>(null)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   // The page a title:icon menu targeted (captured before the menu await — the row is out of scope by
   // the time the picker commits). The cell element anchors the picker's beak.
@@ -1004,14 +1004,16 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   if (widened.some((id) => !sliding.has(id))) setSliding((s) => new Set([...s, ...widened]))
   // The gap-shift geometry for a live column drag — identity changes on slot flips only (the
   // cursor-follow is the grid-level CSS var), which is exactly when rows must re-render.
-  const dragShift = useMemo(
-    () =>
-      colDrag
-        ? { from: colDrag.from, to: colDrag.to, width: colWidth(columns[colDrag.from].id) }
-        : null,
+  const dragShift = useMemo(() => {
+    if (!colDrag) return null
+    // A watcher or pane write can reshape `columns` mid-drag — a vanished or re-pointed source
+    // column ends the shift rather than throwing or painting a neighbor.
+    const src = columns[colDrag.from]
+    return src && src.id === colDrag.id
+      ? { from: colDrag.from, to: colDrag.to, width: colWidth(src.id) }
+      : null
     // colWidth's inputs (widths, collapsing) are static during a drag; keying on colDrag + columns is the change surface.
-    [colDrag, columns],
-  )
+  }, [colDrag, columns])
   // ONE stable handler identity for every row — calls read the freshest closures through the ref,
   // so memoized rows never re-render for handler churn (and never call a stale state writer).
   const cellApiRef = useRef({ openCellMenu, onCellClick, cellEditor, removeCellValue })
@@ -1124,7 +1126,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     // null until the pointer travels ACTIVATION px — a sub-threshold press is a click, not a drag, so the
     // highlight band never flashes and a jittery click can't reorder.
-    let current: { from: number; to: number } | null = null
+    const dragId = columns[from].id
+    let current: { from: number; to: number; id: string } | null = null
     const onMove = (ev: PointerEvent): void => {
       if (!current && Math.hypot(ev.clientX - startX, ev.clientY - startY) < ACTIVATION) return
       const projected = startCenter + (ev.clientX - startX)
@@ -1152,7 +1155,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       // it) — React state updates only on activation + slot flips, never per move.
       grid.style.setProperty('--col-drag-x', `${(ev.clientX - startX) / zoom}px`)
       if (!current || current.to !== to) {
-        current = { from, to }
+        current = { from, to, id: dragId }
         setColDrag(current)
       }
     }
