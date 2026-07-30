@@ -19,23 +19,6 @@ export type SolidColor = keyof typeof SPECTRUM
 /** The `accent` value in .nexus/settings.json: a spectrum solid, or follow-the-OS. */
 export type AccentSetting = SolidColor | 'system'
 
-/** Legacy external color names (Notion select colors / the Swift Area palette) → their chip
- *  solid — most hues map 1:1; brown/pink/indigo take a nearest color; teal→cyan; gray→grey.
- *  `accent` and unknowns are deliberately absent (→ unset). */
-export const LEGACY_CHIP_COLOR_MAP: Record<string, SolidColor> = {
-  gray: 'grey',
-  brown: 'orange',
-  orange: 'orange',
-  yellow: 'yellow',
-  green: 'green',
-  blue: 'blue',
-  purple: 'purple',
-  pink: 'lavender',
-  red: 'red',
-  teal: 'cyan',
-  indigo: 'purple',
-}
-
 /** Default when settings.json omits or has an invalid `accent`. A concrete spectrum color
  *  (never `system`) so it always resolves to a hex; users opt into `system` explicitly. */
 export const DEFAULT_ACCENT: SolidColor = 'lavender'
