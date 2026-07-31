@@ -51,7 +51,7 @@ A card's **right-click** opens a native menu: the **Add Property ▸** submenu o
 
 #### II. Surfaces & Insets
 
-Cards live in the ViewSettings type grid and carry their options in the Layout leaf, with Style and Scale pinned in the footing; the grouping and sorting leaves reuse the shared panes. A view switched to a type inherits the new type's default glyph only when it still wore the old default. Cards ride the block-surface inset regime: in a full-page pane a pane-body rule supplies the surface inset so the view itself never pads, while an embedded cards view runs the tight inter-tile lane directly on its grid — the whole-page inset composes that same lane onto a floating-sidebar clearance a tile has already gotten, so a tile needs only the bare lane rather than sitting flush to the edge.
+Cards live in the ViewSettings type grid and carry their options in the Layout leaf, with Style and Scale pinned in the footing; the grouping and sorting leaves reuse the shared panes. A view switched to a type inherits the new type's default glyph only when it still wore the old default. Cards ride the block-surface inset regime: in a full-page pane a pane-body rule supplies the surface inset so the view itself never pads, while an embedded cards view runs the tight inter-tile lane directly on its grid — the whole-page inset composes that same lane onto a floating-sidebar clearance a tile has already gotten, so a tile needs only the bare lane rather than sitting flush to the edge. An embedded view also keeps its own tail seam — the last card row sits off the tile's bottom edge on the card rhythm, matching the view's top seam.
 
 ### Pending
 
