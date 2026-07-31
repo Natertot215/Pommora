@@ -20,7 +20,6 @@ type TrioPanel = 'navigation' | 'settings'
  *  dropdown's beak. */
 type TrioSegment = Segment & { panel?: TrioPanel }
 
-// Navigation + Settings are stub panels for now.
 export function Toolbar({
   inspectorOpen,
   onToggleInspector,

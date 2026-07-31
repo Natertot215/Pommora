@@ -131,8 +131,7 @@ export interface SavedView {
   /** Absent = on. Parking a filter keeps its rules and its match mode; only application stops. */
   filter_enabled?: boolean
   group?: GroupConfig
-  /** View density — persisted per-view; Cards reads it via `isCompact` to switch layout. Table's
-   *  `--zoom` Compact step isn't wired to this field yet. */
+  /** View density — persisted per-view; Cards reads it via `isCompact` to switch layout. */
   format?: ViewFormat
   /** Manual structural band order — ONE flat set-id array covering every nesting level (ids are
    *  unique across the tree). View-level, not on `group`: the structural GroupConfig decoder
@@ -324,20 +323,15 @@ const mintBase = (name: string) => ({
   group: { kind: 'structural' as const },
 })
 
-/** Title-only visibility for a `+`-minted view of a given type — the per-ViewType seam (only Table
- *  ships; a future type adds its own case). Table hides every schema id and all three Contexts, so
- *  the guaranteed Title is the sole column (verified through resolveColumns). */
+/** Title-only visibility for a `+`-minted view. Every schema id is hidden and Context columns need
+ *  no entry — absence from property_order IS hidden for them — so the guaranteed Title is the sole
+ *  column (verified through resolveColumns). */
 function mintVisibility(
-  type: ViewType,
   schema: PropertyDefinition[],
 ): Pick<SavedView, 'property_order' | 'hidden_properties'> {
-  switch (type) {
-    default:
-      return {
-        // Context columns need no entry: absence from property_order IS hidden for them.
-        property_order: [RESERVED_PROPERTY_ID.title],
-        hidden_properties: schema.map((d) => d.id),
-      }
+  return {
+    property_order: [RESERVED_PROPERTY_ID.title],
+    hidden_properties: schema.map((d) => d.id),
   }
 }
 
@@ -347,10 +341,10 @@ function mintVisibility(
 export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
   return {
     ...mintBase('Table'),
-    ...mintVisibility('table', schema),
+    ...mintVisibility(schema),
   }
 }
 
 export function mintNewView(name: string, schema: PropertyDefinition[]): SavedView {
-  return { ...mintBase(name), ...mintVisibility('table', schema) }
+  return { ...mintBase(name), ...mintVisibility(schema) }
 }

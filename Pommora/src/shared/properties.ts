@@ -1,12 +1,9 @@
-// One schema entry inside a Type / agenda-config sidecar's `property_definitions[]`. The zod
-// schema IS the codec AND the type (z.infer).
+// One property schema entry. The zod schema IS the codec AND the type (z.infer). Definitions live
+// in the nexus-wide registry; a Collection assigns them by id.
 //
 // Snake_case keys = the on-disk shape. Loose ⇒ foreign keys within a def survive a rewrite.
-// Display formats live per-VIEW in SavedView `column_styles`; the def-level riders
-// (number_format, date_format, time_format, display_as, date_includes_time) stay inert
-// foreign keys that round-trip but are never read.
-// The renderable structure (type, options, context target, Context reverse labels, icons) IS
-// modeled because the write path + Context synthesis read it.
+// What is modeled here is what the write path or a renderer actually reads — a rider nothing
+// consumes rides through as a foreign key and does not earn a field.
 
 import { z } from 'zod'
 
@@ -41,8 +38,8 @@ const selectOption = z.looseObject({
   color: z.string().optional().catch(undefined),
 })
 
-/** Status-group ids — an OPEN set (seeded with upcoming / in_progress / done, the only three shipped
- *  today). The count isn't capped: a future EventKit bridge maps each group by a done-flag, not a fixed 3. */
+/** Status-group ids — an OPEN set, seeded with upcoming / in_progress / done. The count is
+ *  deliberately uncapped: a group is identified by its id, never by its position in a fixed three. */
 export const statusGroupId = z.string()
 export type StatusGroupId = z.infer<typeof statusGroupId>
 
@@ -64,10 +61,8 @@ const statusGroup = z.looseObject({
 })
 export type StatusGroup = z.infer<typeof statusGroup>
 
-/** Context picker constraint — which registry Context a `context` property draws from
- *  (`{ context_id }`). Lenient `kind` so an unknown target survives parse. */
+/** Context picker constraint — which registry Context a `context` property draws from. */
 const contextTarget = z.looseObject({
-  kind: z.string().optional(),
   context_id: z.string().optional(),
 })
 
@@ -80,11 +75,8 @@ export const propertyDefinition = z.looseObject({
   select_options: z.array(selectOption).optional(),
   status_groups: z.array(statusGroup).optional(),
   context_target: contextTarget.optional(),
-  reverse_name: z.string().optional(),
-  reverse_icon: z.string().optional(),
-  accept: z.array(z.string()).optional(),
-  // Link display config is def-level per-property (distinct from the per-VIEW number/date formats
-  // noted above): how a URL property's values render. `link_color` is a solid-palette key; absent =
+  // Link display config is def-level per-property: how a URL property's values render.
+  // `link_color` is a solid-palette key; absent =
   // Default = the system accent. Lenient .catch so an unknown value degrades to the default look.
   link_underline: z.boolean().optional().catch(undefined),
   // A toggle: link-url (default) shows the URL, link-title the fetched page title. A per-value alias
@@ -132,7 +124,6 @@ export const RESERVED_PROPERTY_ID = {
   title: '_title',
   createdAt: '_created_at',
   modifiedAt: '_modified_at',
-  status: '_status',
   // Filter-only Location target — never a column; the filter's location branch runs before the
   // declaredType dispatch, so this id deliberately resolves to no type.
   location: '_location',
@@ -165,9 +156,9 @@ export function optionValues(def: Pick<PropertyDefinition, 'type' | 'status_grou
     : (def.select_options ?? []).map((o) => o.value)
 }
 
-/** Default 3-group seed written when a Status property is first added. Group IDs stay fixed
- *  (calendar sync); labels are Open / Active / Done, and each group seeds one option whose
- *  value=label=its group label, carrying the group color. */
+/** Default 3-group seed written when a Status property is first added. Group IDs are stable — they
+ *  are the identity a rename must not disturb. Labels are Open / Active / Done, and each group
+ *  seeds one option whose value=label=its group label, carrying the group color. */
 export function defaultStatusSeed(): StatusGroup[] {
   return [
     {

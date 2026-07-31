@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  parseDefinitions,
-  droppingUserContexts,
-  validateName,
-  validateDefinition,
-  validateOptionValues,
-} from './schema'
+import { validateName, validateDefinition, validateOptionValues } from './schema'
 import type { PropertyDefinition } from '@shared/properties'
 
 const def = (
@@ -15,34 +9,6 @@ const def = (
     type: PropertyDefinition['type']
   },
 ) => over as PropertyDefinition
-
-describe('parseDefinitions', () => {
-  it('parses valid entries and drops malformed / retired-type ones', () => {
-    const out = parseDefinitions([
-      { id: 'p1', name: 'Score', type: 'number' },
-      { id: 'p2', name: 'When', type: 'date' }, // retired type → fails the enum → dropped
-      { name: 'missing id', type: 'number' }, // dropped
-      'garbage', // dropped
-    ])
-    expect(out.map((d) => d.id)).toEqual(['p1'])
-  })
-
-  it('returns [] for non-array input', () => {
-    expect(parseDefinitions(undefined)).toEqual([])
-    expect(parseDefinitions({})).toEqual([])
-  })
-})
-
-describe('droppingUserContexts', () => {
-  it('drops every stored .context def and keeps non-contexts', () => {
-    const out = droppingUserContexts([
-      def({ id: 'prop_x', name: 'Link', type: 'context' }),
-      def({ id: 'ctx_areas', name: 'Areas', type: 'context' }),
-      def({ id: 'prop_y', name: 'Score', type: 'number' }),
-    ])
-    expect(out.map((d) => d.id)).toEqual(['prop_y'])
-  })
-})
 
 describe('validateName', () => {
   const existing = [def({ id: 'p1', name: 'Stage', type: 'status' })]
@@ -60,7 +26,7 @@ describe('validateDefinition', () => {
   const existing = [def({ id: 'p1', name: 'Stage', type: 'status' })]
 
   it('blocks reserved ids and duplicate ids', () => {
-    expect(validateDefinition(def({ id: '_status', name: 'X', type: 'number' }), existing).ok).toBe(
+    expect(validateDefinition(def({ id: '_title', name: 'X', type: 'number' }), existing).ok).toBe(
       false,
     )
     expect(validateDefinition(def({ id: 'p1', name: 'New', type: 'number' }), existing).ok).toBe(

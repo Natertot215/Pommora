@@ -45,14 +45,5 @@ export interface ScannedConnection {
 /** Resolution outcome for a scanned title against the nexus link index. */
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
-/** A resolved connection edge from a source page to a (possibly missing) target. */
-export interface ConnectionEdge {
-  sourceId: string
-  normalizedTitle: string
-  status: LinkStatus
-  targetId?: string
-  multiplicity: number
-}
-
 /** The wikilink native context menu's actions (conn-menu IPC). */
 export type ConnMenuAction = 'preview'

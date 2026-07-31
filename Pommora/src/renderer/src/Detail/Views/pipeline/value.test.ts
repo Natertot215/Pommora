@@ -55,8 +55,7 @@ describe('declaredType', () => {
     expect(declaredType('prop_when', schema)).toBe('datetime')
   })
 
-  it('gives _status no special branch, and unknown ids resolve undefined', () => {
-    expect(declaredType('_status', schema)).toBeUndefined()
+  it('resolves an unknown id to undefined', () => {
     expect(declaredType('prop_absent', schema)).toBeUndefined()
   })
 })
@@ -82,9 +81,8 @@ describe('resolveFieldValue', () => {
     expect(rfv(row, 'prop_num')).toEqual({ kind: 'number', value: 42 })
   })
 
-  it('returns null for an absent property and for the unbranched _status', () => {
+  it('returns null for an absent property', () => {
     expect(rfv(row, 'prop_absent')).toEqual({ kind: 'null' })
-    expect(rfv(row, '_status')).toEqual({ kind: 'null' })
   })
 
   it('degrades a malformed value to null rather than throwing (never poison a view)', () => {

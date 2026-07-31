@@ -37,7 +37,6 @@ describe('propertyDefinition', () => {
       type: 'status',
       icon: 'circle',
       status_groups: defaultStatusSeed(),
-      reverse_name: 'Stages',
       // foreign / display-config keys ride through (looseObject)
       display_as: 'pill',
       plugin_meta: { keep: true },
@@ -106,8 +105,8 @@ describe('propertyDefinition', () => {
 
 describe('reserved property ids', () => {
   it('recognizes reserved vs user ids', () => {
-    expect(isReservedPropertyId('_status')).toBe(true)
     expect(isReservedPropertyId('_title')).toBe(true)
+    expect(isReservedPropertyId('_modified_at')).toBe(true)
     expect(isReservedPropertyId('prop_01H')).toBe(false)
     expect(isReservedPropertyId('stage')).toBe(false)
   })
