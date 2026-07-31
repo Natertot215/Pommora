@@ -1,4 +1,5 @@
 import type { ReactNode, MouseEvent, CSSProperties } from 'react'
+import { DISCLOSURE_INDENT } from '../../tokens/size.css'
 import { Icon, type IconName } from '../../symbols'
 import * as s from './menu.css'
 import { cx } from '../../cx'
@@ -33,7 +34,9 @@ export function MenuItem({
   className,
   children,
 }: MenuItemProps): React.JSX.Element {
-  const rowStyle: CSSProperties | undefined = indent ? { paddingLeft: 8 + indent * 14 } : undefined
+  const rowStyle: CSSProperties | undefined = indent
+    ? { paddingLeft: 8 + indent * DISCLOSURE_INDENT }
+    : undefined
   const hasTrailing = detail != null || trailing != null
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
