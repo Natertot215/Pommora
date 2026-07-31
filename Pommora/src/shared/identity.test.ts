@@ -66,8 +66,20 @@ describe('admitContentFile', () => {
     })
   })
 
+  // An emptied key is an ABSENT key: clearing a property in an outside editor writes `PageID:`
+  // with nothing after it, and everywhere else in Pommora an emptied value deletes its key.
+  it('treats an emptied key as missing, not malformed — the file stays adoptable', () => {
+    for (const empty of [null, '', undefined]) {
+      expect(admitContentFile({ [KIND_ID_KEY.page]: empty }, 'page')).toEqual({ state: 'missing' })
+    }
+    // And an emptied key alongside a real one is not "dual" — there is only one key.
+    expect(admitContentFile({ [KIND_ID_KEY.page]: ULID, [KIND_ID_KEY.task]: null }, 'page')).toEqual(
+      { state: 'member', id: ULID },
+    )
+  })
+
   it('rejects a value that cannot be an identity — hand-authored keys are a supported input', () => {
-    for (const bad of ['hello world', '', 'research-bizops', 3, null, { a: 1 }, ['x']]) {
+    for (const bad of ['hello world', 'research-bizops', 3, { a: 1 }, ['x']]) {
       expect(admitContentFile({ [KIND_ID_KEY.page]: bad }, 'page')).toEqual({
         state: 'unknown',
         reason: 'malformed',

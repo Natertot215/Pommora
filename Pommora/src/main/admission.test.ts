@@ -149,6 +149,19 @@ describe('the move backstop', () => {
     expect(await bytes('Member.md')).toContain(KIND_ID_KEY.page)
   })
 
+  // The nexus root holds no content of its own. `depth` is caller-supplied, so without an explicit
+  // root arm the resolver called it a Set and the one main-side check passed for that destination.
+  it('refuses a move onto the nexus root itself', async () => {
+    await openSession(root)
+    const r = await handleMutate(
+      { op: 'movePage', path: 'Notes/Member.md', newParentPath: '.' },
+      deps,
+    )
+    expect(r.ok).toBe(false)
+    if (r.ok) return
+    expect(r.error.code).toBe('invalid-path')
+  })
+
   it('still allows a move into a real Set', async () => {
     await openSession(root)
     await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })

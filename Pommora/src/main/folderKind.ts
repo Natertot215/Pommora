@@ -22,6 +22,8 @@ export interface AgendaRegistration {
 
 export interface FolderKindContext {
   agenda: AgendaRegistration
+  /** The nexus root. It holds no content of its own, so it is never a container. */
+  root?: string
   /** A raw, un-adopted nexus carries no container sidecars — there, position alone classifies. */
   sidecarMode: boolean
 }
@@ -58,6 +60,7 @@ export async function resolveFolderKind(
   depth: 'root' | 'nested',
   ctx: FolderKindContext,
 ): Promise<FolderKind> {
+  if (ctx.root !== undefined && absDir === ctx.root) return 'unknown'
   const present = await Promise.all(
     AGENDA_SLOTS.map((s) => pathExists(join(absDir, SIDECAR_FILENAME[s.sidecar]))),
   )

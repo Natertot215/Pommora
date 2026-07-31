@@ -59,13 +59,26 @@ describe('ensureIdentity', () => {
     expect(await readFile(idPath(), 'utf8')).toBe('{ corrupt')
   })
 
-  it('minting over a readable id-less file preserves its foreign keys', async () => {
+  // A file that EXISTS but carries no readable id is an established nexus with damaged identity,
+  // not a new one — so it is repaired, not created. Reporting it as a creation would seed agenda
+  // folders into a populated nexus and orphan every asset keyed to the old id.
+  it('mints over a readable id-less file as a REPAIR, preserving its foreign keys', async () => {
     await writeId({ note: 'keep me' })
     const r = await ensureIdentity(root)
-    expect(r.created).toBe(true)
+    expect(r.created).toBe(false)
     const j = await readId()
     expect(j.note).toBe('keep me')
     expect(typeof j.id === 'string' && isUlid(j.id as string)).toBeTruthy()
+    expect(j.agenda_singletons).toBeUndefined()
+    expect(await pathExists(join(root, 'Tasks'))).toBe(false)
+  })
+
+  it('does not re-seed a nexus whose id is present but not a string', async () => {
+    await writeId({ id: 20260731, note: 'keep me' })
+    const r = await ensureIdentity(root)
+    expect(r.created).toBe(false)
+    expect(await pathExists(join(root, 'Tasks'))).toBe(false)
+    expect((await readId()).note).toBe('keep me')
   })
 })
 
