@@ -20,8 +20,11 @@ export const coerceViewButton = (raw: unknown): 'icon' | 'labeled' | undefined =
 export const coerceViewStyle = (raw: unknown): 'dropdown' | 'toolbar' | undefined =>
   viewStyleField.parse(raw)
 
-/** Fields shared by every folder sidecar. Loose ⇒ unknown keys are retained. */
-const baseSidecar = z.looseObject({
+/** Fields shared by every folder sidecar. Loose ⇒ unknown keys are retained. Exported because it
+ *  is exactly the identity-only shape a kind resolver needs: it reads a sidecar the caller has
+ *  ALREADY located by filename, purely to recover its id. It is deliberately non-discriminating —
+ *  it validates any sidecar — so it must never stand in for the kind decision itself. */
+export const baseSidecar = z.looseObject({
   id: z.string(),
   icon: z.string().optional(),
   modified_at: z.string().optional(),

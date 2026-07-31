@@ -286,10 +286,13 @@ export async function resolveFolderKind(
 Resolution: read `_taskconfig.json`/`_eventconfig.json` presence; if present, read its `id` — match against `reg` ⇒ the singleton kind; no match/duplicate/nested-config ⇒ `'unknown'`. **A folder carrying both an agenda config AND a container sidecar ⇒ `'unknown'`** (no arm guesses between them). Else root + `_pagecollection.json` ⇒ `'collection'`; nested ⇒ `'set'` (the positional law for the page world is unchanged); root without collection sidecar ⇒ `'unknown'`. Cost: ≤2 extra `pathExists` per folder — same order as the root loop's existing checks (B-9 held).
 
 **Steps:**
-- [ ] Failing tests: registered singleton at root (kind) · unregistered config at root (unknown) · config nested in a collection (unknown — the A-7 nested-folder hole closes) · duplicate config folder whose id ≠ registration (unknown) · agenda config + collection sidecar together (unknown) · plain nested folder (set).
-- [ ] Implement; PASS. Retire both remaining divergent detections onto it: `readNexus.ts:487-492`'s root checks and `adopt.ts:105-110`'s skip both call the resolver (the third divergent site died with `collectAgenda` in Task 2).
-- [ ] All four gates green.
-- [ ] Commit: `feat(identity): the folder-kind resolver — one depth-agnostic classification owner`
+- [x] Failing tests: registered singleton at root (kind) · unregistered config at root (unknown) · config nested in a collection (unknown — the A-7 nested-folder hole closes) · duplicate config folder whose id ≠ registration (unknown) · agenda config + collection sidecar together (unknown) · plain nested folder (set).
+- [x] **The plan's signature was incomplete — raw mode.** A raw, un-adopted nexus carries no container sidecars at all, so a resolver that requires `_pagecollection.json` at root would classify every folder in one as Unknown and empty the tree. The context carries `sidecarMode` alongside the registration.
+- [x] **Adoption reads the resolver with `sidecarMode: false`, deliberately.** A container sidecar's ABSENCE is the thing adoption exists to fix, so it must not double as a reason to skip; agenda configs still classify normally, which is what keeps a singleton from adopting as a Collection. Stated in code — it is the one place the two callers disagree.
+- [x] `readAgendaRegistration` reads `agenda_singletons` off `nexus.json` leniently: absent, empty or malformed registers nothing, so every existing nexus runs with zero registrations and every agenda config in one is inert. That is the correct interim state until the seed lands.
+- [x] Implement; PASS. Both remaining divergent detections retired onto it. **Verified by grep: no production file outside `folderKind.ts` names an agenda config filename any more** — A-10's triplication is one owner.
+- [x] All four gates green (173 files / 1877 tests).
+- [x] Commit: `feat(identity): the folder-kind resolver — one depth-agnostic classification owner`
 
 #### Task 10: Registration + creation-seed
 
