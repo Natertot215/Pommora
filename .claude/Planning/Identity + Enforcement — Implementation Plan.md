@@ -348,11 +348,17 @@ Resolution: read `_taskconfig.json`/`_eventconfig.json` presence; if present, re
 - [ ] Commit docs with the phase's final code state.
 
 #### Gate 3 — the named cutover verification
-- [ ] All four gates green.
-- [ ] Fixtures: ID-less (adoptable — Task 7's, still green under `PageID` — AND still covered by the write sweeps: a Remove-Property run strips an ID-less page's value, round 2 R5) · migrated (member) · the full Unknown matrix (invisible in the tree + untouched by adoption AND by a link rename, a property removal, and a context rename — the five gated sweeps) · remove-property snapshot capturing under kind keys (the F5 positive guard: refuse only when a non-empty file set carried no readable identity) · zero dual-key files post-migration (Task 12's verify command).
-- [ ] Live launch, test nexus: pages resolve; pins/tabs survive; a hand-planted `TaskID:` file in a Collection is invisible and untouched; a fresh scratch nexus creates + registers its singleton pair.
+- [x] All four gates green — **174 files / 1894 tests**. Two lint warnings surfaced at the gate (imports orphaned by the sweep gate) and were cleaned, not carried.
+- [x] Fixtures: the ID-less page (adoptable, and still swept by Remove-Property) · migrated members · the **full Unknown matrix on disk** — contradicting, malformed and dual each invisible in the tree AND byte-identical after adoption, a link rename, a property removal and a context rename · the positive strip guard · zero dual-key files.
+- [x] **Every refusal negative-controlled.** Disabling the walk gate, the sweep gate, or the adoption check each turns the matrix red; a naive single-key adoption check reproduces the dual-key file the design exists to prevent. A guard test that passes either way proves nothing.
+- [x] **Live invariants, both nexuses, post-enforcement:** `test` 10 members · `NexusOS` 174 members · **0 dual-key, 0 malformed** on each.
+- [ ] **Live launch — Nathan's loop.** Test nexus first: pages resolve, pins and tabs survive, a hand-planted `TaskID:` file in a Collection is invisible and stays byte-identical, and a fresh scratch nexus creates + registers its singleton pair.
 
----
+#### Task 13: Docs reconciliation — identity half
+- [x] Architecture — the "Only Pages are Markdown" principle, the layout diagram, the suffix-kind law, the per-file-kind Pending, the kind-authority paragraph, the adoption paragraph. The kind law now states the predicate and the Unknown treatment outright.
+- [x] PRD (`id` definition + both agenda format lines) · Structure (kinds + identity) · Pages (frontmatter + adoption) · Properties (`id` line, `description` dropped) · Connections (cascade gate) · Contexts (agenda-JSON scope) · Framework v0.7.0 (inverted: CRUD converges onto the page writers) · project `CLAUDE.md` (the JSON clause + the completed kind law).
+- [x] **Context.md's carve-out written, and it matters:** the kind key is a DELIBERATE second identity source whose *disagreement is the detection signal* — a checksum, not the two-writers defect. Without it the next consolidation sweep would "fix" it and silently delete the ability to tell a mismatched file from a missing one. The `adopting`-flag debt entry it replaces is resolved.
+- [x] Residual-claim sweep across all docs: zero hits for `task.json`, `event.json`, "Only Pages are Markdown", or the extension-borne kind.
 
 ### Sequenced After (not this plan)
 

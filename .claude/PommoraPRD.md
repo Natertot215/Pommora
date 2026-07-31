@@ -61,7 +61,7 @@ Tasks and Events sit under the **Agenda** parent schema. The Page Collection's p
 
 #### Identity and linking
 
-- **`id`** — a stable ULID assigned at creation, never changing. No on-disk reference carries an id. A body connection is a title, a Context link is a title, and a property value sits under its property's name — each resolved at read time, each held correct across a rename by a sweep over the files that hold it.
+- **`id`** — a stable ULID assigned at creation, never changing. A content file stores it under a key that names its kind (`PageID` / `TaskID` / `EventID`), which is also how a file placed in the wrong folder is recognised and left alone. No on-disk reference carries an id. A body connection is a title, a Context link is a title, and a property value sits under its property's name — each resolved at read time, each held correct across a rename by a sweep over the files that hold it.
 - **Title** — the display name, carried as the filename (minus extension), freely renameable. Renames are filesystem renames; ID-keyed references resolve to the current title at render time. Within a container, a colliding Page create auto-disambiguates and a rename is rejected. Titles aren't unique Nexus-wide — a connection to a title shared by two Pages resolves as ambiguous.
 
 Operational entities tag Spaces through parenthesized Context keys — `(Projects):` over a block sequence of bare Space titles at the frontmatter or JSON root — the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections. Full model and the linking catalog → `Features/Structure.md` plus the per-entity docs.
@@ -127,8 +127,10 @@ A Context link is a **dual surface**: an operational entity tags a Space by hold
 
 The calendar layer, split into two distinct entities mirroring EventKit, each stored in its own singleton folder discovered by a config sidecar:
 
-- **Tasks** (`.task.json`) — optional due date, an optional "not before" start, completion, priority, recurrence, and alarms.
-- **Events** (`.event.json`) — required start and end, optional location, all-day, recurrence, and alarms.
+- **Tasks** (`.md`, `TaskID`) — reminder-shaped.
+- **Events** (`.md`, `EventID`) — calendar-event-shaped.
+
+Their fields are an open question: the shape both kinds inherited was removed rather than carried forward, and what replaces it is the Agenda work's to decide.
 
 Both carry the shared property catalog and the same parenthesized Context keys as Pages, plus a built-in, non-deletable **Status** whose three seeded groups (Open / Active / Done) map cleanly onto reminder/calendar semantics. EventKit sync is opt-in. Full detail → `Features/Agenda.md`.
 

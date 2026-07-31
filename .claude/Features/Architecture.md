@@ -8,7 +8,7 @@ The dynamics of Pommora's data layer — the on-disk Nexus, the read + state lay
 
 Every architectural choice below traces back to one of these.
 
-1. **Files are canonical (≠ everything is Markdown).** Only Pages are Markdown; Tasks, Events, sidecars, Contexts, Homepage, and Settings stay JSON. The database is *reserved* for operational state rather than barred from content, and the line runs at assignment: a property definition may move into it, while the assignment on a container's sidecar and the value in a Page's frontmatter stay files. Structure and content stay readable without Pommora; the standing invariant is that nothing is trapped.
+1. **Files are canonical (≠ everything is Markdown).** One `.md` grammar covers the operational layer — Pages, Tasks and Events alike, each naming its kind in its id key; JSON is for sidecars, configs and registries. The database is *reserved* for operational state rather than barred from content, and the line runs at assignment: a property definition may move into it, while the assignment on a container's sidecar and the value in a Page's frontmatter stay files. Structure and content stay readable without Pommora; the standing invariant is that nothing is trapped.
 
 2. **Agent legibility.** External agents (Claude via MCP, any filesystem tool, vim, Obsidian) read the content and understand the context of a user's Nexus — Pages, schemas, relations, properties — straight from plain files. The bar is convention-aware, not stranger-instant: a file that abstracts a resolver, an id reference, or a path lookup still counts as legible once the agent has learned the convention. The firm line holds: no user data is trapped in a binary blob. Legibility is a claim about content, not about every byte the app stores — which is why per-machine chrome belongs in the database rather than in a file an agent would have to learn to ignore.
 
@@ -30,13 +30,13 @@ A Nexus is a single folder. Pommora opens it via picker and treats it as canonic
       <Page>.md                         ← Page at the Set root
     <Page>.md                           ← Page directly in the Collection root
 
-  <Tasks>/                              ← Tasks singleton (folder + _taskconfig.json)
+  <Tasks>/                              ← Tasks singleton (registered by _taskconfig.json's id)
     _taskconfig.json
-    <title>.task.json
+    <title>.md                          ← Task — TaskID in frontmatter, flat (no subfolders)
 
-  <Events>/                             ← Events singleton (folder + _eventconfig.json)
+  <Events>/                             ← Events singleton (registered by _eventconfig.json's id)
     _eventconfig.json
-    <title>.event.json
+    <title>.md                          ← Event — EventID in frontmatter
 
   .nexus/                               ← app-internal config + the device-local database
     nexus.json                          ← nexus ULID + createdAt
@@ -62,11 +62,11 @@ Every sidecar's field shape is canonical in `src//shared//schemas.ts`.
 
 **No wrapper folders.** Page Collections and the Tasks / Events singletons all live as siblings at the nexus root — there is no `Pages/` or `Agenda/` container folder.
 
-**Agenda is discriminated by config sidecar, never by name.** A Tasks / Events singleton is *only* the folder carrying `_taskconfig.json` / `_eventconfig.json`; the folder names are renameable defaults. Every collection-discovery path skips a folder iff it carries an agenda config, so a Page Collection named "Tasks" is still a Collection. No name is ever reserved.
+**Agenda is discriminated by config sidecar, never by name** — and only where the nexus RECORDS it. A Tasks / Events singleton is the folder whose config sidecar id matches the registration `nexus.json` holds; the folder names are renameable defaults, and a Page Collection named "Tasks" is still a Collection. No name is ever reserved.
 
-**An agenda item's own kind is its filename suffix.** `.task.json` and `.event.json` are the on-disk task-vs-event discriminator, deriving both the kind and the title, and load-bearing in the read walk.
+**Registration is the guard.** A duplicated, hand-made, or relocated agenda config matches no record and is inert bytes — not a second singleton, not a Collection, not anything. That is what makes "one Tasks folder" true without a rule enforcing it, and it is why a singleton found nested can be carried home: the record already names which folder is canonical.
 
-> **Pending — per-file kind at adoption.** Adoption classifies at the folder level and skips agenda folders wholesale, so no individual file is scoped to a kind when a folder is adopted. Applying the existing suffix discriminator per file lands with the Agenda surfaces.
+**One resolver owns the answer, at any depth.** Classification is not a root-only question — a folder is placed by what it declares plus where it sits, so a nested agenda config resolves to nothing rather than reading as an ordinary Set.
 
 **Hidden + private.** `.nexus/` and `.trash/` are hidden from the sidebar and from non-Pommora tools by convention (matches `.obsidian/`).
 
@@ -124,7 +124,7 @@ Every file write goes through an atomic path — temp-file + rename, so a crash 
 
 - **YAML+Markdown write** — Pages. The body follows the closing fence directly, with no separator blank line, so a note never opens with an empty line under Obsidian's properties panel. Only modeled keys are re-serialized; every foreign frontmatter key and comment survives by value. The preserving-merge mechanics are canonical in `// Features//Pages.md` § "Read + Write".
 
-- **JSON write** — sidecars, Tasks / Events, Contexts, Settings, Homepage.
+- **JSON write** — sidecars, Contexts, Settings, Homepage.
 
 - **Schema transaction** — multi-file commits that must succeed-or-fail as a unit: a Collection-scoped property delete or a lossy type change rewrites the sidecar *and* strips the property from every member page. Two-phase — stage every payload to a temp sibling, then rename each over its target, rolling the filesystem back on any failure. The nexus-wide property delete deliberately opts out: it snapshots every value to `.trash` first and runs per-file, so a partial run re-runs cleanly rather than rolling back.
 
@@ -144,9 +144,13 @@ Surviving events debounce to a settle, then main re-derives the tree with a **ve
 
 #### Adoption — opening any folder as a Nexus
 
-Opening a folder as a Nexus stamps every un-adopted entity with a real ULID: a raw folder gets its sidecar, an externally-authored page gets a frontmatter `id`. Each entity's id is its own — nothing stamped depends on a sibling or a parent having been stamped first. Root folders holding content become Page Collections and everything nested becomes a Set; agenda singletons, excluded and hidden folders, and empty sidecar-less folders are left alone, and an unrecognized sidecar stays inert beside the one Pommora writes. The pass is silent, best-effort, idempotent, and safe to re-run on partial state. Full per-shape detail → `// Features//Collections.md`.
+Opening a folder as a Nexus stamps every un-adopted entity with a real ULID: a raw folder gets its sidecar, an externally-authored page gets a frontmatter `id`. Each entity's id is its own — nothing stamped depends on a sibling or a parent having been stamped first. Root folders holding content become Page Collections and everything nested becomes a Set; excluded and hidden folders, empty sidecar-less folders, and anything the resolver can't place are left alone, and an unrecognized sidecar stays inert beside the one Pommora writes. A **registered** agenda singleton is no longer skipped: it stamps its own direct `.md` members under the agenda kind, never container-stamps itself — its id already lives in its config sidecar — and never recurses, because agenda is flat. The pass is silent, best-effort, idempotent, and safe to re-run on partial state. Full per-shape detail → `// Features//Collections.md`.
 
-**Kind authority = the folder sidecar, not the extension.** A `.md` file's kind comes from its parent folder's sidecar (`_pagecollection.json` / `_pageset.json` → Page), never from frontmatter. Any kind-like frontmatter key is treated as preserved foreign frontmatter — carried by value, never written by Pommora. The one extension-borne kind is an agenda item's task-vs-event suffix.
+**Kind authority is the folder's sidecar, and the file must agree with it.** The law is kind-first — *what is this* (the folder declares it) before *what is its id* — so a content file stores its id under the key naming its kind: `PageID`, `TaskID`, `EventID`. No extension carries a kind; no reader consults more than the one key its context names.
+
+**The exception that proves it: one predicate reads all three keys.** Telling a *mismatched* file from a *missing* one is definitionally a multi-key question, so admission — and only admission — checks every key. Its answers are: the key agrees (a member), no key at all (adoptable, stamped at open), or **Unknown** — a key contradicting the folder, a value that can't be an identity, or two keys at once.
+
+**Unknown is invisible and untouched.** Not an error, not surfaced, not indexed, and never stamped over: it is absent from the tree and skipped by every nexus-wide write, left byte-identical on disk. A stray `.png` in a Collection gets the same treatment, and for the same reason — Pommora renders what it can place and leaves the rest exactly as written. A file with no key is the opposite case and is admitted throughout: identity decides whether a value can be handed *back*, never whether it may be cleared.
 
 ---
 

@@ -107,7 +107,7 @@ In a Task, an Event or a `_space.json` the same key rides the JSON root, quoted 
 
 #### II. Auto-Managed Properties
 
-Every Page, Task, and Event carries an `id` (a ULID, assigned at creation), `created_at`, and `modified_at` — maintained by Pommora, not user-creatable. It surfaces as **Last Edited Time**, whose column shows the stored `modified_at` stamp; sorting and filtering fall back to `created_at` so a never-modified page still orders by its creation time. Tasks and Events also carry a plain-text `description` JSON field.
+Every Page, Task, and Event carries its kind's id key (`PageID` / `TaskID` / `EventID`, holding a ULID assigned at creation), `created_at`, and `modified_at` — maintained by Pommora, not user-creatable. It surfaces as **Last Edited Time**, whose column shows the stored `modified_at` stamp; sorting and filtering fall back to `created_at` so a never-modified page still orders by its creation time.
 
 **A schema edit is not a page edit.** Renaming a property definition, changing its type, or reordering an assignment leaves every member page's `modified_at` untouched — the page didn't change, its schema did. Only a property's VALUE changing counts, alongside a text edit, a move, and a rename (→ `Pages.md`).
 

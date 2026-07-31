@@ -24,7 +24,7 @@ One shared normalization matches titles everywhere, so no two surfaces disagree.
 
 #### II. Rename Cascade
 
-Identity is the title and the body carries no id, so a rename **cascades**: renaming a target rewrites every body holding its old title. An alias rides through — a rename changes which Page a connection points at, never the words the author chose to show for it. Page bodies come from a walk of the nexus's markdown, the index playing no part. Markdown-block bodies sit inside `.nexus`, out of that walk's reach, so a second best-effort pass heals them afterward; its failure is swallowed and blocks stay stale until the next rewrite.
+Identity is the title and the body carries no id, so a rename **cascades**: renaming a target rewrites every body holding its old title. An alias rides through — a rename changes which Page a connection points at, never the words the author chose to show for it. Page bodies come from a walk of the nexus's markdown, the index playing no part; a file the tree won't admit is passed over, so a rename never rewrites a body Pommora would refuse to render. Markdown-block bodies sit inside `.nexus`, out of that walk's reach, so a second best-effort pass heals them afterward; its failure is swallowed and blocks stay stale until the next rewrite.
 
 Every file is rewritten under the same lock a live edit takes, frontmatter untouched — a derived link edit isn't a user modification. The cascade is per-file, not cross-file atomic: a page pass failing partway reverts the target's rename, leaving already-rewritten bodies pointing at a title no Page holds until the rename is re-run.
 
