@@ -1,6 +1,22 @@
 /* Shared group-band chrome — the disclosure head (twisty + glyph + hover "+") over the band body. The
-   table + cards views each scope the divergent bits: the table's gutter chevron + sticky head + section
-   rhythm, the cards' inter-band spacing. The glyph itself resolves identically for both (GroupBand). */
+   table + cards views each scope the divergent bits: the table's gutter chevron + sticky head, the
+   cards' sibling seams. The glyph itself resolves identically for both (GroupBand). */
+
+/* The seam law, shared by every banded view: the view binds --band-clearance — one shoulder of its
+   content rhythm — and derives its band lead as two; the head clears its own content by one.
+   Collapsed, the head has no content to clear, so the clearance folds away with it on the disclosure
+   beat. The same yield when the first disclosed member is a nested band rather than a row: that
+   band's two-shoulder lead already owns the seam, so clearances never stack. A first-child sub-band
+   bucket keeps the clearance — its single-shoulder lead needs it to reach the uniform seam. */
+.group-band-row {
+  padding-bottom: var(--band-clearance, 0px);
+  transition: padding-bottom var(--disclosure) var(--ease-standard);
+}
+.group-band-row[data-disclose],
+.group-band-row:has(+ [data-reveal] > * > .group-band:not(.sub-band):first-child) {
+  padding-bottom: 0;
+}
+
 .group-band-head {
   display: flex;
   align-items: center;
