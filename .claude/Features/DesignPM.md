@@ -71,6 +71,10 @@ A data-driven design-system site (`npm run showcase`): each leaf iterates its ow
 
 The reusable pieces mirror the Figma library. The shape they're built toward is one folder per component consuming **semantic tokens only** — the intent the set converges on rather than a rule the folder already holds throughout. Shared helpers sit loose beside them by necessity: a vanilla-extract stylesheet may export only plain values, so a helper that *builds* a declaration lives next to the stylesheet rather than inside it. This doc governs the tokens and materials components consume, not the roster; a component's own behaviour lives in its spec (motion → `Interaction.md`; the editor → `MarkdownPM.md`; the table → `TableView.md`).
 
+**The ActionBand** (`Detail/ActionBand.css`) is the shared home for toolbar-row affordances any surface mounts — **ViewSegments** first (the view-switcher segment chassis: hairline border whose stroke is the one place a view's chip color lands, active lift on the selected fill, create/delete slide) plus the hover-revealed settings button, whose reveal *scope* each host binds itself while the chrome stays shared. A segment's collapsible title rides Segmented-Controls' `labelSlot` — the 1fr→0fr grid morph on the `titleReveal` timing is written exactly once, and the toolbar view button, the embed segments, and the embed's dropdown-mode button all mount that same slot.
+
+**The disclosure step** is one literal: `DISCLOSURE_INDENT` in the size tokens, bridged to `--disclosure-indent`. Every hierarchy — the sidebar tree, table group nesting, pane disclosure runs and their rail — derives its per-level inset from it, so a new disclosing surface reads the token rather than minting its own step.
+
 ### Pending
 
 - **Spacing and radius** — no formalized scale; corners and spacing stay ad-hoc literals until they're lifted from Figma.

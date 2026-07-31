@@ -34,7 +34,7 @@ The same zoom — the same keyframes + Bloom curve — mounted on the **`dropdow
 
 #### Caret Blink
 
-The drawn editor caret (and the native-field overlay) fades on a symmetric on/off cycle via twin keyframes in `Carets.css`; `editor/caret.ts` swaps the keyframe name on selection change to restart the cycle without reflow. `:root` knobs tune it — `--caret-width`, `--caret-color`, the `--caret-gap` cycle, and the `--caret-dim` dip, whose ceiling is a solid, non-blinking bar. Extending the drawn caret to table cells and the inline-rename input is outstanding.
+The drawn editor caret (and the native-field overlay) fades on a symmetric on/off cycle via twin keyframes in `Carets.css`; `editor/caret.ts` swaps the keyframe name on selection change to restart the cycle without reflow. `:root` knobs tune it — `--caret-width`, `--caret-color`, the `--caret-gap` cycle, and the `--caret-dim` dip, whose ceiling is a solid, non-blinking bar. On a fresh focus the overlay **settles by convergence** — re-measuring each frame until the bar holds still, deadline-capped — because a pane may still be animating open (the Bloom scale, a placement correction) with moves no resize or input event ever reports; timing guesses strand the bar, convergence can't. Extending the drawn caret to table cells and the inline-rename input is outstanding.
 
 #### Header Scroll-Park
 

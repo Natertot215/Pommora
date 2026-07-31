@@ -6,6 +6,7 @@ import { EditorView } from '@codemirror/view'
 import { ACTIVATION } from '../../design-system/interactions/shared'
 import { parseListMarkerPrefixed as parseListMarker } from '../detect'
 import { Overlay, forEachLine, setShade, shadeField } from './dragChrome'
+import { focusAt } from './input'
 import { lineElementAt } from './lineDom'
 import {
   subBlockAt,
@@ -132,8 +133,7 @@ function clickAction(view: EditorView, pos: number): void {
     view.dispatch({ changes: toggle, userEvent: 'input' })
     return
   }
-  view.dispatch({ selection: { anchor: pos } })
-  view.focus()
+  focusAt(view, pos)
 }
 
 export const listDragExtension: Extension = [
