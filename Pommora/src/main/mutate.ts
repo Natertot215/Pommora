@@ -115,9 +115,9 @@ async function isReserved(root: string, abs: string): Promise<boolean> {
 
 const fault = (message: string): Result<never> => fail('operation-failed', message)
 
-/** The choke point every move passes: a page or Set may only land somewhere that holds pages.
- *  No surface can currently offer a cross-kind move, so this guards the programmatic accident —
- *  and it is the ONE main-side check, rather than a rule re-stated per caller. */
+/** The choke point every move passes: a page or Set may only land somewhere that holds pages —
+ *  a guard against a programmatic accident bypassing the UI's own constraints, and the ONE
+ *  main-side check, rather than a rule re-stated per caller. */
 async function movesInto(root: string, dst: string): Promise<Result<null>> {
   const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
   const ctx = { agenda: readAgendaRegistration(identity), sidecarMode: !!identity?.id }
