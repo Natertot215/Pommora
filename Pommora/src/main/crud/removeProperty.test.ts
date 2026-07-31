@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { PAGE_ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -97,7 +98,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
   // clear — and it must not be cached under a synthetic id it would never be found by again.
   it('strips an identity-less page too, caching nothing for it', async () => {
     const raw = await readFile(pageA, 'utf8')
-    await writeFile(pageA, raw.replace(/^id:.*\n/m, ''))
+    await writeFile(pageA, raw.replace(new RegExp(`^${PAGE_ID_KEY}:.*\\n`, 'm'), ''))
     expect(await pageValue(pageA)).toBe('active') // still holds the value, just no identity
 
     const r = await removeProperty(root, folder, propId)

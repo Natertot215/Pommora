@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { PAGE_ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, mkdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -54,9 +55,9 @@ describe('createPage', () => {
     expect(r.value.path.endsWith('My Page.md')).toBe(true)
     const content = await readFile(r.value.path, 'utf8')
     const fm = splitFrontmatter(content)
-    expect(isUlid(fm.id as string)).toBe(true)
+    expect(isUlid(fm[PAGE_ID_KEY] as string)).toBe(true)
     // Nothing but the modeled keys — Context membership is value-driven, never seeded.
-    expect(Object.keys(fm).sort()).toEqual(['created_at', 'id', 'modified_at'])
+    expect(Object.keys(fm).sort()).toEqual([PAGE_ID_KEY, 'created_at', 'modified_at'].sort())
     expect(splitEnvelope(content).body).toBe('Hello')
   })
 
@@ -77,7 +78,7 @@ describe('renamePage', () => {
     if (!r.ok) return
     expect(r.value.path.endsWith('New.md')).toBe(true)
     await expect(stat(c.value.path)).rejects.toThrow()
-    expect(splitFrontmatter(await readFile(r.value.path, 'utf8')).id).toBe(c.value.id)
+    expect(splitFrontmatter(await readFile(r.value.path, 'utf8'))[PAGE_ID_KEY]).toBe(c.value.id)
   })
 
   it('bumps modified_at — a rename counts as an edit', async () => {
@@ -116,7 +117,7 @@ describe('updatePageBody', () => {
     const content = await readFile(c.value.path, 'utf8')
     expect(splitEnvelope(content).body).toBe('two')
     const fm = splitFrontmatter(content)
-    expect(fm.id).toBe(c.value.id)
+    expect(fm[PAGE_ID_KEY]).toBe(c.value.id)
     expect(fm.plugin_key).toBe('keep')
     expect(fm.modified_at).toBeTruthy()
   })
@@ -185,7 +186,7 @@ describe('updatePageProperty', () => {
     })
     expect(await at('status')).toBe('todo')
     expect(await at('tags')).toEqual(['a', 'b'])
-    expect(splitFrontmatter(await readFile(f, 'utf8')).id).toBe(c.value.id)
+    expect(splitFrontmatter(await readFile(f, 'utf8'))[PAGE_ID_KEY]).toBe(c.value.id)
 
     await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'done' })
     expect(await at('status')).toBe('done')

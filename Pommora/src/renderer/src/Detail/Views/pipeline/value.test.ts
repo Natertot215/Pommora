@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { PAGE_ID_KEY } from '@shared/identity'
 import type { ViewRow } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { declaredType, resolveFieldValue } from './value'
@@ -22,7 +23,7 @@ const row: ViewRow = {
   path: 'Col/my-page.md',
   contextValues: { ctx_areas: ['01AREA'] },
   frontmatter: {
-    id: '01ROW',
+    [PAGE_ID_KEY]: '01ROW',
     modified_at: '2026-06-20T10:00:00Z',
     ...propsAtRoot(
       {
@@ -90,7 +91,7 @@ describe('resolveFieldValue', () => {
   })
 
   it('returns null for _modified_at when frontmatter has no timestamp', () => {
-    const bare: ViewRow = { id: 'x', title: 'X', path: 'x.md', frontmatter: { id: 'x' } }
+    const bare: ViewRow = { id: 'x', title: 'X', path: 'x.md', frontmatter: { [PAGE_ID_KEY]: 'x' } }
     expect(rfv(bare, '_modified_at')).toEqual({ kind: 'null' })
   })
 })
@@ -101,7 +102,7 @@ describe('resolveFieldValue memoization', () => {
       id: 'p1',
       title: 'One',
       path: 'C/One.md',
-      frontmatter: { id: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema), '(Areas)': ['a'] },
+      frontmatter: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema), '(Areas)': ['a'] },
     }
     // Every kind returns the cached object now — there is no per-call re-tag left to make a fresh
     // one. No consumer keys identity on the resolved value (Cell resolves fresh; rowById keys on
@@ -111,8 +112,8 @@ describe('resolveFieldValue memoization', () => {
   })
 
   it('a fresh frontmatter identity re-resolves (the optimistic-patch / reload contract)', () => {
-    const fm1 = { id: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema) }
-    const fm2 = { id: 'p1', ...propsAtRoot({ prop_s: 'done' }, schema) }
+    const fm1 = { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_s: 'open' }, schema) }
+    const fm2 = { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_s: 'done' }, schema) }
     const rowAt = (frontmatter: ViewRow['frontmatter']): ViewRow => ({
       id: 'p1',
       title: 'One',
@@ -126,7 +127,7 @@ describe('resolveFieldValue memoization', () => {
   })
 
   it('_title never caches — a rename with an unchanged frontmatter object shows the new title', () => {
-    const fm = { id: 'p1' }
+    const fm = { [PAGE_ID_KEY]: 'p1' }
     const a = rfv({ id: 'p1', title: 'Old', path: 'C/Old.md', frontmatter: fm }, '_title')
     const b = rfv({ id: 'p1', title: 'New', path: 'C/New.md', frontmatter: fm }, '_title')
     expect(a).toEqual({ kind: 'select', value: 'Old' })
@@ -143,7 +144,7 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
     id: 'r',
     title: 'R',
     path: 'C/r.md',
-    frontmatter: { id: 'r', ...propsAtRoot(properties, typedSchema) },
+    frontmatter: { [PAGE_ID_KEY]: 'r', ...propsAtRoot(properties, typedSchema) },
   })
 
   it('a url column reads an aliased [alias](url) value as url — no shape ever votes', () => {

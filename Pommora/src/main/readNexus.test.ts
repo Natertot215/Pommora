@@ -5,6 +5,10 @@ import { join } from 'node:path'
 import { readCommands, readNexus, readPersonalization, splitFrontmatter } from './readNexus'
 import { DEFAULT_COMMANDS } from '@shared/types'
 
+const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDRP'
+const PG_LINKED = '01KVGMT8BFG350FZZXAMG1QDRQ'
+const PG_PLAIN = '01KVGMT8BFG350FZZXAMG1QDRR'
+
 describe('readCommands', () => {
   it('falls back to DEFAULT_COMMANDS when the block is absent or malformed', () => {
     expect(readCommands(undefined)).toEqual(DEFAULT_COMMANDS)
@@ -57,7 +61,7 @@ beforeAll(() => {
   raw = mkdtempSync(join(tmpdir(), 'pom-raw-'))
   d(join(raw, 'Collection A', 'Set A', 'Sub A'))
   w(join(raw, 'Collection A', 'Set A', 'Sub A', 'Deep.md'), '# deep (depth-3, proves no cap)')
-  w(join(raw, 'Collection A', 'Set A', 'Page A.md'), '---\nid: page-a\nicon: star\n---\n\nbody')
+  w(join(raw, 'Collection A', 'Set A', 'Page A.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRP\nicon: star\n---\n\nbody')
   w(join(raw, 'Collection A', 'Set A', 'Page B.md'), 'no frontmatter, just body')
   w(join(raw, 'Collection A', 'Root Page.md'), '# collection-root page')
   d(join(raw, 'Collection B'))
@@ -150,7 +154,7 @@ describe('readNexus — structure mode (raw, like ~/test)', () => {
     const setA = t.collections!.find((c) => c.title === 'Collection A')!.sets[0]
     const pa = setA.pages.find((p) => p.title === 'Page A')!
     const pb = setA.pages.find((p) => p.title === 'Page B')!
-    expect(pa.id).toBe('page-a')
+    expect(pa.id).toBe(PAGE_A)
     expect(pa.icon).toBe('star')
     expect(pa.path).toBe('Collection A/Set A/Page A.md')
     expect(pb.id.startsWith('adopted-')).toBe(true)
@@ -262,8 +266,8 @@ describe('readNexus — registry-backed contexts', () => {
     )
     d(join(reg, 'Notes'))
     w(join(reg, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
-    w(join(reg, 'Notes', 'Linked.md'), '---\nid: pg-linked\n(Projects):\n  - Pommora\n---\nbody')
-    w(join(reg, 'Notes', 'Plain.md'), '---\nid: pg-plain\n---\nbody')
+    w(join(reg, 'Notes', 'Linked.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRQ\n(Projects):\n  - Pommora\n---\nbody')
+    w(join(reg, 'Notes', 'Plain.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRR\n---\nbody')
   })
   afterAll(() => rmSync(reg, { recursive: true, force: true }))
 
@@ -286,9 +290,9 @@ describe('readNexus — registry-backed contexts', () => {
 
   it('resolves wrapped page keys onto the node contextValues', async () => {
     const t = await readNexus(reg)
-    const page = t.collections![0].pages.find((p) => p.id === 'pg-linked')
+    const page = t.collections![0].pages.find((p) => p.id === PG_LINKED)
     expect(page?.contextValues).toEqual({ ctx_projects: ['sp-pom'] })
-    const plain = t.collections![0].pages.find((p) => p.id === 'pg-plain')
+    const plain = t.collections![0].pages.find((p) => p.id === PG_PLAIN)
     expect(plain?.contextValues).toBeUndefined()
   })
 

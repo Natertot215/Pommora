@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { PAGE_ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, mkdir, writeFile, readFile, readdir, chmod } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { handleMutate, type MutateDeps } from './mutate'
+
+const A_ID = '01KVGMT8BFG350FZZXAMG1QDRA'
+const B_ID = '01KVGMT8BFG350FZZXAMG1QDRB'
+const G_ID = '01KVGMT8BFG350FZZXAMG1QDRG'
 import { openSession, closeSession } from './session'
 import { splitFrontmatter, readNexus } from './readNexus'
 import { pathExists } from './io/atomicWrite'
@@ -26,9 +31,9 @@ beforeEach(async () => {
   await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'col' }))
   await writeFile(
     join(root, 'Notes', 'Daily', 'Alpha.md'),
-    '---\nid: a\n(Areas):\n  - Work\n---\n\nSee [[Beta]] for more.',
+    '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRA\n(Areas):\n  - Work\n---\n\nSee [[Beta]] for more.',
   )
-  await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), '---\nid: b\n---\n\nbody')
+  await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRB\n---\n\nbody')
   await openSession(root)
 })
 afterEach(async () => {
@@ -183,20 +188,20 @@ describe('handleMutate — move + guards', () => {
         views: [{ id: 'v1', type: 'table' }],
       }),
     )
-    await writeFile(join(root, 'Notes', 'Daily', 'Gamma.md'), '---\nid: g\n---\n\nbody')
+    await writeFile(join(root, 'Notes', 'Daily', 'Gamma.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRG\n---\n\nbody')
     const r = await handleMutate(
       {
         op: 'movePage',
         path: 'Notes/Daily/Gamma.md',
         newParentPath: 'Notes/Daily',
-        order: ['g', 'b', 'a'],
+        order: [G_ID, B_ID, A_ID],
       },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
     // page_order written; views preserved (loose sidecar); file not moved
     const sc = JSON.parse(await read('Notes/Daily/_pageset.json'))
-    expect(sc.page_order).toEqual(['g', 'b', 'a'])
+    expect(sc.page_order).toEqual([G_ID, B_ID, A_ID])
     expect(sc.views).toHaveLength(1)
     expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
     // readNexus applies it: Daily's pages come back in the persisted order
@@ -204,7 +209,7 @@ describe('handleMutate — move + guards', () => {
     const daily = tree.collections
       .find((c) => c.title === 'Notes')
       ?.sets.find((s) => s.title === 'Daily')
-    expect(daily?.pages.map((p) => p.id)).toEqual(['g', 'b', 'a'])
+    expect(daily?.pages.map((p) => p.id)).toEqual([G_ID, B_ID, A_ID])
   })
 
   it('reorderChildren persists set_order on the collection sidecar', async () => {
@@ -233,7 +238,7 @@ describe('handleMutate — move + guards', () => {
       join(root, 'Notes', 'Daily', 'SetX', '_pageset.json'),
       JSON.stringify({ id: 'sx' }),
     )
-    await writeFile(join(root, 'Notes', 'Daily', 'SetX', 'Inner.md'), '---\nid: in\n---\n\nbody')
+    await writeFile(join(root, 'Notes', 'Daily', 'SetX', 'Inner.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRN\n---\n\nbody')
     await mkdir(join(root, 'Notes', 'Weekly'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Weekly', '_pageset.json'), JSON.stringify({ id: 'wk' }))
     const r = await handleMutate(
@@ -356,7 +361,7 @@ describe('handleMutate — review-round hardening', () => {
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(true)
     await mkdir(join(root, 'Notes', 'Other'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Other', '_pageset.json'), JSON.stringify({ id: 'oth' }))
-    await writeFile(join(root, 'Notes', 'Other', 'Beta.md'), '---\nid: b2\n---\n')
+    await writeFile(join(root, 'Notes', 'Other', 'Beta.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRZ\n---\n')
     const clash = await handleMutate(
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Other' },
       nexusDeps,
@@ -463,7 +468,7 @@ describe('handleMutate — review-round hardening', () => {
     await writeFile(join(root, 'Notes', 'Locked', '_pageset.json'), JSON.stringify({ id: 'lk' }))
     await writeFile(
       join(root, 'Notes', 'Locked', 'Linker.md'),
-      '---\nid: lk1\n---\n\nSee [[Beta]].',
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRK\n---\n\nSee [[Beta]].',
     )
     await chmod(join(root, 'Notes', 'Locked'), 0o555)
     try {
@@ -570,7 +575,7 @@ describe('handleMutate — setBanner', () => {
     )
     expect(r.ok).toBe(true)
     const after = await read(pagePath)
-    const id = /id:\s*(\S+)/.exec(after)?.[1]
+    const id = new RegExp(`${PAGE_ID_KEY}:\\s*(\\S+)`).exec(after)?.[1]
     const cover = /cover:\s*(\S+)/.exec(after)?.[1]
     expect(cover).toBe(`.nexus/assets/${id}/${cover?.split('/').pop()}`)
     expect(cover).toMatch(/banner-[a-z0-9]+\.png$/)
@@ -597,7 +602,7 @@ describe('handleMutate — setBanner', () => {
     if (!created.ok) return
     const pagePath = created.value.created!.path
     const abs = join(root, pagePath)
-    await writeFile(abs, '---\nid: ../../../../escaped\n---\nbody')
+    await writeFile(abs, '---\nPageID: ../../../../escaped\n---\nbody')
     const before = await read(pagePath)
 
     const r = await handleMutate(
@@ -644,7 +649,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     expect(r.ok).toBe(true)
     const md = await read('Notes/Daily/Beta.md')
     expect(md).toContain('body')
-    expect(splitFrontmatter(md).id).toBe('b')
+    expect(splitFrontmatter(md)[PAGE_ID_KEY]).toBe(B_ID)
     expect(splitFrontmatter(md)['<Stage>']).toBe('done')
   })
 

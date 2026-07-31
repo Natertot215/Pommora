@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { PAGE_ID_KEY } from '@shared/identity'
 import type { ViewRow } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { makeSorter, resolveManualOrder, resolvedSortCount } from './sort'
@@ -67,7 +68,7 @@ function makeRow(
     title: opts.title ?? id,
     path: `${id}.md`,
     frontmatter: {
-      id,
+      [PAGE_ID_KEY]: id,
       ...(opts.modified_at ? { modified_at: opts.modified_at } : {}),
       ...(opts.created_at ? { created_at: opts.created_at } : {}),
       ...propsAtRoot(opts.props ?? {}, schema),

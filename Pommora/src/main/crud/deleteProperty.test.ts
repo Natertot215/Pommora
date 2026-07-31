@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { PAGE_ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -67,7 +68,7 @@ describe('deleteProperty', () => {
     for (const path of [p1.value.path, p2.value.path]) {
       const content = await readFile(path, 'utf8')
       expect(content).not.toContain('<Priority>')
-      expect(content).toContain('id:')
+      expect(content).toContain(`${PAGE_ID_KEY}:`)
     }
     // a recovery snapshot landed in .trash
     const trashed = await readdir(join(root, '.trash'))
