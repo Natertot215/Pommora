@@ -5,6 +5,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { join } from 'node:path'
+import { contentId, PAGE_ID_KEY } from '@shared/identity'
 import { newId } from './ids'
 import { atomicWriteFile, readJsonObject, readJsonStrict, pathExists } from './io/atomicWrite'
 import { writeSidecar } from './sidecarIO'
@@ -27,9 +28,12 @@ async function listEntries(dir: string): Promise<Dirent[]> {
  *  frontmatter + body survive via the preserving merge. */
 async function stampPage(absFile: string): Promise<boolean> {
   const content = await readFile(absFile, 'utf8')
-  if (asString(readFrontmatterFields(content).id)) return false // already adopted
+  if (contentId(readFrontmatterFields(content))) return false // already adopted
   const { body } = splitEnvelope(content)
-  await atomicWriteFile(absFile, mergeFrontmatter(content, { id: newId() }, ['id'], body))
+  await atomicWriteFile(
+    absFile,
+    mergeFrontmatter(content, { [PAGE_ID_KEY]: newId() }, [PAGE_ID_KEY], body),
+  )
   return true
 }
 

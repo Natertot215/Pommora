@@ -3,6 +3,7 @@
 // can add keys to a sidecar without Pommora erasing them.
 
 import { z } from 'zod'
+import { PAGE_ID_KEY } from './identity'
 import { savedView } from './views'
 
 const ulidList = z.array(z.string()).optional()
@@ -69,7 +70,7 @@ export const spaceSidecar = baseSidecar.extend({
  *  A property value rides the same way, under its own wrapped name key. Loose ⇒ every wrapped
  *  key and every foreign key rides through unmodeled. */
 export const pageFrontmatter = z.looseObject({
-  id: z.string(),
+  [PAGE_ID_KEY]: z.string(),
   icon: z.string().optional(),
   created_at: z.string().optional(),
   modified_at: z.string().optional(),
@@ -79,4 +80,10 @@ export type PageFrontmatter = z.infer<typeof pageFrontmatter>
 
 /** The modeled top-level page keys a FULL page rewrite governs (set if present, else
  *  delete). Partial updates pass a narrower key set so they touch nothing else. */
-export const PAGE_MODELED_KEYS = ['id', 'icon', 'created_at', 'modified_at', 'cover'] as const
+export const PAGE_MODELED_KEYS = [
+  PAGE_ID_KEY,
+  'icon',
+  'created_at',
+  'modified_at',
+  'cover',
+] as const

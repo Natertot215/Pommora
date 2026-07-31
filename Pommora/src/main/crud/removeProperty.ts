@@ -6,6 +6,7 @@
 // options (per-value reconciliation); the global Delete purges these caches.
 
 import { join } from 'node:path'
+import { contentId } from '@shared/identity'
 import { rewritePageSerialized } from '../io/fileLock'
 import { stripPageMember } from './pageValue'
 import { readSidecar } from '../sidecarIO'
@@ -54,7 +55,8 @@ async function removeInner(
     if (raw === undefined) continue
     // Only the CACHE needs identity — an id-less page still gets stripped (below), its value
     // just isn't restorable; Remove must not leak the value it exists to clear.
-    if (typeof fields.id === 'string') values[fields.id] = raw
+    const id = contentId(fields)
+    if (id) values[id] = raw
   }
   // Cache + unassign FIRST (through the strict RMW, so the page-read window above can't
   // revert a concurrent icon/banner/view write), THEN strip each page under its file lock.
@@ -115,8 +117,8 @@ export async function restoreCachedValues(
   for (const file of await listMarkdownFiles(collectionFolder)) {
     const content = await readTextOrNull(file)
     if (content === null) continue
-    const id = readFrontmatterFields(content).id
-    if (typeof id === 'string') byId.set(id, file)
+    const id = contentId(readFrontmatterFields(content))
+    if (id) byId.set(id, file)
   }
   // Each entry leaves the cache only as its page write lands; what didn't restore — a page
   // that vanished, a value the def's CURRENT type/options reject (the decoder's strict mode,
