@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { PAGE_ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -54,13 +55,13 @@ describe('stampAdopted', () => {
     await stampAdopted(root)
 
     const note1 = readFrontmatterFields(await readFile(join(root, 'Notes', 'Note1.md'), 'utf8'))
-    expect(typeof note1.id === 'string' && isUlid(note1.id)).toBeTruthy()
+    expect(typeof note1[PAGE_ID_KEY] === 'string' && isUlid(note1[PAGE_ID_KEY])).toBeTruthy()
     expect(note1.aliases).toEqual(['foo']) // foreign key survived
 
     const day1 = readFrontmatterFields(
       await readFile(join(root, 'Notes', 'Daily', 'Day1.md'), 'utf8'),
     )
-    expect(typeof day1.id === 'string' && isUlid(day1.id)).toBeTruthy()
+    expect(typeof day1[PAGE_ID_KEY] === 'string' && isUlid(day1[PAGE_ID_KEY])).toBeTruthy()
   })
 
   it('is idempotent — a second run stamps nothing and leaves ids unchanged', async () => {

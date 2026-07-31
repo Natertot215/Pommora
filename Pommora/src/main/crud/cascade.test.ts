@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { PAGE_ID_KEY } from '@shared/identity'
 import { renameCascade } from './cascade'
 import { createPage } from './page'
 import { splitFrontmatter } from '../readNexus'
@@ -43,7 +44,7 @@ describe('renameCascade', () => {
     expect(await bodyOf(c.value.path)).toBe('no links')
 
     const after = await fmOf(a.value.path)
-    expect(after.id).toBe(a.value.id)
+    expect(after[PAGE_ID_KEY]).toBe(a.value.id)
     expect(after.modified_at).toBe(before.modified_at) // derived edit ⇒ no modified bump
   })
 

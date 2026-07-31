@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { PAGE_ID_KEY } from '@shared/identity'
 import fixture from '@shared/__fixtures__/collection-with-status.json'
 import registry from '@shared/__fixtures__/registry.json'
 import type { CollectionNode, PageNode } from '@shared/types'
@@ -86,10 +87,10 @@ describe('resolveView — full pipeline over the fixture', () => {
       propertyDefinition.parse((registry as Record<string, unknown>)[id]),
     )
     const values: Record<string, PageFrontmatter> = {
-      p1: { id: 'p1', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
-      p2: { id: 'p2', ...propsAtRoot({ prop_status: 'opt_open' }, schema) },
-      p3: { id: 'p3', ...propsAtRoot({ prop_status: 'not_started' }, schema) },
-      p4: { id: 'p4' },
+      p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
+      p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'opt_open' }, schema) },
+      p3: { [PAGE_ID_KEY]: 'p3', ...propsAtRoot({ prop_status: 'not_started' }, schema) },
+      p4: { [PAGE_ID_KEY]: 'p4' },
     }
     const { rows, setTree } = flattenContainer(
       collection([page('p1'), page('p2'), page('p3'), page('p4')]),
@@ -157,8 +158,8 @@ describe('resolveView — full pipeline over the fixture', () => {
       sort: [{ property_id: '_title', direction: 'descending' }],
     }
     const values: Record<string, PageFrontmatter> = {
-      a: { id: 'a', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
-      b: { id: 'b', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
+      a: { [PAGE_ID_KEY]: 'a', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
+      b: { [PAGE_ID_KEY]: 'b', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
     }
     const { rows, setTree } = flattenContainer(collection([page('a'), page('b')]), values)
     const { groups } = resolveView({ rows, setTree, view, schema })
@@ -240,7 +241,7 @@ describe('resolveView — group_order', () => {
       propertyDefinition.parse((registry as Record<string, unknown>)[id]),
     )
     const { rows, setTree } = flattenContainer(collection([page('p1')]), {
-      p1: { id: 'p1' },
+      p1: { [PAGE_ID_KEY]: 'p1' },
     })
     expect(() => resolveView({ rows, setTree, view, schema })).not.toThrow()
   })
@@ -273,9 +274,9 @@ describe('resolveView — group_order', () => {
       },
     ]
     const values: Record<string, PageFrontmatter> = {
-      p1: { id: 'p1', ...propsAtRoot({ prop_status: 'todo' }, schema) },
-      p2: { id: 'p2' },
-      root1: { id: 'root1' },
+      p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'todo' }, schema) },
+      p2: { [PAGE_ID_KEY]: 'p2' },
+      root1: { [PAGE_ID_KEY]: 'root1' },
     }
     const base: SavedView = {
       id: 'v',
