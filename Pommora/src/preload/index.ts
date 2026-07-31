@@ -131,8 +131,6 @@ const api = {
   subfield: { get: ask('subfield:get'), set: ask('subfield:set') },
   // Nav view modes (List/Gallery per surface) — React-owned `navViewModes` key.
   navViewModes: { get: ask('navViewModes:get'), set: ask('navViewModes:set') },
-  // Agenda read for the sidebar's Agenda mode — lazy, called only when that mode is active.
-  agenda: { list: ask('agenda:list') },
   // Navigation intent — one contract over two stores; the IO layer routes each key. The
   // renderer owns the arrays and sends only the keys it means to change.
   nav: { read: ask('nav:read'), write: ask('nav:write') },

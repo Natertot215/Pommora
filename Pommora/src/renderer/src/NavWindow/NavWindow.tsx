@@ -228,8 +228,8 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
               />
             </div>
             <div className="navwindow-main-scroll edge-fade">
-              {/* `extras` (inert agenda hits) has no card form, so it renders as a List row regardless
-                  of the Style toggle. */}
+              {/* `extras` has no card form, so Gallery is passed none at all — inert hits surface
+                  in List only. */}
               {viewMode === 'gallery' ? (
                 <NavGallery
                   pins={results ? [] : resolvedPins}

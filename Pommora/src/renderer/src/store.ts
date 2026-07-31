@@ -3,7 +3,6 @@ import { blockHostKey, type BlockHostRef } from '@shared/blocks'
 import {
   EMPTY_PREVIEWS,
   DEFAULT_COMMANDS,
-  type AgendaEntry,
   type NavigationState,
   type NavRef,
   type NavViewMode,
@@ -227,8 +226,6 @@ interface SessionState {
   removeRecent: (key: string) => void
   reorderRecent: (activeKey: string, overKey: string) => void
   setRecentsOrder: (keys: string[]) => void
-  agendaSnapshot: { tasks: AgendaEntry[]; events: AgendaEntry[] } | null
-  ensureAgendaSnapshot: () => Promise<void>
   navOpen: boolean
   openNav: () => void
   closeNav: () => void
@@ -628,7 +625,6 @@ export const useSession = create<SessionState>((set, get) => {
                 .then((views) => set({ activeViews: views }))
                 .catch(() => undefined), // surfaces fall back to the first saved view
             ])
-            set({ agendaSnapshot: null })
             // A mutation refetch must NOT re-read the sidecar here — its debounced write trails
             // the in-memory tab set, so a re-read would roll the tabs backward.
             if (get().activeTabId === '') {
@@ -791,7 +787,6 @@ export const useSession = create<SessionState>((set, get) => {
       applySystemAccent(systemColor)
       set({ personalization: tree.personalization, commands: tree.commands })
       applyPersonalization(tree.personalization)
-      if (get().agendaSnapshot) set({ agendaSnapshot: null })
     },
 
     choose: () => openVia(() => window.nexus.choose()),
@@ -1075,19 +1070,8 @@ export const useSession = create<SessionState>((set, get) => {
       if (next.every((r, i) => r === s.recents[i])) return
       commitRecents(next)
     },
-    agendaSnapshot: null,
-    ensureAgendaSnapshot: async () => {
-      if (get().agendaSnapshot) return
-      try {
-        const res = await window.nexus.agenda.list()
-        if (res.ok) set({ agendaSnapshot: { tasks: res.value.tasks, events: res.value.events } })
-      } catch {
-        // search runs over the tree alone until the next attempt
-      }
-    },
     navOpen: false,
     openNav: () => {
-      void get().ensureAgendaSnapshot()
       set({ navOpen: true })
       get().openNavPreview()
     },

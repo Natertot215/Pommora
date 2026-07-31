@@ -178,23 +178,7 @@
   }
 }
 
-/* --- agenda mode (read-only list) --- */
-.agenda-mode {
-  display: flex;
-  flex-direction: column;
-}
-.agenda-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 6px;
-  color: var(--label-secondary);
-}
-.agenda-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* --- agenda mode --- */
 .agenda-empty {
   padding: 8px 6px;
   color: var(--label-tertiary);
