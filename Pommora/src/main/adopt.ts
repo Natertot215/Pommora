@@ -11,6 +11,7 @@ import { writeSidecar } from './sidecarIO'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { asString, asStringArray } from './coerce'
 import { shouldSkipDir } from './exclusion'
+import { readAgendaRegistration, resolveFolderKind } from './folderKind'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, nexusConfig } from './paths'
 
 type FolderKind = 'collection' | 'set'
@@ -83,21 +84,20 @@ async function stampTree(
 export async function stampAdopted(root: string): Promise<{ stamped: number }> {
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}
   const excluded = asStringArray(settings.excluded_folders) ?? []
+  const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
+  // `sidecarMode: false` is the honest reading for adoption specifically: a container sidecar's
+  // ABSENCE is what this pass exists to fix, so it must not be taken as a reason to skip. Agenda
+  // configs still classify normally, which is what keeps a singleton from adopting as a Collection.
+  const kindCtx = { agenda: readAgendaRegistration(identity), sidecarMode: false }
 
   let stamped = 0
   for (const e of await listEntries(root)) {
     if (!e.isDirectory()) continue
     if (shouldSkipDir(e.name, e.name, excluded)) continue
     const abs = join(root, e.name)
-    // Agenda singletons are identified by their config sidecar (never by name). A folder carrying
-    // one is left unclassified rather than adopted as a Collection — its members answer to the
-    // agenda kind, not the page one.
-    if (
-      (await pathExists(join(abs, SIDECAR_FILENAME.taskConfig))) ||
-      (await pathExists(join(abs, SIDECAR_FILENAME.eventConfig)))
-    ) {
-      continue
-    }
+    // Anything the resolver won't call a Collection is left alone — an agenda singleton's members
+    // answer to the agenda kind, not the page one.
+    if ((await resolveFolderKind(abs, 'root', kindCtx)) !== 'collection') continue
     // Don't fabricate a Collection from an empty, sidecar-less folder (stray junk). One that
     // already has a sidecar, or holds pages/subfolders, is real content and gets adopted.
     if (

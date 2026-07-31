@@ -7,6 +7,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { parseDocument } from 'yaml'
 import { contentId } from '@shared/identity'
+import { readAgendaRegistration, resolveFolderKind } from './folderKind'
 import type {
   SolidColor,
   AccentSetting,
@@ -443,6 +444,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const sidecarMode = !!asString(identity?.id)
   const id = sidecarMode ? (identity!.id as string) : adoptedId(root)
   const fb: Fallback = sidecarMode ? 'id' : 'title'
+  const kindCtx = { agenda: readAgendaRegistration(identity), sidecarMode }
 
   const excluded = asStringArray(settings.excluded_folders) ?? []
   const labels = readLabels(settings.labels)
@@ -485,12 +487,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const maybeCollections = await Promise.all(
     rootDirs.map(async (e) => {
       const abs = join(root, e.name)
-      const [hasTask, hasEvent, hasCollection] = await Promise.all([
-        pathExists(join(abs, SIDECAR_FILENAME.taskConfig)),
-        pathExists(join(abs, SIDECAR_FILENAME.eventConfig)),
-        sidecarMode ? pathExists(join(abs, SIDECAR_FILENAME.collection)) : true,
-      ])
-      if (hasTask || hasEvent || !hasCollection) return null
+      if ((await resolveFolderKind(abs, 'root', kindCtx)) !== 'collection') return null
       return readPageCollection(abs, e.name, e.name, sidecarMode, excluded, fb, registry.defs)
     }),
   )
