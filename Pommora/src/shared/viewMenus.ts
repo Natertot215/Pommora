@@ -6,12 +6,7 @@ export type ViewButtonMenuAction = 'toggle-title' | 'style-dropdown' | 'style-to
 
 export type EmbedTitleMenuAction = 'toggle-icon' | 'hide-title' | `size-${number}`
 
-export type EmbedAreaMenuAction =
-  | 'toggle-pill-titles'
-  | 'show-title'
-  | 'new-view'
-  | 'style-dropdown'
-  | 'style-toolbar'
+export type EmbedAreaMenuAction = 'show-title' | 'new-view' | 'style-dropdown' | 'style-toolbar'
 
 export type ViewItemMenuAction = 'view:duplicate' | 'view:delete'
 

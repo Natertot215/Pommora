@@ -260,7 +260,7 @@ export interface Asks {
     reply: EmbedTitleMenuAction | null
   }
   'view-embed-area-menu': {
-    args: [current: { viewButton: ViewButton; viewStyle: ViewStyle; titleShown: boolean }]
+    args: [current: { viewStyle: ViewStyle; titleShown: boolean }]
     reply: EmbedAreaMenuAction | null
   }
   'view-item-menu': { args: [canDelete: boolean]; reply: ViewItemMenuAction | null }
