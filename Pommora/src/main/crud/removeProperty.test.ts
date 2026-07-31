@@ -92,6 +92,22 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     expect(vals).toEqual(expect.arrayContaining(['active', 'done']))
   })
 
+  // Remove exists to CLEAR a value; identity only decides whether it can be handed back. A page
+  // carrying no identity key must still be stripped, or Remove leaks the very value it ran to
+  // clear — and it must not be cached under a synthetic id it would never be found by again.
+  it('strips an identity-less page too, caching nothing for it', async () => {
+    const raw = await readFile(pageA, 'utf8')
+    await writeFile(pageA, raw.replace(/^id:.*\n/m, ''))
+    expect(await pageValue(pageA)).toBe('active') // still holds the value, just no identity
+
+    const r = await removeProperty(root, folder, propId)
+    expect(r.ok).toBe(true)
+    expect(await pageValue(pageA)).toBeUndefined() // stripped regardless
+    expect(await pageValue(pageB)).toBeUndefined()
+    const vals = Object.values((await cacheBlock())?.values ?? {})
+    expect(vals).toEqual(['done']) // only the identified page is restorable
+  })
+
   it('is a no-op when the property is not assigned — never overwrites a cache with emptiness (E-6)', async () => {
     await removeProperty(root, folder, propId)
     const before = await cacheBlock()

@@ -179,13 +179,22 @@ export interface PageFrontmatter {
 - Test: extend `src/main/readNexus.test.ts` + `src/main/crud/loadValues.test.ts` (or nearest existing suites)
 
 **Steps:**
-- [ ] Write the test: a fixture page with NO identity key flows through the walk (gets `adopted-` synthetic id), through `loadValues` (present in the value map under the synthetic id — no silent drop), and through `readPage` (detail opens) — pinned green under the OLD key so Phase 3's flip must keep it green.
-- [ ] vitest → PASS (this behavior exists today; the fixture pins it).
-- [ ] Commit: `test(identity): the ID-less page fixture — the cutover cannot hide behind migrated fixtures`
+- [x] Write the test: a fixture page with NO identity key flows through the walk (gets `adopted-` synthetic id), through `loadValues` (present in the value map under the synthetic id — no silent drop), and through `readPage` (detail opens) — pinned green under the OLD key so Phase 3's flip must keep it green.
+- [x] **Audit first — two of the three legs were already pinned.** The walk (`readNexus.test.ts`, "adopts no-frontmatter pages") and the detail read (`readPage.test.ts`, "adopts an id … when no frontmatter") already covered it. `loadValues` pinned only the *key*, so it was strengthened to assert the values ride intact — a row landing in the batch with its values dropped renders blank, which reads as data loss rather than as a page awaiting adoption.
+- [x] **The real gap was elsewhere, and Gate 3 depends on it:** the documented Remove-Property law — "an id-less page still gets stripped, its value just isn't restorable" — had **no test at all**. Written now: an identity-less member is stripped like any other, and caches nothing. This is the tripwire for the round-2 R5 gate; a `member`-only admission check in Task 11 turns it red.
+- [x] vitest → PASS (this behavior exists today; the fixtures pin it). 172 files / 1859 tests.
+- [x] Commit: `test(identity): the ID-less page fixture — the cutover cannot hide behind migrated fixtures`
 
 #### Gate 2 — one-owner verification
-- [ ] All four gates green; the Task 6 grep clean; Task 7's fixture green.
-- [ ] Behavior unchanged confirmed: the full vitest suite needed no assertion rewrites in this phase beyond stub typing.
+- [x] All four gates green (172 files / 1859 tests); the Task 6 grep clean; Task 7's fixtures green.
+- [x] Behavior unchanged confirmed by **count, not by assertion**: Phase 2 rewrote zero existing assertions. Every test that passed before the seam passes after it, and the only count movement is the three tests this phase added.
+
+**Phase 2 closed. Self-review findings:**
+
+1. **The plan's `writeImageAsset` census was wrong, and the correction changed the fix's shape.** Four callers, not three-trusted-plus-one — the container-banner arm takes its key from a sidecar read off disk. Gating the one named call site would have left a *demonstrated* escape: with the guard lifted, the pinning test creates a directory outside the nexus root. The guard belongs at the sink. **Lesson for the remaining tasks: a hand-enumerated caller list in this plan is a hypothesis, not a census** — re-derive it by grep before relying on it. Task 11's five-sweep list is the next one that matters.
+2. **A "make the type explicit" instruction proved unnecessary.** `PAGE_ID_KEY` is a literal type, so the computed schema key resolves to a named field and `z.infer` survives. Writing the parallel interface would have duplicated the schema. Check inference before hand-writing a type the schema already yields.
+3. **Guard tests need negative controls.** The traversal test was verified by disabling the guard and watching it fail. A guard test that passes both ways proves nothing — apply this to every refusal Task 11 adds.
+4. **Phase 3's baseline is 172 files / 1859 tests.**
 
 ---
 
