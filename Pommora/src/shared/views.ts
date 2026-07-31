@@ -314,37 +314,23 @@ export const VIEW_ID_PREFIX = 'view_'
  *  this for a real `view_<ulid>` on first save (see crud/views). */
 export const DEFAULT_VIEW_ID = `${VIEW_ID_PREFIX}default`
 
-/** The fields every minted view shares — sentinel id, table type, structural grouping, table glyph. */
-const mintBase = (name: string) => ({
-  id: DEFAULT_VIEW_ID,
-  name,
-  icon: 'table',
-  type: 'table' as const,
-  group: { kind: 'structural' as const },
-})
-
-/** Title-only visibility for a `+`-minted view. Every schema id is hidden and Context columns need
- *  no entry — absence from property_order IS hidden for them — so the guaranteed Title is the sole
- *  column (verified through resolveColumns). */
-function mintVisibility(
-  schema: PropertyDefinition[],
-): Pick<SavedView, 'property_order' | 'hidden_properties'> {
+/** A minted view: sentinel id until first save, table type + glyph, structural grouping, and
+ *  title-only visibility. Every schema id is hidden and Context columns need no entry — absence
+ *  from property_order IS hidden for them — so the guaranteed Title is the sole column (verified
+ *  through resolveColumns), and the user reveals what they want. */
+export function mintNewView(name: string, schema: PropertyDefinition[]): SavedView {
   return {
+    id: DEFAULT_VIEW_ID,
+    name,
+    icon: 'table',
+    type: 'table',
+    group: { kind: 'structural' },
     property_order: [RESERVED_PROPERTY_ID.title],
     hidden_properties: schema.map((d) => d.id),
   }
 }
 
-/** The seeded/entry-minted default Table view — same visibility seam as a `+`-created view, so
- *  it always starts clean and the user reveals what they want. Carries the sentinel id until
- *  first save. */
+/** The seeded/entry-minted default view — a minted view wearing the Table name. */
 export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
-  return {
-    ...mintBase('Table'),
-    ...mintVisibility(schema),
-  }
-}
-
-export function mintNewView(name: string, schema: PropertyDefinition[]): SavedView {
-  return { ...mintBase(name), ...mintVisibility(schema) }
+  return mintNewView('Table', schema)
 }

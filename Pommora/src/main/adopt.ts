@@ -36,22 +36,17 @@ async function stampPage(absFile: string): Promise<boolean> {
   return true
 }
 
-/** Resolve a folder's id, minting + persisting one when it has none. Returns `{ id, wrote }`, or
- *  null for a sidecar that exists but couldn't be read: minting over it would replace the
- *  Collection's views, schema and cache with a bare id, so the folder waits for a later open. */
-async function stampFolder(
-  absDir: string,
-  kind: FolderKind,
-): Promise<{ id: string; wrote: boolean } | null> {
+/** Mint + persist a folder id when it has none, reporting whether it wrote. A sidecar that exists
+ *  but couldn't be read is left alone: minting over it would replace the Collection's views,
+ *  schema and cache with a bare id, so the folder waits for a later open. */
+async function stampFolder(absDir: string, kind: FolderKind): Promise<boolean> {
   const read = await readJsonStrict(join(absDir, SIDECAR_FILENAME[kind]))
-  if (!read.ok && read.error.code !== 'not-found') return null
+  if (!read.ok && read.error.code !== 'not-found') return false
   const existing = read.ok ? read.value : {}
-  const existingId = asString(existing.id)
-  if (existingId) return { id: existingId, wrote: false }
+  if (asString(existing.id)) return false
 
-  const id = newId()
-  await writeSidecar(absDir, kind, { ...existing, id })
-  return { id, wrote: true }
+  await writeSidecar(absDir, kind, { ...existing, id: newId() })
+  return true
 }
 
 /** Stamp `absDir` (as `kind`) then its direct pages, then recurse every non-excluded
@@ -62,8 +57,7 @@ async function stampTree(
   kind: FolderKind,
   excluded: string[],
 ): Promise<number> {
-  const self = await stampFolder(absDir, kind)
-  let count = self?.wrote ? 1 : 0
+  let count = (await stampFolder(absDir, kind)) ? 1 : 0
 
   for (const e of await listEntries(absDir)) {
     if (e.isFile() && !e.name.startsWith('_') && e.name.toLowerCase().endsWith('.md')) {
