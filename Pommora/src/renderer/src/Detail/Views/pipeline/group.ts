@@ -5,6 +5,7 @@
 
 import type { CollectionNode, PageNode, ResolvedGroup, SetNode, ViewRow } from '@shared/types'
 import type { DateGranularity, EmptyPlacement, GroupConfig, SubGroupConfig } from '@shared/views'
+import { PAGE_ID_KEY } from '@shared/identity'
 import type { PageFrontmatter } from '@shared/schemas'
 import { optionValues, type PropertyDefinition } from '@shared/properties'
 import { UNGROUPED } from '@shared/types'
@@ -65,7 +66,7 @@ function toRow(
     icon: page.icon,
     path: page.path,
     ...(parentSetId !== undefined ? { parentSetId } : {}),
-    frontmatter: values[page.id] ?? { id: page.id },
+    frontmatter: values[page.id] ?? { [PAGE_ID_KEY]: page.id },
     ...(page.contextValues !== undefined ? { contextValues: page.contextValues } : {}),
   }
 }

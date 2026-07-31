@@ -4,6 +4,7 @@
 // so a cascade can't clobber a concurrent edit. Per-file, not cross-file atomic: a
 // partly-applied cascade is recoverable by re-running.
 
+import { contentId } from '@shared/identity'
 import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'
 import { listMarkdownFiles } from '../io/walk'
@@ -31,7 +32,7 @@ export async function renameCascade(
     const wrote = await rewritePageSerialized(file, (content) => {
       const { body } = splitEnvelope(content)
       if (!scanConnections(body).some((c) => c.normalizedTitle === oldKey)) return null
-      if (!splitFrontmatter(content).id) return null // connections live only on real pages
+      if (!contentId(splitFrontmatter(content))) return null // connections live only on real pages
       const newBody = rewriteConnections(body, oldTitle, newTitle)
       if (newBody === body) return null
       return mergeFrontmatter(content, {}, [], newBody)

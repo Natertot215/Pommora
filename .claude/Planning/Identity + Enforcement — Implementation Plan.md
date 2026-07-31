@@ -140,9 +140,10 @@ export function contentId(fm: Record<string, unknown>): string | undefined {
 - `src/main/crud/cascade.ts:34` — `if (!splitFrontmatter(content).id)` → `if (!contentId(splitFrontmatter(content)))`
 - `src/main/crud/removeProperty.ts:57` (snapshot) + `:118` (restore) — `fields.id`/`readFrontmatterFields(content).id` → `contentId(...)`
 - `src/main/adopt.ts:30` — `asString(readFrontmatterFields(content).id)` → `contentId(readFrontmatterFields(content))`; `:32`'s `{ id: newId() }, ['id']` → `{ [PAGE_ID_KEY]: newId() }, [PAGE_ID_KEY]`
-- `src/main/mutate.ts:321` — `fields.id` → `contentId(fields)`; **and the F6 gate**: before `:325`'s `writeImageAsset(root, id, …)`, add `if (!isUlid(id)) return fault('That page's id can't key an asset.')` — at THIS call site only, never inside `writeImageAsset` (its other callers pass `''`/`'homepage'`/the nexus id — verified `mutate.ts:275,:348,:382`)
+- `src/main/mutate.ts:321` — `fields.id` → `contentId(fields)`. **The F6 gate moved to the sink, and the premise behind its original placement was false.** `writeImageAsset` has FOUR callers, not three-trusted-plus-one: `:275` (nexus id) and `:348` (`''`) are trusted, `'homepage'` is a literal, but the container-banner arm assigns `assetKey` from `readJsonObject(<container sidecar>).id` — arbitrary disk content reaching `join(root, '.nexus', 'assets', assetKey, file)`, the same untrusted class as the page frontmatter id and behind the same insufficient `typeof === 'string'` check. Gating one call site would have left a demonstrated hole: a negative-control run with the guard disabled **creates a directory outside the nexus root**. One predicate at the sink instead, covering every present and future caller.
+  **Shape, deliberately narrow:** the key must be ONE path segment (no `/`, no `\`, not `.`/`..`) — *not* ULID-shaped. A ULID requirement would strip cover images from any hand-authored id, including the live `research-*` slug pages, which is a behavior change Phase 2 must not make. Path syntax is the harm; id shape is not.
 - `src/main/crud/page.ts:34-38` — `createPage`'s modeled record keys via `PAGE_ID_KEY`
-- `src/shared/schemas.ts:80-86` — `pageFrontmatter` uses the computed key; declare the type explicitly so inference survives:
+- `src/shared/schemas.ts:71-77` — `pageFrontmatter` uses the computed key. **The explicit interface proved unnecessary and was not written:** `PAGE_ID_KEY` is a literal type, so TypeScript resolves the computed property to a named field and `z.infer` survives intact (typecheck green across the whole frontmatter surface). Hand-writing a parallel interface would have duplicated the schema and broken the file's own stated law — each schema IS its type. The plan's sketch, kept for the record:
 ```ts
 import { PAGE_ID_KEY } from './identity'
 export const pageFrontmatter = z.looseObject({
@@ -165,9 +166,10 @@ export interface PageFrontmatter {
 - Renderer/test stubs that read `.frontmatter.id` directly: fix what typecheck flags after the schema change; nothing else.
 
 **Steps:**
-- [ ] Route the readers (the first seven files), typecheck between groups — behavior identical, the seam still answers `'id'`.
-- [ ] Route the writers + schemas (the last three).
-- [ ] Run all four gates — expect green, zero behavior change.
+- [x] Route the readers (the first seven files), typecheck between groups — behavior identical, the seam still answers `'id'`.
+- [x] Route the writers + schemas (the last three). `asString` left `readPage.ts` with its last use.
+- [x] Run all four gates — green at **172 files / 1858 tests**: the Task 5 baseline of 1857 plus the one new test, and no assertion rewrites anywhere. Zero behavior change confirmed by the count, not by assertion.
+- [x] Pin the sink guard with a **negative control**: disable `assetKeyOk` and the new test must fail on a directory appearing outside the nexus root. Verified failing, then restored — a guard test that passes both ways proves nothing.
 - [ ] Grep proof of one ownership: `grep -rn "fm\.id\b\|frontmatter\.id\b\|fields\.id\b\|splitFrontmatter(content)\.id\|readFrontmatterFields(content)\.id\|{ id: \|, id: " Pommora/src --include="*.ts"` reviewed hit-by-hit — the accesses AND object-literal writes; zero production hits outside the seam (the grep is a reviewed sweep, not a bare count — sidecar/nexus/tab `id` fields are different keys and stay).
 - [ ] Commit: `refactor(identity): every content-id consumer routes through the seam`
 

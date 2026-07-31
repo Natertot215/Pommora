@@ -6,6 +6,7 @@
 // stats before serving, so a changed file re-parses and an untouched one costs no read at all.
 
 import { join, relative, sep } from 'node:path'
+import { PAGE_ID_KEY } from '@shared/identity'
 import { pageFrontmatter, type PageFrontmatter } from '@shared/schemas'
 import { readPageRecord } from '../readNexus'
 import { listMarkdownFiles } from '../io/walk'
@@ -27,7 +28,7 @@ export async function loadValues(
   for (const rec of records) {
     if (!rec) continue
     // The record's node.id IS the id rule — frontmatter id, else the adopted one.
-    const parsed = pageFrontmatter.safeParse({ ...rec.fm, id: rec.node.id })
+    const parsed = pageFrontmatter.safeParse({ ...rec.fm, [PAGE_ID_KEY]: rec.node.id })
     if (parsed.success) out[rec.node.id] = parsed.data
   }
   return out
