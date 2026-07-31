@@ -133,7 +133,6 @@ export const RESERVED_PROPERTY_ID = {
   createdAt: '_created_at',
   modifiedAt: '_modified_at',
   status: '_status',
-  type: '_type',
   // Filter-only Location target — never a column; the filter's location branch runs before the
   // declaredType dispatch, so this id deliberately resolves to no type.
   location: '_location',
