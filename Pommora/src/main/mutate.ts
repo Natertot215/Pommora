@@ -63,18 +63,6 @@ export interface MutateDeps {
   trashToSystem: (absPath: string) => Promise<void>
 }
 
-/** A nested Set's `parent_id` = its parent container's sidecar id (a Collection at depth-1,
- *  a Set deeper), set once at create time — a move does not re-heal it. Position (the folder
- *  nesting) is what the app itself walks, so a missing parent sidecar here is non-fatal; the
- *  create just omits the field. */
-async function parentContainerId(parentDir: string): Promise<string | undefined> {
-  for (const kind of ['collection', 'set'] as const) {
-    const sc = await readJsonObject(join(parentDir, SIDECAR_FILENAME[kind]))
-    if (sc && typeof sc.id === 'string') return sc.id
-  }
-  return undefined
-}
-
 const relJoin = (parent: string, child: string): string => (parent ? `${parent}/${child}` : child)
 
 function decodeImageDataUrl(dataUrl: string): { ext: string; buffer: Buffer } | null {
@@ -196,10 +184,6 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const parent = await resolveUnderRoot(root, req.parentPath || '.')
       if (!parent.ok) return parent
       const extra: Record<string, unknown> = {}
-      if (req.kind === 'set') {
-        const pid = await parentContainerId(parent.value)
-        if (pid) extra.parent_id = pid
-      }
       // Creation-seed: an app-made container is born with its default view on disk, so no
       // surface ever meets an empty views[]. The ULID mints here in main (the sentinel can't).
       extra.views = [{ ...mintDefaultView([]), id: `${VIEW_ID_PREFIX}${newId()}` }]
