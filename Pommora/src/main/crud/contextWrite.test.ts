@@ -6,12 +6,10 @@ import {
   createContextGroup,
   createSpace,
   loadContextWorld,
-  setAgendaContext,
   setPageContext,
   setSpaceColor,
   setSpaceContext,
 } from './contextWrite'
-import { updateAgendaItem, updateAgendaProperty } from './agendaEntity'
 import { rawLayoutSchema } from '@shared/blocks'
 import { readBlockDoc } from '../blocks'
 import { openSessionDb, closeSessionDb } from '../sessionDb'
@@ -164,37 +162,6 @@ describe('setPageContext', () => {
     const r = await setPageContext(page(), await world(), 'ctx_projects', ['nope'])
     expect(r.ok).toBe(false)
     expect(await readFile(page(), 'utf8')).toBe(before)
-  })
-})
-
-describe('setAgendaContext + the agenda lock', () => {
-  const task = () => join(root, 'Tasks', 'T.task.json')
-  beforeEach(async () => {
-    await mkdir(join(root, 'Tasks'), { recursive: true })
-    await writeFile(task(), JSON.stringify({ id: 't1', '(Projects)': ['pommora'], foreign: true }))
-  })
-
-  it('writes the wrapped key, repairs siblings, preserves foreign keys', async () => {
-    const r = await setAgendaContext(task(), await world(), 'ctxC', ['sp-cs'])
-    expect(r.ok).toBe(true)
-    const raw = JSON.parse(await readFile(task(), 'utf8'))
-    expect(raw['(Classes)']).toEqual(['CS 161'])
-    expect(raw['(Projects)']).toEqual(['Pommora'])
-    expect(raw.foreign).toBe(true)
-  })
-
-  it('concurrent agenda RMWs on one file serialize (no lost update)', async () => {
-    await Promise.all([
-      updateAgendaItem(task(), { priority: 5 }),
-      updateAgendaProperty(
-        task(),
-        { id: 'prop_x', name: 'Prop_x', type: 'url' as const },
-        { kind: 'url', value: 'https://x.dev' },
-      ),
-    ])
-    const raw = JSON.parse(await readFile(task(), 'utf8'))
-    expect(raw.priority).toBe(5)
-    expect((raw as Record<string, unknown>)['<Prop_x>']).toBeDefined()
   })
 })
 

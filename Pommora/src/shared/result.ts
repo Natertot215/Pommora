@@ -9,15 +9,13 @@ export type ErrorCode =
   | 'invalid-name'
   | 'invalid-path'
   | 'invalid-property'
-  | 'invalid-event'
-  | 'not-agenda'
   | 'lossy-change-requires-confirmation'
   | 'operation-failed'
   | 'no-nexus'
   | 'busy'
 
 /** A structured, serializable error. `scope` names the entity/kind domain (free-form: an
- *  entity name like "page"/"agenda" or a SidecarKind), used for message context only. */
+ *  entity name like "page" or a SidecarKind), used for message context only. */
 export interface PommoraError {
   code: ErrorCode
   message: string

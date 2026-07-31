@@ -63,15 +63,6 @@ export const spaceSidecar = baseSidecar.extend({
   color: z.string().optional().catch(undefined),
 })
 
-/** Agenda config sidecar (`_taskconfig.json` / `_eventconfig.json`) — a property schema
- *  for its agenda items. property_definitions stay loose (per-def codec is parseDefinitions);
- *  views + default_sort ride through untouched. */
-export const agendaConfigSidecar = baseSidecar.extend({
-  property_definitions: z.array(z.looseObject({})).optional(),
-  views: z.array(z.looseObject({})).optional(),
-  default_sort: z.looseObject({}).optional(),
-})
-
 /** Page (.md) frontmatter. Context links are parenthesized TITLE keys (`(Projects):`)
  *  riding the loose object as retained raw keys — resolved against the registry at walk
  *  assembly, never modeled here (per-nexus dynamic keys can't be schema fields).
