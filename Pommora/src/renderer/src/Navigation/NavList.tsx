@@ -201,7 +201,7 @@ export function NavList({
   items: ResolvedNav[]
   /** Membership comes from the caller's pin set, never a flag on the rows (mirrors NavGallery). */
   pins?: ResolvedNav[]
-  /** Unresolvable hits (agenda kinds) — listed inert until Agenda routing ships. */
+  /** Hits whose kind has no click destination — listed inert so they stay findable. */
   extras?: { key: string; title: string; kind: string }[]
   reorderable?: boolean
   /** Host override for the recents reorder (NavWindow rewrites its frozen snapshot too). */
@@ -243,7 +243,7 @@ export function NavList({
         <div
           key={e.key}
           className="nav-item nav-item-inert"
-          title="Agenda navigation isn't wired yet"
+          title="This result can't be opened"
         >
           <span className="nav-item-title">{e.title}</span>
           <span className={cx('nav-item-path', text.caption.standard)}>{e.kind}</span>

@@ -21,7 +21,6 @@ import type {
 import { isPlainObject } from '@shared/propertyValue'
 import { errText, fail, ok, type Result } from '@shared/result'
 import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
-import { collectAgendaEntries } from './agenda/collectAgenda'
 import type { MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { readNexus } from './readNexus'
@@ -490,17 +489,6 @@ serveBridge(
         } catch (e) {
           return { status: 'error', error: errText(e) }
         }
-      },
-    },
-
-    // Called only when the sidebar's Agenda mode is active, so agenda files never join the tree walk.
-    'agenda:list': {
-      kind: 'envelope',
-      fn: async () => {
-        const root = sessionRoot()
-        if (root === null) return NO_NEXUS
-        const { tasks, events } = await collectAgendaEntries(root)
-        return ok({ tasks, events })
       },
     },
 
