@@ -181,8 +181,8 @@ export function resolveIndexOf(tree: NexusTree): ResolveIndex {
 }
 
 /** Tree-derived search entries, grouped by kind (homepage, spaces, collections, sets, pages) so
- *  equal-scored ties keep a stable cross-kind order. Agenda entries append per surface — they
- *  ride a snapshot, not the tree. */
+ *  equal-scored ties keep a stable cross-kind order. The tree is the whole universe — a kind
+ *  absent from the walk is absent from search. */
 export function searchEntriesOf(tree: NexusTree): SearchEntry[] {
   const ix = indexFor(tree)
   if (!ix.search) {
