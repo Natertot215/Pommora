@@ -27,6 +27,13 @@ export function isUlidShaped(value: unknown): value is string {
   return typeof value === 'string' && ULID_RE.test(value)
 }
 
+/** A key with no value is an ABSENT key — clearing a property in an outside editor writes
+ *  `PageID:` with nothing after it, and everywhere else in Pommora an emptied value deletes its
+ *  key. Reading that as a malformed identity would make the file invisible and un-adoptable for
+ *  what the user experienced as deleting a field. */
+const presentKeys = (fm: Record<string, unknown>): string[] =>
+  ALL_KIND_KEYS.filter((k) => fm[k] !== undefined && fm[k] !== null && fm[k] !== '')
+
 export type Admission =
   | { state: 'member'; id: string }
   | { state: 'missing' }
@@ -45,7 +52,7 @@ export function admitContentFile(
   fm: Record<string, unknown>,
   expected: ContentKind,
 ): Admission {
-  const present = ALL_KIND_KEYS.filter((k) => fm[k] !== undefined)
+  const present = presentKeys(fm)
   // Ambiguity outranks every other question: with two keys there is no "the" key to judge.
   if (present.length > 1) return { state: 'unknown', reason: 'dual' }
   if (present.length === 0) return { state: 'missing' }
@@ -60,7 +67,7 @@ export function admitContentFile(
  *  kind context already decided admission. Deliberately WITHOUT shape validation: shape belongs to
  *  the predicate above, and keeping this lenient is what lets a hand-authored id still read. */
 export function contentId(fm: Record<string, unknown>): string | undefined {
-  const present = ALL_KIND_KEYS.filter((k) => fm[k] !== undefined)
+  const present = presentKeys(fm)
   if (present.length !== 1) return undefined
   const v = fm[present[0]]
   return typeof v === 'string' && v.length > 0 ? v : undefined

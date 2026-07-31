@@ -459,7 +459,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const sidecarMode = !!asString(identity?.id)
   const id = sidecarMode ? (identity!.id as string) : adoptedId(root)
   const fb: Fallback = sidecarMode ? 'id' : 'title'
-  const kindCtx = { agenda: readAgendaRegistration(identity), sidecarMode }
+  const kindCtx = { agenda: readAgendaRegistration(identity), sidecarMode, root }
 
   const excluded = asStringArray(settings.excluded_folders) ?? []
   const labels = readLabels(settings.labels)

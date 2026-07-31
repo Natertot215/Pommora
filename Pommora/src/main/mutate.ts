@@ -120,7 +120,7 @@ const fault = (message: string): Result<never> => fail('operation-failed', messa
  *  main-side check, rather than a rule re-stated per caller. */
 async function movesInto(root: string, dst: string): Promise<Result<null>> {
   const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
-  const ctx = { agenda: readAgendaRegistration(identity), sidecarMode: !!identity?.id }
+  const ctx = { agenda: readAgendaRegistration(identity), sidecarMode: !!identity?.id, root }
   const depth = dirname(dst) === root ? 'root' : 'nested'
   const kind = await resolveFolderKind(dst, depth, ctx)
   return kind === 'collection' || kind === 'set'
