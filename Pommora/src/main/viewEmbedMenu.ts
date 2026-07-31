@@ -3,7 +3,7 @@
 // same returning-menu chassis as the ViewDropdown's. Show Title only surfaces in the area menu
 // while the title row is hidden: with the row gone, its own right-click target is gone too.
 import type { BrowserWindow } from 'electron'
-import type { ViewButton, ViewStyle } from '@shared/types'
+import type { ViewStyle } from '@shared/types'
 import type { EmbedAreaMenuAction, EmbedTitleMenuAction } from '@shared/viewMenus'
 import { popReturningMenu } from './returningMenu'
 
@@ -32,13 +32,11 @@ export function popEmbedTitleMenu(
 
 export function popEmbedAreaMenu(
   win: BrowserWindow,
-  current: { viewButton: ViewButton; viewStyle: ViewStyle; titleShown: boolean },
+  current: { viewStyle: ViewStyle; titleShown: boolean },
 ): Promise<EmbedAreaMenuAction | null> {
+  // The pill-titles toggle lives on the segments' own menu alone — beside the title row's
+  // Show/Hide Title, the two near-identical labels read as one control.
   return popReturningMenu<EmbedAreaMenuAction>(win, (pick) => [
-    {
-      label: current.viewButton === 'labeled' ? 'Hide Titles' : 'Show Titles',
-      click: pick('toggle-pill-titles'),
-    },
     ...(current.titleShown ? [] : [{ label: 'Show Title', click: pick('show-title') }]),
     { label: 'New View', click: pick('new-view') },
     { type: 'separator' as const },

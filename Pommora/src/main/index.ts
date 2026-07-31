@@ -1392,13 +1392,8 @@ serveBridge(
     'view-embed-area-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, current: unknown): Promise<EmbedAreaMenuAction | null> => {
-        const c = current as {
-          viewButton?: unknown
-          viewStyle?: unknown
-          titleShown?: unknown
-        } | null
+        const c = current as { viewStyle?: unknown; titleShown?: unknown } | null
         return popEmbedAreaMenu(win, {
-          viewButton: c?.viewButton === 'icon' ? 'icon' : 'labeled',
           viewStyle: c?.viewStyle === 'dropdown' ? 'dropdown' : 'toolbar',
           titleShown: c?.titleShown !== false,
         })
