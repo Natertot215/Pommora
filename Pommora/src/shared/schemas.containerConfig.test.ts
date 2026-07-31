@@ -42,7 +42,6 @@ describe('container sidecar round-trip', () => {
   it('set keeps view_button + view_style (no open_in field)', () => {
     const s = pageSetSidecar.parse({
       id: 's1',
-      parent_id: 'c1',
       view_button: 'icon',
       view_style: 'dropdown',
     })

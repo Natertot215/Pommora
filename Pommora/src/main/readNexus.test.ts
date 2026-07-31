@@ -94,7 +94,7 @@ beforeAll(() => {
   )
   w(
     join(sidecar, 'Notes', 'Daily', '_pageset.json'),
-    JSON.stringify({ id: 'set-daily', parent_id: 'col-notes' }),
+    JSON.stringify({ id: 'set-daily' }),
   )
   w(join(sidecar, 'Notes', 'Daily', 'Entry.md'), '---\nid: e1\n---\n')
   w(join(sidecar, 'Notes', 'Loose.md'), 'collection-root page')
@@ -490,11 +490,11 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
     w(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'c-notes' }))
     w(
       join(root, 'Notes', 'Daily', '_pageset.json'),
-      JSON.stringify({ id: 's-daily', parent_id: 'c-notes' }),
+      JSON.stringify({ id: 's-daily' }),
     )
     w(
       join(root, 'Notes', 'Daily', 'Morning', '_pageset.json'),
-      JSON.stringify({ id: 's-morning', parent_id: 's-daily' }),
+      JSON.stringify({ id: 's-morning' }),
     )
     w(join(root, 'Notes', 'Daily', 'Morning', 'Entry.md'), '---\nid: e1\n---\n')
   })
