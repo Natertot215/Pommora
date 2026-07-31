@@ -4,9 +4,9 @@
 // `to` is EXCLUSIVE of the trailing newline — matching SubBlock.to / headingSections.to / TableRegion.to,
 // which the drag's self-drop guard relies on. Do not return an inclusive `to`.
 //
-// Block math (`$$…$$`) is intentionally NOT a distinct kind: it's a span token. A multi-line `$$…$$` containing
-// a blank line splits into two paragraphs with orphaned `$$` (the one known V1 gap — it CORRUPTS, not just
-// mis-selects; fix with a `blockMathRanges` when it earns it).
+// Block math (`$$…$$`) is intentionally NOT a distinct kind: it's a span token. KNOWN DEFECT: a
+// multi-line `$$…$$` containing a blank line splits into two paragraphs with orphaned `$$` — this
+// CORRUPTS the document, it does not merely mis-select. A block-range pass would close it.
 import {
   calloutLines,
   isBlockquoteLine,

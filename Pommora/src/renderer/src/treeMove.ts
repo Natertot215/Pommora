@@ -95,15 +95,6 @@ function insert(
   return { containers: next, done }
 }
 
-/** Collections live at the top and under user sections — each root patches back independently. */
-function rootsOf(
-  tree: NexusTree,
-): { collections: CollectionNode[]; assign: (cs: CollectionNode[]) => NexusTree }[] {
-  const roots: { collections: CollectionNode[]; assign: (cs: CollectionNode[]) => NexusTree }[] = [
-    { collections: tree.collections, assign: (cs) => ({ ...tree, collections: cs }) },
-  ]
-  return roots
-}
 
 /** Relocate the node at `path` under `newParentPath`, updating paths. Null if unresolved or a no-op. */
 export function relocateNodeInTree(
@@ -113,15 +104,13 @@ export function relocateNodeInTree(
 ): NexusTree | null {
   if (parentOf(path) === newParentPath) return null // already there
   const newPath = joinPath(newParentPath, basename(path))
-  for (const root of rootsOf(tree)) {
-    const pulled = extract(root.collections, path)
-    if (!pulled.node) continue
-    const moved = reparentPaths(pulled.node, path, newPath)
-    const placed = insert(pulled.containers, newParentPath, moved)
-    if (!placed.done) return null // destination not in this root — skip optimism, let the reload settle it
-    return root.assign(placed.containers as CollectionNode[])
-  }
-  return null
+  const pulled = extract(tree.collections, path)
+  if (!pulled.node) return null
+  const moved = reparentPaths(pulled.node, path, newPath)
+  const placed = insert(pulled.containers, newParentPath, moved)
+  // Destination unresolved — skip optimism and let the confirming reload settle it.
+  if (!placed.done) return null
+  return { ...tree, collections: placed.containers as CollectionNode[] }
 }
 
 /** Its row (icon + rename input) appears before the confirming reload. */
@@ -185,11 +174,9 @@ export function insertCreatedInTree(
             sets: [],
             pages: [],
           }
-    for (const root of rootsOf(tree)) {
-      const placed = insert(root.collections, req.parentPath, node)
-      if (placed.done) return root.assign(placed.containers as CollectionNode[])
-    }
-    return null
+    const placed = insert(tree.collections, req.parentPath, node)
+    if (!placed.done) return null
+    return { ...tree, collections: placed.containers as CollectionNode[] }
   }
   return null
 }
@@ -267,11 +254,8 @@ export function updateNodeInTree(
     groups[gi] = { ...g, spaces }
     return { ...tree, contexts: groups }
   }
-  for (const root of rootsOf(tree)) {
-    const r = updateInContainers(root.collections, path, fn)
-    if (r.found) return root.assign(r.containers as CollectionNode[])
-  }
-  return null
+  const r = updateInContainers(tree.collections, path, fn)
+  return r.found ? { ...tree, collections: r.containers as CollectionNode[] } : null
 }
 
 function updateInContainers(
