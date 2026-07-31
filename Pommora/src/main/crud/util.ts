@@ -1,7 +1,10 @@
-import { invalidBasename } from '@shared/contexts'
 // Shared helpers for the CRUD layer — the one home for the small primitives every
 // mutation needs, so they aren't re-implemented per file. `pathExists` is re-exported
-// from the io layer (its real owner); name + timestamp rules live here.
+// from the io layer (its real owner); name, timestamp and sweep-admission rules live here.
+
+import { invalidBasename } from '@shared/contexts'
+import { admitContentFile } from '@shared/identity'
+import { readFrontmatterFields } from '../io/pageFile'
 
 export { pathExists } from '../io/atomicWrite'
 
@@ -22,6 +25,17 @@ export function invalidName(name: string): boolean {
     trimmed.startsWith('.') ||
     /\.md$/i.test(trimmed)
   )
+}
+
+/** Whether a nexus-wide sweep may rewrite this `.md`. Unknown files — a key contradicting their
+ *  folder, a malformed value, two kind keys — are invisible and stay byte-untouched, the same
+ *  treatment a stray `.png` in a Collection gets.
+ *
+ *  An identity-LESS page is admitted, deliberately: the sweeps exist to change or clear values, and
+ *  identity only decides whether a value can be handed back afterwards. Gating on membership alone
+ *  would leave a page holding the very value a Remove ran to clear. */
+export function sweepAdmits(content: string): boolean {
+  return admitContentFile(readFrontmatterFields(content), 'page').state !== 'unknown'
 }
 
 /** The ISO-8601 timestamp written to governance fields (`created_at` / `modified_at`). */

@@ -18,8 +18,8 @@ import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pa
 import { readRegistry } from '../io/propertiesRegistry'
 import { decodeValue, encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
 import { serializeSchemaOp } from './schemaChain'
-import { nowIso } from './util'
-import { ok, type Result } from '@shared/result'
+import { nowIso, sweepAdmits } from './util'
+import { fail, ok, type Result } from '@shared/result'
 
 export function removeProperty(
   root: string,
@@ -47,16 +47,27 @@ async function removeInner(
   // Snapshot each page's value for the restore cache — read BEFORE stripping so the cache is
   // written first (below): a failure mid-strip can then never lose a value it didn't capture.
   const values: Record<string, unknown> = {}
+  // Identity presence is counted independently of VALUE presence: zero captured values is the
+  // ordinary "nobody filled this in" case, whereas zero readable identities across a non-empty
+  // collection means the strip would be unrestorable for every page at once.
+  let readable = 0
   for (const file of files) {
     const content = await readTextOrNull(file)
     if (content === null) continue
     const fields = readFrontmatterFields(content)
+    const id = contentId(fields)
+    if (id) readable++
     const raw = (fields as Record<string, unknown>)[key]
     if (raw === undefined) continue
     // Only the CACHE needs identity — an id-less page still gets stripped (below), its value
     // just isn't restorable; Remove must not leak the value it exists to clear.
-    const id = contentId(fields)
     if (id) values[id] = raw
+  }
+  if (files.length > 0 && readable === 0) {
+    return fail(
+      'operation-failed',
+      'No page in this Collection carries an id, so removing this property could not be undone.',
+    )
   }
   // Cache + unassign FIRST (through the strict RMW, so the page-read window above can't
   // revert a concurrent icon/banner/view write), THEN strip each page under its file lock.
@@ -72,7 +83,9 @@ async function removeInner(
   )
   if (!written.ok) return written
   for (const file of files) {
-    await rewritePageSerialized(file, (content) => stripPageMember(content, key))
+    await rewritePageSerialized(file, (content) =>
+      sweepAdmits(content) ? stripPageMember(content, key) : null,
+    )
   }
   return ok(null)
 }
@@ -132,7 +145,9 @@ export async function restoreCachedValues(
     // rewritePageSerialized RESOLVES false for a page it couldn't read — only a landed write
     // resolves true — so the resolved boolean is the spend signal, with a refusal mapped in.
     const wrote = await rewritePageSerialized(file, (content) =>
-      mergeFrontmatter(
+      !sweepAdmits(content)
+        ? null
+        : mergeFrontmatter(
         content,
         { [key]: encodeValue(value), modified_at: nowIso() },
         [key, 'modified_at'],

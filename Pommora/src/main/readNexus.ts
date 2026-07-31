@@ -6,8 +6,8 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { parseDocument } from 'yaml'
-import { contentId } from '@shared/identity'
-import { readAgendaRegistration, resolveFolderKind } from './folderKind'
+import { admitContentFile, type ContentKind } from '@shared/identity'
+import { readAgendaRegistration, resolveFolderKind, type FolderKindContext } from './folderKind'
 import type {
   SolidColor,
   AccentSetting,
@@ -217,13 +217,24 @@ export interface PageRecord {
 }
 
 /** THE per-page read: one stat-gated parse serves the walk (the node) and the view
- *  pipeline's value batch (the frontmatter) — the same bytes are never read twice. */
-export async function readPageRecord(absFile: string, relFile: string): Promise<PageRecord> {
+ *  pipeline's value batch (the frontmatter) — the same bytes are never read twice.
+ *
+ *  Null for a file the folder's kind won't admit. That is not an error and never surfaces: an
+ *  Unknown file is skipped exactly like an unreadable one, which is the same treatment a stray
+ *  `.png` in a Collection already gets. A file with NO key is admitted and wears a synthetic id
+ *  until adoption stamps it. */
+export async function readPageRecord(
+  absFile: string,
+  relFile: string,
+  expected: ContentKind = 'page',
+): Promise<PageRecord | null> {
   return cachedParse(absFile, async () => {
     const fm = splitFrontmatter(await readFile(absFile, 'utf8'))
+    const admission = admitContentFile(fm, expected)
+    if (admission.state === 'unknown') return null
     const node: PageNode = {
       kind: 'page',
-      id: contentId(fm) ?? adoptedId(relFile),
+      id: admission.state === 'member' ? admission.id : adoptedId(relFile),
       title: basenameNoMd(basename(absFile)),
       icon: asString(fm.icon),
       path: relFile,
@@ -233,8 +244,8 @@ export async function readPageRecord(absFile: string, relFile: string): Promise<
   })
 }
 
-async function readPage(absFile: string, relFile: string): Promise<PageNode> {
-  return (await readPageRecord(absFile, relFile)).node
+async function readPage(absFile: string, relFile: string): Promise<PageNode | null> {
+  return (await readPageRecord(absFile, relFile))?.node ?? null
 }
 
 async function readDirectPages(absDir: string, relDir: string): Promise<PageNode[]> {
@@ -269,16 +280,20 @@ function parseViews(raw: unknown): SavedView[] | undefined {
 async function readChildSets(
   absDir: string,
   relDir: string,
-  sidecarMode: boolean,
+  kindCtx: FolderKindContext,
   excluded: string[],
   fb: Fallback,
 ): Promise<SetNode[]> {
   const dirs = (await listEntries(absDir)).filter(
     (e) => e.isDirectory() && !shouldSkipDir(e.name, `${relDir}/${e.name}`, excluded),
   )
+  // A nested folder is a Set only if the resolver says so — one carrying an agenda config
+  // renders as nothing rather than as an ordinary Set.
+  const kinds = await Promise.all(dirs.map((e) => resolveFolderKind(join(absDir, e.name), 'nested', kindCtx)))
+  const sets = dirs.filter((_, i) => kinds[i] === 'set')
   return Promise.all(
-    dirs.map((e) =>
-      readSet(join(absDir, e.name), `${relDir}/${e.name}`, e.name, sidecarMode, excluded, fb),
+    sets.map((e) =>
+      readSet(join(absDir, e.name), `${relDir}/${e.name}`, e.name, kindCtx, excluded, fb),
     ),
   )
 }
@@ -287,15 +302,15 @@ async function readSet(
   absDir: string,
   relDir: string,
   name: string,
-  sidecarMode: boolean,
+  kindCtx: FolderKindContext,
   excluded: string[],
   fb: Fallback,
 ): Promise<SetNode> {
   const [meta, sets, pages] = await Promise.all([
-    sidecarMode
+    kindCtx.sidecarMode
       ? readSidecar(join(absDir, SIDECAR_FILENAME.set)).then((m) => m ?? {})
       : Promise.resolve<Json>({}),
-    readChildSets(absDir, relDir, sidecarMode, excluded, fb),
+    readChildSets(absDir, relDir, kindCtx, excluded, fb),
     readDirectPages(absDir, relDir),
   ])
   return {
@@ -332,16 +347,16 @@ async function readPageCollection(
   absDir: string,
   relDir: string,
   name: string,
-  sidecarMode: boolean,
+  kindCtx: FolderKindContext,
   excluded: string[],
   fb: Fallback,
   registry: PropertyRegistry,
 ): Promise<CollectionNode> {
   const [meta, sets, pages] = await Promise.all([
-    sidecarMode
+    kindCtx.sidecarMode
       ? readSidecar(join(absDir, SIDECAR_FILENAME.collection)).then((m) => m ?? {})
       : Promise.resolve<Json>({}),
-    readChildSets(absDir, relDir, sidecarMode, excluded, fb),
+    readChildSets(absDir, relDir, kindCtx, excluded, fb),
     readDirectPages(absDir, relDir),
   ])
   return {
@@ -488,7 +503,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     rootDirs.map(async (e) => {
       const abs = join(root, e.name)
       if ((await resolveFolderKind(abs, 'root', kindCtx)) !== 'collection') return null
-      return readPageCollection(abs, e.name, e.name, sidecarMode, excluded, fb, registry.defs)
+      return readPageCollection(abs, e.name, e.name, kindCtx, excluded, fb, registry.defs)
     }),
   )
   const allCollections = maybeCollections.filter((c): c is CollectionNode => c !== null)

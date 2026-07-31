@@ -1,20 +1,25 @@
 // Open-time write-pass that stamps a real ULID into every entity still lacking a persisted id.
 // Idempotent; folder position decides kind — a root child is a Collection, anything nested a Set.
 
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, rename } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
-import { join } from 'node:path'
-import { contentId, PAGE_ID_KEY } from '@shared/identity'
+import { basename, join } from 'node:path'
+import { admitContentFile, KIND_ID_KEY, type ContentKind } from '@shared/identity'
 import { newId } from './ids'
 import { atomicWriteFile, readJsonObject, readJsonStrict, pathExists } from './io/atomicWrite'
-import { writeSidecar } from './sidecarIO'
+import { readSidecar, writeSidecar } from './sidecarIO'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { asString, asStringArray } from './coerce'
+import { baseSidecar } from '@shared/schemas'
+import { recordWrite } from './io/writeEcho'
 import { shouldSkipDir } from './exclusion'
-import { readAgendaRegistration, resolveFolderKind } from './folderKind'
+import {
+  readAgendaRegistration,
+  resolveFolderKind,
+  type FolderKind,
+  type FolderKindContext,
+} from './folderKind'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, nexusConfig } from './paths'
-
-type FolderKind = 'collection' | 'set'
 
 async function listEntries(dir: string): Promise<Dirent[]> {
   try {
@@ -24,23 +29,67 @@ async function listEntries(dir: string): Promise<Dirent[]> {
   }
 }
 
-/** Stamp a single `.md` page that lacks an id. Returns whether it wrote. Foreign
- *  frontmatter + body survive via the preserving merge. */
-async function stampPage(absFile: string): Promise<boolean> {
+/**
+ * Move a registered singleton back to the nexus root when it is found nested. The registration IS
+ * the record — no last-known-state system is involved, because the nexus already names this exact
+ * folder as canonical and the root is the only place it is valid.
+ *
+ * A name already taken at the root refuses rather than overwrites: two folders claiming one place
+ * is the user's to resolve, and silently merging them would be worse than leaving one nested.
+ */
+async function reHomeRegistered(
+  absDir: string,
+  root: string,
+  kindCtx: FolderKindContext,
+): Promise<boolean> {
+  for (const [slot, kind] of [
+    ['tasks', 'taskConfig'],
+    ['events', 'eventConfig'],
+  ] as const) {
+    const registered = kindCtx.agenda[slot]
+    if (!registered) continue
+    const sidecar = await readSidecar(absDir, kind, baseSidecar)
+    if (sidecar?.id !== registered) continue
+    const target = join(root, basename(absDir))
+    if (await pathExists(target)) return false
+    recordWrite(absDir)
+    recordWrite(target)
+    await rename(absDir, target)
+    return true
+  }
+  return false
+}
+
+/** Stamp a single `.md` that lacks an id, under the key its FOLDER declares. Returns whether it
+ *  wrote. Foreign frontmatter + body survive via the preserving merge.
+ *
+ *  Only a missing key is adoptable. Unknown — a key contradicting the folder, a malformed value,
+ *  two keys at once — is left byte-untouched: stamping over it would erase the conflict and
+ *  silently convert a mislocated file into a member of wherever it happened to land. */
+async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
   const content = await readFile(absFile, 'utf8')
-  if (contentId(readFrontmatterFields(content))) return false // already adopted
+  if (admitContentFile(readFrontmatterFields(content), kind).state !== 'missing') return false
+  const key = KIND_ID_KEY[kind]
   const { body } = splitEnvelope(content)
-  await atomicWriteFile(
-    absFile,
-    mergeFrontmatter(content, { [PAGE_ID_KEY]: newId() }, [PAGE_ID_KEY], body),
-  )
+  await atomicWriteFile(absFile, mergeFrontmatter(content, { [key]: newId() }, [key], body))
   return true
+}
+
+/** The two folder kinds that carry a container sidecar of their own. */
+type ContainerKind = 'collection' | 'set'
+
+/** The content kind a folder's members answer to. */
+const MEMBER_KIND: Record<string, ContentKind> = {
+  collection: 'page',
+  set: 'page',
+  'tasks-singleton': 'task',
+  'events-singleton': 'event',
 }
 
 /** Mint + persist a folder id when it has none, reporting whether it wrote. A sidecar that exists
  *  but couldn't be read is left alone: minting over it would replace the Collection's views,
  *  schema and cache with a bare id, so the folder waits for a later open. */
-async function stampFolder(absDir: string, kind: FolderKind): Promise<boolean> {
+async function stampFolder(absDir: string, kind: ContainerKind): Promise<boolean> {
   const read = await readJsonStrict(join(absDir, SIDECAR_FILENAME[kind]))
   if (!read.ok && read.error.code !== 'not-found') return false
   const existing = read.ok ? read.value : {}
@@ -50,27 +99,43 @@ async function stampFolder(absDir: string, kind: FolderKind): Promise<boolean> {
   return true
 }
 
-/** Stamp `absDir` (as `kind`) then its direct pages, then recurse every non-excluded
- *  subfolder as a Set. Accumulates the write count. */
+/**
+ * Stamp `absDir` then its direct `.md` members, then recurse. Accumulates the write count.
+ *
+ * An agenda singleton is FLAT by rule and differs in both directions: its own id already lives in
+ * the config sidecar, so it is never container-stamped, and it does not recurse — there are no
+ * Sets over agenda, and nothing below it is stamped as anything.
+ */
 async function stampTree(
   absDir: string,
   relDir: string,
   kind: FolderKind,
   excluded: string[],
+  kindCtx: FolderKindContext,
+  root: string,
 ): Promise<number> {
-  let count = (await stampFolder(absDir, kind)) ? 1 : 0
+  const singleton = kind === 'tasks-singleton' || kind === 'events-singleton'
+  const memberKind = MEMBER_KIND[kind]
+  let count = !singleton && (await stampFolder(absDir, kind as ContainerKind)) ? 1 : 0
 
   for (const e of await listEntries(absDir)) {
     if (e.isFile() && !e.name.startsWith('_') && e.name.toLowerCase().endsWith('.md')) {
       // An unreadable page, or one whose frontmatter refuses a field write, skips — adoption
       // is idempotent, so the next open retries it.
-      if (await stampPage(join(absDir, e.name)).catch(() => false)) count++
-    } else if (e.isDirectory()) {
+      if (await stampPage(join(absDir, e.name), memberKind).catch(() => false)) count++
+    } else if (e.isDirectory() && !singleton) {
       const childRel = `${relDir}/${e.name}`
+      if (shouldSkipDir(e.name, childRel, excluded)) continue
+      const abs = join(absDir, e.name)
       // A folder whose own sidecar is unreadable still adopts its subtree — the children are
       // independent entities, not dependents of their parent's id.
-      if (!shouldSkipDir(e.name, childRel, excluded))
-        count += await stampTree(join(absDir, e.name), childRel, 'set', excluded)
+      if (await reHomeRegistered(abs, root, kindCtx)) {
+        count++
+        continue
+      }
+      const childKind = await resolveFolderKind(abs, 'nested', kindCtx)
+      if (childKind === 'unknown') continue
+      count += await stampTree(abs, childRel, childKind, excluded, kindCtx, root)
     }
   }
   return count
@@ -95,9 +160,14 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
     if (!e.isDirectory()) continue
     if (shouldSkipDir(e.name, e.name, excluded)) continue
     const abs = join(root, e.name)
-    // Anything the resolver won't call a Collection is left alone — an agenda singleton's members
-    // answer to the agenda kind, not the page one.
-    if ((await resolveFolderKind(abs, 'root', kindCtx)) !== 'collection') continue
+    const kind = await resolveFolderKind(abs, 'root', kindCtx)
+    // Unknown is left entirely alone; a registered singleton adopts its own members under the
+    // agenda kind rather than the page one.
+    if (kind === 'unknown') continue
+    if (kind !== 'collection') {
+      stamped += await stampTree(abs, e.name, kind, excluded, kindCtx, root)
+      continue
+    }
     // Don't fabricate a Collection from an empty, sidecar-less folder (stray junk). One that
     // already has a sidecar, or holds pages/subfolders, is real content and gets adopted.
     if (
@@ -106,7 +176,7 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
     ) {
       continue
     }
-    stamped += await stampTree(abs, e.name, 'collection', excluded)
+    stamped += await stampTree(abs, e.name, 'collection', excluded, kindCtx, root)
   }
   return { stamped }
 }

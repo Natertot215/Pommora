@@ -21,7 +21,7 @@ import { SIDECAR_FILENAME } from '../paths'
 import { serializeJson, writeJson } from '../io/atomicWrite'
 import { splitFrontmatter } from '../readNexus'
 import { isPlainObject, propertyKey } from '@shared/propertyValue'
-import { nowIso } from './util'
+import { nowIso, sweepAdmits } from './util'
 import { fail, type Result } from '@shared/result'
 
 async function snapshot(
@@ -69,7 +69,9 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   for (const folder of folders) {
     // Strip the value from every page under its file lock (shared with the cell-write path).
     for (const file of await listMarkdownFiles(folder)) {
-      await rewritePageSerialized(file, (content) => stripPageMember(content, key))
+      await rewritePageSerialized(file, (content) =>
+        sweepAdmits(content) ? stripPageMember(content, key) : null,
+      )
     }
     // Then unassign + purge the Remove-cache on the collection sidecar (JSON, never raced by a
     // cell-write). The .trash snapshot above is the recovery net, so this needn't be atomic.
