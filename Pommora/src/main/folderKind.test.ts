@@ -73,7 +73,6 @@ describe('resolveFolderKind', () => {
     expect(await resolveFolderKind(d, 'root', REG)).toBe('unknown')
   })
 
-  // The A-7 hole: the old root-only check meant a nested agenda folder read as an ordinary Set.
   it('leaves a registered agenda config unknown when it sits nested', async () => {
     const d = await dir('Notes/Tasks', { [SIDECAR_FILENAME.taskConfig]: { id: TASKS } })
     expect(await resolveFolderKind(d, 'nested', REG)).toBe('unknown')
