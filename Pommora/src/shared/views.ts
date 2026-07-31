@@ -99,6 +99,9 @@ export interface SavedView {
   id: string
   name: string
   icon?: string
+  /** Segment-stroke chip key (open string, validated through the chip map at render);
+   *  absent = the neutral hairline. */
+  color?: string
   type: ViewType
   property_order: string[]
   hidden_properties: string[]
@@ -253,6 +256,7 @@ export const savedView = z.looseObject({
   id: z.string().catch(''),
   name: z.string().catch('Table'),
   icon: z.string().optional(),
+  color: z.string().optional(),
   type: z.enum(VIEW_TYPES).catch('table'),
   property_order: z.array(z.string()).catch([]),
   hidden_properties: z.array(z.string()).catch([]),
