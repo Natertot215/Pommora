@@ -5,10 +5,10 @@
 > ⚡ **Cornerstone — carry into every handoff, unchanged (Nathan's voice).**
 > *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
 
-### Session Summary — the landing verified, the record trued, the bridge built, the tree index consolidated
+### Session Summary — the landing verified, the bridge built, the tree index consolidated, then identity rebuilt kind-first
 
 **Session ID:** 6dc9212b-b419-4b10-9e15-aa2fb5aedb6e
-**Dates:** 07-30-2026
+**Dates:** 07-30 → 07-31-2026
 **Model:** Fable 5
 **Connectors:** none
 **Agents:** Explore (12x — six-lens scoping sweep, four-lens IPC census, three-lens index census) · build-breaking (4x — fix-batch attack, spec plan-attack, bridge context, treeIndex attack) · code-simplifier (3x — fix-batch pass, bridge prove-me-wrong, treeIndex prove-me-wrong) · general-purpose (2x — the two serialized bridge implementers)
@@ -51,6 +51,37 @@
 - The spec's review round was singular — the folds adopted the reviewer's own verified fixes, so a second round was judged manufacture-risk rather than value.
 
 **Recent Work (07-30, later session):** The band-seam law — every disclosure-band seam in Table and Cards is two shoulders of the view's content rhythm, state-free, owned once in the shared GroupBand chrome behind a per-view `--band-clearance` binding; a collapsed head sheds its dead clearance, a band opening a disclosure leads by a single shoulder, and embedded cards gained their tail seam. A four-lens /simplify pass folded the law's derivation and the nested-band yield into their deepest forms; the menu/pane disclosure surfaces were audited and rated good-to-be-unique. → [[CardView]] · [[TableView]].
+
+#### II. The Identity Arc (07-31) — the part still in flight
+
+**What it is.** A content file now names its kind in the KEY holding its id: `PageID:` / `TaskID:` / `EventID:`, value a bare ULID. The folder's sidecar declares the kind and the file must AGREE. One predicate (`shared/identity.ts` · `admitContentFile`) is the only reader of all three keys and returns **member** (agrees) · **missing** (no key — adoptable, stamped at open) · **Unknown** (contradicting / malformed / dual). Unknown is invisible to the tree, skipped by all six nexus-wide write sweeps, and left byte-identical — the stray-`.png` treatment. An identity-LESS file is admitted everywhere, deliberately: identity decides whether a value can be handed *back*, never whether it may be cleared.
+
+**Executed against** `Planning/Identity + Enforcement — Implementation Plan.md` (ratified; its Decision Log is the spec). All 13 tasks + 3 gates done, sequencing law held (remove old → verify clean → implement new). ~22 commits from base `7ffe0511`. Gates green: **174 test files / 1,897 tests**.
+
+**Landed:** the whole old agenda architecture deleted (dead write layer, interim read surface, `.task.json`/`.event.json` suffix grammar, `shared/agenda.ts`) · the identity seam + eleven hand-rolled `fm.id` readers routed through it · the kind-key flip + five-arm predicate · `main/folderKind.ts`, one depth-aware classification owner retiring three divergent detections · registration (`nexus.json` `agenda_singletons`) seeded at nexus creation only · admission enforced at walk, adoption and six sweeps · singleton flat stamping + re-homing · the move backstop · a Swift-remnant sweep (`_type`, `_status`, `parent_id`, `ConnectionEdge`, `reverse_name`/`reverse_icon`, `accept`, `default_sort`, `rootsOf`) · docs reconciled.
+
+**Live migration ran (both nexuses, app closed):** 171 files renamed `id:` → `PageID:`, 8 hand-authored `research-*` slugs stripped per Nathan's ruling so they re-adopt fresh. Verified after a real open: 0 dual-key, 0 malformed, all 8 re-adopted with fresh ULIDs. 49 files remain identity-less — all inside `excluded_folders`, which is correct.
+
+**Nathan's rulings made during execution (binding):**
+- Strip the non-ULID slugs rather than convert them — the migration doubles as the adoption test.
+- No time-specific comments, anywhere, code or docs. A comment stating what is or isn't built rots; state the durable why.
+- Swift remnants are dead code — hunt them proactively, don't wait to trip over one.
+- Sweeps rewriting `[[links]]` inside `excluded_folders` and `.claude/` is **desired reach, not a defect** (closes the reviewer's F2).
+- **D-3 stands: no legacy `id:` promotion, no synonym read.** Trash was stripped of ids manually instead, so an untrash mints fresh. He is the only consumer; future deletions already carry kind keys.
+
+**Post-plan close (done):** comment-killer + three read-only reviewers (settled tree · enforcement internals · docs truth). **7 defects found and fixed** — see `59b4b5ba` and `92020af4`. The two that matter most as lessons: `sweepContextRoots` was never gated (I gated five of six sweeps and my commit message claimed six), and its test passed for the wrong reason because it drove `createContextGroup`, which never reaches that sweep.
+
+**STILL OPEN — pick up here:**
+1. **F3 · duplicated singleton (highest).** `folderKind.ts`'s guard is `sidecar.id === registered`, but Finder duplicate / `cp -R` / backup / sync-conflict all copy the id, so two folders resolve as singletons and adoption stamps `TaskID` into the copy's pages — permanently un-adoptable (`contradicting` forever; `stampPage` only fixes `missing`). Fix is a design call: bind registration to path as well as id, OR refuse when >1 root folder claims a slot (mirrors the existing "no arm may pick between them" rule; needs hoisting into the callers that enumerate root folders). **Tracer agents dispatched to confirm reachability — read their verdict before acting.**
+2. **F6 · one folder, two ids.** A Set dragged to the root keeps `_pageset.json` while adoption mints a `_pagecollection.json`.
+3. **F8 · a taken seed-slot name is unregisterable forever** — arguably correct-and-incomplete rather than a defect.
+4. **Docs:** ~18 identity-scope false claims the docs reviewer found that Task 13 missed (`Structure.md` still says kind = file extension; `Properties.md` still lists `_status`/`_type` and agenda `property_definitions`; `Contexts.md` names a three-arm `setContext`; the PRD self-contradicts). Plus 3 documentation gaps (registration is never backfilled; a taken slot never registers; the move backstop is undocumented).
+5. **41 time-specific doc sentences** across 22 docs — pre-existing, violates the standing rule, needs its own sweep and Nathan's go.
+6. **Two damaged live files** — `NexusOS/Studio/NexusOS/{NexusOS,Nexus-Index}.md` carry a dead `id:` beside their new `PageID:`, and `Studio/NexusOS/_pageset.json`'s `page_order` still lists their OLD ids, so they've dropped out of that Set's manual order. Cause: trashed pre-migration, untrashed after. Either restore the old id as their `PageID` (fixes every reference at once) or drop the dead key and re-order by hand. **Awaiting Nathan's pick.**
+
+**Sequenced after this plan:** the Record Plan (D-17 — one last-known-state mechanism serving structural revert AND trash restore) and the Agenda Rethink (shape, fields, surfaces, CRUD — from the de-scaffolded clean slate, with identification already total).
+
+**A mistake worth not repeating:** my pre-migration backup used unquoted command substitution (`tar … $(find …)`), which word-split on the 159 paths containing spaces — it archived 64 of 223 files while I described it as full insurance. Use `find -print0 | tar --null -T -`, and verify the archived count against the live count before relying on it.
 
 ---
 
