@@ -9,6 +9,7 @@ import { allCollectionFolders } from './assignment'
 import { serializeSchemaOp } from './schemaChain'
 import { rewritePageSerialized } from '../io/fileLock'
 import { listMarkdownFiles } from '../io/walk'
+import { sweepAdmits } from './util'
 import { replacePageValue, stripPageValue } from './pageValue'
 import { ok, fail, type Result } from '@shared/result'
 import {
@@ -190,7 +191,7 @@ export async function cascadePages(
 ): Promise<void> {
   for (const folder of await allCollectionFolders(root)) {
     for (const file of await listMarkdownFiles(folder)) {
-      await rewritePageSerialized(file, rewrite)
+      await rewritePageSerialized(file, (content) => (sweepAdmits(content) ? rewrite(content) : null))
     }
   }
 }

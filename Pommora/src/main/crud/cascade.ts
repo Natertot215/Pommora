@@ -8,6 +8,7 @@ import { contentId } from '@shared/identity'
 import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'
 import { listMarkdownFiles } from '../io/walk'
+import { sweepAdmits } from './util'
 import { rewritePageSerialized } from '../io/fileLock'
 import { scanConnections } from '../connections/scan'
 import { rewriteConnections } from '../connections/rewrite'
@@ -32,7 +33,7 @@ export async function renameCascade(
     const wrote = await rewritePageSerialized(file, (content) => {
       const { body } = splitEnvelope(content)
       if (!scanConnections(body).some((c) => c.normalizedTitle === oldKey)) return null
-      if (!contentId(splitFrontmatter(content))) return null // connections live only on real pages
+      if (!sweepAdmits(content)) return null // connections live only on files the tree admits
       const newBody = rewriteConnections(body, oldTitle, newTitle)
       if (newBody === body) return null
       return mergeFrontmatter(content, {}, [], newBody)
