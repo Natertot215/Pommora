@@ -35,8 +35,10 @@ Property definitions live in the nexus-wide registry; a Collection assigns which
 
 The parent schema holding two peer kinds, each with its own config sidecar and the shared property catalog plus Context links:
 
-- **Task** (`.task.json`) — reminder-shaped: due date, completion, priority.
-- **Event** (`.event.json`) — calendar-event-shaped: start, end, location.
+- **Task** (`.md`, `TaskID`) — reminder-shaped.
+- **Event** (`.md`, `EventID`) — calendar-event-shaped.
+
+Their field vocabulary is unsettled — the inherited shape was removed rather than built on → `Agenda.md`.
 
 Full spec → `Agenda.md`; the property catalog across all kinds → `Properties.md`.
 
@@ -54,7 +56,7 @@ Per-Nexus config at `.nexus/settings.json` — UI labels, a profile image and su
 
 #### II. Entity Identity vs Title
 
-- **`id`** — a stable ULID assigned at creation, never changing. It identifies the entity itself; no on-disk link form carries it. An entity read from a folder Pommora hasn't adopted yet reads under a stable id hashed from its Nexus-relative path, held until adoption mints a real one.
+- **`id`** — a stable ULID assigned at creation, never changing. A content file stores it under the key naming its kind (`PageID` / `TaskID` / `EventID`), so a file answers *what am I* before *what is my id*; containers carry theirs in their sidecar. It identifies the entity itself; no on-disk link form carries it. An entity read from a folder Pommora hasn't adopted yet reads under a stable id hashed from its Nexus-relative path, held until adoption mints a real one.
 
 - **Title** — the display name, carried as the filename minus extension, freely renameable. Renames are filesystem renames; in-memory references resolve to the current title at render time.
 

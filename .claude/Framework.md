@@ -49,7 +49,7 @@ The remaining renderers — **List · Gallery · Calendar · Timeline** — over
 
 #### v0.7.0 — Agenda + Calendar
 
-Making Agenda reachable. The whole CRUD layer is written, locked, and tested but has **no IPC and no UI** — every caller is a test, and the sidebar's Agenda rows are inert. Needs a selection kind, a detail surface, and the mutate ops to reach the existing write path; an EventKit bridge (opt-in, bidirectional) follows.
+Building Agenda. The inherited shape was removed rather than carried forward, so this starts from a settled identity model and an empty schema: Tasks and Events are `.md` under their kind keys, their singleton folders are registered, and admission already recognises them. What it needs is the field vocabulary, the tree membership, a selection kind, a detail surface, and CRUD that converges onto the page writers rather than a second serializer; an EventKit bridge (opt-in, bidirectional) follows.
 
 #### v0.8.0 — Settings + Quick Capture + LLM Inspector + Search
 
