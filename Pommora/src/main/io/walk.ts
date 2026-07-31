@@ -27,20 +27,12 @@ export async function listMarkdownFiles(
 
 /** Every file under `dir` (recursive) matching one of `suffixes`, as absolute paths —
  *  the JSON-scope sibling of listMarkdownFiles (`_space.json` sidecars). */
-export async function listFilesRecursive(
-  dir: string,
-  suffixes: string[],
-  opts: { skipTopLevel?: string[] } = {},
-): Promise<string[]> {
+export async function listFilesRecursive(dir: string, suffixes: string[]): Promise<string[]> {
   let rels: string[]
   try {
     rels = await readdir(dir, { recursive: true })
   } catch {
     return []
   }
-  const skip = new Set(opts.skipTopLevel ?? [])
-  return rels
-    .filter((r) => suffixes.some((s) => r.endsWith(s)))
-    .filter((r) => !skip.has(r.split(/[/\\]/)[0]))
-    .map((r) => join(dir, r))
+  return rels.filter((r) => suffixes.some((s) => r.endsWith(s))).map((r) => join(dir, r))
 }

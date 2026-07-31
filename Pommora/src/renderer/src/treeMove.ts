@@ -95,7 +95,6 @@ function insert(
   return { containers: next, done }
 }
 
-
 /** Relocate the node at `path` under `newParentPath`, updating paths. Null if unresolved or a no-op. */
 export function relocateNodeInTree(
   tree: NexusTree,

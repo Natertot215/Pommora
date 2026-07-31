@@ -21,7 +21,7 @@ export function validateName(
 }
 
 /** Full add-time validation: name rules + reserved-id block + unique id + select /
- *  multiSelect option constraints. Mirrors `PropertyDefinitionValidator.validate`. */
+ *  multiSelect option constraints. */
 export function validateDefinition(
   def: PropertyDefinition,
   existing: PropertyDefinition[],
