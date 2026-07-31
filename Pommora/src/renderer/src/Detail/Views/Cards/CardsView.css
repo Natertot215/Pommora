@@ -76,8 +76,8 @@
   transition: margin-top var(--disclosure) var(--ease-standard);
 }
 /* A collapsed band folds to the card rhythm: it wears the band-to-card gap on both sides, so any
-   seam it touches — either neighbouring band, or the Set-cards row above — reads twice that gap
-   instead of the band rhythm. The seam morph rides the disclosure beat, in step with the fold. */
+   seam it touches — either neighbouring band, or the Set-cards row above — sheds the band rhythm.
+   The seam morph runs in step with the fold. */
 .cards-view .group-band:has(> .group-band-row[data-disclose]) + .group-band,
 .cards-view .group-band + .group-band:has(> .group-band-row[data-disclose]) {
   margin-top: calc(2 * var(--card-gap-v));
