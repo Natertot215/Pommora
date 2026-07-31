@@ -23,8 +23,13 @@ describe('invalidName', () => {
   })
 
   it('rejects a trailing managed extension so filename = title holds', () => {
-    for (const n of ['Note.md', 'Note.MD', 'Thing.task.json', 'Thing.event.json'])
-      expect(invalidName(n), n).toBe(true)
+    for (const n of ['Note.md', 'Note.MD']) expect(invalidName(n), n).toBe(true)
+  })
+
+  // `.md` is the only extension the writers append, so every other one is just part of the title.
+  it('accepts a name whose extension the writers never manage', () => {
+    for (const n of ['Thing.task.json', 'Thing.event.json', 'Report.pdf'])
+      expect(invalidName(n), n).toBe(false)
   })
 
   // The walk hides both prefixes (files by the `_` skip, folders via shouldSkipDir), so a name the

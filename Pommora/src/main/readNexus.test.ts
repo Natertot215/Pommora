@@ -66,7 +66,7 @@ beforeAll(() => {
   // Agenda singleton — hidden from Collections by its CONFIG sidecar, not its name.
   d(join(raw, 'Tasks'))
   w(join(raw, 'Tasks', '_taskconfig.json'), '{}')
-  w(join(raw, 'Tasks', 'Submit.task.json'), '{}')
+  w(join(raw, 'Tasks', 'Submit.md'), '# a member')
 
   // --- sidecar-driven nexus (_pagecollection.json at the top, recursive _pageset.json below) ---
   sidecar = mkdtempSync(join(tmpdir(), 'pom-sc-'))
