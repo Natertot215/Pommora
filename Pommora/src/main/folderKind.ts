@@ -1,6 +1,6 @@
 // What a folder IS, decided in one place. Kind is declared by the well-known sidecar filename a
-// folder carries — never by its name — and the answer is depth-aware rather than root-only, so a
-// nested agenda config can no longer read as an ordinary Set.
+// folder carries — never by its name — and classification is depth-aware, so a nested agenda
+// config reads as Unknown rather than as an ordinary Set.
 //
 // An agenda config only counts where the nexus RECORDS it: registration by sidecar id is the
 // guard, which is what makes a duplicated, hand-made or relocated config inert bytes instead of a
