@@ -1,5 +1,5 @@
 // The Contexts & Spaces write layer: create ops, the setContext family (one per entity
-// kind — page frontmatter, agenda JSON, `_space.json`), color setters, and the
+// kind — page frontmatter, `_space.json`), color setters, and the
 // per-file reconcile every context write runs on the root it's already rewriting (repair
 // near-misses, drop unknowns). Ids arrive from the renderer; titles serialize here,
 // through the live registry — never earlier.
@@ -17,7 +17,6 @@ import {
 import { reconcileContextKeys } from '@shared/contextResolve'
 import { blockHostKey, NEW_TILE_H } from '@shared/blocks'
 import { writeKey } from '../db/localState'
-import { agendaKindOf } from '@shared/agenda'
 import { SOLID_COLORS, type SpaceNode } from '@shared/types'
 import { ok, fail, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
@@ -25,10 +24,8 @@ import { adoptedId, newId } from '../ids'
 import {
   atomicWriteFile,
   pathExists,
-  readJsonObject,
   readJsonStrict,
   rmwJsonStrict,
-  writeJson,
 } from '../io/atomicWrite'
 import { serializeOnFile } from '../io/fileLock'
 import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
@@ -173,25 +170,6 @@ export async function setPageContext(
   })
 }
 
-/** setContext on an agenda item's JSON root — whole-root rewrite under its lock. */
-export async function setAgendaContext(
-  absFile: string,
-  world: ContextWorld,
-  contextId: string,
-  spaceIds: string[],
-): Promise<Result<null>> {
-  const titles = targetTitles(world, spaceIds)
-  if (!titles.ok) return titles
-  return serializeOnFile(absFile, async () => {
-    const raw = await readJsonObject(absFile)
-    if (!raw) return fail('not-found', 'Agenda item not found.', 'agenda')
-    const applied = applyTarget(world, raw, contextId, titles.value)
-    if (!applied.ok) return applied
-    await writeJson(absFile, { ...applied.value.root, modified_at: nowIso() })
-    return ok(null)
-  })
-}
-
 /** setContext on a Space's own `_space.json` (cross-Context allowed) — strict RMW,
  *  never fallback-to-empty. */
 export async function setSpaceContext(
@@ -222,7 +200,6 @@ export async function setContextOnPath(
   spaceIds: string[],
 ): Promise<Result<null>> {
   if (abs.toLowerCase().endsWith('.md')) return setPageContext(abs, world, contextId, spaceIds)
-  if (agendaKindOf(abs)) return setAgendaContext(abs, world, contextId, spaceIds)
   const owner = [...world.spaceById.values()].find((ref) => ref.dir === abs)
   if (owner) return setSpaceContext(world, owner.id, contextId, spaceIds)
   return fail('invalid-path', 'Not a context-taggable entity.', 'contexts')

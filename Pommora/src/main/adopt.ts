@@ -98,10 +98,9 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
     if (!e.isDirectory()) continue
     if (shouldSkipDir(e.name, e.name, excluded)) continue
     const abs = join(root, e.name)
-    // Agenda singletons are identified by their config sidecar (never by name) — skip them.
-    // This guards at the FOLDER level only; per-FILE agenda items are discriminated by their
-    // `.task.json` / `.event.json` extension (shared/agenda.ts's agendaKindOf), not inferred
-    // from the parent folder.
+    // Agenda singletons are identified by their config sidecar (never by name). A folder carrying
+    // one is left unclassified rather than adopted as a Collection — its members answer to the
+    // agenda kind, not the page one.
     if (
       (await pathExists(join(abs, SIDECAR_FILENAME.taskConfig))) ||
       (await pathExists(join(abs, SIDECAR_FILENAME.eventConfig)))
