@@ -50,6 +50,8 @@
 - The bridge and the index are verified headlessly only (gates + 1875 tests + the breaker's executed old-vs-new parity harness); no live launch has run either end-to-end.
 - The spec's review round was singular — the folds adopted the reviewer's own verified fixes, so a second round was judged manufacture-risk rather than value.
 
+**Recent Work (07-30, later session):** The band-seam law — every disclosure-band seam in Table and Cards is two shoulders of the view's content rhythm, state-free, owned once in the shared GroupBand chrome behind a per-view `--band-clearance` binding; a collapsed head sheds its dead clearance, a band opening a disclosure leads by a single shoulder, and embedded cards gained their tail seam. A four-lens /simplify pass folded the law's derivation and the nested-band yield into their deepest forms; the menu/pane disclosure surfaces were audited and rated good-to-be-unique. → [[CardView]] · [[TableView]].
+
 ---
 
 ### Recent Sessions

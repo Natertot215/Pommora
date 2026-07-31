@@ -3,18 +3,22 @@
    cards' sibling seams. The glyph itself resolves identically for both (GroupBand). */
 
 /* The seam law, shared by every banded view: the view binds --band-clearance — one shoulder of its
-   content rhythm — and derives its band lead as two; the head clears its own content by one.
-   Collapsed, the head has no content to clear, so the clearance folds away with it on the disclosure
-   beat. The same yield when the first disclosed member is a nested band rather than a row: that
-   band's two-shoulder lead already owns the seam, so clearances never stack. A first-child sub-band
-   bucket keeps the clearance — its single-shoulder lead needs it to reach the uniform seam. */
-.group-band-row {
-  padding-bottom: var(--band-clearance, 0px);
-  transition: padding-bottom var(--disclosure) var(--ease-standard);
+   content rhythm — and the band seam derives as two. The head clears its own content by one; a band
+   that OPENS a disclosure leads by one, the head's clearance supplying the other, so a nested band's
+   seam still reads two and clearances never stack. Collapsed, the head has no content to clear — the
+   clearance folds away with it, on the chevron's own beat. */
+.group-band {
+  --band-gap: calc(2 * var(--band-clearance));
 }
-.group-band-row[data-disclose],
-.group-band-row:has(+ [data-reveal] > * > .group-band:not(.sub-band):first-child) {
+.group-band-row {
+  padding-bottom: var(--band-clearance);
+  transition: padding-bottom var(--twisty-beat, var(--disclosure)) var(--ease-standard);
+}
+.group-band-row[data-disclose] {
   padding-bottom: 0;
+}
+[data-reveal] > * > .group-band:first-child > .group-band-row {
+  padding-top: var(--band-clearance);
 }
 
 .group-band-head {
