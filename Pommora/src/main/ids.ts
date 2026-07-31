@@ -4,7 +4,8 @@
 // a real id exists. Both the read engine and the write path import from here.
 
 import { createHash } from 'node:crypto'
-import { monotonicFactory, isValid } from 'ulidx'
+import { monotonicFactory } from 'ulidx'
+import { isUlidShaped } from '@shared/identity'
 
 const nextUlid = monotonicFactory()
 
@@ -13,9 +14,12 @@ export function newId(): string {
   return nextUlid()
 }
 
-/** True for a syntactically valid ULID (26 Crockford-base32 chars). */
+/** True for a syntactically valid ULID. Shape lives in the identity seam so the walk's admission
+ *  check and this one can never disagree — and it is case-SENSITIVE where the ulid library is not:
+ *  an id becomes a folder name, and a case-insensitive filesystem would collide two ids the
+ *  library calls equal. Minting only ever produces the canonical uppercase form. */
 export function isUlid(value: string): boolean {
-  return isValid(value)
+  return isUlidShaped(value)
 }
 
 /** Mint a fresh user-defined property id (`prop_<ulid>`). Built-in property ids are the
