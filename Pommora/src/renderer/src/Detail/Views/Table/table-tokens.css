@@ -38,7 +38,8 @@
   --heading-padding-y: 8px; /* clears the label off the top + bottom seams */
 
   /* — Group sections — */
-  --group-gap-top: 16px;
+  /* The section lead — two shoulders of the row rhythm, state-free; tune --cell-padding-y, not this. */
+  --group-gap-top: calc(2 * var(--cell-padding-y));
   --subband-gap-top: var(
     --cell-padding-y
   ); /* a sub-group bucket header sits at data-row height, not band height */
