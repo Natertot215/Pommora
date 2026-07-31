@@ -15,4 +15,9 @@ export type EmbedAreaMenuAction =
 
 export type ViewItemMenuAction = 'view:duplicate' | 'view:delete'
 
-export type ViewRowMenuAction = 'view:rename' | 'view:edit-icon' | 'view:delete'
+export type ViewRowMenuAction =
+  | 'view:rename'
+  | 'view:edit-icon'
+  | 'view:change-color'
+  | 'view:toggle-titles'
+  | 'view:delete'

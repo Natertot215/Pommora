@@ -264,7 +264,7 @@ export interface Asks {
     reply: EmbedAreaMenuAction | null
   }
   'view-item-menu': { args: [canDelete: boolean]; reply: ViewItemMenuAction | null }
-  'view-row-menu': { args: [canDelete: boolean]; reply: ViewRowMenuAction | null }
+  'view-row-menu': { args: [canDelete: boolean, labeled?: boolean]; reply: ViewRowMenuAction | null }
   'icon-favorite-menu': { args: [favorited: boolean]; reply: IconFavoriteMenuAction | null }
   'nexus:iconMenu': {
     args: [opts: { hasPhoto: boolean; hasGlyph: boolean }]

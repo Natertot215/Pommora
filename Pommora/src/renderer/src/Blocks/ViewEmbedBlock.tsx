@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ViewBlockEntry } from '@shared/blocks'
-import type { CollectionNode, SetNode } from '@shared/types'
+import type { CollectionNode, SetNode, SolidColor } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import {
   DEFAULT_VIEW_ID,
@@ -10,6 +10,10 @@ import {
   type ViewState,
 } from '@shared/views'
 import { Icon, iconNameOr } from '@renderer/design-system/symbols'
+import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
+import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
+import { ColorPicker } from '@renderer/Components/Detail/ColorPicker'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
 import {
   AccessoryButton,
@@ -32,7 +36,22 @@ import { SettingsPane } from '@renderer/Components/Detail/SettingsPane'
 import { ViewEmbedScopeProvider } from '@renderer/Embeds/ViewEmbedScope'
 import { useSession } from '@renderer/store'
 import { PICKER_MAX_HEIGHT } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
-import { PILL_ICON } from './viewEmbed.css'
+import { cx } from '@renderer/design-system/cx'
+import {
+  labelSlot,
+  labelSlotHidden,
+  labelText,
+} from '@renderer/design-system/components/Segmented-Controls/segmented.css'
+import {
+  SEGMENT_ICON,
+  segment,
+  segmentActive,
+  segmentEntering,
+  segmentExiting,
+  segmentTrail,
+  settingsBtn,
+  settingsBtnActive,
+} from '@renderer/Detail/ActionBand.css'
 import * as s from './viewEmbed.css'
 
 /** A foreign or malformed config degrades to the blank default (repair-not-reject), re-stamped
@@ -59,6 +78,15 @@ const rawViews = (raw: Record<string, unknown>): unknown[] =>
 
 /** A view's leading glyph, falling back to the table icon when unset. */
 const viewIcon = (v: SavedView): string => iconNameOr(v.icon, 'table')
+
+/** A view's segment-stroke, as the style that carries it: its chip color at tint-primary, or
+ *  nothing at all so the segment keeps the neutral hairline. */
+const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
+  const key = chipColorFor(v.color)
+  if (key === 'default') return undefined
+  const stroke = tintAt(colorVars.color.solid[key as SolidColor], TINT_STEPS.primary)
+  return { '--segment-stroke': stroke } as React.CSSProperties
+}
 
 /** Sized by markdownPM's own `.md-h{level}` class so a title reads uniform with any heading.
  *  Editing happens in place via contentEditable — no input swap. Escape reverts; an empty commit
@@ -163,22 +191,26 @@ function ViewPill({
   onAnimEnd: () => void
 }): React.JSX.Element {
   const { setNodeRef, style, handle } = useDragItem(id)
-  const cls = [s.pill, active && s.pillActive, entering && s.pillEntering, exiting && s.pillExiting]
-    .filter(Boolean)
-    .join(' ')
   return (
     <button
       ref={setNodeRef}
-      style={style}
+      style={{ ...style, ...strokeStyle(view) }}
       {...handle}
       type="button"
-      className={cls}
+      className={cx(
+        segment,
+        active && segmentActive,
+        entering && segmentEntering,
+        exiting && segmentExiting,
+      )}
       onClick={renameNode ? undefined : onSwitch}
       onContextMenu={onMenu}
       onAnimationEnd={onAnimEnd}
     >
-      <Icon name={viewIcon(view)} size={PILL_ICON} />
-      {renameNode ?? (labeled && <span>{view.name}</span>)}
+      <Icon name={viewIcon(view)} size={SEGMENT_ICON} />
+      <span className={cx(labelSlot, !renameNode && !labeled && labelSlotHidden)}>
+        <span className={labelText}>{renameNode ?? view.name}</span>
+      </span>
     </button>
   )
 }
@@ -203,6 +235,10 @@ export function ViewEmbedBlock({
   const [listOpen, setListOpen] = useState(false)
   const [renaming, setRenaming] = useState<number | null>(null)
   const [iconFor, setIconFor] = useState<number | null>(null)
+  const [colorFor, setColorFor] = useState<number | null>(null)
+  // The right-clicked segment/row — captured at menu time so every follow-up picker
+  // (icon, color) drops from the chip itself, never the embed.
+  const menuAnchorRef = useRef<HTMLElement | null>(null)
   const [exitingId, setExitingId] = useState<string | null>(null)
   const [enteringIds, setEnteringIds] = useState<Set<string>>(() => new Set())
   const prevIdsRef = useRef<Set<string> | null>(null)
@@ -270,6 +306,8 @@ export function ViewEmbedBlock({
   }
   // The lock toggle rides patchEntry's `locked` exemption above, so you can always unlock.
   const setLocked = (v: boolean): void => patchEntry({ locked: v ? true : undefined })
+  // Reached from both the area menu and a segment's own row menu — one command, two doors.
+  const toggleTitles = (): void => patchEntry({ view_button: labeled ? 'icon' : undefined })
   const writeConfig = (i: number, config: SavedView): void => {
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
@@ -365,7 +403,7 @@ export function ViewEmbedBlock({
       viewStyle: dropdown ? 'dropdown' : 'toolbar',
       titleShown,
     })
-    if (action === 'toggle-pill-titles') patchEntry({ view_button: labeled ? 'icon' : undefined })
+    if (action === 'toggle-pill-titles') toggleTitles()
     else if (action === 'show-title') patchEntry({ title: undefined })
     else if (action === 'new-view') addView()
     else if (action === 'style-dropdown') patchEntry({ view_style: 'dropdown' })
@@ -376,9 +414,12 @@ export function ViewEmbedBlock({
     e.preventDefault()
     e.stopPropagation() // the switcher row underneath owns the area menu
     if (locked) return
-    const action = await window.nexus.viewRowMenu(entry.views.length > 1)
+    menuAnchorRef.current = e.currentTarget as HTMLElement
+    const action = await window.nexus.viewRowMenu(entry.views.length > 1, labeled)
     if (action === 'view:rename') setRenaming(i)
     else if (action === 'view:edit-icon') setIconFor(i)
+    else if (action === 'view:change-color') setColorFor(i)
+    else if (action === 'view:toggle-titles') toggleTitles()
     else if (action === 'view:delete') (animate ? beginDeleteView : deleteViewAt)(i)
   }
   const pillAnimEnd = (id: string): void => {
@@ -391,6 +432,7 @@ export function ViewEmbedBlock({
     <EditableInput
       value={views[i].name}
       className={rowInput}
+      autoSize
       caretAtEnd
       onCommit={(next) => {
         setRenaming(null)
@@ -404,7 +446,7 @@ export function ViewEmbedBlock({
     <button
       ref={btnRef}
       type="button"
-      className={cfgOpen ? `${s.configBtn} ${s.configBtnActive}` : s.configBtn}
+      className={cx(settingsBtn, cfgOpen && settingsBtnActive)}
       aria-label="View settings"
       onClick={() => setCfgOpen(true)}
     >
@@ -425,10 +467,18 @@ export function ViewEmbedBlock({
   )
 
   const switcher = dropdown ? (
-    <button ref={dropRef} type="button" className={s.pill} onClick={() => setListOpen(true)}>
-      <Icon name={viewIcon(view)} size={PILL_ICON} />
-      {labeled && <span>{view.name}</span>}
-      <Icon name="chevron-down" size={10} />
+    <button
+      ref={dropRef}
+      type="button"
+      className={segment}
+      style={strokeStyle(view)}
+      onClick={() => setListOpen(true)}
+    >
+      <Icon name={viewIcon(view)} size={SEGMENT_ICON} />
+      <span className={cx(labelSlot, !labeled && labelSlotHidden)}>
+        <span className={labelText}>{view.name}</span>
+      </span>
+      <Icon name="chevron-down" size={10} className={segmentTrail} />
     </button>
   ) : (
     <>
@@ -536,10 +586,21 @@ export function ViewEmbedBlock({
         <IconPicker
           open={iconFor !== null}
           onClose={() => setIconFor(null)}
+          triggerRef={menuAnchorRef}
           value={iconFor !== null ? views[iconFor]?.icon : undefined}
           onSelect={(icon) => {
             if (iconFor !== null) persistConfig(iconFor, { ...views[iconFor], icon })
           }}
+        />
+        <ColorPicker
+          open={colorFor !== null}
+          selected={chipColorFor(colorFor !== null ? views[colorFor]?.color : undefined)}
+          onPick={(picked) => {
+            if (colorFor !== null) persistConfig(colorFor, { ...views[colorFor], color: picked })
+            setColorFor(null)
+          }}
+          onDismiss={() => setColorFor(null)}
+          triggerRef={menuAnchorRef}
         />
       </div>
     </ViewEmbedScopeProvider>

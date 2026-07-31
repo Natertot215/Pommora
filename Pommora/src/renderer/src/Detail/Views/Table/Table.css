@@ -377,11 +377,8 @@
    the column grid. The chrome lives on .group-band-* (GroupBand.css); the table scopes the section
    rhythm (the row), the sticky pin (the head), and the gutter chevron. */
 .table-view .group-band-row {
-  /* Base density only — the row re-applies base --zoom to match the data-row scale. It never wraps the
-     rows (the Reveal is its sibling), so they keep the grid's compound zoom; re-adding --block-zoom
-     would square it. Zoom rides the row, the sticky pin the head — kept apart so zoom never distorts
-     the sticky offset. */
-  zoom: var(--zoom);
+  /* No zoom of its own — the row sits inside .table-grid's compound zoom already, so it scales in
+     lockstep with the data rows; any re-application here would square a factor. */
   padding-top: var(--group-gap-top);
   padding-bottom: var(
     --cell-padding-y
