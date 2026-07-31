@@ -2,13 +2,23 @@
 
 ### Current Focus
 
-**The bridge map is in, and the tree's lookups share one walk.** Every IPC channel is declared once in `shared/bridge.ts` — the preload derives its dialers, main answers through one exhaustive handler object, and the envelope unified on the structured `Result` with one spelling per refusal. On the renderer side, `treeIndex` now owns every tree-derived lookup: one walk per tree identity produces a record per entity, and the reconcile, resolve, search, connections, and thumbnail-key tables are cached projections of it — the per-gesture tree walks (every nav click, pin drag, Back/Forward step) are gone, and Spaces vs Context groups reconcile against distinct buckets. The erasure campaigns before it left Swift parity gone and Navigation on one contract. Each arc ran its full closing loop (adversarial review, simplifier or prove-me-wrong pass, findings fixed same-session).
+**Identity is kind-first, and enforcement is live.** A content file names its kind in the key holding its id — `PageID:` / `TaskID:` / `EventID:`, value a bare ULID — the folder's sidecar declares that kind, and the file must agree. One predicate reads all three keys and answers member / missing / **Unknown**; Unknown is invisible to the tree, skipped by every nexus-wide write, and left byte-identical on disk, exactly as a stray `.png` in a Collection already is. A file with no key is the opposite case and stays fully live: it adopts at open and is still swept, because identity decides whether a value can be handed *back*, never whether it may be cleared. One resolver owns folder classification at any depth, and an agenda config counts only where the nexus records its id — which is what makes a duplicated or relocated config inert without a rule enforcing it.
 
-What's genuinely open: the live UIX pass waits on the next fresh dev launch — the running session pre-dates two rounds of main-process rewiring, so the first fresh launch runs the new world end-to-end (pin/unpin/reorder, recents restarting, tab restore, the NavView banner, a Set-Card drag holding its order, an icon change from a table row reaching the open page's header, and any native menu + any write erroring gracefully). After that, the next focus is whatever matters most from Pending — the Pages-in-DB session is queued as its own conversation.
+The old agenda architecture is gone rather than adapted: the suffix grammar, the item schemas, the CRUD, the read surface. What replaces it starts from a settled identity model and an empty schema, because the shape both kinds carried was Apple's, imported wholesale by the Swift build and never re-chosen.
 
-The baseline all of this counts forward from: the React rebuild passed the old SwiftUI build at v0.5.0, Contexts & Spaces made the organization layer user-defined, and Properties and Contexts share one wrapped-title-key syntax — a page's frontmatter carries `(Areas):` and `<Status>: Complete` at the root, bare values, no ULID anywhere on a page.
+What's genuinely open: three enforcement findings from the closing review — a duplicated singleton folder is not inert (every copy mechanism copies the id it is keyed on), a Set dragged to the root ends up with two competing ids, and a seed slot whose name is taken can never be registered. None is reachable in ordinary use today; each wants a design call rather than a patch. Alongside them, a batch of identity doc claims the reconciliation missed, and a standing docs-wide violation of the no-time-specific-commentary rule.
+
+The baseline all of this counts forward from: the React rebuild passed the old SwiftUI build at v0.5.0, Contexts & Spaces made the organization layer user-defined, and Properties and Contexts share one wrapped-title-key syntax — a page's frontmatter carries `(Areas):` and `<Status>: Complete` at the root, bare values, and no ULID in any key or link value.
 
 ### Recent Work
+
+#### Identity Rebuilt Kind-First (07-31)
+
+The universal question inverted. It used to be *what is this entity's id*; it is now *what is this* — the folder's sidecar — *and then what is its id*, under the key that names the kind. That single reordering is what makes a mislocated file recognisable at all: the kind key and the folder sidecar are a deliberate second identity source whose **disagreement is the detection signal**, which is why the consolidation rule that hunts redundant sources carries an explicit carve-out for it.
+
+Three divergent folder-classification checks became one depth-aware resolver, closing the hole where a nested agenda config read as an ordinary Set. Registration by sidecar id replaced "any folder carrying an agenda config is a singleton." Adoption inverted for agenda: a registered singleton stamps its own direct members and never recurses, because agenda is flat. Six nexus-wide write sweeps gained an admission gate; the live migration renamed 171 real files and stripped 8 hand-authored slug ids so they re-adopted fresh, which made the migration its own end-to-end adoption test.
+
+A Swift-remnant sweep ran alongside it — `_type` and `_status` reserved ids, `parent_id` and its whole write path, `ConnectionEdge`, `reverse_name`/`reverse_icon`, `accept`, `default_sort`, `rootsOf` — each traced to the Swift build and removed rather than re-justified. No id-valued cross-entity foreign key exists on disk any more, which is precisely why the kind key can be the only in-file classification input.
 
 #### The Erasure Campaigns (07-29 → 07-30)
 
@@ -59,6 +69,20 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 **`mutate.ts` — The Counter With Some Clerks and Some Piles.** Every change the window requests funnels through one dispatcher in the file-owning process — a big switch: "rename? do this. set a banner? do this." Some operations are handled by tidy specialist modules in `crud//`; others by long paragraphs of logic written directly inside the switch arm. Same counter, inconsistent staffing. The funnel itself is deliberate and good — one entry point means one place for safety policy (trash rules, the reserved-path guard, cascade ordering); the inconsistency is just archaeology: early ops got modules, later ops got written where the author was already standing. The change is purely organizational — move the inline arms out so every op lives the same way, and "where do I edit the banner logic" stops depending on when banner logic was written. Cheap and mechanical; do it opportunistically as each arm is next touched.
 
 **Sequencing:** the store split is the one remaining dedicated session — it de-risks every future feature. The mutate cleanup rides along with whatever next touches an arm, and the tree reload isn't a task at all yet — it's a constraint for the Pages-in-DB session queued below.
+
+#### Open From The Identity Arc
+
+Each is a design call, not a patch, and none is reachable in ordinary single-user use today — they matter because the mechanisms they sit in are load-bearing.
+
+**A duplicated singleton is not inert.** Registration keys on the config sidecar's id, and every ordinary duplication mechanism — Finder duplicate, `cp -R`, a restored backup, a sync conflict copy — copies that id. Two folders then both read as the singleton, and adoption stamps the agenda kind into the copy's pages, which makes them permanently un-adoptable as pages: contradicting reads are never re-stamped, by design. The guard needs to bind identity *and place*, or refuse outright when more than one folder claims a slot — the same "no arm may pick between them" rule the resolver already applies to a folder claiming two kinds at once.
+
+**A container can end up with two ids.** A Set dragged to the nexus root keeps its `_pageset.json` while adoption mints a fresh `_pagecollection.json` beside it, so which id is authoritative depends on where the folder sits. The fix is to migrate the sidecar rather than mint a second one — preserving the identity the rest of the nexus already references.
+
+**A taken seed slot never registers.** Seeding runs only at nexus creation and refuses a folder name already on disk, which correctly protects a user's own `Tasks/` of notes — but nothing ever fills that slot afterwards. Arguably correct-and-incomplete rather than broken: the recovery belongs to the Agenda work.
+
+**Docs owe the identity model a pass.** A batch of claims survived the reconciliation — kind-by-file-extension, agenda `property_definitions`, reserved ids that no longer exist — and three behaviours are load-bearing but undocumented: registration is never backfilled onto an existing nexus, a taken slot goes unregistered, and every move now passes a destination-kind refusal.
+
+**The no-time-specific rule needs a docs-wide sweep.** ~41 sentences across ~22 docs state what is or isn't built "yet" / "today" / "for now". Pre-existing and unrelated to identity; wants its own pass.
 
 #### Next-Feature Candidates
 
