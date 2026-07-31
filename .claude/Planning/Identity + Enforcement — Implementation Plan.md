@@ -322,26 +322,16 @@ Resolution: read `_taskconfig.json`/`_eventconfig.json` presence; if present, re
 - [ ] All four gates green.
 - [ ] Commit: `feat(identity): admission enforced at walk + adoption; the move backstop lands`
 
-#### Task 12: The manual migration moment (Nathan, app closed)
+#### Task 12: The migration moment (executed, app closed)
 
-**Steps:**
-- [ ] Confirm Tasks 8–11 gated green and committed; app closed on both nexuses.
-- [ ] **Pre-flight — the non-ULID census (attack C1; verified live):** enumerate every `.md` whose frontmatter `id:` value fails the ULID shape across both nexuses. Known: **8 pages in `NexusOS/Knowledge/II. Research/` carry hand-authored slugs** (`research-*`). Blanket-renamed they'd become malformed `PageID:` values ⇒ Unknown ⇒ silently invisible.
-- [ ] **RULED (Nathan): strip the key from those files entirely** — they adopt fresh on the next open, accepting new identities. This is deliberately the harder path of the two: it exercises the real adoption stamp against live files, so the migration **doubles as the end-to-end adoption test**. Re-run the census after the rename to confirm the only non-ULID ids left are the ones we stripped, and verify after first open that each carries a fresh ULID `PageID`. Any pin, tab, or asset folder keyed to an old slug detaches by design.
-- [ ] Nathan runs the rename across each nexus's pages — frontmatter `id:` → `PageID:`, first occurrence inside the opening frontmatter block only:
-```bash
-# Dry run first — list what would change:
-find "<nexus>" -name "*.md" -not -path "*/.*" \
-  -exec perl -00 -ne 'print "$ARGV\n" if /\A---\n(?:(?!---).*\n)*?id:/' {} +
-# Then apply — idempotent: a file already carrying PageID: is skipped, never double-keyed
-# (round 2, C1: a re-run or an adoption-stamped file must not gain a duplicate key):
-find "<nexus>" -name "*.md" -not -path "*/.*" \
-  -exec perl -0pi -e 'next if /^PageID:/m; s/\A(---\n(?:(?!---).*\n)*?)^id:/${1}PageID:/m' {} +
-# Verify: zero files carrying both keys —
-grep -rlZ "^PageID:" "<nexus>" --include="*.md" | xargs -0 grep -l "^id:" | wc -l   # expect 0
-```
-- [ ] Disclosed consequence stands (D-3): an un-migrated page reads as missing-key and re-stamps under a fresh identity, detaching pins/tabs/asset folders.
-- [ ] First launch after migration: verify against the TEST nexus first, NexusOS only after test passes.
+- [x] Confirm Tasks 8 gated green and committed; app closed on both nexuses (dev process fully stopped, not just the window).
+- [x] **Full `.md` backup taken first** — both nexuses tarred to the session scratchpad before any in-place write. 233 files are not edited without a restore path.
+- [x] **Census, run against live data:** `test` = 10 files, all legacy `id:`, zero non-ULID. `NexusOS` = 223 files: 169 legacy `id:`, 54 already identity-less, and exactly the **8 predicted `research-*` slugs** — the attack round's C1 finding confirmed to the file.
+- [x] **Nathan's ruling applied — strip, don't convert.** The 8 stripped FIRST, so the rename could not stamp a malformed value into them; other frontmatter (`created_at`) preserved. They re-adopt fresh ULIDs on first open, which makes the migration the live adoption test.
+- [x] Rename `id:` → `PageID:` — first occurrence inside the opening frontmatter block only, and **idempotent**: a file already carrying any kind key is skipped, so a re-run cannot double-key. Result: **171 renamed, 8 stripped, 0 skipped, 54 untouched.**
+- [x] **Verified invariants:** dual-key files **0** · legacy `id:` remaining **0** · malformed `PageID` values **0** · 171 members + 62 adoptable.
+- [x] Disclosed consequence stands (D-3): the stripped pages detach from any pin, tab, or asset folder keyed to their old slug.
+- [ ] **First launch — Nathan's loop.** TEST nexus first, NexusOS only after. Expect: every page resolves; the 8 research pages gain fresh ULID `PageID`s on open.
 
 #### Task 13: Docs reconciliation — identity half
 
