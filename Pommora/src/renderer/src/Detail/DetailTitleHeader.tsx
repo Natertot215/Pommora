@@ -42,7 +42,11 @@ export function DetailTitleHeader({
         <Icon
           ref={iconRef}
           name={icon}
-          className={iconHidden ? 'detail-title-icon is-hidden' : 'detail-title-icon'}
+          className={
+            iconHidden
+              ? 'detail-title-icon title-icon-reveal is-hidden'
+              : 'detail-title-icon title-icon-reveal'
+          }
           onContextMenu={editing ? undefined : openMenu}
         />
       )}

@@ -1,5 +1,7 @@
 import { globalStyle, keyframes, style } from '@vanilla-extract/css'
+import { titleReveal } from '../design-system/animations.css'
 import { vars as colorVars } from '../design-system/tokens/color.css'
+import { duration } from '../design-system/tokens/motion'
 import { SEGMENT_H, segmentRow, settingsBtn } from '../Detail/ActionBand.css'
 import { EMBED_ZOOM, VIEW_EMBED_ZOOM } from '../Embeds/embedScale'
 
@@ -46,6 +48,38 @@ export const titleRow = style({
     background: c.separator.segment,
   },
 })
+
+/** Two-phase title hide/reveal, both phases on the segments' titleReveal timing. Hiding slides the
+ *  title left THEN collapses the row's space upward; revealing opens the space THEN slides the
+ *  title back in. A transition reads its delay from the DESTINATION state's rules, so each
+ *  direction re-orders the phases by itself: the shown state delays the slide, the hidden state
+ *  delays the collapse. The slide is a literal translate (the title-icon reveal's treatment at
+ *  heading scale) — a width morph reads as motion only when the box hugs its content, and this
+ *  row is flex-stretched. */
+export const titleSlide = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  flex: '1 1 auto',
+  minWidth: 0,
+  transition: `transform ${titleReveal}, opacity ${titleReveal}`,
+  transitionDelay: duration.dropdown,
+})
+export const titleSlideHidden = style({
+  transform: 'translateX(-24px)', // KNOB — the hide's slide distance
+  opacity: 0,
+  transitionDelay: '0s',
+})
+export const titleSpace = style({
+  display: 'grid',
+  gridTemplateRows: '1fr',
+  transition: `grid-template-rows ${titleReveal}`,
+})
+export const titleSpaceHidden = style({
+  gridTemplateRows: '0fr',
+  transitionDelay: duration.dropdown,
+})
+export const titleSpaceInner = style({ minHeight: 0, overflow: 'hidden' })
 
 /** The title text + its in-place rename input. Size + weight come from the `.md-hN` class the caller
  *  appends (markdownPM's own heading code); this carries only colour, truncation, and the input reset. */
