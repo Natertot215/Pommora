@@ -1,5 +1,6 @@
-import { type Ref, useEffect, useRef, useState } from 'react'
+import { type Ref, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
+import { EditableInput } from '@renderer/Components/EditableInput'
 import './DetailTitleHeader.css'
 
 interface Props {
@@ -25,28 +26,6 @@ export function DetailTitleHeader({
   iconHidden,
 }: Props): React.JSX.Element {
   const [editing, setEditing] = useState(false)
-  const [value, setValue] = useState(title)
-  const reverting = useRef(false) // Escape sets this so the blur it triggers doesn't commit
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => setValue(title), [title])
-  useEffect(() => {
-    if (editing) {
-      inputRef.current?.focus()
-      inputRef.current?.select()
-    }
-  }, [editing])
-
-  const commit = async (): Promise<void> => {
-    setEditing(false)
-    const next = value.trim()
-    if (!next || next === title) {
-      setValue(title)
-      return
-    }
-    const res = await onRename(next)
-    if (res === false) setValue(title)
-  }
 
   const openMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
@@ -68,29 +47,16 @@ export function DetailTitleHeader({
         />
       )}
       {editing ? (
-        <input
-          ref={inputRef}
+        // A refused rename needs no revert here — the field unmounts on commit and the resting
+        // span keeps showing the live title until the tree confirms a change.
+        <EditableInput
+          value={title}
           className="detail-title-input"
-          value={value}
-          spellCheck={false}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              void commit()
-            } else if (e.key === 'Escape') {
-              reverting.current = true
-              setValue(title)
-              setEditing(false)
-            }
+          onCommit={(next) => {
+            setEditing(false)
+            if (next && next !== title) void onRename(next)
           }}
-          onBlur={() => {
-            if (reverting.current) {
-              reverting.current = false
-              return
-            }
-            void commit()
-          }}
+          onCancel={() => setEditing(false)}
         />
       ) : (
         // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics

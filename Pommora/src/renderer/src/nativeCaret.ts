@@ -169,6 +169,35 @@ function schedule(): void {
   if (active && !raf) raf = requestAnimationFrame(reposition)
 }
 
+// A pane may still be animating open (the Bloom scale, the center-origin re-place) when its field
+// takes focus — moves no listener above can see, since transforms never touch the layout box the
+// ResizeObserver watches. A fresh focus re-measures every frame until the bar holds still, then
+// stops; the deadline caps a host that never settles.
+let settleRaf = 0
+const SETTLE_STILL_FRAMES = 2
+const SETTLE_DEADLINE_MS = 400
+function beginSettle(): void {
+  cancelAnimationFrame(settleRaf)
+  const startedAt = performance.now()
+  let last: string | null = null
+  let still = 0
+  const tick = (): void => {
+    settleRaf = 0
+    const b = bar
+    if (!active || !b) return
+    reposition()
+    const key = `${b.style.left}|${b.style.top}|${b.style.display}`
+    if (key === last) still++
+    else {
+      still = 0
+      last = key
+    }
+    if (still >= SETTLE_STILL_FRAMES || performance.now() - startedAt > SETTLE_DEADLINE_MS) return
+    settleRaf = requestAnimationFrame(tick)
+  }
+  settleRaf = requestAnimationFrame(tick)
+}
+
 export function initNativeCaret(): void {
   if (started || typeof document === 'undefined') return
   started = true
@@ -184,6 +213,7 @@ export function initNativeCaret(): void {
         requestAnimationFrame(schedule)
       })
       fieldRO.observe(active)
+      beginSettle()
     }
     schedule()
   })
@@ -193,6 +223,7 @@ export function initNativeCaret(): void {
       active = null
       styledEl = null
       fieldRO?.disconnect()
+      cancelAnimationFrame(settleRaf)
       if (bar) bar.style.display = 'none'
     }
   })

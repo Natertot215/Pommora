@@ -86,6 +86,13 @@ const onShiftTab = (view: EditorView): boolean => {
   return true
 }
 
+/** Place the caret at `pos` and give the editor focus — the shared landing for chrome that hands
+ *  the user back to typing (table exits, the list-glyph click). */
+export function focusAt(view: EditorView, pos: number): void {
+  view.dispatch({ selection: { anchor: pos } })
+  view.focus()
+}
+
 // Shift+Enter exits a construct (plain newline) — except inside a callout, where it stays in the box. If the
 // caret sits inside an unclosed pair, it closes that first so the break never lands inside the pair.
 const onShiftEnter = (view: EditorView): boolean => {
