@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { NavRef } from '@shared/types'
 import { useSession } from '../store'
-import { reconcileIndexOf, resolveIndexOf } from '../treeIndex'
+import { reconcileIndexOf, resolveIndexOf, searchEntriesOf } from '../treeIndex'
 import { liveTarget } from '../Tabs/tabsModel'
 import {
   resolveFavorites,
@@ -10,16 +10,19 @@ import {
   resolveWith,
   type ResolvedNav,
 } from './navResolve'
-import { buildNavIndex, filterNav, type SearchEntry } from './navSearch'
+import { filterNav, type SearchEntry } from './navSearch'
+
+/** A stable empty index — a fresh literal per render would churn the search callback's deps. */
+const NO_ENTRIES: SearchEntry[] = []
 
 export interface SearchResult {
   entry: SearchEntry
-  /** Resolved display, or null for an unresolvable hit (agenda kinds — listed but not yet routable). */
+  /** Resolved display, or null for a hit whose kind has no click destination. */
   resolved: ResolvedNav | null
 }
 
 /** Split search results into the NavList shape both surfaces render: resolved hits become selectable
- *  `items`; unresolvable ones (agenda) become inert `extras`. */
+ *  `items`; unresolvable ones become inert `extras`. */
 export function splitSearch(results: SearchResult[]): {
   items: ResolvedNav[]
   extras: { key: string; title: string; kind: string }[]
@@ -33,7 +36,7 @@ export function splitSearch(results: SearchResult[]): {
 }
 
 /** The shared read side both NavWindow + NavPane render from — one source, two presentations. The tree
- *  index is memoized on (tree, agenda), so search filters per keystroke WITHOUT re-walking the tree. */
+ *  index is memoized per tree, so search filters per keystroke WITHOUT re-walking the tree. */
 export function useNavData(): {
   resolvedRecents: ResolvedNav[]
   resolvedFavorites: ResolvedNav[]
@@ -45,21 +48,10 @@ export function useNavData(): {
   const recents = useSession((s) => s.recents)
   const favorites = useSession((s) => s.favorites)
   const pinned = useSession((s) => s.pinned)
-  const agenda = useSession((s) => s.agendaSnapshot)
   const select = useSession((s) => s.select)
-  const ensureAgendaSnapshot = useSession((s) => s.ensureAgendaSnapshot)
-
-  // Re-warm the agenda snapshot whenever it's null while a nav surface is open (a mid-open tree push
-  // invalidates it) — otherwise agenda hits silently drop from search until reopen.
-  useEffect(() => {
-    if (agenda === null) void ensureAgendaSnapshot()
-  }, [agenda, ensureAgendaSnapshot])
 
   const resolveIndex = tree ? resolveIndexOf(tree) : null
-  const searchIndex = useMemo(
-    () => (tree ? buildNavIndex(tree, agenda ?? undefined) : []),
-    [tree, agenda],
-  )
+  const searchIndex = tree ? searchEntriesOf(tree) : NO_ENTRIES
   const resolvedPins = useMemo(
     () => (resolveIndex ? resolvePins(resolveIndex, pinned) : []),
     [resolveIndex, pinned],

@@ -62,7 +62,19 @@ describe('searchEntriesOf', () => {
     expect(entries[0]).toMatchObject({ key: 'homepage', title: 'TestNexus' })
     const alpha = entries.find((e) => e.title === 'Alpha')
     expect(alpha?.target).toEqual({ kind: 'page', id: 'p1' })
+    expect(alpha?.key).toBe('page:p1')
     expect(alpha?.lower).toBe('alpha')
+  })
+
+  it('indexes homepage, spaces, collections, sets, and pages', () => {
+    const entries = searchEntriesOf(makeTree())
+    const byKind = (k: string): string[] =>
+      entries.filter((e) => e.target.kind === k).map((e) => e.title)
+    expect(byKind('homepage')).toEqual(['TestNexus'])
+    expect(byKind('space').sort()).toEqual(['Pommora', 'Reading', 'Work'])
+    expect(byKind('collection')).toEqual(['Notes'])
+    expect(byKind('set')).toEqual(['Ideas'])
+    expect(byKind('page').sort()).toEqual(['Alpha', 'Nested Beta'])
   })
 })
 

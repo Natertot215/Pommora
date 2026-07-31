@@ -54,11 +54,12 @@
 - **Survivors, deliberate (do NOT touch):** the `'agenda'` `SidebarMode` + ribbon entry + `readPersonalization` allowlist (`readNexus.ts:84`) · `labels.agendaTask`/`agendaEvent` parsing (`readNexus.ts:154-155`) · `NavRef`'s `'task' | 'event'` kinds (`types.ts:285`) + the three renderer guards (`tabsModel.ts:35`, `store.ts:1000`, `store.ts:1047`) + `NAV_KINDS`/`TAB_KINDS` allowlists (D-19: the kind-scoping capability stays) · `NavList`'s extras rendering (`NavList.tsx:242-252`)
 
 **Steps:**
-- [ ] Delete/modify per the list, renderer last (the bridge entry's removal makes any missed caller a compile error — use that: typecheck after the main/shared half, expect the renderer callers to be the only reds, then fix exactly those).
-- [ ] Run all four gates — expect green.
-- [ ] Grep-verify: `grep -rn "agenda:list\|AgendaEntry\|agendaSnapshot\|ensureAgendaSnapshot\|agenda-row\|agenda-title\|agenda-mode" Pommora/src` → zero hits.
-- [ ] Live check (dev launch against the TEST nexus only): Agenda ribbon mode renders the empty state; nav search shows no agenda rows.
-- [ ] Commit: `refactor(agenda): the interim read surface leaves — the mode slot stays inert`
+- [x] Delete/modify per the list, renderer last (the bridge entry's removal makes any missed caller a compile error — use that: typecheck after the main/shared half, expect the renderer callers to be the only reds, then fix exactly those). The technique worked: 10 errors, all renderer, all expected.
+- [x] Run all four gates — green (171 files / 1852 tests).
+- [x] Grep-verify: `grep -rn "agenda:list\|AgendaEntry\|agendaSnapshot\|ensureAgendaSnapshot\|agenda-row\|agenda-title\|agenda-mode\|buildNavIndex\|collectAgenda" Pommora/src` → zero hits.
+- [x] **`buildNavIndex` collapsed rather than trimmed.** With the agenda append gone it was a one-line passthrough to `searchEntriesOf` with one production caller, wrapped in a `useMemo` around an already-identity-memoized function. Its purpose — merging an *off-tree* source into the tree index — is permanently dead under D-9, not temporarily. `useNavData` now calls `searchEntriesOf` directly against a stable empty constant; the `treeIndex` ↔ `navSearch` import cycle breaks; `navSearch.test.ts`'s index-shape coverage moved to `treeIndex.test.ts`, where its subject lives.
+- [ ] **Live check — Nathan's loop, not mine.** Against the TEST nexus: the Agenda ribbon mode renders "No tasks or events"; nav search returns no task/event rows for any query.
+- [x] Commit: `refactor(agenda): the interim read surface leaves — the mode slot stays inert`
 
 #### Task 3: Delete the suffix grammar
 

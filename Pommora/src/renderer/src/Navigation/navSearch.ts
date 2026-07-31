@@ -1,12 +1,9 @@
-// Client-side title search over the live tree (+ a cached agenda snapshot). v1 is title/kind only —
-// full-text/body search is a deferred Prospect (needs a SQLite FTS layer that doesn't exist yet). The
-// index carries a ready-to-select NavRef per hit; agenda hits (task/event) are find-only in v1 (no
-// click destination yet), but ride the same index so search can already surface them. Pure — the UI
-// memoizes buildNavIndex over (tree, agenda) and re-runs filterNav per keystroke.
+// Client-side title search over the live tree — title/kind only; full-text/body search is a
+// deferred Prospect resting on a SQLite FTS layer. The index carries a ready-to-select NavRef per
+// hit and is built by treeIndex's searchEntriesOf, memoized per tree; filterNav is pure and
+// re-runs per keystroke.
 
-import type { AgendaEntry, NavRef, NexusTree } from '@shared/types'
-import { searchEntriesOf } from '../treeIndex'
-import { navKey } from './navRecents'
+import type { NavRef } from '@shared/types'
 
 export interface SearchEntry {
   key: string
@@ -14,25 +11,6 @@ export interface SearchEntry {
   title: string
   /** Lowercased once at build — filterNav scores EVERY entry on every keystroke. */
   lower: string
-}
-
-const entry = (target: NavRef, title: string): SearchEntry => ({
-  key: navKey(target),
-  target,
-  title,
-  lower: title.toLowerCase(),
-})
-
-export function buildNavIndex(
-  tree: NexusTree,
-  agenda?: { tasks: AgendaEntry[]; events: AgendaEntry[] },
-): SearchEntry[] {
-  const treeEntries = searchEntriesOf(tree)
-  if (!agenda) return treeEntries
-  const out = [...treeEntries]
-  for (const t of agenda.tasks) out.push(entry({ kind: 'task', id: t.id }, t.title))
-  for (const e of agenda.events) out.push(entry({ kind: 'event', id: e.id }, e.title))
-  return out
 }
 
 /** Fuzzy subsequence score of an already-lowercased `t` against an already-lowercased `q`, or null

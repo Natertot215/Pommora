@@ -5,7 +5,6 @@ import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { slideScrollBack } from '@renderer/design-system/components/OverflowScroll'
 import type {
-  AgendaEntry,
   CollectionNode,
   ContextGroup,
   FolderPlacement,
@@ -498,28 +497,6 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const subSetPlacement = useSession((s) => s.personalization.subSetPlacement ?? 'top')
   const mode: SidebarMode = useSession((s) => s.personalization.sidebarMode ?? 'collections')
 
-  // The agenda list lives HERE, not in AgendaMode: the mode-exit overlay renders a second copy of
-  // the outgoing layer, and a component that fetched its own data would mount that copy empty —
-  // painting "no tasks or events" over the list it is supposed to be animating away. Keyed on the
-  // nexus so switching one re-reads rather than holding the previous nexus's list.
-  const [agenda, setAgenda] = useState<{ tasks: AgendaEntry[]; events: AgendaEntry[] }>({
-    tasks: [],
-    events: [],
-  })
-  useEffect(() => {
-    if (mode !== 'agenda') return undefined
-    let live = true
-    // Clear first — a switch must not show the previous nexus's items while the new read is in
-    // flight, or indefinitely if it fails.
-    setAgenda({ tasks: [], events: [] })
-    void window.nexus.agenda.list().then((r) => {
-      if (live && r.ok) setAgenda({ tasks: r.value.tasks, events: r.value.events })
-    })
-    return () => {
-      live = false
-    }
-  }, [mode, tree.nexus.rootPath])
-
   const onSelectCollection = (col: CollectionNode): void => {
     void select({ kind: 'collection', id: col.id })
   }
@@ -622,7 +599,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       cb()
     }
 
-  const agendaLayer = <AgendaMode tasks={agenda.tasks} events={agenda.events} />
+  const agendaLayer = <AgendaMode />
 
   const layerFor = (m: SidebarMode): React.ReactNode =>
     m === 'contexts' ? contextsLayer : m === 'agenda' ? agendaLayer : collectionsLayer

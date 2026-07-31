@@ -8,7 +8,6 @@
 // bundle may require only 'electron') consumes it freely from both tsconfig projects.
 
 import type {
-  AgendaEntry,
   NavigationState,
   NavViewModes,
   NexusState,
@@ -219,8 +218,7 @@ export interface Asks {
   }
   'theme:systemAccent': { args: []; reply: string | null }
 
-  // Agenda / navigation / tabs / previews / thumbnails
-  'agenda:list': { args: []; reply: Result<{ tasks: AgendaEntry[]; events: AgendaEntry[] }> }
+  // Navigation / tabs / previews / thumbnails
   'nav:read': { args: []; reply: Result<NavigationState> }
   'nav:write': { args: [patch: Partial<NavigationState>]; reply: Result<null> }
   'tabs:load': { args: []; reply: Result<StoredTabSet | null> }
