@@ -1,5 +1,5 @@
-// Per-value page primitives — strip or rewrite ONE option's value on a page, distinct from
-// stripPageMember (which deletes a whole property key). Type-switched over the on-disk value
+// Page value primitives — strip or rewrite ONE option's value on a page, plus stripPageMember,
+// which deletes a whole property key. Type-switched over the on-disk value
 // shapes: multi_select = string array; every single-option kind, Status included, = bare string. Multi arrays
 // are edited IN PLACE (filter/map on the raw array), never decode-to-strings→re-encode: a page
 // may carry foreign / non-string elements, and an op must touch only its target.
@@ -78,4 +78,18 @@ export function replacePageValue(
   type: PropertyType,
 ): string | null {
   return applyEdit(content, key, type, oldValue, { op: 'replace', to: newValue })
+}
+
+/** Null means the page didn't hold it — the caller writes nothing, so an unrelated page is never
+ *  re-dated. The key arrives resolved; a property's values live under its own name. */
+export function stripPageMember(content: string, key: string): string | null {
+  const root = splitFrontmatter(content) as Record<string, unknown>
+  if (!(key in root)) return null
+  // The key is governed but not supplied, which is how the merge is told to delete it.
+  return mergeFrontmatter(
+    content,
+    { modified_at: nowIso() },
+    [key, 'modified_at'],
+    splitEnvelope(content).body,
+  )
 }

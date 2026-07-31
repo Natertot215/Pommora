@@ -7,7 +7,7 @@
 
 import { join } from 'node:path'
 import { rewritePageSerialized } from '../io/fileLock'
-import { stripPageMember } from './schema'
+import { stripPageMember } from './pageValue'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
