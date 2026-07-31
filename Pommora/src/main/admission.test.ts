@@ -249,6 +249,42 @@ describe('agenda singleton adoption', () => {
     ).toContain(TASKS)
   })
 
+  // Every duplication mechanism copies the id the registration keys on, so two folders answer to
+  // one record. That is the same ambiguity a single folder claiming two kinds already gets: no arm
+  // picks. Nothing is written, so deleting the stray config restores the nexus completely.
+  it('drops a contested slot — a duplicated config makes BOTH folders inert', async () => {
+    await withRegisteredTasks()
+    await mkdir(join(root, 'Tasks copy'), { recursive: true })
+    await writeFile(
+      join(root, 'Tasks copy', SIDECAR_FILENAME.taskConfig),
+      JSON.stringify({ id: TASKS }),
+    )
+    await writeFile(join(root, 'Tasks copy', 'Copied.md'), 'no frontmatter\n')
+
+    await stampAdopted(root)
+    // Neither folder's members are stamped — the copy's page keeps its adoptability.
+    expect(await readFile(join(root, 'Tasks copy', 'Copied.md'), 'utf8')).toBe('no frontmatter\n')
+    expect(await readFile(join(root, 'Tasks', 'Buy milk.md'), 'utf8')).toBe('no frontmatter\n')
+  })
+
+  // A folder that crossed depth outside the app carries the wrong sidecar. Its identity is
+  // renamed, not replaced — a second sidecar would leave one folder with two competing ids.
+  it('migrates a stale container sidecar rather than minting a second id', async () => {
+    const SET_ID = '01KVGMT8BFG350FZZXAMG1QDS9'
+    await mkdir(join(root, 'Stray'), { recursive: true })
+    await writeFile(
+      join(root, 'Stray', SIDECAR_FILENAME.set),
+      JSON.stringify({ id: SET_ID, icon: 'box' }),
+    )
+    await writeFile(join(root, 'Stray', 'Note.md'), 'no frontmatter\n')
+
+    await stampAdopted(root)
+    const coll = JSON.parse(await readFile(join(root, 'Stray', SIDECAR_FILENAME.collection), 'utf8'))
+    expect(coll.id).toBe(SET_ID) // the identity survived the crossing
+    expect(coll.icon).toBe('box') // and so did everything riding with it
+    await expect(readFile(join(root, 'Stray', SIDECAR_FILENAME.set), 'utf8')).rejects.toThrow()
+  })
+
   it('leaves an UNREGISTERED agenda folder entirely alone', async () => {
     await mkdir(join(root, 'Tasks'), { recursive: true })
     await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.taskConfig), JSON.stringify({ id: TASKS }))

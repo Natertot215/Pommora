@@ -47,7 +47,7 @@ import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pag
 import { basenameNoMd } from './coerce'
 import { nexusConfig, SIDECAR_FILENAME, NEXUS_CONFIG_FILES } from './paths'
 import { ensureIdentity } from './identity'
-import { readAgendaRegistration, resolveFolderKind } from './folderKind'
+import { agendaContext, resolveFolderKind } from './folderKind'
 import { updateSettings } from './settings'
 import { newId } from './ids'
 import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
@@ -120,7 +120,7 @@ const fault = (message: string): Result<never> => fail('operation-failed', messa
  *  main-side check, rather than a rule re-stated per caller. */
 async function movesInto(root: string, dst: string): Promise<Result<null>> {
   const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
-  const ctx = { agenda: readAgendaRegistration(identity), sidecarMode: !!identity?.id, root }
+  const ctx = await agendaContext(root, identity, !!identity?.id)
   const depth = dirname(dst) === root ? 'root' : 'nested'
   const kind = await resolveFolderKind(dst, depth, ctx)
   return kind === 'collection' || kind === 'set'

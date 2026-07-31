@@ -7,7 +7,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { parseDocument } from 'yaml'
 import { admitContentFile, type ContentKind } from '@shared/identity'
-import { readAgendaRegistration, resolveFolderKind, type FolderKindContext } from './folderKind'
+import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
 import type {
   SolidColor,
   AccentSetting,
@@ -459,7 +459,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const sidecarMode = !!asString(identity?.id)
   const id = sidecarMode ? (identity!.id as string) : adoptedId(root)
   const fb: Fallback = sidecarMode ? 'id' : 'title'
-  const kindCtx = { agenda: readAgendaRegistration(identity), sidecarMode, root }
+  const kindCtx = await agendaContext(root, identity, sidecarMode)
 
   const excluded = asStringArray(settings.excluded_folders) ?? []
   const labels = readLabels(settings.labels)
