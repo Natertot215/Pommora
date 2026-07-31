@@ -379,11 +379,11 @@
 .table-view .group-band-row {
   /* No zoom of its own — the row sits inside .table-grid's compound zoom already, so it scales in
      lockstep with the data rows; any re-application here would square a factor. */
-  padding-top: var(--group-gap-top);
+  padding-top: var(--band-gap);
 }
-/* A sub-group bucket band reads as a row, not a section — its gap collapses to the row rhythm. */
+/* A sub-group bucket band reads as a row, not a section — one shoulder, not two. */
 .table-view .group-band.sub-band .group-band-row {
-  padding-top: var(--subband-gap-top);
+  padding-top: var(--band-clearance);
 }
 .table-view .group-band-head {
   /* Sticky-left so the disclosure label + its chevron hold the gutter when the columns scroll — the
