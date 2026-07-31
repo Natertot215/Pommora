@@ -28,11 +28,11 @@
 - Modify: `src/shared/result.ts:12-13` — delete `'invalid-event'` + `'not-agenda'` from `ErrorCode` (sole producers were `agendaEntity.ts:50,:64`)
 
 **Steps:**
-- [ ] Move `stripPageMember` verbatim into `pageValue.ts`; update the two imports; run typecheck — expect green.
-- [ ] Delete the files/blocks listed above in one pass.
-- [ ] Run all four gates — expect green (nothing live imported any of it; `contextWrite.test.ts`'s remaining blocks cover `setPageContext`/`setSpaceContext` and still pass).
-- [ ] Grep-verify: `grep -rn "agendaEntity\|agendaConfigSidecar\|SchemaTarget\|schemaTransaction\|invalid-event\|not-agenda" Pommora/src` → zero hits.
-- [ ] Commit (explicit paths): `refactor(agenda): the dead write layer leaves — stripPageMember rehomes beside the page value writers`
+- [x] Move `stripPageMember` verbatim into `pageValue.ts`; update the two imports; run typecheck — expect green.
+- [x] Delete the files/blocks listed above in one pass. **Also removed:** the `setAgendaContext` import at `contextWrite.test.ts:9` (orphaned with the describe block), `listFilesBySuffix` (`io/walk.ts` — zero consumers once `agendaTarget` died), and the `SchemaTransaction` citation in `atomicWrite.ts`'s `serializeJson` header.
+- [x] Run all four gates — green (172 files / 1857 tests; `contextWrite.test.ts`'s remaining blocks cover `setPageContext`/`setSpaceContext` and still pass).
+- [x] Grep-verify: `grep -rn "agendaEntity\|agendaConfigSidecar\|SchemaTarget\|schemaTransaction\|invalid-event\|not-agenda\|listFilesBySuffix" Pommora/src` → zero hits.
+- [x] Commit (explicit paths): `refactor(agenda): the dead write layer leaves — stripPageMember rehomes beside the page value writers`
 
 #### Task 2: Delete the interim read surface
 
