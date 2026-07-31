@@ -14,7 +14,7 @@
   --cell-padding-y: 6px; /* drives row height */
   --cell-icon-gap: 6px; /* used by the title cell + group glyph */
   --chips-gap: 4px; /* used by multi-select / relation cells */
-  --row-indent: 22px; /* extra left-indent added per nesting depth (Set within Set, group members) */
+  --row-indent: var(--disclosure-indent); /* per-nesting-depth inset (Set within Set, group members) — the shared disclosure step */
   --loose-inset: 8px; /* title inset for ungrouped/loose rows — tucked left of the cell-padding-x column inset */
 
   /* — Gutter (row grips + group chevrons float left into this strip) — */

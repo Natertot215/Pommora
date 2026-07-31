@@ -1,5 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../tokens/color.css'
+import { DISCLOSURE_INDENT } from '../../tokens/size.css'
 import { text, truncateHoverScroll } from '../../tokens/typography.css'
 import { duration, easing } from '../../tokens/motion'
 import { TINT_STEPS, tintAt } from '../../tokens/tint'
@@ -58,14 +59,15 @@ export const twistySpacer = style({ width: '12px', flex: '0 0 auto' })
 /** KNOB — the rail's x. It rides the parent row's DISCLOSURE column, nudged a hair right — not the
  *  icon column, since a row's icon sits well past its chevron, which would put the rail through the
  *  child titles. */
-const RAIL_X = '14px'
+// The rail rides the shared disclosure step, holding a fixed clearance to the indented content.
+const RAIL_X = `${DISCLOSURE_INDENT - 6}px`
 
 /** A disclosed child run — rides the shared list-outline rail with rounded caps, children indenting
  *  past it. Lives here, not in a pane: the rail is what "these rows belong to the one above" looks
  *  like, and every disclosing surface needs it. */
 export const railRow = style({
   position: 'relative',
-  paddingLeft: '20px',
+  paddingLeft: `${DISCLOSURE_INDENT}px`,
   '::before': {
     content: '""',
     position: 'absolute',
