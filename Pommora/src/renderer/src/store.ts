@@ -991,7 +991,8 @@ export const useSession = create<SessionState>((set, get) => {
     pinnedTabs: [],
     navBanner: undefined,
     pinTarget: (target) => {
-      // Agenda kinds have no durable resolver yet; adopted ids would re-mint under a new id.
+      // A pin must resolve for as long as it is stored: agenda kinds resolve against nothing,
+      // and an adopted id is re-minted on the next walk.
       if (target.kind === 'task' || target.kind === 'event') return
       if ('id' in target && target.id.startsWith('adopted-')) return
       const ref = toNavRef(target)
@@ -1037,8 +1038,8 @@ export const useSession = create<SessionState>((set, get) => {
       void window.nexus.capture.evict(live)
     },
     addFavorite: (target) => {
-      // v1 favorites are tree kinds only — an agenda favorite would resolve to null and render
-      // as an invisible, un-removable entry until the agenda resolver ships.
+      // Favorites are tree kinds only — an agenda favorite resolves to null, which renders as an
+      // invisible row the user then has no way to remove.
       if (target.kind === 'task' || target.kind === 'event') return
       const ref = toNavRef(target)
       const key = navKey(ref)
