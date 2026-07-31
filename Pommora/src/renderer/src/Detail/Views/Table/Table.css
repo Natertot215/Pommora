@@ -383,10 +383,24 @@
   padding-bottom: var(
     --cell-padding-y
   ); /* matches the data-cell vertical padding — head-to-row gap */
+  transition:
+    padding-top var(--disclosure) var(--ease-standard),
+    padding-bottom var(--disclosure) var(--ease-standard);
 }
 /* A sub-group bucket band reads as a row, not a section — its gap collapses to the row rhythm. */
 .table-view .group-band.sub-band .group-band-row {
   padding-top: var(--subband-gap-top);
+}
+/* A collapsed band folds to the row rhythm (the cards-view seam law): any band seam it touches
+   sheds the section gap, and the clearance under its own head folds away with the rows. Sub-band
+   buckets already sit at the row rhythm, so their lead never moves; the band directly under the
+   table head keeps the section gap — the edge keeps its law. The morph runs in step with the fold. */
+.table-view :not(.table-head) + .group-band:not(.sub-band):has(> .group-band-row[data-disclose]) > .group-band-row,
+.table-view .group-band:has(> .group-band-row[data-disclose]) + .group-band:not(.sub-band) > .group-band-row {
+  padding-top: calc(2 * var(--cell-padding-y));
+}
+.table-view .group-band-row[data-disclose] {
+  padding-bottom: 0;
 }
 .table-view .group-band-head {
   /* Sticky-left so the disclosure label + its chevron hold the gutter when the columns scroll — the
