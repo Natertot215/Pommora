@@ -16,7 +16,7 @@ The shared wayfinding store beneath every navigation surface — built once, rea
 
 Everything the layer persists is a bare identity ref — `{kind, id}`, nothing else — under one contract with one validation boundary: pins and favorites as ordered arrays in `.nexus/navigation.json` (array position IS the order, alongside the NavView's banner pointer), recents as a device-local database row, because two machines interleaving one history has no correct answer. The renderer speaks one read and one write; the IO layer routes each key to its store, and the file writes as a serialized patch so the arrays and the banner can never drop each other. Every title, icon, and path resolves **live** against the current tree at the moment of use — a rename or move, even while the app is closed, cannot leave anything stale, because nothing stale is stored. An entry that no longer resolves is hidden at render but never deleted from storage, so a Nexus switch can't silently wipe pins or favorites. The navigation file is hand-editable and follows the nexus, last-writer-wins; an outside edit to it refreshes the open app live.
 
-**Search** is a client-side, title-based fuzzy scan over the in-memory tree, plus a cached Agenda snapshot so Tasks and Events are findable. A Context isn't itself a hit — it's the path crumb its Spaces resolve under. The index is memoized per tree, so typing filters without re-walking it.
+**Search** is a client-side, title-based fuzzy scan over the in-memory tree — one index, built from the tree alone, with no second source to merge or invalidate. A Context isn't itself a hit — it's the path crumb its Spaces resolve under. The index is memoized per tree, so typing filters without re-walking it.
 
 ### Features
 
@@ -62,8 +62,8 @@ The footer carries a breadcrumb of the active tab's container path, plus a dimme
 
 **Surface build state:** NavWindow (the overlay), **Toolbar Tabs**, and **NavView** are shipped. **NavPane** (the dropdown) is a placeholder pending its content call.
 
-The **NavWindow rail's** Style toggle governs its search results too — searching changes what is listed, never how it's drawn. (NavView differs deliberately: its search is always cards.) Only recents reorder, since a result set has no stored order to drag against, and the inert agenda hits render as List rows only, having no card form.
+The **NavWindow rail's** Style toggle governs its search results too — searching changes what is listed, never how it's drawn. (NavView differs deliberately: its search is always cards.) Only recents reorder, since a result set has no stored order to drag against. Inert hits — those whose kind has no click destination — have no card form, so Gallery is passed none and they surface in List only.
 
 **Open design:** the NavWindow's Figma gallery form. Whether the rail as built is the intended rail or a stand-in has no ruling; nor does whether the shipped hover pin marker settles the row marker. List rows carry no current-item treatment today; gallery cards do.
 
-**Deferred:** Agenda entries are search-listable but route nowhere — no selection kind opens a Task or Event, so they list inert until Agenda's own surfaces land. Body and full-text search waits on a SQLite FTS layer that doesn't exist. Drag-to-pin across the tab divider, and dragging a tab out into its own window, are Prospects.
+**Deferred:** Agenda is unsearchable — Tasks and Events are absent from the tree the index builds from, and no selection kind opens one. Both wait on Agenda joining the walk rather than on new plumbing: the persistence layer admits their refs, and the inert-row rendering exists. Body and full-text search waits on a SQLite FTS layer that doesn't exist. Drag-to-pin across the tab divider, and dragging a tab out into its own window, are Prospects.
