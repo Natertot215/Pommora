@@ -4,8 +4,6 @@
 // so a cascade can't clobber a concurrent edit. Per-file, not cross-file atomic: a
 // partly-applied cascade is recoverable by re-running.
 
-import { contentId } from '@shared/identity'
-import { splitFrontmatter } from '../readNexus'
 import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'
 import { listMarkdownFiles } from '../io/walk'
 import { sweepAdmits } from './util'
