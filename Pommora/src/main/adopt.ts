@@ -14,7 +14,7 @@ import { baseSidecar } from '@shared/schemas'
 import { recordWrite } from './io/writeEcho'
 import { shouldSkipDir } from './exclusion'
 import {
-  readAgendaRegistration,
+  agendaContext,
   resolveFolderKind,
   type FolderKind,
   type FolderKindContext,
@@ -99,10 +99,34 @@ const MEMBER_KIND: Record<string, ContentKind> = {
 async function stampFolder(absDir: string, kind: ContainerKind): Promise<boolean> {
   const read = await readJsonStrict(join(absDir, SIDECAR_FILENAME[kind]))
   if (!read.ok && read.error.code !== 'not-found') return false
-  const existing = read.ok ? read.value : {}
-  if (asString(existing.id)) return false
+  if (read.ok && asString(read.value.id)) return false
+  if (!read.ok && (await migrateContainerSidecar(absDir, kind))) return true
 
-  await writeSidecar(absDir, kind, { ...existing, id: newId() })
+  await writeSidecar(absDir, kind, { ...(read.ok ? read.value : {}), id: newId() })
+  return true
+}
+
+/**
+ * A folder that crossed depth outside the app still carries the sidecar of the kind it used to be
+ * — a Set dragged to the root, a Collection dragged into one. Its identity is renamed rather than
+ * replaced: minting a second sidecar beside the first leaves one folder with two ids, whichever
+ * one wins decided purely by where it currently sits, and any work done under the new id silently
+ * reverts the moment it moves back.
+ *
+ * Renaming, not refusing. Refusing writes no sidecar, and the walk needs one — the folder would
+ * vanish from the sidebar entirely, which is worse than losing an icon. Both sidecars present is
+ * the one case that refuses: that is a real conflict, and no arm should pick.
+ */
+async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Promise<boolean> {
+  const other: ContainerKind = kind === 'collection' ? 'set' : 'collection'
+  const from = join(absDir, SIDECAR_FILENAME[other])
+  const read = await readJsonStrict(from)
+  if (!read.ok || !asString(read.value.id)) return false
+  const to = join(absDir, SIDECAR_FILENAME[kind])
+  // Both endpoints, or the rename reads as an external edit and buys a full re-walk.
+  recordWrite(from)
+  recordWrite(to)
+  await rename(from, to)
   return true
 }
 
@@ -165,7 +189,7 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
   // `sidecarMode: false` is the honest reading for adoption specifically: a container sidecar's
   // ABSENCE is what this pass exists to fix, so it must not be taken as a reason to skip. Agenda
   // configs still classify normally, which is what keeps a singleton from adopting as a Collection.
-  const kindCtx = { agenda: readAgendaRegistration(identity), sidecarMode: false, root }
+  const kindCtx = await agendaContext(root, identity, false)
 
   let stamped = 0
   for (const e of await listEntries(root)) {
