@@ -11,7 +11,7 @@ Role is computed from depth at render time and never stored: the same folder bec
 
 #### II. Sidecar
 
-`_pageset.json` holds the Set's id, a `parent_id` breadcrumb, its icon, the orders for its Pages and child Sets, and the view-bearing fields. The shape is identical at every depth, and an app-made Set is born with a default view wherever it sits. Position is authoritative for parentage: `parent_id` is stamped at create and healed from position on adoption, so a missing one is never a data problem and nothing on the read path consults it. The title is the folder name, and foreign keys ride through on every write.
+`_pageset.json` holds the Set's id, its icon, the orders for its Pages and child Sets, and the view-bearing fields. The shape is identical at every depth, and an app-made Set is born with a default view wherever it sits. **Parentage is the folder nesting itself** — a Set stores no pointer to its parent, so there is no second source to drift, heal, or reconcile when a Set moves. The title is the folder name, and foreign keys ride through on every write.
 
 #### II. Recursive Nesting
 
