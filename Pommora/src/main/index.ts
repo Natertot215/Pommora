@@ -1413,11 +1413,18 @@ serveBridge(
       },
     },
 
-    // A ViewPane view row's right-click menu (Rename / Edit Icon / Delete).
+    // The per-view right-click menu (ViewPane rows + embed segments).
     'view-row-menu': {
       kind: 'menu',
-      fn: async (win: BrowserWindow, canDelete: unknown): Promise<ViewRowMenuAction | null> => {
-        return popViewRowMenu(win, { canDelete: canDelete === true })
+      fn: async (
+        win: BrowserWindow,
+        canDelete: unknown,
+        labeled: unknown,
+      ): Promise<ViewRowMenuAction | null> => {
+        return popViewRowMenu(win, {
+          canDelete: canDelete === true,
+          labeled: typeof labeled === 'boolean' ? labeled : undefined,
+        })
       },
     },
 
