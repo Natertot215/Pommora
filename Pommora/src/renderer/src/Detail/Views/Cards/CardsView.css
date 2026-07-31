@@ -71,7 +71,7 @@
   margin-top: var(--band-gap);
 }
 .cards-view .group-band-row {
-  padding-bottom: 8px; /* KNOB — heading-to-cards clearance */
+  padding-bottom: var(--card-gap-v); /* heading-to-cards clearance rides the vertical card rhythm */
 }
 
 .cards-grid {
