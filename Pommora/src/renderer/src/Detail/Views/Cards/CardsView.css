@@ -2,8 +2,7 @@
    radius, gaps, title-area) starts from NavGallery's values — the title/property area is allowed to
    diverge as the card design settles. The pane insets live in Detail.css (the `:has(.cards-view)`
    body rule — the block-surface inset regime, no views gutter); the embed zoom law rides here so a
-   view embed scales the grid as a unit. `.is-compact` = Card Banner: None — imageless cards, and
-   the band rhythm tightens with them. */
+   view embed scales the grid as a unit. `.is-compact` = Card Banner: None — imageless cards. */
 .cards-view {
   --card-min: calc(180px * var(--card-scale, 1)); /* KNOB — column-width floor × the Scale factor */
   --set-card-min: calc(var(--card-min) * 1.5); /* KNOB — the Set Cards row's larger floor */
@@ -19,7 +18,8 @@
      that image:body proportion instead of collapsing to the title; a content-heavy card still grows
      past it (no aspect clip). */
   --card-body-min: calc(var(--thumb-h) * 0.54);
-  --band-gap: 22px; /* KNOB — vertical rhythm between disclosure bands */
+  /* The inter-band seam — two shoulders of the card rhythm, state-free; tune --card-gap-v, not this. */
+  --band-gap: calc(2 * var(--card-gap-v));
   /* ONE padding source for everything in a card's value flow: the chip tokens' own vars. Chips read
      them natively; the text-shaped values (dates, numbers, links) are re-pointed at the same vars
      below — so the tight packing is a single knob pair. */
@@ -32,7 +32,6 @@
   padding-top: var(--card-gap-v);
 }
 .cards-view.is-compact {
-  --band-gap: 14px;
   --card-row-h: 17px; /* KNOB — a compact property-value row (chip height × --chip-zoom) */
   --card-foot-h: calc(
     1.5px +
@@ -53,7 +52,6 @@
   grid-template-columns: repeat(auto-fill, var(--set-card-min));
   gap: var(--card-gap-v) var(--card-gap-h);
   margin-bottom: var(--band-gap);
-  transition: margin-bottom var(--disclosure) var(--ease-standard);
 }
 .set-card {
   aspect-ratio: 125 / 90;
@@ -73,17 +71,6 @@
    heading-to-cards clearance. ── */
 .cards-view .group-band + .group-band {
   margin-top: var(--band-gap);
-  transition: margin-top var(--disclosure) var(--ease-standard);
-}
-/* A collapsed band folds to the card rhythm: it wears the band-to-card gap on both sides, so any
-   seam it touches — either neighbouring band, or the Set-cards row above — sheds the band rhythm.
-   The seam morph runs in step with the fold. */
-.cards-view .group-band:has(> .group-band-row[data-disclose]) + .group-band,
-.cards-view .group-band + .group-band:has(> .group-band-row[data-disclose]) {
-  margin-top: calc(2 * var(--card-gap-v));
-}
-.cards-view .set-cards-row:has(+ .group-band > .group-band-row[data-disclose]) {
-  margin-bottom: calc(2 * var(--card-gap-v));
 }
 .cards-view .group-band-row {
   padding-bottom: var(--card-gap-v); /* heading-to-cards clearance rides the vertical card rhythm */
