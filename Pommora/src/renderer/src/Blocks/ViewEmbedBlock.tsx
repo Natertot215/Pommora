@@ -399,12 +399,10 @@ export function ViewEmbedBlock({
     e.preventDefault()
     if (locked) return
     const action = await window.nexus.viewEmbedAreaMenu({
-      viewButton: labeled ? 'labeled' : 'icon',
       viewStyle: dropdown ? 'dropdown' : 'toolbar',
       titleShown,
     })
-    if (action === 'toggle-pill-titles') toggleTitles()
-    else if (action === 'show-title') patchEntry({ title: undefined })
+    if (action === 'show-title') patchEntry({ title: undefined })
     else if (action === 'new-view') addView()
     else if (action === 'style-dropdown') patchEntry({ view_style: 'dropdown' })
     else if (action === 'style-toolbar') patchEntry({ view_style: undefined })
@@ -521,21 +519,28 @@ export function ViewEmbedBlock({
       }}
     >
       <div className={s.tile} onPointerDownCapture={onActivate}>
-        {titleShown && (
-          // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
-          <div className={s.titleRow} onContextMenu={(e) => void titleMenu(e)}>
-            {/* size omitted → Icon defaults to 1em; the .md-hN class sets the em base, so the icon
-                scales with the title level in lockstep with the text. */}
-            {iconShown && <Icon name={viewIcon(view)} className={`md-h${titleLevel}`} />}
-            <EmbedTitle
-              title={entry.display_title ?? source.title}
-              level={titleLevel}
-              editable={!locked}
-              onCommit={commitTitle}
-            />
-            {configButton}
+        <div className={cx(s.titleSpace, !titleShown && s.titleSpaceHidden)}>
+          <div className={s.titleSpaceInner}>
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
+            <div className={s.titleRow} onContextMenu={(e) => void titleMenu(e)}>
+              <span className={cx(s.titleSlide, !titleShown && s.titleSlideHidden)}>
+                {/* size omitted → Icon defaults to 1em; the .md-hN class sets the em base, so the
+                    icon scales with the title level in lockstep with the text. */}
+                <Icon
+                  name={viewIcon(view)}
+                  className={cx(`md-h${titleLevel}`, 'title-icon-reveal', !iconShown && 'is-hidden')}
+                />
+                <EmbedTitle
+                  title={entry.display_title ?? source.title}
+                  level={titleLevel}
+                  editable={!locked}
+                  onCommit={commitTitle}
+                />
+              </span>
+              {titleShown && configButton}
+            </div>
           </div>
-        )}
+        </div>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div className={s.switcherRow} onContextMenu={(e) => void areaMenu(e)}>
           {switcher}

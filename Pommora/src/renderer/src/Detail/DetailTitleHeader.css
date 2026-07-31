@@ -6,28 +6,33 @@
   min-width: 0;
   --detail-title-size: 24px;
 }
-.detail-title-icon {
-  flex: none;
-  /* Sizes to the title — the type scale drives both. KNOB: bump to e.g. calc(var(--detail-title-size) * 1.1). */
-  width: var(--detail-title-size);
-  height: var(--detail-title-size);
-  max-width: var(--detail-title-size);
+/* The title-icon hide/show — one treatment for every heading icon (the Detail header, the
+   view-embed heading): max-width collapses the space on the slide token, the translate carries
+   it, the negative margin swallows the host's 8px gap. --title-icon-w is the shown ceiling;
+   hosts with a fixed icon box point it at their size var. */
+.title-icon-reveal {
   min-width: 0;
+  max-width: var(--title-icon-w, 1em);
   overflow: hidden;
-  color: var(--label-control);
-  /* Hide/show slides the icon in/out on the slide token (--duration-base): max-width collapses the
-     space, the translate carries it, the negative margin swallows the .detail-title gap. */
   transition:
     max-width var(--duration-base) var(--ease-standard),
     opacity var(--duration-base) var(--ease-standard),
     transform var(--duration-base) var(--ease-standard),
     margin-right var(--duration-base) var(--ease-standard);
 }
-.detail-title-icon.is-hidden {
+.title-icon-reveal.is-hidden {
   max-width: 0;
   opacity: 0;
   transform: translateX(-6px);
   margin-right: -8px;
+}
+.detail-title-icon {
+  flex: none;
+  /* Sizes to the title — the type scale drives both. KNOB: bump to e.g. calc(var(--detail-title-size) * 1.1). */
+  --title-icon-w: var(--detail-title-size);
+  width: var(--detail-title-size);
+  height: var(--detail-title-size);
+  color: var(--label-control);
 }
 .detail-title-text,
 .detail-title-input {
