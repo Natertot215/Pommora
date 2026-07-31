@@ -18,8 +18,10 @@
      that image:body proportion instead of collapsing to the title; a content-heavy card still grows
      past it (no aspect clip). */
   --card-body-min: calc(var(--thumb-h) * 0.54);
-  /* The inter-band seam — two shoulders of the card rhythm, state-free; tune --card-gap-v, not this. */
-  --band-gap: calc(2 * var(--card-gap-v));
+  /* The seam law's binding (GroupBand.css): the card rhythm is the shoulder, the band seam two of
+     them — state-free; tune --card-gap-v, not these. */
+  --band-clearance: var(--card-gap-v);
+  --band-gap: calc(2 * var(--band-clearance));
   /* ONE padding source for everything in a card's value flow: the chip tokens' own vars. Chips read
      them natively; the text-shaped values (dates, numbers, links) are re-pointed at the same vars
      below — so the tight packing is a single knob pair. */
@@ -66,19 +68,11 @@
   opacity: 0.85;
 }
 
-/* ── Disclosure bands (shared GroupBand chrome): the heading over the band's card grid. The chrome +
-   glyph resolve identically to the table's (GroupBand); cards scopes only the inter-band rhythm and the
-   heading-to-cards clearance. ── */
+/* ── Disclosure bands (shared GroupBand chrome): the heading over the band's card grid. The chrome,
+   glyph, and seam law resolve identically to the table's (GroupBand); cards scopes only the sibling
+   seam. ── */
 .cards-view .group-band + .group-band {
   margin-top: var(--band-gap);
-}
-.cards-view .group-band-row {
-  padding-bottom: var(--card-gap-v); /* heading-to-cards clearance rides the vertical card rhythm */
-  transition: padding-bottom var(--disclosure) var(--ease-standard);
-}
-/* Collapsed, the heading has no cards to clear — the clearance folds away with them. */
-.cards-view .group-band-row[data-disclose] {
-  padding-bottom: 0;
 }
 
 .cards-grid {

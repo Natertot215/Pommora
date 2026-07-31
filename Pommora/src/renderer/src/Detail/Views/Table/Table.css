@@ -380,22 +380,10 @@
   /* No zoom of its own — the row sits inside .table-grid's compound zoom already, so it scales in
      lockstep with the data rows; any re-application here would square a factor. */
   padding-top: var(--group-gap-top);
-  padding-bottom: var(
-    --cell-padding-y
-  ); /* matches the data-cell vertical padding — head-to-row gap */
-  transition: padding-bottom var(--disclosure) var(--ease-standard);
 }
 /* A sub-group bucket band reads as a row, not a section — its gap collapses to the row rhythm. */
 .table-view .group-band.sub-band .group-band-row {
   padding-top: var(--subband-gap-top);
-}
-/* Collapsed, the head has no rows to clear — the clearance folds away with them. The same yield
-   when the first disclosed member is a nested band rather than a row: that band's two-shoulder lead
-   already owns the seam, so the clearances never stack. A first-child sub-band bucket keeps the
-   clearance — its single-shoulder lead needs it to reach the uniform seam. */
-.table-view .group-band-row[data-disclose],
-.table-view .group-band-row:has(+ [data-reveal] > * > .group-band:not(.sub-band):first-child) {
-  padding-bottom: 0;
 }
 .table-view .group-band-head {
   /* Sticky-left so the disclosure label + its chevron hold the gutter when the columns scroll — the
