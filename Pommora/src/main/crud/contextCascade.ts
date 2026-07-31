@@ -1,8 +1,8 @@
-// The three-scope title cascade behind Context/Space renames, plus the rename ops and the
-// on-open journal replay. A Context rename rewrites the parenthesized KEY in every member root; a
-// Space rename rewrites its exact canonical title as a VALUE under its Context's key
-// (near-miss forms stay — the reconcile owns those). Scopes: every `.md` frontmatter, every
-// agenda `*.json` root, every `_space.json` root — each under its own file lock.
+// The title cascade behind Context/Space renames, plus the rename ops and the on-open journal
+// replay. A Context rename rewrites the parenthesized KEY in every member root; a Space rename
+// rewrites its exact canonical title as a VALUE under its Context's key (near-miss forms stay —
+// the reconcile owns those). Scopes: every `.md` frontmatter and every `_space.json` root — each
+// under its own file lock.
 
 import { readFile, rename } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -64,7 +64,7 @@ function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | nu
   return { ...raw, [key]: next }
 }
 
-/** Sweep every root in the three scopes through `rewrite` (null = untouched), each under
+/** Sweep every context-bearing root through `rewrite` (null = untouched), each under
  *  its file lock. The one walk every key/value cascade and unlink shares. */
 export async function sweepContextRoots(
   root: string,
@@ -113,7 +113,7 @@ export async function sweepContextRoots(
   return { touched, skipped }
 }
 
-/** Run the three-scope cascade for a journal record. `contextTitle` is the owning
+/** Run the title cascade for a journal record. `contextTitle` is the owning
  *  Context's CURRENT registry title (the key Space values live under). */
 export async function cascadeTitle(
   root: string,
@@ -127,7 +127,7 @@ export async function cascadeTitle(
   return ok(await sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j)))
 }
 
-/** Strip a deleted Context's parenthesized KEY from every root in all three scopes. */
+/** Strip a deleted Context's parenthesized KEY from every context-bearing root. */
 export async function unlinkContextKey(
   root: string,
   contextTitle: string,
@@ -143,8 +143,8 @@ export async function unlinkContextKey(
   )
 }
 
-/** Strip a deleted Space's exact title as a VALUE under its Context's key in all three
- *  scopes; a key left empty drops with it (no empties). Silent, like today's id-strip. */
+/** Strip a deleted Space's exact title as a VALUE under its Context's key in every
+ *  context-bearing root; a key left empty drops with it (no empties). Silent, like the id-strip. */
 export async function unlinkSpaceValue(
   root: string,
   contextTitle: string,
@@ -171,7 +171,7 @@ async function settleJournal(root: string, j: RenameJournal, skipped: string[]):
   else await clearJournal(root)
 }
 
-/** Rename a Context: journal → folder rename → three-scope KEY cascade → registry title
+/** Rename a Context: journal → folder rename → KEY cascade → registry title
  *  commit → journal settle, in that exact order. A live failure aborts: best-effort
  *  reverse, journal cleared. */
 export async function renameContextOp(
@@ -235,7 +235,7 @@ export async function renameContextOp(
   return ok(null)
 }
 
-/** Rename a Space: journal → folder rename → three-scope VALUE cascade → journal settle.
+/** Rename a Space: journal → folder rename → VALUE cascade → journal settle.
  *  No registry commit — Space identity lives in its folder + sidecar id. */
 export async function renameSpaceOp(
   root: string,
