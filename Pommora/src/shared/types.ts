@@ -71,8 +71,8 @@ export interface Personalization {
   connectionsOpenInPreview?: boolean
   /** Ribbon icon order below the pinned Homepage — bare icon keys, in display order. */
   ribbonOrder?: string[]
-  /** The window zoom the nexus opens at (and ⌘0 resets to). Absent = 1.0. Set by hand in
-   *  settings.json for now; ⌘ +/− nudge live from it. Applied main-side (webContents zoom). */
+  /** The window zoom the nexus opens at (and ⌘0 resets to). Absent = 1.0; ⌘ +/− nudge live from
+   *  it. Applied main-side (webContents zoom). */
   defaultViewScale?: number
 }
 
@@ -156,8 +156,8 @@ export type ViewStyle = 'dropdown' | 'toolbar'
 
 export interface SetNode extends PathNode {
   kind: 'set'
-  /** Child Sets nested at any depth. Optional during the migration
-   *  window; populated by the recursive read. */
+  /** Child Sets nested at any depth. Optional so a container read that stops short of the
+   *  recursion still types; the walk populates it. */
   sets?: SetNode[]
   pages: PageNode[]
   /** Saved views from the sidecar `views[]` (depth-1 Sets only; deeper Sub-Sets ignore them). */
@@ -223,7 +223,6 @@ export interface NexusTree {
    *  raw/unmigrated tree — the open path migrates + seeds before anything renders). */
   collections: CollectionNode[]
   contexts: ContextGroup[]
-  /** Ungrouped top-level Collections (those not assigned to a user section). */
   labels: NexusLabels
   /** Resolved app accent from .nexus/settings.json (defaults to DEFAULT_ACCENT). */
   accent: AccentSetting
@@ -316,12 +315,6 @@ export interface StoredTab {
   target: NavRef | NewTabSentinel
   navStack: NavRef[]
   navIndex: number
-}
-
-/** The unpinned tab set + the active-tab pointer (which may reference a derived pinned tab's id). */
-export interface TabSet {
-  tabs: Tab[]
-  activeTabId: string
 }
 
 /** The persisted row's shape — StoredTab entries under the same pointer. */

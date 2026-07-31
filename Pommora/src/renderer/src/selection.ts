@@ -20,8 +20,8 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
       // Homepage is a singleton (always present) — never reconciled away.
       return selection
     case 'context':
-      // A Context group is a disclosure, not a destination — until ContextView exists, a stored
-      // group ref reconciles dead so no layer holds what none can render.
+      // A Context group is a disclosure, not a destination — its Spaces are what open. A stored
+      // group ref reconciles dead so no layer holds a ref nothing can render.
       return { kind: 'none' }
     case 'space':
       return index.spaces.has(selection.id) ? selection : { kind: 'none' }

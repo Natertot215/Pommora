@@ -196,8 +196,8 @@ export const menu = style({ display: 'flex', flexDirection: 'column', padding: '
 
 // ── Shared dropdown row defaults + the AccessoryButton primitive ──
 // The dropdown surfaces (SettingsPane · ViewPane · ViewSettings) route their coloring, spacing, and
-// icon-button recipe here. `item` also serves the sidebar, so a control tone can't ride the base row —
-// dropdown surfaces opt in via `dropdownRowTitle`.
+// icon-button recipe here. `item` also serves the sidebar, so a control tone can't ride the base
+// row: a dropdown-only treatment belongs on its own class, never on `item`.
 
 /** The one icon-button recipe behind every TopRow/BottomRow/row affordance (ellipsis · plus · eye ·
  *  palette). Box via `--accessory-box` (consumers pass their own). The `&&` pins the

@@ -35,7 +35,6 @@ export const pageCollectionSidecar = baseSidecar.extend({
   set_order: ulidList,
   page_order: ulidList,
   properties: z.array(z.string()).optional(),
-  default_sort: z.looseObject({}).optional(),
   views: z.array(savedView).optional(),
   open_in: openInField,
   view_button: viewButtonField,
