@@ -389,8 +389,12 @@
 .table-view .group-band.sub-band .group-band-row {
   padding-top: var(--subband-gap-top);
 }
-/* Collapsed, the head has no rows to clear — the clearance folds away with them. */
-.table-view .group-band-row[data-disclose] {
+/* Collapsed, the head has no rows to clear — the clearance folds away with them. The same yield
+   when the first disclosed member is a nested band rather than a row: that band's two-shoulder lead
+   already owns the seam, so the clearances never stack. A first-child sub-band bucket keeps the
+   clearance — its single-shoulder lead needs it to reach the uniform seam. */
+.table-view .group-band-row[data-disclose],
+.table-view .group-band-row:has(+ [data-reveal] > * > .group-band:not(.sub-band):first-child) {
   padding-bottom: 0;
 }
 .table-view .group-band-head {
