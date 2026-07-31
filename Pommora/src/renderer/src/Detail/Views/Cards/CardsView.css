@@ -18,10 +18,9 @@
      that image:body proportion instead of collapsing to the title; a content-heavy card still grows
      past it (no aspect clip). */
   --card-body-min: calc(var(--thumb-h) * 0.54);
-  /* The seam law's binding (GroupBand.css): the card rhythm is the shoulder, the band seam two of
-     them — state-free; tune --card-gap-v, not these. */
+  /* The seam law's binding (GroupBand.css): the card rhythm is the shoulder; tune --card-gap-v, not
+     this. */
   --band-clearance: var(--card-gap-v);
-  --band-gap: calc(2 * var(--band-clearance));
   /* ONE padding source for everything in a card's value flow: the chip tokens' own vars. Chips read
      them natively; the text-shaped values (dates, numbers, links) are re-pointed at the same vars
      below — so the tight packing is a single knob pair. */
@@ -30,8 +29,8 @@
   --switch-zoom: 0.75; /* KNOB — the Switch checkbox-look's card scale (its native 54×24 towers over chips raw) */
   zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
   /* The leading band/row sits off the view's top edge (the embed's ActionBand line, the pane head)
-     by the same vertical card rhythm the rows keep between themselves. */
-  padding-top: var(--card-gap-v);
+     by one shoulder — the same rhythm the rows keep between themselves. */
+  padding-top: var(--band-clearance);
 }
 .cards-view.is-compact {
   --card-row-h: 17px; /* KNOB — a compact property-value row (chip height × --chip-zoom) */
@@ -53,7 +52,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--set-card-min));
   gap: var(--card-gap-v) var(--card-gap-h);
-  margin-bottom: var(--band-gap);
 }
 .set-card {
   aspect-ratio: 125 / 90;
@@ -70,8 +68,8 @@
 
 /* ── Disclosure bands (shared GroupBand chrome): the heading over the band's card grid. The chrome,
    glyph, and seam law resolve identically to the table's (GroupBand); cards scopes only the sibling
-   seam. ── */
-.cards-view .group-band + .group-band {
+   seam — lead-side, one rule for whatever precedes a band. ── */
+.cards-view :is(.set-cards-row, .group-band) + .group-band {
   margin-top: var(--band-gap);
 }
 

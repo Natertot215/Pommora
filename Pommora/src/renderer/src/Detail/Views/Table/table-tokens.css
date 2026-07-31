@@ -37,13 +37,9 @@
   --heading-segment-width: 1.5px;
   --heading-padding-y: 8px; /* clears the label off the top + bottom seams */
 
-  /* — Group sections — the seam law's binding (GroupBand.css): the row rhythm is the shoulder, the
-       section lead two of them — state-free; tune --cell-padding-y, not these. — */
+  /* — Group sections — the seam law's binding (GroupBand.css): the row rhythm is the shoulder;
+       tune --cell-padding-y, not this. — */
   --band-clearance: var(--cell-padding-y);
-  --group-gap-top: calc(2 * var(--band-clearance));
-  --subband-gap-top: var(
-    --band-clearance
-  ); /* a sub-group bucket header sits at data-row height, not band height */
 
   /* — Column resize — */
   --resizer-width: 8px;
