@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { text } from '@renderer/design-system/tokens'
+import { DISCLOSURE_INDENT } from '@renderer/design-system/tokens/size.css'
 import { stack } from '@renderer/design-system/tokens/stack'
 import { ACTIVATION, suppressNextClick } from '@renderer/design-system/interactions/shared'
 import { announce } from '@renderer/design-system/interactions/a11y'
@@ -31,7 +32,7 @@ import {
 
 const LINE_INSET_RIGHT = 12
 const BASE_INDENT = 8 // MenuItem's base left padding
-const STEP_INDENT = 14 // MenuItem's per-depth inset
+const STEP_INDENT = DISCLOSURE_INDENT // MenuItem's per-depth inset — the shared disclosure step
 
 type DropTarget = {
   depth: number // indent depth of the landing slot (the line)

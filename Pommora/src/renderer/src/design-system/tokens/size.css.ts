@@ -57,6 +57,11 @@ const controlScale = createGlobalTheme(':root', {
   },
 })
 
+/** The one per-level inset every disclosure hierarchy steps by — the sidebar tree, table group
+ *  nesting, and pane disclosure runs all derive from this single literal (theme-vars bridges it
+ *  to `--disclosure-indent` for plain CSS). A number, not a var: drop-line math multiplies it. */
+export const DISCLOSURE_INDENT = 14
+
 /** One token object: `size.icon.md`, `size.control['button-large'].height`, … */
 export const size = {
   icon: iconScale.icon,

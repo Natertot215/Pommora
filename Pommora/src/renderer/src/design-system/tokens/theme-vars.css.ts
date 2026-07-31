@@ -2,7 +2,7 @@ import { globalStyle } from '@vanilla-extract/css'
 import { DEFAULT_ACCENT } from '@shared/types'
 import { vars as colorVars } from './color.css'
 import { font } from './typography.css'
-import { size } from './size.css'
+import { DISCLOSURE_INDENT, size } from './size.css'
 import { TINT_STEPS } from './tint'
 import { duration, easing } from './motion'
 import { stack } from './stack'
@@ -103,6 +103,8 @@ globalStyle(':root', {
     '--text-title3-size': font.scale.title3.size,
     '--text-caption-size': font.scale.caption.size,
     '--text-subline-size': font.scale.subline.size,
+    // The per-level disclosure inset every hierarchy steps by (sidebar, table nesting, panes).
+    '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
     // Icon-size ladder — so plain-CSS glyphs (e.g. the fold chevron) route to the same steps.
     '--icon-xs': size.icon.xs,
     '--icon-sm': size.icon.sm,
