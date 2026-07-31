@@ -174,6 +174,9 @@ globalStyle(`${body} .table-view, ${body} .table-empty`, {
  *  table's text-normalization; without this the card grid rendered at full detail-pane size in a tile. */
 globalStyle(`${body} .cards-view`, {
   vars: { '--zoom': String(EMBED_ZOOM) },
+  // The tail seam — the last card row clears the tile's bottom edge on the same card rhythm as the
+  // view's top seam. Embed-owned: a full-page pane's inset already clears the bottom.
+  paddingBottom: 'var(--card-gap-v)',
 })
 
 /** The CARD GRIDS alone align to the header inset — the same line the title divider and pills
