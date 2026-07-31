@@ -77,8 +77,8 @@ export type MutateRequest =
   | { op: 'createContextGroup'; name: string }
   // Create a Space folder + `_space.json` under its Context, seeded with the 2×2 block doc.
   | { op: 'createSpace'; contextId: string; name: string }
-  // Rename a Context/Space — the journaled three-scope title cascade (frontmatter keys,
-  // agenda JSON roots, `_space.json` roots) plus the registry/folder rename.
+  // Rename a Context/Space — the journaled title cascade over every context-bearing root
+  // (page frontmatter, `_space.json`) plus the registry/folder rename.
   | { op: 'renameContext'; contextId: string; newName: string }
   | { op: 'renameSpace'; spaceId: string; newName: string }
   // Set an entity's links for ONE Context: the full Space-id list (empty = key removed).

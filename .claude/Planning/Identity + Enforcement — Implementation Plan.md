@@ -83,15 +83,23 @@
 #### Task 4: Live-nexus folder deletion (Nathan-coordinated)
 
 **Steps:**
-- [ ] App closed (both nexuses).
-- [ ] Enumerate: `find <test-nexus> <NexusOS> -maxdepth 2 \( -name "_taskconfig.json" -o -name "_eventconfig.json" \)` — list every hit's parent folder with its contents to Nathan **before touching anything**.
-- [ ] On Nathan's go per folder: move each singleton folder to the **system trash** (recoverable — never `rm`).
-- [ ] Re-run the enumeration → zero hits. No tolerance code is ever written for what was removed.
+- [x] App closed (both nexuses) — and **fully stopped, not just the window closed**: a detached `electron-vite dev` keeps the watcher alive, and main/preload never HMR, so a surviving dev process is still executing pre-Task-1 main code.
+- [x] Enumerate: `find <test-nexus> <NexusOS> -maxdepth 2 \( -name "_taskconfig.json" -o -name "_eventconfig.json" \)` — list every hit's parent folder with its contents to Nathan **before touching anything**. Four folders, each sidecar-only; zero item files on either nexus. **Read each config in FULL** — a truncated read understated the NexusOS pair, which carried a hand-authored `_type` Select beyond the built-in Status (recorded in the log's Schema Scrub Inventory).
+- [x] On Nathan's go per folder: move each singleton folder to the **system trash** (recoverable — never `rm`). Bytes also snapshotted to the session scratchpad, so the taxonomy survives an emptied trash.
+- [x] Re-run the enumeration → zero hits. No tolerance code is ever written for what was removed.
 
 #### Gate 1 — clean-slate verification
-- [ ] All four gates green.
-- [ ] The Task 1–3 greps all clean.
-- [ ] Live: Context rename still sweeps `.md` + `_space.json` (run one in the test nexus); Agenda mode inert; search clean.
+- [x] All four gates green (171 files / 1853 tests).
+- [x] The Task 1–3 greps all clean.
+- [x] Survivor sweep: four comments describing deleted machinery rewritten to durable truth — `treeIndex.ts`'s "agenda entries append per surface", `mutate.ts`'s three-scope cascade list, and the two nav-guard comments in `store.ts` whose rationale was written as a wait ("no resolver yet", "until the agenda resolver ships"). A guard's comment states why it refuses, not what hasn't shipped.
+- [ ] **Live — Nathan's loop:** a Context rename in the TEST nexus still sweeps `.md` + `_space.json`; Agenda mode inert; search clean.
+
+**Phase 1 closed. Self-review findings that rewrite later tasks:**
+
+1. **Task 9/10 gained a prerequisite Phase 1 created.** `readSidecar` requires a zod schema, and Task 1 deleted `agendaConfigSidecar` — the only one for an agenda config. Task 9's resolver must read that sidecar's `id` to match the registration, so it needs a schema first. `baseSidecar` (`schemas.ts:23`) is exactly `{ id, icon?, modified_at? }` loose — *precisely* D-10's identity-only config — but it is not exported. **Export it and read agenda configs through it**; do not author a parallel schema. `writeSidecar` takes `unknown`, so Task 10's seed needs nothing.
+2. **Citation drift, re-verified against the post-Phase-1 tree.** Task 6: `pageFrontmatter` `:80-86` → **`:71-77`**, `PAGE_MODELED_KEYS` `:91` → **`:82`** (both moved up with `agendaConfigSidecar`'s deletion). Task 11: `sweepContextRoots`' `.md` loop `:77` → **`:76`**. Task 9: `adopt.ts`'s skip `:105-110` → **`:104-109`**. Unchanged and re-confirmed: `readNexus.ts:224` · `readPage.ts:23` · `loadValues.ts:30` · `cascade.ts:34` · `removeProperty.ts:57`/`:118` · `adopt.ts:30`/`:32` · `mutate.ts:321`/`:325` · `readNexus.ts:487-493`.
+3. **One Task 6 claim still to prove, not assume.** The plan states `writeImageAsset`'s other callers pass trusted constants. Three exist — `mutate.ts:275` (nexus id), `:348` (`''`), `:382` (`assetKey`, a *variable*). Confirm `:382` resolves to a constant before gating only the `:325` call site.
+4. **Phase 2's baseline is 171 files / 1853 tests** — Phase 2 must not change either number beyond stub typing.
 
 ---
 

@@ -28,7 +28,18 @@ The standing watch record for [[Identity + Enforcement — Implementation Plan]]
 
 #### Rulings Recorded Mid-Plan
 
-*(none yet)*
+- **Ratification is on record.** Nathan's execution instruction ("Execute the ratified implementation plan") ratifies both the log and the plan; the "attack round pending fold" header was stale — the plan body carries the folded round-2 findings. Headers rewritten, committed `8c5ef003`.
+- **Doc reconciliation moves to the falsifying commit.** Docs made false by a Phase-1 deletion land in that task's commit, not Task 13. Task 13 keeps a "Not here — landed with the code that falsified them" clause and reconciles against this ledger at close.
+- **Evidence beats classification.** Where the De-Scaffolding Report's own sections disagree (`listFilesBySuffix` listed as both generic-and-surviving and as retiring), the zero-consumer evidence governs.
+- **Core-bullet narrowing is Nathan's to adjudicate.** The decision log's Core lists the record-based mislocation revert in this plan; D-17 splits it out. The plan's reading is the coherent one; the Core text drifted. Raised, unresolved.
+- **No time-specific comments (Nathan, standing).** A comment or doc line stating what is or isn't built goes stale — state the durable why instead. Bans `yet` · `currently` · `for now` · `today` · `until X lands` as claims about build state. Applies to docs equally.
+
+#### Task Log
+
+- **Task 4 — held, app running.** The dev process (electron-vite + Electron main/renderer) is live; the plan's first checkbox is "App closed (both nexuses)." Hold is correct. **Enumeration finding carried forward for the Agenda Rethink:** both NexusOS agenda configs carry a second, user-authored `_type` Select property that exists nowhere in code and is not recoverable from `defaultStatusSeed()` — Tasks: Task / To-Do / Phase; Events: Event / Meeting / Appointment. Nathan's own taxonomy, and a real design input for the agenda schema scrub. The test-nexus configs carry Status only. All four are Swift-serialized and key their schema under `properties`, not `property_definitions` — the deleted `agendaConfigSidecar` could never have read them.
+- **Task 3 — landed `b927a99c`, four gates green.** `AGENDA_SUFFIX` · `agendaKindOf` · `shared/agenda` return zero hits; the only surviving `task.json` / `event.json` string is `util.test.ts:31`'s accepted-name fixture, exactly as the amended grep step predicts. Survivors intact: `paths.ts` filenames, the `adopt.ts` + `readNexus.ts` folder skips.
+- **Task 2 — landed `8be1cc7e`, four gates green.** `agenda:list` · `AgendaEntry` · `agendaSnapshot` · `ensureAgendaSnapshot` all zero hits. `buildNavIndex` collapsed rather than kept as a passthrough seam.
+- **Task 1 — landed `9b005cb8`, four gates green.** Verified independently: `agendaEntity` · `agendaConfigSidecar` · `SchemaTarget` · `schemaTransaction` · `invalid-event` · `not-agenda` · `listFilesBySuffix` all return zero hits across `Pommora/src`. `stripPageMember` lives at `pageValue.ts:85`; both importers repoint to `./pageValue`. `listFilesRecursive` + `listMarkdownFiles` survive with live callers. Baseline before the edit: typecheck 0 · lint 0 · vitest 0 (175 files / 1875 tests) · build 0.
 
 ### Docs To Change
 
@@ -64,5 +75,11 @@ Seeded from the plan's Task 13 list and the decision log's Reconciliation Bill (
 | `src/main/crud/adopt.ts` comment block | The skip comment cites `agendaKindOf` / `shared/agenda.ts` | Both deleted in Task 3 — comment restates the new truth in that task's commit | 3 |
 | `src/renderer/src/Sidebar/Sidebar.css` | `/* --- agenda mode (read-only list) --- */` heading over `.agenda-row` / `.agenda-title` | Task 2 reduces AgendaMode to its empty state; those two rules orphan and the comment's claim dies | 2 |
 | `src/shared/bridge.ts` comment | "Agenda / navigation / tabs / previews / thumbnails" section header | `agenda:list` leaves the map in Task 2 | 2 |
+| `src/renderer/src/Navigation/navSearch.ts:1-5` | File header — "over the live tree (+ a cached agenda snapshot)… agenda hits ride the same index… memoizes buildNavIndex over (tree, agenda)" | Every clause dies with the parameter and the append loops | 2 |
+| `src/renderer/src/Navigation/useNavData.ts:34-35` | "The tree index is memoized on (tree, agenda)" | The agenda dependency drops from the search memo | 2 |
+| `src/renderer/src/Navigation/useNavData.ts:17, :21-22` | `SearchResult.resolved` and `splitSearch` docs — "unresolvable hit (agenda kinds)" / "unresolvable ones (agenda) become inert `extras`" | The shape is a deliberate survivor; its comments cite a producer that no longer exists — restate generically, do not delete | 2 |
+| `src/renderer/src/Navigation/NavList.tsx:203` | `extras` prop doc — "Unresolvable hits (agenda kinds) — listed inert until Agenda routing ships" | Same class as above — survivor, stale rationale | 2 |
+| `src/renderer/src/Navigation/NavList.tsx:246` | Tooltip copy `title="Agenda navigation isn't wired yet"` | User-visible copy on a survivor block that can no longer receive agenda rows — needs Nathan's call, not a silent rewrite | 2 |
+| `src/renderer/src/NavWindow/NavWindow.tsx:231-232` | "`extras` (inert agenda hits) has no card form, so it renders as a List row regardless of the Style toggle" | Already false pre-plan — gallery mode passes no `extras` at all, so nothing renders there; also cites the dying producer | 2 |
 
 **Standing discrepancies carried, not owned by this plan:** the PRD's dangling "see Prospects below" (no such section; Framework points at it too).
