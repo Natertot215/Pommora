@@ -27,6 +27,9 @@
   --chip-pad-x: 4px; /* KNOB — horizontal padding of chips AND text values (tight) */
   --switch-zoom: 0.75; /* KNOB — the Switch checkbox-look's card scale (its native 54×24 towers over chips raw) */
   zoom: calc(var(--zoom, 1) * var(--block-zoom, 1));
+  /* The leading band/row sits off the view's top edge (the embed's ActionBand line, the pane head)
+     by the same vertical card rhythm the rows keep between themselves. */
+  padding-top: var(--card-gap-v);
 }
 .cards-view.is-compact {
   --band-gap: 14px;
