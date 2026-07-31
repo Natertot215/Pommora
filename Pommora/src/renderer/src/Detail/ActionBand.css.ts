@@ -95,8 +95,9 @@ export const segmentExiting = style({
 })
 
 /** A trailing glyph after the label slot (the dropdown chevron) — carries its own lead-in since
- *  the segment's gap is zero. */
-export const segmentTrail = style({ marginLeft: '5px' })
+ *  the segment's gap is zero. 6px is the house inline gap — the same glyph↔label spacing the cell
+ *  icon gap, the label slot's lead, the segment row, and the disclosure rail's clearance all use. */
+export const segmentTrail = style({ marginLeft: '6px' })
 
 /** The band's settings affordance — hover chrome (top-right family), same glyph as the toolbar
  *  Settings. Hidden at rest; the HOST binds its own reveal scope (tile hover, row hover) with a
