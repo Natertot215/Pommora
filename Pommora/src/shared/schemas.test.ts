@@ -20,8 +20,8 @@ describe('folder sidecar schemas', () => {
     expect(pageCollectionSidecar.parse(v)).toMatchObject(v)
   })
 
-  it('page set carries parent_id + page_order', () => {
-    const v = { id: 'S1', parent_id: 'C1', page_order: ['p1'] }
+  it('page set carries page_order', () => {
+    const v = { id: 'S1', page_order: ['p1'] }
     expect(pageSetSidecar.parse(v)).toMatchObject(v)
   })
 
@@ -35,8 +35,8 @@ describe('folder sidecar schemas', () => {
     expect(pageCollectionSidecar.parse(v)).toMatchObject(v)
   })
 
-  it('page set accepts the nested parent_id + set_order', () => {
-    const v = { id: 'S1', parent_id: 'C1', set_order: ['s2'], page_order: ['p1'] }
+  it('page set accepts set_order alongside page_order', () => {
+    const v = { id: 'S1', set_order: ['s2'], page_order: ['p1'] }
     expect(pageSetSidecar.parse(v)).toMatchObject(v)
   })
 })

@@ -34,7 +34,7 @@ const coll = (p: string) => readSidecar(p, 'collection', pageCollectionSidecar)
 const set = (p: string) => readSidecar(p, 'set', pageSetSidecar)
 
 describe('stampAdopted', () => {
-  it('mints ULID sidecars for raw folders, healing parent_id from folder position', async () => {
+  it('mints ULID sidecars for raw folders at every depth', async () => {
     const { stamped } = await stampAdopted(root)
     expect(stamped).toBeGreaterThan(0)
 
@@ -46,9 +46,8 @@ describe('stampAdopted', () => {
     expect(daily?.id && isUlid(daily.id)).toBeTruthy()
     expect(deep?.id && isUlid(deep.id)).toBeTruthy()
 
-    // parent_id points at the parent's freshly-minted ULID (parents-before-children)
-    expect((daily as { parent_id?: string }).parent_id).toBe(notes!.id)
-    expect((deep as { parent_id?: string }).parent_id).toBe(daily!.id)
+    // Each is its own identity — parentage is the folder nesting, never a stored field.
+    expect(new Set([notes!.id, daily!.id, deep!.id]).size).toBe(3)
   })
 
   it('stamps a frontmatter-less page id and preserves foreign frontmatter', async () => {
@@ -105,10 +104,9 @@ describe('stampAdopted', () => {
     await writeFile(sidecar, '{ corrupt', 'utf8')
     await stampAdopted(root)
     expect(await readFile(sidecar, 'utf8')).toBe('{ corrupt') // byte-identical
-    // Children mint without a parent_id (it only heals at mint time) rather than waiting.
+    // The children are independent entities, so they adopt regardless of the parent's state.
     const daily = await set(join(root, 'Notes', 'Daily'))
     expect(daily?.id).toBeTruthy()
-    expect((daily as { parent_id?: string } | null)?.parent_id).toBeUndefined()
   })
 
   it('a page whose frontmatter refuses the id write is skipped, not clobbered', async () => {

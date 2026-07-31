@@ -1,5 +1,4 @@
 // Open-time write-pass that stamps a real ULID into every entity still lacking a persisted id.
-// Walks parents before children so a Set's healed parent_id points at the parent's fresh id.
 // Idempotent; folder position decides kind — a root child is a Collection, anything nested a Set.
 
 import { readdir, readFile } from 'node:fs/promises'
@@ -37,15 +36,12 @@ async function stampPage(absFile: string): Promise<boolean> {
   return true
 }
 
-/** Resolve a folder's id, minting + persisting one when it has none. A Set heals its
- *  `parent_id` to `parentId` only at mint time (so an already-adopted folder is untouched).
- *  Returns `{ id, wrote }` — `id` is what children hang their `parent_id` on — or null for a
- *  sidecar that exists but couldn't be read: minting over it would replace the Collection's
- *  views, schema and cache with a bare id, so the folder waits for a later open instead. */
+/** Resolve a folder's id, minting + persisting one when it has none. Returns `{ id, wrote }`, or
+ *  null for a sidecar that exists but couldn't be read: minting over it would replace the
+ *  Collection's views, schema and cache with a bare id, so the folder waits for a later open. */
 async function stampFolder(
   absDir: string,
   kind: FolderKind,
-  parentId: string | null,
 ): Promise<{ id: string; wrote: boolean } | null> {
   const read = await readJsonStrict(join(absDir, SIDECAR_FILENAME[kind]))
   if (!read.ok && read.error.code !== 'not-found') return null
@@ -54,22 +50,19 @@ async function stampFolder(
   if (existingId) return { id: existingId, wrote: false }
 
   const id = newId()
-  const next: Record<string, unknown> = { ...existing, id }
-  if (kind === 'set' && parentId) next.parent_id = parentId
-  await writeSidecar(absDir, kind, next)
+  await writeSidecar(absDir, kind, { ...existing, id })
   return { id, wrote: true }
 }
 
 /** Stamp `absDir` (as `kind`) then its direct pages, then recurse every non-excluded
- *  subfolder as a Set. Parents are stamped before children. Accumulates the write count. */
+ *  subfolder as a Set. Accumulates the write count. */
 async function stampTree(
   absDir: string,
   relDir: string,
   kind: FolderKind,
-  parentId: string | null,
   excluded: string[],
 ): Promise<number> {
-  const self = await stampFolder(absDir, kind, parentId)
+  const self = await stampFolder(absDir, kind)
   let count = self?.wrote ? 1 : 0
 
   for (const e of await listEntries(absDir)) {
@@ -79,10 +72,10 @@ async function stampTree(
       if (await stampPage(join(absDir, e.name)).catch(() => false)) count++
     } else if (e.isDirectory()) {
       const childRel = `${relDir}/${e.name}`
-      // A skipped folder (unreadable sidecar) still adopts its subtree — children just mint
-      // without a parent_id, which only ever heals at mint time anyway.
+      // A folder whose own sidecar is unreadable still adopts its subtree — the children are
+      // independent entities, not dependents of their parent's id.
       if (!shouldSkipDir(e.name, childRel, excluded))
-        count += await stampTree(join(absDir, e.name), childRel, 'set', self?.id ?? null, excluded)
+        count += await stampTree(join(absDir, e.name), childRel, 'set', excluded)
     }
   }
   return count
@@ -119,7 +112,7 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
     ) {
       continue
     }
-    stamped += await stampTree(abs, e.name, 'collection', null, excluded)
+    stamped += await stampTree(abs, e.name, 'collection', excluded)
   }
   return { stamped }
 }
