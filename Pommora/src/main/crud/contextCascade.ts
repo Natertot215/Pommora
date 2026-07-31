@@ -13,7 +13,6 @@ import {
   normalizeContextValue,
   type ContextsRegistry,
 } from '@shared/contexts'
-import { AGENDA_SUFFIX } from '@shared/agenda'
 import { ok, fail, errText, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
 import { atomicWriteFile, pathExists, readJsonObject, writeJson } from '../io/atomicWrite'
@@ -98,13 +97,7 @@ export async function sweepContextRoots(
     })
   }
 
-  const jsonFiles = [
-    ...(await listFilesRecursive(root, [AGENDA_SUFFIX.task, AGENDA_SUFFIX.event], {
-      skipTopLevel: SKIP_TOP_LEVEL,
-    })),
-    ...(await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])),
-  ]
-  for (const file of jsonFiles) {
+  for (const file of await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])) {
     await serializeOnFile(file, async () => {
       const raw = await readJsonObject(file)
       if (!raw) {

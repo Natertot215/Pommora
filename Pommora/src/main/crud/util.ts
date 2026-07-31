@@ -8,7 +8,7 @@ export { pathExists } from '../io/atomicWrite'
 /** A name usable as a file/folder basename (filename = title). Rejects path separators,
  *  dot dirs, and a trailing managed extension (which the writers append themselves — a name
  *  like "Note.md" would otherwise yield "Note.md.md", breaking the filename = title invariant).
- *  Single source for the rule across page + folder + agenda CRUD. */
+ *  Single source for the rule across page + folder CRUD. */
 export function invalidName(name: string): boolean {
   const trimmed = name.trim()
   return (
@@ -20,7 +20,7 @@ export function invalidName(name: string): boolean {
     // show again — a rename that reads to the user as a delete.
     trimmed.startsWith('_') ||
     trimmed.startsWith('.') ||
-    /\.(md|task\.json|event\.json)$/i.test(trimmed)
+    /\.md$/i.test(trimmed)
   )
 }
 

@@ -1,38 +1,32 @@
 ### Agenda
 
-The operational layer's calendar-anchored side. Agenda is the parent schema holding two peer entity types, each mirroring an EventKit kind:
+The operational layer's calendar-anchored side: two peer entity kinds, **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each with a built-in Status.
 
-- **Tasks** (`.task.json`) — reminder-shaped: `due_at` with its floating and all-day modifiers, a "not before" `start_at`, `completed` + `completed_at`, and `priority`; all optional.
-- **Events** (`.event.json`) — calendar-event-shaped: `start_at` + `end_at` (both required to write, lenient on read), `all_day`, `location`, and fixed-time alarms.
+> **De-scaffolded.** Agenda carries no on-disk format, no CRUD, and no read surface. The shape it inherited was imported wholesale from the Swift build and never re-chosen, so it was removed rather than built on: every field, the item format, ordering, and the surfaces are open questions that the Agenda rethink answers. What survives is named below — the plumbing that holds for any form Agenda takes.
 
-> **The on-disk layer only.** The file format and the CRUD behind it are written and tested; no production caller reaches the write path. What ships is a read-only list feeding display-only rows — everything under *Pending* is unbuilt.
-
-Both carry the same property type catalog and the same parenthesized Context keys as Pages, and their values speak names the same way. The definitions differ: an agenda item's properties resolve against its own kind's `property_definitions`, a separate namespace from the nexus registry — so an agenda property and a page property may share a name with no collision, and a rename on either side never reaches the other's files.
-
-Each kind lives in its own singleton folder discovered by a config sidecar; the layout and the discrimination rules are `Architecture.md`'s. EventKit's reminder and event APIs are separate, so the two kinds stay separate singletons rather than sharing one wrapper folder.
-
-### Features
-
-#### II. Shared Fields
-
-Both kinds carry `id`, an optional `icon`, a plain-text `description`, the wrapped keys at the JSON root — `(Context)` keys naming Spaces and one `<Property>` key per value — `created_at` / `modified_at`, a `recurrence` object that round-trips but is never edited, relative alarm offsets, and `calendar_id` + `eventkit_uuid` for sync state. Foreign keys are preserved by value on every write.
-
-#### II. Schema
-
-Each kind's config sidecar carries `property_definitions` — its own full definitions, deliberately separate from the nexus-wide registry that Collections assign out of. Every definition on an agenda config is user-defined. The catalog → `Properties.md`.
+Each kind lives in its own singleton folder at the nexus root, discovered by a **config sidecar** and never by folder name — the folders stay renameable, and a folder carrying an agenda config is not a Collection. The layout and discrimination rules are `Architecture.md`'s.
 
 ### Architecture
 
-#### II. CRUD
+#### II. What Holds Regardless of Form
 
-Tasks and Events run through one generic agenda CRUD: create mints a ULID, rename preserves the kind suffix, update merges over the JSON retaining foreign keys, and set-property and set-context each have their own path. The filename is the title, and an Event needs both a start and an end to be written at all.
+- **Sidecar-declared kind.** A folder's kind comes from the well-known JSON filename it carries (`_taskconfig.json` / `_eventconfig.json`), the same law that declares Collections and Sets. The walk and the adoption pass both leave such folders unclassified rather than adopting them as Collections.
+- **Identity refs.** `NavRef` admits `task` and `event` as bare `{kind, id}` refs, and `navigation.json` persists them. Three guards keep a stored ref safe while nothing routes it: the tab resolver, the pin target, and the favorite add each refuse an agenda kind, so a stored ref resolves to nothing rather than to a broken destination.
+- **The sidebar mode.** Agenda is one of the Ribbon's modes, holding its place with an empty state → `Sidebar.md`.
+- **Labels.** The `agendaTask` / `agendaEvent` singular-plural pairs are parsed from settings and defaulted; no surface reads them.
+- **Inert search rows.** Nav search renders unresolvable hits as non-clickable rows → `Navigation.md`. Nothing produces them while Agenda is off the tree.
 
 ### Pending
 
-**Agenda Surfacing:** The sidebar's **Agenda mode** renders a read-only list of Tasks then Events over its own channel, which keeps agenda files off the tree walk — but not off every read: opening a navigation surface warms the same snapshot so search can list agenda entries, and the snapshot is re-warmed rather than held across a tree push.
+**The Agenda rethink.** The item format, the field vocabulary, ordering, and every surface are unanswered. Two decisions are settled and bind that work:
 
-What's pending is interactivity. No selection kind routes an agenda entity, so a sidebar row opens nothing and a search hit renders inert; there's no detail surface and no calendar or date-grouped layout. There's no write channel either — the mutate ops and IPC that would reach the existing CRUD are unbuilt.
+- **Tasks and Events are Markdown.** One `.md` grammar covers all operational content — the body *is* the description — so agenda items inherit the page writers, the link cascade, and the editor rather than carrying a second serializer. JSON stays for sidecars, configs, and registries.
+- **Agenda joins the tree walk.** Its kinds enter as their own top-level branch, which is what gives every Task and Event a record, a navKey, and a search entry. Collection-scoped consumers — connections, embeds, breadcrumbs — stay page-only by kind partition, not by new guards.
 
-**Built-in Status:** A non-deletable **Status** property seeded onto both kinds' schemas, tracking the user's engagement rather than the clock — for an Event it stays decoupled from the date math. Neither half exists: nothing seeds the property when an agenda config is created, and nothing guards it from deletion. Its group seed → `Properties.md`.
+**Registration.** Exactly one Tasks folder and one Events folder are canonical, recorded by sidecar id at the nexus level. A duplicated, nested, or hand-made agenda config matches no record and is inert.
 
-**EventKit Sync:** The live, opt-in bidirectional mirror between Agenda entities and the system Reminders and Calendar apps — each kind maps to one EventKit entity by extension, `calendar_id` + `eventkit_uuid` hold the sync state, and the Status groups map onto reminder completion. The on-disk fields are ready; the bridge isn't built.
+**Surfaces.** No selection kind opens a Task or Event, so there is no detail surface, no calendar or date-grouped layout, and no create path. Quick Capture's named blocker is exactly this.
+
+**Built-in Status:** A non-deletable **Status** property on both kinds, tracking the user's engagement rather than the clock — for an Event it stays decoupled from the date math. Its group seed → `Properties.md`.
+
+**EventKit Sync:** The opt-in bidirectional mirror to the system Reminders and Calendar apps. The calendar database is API-only — it consumes constructed objects with typed properties and has no file or key-value ingestion — so sync is a code-level translation layer whatever Pommora stores on disk, and it constrains none of the decisions above.

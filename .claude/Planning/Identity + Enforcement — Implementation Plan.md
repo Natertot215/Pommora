@@ -72,13 +72,13 @@
 - **Survivors, deliberate:** `paths.ts:17-18` (`taskConfig`/`eventConfig` filenames) and the agenda-folder skips in `adopt.ts:105-110` + `readNexus.ts:487-492` — they keep old/stray agenda folders from adopting as Collections until Task 8 replaces them with registration-aware classification.
 
 **Steps:**
-- [ ] Delete/modify per the list; run typecheck to catch any missed `@shared/agenda` importer, fix exactly those.
-- [ ] Rewrite `src/main/crud/contextCascade.test.ts` (the attack round measured **7 of 15 tests failing** here — this is a rewrite subtask, not assertion-trimming): the rename/unlink cases drop their agenda-JSON scope assertions; the D-7b skip-journal test (`:136-146`) keeps its *behavior* (an enumerated-but-unreadable file is skipped, the journal survives) on a NEW non-agenda fixture — a directory named `Broken.md` inside a Collection (matches the `.md` sweep's suffix filter, unreadable as a file).
-- [ ] Update `src/main/crud/util.test.ts:25-28` — `'Thing.task.json'`/`'Thing.event.json'` move from the rejected list to accepted names (the extension rule now guards `.md` only); `contextWrite.test.ts`'s remaining `.task.json` fixture cases delete.
-- [ ] Clean the now-stale comment block at `adopt.ts:101-104` (it cites `agendaKindOf`/`shared/agenda.ts`, which no longer exist) — the skip itself survives, its comment tells the new truth: old agenda-config folders stay unclassified until registration-aware classification lands.
-- [ ] Run all four gates — expect green.
+- [x] Delete/modify per the list; run typecheck to catch any missed `@shared/agenda` importer, fix exactly those. **Also removed:** `readJsonObject` + `writeJson` from `contextWrite.ts` (orphaned with `setAgendaContext` — it was their only caller), and the `.task.json` fixture files in `adopt.test.ts` + `readNexus.test.ts`, which asserted the dead grammar; both became `.md` members, strengthening the assertion (a *content-bearing* agenda folder still isn't adopted as a Collection).
+- [x] Rewrite `src/main/crud/contextCascade.test.ts` (the attack round measured **7 of 15 tests failing** here — measured live as 7 there plus 1 in `util.test.ts`; this is a rewrite subtask, not assertion-trimming): the rename/unlink cases drop their agenda-JSON scope assertions; the D-7b skip-journal test (`:136-146`) keeps its *behavior* (an enumerated-but-unreadable file is skipped, the journal survives) on a NEW non-agenda fixture — a directory named `Broken.md` inside a Collection (matches the `.md` sweep's suffix filter, unreadable as a file).
+- [x] Update `src/main/crud/util.test.ts:25-28` — `'Thing.task.json'`/`'Thing.event.json'` move from the rejected list to accepted names (the extension rule now guards `.md` only); `contextWrite.test.ts`'s remaining `.task.json` fixture cases delete.
+- [x] Clean the now-stale comment block at `adopt.ts:101-104` (it cites `agendaKindOf`/`shared/agenda.ts`, which no longer exist) — the skip itself survives, its comment tells the new truth.
+- [x] Run all four gates — green (171 files / 1853 tests).
 - [ ] Grep-verify: `grep -rn "AGENDA_SUFFIX\|agendaKindOf\|task\.json\|event\.json" Pommora/src` → hits only in `paths.ts`/`adopt.ts`/`readNexus.ts` survivor lines (filenames + skips) **and `util.test.ts`'s accepted-name fixtures** (this task deliberately moves `Thing.task.json`/`Thing.event.json` into the accepted list — expected hits, not a miss); none in comments citing dead modules.
-- [ ] Commit: `refactor(agenda): the suffix grammar leaves — sidecar skips survive until registration lands`
+- [x] Commit: `refactor(agenda): the suffix grammar leaves — sidecar skips survive until registration lands`
 
 #### Task 4: Live-nexus folder deletion (Nathan-coordinated)
 

@@ -82,7 +82,7 @@ describe('stampAdopted', () => {
   it('never fabricates a Collection on an Agenda singleton (identified by config sidecar)', async () => {
     await mkdir(join(root, 'My Tasks'), { recursive: true })
     await writeFile(join(root, 'My Tasks', '_taskconfig.json'), '{}')
-    await writeFile(join(root, 'My Tasks', 'Submit.task.json'), '{}')
+    await writeFile(join(root, 'My Tasks', 'Submit.md'), '# a member')
     await stampAdopted(root)
     expect(await coll(join(root, 'My Tasks'))).toBeNull() // no _pagecollection.json written
   })
