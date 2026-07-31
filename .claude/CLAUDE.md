@@ -24,7 +24,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 
 **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `db//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 
-**The Figma Library** (https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r) is canonical for design values — mirror changes into the tokens at `/design-system.` The live showcase deploys from `Pommora/` to https://pommora-design-system.vercel.app.
+**The Figma Library** (https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r) is used for designing; its specifics may lag behind the canonical in-code vie— mirror changes into the tokens at `/design-system.` The live showcase deploys from `Pommora/` to https://pommora-design-system.vercel.app.
 
 ### Hard Rules
 
@@ -34,7 +34,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; don't add unrequested complexity.
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full rebuild / re-walk when an incremental or cached update works — cache, memoize, snapshot, subscribe narrowly. It's THE lag source.
-- **Never** reference plans, decision logs, or any other session-dependent phrasing in documentation or code comments; **Never** write comments that restate what the code clearly shows. 
+- **Never** reference plans, decision logs, or any other session-dependent phrasing in documentation or code comments.
 - **Never** assume locked decisions are above questioning — never implement otherwise unless you explicitly state the conflicting state, find the evidence to support the change, and Nathan gives an explicit sign-off. 
 - **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they never restate exact code values. Name the token and its treatment ("the red solid at a low opacity"), never the literal `#hex` / `%` / line-for-line code stays in the code itself. The same discipline must be held true equally to code comments.
 
@@ -64,7 +64,12 @@ The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set
 
 - **Formatting is Biome's** (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align or run Biome yourself — an Edit failing on whitespace means Biome reformatted, so re-read and retry. `npm run typecheck` stays the *only* type gate (the build strips types unchecked). 
 - **Connections** are in-line `[[Title]]`, resolved against an in-memory title map built from the page tree, and **aren’t** displayed in any container views *(tables, galleries, lists…)*. **Contexts** resolve via parenthesized title keys in front-matter through the registry; content ↔ content relational properties **don’t** exist. 
-- **Swift Origins:** Pommora was first built as a native SwiftUI app — that build was active for around one month and designed and versioned the entire paradigm; React was initially scoped as an alternative contingency. The decision to switch to React mostly came down to frustrations and limitations with SwiftUI, and to Claude's greater competency with TypeScript. The Swift build is archived at `// The Studio // Archive // Pommora` — source, External packages, and `.claude/` docs; its git history lives on the `swift` branch.
+
+#### II. Swift Origins
+
+Pommora was first built as a native SwiftUI app — that build was active for around one month and designed and versioned the entire paradigm; React was initially scoped as an alternative contingenc but was eventually determined to be the best long-term approach. The Swift build is archived at `// The Studio // Archive // Pommora` — source; its git history lives on the `swift` branch.
+
+- **Why This Matters:** The initial rebuild brought along now obsolete swift-based code; swift-compatibility is not a constraint — any code that may appear functional but is solely an artifact of the swift origin must be flagged for removal.
 
 #### II. Project Sapphire
 
