@@ -24,7 +24,7 @@ import { splitFrontmatter } from '../readNexus'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { clearJournal, readJournal, writeJournal, type RenameJournal } from './contextJournal'
 import { loadContextWorld } from './contextWrite'
-import { invalidName } from './util'
+import { invalidName, sweepAdmits } from './util'
 
 const SKIP_TOP_LEVEL = ['.nexus', '.trash']
 type Raw = Record<string, unknown>
@@ -82,6 +82,7 @@ export async function sweepContextRoots(
         skipped.push(file)
         return
       }
+      if (!sweepAdmits(content)) return
       const raw = splitFrontmatter(content)
       const next = rewrite(raw)
       if (next === null) return
