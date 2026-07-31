@@ -23,19 +23,28 @@ export async function ensureIdentity(root: string): Promise<{ id: string; create
   if (!read.ok && read.error.code !== 'not-found') return { id: newId(), created: false }
   const existing = read.ok ? read.value : null
   const existingId = existing && asString(existing.id)
-
   if (existing && existingId) return { id: existingId, created: false }
 
   await mkdir(nexusDir(root), { recursive: true })
   const id = newId()
+  // A file that EXISTS but carries no readable id is an established nexus with a damaged
+  // identity, not a new one: mint an id over it and seed nothing. Fusing the two would recreate
+  // folders its owner deleted and orphan every asset keyed to the old id.
+  if (existing) {
+    await writeJson(path, { ...existing, id, createdAt: nowIso() })
+    return { id, created: false }
+  }
+
+  // Identity lands BEFORE the folders exist. The reverse order can strand them: seeding writes
+  // real folders, and a failure before the record persists leaves them permanently unregistered
+  // — invisible to the walk, skipped by adoption, with no repair path, since registration is
+  // written here and nowhere else.
+  await writeJson(path, { id, createdAt: nowIso() })
   const agenda_singletons = await seedAgendaSingletons(root)
-  await writeJson(path, {
-    ...existing,
-    id,
-    createdAt: nowIso(),
-    // No empties: a nexus that could seed neither slot records no registration at all.
-    ...(Object.keys(agenda_singletons).length ? { agenda_singletons } : {}),
-  })
+  // No empties: a nexus that could seed neither slot records no registration at all.
+  if (Object.keys(agenda_singletons).length) {
+    await writeJson(path, { id, createdAt: nowIso(), agenda_singletons })
+  }
   return { id, created: true }
 }
 

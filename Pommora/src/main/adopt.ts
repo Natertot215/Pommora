@@ -42,6 +42,8 @@ async function reHomeRegistered(
   root: string,
   kindCtx: FolderKindContext,
 ): Promise<boolean> {
+  const slotKind = (k: 'taskConfig' | 'eventConfig'): FolderKind =>
+    k === 'taskConfig' ? 'tasks-singleton' : 'events-singleton'
   for (const [slot, kind] of [
     ['tasks', 'taskConfig'],
     ['events', 'eventConfig'],
@@ -50,8 +52,13 @@ async function reHomeRegistered(
     if (!registered) continue
     const sidecar = await readSidecar(absDir, kind, baseSidecar)
     if (sidecar?.id !== registered) continue
+    // Try the other slot rather than aborting the loop on one refusal.
     const target = join(root, basename(absDir))
     if (await pathExists(target)) return false
+    // Ask the resolver whether this folder WOULD be the singleton once it sat at the root. That
+    // one call inherits every refusal it already makes — a second agenda config, a container
+    // sidecar beside it — so re-homing can never relocate a folder the resolver calls Unknown.
+    if ((await resolveFolderKind(absDir, 'root', kindCtx)) !== slotKind(kind)) return false
     recordWrite(absDir)
     recordWrite(target)
     await rename(absDir, target)
@@ -116,7 +123,12 @@ async function stampTree(
 ): Promise<number> {
   const singleton = kind === 'tasks-singleton' || kind === 'events-singleton'
   const memberKind = MEMBER_KIND[kind]
-  let count = !singleton && (await stampFolder(absDir, kind as ContainerKind)) ? 1 : 0
+  // A folder Pommora can't write — a locked sync target, a restored backup with foreign
+  // ownership, an evicted cloud placeholder — costs only itself. Letting it throw would abandon
+  // every folder after it in readdir order, silently, on every open.
+  let count = !singleton && (await stampFolder(absDir, kind as ContainerKind).catch(() => false))
+    ? 1
+    : 0
 
   for (const e of await listEntries(absDir)) {
     if (e.isFile() && !e.name.startsWith('_') && e.name.toLowerCase().endsWith('.md')) {
@@ -129,13 +141,13 @@ async function stampTree(
       const abs = join(absDir, e.name)
       // A folder whose own sidecar is unreadable still adopts its subtree — the children are
       // independent entities, not dependents of their parent's id.
-      if (await reHomeRegistered(abs, root, kindCtx)) {
+      if (await reHomeRegistered(abs, root, kindCtx).catch(() => false)) {
         count++
         continue
       }
       const childKind = await resolveFolderKind(abs, 'nested', kindCtx)
       if (childKind === 'unknown') continue
-      count += await stampTree(abs, childRel, childKind, excluded, kindCtx, root)
+      count += await stampTree(abs, childRel, childKind, excluded, kindCtx, root).catch(() => 0)
     }
   }
   return count
@@ -153,7 +165,7 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
   // `sidecarMode: false` is the honest reading for adoption specifically: a container sidecar's
   // ABSENCE is what this pass exists to fix, so it must not be taken as a reason to skip. Agenda
   // configs still classify normally, which is what keeps a singleton from adopting as a Collection.
-  const kindCtx = { agenda: readAgendaRegistration(identity), sidecarMode: false }
+  const kindCtx = { agenda: readAgendaRegistration(identity), sidecarMode: false, root }
 
   let stamped = 0
   for (const e of await listEntries(root)) {
@@ -165,7 +177,7 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
     // agenda kind rather than the page one.
     if (kind === 'unknown') continue
     if (kind !== 'collection') {
-      stamped += await stampTree(abs, e.name, kind, excluded, kindCtx, root)
+      stamped += await stampTree(abs, e.name, kind, excluded, kindCtx, root).catch(() => 0)
       continue
     }
     // Don't fabricate a Collection from an empty, sidecar-less folder (stray junk). One that
@@ -176,7 +188,7 @@ export async function stampAdopted(root: string): Promise<{ stamped: number }> {
     ) {
       continue
     }
-    stamped += await stampTree(abs, e.name, 'collection', excluded, kindCtx, root)
+    stamped += await stampTree(abs, e.name, 'collection', excluded, kindCtx, root).catch(() => 0)
   }
   return { stamped }
 }
