@@ -317,16 +317,19 @@ async function prepareOpenedNexus(path: string): Promise<void> {
 // session root swaps, so a mid-adopt save can't land in the NEW nexus's synced sidecars (the drop
 // path is non-modal, so the renderer stays interactive through the adopt). The outgoing state was
 // drained at adopt start; the post-adopt load re-seeds and re-persists.
-let adopting = false
+// A COUNT, not a flag: the open path runs more than one pass, and a boolean lets whichever
+// finishes first clear the suppression the other is still relying on.
+let adoptingDepth = 0
+const adopting = (): boolean => adoptingDepth > 0
 
 // Open a chosen nexus folder: make it the session, persist it as last-opened, and
 // push it onto the recents (deduped, capped) + the OS Recent Documents list.
 async function adoptNexus(path: string): Promise<void> {
-  adopting = true
+  adoptingDepth++
   try {
     await adoptNexusInner(path)
   } finally {
-    adopting = false
+    adoptingDepth--
   }
 }
 
@@ -507,7 +510,7 @@ serveBridge(
     'nav:write': {
       kind: 'envelope',
       fn: async (patch: unknown) => {
-        if (adopting) return BUSY
+        if (adopting()) return BUSY
         const root = sessionRoot()
         if (root === null) return NO_NEXUS
         if (!isPlainObject(patch))
@@ -529,7 +532,7 @@ serveBridge(
     'tabs:save': {
       kind: 'raw',
       fn: (set: unknown) => {
-        if (adopting) return BUSY
+        if (adopting()) return BUSY
         const clean = sanitizeTabSet(set)
         if (!clean) return fail('operation-failed', 'Bad tab set.')
         if (!writeTabsState(clean)) return NO_NEXUS
@@ -549,7 +552,7 @@ serveBridge(
     'previews:save': {
       kind: 'raw',
       fn: (file: unknown) => {
-        if (adopting) return BUSY
+        if (adopting()) return BUSY
         const clean = sanitizePreviews(file)
         if (!clean) return fail('operation-failed', 'Bad previews file.')
         if (!writePreviewsState(clean)) return NO_NEXUS
@@ -1125,7 +1128,7 @@ serveBridge(
     'blocks:save': {
       kind: 'envelope',
       fn: (host: unknown, patch: unknown) => {
-        if (adopting) return BUSY
+        if (adopting()) return BUSY
         const h = coerceBlockHost(host)
         if (!h) return fail('not-found', 'Unknown block host.')
         if (!patch || typeof patch !== 'object')

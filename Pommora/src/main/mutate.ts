@@ -47,6 +47,7 @@ import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pag
 import { basenameNoMd } from './coerce'
 import { nexusConfig, SIDECAR_FILENAME, NEXUS_CONFIG_FILES } from './paths'
 import { ensureIdentity } from './identity'
+import { readAgendaRegistration, resolveFolderKind } from './folderKind'
 import { updateSettings } from './settings'
 import { newId } from './ids'
 import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
@@ -113,6 +114,19 @@ async function isReserved(root: string, abs: string): Promise<boolean> {
 }
 
 const fault = (message: string): Result<never> => fail('operation-failed', message)
+
+/** The choke point every move passes: a page or Set may only land somewhere that holds pages.
+ *  No surface can currently offer a cross-kind move, so this guards the programmatic accident —
+ *  and it is the ONE main-side check, rather than a rule re-stated per caller. */
+async function movesInto(root: string, dst: string): Promise<Result<null>> {
+  const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
+  const ctx = { agenda: readAgendaRegistration(identity), sidecarMode: !!identity?.id }
+  const depth = dirname(dst) === root ? 'root' : 'nested'
+  const kind = await resolveFolderKind(dst, depth, ctx)
+  return kind === 'collection' || kind === 'set'
+    ? ok(null)
+    : fail('invalid-path', 'Pages live in Collections and Sets.')
+}
 
 /** Set one field on a config/sidecar record, or drop the key when there's no value — the
  *  no-empties rule the banner, heading-icon and icon writers all follow. */
@@ -491,6 +505,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!src.ok) return src
       const dst = await resolveUnderRoot(root, req.newParentPath)
       if (!dst.ok) return dst
+      const destOk = await movesInto(root, dst.value)
+      if (!destOk.ok) return destOk
       const r = await movePage(src.value, dst.value)
       if (!r.ok) return r
       // Persist the destination's new page order (reorder + drop-at-position). The source's
@@ -508,6 +524,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!src.ok) return src
       const dst = await resolveUnderRoot(root, req.newParentPath)
       if (!dst.ok) return dst
+      const destOk = await movesInto(root, dst.value)
+      if (!destOk.ok) return destOk
       const r = await moveFolderEntity(src.value, dst.value)
       if (!r.ok) return r
       const o = await setChildOrder(dst.value, 'set_order', req.order)
