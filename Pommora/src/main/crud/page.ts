@@ -5,6 +5,7 @@
 
 import { join, dirname, basename } from 'node:path'
 import { rename, readFile } from 'node:fs/promises'
+import { PAGE_ID_KEY } from '@shared/identity'
 import { newId } from '../ids'
 import { writePageFile, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { atomicWriteFile } from '../io/atomicWrite'
@@ -32,7 +33,7 @@ export async function createPage(
   const id = newId()
   const now = nowIso()
   const modeled: Record<string, unknown> = {
-    id,
+    [PAGE_ID_KEY]: id,
     created_at: now,
     modified_at: now,
   }

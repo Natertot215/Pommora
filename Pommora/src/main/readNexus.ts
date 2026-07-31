@@ -6,6 +6,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { parseDocument } from 'yaml'
+import { contentId } from '@shared/identity'
 import type {
   SolidColor,
   AccentSetting,
@@ -221,7 +222,7 @@ export async function readPageRecord(absFile: string, relFile: string): Promise<
     const fm = splitFrontmatter(await readFile(absFile, 'utf8'))
     const node: PageNode = {
       kind: 'page',
-      id: asString(fm.id) ?? adoptedId(relFile),
+      id: contentId(fm) ?? adoptedId(relFile),
       title: basenameNoMd(basename(absFile)),
       icon: asString(fm.icon),
       path: relFile,

@@ -4,10 +4,11 @@
 
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
+import { contentId } from '@shared/identity'
 import type { PageDetail } from '@shared/types'
 import { splitFrontmatter } from './readNexus'
 import { splitEnvelope } from './io/pageFile'
-import { asString, basenameNoMd } from './coerce'
+import { basenameNoMd } from './coerce'
 import { adoptedId } from './ids'
 
 /**
@@ -20,7 +21,7 @@ export async function readPage(rootPath: string, relPath: string): Promise<PageD
   const content = await readFile(absFile, 'utf8')
   const frontmatter = splitFrontmatter(content)
   return {
-    id: asString(frontmatter.id) ?? adoptedId(relPath),
+    id: contentId(frontmatter) ?? adoptedId(relPath),
     title: basenameNoMd(basename(relPath)),
     path: relPath,
     frontmatter,

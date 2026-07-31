@@ -585,6 +585,30 @@ describe('handleMutate — setBanner', () => {
     expect(await pathExists(join(root, cover!))).toBe(false)
   })
 
+  // An id read off disk is hand-editable, and it becomes a directory name under `.nexus/assets/`.
+  // A page carrying path syntax in its id must refuse rather than let `join` write outside the
+  // nexus — and the refusal must leave the page itself untouched.
+  it('refuses a page id that would escape the assets folder, writing nothing', async () => {
+    const created = await handleMutate(
+      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Escape' },
+      nexusDeps,
+    )
+    expect(created.ok).toBe(true)
+    if (!created.ok) return
+    const pagePath = created.value.created!.path
+    const abs = join(root, pagePath)
+    await writeFile(abs, '---\nid: ../../../../escaped\n---\nbody')
+    const before = await read(pagePath)
+
+    const r = await handleMutate(
+      { op: 'setBanner', path: pagePath, kind: 'page', dataUrl: PNG },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(false)
+    expect(await read(pagePath)).toBe(before)
+    expect(await pathExists(join(root, '..', 'escaped'))).toBe(false)
+  })
+
   it('sets a homepage banner in .nexus/homepage.json keyed by "homepage"', async () => {
     const r = await handleMutate(
       { op: 'setBanner', path: '', kind: 'homepage', dataUrl: PNG },

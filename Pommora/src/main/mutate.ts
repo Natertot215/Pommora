@@ -9,6 +9,7 @@
 
 import { basename, dirname, join, relative, sep } from 'node:path'
 import { mkdir, readFile, realpath, rm } from 'node:fs/promises'
+import { contentId } from '@shared/identity'
 import { sessionRoot } from './session'
 import { resolveUnderRoot } from './pathSafety'
 import { createPage, renamePage, movePage, updatePageProperty } from './crud/page'
@@ -83,6 +84,16 @@ function decodeImageDataUrl(dataUrl: string): { ext: string; buffer: Buffer } | 
   return { ext: subtype === 'jpeg' ? 'jpg' : subtype, buffer: Buffer.from(m[2], 'base64') }
 }
 
+/** An asset key becomes a DIRECTORY NAME under `.nexus/assets/`, so it must be ONE path segment:
+ *  a separator or a dot-dir would let `join` walk out of the nexus, and the relative path it
+ *  returns is later stored on the entity and `rm`'d. Keys arrive from disk (a page's frontmatter
+ *  id, a container sidecar's id) and are hand-editable, so this is decided at the sink rather than
+ *  per call site. Shape beyond that is deliberately not policed — a hand-authored id is a legal
+ *  identity, and refusing it here would take a cover image away from a page that reads fine. */
+function assetKeyOk(key: string): boolean {
+  return !key.includes('/') && !key.includes('\\') && key !== '.' && key !== '..'
+}
+
 /** A FRESH filename per write is deliberate: a stable name gave every image the same URL, so the
  *  renderer's <img> served the browser-cached previous image on Change/replace. */
 async function writeImageAsset(
@@ -91,6 +102,7 @@ async function writeImageAsset(
   dataUrl: string,
   prefix: string,
 ): Promise<string | null> {
+  if (!assetKeyOk(assetKey)) return null
   const decoded = decodeImageDataUrl(dataUrl)
   if (!decoded) return null
   const file = `${prefix}-${Math.random().toString(36).slice(2, 10)}.${decoded.ext}`
@@ -318,8 +330,9 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
           }
           const { body } = splitEnvelope(existing)
           const fields = readFrontmatterFields(existing)
-          const id = typeof fields.id === 'string' ? fields.id : null
+          const id = contentId(fields)
           if (!id) return fault('That page has no id to key its banner.')
+          if (!assetKeyOk(id)) return fault('That page’s id can’t name a folder.')
           const prev = isAssetPath(fields.cover) ? fields.cover : null
           if (req.dataUrl) {
             const rel = await writeImageAsset(root, id, req.dataUrl, 'banner')
@@ -375,6 +388,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         existing = await readJsonObject(cfgPath)
         const id = typeof existing?.id === 'string' ? existing.id : null
         if (!id) return fault('That item has no id to key its banner.')
+        if (!assetKeyOk(id)) return fault('That item’s id can’t name a folder.')
         assetKey = id
       }
       const prev = isAssetPath(existing?.banner) ? existing.banner : null
