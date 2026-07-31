@@ -1,5 +1,6 @@
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
 import { docString } from '../editor/docCache'
+import { focusAt } from '../editor/input'
 import {
   Facet,
   StateField,
@@ -145,8 +146,7 @@ class TableWidget extends WidgetType {
     const exit = (dir: 'before' | 'after'): void => {
       const region = tableRegions(docString(view.state.doc))[this.tableIndex]
       if (!region) return
-      view.dispatch({ selection: { anchor: dir === 'before' ? region.from : region.to } })
-      view.focus()
+      focusAt(view, dir === 'before' ? region.from : region.to)
     }
     const reorder = (axis: 'col' | 'row', from: number, to: number): boolean => {
       const change = structuralEditChange(docString(view.state.doc), this.tableIndex, (m) =>

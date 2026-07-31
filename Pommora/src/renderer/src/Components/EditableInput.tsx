@@ -46,6 +46,8 @@ export function EditableInput({
       className={cx(className, autoSize && autoSizeInput)}
       defaultValue={value}
       size={autoSize ? 1 : undefined}
+      // Every consumer is a title field — proper nouns, not prose; squiggles are noise.
+      spellCheck={false}
       maxLength={maxLength}
       onFocus={(e) => {
         if (!caretAtEnd) return e.currentTarget.select()
