@@ -143,8 +143,8 @@ async function stampTree(
 
 /**
  * Stamp every un-adopted entity under `root`, returning how many writes happened.
- * Top-level folders are Collections; everything nested is a Set. Agenda singleton
- * folders and excluded folders are left alone.
+ * Top-level folders are Collections; everything nested is a Set. A registered agenda
+ * singleton stamps its own members instead; excluded folders are left alone.
  */
 export async function stampAdopted(root: string): Promise<{ stamped: number }> {
   const settings = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))) ?? {}

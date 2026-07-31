@@ -13,7 +13,13 @@ import { stampAdopted } from './adopt'
 import { renameCascade } from './crud/cascade'
 import { handleMutate, type MutateDeps } from './mutate'
 import { openSession, closeSession } from './session'
-import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from './paths'
+import {
+  contextsRegistryFile,
+  nexusDir,
+  nexusConfig,
+  NEXUS_CONFIG_FILES,
+  SIDECAR_FILENAME,
+} from './paths'
 
 const ULID = '01KVGMT8BFG350FZZXAMG1QDRC'
 const OTHER = '01KVGMT8BFG350FZZXAMG1QDRD'
@@ -36,6 +42,7 @@ beforeEach(async () => {
     JSON.stringify({ id: '01KVGMT8BFG350FZZXAMG1QDNX', createdAt: '2026' }),
   )
   await writeFile(nexusConfig(root, NEXUS_CONFIG_FILES.settings), '{}')
+  await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
   await mkdir(join(root, 'Notes'), { recursive: true })
   await writeFile(
     join(root, 'Notes', SIDECAR_FILENAME.collection),
@@ -101,14 +108,28 @@ describe('the nexus-wide write sweeps', () => {
     expect(await Promise.all(Object.keys(UNKNOWN_FILES).map(bytes))).toEqual(before)
   })
 
-  it('a Context rename leaves an Unknown file alone', async () => {
+  it('a Context RENAME sweeps a member but leaves an Unknown file alone', async () => {
+    await openSession(root)
+    const made = await handleMutate({ op: 'createContextGroup', name: 'Projects' }, deps)
+    expect(made.ok).toBe(true)
+    if (!made.ok) return
+    const contextId = made.value.created!.id
+
+    // Both files carry the same context key; only one of them is admissible.
+    const tagged = (key: string, id: string): string =>
+      `---\n${key}: ${id}\n(Projects):\n  - Pommora\n---\nbody\n`
+    await writeFile(join(root, 'Notes', 'Contradicting.md'), tagged(KIND_ID_KEY.task, ULID))
     await writeFile(
-      join(root, 'Notes', 'Contradicting.md'),
-      `---\n${KIND_ID_KEY.task}: ${ULID}\n(Projects):\n  - Pommora\n---\nbody\n`,
+      join(root, 'Notes', 'Member.md'),
+      tagged(KIND_ID_KEY.page, '01KVGMT8BFG350FZZXAMG1QDM1'),
     )
     const before = await bytes('Contradicting.md')
-    await openSession(root)
-    await handleMutate({ op: 'createContextGroup', name: 'Projects' }, deps)
+
+    const r = await handleMutate({ op: 'renameContext', contextId, newName: 'Ventures' }, deps)
+    expect(r.ok).toBe(true)
+    // The member's key is rewritten — proof the sweep ran at all.
+    expect(await bytes('Member.md')).toContain('(Ventures):')
+    // The Unknown file is byte-identical, still carrying the old key.
     expect(await bytes('Contradicting.md')).toBe(before)
   })
 })
