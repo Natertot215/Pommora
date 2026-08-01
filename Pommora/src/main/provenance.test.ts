@@ -605,7 +605,8 @@ describe('restore — the gate-four pins', () => {
     expect(await pathExists(join(root, 'Notes', 'fake.deleted', '_record.json'))).toBe(true)
   })
 
-  it('a property record has no artifact to restore', async () => {
+  it('a property whose definition can no longer stand does not return, and its record stays', async () => {
+    // A record the registry refuses — here a definition with no name at all.
     const bundle = await writePropertyBundle(root, {
       entity: 'property',
       id: 'prop_x',
@@ -615,7 +616,6 @@ describe('restore — the gate-four pins', () => {
     const [listed] = await listBundles(root)
     const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.error.message).toContain('property')
     expect(await pathExists(join(bundle, '_record.json'))).toBe(true)
   })
 })

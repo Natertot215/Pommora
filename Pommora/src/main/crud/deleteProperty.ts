@@ -36,8 +36,15 @@ async function snapshot(
 ): Promise<void> {
   const key = propertyKey(def)
   const values: Record<string, unknown> = {}
+  const assignments: string[] = []
   let partial = false
   for (const folder of folders) {
+    // Which Collections carried it, by sidecar id — a property restored into no Collection is
+    // defined but belongs nowhere, so this is gathered before the unassign strips it.
+    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
+    const holds = ((sidecar?.properties as string[] | undefined) ?? []).includes(propertyId)
+    if (holds && typeof sidecar?.id === 'string') assignments.push(sidecar.id)
+    else if (holds) partial = true
     for (const file of await listMarkdownFiles(folder)) {
       let fm: Record<string, unknown>
       try {
@@ -58,6 +65,7 @@ async function snapshot(
     id: propertyId,
     def,
     values,
+    ...(assignments.length ? { assignments } : {}),
     ...(partial ? { partial: true as const } : {}),
   })
 }
