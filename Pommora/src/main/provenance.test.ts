@@ -442,3 +442,62 @@ describe('restore — the pair spends, headless', () => {
     expect(await pairFiles(join(root, '.trash'))).toHaveLength(1)
   })
 })
+
+describe('restore — the gate-four pins', () => {
+  it('a corrupt registry refuses a Context restore with the pair and artifact intact', async () => {
+    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
+    await writeFile(contextsRegistryFile(root), '{corrupt')
+    const [listed] = await listPairs(root)
+    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(r.ok).toBe(false)
+    // Nothing moved and the evidence survives — the restore is retryable once the registry heals.
+    expect(await pairFiles(join(root, '.trash'))).toHaveLength(1)
+    expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(false)
+  })
+
+  it('a Context restore under a title collision lands the FINAL title everywhere', async () => {
+    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
+    // An impostor mints the freed title while the original sits in trash.
+    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    reg.contexts.push({ id: 'ctx_impostor', title: 'Projects' })
+    await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
+    await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
+
+    const [listed] = await listPairs(root)
+    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(r.ok).toBe(true)
+    // Folder, registry entry, and membership key all wear the resolver's final title.
+    expect(await pathExists(join(contextsDir(root), 'Projects 2', 'Pommora', '_space.json'))).toBe(true)
+    const after = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    expect(after.contexts).toContainEqual({
+      id: 'ctx_projects',
+      title: 'Projects 2',
+      singular: 'Project',
+      icon: 'target',
+    })
+    const fm = splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8'))
+    expect(fm['(Projects 2)']).toEqual(['Pommora'])
+    expect(fm['(Projects)']).toBeUndefined()
+  })
+
+  it('an occupant the tree cannot see refuses the restore — never a clobber', async () => {
+    await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
+    // An Unknown squatter takes the resolved target: same name, contradicting kind key.
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Alpha.md'),
+      '---\nTaskID: 01KVGMT8BFG350FZZXAMG1QDVD\n---\nsquatter',
+    )
+    const [listed] = await listPairs(root)
+    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(r.ok).toBe(false)
+    expect(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8')).toContain('squatter')
+    expect(await pairFiles(join(root, '.trash'))).toHaveLength(1)
+  })
+
+  it('only a trash record restores — an in-nexus path refuses', async () => {
+    await writeFile(join(root, 'Notes', 'fake.provenance.json'), JSON.stringify({}))
+    const r = await handleMutate({ op: 'restore', pairPath: 'Notes/fake.provenance.json' }, nexusDeps)
+    expect(r.ok).toBe(false)
+    expect(await pathExists(join(root, 'Notes', 'fake.provenance.json'))).toBe(true)
+  })
+})

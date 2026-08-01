@@ -261,15 +261,19 @@ export type ArtifactPair = Exclude<PairFile, { entity: 'property' }>
 export function artifactBaseName(leaf: string): string {
   const parts = leaf.split('__')
   if (parts.length < 2) return leaf
-  return parts.length > 2 && /^\d+$/.test(parts[1]) ? parts.slice(2).join('__') : parts.slice(1).join('__')
+  const afterStamp = parts.length > 2 && /^\d+$/.test(parts[1]) ? 2 : 1
+  return parts.slice(afterStamp).join('__')
 }
 
 const fold = (s: string): string => s.normalize('NFC').toLowerCase()
 
-const disambiguate = (base: string, taken: (title: string) => boolean): string => {
-  if (!taken(base)) return base
+/** The create convention: a name already held — case- and form-insensitively — gains a counter. */
+const disambiguate = (base: string, taken: string[]): string => {
+  const held = taken.map(fold)
+  const isTaken = (title: string): boolean => held.includes(fold(title))
+  if (!isTaken(base)) return base
   let n = 2
-  while (taken(`${base} ${n}`)) n++
+  while (isTaken(`${base} ${n}`)) n++
   return `${base} ${n}`
 }
 
@@ -300,8 +304,9 @@ export function resolvePair(pair: ArtifactPair, baseName: string, tree: NexusTre
   if (pairId && live[pairId]) return { refuse: 'id-live' }
 
   if (pair.entity === 'context') {
-    const finalTitle = disambiguate(pair.registry.title, (t) =>
-      tree.contexts.some((g) => fold(g.def.title) === fold(t)),
+    const finalTitle = disambiguate(
+      pair.registry.title,
+      tree.contexts.map((g) => g.def.title),
     )
     return { place: { dir: '.nexus/contexts', finalName: finalTitle, finalTitle } }
   }
@@ -312,8 +317,9 @@ export function resolvePair(pair: ArtifactPair, baseName: string, tree: NexusTre
     if (parent.kind !== 'context') return { refuse: 'cannot-hold' }
     const group = tree.contexts.find((g) => g.def.id === parent.id)
     if (!group) return { refuse: 'parent-gone' }
-    const finalTitle = disambiguate(baseName, (t) =>
-      group.spaces.some((s) => fold(s.title) === fold(t)),
+    const finalTitle = disambiguate(
+      baseName,
+      group.spaces.map((s) => s.title),
     )
     return { place: { dir: `.nexus/contexts/${group.def.title}`, finalName: finalTitle, finalTitle } }
   }
@@ -325,8 +331,9 @@ export function resolvePair(pair: ArtifactPair, baseName: string, tree: NexusTre
       return { refuse: 'cannot-hold' }
     case 'root': {
       if (pair.entity !== 'collection') return { refuse: 'cannot-hold' }
-      const finalName = disambiguate(baseName, (t) =>
-        tree.collections.some((c) => fold(c.title) === fold(t)),
+      const finalName = disambiguate(
+        baseName,
+        tree.collections.map((c) => c.title),
       )
       return { place: { dir: '', finalName } }
     }
@@ -336,12 +343,11 @@ export function resolvePair(pair: ArtifactPair, baseName: string, tree: NexusTre
       if (!parent) return live[pair.parent.id] ? { refuse: 'cannot-hold' } : { refuse: 'parent-gone' }
       // A page and a Set share one folder namespace — both sibling sets block both kinds.
       const siblings = [...parent.pages.map((p) => p.title), ...(parent.sets ?? []).map((s) => s.title)]
-      const takenBy = (t: string): boolean => siblings.some((s) => fold(s) === fold(t))
       if (pair.entity === 'page') {
-        const finalTitle = disambiguate(baseName.replace(/\.md$/i, ''), takenBy)
+        const finalTitle = disambiguate(baseName.replace(/\.md$/i, ''), siblings)
         return { place: { dir: parent.path, finalName: `${finalTitle}.md` } }
       }
-      return { place: { dir: parent.path, finalName: disambiguate(baseName, takenBy) } }
+      return { place: { dir: parent.path, finalName: disambiguate(baseName, siblings) } }
     }
   }
 }
@@ -470,17 +476,24 @@ export async function restoreArtifact(root: string, pairAbs: string): Promise<Re
   // could still occupy the target — refuse rather than clobber what nothing adjudicated.
   if (await pathExists(targetAbs))
     return fail('exists', 'Something already sits at the restored location.')
+  // A Context's identity lives ONLY in its registry entry, so it re-enters BEFORE anything
+  // moves: a refused write leaves the pair and artifact intact — the restore is retryable —
+  // where an append after the move would destroy the evidence on failure and reply ok.
+  const title = finalTitle ?? finalName
+  if (pair.entity === 'context') {
+    const committed = await mutateRegistryFile(root, (cur) => ({
+      contexts: [...cur.contexts, { ...pair.registry, title }],
+    }))
+    if (!committed.ok) return committed
+  }
   recordWrite(artifactAbs)
   recordWrite(targetAbs)
+  await mkdir(dirname(targetAbs), { recursive: true })
   await rename(artifactAbs, targetAbs)
   await rm(pairAbs, { force: true })
 
   const roots = projectBaseline(tree).entries
   if (pair.entity === 'context') {
-    const title = finalTitle ?? pair.registry.title
-    await mutateRegistryFile(root, (cur) => ({
-      contexts: [...cur.contexts, { ...pair.registry, title }],
-    }))
     const titlesById = await restoredSpaceTitles(targetAbs)
     const key = contextKey(title)
     const additions: Record<string, string[]> = {}
@@ -491,19 +504,34 @@ export async function restoreArtifact(root: string, pairAbs: string): Promise<Re
         .filter((t): t is string => typeof t === 'string')
       if (titles.length) additions[m.root.id] = titles
     }
-    await reconcile(additions, (id, titles) => addContextValues(root, roots[id], key, titles))
+    await reapply(root, roots, contextKey(title), additions)
   } else if (pair.entity === 'space' && pair.parent.kind === 'context') {
     const parentId = pair.parent.id
     const group = tree.contexts.find((g) => g.def.id === parentId)
     if (group) {
-      const key = contextKey(group.def.title)
       const additions = Object.fromEntries(
         pair.members
           .filter((m): m is typeof m & { id: string } => typeof m.id === 'string')
-          .map((m) => [m.id, [finalTitle ?? finalName]]),
+          .map((m) => [m.id, [title]]),
       )
-      await reconcile(additions, (id, titles) => addContextValues(root, roots[id], key, titles))
+      await reapply(root, roots, contextKey(group.def.title), additions)
     }
   }
   return ok(null)
+}
+
+/** Membership re-apply, spent through the shared loop — what didn't land is named, never
+ *  rolled back and never silently claimed. */
+async function reapply(
+  root: string,
+  roots: Record<string, { kind: string; path: string }>,
+  key: string,
+  additions: Record<string, string[]>,
+): Promise<void> {
+  const { kept } = await reconcile(additions, (id, titles) =>
+    addContextValues(root, roots[id], key, titles),
+  )
+  const unspent = Object.keys(kept)
+  if (unspent.length)
+    console.warn(`restore: membership for ${key} did not re-apply to: ${unspent.join(', ')}`)
 }
