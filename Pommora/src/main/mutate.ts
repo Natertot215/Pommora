@@ -30,13 +30,13 @@ import {
 } from './crud/contextCascade'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import {
-  buildContextPair,
-  gatherContentPair,
+  buildContextRecord,
+  gatherContentRecord,
   gatherContextEvidence,
-  gatherSpacePair,
-  type PairFile,
+  gatherSpaceRecord,
+  type RecordFile,
   restoreArtifact,
-  writePair,
+  writeRecord,
 } from './provenance'
 import { setSpaceOrder } from './crud/reorder'
 import { renameCascade } from './crud/cascade'
@@ -268,20 +268,20 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!resolved.ok) return resolved
       const abs = resolved.value
       if (await isReserved(root, abs)) return fault('That item can’t be deleted.')
-      // The pair gathers in the arm's real order — scoped id reads and the registry entry
-      // BEFORE the erase (the title→id window closes there), membership DURING the sweep,
-      // the pair name AFTER the move returns. System-trash mode gathers nothing: the
-      // artifact leaves the nexus and there is nowhere valid for a pair to point.
-      const wantPair = deps.trashMode !== 'system'
-      let pair: PairFile | null = null
+      // The record gathers in the arm's real order — scoped id reads and the registry entry
+      // BEFORE the erase (the title→id window closes there), membership DURING the sweep.
+      // System-trash mode gathers nothing: the artifact leaves the nexus and there is nowhere
+      // valid for a record to live.
+      const wantRecord = deps.trashMode !== 'system'
+      let record: RecordFile | null = null
       if (req.kind === 'space') {
-        const registry = wantPair ? await readRegistryStrict(root) : null
+        const registry = wantRecord ? await readRegistryStrict(root) : null
         // Unlink the Space's title as a value everywhere BEFORE the folder trashes.
         const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
-        if (wantPair) pair = await gatherSpacePair(abs, registry, swept.ok ? swept.value : null)
+        if (wantRecord) record = await gatherSpaceRecord(abs, registry, swept.ok ? swept.value : null)
       } else if (req.kind === 'context') {
         const title = basename(abs)
-        const evidence = wantPair
+        const evidence = wantRecord
           ? await gatherContextEvidence(abs, title, await readRegistryStrict(root))
           : null
         // Unlink the parenthesized key everywhere OUTSIDE the folder being trashed — the
@@ -291,26 +291,26 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         await mutateRegistryFile(root, (cur) => ({
           contexts: cur.contexts.filter((c) => c.title !== title),
         }))
-        if (evidence) pair = buildContextPair(evidence, swept.ok ? swept.value : null)
-      } else if (wantPair) {
-        pair = await gatherContentPair(root, req.kind, abs)
+        if (evidence) record = buildContextRecord(evidence, swept.ok ? swept.value : null)
+      } else if (wantRecord) {
+        record = await gatherContentRecord(root, req.kind, abs)
       }
       const removed = await removeViaMode(root, abs, deps)
       if (!removed.ok) return removed
-      // Best-effort: the artifact is already irreversibly moved, so a pair failure never
+      // Best-effort: the artifact is already irreversibly moved, so a record failure never
       // fails the delete — the entity degrades to hand-restore, today's behavior.
-      if (pair && removed.value.dest) {
+      if (record && removed.value.bundle) {
         try {
-          await writePair(removed.value.dest, pair)
+          await writeRecord(removed.value.bundle, record)
         } catch (e) {
-          console.error('provenance: the pair write failed; the delete stands:', errText(e))
+          console.error('provenance: the record write failed; the delete stands:', errText(e))
         }
       }
       return ok({})
     }
 
     case 'restore': {
-      const resolved = await resolveUnderRoot(root, req.pairPath)
+      const resolved = await resolveUnderRoot(root, req.bundlePath)
       if (!resolved.ok) return resolved
       const r = await restoreArtifact(root, resolved.value)
       return r.ok ? ok({}) : r
@@ -662,20 +662,21 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
   }
 }
 
-/** Remove a file/folder per the delete-target setting: in-nexus .trash (default, portable +
- *  recoverable, destination returned for the pair) or the OS Trash (no destination — the
- *  artifact leaves the nexus). */
+/** Remove a file/folder per the delete-target setting: an in-nexus `.trash` bundle (default,
+ *  portable + recoverable, the bundle returned to hold the record) or the OS Trash (no bundle —
+ *  the artifact leaves the nexus). */
 async function removeViaMode(
   root: string,
   abs: string,
   deps: MutateDeps,
-): Promise<Result<{ dest: string | null }>> {
+): Promise<Result<{ bundle: string | null }>> {
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
   if (deps.trashMode === 'system') {
     recordWrite(abs) // in-nexus trash records inside settleBundle; the OS route records here
     await deps.trashToSystem(abs)
-    return ok({ dest: null })
+    return ok({ bundle: null })
   }
   const bundle = await mintBundle(root, abs)
-  return ok({ dest: await settleBundle(bundle, abs) })
+  await settleBundle(bundle, abs)
+  return ok({ bundle })
 }

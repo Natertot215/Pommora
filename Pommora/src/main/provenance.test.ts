@@ -1,11 +1,17 @@
 import { mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from './io/atomicWrite'
 import { handleMutate, type MutateDeps } from './mutate'
 import { contextsDir, contextsRegistryFile } from './paths'
-import { artifactBaseName, listPairs, readPair, resolvePair, writePropertyPair } from './provenance'
+import {
+  bundleArtifact,
+  listBundles,
+  readRecord,
+  resolveRecord,
+  writePropertyBundle,
+} from './provenance'
 import { readNexus, splitFrontmatter } from './readNexus'
 import { closeSession, openSession } from './session'
 
@@ -14,8 +20,9 @@ const nexusDeps: MutateDeps = { trashMode: 'nexus', trashToSystem: async () => {
 
 let root: string
 
-/** Every pair file under .trash, recursively. */
-async function pairFiles(dir: string): Promise<string[]> {
+/** Every bundle directory under .trash, recursively — never descending into one, exactly as
+ *  the listing walks. */
+async function bundleDirs(dir: string): Promise<string[]> {
   const out: string[] = []
   let entries: import('node:fs').Dirent[]
   try {
@@ -24,17 +31,18 @@ async function pairFiles(dir: string): Promise<string[]> {
     return out
   }
   for (const e of entries) {
+    if (!e.isDirectory()) continue
     const abs = join(dir, e.name)
-    if (e.isDirectory()) out.push(...(await pairFiles(abs)))
-    else if (e.name.endsWith('.provenance.json')) out.push(abs)
+    if (e.name.endsWith('.deleted')) out.push(abs)
+    else out.push(...(await bundleDirs(abs)))
   }
   return out
 }
 
-const onlyPair = async (): Promise<{ file: string; pair: unknown }> => {
-  const files = await pairFiles(join(root, '.trash'))
-  expect(files).toHaveLength(1)
-  return { file: files[0], pair: await readPair(files[0]) }
+const onlyBundle = async (): Promise<{ dir: string; record: unknown }> => {
+  const dirs = await bundleDirs(join(root, '.trash'))
+  expect(dirs).toHaveLength(1)
+  return { dir: dirs[0], record: await readRecord(dirs[0]) }
 }
 
 beforeEach(async () => {
@@ -72,7 +80,7 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-describe('the pair — one JSON beside every nexus-trashed artifact', () => {
+describe('the bundle — one folder per deletion, holding the artifact and its record', () => {
   it('a page delete records identity + its parent container by the id the walk assigns', async () => {
     const tree = await readNexus(root)
     const dailyId = tree.collections[0].sets[0].id
@@ -80,20 +88,23 @@ describe('the pair — one JSON beside every nexus-trashed artifact', () => {
 
     const r = await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
     expect(r.ok).toBe(true)
-    const { file, pair } = await onlyPair()
-    expect(file.endsWith('Alpha.md.provenance.json')).toBe(true)
-    expect(pair).toMatchObject({
+    const { dir, record } = await onlyBundle()
+    expect(basename(dir).endsWith('__Alpha.md.deleted')).toBe(true)
+    // The artifact keeps the name it always had — there is no stamped leaf to parse back.
+    expect(await bundleArtifact(dir)).toBe(join(dir, 'Alpha.md'))
+    expect(record).toMatchObject({
       entity: 'page',
       id: PAGE_A,
       parent: { kind: 'container', id: dailyId },
     })
   })
 
-  it('a root Collection delete records parent root; the pair sits beside the folder artifact', async () => {
+  it('a root Collection delete records parent root; the folder sits inside the bundle', async () => {
     const r = await handleMutate({ op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
     expect(r.ok).toBe(true)
-    const { pair } = await onlyPair()
-    expect(pair).toMatchObject({ entity: 'collection', id: 'col-notes', parent: { kind: 'root' } })
+    const { dir, record } = await onlyBundle()
+    expect(await bundleArtifact(dir)).toBe(join(dir, 'Notes'))
+    expect(record).toMatchObject({ entity: 'collection', id: 'col-notes', parent: { kind: 'root' } })
   })
 
   it('a Space delete records its context parent and the id-bearing roots that tagged it', async () => {
@@ -102,13 +113,13 @@ describe('the pair — one JSON beside every nexus-trashed artifact', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const { pair } = await onlyPair()
-    expect(pair).toMatchObject({
+    const { record } = await onlyBundle()
+    expect(record).toMatchObject({
       entity: 'space',
       id: 'sp-pom',
       parent: { kind: 'context', id: 'ctx_projects' },
     })
-    const members = (pair as { members: { id: string; kind: string }[] }).members
+    const members = (record as { members: { id: string; kind: string }[] }).members
     expect(members).toContainEqual({ id: PAGE_A, kind: 'page' })
     expect(members).toContainEqual({ id: 'sp-sap', kind: 'space' })
     expect(members).toHaveLength(2)
@@ -120,13 +131,13 @@ describe('the pair — one JSON beside every nexus-trashed artifact', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const { pair } = await onlyPair()
-    expect(pair).toMatchObject({
+    const { record } = await onlyBundle()
+    expect(record).toMatchObject({
       entity: 'context',
       registry: { id: 'ctx_projects', title: 'Projects', singular: 'Project', icon: 'target' },
     })
     const membership = (
-      pair as {
+      record as {
         membership: { root: { id?: string; kind: string }; spaces: { id?: string; title: string }[] }[]
       }
     ).membership
@@ -137,94 +148,150 @@ describe('the pair — one JSON beside every nexus-trashed artifact', () => {
     expect(membership[0].spaces).toEqual([{ id: 'sp-pom', title: 'Pommora' }])
   })
 
-  it('system trash mode writes no pair — there is nowhere valid for it to point', async () => {
+  it('system trash mode writes no bundle — the artifact leaves the nexus entirely', async () => {
     const systemDeps: MutateDeps = { trashMode: 'system', trashToSystem: async () => {} }
     const r = await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, systemDeps)
     expect(r.ok).toBe(true)
-    expect(await pairFiles(join(root, '.trash'))).toHaveLength(0)
+    expect(await bundleDirs(join(root, '.trash'))).toHaveLength(0)
   })
 
-  it('all-or-nothing: an unreadable registry means a Context delete writes NO pair, and the delete still lands', async () => {
+  it('all-or-nothing: an unreadable registry means a Context delete records nothing, and the delete still lands', async () => {
     await writeFile(contextsRegistryFile(root), '{corrupt')
     const r = await handleMutate(
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(await pairFiles(join(root, '.trash'))).toHaveLength(0)
+    // A recordless folder is not a bundle — the listing never offers it, and it degrades to
+    // hand-restore rather than to a record restore would trust.
+    expect(await listBundles(root)).toHaveLength(0)
     // The artifact itself still trashed recoverably.
     expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(false)
   })
 
-  it('writePair → readPair round-trips exactly; a malformed pair file reads null', async () => {
+  it('writeRecord → readRecord round-trips exactly; a malformed record reads null', async () => {
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
-    const { file, pair } = await onlyPair()
-    expect(await readPair(file)).toEqual(pair)
-    await writeFile(file, '{not a pair')
-    expect(await readPair(file)).toBeNull()
-    await writeFile(file, JSON.stringify({ hello: 'world' }))
-    expect(await readPair(file)).toBeNull()
+    const { dir, record } = await onlyBundle()
+    expect(await readRecord(dir)).toEqual(record)
+    await writeFile(join(dir, 'record.json'), '{not a record')
+    expect(await readRecord(dir)).toBeNull()
+    await writeFile(join(dir, 'record.json'), JSON.stringify({ hello: 'world' }))
+    expect(await readRecord(dir)).toBeNull()
   })
 
-  it('an unreadable parent sidecar degrades to unaddressable — the pair is still written', async () => {
+  it('an unreadable parent sidecar degrades to unaddressable — the record is still written', async () => {
     await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), '{corrupt')
     const r = await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
     expect(r.ok).toBe(true)
-    const { pair } = await onlyPair()
-    expect(pair).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'unaddressable' } })
+    const { record } = await onlyBundle()
+    expect(record).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'unaddressable' } })
   })
 
-  it('a refused root marks the Space pair partial — the members list is thinner than the truth', async () => {
+  it('a refused root marks the Space record partial — the members list is thinner than the truth', async () => {
     await writeFile(
       join(root, 'Notes', 'Daily', 'Dual.md'),
       '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\nTaskID: 01KVGMT8BFG350FZZXAMG1QDVC\n(Projects):\n  - Pommora\n---\n',
     )
     await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' }, nexusDeps)
-    const { pair } = await onlyPair()
-    expect(pair).toMatchObject({ entity: 'space', partial: true })
+    const { record } = await onlyBundle()
+    expect(record).toMatchObject({ entity: 'space', partial: true })
   })
 
-  it('an id-less tagging root marks the Space pair partial — its membership is unrestorable', async () => {
+  it('an id-less tagging root marks the Space record partial — its membership is unrestorable', async () => {
     await writeFile(join(root, 'Notes', 'Daily', 'NoId.md'), '---\n(Projects):\n  - Pommora\n---\n')
     await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' }, nexusDeps)
-    const { pair } = await onlyPair()
-    expect(pair).toMatchObject({ entity: 'space', partial: true })
-    const members = (pair as { members: { id: string }[] }).members
+    const { record } = await onlyBundle()
+    expect(record).toMatchObject({ entity: 'space', partial: true })
+    const members = (record as { members: { id: string }[] }).members
     expect(members.every((m) => typeof m.id === 'string')).toBe(true)
   })
 
-  it('an unreadable Space sidecar inside the Context marks its pair partial', async () => {
+  it('an unreadable Space sidecar inside the Context marks its record partial', async () => {
     await mkdir(join(contextsDir(root), 'Projects', 'Broken'), { recursive: true })
     await writeFile(join(contextsDir(root), 'Projects', 'Broken', '_space.json'), '{corrupt')
     await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
-    const { pair } = await onlyPair()
-    expect(pair).toMatchObject({ entity: 'context', partial: true })
+    const { record } = await onlyBundle()
+    expect(record).toMatchObject({ entity: 'context', partial: true })
   })
 })
 
-describe('writePropertyPair', () => {
-  it('de-collides within one timestamp — a same-stamp double delete keeps both pairs', async () => {
+describe('writePropertyBundle — the artifact-less shape', () => {
+  it('de-collides within one timestamp — a same-stamp double delete keeps both records', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
     try {
-      const pair = {
+      const record = {
         entity: 'property' as const,
         id: 'prop_x',
         def: { id: 'prop_x' },
         values: { a: 1 },
       }
-      const first = await writePropertyPair(root, pair)
-      const second = await writePropertyPair(root, { ...pair, values: { a: 2 } })
+      const first = await writePropertyBundle(root, record)
+      const second = await writePropertyBundle(root, { ...record, values: { a: 2 } })
       expect(second).not.toBe(first)
-      expect(await readPair(first)).toMatchObject({ values: { a: 1 } })
-      expect(await readPair(second)).toMatchObject({ values: { a: 2 } })
+      expect(await readRecord(first)).toMatchObject({ values: { a: 1 } })
+      expect(await readRecord(second)).toMatchObject({ values: { a: 2 } })
     } finally {
       vi.useRealTimers()
     }
   })
 })
 
-describe('resolvePair — a placement with final names, or a typed refusal', () => {
+describe('listBundles — what the trash offers', () => {
+  it('an incomplete deletion is skipped, and left on disk as evidence', async () => {
+    await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
+    const [dir] = await bundleDirs(join(root, '.trash'))
+    await rm(join(dir, 'Alpha.md'), { force: true })
+    await writePropertyBundle(root, {
+      entity: 'property',
+      id: 'prop_x',
+      def: { id: 'prop_x' },
+      values: {},
+    })
+    for (let n = 0; n < 3; n++) {
+      const listed = await listBundles(root)
+      expect(listed).toHaveLength(1)
+      expect(listed[0].record.entity).toBe('property')
+    }
+    // Never pruned — the record is the only evidence that destruction happened.
+    expect(await pathExists(join(dir, 'record.json'))).toBe(true)
+  })
+
+  it('Finder litter beside the artifact changes nothing', async () => {
+    await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
+    const [dir] = await bundleDirs(join(root, '.trash'))
+    await writeFile(join(dir, '.DS_Store'), 'junk')
+    expect(await bundleArtifact(dir)).toBe(join(dir, 'Alpha.md'))
+    expect(await listBundles(root)).toHaveLength(1)
+  })
+
+  it('a bundle’s interior is trashed content, never trash structure', async () => {
+    await handleMutate({ op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
+    const [dir] = await bundleDirs(join(root, '.trash'))
+    // A user's own folder named like a bundle, riding inside the trashed Collection.
+    const phantom = join(dir, 'Notes', 'Archive.deleted')
+    await mkdir(phantom, { recursive: true })
+    await writeFile(
+      join(phantom, 'record.json'),
+      JSON.stringify({ entity: 'page', parent: { kind: 'root' } }),
+    )
+    const listed = await listBundles(root)
+    expect(listed).toHaveLength(1)
+    expect(listed[0].record.entity).toBe('collection')
+  })
+
+  it('old-format trash entries are invisible', async () => {
+    await mkdir(join(root, '.trash', 'Notes'), { recursive: true })
+    await writeFile(join(root, '.trash', 'Notes', '2026-01-01T00-00-00-000Z__Old.md'), 'body')
+    await writeFile(
+      join(root, '.trash', 'Notes', '2026-01-01T00-00-00-000Z__Old.md.provenance.json'),
+      JSON.stringify({ entity: 'page', id: 'old', parent: { kind: 'root' } }),
+    )
+    expect(await listBundles(root)).toHaveLength(0)
+  })
+})
+
+describe('resolveRecord — a placement with final names, or a typed refusal', () => {
   const P = (over: Partial<import('@shared/types').PageNode> = {}) =>
     ({ kind: 'page', id: 'page-x', title: 'X', path: 'Notes/X.md', ...over }) as import('@shared/types').PageNode
   const treeOf = (
@@ -252,27 +319,27 @@ describe('resolvePair — a placement with final names, or a typed refusal', () 
     pages,
   })
 
-  const pagePair = { entity: 'page' as const, id: PAGE_A, parent: { kind: 'container' as const, id: 'set-daily' } }
+  const pageRecord = { entity: 'page' as const, id: PAGE_A, parent: { kind: 'container' as const, id: 'set-daily' } }
 
   it('places a page into its parent container at the container’s CURRENT path', () => {
-    const r = resolvePair(pagePair, 'Alpha.md', treeOf([], [notes()]))
+    const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes()]))
     expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha.md' } })
   })
 
   it('disambiguates a taken title, matching the create convention', () => {
     const taken = journal({ pages: [P({ id: 'page-o', title: 'Alpha', path: 'Notes/Journal/Alpha.md' })] })
-    const r = resolvePair(pagePair, 'Alpha.md', treeOf([], [notes([taken])]))
+    const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes([taken])]))
     expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha 2.md' } })
   })
 
   it('a set title also blocks a page name — one folder cannot hold both', () => {
     const inner = journal({ sets: [journal({ id: 'set-inner', title: 'Alpha', path: 'Notes/Journal/Alpha' })] })
-    const r = resolvePair(pagePair, 'Alpha.md', treeOf([], [notes([inner])]))
+    const r = resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes([inner])]))
     expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha 2.md' } })
   })
 
   it('refuses when the parent is gone — a still-trashed parent is the same answer', () => {
-    expect(resolvePair(pagePair, 'Alpha.md', treeOf([], [notes([])]))).toEqual({ refuse: 'parent-gone' })
+    expect(resolveRecord(pageRecord, 'Alpha.md', treeOf([], [notes([])]))).toEqual({ refuse: 'parent-gone' })
   })
 
   it('refuses when the parent id resolves to a kind that cannot hold this one', () => {
@@ -280,22 +347,22 @@ describe('resolvePair — a placement with final names, or a typed refusal', () 
       [{ def: { id: 'ctx_a', title: 'Areas' }, spaces: [{ kind: 'space', id: 'set-daily', title: 'S', path: '.nexus/contexts/Areas/S', contextId: 'ctx_a' } as import('@shared/types').SpaceNode] }],
       [notes([])],
     )
-    expect(resolvePair(pagePair, 'Alpha.md', tree)).toEqual({ refuse: 'cannot-hold' })
+    expect(resolveRecord(pageRecord, 'Alpha.md', tree)).toEqual({ refuse: 'cannot-hold' })
   })
 
   it('a live id refuses, and it outranks every other answer', () => {
     const tree = treeOf([], [notes([], [P({ id: PAGE_A, title: 'Elsewhere', path: 'Notes/Elsewhere.md' })])])
-    expect(resolvePair(pagePair, 'Alpha.md', tree)).toEqual({ refuse: 'id-live' })
+    expect(resolveRecord(pageRecord, 'Alpha.md', tree)).toEqual({ refuse: 'id-live' })
   })
 
   it('an unaddressable parent refuses', () => {
-    const pair = { entity: 'page' as const, id: PAGE_A, parent: { kind: 'unaddressable' as const } }
-    expect(resolvePair(pair, 'Alpha.md', treeOf([], [notes()]))).toEqual({ refuse: 'unaddressable' })
+    const record = { entity: 'page' as const, id: PAGE_A, parent: { kind: 'unaddressable' as const } }
+    expect(resolveRecord(record, 'Alpha.md', treeOf([], [notes()]))).toEqual({ refuse: 'unaddressable' })
   })
 
   it('a collection returns to the root, disambiguated against its siblings', () => {
-    const pair = { entity: 'collection' as const, id: 'col-back', parent: { kind: 'root' as const } }
-    const r = resolvePair(pair, 'Notes', treeOf([], [notes()]))
+    const record = { entity: 'collection' as const, id: 'col-back', parent: { kind: 'root' as const } }
+    const r = resolveRecord(record, 'Notes', treeOf([], [notes()]))
     expect(r).toEqual({ place: { dir: '', finalName: 'Notes 2' } })
   })
 
@@ -311,13 +378,13 @@ describe('resolvePair — a placement with final names, or a typed refusal', () 
       ],
       [],
     )
-    const pair = {
+    const record = {
       entity: 'space' as const,
       id: 'sp-pom',
       parent: { kind: 'context' as const, id: 'ctx_projects' },
       members: [],
     }
-    const r = resolvePair(pair, 'Pommora', tree)
+    const r = resolveRecord(record, 'Pommora', tree)
     expect(r).toEqual({
       place: { dir: '.nexus/contexts/Ventures', finalName: 'Pommora 2', finalTitle: 'Pommora 2' },
     })
@@ -325,12 +392,12 @@ describe('resolvePair — a placement with final names, or a typed refusal', () 
 
   it('a Context re-enters the registry under a disambiguated final title', () => {
     const tree = treeOf([{ def: { id: 'ctx_new', title: 'Projects' }, spaces: [] }], [])
-    const pair = {
+    const record = {
       entity: 'context' as const,
       registry: { id: 'ctx_projects', title: 'Projects' },
       membership: [],
     }
-    const r = resolvePair(pair, 'Projects', tree)
+    const r = resolveRecord(record, 'Projects', tree)
     expect(r).toEqual({
       place: { dir: '.nexus/contexts', finalName: 'Projects 2', finalTitle: 'Projects 2' },
     })
@@ -338,34 +405,25 @@ describe('resolvePair — a placement with final names, or a typed refusal', () 
 
   it('a Context whose registry id is already live refuses', () => {
     const tree = treeOf([{ def: { id: 'ctx_projects', title: 'Elsewhere' }, spaces: [] }], [])
-    const pair = {
+    const record = {
       entity: 'context' as const,
       registry: { id: 'ctx_projects', title: 'Projects' },
       membership: [],
     }
-    expect(resolvePair(pair, 'Projects', tree)).toEqual({ refuse: 'id-live' })
+    expect(resolveRecord(record, 'Projects', tree)).toEqual({ refuse: 'id-live' })
   })
 })
 
-describe('artifactBaseName', () => {
-  it('strips the stamp, the de-collision counter, and nothing else', () => {
-    expect(artifactBaseName('2026-08-01T12-00-00-000Z__Alpha.md')).toBe('Alpha.md')
-    expect(artifactBaseName('2026-08-01T12-00-00-000Z__3__Alpha.md')).toBe('Alpha.md')
-    expect(artifactBaseName('2026-08-01T12-00-00-000Z__My__Odd__Name.md')).toBe('My__Odd__Name.md')
-    expect(artifactBaseName('2026-08-01T12-00-00-000Z__2')).toBe('2')
-    expect(artifactBaseName('2026-08-01T12-00-00-000Z__1__2')).toBe('2')
-  })
-})
-
-describe('restore — the pair spends, headless', () => {
+describe('restore — the record spends, headless', () => {
   it('a page returns into its since-renamed parent', async () => {
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
     await rename(join(root, 'Notes', 'Daily'), join(root, 'Notes', 'Journal'))
-    const [listed] = await listPairs(root)
-    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(await readFile(join(root, 'Notes', 'Journal', 'Alpha.md'), 'utf8')).toContain(PAGE_A)
-    expect(await pairFiles(join(root, '.trash'))).toHaveLength(0)
+    // The spent bundle leaves nothing behind.
+    expect(await bundleDirs(join(root, '.trash'))).toHaveLength(0)
   })
 
   it('a Space round-trips: the surviving roots carry its tag again', async () => {
@@ -379,8 +437,8 @@ describe('restore — the pair spends, headless', () => {
       ],
     ).toBeUndefined()
 
-    const [listed] = await listPairs(root)
-    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))).toBe(true)
     expect(
@@ -396,8 +454,8 @@ describe('restore — the pair spends, headless', () => {
 
   it('a Context round-trips: the registry entry appends and membership re-applies', async () => {
     await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
-    const [listed] = await listPairs(root)
-    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
     expect(reg.contexts).toContainEqual({
@@ -420,38 +478,34 @@ describe('restore — the pair spends, headless', () => {
 
   it('the resolver re-runs inside the op — a parent gone between list and restore refuses', async () => {
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
-    const [listed] = await listPairs(root)
+    const [listed] = await listBundles(root)
     await handleMutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
-    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
   })
 
-  it('listPairs prunes an orphaned pair as encountered, but never the artifact-less variant', async () => {
+  it('an incomplete deletion refuses, and its record stays put', async () => {
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
-    const files = await pairFiles(join(root, '.trash'))
-    await rm(files[0].slice(0, -'.provenance.json'.length), { force: true })
-    await writePropertyPair(root, {
-      entity: 'property',
-      id: 'prop_x',
-      def: { id: 'prop_x' },
-      values: {},
-    })
-    const listed = await listPairs(root)
-    expect(listed).toHaveLength(1)
-    expect(listed[0].pair.entity).toBe('property')
-    expect(await pairFiles(join(root, '.trash'))).toHaveLength(1)
+    const [dir] = await bundleDirs(join(root, '.trash'))
+    await rm(join(dir, 'Alpha.md'), { force: true })
+    const r = await handleMutate(
+      { op: 'restore', bundlePath: join('.trash', 'Notes', 'Daily', basename(dir)) },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(false)
+    expect(await pathExists(join(dir, 'record.json'))).toBe(true)
   })
 })
 
 describe('restore — the gate-four pins', () => {
-  it('a corrupt registry refuses a Context restore with the pair and artifact intact', async () => {
+  it('a corrupt registry refuses a Context restore with the bundle intact', async () => {
     await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
     await writeFile(contextsRegistryFile(root), '{corrupt')
-    const [listed] = await listPairs(root)
-    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
     // Nothing moved and the evidence survives — the restore is retryable once the registry heals.
-    expect(await pairFiles(join(root, '.trash'))).toHaveLength(1)
+    expect(await bundleDirs(join(root, '.trash'))).toHaveLength(1)
     expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(false)
   })
 
@@ -463,8 +517,8 @@ describe('restore — the gate-four pins', () => {
     await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
     await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
 
-    const [listed] = await listPairs(root)
-    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     // Folder, registry entry, and membership key all wear the resolver's final title.
     expect(await pathExists(join(contextsDir(root), 'Projects 2', 'Pommora', '_space.json'))).toBe(true)
@@ -487,42 +541,60 @@ describe('restore — the gate-four pins', () => {
       join(root, 'Notes', 'Daily', 'Alpha.md'),
       '---\nTaskID: 01KVGMT8BFG350FZZXAMG1QDVD\n---\nsquatter',
     )
-    const [listed] = await listPairs(root)
-    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
     expect(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8')).toContain('squatter')
-    expect(await pairFiles(join(root, '.trash'))).toHaveLength(1)
+    expect(await bundleDirs(join(root, '.trash'))).toHaveLength(1)
   })
 
-  it('only a trash record restores — an in-nexus path refuses', async () => {
-    await writeFile(join(root, 'Notes', 'fake.provenance.json'), JSON.stringify({}))
-    const r = await handleMutate({ op: 'restore', pairPath: 'Notes/fake.provenance.json' }, nexusDeps)
+  it('only a trash bundle restores — an in-nexus path refuses', async () => {
+    await mkdir(join(root, 'Notes', 'fake.deleted'), { recursive: true })
+    await writeFile(
+      join(root, 'Notes', 'fake.deleted', 'record.json'),
+      JSON.stringify({ entity: 'page', id: 'x', parent: { kind: 'root' } }),
+    )
+    const r = await handleMutate({ op: 'restore', bundlePath: 'Notes/fake.deleted' }, nexusDeps)
     expect(r.ok).toBe(false)
-    expect(await pathExists(join(root, 'Notes', 'fake.provenance.json'))).toBe(true)
+    expect(await pathExists(join(root, 'Notes', 'fake.deleted', 'record.json'))).toBe(true)
+  })
+
+  it('a property record has no artifact to restore', async () => {
+    const bundle = await writePropertyBundle(root, {
+      entity: 'property',
+      id: 'prop_x',
+      def: { id: 'prop_x' },
+      values: {},
+    })
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.message).toContain('property')
+    expect(await pathExists(join(bundle, 'record.json'))).toBe(true)
   })
 })
 
 describe('restore — the attack folds', () => {
-  it('a pair cannot steer the artifact outside the nexus', async () => {
+  it('a record cannot steer the artifact outside the nexus', async () => {
     await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
-    const [file] = await pairFiles(join(root, '.trash'))
-    const pair = JSON.parse(await readFile(file, 'utf8'))
-    pair.registry.title = '../../../escape-target'
-    await writeFile(file, JSON.stringify(pair))
-    const [listed] = await listPairs(root)
-    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const [dir] = await bundleDirs(join(root, '.trash'))
+    const record = JSON.parse(await readFile(join(dir, 'record.json'), 'utf8'))
+    record.registry.title = '../../../escape-target'
+    await writeFile(join(dir, 'record.json'), JSON.stringify(record))
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
     expect(await pathExists(join(root, '..', 'escape-target'))).toBe(false)
   })
 
-  it('a numeric-prefixed filename round-trips intact — the pair records the real name', async () => {
+  it('a numeric-prefixed filename round-trips intact — the artifact keeps its real name', async () => {
     await writeFile(
       join(root, 'Notes', 'Daily', '12__Notes.md'),
       '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVE\n---\nbody',
     )
     await handleMutate({ op: 'delete', path: 'Notes/Daily/12__Notes.md', kind: 'page' }, nexusDeps)
-    const [listed] = await listPairs(root)
-    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Notes', 'Daily', '12__Notes.md'))).toBe(true)
     expect(await pathExists(join(root, 'Notes', 'Daily', 'Notes.md'))).toBe(false)
@@ -533,8 +605,8 @@ describe('restore — the attack folds', () => {
     await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
     await chmod(join(root, '.nexus', 'contexts'), 0o555)
     try {
-      const [listed] = await listPairs(root)
-      const failed = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+      const [listed] = await listBundles(root)
+      const failed = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
       expect(failed.ok).toBe(false)
       // No ghost entry: the append reversed when the move refused.
       const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
@@ -542,8 +614,8 @@ describe('restore — the attack folds', () => {
     } finally {
       await chmod(join(root, '.nexus', 'contexts'), 0o755)
     }
-    const [listed] = await listPairs(root)
-    const retried = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const [listed] = await listBundles(root)
+    const retried = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(retried.ok).toBe(true)
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
   })
@@ -556,8 +628,8 @@ describe('restore — the attack folds', () => {
     await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
     await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
 
-    const [listed] = await listPairs(root)
-    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     const sap = JSON.parse(
       await readFile(join(contextsDir(root), 'Projects 2', 'Sapphire', '_space.json'), 'utf8'),
