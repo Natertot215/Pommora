@@ -180,6 +180,20 @@ export function splitFrontmatter(content: string): Json {
 const readSidecar = (absPath: string): Promise<Json | null> =>
   cachedParse(absPath, () => readJsonObject(absPath))
 
+/** The lenient sidecar read keeps the distinction its null destroys: absent stays silent (an
+ *  un-adopted folder), present-but-unparseable records the owner's path. Recording happens
+ *  HERE at the call site — a side effect inside a parse closure would go silent on every
+ *  warm walk, because the cache serves non-null results without re-running it. */
+async function readSidecarNaming(
+  absSidecar: string,
+  relOwner: string,
+  unreadable: string[],
+): Promise<Json | null> {
+  const meta = await readSidecar(absSidecar)
+  if (meta === null && (await pathExists(absSidecar))) unreadable.push(relOwner)
+  return meta
+}
+
 /** A `.nexus` config file as a record — absent and unreadable both read as empty, because the
  *  walk has no field of its own to lose. The one exception (nexus.json) reads strict below. */
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
@@ -240,14 +254,22 @@ async function readPage(absFile: string, relFile: string): Promise<PageNode | nu
   return (await readPageRecord(absFile, relFile))?.node ?? null
 }
 
-async function readDirectPages(absDir: string, relDir: string): Promise<PageNode[]> {
+async function readDirectPages(
+  absDir: string,
+  relDir: string,
+  unreadable: string[],
+): Promise<PageNode[]> {
   const files = (await listEntries(absDir)).filter(
     isContentFile,
   )
   const out = await Promise.all(
-    files.map((e) => {
+    files.map(async (e) => {
       const rel = relDir ? `${relDir}/${e.name}` : e.name
-      return readPage(join(absDir, e.name), rel).catch(() => null) // unreadable page -> skip
+      // Null is Unknown admission or an unreadable file — either way the walk skips it,
+      // and the record must not read the skip as absence.
+      const node = await readPage(join(absDir, e.name), rel).catch(() => null)
+      if (node === null) unreadable.push(rel)
+      return node
     }),
   )
   return out.filter((n): n is PageNode => n !== null)
@@ -275,6 +297,7 @@ async function readChildSets(
   kindCtx: FolderKindContext,
   excluded: string[],
   fb: Fallback,
+  unreadable: string[],
 ): Promise<SetNode[]> {
   const dirs = (await listEntries(absDir)).filter(
     (e) => e.isDirectory() && !shouldSkipDir(e.name, `${relDir}/${e.name}`, excluded),
@@ -285,7 +308,7 @@ async function readChildSets(
   const sets = dirs.filter((_, i) => kinds[i] === 'set')
   return Promise.all(
     sets.map((e) =>
-      readSet(join(absDir, e.name), `${relDir}/${e.name}`, e.name, kindCtx, excluded, fb),
+      readSet(join(absDir, e.name), `${relDir}/${e.name}`, e.name, kindCtx, excluded, fb, unreadable),
     ),
   )
 }
@@ -297,13 +320,14 @@ async function readSet(
   kindCtx: FolderKindContext,
   excluded: string[],
   fb: Fallback,
+  unreadable: string[],
 ): Promise<SetNode> {
   const [meta, sets, pages] = await Promise.all([
     kindCtx.sidecarMode
-      ? readSidecar(join(absDir, SIDECAR_FILENAME.set)).then((m) => m ?? {})
+      ? readSidecarNaming(join(absDir, SIDECAR_FILENAME.set), relDir, unreadable).then((m) => m ?? {})
       : Promise.resolve<Json>({}),
-    readChildSets(absDir, relDir, kindCtx, excluded, fb),
-    readDirectPages(absDir, relDir),
+    readChildSets(absDir, relDir, kindCtx, excluded, fb, unreadable),
+    readDirectPages(absDir, relDir, unreadable),
   ])
   return {
     kind: 'set',
@@ -343,13 +367,16 @@ async function readPageCollection(
   excluded: string[],
   fb: Fallback,
   registry: PropertyRegistry,
+  unreadable: string[],
 ): Promise<CollectionNode> {
   const [meta, sets, pages] = await Promise.all([
     kindCtx.sidecarMode
-      ? readSidecar(join(absDir, SIDECAR_FILENAME.collection)).then((m) => m ?? {})
+      ? readSidecarNaming(join(absDir, SIDECAR_FILENAME.collection), relDir, unreadable).then(
+          (m) => m ?? {},
+        )
       : Promise.resolve<Json>({}),
-    readChildSets(absDir, relDir, kindCtx, excluded, fb),
-    readDirectPages(absDir, relDir),
+    readChildSets(absDir, relDir, kindCtx, excluded, fb, unreadable),
+    readDirectPages(absDir, relDir, unreadable),
   ])
   return {
     kind: 'collection',
@@ -376,9 +403,12 @@ async function readSpace(
   relDir: string,
   name: string,
   contextId: string,
+  unreadable: string[],
 ): Promise<SpaceNode | null> {
-  const sc = await readSidecar(join(absDir, SPACE_SIDECAR))
-  if (!sc) return null // a Space IS its sidecar
+  // A Space IS its sidecar: no sidecar means no Space (a plain folder, silent), while an
+  // unparseable one names itself on the list rather than reading as deleted.
+  const sc = await readSidecarNaming(join(absDir, SPACE_SIDECAR), relDir, unreadable)
+  if (!sc) return null
   const node: SpaceNode = {
     kind: 'space',
     id: asString(sc.id) ?? adoptedId(relDir),
@@ -402,6 +432,7 @@ async function readContextGroups(
   spaceOrders: Json,
   excluded: string[],
   fb: Fallback,
+  unreadable: string[],
 ): Promise<ContextGroup[]> {
   return Promise.all(
     registry.contexts.map(async (def) => {
@@ -411,7 +442,7 @@ async function readContextGroups(
         .map((e) => ({ name: e.name, rel: `.nexus/contexts/${def.title}/${e.name}` }))
         .filter(({ name, rel }) => !shouldSkipDir(name, rel, excluded))
       const read = await Promise.all(
-        entries.map(({ name, rel }) => readSpace(join(dir, name), rel, name, def.id)),
+        entries.map(({ name, rel }) => readSpace(join(dir, name), rel, name, def.id, unreadable)),
       )
       const spaces = read.filter((n): n is SpaceNode => n !== null)
       return { def, spaces: resolveOrder(spaces, asStringArray(spaceOrders[def.id]), fb) }
@@ -481,8 +512,14 @@ async function walkNexus(root: string): Promise<NexusTree> {
     state.space_orders != null && typeof state.space_orders === 'object'
       ? (state.space_orders as Json)
       : {}
+  const unreadable: string[] = []
+  // An unusable registry blanks the whole Contexts layer for the session — every group and
+  // Space leaves the walk at once. Absent is real raw mode and stays silent; present names
+  // the registry so the record reads the blank layer as unreadable, never as mass deletion.
+  if (!ctxRegistry && (await pathExists(contextsRegistryFile(root))))
+    unreadable.push('.nexus/contexts.json')
   const contexts = ctxRegistry
-    ? await readContextGroups(root, ctxRegistry, spaceOrders, excluded, fb)
+    ? await readContextGroups(root, ctxRegistry, spaceOrders, excluded, fb, unreadable)
     : undefined
 
   // Top-level Collections (gated by `_pagecollection.json`; raw mode treats every root folder
@@ -495,7 +532,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     rootDirs.map(async (e) => {
       const abs = join(root, e.name)
       if ((await resolveFolderKind(abs, 'root', kindCtx)) !== 'collection') return null
-      return readPageCollection(abs, e.name, e.name, kindCtx, excluded, fb, registry.defs)
+      return readPageCollection(abs, e.name, e.name, kindCtx, excluded, fb, registry.defs, unreadable)
     }),
   )
   const allCollections = maybeCollections.filter((c): c is CollectionNode => c !== null)
@@ -541,5 +578,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
     personalization,
     commands,
     registry: orderedDefs(registry),
+    ...(unreadable.length ? { unreadable: unreadable.map((path) => ({ path })) } : {}),
   }
 }

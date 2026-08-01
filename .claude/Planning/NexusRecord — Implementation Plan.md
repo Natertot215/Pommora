@@ -152,10 +152,10 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 **Must agree:** the walk's admission refusals and the unreadable list must cover the same files — the fixture from `admission.test.ts`'s Unknown matrix crosses both.
 
 **Steps:**
-- [ ] Failing test: corrupt sidecar + Unknown page + corrupt Space sidecar each land on the list.
-- [ ] Implement — recording at the **call sites**, never inside a parse closure: `cachedParse` caches non-null results, so a closure side effect would silently empty the list on every warm walk.
-- [ ] Gates green (the walk's existing consumers ignore the new field — additive).
-- [ ] Commit: `feat(walk): present-but-unreadable is its own answer`
+- [x] Failing test: corrupt sidecar + Unknown page + corrupt Space sidecar each land on the list.
+- [x] Implement — recording at the **call sites**, never inside a parse closure: `cachedParse` caches non-null results, so a closure side effect would silently empty the list on every warm walk.
+- [x] Gates green (the walk's existing consumers ignore the new field — additive).
+- [x] Commit: `feat(walk): present-but-unreadable is its own answer`
 
 #### Task 3: The open path owns one walk
 
@@ -437,7 +437,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - [ ] **Phase 1** — one tuple, one baseline, one silent diff · base `680d996f`
   - [x] Task 1 — the shared record shape
   - [x] Task 2 — the baseline projection and its rows
-  - [ ] Task 2a — the walk names what it cannot read
+  - [x] Task 2a — the walk names what it cannot read
   - [ ] Task 3 — the open path owns one walk
 - [ ] **Phase 2** — the re-mint
   - [ ] Task 4 — detection and adjudication
@@ -462,6 +462,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 
 ### Open Against Later Tasks
 ### Deviations
+- **T2a:** a fourth producer joined the three planned ones — a **present-but-unusable contexts registry** (`.nexus/contexts.json` corrupt or shape-invalid) blanks the whole Contexts layer in one stroke, which the baseline would read as mass deletion of every group and Space. The walk now records the registry's own path on the list; T3's latch carries prior `context`/`space` entries as unreadable when that path is listed. Absent registry (real raw mode) stays silent.
 - **T2:** the writer's merge shipped as `latchBaseline(projection, unreadablePaths, prior)` in `record.ts` rather than as inline logic in T3's wiring — every carry/drop/ambiguous rule is pure and tested where the projection lives; T3 wires `projectBaseline → latch → diff → rows` and stays thin. `projectBaseline` returns `{ entries, duplicates }` (T4 consumes `duplicates` directly). The unreadable list rides as a parameter, not read off the tree, so T2 ships before T2a adds the field.
 ### Lessons
 ### Sequenced After
