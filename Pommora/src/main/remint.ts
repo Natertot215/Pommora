@@ -175,10 +175,9 @@ export function applyRemints(projection: Projection, reminted: RemintedEntity[])
     duplicates[target.id] = claims.filter((c) => c.path !== target.path)
   }
   for (const [id, claims] of Object.entries(duplicates)) {
-    if (claims.length === 1) {
-      entries[id] = claims[0]
-      delete duplicates[id]
-    } else if (claims.length === 0) delete duplicates[id]
+    if (claims.length > 1) continue
+    if (claims.length === 1) entries[id] = claims[0]
+    delete duplicates[id]
   }
   return { entries, duplicates }
 }
