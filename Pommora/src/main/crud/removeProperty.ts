@@ -78,7 +78,7 @@ async function removeInner(
       { ...cur, properties: ids.filter((id) => id !== propertyId) },
       propertyId,
       // No value, no key — a block with nothing in it is the same violation as an empty map.
-      Object.keys(values).length ? { removed_at: nowIso(), values } : undefined,
+      Object.keys(values).length ? { values } : undefined,
     ),
   )
   if (!written.ok) return written
