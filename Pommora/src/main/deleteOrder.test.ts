@@ -22,26 +22,20 @@ let atSweep: unknown
 let atSettle: unknown
 let settleFails = false
 
-/** The one record under .trash, whatever bundle holds it. */
-async function anyRecord(): Promise<unknown> {
-  const walk = async (dir: string): Promise<unknown> => {
-    let entries: import('node:fs').Dirent[]
-    try {
-      entries = await readdir(dir, { withFileTypes: true })
-    } catch {
-      return undefined
-    }
-    for (const e of entries) {
-      if (!e.isDirectory()) continue
-      const hit = join(dir, e.name, '_record.json')
-      if (await pathExists(hit)) return JSON.parse(await readFile(hit, 'utf8'))
-      const deeper = await walk(join(dir, e.name))
-      if (deeper !== undefined) return deeper
-    }
-    return undefined
+async function firstRecordUnder(dir: string): Promise<unknown> {
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
+  for (const e of entries) {
+    if (!e.isDirectory()) continue
+    const hit = join(dir, e.name, '_record.json')
+    if (await pathExists(hit)) return JSON.parse(await readFile(hit, 'utf8'))
+    const deeper = await firstRecordUnder(join(dir, e.name))
+    if (deeper !== undefined) return deeper
   }
-  return walk(join(root, '.trash'))
+  return undefined
 }
+
+/** The one record under .trash, whatever bundle holds it. */
+const anyRecord = (): Promise<unknown> => firstRecordUnder(join(root, '.trash'))
 
 vi.mock('./crud/contextCascade', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./crud/contextCascade')>()
