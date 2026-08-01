@@ -90,7 +90,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 **Files:**
 - Create: `src/shared/record.ts` — `RecordKind`, `EntityRecord { id, kind, title, path, state }`, `ExistState = 'present' | 'unreadable'`, `BaselineDiff` types. Pure, no fs, no React.
-- Modify: `src/renderer/src/treeIndex.ts` — `NodeRecord` derives its overlapping fields from `EntityRecord` (its extras — icon, ownIcon, crumbs, key — stay local).
+- Modify: `src/renderer/src/treeIndex.ts` — `NodeRecord` derives the fields the two genuinely share — `{id, title, path}` — from `EntityRecord`. Its `kind` stays local: the unions are disjoint in both directions (`NodeRecord` adds `homepage`, `RecordKind` adds `context`), so claiming one owner for `kind` would be false; what F-5 buys is the tuple, stated honestly.
 - Test: `src/shared/record.test.ts`
 
 **Interfaces**
@@ -123,24 +123,50 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 - Produces: the functions above. Baseline entries carry `state` per C-5a: a container whose sidecar was unreadable projects `unreadable`, not its synthetic id.
 - Assumed by: Task 3 (calls all four), Task 4 (reads baseline for adjudication).
 
-**Failure half:** null db handle → all reads null, all writes no-op (locked media = C-2a's absent case) · a tree with zero entities → empty baseline written, not skipped · duplicate id in the tree → **both paths recorded under the ambiguous marker**, never last-wins (spec A-5: the refusal preserves its evidence).
+**Failure half:** null db handle → all reads null, all writes no-op (locked media = C-2a's absent case) · a tree with zero entities → empty baseline written, not skipped · duplicate id in the tree → the projection flags it ambiguous, and **the write step keeps the PRIOR baseline's entry for that id** rather than either current path (spec A-5: the prior-session path is the only non-re-derivable fact, and it is exactly what a deferred adjudication needs — `projectBaseline` alone cannot preserve it, so the carry-forward lives where prior and next meet, in T3's write).
 
-**Negative control:** the `adopted-` filter — project a fixture holding an un-adopted entity, assert absent; disable the filter, assert the test goes red.
+**Negative control:** the `adopted-` filter — and its subject must be the harmful shape, not the benign one: project a fixture whose Collection sidecar is **corrupt** (present but unparseable), assert the entry projects `unreadable` rather than being dropped as un-adopted; then a genuinely un-adopted folder, assert absent; disable the filter, assert red. `stampAdopted` runs before every walk in production, so the filter's main real-world input is the corrupt case.
 
 **Steps:**
-- [ ] Failing tests first (projection, filter + control, ambiguous preservation, null-handle no-op).
+- [ ] Failing tests first (projection, both filter controls, null-handle no-op).
 - [ ] Implement; gates green.
 - [ ] Commit: `feat(record): the baseline projection and its device-local rows`
+
+#### Task 2a: The walk names what it cannot read
+
+**Requirement:** 4 (C-5a's producer)
+
+**Why:** Three-state existence has no producer today — `readNexus` destroys the distinction before returning: an unreadable container sidecar falls to `adoptedId` (byte-identical to un-adopted, which the projection drops), and an Unknown or unreadable page vanishes with no marker. Without this task the diff reports a hand-edit typo as a deletion and an iCloud-evicted sidecar as delete-then-create — the phantom pair overwriting the last-non-empty drift row it exists to protect. Adoption already treats the unreadable sidecar as a *waiting* state ("the folder waits for a later open"); the record must read it the same way.
+
+**Files:**
+- Modify: `src/main/readNexus.ts` — the tree gains an `unreadable` list: container reads distinguish not-found (raw/un-adopted) from present-but-unparseable via the strict reader; a page whose admission is Unknown, an unreadable page, and a null-parsing Space sidecar each record their path.
+- Modify: `src/shared/types.ts` — the tree field.
+- Test: extend the walk tests; the diff test in T2 consumes the list — a disappeared id whose prior path is on it reports `unreadable`, never deleted.
+
+**Interfaces**
+- Produces: `NexusTree.unreadable: { path: string }[]`.
+- Assumed by: Task 2's projection (state per C-5a) and the diff.
+
+**Failure half:** a path both walked and listed (racing edit) → the listing wins, conservative · empty list → absent from the tree per no-empties · the list never enters the renderer's concerns (it rides the tree type but no surface reads it).
+
+**Must agree:** the walk's admission refusals and the unreadable list must cover the same files — the fixture from `admission.test.ts`'s Unknown matrix crosses both.
+
+**Steps:**
+- [ ] Failing test: corrupt sidecar + Unknown page + corrupt Space sidecar each land on the list.
+- [ ] Implement; gates green (the walk's existing consumers ignore the new field — additive).
+- [ ] Commit: `feat(walk): present-but-unreadable is its own answer`
 
 #### Task 3: The open path owns one walk
 
 **Requirement:** 4
 
-**Why:** Spec C-2: latching to "whichever walk runs first" loses to the watcher on launch-restore — a sync daemon's changes would become the baseline instead of the drift. `adoptNexusInner` and launch-restore walk once, explicitly, after `openSessionDb`; prior baseline read → diff → drift written only if non-empty (C-7) → new baseline written. Absent prior baseline: latch, report nothing (C-2a). The renderer's own `nexus:state` walk is untouched — it runs after the open path completes, so it sees post-re-mint disk, and the warm parse cache makes it stat-only. This satisfies C-2's hand-off *intent* (the baseline latches pre-watcher; the first render shows re-minted ids) without rewiring the state IPC; T13 aligns the spec's wording to this reading.
+**Why:** Spec C-2: latching to "whichever walk runs first" loses to the watcher on launch-restore — a sync daemon's changes would become the baseline instead of the drift. `adoptNexusInner` and launch-restore walk once, explicitly, after `openSessionDb`; prior baseline read → diff (ambiguous ids excluded) → drift written only if non-empty (C-7) → new baseline written, **with each ambiguous id's prior entry carried forward in place of the projected one**. Absent prior baseline: latch, report nothing (C-2a). The renderer's own `nexus:state` walk is untouched — it runs after the open path completes, so it sees post-re-mint disk, and the warm parse cache makes it stat-only. This satisfies C-2's hand-off *intent* (the baseline latches pre-watcher; the first render shows re-minted ids) without rewiring the state IPC; T13 aligns the spec's wording to this reading.
 
 **Files:**
-- Modify: `src/main/index.ts` — both open sites (the pair of `prepareOpenedNexus` + `replayPendingRename` callers).
+- Modify: `src/main/index.ts` — the two genuine open sites only (the `prepareOpenedNexus` + `replayPendingRename` caller pairs). **Not `adoptNexusInner` itself**: `nexus:rename` reuses it as a mid-session re-point, and a latch riding it would diff the live session against the launch baseline — every in-session change reporting as drift and overwriting the real closed-window record. The record block sits with the open callers, and the rename re-point runs none of it.
 - Test: extend `src/main/record.test.ts` with an open-sequence fixture test.
+
+One cost sentence: this moves the first cold walk ahead of `createWindow` — the renderer's own walk becomes warm-cache stat-only, so total parse work is unchanged; only its timing shifts earlier.
 
 **Interfaces**
 - Consumes: Task 2's four functions; `readNexus`.
@@ -191,7 +217,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 **Requirement:** 5
 
-**Why:** Executing a re-mint means: page → rewrite the kind key under the file lock (`serializeOnFile` + `mergeFrontmatter`); container → `writeSidecar` with the new id; then **re-key** the device-local rows the old id keys — `blockDoc` (`space:<id>` — authored layout, spec: "a Space re-mint silently empties its board"), `activeView`, `folds`, `headingCols`, preview origins. Thumbnails drop (regenerable, evicted anyway). Order arrays untouched (`resolveOrder` re-enters by title). Asset pointers untouched (stored rel paths travel). Then the open-path tree: patch the node ids so the baseline projection records the re-minted state. Nothing more — the handed tree's only consumer is the projection, whose fields are scalars; `contextValues` never enter it, and the renderer walks fresh after the re-mint completes (T3), so the spec's attach-pass clause is satisfied with no consumer left to need it.
+**Why:** Executing a re-mint means: page → rewrite the kind key under the file lock (`serializeOnFile` + `mergeFrontmatter`); container → `writeSidecar` with the new id; then **copy — never move — the device-local rows** onto the fresh id: `blockDoc` (`space:<id>`), `activeView`, `folds`, `headingCols`, preview origins. The old-id rows belong to the **original**, which keeps that id; moving them would hand the original's authored board to the copy and leave the original blank — the exact inversion of the Goal's "the original keeps everything keyed to it." Duplicating them keeps the original untouched by construction and keeps the copy's ridden-along tile files referenced. Thumbnails: none for the fresh id, regenerated on use. Order arrays untouched (`resolveOrder` re-enters by title). Asset pointers untouched (stored rel paths travel). Then the open-path tree: patch the node ids so the baseline projection records the re-minted state. Nothing more — the handed tree's only consumer is the projection, whose fields are scalars; `contextValues` never enter it, and the renderer walks fresh after the re-mint completes (T3), so the spec's attach-pass clause is satisfied with no consumer left to need it.
 
 **Files:**
 - Modify: `src/main/remint.ts` — the write half.
@@ -200,14 +226,14 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 **Derivation**
 - `grep -Fn "space:" Pommora/src/shared/blocks.ts` → the blockDoc key builder; re-key against it, never a hand-built string.
 
-**Failure half:** frontmatter write refused (locked file) → that re-mint skips, defer stands, nothing partial · sidecar write fails after row re-key → rows re-keyed to an id disk doesn't hold — so **disk writes first, rows second**, and a row re-key failure is logged and harmless (regenerable-or-stale UI state, self-corrects on use) · re-mint of an id with zero device-local rows → no-op re-key, no error.
+**Failure half:** frontmatter write refused (locked file) → that re-mint skips, defer stands, nothing partial · row copy fails after the disk write → the copy runs with default chrome (empty board, no folds) and the original is untouched — **disk writes first, row copies second**, logged and harmless · re-mint of an id with zero device-local rows → nothing to copy, no error.
 
 **Must agree:** the re-minted page must read as `member` through `admitContentFile` and appear in the next projection under the new id — one test crosses the re-mint, the admission predicate, and the projection.
 
 **Steps:**
-- [ ] Failing tests: page re-mint, container re-mint, row re-keys, the must-agree crossing.
+- [ ] Failing tests: page re-mint, container re-mint, row copies — asserting the ORIGINAL's rows are byte-identical after (the acceptance criterion's "keeps its folds" pinned directly) — and the must-agree crossing.
 - [ ] Implement; gates green.
-- [ ] Commit: `feat(remint): the copy takes a fresh id and its rows follow`
+- [ ] Commit: `feat(remint): the copy takes a fresh id and duplicate chrome; the original never moves`
 
 #### Gate 2 — duplicates resolve, originals never move
 - [ ] Gates green; simplification + review on the range; concerns fixed or ruled.
@@ -264,7 +290,9 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 **Requirement:** 1
 
-**Why:** Spec B-1..B-7. One JSON beside the trashed artifact, named from `trashWithTimestamp`'s returned leaf. Gathered at the three fixed points; parent as the discriminated union (B-4); per-kind payloads (B-5); all-or-nothing per pair; best-effort — a pair failure never fails the delete. `trashTileFile` writes no pair (A-4).
+**Why:** Spec B-1..B-7. One JSON beside the trashed artifact, named from `trashWithTimestamp`'s returned leaf. Parent as the discriminated union (B-4); per-kind payloads (B-5); all-or-nothing per pair; best-effort — a pair failure never fails the delete. `trashTileFile` writes no pair (A-4).
+
+  **Four gather points, not three** — the Context arm needs a world snapshot: frontmatter stores Space *titles*, the sweep can only capture titles, and G-3's ratified `{id, title}` needs title→id resolution through `loadContextWorld`, whose window **closes at the registry erase**. So: (0) world snapshot before the sweep, for Space/Context deletes only · (1) registry entry before the erase · (2) membership during the sweep, resolved against the snapshot · (3) pair name after the move. Without point 0 the pair ships titles alone — the join key the spec's Considered & Rejected explicitly refused.
 
 **Files:**
 - Create: `src/main/provenance.ts` — pair shape (zod, loose), `gatherProvenance(kind, abs, root, capture)`, `writePair(dest, pair)`, `readPair(dest)`.
@@ -279,7 +307,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 **Negative control:** the all-or-nothing rule — break the registry read in a fixture, delete a Context, assert no pair exists; restore the read, assert the pair carries the entry.
 
-**Must agree:** the pair's recorded parent id must be resolvable by Task 11's resolver against the same fixture tree — one test crosses gather and resolve.
+**Must agree:** `writePair` → `readPair` round-trips byte-stable per kind, and the recorded parent id matches the id the walk assigns that folder in the same fixture. The gather↔resolver crossing lives in **Task 11's** steps — the resolver does not exist yet, and a crossing named here would have no task to write it.
 
 **Steps:**
 - [ ] Failing tests per kind: page, Set (parent id), root Collection (parent root), Space (membership), Context (registry entry + membership map), dual-mode (system trash → no pair).
@@ -355,13 +383,14 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 **Steps:**
 - [ ] Failing matrix tests; implement; gates green.
+- [ ] The gather↔resolve crossing: every pair T8's fixtures produced resolves or refuses typed — never throws, never mis-shapes.
 - [ ] Commit: `feat(provenance): the resolver decides; a placement or a typed refusal`
 
 #### Task 12: Restore
 
 **Requirement:** 3 · **Scope ruling (Nathan): actions only — no user interface.** The op, the listing, and the IPC arm ship end-to-end tested; every surface that would call them is sequenced after.
 
-**Why:** The mover: a `restore` mutate op takes a trash-relative pair reference, calls the resolver, executes the placement — move the artifact (drop the stamp, apply final name), delete the pair, and per kind: re-insert the Context registry entry (append, final title), re-apply membership through Task 10's loop under final titles, re-apply the Space list. Branches on nothing (E-2).
+**Why:** The mover: a `restore` mutate op takes a trash-relative pair reference, calls the resolver, executes the placement — move the artifact (drop the stamp, apply final name), delete the pair, and per kind: re-insert the Context registry entry (append, final title), re-apply membership through Task 10's loop — joined by the recorded Space **ids** against the restored `_space.json` files, whose **as-restored** titles are what gets written (E-3: recorded titles are labels; the resolver's final titles are what restore writes). Branches on nothing (E-2).
 
 **Files:**
 - Modify: `src/shared/mutate.ts` — the `restore` op; `src/main/mutate.ts` — the arm.
@@ -405,6 +434,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 - [ ] **Phase 1** — one tuple, one baseline, one silent diff · base `<commit>`
   - [ ] Task 1 — the shared record shape
   - [ ] Task 2 — the baseline projection and its rows
+  - [ ] Task 2a — the walk names what it cannot read
   - [ ] Task 3 — the open path owns one walk
 - [ ] **Phase 2** — the re-mint
   - [ ] Task 4 — detection and adjudication
@@ -422,6 +452,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 ### Rulings
 - Restore's **interface** is out of scope; its actions — resolver, op, listing — ship (Nathan, pre-ratification).
+- Plan review round 1: 8 findings — 3 High (row-copy direction · three-state producer · the fourth gather point), 3 Medium, 2 Low; 7 folded above, 1 moot post-scope-cut (the trigger/live-data contradiction named a step that no longer exists). The spec itself survived the round untouched; the T3/T5 hand-off deviation was verified correct against the real open sequence.
 
 ### Open Against Later Tasks
 ### Deviations
