@@ -168,6 +168,34 @@ describe('unlink cascades (D-3)', () => {
   })
 })
 
+describe('a delete sweep never strips a passenger (G-1a)', () => {
+  const pomSidecar = () => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+
+  it('roots under the deleted Context keep their keys; outside roots still lose them', async () => {
+    await writeFile(pomSidecar(), JSON.stringify({ id: 'sp-pom', '(Projects)': ['Sapphire'] }))
+    const { unlinkContextKey } = await import('./contextCascade')
+    const r = await unlinkContextKey(root, 'Projects', join(contextsDir(root), 'Projects'))
+    expect(r.ok).toBe(true)
+    // The passenger keeps the key it will carry into the trash.
+    const pom = JSON.parse(await readFile(pomSidecar(), 'utf8'))
+    expect(pom['(Projects)']).toEqual(['Sapphire'])
+    // The control: the sweep still ran everywhere outside the subtree.
+    expect('(Projects)' in (await fmOf(page()))).toBe(false)
+    expect('(Projects)' in JSON.parse(await readFile(csSidecar(), 'utf8'))).toBe(false)
+  })
+
+  it('the rename cascade still reaches inside its own Context — the skip is the delete’s alone', async () => {
+    await writeFile(pomSidecar(), JSON.stringify({ id: 'sp-pom', '(Projects)': ['Sapphire'] }))
+    const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
+    expect(r.ok).toBe(true)
+    const pom = JSON.parse(
+      await readFile(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'), 'utf8'),
+    )
+    expect(pom['(Ventures)']).toEqual(['Sapphire'])
+    expect('(Projects)' in pom).toBe(false)
+  })
+})
+
 describe('replayPendingRename (D-7a crash windows)', () => {
   it('completes a rename crashed before the registry commit', async () => {
     // Crash simulation: journal written, folder renamed, files NOT yet cascaded,

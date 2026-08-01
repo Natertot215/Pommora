@@ -263,10 +263,11 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
       }
       if (req.kind === 'context') {
-        // Unlink the parenthesized key everywhere, then drop the registry entry; the folder
-        // tree (its Spaces included) trashes recoverably below.
+        // Unlink the parenthesized key everywhere OUTSIDE the folder being trashed — the
+        // subtree's own roots are passengers whose links stay true in the trash; then drop
+        // the registry entry; the folder tree (its Spaces included) trashes recoverably below.
         const title = basename(abs)
-        await unlinkContextKey(root, title)
+        await unlinkContextKey(root, title, abs)
         await mutateRegistryFile(root, (cur) => ({
           contexts: cur.contexts.filter((c) => c.title !== title),
         }))

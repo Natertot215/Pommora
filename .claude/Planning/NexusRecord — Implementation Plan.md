@@ -263,8 +263,8 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Sibling sweep:** `cascadeTitle` shares `sweepContextRoots` — the rename path must NOT gain the skip (a rename's subtree stays live and must be swept). The skip rides the unlink wrappers, never the shared sweep core. One test pins the rename path still reaching an in-Context Space.
 
 **Steps:**
-- [ ] Failing test first; fix; both controls green; gates green.
-- [ ] Commit: `fix(contexts): a delete's sweep never strips the subtree it is trashing`
+- [x] Failing test first; fix; both controls green; gates green.
+- [x] Commit: `fix(contexts): a delete's sweep never strips the subtree it is trashing`
 
 #### Task 7: The sweep tells the truth about what it did
 
@@ -442,8 +442,8 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - [x] **Phase 2** — the re-mint · base `5bc40a2c`
   - [x] Task 4 — detection and adjudication · `9c97b376`
   - [x] Task 5 — the re-mint writes · `0c34dd2a`
-- [ ] **Phase 3** — the sweep and the pair
-  - [ ] Task 6 — the sweep never strips a passenger
+- [ ] **Phase 3** — the sweep and the pair · base `f136d56b`
+  - [x] Task 6 — the sweep never strips a passenger
   - [ ] Task 7 — the sweep tells the truth
   - [ ] Task 8 — the pair
   - [ ] Task 9 — absorb the snapshot; remove the residue
