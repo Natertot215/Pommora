@@ -128,9 +128,9 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 **Negative control:** the `adopted-` filter — and its subject must be the harmful shape, not the benign one: project a fixture whose Collection sidecar is **corrupt** (present but unparseable), assert the entry projects `unreadable` rather than being dropped as un-adopted; then a genuinely un-adopted folder, assert absent; disable the filter, assert red. `stampAdopted` runs before every walk in production, so the filter's main real-world input is the corrupt case.
 
 **Steps:**
-- [ ] Failing tests first (projection, both filter controls, null-handle no-op).
-- [ ] Implement; gates green.
-- [ ] Commit: `feat(record): the baseline projection and its device-local rows`
+- [x] Failing tests first (projection, both filter controls, null-handle no-op).
+- [x] Implement; gates green.
+- [x] Commit: `feat(record): the baseline projection and its device-local rows`
 
 #### Task 2a: The walk names what it cannot read
 
@@ -436,7 +436,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 ### Progress
 - [ ] **Phase 1** — one tuple, one baseline, one silent diff · base `680d996f`
   - [x] Task 1 — the shared record shape
-  - [ ] Task 2 — the baseline projection and its rows
+  - [x] Task 2 — the baseline projection and its rows
   - [ ] Task 2a — the walk names what it cannot read
   - [ ] Task 3 — the open path owns one walk
 - [ ] **Phase 2** — the re-mint
@@ -462,6 +462,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 
 ### Open Against Later Tasks
 ### Deviations
+- **T2:** the writer's merge shipped as `latchBaseline(projection, unreadablePaths, prior)` in `record.ts` rather than as inline logic in T3's wiring — every carry/drop/ambiguous rule is pure and tested where the projection lives; T3 wires `projectBaseline → latch → diff → rows` and stays thin. `projectBaseline` returns `{ entries, duplicates }` (T4 consumes `duplicates` directly). The unreadable list rides as a parameter, not read off the tree, so T2 ships before T2a adds the field.
 ### Lessons
 ### Sequenced After
 - Every surface: the restore trigger, the trash browser, any compare view — each invokes actions this build ships.
