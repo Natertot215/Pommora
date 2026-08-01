@@ -2,10 +2,13 @@
 // per-entity map, latch it against the prior session's baseline, and persist both the baseline
 // and the last non-empty drift as device-local rows. Derived, per-machine, rebuildable.
 
-import type { BaselineDiff, EntityRecord } from '@shared/record'
+import { type BaselineDiff, diffBaselines, type EntityRecord, isEmptyDiff } from '@shared/record'
+import { errText } from '@shared/result'
 import type { NexusTree, PageNode, SetNode } from '@shared/types'
 import { readKey, writeKey } from './db/localState'
 import { isAdoptedId } from './ids'
+import { CONTEXTS_REGISTRY_REL } from './paths'
+import { readNexus } from './readNexus'
 
 /** `ambiguous` marks an id the walk saw at 2+ paths that the prior session could not
  *  adjudicate — its recorded path is stale by construction, so it leaves the diff. */
@@ -88,7 +91,48 @@ export function latchBaseline(
     if (!(id in out) && !(id in projection.duplicates) && unreadable.has(p.path))
       out[id] = { ...p, state: 'unreadable' }
   }
+  // An unusable registry blanks the whole Contexts layer in one stroke — carry every prior
+  // group and Space as unreadable rather than reading the blank as mass deletion.
+  if (unreadable.has(CONTEXTS_REGISTRY_REL)) {
+    for (const [id, p] of Object.entries(prior ?? {})) {
+      if ((p.kind === 'context' || p.kind === 'space') && !(id in out))
+        out[id] = { ...p, state: 'unreadable' }
+    }
+  }
   return out
+}
+
+/** The open path's record pass: one explicit walk, latched against the prior session, the
+ *  drift kept only when it says something (an uneventful open must not overwrite the one
+ *  interesting record), the new baseline written last. A failed walk retains the prior
+ *  baseline — the open itself proceeds. */
+export async function runOpenRecord(root: string): Promise<void> {
+  let tree: NexusTree
+  try {
+    tree = await readNexus(root)
+  } catch (e) {
+    console.error('record: open walk failed; the prior baseline stands:', errText(e))
+    return
+  }
+  latchOpenTree(tree)
+}
+
+/** Ambiguous entries leave both sides of the diff: their recorded path is stale by
+ *  construction, and re-reporting the same phantom every open would overwrite the
+ *  last-non-empty drift row. */
+const unambiguous = (b: Baseline): Record<string, EntityRecord> =>
+  Object.fromEntries(Object.entries(b).filter(([, e]) => !e.ambiguous))
+
+/** The tree half of the open pass, split from the walk so fixtures can drive it directly. */
+export function latchOpenTree(tree: NexusTree): void {
+  const prior = readBaseline()
+  const unreadablePaths = (tree.unreadable ?? []).map((u) => u.path)
+  const next = latchBaseline(projectBaseline(tree), unreadablePaths, prior)
+  if (prior !== null) {
+    const drift = diffBaselines(unambiguous(prior), unambiguous(next))
+    if (!isEmptyDiff(drift)) writeDrift(drift)
+  }
+  writeBaseline(next)
 }
 
 export function readBaseline(): Baseline | null {

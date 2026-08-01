@@ -24,6 +24,7 @@ import { BUSY, NO_NEXUS, push, scopeGet, scopeSet, serveBridge } from './ipc'
 import type { MutateRequest, ContextTarget } from '@shared/mutate'
 import { WINDOW_BG } from '@shared/theme'
 import { readNexus } from './readNexus'
+import { runOpenRecord } from './record'
 import { readPage } from './readPage'
 import {
   convertTileToPage,
@@ -324,16 +325,19 @@ const adopting = (): boolean => adoptingDepth > 0
 
 // Open a chosen nexus folder: make it the session, persist it as last-opened, and
 // push it onto the recents (deduped, capped) + the OS Recent Documents list.
-async function adoptNexus(path: string): Promise<void> {
+// `latchRecord: false` is the mid-session re-point's opt-out: only a GENUINE open latches the
+// record baseline — a re-point that latched would diff the live session against the launch
+// baseline, reporting every in-session change as drift and overwriting the closed-window record.
+async function adoptNexus(path: string, latchRecord = true): Promise<void> {
   adoptingDepth++
   try {
-    await adoptNexusInner(path)
+    await adoptNexusInner(path, latchRecord)
   } finally {
     adoptingDepth--
   }
 }
 
-async function adoptNexusInner(path: string): Promise<void> {
+async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void> {
   await openSession(path)
   // openSession canonicalized the root (realpath); thread THAT everywhere below so the watcher's
   // session-match guard and the persistence layer key off the same string — a raw path here
@@ -344,6 +348,9 @@ async function adoptNexusInner(path: string): Promise<void> {
   await replayPendingRename(root)
   // Best-effort: a null handle costs the session its persisted chrome, never its content.
   openSessionDb(root)
+  // The record's one explicit walk — BEFORE the watcher starts, so the baseline latches what
+  // the closed window left rather than whatever a sync daemon materializes first.
+  if (latchRecord) await runOpenRecord(root)
   // A user-initiated open always has a window; launch-restore starts its watcher after
   // createWindow below instead.
   if (mainWindow) void startWatcher(root, mainWindow)
@@ -1560,9 +1567,10 @@ serveBridge(
           return fail('operation-failed', 'A folder with that name already exists.')
         await rename(root, newRoot)
         // RE-POINT: adoptNexus does exactly the re-target work (openSession + openSessionDb +
-        // startWatcher + lastNexusPath/recents + addRecentDocument + refreshMenu) with no
-        // adoption-only side effects to skip, so reuse it rather than replicate the calls.
-        await adoptNexus(newRoot)
+        // startWatcher + lastNexusPath/recents + addRecentDocument + refreshMenu), so reuse it
+        // rather than replicate the calls — opting out of the record latch, which belongs to
+        // genuine opens only.
+        await adoptNexus(newRoot, false)
         return ok(null)
       },
     },
@@ -1610,6 +1618,7 @@ app
         await prepareOpenedNexus(root)
         await replayPendingRename(root)
         openSessionDb(root)
+        await runOpenRecord(root)
       }
     } catch (e) {
       console.error('Restore skipped (config unreadable):', e)

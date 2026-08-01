@@ -26,10 +26,13 @@ export function nexusConfig(root: string, file: string): string {
   return join(nexusDir(root), file)
 }
 
-/** The Contexts registry — `.nexus/contexts.json` (per-Context id, title, singular, icon;
- *  array position is the order). */
+/** The Contexts registry's nexus-relative spelling — the walk's unreadable list and the
+ *  record's baseline name it by this exact string. */
+export const CONTEXTS_REGISTRY_REL = '.nexus/contexts.json'
+
+/** The Contexts registry (per-Context id, title, singular, icon; array position is the order). */
 export function contextsRegistryFile(root: string): string {
-  return join(nexusDir(root), 'contexts.json')
+  return join(root, CONTEXTS_REGISTRY_REL)
 }
 
 /** The Space tree root — `.nexus/contexts/<Context Title>/<Space Title>/`. */

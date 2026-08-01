@@ -176,10 +176,10 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Failure half:** walk throws (unreadable root) → open proceeds, no baseline written this session, prior baseline retained · empty diff → drift row untouched (last non-empty preserved) · first-ever open → baseline latches, no drift · an ambiguous id with **no prior entry** (created and copied inside one closed window — or already duplicated when the feature first ships) → **one current path is recorded, unmarked, walk-order-first**, so the *next* open adjudicates against a stable reference and the other claimant re-mints then. Omission was considered and rejected: it re-freezes forever (no prior entry next open either), which is the hoarding A-5 forbids — and with two identical copies "wrong twin keeps the id" is barely a cost, while "neither ever re-mints" leaves them sharing chrome rows indefinitely · an ambiguous id whose **recorded path no longer exists** → the writer **drops the entry** (A-5's unadjudicable verb, executed where the write happens, not merely classified by the adjudicator).
 
 **Steps:**
-- [ ] Fixture test: two opens with a rename between → drift names it; third uneventful open → drift unchanged.
-- [ ] Wire the funnel + launch-restore; gates green; build green.
-- [ ] Rewrite `nexus:rename`'s reuse comment in the same commit — it justifies the reuse by "no adoption-only side effects to skip," which the opt-out makes false; restate as always-true per the house rule.
-- [ ] Commit: `feat(record): the open path walks once and the baseline latches`
+- [x] Fixture test: two opens with a rename between → drift names it; third uneventful open → drift unchanged.
+- [x] Wire the funnel + launch-restore; gates green; build green.
+- [x] Rewrite `nexus:rename`'s reuse comment in the same commit — it justifies the reuse by "no adoption-only side effects to skip," which the opt-out makes false; restate as always-true per the house rule.
+- [x] Commit: `feat(record): the open path walks once and the baseline latches`
 
 #### Gate 1 — the baseline exists and lies about nothing
 - [ ] Gates green, exit codes direct.
@@ -438,7 +438,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
   - [x] Task 1 — the shared record shape
   - [x] Task 2 — the baseline projection and its rows
   - [x] Task 2a — the walk names what it cannot read
-  - [ ] Task 3 — the open path owns one walk
+  - [x] Task 3 — the open path owns one walk
 - [ ] **Phase 2** — the re-mint
   - [ ] Task 4 — detection and adjudication
   - [ ] Task 5 — the re-mint writes
@@ -462,6 +462,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 
 ### Open Against Later Tasks
 ### Deviations
+- **T3:** the open pass split as `runOpenRecord(root)` (walk + guard) → `latchOpenTree(tree)` (rows), both in `record.ts` — index.ts holds one awaited call per open path and no record logic. T4's re-mint slots inside `runOpenRecord` between the walk and the latch, exactly where the order is load-bearing.
 - **T2a:** a fourth producer joined the three planned ones — a **present-but-unusable contexts registry** (`.nexus/contexts.json` corrupt or shape-invalid) blanks the whole Contexts layer in one stroke, which the baseline would read as mass deletion of every group and Space. The walk now records the registry's own path on the list; T3's latch carries prior `context`/`space` entries as unreadable when that path is listed. Absent registry (real raw mode) stays silent.
 - **T2:** the writer's merge shipped as `latchBaseline(projection, unreadablePaths, prior)` in `record.ts` rather than as inline logic in T3's wiring — every carry/drop/ambiguous rule is pure and tested where the projection lives; T3 wires `projectBaseline → latch → diff → rows` and stays thin. `projectBaseline` returns `{ entries, duplicates }` (T4 consumes `duplicates` directly). The unreadable list rides as a parameter, not read off the tree, so T2 ships before T2a adds the field.
 ### Lessons
