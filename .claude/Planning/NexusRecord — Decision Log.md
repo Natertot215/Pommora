@@ -1,6 +1,6 @@
 ## NexusRecord — Decision Log
 
-> **Status:** V6 — the third attack round's thirteen findings fold. The pair-beside-the-artifact shape survived that round untouched; what reworked is the re-mint (now covering container ids, preserving its evidence across sessions, and patching the handed tree) and restore's join key (the resolver's final title, never the recorded one). Pending a narrow verification round on the changed decisions only, then the plan.
+> **Status:** settled, pending a scoped verification round, then the implementation plan. Every decision below is ratified by Nathan or derived from a verified fact; none is open.
 
 ### Frame
 
@@ -10,7 +10,7 @@
   - A page is trashed; its parent folder is renamed; the page restores into the renamed folder.
   - A folder is trashed with pages inside it; restoring the folder restores its contents intact.
   - A Space tagged on many pages is deleted and restored; the pages that still exist carry its tag again.
-  - A Finder-duplicated page stops rendering its twin's property values: the copy is identified against the prior baseline and re-minted.
+  - A duplicated file or folder stops sharing its twin's identity: the copy is adjudicated against the prior baseline and re-minted.
   - Adding a tracked fact later is additive — no entry-shape change, no differ rewrite.
   - The code that performs a restore holds no domain policy of its own.
 
@@ -18,115 +18,112 @@
 
 They share a module and nothing else.
 
-- **Provenance** — where a departed entity belonged and what it carried. A **paired JSON written beside the artifact in `.trash`**, named from the artifact's final stamped leaf. It is created by the delete, read by restore, deleted with its artifact, and never enters the live tree.
+- **Provenance** — where a departed entity belonged and what it carried. A **paired JSON written beside the artifact in `.trash`**, named from the artifact's final stamped leaf. Created by the delete, read by restore, deleted with its artifact, never entering the live tree.
 - **Baseline** — what the walk last saw. A derived per-machine projection in `nexus.db`, written once per session, read once per session.
 
 ### Sources
 
-- `.claude/Planning/Identity + Enforcement — Decision Log.md` — D-15 (duplicate content ids) and D-17 (the record serves structural revert and trash restore). D-15 folds in via the baseline; see A-5.
+- `.claude/Planning/Identity + Enforcement — Decision Log.md` — D-15 (duplicate ids; folds in via the baseline, see A-5) and D-17 (one record serving structural revert and trash restore).
 - Commit `be671378` — *"parent_id leaves — folder nesting was always the parentage."* Constrains B-3.
-- `src/main/io/atomicWrite.ts` — `trashWithTimestamp`; mirrors the folder chain, stamps the leaf, de-collides with a counter, moves the whole subtree in one rename, and **returns the final destination** — the pair name derives from it.
-- `src/main/mutate.ts` — the `delete` arm and `removeViaMode`'s two trash modes; the unlink sweeps run before the move and return `{ touched, skipped }`, discarded at the call site.
-- `src/main/crud/contextCascade.ts` — `sweepContextRoots` hands its callback each file's parsed frontmatter, so the page's id and its Space values are in hand at the moment of removal; `unlinkContextKey` / `unlinkSpaceValue` wrap it.
-- `src/main/watcher.ts` — the ignore predicate. `.nexus/` **is watched**; `.trash` and `nexus.db` are ignored — a pair write in `.trash` costs no watcher event.
-- `src/main/index.ts` — `prepareOpenedNexus` holds no tree; the walk is called from the watcher push, the state IPC arm, and `crud/assignment.ts`.
-- `src/renderer/src/store.ts` — `mutate` applies an optimistic patch then calls `load()`, which confirms canon; every in-app structural mutation already causes a walk.
-- `src/main/crud/removeProperty.ts` — the `property_cache` block: id-keyed, reconciled per value on restore, co-located with its Collection. The reconciliation model restore copies.
-- `src/main/crud/deleteProperty.ts` — the path-keyed snapshot; raw non-atomic write, flat in `.trash`, read by nothing.
+- `src/main/io/atomicWrite.ts` — `trashWithTimestamp`: mirrors the folder chain, stamps the leaf, de-collides with a counter, moves a whole subtree in one rename, and returns the final destination the pair name derives from.
+- `src/main/mutate.ts` — the `delete` arm's real order (sweep → registry erase → move) and `removeViaMode`'s two trash modes.
+- `src/main/crud/contextCascade.ts` — `sweepContextRoots` hands its callback each swept root's parsed frontmatter; `unlinkContextKey` / `unlinkSpaceValue` wrap it; the same sweep serves the rename cascade.
+- `src/main/watcher.ts` — `.nexus/` is watched; `.trash` and `nexus.db` are ignored, so a pair write costs no watcher event.
+- `src/main/index.ts` — `prepareOpenedNexus` holds no tree; the watcher starts before the renderer's first state request.
+- `src/renderer/src/store.ts` — `mutate` patches optimistically then confirms with a walk; the error arm skips both, and the write-echo suppresses the watcher push.
+- `src/main/crud/removeProperty.ts` — the `property_cache` block: id-keyed, reconciled per value on restore, co-located with its Collection.
+- `src/main/crud/deleteProperty.ts` — the property snapshot: path-keyed, non-atomic, flat in `.trash`, read by nothing.
 - `src/main/crud/contextJournal.ts` · `contextCascade.ts` — the rename journal and its discard branches.
-- `src/main/crud/folderEntity.ts` — folder name = title; the filesystem itself forbids two same-titled Spaces in one Context, creates disambiguate, renames refuse.
-- `src/shared/types.ts` — `NodeKind`, the discriminant on every walked node.
+- `src/main/crud/contextWrite.ts` — a Context's folder resolves as `contextsDir/<title>`; a freed title is immediately mintable by a new Space or Context.
+- `src/main/crud/folderEntity.ts` — folder name = title; creates disambiguate on collision, renames refuse.
+- `src/shared/types.ts` — `NodeKind`; a Context group is `{def, spaces}` with no node kind of its own.
 
 ### Decisions
 
 #### A — Scope
 
-- **A-1:** [assumed] The record tracks **structural facts** — identity, location, parentage, existence. No *continuous* content snapshotting. Values may enter as event payloads bounded by an event; they never become baseline fields.
-- **A-2:** [assumed] Compare **reports** external drift; it never auto-reverts. Separately, the app's own *interrupted* work may complete unattended — the rename journal already does, and forbidding it would forbid the record's best future use.
+- **A-1:** [assumed] The record tracks **structural facts** — identity, location, parentage, existence. No *continuous* content snapshotting. Values enter only as event payloads bounded by an event; they never become baseline fields.
+- **A-2:** [assumed] Compare **reports** external drift; it never auto-reverts. Separately, the app's own *interrupted* work may complete unattended — the rename journal already does, and forbidding that would forbid the record's best future use.
 - **A-3:** [assumed] Un-adopted entities are out of scope. The baseline projection **actively filters** `adopted-`-prefixed ids, and a parent whose id is one records as `unaddressable` — a path hash is an address, not an identity.
 - **A-4:** [assumed] Out of scope entirely, stated rather than discovered: **block tiles** (no id key, `.nexus`-resident, invisible to the walk; their trash path writes no pair) and **Tasks/Events** (the walk emits no agenda nodes; widens for free when Agenda joins the walk).
-- **A-5:** [confirmed — Nathan; scope widened by review] **A duplicated id re-mints — content AND container — and the baseline is what makes that safe.** One Finder folder-duplicate copies the sidecar id along with every page id inside, and container ids key the fold, view, thumbnail and asset stores, so the copy and the original share all of them until re-minted. A sidecar id is exactly as re-mintable as a frontmatter one. The prior session's baseline names the path that legitimately held each id; the file or folder at that path is the original, the other re-mints.
-  - **The refusal preserves its evidence.** When the baseline cannot adjudicate, nothing is minted — and the baseline writer must **not** then collapse the ambiguity: an id the walk saw at two or more paths keeps its prior-session path and is marked ambiguous, so a later session still adjudicates against the pre-duplication record rather than against whichever file readdir happened to order last. Without this, the refusal launders a guess into the next session.
-  - **The re-mint patches the tree it was handed.** It runs after the open path's one walk (it needs the walk to see the duplicate), so it rewrites the walked node's id in memory as it writes the file — the renderer's first render shows the re-minted id, no second walk. Its frontmatter write takes the file lock like every other frontmatter writer.
+- **A-5:** [confirmed — Nathan] **A duplicated id re-mints — content and container alike — and the baseline is what makes that safe.** One Finder folder-duplicate copies the sidecar id along with every page id inside, and container ids key the fold, view, thumbnail and asset stores, so the copy and the original share all of them until re-minted. A sidecar id is exactly as re-mintable as a frontmatter one. The prior session's baseline names the path that legitimately held each id; what sits at that path is the original, the other re-mints.
+  - **The refusal preserves its evidence.** When the baseline cannot adjudicate — no baseline, or neither claimant at the recorded path — nothing is minted, and the baseline writer must **not** then collapse the ambiguity: an id the walk saw at two or more paths keeps its prior-session path and is marked ambiguous, so a later session adjudicates against the pre-duplication record rather than against readdir order.
+  - **The re-mint patches the tree it was handed.** It runs after the open path's one walk, so it rewrites the walked node's id in memory as it writes the file — the renderer's first render shows the re-minted id, no second walk. Its frontmatter write takes the file lock like every other frontmatter writer.
   - Silent, per C-7.
 
 #### B — Provenance (the restore half)
 
-- **B-1:** [assumed — Nathan permits either form] Provenance is a **paired JSON beside the trashed artifact**, written **best-effort**: the gather happens at three named points in the delete arm's real order — the registry entry before the erase, the membership during the sweep, the pair name after the move returns — and a pair write that fails does **not** fail the delete. The artifact is already irreversibly moved by then, and a fault reply would leave the renderer showing an entity that is gone from disk (the error arm skips both the optimistic patch and the confirming load, and the write-echo suppresses the watcher push). A missing pair degrades that one entity to hand-restore, which is today's behaviour for everything.
+- **B-1:** [confirmed — Nathan] Provenance is a **paired JSON beside the trashed artifact**. Nathan's rule constrains *what* may be recorded — **ids, never name-based locations**, since a rename rots a name — not where the record lives; an id on the artifact itself would also be legal. The pair wins on cohesion: on-artifact storage needs three shapes (a frontmatter key for pages, a sidecar key for containers, and a new file anyway for Contexts, which have no sidecar), where the pair is one mechanism for every kind, holds the long payloads that have no business in frontmatter, writes nothing into the user's file on the way out, and leaves no residue to strip on the way back.
 
-  Provenance is a **paired JSON beside the trashed artifact**. Nathan's ruling, clarified: a parent **id** may be stored on the deleted item itself — the prohibition is on storing a name-based location, which a rename rots. Both forms are therefore legal, and the pair is chosen on his cohesion criterion, not on permission: on-artifact storage needs **three shapes** (a frontmatter key for pages, a sidecar key for containers, and — since a Context has no sidecar — a new file inside the trashed folder anyway), where the pair is **one mechanism for every kind**, and it holds the long payloads (a Space's page list, a Context's membership map) that have no business in frontmatter. It also keeps the four dissolved defect classes dissolved. Revisitable if Nathan actively prefers on-artifact; the facts either form must carry are identical.
+  Why a record at trash time is necessary at all: the mirrored chain stores only the old **path**, and the baseline holds only the last **session**, overwritten each open. Once the parent is renamed, no surviving structure maps the stale path to the parent's stable id — so the id is captured at the moment of departure.
 
-  The delete arm gathers what it needs *before* the move — reading, not writing — then writes one pair file next to the destination `trashWithTimestamp` returns. Nothing touches the user's file on the way out, and nothing rides back into the tree on restore.
-
-  Why a record at trash time is still necessary, double-checked: the mirrored chain stores only the **old path**, and the baseline holds only the **last session**, overwritten each open. Once the parent is renamed, no surviving structure maps the stale path to the parent's stable id — so the id must be captured at the moment of departure. It just doesn't have to be captured *inside* the file.
-
-  What this dissolves, from the second attack round: the file-lock hazard (nothing writes to a live page, so nothing races the autosave) · the malformed-frontmatter branch (five of eight shapes refused a frontmatter write; a pair write reads the file at most and writes beside it) · the strip-at-restore pass and its adoption gate (no key ever sits on a restored file) · the empty-fence flow-style degradation (no fence is ever created).
-- **B-2:** [assumed] One pair per trashed **top**. `trashWithTimestamp` moves a whole subtree in one rename; passengers keep their nesting and need nothing. The pair is named from the final stamped leaf — the de-collision counter included — so pairing is unambiguous.
-- **B-3:** [assumed] This does not touch `be671378`. No pointer is written on any live entity, and none is written on the dead one either — the pair sits beside it.
-- **B-4:** [assumed] The pair's parent field is a **discriminated union**: root · container by id · Context by registry id · unaddressable. Root-level Collections, Spaces and Contexts have no parent sidecar; a folder made outside the app before adoption has no id at all; a path-derived synthetic id is an address. Each records honestly rather than pretending to a bare id.
+  The write is **best-effort, gathered at three named points** in the delete arm's real order: the registry entry before the erase, the membership during the sweep, the pair name after the move returns. A pair write that fails does **not** fail the delete — the artifact is already irreversibly moved, and a fault reply would leave the renderer showing an entity that is gone from disk. A missing pair degrades that one entity to hand-restore, which is today's behaviour for everything.
+- **B-2:** [assumed] One pair per trashed **top**. The trash primitive moves a whole subtree in one rename; passengers keep their nesting and need nothing. The pair is named from the final stamped leaf — de-collision counter included — so pairing is injective.
+- **B-3:** [assumed] This does not touch `be671378`. No pointer is written on any live entity, and none on the dead one either — the pair sits beside it.
+- **B-4:** [assumed] The pair's parent field is a **discriminated union**: root · container by id · Context by registry id · unaddressable. Root-level Collections, Spaces and Contexts have no parent sidecar; a folder made outside the app before adoption has no id at all; a path-derived synthetic is an address. Each records honestly rather than pretending to a bare id.
 - **B-5:** [assumed] Per-kind payloads ride the same pair:
-  - a **Context** carries its **own registry entry** — id, title, icon — because its identity lives only in the registry, which the delete arm erases before the folder moves. Verified: a perfectly hand-restored Context folder returns nothing without it. No position is recorded: registry order is array position, meaningless after any reorder while the Context sat in trash — restore **appends at the end**, stated rather than guessed. It also carries the membership map per A-1b. Its restore refuses on a **live title collision**: the registry key space IS the title (every page's frontmatter holds the parenthesized title), so two registry ids must never point at one folder.
-  - a **Space** carries the membership list per A-1a.
+  - a **Context** carries its **own registry entry** — id, title, icon — because its identity lives only in the registry, which the delete erases before the folder moves; a perfectly hand-restored Context folder returns nothing without it. No position is recorded: registry order is array position, meaningless after any reorder while the Context sat in trash, so restore **appends at the end**. It also carries the membership map per G-3.
+  - a **Space** carries the membership list per G-1.
   - pages and ordinary containers carry parent + identity and nothing else.
+  - the **property snapshot** is the pair shape's one **artifact-less variant** — nothing is trashed when a property is deleted, so there is no leaf to pair with; the orphan prune exempts the variant, or it would eat the recovery net the delete confirmation promises.
 - **B-6:** [assumed] Under **system trash mode** the artifact leaves the nexus through the OS and no pair is written — there is nowhere valid for it to point. The restore surface covers nexus-trash mode only and says so; the delete confirmation already distinguishes the modes.
-- **B-7:** [assumed] A pair whose artifact is gone — trash emptied by hand in Finder — is orphaned and harmless; restore listing prunes orphans as it encounters them. A hand-restored artifact leaves its pair behind the same way, and carries **no residue at all** into the live tree.
+- **B-7:** [assumed] A pair whose artifact is gone — trash emptied by hand in Finder — is orphaned and harmless; restore listing prunes orphans as it encounters them, exempting the artifact-less variant. A hand-restored artifact leaves its pair behind the same way, and carries no residue into the live tree.
 
 #### C — Baseline (the compare half)
 
 - **C-1:** [assumed] The baseline lives in `nexus.db` as a `local_state` row. It is derived, per-machine, and rebuildable by definition. `.nexus/` is watched, so a per-gesture document there buys re-walks; the database is ignored *because* it thrashes.
-- **C-2:** [assumed] The **open path owns one walk explicitly**: `adoptNexus` and launch-restore call it after the database opens and hand that one tree to the baseline writer and the renderer's first state read. Not "whichever walk happens first" — the watcher starts before the renderer's first request, and a sync daemon materialising another device's changes would otherwise make the post-change walk the baseline.
+- **C-2:** [assumed] The **open path owns one walk explicitly**: `adoptNexus` and launch-restore call it after the database opens and hand that one tree to the baseline writer, the re-mint pass, and the renderer's first state read. Not "whichever walk happens first" — the watcher starts before the renderer's first request, and a sync daemon materialising another device's changes would otherwise make the post-change walk the baseline.
 - **C-2a:** [assumed] An **absent** prior baseline is a distinct outcome: latch and report nothing. First-ever open, a schema bump that drops the database, and a null handle on locked media all reach it; treating absence as an empty map would report every entity as created.
-- **C-3:** [assumed] **No mutation hooks.** Every in-app structural change already triggers a confirming walk; the next session's baseline captures it.
+- **C-3:** [assumed] **No mutation hooks.** Every in-app structural change already triggers a confirming walk; the next session's baseline captures it. The one exception is stated in A-5: the re-mint patches the handed tree itself.
 - **C-4:** [assumed] The watcher already attributes live-session drift in memory. The baseline covers only the window when the app was closed.
 - **C-5:** [assumed] The diff runs over the **union** of keys with absence as a first-class value; tracked fields are **scalars**. Non-scalar facts enter as event payloads, never baseline fields.
-- **C-5a:** [assumed] **Existence has three states** — present, absent, unreadable. The walk drops a file whose frontmatter went Unknown and synthesizes an id for a container whose sidecar is unreadable; a two-state diff reports a hand-edit typo as a deletion. The walk distinguishes these internally; the projection carries it through.
-- **C-6:** [assumed — widened by review] `kind` derives from `NodeKind` **plus `context`**. A Context group carries no node kind — it is `{def, spaces}` in its own array — yet it is trashable, id-bearing, and holds the richest pair; a projection that cannot represent it can never report a Context created, renamed or deleted while the app was closed. Still no `homepage` member (no id, no path, not trashable). Widens further with the walk.
-- **C-7:** [confirmed — Nathan] **Compare is silent.** The diff is computed at open — it must be, since the prior baseline is overwritten in the same breath — and its result is kept as a quiet device-local row holding the **last non-empty** diff: an uneventful open must not overwrite the one interesting record with nothing, or the row can never be read by the surface that eventually wants it. No surface, no notification now.
+- **C-5a:** [assumed] **Existence has three states** — present, absent, unreadable. The walk drops a file whose frontmatter went Unknown and synthesizes an id for a container whose sidecar is unreadable; a two-state diff would report a hand-edit typo as a deletion. The walk distinguishes these internally; the projection carries it through.
+- **C-6:** [assumed] `kind` derives from `NodeKind` **plus `context`**. A Context group carries no node kind — it is `{def, spaces}` in its own array — yet it is trashable, id-bearing, and holds the richest pair; a projection that cannot represent it can never report a Context created, renamed or deleted while the app was closed. No `homepage` member (no id, no path, not trashable). Widens further with the walk.
+- **C-7:** [confirmed — Nathan] **Compare is silent.** The diff is computed at open — it must be, since the prior baseline is overwritten in the same breath — and its result is kept as a quiet device-local row holding the **last non-empty** diff, so an uneventful open cannot overwrite the one interesting record with nothing. No surface, no notification; a surface, when one is wanted, reads what is already recorded.
 
 #### D — What Is Not Absorbed
 
-- **D-1:** [assumed — variant added by review] **Absorb the property Delete snapshot** — path-keyed, non-atomic, flat in `.trash`, read by nothing — as the pair shape's one **artifact-less variant**: nothing is trashed when a property is deleted, so there is no leaf to pair with and no artifact whose absence means anything. The orphan prune explicitly exempts the variant, or it would eat the one recovery net the delete confirmation promises the user.
-- **D-2:** [assumed] **Leave the Remove cache alone.** Its correctness is its reconciliation branches; it is co-located with its Collection and travels with it. Its per-value spend-on-landed-write model is *copied* by restore, not centralized.
-- **D-3:** [assumed] **Leave the rename journal separate.** Eleven discard branches, one of which must never generalize: discard, never hijack.
-- **D-4:** [assumed] **Leave the order arrays alone.**
-- **D-5:** [confirmed by evidence] No migration anywhere: zero `property_cache` blocks exist on either live nexus, and the pair mechanism creates files only in `.trash`.
-
-#### F — Consolidation (Nathan's lens: leave no adjacent residue for a future pass)
-
-- **F-1:** [confirmed — Nathan's directive] The feature absorbs its neighbourhood **now**. A future consolidation pass must not find mechanisms this work should have taken; simplicity and cohesion outrank minimal diff.
-- **F-2:** [assumed] Absorbed outright: the **property Delete snapshot** becomes an ordinary pair (fixing, in one move, its path key, its non-atomic raw write, and its flat un-collided placement).
-- **F-3:** [assumed] Residue removed in the same work, because the delete path is already open under the editor: the **`removed_at`** field the Remove cache writes and nothing reads · the **four unreachable cascade-failure branches** in the context cascade, whose precondition every caller has already resolved · the **stale comment** claiming `trashWithTimestamp` is shared by crud delete helpers that do not exist.
-- **F-4:** [assumed] **One reconciliation loop.** Tag re-application on restore is the Remove cache's spend-per-landed-write shape; the plan implements it by extracting that loop and pointing both at it where the shapes genuinely align — never by writing a parallel one. The Remove cache's storage and its type-revalidation branches stay exactly where they are.
-- **F-5:** [assumed] **The per-entity tuple gets one owner.** The baseline's `{ id, kind, title, path }` shape is declared once in `src/shared/`, and the renderer's tree-index record aligns to it rather than restating it — the two are the same fact in two processes today.
-- **F-6:** [assumed] Explicitly NOT absorbed, each a different mechanism rather than a deferred absorption: the **Remove cache** (a value cache on a live entity — nothing departs) · the **rename journal** (a transaction log whose discard branches are domain law) · the **order arrays** (display state with read-time tolerance). A future pass finding these should find this paragraph.
+- **D-1:** [assumed] **Leave the Remove cache's storage where it is** — co-located with its Collection, travelling with it through rename, move, trash-restore and copy. Restore's re-application uses **the same reconciliation loop** per F-4; the loop is shared, the storage is not.
+- **D-2:** [assumed] **Leave the rename journal separate.** It is a transaction log whose correctness is its discard branches — one of which must never generalize: discard, never hijack a re-minted title.
+- **D-3:** [assumed] **Leave the order arrays alone.** Absorbing them means inventing a purge that does not exist.
+- **D-4:** [confirmed by evidence] No migration anywhere: zero `property_cache` blocks exist on either live nexus, and the pair mechanism creates files only in `.trash`.
 
 #### E — Resolution
 
-- **E-1:** [assumed] The record **decides** and returns the decision as data: a placement (directory + final name) or a typed refusal — parent gone · parent cannot hold this kind · parent unaddressable · trashed outside the nexus · id already live.
-- **E-2:** [assumed] The acting code branches on nothing — a mover, not a decider. Name choice on collision is the resolver's, since choosing is deciding.
-- **E-3:** [assumed] A name collision at the target **disambiguates**, as creates already do; the resolver returns the chosen name.
+- **E-1:** [assumed] The record **decides** and returns the decision as data: a placement — directory, final name, and for a Context the final registry title — or a typed refusal: parent gone · parent cannot hold this kind · parent unaddressable · trashed outside the nexus · id already live.
+- **E-2:** [assumed] The acting code branches on nothing — a mover, not a decider. Every name and title choice is the resolver's, since choosing is deciding.
+- **E-3:** [assumed] A name or title collision at the target **disambiguates**, as creates already do, for every kind including Contexts: the restored registry entry, its folder, and every re-applied membership key all use the resolver's final title, so two registry ids can never point at one folder. Titles recorded in a pair are labels; **the resolver's final titles are what restore writes**, never the recorded ones — title uniqueness holds only at a moment, and nothing stops an impostor minting a freed title while the original sits in trash.
 - **E-4:** [assumed] Restoring a child out of a still-trashed parent refuses rather than guessing.
 - **E-5:** [assumed] If a fix ever needs ordering, the resolver returns an ordered plan.
 
-#### Membership capture
+#### F — Consolidation (Nathan's lens: leave no adjacent residue for a future pass)
 
-- **A-1a:** [assumed — cost restated by review] **Membership is captured at the sweep, keyed per swept root — pages AND Space sidecars.** Spaces are context-taggable themselves, and the unlink sweep strips `_space.json` roots exactly as it strips pages; a page-only capture would silently destroy every Space-to-Space link a deleted Context held. The capture discriminates the root by which id key it carries.
+- **F-1:** [confirmed — Nathan] The feature absorbs its neighbourhood **now**. A future consolidation pass must not find mechanisms this work should have taken; simplicity and cohesion outrank minimal diff.
+- **F-2:** [assumed] Absorbed outright: the **property Delete snapshot** becomes the pair's artifact-less variant (fixing, in one move, its path key, its non-atomic raw write, and its flat un-collided placement).
+- **F-3:** [assumed] Residue removed in the same work, because the delete path is already open under the editor: the `removed_at` field the Remove cache writes and nothing reads · the four unreachable cascade-failure branches in the context cascade · the stale comment claiming the trash primitive is shared by crud delete helpers that do not exist.
+- **F-4:** [assumed] **One reconciliation loop.** Tag re-application on restore is the Remove cache's spend-per-landed-write shape; the plan extracts that loop and points both at it — never a parallel one. The Remove cache's storage and its type-revalidation branches stay exactly where they are.
+- **F-5:** [assumed] **The per-entity tuple gets one owner.** The baseline's `{ id, kind, title, path }` shape is declared once in `src/shared/`, and the renderer's tree-index record aligns to it rather than restating it.
+- **F-6:** [assumed] Explicitly not absorbed, each a different mechanism rather than a deferred absorption: the **Remove cache** (a value cache on a live entity — nothing departs) · the **rename journal** (a transaction log whose discard branches are domain law) · the **order arrays** (display state with read-time tolerance). A future pass finding these should find this paragraph.
 
-  This is a **signature change to the shared sweep, not a free ride**: the callback gains the file path beside the parsed frontmatter, the return gains the captured values, and the sweep also serves the rename cascade — the widening reaches it. The sweep further grows a **third list** for admission-refused files (a dual-key page keeps its context key through the delete and today appears in neither `touched` nor `skipped`), and the pair records itself as **partial** when that list or `skipped` is non-empty rather than claiming completeness. Restore re-applies per entry, reconciling like the Remove cache — spend an entry only on a landed write, skip what has since moved or died. No standing reverse index exists or is created.
-- **A-1b:** [confirmed — Nathan; join reworked by review] A **Context** delete records, per swept root, the **Space list** the stripped key held, each Space as **`{ id, title }`**. The id is the identity; the recorded title is a *label*, because title uniqueness holds only at a moment — nothing stops a new Space or Context minting the freed title while the old one sits in trash, and a title-keyed re-apply would tag every recorded page onto the impostor. **Re-application always writes the resolver's FINAL titles** — the restored Context's final key, the restored Spaces' final folder names — never the recorded ones.
+#### G — Membership capture
+
+- **G-1:** [assumed] **Membership is captured at the sweep, keyed per swept root — pages and Space sidecars alike.** Spaces are context-taggable themselves, and the unlink sweep strips `_space.json` roots exactly as it strips pages; a page-only capture would silently destroy every Space-to-Space link a deleted Context held. The capture discriminates the root by which id key it carries.
+- **G-2:** [assumed] This is a **signature change to the shared sweep, not a free ride**: the callback gains the file path beside the parsed frontmatter, the return gains the captured values, and the widening reaches the rename cascade, which shares the sweep. The sweep also grows a **third list** for admission-refused roots — a dual-key page keeps its context key through the delete and today appears in neither `touched` nor `skipped` — and the pair records itself **partial** when that list or `skipped` is non-empty, rather than claiming completeness.
+- **G-3:** [confirmed — Nathan] A **Context** delete records, per swept root, the Space list its stripped key held, each Space as `{ id, title }` — one root may carry several values, and a root-only record would restore the key empty. The id is the identity; the title is a label for the resolver, which re-applies under final titles per E-3.
+- **G-4:** [assumed] Restore re-applies per entry through the shared reconciliation loop — spend an entry only on a landed write, skip what has since moved or died. No standing reverse index exists or is created; the set is computed once, at removal, by a sweep that already runs.
 
 ### Core (must-have)
 
-- The pair: its shape, the parent union, per-kind payloads, written by the delete arm from reads made before the move.
-- The resolver, returning a placement + name or a typed refusal.
+- The pair: its shape, the parent union, per-kind payloads and the artifact-less variant, written best-effort by the delete arm from reads made at the three gather points.
+- The resolver, returning a placement with final names or a typed refusal.
 - **A minimal restore path** — without one, pairs are written and never spent.
-- The baseline projection, the open path's one explicit walk, the union-diff with three-state existence, the silent result row.
-- The duplicate-id re-mint at open, baseline-adjudicated, refusing when it cannot adjudicate.
+- The baseline projection, the open path's one explicit walk, the union-diff with three-state existence, the last-non-empty result row.
+- The duplicate-id re-mint at open — content and container — baseline-adjudicated, evidence-preserving, refusing when it cannot adjudicate.
 
 #### Prospects
 
 - **Crash-safe cascades** — the write→act→settle shape with no record today; a page rename's only safety net is an in-memory reverse a crash defeats. The pair + settle shape covers it nearly free.
-- A full trash browse-and-restore surface, and any compare surface — both read what Core already records.
+- A trash browse-and-restore surface, and any compare surface — both read what Core already records.
 - Property and frontmatter change capture, as event payloads.
 - Git as opt-in content history — complementary, never the record; Pommora must never auto-commit.
 
@@ -136,18 +133,17 @@ They share a module and nothing else.
 
 #### Considered & Rejected
 
-- **Provenance written INTO the trashed artifact** (V2/V3). Rejected by Nathan's rule — no writes into content that aren't necessary — and the necessity test failed: a pair beside the artifact carries the same facts. Dissolves the lock hazard, the malformed-frontmatter branch, the strip pass, and the flow-style degradation in one move.
-- **A central `.nexus/record.json`** (V1). `.nexus/` is watched; near a megabyte at scale, fully re-serialized per gesture; entries with no consumer to spend them.
-- **Per-mutation baseline hooks** — the confirming walk already runs.
-- **Append-only ledger** · **record distributed across live container sidecars** · **git as the mechanism** · **once-per-open as the only trigger** — as previously recorded.
+- **Provenance written into the trashed artifact.** Legal under the ids-not-names rule, rejected on cohesion: three shapes instead of one, a new file needed for Contexts anyway, long payloads in frontmatter, a lock against the autosave, refusals on the five frontmatter shapes that cannot round-trip, a strip pass on restore, and a flow-style degradation on pages that had no fence.
+- **A central record document in `.nexus/`.** The folder is watched, so a per-gesture rewrite buys re-walks; near a megabyte at realistic scale, fully re-serialized per patch; entries with no consumer to spend them.
+- **Per-mutation baseline hooks.** The confirming walk already runs after every in-app structural change.
+- **Title as the membership join key.** Uniqueness holds only at a moment; an impostor can mint a freed title while the original sits in trash.
+- **A stored registry position in the Context pair.** Registry order is array position; any reorder while trashed makes a recorded index a lie.
+- **Append-only ledger** — demands a compaction policy up front and grows without bound. **Record distributed across live container sidecars** — a trashed entity has no home sidecar; inverted instead, the departed entity's pair remembers the folder. **Git as the mechanism** — tracks paths and guesses renames by content similarity; answers the address question, which is already solved, not the identity question, which is the gap. **Once-per-open as the only write trigger** — a page moved in-app then trashed would restore to where it was at last open.
 
 #### Lessons
 
-- When a mechanism must remember something about a thing, put the memory as close to the thing as possible — *on* it if it must travel, **beside** it if it must not. The beside-form kept every benefit and dissolved four defect classes the on-form carried.
+- When a mechanism must remember something about a thing, put the memory as close to the thing as possible — *on* it if it must travel, **beside** it if it must not.
 - "Bounded in count" is not "bounded in cost." Size it before choosing where it lives.
 - A record whose entries are only spent by a surface you have not built is an append-only log wearing a bounded one's clothes.
 - The enumeration you need is often already computed and discarded at the exact call site that needs it. Check the return types of the sweeps you already run before designing capture.
-
-### Open — none
-
-Every previously open decision is closed by Nathan's rulings: provenance beside the artifact (no content writes) · compare silent · duplicates re-mint with baseline adjudication · Context records carry `{id, title}` Spaces. What remains before ratification is one attack round against this version.
+- A refusal that defers a decision must preserve the evidence the deferred decision needs, or it launders a guess into the session that trusts it.
