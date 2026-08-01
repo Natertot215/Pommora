@@ -211,9 +211,9 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Negative control:** the refusal — fixture with duplicates and no baseline: assert zero writes; then hand it a baseline and assert the copy (only) re-mints.
 
 **Steps:**
-- [ ] Failing tests: the adjudication matrix above.
-- [ ] Implement pure half; then wire the runner into T3's hook, ordered before the baseline write.
-- [ ] Commit: `feat(remint): duplicated ids adjudicate against the prior baseline`
+- [x] Failing tests: the adjudication matrix above.
+- [x] Implement pure half; the runner wires in T5 alongside the writes it executes (wiring a write-less runner would be dead code for one commit).
+- [x] Commit: `feat(remint): duplicated ids adjudicate against the prior baseline`
 
 #### Task 5: The re-mint writes
 
@@ -439,8 +439,8 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
   - [x] Task 2 — the baseline projection and its rows · `17646d8d`
   - [x] Task 2a — the walk names what it cannot read · `3f301f62`
   - [x] Task 3 — the open path owns one walk · `352bf1a7`
-- [ ] **Phase 2** — the re-mint
-  - [ ] Task 4 — detection and adjudication
+- [ ] **Phase 2** — the re-mint · base `5bc40a2c`
+  - [x] Task 4 — detection and adjudication
   - [ ] Task 5 — the re-mint writes
 - [ ] **Phase 3** — the sweep and the pair
   - [ ] Task 6 — the sweep never strips a passenger
@@ -464,6 +464,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - **Needs Nathan's ruling (Gate 1, review finding — code shipped with the proxy):** `latchBaseline` is pure, so A-5's drop condition "the recorded path no longer exists at all" is implemented as "no walked claimant sits at the recorded path and it is not on the unreadable list." Wider than the spec's literal condition in one edge: a duplicated id whose recorded home left the walk for a *non-destructive* reason (its subtree added to `excluded_folders` while closed, or the id key hand-stripped) drops its evidence, and the next open records the surviving copy walk-order-first. The reviewer judged the proxy defensible; ruling wanted on whether the exclusion edge deserves a stat-based check instead.
 
 ### Deviations
+- **T4:** two departures from the written task, both spec-grounded. (1) `adjudicate` takes the walk's unreadable list as a third parameter — the "original at recorded path but unreadable → defer, never guess" arm is undecidable without it, and the plan's two-argument signature predates T2a's producer. (2) The "id ambiguous in the prior baseline too → defer" arm is NOT implemented: an ambiguous mark is A-5's *preserved evidence*, kept exactly so a later session can spend it — a blanket defer would freeze adjudication for as long as the duplication persists, the same hoarding round 3 removed from the no-prior case. Ambiguous-marked entries adjudicate identically to unmarked ones; the deferring states are exactly no-baseline · no-entry · unreadable-recorded-path · no-claimant-at-recorded-path. Test pins the spend. **Flagged for Nathan's post-hoc ruling.**
 - **Gate 1 (round run, both negative controls red-then-green):** simplifier landed 3 clarity edits (shared `readContainerMeta` in the walk, symmetric diff arms, one prior-normalization in the latch). Correctness review: 1 Medium + 4 Low, all verified at the cited symbols. Folded: **same-root guard** — re-adopting the already-open nexus (Open Recent head, picker re-pick) now stands down from the latch, closing a one-click drift-clobber the rename opt-out alone missed; **whole-pass guard** — a row-write failure (disk full) can no longer fail a genuine open, the record is best-effort end to end; **in-flux diff exclusion** — ids the current walk saw at 2+ paths leave both diff sides (a dropped duplicate is not a removal, a record-one is not an addition), the same stale-by-construction rationale A-5 gives for ambiguous-marked entries; **the corrupt-sidecar crossing test** — healthy open → corrupt the sidecar on disk → second open reads an unreadable transition, never a removal. `latchOpenTree` inlined into `runOpenRecord` (its stated test seam went unused; T4 inserts inside the one function). One item to Open Against Later Tasks for a ruling.
 - **T3:** the open pass split as `runOpenRecord(root)` (walk + guard) → `latchOpenTree(tree)` (rows), both in `record.ts` — index.ts holds one awaited call per open path and no record logic. T4's re-mint slots inside `runOpenRecord` between the walk and the latch, exactly where the order is load-bearing.
 - **T2a:** a fourth producer joined the three planned ones — a **present-but-unusable contexts registry** (`.nexus/contexts.json` corrupt or shape-invalid) blanks the whole Contexts layer in one stroke, which the baseline would read as mass deletion of every group and Space. The walk now records the registry's own path on the list; T3's latch carries prior `context`/`space` entries as unreadable when that path is listed. Absent registry (real raw mode) stays silent.
