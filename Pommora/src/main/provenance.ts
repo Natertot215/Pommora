@@ -29,7 +29,11 @@ import { SIDECAR_FILENAME, SPACE_SIDECAR } from './paths'
 import { readNexus, splitFrontmatter } from './readNexus'
 import { projectBaseline } from './record'
 
-export const RECORD_FILENAME = 'record.json'
+/** The underscore is load-bearing, not decoration: the artifact shares this folder under its own
+ *  real name, and `invalidName` forbids a leading `_` for every entity — so no name a user can
+ *  choose collides with the record, and the atomic writer's temp sibling is skipped by the same
+ *  rule that skips Finder litter. */
+export const RECORD_FILENAME = '_record.json'
 
 const parentRef = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('root') }),
@@ -115,8 +119,9 @@ export async function readRecord(bundleDir: string): Promise<RecordFile | null> 
 }
 
 /** The one artifact a settled bundle holds, or null when the deletion never finished. Names the
- *  walk hides — Finder's `.DS_Store`, AppleDouble litter — are skipped rather than read as a
- *  second candidate: `invalidName` forbids those prefixes, so no real entity wears one. */
+ *  walk hides — Finder's `.DS_Store`, AppleDouble litter, the record itself — are skipped rather
+ *  than read as a second candidate: `invalidName` forbids those prefixes, so no real entity
+ *  wears one. */
 export async function bundleArtifact(bundleDir: string): Promise<string | null> {
   let entries: Dirent[]
   try {
@@ -124,9 +129,7 @@ export async function bundleArtifact(bundleDir: string): Promise<string | null> 
   } catch {
     return null
   }
-  const found = entries.filter(
-    (e) => e.name !== RECORD_FILENAME && !e.name.startsWith('.') && !e.name.startsWith('_'),
-  )
+  const found = entries.filter((e) => !e.name.startsWith('.') && !e.name.startsWith('_'))
   return found.length === 1 ? join(bundleDir, found[0].name) : null
 }
 
@@ -368,11 +371,13 @@ export interface ListedBundle {
   record: RecordFile
 }
 
-/** Every spendable bundle under `.trash`. A bundle's interior is trashed content, never trash
- *  structure, so the walk stops at one: a user's own folder named `<x>.deleted` riding inside a
- *  trashed Collection is not a deletion. A folder holding no valid record is not a bundle, and a
- *  content bundle holding no artifact is a deletion that never finished — both are skipped, and
- *  neither is ever removed: the record is the only evidence that destruction happened. */
+/** Every spendable bundle under `.trash`. A bundle is a `.deleted` folder HOLDING A RECORD — the
+ *  name alone can't decide it, because `.trash` mirrors the nexus and a user's own folder may
+ *  wear that name anywhere in the chain. A bundle's interior is trashed content rather than trash
+ *  structure, so the walk stops at one and never reads a deletion out of what it holds.
+ *
+ *  A content bundle with no artifact is a deletion that never finished: skipped, and never
+ *  removed — the record is the only evidence that destruction happened. */
 export async function listBundles(root: string): Promise<ListedBundle[]> {
   const out: ListedBundle[] = []
   const walk = async (dir: string): Promise<void> => {
@@ -385,12 +390,11 @@ export async function listBundles(root: string): Promise<ListedBundle[]> {
     for (const e of entries) {
       if (!e.isDirectory()) continue
       const abs = join(dir, e.name)
-      if (!e.name.endsWith(BUNDLE_SUFFIX)) {
+      const record = e.name.endsWith(BUNDLE_SUFFIX) ? await readRecord(abs) : null
+      if (!record) {
         await walk(abs)
         continue
       }
-      const record = await readRecord(abs)
-      if (!record) continue
       if (record.entity !== 'property' && !(await bundleArtifact(abs))) continue
       out.push({ bundlePath: relative(root, abs), record })
     }
@@ -495,12 +499,10 @@ async function restoredSpaceTitles(absContextDir: string): Promise<Map<string, s
  *  per kind re-enter the registry and re-apply membership through the shared reconcile loop.
  *  Branches on nothing — every decision is the resolver's. */
 export async function restoreArtifact(root: string, bundleAbs: string): Promise<Result<null>> {
-  // The root is realpath'd for the same reason `isReserved` does it: a symlinked root (macOS
-  // /var→/private/var) makes the prefix mismatch and the containment check silently pass.
-  if (
-    !bundleAbs.startsWith(join(await realpath(root), '.trash') + sep) ||
-    !bundleAbs.endsWith(BUNDLE_SUFFIX)
-  )
+  // The root is realpath'd for the same reason `isReserved` does it: `bundleAbs` is canonical,
+  // so a symlinked root (macOS /var→/private/var) would mismatch and let the guard silently pass.
+  const trashPrefix = join(await realpath(root), '.trash') + sep
+  if (!bundleAbs.startsWith(trashPrefix) || !bundleAbs.endsWith(BUNDLE_SUFFIX))
     return fail('operation-failed', 'Only a trash record can be restored.')
   const record = await readRecord(bundleAbs)
   if (!record) return fail('operation-failed', 'That restore record is unreadable.')
