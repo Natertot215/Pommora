@@ -30,7 +30,7 @@ Execution ran all 14 tasks across 4 phases, failing-test-first, every guard nega
 
 **Next Session:**
 
-1. **Nathan's live check of the record** — delete a page in-app and find its `.provenance.json` beside the artifact in `.trash`; with the app closed, Finder-copy a page, open twice, and watch the copy take a fresh `PageID` while the original keeps everything.
+1. **Nathan's live check of the record** — delete a page in-app and find, under `.trash` mirroring where it lived, a `<stamp>__<name>.deleted/` folder holding the page under its real name plus `_record.json`; with the app closed, Finder-copy a page, open twice, and watch the copy take a fresh `PageID` while the original keeps everything.
 2. **His rulings on the three flagged calls** in the plan's Log (Deviations + Open Against Later Tasks): ambiguous-marks-spend over the plan's defer arm, the drop-evidence proxy's `excluded_folders` edge, and the eldest-by-birth-time pick on filesystems without birth time.
 3. Push `main` when he says so; the deferred live UIX pass (bridge / index / navigation checklists) still wants a fresh dev launch.
 

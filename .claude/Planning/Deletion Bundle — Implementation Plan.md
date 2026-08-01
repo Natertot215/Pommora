@@ -117,11 +117,11 @@ Trash browser + restore surface (reads `listBundles`, invokes `restore`) · empt
 - [x] T1 bundle primitives — `9a9d7a3f`
 - [x] T2 record grammar + listing (absorbed T4 + T5) — `c29d13e1`
 - [x] P1 gate — folds in `9d43ef55`
-- [x] T3 write-ahead arms
+- [x] T3 write-ahead arms — `991a20e3`
 - [x] T4 property bundles — landed with T2
-- [ ] P2 gate
+- [x] P2 gate
 - [x] T5 restore on bundles — landed with T2
-- [ ] T6 docs + sweep
+- [x] T6 docs + sweep
 - [ ] P3 gate + closeout
 
 ### Log
@@ -133,3 +133,5 @@ Trash browser + restore surface (reads `listBundles`, invokes `restore`) · empt
   - The record shared a namespace with the artifact, so a folder entity named `record.json` broke its own record write. **Nathan's ruling:** take the sidecar convention's underscore (A-1), which removes the collision at its source and also stops the atomic writer's temp sibling from reading as a second artifact.
   - `restoreArtifact`'s containment check reads with its prefix hoisted out of the condition.
 - Not folded, on the reachability razor: nothing was added for states reachable only by hand-editing `.trash`.
+- **Phase 2 base:** `9d43ef55`. Gate ran the arm-order derivation (every destructive call preceded in source order by its arm's record write) plus a simplifier + correctness round on the arms. **Correctness came back clean.** The simplifier chased the `if (write)` repetition and reported it doesn't collapse: making `write` unconditional would evaluate the gatherers in system-trash mode, and thunking them buries the fact that gathering is skipped — the one thing the arm most needs to say out loud. Two test-file clarity folds taken.
+- **Inherited improvement, unplanned:** hoisting the existence check out of the retired `removeViaMode` put it ahead of the sweeps. Deleting a Space or Context whose folder had already vanished used to strip tags nexus-wide and *then* report failure; it now refuses before sweeping.
