@@ -1,13 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtemp, rm, mkdir, readFile, writeFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, basename } from 'node:path'
+import { dirname, join, basename } from 'node:path'
 import {
   atomicWriteFile,
   writeJson,
   rmwJsonStrict,
   stableStringify,
-  trashWithTimestamp,
+  mintBundle,
+  settleBundle,
+  trashFileFlat,
 } from './atomicWrite'
 
 let dir: string
@@ -106,32 +108,88 @@ describe('rmwJsonStrict', () => {
   })
 })
 
-describe('trashWithTimestamp', () => {
-  it('moves a file into .trash and removes the original', async () => {
+describe('mintBundle', () => {
+  it('creates the bundle under the mirrored chain while the source stays live', async () => {
+    await mkdir(join(dir, 'Notes', 'Daily'), { recursive: true })
+    const p = join(dir, 'Notes', 'Daily', 'Beta.md')
+    await atomicWriteFile(p, 'bye')
+    const bundle = await mintBundle(dir, p)
+    expect(dirname(bundle)).toBe(join(dir, '.trash', 'Notes', 'Daily'))
+    expect(basename(bundle).endsWith('__Beta.md.deleted')).toBe(true)
+    expect((await stat(bundle)).isDirectory()).toBe(true)
+    // Nothing destructive has happened yet — that is the whole point of minting first.
+    expect(await readFile(p, 'utf8')).toBe('bye')
+  })
+
+  it('de-collides within one timestamp — two mints never share a bundle', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
+    try {
+      const p = join(dir, 'twice.md')
+      const first = await mintBundle(dir, p)
+      const second = await mintBundle(dir, p)
+      expect(second).not.toBe(first)
+      expect(basename(second)).toBe('2026-08-01T12-00-00-000Z__1__twice.md.deleted')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('lands flat when the source is not under the root', async () => {
+    const outside = await mkdtemp(join(tmpdir(), 'pom-out-'))
+    try {
+      const bundle = await mintBundle(dir, join(outside, 'Stray.md'))
+      expect(dirname(bundle)).toBe(join(dir, '.trash'))
+    } finally {
+      await rm(outside, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('settleBundle', () => {
+  it('moves the artifact in under its original basename and clears the original', async () => {
+    const p = join(dir, '12__Notes.md')
+    await atomicWriteFile(p, 'bye')
+    const bundle = await mintBundle(dir, p)
+    const dest = await settleBundle(bundle, p)
+    expect(dest).toBe(join(bundle, '12__Notes.md'))
+    expect(await readFile(dest, 'utf8')).toBe('bye')
+    await expect(stat(p)).rejects.toThrow()
+  })
+
+  it('rejects when the source vanished — the caller surfaces it', async () => {
+    const p = join(dir, 'ghost.md')
+    const bundle = await mintBundle(dir, p)
+    await expect(settleBundle(bundle, p)).rejects.toThrow()
+  })
+})
+
+describe('trashFileFlat', () => {
+  it('moves a file into .trash under a stamped leaf and removes the original', async () => {
     const p = join(dir, 'doomed.md')
     await atomicWriteFile(p, 'bye')
-    const dest = await trashWithTimestamp(dir, p)
+    const dest = await trashFileFlat(dir, p)
     expect(dest).toContain('.trash')
     expect(await readFile(dest, 'utf8')).toBe('bye')
     await expect(stat(p)).rejects.toThrow()
   })
 
-  it('mirrors the folder chain the entity was deleted from', async () => {
+  it('mirrors the folder chain the file was deleted from', async () => {
     await mkdir(join(dir, 'Notes', 'Daily'), { recursive: true })
     const p = join(dir, 'Notes', 'Daily', 'Beta.md')
     await atomicWriteFile(p, 'bye')
-    const dest = await trashWithTimestamp(dir, p)
+    const dest = await trashFileFlat(dir, p)
     expect(dest.startsWith(join(dir, '.trash', 'Notes', 'Daily'))).toBe(true)
     expect(basename(dest).endsWith('__Beta.md')).toBe(true)
     expect(await readFile(dest, 'utf8')).toBe('bye')
   })
 
-  it('de-collides two deletes of the same name from the same folder', async () => {
+  it('de-collides two trashes of the same name from the same folder', async () => {
     const p = join(dir, 'twice.md')
     await atomicWriteFile(p, 'one')
-    const first = await trashWithTimestamp(dir, p)
+    const first = await trashFileFlat(dir, p)
     await atomicWriteFile(p, 'two')
-    const second = await trashWithTimestamp(dir, p)
+    const second = await trashFileFlat(dir, p)
     expect(second).not.toBe(first)
     expect(await readFile(first, 'utf8')).toBe('one')
     expect(await readFile(second, 'utf8')).toBe('two')

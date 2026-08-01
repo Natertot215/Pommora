@@ -42,7 +42,8 @@ import { setSpaceOrder } from './crud/reorder'
 import { renameCascade } from './crud/cascade'
 import { rewriteBlockConnections } from './blocks'
 import {
-  trashWithTimestamp,
+  mintBundle,
+  settleBundle,
   pathExists,
   readJsonObject,
   rmwJsonStrict,
@@ -671,9 +672,10 @@ async function removeViaMode(
 ): Promise<Result<{ dest: string | null }>> {
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
   if (deps.trashMode === 'system') {
-    recordWrite(abs) // in-nexus trash records inside trashWithTimestamp; the OS route records here
+    recordWrite(abs) // in-nexus trash records inside settleBundle; the OS route records here
     await deps.trashToSystem(abs)
     return ok({ dest: null })
   }
-  return ok({ dest: await trashWithTimestamp(root, abs) })
+  const bundle = await mintBundle(root, abs)
+  return ok({ dest: await settleBundle(bundle, abs) })
 }

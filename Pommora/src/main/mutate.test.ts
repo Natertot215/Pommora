@@ -120,9 +120,12 @@ describe('handleMutate — delete', () => {
     )
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(false)
-    // The chain IS the restore record: .trash mirrors the nexus, the leaf carries the stamp.
+    // .trash mirrors the nexus, so a deleted page shows where it lived; the stamped leaf is a
+    // bundle folder, and the artifact sits inside it under the name it always had.
     const trashed = await readdir(join(root, '.trash', 'Notes', 'Daily'))
-    expect(trashed.some((f) => f.endsWith('__Beta.md'))).toBe(true)
+    const bundle = trashed.find((f) => f.endsWith('__Beta.md.deleted'))
+    expect(bundle).toBeDefined()
+    expect(await readdir(join(root, '.trash', 'Notes', 'Daily', bundle ?? ''))).toContain('Beta.md')
   })
 
   it('system mode delegates to the injected OS-trash fn (not the .trash)', async () => {
