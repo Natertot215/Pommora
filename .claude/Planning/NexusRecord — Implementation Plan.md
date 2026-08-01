@@ -100,10 +100,10 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 **Failure half:** empty maps both sides → empty diff, not a report · one side null is NOT handled here (T3 owns absent-baseline) · an id present both sides with `state: 'unreadable'` on one → an `unreadable` transition, never a delete.
 
 **Steps:**
-- [ ] Failing tests: union-diff catches an added key, a removed key, an unreadable transition, and reports nothing on identical maps.
-- [ ] Implement; gates green.
-- [ ] Align `NodeRecord`; typecheck proves the derivation compiles.
-- [ ] Commit: `feat(record): one owner for the per-entity tuple and its union diff`
+- [x] Failing tests: union-diff catches an added key, a removed key, an unreadable transition, and reports nothing on identical maps.
+- [x] Implement; gates green.
+- [x] Align `NodeRecord`; typecheck proves the derivation compiles.
+- [x] Commit: `feat(record): one owner for the per-entity tuple and its union diff`
 
 #### Task 2: The baseline projection and its rows
 
@@ -434,8 +434,8 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — one tuple, one baseline, one silent diff · base `<commit>`
-  - [ ] Task 1 — the shared record shape
+- [ ] **Phase 1** — one tuple, one baseline, one silent diff · base `680d996f`
+  - [x] Task 1 — the shared record shape
   - [ ] Task 2 — the baseline projection and its rows
   - [ ] Task 2a — the walk names what it cannot read
   - [ ] Task 3 — the open path owns one walk

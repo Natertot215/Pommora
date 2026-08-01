@@ -10,6 +10,7 @@
 // listed, so title resolution can still answer "ambiguous" and search still shows both. The keyed
 // projections collapse duplicates last-wins, which is what a Map built from a list always did.
 
+import type { EntityRecord } from '@shared/record'
 import type { NavRef, NexusTree, PageNode, SetNode } from '@shared/types'
 import { entityIcon, iconNameOr } from '@renderer/design-system/symbols'
 import { buildPageIndex, type ConnPage, type PageIndex } from './MarkdownPM/connections'
@@ -18,18 +19,16 @@ import type { NavCore, PathCrumb, ResolveIndex } from './Navigation/navResolve'
 import type { SearchEntry } from './Navigation/navSearch'
 import type { ReconcileIndex } from './selection'
 
-interface NodeRecord {
+/** The `{id, title, path}` tuple is `EntityRecord`'s; `id` and `path` are '' for the folderless,
+ *  id-less homepage singleton. `kind` stays local — the unions are disjoint (`homepage` here,
+ *  `context` there). */
+interface NodeRecord extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
   key: string
   kind: 'homepage' | 'space' | 'collection' | 'set' | 'page'
-  /** '' for the id-less homepage singleton. */
-  id: string
-  title: string
   /** Resolved display glyph — the user's own icon if renderable, else the nexus default. */
   icon: string
   /** The node's own raw icon field — surfaces that render absence read this, not the resolved glyph. */
   ownIcon?: string
-  /** Nexus-relative fs path; '' where no folder backs the entity. */
-  path: string
   /** Container breadcrumbs, excluding the entity itself. */
   crumbs: PathCrumb[]
 }
