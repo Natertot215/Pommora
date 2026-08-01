@@ -17,6 +17,7 @@ import { readTextOrNull, rmwJsonStrict } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
 import { decodeValue, encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
+import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
 import { nowIso, sweepAdmits } from './util'
 import { fail, ok, type Result } from '@shared/result'
@@ -136,26 +137,24 @@ export async function restoreCachedValues(
   // Each entry leaves the cache only as its page write lands; what didn't restore — a page
   // that vanished, a value the def's CURRENT type/options reject (the decoder's strict mode,
   // not a second decoder), a page whose frontmatter refuses the write — stays cached.
-  const survivors = { ...block.values }
-  for (const [pageId, raw] of Object.entries(block.values)) {
+  // rewritePageSerialized RESOLVES false for a page it couldn't read — only a landed write
+  // resolves true — so the resolved boolean is the spend signal, with refusals mapped in.
+  const { kept: survivors } = await reconcile(block.values, async (pageId, raw) => {
     const file = byId.get(pageId)
-    if (!file) continue
+    if (!file) return false
     const value = decodeValue(def, raw, { strict: true })
-    if (value.kind === 'null') continue
-    // rewritePageSerialized RESOLVES false for a page it couldn't read — only a landed write
-    // resolves true — so the resolved boolean is the spend signal, with a refusal mapped in.
-    const wrote = await rewritePageSerialized(file, (content) =>
+    if (value.kind === 'null') return false
+    return rewritePageSerialized(file, (content) =>
       !sweepAdmits(content)
         ? null
         : mergeFrontmatter(
-        content,
-        { [key]: encodeValue(value), modified_at: nowIso() },
-        [key, 'modified_at'],
-        splitEnvelope(content).body,
-      ),
-    ).catch(() => false)
-    if (wrote) delete survivors[pageId]
-  }
+            content,
+            { [key]: encodeValue(value), modified_at: nowIso() },
+            [key, 'modified_at'],
+            splitEnvelope(content).body,
+          ),
+    )
+  })
   const written = await rmwJsonStrict(join(collectionFolder, SIDECAR_FILENAME.collection), (cur) =>
     patchCacheBlock(
       cur,
