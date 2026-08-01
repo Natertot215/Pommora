@@ -13,7 +13,7 @@ Deliberately not solved here: content versioning, un-adopted entities, sync conf
 
 **Requirements** (the spec's Core, numbered)
 
-1. The pair: shape, parent union, per-kind payloads, artifact-less variant, written best-effort by the delete arm from three gather points.
+1. The pair: shape, parent union, per-kind payloads, artifact-less variant, written best-effort by the delete arm from four gather points.
 2. The resolver: a placement with final names, or a typed refusal.
 3. A minimal restore path that spends pairs.
 4. The baseline projection, the open path's one explicit walk, the union-diff with three-state existence, the last-non-empty drift row.
@@ -24,7 +24,7 @@ Deliberately not solved here: content versioning, un-adopted entities, sync conf
 
 **Forced By**
 
-- The delete arm's real order is sweep → registry erase → move (`mutate.ts`) → the three gather points are fixed: registry entry before erase, membership during sweep, pair name after move.
+- The delete arm's real order is sweep → registry erase → move (`mutate.ts`), and frontmatter stores Space titles while G-3 requires `{id, title}`, with title→id resolution closing at the registry erase → the four gather points are fixed: the scoped id read before the sweep, the registry entry before the erase, membership during the sweep, the pair name after the move.
 - `trashWithTimestamp` returns the final de-collided destination → the pair name derives from the return value, nowhere else.
 - `.nexus/` is watched; `nexus.db` is ignored (`watcher.ts` `ignoredUnder`) → the baseline is a db row, never a `.nexus/` file.
 - `prepareOpenedNexus` holds no tree → the open path gains its own explicit walk; it cannot piggyback.
@@ -173,11 +173,12 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - Consumes: Task 2's four functions; `readNexus`.
 - Assumed by: Task 4 — the re-mint runs between this walk and the baseline write (order is load-bearing, spec C-2).
 
-**Failure half:** walk throws (unreadable root) → open proceeds, no baseline written this session, prior baseline retained · empty diff → drift row untouched (last non-empty preserved) · first-ever open → baseline latches, no drift · an ambiguous id with **no prior entry** (created and copied inside one closed window) → **omitted from the baseline** — there is no evidence to preserve and any current path would be a guess; its first unambiguous appearance reads as an addition, once, and that is the accepted cost.
+**Failure half:** walk throws (unreadable root) → open proceeds, no baseline written this session, prior baseline retained · empty diff → drift row untouched (last non-empty preserved) · first-ever open → baseline latches, no drift · an ambiguous id with **no prior entry** (created and copied inside one closed window — or already duplicated when the feature first ships) → **one current path is recorded, unmarked, walk-order-first**, so the *next* open adjudicates against a stable reference and the other claimant re-mints then. Omission was considered and rejected: it re-freezes forever (no prior entry next open either), which is the hoarding A-5 forbids — and with two identical copies "wrong twin keeps the id" is barely a cost, while "neither ever re-mints" leaves them sharing chrome rows indefinitely · an ambiguous id whose **recorded path no longer exists** → the writer **drops the entry** (A-5's unadjudicable verb, executed where the write happens, not merely classified by the adjudicator).
 
 **Steps:**
 - [ ] Fixture test: two opens with a rename between → drift names it; third uneventful open → drift unchanged.
-- [ ] Wire both open sites; gates green; build green.
+- [ ] Wire the funnel + launch-restore; gates green; build green.
+- [ ] Rewrite `nexus:rename`'s reuse comment in the same commit — it justifies the reuse by "no adoption-only side effects to skip," which the opt-out makes false; restate as always-true per the house rule.
 - [ ] Commit: `feat(record): the open path walks once and the baseline latches`
 
 #### Gate 1 — the baseline exists and lies about nothing
@@ -218,10 +219,11 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 
 **Requirement:** 5
 
-**Why:** Executing a re-mint means: page → rewrite the kind key under the file lock (`serializeOnFile` + `mergeFrontmatter`); container → `writeSidecar` with the new id; then **copy — never move — the device-local state** onto the fresh id. Three shapes, because the rows are not uniform: `activeView`, `folds`, `headingCols` are per-key rows and copy verbatim · `blockDoc`'s value is **not opaque** — its view-embed tiles carry `views[].config.id`, a live per-machine key two boards must never share (the codebase says so twice, and `duplicateBlockTile` already calls `remintConfigIds` for exactly this) — so the copied value passes through `remintConfigIds` before writing · `previews` is a **singleton row** with a nested `origins` map, so it is a read-modify-write through `readPreviewsState`/`writePreviewsState`, never `writeKey` (a keyed write there lands a junk row nothing reads). And the container re-mint's sidecar rewrite also re-mints the copy's `views[].id` in the same write — a file-copied Collection duplicates those too, and they key `viewOrder` per machine. The old-id rows belong to the **original**, which keeps that id; moving them would hand the original's authored board to the copy and leave the original blank — the exact inversion of the Goal's "the original keeps everything keyed to it." Duplicating them keeps the original untouched by construction and keeps the copy's ridden-along tile files referenced. Thumbnails: none for the fresh id, regenerated on use. Order arrays untouched (`resolveOrder` re-enters by title). Asset pointers untouched (stored rel paths travel). Then the open-path tree: patch the node ids so the baseline projection records the re-minted state. Nothing more — the handed tree's only consumer is the projection, whose fields are scalars; `contextValues` never enter it, and the renderer walks fresh after the re-mint completes (T3), so the spec's attach-pass clause is satisfied with no consumer left to need it.
+**Why:** Executing a re-mint means: page → rewrite the kind key under the file lock (`serializeOnFile` + `mergeFrontmatter`); container → `writeSidecar` with the new id; then **copy — never move — the device-local state** onto the fresh id. Three shapes, because the rows are not uniform: `activeView`, `folds`, `headingCols` are per-key rows and copy verbatim · `blockDoc`'s value is **not opaque** — its view-embed tiles carry `views[].config.id`, a live per-machine key two boards must never share (the codebase says so twice, and `duplicateBlockTile` already calls `remintConfigIds` for exactly this) — so the copy walks `blocks` where `type === 'view'` and passes **each tile's `views` array** through `remintConfigIds`, which takes one tile's views, not a whole doc — handed the doc's `blocks` it is a type-clean silent no-op · `previews` is a **singleton row** with a nested `origins` map, so it is a read-modify-write through `readPreviewsState`/`writePreviewsState`, never `writeKey` (a keyed write there lands a junk row nothing reads). And the container re-mint's sidecar rewrite also re-mints the copy's `views[].id` in the same write — a file-copied Collection duplicates those too, and they key `viewOrder` per machine. The old-id rows belong to the **original**, which keeps that id; moving them would hand the original's authored board to the copy and leave the original blank — the exact inversion of the Goal's "the original keeps everything keyed to it." Duplicating them keeps the original untouched by construction and keeps the copy's ridden-along tile files referenced. Thumbnails: none for the fresh id, regenerated on use. Order arrays untouched (`resolveOrder` re-enters by title). Asset pointers untouched (stored rel paths travel). Then the open-path tree: patch the node ids so the baseline projection records the re-minted state. Nothing more — the handed tree's only consumer is the projection, whose fields are scalars; `contextValues` never enter it, and the renderer walks fresh after the re-mint completes (T3), so the spec's attach-pass clause is satisfied with no consumer left to need it.
 
 **Files:**
 - Modify: `src/main/remint.ts` — the write half.
+- Modify: `src/main/blocks.ts` — export `remintConfigIds` (module-private today; a local re-spelling would be the two-spellings failure T1 exists to prevent).
 - Test: extend `src/main/remint.test.ts`; an admission-level fixture proving the re-minted file re-reads as `member` with the new id.
 
 **Derivation**
@@ -232,7 +234,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Must agree:** the re-minted page must read as `member` through `admitContentFile` and appear in the next projection under the new id — one test crosses the re-mint, the admission predicate, and the projection.
 
 **Steps:**
-- [ ] Failing tests: page re-mint, container re-mint (including fresh `views[].id` on the copy's sidecar), the three row-copy shapes — asserting the ORIGINAL's rows are byte-identical after AND that no view config id is shared between the two boards — and the must-agree crossing.
+- [ ] Failing tests: page re-mint, container re-mint (including fresh `views[].id` on the copy's sidecar), the three row-copy shapes — asserting the ORIGINAL's rows are byte-identical after AND that no id at `blocks[].views[].config.id` is shared between the two boards (the assertion must read that exact path, or the no-op passes it) — and the must-agree crossing.
 - [ ] Implement; gates green.
 - [ ] Commit: `feat(remint): the copy takes a fresh id and duplicate chrome; the original never moves`
 
@@ -454,6 +456,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 ### Rulings
 - Restore's **interface** is out of scope; its actions — resolver, op, listing — ship (Nathan, pre-ratification).
 - Plan review round 1: 8 findings — 3 High (row-copy direction · three-state producer · the fourth gather point), 3 Medium, 2 Low; 7 folded above, 1 moot post-scope-cut (the trigger/live-data contradiction named a step that no longer exists). The spec itself survived the round untouched; the T3/T5 hand-off deviation was verified correct against the real open sequence.
+- Plan review round 3 (final; scoped to round 2's folds): 4 findings — 2 Medium (the ambiguous-no-prior omission re-froze forever, contradicting A-5's never-hoards — now one path recorded unmarked so the next open adjudicates, and the writer executes the drop verb; `remintConfigIds` is module-private and takes one tile's views, so the reuse names the export and the exact walk, with the test assertion pinned to `blocks[].views[].config.id`), 2 Low (the three-vs-four gather-point count swept upstream into Requirements and Forced By; `nexus:rename`'s reuse comment rewritten in T3's commit). Three of five round-2 folds held under direct attack. Round cap reached; these four folds are post-round — three were prescribed by the reviewer against symbols it verified, the fourth (record-one-unmarked) is a judgment call flagged to Nathan at presentation.
 - Plan review round 2 (scoped to round 1's folds): 5 findings — 1 High (the T3 wiring citation excluded the one funnel every ordinary open passes through; now an opt-out parameter only `nexus:rename` sets), 2 Medium (`blockDoc` values re-mint their view config ids through the existing `remintConfigIds`, and the copy's sidecar re-mints `views[].id`; gather point 0 scoped per arm instead of `loadContextWorld`, whose nexus-wide strictness would let one unrelated corrupt sidecar suppress every pair), 2 Low (`previews` is a singleton RMW, not a keyed row; an ambiguous id with no prior entry is omitted, its first unambiguous appearance reading as one addition). All folded; four of round 1's six folds survived scrutiny intact.
 
 ### Open Against Later Tasks
