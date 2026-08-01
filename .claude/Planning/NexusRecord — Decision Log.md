@@ -1,6 +1,6 @@
 ## NexusRecord — Decision Log
 
-> **Status:** V4 — two attack rounds run against earlier versions; V4 folds Nathan's rulings: provenance moves **beside** the trashed artifact rather than into it, compare stays silent, duplicate ids re-mint with the baseline as adjudicator, and Context records carry Space ids. Pending one attack round against this shape, then ratification.
+> **Status:** V5 — folds Nathan's clarified ruling (an id MAY be stored on the deleted item; the prohibition is on name-based locations) and his consolidation lens: this feature absorbs its adjacent residue now, so no future pass finds things it should have taken. Pending the third attack round's findings, then the plan.
 
 ### Frame
 
@@ -49,7 +49,9 @@ They share a module and nothing else.
 
 #### B — Provenance (the restore half)
 
-- **B-1:** [confirmed — Nathan: no writes into content] Provenance is a **paired JSON beside the trashed artifact**, never a write into the artifact itself. The delete arm gathers what it needs *before* the move — reading, not writing — then writes one pair file next to the destination `trashWithTimestamp` returns. Nothing touches the user's file on the way out, and nothing rides back into the tree on restore.
+- **B-1:** [assumed — Nathan permits either form] Provenance is a **paired JSON beside the trashed artifact**. Nathan's ruling, clarified: a parent **id** may be stored on the deleted item itself — the prohibition is on storing a name-based location, which a rename rots. Both forms are therefore legal, and the pair is chosen on his cohesion criterion, not on permission: on-artifact storage needs **three shapes** (a frontmatter key for pages, a sidecar key for containers, and — since a Context has no sidecar — a new file inside the trashed folder anyway), where the pair is **one mechanism for every kind**, and it holds the long payloads (a Space's page list, a Context's membership map) that have no business in frontmatter. It also keeps the four dissolved defect classes dissolved. Revisitable if Nathan actively prefers on-artifact; the facts either form must carry are identical.
+
+  The delete arm gathers what it needs *before* the move — reading, not writing — then writes one pair file next to the destination `trashWithTimestamp` returns. Nothing touches the user's file on the way out, and nothing rides back into the tree on restore.
 
   Why a record at trash time is still necessary, double-checked: the mirrored chain stores only the **old path**, and the baseline holds only the **last session**, overwritten each open. Once the parent is renamed, no surviving structure maps the stale path to the parent's stable id — so the id must be captured at the moment of departure. It just doesn't have to be captured *inside* the file.
 
@@ -83,6 +85,15 @@ They share a module and nothing else.
 - **D-3:** [assumed] **Leave the rename journal separate.** Eleven discard branches, one of which must never generalize: discard, never hijack.
 - **D-4:** [assumed] **Leave the order arrays alone.**
 - **D-5:** [confirmed by evidence] No migration anywhere: zero `property_cache` blocks exist on either live nexus, and the pair mechanism creates files only in `.trash`.
+
+#### F — Consolidation (Nathan's lens: leave no adjacent residue for a future pass)
+
+- **F-1:** [confirmed — Nathan's directive] The feature absorbs its neighbourhood **now**. A future consolidation pass must not find mechanisms this work should have taken; simplicity and cohesion outrank minimal diff.
+- **F-2:** [assumed] Absorbed outright: the **property Delete snapshot** becomes an ordinary pair (fixing, in one move, its path key, its non-atomic raw write, and its flat un-collided placement).
+- **F-3:** [assumed] Residue removed in the same work, because the delete path is already open under the editor: the **`removed_at`** field the Remove cache writes and nothing reads · the **four unreachable cascade-failure branches** in the context cascade, whose precondition every caller has already resolved · the **stale comment** claiming `trashWithTimestamp` is shared by crud delete helpers that do not exist.
+- **F-4:** [assumed] **One reconciliation loop.** Tag re-application on restore is the Remove cache's spend-per-landed-write shape; the plan implements it by extracting that loop and pointing both at it where the shapes genuinely align — never by writing a parallel one. The Remove cache's storage and its type-revalidation branches stay exactly where they are.
+- **F-5:** [assumed] **The per-entity tuple gets one owner.** The baseline's `{ id, kind, title, path }` shape is declared once in `src/shared/`, and the renderer's tree-index record aligns to it rather than restating it — the two are the same fact in two processes today.
+- **F-6:** [assumed] Explicitly NOT absorbed, each a different mechanism rather than a deferred absorption: the **Remove cache** (a value cache on a live entity — nothing departs) · the **rename journal** (a transaction log whose discard branches are domain law) · the **order arrays** (display state with read-time tolerance). A future pass finding these should find this paragraph.
 
 #### E — Resolution
 
