@@ -35,6 +35,7 @@ import {
   gatherContextEvidence,
   gatherSpacePair,
   type PairFile,
+  restoreArtifact,
   writePair,
 } from './provenance'
 import { setSpaceOrder } from './crud/reorder'
@@ -305,6 +306,13 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         }
       }
       return ok({})
+    }
+
+    case 'restore': {
+      const resolved = await resolveUnderRoot(root, req.pairPath)
+      if (!resolved.ok) return resolved
+      const r = await restoreArtifact(root, resolved.value)
+      return r.ok ? ok({}) : r
     }
 
     case 'setProfileSubtitle': {

@@ -1,12 +1,12 @@
-import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from './io/atomicWrite'
 import { handleMutate, type MutateDeps } from './mutate'
 import { contextsDir, contextsRegistryFile } from './paths'
-import { artifactBaseName, readPair, resolvePair, writePropertyPair } from './provenance'
-import { readNexus } from './readNexus'
+import { artifactBaseName, listPairs, readPair, resolvePair, writePropertyPair } from './provenance'
+import { readNexus, splitFrontmatter } from './readNexus'
 import { closeSession, openSession } from './session'
 
 const PAGE_A = '01KVGMT8BFG350FZZXAMG1QDVA'
@@ -354,5 +354,91 @@ describe('artifactBaseName', () => {
     expect(artifactBaseName('2026-08-01T12-00-00-000Z__My__Odd__Name.md')).toBe('My__Odd__Name.md')
     expect(artifactBaseName('2026-08-01T12-00-00-000Z__2')).toBe('2')
     expect(artifactBaseName('2026-08-01T12-00-00-000Z__1__2')).toBe('2')
+  })
+})
+
+describe('restore — the pair spends, headless', () => {
+  it('a page returns into its since-renamed parent', async () => {
+    await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
+    await rename(join(root, 'Notes', 'Daily'), join(root, 'Notes', 'Journal'))
+    const [listed] = await listPairs(root)
+    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(r.ok).toBe(true)
+    expect(await readFile(join(root, 'Notes', 'Journal', 'Alpha.md'), 'utf8')).toContain(PAGE_A)
+    expect(await pairFiles(join(root, '.trash'))).toHaveLength(0)
+  })
+
+  it('a Space round-trips: the surviving roots carry its tag again', async () => {
+    await handleMutate(
+      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
+      nexusDeps,
+    )
+    expect(
+      splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8'))[
+        '(Projects)'
+      ],
+    ).toBeUndefined()
+
+    const [listed] = await listPairs(root)
+    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(r.ok).toBe(true)
+    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))).toBe(true)
+    expect(
+      splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8'))[
+        '(Projects)'
+      ],
+    ).toEqual(['Pommora'])
+    const sap = JSON.parse(
+      await readFile(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'), 'utf8'),
+    )
+    expect(sap['(Projects)']).toEqual(['Pommora'])
+  })
+
+  it('a Context round-trips: the registry entry appends and membership re-applies', async () => {
+    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
+    const [listed] = await listPairs(root)
+    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(r.ok).toBe(true)
+    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    expect(reg.contexts).toContainEqual({
+      id: 'ctx_projects',
+      title: 'Projects',
+      singular: 'Project',
+      icon: 'target',
+    })
+    expect(
+      splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8'))[
+        '(Projects)'
+      ],
+    ).toEqual(['Pommora'])
+    // The passenger Space returned intact, its own links untouched by the round-trip.
+    const sap = JSON.parse(
+      await readFile(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'), 'utf8'),
+    )
+    expect(sap['(Projects)']).toEqual(['Pommora'])
+  })
+
+  it('the resolver re-runs inside the op — a parent gone between list and restore refuses', async () => {
+    await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
+    const [listed] = await listPairs(root)
+    await handleMutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(r.ok).toBe(false)
+  })
+
+  it('listPairs prunes an orphaned pair as encountered, but never the artifact-less variant', async () => {
+    await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
+    const files = await pairFiles(join(root, '.trash'))
+    await rm(files[0].slice(0, -'.provenance.json'.length), { force: true })
+    await writePropertyPair(root, {
+      entity: 'property',
+      id: 'prop_x',
+      def: { id: 'prop_x' },
+      values: {},
+    })
+    const listed = await listPairs(root)
+    expect(listed).toHaveLength(1)
+    expect(listed[0].pair.entity).toBe('property')
+    expect(await pairFiles(join(root, '.trash'))).toHaveLength(1)
   })
 })

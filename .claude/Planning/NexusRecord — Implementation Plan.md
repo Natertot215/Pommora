@@ -407,9 +407,9 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Failure half:** artifact gone but pair present → orphan; listing prunes it · restore into a parent that vanished between list and click → the resolver re-runs inside the op; refusal surfaces as the op's error · membership re-apply partially lands → loop semantics: spent entries spent, kept entries reported, never a rollback of the placed artifact.
 
 **Steps:**
-- [ ] Failing end-to-end tests (renamed-parent restore; Space round-trip with tags).
-- [ ] Implement op + arm + `listPairs`; gates green.
-- [ ] Commit: `feat(trash): restore — the pair spends, headless`
+- [x] Failing end-to-end tests (renamed-parent restore; Space round-trip with tags).
+- [x] Implement op + arm + `listPairs`; gates green.
+- [x] Commit: `feat(trash): restore — the pair spends, headless`
 
 #### Task 13: The record tells the docs
 
@@ -450,7 +450,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - [ ] **Phase 4** — the resolver spends the pairs · base `0d2695fc`
   - [x] Task 10 — one reconciliation loop
   - [x] Task 11 — the resolver
-  - [ ] Task 12 — restore
+  - [x] Task 12 — restore
   - [ ] Task 13 — the record tells the docs
 
 ### Rulings
@@ -464,6 +464,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - **Needs Nathan's ruling (Gate 1, review finding — code shipped with the proxy):** `latchBaseline` is pure, so A-5's drop condition "the recorded path no longer exists at all" is implemented as "no walked claimant sits at the recorded path and it is not on the unreadable list." Wider than the spec's literal condition in one edge: a duplicated id whose recorded home left the walk for a *non-destructive* reason (its subtree added to `excluded_folders` while closed, or the id key hand-stripped) drops its evidence, and the next open records the surviving copy walk-order-first. The reviewer judged the proxy defensible; ruling wanted on whether the exclusion edge deserves a stat-based check instead.
 
 ### Deviations
+- **T12:** the mover lives as `restoreArtifact` in `provenance.ts` beside the resolver it spends — `mutate.ts`'s arm is four lines (path-safety + call), keeping the acting code visibly decision-free. The op refuses (never clobbers) when something the tree cannot see occupies the resolved target — an Unknown squatter is nothing the resolver adjudicated, and refusing is not choosing. A Context restore joins membership values by id against the as-restored folder names; a member root that died since the delete stays kept in the reconcile result, never re-created.
 - **T11:** the refusal vocabulary is four members, not five — "trashed outside the nexus" is unreachable as its own arm: `resolveUnderRoot` bars the delete op from targeting anything outside the root, and an artifact that somehow gathered from outside would carry an `unaddressable` parent, which already refuses. The property variant is excluded at the type level (`ArtifactPair`) — nothing artifact-less can be placed. Live-id detection reuses `projectBaseline` (one owner for "what ids the tree holds"). Content-name collisions compare case-insensitively (NFC + lowercase) — the filesystem is.
 - **Gate 3:** simplifier landed 2 (the `UnlinkOutcome` intersection named once at its producer; `sweepPartial` flattened to the `sweepIncomplete` predicate). Correctness review: 1 Medium + 4 Low + 1 informational, all verified. Folded: **the partial-marker family got its red-capable tests** (a refused root, an id-less tagging root, an unreadable in-Context sidecar each mark their pair partial; `writePropertyPair` de-collision pinned under fake timers — the T9 checkbox had claimed coverage that wasn't there); **id-less members now mark the Space pair partial** (they are stripped truth the members list omits); **a duplicated page id in the property snapshot marks it partial** (last-wins collapse, stated); `serializeJson`'s consumer-less export un-exported (F-3's own lens). Recorded, not fixed: a self-tagged Space's own sidecar is swept before the move (UI-improbable, captured for re-apply, the plan's no-skip reason was incomplete); spec B-1's "a parent that could not resolve" sentence contradicts B-4 and the ratified failure-half — the code follows the ratified side, T13 aligns the spec wording.
 - **Gate 2 (no-baseline refusal negative-controlled red-then-green):** simplifier landed 3 small collapses (one delete in `applyRemints`' tail, a hoisted fixture constant, an unused import — the range's only lint warning). Correctness review: 1 Medium + 2 Low, all verified. Folded: the **must-agree crossing test** — a third open after the re-mint proves the fresh id re-enters through a genuine disk walk and admission, not just the in-memory fix-up (the T5 checkbox had claimed it without the test existing). Recorded, not fixed: the in-lock id re-checks and partial-re-mint arm have no red-capable fixtures (race guards, traced correct by both reviewer and author); a container copy's copied `activeView` row dangles against the copy's re-minted view ids and falls back to the first view at render (plan-prescribed verbatim copy; renderer tolerance verified at `pickView`). Hook order re-assessed as built: walk → adjudicate/write → fix-up → latch → drift → baseline, renderer walks after — holds; T6+ interfaces unaffected.
