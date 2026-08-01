@@ -145,17 +145,18 @@ function captureRoot(raw: Raw, file: string, values: string[]): SweepCapture {
 }
 
 /** Run the title cascade for a journal record. `contextTitle` is the owning
- *  Context's CURRENT registry title (the key Space values live under). */
+ *  Context's CURRENT registry title (the key Space values live under). Every caller
+ *  resolves the def before journaling, so an unknown context sweeps nothing. */
 export async function cascadeTitle(
   root: string,
   registry: ContextsRegistry,
   j: RenameJournal,
-): Promise<Result<SweepResult>> {
+): Promise<SweepResult> {
   const def = registry.contexts.find((c) => c.id === j.contextId)
-  if (!def) return fail('not-found', 'Unknown Context.', 'contexts')
+  if (!def) return { touched: [], skipped: [], refused: [] }
   // A context rename's own registry title may already read old or new — the key being
   // rewritten comes from the journal, never the registry.
-  return ok(await sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j)))
+  return sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j))
 }
 
 /** Strip a deleted Context's parenthesized KEY from every context-bearing root. A root under
@@ -253,10 +254,6 @@ export async function renameContextOp(
   }
 
   const cascade = await cascadeTitle(root, reg.value, j)
-  if (!cascade.ok) {
-    await clearJournal(root)
-    return cascade
-  }
 
   const committed = await mutateRegistryFile(root, (cur) => ({
     contexts: cur.contexts.map((c) => (c.id === contextId ? { ...c, title: newName } : c)),
@@ -273,7 +270,7 @@ export async function renameContextOp(
     return committed
   }
 
-  await settleJournal(root, j, cascade.value.skipped)
+  await settleJournal(root, j, cascade.skipped)
   return ok(null)
 }
 
@@ -314,11 +311,7 @@ export async function renameSpaceOp(
   }
 
   const cascade = await cascadeTitle(root, world.value.registry, j)
-  if (!cascade.ok) {
-    await clearJournal(root)
-    return cascade
-  }
-  await settleJournal(root, j, cascade.value.skipped)
+  await settleJournal(root, j, cascade.skipped)
   return ok(null)
 }
 
@@ -352,14 +345,13 @@ export async function replayPendingRename(root: string): Promise<void> {
     const newDir = join(contextsDir(root), j.newTitle)
     if ((await pathExists(oldDir)) && !(await pathExists(newDir))) await rename(oldDir, newDir)
     const cascade = await cascadeTitle(root, reg.value, j)
-    if (!cascade.ok) return
     if (entry.title !== j.newTitle) {
       const committed = await mutateRegistryFile(root, (cur) => ({
         contexts: cur.contexts.map((c) => (c.id === j.contextId ? { ...c, title: j.newTitle } : c)),
       }))
       if (!committed.ok) return
     }
-    await settleJournal(root, j, cascade.value.skipped)
+    await settleJournal(root, j, cascade.skipped)
     return
   }
 
@@ -389,6 +381,5 @@ export async function replayPendingRename(root: string): Promise<void> {
     await rename(join(ctxDir, j.oldTitle), target)
   }
   const cascade = await cascadeTitle(root, reg.value, j)
-  if (!cascade.ok) return
-  await settleJournal(root, j, cascade.value.skipped)
+  await settleJournal(root, j, cascade.skipped)
 }

@@ -9,7 +9,7 @@
 // trusted by restore. The parent is not a required payload: it degrades to `unaddressable`.
 
 import type { Dirent } from 'node:fs'
-import { readdir, readFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { z } from 'zod'
 import type { ContextsRegistry } from '@shared/contexts'
@@ -53,6 +53,15 @@ export const pairFile = z.discriminatedUnion('entity', [
     partial: z.literal(true).optional(),
   }),
   z.looseObject({
+    entity: z.literal('property'),
+    id: z.string(),
+    /** The registry definition the delete removes — restore has nothing else to rebuild from. */
+    def: z.looseObject({ id: z.string() }),
+    /** Page id → the raw value the scrub stripped. Ids, never paths. */
+    values: z.record(z.string(), z.unknown()),
+    partial: z.literal(true).optional(),
+  }),
+  z.looseObject({
     entity: z.literal('context'),
     /** The registry entry the erase destroys — a hand-restored folder returns nothing without it. */
     registry: z.looseObject({
@@ -78,6 +87,23 @@ export function pairPathFor(artifactDest: string): string {
 /** Atomic, beside the artifact — `.trash` is unwatched, so this costs no watcher event. */
 export async function writePair(artifactDest: string, pair: PairFile): Promise<void> {
   await writeJson(pairPathFor(artifactDest), pair)
+}
+
+/** The artifact-less variant: a property delete trashes nothing, so there is no leaf to pair
+ *  with — the pair lands flat in `.trash`, atomic and de-collided, and the orphan prune
+ *  exempts the variant. */
+export async function writePropertyPair(
+  root: string,
+  pair: Extract<PairFile, { entity: 'property' }>,
+): Promise<string> {
+  const trash = join(root, '.trash')
+  await mkdir(trash, { recursive: true })
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  let dest = join(trash, `${stamp}__property-${pair.id}${PAIR_SUFFIX}`)
+  for (let n = 1; await pathExists(dest); n++)
+    dest = join(trash, `${stamp}__${n}__property-${pair.id}${PAIR_SUFFIX}`)
+  await writeJson(dest, pair)
+  return dest
 }
 
 /** Null for missing, unreadable, or shape-mismatched — a pair is trusted by restore, so a

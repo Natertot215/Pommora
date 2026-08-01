@@ -9,7 +9,9 @@ import { assignProperty } from './assignment'
 import { removeProperty } from './removeProperty'
 import { createFolderEntity } from './folderEntity'
 import { createPage, updatePageProperty } from './page'
+import { readFrontmatterFields } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
+import { readPair } from '../provenance'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
@@ -70,9 +72,18 @@ describe('deleteProperty', () => {
       expect(content).not.toContain('<Priority>')
       expect(content).toContain(`${PAGE_ID_KEY}:`)
     }
-    // a recovery snapshot landed in .trash
+    // The recovery snapshot is the pair's artifact-less variant — a valid pair file whose
+    // values key by page id, never by path.
     const trashed = await readdir(join(root, '.trash'))
-    expect(trashed.some((f) => f.includes(`property-${id}`))).toBe(true)
+    const name = trashed.find((f) => f.includes(`property-${id}`))
+    expect(name?.endsWith('.provenance.json')).toBe(true)
+    const pair = await readPair(join(root, '.trash', name ?? ''))
+    expect(pair).toMatchObject({ entity: 'property', id })
+    const values = (pair as { values: Record<string, unknown> }).values
+    for (const path of [p1.value.path, p2.value.path]) {
+      const pid = readFrontmatterFields(await readFile(path, 'utf8'))[PAGE_ID_KEY] as string
+      expect(values[pid]).toBe('hi')
+    }
   })
 
   it('fails for an unknown property id', async () => {

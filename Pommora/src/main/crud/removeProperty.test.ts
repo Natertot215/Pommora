@@ -69,12 +69,10 @@ const pageValue = async (path: string): Promise<unknown> =>
   ]
 const sidecar = async (): Promise<Record<string, unknown> | null> =>
   (await readSidecar(folder, 'collection', pageCollectionSidecar)) as Record<string, unknown> | null
-const cacheBlock = async (): Promise<
-  { removed_at: string; values: Record<string, unknown> } | undefined
-> =>
+const cacheBlock = async (): Promise<{ values: Record<string, unknown> } | undefined> =>
   (
     (await sidecar())?.property_cache as
-      | Record<string, { removed_at: string; values: Record<string, unknown> }>
+      | Record<string, { values: Record<string, unknown> }>
       | undefined
   )?.[propId]
 
@@ -87,7 +85,8 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     const sc = await sidecar()
     expect((sc?.properties as string[] | undefined) ?? []).not.toContain(propId)
     const block = await cacheBlock()
-    expect(typeof block?.removed_at).toBe('string')
+    // The block is the values map and nothing else — no timestamp field rides along.
+    expect(Object.keys(block ?? {})).toEqual(['values'])
     const vals = Object.values(block?.values ?? {})
     expect(vals).toHaveLength(2)
     expect(vals).toEqual(expect.arrayContaining(['active', 'done']))
