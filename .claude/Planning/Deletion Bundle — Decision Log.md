@@ -1,6 +1,6 @@
 ## Deletion Bundle — Decision Log
 
-**Status:** written — review round 1 folded, round 2 pending.
+**Status:** review-certified across two adversarial rounds — pending Nathan's ratification.
 
 ### Frame
 
@@ -30,10 +30,10 @@
 
 #### B — Write-Ahead Ordering
 
-- **B-1:** [confirmed] The bundle folder and `record.json` are written **before any destructive step**; the artifact moves in **last**. The artifact's presence inside the bundle is the settle marker: a non-property bundle without an artifact is an incomplete delete — never restorable, skipped by the listing, left on disk as evidence.
-- **B-2:** [confirmed] Facts that only exist mid-delete (a sweep's captured membership) are patched into `record.json` after the sweep, before the artifact moves in. The pre-sweep record is written with `partial: true` and the patch clears it — so a crash between sweep and patch leaves a record that says it is thinner than the truth, never one affirmatively asserting an empty membership. With that, intermediate record states cannot lie: the bundle is incomplete until the artifact arrives, and the record is marked partial until the patch lands.
-- **B-3:** [assumed] In nexus-trash mode, a failed record write **refuses the delete** — nothing has been destroyed yet, so refusal is finally possible and honest. The refusal rolls the mint back (removing the just-created, provably empty bundle folder) so a failed delete leaves no litter in `.trash`. This inverts the pair design's best-effort-and-shrug, which was forced on it by writing last. The user-visible change: a delete can now fail with "this couldn't be recorded" instead of silently degrading to hand-restore.
-- **B-4:** [assumed] The Space arm reorders to match: sidecar id and registry entry are read **before** the unlink sweep, and a Space whose id can't be read refuses the delete. The pair design stripped the tag from every page first and only then discovered it couldn't record the act.
+- **B-1:** [confirmed] The bundle folder and `record.json` are written **before any destructive step**; the artifact moves in **last**. The artifact's presence inside the bundle is the settle marker: a non-property bundle without an artifact is an incomplete delete — never restorable, skipped by the listing, left on disk as evidence. For the sweep arms that evidence carries real weight: a crash between the sweep and the settle leaves the destruction done, the folder still live in the tree, and the swept membership preserved only inside the skipped bundle's record — hand-readable, not in-app spendable. Accepted cost, named here deliberately: the same crash under the pair design left the same destruction with no record anywhere.
+- **B-2:** [confirmed] Facts that only exist mid-delete (a sweep's captured membership) are patched into `record.json` after the sweep, before the artifact moves in. The pre-sweep record is written with `partial: true`, and the patch **recomputes** `partial` from the sweep's real outcome rather than clearing it — the existing gatherers stay the single computer of the marker, so a sweep that skipped or refused roots keeps the record partial. A crash between sweep and patch leaves a record that admits it is thinner than the truth, never one affirmatively asserting a complete membership.
+- **B-3:** [assumed] In nexus-trash mode, a failed record write **refuses the delete** — nothing has been destroyed yet, so refusal is finally possible and honest. Rollback of the mint is a property of **every non-settling exit** from the arm (a failed record write, a refused gather, the target vanishing in the resolve-to-remove window): the just-created, provably empty bundle folder is removed, so no failed delete leaves litter in `.trash`. This inverts the pair design's best-effort-and-shrug, which was forced on it by writing last. The user-visible change: a delete can now fail with "this couldn't be recorded" instead of silently degrading to hand-restore.
+- **B-4:** [assumed] The Space arm reorders to match: sidecar and registry are read **before** the unlink sweep. The refusal keys on the sidecar being **present but unreadable** — an id-less sidecar is a supported adopted state throughout the read engine, so it records without an `id` and marks itself partial, exactly as content records already treat an absent id; refusing it would make an adopted Space permanently undeletable. The pair design stripped the tag from every page first and only then discovered it couldn't record the act.
 
 #### C — Restore & Listing
 
@@ -49,7 +49,7 @@
 #### E — Blast Radius
 
 - **E-1:** [confirmed] [[NexusRecord]]'s Provenance sections go false and are rewritten as-built at ship; History carries the arc. `record.ts` and the baseline half are untouched; `remint.ts` changes only by exporting three private helpers (C-4); the `restore` op keeps its one-path shape with the field renamed `pairPath` → `bundlePath` (two references repo-wide, zero renderer-side).
-- **E-2:** [confirmed] The provenance test suite re-points at the bundle layout; the assertion matrix (gather content, resolver decisions, restore round-trips, guard pins) carries over.
+- **E-2:** [confirmed] The provenance test suite re-points at the bundle layout. The resolver matrix and restore-guard pins carry over with assertions untouched; the gather-matrix tests that pinned the pair design's refusal philosophy invert where B-2/B-3/B-4 rule otherwise — named per test in the plan, never discovered at a gate.
 
 ### Core (must-have)
 
