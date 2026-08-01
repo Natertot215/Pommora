@@ -78,9 +78,9 @@ Every sidecar's field shape is canonical in `src//shared//schemas.ts`.
 
 **Hidden + private.** `.nexus/` and `.trash/` are hidden from the sidebar and from non-Pommora tools by convention (matches `.obsidian/`).
 
-**The trash mirrors the nexus.** A deleted entity keeps the folder chain it came from and takes a timestamp on its leaf, so the layout itself records where the item lived — restoring is dropping the stamp and moving it back up. Collisions within one folder de-collide on the leaf, so the same title deleted twice keeps both.
+**The trash mirrors the nexus, and every departure carries its record.** A deleted entity keeps the folder chain it came from and takes a timestamp on its leaf; collisions within one folder de-collide on the leaf, so the same title deleted twice keeps both. Beside each nexus-trashed artifact sits its **provenance pair** — one JSON naming what departed and where it belonged by id, never by name — written by the delete, read by restore, deleted with its artifact, never entering the live tree. The **restore op** spends a pair by resolving it against the *current* tree, so an item returns to its parent's since-renamed home rather than a stale path; the resolver decides placement and final names or returns a typed refusal, and the mover branches on nothing → [[Record]].
 
-> **Pending — trash restore surface.** No surface browses or restores the trash; the mirrored layout is the whole of the record, so putting an item back is a manual move.
+> **Pending — trash restore surface.** The restore action is IPC-reachable and end-to-end tested; no surface browses the trash or invokes it yet.
 
 **User folder exclusion.** Beyond the built-in skips, `excluded_folders` on `settings.json` takes anchored nexus-relative paths the read walk, the adoption pass and the watcher all ignore at any depth — never adopted, shown, indexed, or auto-tagged, and the property fan-outs inherit that for free by deriving their folder list from the tree. The title cascades are the deliberate exception: they rewrite every `.md` under the root so an excluded folder's `[[link]]`s and Context keys stay correct rather than rotting. The filter is subtractive and root-anchored, which is what keeps an ordinary exclusion from reaching the internal `.nexus/` reads that run through it too. Editing UI is deferred to Settings.
 

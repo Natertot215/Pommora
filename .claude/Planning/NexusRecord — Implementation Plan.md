@@ -420,9 +420,9 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Files:** the four Made False entries + `History.md` (one entry, durable voice) + `Handoff.md` session block.
 
 **Steps:**
-- [ ] Rewrite each claim; closing sweep: `removed_at` → 0 against control `property_cache` → 15.
-- [ ] Align the spec's C-2/A-5 hand-off wording to the as-built reading (T3/T5's Whys carry the reasoning).
-- [ ] Commit: `docs(record): the trash carries its provenance and the docs say so`
+- [x] Rewrite each claim; closing sweep: `removed_at` → 0 against control `property_cache` → 15.
+- [x] Align the spec's C-2/A-5 hand-off wording to the as-built reading (T3/T5's Whys carry the reasoning) — plus B-1's parent sentence to the ratified B-4 side. A new `Features/Record.md` carries the feature's own doc.
+- [x] Commit: `docs(record): the trash carries its provenance and the docs say so`
 
 #### Gate 4 — the acceptance criterion, whole
 - [ ] The acceptance sequence runs green as tests — headless; no trigger exists.
@@ -451,7 +451,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
   - [x] Task 10 — one reconciliation loop
   - [x] Task 11 — the resolver
   - [x] Task 12 — restore
-  - [ ] Task 13 — the record tells the docs
+  - [x] Task 13 — the record tells the docs
 
 ### Rulings
 - **Ratified by Nathan** after three review rounds (the cap); execution authorized. The record-one-unmarked judgment call was presented and stands.

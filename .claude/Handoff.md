@@ -28,6 +28,7 @@
 **Next Session:**
 
 - The live UIX pass on a fresh dev launch — covering all three arcs: the navigation checklist, the bridge (any native menu, any write failing gracefully, a Set-Card drag holding, a row icon change reaching the open page header), and the index (nav search results, tab titles after a rename, [[link]] resolution, autocomplete).
+- Nathan's live check of the NexusRecord (headless by design — the observable half): delete a page in-app and find its `.provenance.json` beside the artifact in `.trash`; Finder-copy a page with the app closed, open twice, and watch the copy take a fresh `PageID` while the original keeps everything.
 - Push `main` when Nathan says so.
 - The Pages-in-DB storage-model session (its own conversation); the store split is the remaining dedicated Boring Work session. The index accessors are the seam a future DB query layer repoints — one accessor per question, not nine call sites.
 
@@ -52,7 +53,7 @@
 
 **Recent Work (07-30, later session):** The band-seam law — every disclosure-band seam in Table and Cards is two shoulders of the view's content rhythm, state-free, owned once in the shared GroupBand chrome behind a per-view `--band-clearance` binding; a collapsed head sheds its dead clearance, a band opening a disclosure leads by a single shoulder, and embedded cards gained their tail seam. A four-lens /simplify pass folded the law's derivation and the nested-band yield into their deepest forms; the menu/pane disclosure surfaces were audited and rated good-to-be-unique. → [[CardView]] · [[TableView]].
 
-#### II. The Identity Arc (07-31) — the part still in flight
+#### II. The Identity Arc (07-31, closed)
 
 **What it is.** A content file now names its kind in the KEY holding its id: `PageID:` / `TaskID:` / `EventID:`, value a bare ULID. The folder's sidecar declares the kind and the file must AGREE. One predicate (`shared/identity.ts` · `admitContentFile`) is the only reader of all three keys and returns **member** (agrees) · **missing** (no key — adoptable, stamped at open) · **Unknown** (contradicting / malformed / dual). Unknown is invisible to the tree, skipped by all six nexus-wide write sweeps, and left byte-identical — the stray-`.png` treatment. An identity-LESS file is admitted everywhere, deliberately: identity decides whether a value can be handed *back*, never whether it may be cleared.
 
@@ -73,10 +74,21 @@
 
 **LIVE-VERIFIED by Nathan; the plan is closed.** What remains is sequenced work, not unfinished work:
 1. **~41 time-specific doc sentences** across ~22 docs — pre-existing, violates the standing no-time-specific rule, wants its own sweep and Nathan's go.
-2. **D-15 · duplicate CONTENT ids** — policy still `[open]`; the reachability question it blocked on is now answered and recorded in the log. **Highly reachable by the ordinary gesture**: no duplicate or restore op exists on the bridge, so copying a page can only happen in Finder — the unguarded path is the only path. Two files then share one id, the container's value batch collapses them last-wins, and a row renders the other file's values in directory order. It never self-heals (adoption stamps only a missing key; both stay members). Nothing is written, so the byte-identical promise holds. A fix belongs at the walk, which visits each file once — the predicate sees one file at a time and structurally cannot know a sibling shares its id.
+2. **D-15 · duplicate CONTENT ids** — closed by the NexusRecord arc below: the open-path re-mint adjudicates duplicates against the prior session's baseline and the copy takes a fresh id.
 3. **F8 · a taken seed-slot name never registers** — deliberately unpatched. Filling it needs a second writer to the registration record, weakening the single-writer invariant the seed ordering relies on, plus a product call. **Folds into the Agenda Rethink.**
 
 **Closed this session, for the record:** F3 (a contested slot now registers nobody) · F6 (a folder crossing depth has its sidecar renamed, not duplicated) · the two damaged live files (original ids restored, so `page_order` resolves again) · the identity docs reconciliation · both trashes stripped of ids · NexusOS manually seeded with its registered agenda pair.
+
+#### II. The NexusRecord Arc (08-01) — executed and gated
+
+**What it is.** Two memories and their first consumers, executed from the ratified `Planning/NexusRecord — Implementation Plan.md` (its Decision Log is the spec). **Pair:** every nexus-trash delete writes one JSON beside the artifact — parent by id as a discriminated union, per-kind payloads, all-or-nothing per pair, best-effort against the delete. **Baseline:** every genuine open walks once (pre-watcher, behind an opt-out only `nexus:rename` and a same-root re-adopt set), diffs against the prior session with three-state existence, keeps the last non-empty drift silently, and **re-mints duplicated ids** — content and container — against the prior baseline, the copy taking fresh id + duplicated chrome rows, the original untouched by construction. **Restore:** a headless `restore` mutate op + pure resolver spend the pairs — final titles are the resolver's, membership re-applies through the one shared reconcile loop. **No surface ships; every trigger is sequenced after.**
+
+**Execution:** all 14 tasks + 4 phase gates, failing-test-first throughout, every guard negative-controlled (disabled → red → restored). Each gate ran an independent simplifier + correctness reviewer on the phase's commit range; every finding was re-verified at the cited code before folding. Gate folds that mattered: the same-root re-adopt latch guard (a one-click drift clobber), ids-in-flux leaving both diff sides, the corrupt-registry mass-deletion guard, the partial-marker test family, the must-agree crossing (a re-minted file re-enters through a genuine walk). Closing state: **typecheck 0 · lint 0 · 1,984 tests / 179 files · build clean**, ~24 commits from base `680d996f`.
+
+**Deviations from the written plan, all logged in the plan's Log with reasoning (flagged for Nathan's post-hoc read):**
+- The plan's "prior-ambiguous → defer" adjudication arm was NOT implemented — it would freeze adjudication for as long as a duplication persists, the hoarding A-5 forbids; an ambiguous mark is preserved evidence and is **spent** the session its path answers again.
+- One item awaits a ruling in *Open Against Later Tasks*: the pure latch approximates "recorded path no longer exists" as "no walked claimant there" — wider than the spec's literal condition when a duplicated id's home was excluded via `excluded_folders` while closed.
+- The refusal vocabulary is four members, not five ("trashed outside the nexus" is unreachable — `resolveUnderRoot` bars it; an escapee reads unaddressable).
 
 **The post-close verification pass.** After the live check, the shipped subsystem was walked by hand across every user-reachable path — in-app and in Finder — then simplified twice (inline and by a sub-agent running the same skill, findings compared before anything was implemented), then attacked by a reviewer briefed that the work was long settled and merely awaiting a final look. That framing is the point: a reviewer expecting a finished, simple implementation should meet one.
 
