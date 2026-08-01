@@ -1,6 +1,6 @@
 ## NexusRecord — Implementation Plan
 
-> **Status:** written, pending review · Spec: [[NexusRecord — Decision Log]] · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: [[NexusRecord — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -454,6 +454,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
   - [ ] Task 13 — the record tells the docs
 
 ### Rulings
+- **Ratified by Nathan** after three review rounds (the cap); execution authorized. The record-one-unmarked judgment call was presented and stands.
 - Restore's **interface** is out of scope; its actions — resolver, op, listing — ship (Nathan, pre-ratification).
 - Plan review round 1: 8 findings — 3 High (row-copy direction · three-state producer · the fourth gather point), 3 Medium, 2 Low; 7 folded above, 1 moot post-scope-cut (the trigger/live-data contradiction named a step that no longer exists). The spec itself survived the round untouched; the T3/T5 hand-off deviation was verified correct against the real open sequence.
 - Plan review round 3 (final; scoped to round 2's folds): 4 findings — 2 Medium (the ambiguous-no-prior omission re-froze forever, contradicting A-5's never-hoards — now one path recorded unmarked so the next open adjudicates, and the writer executes the drop verb; `remintConfigIds` is module-private and takes one tile's views, so the reuse names the export and the exact walk, with the test assertion pinned to `blocks[].views[].config.id`), 2 Low (the three-vs-four gather-point count swept upstream into Requirements and Forced By; `nexus:rename`'s reuse comment rewritten in T3's commit). Three of five round-2 folds held under direct attack. Round cap reached; these four folds are post-round — three were prescribed by the reviewer against symbols it verified, the fourth (record-one-unmarked) is a judgment call flagged to Nathan at presentation.
