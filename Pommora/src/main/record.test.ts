@@ -360,4 +360,35 @@ describe('runOpenRecord — the open sequence', () => {
     expect(readBaseline()).toEqual({})
     expect(readDrift()).toBeNull()
   })
+
+  it('an id in flux never enters the drift — a dropped duplicate is not a removal', async () => {
+    await runOpenRecord(root)
+    const body = `---\nPageID: ${NOTES}\n---\nbody`
+    await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'A.md'))
+    await writeFile(join(root, 'Library', 'B.md'), body)
+    await runOpenRecord(root)
+    // Two claimants, neither at the recorded path: the entry drops from the baseline, and the
+    // drift stays silent about it — two copies on disk are not a deletion.
+    expect(readBaseline()?.[NOTES]).toBeUndefined()
+    expect(readDrift()).toBeNull()
+  })
+
+  it('a sidecar corrupted while closed reads as an unreadable transition, never a removal', async () => {
+    await runOpenRecord(root)
+    await writeFile(join(root, 'Library', '_pagecollection.json'), '{corrupt')
+    await runOpenRecord(root)
+    const baseline = readBaseline()
+    expect(baseline?.['col-lib']).toEqual({
+      id: 'col-lib',
+      kind: 'collection',
+      title: 'Library',
+      path: 'Library',
+      state: 'unreadable',
+    })
+    const drift = readDrift()
+    expect(drift?.removed).toEqual([])
+    expect(drift?.changed.map((c) => [c.before.state, c.after.state])).toEqual([
+      ['present', 'unreadable'],
+    ])
+  })
 })

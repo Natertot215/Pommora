@@ -42,7 +42,7 @@ export function diffBaselines(
     const before = prev[id]
     const after = next[id]
     if (before === undefined) {
-      if (after) diff.added.push(after)
+      diff.added.push(after)
     } else if (after === undefined) {
       diff.removed.push(before)
     } else if (SCALAR_FIELDS.some((f) => before[f] !== after[f])) {
