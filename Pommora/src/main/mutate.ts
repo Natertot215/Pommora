@@ -654,8 +654,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
 }
 
 /** Remove a file/folder per the delete-target setting: in-nexus .trash (default, portable +
- *  recoverable) or the OS Trash. trashWithTimestamp is the shared primitive crud's delete*
- *  uses; this adds the mode branch the crud helpers don't cover. */
+ *  recoverable, destination returned for the pair) or the OS Trash (no destination — the
+ *  artifact leaves the nexus). */
 async function removeViaMode(
   root: string,
   abs: string,

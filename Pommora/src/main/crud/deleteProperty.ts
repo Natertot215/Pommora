@@ -6,7 +6,9 @@
 // rare one, and it saves nothing restorable in-app.
 
 import { join } from 'node:path'
-import { readFile, mkdir, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
+import { contentId } from '@shared/identity'
+import { writePropertyPair } from '../provenance'
 import { withoutCacheBlock } from './assignment'
 import { readRegistry, type PropertyRegistry } from '../io/propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
@@ -18,12 +20,14 @@ import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
 import { SIDECAR_FILENAME } from '../paths'
-import { serializeJson, writeJson } from '../io/atomicWrite'
+import { writeJson } from '../io/atomicWrite'
 import { splitFrontmatter } from '../readNexus'
 import { isPlainObject, propertyKey } from '@shared/propertyValue'
 import { nowIso, sweepAdmits } from './util'
 import { fail, type Result } from '@shared/result'
 
+/** The recovery net the delete confirmation promises: the pair's artifact-less variant, values
+ *  keyed by page id — an id-less page's value is unrestorable and marks the pair partial. */
 async function snapshot(
   root: string,
   propertyId: string,
@@ -32,6 +36,7 @@ async function snapshot(
 ): Promise<void> {
   const key = propertyKey(def)
   const values: Record<string, unknown> = {}
+  let partial = false
   for (const folder of folders) {
     for (const file of await listMarkdownFiles(folder)) {
       let fm: Record<string, unknown>
@@ -40,16 +45,19 @@ async function snapshot(
       } catch {
         continue
       }
-      if (key in fm) values[file] = fm[key]
+      if (!(key in fm)) continue
+      const id = contentId(fm)
+      if (id) values[id] = fm[key]
+      else partial = true
     }
   }
-  const trash = join(root, '.trash')
-  await mkdir(trash, { recursive: true })
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-  await writeFile(
-    join(trash, `${stamp}__property-${propertyId}.json`),
-    serializeJson({ propertyId, def, values }),
-  )
+  await writePropertyPair(root, {
+    entity: 'property',
+    id: propertyId,
+    def,
+    values,
+    ...(partial ? { partial: true as const } : {}),
+  })
 }
 
 export function deleteProperty(root: string, propertyId: string): Promise<Result<null>> {

@@ -338,9 +338,9 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Survivors:** the Remove cache's storage, reconciliation branches, and cache-before-strip ordering — all deliberate stays (spec D-1, F-6). `propertyMenu.ts`'s user-facing promise ("a recovery snapshot lands in .trash") stays true.
 
 **Steps:**
-- [ ] Convert the snapshot write; its test asserts atomicity + de-collision now.
-- [ ] Remove residue; let the type gate enumerate fallout; gates green.
-- [ ] Commit: `refactor(crud): the snapshot joins the pair; the residue leaves`
+- [x] Convert the snapshot write; its test asserts atomicity + de-collision now.
+- [x] Remove residue; let the type gate enumerate fallout; gates green.
+- [x] Commit: `refactor(crud): the snapshot joins the pair; the residue leaves`
 
 #### Gate 3 — every delete leaves a truthful record
 - [ ] Gates green; simplification + review on the range; concerns fixed or ruled.
@@ -446,7 +446,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
   - [x] Task 6 — the sweep never strips a passenger
   - [x] Task 7 — the sweep tells the truth
   - [x] Task 8 — the pair
-  - [ ] Task 9 — absorb the snapshot; remove the residue
+  - [x] Task 9 — absorb the snapshot; remove the residue
 - [ ] **Phase 4** — the resolver spends the pairs
   - [ ] Task 10 — one reconciliation loop
   - [ ] Task 11 — the resolver
