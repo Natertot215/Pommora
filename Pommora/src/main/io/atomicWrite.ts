@@ -156,9 +156,9 @@ const trashStamp = (): string => new Date().toISOString().replace(/[:.]/g, '-')
 export async function mintBundle(nexusRoot: string, absSource: string): Promise<string> {
   const dir = await trashChainDir(nexusRoot, absSource)
   const stamp = trashStamp()
-  const base = basename(absSource)
+  const leaf = `${basename(absSource)}${BUNDLE_SUFFIX}`
   for (let n = 0; ; n++) {
-    const bundle = join(dir, `${stamp}__${n ? `${n}__` : ''}${base}${BUNDLE_SUFFIX}`)
+    const bundle = join(dir, n === 0 ? `${stamp}__${leaf}` : `${stamp}__${n}__${leaf}`)
     try {
       await mkdir(bundle)
       return bundle
