@@ -21,6 +21,7 @@ import { mutateRegistryFile } from './contextsRegistry'
 import type { SweepCapture, UnlinkOutcome } from './crud/contextCascade'
 import { reconcile } from './crud/reconcile'
 import { restoreProperty } from './crud/restoreProperty'
+import { scrubReturning } from './crud/restoreScrub'
 import { sweepAdmits } from './crud/util'
 import { hiddenName } from './exclusion'
 import { BUNDLE_SUFFIX, mintBundle, pathExists, readJsonObject, writeJson } from './io/atomicWrite'
@@ -522,6 +523,21 @@ export async function restoreArtifact(root: string, bundleAbs: string): Promise<
   // could still occupy the target — refuse rather than clobber what nothing adjudicated.
   if (await pathExists(targetAbs))
     return fail('exists', 'Something already sits at the restored location.')
+  // The bundle was frozen at its delete while the world moved on, so the returning content is
+  // reconciled against the CURRENT world here — in the trash, before anything lands. Content
+  // entities only: a Space or Context holds block documents, not schema-bearing pages.
+  if (record.entity !== 'space' && record.entity !== 'context') {
+    const owner =
+      record.entity === 'collection'
+        ? artifactAbs
+        : tree.collections.find((c) => dir === c.path || dir.startsWith(`${c.path}/`))?.path
+    await scrubReturning(
+      root,
+      tree,
+      artifactAbs,
+      owner === undefined ? null : owner === artifactAbs ? artifactAbs : join(root, owner),
+    )
+  }
   // A Context's identity lives ONLY in its registry entry, so it re-enters BEFORE anything
   // moves: a refused write leaves the bundle intact — the restore is retryable — where an
   // append after the move would destroy the evidence on failure and reply ok.
