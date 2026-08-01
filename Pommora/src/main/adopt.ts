@@ -3,7 +3,7 @@
 
 import { readFile, rename } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { listEntries } from './io/walk'
+import { isContentFile, listEntries } from './io/walk'
 import { admitContentFile, KIND_ID_KEY, type ContentKind } from '@shared/identity'
 import { newId } from './ids'
 import { atomicWriteFile, readJsonObject, readJsonStrict, pathExists } from './io/atomicWrite'
@@ -38,6 +38,9 @@ async function reHomeRegistered(
   for (const { slot, sidecar: sidecarKind, kind } of AGENDA_SLOTS) {
     const registered = kindCtx.agenda[slot]
     if (!registered) continue
+    // The singleton is already at the root, so nothing was displaced: this folder is a copy of it,
+    // and carrying it home would move it out of wherever its owner filed it.
+    if (kindCtx.homed.has(slot)) continue
     const sidecar = await readSidecar(absDir, sidecarKind, baseSidecar)
     // Try the other slot rather than aborting the loop on one non-match.
     if (sidecar?.id !== registered) continue
@@ -145,7 +148,7 @@ async function stampTree(
   let count = !singleton && (await stampFolder(absDir, kind).catch(() => false)) ? 1 : 0
 
   for (const e of await listEntries(absDir)) {
-    if (e.isFile() && !e.name.startsWith('_') && e.name.toLowerCase().endsWith('.md')) {
+    if (isContentFile(e)) {
       // An unreadable page, or one whose frontmatter refuses a field write, skips — adoption
       // is idempotent, so the next open retries it.
       if (await stampPage(join(absDir, e.name), memberKind).catch(() => false)) count++
@@ -214,7 +217,7 @@ async function isEmptyOfContent(
   excluded: string[],
 ): Promise<boolean> {
   for (const e of await listEntries(absDir)) {
-    if (e.isFile() && !e.name.startsWith('_') && e.name.toLowerCase().endsWith('.md')) return false
+    if (isContentFile(e)) return false
     if (e.isDirectory() && !shouldSkipDir(e.name, `${relDir}/${e.name}`, excluded)) return false
   }
   return true

@@ -10,6 +10,8 @@ import { join } from 'node:path'
 import { KIND_ID_KEY } from '@shared/identity'
 import { readNexus } from './readNexus'
 import { stampAdopted } from './adopt'
+import { agendaContext, resolveFolderKind } from './folderKind'
+import { pathExists, readJsonObject } from './io/atomicWrite'
 import { renameCascade } from './crud/cascade'
 import { handleMutate, type MutateDeps } from './mutate'
 import { openSession, closeSession } from './session'
@@ -106,6 +108,21 @@ describe('the nexus-wide write sweeps', () => {
     expect(await bytes('Adoptable.md')).toContain('[[Renamed]]')
     // Untouched: every Unknown one still says [[Target]], byte for byte.
     expect(await Promise.all(Object.keys(UNKNOWN_FILES).map(bytes))).toEqual(before)
+  })
+
+  // The walk admits a `.MD` case-insensitively, so the sweeps have to reach it on the same terms.
+  // A file the tree shows but no sweep rewrites goes quietly stale: its links survive a rename
+  // and its property cells read empty.
+  it('sweeps an upper-case .MD page on the same terms as any other member', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Upper.MD'),
+      `---\n${KIND_ID_KEY.page}: 01KVGMT8BFG350FZZXAMG1QDV1\n---\n\nlinks to [[Target]]\n`,
+    )
+    expect(await titles()).toContain('Upper')
+
+    const r = await renameCascade(root, 'Target', 'Renamed')
+    expect(r.ok).toBe(true)
+    expect(await bytes('Upper.MD')).toContain('[[Renamed]]')
   })
 
   it('a Context RENAME sweeps a member but leaves an Unknown file alone', async () => {
@@ -294,6 +311,27 @@ describe('agenda singleton adoption', () => {
     // Neither folder's members are stamped — the copy's page keeps its adoptability.
     expect(await readFile(join(root, 'Tasks copy', 'Copied.md'), 'utf8')).toBe('no frontmatter\n')
     expect(await readFile(join(root, 'Tasks', 'Buy milk.md'), 'utf8')).toBe('no frontmatter\n')
+  })
+
+  // Re-homing matches a registered id at any depth; contest detection only ever looked at the
+  // root's own children. A copy filed inside a Collection therefore read as the singleton having
+  // been dragged away — so it was carried out of the folder the user put it in, and on the next
+  // open the two of them contested the slot and de-registered the real one.
+  it('leaves a nested duplicate where the user filed it while the real singleton is home', async () => {
+    await withRegisteredTasks()
+    await mkdir(join(root, 'Notes', 'Tasks copy'), { recursive: true })
+    await writeFile(
+      join(root, 'Notes', 'Tasks copy', SIDECAR_FILENAME.taskConfig),
+      JSON.stringify({ id: TASKS }),
+    )
+
+    await stampAdopted(root)
+    expect(await pathExists(join(root, 'Notes', 'Tasks copy'))).toBe(true)
+    expect(await pathExists(join(root, 'Tasks copy'))).toBe(false)
+    // And the real singleton is still the registered one.
+    const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
+    const ctx = await agendaContext(root, identity, true)
+    expect(await resolveFolderKind(join(root, 'Tasks'), 'root', ctx)).toBe('tasks-singleton')
   })
 
   // A folder that crossed depth outside the app carries the wrong sidecar. Its identity is

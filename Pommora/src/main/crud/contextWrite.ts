@@ -28,6 +28,7 @@ import {
   rmwJsonStrict,
 } from '../io/atomicWrite'
 import { serializeOnFile } from '../io/fileLock'
+import { isMarkdownFile } from '../io/walk'
 import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { splitFrontmatter } from '../readNexus'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
@@ -199,7 +200,7 @@ export async function setContextOnPath(
   contextId: string,
   spaceIds: string[],
 ): Promise<Result<null>> {
-  if (abs.toLowerCase().endsWith('.md')) return setPageContext(abs, world, contextId, spaceIds)
+  if (isMarkdownFile(abs)) return setPageContext(abs, world, contextId, spaceIds)
   const owner = [...world.spaceById.values()].find((ref) => ref.dir === abs)
   if (owner) return setSpaceContext(world, owner.id, contextId, spaceIds)
   return fail('invalid-path', 'Not a context-taggable entity.', 'contexts')

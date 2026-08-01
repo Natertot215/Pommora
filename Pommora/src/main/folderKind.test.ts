@@ -15,10 +15,11 @@ const EVENTS = '01KVGMT8BFG350FZZXAMG1QDE1'
 let root: string
 const REG = (): FolderKindContext => ({
   agenda: { tasks: TASKS, events: EVENTS },
+  homed: new Set(),
   sidecarMode: true,
   root,
 })
-const RAW = (): FolderKindContext => ({ agenda: {}, sidecarMode: false, root })
+const RAW = (): FolderKindContext => ({ agenda: {}, homed: new Set(), sidecarMode: false, root })
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'pom-kind-'))
 })

@@ -36,6 +36,11 @@ export type AgendaRegistration = Partial<Record<AgendaSlot, string>>
 
 export interface FolderKindContext {
   agenda: AgendaRegistration
+  /** Registered slots whose folder already sits at the nexus root. Nothing needs carrying home
+   *  for one of these, and a nested folder claiming it is a copy rather than a displaced
+   *  original — re-homing it would take it out of wherever its owner filed it, and leave the two
+   *  of them contesting the slot on the next open. */
+  homed: ReadonlySet<AgendaSlot>
   /** The nexus root. It holds no content of its own, so it is never a container. Required, not
    *  optional: an absent root once let the resolver classify the nexus root itself as a Set. */
   root: string
@@ -120,7 +125,9 @@ export async function agendaContext(
   sidecarMode: boolean,
 ): Promise<FolderKindContext> {
   const registered = readAgendaRegistration(identity)
-  if (Object.keys(registered).length === 0) return { agenda: {}, sidecarMode, root }
+  if (Object.keys(registered).length === 0) {
+    return { agenda: {}, homed: new Set(), sidecarMode, root }
+  }
 
   // An unreadable root yields no entries, which counts no claims, which contests no slot — the
   // recorded registration stands. That is the right answer: a root Pommora cannot list is no
@@ -138,9 +145,13 @@ export async function agendaContext(
     if (sidecar?.id) claims.set(sidecar.id, (claims.get(sidecar.id) ?? 0) + 1)
   }
   const agenda: AgendaRegistration = {}
+  const homed = new Set<AgendaSlot>()
   for (const { slot } of AGENDA_SLOTS) {
     const id = registered[slot]
-    if (id && (claims.get(id) ?? 0) <= 1) agenda[slot] = id
+    if (!id) continue
+    const claimants = claims.get(id) ?? 0
+    if (claimants <= 1) agenda[slot] = id
+    if (claimants >= 1) homed.add(slot)
   }
-  return { agenda, sidecarMode, root }
+  return { agenda, homed, sidecarMode, root }
 }
