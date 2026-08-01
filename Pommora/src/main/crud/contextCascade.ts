@@ -81,6 +81,9 @@ export interface SweepResult {
   refused: string[]
 }
 
+/** What an unlink sweep returns: the sweep's own truth plus what each stripped root gave up. */
+export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
+
 /** Sweep every context-bearing root through `rewrite` (null = untouched), each under
  *  its file lock. The one walk every key/value cascade and unlink shares; the callback
  *  gets the root's absolute path beside its parsed form. */
@@ -167,7 +170,7 @@ export async function unlinkContextKey(
   root: string,
   contextTitle: string,
   skipUnder?: string,
-): Promise<Result<SweepResult & { captured: SweepCapture[] }>> {
+): Promise<Result<UnlinkOutcome>> {
   const key = contextKey(contextTitle)
   const skipPrefix = skipUnder ? skipUnder + sep : null
   const captured: SweepCapture[] = []
@@ -191,7 +194,7 @@ export async function unlinkSpaceValue(
   root: string,
   contextTitle: string,
   spaceTitle: string,
-): Promise<Result<SweepResult & { captured: SweepCapture[] }>> {
+): Promise<Result<UnlinkOutcome>> {
   const key = contextKey(contextTitle)
   const captured: SweepCapture[] = []
   const swept = await sweepContextRoots(root, (raw, file) => {
