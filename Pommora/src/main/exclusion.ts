@@ -5,12 +5,18 @@ export function normalizeSeg(s: string): string {
   return s.normalize('NFC').toLocaleLowerCase()
 }
 
+/** A name Pommora keeps to itself: dot-prefixed (`.nexus`, `.git`, `.trash`) or underscore-
+ *  prefixed (sidecars, and internal folders). The walk hides these, which is why CRUD refuses to
+ *  create one — and why anything reading a Pommora-owned folder can treat such a name as its own
+ *  rather than as user content. One fact, so the three readings can never drift apart. */
+export function hiddenName(name: string): boolean {
+  return name.startsWith('.') || name.startsWith('_')
+}
+
 /** Should this directory be skipped while walking the nexus? `relPath` is POSIX-style,
  *  '/'-joined; `excluded` is user `excluded_folders` from settings.json. */
 export function shouldSkipDir(name: string, relPath: string, excluded: string[]): boolean {
-  // Convention skips: dot-prefixed (.nexus/.git/.trash), underscore-prefixed
-  // (sidecars are files, but underscore folders are internal), and node_modules.
-  if (name.startsWith('.') || name.startsWith('_') || name === 'node_modules') return true
+  if (hiddenName(name) || name === 'node_modules') return true
   return excludedMatcher(excluded)(relPath.split('/'))
 }
 
