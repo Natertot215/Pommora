@@ -1,12 +1,12 @@
 ## Deletion Bundle — Decision Log
 
-**Status:** written, pending review.
+**Status:** written — review round 1 folded, round 2 pending.
 
 ### Frame
 
 - **Purpose:** Restructure the provenance half of the NexusRecord so the record is written *before* the destruction it describes and can never be separated from its artifact — one deletion becomes one self-contained folder in `.trash`.
 - **Core Value:** A delete that crashes half-way leaves evidence instead of silent loss, and no rename, hand-move, or sync race can strand an artifact without its record.
-- **Success Criteria:** Every nexus-trash delete produces a single `.deleted` bundle holding the artifact under its original name plus `record.json`; killing the process at any point mid-delete leaves either a completed bundle or a self-describing incomplete one, never unrecorded destruction; restore behavior is unchanged from the pair design for every already-passing case.
+- **Success Criteria:** Every nexus-trash **entity** delete (page, collection, set, space, context, property) produces a single `.deleted` bundle holding the artifact under its original name plus `record.json`; killing the process at any point mid-delete leaves either a completed bundle or a self-describing incomplete one, never unrecorded destruction; restore behavior is unchanged from the pair design for every already-passing case.
 
 ### Sources
 
@@ -26,20 +26,21 @@
 - **A-2:** [confirmed] The record schema is the pair schema minus the `name` field and its stamped-leaf parser (`artifactBaseName`) — the artifact keeps its real name, so both dissolve. The zod discriminated union, `parentRef`, per-kind payloads, and `partial` marker carry over unchanged.
 - **A-3:** [confirmed] Property deletes become ordinary artifact-less bundles — `.trash/<stamp>__property-<id>.deleted/` holding only `record.json`. The flat-file `writePropertyPair` path, its own de-collision loop, and the property exemption in the listing all dissolve; every deletion is now the same shape.
 - **A-4:** [confirmed] System-trash mode is unchanged: no bundle, no gathers — the artifact leaves the nexus and there is nowhere valid for a record to point.
+- **A-5:** [confirmed] A markdown-block tile file is **not an entity delete** — it has no record schema entity and no restore semantics. The flat, record-less trash primitive survives (renamed `trashFileFlat`) solely for `blocks.ts`; its tests are unchanged. Bundles are for entity deletes only.
 
 #### B — Write-Ahead Ordering
 
 - **B-1:** [confirmed] The bundle folder and `record.json` are written **before any destructive step**; the artifact moves in **last**. The artifact's presence inside the bundle is the settle marker: a non-property bundle without an artifact is an incomplete delete — never restorable, skipped by the listing, left on disk as evidence.
-- **B-2:** [confirmed] Facts that only exist mid-delete (a sweep's captured membership) are patched into `record.json` after the sweep, before the artifact moves in. Intermediate record states cannot lie: until the artifact arrives, the bundle is incomplete by definition.
-- **B-3:** [assumed] In nexus-trash mode, a failed record write **refuses the delete** — nothing has been destroyed yet, so refusal is finally possible and honest. This inverts the pair design's best-effort-and-shrug, which was forced on it by writing last. The user-visible change: a delete can now fail with "this couldn't be recorded" instead of silently degrading to hand-restore.
+- **B-2:** [confirmed] Facts that only exist mid-delete (a sweep's captured membership) are patched into `record.json` after the sweep, before the artifact moves in. The pre-sweep record is written with `partial: true` and the patch clears it — so a crash between sweep and patch leaves a record that says it is thinner than the truth, never one affirmatively asserting an empty membership. With that, intermediate record states cannot lie: the bundle is incomplete until the artifact arrives, and the record is marked partial until the patch lands.
+- **B-3:** [assumed] In nexus-trash mode, a failed record write **refuses the delete** — nothing has been destroyed yet, so refusal is finally possible and honest. The refusal rolls the mint back (removing the just-created, provably empty bundle folder) so a failed delete leaves no litter in `.trash`. This inverts the pair design's best-effort-and-shrug, which was forced on it by writing last. The user-visible change: a delete can now fail with "this couldn't be recorded" instead of silently degrading to hand-restore.
 - **B-4:** [assumed] The Space arm reorders to match: sidecar id and registry entry are read **before** the unlink sweep, and a Space whose id can't be read refuses the delete. The pair design stripped the tag from every page first and only then discovered it couldn't record the act.
 
 #### C — Restore & Listing
 
 - **C-1:** [confirmed] `restoreArtifact` takes a bundle path; the artifact is the single non-`record.json` entry inside; it moves out to the resolver's placement and the bundle is removed. The resolver, the containment/occupancy guards, registry-append-before-move with rollback, passenger re-keying, and the reconcile loop are all unchanged.
 - **C-2:** [confirmed] The orphan prune is **deleted**, not ported — a record inside the bundle cannot be separated from its artifact by a rename, hand-move, or sync race, so the failure the prune answered (and the data loss it caused, destroying non-derivable records over temporary artifact absence) no longer exists.
-- **C-3:** [confirmed] Restore re-derives the artifact's actual id inside the op (page frontmatter / container sidecar) and refuses on disagreement with the record — the record's claim is no longer trusted over the artifact's content.
-- **C-4:** [assumed] The id-live trap heals by re-mint: when restore finds the recorded id alive in the tree (a Finder copy made before the delete), it restores the artifact under a **fresh id** instead of refusing forever — mirroring the duplicate law (possession is originality; the live holder keeps the id). Device rows copy old-id → new-id through the exported re-mint helpers so the restored entity keeps its folds and view state. The refusal remains only for Contexts and Spaces, whose identity lives in the registry and cannot re-mint meaningfully without their memberships re-keying.
+- **C-3:** [confirmed] Restore re-derives the artifact's actual id inside the op and refuses on disagreement with the record — the record's claim is no longer trusted over the artifact's content. Carved by kind: page → frontmatter id; collection/set/space → sidecar id; **context → the re-check does not apply**, because a Context has no artifact-side identity at all — its identity is solely the registry entry the record carries, which is why the record exists. Disagreement refuses; absence on both sides proceeds.
+- **C-4:** [assumed] The id-live trap heals by re-mint: when restore finds the recorded id alive in the tree (a Finder copy made before the delete), it restores the artifact under a **fresh id** instead of refusing forever — mirroring the duplicate law (possession is originality; the live holder keeps the id). Order matters: the **record patches to the fresh id first, then the artifact rewrites** — a crash between the two leaves a disagreement that a retried restore re-heals, never a permanently refused bundle. Device rows copy old-id → new-id so the restored entity keeps its folds and view state; the re-mint helpers this reuses are currently module-private and get exported as part of the task (a sidecar re-mint also re-mints `views[].id`, a side effect the heal inherits deliberately). The refusal remains only for Contexts and Spaces, whose identity lives in the registry and cannot re-mint meaningfully without their memberships re-keying.
 
 #### D — Migration
 
