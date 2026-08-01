@@ -123,12 +123,7 @@ export async function readRecord(bundleDir: string): Promise<RecordFile | null> 
  *  than read as a second candidate: `invalidName` forbids those prefixes, so no real entity
  *  wears one. */
 export async function bundleArtifact(bundleDir: string): Promise<string | null> {
-  let entries: Dirent[]
-  try {
-    entries = await readdir(bundleDir, { withFileTypes: true })
-  } catch {
-    return null
-  }
+  const entries = await readdir(bundleDir, { withFileTypes: true }).catch(() => [])
   const found = entries.filter((e) => !e.name.startsWith('.') && !e.name.startsWith('_'))
   return found.length === 1 ? join(bundleDir, found[0].name) : null
 }
@@ -381,13 +376,7 @@ export interface ListedBundle {
 export async function listBundles(root: string): Promise<ListedBundle[]> {
   const out: ListedBundle[] = []
   const walk = async (dir: string): Promise<void> => {
-    let entries: Dirent[]
-    try {
-      entries = await readdir(dir, { withFileTypes: true })
-    } catch {
-      return
-    }
-    for (const e of entries) {
+    for (const e of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
       if (!e.isDirectory()) continue
       const abs = join(dir, e.name)
       const record = e.name.endsWith(BUNDLE_SUFFIX) ? await readRecord(abs) : null
