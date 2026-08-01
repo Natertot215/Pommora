@@ -22,7 +22,7 @@ Linking is the one conversion: a markdown tile links out to a Page or a view fro
 
 ### The Embed Framework
 
-One seam renders a Page inside any foreign surface — SurfacePM tiles today, MarkdownPM's `![[Embed]]` later. The embed **is** the CM6 view: a read-only portal at rest carrying every MarkdownPM affordance, with editability flipped in place through a live-reconfigured compartment rather than a remount. An embed edit *is* a page edit, flowing through the page's own debounced save.
+One seam renders a Page inside any foreign surface — SurfacePM tiles, and MarkdownPM's `![[Embed]]` when it arrives. The embed **is** the CM6 view: a read-only portal at rest carrying every MarkdownPM affordance, with editability flipped in place through a live-reconfigured compartment rather than a remount. An embed edit *is* a page edit, flowing through the page's own debounced save.
 
 Both embed kinds size off **one knob**: a page embed's fixed dimensions ride a scale var while its text zoom derives from that same knob on the editor's own curve; a view embed normalizes its grid onto the editor's text base before taking the zoom, so the two read at one text level. **Resizing a tile is a viewport change, never a scale change.**
 
@@ -54,7 +54,7 @@ Two hosts carry a block document: the Homepage singleton and each Space, identif
 
 #### Pending
 
-- **The Homepage's standing** — it hosts a real block surface today. Whether it stays a BlockHost, hands the landing surface off, or goes away entirely is undecided; a Space is a settled host either way.
+- **The Homepage's standing** — it hosts a real block surface. Whether it stays a BlockHost, hands the landing surface off, or goes away entirely is undecided; a Space is a settled host either way.
 
 - **The view-embed lock's reach** — the view-embed config lock and the per-tile lock write one key, so locking a view embed's configuration also freezes its position and size. Whether the two stay coupled — and what the lock should therefore read — is unsettled.
 
@@ -62,7 +62,7 @@ Two hosts carry a block document: the Homepage singleton and each Space, identif
 
 - **The Insert menu** — background right-click offering Page / View / Block through the shipped picker, with the Link-Page search pane behind its Page branch. Navigation's per-nexus recents is a confirmed future consumer, but the current drill picker works, so the swap is deferred.
 
-- **The container view-lock** — locking a Collection's or Set's views everywhere they're read; the one lock still unbuilt.
+- **The container view-lock** — locking a Collection's or Set's views everywhere they're read; the one lock with no implementation behind it.
 
 - **Navigation surfaces for hosts** — parked by design.
 

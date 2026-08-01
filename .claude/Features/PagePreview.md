@@ -36,7 +36,7 @@ Warmth is session-only and per-tab: serialized editor state, undo included, plus
 
 ### The NavWindow Flavor
 
-The NavWindow is tab 1 of its own flavor: a perma-pinned, icon-only, non-orderable map tab whose content IS the window's whole body. "Open in Preview" from its rows adds page tabs beside it when the window's routing override is on — persisted with the preview sets, default on, with no UI control yet; off routes to the floating window. An active page tab swaps the body for the editable embed and slides the rail closed; the map tab is the return, refocusing the search. The strip lives in the content column beside the full-height rail, so tabs start right of the sidebar exactly like the app's tab bar, and the row exists only past one tab, its height nudging the search down. A page tab whose own icon is the map glyph renders its type icon instead, so nothing masquerades as the pinned tab. Opening the window over a live page preview morphs it — a FLIP from the preview's rect, the outgoing preview hiding instantly — one window changing shape, never a dismiss and a fresh open. The two windows carry different tint opacities, the NavWindow the more opaque of the pair, so the morph steps. The window's tab set is durable multi-session, restored on every open.
+The NavWindow is tab 1 of its own flavor: a perma-pinned, icon-only, non-orderable map tab whose content IS the window's whole body. "Open in Preview" from its rows adds page tabs beside it when the window's routing override is on — persisted with the preview sets, default on, with no UI control over it; off routes to the floating window. An active page tab swaps the body for the editable embed and slides the rail closed; the map tab is the return, refocusing the search. The strip lives in the content column beside the full-height rail, so tabs start right of the sidebar exactly like the app's tab bar, and the row exists only past one tab, its height nudging the search down. A page tab whose own icon is the map glyph renders its type icon instead, so nothing masquerades as the pinned tab. Opening the window over a live page preview morphs it — a FLIP from the preview's rect, the outgoing preview hiding instantly — one window changing shape, never a dismiss and a fresh open. The two windows carry different tint opacities, the NavWindow the more opaque of the pair, so the morph steps. The window's tab set is durable multi-session, restored on every open.
 
 ### The Inspector
 
@@ -46,7 +46,7 @@ The right-hand pane is a PreviewPane **side slot** in its overlay mode — it ri
 
 ### Pending
 
-- The hover card's embedded page content — its body is a blank pane today.
+- The hover card's embedded page content — its body is a blank pane.
 
 - The engulf's landing when the promoted page's main-pane fetch outlasts the FLIP; the pane can show the prior view for a beat, usually masked by warmth.
 

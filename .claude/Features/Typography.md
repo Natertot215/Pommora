@@ -47,5 +47,5 @@ The same file holds the **capped label** — ellipsis at rest, scroll-on-hover w
 - **Monospace / code font** — the editor draws code from a hand-written stack with no `mono` token behind it.
 - **Markdown element mapping** — no ramp style is assigned to any Markdown element.
 - **Tabular / monospaced digits** — the editor's ordered-list markers use them; tables and numeric columns don't.
-- **Truncation conventions** — which surfaces cap at all, and whether a multi-line clamp exists (none does today).
+- **Truncation conventions** — which surfaces cap at all, and whether a multi-line clamp exists (none does).
 - **Dynamic Type / responsive sizing** — the ramp is fixed and doesn't answer OS text-size settings.

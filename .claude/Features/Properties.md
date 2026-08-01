@@ -150,7 +150,7 @@ Nothing mirrors the registry into a database: filter, sort, and group all run re
 
 **Lossy Change-Type Strip:** The cross-assigner value strip a lossy type change should trigger. `changeType` accepts the drop flag and ignores it, applying a plain global definition edit.
 
-**Per-Type Editor Panes:** File is the one creatable type whose editor body is still blank. The Checkbox, Number, Select, Multi-Select, Status (grouped / flat option lists, add · recolor · reorder · drag, right-click Rename · Remove · Clear), URL, and Date & Time editors have shipped; File follows on their patterns.
+**Per-Type Editor Panes:** File is the one creatable type whose editor body is blank. The Checkbox, Number, Select, Multi-Select, Status (grouped / flat option lists, add · recolor · reorder · drag, right-click Rename · Remove · Clear), URL, and Date & Time editors have shipped; File follows on their patterns.
 
 **Number Show-as for dynamic views:** the completion **Ring** and the Notion-style Number/Bar/Ring tile grid belong to view types with vertical room (Gallery/Board) — the table ships the Number/Bar look row only. The bar's stroke is held pending a visual pass.
 
@@ -158,10 +158,10 @@ Nothing mirrors the registry into a database: filter, sort, and group all run re
 
 **Calendar Picker refinements:** the Date & Time value editor is live in table cells but pending — range values (a datetime value is a single ISO on disk, so the value picker disables the shared picker's range mode), keyboard stepping on the time segments, an in-app control for the `time_format` setting, and its own test coverage.
 
-**Per-View Link Styling:** a URL property's look — display (full-URL ⇄ title), underline, colour — is entirely property-level today; a URL column has no per-view style. Letting a view override it (one view titles, another raw URLs, of the same property) is a prospect, not a limitation — the `column_styles` seam already carries per-view looks for the other types.
+**Per-View Link Styling:** a URL property's look — display (full-URL ⇄ title), underline, colour — is entirely property-level; a URL column has no per-view style. Letting a view override it (one view titles, another raw URLs, of the same property) is a prospect, not a limitation — the `column_styles` seam already carries per-view looks for the other types.
 
 ### Known Issues
 
 **A checkbox's "Accent" reads neutral in the pane under a `system` accent:** the cell box and switch tint the true accent through `var(--accent)`, so they render correctly for any accent setting. The editor's colour *chip*, though, resolves through a palette key — and `system` (follow-the-OS) has no palette key, so it falls back to the neutral default chip. A palette-key accent (the default and every explicit choice) is unaffected, and only the settings chip shows the mismatch.
 
-**A stray bare-string Multi-Select value reads as Select:** the read-side coercion that overrides a shape-vs-column type mismatch — a value's on-disk shape corrected to what its column actually declares — covers only the single-string kinds (URL / Select / Date). A Multi-Select value stored as a lone string rather than an array therefore stays classified as Select and drops out of grouping and filtering. Unreachable today (nothing writes that shape), but it goes live the moment the **Lossy Change-Type Strip** performs a Select→Multi-Select change; fix it there as a value migration (bare string → single-element array), not a coercion special-case.
+**A stray bare-string Multi-Select value reads as Select:** the read-side coercion that overrides a shape-vs-column type mismatch — a value's on-disk shape corrected to what its column actually declares — covers only the single-string kinds (URL / Select / Date). A Multi-Select value stored as a lone string rather than an array therefore stays classified as Select and drops out of grouping and filtering. Unreachable while nothing writes that shape, but it goes live the moment the **Lossy Change-Type Strip** performs a Select→Multi-Select change; fix it there as a value migration (bare string → single-element array), not a coercion special-case.

@@ -44,7 +44,7 @@ An in-memory map from normalized title to the Page IDs holding it resolves every
 
 ### Prospects
 
-**Aliases:** the tail of `[[Title|alias]]` parses and survives every rewrite, but nothing renders it as the display text yet and no surface authors one. The display treatment and an insertion path are outstanding.
+**Aliases:** the tail of `[[Title|alias]]` parses and survives every rewrite, but nothing renders it as the display text and no surface authors one. The display treatment and an insertion path are outstanding.
 
 **Duplicate Disambiguation:** id-scoping so a connection to an ambiguous title can pick its target inline.
 

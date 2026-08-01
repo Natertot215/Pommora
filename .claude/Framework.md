@@ -45,7 +45,7 @@ The near-term queue rides `Context.md`'s Pending Focuses rather than a version n
 
 #### v0.6.0 — The View Renderers
 
-The remaining renderers — **List · Gallery · Calendar · Timeline** — over the shipped filter → group → sort pipeline (Table and Cards render today; the other four are registered types with no renderer, and their picker tiles are inert). Each groups mechanically differently, so each carries its own grouping surface.
+The remaining renderers — **List · Gallery · Calendar · Timeline** — over the shipped filter → group → sort pipeline (Table and Cards carry renderers; these four are registered types with none, and their picker tiles are inert). Each groups mechanically differently, so each carries its own grouping surface.
 
 #### v0.7.0 — Agenda + Calendar
 

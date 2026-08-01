@@ -64,6 +64,6 @@ The footer carries a breadcrumb of the active tab's container path, plus a dimme
 
 The **NavWindow rail's** Style toggle governs its search results too — searching changes what is listed, never how it's drawn. (NavView differs deliberately: its search is always cards.) Only recents reorder, since a result set has no stored order to drag against. Inert hits — those whose kind has no click destination — have no card form, so Gallery is passed none and they surface in List only.
 
-**Open design:** the NavWindow's Figma gallery form. Whether the rail as built is the intended rail or a stand-in has no ruling; nor does whether the shipped hover pin marker settles the row marker. List rows carry no current-item treatment today; gallery cards do.
+**Open design:** the NavWindow's Figma gallery form. Whether the rail as built is the intended rail or a stand-in has no ruling; nor does whether the shipped hover pin marker settles the row marker. List rows carry no current-item treatment; gallery cards do.
 
 **Deferred:** Agenda is unsearchable — Tasks and Events are absent from the tree the index builds from, and no selection kind opens one. Both wait on Agenda joining the walk rather than on new plumbing: the persistence layer admits their refs, and the inert-row rendering exists. Body and full-text search waits on a SQLite FTS layer that doesn't exist. Drag-to-pin across the tab divider, and dragging a tab out into its own window, are Prospects.

@@ -68,7 +68,7 @@ A view write saves the whole view and then refetches: the watcher echo-suppresse
 
 **List, Gallery, Calendar, and Timeline Renderers:** Modeled in the type registry and present as picker tiles, with no renderer behind them — Table and Cards are the built pair, and a view of any other type falls through to the table.
 
-**Compact Table Density:** The Format control persists Standard / Compact and drives the cards card layout today (→ `CardView.md`); the table's Compact style isn't built, so the toggle stays visually inert there.
+**Compact Table Density:** The Format control persists Standard / Compact and drives the cards card layout (→ `CardView.md`); the table carries no Compact style, so the toggle stays visually inert there.
 
 **Table Flatten + Location Subtitle:** The table's no-grouping mode — bands flatten away and a page's location renders as a subtitle in its title cell, governed by its own Flatten and Hide Location toggles. Cards already carry both halves (Group By: None, and the Hide Location switch); the Figma shows both toggles, and the footing region takes them without layout change.
 

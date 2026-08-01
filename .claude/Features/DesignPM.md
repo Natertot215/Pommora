@@ -78,5 +78,5 @@ The reusable pieces mirror the Figma library. The shape they're built toward is 
 ### Pending
 
 - **Spacing and radius** — no formalized scale; corners and spacing stay ad-hoc literals until they're lifted from Figma.
-- **Light/dark theming** — a future seam; the system is dark only today.
+- **Light/dark theming** — a future seam; the system is dark-only.
 - **Accent editing UI** — deferred; the control surface is the config file.
