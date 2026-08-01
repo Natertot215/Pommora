@@ -1,6 +1,6 @@
 ## NexusRecord — Decision Log
 
-> **Status:** settled, pending a scoped verification round, then the implementation plan. Every decision below is ratified by Nathan or derived from a verified fact; none is open.
+> **Status:** settled — verification complete, pending the implementation plan. Every decision below is ratified by Nathan or derived from a verified fact; none is open.
 
 ### Frame
 
@@ -35,7 +35,7 @@ They share a module and nothing else.
 - `src/main/crud/deleteProperty.ts` — the property snapshot: path-keyed, non-atomic, flat in `.trash`, read by nothing.
 - `src/main/crud/contextJournal.ts` · `contextCascade.ts` — the rename journal and its discard branches.
 - `src/main/crud/contextWrite.ts` — a Context's folder resolves as `contextsDir/<title>`; a freed title is immediately mintable by a new Space or Context.
-- `src/main/crud/folderEntity.ts` — folder name = title; creates disambiguate on collision, renames refuse.
+- `src/main/crud/folderEntity.ts` · `mutate.ts` — folder name = title; the create wrapper in the dispatch disambiguates on collision, the primitives themselves refuse.
 - `src/shared/types.ts` — `NodeKind`; a Context group is `{def, spaces}` with no node kind of its own.
 
 ### Decisions
@@ -47,8 +47,9 @@ They share a module and nothing else.
 - **A-3:** [assumed] Un-adopted entities are out of scope. The baseline projection **actively filters** `adopted-`-prefixed ids, and a parent whose id is one records as `unaddressable` — a path hash is an address, not an identity.
 - **A-4:** [assumed] Out of scope entirely, stated rather than discovered: **block tiles** (no id key, `.nexus`-resident, invisible to the walk; their trash path writes no pair) and **Tasks/Events** (the walk emits no agenda nodes; widens for free when Agenda joins the walk).
 - **A-5:** [confirmed — Nathan] **A duplicated id re-mints — content and container alike — and the baseline is what makes that safe.** One Finder folder-duplicate copies the sidecar id along with every page id inside, and container ids key the fold, view, thumbnail and asset stores, so the copy and the original share all of them until re-minted. A sidecar id is exactly as re-mintable as a frontmatter one. The prior session's baseline names the path that legitimately held each id; what sits at that path is the original, the other re-mints.
-  - **The refusal preserves its evidence.** When the baseline cannot adjudicate — no baseline, or neither claimant at the recorded path — nothing is minted, and the baseline writer must **not** then collapse the ambiguity: an id the walk saw at two or more paths keeps its prior-session path and is marked ambiguous, so a later session adjudicates against the pre-duplication record rather than against readdir order.
-  - **The re-mint patches the tree it was handed.** It runs after the open path's one walk, so it rewrites the walked node's id in memory as it writes the file — the renderer's first render shows the re-minted id, no second walk. Its frontmatter write takes the file lock like every other frontmatter writer.
+  - **The refusal preserves its evidence — and spends it or drops it, never hoards it.** When the baseline cannot adjudicate, nothing is minted, and the baseline writer must not collapse the ambiguity: an id the walk saw at two or more paths keeps its prior-session path, marked ambiguous. But a deferral must have a payoff to defer *to*: when the recorded path no longer exists at all, no future session can adjudicate either, so the id drops to unadjudicable rather than freezing forever. Ambiguous-marked ids are **excluded from the diff** — their baseline path is stale by construction, and reporting the same phantom move every open would also overwrite the last-non-empty drift row C-7 protects.
+  - **The re-mint re-keys what the id keys.** The device-local rows keyed by entity id — the block layout, the active view, folds, preview origins — move with the id, or a Space re-mint silently empties its board and orphans its tile files. Order arrays need nothing: unknown ids drop and the entity re-enters by title.
+  - **The re-mint re-runs the attach pass, not a hand-patch.** A Space's id also lives in the `contextValues` of every node that tags it, so patching the one walked node leaves every chip resolving a dead id on first render. The walk's existing in-memory attach pass re-runs over the patched tree — it already exists and is explicitly cheap. The frontmatter write takes the file lock like every other frontmatter writer.
   - Silent, per C-7.
 
 #### B — Provenance (the restore half)
@@ -58,6 +59,8 @@ They share a module and nothing else.
   Why a record at trash time is necessary at all: the mirrored chain stores only the old **path**, and the baseline holds only the last **session**, overwritten each open. Once the parent is renamed, no surviving structure maps the stale path to the parent's stable id — so the id is captured at the moment of departure.
 
   The write is **best-effort, gathered at three named points** in the delete arm's real order: the registry entry before the erase, the membership during the sweep, the pair name after the move returns. A pair write that fails does **not** fail the delete — the artifact is already irreversibly moved, and a fault reply would leave the renderer showing an entity that is gone from disk. A missing pair degrades that one entity to hand-restore, which is today's behaviour for everything.
+
+  **All-or-nothing per pair:** if a gather point a kind requires fails — a Context whose registry entry could not be read, a parent that could not resolve — **no pair is written at all**. A missing pair is the accepted degradation; a present pair that is silently incomplete is worse, because restore trusts it. The sweep-scoped partial marker (G-2) covers sweep gaps only and says so.
 - **B-2:** [assumed] One pair per trashed **top**. The trash primitive moves a whole subtree in one rename; passengers keep their nesting and need nothing. The pair is named from the final stamped leaf — de-collision counter included — so pairing is injective.
 - **B-3:** [assumed] This does not touch `be671378`. No pointer is written on any live entity, and none on the dead one either — the pair sits beside it.
 - **B-4:** [assumed] The pair's parent field is a **discriminated union**: root · container by id · Context by registry id · unaddressable. Root-level Collections, Spaces and Contexts have no parent sidecar; a folder made outside the app before adoption has no id at all; a path-derived synthetic is an address. Each records honestly rather than pretending to a bare id.
@@ -72,7 +75,7 @@ They share a module and nothing else.
 #### C — Baseline (the compare half)
 
 - **C-1:** [assumed] The baseline lives in `nexus.db` as a `local_state` row. It is derived, per-machine, and rebuildable by definition. `.nexus/` is watched, so a per-gesture document there buys re-walks; the database is ignored *because* it thrashes.
-- **C-2:** [assumed] The **open path owns one walk explicitly**: `adoptNexus` and launch-restore call it after the database opens and hand that one tree to the baseline writer, the re-mint pass, and the renderer's first state read. Not "whichever walk happens first" — the watcher starts before the renderer's first request, and a sync daemon materialising another device's changes would otherwise make the post-change walk the baseline.
+- **C-2:** [assumed] The **open path owns one walk explicitly**: `adoptNexus` and launch-restore call it after the database opens and hand that one tree to the re-mint pass, **then** the baseline writer, then the renderer's first state read — in that order, or the baseline records the pre-mint state and the next open reports the re-minted entity as created. Not "whichever walk happens first" — the watcher starts before the renderer's first request, and a sync daemon materialising another device's changes would otherwise make the post-change walk the baseline.
 - **C-2a:** [assumed] An **absent** prior baseline is a distinct outcome: latch and report nothing. First-ever open, a schema bump that drops the database, and a null handle on locked media all reach it; treating absence as an empty map would report every entity as created.
 - **C-3:** [assumed] **No mutation hooks.** Every in-app structural change already triggers a confirming walk; the next session's baseline captures it. The one exception is stated in A-5: the re-mint patches the handed tree itself.
 - **C-4:** [assumed] The watcher already attributes live-session drift in memory. The baseline covers only the window when the app was closed.
@@ -108,6 +111,7 @@ They share a module and nothing else.
 #### G — Membership capture
 
 - **G-1:** [assumed] **Membership is captured at the sweep, keyed per swept root — pages and Space sidecars alike.** Spaces are context-taggable themselves, and the unlink sweep strips `_space.json` roots exactly as it strips pages; a page-only capture would silently destroy every Space-to-Space link a deleted Context held. The capture discriminates the root by which id key it carries.
+- **G-1a:** [assumed] **The sweep never strips a passenger.** A root that sits *under the entity being deleted* is leaving with its owner, and its key is still true inside the trashed subtree — stripping it records a loss the same operation then ships to trash, and a restored Context would come back with its internal Space-to-Space links destroyed. The unlink sweeps skip roots under the delete target by path prefix; the damage is removed at its source rather than captured and re-applied.
 - **G-2:** [assumed] This is a **signature change to the shared sweep, not a free ride**: the callback gains the file path beside the parsed frontmatter, the return gains the captured values, and the widening reaches the rename cascade, which shares the sweep. The sweep also grows a **third list** for admission-refused roots — a dual-key page keeps its context key through the delete and today appears in neither `touched` nor `skipped` — and the pair records itself **partial** when that list or `skipped` is non-empty, rather than claiming completeness.
 - **G-3:** [confirmed — Nathan] A **Context** delete records, per swept root, the Space list its stripped key held, each Space as `{ id, title }` — one root may carry several values, and a root-only record would restore the key empty. The id is the identity; the title is a label for the resolver, which re-applies under final titles per E-3.
 - **G-4:** [assumed] Restore re-applies per entry through the shared reconciliation loop — spend an entry only on a landed write, skip what has since moved or died. No standing reverse index exists or is created; the set is computed once, at removal, by a sweep that already runs.
