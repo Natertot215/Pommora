@@ -7,7 +7,7 @@ import { isUlidShaped } from '@shared/identity'
 import type { EntityRecord } from '@shared/record'
 import { readKey, writeKey } from './db/localState'
 import { readPreviewsState, writePreviewsState } from './io/previewState'
-import { readBaseline, readDrift, runOpenRecord } from './record'
+import { readBaseline, runOpenRecord } from './record'
 import type { Baseline } from './record'
 import { adjudicate } from './remint'
 import { closeSessionDb, openSessionDb } from './sessionDb'
@@ -158,8 +158,9 @@ describe('the re-mint writes', () => {
     await rm(root, { recursive: true, force: true })
   })
 
-  const freshIdsIn = (baseline: Record<string, unknown>, known: string[]): string[] =>
-    Object.keys(baseline).filter((id) => !known.includes(id))
+  const SEEDED = [PAGE, SPACE, SET, 'col-lib', 'ctx_a']
+  const freshIdsIn = (baseline: Record<string, unknown>): string[] =>
+    Object.keys(baseline).filter((id) => !SEEDED.includes(id))
 
   it('a copied page re-mints: the copy takes a fresh id, the original never moves', async () => {
     await runOpenRecord(root)
@@ -183,7 +184,7 @@ describe('the re-mint writes', () => {
 
     const baseline = readBaseline()!
     expect(baseline[PAGE].path).toBe('Library/Notes.md')
-    const [fresh] = freshIdsIn(baseline, [PAGE, SPACE, SET, 'col-lib', 'ctx_a'])
+    const [fresh] = freshIdsIn(baseline)
     expect(isUlidShaped(fresh)).toBe(true)
     expect(baseline[fresh]).toMatchObject({ kind: 'page', path: 'Library/Notes copy.md' })
 
@@ -193,6 +194,17 @@ describe('the re-mint writes', () => {
     const previews = readPreviewsState()
     expect(previews.origins[PAGE]).toBeDefined()
     expect(previews.origins[fresh]).toBeDefined()
+
+    // The must-agree crossing: the re-minted file re-enters through a GENUINE walk — read off
+    // disk, through admission, into the projection — not through the in-memory fix-up.
+    await runOpenRecord(root)
+    const rewalked = readBaseline()!
+    expect(rewalked[fresh]).toMatchObject({
+      kind: 'page',
+      path: 'Library/Notes copy.md',
+      state: 'present',
+    })
+    expect(rewalked[PAGE].path).toBe('Library/Notes.md')
   })
 
   it('a copied container re-mints its sidecar id AND its views[].id; the board never shares a config id', async () => {
@@ -268,7 +280,7 @@ describe('the re-mint writes', () => {
     // The recorded path adjudicates: its claimant keeps the id, the other re-mints.
     const baseline = readBaseline()!
     expect(baseline[PAGE].path).toBe(recorded.path)
-    const [fresh] = freshIdsIn(baseline, [PAGE, SPACE, SET, 'col-lib', 'ctx_a'])
+    const [fresh] = freshIdsIn(baseline)
     expect(isUlidShaped(fresh)).toBe(true)
   })
 })
