@@ -7,6 +7,20 @@ import { readdir } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { join } from 'node:path'
 
+/** Whether a name (or a path ending in one) is Markdown. Case-INSENSITIVE, and stated once: a
+ *  `.MD` written by another editor is the same file to the person who wrote it, and a walk that
+ *  admits it while the sweeps skip it leaves a page that renders but never gets rewritten — its
+ *  links go stale on a rename and its property cells read empty. */
+export function isMarkdownFile(name: string): boolean {
+  return name.toLowerCase().endsWith('.md')
+}
+
+/** Whether a directory entry is a content `.md` the read walk and the adoption pass both act on.
+ *  Underscore-prefixed names are Pommora's own sidecars, never content. */
+export function isContentFile(entry: Dirent): boolean {
+  return entry.isFile() && !entry.name.startsWith('_') && isMarkdownFile(entry.name)
+}
+
 /** One level of `dir`, or [] when it can't be read. Every caller walks a tree of independent
  *  entities, so a directory that vanished mid-walk or refuses to open costs only itself — the
  *  levels above and beside it still enumerate. Shared so that stays one decision: two copies of
@@ -34,7 +48,7 @@ export async function listMarkdownFiles(
   }
   const skip = new Set(opts.skipTopLevel ?? [])
   return rels
-    .filter((r) => r.endsWith('.md'))
+    .filter(isMarkdownFile)
     .filter((r) => !skip.has(r.split(/[/\\]/)[0]))
     .map((r) => join(dir, r))
 }

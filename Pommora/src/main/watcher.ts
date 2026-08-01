@@ -10,6 +10,7 @@ import { excludedMatcher } from './exclusion'
 import { readJsonObject } from './io/atomicWrite'
 import { readNavigationFile } from './io/navigationFile'
 import { isRecentWrite } from './io/writeEcho'
+import { isMarkdownFile } from './io/walk'
 import { HOMEPAGE_HOST_DIRNAME, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 import { push as pushToWindow } from './ipc'
 import { readNexus } from './readNexus'
@@ -59,7 +60,7 @@ export function ignoredUnder(root: string, excluded: string[] = []): (path: stri
       (segs[0] === '.nexus' &&
         segs[1] === 'contexts' &&
         segs.length >= 5 &&
-        segs[segs.length - 1].endsWith('.md')) ||
+        isMarkdownFile(segs[segs.length - 1])) ||
       isExcluded(segs)
     )
   }
