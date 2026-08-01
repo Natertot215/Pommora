@@ -9,17 +9,23 @@
 // trusted by restore. The parent is not a required payload: it degrades to `unaddressable`.
 
 import type { Dirent } from 'node:fs'
-import { mkdir, readdir, readFile } from 'node:fs/promises'
-import { basename, dirname, join } from 'node:path'
+import { mkdir, readdir, readFile, rename, rm } from 'node:fs/promises'
+import { basename, dirname, join, relative, sep } from 'node:path'
 import { z } from 'zod'
-import type { ContextsRegistry } from '@shared/contexts'
+import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { contentId } from '@shared/identity'
-import type { Result } from '@shared/result'
+import { fail, ok, type Result } from '@shared/result'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
+import { mutateRegistryFile } from './contextsRegistry'
 import type { SweepCapture, UnlinkOutcome } from './crud/contextCascade'
+import { reconcile } from './crud/reconcile'
+import { sweepAdmits } from './crud/util'
 import { pathExists, readJsonObject, writeJson } from './io/atomicWrite'
+import { rewritePageSerialized, serializeOnFile } from './io/fileLock'
+import { mergeFrontmatter, splitEnvelope } from './io/pageFile'
+import { recordWrite } from './io/writeEcho'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from './paths'
-import { splitFrontmatter } from './readNexus'
+import { readNexus, splitFrontmatter } from './readNexus'
 import { projectBaseline } from './record'
 
 export const PAIR_SUFFIX = '.provenance.json'
@@ -338,4 +344,166 @@ export function resolvePair(pair: ArtifactPair, baseName: string, tree: NexusTre
       return { place: { dir: parent.path, finalName: disambiguate(baseName, takenBy) } }
     }
   }
+}
+
+// ---------- the spend path ----------
+
+export interface ListedPair {
+  /** Nexus-relative pair-file path — the reference the restore op takes. */
+  pairPath: string
+  pair: PairFile
+}
+
+/** Every pair under `.trash`. A pair whose artifact is gone — trash emptied by hand — is an
+ *  orphan pruned as encountered; the artifact-less property variant is exempt. A file that
+ *  fails validation is not a pair and is never pruned. */
+export async function listPairs(root: string): Promise<ListedPair[]> {
+  const out: ListedPair[] = []
+  const walk = async (dir: string): Promise<void> => {
+    let entries: Dirent[]
+    try {
+      entries = await readdir(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const e of entries) {
+      const abs = join(dir, e.name)
+      if (e.isDirectory()) {
+        await walk(abs)
+        continue
+      }
+      if (!e.name.endsWith(PAIR_SUFFIX)) continue
+      const pair = await readPair(abs)
+      if (!pair) continue
+      if (pair.entity !== 'property' && !(await pathExists(abs.slice(0, -PAIR_SUFFIX.length)))) {
+        await rm(abs, { force: true })
+        continue
+      }
+      out.push({ pairPath: relative(root, abs), pair })
+    }
+  }
+  await walk(join(root, '.trash'))
+  return out
+}
+
+const REFUSAL_TEXT: Record<Refusal, string> = {
+  'parent-gone': 'The place this belonged to no longer exists.',
+  'cannot-hold': 'The place this belonged to can no longer hold it.',
+  unaddressable: 'Where this belonged was never recorded.',
+  'id-live': 'Something in the nexus already carries this identity.',
+}
+
+/** Merge titles into a governed context key on one root — a page's frontmatter under its file
+ *  lock, or a Space sidecar. True only when the write landed; the reconcile loop spends on it. */
+async function addContextValues(
+  root: string,
+  entry: { kind: string; path: string } | undefined,
+  key: string,
+  titles: string[],
+): Promise<boolean> {
+  if (!entry || (entry.kind !== 'page' && entry.kind !== 'space')) return false
+  const merge = (raw: Record<string, unknown>): unknown[] => {
+    const existing = Array.isArray(raw[key])
+      ? (raw[key] as unknown[]).filter((v): v is string => typeof v === 'string')
+      : []
+    return [...existing, ...titles.filter((t) => !existing.includes(t))]
+  }
+  if (entry.kind === 'page') {
+    const abs = join(root, entry.path)
+    return rewritePageSerialized(abs, (content) => {
+      if (!sweepAdmits(content)) return null
+      const raw = splitFrontmatter(content)
+      return mergeFrontmatter(content, { [key]: merge(raw) }, [key], splitEnvelope(content).body)
+    }).catch(() => false)
+  }
+  const file = join(root, entry.path, SPACE_SIDECAR)
+  return serializeOnFile(file, async () => {
+    const raw = await readJsonObject(file)
+    if (!raw) return false
+    await writeJson(file, { ...raw, [key]: merge(raw) })
+    return true
+  })
+}
+
+/** Current Space titles inside a restored Context folder, by sidecar id — the membership join
+ *  runs on ids; the as-restored folder names are what gets written. */
+async function restoredSpaceTitles(absContextDir: string): Promise<Map<string, string>> {
+  const titles = new Map<string, string>()
+  let dirs: Dirent[] = []
+  try {
+    dirs = await readdir(absContextDir, { withFileTypes: true })
+  } catch {
+    return titles
+  }
+  for (const d of dirs) {
+    if (!d.isDirectory()) continue
+    const raw = await readJsonObject(join(absContextDir, d.name, SPACE_SIDECAR))
+    if (typeof raw?.id === 'string') titles.set(raw.id, d.name)
+  }
+  return titles
+}
+
+/** The mover: resolve against the CURRENT tree inside the op (the world may have changed since
+ *  listing), place the artifact under the resolver's final names, delete the pair, and per kind
+ *  re-enter the registry and re-apply membership through the shared reconcile loop. Branches on
+ *  nothing — every decision is the resolver's. */
+export async function restoreArtifact(root: string, pairAbs: string): Promise<Result<null>> {
+  if (!pairAbs.startsWith(join(root, '.trash') + sep))
+    return fail('operation-failed', 'Only a trash record can be restored.')
+  const pair = await readPair(pairAbs)
+  if (!pair) return fail('operation-failed', 'That restore record is unreadable.')
+  if (pair.entity === 'property')
+    return fail('operation-failed', 'A property record has no artifact to restore.')
+  const artifactAbs = pairAbs.slice(0, -PAIR_SUFFIX.length)
+  if (!(await pathExists(artifactAbs))) {
+    await rm(pairAbs, { force: true })
+    return fail('not-found', 'The trashed item is gone; its record was cleared.')
+  }
+
+  const tree = await readNexus(root)
+  const resolution = resolvePair(pair, artifactBaseName(basename(artifactAbs)), tree)
+  if ('refuse' in resolution) return fail('operation-failed', REFUSAL_TEXT[resolution.refuse])
+  const { dir, finalName, finalTitle } = resolution.place
+
+  const targetAbs = join(root, dir, finalName)
+  // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter)
+  // could still occupy the target — refuse rather than clobber what nothing adjudicated.
+  if (await pathExists(targetAbs))
+    return fail('exists', 'Something already sits at the restored location.')
+  recordWrite(artifactAbs)
+  recordWrite(targetAbs)
+  await rename(artifactAbs, targetAbs)
+  await rm(pairAbs, { force: true })
+
+  const roots = projectBaseline(tree).entries
+  if (pair.entity === 'context') {
+    const title = finalTitle ?? pair.registry.title
+    await mutateRegistryFile(root, (cur) => ({
+      contexts: [...cur.contexts, { ...pair.registry, title }],
+    }))
+    const titlesById = await restoredSpaceTitles(targetAbs)
+    const key = contextKey(title)
+    const additions: Record<string, string[]> = {}
+    for (const m of pair.membership) {
+      if (!m.root.id) continue
+      const titles = m.spaces
+        .map((s) => (s.id ? titlesById.get(s.id) : undefined))
+        .filter((t): t is string => typeof t === 'string')
+      if (titles.length) additions[m.root.id] = titles
+    }
+    await reconcile(additions, (id, titles) => addContextValues(root, roots[id], key, titles))
+  } else if (pair.entity === 'space' && pair.parent.kind === 'context') {
+    const parentId = pair.parent.id
+    const group = tree.contexts.find((g) => g.def.id === parentId)
+    if (group) {
+      const key = contextKey(group.def.title)
+      const additions = Object.fromEntries(
+        pair.members
+          .filter((m): m is typeof m & { id: string } => typeof m.id === 'string')
+          .map((m) => [m.id, [finalTitle ?? finalName]]),
+      )
+      await reconcile(additions, (id, titles) => addContextValues(root, roots[id], key, titles))
+    }
+  }
+  return ok(null)
 }

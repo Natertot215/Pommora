@@ -39,6 +39,9 @@ export type MutateRequest =
   // renames are cascades, and a path-addressed folder rename would strip every tag silently.
   | { op: 'rename'; path: string; kind: Exclude<MutableKind, 'space' | 'context'>; newName: string }
   | { op: 'delete'; path: string; kind: MutableKind }
+  // Spend a trash pair: resolve against the CURRENT tree and put the artifact back — into its
+  // parent's renamed home if it moved. `pairPath` is the nexus-relative pair file from listing.
+  | { op: 'restore'; pairPath: string }
   // dataUrl set ⇒ decode + copy into `.nexus/assets/<nexusID>/profile-<token>.<ext>` + record
   // the rel path in `settings.profile_image`; null ⇒ clear the field + delete the file.
   | { op: 'setProfileImage'; dataUrl: string | null }
