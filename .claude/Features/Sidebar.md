@@ -48,6 +48,6 @@ The inline rename field is the menu system's flush `titleInput` — dimensionall
 
 **User Sections:** unbuilt. A first attempt shipped a read path with no writer — a config file the app parsed and never wrote — and it was removed rather than left looking real. The surface wants an **"Add Heading"** entry in the Collections create menu plus rename and drag-a-Collection-into-a-section, and the sections themselves belong in the database with the rest of the sidebar's arrangement.
 
-**Space-Create Label:** Today the create item reads a **stored singular**, which only the seeded Contexts carry — so those offer New Area / New Topic / New Project and every other Context offers flat **New Space**. Because the singular is stored rather than derived, renaming a seeded Context leaves its old label behind. The ruled behaviour keys off the **title** instead, so the label follows a rename. Per-Context custom singulars are prospective.
+**Space-Create Label:** The create item reads a **stored singular**, which only the seeded Contexts carry — so those offer New Area / New Topic / New Project and every other Context offers flat **New Space**. Because the singular is stored rather than derived, renaming a seeded Context leaves its old label behind. The ruled behaviour keys off the **title** instead, so the label follows a rename. Per-Context custom singulars are prospective.
 
-**Always-On Ribbon:** A ribbon that survives the sidebar collapsing, toggled independently; today the ribbon collapses with the sidebar.
+**Always-On Ribbon:** A ribbon that survives the sidebar collapsing, toggled independently rather than folding away with it.

@@ -67,7 +67,7 @@ Every type carries a glyph, but only **Table and Cards have renderers** — the 
 
 ### Misc
 
-`link-2` is the Connections glyph — registered and reserved for the `[[Title]]` connections surface, which doesn't render it yet. The Context property type wears `layout-grid`, matching the sidebar Contexts.
+`link-2` is the Connections glyph — registered and reserved for the `[[Title]]` connections surface, which doesn't render it. The Context property type wears `layout-grid`, matching the sidebar Contexts.
 
 ### The Picker
 

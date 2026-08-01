@@ -44,6 +44,6 @@ Resolution runs at walk assembly off the registry, entirely in memory. The rever
 
 **Space-to-Space Relation Rows:** the settings pane's assign-reveal rows for a Space's own memberships — the write path and index are live, the UI isn't.
 
-**Space-Create Labels:** the entries read a stored singular today, so a renamed seeded Context keeps its old label. The ruled behaviour keys off the Context's exact title instead, letting the label follow a rename; per-Context custom singulars, and any wider set of recognized titles, follow behind it.
+**Space-Create Labels:** the entries read a stored singular, so a renamed seeded Context keeps its old label. The ruled behaviour keys off the Context's exact title instead, letting the label follow a rename; per-Context custom singulars, and any wider set of recognized titles, follow behind it.
 
 **ContextView + Linked-From:** a Context's own aggregate surface, and the inbound list of every entity tagging a Space — both ride the indexed reverse query.

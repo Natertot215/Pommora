@@ -1,6 +1,6 @@
 ### Configuration
 
-How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nexus/settings.json` — **personalization**, **labels**, and the profile (image + subtitle) — that travels with the Nexus and syncs, and a per-device **app config** that stays on the machine. A third scope — transient device-local UI state (folds, active view, view order, table headings) — is never synced and lives with the read engine (→ `Architecture.md`).
+How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nexus/settings.json` — **personalization**, **labels**, and the profile (image + subtitle) — that travels with the Nexus and syncs, and a per-device **app config** that stays on the machine. A third scope — per-machine chrome (folds, active view, view order, table headings, the tab and preview sets, the visited-entity history) — is never synced and lives in the Nexus's device-local database (→ `Architecture.md`).
 
 ### Personalization (per-Nexus)
 
@@ -53,7 +53,7 @@ Every entity kind carries a **renameable display label** in `settings.json` — 
 
 ### App Config (per-device)
 
-Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the recents list, and the delete target (in-Nexus trash vs the system trash). It is never part of a Nexus, so it never syncs.
+Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target (in-Nexus trash vs the system trash). It is never part of a Nexus, so it never syncs. The Navigation layer's own recents are a different stream entirely — visited entities inside one Nexus, held in that Nexus's database (→ `Navigation.md`).
 
 ### The Settings Window
 

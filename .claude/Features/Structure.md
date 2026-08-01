@@ -46,7 +46,7 @@ Full spec → `Agenda.md`; the property catalog across all kinds → `Properties
 
 #### II. Homepage
 
-One per Nexus — always reachable and never user-deletable, with no `id`, Context links, or `parents`; the file location is its identity. Its `.nexus/homepage.json` config is written on the first block or banner edit. The **Homepage ribbon icon** is its entry point: selecting it opens the Homepage in the main pane, where its title doubles as the nexus rename affordance. It hosts a live block surface under its banner (→ [[SurfacePM]]).
+One per Nexus — always reachable and never user-deletable, with no `id`, Context links, or `parents`; the file location is its identity. Its `.nexus/homepage.json` config holds a banner and a heading icon, written into existence by the first edit to either. The **Homepage ribbon icon** is its entry point: selecting it opens the Homepage in the main pane, where its title doubles as the nexus rename affordance. It hosts a live block surface under its banner (→ [[SurfacePM]]).
 
 #### II. Settings
 
@@ -77,7 +77,7 @@ Every link form is stored as a title and resolved at read time; no link on disk 
 
 #### II. On-Disk Model
 
-Files are canonical: Pages, Tasks and Events are all `.md` (YAML frontmatter + body); Contexts, sidecars, and all config are JSON. **A container's kind is its folder's sidecar filename**, never its name; a **content file's kind is declared by its folder and confirmed by its id key** (`PageID` / `TaskID` / `EventID`) — no extension carries a kind. Foreign keys — and YAML comments on pages — are preserved by value on every write. A device-local database beside the read path currently holds per-machine chrome — view selection, editor state, tabs, and each block host's document — so a Nexus stays complete without it. Full on-disk spec and the read/IPC engine → `Architecture.md`.
+Files are canonical: Pages, Tasks and Events are all `.md` (YAML frontmatter + body); Contexts, sidecars, and all config are JSON. **A container's kind is its folder's sidecar filename**, never its name; a **content file's kind is declared by its folder and confirmed by its id key** (`PageID` / `TaskID` / `EventID`) — no extension carries a kind. Foreign keys — and YAML comments on pages — are preserved by value on every write. A device-local database beside the read path holds per-machine chrome — view selection, editor state, tabs, and each block host's document — so a Nexus stays complete without it. Full on-disk spec and the read/IPC engine → `Architecture.md`.
 
 #### II. The NexusTree Contract
 
@@ -85,4 +85,4 @@ The read side is one eager, read-only walk producing a pre-ordered `NexusTree` �
 
 ### Pending
 
-**Homepage's Final Shape:** A developer surface for now — its final form is its own design pass (a graph-view host with custom widgets is the current direction).
+**Homepage's Final Shape:** A developer surface standing in for a settled one — its final form is its own design pass, with a graph-view host carrying custom widgets as the leading direction.

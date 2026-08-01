@@ -25,7 +25,7 @@ Each kind lives in its own singleton folder at the nexus root, discovered by a *
 
 **Registration.** Exactly one Tasks folder and one Events folder are canonical, recorded by sidecar id at the nexus level. A hand-made config names an id the record doesn't hold, so it matches nothing and is inert; a nested one is inert on depth alone. A *copy* is the harder case, because every duplication mechanism reproduces the id the record keys on: two root folders claiming one record register neither, since no arm may pick between them, and a copy filed below the root stays where its owner put it rather than being carried up.
 
-**A slot whose folder name is already taken goes unregistered.** Seeding refuses to write an agenda config into a folder that already exists, which is what stops it claiming a user's own `Tasks/` of notes; nothing fills that slot afterwards. Adopting or disambiguating it is the Agenda work's call, and needs a second writer to the registration record — today there is exactly one.
+**A slot whose folder name is already taken goes unregistered.** Seeding refuses to write an agenda config into a folder that already exists, which is what stops it claiming a user's own `Tasks/` of notes; nothing fills that slot afterwards, because nexus creation is the registration record's only writer. Adopting or disambiguating such a folder therefore needs a second writer, and what one may do is the Agenda work's call.
 
 **Surfaces.** No selection kind opens a Task or Event, so there is no detail surface, no calendar or date-grouped layout, and no create path. Quick Capture's named blocker is exactly this.
 

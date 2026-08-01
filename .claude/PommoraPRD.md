@@ -56,13 +56,13 @@ Tasks and Events sit under the **Agenda** parent schema. The Page Collection's p
 
 #### Singletons
 
-- **Homepage** — one composed-blocks dashboard per Nexus, the landing surface; seeded on first launch, not user-deletable.
+- **Homepage** — one composed-blocks dashboard per Nexus, the landing surface; always reachable and not user-deletable, its config file written by the first banner or heading-icon edit.
 - **Settings** — per-Nexus, user-overridable UI labels and accent color.
 
 #### Identity and linking
 
 - **`id`** — a stable ULID assigned at creation, never changing. A content file stores it under a key that names its kind (`PageID` / `TaskID` / `EventID`), which is also how a file placed in the wrong folder is recognised and left alone. No on-disk reference carries an id. A body connection is a title, a Context link is a title, and a property value sits under its property's name — each resolved at read time, each held correct across a rename by a sweep over the files that hold it.
-- **Title** — the display name, carried as the filename (minus extension), freely renameable. Renames are filesystem renames; ID-keyed references resolve to the current title at render time. Within a container, a colliding Page create auto-disambiguates and a rename is rejected. Titles aren't unique Nexus-wide — a connection to a title shared by two Pages resolves as ambiguous.
+- **Title** — the display name, carried as the filename (minus extension), freely renameable. Renames are filesystem renames; in-memory references resolve to the current title at render time. Within a container, a colliding Page create auto-disambiguates and a rename is rejected. Titles aren't unique Nexus-wide — a connection to a title shared by two Pages resolves as ambiguous.
 
 Operational entities tag Spaces through parenthesized Context keys — `(Projects):` over a block sequence of bare Space titles at the frontmatter root (or, for a Space, its sidecar root) — the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections. Full model and the linking catalog → `Features/Structure.md` plus the per-entity docs.
 
@@ -84,17 +84,17 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 2. **Cloud-sync-ready and cross-nexus queryable.** Collections aren't isolated silos — property definitions live nexus-wide, so one shared property id means the same thing in every Collection that assigns it and a single query matches across all of them; any Page or Context can query, link, or embed any Collection's contents regardless of where it sits on disk. The on-disk model maps cleanly onto a cloud database, so sync arrives later as an additive translation rather than a rewrite. A Nexus placed in iCloud Drive, Dropbox, or any synced folder already gets device-to-device sync for free.
 
-3. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read the content, and understand the context of the user's Nexus (Pages, schemas, Areas, relations, properties) straight from plain files. The bar is convention-aware, not instant to an outsider: a `[[wikilink]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob. The device-local database holds per-machine chrome, and no content today.
+3. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read the content, and understand the context of the user's Nexus (Pages, schemas, Areas, relations, properties) straight from plain files. The bar is convention-aware, not instant to an outsider: a `[[wikilink]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob. The device-local database holds per-machine chrome, and no content.
 
 #### Storage Philosophy
 
-**Files are canonical.** Everything a user creates lives as a plain file in a folder they pick, and that folder is the whole product — it can sit in any synced location and travels intact. Pages, Tasks and Events are Markdown with YAML frontmatter; Contexts and all configuration are JSON. Databases are used sparingly, but aren't prohibited as a means of carrying information; they're currently reserved as operational-only, and a future information-bearing functionality isn't out of the question. **The line runs at assignment.** A property *definition* — its name, type, options and formats — may move into the database, and the file format is what makes that safe: because a Page's frontmatter names its own properties, losing the registry costs presentation config rather than the ability to read a value. An *assignment* (which properties a Collection carries) stays on that Collection's sidecar, and a *value* stays in its Page's frontmatter, so a Nexus's structure and its content both remain readable from the files alone.
+**Files are canonical.** Everything a user creates lives as a plain file in a folder they pick, and that folder is the whole product — it can sit in any synced location and travels intact. Pages, Tasks and Events are Markdown with YAML frontmatter; Contexts and all configuration are JSON. Databases are used sparingly, but aren't prohibited as a means of carrying information; they're reserved as operational-only, and an information-bearing role isn't out of the question. **The line runs at assignment.** A property *definition* — its name, type, options and formats — may move into the database, and the file format is what makes that safe: because a Page's frontmatter names its own properties, losing the registry costs presentation config rather than the ability to read a value. An *assignment* (which properties a Collection carries) stays on that Collection's sidecar, and a *value* stays in its Page's frontmatter, so a Nexus's structure and its content both remain readable from the files alone.
 
-**Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_space.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar — folder names stay freely renameable, and classification never depends on a file extension or a frontmatter field. App-internal config and the device-local database live under a hidden `.nexus/` folder that travels with the Nexus.
+**Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_space.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar — folder names stay freely renameable, and no file extension ever carries a kind. The content file inside must AGREE with the folder that declares it, storing its id under the key naming that kind; one whose key contradicts its folder is Unknown — invisible, untouched, never stamped over. App-internal config and the device-local database live under a hidden `.nexus/` folder that travels with the Nexus.
 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault leaves notes byte-identical until the user edits them.
 
-**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present for now — this isn't a hard-locked decision and may be reconsidered. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from; the surface for browsing and restoring it is planned, not built.
+**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present — not a hard-locked decision, and open to reconsideration. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from, so the layout itself records where an item lived; no surface browses or restores it, which makes putting one back a manual move.
 
 Full on-disk spec → `Features/Architecture.md`.
 
@@ -146,7 +146,7 @@ There is no free-form text type — the filename is the title, and text-shaped v
 
 A view is a saved presentation of a Collection's (or depth-1 Set's) Pages — it never modifies its source. Each container's sidecar holds an ordered list of saved views; the active view is tracked per-machine so switching it doesn't churn the synced file. A view records its renderer type, property layout (column order plus a hidden set), and its sort / filter / group config, fed by one pure pipeline: **fetch → filter → group → sort**.
 
-The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — Table and Cards render today; the other four are registered but unbuilt. Views also embed as tiles in block-host surfaces — a **Linked View** referencing a saved view, or a **Custom View** with embed-owned, nexus-wide config. Two capabilities go beyond the baseline: multi-key sort, and recursive AND/OR filter groups. Full detail → `Features/Views.md`.
+The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — Table and Cards carry renderers; the rest are registered types with none. Views also embed as tiles in block-host surfaces — a **Linked View** referencing a saved view, or a **Custom View** with embed-owned, nexus-wide config. Two capabilities go beyond the baseline: multi-key sort, and recursive AND/OR filter groups. Full detail → `Features/Views.md`.
 
 #### The Local-End Translation Principle
 
@@ -160,7 +160,7 @@ In v1, connections resolve by title. A uniquely-held title is live and navigable
 
 #### Sidebar Navigation
 
-The sidebar surfaces curated, app-relevant navigation — not a raw filesystem view. It is a fixed **ribbon** (an icon strip pinned to the left edge, the Nexus's identity icon at its top opening the Homepage) beside a **content column** that shows one mode at a time: **Collections**, **Contexts**, or **Agenda**. There is no header row and no all-at-once stack; switching modes plays the overtake sweep. Agenda rows are read-only today.
+The sidebar surfaces curated, app-relevant navigation — not a raw filesystem view. It is a fixed **ribbon** (an icon strip pinned to the left edge, the Nexus's identity icon at its top opening the Homepage) beside a **content column** that shows one mode at a time: **Collections**, **Contexts**, or **Agenda**. There is no header row and no all-at-once stack; switching modes plays the overtake sweep. The Agenda mode holds its place with an empty state, form-independent of whatever Agenda becomes.
 
 Every entity reorders by drag-and-drop, and Pages reparent across the tree. Creation is right-click-first — a context menu offers "New X" options scoped to the cursor location. Full spec → `Features/Sidebar.md`.
 
@@ -176,7 +176,7 @@ The main pane is **multi-tab**: warm, state-preserving toolbar tabs, one view mo
 
 #### First-Launch Experience
 
-On launch Pommora restores the last opened Nexus or opens empty — never a launch modal. The File menu's Open Nexus picks a folder, and a dropped folder opens the same way. The Nexus's singletons — Homepage, the Contexts registry and label config, Settings, and the Tasks and Events folders — auto-seed on first sight. Opening a folder that isn't yet a Nexus runs an idempotent adoption pass that classifies each folder by position and leaves existing notes untouched until edited. No tutorial, no walkthrough wizard.
+On launch Pommora restores the last opened Nexus or opens empty — never a launch modal. The File menu's Open Nexus picks a folder, and a dropped folder opens the same way. Seeding is split by what it costs to be wrong: the Contexts registry seeds on any open that finds none, because a Nexus without one can't mint its first Context; the Tasks and Events folders seed **only** as a folder becomes a Nexus, because re-seeding an established one would recreate folders its owner deleted. Settings and the Homepage config are written into existence by the first write that needs them — a knob flip, a banner — and every read tolerates their absence. Opening a folder that isn't a Nexus runs an idempotent adoption pass that classifies each folder by position and leaves existing notes untouched until edited. No tutorial, no walkthrough wizard.
 
 #### Design System
 
@@ -184,7 +184,7 @@ A two-tier token system — primitives (one neutral base at opacities, accent, t
 
 #### MacOS Integration
 
-First-party where Electron reaches it — the native menu bar and dark mode ship today; `pommora://` deep links, notifications, and a tray icon are targets, not built. QuickLook previews, a Share Extension, and deep Spotlight indexing require a companion Swift bundle shipped alongside. Finder file-promise drag-out, true sidebar vibrancy, and Spaces-aware window restoration are Electron ceilings to ship a companion for or accept. Detail → `Resources/Mac-Integration.md`.
+First-party where Electron reaches it — the native menu bar and dark mode are in the shell; `pommora://` deep links, notifications, and a tray icon are targets, not built. QuickLook previews, a Share Extension, and deep Spotlight indexing require a companion Swift bundle shipped alongside. Finder file-promise drag-out, true sidebar vibrancy, and Spaces-aware window restoration are Electron ceilings to ship a companion for or accept. Detail → `Resources/Mac-Integration.md`.
 
 #### Distribution
 
@@ -197,13 +197,13 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 - **Contexts & Spaces** — free-standing, user-manageable Context groups holding Spaces (the registry seeds Areas / Topics / Projects), each group a sidebar disclosure. No containment, no parents.
 - **Page Collections + Sets + Pages** — schema-bearing Collections, schema-less recursive Sets, and Markdown Pages. UI labels renameable. Each Collection chooses preview-window vs. main-pane opening.
 - **Pages** — Markdown + frontmatter (including the wrapped Context and property keys), the MarkdownPM editor, Columns and Callouts.
-- **Agenda** — Tasks and Events with a required built-in Status on each; sync opt-in; reached through a Calendar entry, no sidebar section.
-- **Homepage** — singleton dashboard, seeded on first launch.
-- **Settings** — storage, label wiring across renameable surfaces, and accent-color reading now; full editing UI planned.
+- **Agenda** — Tasks and Events with a required built-in Status on each; sync opt-in; reached through the sidebar ribbon's own Agenda mode.
+- **Homepage** — singleton dashboard, always reachable from the ribbon's identity icon.
+- **Settings** — storage, label wiring across renameable surfaces, accent-color reading, and the full editing UI.
 - Property panel driven by each entity's schema, the full v1 catalog (including Status and File / Attachment), and per-view configuration (sort / group / filter / layout / visibility).
 - Connections — `[[Page]]` inline links, the sole connection syntax, with automatic rename cascade across all referencing bodies.
 - A file watcher keeping the tree live, and global full-text search.
-- Sidebar (Nexus header / Contexts / Collections) plus user-creatable Collection sections, reorderable with drag-and-drop.
+- Sidebar — the ribbon's Collections / Contexts / Agenda modes plus user-creatable Collection sections, reorderable with drag-and-drop.
 - Inline editing of embedded views.
 - One design scheme plus in-app accent customization.
 

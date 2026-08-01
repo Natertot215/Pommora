@@ -92,7 +92,7 @@ Right-click pops the **OS-native** menu, built in the Electron main process off 
 
 ### Host Services
 
-The wikilink resolver is **wired** to `@shared/connections`: resolution, styling, click-routing, and rename-cascade all ride the connections layer. Images, LaTeX, and syntax highlighting are **detected and styled only** — there is no renderer and no injection seam for them yet; building one is part of the work, not a slot waiting to be filled.
+The wikilink resolver is **wired** to `@shared/connections`: resolution, styling, click-routing, and rename-cascade all ride the connections layer. Images, LaTeX, and syntax highlighting are **detected and styled only** — there is no renderer and no injection seam for them; building one is part of the work, not a slot waiting to be filled.
 
 ### Module Shape
 
@@ -120,9 +120,9 @@ The wikilink resolver is **wired** to `@shared/connections`: resolution, styling
 
 ### Deferred
 
-- **Image + LaTeX** render seams (detected + styled today, rendered later) · **fenced-code copy button** · **zoom slider** UI placement · **heading-fold inside a callout** (headings render in a callout, but the fold chevron isn't prefix-aware yet) · **table inside a callout** (renders as raw text; needs prefix-aware region detection).
+- **Image + LaTeX** render seams (detected + styled, never rendered) · **fenced-code copy button** · **zoom slider** UI placement · **heading-fold inside a callout** (headings render in a callout, but the fold chevron isn't prefix-aware) · **table inside a callout** (renders as raw text; needs prefix-aware region detection).
 
-- **Aliased connections** — the pipe segment of `[[Title|alias]]` parses and survives every rewrite, but nothing renders it as the display text yet, so it shows as plain text beside the styled title. The display treatment and the authoring gesture are both unbuilt.
+- **Aliased connections** — the pipe segment of `[[Title|alias]]` parses and survives every rewrite, but nothing renders it as the display text, so it shows as plain text beside the styled title. The display treatment and the authoring gesture are both unbuilt.
 
 - **Outliner rails on ordered / arrow / `+` lists** — the guide is bullets + checkboxes only; a right-aligned number and the arrow / `+` glyphs need their own glyph-centre and vertical-evenness maths before their rails read straight.
 
