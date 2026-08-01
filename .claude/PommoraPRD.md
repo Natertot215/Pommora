@@ -49,8 +49,8 @@ User-defined, **free-standing** Context groups holding Spaces — the registry s
 | **Page Collection** | Schema-bearing top container for Pages | "Collection" |
 | **Page Set** | Recursive sub-folder inside a Collection (any depth); inherits the schema. Depth-1 carries its own views; deeper is plain | "Set" / "Sub-Set" |
 | **Page** | Markdown document — prose plus frontmatter | "Page" |
-| **Task** | Reminder-shaped: due date, completion, priority | "Task" |
-| **Event** | Calendar-event-shaped: start + end, location | "Event" |
+| **Task** | Reminder-shaped; its field vocabulary is the Agenda work's to settle | "Task" |
+| **Event** | Calendar-event-shaped; same | "Event" |
 
 Tasks and Events sit under the **Agenda** parent schema. The Page Collection's property schema applies to every Page inside it at any depth — all Sets inherit it whole.
 
@@ -64,7 +64,7 @@ Tasks and Events sit under the **Agenda** parent schema. The Page Collection's p
 - **`id`** — a stable ULID assigned at creation, never changing. A content file stores it under a key that names its kind (`PageID` / `TaskID` / `EventID`), which is also how a file placed in the wrong folder is recognised and left alone. No on-disk reference carries an id. A body connection is a title, a Context link is a title, and a property value sits under its property's name — each resolved at read time, each held correct across a rename by a sweep over the files that hold it.
 - **Title** — the display name, carried as the filename (minus extension), freely renameable. Renames are filesystem renames; ID-keyed references resolve to the current title at render time. Within a container, a colliding Page create auto-disambiguates and a rename is rejected. Titles aren't unique Nexus-wide — a connection to a title shared by two Pages resolves as ambiguous.
 
-Operational entities tag Spaces through parenthesized Context keys — `(Projects):` over a block sequence of bare Space titles at the frontmatter or JSON root — the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections. Full model and the linking catalog → `Features/Structure.md` plus the per-entity docs.
+Operational entities tag Spaces through parenthesized Context keys — `(Projects):` over a block sequence of bare Space titles at the frontmatter root (or, for a Space, its sidecar root) — the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections. Full model and the linking catalog → `Features/Structure.md` plus the per-entity docs.
 
 ---
 
@@ -88,7 +88,7 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 #### Storage Philosophy
 
-**Files are canonical.** Everything a user creates lives as a plain file in a folder they pick, and that folder is the whole product — it can sit in any synced location and travels intact. Pages are Markdown with YAML frontmatter; Agenda entries, Contexts, and all configuration are JSON. Databases are used sparingly, but aren't prohibited as a means of carrying information; they're currently reserved as operational-only, and a future information-bearing functionality isn't out of the question. **The line runs at assignment.** A property *definition* — its name, type, options and formats — may move into the database, and the file format is what makes that safe: because a Page's frontmatter names its own properties, losing the registry costs presentation config rather than the ability to read a value. An *assignment* (which properties a Collection carries) stays on that Collection's sidecar, and a *value* stays in its Page's frontmatter, so a Nexus's structure and its content both remain readable from the files alone.
+**Files are canonical.** Everything a user creates lives as a plain file in a folder they pick, and that folder is the whole product — it can sit in any synced location and travels intact. Pages, Tasks and Events are Markdown with YAML frontmatter; Contexts and all configuration are JSON. Databases are used sparingly, but aren't prohibited as a means of carrying information; they're currently reserved as operational-only, and a future information-bearing functionality isn't out of the question. **The line runs at assignment.** A property *definition* — its name, type, options and formats — may move into the database, and the file format is what makes that safe: because a Page's frontmatter names its own properties, losing the registry costs presentation config rather than the ability to read a value. An *assignment* (which properties a Collection carries) stays on that Collection's sidecar, and a *value* stays in its Page's frontmatter, so a Nexus's structure and its content both remain readable from the files alone.
 
 **Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_space.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar — folder names stay freely renameable, and classification never depends on a file extension or a frontmatter field. App-internal config and the device-local database live under a hidden `.nexus/` folder that travels with the Nexus.
 
@@ -125,18 +125,18 @@ A Context link is a **dual surface**: an operational entity tags a Space by hold
 
 #### Agenda (Tasks + Events)
 
-The calendar layer, split into two distinct entities mirroring EventKit, each stored in its own singleton folder discovered by a config sidecar:
+The calendar layer, two peer kinds, each in its own singleton folder that the nexus registers by the config sidecar's id — a config it does not record is inert:
 
 - **Tasks** (`.md`, `TaskID`) — reminder-shaped.
 - **Events** (`.md`, `EventID`) — calendar-event-shaped.
 
 Their fields are an open question: the shape both kinds inherited was removed rather than carried forward, and what replaces it is the Agenda work's to decide.
 
-Both carry the shared property catalog and the same parenthesized Context keys as Pages, plus a built-in, non-deletable **Status** whose three seeded groups (Open / Active / Done) map cleanly onto reminder/calendar semantics. EventKit sync is opt-in. Full detail → `Features/Agenda.md`.
+Both carry the same parenthesized Context keys as Pages. A built-in **Status** and the field vocabulary behind it are unbuilt — the shape both kinds inherited was removed rather than carried forward. EventKit sync is opt-in, and being an API-only mapping it constrains nothing about what Pommora stores. Full detail → `Features/Agenda.md`.
 
 #### Properties
 
-Property **definitions** live in one nexus-wide registry (`.nexus/properties.json`) — defined once, assigned by any Collection, one shared definition and option set everywhere; an Agenda config keeps its own definitions. Property **values** live in each entity's frontmatter or JSON. A property's identity is a stable ULID held in the registry; its name is the key its values write under, unique nexus-wide, and a rename sweeps every page holding it. The v1 catalog:
+Property **definitions** live in one nexus-wide registry (`.nexus/properties.json`) — defined once, assigned by any Collection, one shared definition and option set everywhere; an agenda config carries identity and nothing else. Property **values** live in each entity's frontmatter or JSON. A property's identity is a stable ULID held in the registry; its name is the key its values write under, unique nexus-wide, and a rename sweeps every page holding it. The v1 catalog:
 
 - **Number**, **Checkbox**, **Date** (date-only or with-time), **Select**, **Multi-select**, **Status**, **URL**, **Context** (registry-minted, one per Context), **Last Edited Time** (derived), and **File / Attachment**.
 

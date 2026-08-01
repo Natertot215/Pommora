@@ -26,4 +26,4 @@ Capture is meant to extend to web clipping — a page's title, URL, description,
 
 **The Entry Surface:** The Electron entry surface is the open design decision — a global shortcut, a tray-based popover (heavier than a native menu-bar item), or a launch-at-login background agent, paired with the web-capture courier route. Capture while the app is fully quit stays out of scope — a headless writer would reintroduce the multi-process problems the single-owner principle avoids.
 
-**Scope:** Whether Quick Capture ships Page-only or waits on the Agenda write path is unruled. Pages have a create operation; Tasks and Events don't — the agenda IPC channel is read-only — so capturing them is gated on that path being built.
+**Scope:** Whether Quick Capture ships Page-only or waits on the Agenda write path is unruled. Pages have a create operation; Tasks and Events don't — no agenda write path exists — so capturing them is gated on that being built. The generic `.md` writer carries no Collection assumptions, so what it waits on is Agenda's shape, not new plumbing.

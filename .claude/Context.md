@@ -6,7 +6,7 @@
 
 The old agenda architecture is gone rather than adapted: the suffix grammar, the item schemas, the CRUD, the read surface. What replaces it starts from a settled identity model and an empty schema, because the shape both kinds carried was Apple's, imported wholesale by the Swift build and never re-chosen.
 
-What's genuinely open: three enforcement findings from the closing review — a duplicated singleton folder is not inert (every copy mechanism copies the id it is keyed on), a Set dragged to the root ends up with two competing ids, and a seed slot whose name is taken can never be registered. None is reachable in ordinary use today; each wants a design call rather than a patch. Alongside them, a batch of identity doc claims the reconciliation missed, and a standing docs-wide violation of the no-time-specific-commentary rule.
+What's genuinely open: one enforcement gap, and it is scoped rather than broken — a seed slot whose folder name is already taken never registers, and filling it belongs to the Agenda work. The closing review's other two findings landed: a contested registration now registers nobody, and a folder that crosses depth outside the app has its sidecar renamed rather than duplicated. Duplicate *content* ids stay unhandled (D-15). Beyond that, only a docs-wide sweep for time-specific commentary remains.
 
 The baseline all of this counts forward from: the React rebuild passed the old SwiftUI build at v0.5.0, Contexts & Spaces made the organization layer user-defined, and Properties and Contexts share one wrapped-title-key syntax — a page's frontmatter carries `(Areas):` and `<Status>: Complete` at the root, bare values, and no ULID in any key or link value.
 
@@ -72,17 +72,11 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 
 #### Open From The Identity Arc
 
-Each is a design call, not a patch, and none is reachable in ordinary single-user use today — they matter because the mechanisms they sit in are load-bearing.
+**A taken seed slot never registers.** Seeding runs only at nexus creation and refuses a folder name already on disk, which correctly protects a user's own `Tasks/` of notes — but nothing fills that slot afterwards. Correct-and-incomplete rather than broken: filling it needs a second writer to the registration record, which weakens the single-writer invariant the seed ordering depends on, plus a product call (adopt the user's folder, or disambiguate?). **Belongs to the Agenda work.**
 
-**A duplicated singleton is not inert.** Registration keys on the config sidecar's id, and every ordinary duplication mechanism — Finder duplicate, `cp -R`, a restored backup, a sync conflict copy — copies that id. Two folders then both read as the singleton, and adoption stamps the agenda kind into the copy's pages, which makes them permanently un-adoptable as pages: contradicting reads are never re-stamped, by design. The guard needs to bind identity *and place*, or refuse outright when more than one folder claims a slot — the same "no arm may pick between them" rule the resolver already applies to a folder claiming two kinds at once.
+**Duplicate CONTENT ids remain unhandled.** Duplicate container ids now register nobody, but two `.md` files carrying the same id — a Finder copy of a page — are still admitted as two members, and the kind-blind lookups collapse them last-wins. This is D-15, still open in the decision log; its reachability question is what settles whether it is scaffold work or a Prospect.
 
-**A container can end up with two ids.** A Set dragged to the nexus root keeps its `_pageset.json` while adoption mints a fresh `_pagecollection.json` beside it, so which id is authoritative depends on where the folder sits. The fix is to migrate the sidecar rather than mint a second one — preserving the identity the rest of the nexus already references.
-
-**A taken seed slot never registers.** Seeding runs only at nexus creation and refuses a folder name already on disk, which correctly protects a user's own `Tasks/` of notes — but nothing ever fills that slot afterwards. Arguably correct-and-incomplete rather than broken: the recovery belongs to the Agenda work.
-
-**Docs owe the identity model a pass.** A batch of claims survived the reconciliation — kind-by-file-extension, agenda `property_definitions`, reserved ids that no longer exist — and three behaviours are load-bearing but undocumented: registration is never backfilled onto an existing nexus, a taken slot goes unregistered, and every move now passes a destination-kind refusal.
-
-**The no-time-specific rule needs a docs-wide sweep.** ~41 sentences across ~22 docs state what is or isn't built "yet" / "today" / "for now". Pre-existing and unrelated to identity; wants its own pass.
+**A docs-wide sweep for time-specific commentary.** ~41 sentences across ~22 docs state what is or isn't built "yet" / "today" / "for now". Pre-existing and unrelated to identity; wants its own pass.
 
 #### Next-Feature Candidates
 

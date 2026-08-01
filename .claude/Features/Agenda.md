@@ -1,6 +1,6 @@
 ### Agenda
 
-The operational layer's calendar-anchored side: two peer entity kinds, **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each with a built-in Status.
+The operational layer's calendar-anchored side: two peer entity kinds, **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each a `.md` carrying its kind's id key.
 
 > **De-scaffolded.** Agenda carries no on-disk format, no CRUD, and no read surface. The shape it inherited was imported wholesale from the Swift build and never re-chosen, so it was removed rather than built on: every field, the item format, ordering, and the surfaces are open questions that the Agenda rethink answers. What survives is named below — the plumbing that holds for any form Agenda takes.
 
@@ -10,7 +10,7 @@ Each kind lives in its own singleton folder at the nexus root, discovered by a *
 
 #### II. What Holds Regardless of Form
 
-- **Sidecar-declared kind.** A folder's kind comes from the well-known JSON filename it carries (`_taskconfig.json` / `_eventconfig.json`), the same law that declares Collections and Sets. The walk and the adoption pass both leave such folders unclassified rather than adopting them as Collections.
+- **Sidecar-declared kind.** A folder's kind comes from the well-known JSON filename it carries (`_taskconfig.json` / `_eventconfig.json`), the same law that declares Collections and Sets. A folder the nexus registers is that singleton; one it does not is inert, and neither is ever adopted as a Collection. A registered singleton stamps its own direct members and is flat — nothing below it is walked or stamped.
 - **Identity refs.** `NavRef` admits `task` and `event` as bare `{kind, id}` refs, and `navigation.json` persists them. Three guards keep a stored ref safe while nothing routes it: the tab resolver, the pin target, and the favorite add each refuse an agenda kind, so a stored ref resolves to nothing rather than to a broken destination.
 - **The sidebar mode.** Agenda is one of the Ribbon's modes, holding its place with an empty state → `Sidebar.md`.
 - **Labels.** The `agendaTask` / `agendaEvent` singular-plural pairs are parsed from settings and defaulted; no surface reads them.
@@ -23,7 +23,9 @@ Each kind lives in its own singleton folder at the nexus root, discovered by a *
 - **Tasks and Events are Markdown.** One `.md` grammar covers all operational content — the body *is* the description — so agenda items inherit the page writers, the link cascade, and the editor rather than carrying a second serializer. JSON stays for sidecars, configs, and registries.
 - **Agenda joins the tree walk.** Its kinds enter as their own top-level branch, which is what gives every Task and Event a record, a navKey, and a search entry. Collection-scoped consumers — connections, embeds, breadcrumbs — stay page-only by kind partition, not by new guards.
 
-**Registration.** Exactly one Tasks folder and one Events folder are canonical, recorded by sidecar id at the nexus level. A duplicated, nested, or hand-made agenda config matches no record and is inert.
+**Registration.** Exactly one Tasks folder and one Events folder are canonical, recorded by sidecar id at the nexus level. A duplicated, nested, or hand-made agenda config matches no record and is inert — and when two folders claim one record, it registers neither, since no arm may pick between them.
+
+**A slot whose folder name is already taken goes unregistered.** Seeding refuses to write an agenda config into a folder that already exists, which is what stops it claiming a user's own `Tasks/` of notes; nothing fills that slot afterwards. Adopting or disambiguating it is the Agenda work's call, and needs a second writer to the registration record — today there is exactly one.
 
 **Surfaces.** No selection kind opens a Task or Event, so there is no detail surface, no calendar or date-grouped layout, and no create path. Quick Capture's named blocker is exactly this.
 
