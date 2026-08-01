@@ -9,6 +9,7 @@ import { readKey, writeKey } from './db/localState'
 import { isAdoptedId } from './ids'
 import { CONTEXTS_REGISTRY_REL } from './paths'
 import { readNexus } from './readNexus'
+import { applyRemints, runRemintPass } from './remint'
 
 /** `ambiguous` marks an id the walk saw at 2+ paths that the prior session could not
  *  adjudicate — its recorded path is stale by construction, so it leaves the diff. */
@@ -120,8 +121,12 @@ export async function runOpenRecord(root: string): Promise<void> {
   try {
     const tree = await readNexus(root)
     const prior = readBaseline()
-    const projection = projectBaseline(tree)
     const unreadablePaths = (tree.unreadable ?? []).map((u) => u.path)
+    // The re-mint runs between the walk and the latch — the baseline must record the
+    // re-minted state, or the next open reports every fresh id as a creation.
+    const walked = projectBaseline(tree)
+    const reminted = await runRemintPass(root, walked, prior, unreadablePaths)
+    const projection = applyRemints(walked, reminted)
     const next = latchBaseline(projection, unreadablePaths, prior)
     if (prior !== null) {
       const drift = diffBaselines(

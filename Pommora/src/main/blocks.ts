@@ -148,8 +148,9 @@ export async function convertTileToPage(
 
 /** Re-mint each view config's payload-local `id` as a fresh ULID. The source view's id and
  *  the DEFAULT_VIEW_ID sentinel are live keys OUTSIDE the payload — preserving one would
- *  silently re-couple a copied/"detached" snapshot to its source, so every copy re-mints. */
-function remintConfigIds(views: unknown[]): unknown[] {
+ *  silently re-couple a copied/"detached" snapshot to its source, so every copy re-mints.
+ *  Takes ONE tile's `views` array, never a whole block doc. */
+export function remintConfigIds(views: unknown[]): unknown[] {
   return views.map((v) => {
     if (typeof v !== 'object' || v === null) return v
     const el = v as Record<string, unknown>
