@@ -128,6 +128,7 @@ async function movesInto(root: string, dst: string): Promise<Result<null>> {
   const depth = dirname(dst) === root ? 'root' : 'nested'
   const kind = await resolveFolderKind(dst, depth, {
     agenda: {},
+    homed: new Set(),
     root,
     sidecarMode: !!identity?.id,
   })

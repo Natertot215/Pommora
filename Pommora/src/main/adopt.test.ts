@@ -79,7 +79,10 @@ describe('stampAdopted', () => {
     expect(await set(join(root, 'Excluded'))).toBeNull()
   })
 
-  it('never fabricates a Collection on an Agenda singleton (identified by config sidecar)', async () => {
+  // Unregistered, so this is not the singleton — it is the weaker guarantee that carrying an
+  // agenda config is enough to keep a folder out of Collections. The registered case is pinned
+  // in admission.test.ts, where a nexus records the id.
+  it('never fabricates a Collection on a folder carrying an agenda config', async () => {
     await mkdir(join(root, 'My Tasks'), { recursive: true })
     await writeFile(join(root, 'My Tasks', '_taskconfig.json'), '{}')
     await writeFile(join(root, 'My Tasks', 'Submit.md'), '# a member')

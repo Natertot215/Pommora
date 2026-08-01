@@ -45,7 +45,7 @@ import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas
 import type { PropertyDefinition } from '@shared/properties'
 import { adoptedId } from './ids'
 import { pathExists, readJsonObject, readJsonStrict } from './io/atomicWrite'
-import { listEntries } from './io/walk'
+import { isContentFile, listEntries } from './io/walk'
 import { orderedDefs, readRegistry, type PropertyRegistry } from './io/propertiesRegistry'
 import { asString, asStringArray, basenameNoMd } from './coerce'
 import { shouldSkipDir } from './exclusion'
@@ -242,7 +242,7 @@ async function readPage(absFile: string, relFile: string): Promise<PageNode | nu
 
 async function readDirectPages(absDir: string, relDir: string): Promise<PageNode[]> {
   const files = (await listEntries(absDir)).filter(
-    (e) => e.isFile() && !e.name.startsWith('_') && e.name.toLowerCase().endsWith('.md'),
+    isContentFile,
   )
   const out = await Promise.all(
     files.map((e) => {
