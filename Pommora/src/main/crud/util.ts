@@ -3,6 +3,7 @@
 // from the io layer (its real owner); name, timestamp and sweep-admission rules live here.
 
 import { invalidBasename } from '@shared/contexts'
+import { hiddenName } from '../exclusion'
 import { admitContentFile } from '@shared/identity'
 import { readFrontmatterFields } from '../io/pageFile'
 
@@ -19,10 +20,9 @@ export function invalidName(name: string): boolean {
     // `|` opens the alias segment of `[[Title|alias]]`, so a title holding one can never be
     // written as a connection that resolves back to it. The filesystem would take it; we don't.
     name.includes('|') ||
-    // The walk hides both prefixes, so accepting one would write a real file the tree can never
-    // show again — a rename that reads to the user as a delete.
-    trimmed.startsWith('_') ||
-    trimmed.startsWith('.') ||
+    // The walk hides these, so accepting one would write a real file the tree can never show
+    // again — a rename that reads to the user as a delete.
+    hiddenName(trimmed) ||
     /\.md$/i.test(trimmed)
   )
 }

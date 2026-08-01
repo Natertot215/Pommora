@@ -145,6 +145,12 @@ async function trashChainDir(nexusRoot: string, absPath: string): Promise<string
 
 const trashStamp = (): string => new Date().toISOString().replace(/[:.]/g, '-')
 
+/** The trash's leaf naming, stated once: the stamp, then a de-collision counter once one is
+ *  needed, then the name the entity had. Both trash paths de-collide differently — a bundle
+ *  claims its folder atomically, a bare file probes — but what they produce reads identically. */
+const stampedLeaf = (stamp: string, n: number, base: string): string =>
+  n === 0 ? `${stamp}__${base}` : `${stamp}__${n}__${base}`
+
 /**
  * Create the empty bundle folder a deletion will fill: `<stamp>__<base>.deleted/` under the
  * mirrored chain. Nothing is destroyed — minting is the first half of a delete, and the record
@@ -156,9 +162,9 @@ const trashStamp = (): string => new Date().toISOString().replace(/[:.]/g, '-')
 export async function mintBundle(nexusRoot: string, absSource: string): Promise<string> {
   const dir = await trashChainDir(nexusRoot, absSource)
   const stamp = trashStamp()
-  const leaf = `${basename(absSource)}${BUNDLE_SUFFIX}`
+  const base = `${basename(absSource)}${BUNDLE_SUFFIX}`
   for (let n = 0; ; n++) {
-    const bundle = join(dir, n === 0 ? `${stamp}__${leaf}` : `${stamp}__${n}__${leaf}`)
+    const bundle = join(dir, stampedLeaf(stamp, n, base))
     try {
       await mkdir(bundle)
       return bundle
@@ -187,8 +193,8 @@ export async function trashFileFlat(nexusRoot: string, absPath: string): Promise
   const dir = await trashChainDir(nexusRoot, absPath)
   const stamp = trashStamp()
   const base = basename(absPath)
-  let dest = join(dir, `${stamp}__${base}`)
-  for (let n = 1; await pathExists(dest); n++) dest = join(dir, `${stamp}__${n}__${base}`)
+  let dest = join(dir, stampedLeaf(stamp, 0, base))
+  for (let n = 1; await pathExists(dest); n++) dest = join(dir, stampedLeaf(stamp, n, base))
   await rename(absPath, dest)
   return dest
 }

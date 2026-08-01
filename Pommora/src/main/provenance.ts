@@ -21,7 +21,9 @@ import { mutateRegistryFile } from './contextsRegistry'
 import type { SweepCapture, UnlinkOutcome } from './crud/contextCascade'
 import { reconcile } from './crud/reconcile'
 import { sweepAdmits } from './crud/util'
+import { hiddenName } from './exclusion'
 import { BUNDLE_SUFFIX, mintBundle, pathExists, readJsonObject, writeJson } from './io/atomicWrite'
+import { listEntries } from './io/walk'
 import { rewritePageSerialized, serializeOnFile } from './io/fileLock'
 import { mergeFrontmatter, splitEnvelope } from './io/pageFile'
 import { recordWrite } from './io/writeEcho'
@@ -123,8 +125,7 @@ export async function readRecord(bundleDir: string): Promise<RecordFile | null> 
  *  than read as a second candidate: `invalidName` forbids those prefixes, so no real entity
  *  wears one. */
 export async function bundleArtifact(bundleDir: string): Promise<string | null> {
-  const entries = await readdir(bundleDir, { withFileTypes: true }).catch(() => [])
-  const found = entries.filter((e) => !e.name.startsWith('.') && !e.name.startsWith('_'))
+  const found = (await listEntries(bundleDir)).filter((e) => !hiddenName(e.name))
   return found.length === 1 ? join(bundleDir, found[0].name) : null
 }
 
@@ -376,7 +377,7 @@ export interface ListedBundle {
 export async function listBundles(root: string): Promise<ListedBundle[]> {
   const out: ListedBundle[] = []
   const walk = async (dir: string): Promise<void> => {
-    for (const e of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
+    for (const e of await listEntries(dir)) {
       if (!e.isDirectory()) continue
       const abs = join(dir, e.name)
       const record = e.name.endsWith(BUNDLE_SUFFIX) ? await readRecord(abs) : null
@@ -443,13 +444,7 @@ async function rekeyPassengers(
   const newKey = contextKey(newTitle)
   const strings = (v: unknown): string[] =>
     Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
-  let dirs: Dirent[] = []
-  try {
-    dirs = await readdir(absContextDir, { withFileTypes: true })
-  } catch {
-    return
-  }
-  for (const d of dirs) {
+  for (const d of await listEntries(absContextDir)) {
     if (!d.isDirectory()) continue
     const file = join(absContextDir, d.name, SPACE_SIDECAR)
     await serializeOnFile(file, async () => {
@@ -469,13 +464,7 @@ async function rekeyPassengers(
  *  runs on ids; the as-restored folder names are what gets written. */
 async function restoredSpaceTitles(absContextDir: string): Promise<Map<string, string>> {
   const titles = new Map<string, string>()
-  let dirs: Dirent[] = []
-  try {
-    dirs = await readdir(absContextDir, { withFileTypes: true })
-  } catch {
-    return titles
-  }
-  for (const d of dirs) {
+  for (const d of await listEntries(absContextDir)) {
     if (!d.isDirectory()) continue
     const raw = await readJsonObject(join(absContextDir, d.name, SPACE_SIDECAR))
     if (typeof raw?.id === 'string') titles.set(raw.id, d.name)
