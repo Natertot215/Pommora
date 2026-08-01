@@ -15,10 +15,12 @@ import { z } from 'zod'
 import type { ContextsRegistry } from '@shared/contexts'
 import { contentId } from '@shared/identity'
 import type { Result } from '@shared/result'
+import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { SweepCapture, UnlinkOutcome } from './crud/contextCascade'
 import { pathExists, readJsonObject, writeJson } from './io/atomicWrite'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from './paths'
 import { splitFrontmatter } from './readNexus'
+import { projectBaseline } from './record'
 
 export const PAIR_SUFFIX = '.provenance.json'
 
@@ -228,5 +230,112 @@ export function buildContextPair(evidence: ContextEvidence, swept: UnlinkOutcome
     registry: evidence.entry,
     membership,
     ...(partial ? { partial: true as const } : {}),
+  }
+}
+
+// ---------- resolution ----------
+
+export interface Placement {
+  /** Nexus-relative directory the artifact re-enters; '' is the root. */
+  dir: string
+  /** Final basename for the artifact — extension included for pages. */
+  finalName: string
+  /** For a Space or Context: the final title restore writes everywhere (folder, registry,
+   *  re-applied membership keys). Recorded titles are labels; this is the decision. */
+  finalTitle?: string
+}
+
+export type Refusal = 'parent-gone' | 'cannot-hold' | 'unaddressable' | 'id-live'
+export type Resolution = { place: Placement } | { refuse: Refusal }
+
+/** The property variant is artifact-less — there is nothing to place. */
+export type ArtifactPair = Exclude<PairFile, { entity: 'property' }>
+
+/** The artifact's original basename, out of the trash primitive's stamped leaf. */
+export function artifactBaseName(leaf: string): string {
+  const parts = leaf.split('__')
+  if (parts.length < 2) return leaf
+  return parts.length > 2 && /^\d+$/.test(parts[1]) ? parts.slice(2).join('__') : parts.slice(1).join('__')
+}
+
+const fold = (s: string): string => s.normalize('NFC').toLowerCase()
+
+const disambiguate = (base: string, taken: (title: string) => boolean): string => {
+  if (!taken(base)) return base
+  let n = 2
+  while (taken(`${base} ${n}`)) n++
+  return `${base} ${n}`
+}
+
+function findContainer(tree: NexusTree, id: string): CollectionNode | SetNode | null {
+  const inSets = (sets: SetNode[] | undefined): SetNode | null => {
+    for (const s of sets ?? []) {
+      if (s.id === id) return s
+      const hit = inSets(s.sets)
+      if (hit) return hit
+    }
+    return null
+  }
+  for (const c of tree.collections) {
+    if (c.id === id) return c
+    const hit = inSets(c.sets)
+    if (hit) return hit
+  }
+  return null
+}
+
+/** THE decision. A placement with final names against the CURRENT tree — a renamed parent
+ *  resolves to its renamed path — or a typed refusal. The acting code branches on nothing:
+ *  every name and title choice is made here, because choosing is deciding. A live id refusal
+ *  outranks every other answer — nothing may write over a living identity. */
+export function resolvePair(pair: ArtifactPair, baseName: string, tree: NexusTree): Resolution {
+  const live = projectBaseline(tree).entries
+  const pairId = pair.entity === 'context' ? pair.registry.id : pair.id
+  if (pairId && live[pairId]) return { refuse: 'id-live' }
+
+  if (pair.entity === 'context') {
+    const finalTitle = disambiguate(pair.registry.title, (t) =>
+      tree.contexts.some((g) => fold(g.def.title) === fold(t)),
+    )
+    return { place: { dir: '.nexus/contexts', finalName: finalTitle, finalTitle } }
+  }
+
+  if (pair.entity === 'space') {
+    const parent = pair.parent
+    if (parent.kind === 'unaddressable') return { refuse: 'unaddressable' }
+    if (parent.kind !== 'context') return { refuse: 'cannot-hold' }
+    const group = tree.contexts.find((g) => g.def.id === parent.id)
+    if (!group) return { refuse: 'parent-gone' }
+    const finalTitle = disambiguate(baseName, (t) =>
+      group.spaces.some((s) => fold(s.title) === fold(t)),
+    )
+    return { place: { dir: `.nexus/contexts/${group.def.title}`, finalName: finalTitle, finalTitle } }
+  }
+
+  switch (pair.parent.kind) {
+    case 'unaddressable':
+      return { refuse: 'unaddressable' }
+    case 'context':
+      return { refuse: 'cannot-hold' }
+    case 'root': {
+      if (pair.entity !== 'collection') return { refuse: 'cannot-hold' }
+      const finalName = disambiguate(baseName, (t) =>
+        tree.collections.some((c) => fold(c.title) === fold(t)),
+      )
+      return { place: { dir: '', finalName } }
+    }
+    case 'container': {
+      if (pair.entity === 'collection') return { refuse: 'cannot-hold' }
+      const parent = findContainer(tree, pair.parent.id)
+      if (!parent) return live[pair.parent.id] ? { refuse: 'cannot-hold' } : { refuse: 'parent-gone' }
+      // A page and a Set share one folder namespace — both sibling sets block both kinds.
+      const siblings = [...parent.pages.map((p) => p.title), ...(parent.sets ?? []).map((s) => s.title)]
+      const takenBy = (t: string): boolean => siblings.some((s) => fold(s) === fold(t))
+      if (pair.entity === 'page') {
+        const finalTitle = disambiguate(baseName.replace(/\.md$/i, ''), takenBy)
+        return { place: { dir: parent.path, finalName: `${finalTitle}.md` } }
+      }
+      return { place: { dir: parent.path, finalName: disambiguate(baseName, takenBy) } }
+    }
   }
 }
