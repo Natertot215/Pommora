@@ -15,28 +15,33 @@ import { readSidecar } from './sidecarIO'
 
 export type FolderKind = 'collection' | 'set' | 'tasks-singleton' | 'events-singleton' | 'unknown'
 
+/** Everything that separates one agenda slot from the other, stated once: the sidecar filename
+ *  that declares it, the kind it resolves to, the key it registers under, and the name it is
+ *  seeded with. Consumers derive from this table rather than restating the pairing — a mapping
+ *  kept in more than one place is one edit away from disagreeing with itself. */
+export const AGENDA_SLOTS = [
+  { slot: 'tasks', sidecar: 'taskConfig', kind: 'tasks-singleton', seedName: 'Tasks' },
+  { slot: 'events', sidecar: 'eventConfig', kind: 'events-singleton', seedName: 'Events' },
+] as const satisfies readonly {
+  slot: string
+  sidecar: SidecarKind
+  kind: FolderKind
+  seedName: string
+}[]
+
+export type AgendaSlot = (typeof AGENDA_SLOTS)[number]['slot']
+
 /** The canonical agenda singletons a nexus records, by sidecar id. */
-export interface AgendaRegistration {
-  tasks?: string
-  events?: string
-}
+export type AgendaRegistration = Partial<Record<AgendaSlot, string>>
 
 export interface FolderKindContext {
   agenda: AgendaRegistration
-  /** The nexus root. It holds no content of its own, so it is never a container. */
-  root?: string
+  /** The nexus root. It holds no content of its own, so it is never a container. Required, not
+   *  optional: an absent root once let the resolver classify the nexus root itself as a Set. */
+  root: string
   /** A raw, un-adopted nexus carries no container sidecars — there, position alone classifies. */
   sidecarMode: boolean
 }
-
-const AGENDA_SLOTS = [
-  { sidecar: 'taskConfig', kind: 'tasks-singleton', slot: 'tasks' },
-  { sidecar: 'eventConfig', kind: 'events-singleton', slot: 'events' },
-] as const satisfies readonly {
-  sidecar: SidecarKind
-  kind: FolderKind
-  slot: keyof AgendaRegistration
-}[]
 
 /** The registration recorded on `nexus.json`, read leniently: a nexus that records nothing simply
  *  registers nothing, and every agenda config it holds is inert. Only a string id can register a
@@ -46,8 +51,10 @@ export function readAgendaRegistration(identity: Record<string, unknown> | null)
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return {}
   const rec = raw as Record<string, unknown>
   const out: AgendaRegistration = {}
-  if (typeof rec.tasks === 'string' && rec.tasks) out.tasks = rec.tasks
-  if (typeof rec.events === 'string' && rec.events) out.events = rec.events
+  for (const { slot } of AGENDA_SLOTS) {
+    const id = rec[slot]
+    if (typeof id === 'string' && id) out[slot] = id
+  }
   return out
 }
 
@@ -61,7 +68,7 @@ export async function resolveFolderKind(
   depth: 'root' | 'nested',
   ctx: FolderKindContext,
 ): Promise<FolderKind> {
-  if (ctx.root !== undefined && absDir === ctx.root) return 'unknown'
+  if (absDir === ctx.root) return 'unknown'
   const present = await Promise.all(
     AGENDA_SLOTS.map((s) => pathExists(join(absDir, SIDECAR_FILENAME[s.sidecar]))),
   )
@@ -113,8 +120,7 @@ export async function agendaContext(
   sidecarMode: boolean,
 ): Promise<FolderKindContext> {
   const registered = readAgendaRegistration(identity)
-  const slots = Object.keys(registered) as (keyof AgendaRegistration)[]
-  if (slots.length === 0) return { agenda: {}, sidecarMode, root }
+  if (Object.keys(registered).length === 0) return { agenda: {}, sidecarMode, root }
 
   let entries: string[]
   try {
@@ -125,15 +131,19 @@ export async function agendaContext(
     return { agenda: registered, sidecarMode, root }
   }
 
+  // Counting is order-independent, so the reads fan out — this runs on every walk, and a serial
+  // pass costs one round trip per root folder per slot before anything can render.
+  const found = await Promise.all(
+    entries.flatMap((name) =>
+      AGENDA_SLOTS.map((s) => readSidecar(join(root, name), s.sidecar, baseSidecar)),
+    ),
+  )
   const claims = new Map<string, number>()
-  for (const name of entries) {
-    for (const slot of AGENDA_SLOTS) {
-      const sidecar = await readSidecar(join(root, name), slot.sidecar, baseSidecar)
-      if (sidecar?.id) claims.set(sidecar.id, (claims.get(sidecar.id) ?? 0) + 1)
-    }
+  for (const sidecar of found) {
+    if (sidecar?.id) claims.set(sidecar.id, (claims.get(sidecar.id) ?? 0) + 1)
   }
   const agenda: AgendaRegistration = {}
-  for (const slot of slots) {
+  for (const { slot } of AGENDA_SLOTS) {
     const id = registered[slot]
     if (id && (claims.get(id) ?? 0) <= 1) agenda[slot] = id
   }
