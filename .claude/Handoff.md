@@ -71,13 +71,12 @@
 
 **Post-plan close (done):** comment-killer + three read-only reviewers (settled tree · enforcement internals · docs truth). **7 defects found and fixed** — see `59b4b5ba` and `92020af4`. The two that matter most as lessons: `sweepContextRoots` was never gated (I gated five of six sweeps and my commit message claimed six), and its test passed for the wrong reason because it drove `createContextGroup`, which never reaches that sweep.
 
-**STILL OPEN — pick up here:**
-1. **F3 · duplicated singleton (highest).** `folderKind.ts`'s guard is `sidecar.id === registered`, but Finder duplicate / `cp -R` / backup / sync-conflict all copy the id, so two folders resolve as singletons and adoption stamps `TaskID` into the copy's pages — permanently un-adoptable (`contradicting` forever; `stampPage` only fixes `missing`). Fix is a design call: bind registration to path as well as id, OR refuse when >1 root folder claims a slot (mirrors the existing "no arm may pick between them" rule; needs hoisting into the callers that enumerate root folders). **Tracer agents dispatched to confirm reachability — read their verdict before acting.**
-2. **F6 · one folder, two ids.** A Set dragged to the root keeps `_pageset.json` while adoption mints a `_pagecollection.json`.
-3. **F8 · a taken seed-slot name is unregisterable forever** — arguably correct-and-incomplete rather than a defect.
-4. **Docs:** ~18 identity-scope false claims the docs reviewer found that Task 13 missed (`Structure.md` still says kind = file extension; `Properties.md` still lists `_status`/`_type` and agenda `property_definitions`; `Contexts.md` names a three-arm `setContext`; the PRD self-contradicts). Plus 3 documentation gaps (registration is never backfilled; a taken slot never registers; the move backstop is undocumented).
-5. **41 time-specific doc sentences** across 22 docs — pre-existing, violates the standing rule, needs its own sweep and Nathan's go.
-6. **Two damaged live files** — `NexusOS/Studio/NexusOS/{NexusOS,Nexus-Index}.md` carry a dead `id:` beside their new `PageID:`, and `Studio/NexusOS/_pageset.json`'s `page_order` still lists their OLD ids, so they've dropped out of that Set's manual order. Cause: trashed pre-migration, untrashed after. Either restore the old id as their `PageID` (fixes every reference at once) or drop the dead key and re-order by hand. **Awaiting Nathan's pick.**
+**LIVE-VERIFIED by Nathan; the plan is closed.** What remains is sequenced work, not unfinished work:
+1. **~41 time-specific doc sentences** across ~22 docs — pre-existing, violates the standing no-time-specific rule, wants its own sweep and Nathan's go.
+2. **D-15 · duplicate CONTENT ids** — still `[open]` in the log. Duplicate *container* ids are handled now; two `.md` carrying one id are still admitted as two members.
+3. **F8 · a taken seed-slot name never registers** — deliberately unpatched. Filling it needs a second writer to the registration record, weakening the single-writer invariant the seed ordering relies on, plus a product call. **Folds into the Agenda Rethink.**
+
+**Closed this session, for the record:** F3 (a contested slot now registers nobody) · F6 (a folder crossing depth has its sidecar renamed, not duplicated) · the two damaged live files (original ids restored, so `page_order` resolves again) · the identity docs reconciliation · both trashes stripped of ids · NexusOS manually seeded with its registered agenda pair.
 
 **Sequenced after this plan:** the Record Plan (D-17 — one last-known-state mechanism serving structural revert AND trash restore) and the Agenda Rethink (shape, fields, surfaces, CRUD — from the de-scaffolded clean slate, with identification already total).
 
