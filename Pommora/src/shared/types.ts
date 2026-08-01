@@ -238,6 +238,10 @@ export interface NexusTree {
   /** Every registry definition, in the nexus-wide cosmetic order (order-listed first,
    *  unlisted appended) — reserved ids included; consumers filter. */
   registry: PropertyDefinition[]
+  /** Nexus-relative paths the walk saw but could not read — a present-but-unparseable
+   *  sidecar, an Unknown or unreadable page. Distinct from absence, which is a missing
+   *  entry; absent when empty. No surface reads it — the record's baseline consumes it. */
+  unreadable?: { path: string }[]
 }
 
 /**

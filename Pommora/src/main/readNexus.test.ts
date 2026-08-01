@@ -305,6 +305,75 @@ describe('readNexus — registry-backed contexts', () => {
   })
 })
 
+describe('readNexus — the walk names what it cannot read', () => {
+  const INSIDE = '01KVGMT8BFG350FZZXAMG1QDRT'
+  let root: string
+  beforeAll(() => {
+    root = mkdtempSync(join(tmpdir(), 'pom-unread-'))
+    d(join(root, '.nexus'))
+    w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxu', createdAt: '2026' }))
+    w(
+      join(root, '.nexus', 'contexts.json'),
+      JSON.stringify({ contexts: [{ id: 'ctx_a', title: 'Areas', singular: 'Area' }] }),
+    )
+    d(join(root, '.nexus', 'contexts', 'Areas', 'Good'))
+    w(join(root, '.nexus', 'contexts', 'Areas', 'Good', '_space.json'), JSON.stringify({ id: 'sp-good' }))
+    d(join(root, '.nexus', 'contexts', 'Areas', 'Bad'))
+    w(join(root, '.nexus', 'contexts', 'Areas', 'Bad', '_space.json'), '{corrupt')
+    d(join(root, '.nexus', 'contexts', 'Areas', 'Plain')) // no _space.json -> not a Space, silent
+    d(join(root, 'Notes'))
+    w(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
+    w(join(root, 'Notes', 'Entry.md'), '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRS\n---\nbody')
+    w(join(root, 'Notes', 'Alien.md'), '---\nTaskID: 01KVGMT8BFG350FZZXAMG1QDRV\n---\nbody')
+    w(
+      join(root, 'Notes', 'Dual.md'),
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDRS\nTaskID: 01KVGMT8BFG350FZZXAMG1QDRV\n---\n',
+    )
+    w(join(root, 'Notes', 'Malformed.md'), '---\nPageID: not-a-ulid\n---\nbody')
+    d(join(root, 'Broken'))
+    w(join(root, 'Broken', '_pagecollection.json'), '{nope')
+    w(join(root, 'Broken', 'Inside.md'), `---\nPageID: ${INSIDE}\n---\nbody`)
+    d(join(root, 'PlainFolder')) // un-adopted, no sidecar -> silent
+  })
+  afterAll(() => rmSync(root, { recursive: true, force: true }))
+
+  it('records the corrupt sidecars and every Unknown admission; absence stays silent', async () => {
+    const t = await readNexus(root)
+    expect((t.unreadable ?? []).map((u) => u.path).sort()).toEqual([
+      '.nexus/contexts/Areas/Bad',
+      'Broken',
+      'Notes/Alien.md',
+      'Notes/Dual.md',
+      'Notes/Malformed.md',
+    ])
+  })
+
+  it('an unreadable container still walks — its children keep their identity', async () => {
+    const t = await readNexus(root)
+    const broken = t.collections!.find((c) => c.title === 'Broken')!
+    expect(broken.id.startsWith('adopted-')).toBe(true)
+    expect(broken.pages.map((p) => p.id)).toEqual([INSIDE])
+  })
+
+  it('a clean walk carries no list', async () => {
+    expect((await readNexus(sidecar)).unreadable).toBeUndefined()
+  })
+
+  it('an unusable registry names itself — a blank Contexts layer is not mass deletion', async () => {
+    const r = mkdtempSync(join(tmpdir(), 'pom-unread-reg-'))
+    try {
+      d(join(r, '.nexus'))
+      w(join(r, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxc', createdAt: '2026' }))
+      w(join(r, '.nexus', 'contexts.json'), '{corrupt')
+      const t = await readNexus(r)
+      expect(t.contexts).toEqual([])
+      expect(t.unreadable?.map((u) => u.path)).toEqual(['.nexus/contexts.json'])
+    } finally {
+      rmSync(r, { recursive: true, force: true })
+    }
+  })
+})
+
 describe('readNexus — real test nexus (optional smoke)', () => {
   const real = process.env.TEST_NEXUS_PATH || join(homedir(), 'test')
   it.runIf(existsSync(real))('reads the real nexus without throwing', async () => {
