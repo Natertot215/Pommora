@@ -195,6 +195,19 @@ async function readSidecarNaming(
   return meta
 }
 
+/** A Collection's or Set's own sidecar as a record — raw mode has none to read, and an
+ *  unparseable one reads empty so the container still walks, its folder named on the list. */
+const readContainerMeta = (
+  absDir: string,
+  relDir: string,
+  sidecar: string,
+  kindCtx: FolderKindContext,
+  unreadable: string[],
+): Promise<Json> =>
+  kindCtx.sidecarMode
+    ? readSidecarNaming(join(absDir, sidecar), relDir, unreadable).then((m) => m ?? {})
+    : Promise.resolve<Json>({})
+
 /** A `.nexus` config file as a record — absent and unreadable both read as empty, because the
  *  walk has no field of its own to lose. The one exception (nexus.json) reads strict below. */
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
@@ -324,9 +337,7 @@ async function readSet(
   unreadable: string[],
 ): Promise<SetNode> {
   const [meta, sets, pages] = await Promise.all([
-    kindCtx.sidecarMode
-      ? readSidecarNaming(join(absDir, SIDECAR_FILENAME.set), relDir, unreadable).then((m) => m ?? {})
-      : Promise.resolve<Json>({}),
+    readContainerMeta(absDir, relDir, SIDECAR_FILENAME.set, kindCtx, unreadable),
     readChildSets(absDir, relDir, kindCtx, excluded, fb, unreadable),
     readDirectPages(absDir, relDir, unreadable),
   ])
@@ -371,11 +382,7 @@ async function readPageCollection(
   unreadable: string[],
 ): Promise<CollectionNode> {
   const [meta, sets, pages] = await Promise.all([
-    kindCtx.sidecarMode
-      ? readSidecarNaming(join(absDir, SIDECAR_FILENAME.collection), relDir, unreadable).then(
-          (m) => m ?? {},
-        )
-      : Promise.resolve<Json>({}),
+    readContainerMeta(absDir, relDir, SIDECAR_FILENAME.collection, kindCtx, unreadable),
     readChildSets(absDir, relDir, kindCtx, excluded, fb, unreadable),
     readDirectPages(absDir, relDir, unreadable),
   ])

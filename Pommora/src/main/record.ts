@@ -77,24 +77,25 @@ export function latchBaseline(
   prior: Baseline | null,
 ): Baseline {
   const unreadable = new Set(unreadablePaths)
+  const recorded: Baseline = prior ?? {}
   const out: Baseline = {}
   for (const [id, e] of Object.entries(projection.entries))
     out[id] = unreadable.has(e.path) ? { ...e, state: 'unreadable' } : e
   for (const [id, claims] of Object.entries(projection.duplicates)) {
-    const p = prior?.[id]
+    const p = recorded[id]
     if (!p) continue
     if (unreadable.has(p.path)) out[id] = { ...p, state: 'unreadable', ambiguous: true }
     else if (claims.some((c) => c.path === p.path)) out[id] = { ...p, ambiguous: true }
     else delete out[id]
   }
-  for (const [id, p] of Object.entries(prior ?? {})) {
+  for (const [id, p] of Object.entries(recorded)) {
     if (!(id in out) && !(id in projection.duplicates) && unreadable.has(p.path))
       out[id] = { ...p, state: 'unreadable' }
   }
   // An unusable registry blanks the whole Contexts layer in one stroke — carry every prior
   // group and Space as unreadable rather than reading the blank as mass deletion.
   if (unreadable.has(CONTEXTS_REGISTRY_REL)) {
-    for (const [id, p] of Object.entries(prior ?? {})) {
+    for (const [id, p] of Object.entries(recorded)) {
       if ((p.kind === 'context' || p.kind === 'space') && !(id in out))
         out[id] = { ...p, state: 'unreadable' }
     }
@@ -102,37 +103,37 @@ export function latchBaseline(
   return out
 }
 
+/** Entries in flux leave both sides of the diff: an ambiguous-marked prior entry and any id
+ *  the current walk saw at 2+ paths. Their paths are stale or contested by construction, and
+ *  a phantom add or remove would overwrite the last-non-empty drift row. */
+const diffable = (
+  b: Baseline,
+  duplicates: Record<string, EntityRecord[]>,
+): Record<string, EntityRecord> =>
+  Object.fromEntries(Object.entries(b).filter(([id, e]) => !e.ambiguous && !(id in duplicates)))
+
 /** The open path's record pass: one explicit walk, latched against the prior session, the
  *  drift kept only when it says something (an uneventful open must not overwrite the one
- *  interesting record), the new baseline written last. A failed walk retains the prior
- *  baseline — the open itself proceeds. */
+ *  interesting record), the new baseline written last. Best-effort end to end — a failed walk
+ *  or a failed row write retains the prior record, and the open itself proceeds. */
 export async function runOpenRecord(root: string): Promise<void> {
-  let tree: NexusTree
   try {
-    tree = await readNexus(root)
+    const tree = await readNexus(root)
+    const prior = readBaseline()
+    const projection = projectBaseline(tree)
+    const unreadablePaths = (tree.unreadable ?? []).map((u) => u.path)
+    const next = latchBaseline(projection, unreadablePaths, prior)
+    if (prior !== null) {
+      const drift = diffBaselines(
+        diffable(prior, projection.duplicates),
+        diffable(next, projection.duplicates),
+      )
+      if (!isEmptyDiff(drift)) writeDrift(drift)
+    }
+    writeBaseline(next)
   } catch (e) {
-    console.error('record: open walk failed; the prior baseline stands:', errText(e))
-    return
+    console.error('record: the open pass failed; the prior record stands:', errText(e))
   }
-  latchOpenTree(tree)
-}
-
-/** Ambiguous entries leave both sides of the diff: their recorded path is stale by
- *  construction, and re-reporting the same phantom every open would overwrite the
- *  last-non-empty drift row. */
-const unambiguous = (b: Baseline): Record<string, EntityRecord> =>
-  Object.fromEntries(Object.entries(b).filter(([, e]) => !e.ambiguous))
-
-/** The tree half of the open pass, split from the walk so fixtures can drive it directly. */
-export function latchOpenTree(tree: NexusTree): void {
-  const prior = readBaseline()
-  const unreadablePaths = (tree.unreadable ?? []).map((u) => u.path)
-  const next = latchBaseline(projectBaseline(tree), unreadablePaths, prior)
-  if (prior !== null) {
-    const drift = diffBaselines(unambiguous(prior), unambiguous(next))
-    if (!isEmptyDiff(drift)) writeDrift(drift)
-  }
-  writeBaseline(next)
 }
 
 export function readBaseline(): Baseline | null {
