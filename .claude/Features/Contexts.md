@@ -18,7 +18,7 @@ The organization layer. A **Context** is a user-defined group — a fresh nexus 
 
 #### II. Writes
 
-- **`setContext`** is the one membership write per entity kind (page / agenda / space), under per-file locks, reconciling the whole root it rewrites. Space-to-Space links use the same shape: a Space tags Spaces through its own sidecar keys, in its own Context or another.
+- **`setContext`** is the one membership write per entity kind (content file / Space), under per-file locks, reconciling the whole root it rewrites. Space-to-Space links use the same shape: a Space tags Spaces through its own sidecar keys, in its own Context or another.
 
 - **Renames are journaled**: a rename writes the pending-rename journal first, cascades the title across all three file scopes, commits the registry, then settles — a crash replays forward on the next open, and a live registry-commit failure reverses the cascade. Renames are id-keyed; ids never change. A Context rename also renames a folder, so a crash can leave a state nothing on disk records — which is what the journal exists for. The cascade IS the rename, so the generic path-addressed rename can't name a Context or a Space at all, and a bare folder rename that would strand every tag is unreachable.
 
