@@ -170,6 +170,7 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 
 ### Fix Log
 
+- A page deleted from a folder Pommora didn't create records an unrestorable parent. The delete proves the parent's identity by reading its sidecar, and a Finder-made folder has none until the next app launch stamps it — so the record says "where this belonged was never recorded" and restore refuses it forever, even though the app will happily make pages in that folder. Recording the tree's id isn't the fix: for those folders it's a hash of the path. The fix mints the folder a real identity before recording it, which lands in adoption, not the record. Logged, no fix planned. → [[NexusRecord]].
 - The "File" property icon gets clipped by its vertical row padding on the ViewPane.
 - The link-rename field shows a leading empty space — a visual inset, not a stored character (deprioritized).
 - Block-math drag corrupts the doc: a multi-line `$$…$$` span with a blank line inside parses as two halves with orphaned `$$` (`blockModel.ts`, test-pinned but unguarded).
