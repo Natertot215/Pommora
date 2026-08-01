@@ -284,3 +284,65 @@ describe('the re-mint writes', () => {
     expect(isUlidShaped(fresh)).toBe(true)
   })
 })
+
+describe('the whole-Collection copy — the acceptance shape', () => {
+  it('after two opens every copied id is fresh and every original keeps its own', async () => {
+    const root2 = await mkdtemp(join(tmpdir(), 'pom-remint-col-'))
+    try {
+      await mkdir(join(root2, '.nexus'), { recursive: true })
+      await writeFile(
+        join(root2, '.nexus', 'nexus.json'),
+        JSON.stringify({ id: 'nx-col', createdAt: '2026' }),
+      )
+      await mkdir(join(root2, 'Library', 'Fiction'), { recursive: true })
+      await writeFile(
+        join(root2, 'Library', '_pagecollection.json'),
+        JSON.stringify({ id: '01KVGMT8BFG350FZZXAMG1QDWA' }),
+      )
+      await writeFile(
+        join(root2, 'Library', 'Fiction', '_pageset.json'),
+        JSON.stringify({ id: '01KVGMT8BFG350FZZXAMG1QDWB' }),
+      )
+      await writeFile(
+        join(root2, 'Library', 'Notes.md'),
+        '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDWC\n---\nbody',
+      )
+      closeSessionDb()
+      openSessionDb(root2)
+
+      await runOpenRecord(root2)
+      await cp(join(root2, 'Library'), join(root2, 'Library copy'), { recursive: true })
+      await runOpenRecord(root2)
+      await runOpenRecord(root2)
+
+      const original = {
+        col: JSON.parse(await readFile(join(root2, 'Library', '_pagecollection.json'), 'utf8')),
+        set: JSON.parse(await readFile(join(root2, 'Library', 'Fiction', '_pageset.json'), 'utf8')),
+        page: await readFile(join(root2, 'Library', 'Notes.md'), 'utf8'),
+      }
+      expect(original.col.id).toBe('01KVGMT8BFG350FZZXAMG1QDWA')
+      expect(original.set.id).toBe('01KVGMT8BFG350FZZXAMG1QDWB')
+      expect(original.page).toContain('01KVGMT8BFG350FZZXAMG1QDWC')
+
+      const copy = {
+        col: JSON.parse(await readFile(join(root2, 'Library copy', '_pagecollection.json'), 'utf8')),
+        set: JSON.parse(
+          await readFile(join(root2, 'Library copy', 'Fiction', '_pageset.json'), 'utf8'),
+        ),
+        page: await readFile(join(root2, 'Library copy', 'Notes.md'), 'utf8'),
+      }
+      expect(isUlidShaped(copy.col.id)).toBe(true)
+      expect(copy.col.id).not.toBe(original.col.id)
+      expect(isUlidShaped(copy.set.id)).toBe(true)
+      expect(copy.set.id).not.toBe(original.set.id)
+      expect(copy.page).not.toContain('01KVGMT8BFG350FZZXAMG1QDWC')
+
+      const baseline = readBaseline()!
+      expect(baseline['01KVGMT8BFG350FZZXAMG1QDWA'].path).toBe('Library')
+      expect(baseline[copy.col.id].path).toBe('Library copy')
+    } finally {
+      closeSessionDb()
+      await rm(root2, { recursive: true, force: true })
+    }
+  })
+})
