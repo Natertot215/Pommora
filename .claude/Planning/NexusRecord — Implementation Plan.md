@@ -367,8 +367,8 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - Assumed by: Task 12.
 
 **Steps:**
-- [ ] Extract; existing removeProperty tests pass **unmodified**; gates green.
-- [ ] Commit: `refactor(crud): one spend-per-landed-write loop`
+- [x] Extract; existing removeProperty tests pass **unmodified**; gates green.
+- [x] Commit: `refactor(crud): one spend-per-landed-write loop`
 
 #### Task 11: The resolver
 
@@ -447,8 +447,8 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
   - [x] Task 7 — the sweep tells the truth · `435c6f12`
   - [x] Task 8 — the pair · `3fa49491`
   - [x] Task 9 — absorb the snapshot; remove the residue · `91d7a225`
-- [ ] **Phase 4** — the resolver spends the pairs
-  - [ ] Task 10 — one reconciliation loop
+- [ ] **Phase 4** — the resolver spends the pairs · base `0d2695fc`
+  - [x] Task 10 — one reconciliation loop
   - [ ] Task 11 — the resolver
   - [ ] Task 12 — restore
   - [ ] Task 13 — the record tells the docs
