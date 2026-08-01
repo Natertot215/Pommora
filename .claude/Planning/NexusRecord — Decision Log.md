@@ -47,6 +47,12 @@ They share a module and nothing else. Conflating them is what broke V1.
   This is precisely the event payload A-1 reserves: bounded by how many pages tagged that Space, and a list of ULIDs. It rides the trashed artifact's own provenance, so it obeys the same memory-on-the-thing rule as everything else.
 
   Restore re-applies the tag to the pages that still exist and reconciles per entry the way the Remove cache does — spend an entry only on a landed write, keep the rest. A page deleted or moved in the meantime is skipped, not an error. **No standing reverse index is created**: nothing maintains "which pages tag this Space" between deletes, and nothing needs to — the set is computed once, at removal, by a sweep that already runs.
+
+- **A-1b:** [assumed] A **Context** delete records the page's Space list, not just the page. Deleting a Context strips the whole parenthesized key, and that key may hold several Space values on one page — so a page-only record would restore the key and lose its contents. The values sit in the same callback as the removal, read one line before the delete discards them, so capturing `{ id, spaces }` per page is free.
+
+  Cost, stated exactly: one import for the id reader, and an accumulator the caller closes over. The sweep's callback is a plain closure, so **`sweepContextRoots` itself does not change** — the enumeration, the identity, and the values are all already in hand at the moment of removal.
+
+  Space titles are recorded, not Space ids, matching the on-disk grammar: the values in frontmatter are titles, and a deleted Context's Spaces travel inside its own folder, so they return at those titles when it is restored.
 - **A-2:** [assumed] Compare **reports** external drift; it never auto-reverts. Separately, the app's own *interrupted* work may complete unattended — that is what the rename journal already does at open, and forbidding it would forbid the record's best future use.
 - **A-3:** [assumed] Un-adopted entities are out of scope, and the projection must **actively filter** `adopted-`-prefixed ids. The walk assigns them to every excluded or sidecar-less entity, so without a filter they enter the baseline and report as delete-plus-create forever.
 - **A-4:** [assumed] Out of scope entirely, stated rather than discovered: **block tiles** (no id key, `.nexus`-resident, invisible to the walk, and restoring one is a database row insert, not a placement) and **Tasks/Events** (the walk emits no agenda nodes and no delete arm reaches them; this widens for free when Agenda joins the walk).
