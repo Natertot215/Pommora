@@ -14,6 +14,7 @@ import { baseSidecar } from '@shared/schemas'
 import { recordWrite } from './io/writeEcho'
 import { shouldSkipDir } from './exclusion'
 import {
+  AGENDA_SLOTS,
   agendaContext,
   resolveFolderKind,
   type FolderKind,
@@ -42,23 +43,18 @@ async function reHomeRegistered(
   root: string,
   kindCtx: FolderKindContext,
 ): Promise<boolean> {
-  const slotKind = (k: 'taskConfig' | 'eventConfig'): FolderKind =>
-    k === 'taskConfig' ? 'tasks-singleton' : 'events-singleton'
-  for (const [slot, kind] of [
-    ['tasks', 'taskConfig'],
-    ['events', 'eventConfig'],
-  ] as const) {
+  for (const { slot, sidecar: sidecarKind, kind } of AGENDA_SLOTS) {
     const registered = kindCtx.agenda[slot]
     if (!registered) continue
-    const sidecar = await readSidecar(absDir, kind, baseSidecar)
+    const sidecar = await readSidecar(absDir, sidecarKind, baseSidecar)
+    // Try the other slot rather than aborting the loop on one non-match.
     if (sidecar?.id !== registered) continue
-    // Try the other slot rather than aborting the loop on one refusal.
     const target = join(root, basename(absDir))
     if (await pathExists(target)) return false
     // Ask the resolver whether this folder WOULD be the singleton once it sat at the root. That
     // one call inherits every refusal it already makes — a second agenda config, a container
     // sidecar beside it — so re-homing can never relocate a folder the resolver calls Unknown.
-    if ((await resolveFolderKind(absDir, 'root', kindCtx)) !== slotKind(kind)) return false
+    if ((await resolveFolderKind(absDir, 'root', kindCtx)) !== kind) return false
     recordWrite(absDir)
     recordWrite(target)
     await rename(absDir, target)
@@ -85,13 +81,17 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<boolean> {
 /** The two folder kinds that carry a container sidecar of their own. */
 type ContainerKind = 'collection' | 'set'
 
+/** Every kind adoption can act on. Unknown is excluded by type, not by a runtime check: callers
+ *  already skip it, and letting it in here would silently look up an undefined member kind. */
+type AdoptableKind = Exclude<FolderKind, 'unknown'>
+
 /** The content kind a folder's members answer to. */
-const MEMBER_KIND: Record<string, ContentKind> = {
+const MEMBER_KIND = {
   collection: 'page',
   set: 'page',
   'tasks-singleton': 'task',
   'events-singleton': 'event',
-}
+} as const satisfies Record<AdoptableKind, ContentKind>
 
 /** Mint + persist a folder id when it has none, reporting whether it wrote. A sidecar that exists
  *  but couldn't be read is left alone: minting over it would replace the Collection's views,
@@ -140,7 +140,7 @@ async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Pro
 async function stampTree(
   absDir: string,
   relDir: string,
-  kind: FolderKind,
+  kind: AdoptableKind,
   excluded: string[],
   kindCtx: FolderKindContext,
   root: string,
@@ -150,9 +150,7 @@ async function stampTree(
   // A folder Pommora can't write — a locked sync target, a restored backup with foreign
   // ownership, an evicted cloud placeholder — costs only itself. Letting it throw would abandon
   // every folder after it in readdir order, silently, on every open.
-  let count = !singleton && (await stampFolder(absDir, kind as ContainerKind).catch(() => false))
-    ? 1
-    : 0
+  let count = !singleton && (await stampFolder(absDir, kind).catch(() => false)) ? 1 : 0
 
   for (const e of await listEntries(absDir)) {
     if (e.isFile() && !e.name.startsWith('_') && e.name.toLowerCase().endsWith('.md')) {

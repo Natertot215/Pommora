@@ -17,7 +17,7 @@ export const KIND_ID_KEY = {
 
 export const PAGE_ID_KEY = KIND_ID_KEY.page
 
-const ALL_KIND_KEYS: readonly string[] = Object.values(KIND_ID_KEY)
+const ALL_KIND_KEYS = Object.values(KIND_ID_KEY)
 
 /** Crockford base32, 26 chars — I, L, O and U are absent from the alphabet by design. */
 const ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/
@@ -31,7 +31,7 @@ export function isUlidShaped(value: unknown): value is string {
  *  `PageID:` with nothing after it, and everywhere else in Pommora an emptied value deletes its
  *  key. Reading that as a malformed identity would make the file invisible and un-adoptable for
  *  what the user experienced as deleting a field. */
-const presentKeys = (fm: Record<string, unknown>): string[] =>
+const presentKeys = (fm: Record<string, unknown>) =>
   ALL_KIND_KEYS.filter((k) => fm[k] !== undefined && fm[k] !== null && fm[k] !== '')
 
 export type Admission =

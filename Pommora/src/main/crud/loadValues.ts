@@ -1,6 +1,6 @@
 // Batch frontmatter read for a container's view pipeline. Walks every `.md` under a container
 // (recursive — own pages + nested Sets) and returns a `pageId → PageFrontmatter` map, keyed by the
-// SAME id the read engine assigns (frontmatter.id, else adoptedId of the nexus-relative path) so it
+// SAME id the read engine assigns (the frontmatter kind key, else adoptedId of the relative path) so it
 // joins cleanly to the tree's PageNodes in flattenContainer. Read-only; lazy (called on container
 // open, not woven into the tree walk). Reads through the walk's own per-page record — the cache
 // stats before serving, so a changed file re-parses and an untouched one costs no read at all.

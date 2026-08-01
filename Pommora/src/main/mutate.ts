@@ -47,7 +47,7 @@ import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pag
 import { basenameNoMd } from './coerce'
 import { nexusConfig, SIDECAR_FILENAME, NEXUS_CONFIG_FILES } from './paths'
 import { ensureIdentity } from './identity'
-import { agendaContext, resolveFolderKind } from './folderKind'
+import { resolveFolderKind } from './folderKind'
 import { updateSettings } from './settings'
 import { newId } from './ids'
 import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
@@ -117,12 +117,20 @@ const fault = (message: string): Result<never> => fail('operation-failed', messa
 
 /** The choke point every move passes: a page or Set may only land somewhere that holds pages —
  *  a guard against a programmatic accident bypassing the UI's own constraints, and the ONE
- *  main-side check, rather than a rule re-stated per caller. */
+ *  main-side check, rather than a rule re-stated per caller.
+ *
+ *  The empty registration is the honest reading, not a shortcut past one: the resolver consults it
+ *  in a single branch — the destination carries an agenda config — and every outcome of that
+ *  branch is a kind this refuses, so no registration can change the answer. Building a real one
+ *  costs a sidecar read per root folder, on a drag. */
 async function movesInto(root: string, dst: string): Promise<Result<null>> {
   const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
-  const ctx = await agendaContext(root, identity, !!identity?.id)
   const depth = dirname(dst) === root ? 'root' : 'nested'
-  const kind = await resolveFolderKind(dst, depth, ctx)
+  const kind = await resolveFolderKind(dst, depth, {
+    agenda: {},
+    root,
+    sidecarMode: !!identity?.id,
+  })
   return kind === 'collection' || kind === 'set'
     ? ok(null)
     : fail('invalid-path', 'Pages live in Collections and Sets.')

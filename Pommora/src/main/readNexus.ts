@@ -6,7 +6,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { parseDocument } from 'yaml'
-import { admitContentFile, type ContentKind } from '@shared/identity'
+import { admitContentFile } from '@shared/identity'
 import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
 import type {
   SolidColor,
@@ -226,11 +226,10 @@ export interface PageRecord {
 export async function readPageRecord(
   absFile: string,
   relFile: string,
-  expected: ContentKind = 'page',
 ): Promise<PageRecord | null> {
   return cachedParse(absFile, async () => {
     const fm = splitFrontmatter(await readFile(absFile, 'utf8'))
-    const admission = admitContentFile(fm, expected)
+    const admission = admitContentFile(fm, 'page')
     if (admission.state === 'unknown') return null
     const node: PageNode = {
       kind: 'page',
