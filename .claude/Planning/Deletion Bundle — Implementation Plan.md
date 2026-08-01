@@ -14,7 +14,6 @@ Restructure the NexusRecord's provenance container so the record is written befo
 - `src/main/provenance.ts` — schema + gathers + resolver + mover; `writePair`'s production caller is the delete arm; `writePropertyPair`'s is `crud/deleteProperty.ts` `snapshot()` (already write-ahead: snapshot runs before the scrub).
 - `src/main/mutate.ts` delete arm — current order per kind: content gathers before the move; **space sweeps before gathering** (the unrecorded-destruction defect); context gathers evidence before erase, membership during sweep; pair written after `removeViaMode`, best-effort.
 - `src/main/record.ts` `projectBaseline` — restore's id-live source; untouched.
-- `src/main/remint.ts` — id rewrite + `copyDeviceRows` machinery Task 6 reuses.
 - Tests: `provenance.test.ts` (pair matrix, resolver matrix, restore round-trips, guard pins), delete-arm coverage in `mutate.test.ts`-adjacent suites. Baseline gate: **179 files / 1,994 tests**.
 
 ### Forced By
@@ -95,21 +94,13 @@ In one fixture nexus: delete a Context carrying members → exactly one `.delete
 ### Phase 3 — Restore, Heal, and Truth
 
 **Task 5 — Restore spends bundles.**
-*Why:* C-1, C-3; the mover's decisions are unchanged — only its inputs move (Goal: restore behavior preserved).
+*Why:* C-1; the mover's decisions are unchanged — only its inputs move (Goal: restore behavior preserved).
 *Files:* `src/main/provenance.ts` `restoreArtifact`, `src/shared/mutate.ts` (the field renames `pairPath` → `bundlePath` — two references repo-wide, zero renderer-side), `provenance.test.ts` restore matrix.
-*Steps:* path validation (under `.trash` against a **realpath'd** root — the inherited guard compared against the raw root where `isReserved` realpaths for exactly this reason; fixed here while the line is open — ends `.deleted`, is a directory) → `readRecord` → **property refuses first**, with its existing message ("A property record has no artifact to restore") — the guard survives the rewrite ahead of the artifact check, so a complete property record is never mislabeled an incomplete delete → `bundleArtifact` (null ⇒ refuse: incomplete) → **id re-check, carved by kind (C-3)**: page → `contentId` from the artifact's frontmatter; collection/set/space → sidecar id; **context → exempt** (no artifact-side identity exists — the registry entry in the record IS the identity, which is why the record exists); disagreement refuses ("the record and the file disagree") → resolver fed the artifact's real basename → existing guards verbatim (occupancy, registry-append-before-move + rollback) → move the artifact out → remove the bundle dir **recursively** (convention-skipped cruft may remain inside) → passenger re-key + membership reapply unchanged.
-*Failure half:* record id present but artifact unreadable ⇒ refuse (never restore what can't be verified); artifact id-less where the record has one ⇒ refuse; both id-less (page adopted without id) ⇒ proceed — the re-check gates disagreement, not absence.
-*Negative control:* the id re-check disabled reproduces the two-live-pages-one-id defect from the attack (red), restored (green).
+*Steps:* path validation (under `.trash` against a **realpath'd** root — the inherited guard compared against the raw root where `isReserved` realpaths for exactly this reason; fixed here while the line is open — ends `.deleted`, is a directory) → `readRecord` → **property refuses first**, with its existing message ("A property record has no artifact to restore") — the guard survives the rewrite ahead of the artifact check, so a complete property record is never mislabeled an incomplete delete → `bundleArtifact` (null ⇒ refuse: incomplete) → resolver fed the artifact's real basename → existing guards verbatim (occupancy, registry-append-before-move + rollback) → move the artifact out → remove the bundle dir **recursively** (convention-skipped cruft may remain inside) → passenger re-key + membership reapply unchanged. No id re-check against the artifact — the record is trusted, and the state a tampered record could create is the re-mint pass's existing jurisdiction (Log C-3).
+*Failure half:* unreadable record ⇒ not a bundle, refuse; artifact absent ⇒ incomplete, refuse; occupied target ⇒ refuse — all pre-existing shapes, re-pointed.
 *Must agree:* resolver refusals and restore's own refusals must not overlap or contradict — the existing pin tests re-run against bundles unchanged.
 
-**Task 6 — The id-live heal (C-4; drop this task cleanly if Nathan rules refusal stays).**
-*Why:* "copy in Finder, then delete the original" currently makes the original unrestorable forever; the duplicate law (possession is originality) already names the answer.
-*Files:* `src/main/provenance.ts` (the heal arm inside `restoreArtifact`), `src/main/remint.ts` (**export three currently-private helpers** — the page id rewrite, the sidecar re-mint, and `copyDeviceRows`; they are module-private today and this task's first step is exporting them unchanged), tests.
-*Steps:* failing test (Finder-copy fixture → delete original → restore succeeds; two distinct live ids; the restored entity's folds/view rows copied old→new) → on an `id-live` refusal for page/collection/set only: mint a fresh id, **patch `record.json` to it first, then rewrite the artifact** — the record is the cheap atomic half, and this order means a crash mid-heal leaves a disagreement a retried restore re-heals, never a state Task 5's re-check permanently refuses → copy device rows old-id → new-id → re-resolve with the healed record, proceed. The sidecar re-mint also re-mints `views[].id` — inherited deliberately (the live copy owns the old view identities). Contexts and Spaces keep the refusal (their identity is registry + membership; the Log says why).
-*Failure half:* row copy is best-effort (chrome, not content); the artifact rewrite failing leaves record ≠ artifact ⇒ the next restore attempt re-enters the heal, bundle intact.
-*Must agree:* the heal and Task 5's re-check judge the same record-vs-artifact disagreement — one crossing test runs the crash-mid-heal state through a second restore and asserts it heals rather than refuses.
-
-**Task 7 — Docs and the sweep.**
+**Task 6 — Docs and the sweep.**
 *Why:* the blast radius (E-1, E-2) is a deliverable, not an afterthought.
 *Files:* `Features/NexusRecord.md` (Provenance sections rewritten as-built: the bundle, the settle marker, the refusal semantics; the pair described nowhere), `History.md` (one entry), this plan's Log closed out.
 *Steps:* rewrite → grep the docs for `provenance.json`, `pair`, `artifactBaseName` (control token: `record.json` present) → grep `src` for the retired code spellings `PAIR_SUFFIX`, `pairPathFor`, `trashWithTimestamp`, `artifactBaseName` (control token: `RECORD_FILENAME` present; expected hits: zero) → full gates → the acceptance criterion runs as a test, not a claim.
@@ -120,7 +111,7 @@ In one fixture nexus: delete a Context carrying members → exactly one `.delete
 
 ### Sequenced After
 
-Trash browser + restore surface (reads `listBundles`, invokes `restore`) · empty-trash op (bundle-aware) · re-mint pass consulting trash records · property restore path.
+Trash browser + restore surface (reads `listBundles`, invokes `restore`) · empty-trash op (bundle-aware) · the id-live heal (Log Prospects — deferred until a surface makes the trap reachable) · re-mint pass consulting trash records · property restore path.
 
 ### Progress
 
@@ -131,8 +122,7 @@ Trash browser + restore surface (reads `listBundles`, invokes `restore`) · empt
 - [ ] T4 property bundles
 - [ ] P2 gate
 - [ ] T5 restore on bundles
-- [ ] T6 id-live heal (contingent on C-4 ratification)
-- [ ] T7 docs + sweep
+- [ ] T6 docs + sweep
 - [ ] P3 gate + closeout
 
 ### Log

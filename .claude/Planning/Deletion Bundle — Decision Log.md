@@ -39,8 +39,7 @@
 
 - **C-1:** [confirmed] `restoreArtifact` takes a bundle path; the artifact is the single non-`record.json` entry inside; it moves out to the resolver's placement and the bundle is removed. The resolver, the containment/occupancy guards, registry-append-before-move with rollback, passenger re-keying, and the reconcile loop are all unchanged.
 - **C-2:** [confirmed] The orphan prune is **deleted**, not ported — a record inside the bundle cannot be separated from its artifact by a rename, hand-move, or sync race, so the failure the prune answered (and the data loss it caused, destroying non-derivable records over temporary artifact absence) no longer exists.
-- **C-3:** [confirmed] Restore re-derives the artifact's actual id inside the op and refuses on disagreement with the record — the record's claim is no longer trusted over the artifact's content. Carved by kind: page → frontmatter id; collection/set/space → sidecar id; **context → the re-check does not apply**, because a Context has no artifact-side identity at all — its identity is solely the registry entry the record carries, which is why the record exists. Disagreement refuses; absence on both sides proceeds.
-- **C-4:** [assumed] The id-live trap heals by re-mint: when restore finds the recorded id alive in the tree (a Finder copy made before the delete), it restores the artifact under a **fresh id** instead of refusing forever — mirroring the duplicate law (possession is originality; the live holder keeps the id). Order matters: the **record patches to the fresh id first, then the artifact rewrites** — a crash between the two leaves a disagreement that a retried restore re-heals, never a permanently refused bundle. Device rows copy old-id → new-id so the restored entity keeps its folds and view state; the re-mint helpers this reuses are currently module-private and get exported as part of the task (a sidecar re-mint also re-mints `views[].id`, a side effect the heal inherits deliberately). The refusal remains only for Contexts and Spaces, whose identity lives in the registry and cannot re-mint meaningfully without their memberships re-keying.
+- **C-3:** [confirmed] Restore trusts the record's ids without re-deriving them from the artifact. Reaching a disagreement requires hand-editing an id inside a file sitting in `.trash` — and even then, the resulting state (two live holders of one id) is exactly what the baseline's re-mint pass adjudicates at the next open. The record half never duplicates a net the baseline half already provides.
 
 #### D — Migration
 
@@ -48,20 +47,20 @@
 
 #### E — Blast Radius
 
-- **E-1:** [confirmed] [[NexusRecord]]'s Provenance sections go false and are rewritten as-built at ship; History carries the arc. `record.ts` and the baseline half are untouched; `remint.ts` changes only by exporting three private helpers (C-4); the `restore` op keeps its one-path shape with the field renamed `pairPath` → `bundlePath` (two references repo-wide, zero renderer-side).
+- **E-1:** [confirmed] [[NexusRecord]]'s Provenance sections go false and are rewritten as-built at ship; History carries the arc. `record.ts`, `remint.ts`, and the baseline half are untouched; the `restore` op keeps its one-path shape with the field renamed `pairPath` → `bundlePath` (two references repo-wide, zero renderer-side).
 - **E-2:** [confirmed] The provenance test suite re-points at the bundle layout. The resolver matrix and restore-guard pins carry over with assertions untouched; the gather-matrix tests that pinned the pair design's refusal philosophy invert where B-2/B-3/B-4 rule otherwise — named per test in the plan, never discovered at a gate.
 
 ### Core (must-have)
 
 - The bundle primitive (mint / settle) replacing `trashWithTimestamp` for nexus-trash deletes.
 - Write-ahead reordering of all four delete arms, with B-3/B-4 refusal semantics.
-- Bundle-based restore and listing; prune deleted; id re-check (C-3).
+- Bundle-based restore and listing; prune deleted.
 - Property deletes as artifact-less bundles.
 - Docs and tests trued.
 
 #### Prospects (allowed later, not now)
 
-- The id-live re-mint heal (C-4) ships with this plan **if ratified**; if Nathan prefers, it detaches cleanly into its own later pass — the refusal stays as today.
+- **The id-live heal:** restore finding its recorded id alive (a Finder copy made and the original deleted within one session) refuses today, permanently. The heal — restore under a fresh id, mirroring the duplicate law — is deferred until a trash surface makes the trap reachable at all; don't-foreclose: the refusal is a typed `Refusal` the heal would branch on, and the re-mint helpers it needs exist (module-private) in `remint.ts`.
 - The re-mint pass consulting trash records when adjudicating duplicates — deferred; don't-foreclose: bundles are enumerable by one listing call.
 - A property restore path (the property record is still write-only) — deferred until a surface needs it.
 - Trash browser, empty-trash op, retention policy — the surfaces; sequenced after, they only read what this ships.
@@ -81,6 +80,7 @@
 - **Append-only journal** — record separates from artifact (the sync-conflict shape), needs compaction, less browsable.
 - **Soft-delete tombstones** — exports a filter conditional into every present and future reader, keeps trashed files in the watched tree, and cannot express a Context or property delete at all.
 - **Record inside the trashed folder itself** (no envelope for folders) — leaks `record.json` into the live tree on hand-restore and reintroduces sibling separation for single files.
+- **A restore-time id re-check against the artifact** — reachable only by hand-editing ids inside `.trash` with full knowledge of the format, and the state it prevents (two live holders of one id) already lands in the re-mint pass's jurisdiction at the next open. A guard for a self-sabotage path the system already self-heals is complexity with no payer.
 
 #### Lessons
 
