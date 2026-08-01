@@ -77,7 +77,7 @@
 - [x] Update `src/main/crud/util.test.ts:25-28` — `'Thing.task.json'`/`'Thing.event.json'` move from the rejected list to accepted names (the extension rule now guards `.md` only); `contextWrite.test.ts`'s remaining `.task.json` fixture cases delete.
 - [x] Clean the now-stale comment block at `adopt.ts:101-104` (it cites `agendaKindOf`/`shared/agenda.ts`, which no longer exist) — the skip itself survives, its comment tells the new truth.
 - [x] Run all four gates — green (171 files / 1853 tests).
-- [ ] Grep-verify: `grep -rn "AGENDA_SUFFIX\|agendaKindOf\|task\.json\|event\.json" Pommora/src` → hits only in `paths.ts`/`adopt.ts`/`readNexus.ts` survivor lines (filenames + skips) **and `util.test.ts`'s accepted-name fixtures** (this task deliberately moves `Thing.task.json`/`Thing.event.json` into the accepted list — expected hits, not a miss); none in comments citing dead modules.
+- [x] Grep-verify: `grep -rn "AGENDA_SUFFIX\|agendaKindOf\|task\.json\|event\.json" Pommora/src` → hits only in `paths.ts`/`adopt.ts`/`readNexus.ts` survivor lines (filenames + skips) **and `util.test.ts`'s accepted-name fixtures** (this task deliberately moves `Thing.task.json`/`Thing.event.json` into the accepted list — expected hits, not a miss); none in comments citing dead modules.
 - [x] Commit: `refactor(agenda): the suffix grammar leaves — sidecar skips survive until registration lands`
 
 #### Task 4: Live-nexus folder deletion (Nathan-coordinated)
@@ -126,10 +126,10 @@ export function contentId(fm: Record<string, unknown>): string | undefined {
 ```
 
 **Steps:**
-- [ ] Write the failing test: `contentId({ id: 'X' }) === 'X'`, `contentId({}) === undefined`, `contentId({ id: 3 }) === undefined`, `contentId({ id: '' }) === undefined`.
-- [ ] `npx vitest run src/shared/identity.test.ts` — expect FAIL (module missing).
-- [ ] Implement as above; vitest → PASS.
-- [ ] Commit: `feat(identity): the seam module — one owner for the content id key`
+- [x] Write the failing test: `contentId({ id: 'X' }) === 'X'`, `contentId({}) === undefined`, `contentId({ id: 3 }) === undefined`, `contentId({ id: '' }) === undefined`.
+- [x] `npx vitest run src/shared/identity.test.ts` — expect FAIL (module missing).
+- [x] Implement as above; vitest → PASS.
+- [x] Commit: `feat(identity): the seam module — one owner for the content id key`
 
 #### Task 6: Route every consumer through the seam
 
@@ -170,8 +170,8 @@ export interface PageFrontmatter {
 - [x] Route the writers + schemas (the last three). `asString` left `readPage.ts` with its last use.
 - [x] Run all four gates — green at **172 files / 1858 tests**: the Task 5 baseline of 1857 plus the one new test, and no assertion rewrites anywhere. Zero behavior change confirmed by the count, not by assertion.
 - [x] Pin the sink guard with a **negative control**: disable `assetKeyOk` and the new test must fail on a directory appearing outside the nexus root. Verified failing, then restored — a guard test that passes both ways proves nothing.
-- [ ] Grep proof of one ownership: `grep -rn "fm\.id\b\|frontmatter\.id\b\|fields\.id\b\|splitFrontmatter(content)\.id\|readFrontmatterFields(content)\.id\|{ id: \|, id: " Pommora/src --include="*.ts"` reviewed hit-by-hit — the accesses AND object-literal writes; zero production hits outside the seam (the grep is a reviewed sweep, not a bare count — sidecar/nexus/tab `id` fields are different keys and stay).
-- [ ] Commit: `refactor(identity): every content-id consumer routes through the seam`
+- [x] Grep proof of one ownership: `grep -rn "fm\.id\b\|frontmatter\.id\b\|fields\.id\b\|splitFrontmatter(content)\.id\|readFrontmatterFields(content)\.id\|{ id: \|, id: " Pommora/src --include="*.ts"` reviewed hit-by-hit — the accesses AND object-literal writes; zero production hits outside the seam (the grep is a reviewed sweep, not a bare count — sidecar/nexus/tab `id` fields are different keys and stay).
+- [x] Commit: `refactor(identity): every content-id consumer routes through the seam`
 
 #### Task 7: The ID-less fixture (review F7 — lands BEFORE the cutover)
 
@@ -256,9 +256,9 @@ export function contentId(fm: Record<string, unknown>): string | undefined {
 ```
 
 **Steps:**
-- [ ] Write the failing admission matrix first — every arm: valid PageID in page context (member) · no key (missing) · `TaskID` in page context (unknown/contradicting) · `PageID: hello world`, numeric, empty, nested-map values (unknown/malformed) · `PageID` + `TaskID` together (unknown/dual) · case variant `pageid:` (missing — keys are exact) · legacy `id:` (missing — D-3, no synonym).
-- [ ] vitest → FAIL; implement; vitest → PASS. Task 7's fixture still green (missing ⇒ adoptable path unchanged).
-- [ ] Commit: `feat(identity): kind-stamped keys + the five-arm admission predicate`
+- [x] Write the failing admission matrix first — every arm: valid PageID in page context (member) · no key (missing) · `TaskID` in page context (unknown/contradicting) · `PageID: hello world`, numeric, empty, nested-map values (unknown/malformed) · `PageID` + `TaskID` together (unknown/dual) · case variant `pageid:` (missing — keys are exact) · legacy `id:` (missing — D-3, no synonym).
+- [x] vitest → FAIL; implement; vitest → PASS. Task 7's fixture still green (missing ⇒ adoptable path unchanged).
+- [x] Commit: `feat(identity): kind-stamped keys + the five-arm admission predicate`
 
 #### Task 9: The folder-kind resolver + registration oracle
 
@@ -302,9 +302,9 @@ Resolution: read `_taskconfig.json`/`_eventconfig.json` presence; if present, re
 **Seed timing (resolves the recreate-conflict):** the seed runs ONLY on `ensureIdentity`'s **create** branch — a brand-new nexus gets `Tasks/` + `Events/` folders, minimal identity-only configs (`{ id }` via `writeSidecar`), and `nexus.json` written with `agenda_singletons: { tasks, events }` in the same stroke. An **existing** nexus (id already present) is never re-seeded — Nathan's Task-4 deletions stay deleted; his nexuses gain their registered pair at the Agenda Rethink, not before.
 
 **Steps:**
-- [ ] Failing tests: fresh nexus open → both folders + configs + registration exist, ids match; second open → byte-identical (idempotent, no re-seed); existing nexus without the pair → untouched.
-- [ ] Implement; PASS; gates green.
-- [ ] Commit: `feat(identity): singleton registration — seeded at nexus creation, inert everywhere else`
+- [x] Failing tests: fresh nexus open → both folders + configs + registration exist, ids match; second open → byte-identical (idempotent, no re-seed); existing nexus without the pair → untouched.
+- [x] Implement; PASS; gates green.
+- [x] Commit: `feat(identity): singleton registration — seeded at nexus creation, inert everywhere else`
 
 #### Task 11: Adoption + walk enforcement
 
@@ -312,18 +312,18 @@ Resolution: read `_taskconfig.json`/`_eventconfig.json` presence; if present, re
 - Modify: `src/main/adopt.ts` (predicate-driven stamping; singleton stamping, flat) · `src/main/readNexus.ts` (`readPageRecord`/`readDirectPages` admit through the predicate; Unknown files excluded from the tree) · `src/main/index.ts` (the `adopting` flag → counter; locate via `grep -n "adopting" src/main`) · `src/main/mutate.ts` (`movePage`/`moveSet` backstop)
 
 **Steps:**
-- [ ] Walk: `readPageRecord` gains the expected-kind param (its callers know their folder's kind from the resolver); an `unknown` admission returns null and the file is skipped exactly like an unreadable page (`readDirectPages:245`'s existing filter) — never rendered, never indexed.
-- [ ] Adoption: `stampPage(absFile, kind)` stamps `KIND_ID_KEY[kind]` on `missing` ONLY (any `unknown` reason ⇒ untouched); `stampTree` consumes the resolver. Two explicit clauses for the singleton branch (review R7 — the naive "remove the skip" corrupts it): **the singleton folder itself is never container-stamped** (`stampFolder` never runs against it — its agenda config already holds its id), and only its **direct** `.md` children stamp `TaskID`/`EventID` — no subfolder recursion, nothing stamped below.
-- [ ] Write-sweep admission (rounds 1+2, R5/R3/R5b): the nexus-wide `.md` write sweeps gate on **`admitContentFile(fm, 'page').state !== 'unknown'`** before rewriting — admitting `member` AND `missing`, because an ID-less page must still be swept (the documented Remove-Property law: "an id-less page still gets stripped, its value just isn't restorable"; a member-only gate would leak the value Remove exists to clear). The gated sweeps, complete: the link cascade (Task 6's seam gate upgrades to this check) · the property sweeps (`removeProperty.ts:45/:115`, `deleteProperty.ts:71`, `optionOps.ts:192` via `cascadePages`) · **`sweepContextRoots`' `.md` loop (`contextCascade.ts:77`)** — the fifth nexus-wide writer, whose Context rename/delete rewrites would otherwise touch Unknown files. A `TaskID:` file planted in a Collection is untouched by link renames, property ops, AND context cascades; an ID-less page keeps full sweep coverage.
-- [ ] Plumb the registration into adoption (round 2, R4): `stampAdopted` gains the registration input (read `nexus.json`'s `agenda_singletons` in `prepareOpenedNexus` and pass it through, mirroring how `excluded` already flows) — without it the resolver answers `'unknown'` for every agenda folder inside adoption and the singleton stamping + re-homing never fire.
-- [ ] The walk's nested read path consults the resolver too (round 2, M6): `readChildSets` skips a subfolder whose resolved kind is not `'set'` — a nested agenda-config folder renders as nothing, not as a Set, closing A-7's hole on the READ path, not only in adoption.
-- [ ] The `adopting` boolean becomes a counter (increment on entry, decrement in finally; suppression active while > 0).
-- [ ] Singleton re-homing (D-8 — the registered id IS its record, no last-known-state system involved): during the adoption pass, a folder whose config sidecar id matches the registration but which sits NESTED (the resolver returns the singleton kind at `'nested'` depth) is moved back to the nexus root — one `rename`, collision-refused, echo-suppressed via `recordWrite` on both ends.
-- [ ] `removeProperty`'s pre-strip guard turns positive (review F5): count kind-ID-key *presence* across the file loop independently of value presence; refuse the strip (`fail('operation-failed', …)`) only when the file set is non-empty and no file carried a readable identity.
-- [ ] Backstop: in `mutate.ts:491-518`, after resolving `dst`, `resolveFolderKind(dst, …)` must return `'collection' | 'set'` or the move fails `('invalid-path', 'Pages live in Collections and Sets.')` — nothing more (C-2a minimal).
-- [ ] Failing tests → implement → PASS: the Unknown matrix on disk (contradicting/malformed/dual/nested-config/unregistered-config fixtures — each invisible in the walked tree AND byte-unmodified after adoption); flat-singleton stamping; the nested-registered-singleton re-home; the positive strip guard; the backstop refusal.
-- [ ] All four gates green.
-- [ ] Commit: `feat(identity): admission enforced at walk + adoption; the move backstop lands`
+- [x] Walk: `readPageRecord` gains the expected-kind param (its callers know their folder's kind from the resolver); an `unknown` admission returns null and the file is skipped exactly like an unreadable page (`readDirectPages:245`'s existing filter) — never rendered, never indexed.
+- [x] Adoption: `stampPage(absFile, kind)` stamps `KIND_ID_KEY[kind]` on `missing` ONLY (any `unknown` reason ⇒ untouched); `stampTree` consumes the resolver. Two explicit clauses for the singleton branch (review R7 — the naive "remove the skip" corrupts it): **the singleton folder itself is never container-stamped** (`stampFolder` never runs against it — its agenda config already holds its id), and only its **direct** `.md` children stamp `TaskID`/`EventID` — no subfolder recursion, nothing stamped below.
+- [x] Write-sweep admission (rounds 1+2, R5/R3/R5b): the nexus-wide `.md` write sweeps gate on **`admitContentFile(fm, 'page').state !== 'unknown'`** before rewriting — admitting `member` AND `missing`, because an ID-less page must still be swept (the documented Remove-Property law: "an id-less page still gets stripped, its value just isn't restorable"; a member-only gate would leak the value Remove exists to clear). The gated sweeps, complete: the link cascade (Task 6's seam gate upgrades to this check) · the property sweeps (`removeProperty.ts:45/:115`, `deleteProperty.ts:71`, `optionOps.ts:192` via `cascadePages`) · **`sweepContextRoots`' `.md` loop** — the SIXTH nexus-wide writer. The plan enumerated five; the list was re-derived by grep at execution and `deleteProperty` proved to have two sweep loops, not one. Six are gated. A `TaskID:` file planted in a Collection is untouched by link renames, property ops, AND context cascades; an ID-less page keeps full sweep coverage.
+- [x] Plumb the registration into adoption (round 2, R4): `stampAdopted` gains the registration input (read `nexus.json`'s `agenda_singletons` in `prepareOpenedNexus` and pass it through, mirroring how `excluded` already flows) — without it the resolver answers `'unknown'` for every agenda folder inside adoption and the singleton stamping + re-homing never fire.
+- [x] The walk's nested read path consults the resolver too (round 2, M6): `readChildSets` skips a subfolder whose resolved kind is not `'set'` — a nested agenda-config folder renders as nothing, not as a Set, closing A-7's hole on the READ path, not only in adoption.
+- [x] The `adopting` boolean becomes a counter (increment on entry, decrement in finally; suppression active while > 0).
+- [x] Singleton re-homing (D-8 — the registered id IS its record, no last-known-state system involved): during the adoption pass, a folder whose config sidecar id matches the registration but which sits NESTED (the resolver returns the singleton kind at `'nested'` depth) is moved back to the nexus root — one `rename`, collision-refused, echo-suppressed via `recordWrite` on both ends.
+- [x] `removeProperty`'s pre-strip guard turns positive (review F5): count kind-ID-key *presence* across the file loop independently of value presence; refuse the strip (`fail('operation-failed', …)`) only when the file set is non-empty and no file carried a readable identity.
+- [x] Backstop: in `mutate.ts:491-518`, after resolving `dst`, `resolveFolderKind(dst, …)` must return `'collection' | 'set'` or the move fails `('invalid-path', 'Pages live in Collections and Sets.')` — nothing more (C-2a minimal).
+- [x] Failing tests → implement → PASS: the Unknown matrix on disk (contradicting/malformed/dual/nested-config/unregistered-config fixtures — each invisible in the walked tree AND byte-unmodified after adoption); flat-singleton stamping; the nested-registered-singleton re-home; the positive strip guard; the backstop refusal.
+- [x] All four gates green.
+- [x] Commit: `feat(identity): admission enforced at walk + adoption; the move backstop lands`
 
 #### Task 12: The migration moment (executed, app closed)
 
@@ -343,9 +343,9 @@ Resolution: read `_taskconfig.json`/`_eventconfig.json` presence; if present, re
 **Not here — landed with the code that falsified them:** `Features/Sidebar.md`, `Features/Navigation.md` (Task 2) and `Features/Agenda.md` (Task 3). Their claims die to Phase-1 *deletions*, not to the identity cutover, so they reconcile in those commits — a doc left false across two phases is deferred cleanup.
 
 **Steps:**
-- [ ] Rewrite each named claim to the durable new truth (replace, never amend); agenda-shape claims wait for the rethink.
-- [ ] Reconcile against the Watchkeeper's docs ledger — every entry it accumulated closes here or in the commit that falsified it; nothing carries past this plan.
-- [ ] Commit docs with the phase's final code state.
+- [x] Rewrite each named claim to the durable new truth (replace, never amend); agenda-shape claims wait for the rethink.
+- [x] Reconcile against the Watchkeeper's docs ledger — every entry it accumulated closes here or in the commit that falsified it; nothing carries past this plan.
+- [x] Commit docs with the phase's final code state.
 
 #### Gate 3 — the named cutover verification
 - [x] All four gates green — **174 files / 1894 tests**. Two lint warnings surfaced at the gate (imports orphaned by the sweep gate) and were cleaned, not carried.
@@ -359,6 +359,24 @@ Resolution: read `_taskconfig.json`/`_eventconfig.json` presence; if present, re
 - [x] PRD (`id` definition + both agenda format lines) · Structure (kinds + identity) · Pages (frontmatter + adoption) · Properties (`id` line, `description` dropped) · Connections (cascade gate) · Contexts (agenda-JSON scope) · Framework v0.7.0 (inverted: CRUD converges onto the page writers) · project `CLAUDE.md` (the JSON clause + the completed kind law).
 - [x] **Context.md's carve-out written, and it matters:** the kind key is a DELIBERATE second identity source whose *disagreement is the detection signal* — a checksum, not the two-writers defect. Without it the next consolidation sweep would "fix" it and silently delete the ability to tell a mismatched file from a missing one. The `adopting`-flag debt entry it replaces is resolved.
 - [x] Residual-claim sweep across all docs: zero hits for `task.json`, `event.json`, "Only Pages are Markdown", or the extension-borne kind.
+
+### Closeout — what landed beyond the plan
+
+All 13 tasks and 3 gates executed; the only unticked boxes above are Nathan's own live-launch checks. Gates green at **174 test files / 1,899 tests**.
+
+**The closing loop found nine defects across three reviewers; eight are fixed.** They are recorded here because several contradict what the plan asserted:
+
+- **The sweep list was wrong twice.** The plan named five nexus-wide writers; grep found six (`deleteProperty` has two loops). Then five of six were gated while the commit message claimed six — `sweepContextRoots` was missed, and its test passed without reaching the sweep it named because it drove `createContextGroup`. Both fixed. **The lesson is the durable part: a guard test must prove the guarded operation actually ran, or "untouched" is vacuously true.**
+- **The error and partial-write half was where everything broke.** Every input attack on the predicate failed; all nine findings lived in failure paths — an emptied key read as malformed, `ensureIdentity` fusing "no file" with "no id", the seed writing folders before its record, adoption abandoning every folder after an unwritable one, re-homing ignoring the resolver, the nexus root classifying as a Set.
+- **Registration keyed on id alone, and every copy mechanism copies the id.** Two folders answered to one record. A contested slot now registers nobody — the same rule the resolver already applies within one folder.
+- **A folder crossing depth outside the app now has its sidecar renamed, not duplicated.** Refusing would have removed it from the sidebar entirely, which is worse than the icon reset it was meant to prevent.
+
+**Still open, all deliberate:**
+
+1. **F8 — a taken seed-slot name never registers.** Real but latent: no agenda read surface exists, and the user's own folder is unharmed. Filling it needs a second writer to `agenda_singletons`, weakening the single-writer invariant the seed-ordering fix depends on, plus a product decision (adopt the user's folder, or disambiguate?). **Belongs to the Agenda work, not a patch.**
+2. **D-15 — duplicate-id policy** remains `[open]` in the log. The reachability question it asks is now partly answered: duplicate *container* ids are handled, duplicate *content* ids are not.
+3. **Docs:** ~18 identity-scope claims the Task 13 pass missed, three undocumented behaviours (registration is never backfilled; a taken slot goes unregistered; every move passes a destination-kind refusal), and ~41 pre-existing time-specific sentences across ~22 docs.
+4. **Two live files** — `NexusOS/Studio/NexusOS/{NexusOS,Nexus-Index}.md` carry a dead `id:` beside their `PageID:`, and their Set's `page_order` still names the old ids. Trashed pre-migration, untrashed after.
 
 ### Sequenced After (not this plan)
 
