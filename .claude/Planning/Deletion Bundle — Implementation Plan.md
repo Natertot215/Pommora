@@ -122,7 +122,7 @@ Trash browser + restore surface (reads `listBundles`, invokes `restore`) · empt
 - [x] P2 gate
 - [x] T5 restore on bundles — landed with T2
 - [x] T6 docs + sweep
-- [ ] P3 gate + closeout
+- [x] P3 gate + closeout
 
 ### Log
 
@@ -134,4 +134,9 @@ Trash browser + restore surface (reads `listBundles`, invokes `restore`) · empt
   - `restoreArtifact`'s containment check reads with its prefix hoisted out of the condition.
 - Not folded, on the reachability razor: nothing was added for states reachable only by hand-editing `.trash`.
 - **Phase 2 base:** `9d43ef55`. Gate ran the arm-order derivation (every destructive call preceded in source order by its arm's record write) plus a simplifier + correctness round on the arms. **Correctness came back clean.** The simplifier chased the `if (write)` repetition and reported it doesn't collapse: making `write` unconditional would evaluate the gatherers in system-trash mode, and thunking them buries the fact that gathering is skipped — the one thing the arm most needs to say out loud. Two test-file clarity folds taken.
+- **Phase 3 base:** `991a20e3`. Docs trued, retired spellings swept to zero against a live control token. Gates: typecheck 0 · lint 0 warnings · 180 files / 2,012 tests · build clean.
+- **Closeout — neutral verifier:** the delivery claim stands. Two of its wordings were overstated rather than wrong: a delete whose required payload cannot gather produces a bundle with no record (designed, and its own test asserts it), and the property arm's write-ahead ordering was correct in code but not test-pinned like the other three. The pin was added and negative-controlled — inverting the order in `deleteProperty.ts` turns it red.
+- **Closeout — attack (28 probes, 1 High, 1 Low, 8 killed).** Nine restore compositions round-tripped correctly, including the ones most expected to break. Two outcomes:
+  - **Low, fixed:** two deletes of one entity could both clear the existence check, and the loser handed the renderer a raw filesystem path. It now answers the sequential double-press's refusal.
+  - **High, out of scope — raised for Nathan.** `gatherParentRef` proves a parent's identity by reading its sidecar, so a page deleted from a folder the *filesystem* gave Pommora (Finder-made, or a sidecar that won't read) records `parent: unaddressable` and can never be restored. Pre-existing and untouched by this arc — the gatherer is byte-identical — and recording the tree's own answer is not the fix, since an adopted id is a path hash, which the record's governing law forbids. The real fix mints the parent's identity before recording it, which is the adoption subsystem's jurisdiction.
 - **Inherited improvement, unplanned:** hoisting the existence check out of the retired `removeViaMode` put it ahead of the sweeps. Deleting a Space or Context whose folder had already vanished used to strip tags nexus-wide and *then* report failure; it now refuses before sweeping.
