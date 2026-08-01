@@ -3,6 +3,7 @@ import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
+  agendaContext,
   readAgendaRegistration,
   resolveFolderKind,
   type FolderKindContext,
@@ -57,6 +58,27 @@ describe('readAgendaRegistration', () => {
 
   it('takes the half it can read when only one slot is recorded', () => {
     expect(readAgendaRegistration({ agenda_singletons: { tasks: TASKS } })).toEqual({ tasks: TASKS })
+  })
+})
+
+describe('agendaContext', () => {
+  // No entries means no claims, which contests nothing — a root that cannot be listed is no
+  // evidence anything duplicated the recorded pair, so the registration stands.
+  it('keeps the recorded registration when the root cannot be listed', async () => {
+    const ctx = await agendaContext(join(root, 'gone'), { agenda_singletons: { tasks: TASKS } }, true)
+    expect(ctx.agenda).toEqual({ tasks: TASKS })
+  })
+
+  it('drops a slot two folders claim, and keeps the one only a single folder claims', async () => {
+    await dir('Tasks', { [SIDECAR_FILENAME.taskConfig]: { id: TASKS } })
+    await dir('Tasks copy', { [SIDECAR_FILENAME.taskConfig]: { id: TASKS } })
+    await dir('Events', { [SIDECAR_FILENAME.eventConfig]: { id: EVENTS } })
+    const ctx = await agendaContext(
+      root,
+      { agenda_singletons: { tasks: TASKS, events: EVENTS } },
+      true,
+    )
+    expect(ctx.agenda).toEqual({ events: EVENTS })
   })
 })
 
