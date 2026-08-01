@@ -52,6 +52,7 @@ import { shouldSkipDir } from './exclusion'
 import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from './walkCache'
 import {
+  CONTEXTS_REGISTRY_REL,
   contextsDir,
   contextsRegistryFile,
   NEXUS_CONFIG_FILES,
@@ -517,7 +518,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   // Space leaves the walk at once. Absent is real raw mode and stays silent; present names
   // the registry so the record reads the blank layer as unreadable, never as mass deletion.
   if (!ctxRegistry && (await pathExists(contextsRegistryFile(root))))
-    unreadable.push('.nexus/contexts.json')
+    unreadable.push(CONTEXTS_REGISTRY_REL)
   const contexts = ctxRegistry
     ? await readContextGroups(root, ctxRegistry, spaceOrders, excluded, fb, unreadable)
     : undefined
