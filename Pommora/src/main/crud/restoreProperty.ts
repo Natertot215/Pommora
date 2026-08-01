@@ -9,7 +9,6 @@
 import { join } from 'node:path'
 import { pageCollectionSidecar } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
-import { decodeValue, isBlankValue } from '@shared/propertyValue'
 import { fail, ok, type Result } from '@shared/result'
 import { readRegistry } from '../io/propertiesRegistry'
 import type { RecordFile } from '../provenance'
@@ -19,6 +18,7 @@ import { readSidecar } from '../sidecarIO'
 import { allCollectionFolders, assignInner } from './assignment'
 import { updatePageProperty } from './page'
 import { createProperty } from './registryProperty'
+import { propertyValueStands } from './standing'
 import { serializeSchemaOp } from './schemaChain'
 
 type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
@@ -69,14 +69,14 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
       dropped++
       continue
     }
-    // Strict decoding IS the validity rule: a vanished option, a value the type can't hold, or
-    // an emptied one reads blank, and a blank value is not written back.
-    const value = decodeValue(def, raw, { strict: true })
-    if (isBlankValue(value)) {
+    // The same standing check the artifact restore asks, so a value cannot survive one route
+    // and be dropped by the other.
+    const standing = propertyValueStands(def, raw)
+    if (!standing.stands) {
       dropped++
       continue
     }
-    const written = await updatePageProperty(join(root, entry.path), def, value)
+    const written = await updatePageProperty(join(root, entry.path), def, standing.value)
     if (!written.ok) dropped++
   }
   if (dropped) console.warn(`restore: ${dropped} value(s) of ${def.name} no longer validate`)

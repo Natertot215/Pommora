@@ -51,7 +51,17 @@ beforeEach(async () => {
     join(root, '.nexus', 'properties.json'),
     JSON.stringify({
       order: [PROP],
-      defs: { [PROP]: { id: PROP, name: 'Priority', type: 'select', select_options: [] } },
+      defs: {
+        [PROP]: {
+          id: PROP,
+          name: 'Priority',
+          type: 'select',
+          select_options: [
+            { value: 'hi', label: 'High', color: 'red' },
+            { value: 'lo', label: 'Low', color: 'blue' },
+          ],
+        },
+      },
     }),
   )
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
@@ -133,6 +143,69 @@ describe('a returning artifact is reconciled against the world it comes back to'
     const f = await fm('Notes/Daily/Journal.md')
     expect(f['<Priority>']).toBeUndefined()
     expect(f['(Projects)']).toEqual(['Pommora'])
+  })
+
+  it('drops a value whose OPTION was deleted while it sat in the trash', async () => {
+    // The definition still stands; the value it held no longer can. Both restore routes ask the
+    // same standing check, so this cannot survive here and be dropped by a property restore.
+    await cycle('Notes/Alpha.md', 'page', async () => {
+      await writeFile(
+        join(root, '.nexus', 'properties.json'),
+        JSON.stringify({
+          order: [PROP],
+          defs: {
+            [PROP]: {
+              id: PROP,
+              name: 'Priority',
+              type: 'select',
+              select_options: [{ value: 'lo', label: 'Low', color: 'blue' }],
+            },
+          },
+        }),
+      )
+    })
+    expect((await fm('Notes/Alpha.md'))['<Priority>']).toBeUndefined()
+  })
+
+  it('keeps a multi-value tag’s survivors when only some options died', async () => {
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: [PROP],
+        defs: {
+          [PROP]: {
+            id: PROP,
+            name: 'Tags',
+            type: 'multi_select',
+            select_options: [
+              { value: 'a', label: 'A', color: 'red' },
+              { value: 'b', label: 'B', color: 'blue' },
+            ],
+          },
+        },
+      }),
+    )
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      `---\nPageID: ${PAGE_A}\n<Tags>:\n  - a\n  - b\n---\nbody`,
+    )
+    await cycle('Notes/Alpha.md', 'page', async () => {
+      await writeFile(
+        join(root, '.nexus', 'properties.json'),
+        JSON.stringify({
+          order: [PROP],
+          defs: {
+            [PROP]: {
+              id: PROP,
+              name: 'Tags',
+              type: 'multi_select',
+              select_options: [{ value: 'a', label: 'A', color: 'red' }],
+            },
+          },
+        }),
+      )
+    })
+    expect((await fm('Notes/Alpha.md'))['<Tags>']).toEqual(['a'])
   })
 
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {
