@@ -10,11 +10,11 @@
 
 import type { Dirent } from 'node:fs'
 import { mkdir, readdir, readFile, rename, rm } from 'node:fs/promises'
-import { basename, dirname, join, relative, sep } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, sep } from 'node:path'
 import { z } from 'zod'
 import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { contentId } from '@shared/identity'
-import { fail, ok, type Result } from '@shared/result'
+import { errText, fail, ok, type Result } from '@shared/result'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import { mutateRegistryFile } from './contextsRegistry'
 import type { SweepCapture, UnlinkOutcome } from './crud/contextCascade'
@@ -45,6 +45,9 @@ const contentPair = <E extends string>(entity: E) =>
     entity: z.literal(entity),
     id: z.string().optional(),
     parent: parentRef,
+    /** The artifact's original basename — the stamped leaf cannot be parsed back reliably
+     *  (a user's own `12__Notes.md` is indistinguishable from a de-collision counter). */
+    name: z.string().optional(),
     partial: z.literal(true).optional(),
   })
 
@@ -56,6 +59,7 @@ export const pairFile = z.discriminatedUnion('entity', [
     entity: z.literal('space'),
     id: z.string(),
     parent: parentRef,
+    name: z.string().optional(),
     /** The id-bearing roots whose frontmatter carried this Space's tag at the delete. */
     members: z.array(memberRoot),
     partial: z.literal(true).optional(),
@@ -71,6 +75,7 @@ export const pairFile = z.discriminatedUnion('entity', [
   }),
   z.looseObject({
     entity: z.literal('context'),
+    name: z.string().optional(),
     /** The registry entry the erase destroys — a hand-restored folder returns nothing without it. */
     registry: z.looseObject({
       id: z.string(),
@@ -148,7 +153,7 @@ export async function gatherContentPair(
     kind === 'page'
       ? contentId(splitFrontmatter(await readFile(abs, 'utf8').catch(() => '')))
       : await sidecarId(abs, SIDECAR_FILENAME[kind])
-  return { entity: kind, ...(id ? { id } : {}), parent }
+  return { entity: kind, ...(id ? { id } : {}), name: basename(abs), parent }
 }
 
 /** A sweep that never ran, could not read a root, or was refused one left the membership thinner
@@ -178,6 +183,7 @@ export async function gatherSpacePair(
     entity: 'space',
     id,
     parent: def ? { kind: 'context', id: def.id } : { kind: 'unaddressable' },
+    name: basename(abs),
     members,
     ...(partial ? { partial: true as const } : {}),
   }
@@ -233,6 +239,7 @@ export function buildContextPair(evidence: ContextEvidence, swept: UnlinkOutcome
   const partial = evidence.unresolved || sweepIncomplete(swept)
   return {
     entity: 'context',
+    name: evidence.entry.title,
     registry: evidence.entry,
     membership,
     ...(partial ? { partial: true as const } : {}),
@@ -431,6 +438,40 @@ async function addContextValues(
   })
 }
 
+/** Re-key the restored subtree's own context keys to the final title. These are the passengers
+ *  the delete's sweep deliberately left intact; a pre-existing key already wearing the new
+ *  title merges and dedupes rather than being overwritten. */
+async function rekeyPassengers(
+  absContextDir: string,
+  oldTitle: string,
+  newTitle: string,
+): Promise<void> {
+  const oldKey = contextKey(oldTitle)
+  const newKey = contextKey(newTitle)
+  const strings = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+  let dirs: Dirent[] = []
+  try {
+    dirs = await readdir(absContextDir, { withFileTypes: true })
+  } catch {
+    return
+  }
+  for (const d of dirs) {
+    if (!d.isDirectory()) continue
+    const file = join(absContextDir, d.name, SPACE_SIDECAR)
+    await serializeOnFile(file, async () => {
+      const raw = await readJsonObject(file)
+      if (!raw || !(oldKey in raw)) return
+      const existing = strings(raw[newKey])
+      const merged = [...existing, ...strings(raw[oldKey]).filter((v) => !existing.includes(v))]
+      const next = { ...raw }
+      delete next[oldKey]
+      if (merged.length) next[newKey] = merged
+      await writeJson(file, next)
+    })
+  }
+}
+
 /** Current Space titles inside a restored Context folder, by sidecar id — the membership join
  *  runs on ids; the as-restored folder names are what gets written. */
 async function restoredSpaceTitles(absContextDir: string): Promise<Map<string, string>> {
@@ -467,11 +508,24 @@ export async function restoreArtifact(root: string, pairAbs: string): Promise<Re
   }
 
   const tree = await readNexus(root)
-  const resolution = resolvePair(pair, artifactBaseName(basename(artifactAbs)), tree)
+  const baseName = pair.name ?? artifactBaseName(basename(artifactAbs))
+  const resolution = resolvePair(pair, baseName, tree)
   if ('refuse' in resolution) return fail('operation-failed', REFUSAL_TEXT[resolution.refuse])
   const { dir, finalName, finalTitle } = resolution.place
 
   const targetAbs = join(root, dir, finalName)
+  // Pairs are plain user-visible JSON — shape validation is not safety validation. The final
+  // name must be a plain basename landing exactly in the resolver's chosen directory, inside
+  // the nexus and outside the trash; anything else is a recorded title steering the move.
+  const targetRel = relative(root, targetAbs)
+  if (
+    targetRel.startsWith('..') ||
+    isAbsolute(targetRel) ||
+    targetRel.split(sep)[0] === '.trash' ||
+    dirname(targetAbs) !== join(root, dir) ||
+    basename(targetAbs) !== finalName
+  )
+    return fail('operation-failed', 'That restore record points outside the nexus.')
   // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter)
   // could still occupy the target — refuse rather than clobber what nothing adjudicated.
   if (await pathExists(targetAbs))
@@ -488,12 +542,25 @@ export async function restoreArtifact(root: string, pairAbs: string): Promise<Re
   }
   recordWrite(artifactAbs)
   recordWrite(targetAbs)
-  await mkdir(dirname(targetAbs), { recursive: true })
-  await rename(artifactAbs, targetAbs)
+  try {
+    await mkdir(dirname(targetAbs), { recursive: true })
+    await rename(artifactAbs, targetAbs)
+  } catch (e) {
+    // The move is the irreversible half; the append is the reversible one. Reversing it keeps
+    // the failure retryable — a ghost entry would trip the next attempt's own id-live guard.
+    if (pair.entity === 'context')
+      await mutateRegistryFile(root, (cur) => ({
+        contexts: cur.contexts.filter((c) => !(c.id === pair.registry.id && c.title === title)),
+      }))
+    return fail('operation-failed', errText(e))
+  }
   await rm(pairAbs, { force: true })
 
   const roots = projectBaseline(tree).entries
   if (pair.entity === 'context') {
+    // The delete's sweep left the subtree's own keys untouched (passengers); under a
+    // disambiguated final title they would point at whoever now owns the recorded one.
+    if (title !== pair.registry.title) await rekeyPassengers(targetAbs, pair.registry.title, title)
     const titlesById = await restoredSpaceTitles(targetAbs)
     const additions: Record<string, string[]> = {}
     for (const m of pair.membership) {

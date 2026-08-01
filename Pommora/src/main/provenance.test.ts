@@ -501,3 +501,69 @@ describe('restore — the gate-four pins', () => {
     expect(await pathExists(join(root, 'Notes', 'fake.provenance.json'))).toBe(true)
   })
 })
+
+describe('restore — the attack folds', () => {
+  it('a pair cannot steer the artifact outside the nexus', async () => {
+    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
+    const [file] = await pairFiles(join(root, '.trash'))
+    const pair = JSON.parse(await readFile(file, 'utf8'))
+    pair.registry.title = '../../../escape-target'
+    await writeFile(file, JSON.stringify(pair))
+    const [listed] = await listPairs(root)
+    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(r.ok).toBe(false)
+    expect(await pathExists(join(root, '..', 'escape-target'))).toBe(false)
+  })
+
+  it('a numeric-prefixed filename round-trips intact — the pair records the real name', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Daily', '12__Notes.md'),
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVE\n---\nbody',
+    )
+    await handleMutate({ op: 'delete', path: 'Notes/Daily/12__Notes.md', kind: 'page' }, nexusDeps)
+    const [listed] = await listPairs(root)
+    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(r.ok).toBe(true)
+    expect(await pathExists(join(root, 'Notes', 'Daily', '12__Notes.md'))).toBe(true)
+    expect(await pathExists(join(root, 'Notes', 'Daily', 'Notes.md'))).toBe(false)
+  })
+
+  it('a failed move rolls the registry re-entry back — the restore stays retryable', async () => {
+    const { chmod } = await import('node:fs/promises')
+    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
+    await chmod(join(root, '.nexus', 'contexts'), 0o555)
+    try {
+      const [listed] = await listPairs(root)
+      const failed = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+      expect(failed.ok).toBe(false)
+      // No ghost entry: the append reversed when the move refused.
+      const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+      expect(reg.contexts.some((c: { id: string }) => c.id === 'ctx_projects')).toBe(false)
+    } finally {
+      await chmod(join(root, '.nexus', 'contexts'), 0o755)
+    }
+    const [listed] = await listPairs(root)
+    const retried = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(retried.ok).toBe(true)
+    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
+  })
+
+  it('a disambiguated Context restore re-keys its own passengers to the final title', async () => {
+    // Sapphire tags Pommora INSIDE Projects — a passenger link the delete never strips.
+    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
+    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    reg.contexts.push({ id: 'ctx_impostor', title: 'Projects' })
+    await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
+    await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
+
+    const [listed] = await listPairs(root)
+    const r = await handleMutate({ op: 'restore', pairPath: listed.pairPath }, nexusDeps)
+    expect(r.ok).toBe(true)
+    const sap = JSON.parse(
+      await readFile(join(contextsDir(root), 'Projects 2', 'Sapphire', '_space.json'), 'utf8'),
+    )
+    // The passenger's key follows the final title — never left pointing at the impostor.
+    expect(sap['(Projects 2)']).toEqual(['Pommora'])
+    expect('(Projects)' in sap).toBe(false)
+  })
+})

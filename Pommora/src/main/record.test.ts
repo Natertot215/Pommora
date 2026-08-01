@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -359,6 +359,25 @@ describe('runOpenRecord — the open sequence', () => {
     await runOpenRecord(root)
     expect(readBaseline()).toEqual({})
     expect(readDrift()).toBeNull()
+  })
+
+  it('with no prior evidence the eldest claimant records — the original never re-mints', async () => {
+    const body = `---\nPageID: ${NOTES}\n---\nbody`
+    await runOpenRecord(root)
+    // Closed window: the original renamed (birth time survives) AND copied. The copy's name
+    // sorts first, so a walk-order pick would crown it and re-mint the original.
+    await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'Zed.md'))
+    await new Promise((r) => setTimeout(r, 20))
+    await writeFile(join(root, 'Library', 'Aaa.md'), body)
+
+    await runOpenRecord(root) // the recorded path is gone: the entry drops
+    await runOpenRecord(root) // no prior: the eldest claimant records unmarked
+    expect(readBaseline()?.[NOTES]?.path).toBe('Library/Zed.md')
+
+    await runOpenRecord(root) // adjudication: the copy re-mints, the original keeps its id
+    expect(await readFile(join(root, 'Library', 'Zed.md'), 'utf8')).toContain(NOTES)
+    expect(await readFile(join(root, 'Library', 'Aaa.md'), 'utf8')).not.toContain(NOTES)
+    expect(readBaseline()?.[NOTES]?.path).toBe('Library/Zed.md')
   })
 
   it('an id in flux never enters the drift — a dropped duplicate is not a removal', async () => {

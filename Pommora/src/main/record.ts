@@ -2,6 +2,8 @@
 // per-entity map, latch it against the prior session's baseline, and persist both the baseline
 // and the last non-empty drift as device-local rows. Derived, per-machine, rebuildable.
 
+import { stat } from 'node:fs/promises'
+import { join } from 'node:path'
 import { type BaselineDiff, diffBaselines, type EntityRecord, isEmptyDiff } from '@shared/record'
 import { errText } from '@shared/result'
 import type { NexusTree, PageNode, SetNode } from '@shared/types'
@@ -104,6 +106,32 @@ export function latchBaseline(
   return out
 }
 
+/** With no prior evidence, the claimant the baseline records is the ELDEST file, not whatever
+ *  the walk enumerated first: a copy is born after its original and birth time survives a
+ *  rename, so the next open's adjudication crowns the likely original — a walk-order pick
+ *  would let the accidental copy keep the identity and re-mint the live original. */
+async function recordEldest(
+  root: string,
+  projection: Projection,
+  prior: Baseline | null,
+): Promise<void> {
+  for (const [id, claims] of Object.entries(projection.duplicates)) {
+    if (prior?.[id]) continue
+    const births = await Promise.all(
+      claims.map(async (c) => {
+        try {
+          return (await stat(join(root, c.path))).birthtimeMs
+        } catch {
+          return Number.POSITIVE_INFINITY
+        }
+      }),
+    )
+    let eldest = 0
+    for (let i = 1; i < births.length; i++) if (births[i] < births[eldest]) eldest = i
+    projection.entries[id] = claims[eldest]
+  }
+}
+
 /** Entries in flux leave both sides of the diff: an ambiguous-marked prior entry and any id
  *  the current walk saw at 2+ paths. Their paths are stale or contested by construction, and
  *  a phantom add or remove would overwrite the last-non-empty drift row. */
@@ -127,6 +155,7 @@ export async function runOpenRecord(root: string): Promise<void> {
     const walked = projectBaseline(tree)
     const reminted = await runRemintPass(root, walked, prior, unreadablePaths)
     const projection = applyRemints(walked, reminted)
+    await recordEldest(root, projection, prior)
     const next = latchBaseline(projection, unreadablePaths, prior)
     if (prior !== null) {
       const drift = diffBaselines(
