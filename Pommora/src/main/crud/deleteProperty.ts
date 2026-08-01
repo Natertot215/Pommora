@@ -8,7 +8,7 @@
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { contentId } from '@shared/identity'
-import { writePropertyPair } from '../provenance'
+import { writePropertyBundle } from '../provenance'
 import { withoutCacheBlock } from './assignment'
 import { readRegistry, type PropertyRegistry } from '../io/propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
@@ -26,8 +26,8 @@ import { isPlainObject, propertyKey } from '@shared/propertyValue'
 import { nowIso, sweepAdmits } from './util'
 import { fail, type Result } from '@shared/result'
 
-/** The recovery net the delete confirmation promises: the pair's artifact-less variant, values
- *  keyed by page id — an id-less page's value is unrestorable and marks the pair partial. */
+/** The recovery net the delete confirmation promises: an artifact-less bundle, values keyed by
+ *  page id — an id-less page's value is unrestorable and marks the record partial. */
 async function snapshot(
   root: string,
   propertyId: string,
@@ -47,13 +47,13 @@ async function snapshot(
       }
       if (!(key in fm)) continue
       const id = contentId(fm)
-      // A duplicated id can hold only one entry — last wins, and the pair says it is thin.
+      // A duplicated id can hold only one entry — last wins, and the record says it is thin.
       if (id && id in values) partial = true
       if (id) values[id] = fm[key]
       else partial = true
     }
   }
-  await writePropertyPair(root, {
+  await writePropertyBundle(root, {
     entity: 'property',
     id: propertyId,
     def,
