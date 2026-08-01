@@ -5,7 +5,7 @@
 // under its own file lock.
 
 import { readFile, rename } from 'node:fs/promises'
-import { join, sep } from 'node:path'
+import { basename, join, sep } from 'node:path'
 import {
   contextKey,
   invalidContextTitle,
@@ -13,6 +13,7 @@ import {
   normalizeContextValue,
   type ContextsRegistry,
 } from '@shared/contexts'
+import { contentId } from '@shared/identity'
 import { ok, fail, errText, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
 import { atomicWriteFile, pathExists, readJsonObject, writeJson } from '../io/atomicWrite'
@@ -64,15 +65,32 @@ function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | nu
   return { ...raw, [key]: next }
 }
 
+/** What one swept root gave up: its identity (absent = unrestorable, stated honestly) and
+ *  the values the rewrite removed, discriminated by which id key the root carries. */
+export interface SweepCapture {
+  id?: string
+  kind: 'page' | 'space'
+  values: string[]
+}
+
+export interface SweepResult {
+  touched: string[]
+  /** Unreadable roots — the file could not be read or parsed. */
+  skipped: string[]
+  /** Admission-refused roots (a dual-key page keeps its context key); named, never touched. */
+  refused: string[]
+}
+
 /** Sweep every context-bearing root through `rewrite` (null = untouched), each under
  *  its file lock. The one walk every key/value cascade and unlink shares; the callback
  *  gets the root's absolute path beside its parsed form. */
 export async function sweepContextRoots(
   root: string,
   rewrite: (raw: Raw, file: string) => Raw | null,
-): Promise<{ touched: string[]; skipped: string[] }> {
+): Promise<SweepResult> {
   const touched: string[] = []
   const skipped: string[] = []
+  const refused: string[] = []
 
   for (const file of await listMarkdownFiles(root, { skipTopLevel: SKIP_TOP_LEVEL })) {
     await serializeOnFile(file, async () => {
@@ -83,7 +101,10 @@ export async function sweepContextRoots(
         skipped.push(file)
         return
       }
-      if (!sweepAdmits(content)) return
+      if (!sweepAdmits(content)) {
+        refused.push(file)
+        return
+      }
       const raw = splitFrontmatter(content)
       const next = rewrite(raw, file)
       if (next === null) return
@@ -112,7 +133,15 @@ export async function sweepContextRoots(
       touched.push(file)
     })
   }
-  return { touched, skipped }
+  return { touched, skipped, refused }
+}
+
+/** A capture for one root the unlink is about to strip. The id comes from whichever id key
+ *  the root carries — a root with the key but no id captures id-less: honest, unrestorable. */
+function captureRoot(raw: Raw, file: string, values: string[]): SweepCapture {
+  const isSpace = basename(file) === SPACE_SIDECAR
+  const id = isSpace ? (typeof raw.id === 'string' ? raw.id : undefined) : contentId(raw)
+  return { ...(id ? { id } : {}), kind: isSpace ? 'space' : 'page', values }
 }
 
 /** Run the title cascade for a journal record. `contextTitle` is the owning
@@ -121,7 +150,7 @@ export async function cascadeTitle(
   root: string,
   registry: ContextsRegistry,
   j: RenameJournal,
-): Promise<Result<{ touched: string[]; skipped: string[] }>> {
+): Promise<Result<SweepResult>> {
   const def = registry.contexts.find((c) => c.id === j.contextId)
   if (!def) return fail('not-found', 'Unknown Context.', 'contexts')
   // A context rename's own registry title may already read old or new — the key being
@@ -137,18 +166,22 @@ export async function unlinkContextKey(
   root: string,
   contextTitle: string,
   skipUnder?: string,
-): Promise<Result<{ touched: string[]; skipped: string[] }>> {
+): Promise<Result<SweepResult & { captured: SweepCapture[] }>> {
   const key = contextKey(contextTitle)
   const skipPrefix = skipUnder ? skipUnder + sep : null
-  return ok(
-    await sweepContextRoots(root, (raw, file) => {
-      if (skipPrefix && file.startsWith(skipPrefix)) return null
-      if (!(key in raw)) return null
-      const next = { ...raw }
-      delete next[key]
-      return next
-    }),
-  )
+  const captured: SweepCapture[] = []
+  const swept = await sweepContextRoots(root, (raw, file) => {
+    if (skipPrefix && file.startsWith(skipPrefix)) return null
+    if (!(key in raw)) return null
+    const values = Array.isArray(raw[key])
+      ? raw[key].filter((v): v is string => typeof v === 'string')
+      : []
+    captured.push(captureRoot(raw, file, values))
+    const next = { ...raw }
+    delete next[key]
+    return next
+  })
+  return ok({ ...swept, captured })
 }
 
 /** Strip a deleted Space's exact title as a VALUE under its Context's key in every
@@ -157,19 +190,20 @@ export async function unlinkSpaceValue(
   root: string,
   contextTitle: string,
   spaceTitle: string,
-): Promise<Result<{ touched: string[]; skipped: string[] }>> {
+): Promise<Result<SweepResult & { captured: SweepCapture[] }>> {
   const key = contextKey(contextTitle)
-  return ok(
-    await sweepContextRoots(root, (raw) => {
-      const arr = raw[key]
-      if (!Array.isArray(arr) || !arr.includes(spaceTitle)) return null
-      const kept = arr.filter((v) => v !== spaceTitle)
-      const next = { ...raw }
-      if (kept.length) next[key] = kept
-      else delete next[key]
-      return next
-    }),
-  )
+  const captured: SweepCapture[] = []
+  const swept = await sweepContextRoots(root, (raw, file) => {
+    const arr = raw[key]
+    if (!Array.isArray(arr) || !arr.includes(spaceTitle)) return null
+    captured.push(captureRoot(raw, file, [spaceTitle]))
+    const kept = arr.filter((v) => v !== spaceTitle)
+    const next = { ...raw }
+    if (kept.length) next[key] = kept
+    else delete next[key]
+    return next
+  })
+  return ok({ ...swept, captured })
 }
 
 /** Finish a rename after its cascade: persist the skip list (the journal survives for

@@ -168,6 +168,48 @@ describe('unlink cascades (D-3)', () => {
   })
 })
 
+describe('the sweep tells the truth about what it did (G-2)', () => {
+  const PAGE_C = '01KVGMT8BFG350FZZXAMG1QDTA'
+
+  it('unlinkContextKey returns each swept root’s identity and stripped values; a dual-key root is refused, never touched', async () => {
+    await writeFile(
+      join(root, 'Notes', 'C.md'),
+      `---\nPageID: ${PAGE_C}\n(Projects):\n  - Pommora\n---\nbody`,
+    )
+    await writeFile(
+      join(root, 'Notes', 'Dual.md'),
+      `---\nPageID: ${PAGE_C}\nTaskID: 01KVGMT8BFG350FZZXAMG1QDTB\n(Projects):\n  - Pommora\n---\nbody`,
+    )
+    const { unlinkContextKey } = await import('./contextCascade')
+    const r = await unlinkContextKey(root, 'Projects')
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const { captured, refused } = r.value
+    // The dual-key page keeps its key and names itself on the refused list.
+    expect(refused).toEqual([join(root, 'Notes', 'Dual.md')])
+    expect((await fmOf(join(root, 'Notes', 'Dual.md')))['(Projects)']).toEqual(['Pommora'])
+    // Captures discriminate by id key: the PageID page, the id-less legacy page (honest,
+    // unrestorable), and the Space sidecar.
+    expect(captured).toContainEqual({ id: PAGE_C, kind: 'page', values: ['Pommora'] })
+    expect(captured).toContainEqual({ kind: 'page', values: ['Pommora', 'pommora'] })
+    expect(captured).toContainEqual({ id: 'sp-cs', kind: 'space', values: ['Pommora'] })
+    expect(captured).toHaveLength(3)
+  })
+
+  it('unlinkSpaceValue captures the removed title per root; zero matches is an empty list', async () => {
+    const { unlinkSpaceValue } = await import('./contextCascade')
+    const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.captured).toContainEqual({ kind: 'page', values: ['Pommora'] })
+    expect(r.value.captured).toContainEqual({ id: 'sp-cs', kind: 'space', values: ['Pommora'] })
+    expect(r.value.captured).toHaveLength(2)
+
+    const again = await unlinkSpaceValue(root, 'Projects', 'Pommora')
+    expect(again.ok && again.value.captured).toEqual([])
+  })
+})
+
 describe('a delete sweep never strips a passenger (G-1a)', () => {
   const pomSidecar = () => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
 

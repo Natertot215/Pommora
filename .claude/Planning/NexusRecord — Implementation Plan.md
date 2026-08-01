@@ -286,8 +286,8 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Failure half:** a refused root → listed, never captured, never touched · a root with the key but no id → touched, captured with no id entry (unrestorable, honest) · zero captures → empty list, not absent.
 
 **Steps:**
-- [ ] Failing tests; widen; all three consumers compile (the type gate enumerates them); gates green.
-- [ ] Commit: `feat(contexts): the unlink sweeps return what they removed`
+- [x] Failing tests; widen; all three consumers compile (the type gate enumerates them); gates green.
+- [x] Commit: `feat(contexts): the unlink sweeps return what they removed`
 
 #### Task 8: The pair
 
@@ -444,7 +444,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
   - [x] Task 5 — the re-mint writes · `0c34dd2a`
 - [ ] **Phase 3** — the sweep and the pair · base `f136d56b`
   - [x] Task 6 — the sweep never strips a passenger
-  - [ ] Task 7 — the sweep tells the truth
+  - [x] Task 7 — the sweep tells the truth
   - [ ] Task 8 — the pair
   - [ ] Task 9 — absorb the snapshot; remove the residue
 - [ ] **Phase 4** — the resolver spends the pairs
