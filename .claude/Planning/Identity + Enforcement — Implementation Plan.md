@@ -376,7 +376,7 @@ All 13 tasks and 3 gates executed; the only unticked boxes above are Nathan's ow
 **Still open, all deliberate:**
 
 1. **F8 — a taken seed-slot name never registers.** Real but latent: no agenda read surface exists, and the user's own folder is unharmed. Filling it needs a second writer to `agenda_singletons`, weakening the single-writer invariant the seed-ordering fix depends on, plus a product decision (adopt the user's folder, or disambiguate?). **Belongs to the Agenda work, not a patch.**
-2. **D-15 — duplicate-id policy** remains `[open]` in the log. The reachability question it asks is now partly answered: duplicate *container* ids are handled, duplicate *content* ids are not.
+2. **D-15 — duplicate-id policy** remains `[open]` in the log. Its reachability question is fully answered there: duplicate *container* ids are handled, duplicate *content* ids are not, and the content case is reachable by the ordinary Finder gesture because no duplicate or restore op exists on the bridge. What it costs — a row rendering another file's values, in directory order, never self-healing — is measured in the log entry. What remains is the policy call.
 3. **Docs:** ~18 identity-scope claims the Task 13 pass missed, three undocumented behaviours (registration is never backfilled; a taken slot goes unregistered; every move passes a destination-kind refusal), and ~41 pre-existing time-specific sentences across ~22 docs.
 4. **Two live files** — `NexusOS/Studio/NexusOS/{NexusOS,Nexus-Index}.md` carry a dead `id:` beside their `PageID:`, and their Set's `page_order` still names the old ids. Trashed pre-migration, untrashed after.
 

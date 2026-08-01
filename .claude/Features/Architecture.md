@@ -66,9 +66,15 @@ Every sidecar's field shape is canonical in `src//shared//schemas.ts`.
 
 **Registration is written once, at nexus creation, and never backfilled.** A nexus that predates its own registration record holds none, so every agenda config in it is inert — the pair it should register arrives with the Agenda work, not by repair on a later open.
 
-**Registration is the guard.** A duplicated, hand-made, or relocated agenda config matches no record and is inert bytes — not a second singleton, not a Collection, not anything. That is what makes "one Tasks folder" true without a rule enforcing it, and it is why a singleton found nested can be carried home: the record already names which folder is canonical.
+**Registration is the guard.** A hand-made agenda config carries an id the record doesn't name, so it matches nothing and is inert bytes — not a second singleton, not a Collection, not anything. That is what makes "one Tasks folder" true without a rule enforcing it.
+
+**A copy is the case the record can't settle alone.** Every ordinary duplication — a Finder duplicate, a recursive copy, a restored backup, a sync conflict copy — reproduces the id the registration keys on, so the copy matches the record exactly as the original does. Two folders at the root answering to one record therefore register *nobody*: no arm may pick between them, and the real singleton goes inert alongside its copy deliberately, because nothing is written and deleting the stray config restores the nexus completely. A copy below the root is inert on depth alone and stays where its owner filed it.
+
+**Carrying a nested singleton home applies only to a slot with no folder at the root.** The record names which folder is canonical, so a singleton genuinely dragged away can be returned. When the root still holds one, nothing was displaced and a nested folder claiming that record is a copy — moving it would take it out of wherever its owner put it, and leave the two contesting the slot on the next open.
 
 **One resolver owns the answer, at any depth.** Classification is not a root-only question — a folder is placed by what it declares plus where it sits, so a nested agenda config resolves to nothing rather than reading as an ordinary Set.
+
+**One predicate owns what a content file is,** and the extension matches case-insensitively — a file written by another editor is the same file to the person who wrote it. The read walk, the adoption pass and every nexus-wide sweep ask that one question, so a file the tree shows is a file the sweeps reach. Two passes disagreeing would leave a page that renders normally and quietly goes stale: its links surviving a rename, its property cells reading empty.
 
 **Hidden + private.** `.nexus/` and `.trash/` are hidden from the sidebar and from non-Pommora tools by convention (matches `.obsidian/`).
 
