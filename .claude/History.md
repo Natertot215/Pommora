@@ -4,6 +4,10 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 ### Completion Timeline (Descending)
 
+#### Restore Reconciles Against the Present (2026-08-01)
+
+Found by manual testing against a live app, in the seam the whole feature's defect class lives in: every nexus-wide sweep is tree-derived and the tree excludes `.trash`, so a bundle stays frozen at its delete while the world moves on. Restore replayed it verbatim — a page deleted while it held a property value came back still holding it after that property was deleted or unassigned, and a page came back tagging a Context that had since been erased. Reproduced for pages, for whole Sets, and for both governed key families. **Locked:** the returning content is reconciled in the trash before anything lands, and a governed key survives only if what it names still exists; **only orphaned keys are dropped**, so a value the tree would merely fail to resolve is left as the user wrote it — restore is never stricter about a file than the tree it restores into. The real hazard was never the dormant key but the next property or Context to take that name, which would have inherited values the page never legitimately held. → [[NexusRecord]].
+
 #### Property Restore — The Snapshot Becomes Something That Spends (2026-08-01)
 
 The global property delete had promised a "recovery snapshot" since it shipped, and nothing could spend it: the record held the definition and the page values, restore refused property records outright, and hand-recovery meant matching ULIDs across frontmatter by eye. It restores now. **Locked:** only what still validates returns — the registry judges whether the definition may come back at all, and a name another property has since taken refuses the whole restore, because two properties cannot share a frontmatter key; below that each value is decoded strictly against the definition and dropped unless it survives, so a vanished select option, a value the type can no longer hold, and a page that has since died all simply don't return. A record is evidence of what was, never a mandate to recreate it.
