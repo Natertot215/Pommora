@@ -1,143 +1,120 @@
 ## NexusRecord — Decision Log
 
+> **Status:** V2 — reviewed, revised, pending Nathan's ratification. Three review lenses ran against V1 (durability at three months, alternative framings, adversarial attack); V1's central-record design did not survive and was replaced rather than patched.
+
 ### Frame
 
-- **Purpose:** One mechanism that remembers where entities were, so Pommora can compare what it sees now against what it saw before, and can put a trashed entity back into the folder it belonged to — even when that folder has since been renamed or moved.
-- **Core Value:** Pommora can always answer *where is this now*. It can never answer *where was this then*. This is the smallest mechanism that closes that gap.
+- **Purpose:** Let Pommora put a trashed entity back into the folder it belonged to — even when that folder has since been renamed or moved — and let it notice structural change made while it was closed.
+- **Core Value:** Pommora can always answer *where is this now*. It cannot answer *where was this then*. Two separate mechanisms close that, each the smallest thing that does its half.
 - **Success Criteria:**
-  - A page trashed, then whose parent folder is renamed, restores into the renamed folder.
-  - An open detects and reports structural change made outside the app since the last open.
-  - Adding a new tracked fact later (a property value, a frontmatter key, an id seeding) is additive — no entry-shape change, no consumer rewrite.
-  - The acting code that performs a restore holds no domain policy of its own.
+  - A page is trashed; its parent folder is renamed; the page restores into the renamed folder.
+  - A folder is trashed with pages inside it; restoring the folder restores its contents intact.
+  - Opening a nexus reports structural change made since the last open.
+  - Adding a tracked fact later is additive — no entry-shape change, no differ rewrite.
+  - The code that performs a restore holds no domain policy of its own.
+
+### The Two Halves
+
+They share a module and nothing else. Conflating them is what broke V1.
+
+- **Provenance** — where a departed entity belonged. Written **onto the artifact being trashed**, travels with it, dies with it.
+- **Baseline** — what the walk last saw. A derived per-machine projection in `nexus.db`, written once per session, read once per session.
 
 ### Sources
 
-- `.claude/Planning/Identity + Enforcement — Decision Log.md` — D-15 (duplicate content ids, policy open, reachability answered) and D-17 (the record is a shared mechanism serving structural revert AND trash restore, split to its own plan). Both are this document's direct parents.
-- Commit `be671378` — *"parent_id leaves — folder nesting was always the parentage."* Closing line: *"No id-valued cross-entity foreign key now exists on disk."* Constrains D-4 below.
-- `src/main/crud/contextJournal.ts` · `src/main/crud/contextCascade.ts` — the only existing completion journal. One record max at `.nexus/context-rename.json`; its correctness lives in eleven discard branches, replayed at open from `src/main/index.ts`.
-- `src/main/crud/removeProperty.ts` — the `property_cache` block on collection sidecars. Keyed by page id, timestamped, written before the destructive act, spent per value on restore. The closest existing thing to a correct record.
-- `src/main/crud/deleteProperty.ts` — the `.trash/<stamp>__property-<id>.json` snapshot. Keyed by absolute file path, written with a raw non-atomic write, read by nothing.
-- `src/main/io/atomicWrite.ts` — `trashWithTimestamp`; the mirrored `.trash` chain with the stamp on the leaf only. The layout is the current restore record.
-- `src/main/io/writeEcho.ts` — the precedent for "the app's own writes must not read as external change."
-- `src/main/crud/page.ts` — `relocatePage`, the single private funnel for every page rename and move.
-- `src/main/crud/folderEntity.ts` — `renameFolderEntity` / `moveFolderEntity`, structurally identical with no shared helper.
-- `src/main/mutate.ts` — `dispatch` (23 ops, exhaustive, `never`-guarded) and `removeViaMode`.
-- `src/main/index.ts` — `prepareOpenedNexus`, the single high-level open path.
-- `src/main/crud/reorder.ts` · `src/main/order.ts` — the order arrays; stale ids are read-tolerated and never purged.
-- `src/shared/types.ts` — `NodeKind`, the discriminant written on every walked node.
-- `src/renderer/src/treeIndex.ts` — its own stated law: *"A new lookup belongs here as another projection, never as its own walk."*
-- `src/renderer/src/Sidebar/sidebarDndModel.ts` — `Entry`, which already derives `parentId` in memory.
-- `.claude/Features/Architecture.md` — the `.nexus/` content versus `nexus.db` per-machine line; the trash-restore pending note.
+- `.claude/Planning/Identity + Enforcement — Decision Log.md` — D-15 (duplicate content ids) and D-17 (the record serves structural revert and trash restore). D-15's relationship to this work is **reversed** in V2; see A-5.
+- Commit `be671378` — *"parent_id leaves — folder nesting was always the parentage."* Constrains B-3.
+- `src/main/io/atomicWrite.ts` — `trashWithTimestamp`; mirrors the folder chain, stamps the leaf, moves the whole subtree in one rename.
+- `src/main/mutate.ts` — `removeViaMode` and its two trash modes; the nexus-trash arm and the system-trash arm behave differently and V1 addressed only one.
+- `src/main/watcher.ts` — the ignore predicate. `.nexus/` **is watched**; `nexus.db` is ignored because it thrashes on operational writes.
+- `src/main/index.ts` — `prepareOpenedNexus`. It holds no tree; `readNexus` is called from the watcher push, the state IPC arm, and `crud/assignment.ts`.
+- `src/renderer/src/store.ts` — `mutate` applies an optimistic patch then calls `load()`, which *"confirms canon."* Every in-app structural mutation already causes a confirming walk.
+- `src/main/crud/page.ts` · `src/main/io/pageFile.ts` — `relocatePage`; `mergeFrontmatter` governs only the keys it is given, so a provenance key can be written without bumping `modified_at`.
+- `src/shared/schemas.ts` · `src/main/sidecarIO.ts` — every sidecar reads through a loose schema, so a foreign key rides along by construction.
+- `src/main/crud/removeProperty.ts` — the `property_cache` block. Co-located with its Collection and portable with it.
+- `src/main/crud/deleteProperty.ts` — the path-keyed snapshot; raw non-atomic write, flat in `.trash`, read by nothing.
+- `src/main/crud/contextJournal.ts` · `contextCascade.ts` — the rename journal and its discard branches.
+- `src/shared/types.ts` — `NodeKind`, the discriminant on every walked node.
 
 ### Decisions
 
-#### A — Purpose & Scope
+#### A — Scope
 
-- **A-1:** [confirmed] D-15 (duplicate content ids) folds into this work rather than standing alone. The record is what distinguishes the file that legitimately holds an id from a copy, turning a coin flip into a fact.
-- **A-2:** [assumed] The record tracks **structural facts only** — identity, location, parentage, existence. Never what a page contains. This boundary is what stops it becoming a versioning system.
-- **A-3:** [assumed] Compare **detects and reports**; it does not auto-revert. Acting on detected drift is a separate decision and probably a later surface.
-- **A-4:** [assumed] Un-adopted entities are out of scope by construction. A path-derived `adoptedId` *is* a different id after a move, so it is unrevertable in principle.
+- **A-1:** [assumed] The record tracks **structural facts** — identity, location, parentage, existence. No *continuous* content snapshotting. Values may enter as event payloads bounded by an event; they never become baseline fields.
+- **A-2:** [assumed] Compare **reports** external drift; it never auto-reverts. Separately, the app's own *interrupted* work may complete unattended — that is what the rename journal already does at open, and forbidding it would forbid the record's best future use.
+- **A-3:** [assumed] Un-adopted entities are out of scope, and the projection must **actively filter** `adopted-`-prefixed ids. The walk assigns them to every excluded or sidecar-less entity, so without a filter they enter the baseline and report as delete-plus-create forever.
+- **A-4:** [assumed] Out of scope entirely, stated rather than discovered: **block tiles** (no id key, `.nexus`-resident, invisible to the walk, and restoring one is a database row insert, not a placement) and **Tasks/Events** (the walk emits no agenda nodes and no delete arm reaches them; this widens for free when Agenda joins the walk).
+- **A-5:** [assumed — reverses V1] **D-15 does not fold in.** An id-keyed baseline cannot represent two files holding one id; verified by execution, the entry silently retargets to whichever the walk hit last, so compare reports a move that never happened. The record covers only the narrow case where a restore would collide with a live id. General duplicate-id policy stays D-15's own question.
 
-#### B — Shape & Storage
+#### B — Provenance (the restore half)
 
-- **B-1:** [assumed] One module, one file: `.nexus/record.json`. Content, not `nexus.db` — trash provenance must survive a schema-version bump, which drops the database wholesale.
-- **B-2:** [assumed] Two record types in that file, not one shape:
-  - **Baseline** — one entry per entity, structural fields only. Replaced per open, patched per structural mutation. Bounded at one entry per entity; never needs a compaction policy.
-  - **Events** — a discriminated union with an **open payload per kind**. Trash carries a parent; a property removal would carry prior values; an id seeding would carry the minted id. Bounded by unresolved events.
-- **B-3:** [assumed] `kind` derives from `NodeKind`, widened locally to `NodeKind | 'homepage'`. Not `NavRef['kind']` (admits `task`/`event`, which have no node and no path), not `FolderKind` (includes `'unknown'`, never an entity), not `SidecarKind` (omits `page`).
-- **B-4:** [assumed] The reader **preserves event kinds it does not recognize** rather than dropping them, matching the foreign-key preservation every other Pommora document already practises.
+- **B-1:** [assumed] At detach, the parent is written **onto the artifact being trashed** — a frontmatter key for a page, a sidecar key for a container — not into a central document. It travels with the file, cannot be orphaned, needs no central entry, and survives a trash emptied outside the app, a sync conflict, and multi-window. This is the shape Notion uses and the shape the Windows Recycle Bin uses.
+- **B-2:** [assumed] Only the **top of a trashed subtree** carries a key. `trashWithTimestamp` moves the whole subtree in one rename, so a page inside a trashed Set keeps its nesting and needs nothing. Restoring the top restores everything under it.
+- **B-3:** [assumed] This does not reverse `be671378`. That removed a cross-entity pointer from **live** entities in the tree, where nesting already answered. A key on a dead copy inside `.trash`, stripped on restore, is never a live pointer — and it exists precisely where nesting has been destroyed.
+- **B-4:** [assumed] The parent is a **discriminated union**, not a bare id: a root-level container, a container by id, a Context by registry id, or unaddressable. Verified: root-level Collections, Spaces and Contexts have no parent sidecar, and a Set created in Finder before adoption — or one whose sidecar is unreadable — has no id at all. A bare id cannot express any of those; `unaddressable` becomes a typed refusal the resolver already has a slot for.
+- **B-5:** [assumed] A restored file that still carries a provenance key is stripped by the adoption pass that already runs at open — a file carrying trash provenance while sitting in the tree is one someone restored by hand.
+- **B-6:** [assumed] Under **system trash mode** the key is still written before the file leaves, so a hand-dragged restore still resolves. But Pommora cannot enumerate the OS trash, so the restore *surface* covers nexus-trash mode only, and says so. The delete confirmation already distinguishes the two modes.
 
-#### C — Write Cadence
+#### C — Baseline (the compare half)
 
-- **C-1:** [confirmed — Nathan's correction] Once-per-open is **not** the only legitimate trigger. The hard rule forbids expensive work piled onto a high-frequency trigger; it does not forbid event-driven writes. A write is appropriate when the event is *contained*, *human-paced*, and the record write is **THE** companion to that event rather than another listener stacked on it.
-- **C-2:** [confirmed — implied by C-1] A structural mutation made in-app updates the baseline. Without this, the app's own work reads as external drift on the next open — a false positive on every gesture. This is `writeEcho`'s principle applied to structure.
-- **C-3:** [assumed] Writes on: trash, restore, move, rename, re-home, adoption stamp. Full baseline write once per open, **after** adoption — a snapshot taken before it records a world adoption is about to change.
-- **C-4:** [assumed] Never writes on: keystrokes, property value edits, **reorders**, watcher events, walks. Reorder is named explicitly because drag-reorder fires repeatedly and changes order, not location.
+- **C-1:** [assumed] The baseline lives in `nexus.db` as a `local_state` row. It is derived, per-machine, and rebuildable-by-definition. `.nexus/` is watched, so a document rewritten per gesture there buys re-walks; the database is ignored *because* it thrashes. No new schema — `local_state` is already generic.
+- **C-2:** [assumed] Written **once per session**, latched, at the first walk that produces a tree — because `prepareOpenedNexus` has no tree and a second walk on the open path is forbidden. The prior baseline is read before it is overwritten; that read is the compare input.
+- **C-3:** [assumed] **No mutation hooks at all.** Every in-app structural change already triggers a confirming walk, so the next session's baseline captures it. This deletes V1's entire hook set, the `relocateFolder` extraction, and the create/Space-rename/sidecar-migration gaps that hook set had.
+- **C-4:** [assumed] The watcher already attributes live-session drift in memory and pushes a fresh tree. The baseline covers **only the window when the app was closed** — a strictly smaller problem than "compare against last open."
+- **C-5:** [assumed] The diff runs over the **union** of keys with absence as a first-class value, and tracked fields must be **scalars**. Pommora encodes deletion as key absence project-wide; a present-key diff loses every clear in one direction and every add in the other, verified both ways. Non-scalar facts enter as event payloads, never as baseline fields.
+- **C-6:** [assumed] `kind` derives from `NodeKind`, unwidened. It gains Tasks and Events for free when the walk does. No `'homepage'` member — the homepage has no id and no path and cannot be trashed.
 
-#### D — Parentage
+#### D — What Is Not Absorbed
 
-- **D-1:** [confirmed] Nesting is the parentage for anything in the tree. The baseline stores `path` and **no parent field** — `be671378` stands untouched.
-- **D-2:** [assumed] Only a **detached** entry needs a parent identity, because trashing is precisely what destroys nesting. This is the one case `be671378`'s premise does not reach.
-- **D-3:** [assumed] The parent id is read from the parent folder's **existing sidecar** at the moment of detach — `dirname(path)` → read that sidecar → its id. One file read, no persisted map, no staleness possible.
-- **D-4:** [open — BLOCKING, needs Nathan] D-2 puts an id-valued cross-entity pointer back on disk, narrowly, for detached entities only. `be671378` removed exactly that class of field. The argument for the exception: it is *read* (by restore), where `parent_id` was read by nothing, and it covers the case where nesting cannot answer. **Without it, restore-into-a-renamed-directory is unimplementable** — the only alternative is matching the old path, which a rename invalidates. Needs an explicit yes.
+- **D-1:** [assumed] **Absorb the property Delete snapshot only** — it is path-keyed, non-atomic, flat in `.trash`, and read by nothing. Rewrite it to match the Remove cache's discipline in place.
+- **D-2:** [assumed — reverses V1] **Leave the Remove cache alone.** Its correctness is its reconciliation branches, not its storage — the same argument that keeps the rename journal separate. It is co-located with its Collection, so it survives a folder rename, move, trash-restore, and copy into another nexus; centralizing it destroys that. And it covers id-less pages, which an id-keyed store cannot.
+- **D-3:** [assumed] **Leave the rename journal separate.** Its correctness is eleven discard branches, one of which must never generalize: *"The freed old title was re-minted by another Space — discard, never hijack."* A uniform replay-on-open policy would fire it and corrupt a live Space.
+- **D-4:** [assumed] **Leave the order arrays alone.** Absorbing them means inventing a purge that does not exist.
+- **D-5:** [confirmed by evidence] No migration is needed: **zero `property_cache` blocks exist on either live nexus.** V1's I-1 collision with the zero-transition-machinery ruling does not arise.
 
-#### E — Absorption
+#### E — Resolution
 
-- **E-1:** [assumed] **Absorb the Remove cache and the Delete snapshot.** They are the same record written twice and have already drifted once — `assignment.ts` says so in its own comment. They disagree on key space (page id versus absolute path), atomicity (strict read-modify-write versus a raw non-atomic write), and trash layout (mirrored chain with collision handling versus flat and silently overwriting). Winner on key space: **id**, the same answer D-15 turns on.
-- **E-2:** [open — needs Nathan] **Do not absorb the rename journal**, against the stated "must absorb each" constraint. Its correctness is not the record — the record is four strings — it is eleven discard branches, one of which must never be generalized: *"The freed old title was re-minted by another Space — discard, never hijack."* A uniform replay-on-open policy would replay that and rewrite a live Space's values to a name a different Space now owns. It is a transaction log with a replay driver, not a value snapshot; twenty of its twenty-two call sites are internal to one file, so keeping it separate is cheap and generalizing it is expensive.
-- **E-3:** [assumed] **Leave the order arrays alone.** Absorbing them means inventing a purge that does not exist today — a behavior change, since an id that leaves and returns currently resurrects into its old slot.
-- **E-4:** [assumed] Unify the `.trash` artifact spelling so every timestamped restore artifact mirrors the chain and de-collides.
-
-#### F — Restore Resolution
-
-- **F-1:** [assumed] The record **decides** and returns the decision as data. A single resolver takes the entry plus the current tree and returns exactly one outcome: a placement directory, or a refusal with a reason (parent gone · parent cannot hold this kind · name taken · id already live).
-- **F-2:** [assumed] The acting code executes and branches on nothing. No path resolution, no collision policy, no domain rules — a mover, not a decider. This is what keeps the acting code minimal.
-- **F-3:** [assumed] If a fix ever needs ordering (restore a parent before its child), the resolver returns an ordered plan rather than a single placement. Still one decision-maker, still a dumb executor.
-- **F-4:** [assumed] A name collision at the target **disambiguates** the way creates already do, rather than refusing.
-
-#### G — Extensibility
-
-- **G-1:** [assumed] The baseline diff is **field-generic** — *"for each id, for each key present, did it change"*, never a hand-written per-field comparison. This is the single commitment that makes later additions free; without it, every new tracked fact forces a rework of the differ.
-- **G-2:** [assumed] The tracked-field set lives in **exactly one projection function**. The differ never names a field. Two lists of one fact is the `.MD` failure in a new costume.
-- **G-3:** [assumed] Structural facts are bounded (one entry per entity); property values are not (pages × properties). Continuous value snapshotting does not scale and is out. **Event-scoped** value capture is bounded and is how property changes enter later — the shape the Remove cache already proves.
-
-#### H — Integration
-
-- **H-1:** [assumed] Hook sites, all inside functions that already exist and already write to disk: `prepareOpenedNexus` (baseline) · `relocatePage` (every page rename and move, id already free) · `removeViaMode` and `trashTileFile` (both trash routes) · `stampPage` / `stampFolder` / `reHomeRegistered` (adoption).
-- **H-2:** [assumed] One extraction: `relocateFolder`, mirroring the existing `relocatePage`, so folder rename and move share a hook instead of needing two.
-- **H-3:** [confirmed by census] Restore is **entirely new surface** — no restore, untrash, or put-back code exists anywhere in the codebase.
-- **H-4:** [open] `nexus:rename` renames the nexus root outside every funnel — no write echo, no crud primitive, no mutate op. It needs its own hook, and when the root moves every path in the baseline goes stale at once.
-
-#### I — Open Gaps (raised by this log, never discussed)
-
-Each of these is unresolved and none is blocked on the others.
-
-- **I-1:** [open] **Absorbing the Remove cache is a format change.** Existing nexuses carry `property_cache` blocks on collection sidecars. Moving that into the record either strands them or needs migration — and the identity arc's ruling was zero transition machinery. Decide: migrate, strand, or leave the Remove cache where it is.
-- **I-2:** [open] **Corrupt or unreadable record.** The codebase's rule is *"a write may act on a fact, never on ignorance."* An unreadable record must not be silently re-seeded over, because it holds trash provenance. Policy undecided.
-- **I-3:** [open] **First run.** An existing nexus has no record. The first open has no baseline, so compare has nothing to say. Presumably it seeds silently and reports nothing — unconfirmed.
-- **I-4:** [open] **Trash emptied outside the app.** Detached entries then point at files that no longer exist. Nothing purges them. Also: Pommora has no trash-emptying feature at all.
-- **I-5:** [open] **Contexts and Spaces coverage.** Content and containers only, or Contexts/Spaces too? This decides whether the record supersedes the rename journal or sits beside it, so it interacts with E-2.
-- **I-6:** [open] **What compare surfaces, and where.** "Detect and report" names no surface — a notification, a panel, a silent log read on demand.
-- **I-7:** [open] **Excluded folders.** The walk skips them, so their entities never enter the baseline and are invisible to compare. Probably correct; unstated.
-- **I-8:** [open] **Multi-window.** The locked decision is single-window now with multi-window-ready seams. Two sessions on one nexus both writing a baseline is undefined.
-- **I-9:** [open] **Sync conflict.** The baseline self-heals under most-recent-wins because it is rewritten every open. **Detached entries do not** — losing one loses trash provenance, degrading restore to path-matching.
-- **I-10:** [open] **Reading it from the renderer.** A restore surface needs IPC channels. No bridge entries are scoped.
-- **I-11:** [open] **Testing crash recovery.** The rename journal has tests for its replay branches; the shape for testing this one is unscoped.
-- **I-12:** [open] **Size at scale.** Asserted bounded, never estimated. A concrete figure at a few thousand entities should exist before the write cadence is final.
+- **E-1:** [assumed] The record **decides** and returns the decision as data. One resolver takes the provenance plus the current tree and returns a placement or a typed refusal: parent gone · parent cannot hold this kind · parent unaddressable · trashed outside the nexus · id already live.
+- **E-2:** [assumed] The acting code branches on nothing — a mover, not a decider.
+- **E-3:** [assumed] A name collision at the target **disambiguates**, as creates already do. It is not a refusal reason.
+- **E-4:** [assumed] Restoring a child out of a still-trashed parent refuses rather than guessing at a destination.
+- **E-5:** [assumed] If a fix ever needs ordering, the resolver returns an ordered plan. Still one decider.
 
 ### Core (must-have)
 
-- The record document, its module, and the four operations: snapshot, detach, settle, resolve.
-- Parent captured at detach from the parent's existing sidecar.
-- Restore resolution by parent id against the current tree, returning a placement or a typed refusal.
-- Baseline maintained on open and on in-app structural mutation, so the app's own work never reads as drift.
-- Field-generic diff and a single projection function owning the tracked-field set.
+- The provenance key: its shape, the discriminated parent, write at detach, strip at restore, strip on adoption.
+- The resolver, returning a placement or a typed refusal.
+- **A minimal restore path** — even a single menu action. Without one, provenance is written and never spent.
+- The baseline projection, its latched once-per-session write, and the union-diff.
+- **A compare operation and somewhere its result lands.** V1's Core built the record and never read it.
 
-#### Prospects (allowed later, not now)
+#### Prospects
 
-- **Crash-safe cascades.** `renameCascade`, `renameSweep` and `optionOps` do write → act → settle with **no record at all**; a page rename's only safety net is an in-memory reverse a crash defeats. `cascade.ts` says a partial cascade is *"recoverable by re-running"* — and nothing re-runs it. This is arguably the record's highest-value use. Don't-foreclose: the event-entry plus settle shape covers it almost free.
-- **A trash browse-and-restore surface.** The record makes it possible; it is not the record.
-- **Property and frontmatter change capture**, as event entries per G-3.
-- **Git as opt-in content history.** Complementary, never the record — git tracks paths and detects renames heuristically, where this tracks identities. Both nexuses are already git repos and one is the home directory, so Pommora must not auto-commit.
-- **Automatic structural revert**, once detect-and-report has proven itself.
+- **Crash-safe cascades.** `renameCascade`, `renameSweep` and `optionOps` do write → act → settle with no record; a page rename's only safety net is an in-memory reverse a crash defeats, and its own comment says a partial cascade is *"recoverable by re-running"* while nothing re-runs it. Arguably the highest-value use of this shape.
+- A full trash browse-and-restore surface.
+- Property and frontmatter change capture, as event payloads.
+- Git as opt-in content history — complementary, never the record. Both nexuses are already git repos and one is the home directory, so Pommora must never auto-commit.
 
-#### Out of Scope (won't do)
+#### Out of Scope
 
-- Content versioning or an editing undo stack.
-- Any coverage of un-adopted entities.
-- Sync or conflict resolution.
-- Order-array purging.
+- Content versioning or an editing undo stack · un-adopted entities · sync and conflict resolution · order-array purging · block tiles · agenda kinds, until the walk emits them.
 
 #### Considered & Rejected
 
-- **Append-only ledger** (every change an event, state as a fold). More powerful, but demands a compaction policy up front and grows unboundedly — the exact "someone must come back and fix this" shape to avoid.
-- **Distributed record** (each container sidecar records its own members). No central hot file and it travels with a folder move, but a trashed entity has no home sidecar to live in, so it fails the headline requirement worst.
-- **Split storage** (baseline in `nexus.db`, rest in `.nexus/`). Principled about the per-machine line, but two homes forever; the single file self-heals under most-recent-wins, which is worth more here.
-- **Git as the mechanism.** Rejected on structure, not taste: git tracks paths and guesses renames by content similarity, so it answers the address question already answered by the `.trash` chain and contributes nothing to the identity question that is actually missing.
-- **Once-per-open as the only trigger.** Rejected by Nathan; it produces a real bug — a page moved in-app then trashed restores to where it was at last open.
+- **A central `.nexus/record.json` holding detached entries** (V1's design). Rejected on three verified grounds: `.nexus/` is watched, so a per-gesture rewrite buys re-walks; at five thousand entities the file is near a megabyte and each patch is a full re-serialize, an order of magnitude more IO than the rename it accompanies; and its entries can never be spent while no restore surface exists, reproducing the unbounded-growth shape the append-only ledger was rejected for.
+- **Per-mutation baseline hooks.** Unnecessary — the confirming walk already runs.
+- **Append-only ledger** · **record distributed across live container sidecars** (a trashed entity has no home sidecar — inverted in B-1, where the departed entity remembers the folder) · **git as the mechanism** · **once-per-open as the only trigger**.
 
 #### Lessons
 
-- A record that is *replaced* rather than *appended* never needs a compaction policy. Bounded-by-construction is worth more than powerful.
-- "Never on every X" forbids expensive work on a hot trigger, not event-driven writes. The test is whether the write is THE companion to that event or another listener stacked on it.
-- A shared mechanism's value is its *discipline*, not its data. The rename journal's record is four strings; its correctness is eleven discard branches, and generalizing it would lose the one that must never fire.
+- When a mechanism must remember something about a thing, putting the memory *on the thing* dissolves orphaning, sync conflict, and multi-window at once. Ask it before designing a central store.
+- "Bounded in count" is not "bounded in cost." Size it before choosing where it lives.
+- A record whose entries are only spent by a surface you have not built is an append-only log wearing a bounded one's clothes.
+- Three review lenses — durability, alternatives, attack — found different classes of defect and barely overlapped. Two independently reached the same replacement design, which is the strongest signal available that it is right.
+
+### Open — needs Nathan
+
+- **O-1:** Ratify B-1/B-3 — writing a parent key onto a trashed artifact. This is the successor to V1's blocking question, and materially smaller: it is a key on a dead copy in `.trash`, not a pointer on a live entity.
+- **O-2:** Confirm A-5 — that D-15 does **not** fold in after all, against the earlier expectation that it would.
+- **O-3:** Confirm D-2 — leaving the Remove cache alone, reversing V1's absorb-both.
+- **O-4:** Where a compare result should surface. Core needs somewhere for it to land, and nothing is designed.
