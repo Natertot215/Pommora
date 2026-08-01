@@ -5,7 +5,7 @@
 // under its own file lock.
 
 import { readFile, rename } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 import {
   contextKey,
   invalidContextTitle,
@@ -65,10 +65,11 @@ function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | nu
 }
 
 /** Sweep every context-bearing root through `rewrite` (null = untouched), each under
- *  its file lock. The one walk every key/value cascade and unlink shares. */
+ *  its file lock. The one walk every key/value cascade and unlink shares; the callback
+ *  gets the root's absolute path beside its parsed form. */
 export async function sweepContextRoots(
   root: string,
-  rewrite: (raw: Raw) => Raw | null,
+  rewrite: (raw: Raw, file: string) => Raw | null,
 ): Promise<{ touched: string[]; skipped: string[] }> {
   const touched: string[] = []
   const skipped: string[] = []
@@ -84,7 +85,7 @@ export async function sweepContextRoots(
       }
       if (!sweepAdmits(content)) return
       const raw = splitFrontmatter(content)
-      const next = rewrite(raw)
+      const next = rewrite(raw, file)
       if (next === null) return
       const keys = new Set([...Object.keys(raw), ...Object.keys(next)])
       const governed = [...keys].filter(isGovernedContextKey)
@@ -105,7 +106,7 @@ export async function sweepContextRoots(
         skipped.push(file)
         return
       }
-      const next = rewrite(raw)
+      const next = rewrite(raw, file)
       if (next === null) return
       await writeJson(file, next)
       touched.push(file)
@@ -128,14 +129,20 @@ export async function cascadeTitle(
   return ok(await sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j)))
 }
 
-/** Strip a deleted Context's parenthesized KEY from every context-bearing root. */
+/** Strip a deleted Context's parenthesized KEY from every context-bearing root. A root under
+ *  `skipUnder` is a passenger — leaving with its owner, its key still true inside the subtree
+ *  the same operation ships to trash — so the delete arm passes its resolved target and the
+ *  sweep leaves the subtree intact. The rename cascade never skips: its subtree stays live. */
 export async function unlinkContextKey(
   root: string,
   contextTitle: string,
+  skipUnder?: string,
 ): Promise<Result<{ touched: string[]; skipped: string[] }>> {
   const key = contextKey(contextTitle)
+  const skipPrefix = skipUnder ? skipUnder + sep : null
   return ok(
-    await sweepContextRoots(root, (raw) => {
+    await sweepContextRoots(root, (raw, file) => {
+      if (skipPrefix && file.startsWith(skipPrefix)) return null
       if (!(key in raw)) return null
       const next = { ...raw }
       delete next[key]
