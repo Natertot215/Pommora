@@ -53,7 +53,7 @@
 ### Core (must-have)
 
 - The bundle primitive (mint / settle) replacing `trashWithTimestamp` for nexus-trash deletes.
-- Write-ahead reordering of all four delete arms, with B-3/B-4 refusal semantics.
+- Write-ahead reordering of all four delete arms — pure ordering, no guards (B-3, B-4).
 - Bundle-based restore and listing; prune deleted.
 - Property deletes as artifact-less bundles.
 - Docs and tests trued.
