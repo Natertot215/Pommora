@@ -129,22 +129,63 @@ export async function pathExists(p: string): Promise<boolean> {
   }
 }
 
-/**
- * Move a file/folder into the nexus-local `.trash/`, keeping the folder chain it was deleted
- * from and stamping the leaf. `.trash` reads as a shadow of the nexus, so a deleted page shows
- * where it lived and can be put back by dropping the stamp — the layout IS the restore record.
- * Files stay canonical and recoverable (in-nexus, not OS trash). Returns the destination path.
- */
-export async function trashWithTimestamp(nexusRoot: string, absPath: string): Promise<string> {
-  // The source's unlink echo is our own write (the .trash destination is unwatched).
-  recordWrite(absPath)
+export const BUNDLE_SUFFIX = '.deleted'
+
+/** The `.trash` directory mirroring the chain a path was deleted from. `.trash` reads as a
+ *  shadow of the nexus, so a deleted page shows where it lived. A path that isn't under the
+ *  root has no chain to mirror, and following its `..` would write outside the trash entirely —
+ *  it lands flat instead. */
+async function trashChainDir(nexusRoot: string, absPath: string): Promise<string> {
   const rel = relative(nexusRoot, absPath)
-  // A path that isn't under the root has no chain to mirror, and following its `..` would write
-  // outside the trash entirely — it lands flat instead.
   const chain = rel && !rel.startsWith('..') && !isAbsolute(rel) ? dirname(rel) : '.'
   const dir = join(nexusRoot, '.trash', chain)
   await mkdir(dir, { recursive: true })
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  return dir
+}
+
+const trashStamp = (): string => new Date().toISOString().replace(/[:.]/g, '-')
+
+/**
+ * Create the empty bundle folder a deletion will fill: `<stamp>__<base>.deleted/` under the
+ * mirrored chain. Nothing is destroyed — minting is the first half of a delete, and the record
+ * lands inside before the artifact moves.
+ *
+ * The `mkdir` is deliberately NON-recursive so `EEXIST` actually fires: recursive mkdir accepts
+ * an existing directory, and two same-instant deletes would then share one bundle.
+ */
+export async function mintBundle(nexusRoot: string, absSource: string): Promise<string> {
+  const dir = await trashChainDir(nexusRoot, absSource)
+  const stamp = trashStamp()
+  const base = basename(absSource)
+  for (let n = 0; ; n++) {
+    const bundle = join(dir, `${stamp}__${n ? `${n}__` : ''}${base}${BUNDLE_SUFFIX}`)
+    try {
+      await mkdir(bundle)
+      return bundle
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e
+    }
+  }
+}
+
+/** Move the artifact into its minted bundle under its ORIGINAL basename — the last step of a
+ *  delete, and the settle marker: a content bundle holding no artifact is an incomplete one. */
+export async function settleBundle(bundleDir: string, absPath: string): Promise<string> {
+  const dest = join(bundleDir, basename(absPath))
+  // The source's unlink echo is our own write (the .trash destination is unwatched).
+  recordWrite(absPath)
+  recordWrite(dest)
+  await rename(absPath, dest)
+  return dest
+}
+
+/** Trash a bare file with no record and no bundle, under a stamped leaf. A markdown-block tile
+ *  is not an entity — it has no identity to record and no restore semantics — so it takes this
+ *  rather than a bundle. Returns the destination path. */
+export async function trashFileFlat(nexusRoot: string, absPath: string): Promise<string> {
+  recordWrite(absPath)
+  const dir = await trashChainDir(nexusRoot, absPath)
+  const stamp = trashStamp()
   const base = basename(absPath)
   let dest = join(dir, `${stamp}__${base}`)
   for (let n = 1; await pathExists(dest); n++) dest = join(dir, `${stamp}__${n}__${base}`)

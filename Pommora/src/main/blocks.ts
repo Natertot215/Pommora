@@ -22,7 +22,7 @@ import { normalizeTitle } from '@shared/connections'
 import { scanConnections } from './connections/scan'
 import { rewriteConnections } from './connections/rewrite'
 import { newId } from './ids'
-import { atomicWriteFile, pathExists, trashWithTimestamp } from './io/atomicWrite'
+import { atomicWriteFile, pathExists, trashFileFlat } from './io/atomicWrite'
 import { serializeOnFile } from './io/fileLock'
 import { loadContextWorld } from './crud/contextWrite'
 import { blockHostDir } from './paths'
@@ -112,7 +112,7 @@ export async function removeBlockTile(
 async function trashTileFile(root: string, host: BlockHostRef, tileId: string): Promise<void> {
   const file = await blockFilePath(root, host, tileId)
   await serializeOnFile(file, async () => {
-    if (await pathExists(file)) await trashWithTimestamp(root, file)
+    if (await pathExists(file)) await trashFileFlat(root, file)
   })
 }
 
