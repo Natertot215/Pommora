@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -11,6 +11,7 @@ import {
   projectBaseline,
   readBaseline,
   readDrift,
+  runOpenRecord,
   writeBaseline,
   writeDrift,
 } from './record'
@@ -204,6 +205,36 @@ describe('latchBaseline', () => {
     })
   })
 
+  it('an unusable registry carries every prior context and space as unreadable', () => {
+    const prior: Baseline = {
+      'ctx-areas': {
+        id: 'ctx-areas',
+        kind: 'context',
+        title: 'Areas',
+        path: '.nexus/contexts/Areas',
+        state: 'present',
+      },
+      'space-personal': {
+        id: 'space-personal',
+        kind: 'space',
+        title: 'Personal',
+        path: '.nexus/contexts/Areas/Personal',
+        state: 'present',
+      },
+      'page-gone': {
+        id: 'page-gone',
+        kind: 'page',
+        title: 'Gone',
+        path: 'Library/Gone.md',
+        state: 'present',
+      },
+    }
+    const latched = latchBaseline(projected(), ['.nexus/contexts.json'], prior)
+    expect(latched['ctx-areas']).toEqual({ ...prior['ctx-areas'], state: 'unreadable' })
+    expect(latched['space-personal']).toEqual({ ...prior['space-personal'], state: 'unreadable' })
+    expect(latched['page-gone']).toBeUndefined()
+  })
+
   it('a duplicated id whose recorded path is unreadable defers, never guesses', () => {
     const prior: Baseline = {
       'page-dup': {
@@ -274,5 +305,59 @@ describe('the record rows', () => {
     expect(readDrift()).toBeNull()
     expect(writeBaseline({})).toBe(false)
     expect(writeDrift({ added: [], removed: [], changed: [] })).toBe(false)
+  })
+})
+
+describe('runOpenRecord — the open sequence', () => {
+  const NOTES = '01KVGMT8BFG350FZZXAMG1QDRW'
+  let root: string
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), 'pom-open-'))
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'nexus.json'),
+      JSON.stringify({ id: 'nx-open', createdAt: '2026' }),
+    )
+    await mkdir(join(root, 'Library'))
+    await writeFile(join(root, 'Library', '_pagecollection.json'), JSON.stringify({ id: 'col-lib' }))
+    await writeFile(join(root, 'Library', 'Notes.md'), `---\nPageID: ${NOTES}\n---\nbody`)
+    openSessionDb(root)
+  })
+  afterEach(async () => {
+    closeSessionDb()
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('latches silently, names a closed-window rename, and an uneventful open preserves the drift', async () => {
+    await runOpenRecord(root)
+    expect(readDrift()).toBeNull()
+    expect(readBaseline()?.[NOTES]?.path).toBe('Library/Notes.md')
+
+    await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'Journal.md'))
+    await runOpenRecord(root)
+    const drift = readDrift()
+    expect(drift?.added).toEqual([])
+    expect(drift?.removed).toEqual([])
+    expect(drift?.changed).toHaveLength(1)
+    expect(drift?.changed[0].before.path).toBe('Library/Notes.md')
+    expect(drift?.changed[0].after.path).toBe('Library/Journal.md')
+
+    await runOpenRecord(root)
+    expect(readDrift()).toEqual(drift)
+    expect(readBaseline()?.[NOTES]?.path).toBe('Library/Journal.md')
+  })
+
+  it('a failed walk retains the prior baseline and the open proceeds', async () => {
+    await runOpenRecord(root)
+    const first = readBaseline()
+    await expect(runOpenRecord(join(root, 'no-such-root'))).resolves.toBeUndefined()
+    expect(readBaseline()).toEqual(first)
+  })
+
+  it('a nexus with zero entities latches an empty baseline — written, not skipped', async () => {
+    await rm(join(root, 'Library'), { recursive: true, force: true })
+    await runOpenRecord(root)
+    expect(readBaseline()).toEqual({})
+    expect(readDrift()).toBeNull()
   })
 })
