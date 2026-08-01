@@ -2,25 +2,24 @@
 
 > **Status:** written, pending review · Spec: [[NexusRecord — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
+> **Scope ruling (Nathan):** this build is the journal only — the pair and the baseline are written; nothing spends them. Restore is sequenced after.
 
 **Goal**
 
-Pommora gains the ability to answer *where was this* — in two independent halves. **Provenance:** every delete writes one paired JSON beside the trashed artifact recording what departed and where it belonged (by id, never by name), and a restore resolves that pair against the *current* tree, so a page trashed from a folder that has since been renamed goes home to the renamed folder. **Baseline:** every open compares what the walk sees against what the last session's walk saw, records the drift silently, and uses the prior baseline to adjudicate duplicated ids — the copy re-mints, the original keeps everything keyed to it.
+Pommora gains a memory of *where things were* — written, never yet read back. **Provenance:** every nexus-trash delete writes one paired JSON beside the trashed artifact recording what departed and where it belonged, by id and never by name, so a future restore build can resolve it against whatever the tree looks like then. **Baseline:** every open compares what the walk sees against what the last session's walk saw, records the drift silently, and uses the prior baseline to adjudicate duplicated ids — the copy re-mints, the original keeps everything keyed to it.
 
-This shape was settled over four adversarial review rounds. The pair lives *beside* the artifact rather than inside it (one mechanism for every kind including sidecar-less Contexts; no lock against the autosave; no strip pass on restore) and rather than in a central document (`.nexus/` is watched, a per-gesture rewrite buys re-walks, and central entries with no consumer never get spent). The baseline lives in `nexus.db` because it is derived and per-machine. Restore joins on the resolver's **final** titles, never recorded ones, because title uniqueness holds only at a moment. Nathan ratified: ids-never-names on any stored location · compare silent · duplicates re-mint with the baseline as adjudicator · Context records carry `{id, title}` Spaces · the feature absorbs its adjacent residue now.
+The shape was settled over four adversarial review rounds. The pair lives *beside* the artifact rather than inside it (one mechanism for every kind including sidecar-less Contexts; no lock against the autosave; no strip pass later) and rather than in a central document (`.nexus/` is watched, a per-gesture rewrite buys re-walks, and a central store's entries have nothing co-located to die with — pairs die with their artifacts, which is what keeps a journal with no spender bounded). The baseline lives in `nexus.db` because it is derived and per-machine. Nathan ratified: ids-never-names on any stored location · compare silent · duplicates re-mint with the baseline as adjudicator · Context records carry `{id, title}` Spaces · the feature absorbs its adjacent residue now · **restore out of scope**.
 
-Deliberately not solved here: content versioning, un-adopted entities, sync conflict, system-trash-mode restore, block tiles, agenda kinds, any browse surface (Prospects all).
+Deliberately not solved here: restore in any form (resolver, op, trigger — spec section E holds their settled design for the build that constructs them), content versioning, un-adopted entities, sync conflict, system-trash-mode recording, block tiles, agenda kinds, any surface.
 
 **Requirements** (the spec's Core, numbered)
 
 1. The pair: shape, parent union, per-kind payloads, artifact-less variant, written best-effort by the delete arm from three gather points.
-2. The resolver: a placement with final names, or a typed refusal.
-3. A minimal restore path that spends pairs.
-4. The baseline projection, the open path's one explicit walk, the union-diff with three-state existence, the last-non-empty drift row.
-5. The duplicate-id re-mint at open — content and container — baseline-adjudicated, evidence-preserving, refusing when it cannot adjudicate.
-6. Consolidation: the Delete snapshot absorbed (F-2) · residue removed (F-3) · one reconciliation loop (F-4) · one tuple owner (F-5) · the sweep never strips a passenger (G-1a) · the sweep widened honestly (G-2).
+2. The baseline projection, the open path's one explicit walk, the union-diff with three-state existence, the last-non-empty drift row.
+3. The duplicate-id re-mint at open — content and container — baseline-adjudicated, evidence-preserving, refusing when it cannot adjudicate.
+4. Consolidation: the Delete snapshot absorbed (F-2) · residue removed (F-3) · one tuple owner (F-5) · the sweep never strips a passenger (G-1a) · the sweep widened honestly (G-2).
 
-**Acceptance — the whole thing working** (no single task satisfies it): On a fixture nexus, in one sequence: a page is trashed, its parent Set renamed, and restore places it in the renamed Set · a Space tagged on three pages is deleted and restored, and the surviving pages carry its tag again · a page and a whole Collection are file-copied, and after two opens each copy holds a fresh id while every original keeps its id, folds and order slot · the drift row names what changed between the opens. All gates green; the restore surface confirmed against the running app.
+**Acceptance — the whole thing working** (no single task satisfies it): On a fixture nexus, in one sequence: a page in a Set is trashed and its pair names the Set's id · the Set itself is trashed and every page inside rides untouched, keys intact · a Space tagged on three pages is deleted and its pair carries their ids; a Context delete's pair carries its registry entry and membership map · a page and a whole Collection are file-copied, and after two opens each copy holds a fresh id while every original keeps its id, folds, and order slot · the drift row names a rename made between the opens. All gates green.
 
 **Forced By**
 
@@ -30,49 +29,45 @@ Deliberately not solved here: content versioning, un-adopted entities, sync conf
 - `prepareOpenedNexus` holds no tree → the open path gains its own explicit walk; it cannot piggyback.
 - The walk assigns `adopted-` ids to un-adopted entities → the projection filters them or every excluded folder reports as churn.
 - An emptied value deletes its key project-wide → the diff runs over the union of keys with absence first-class.
-- `contextValues` on nodes hold Space ids → a Space re-mint must re-run the attach pass, not hand-patch one node.
 - `blockDoc` rows key `space:<id>` and hold authored layout → a container re-mint re-keys rows or silently empties a board.
-- Registry order is array position → a restored Context appends; no stored position.
 - Zero `property_cache` blocks exist on either live nexus (verified) → no migration machinery anywhere.
 
 **Inherited Reasoning** (tried and ruled out — do not retry)
 
-Central `.nexus/record.json` · provenance written into the artifact's frontmatter · per-mutation baseline hooks · git as the mechanism · title as a join key · a stored registry position · an append-only ledger · absorbing the Remove cache's storage or the rename journal (each a different mechanism; see spec F-6). The spec's Considered & Rejected carries the reasons; every one was execution-tested.
+Central `.nexus/record.json` · provenance written into the artifact's frontmatter · per-mutation baseline hooks · git as the mechanism · title as a join key · a stored registry position · an append-only ledger · absorbing the Remove cache's storage or the rename journal · extracting the reconciliation loop now (one consumer is an abstraction, not a consolidation — it defers with restore). The spec's Considered & Rejected carries the reasons; every one was execution-tested.
 
 **Grounding** (re-open these; don't cite them)
 
 - [[NexusRecord — Decision Log]] — the settled spec; every task's Why traces to its decision ids.
-- `src/main/mutate.ts` — the delete arm, `removeViaMode`, `createDisambiguated`.
+- `src/main/mutate.ts` — the delete arm, `removeViaMode`.
 - `src/main/io/atomicWrite.ts` — `trashWithTimestamp`, `atomicWriteFile`, `writeJson`, strict/lenient readers.
 - `src/main/crud/contextCascade.ts` — `sweepContextRoots` + wrappers; the four `cascade.ok` branches.
-- `src/main/crud/removeProperty.ts` — `restoreCachedValues`, the loop F-4 extracts.
+- `src/main/crud/removeProperty.ts` — the cache block `removed_at` leaves.
 - `src/main/crud/deleteProperty.ts` — the snapshot F-2 absorbs.
 - `src/main/index.ts` — `adoptNexusInner`, launch-restore, `prepareOpenedNexus`, `openSessionDb` order.
-- `src/main/readNexus.ts` — the walk, the attach pass, `readPageRecord`.
-- `src/main/db/localState.ts` — the `Scope` union (9 members), `writeKey`/`readScope`.
+- `src/main/readNexus.ts` — the walk; `src/main/db/localState.ts` — the `Scope` union (9 members).
 - `src/renderer/src/treeIndex.ts` — `NodeRecord`, the shape F-5 aligns.
 - `src/shared/identity.ts` · `src/main/ids.ts` — `KIND_ID_KEY`, `isUlidShaped`, `newId`, `adoptedId`.
 - `Guidelines/Build-Gotchas.md` before any GUI run.
 
-**Environment:** Plan dir `.claude/Planning/` · spec above · explorer: Explore (none designated) · attack: `build-breaking-agent` (designated) · code review: general-purpose scoped to correctness (none designated — deliberate fallback) · verifier: general-purpose · simplification: `code-simplifier` + comment pass `comment-killer-agent` (designated) · gates below · rules `Guidelines/` · reviews as standard agents, never Workflow.
+**Environment:** Plan dir `.claude/Planning/` · spec above · explorer: Explore (none designated) · attack: `build-breaking-agent` (designated) · code review: general-purpose scoped to correctness (none designated — deliberate fallback) · verifier: general-purpose · simplification: `code-simplifier` + `comment-killer-agent` (designated) · gates below · rules `Guidelines/` · reviews as standard agents, never Workflow.
 
-**Shapes:** additive (module, ops, baseline — failing test first) · fix (G-1a, with sibling sweep) · removal (F-3 residue, compiler-enumerated) · user-visible (the restore trigger — interaction pass + Nathan's live check) · live-data (never run against a real nexus; fixtures + `TEST_NEXUS_PATH` only).
+**Shapes:** additive (module, baseline, pair — failing test first) · fix (G-1a, with sibling sweep) · removal (F-3 residue, compiler-enumerated) · live-data (never run against a real nexus; fixtures + `TEST_NEXUS_PATH` only). No user-visible surface ships.
 
 **Global Constraints (every task inherits):**
 - Gates from `Pommora/`, exit codes read directly, never piped: `env -u ELECTRON_RUN_AS_NODE npm run typecheck` · `npx biome lint src` (0 warnings) · `npx vitest run` · `env -u ELECTRON_RUN_AS_NODE npm run build`. Baseline 174 files / 1904 tests — additive only.
 - Biome formats on write; never run it, never hand-align. Comments why-only, no value restatement, no plan references. `KNOB`/`(Nathan's call)` markers survive.
 - Explicit-path staging; commit per task; docs ride the commit that falsifies them.
-- No keybindings without Nathan's per-shortcut sign-off. No second app instance against a live nexus.
-- Out of scope everywhere: the Remove cache's storage · the rename journal · order arrays · block-tile pairs · agenda kinds · any browse surface.
+- No second app instance against a live nexus.
+- Out of scope everywhere: restore, the resolver, any listing or surface · the Remove cache's storage · the rename journal · order arrays · block-tile pairs · agenda kinds.
 
 **Made False**
 
-| Doc | Claim | What falsifies it | Task |
+| Doc | Claim | What makes it false | Task |
 | --- | --- | --- | --- |
-| `Features/Architecture.md` | "Nothing browses or restores the trash; the path record it needs is on disk." | The pair + restore op | 12 |
-| `Features/Architecture.md` | trash layout shows only mirrored chain + stamped leaf | pair files beside artifacts | 8 |
-| `Features/Contexts.md` | Space/Context delete described without capture or restore | pair payloads + restore | 12 |
-| `Features/Properties.md` | Delete snapshot described as path-keyed file nothing reads | artifact-less pair variant | 9 |
+| `Features/Architecture.md` | trash layout shows only mirrored chain + stamped leaf | pair files beside artifacts | 10 |
+| `Features/Contexts.md` | Space/Context delete described without capture | pair payloads | 10 |
+| `Features/Properties.md` | Delete snapshot described as path-keyed file nothing reads | artifact-less pair variant | 10 |
 
 **Dead Vocabulary**
 - `removed_at` → expect 0. Legitimate hits: none (source + tests all convert).
@@ -84,7 +79,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 #### Task 1: The shared record shape
 
-**Requirement:** 4, 6(F-5)
+**Requirement:** 2, 4(F-5)
 
 **Why:** The `{id, kind, title, path}` tuple exists today as `treeIndex.NodeRecord` (renderer) and is about to exist again in main — the exact two-spellings failure the `.MD` bug taught. One owner in `src/shared/` before either half is built. Kind is `NodeKind | 'context'` (spec C-6): Contexts are trashable and id-bearing but carry no node kind.
 
@@ -95,7 +90,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 **Interfaces**
 - Produces: the types above; `diffBaselines(prev, next): BaselineDiff` (pure, union-of-keys, absence first-class, scalar fields only).
-- Assumed by: Tasks 2, 3, 4 (projection, open wiring, re-mint), Task 11 (resolver reads `EntityRecord`).
+- Assumed by: Tasks 2, 3, 4 (projection, open wiring, re-mint).
 
 **Failure half:** empty maps both sides → empty diff, not a report · one side null is NOT handled here (T3 owns absent-baseline) · an id present both sides with `state: 'unreadable'` on one → an `unreadable` transition, never a delete.
 
@@ -107,7 +102,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 #### Task 2: The baseline projection and its rows
 
-**Requirement:** 4
+**Requirement:** 2
 
 **Why:** The baseline is a projection of the tree main already holds at open — never a second walk. It filters `adopted-` ids (spec A-3: an address, not an identity) and includes Contexts from the tree's `contexts` array. Rows live in `nexus.db` under a new `record` scope: baseline, drift (last non-empty), ambiguous ids.
 
@@ -134,9 +129,9 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 #### Task 3: The open path owns one walk
 
-**Requirement:** 4
+**Requirement:** 2
 
-**Why:** Spec C-2: latching to "whichever walk runs first" loses to the watcher on launch-restore — a sync daemon's changes would become the baseline instead of the drift. `adoptNexusInner` and launch-restore walk once, explicitly, after `openSessionDb`; prior baseline read → diff → drift written only if non-empty (C-7) → new baseline written. Absent prior baseline: latch, report nothing (C-2a). The renderer's own `nexus:state` walk is untouched — it runs after the open path completes, so it sees post-re-mint disk, and the warm parse cache makes it stat-only. This satisfies C-2's hand-off *intent* (the baseline latches pre-watcher; the first render shows re-minted ids) without rewiring the state IPC; T13 aligns the spec's wording to this reading.
+**Why:** Spec C-2: latching to "whichever walk runs first" loses to the watcher on launch-restore — a sync daemon's changes would become the baseline instead of the drift. `adoptNexusInner` and launch-restore walk once, explicitly, after `openSessionDb`; prior baseline read → diff → drift written only if non-empty (C-7) → new baseline written. Absent prior baseline: latch, report nothing (C-2a). The renderer's own `nexus:state` walk is untouched — it runs after the open path completes, so it sees post-re-mint disk, and the warm parse cache makes it stat-only. This satisfies C-2's hand-off *intent* (the baseline latches pre-watcher; the first render shows re-minted ids) without rewiring the state IPC; T10 aligns the spec's wording to this reading.
 
 **Files:**
 - Modify: `src/main/index.ts` — both open sites (the pair of `prepareOpenedNexus` + `replayPendingRename` callers).
@@ -165,7 +160,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 #### Task 4: Detection and adjudication
 
-**Requirement:** 5
+**Requirement:** 3
 
 **Why:** Spec A-5. The walk sees every file once; ids seen at 2+ paths are the duplicate set. The **prior** baseline names the legitimate path — what sits there is the original, everything else re-mints. No baseline, or no claimant at the recorded path → refuse; recorded path gone entirely → drop to unadjudicable. Ambiguous ids leave the diff (their baseline path is stale by construction).
 
@@ -189,7 +184,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 #### Task 5: The re-mint writes
 
-**Requirement:** 5
+**Requirement:** 3
 
 **Why:** Executing a re-mint means: page → rewrite the kind key under the file lock (`serializeOnFile` + `mergeFrontmatter`); container → `writeSidecar` with the new id; then **re-key** the device-local rows the old id keys — `blockDoc` (`space:<id>` — authored layout, spec: "a Space re-mint silently empties its board"), `activeView`, `folds`, `headingCols`, preview origins. Thumbnails drop (regenerable, evicted anyway). Order arrays untouched (`resolveOrder` re-enters by title). Asset pointers untouched (stored rel paths travel). Then the open-path tree: patch the node ids so the baseline projection records the re-minted state. Nothing more — the handed tree's only consumer is the projection, whose fields are scalars; `contextValues` never enter it, and the renderer walks fresh after the re-mint completes (T3), so the spec's attach-pass clause is satisfied with no consumer left to need it.
 
@@ -212,7 +207,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 #### Gate 2 — duplicates resolve, originals never move
 - [ ] Gates green; simplification + review on the range; concerns fixed or ruled.
 - [ ] The negative controls hold in both directions.
-- [ ] Re-assess: does the T3 hook order (walk → re-mint → baseline → renderer) hold as built? Rewrite T6+ if any interface drifted.
+- [ ] Re-assess: does the T3 hook order (walk → re-mint → baseline) hold as built? Rewrite T6+ if any interface drifted.
 
 ---
 
@@ -220,9 +215,9 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 #### Task 6: The sweep never strips a passenger
 
-**Requirement:** 6(G-1a) · **Shape: fix** — sibling sweep mandatory.
+**Requirement:** 4(G-1a) · **Shape: fix** — sibling sweep mandatory.
 
-**Why:** The unlink sweeps enumerate every `_space.json` under `contextsDir`, including those inside the Context being deleted — stripping keys that are still true inside the subtree the same operation ships to trash (execution-verified). Restore would return a Context with its internal Space-to-Space links destroyed. Fix at source: roots under the delete target are skipped by path prefix.
+**Why:** The unlink sweeps enumerate every `_space.json` under `contextsDir`, including those inside the Context being deleted — stripping keys that are still true inside the subtree the same operation ships to trash (execution-verified). A hand-restore today, or any future restore, returns a Context with its internal Space-to-Space links destroyed. Fix at source: roots under the delete target are skipped by path prefix.
 
 **Files:**
 - Modify: `src/main/crud/contextCascade.ts` — `unlinkContextKey` / `unlinkSpaceValue` gain the target-prefix skip (threaded from the delete arm).
@@ -239,9 +234,9 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 #### Task 7: The sweep tells the truth about what it did
 
-**Requirement:** 6(G-2), 1
+**Requirement:** 4(G-2), 1
 
-**Why:** Membership capture needs the values and the identity at the moment of removal; the sweep computes both and returns neither. Spec G-2 prices it honestly: the callback gains the file path, the return gains captured entries, and a **third list** for admission-refused roots (a dual-key page keeps its context key and today appears nowhere). Additive for all three consumers.
+**Why:** The pair's membership payload needs the values and the identity at the moment of removal; the sweep computes both and returns neither. Spec G-2 prices it honestly: the callback gains the file path, the return gains captured entries, and a **third list** for admission-refused roots (a dual-key page keeps its context key and today appears nowhere). Additive for all three consumers.
 
 **Files:**
 - Modify: `src/main/crud/contextCascade.ts` — `sweepContextRoots` signature; `unlinkContextKey` / `unlinkSpaceValue` return `{ touched, skipped, refused, captured }`.
@@ -252,7 +247,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 **Interfaces**
 - Produces: `SweepCapture { id, kind: 'page' | 'space', values }[]` per swept root, discriminated by which id key the root carries.
-- Assumed by: Task 8 (the pair's membership payload), Task 12 (restore re-applies).
+- Assumed by: Task 8 (the pair's membership payload).
 
 **Failure half:** a refused root → listed, never captured, never touched · a root with the key but no id → touched, captured with no id entry (unrestorable, honest) · zero captures → empty list, not absent.
 
@@ -264,22 +259,22 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 **Requirement:** 1
 
-**Why:** Spec B-1..B-7. One JSON beside the trashed artifact, named from `trashWithTimestamp`'s returned leaf. Gathered at the three fixed points; parent as the discriminated union (B-4); per-kind payloads (B-5); all-or-nothing per pair; best-effort — a pair failure never fails the delete. `trashTileFile` writes no pair (A-4).
+**Why:** Spec B-1..B-7. One JSON beside the trashed artifact, named from `trashWithTimestamp`'s returned leaf. Gathered at the three fixed points; parent as the discriminated union (B-4); per-kind payloads (B-5); all-or-nothing per pair; best-effort — a pair failure never fails the delete. `trashTileFile` writes no pair (A-4). No reader ships in this build — the pair format's module header is the on-disk contract the restore build reads.
 
 **Files:**
-- Create: `src/main/provenance.ts` — pair shape (zod, loose), `gatherProvenance(kind, abs, root, capture)`, `writePair(dest, pair)`, `readPair(dest)`.
+- Create: `src/main/provenance.ts` — pair shape (zod, loose), `gatherProvenance(kind, abs, root, capture)`, `writePair(dest, pair)`, `readPair(dest)` (the round-trip half of the contract; tests are its only caller in this build).
 - Modify: `src/main/mutate.ts` — the delete arm: gather before erase/move, write after; `removeViaMode` threads the destination back; system-trash arm writes nothing (B-6).
 - Test: `src/main/provenance.test.ts` — the pair matrix per kind on fixture nexuses.
 
 **Interfaces**
-- Produces: the pair file format (documented in the module header as the on-disk contract) and `readPair`.
-- Assumed by: Tasks 9, 11, 12.
+- Produces: the pair file format, documented in the module header as the on-disk contract.
+- Assumed by: Task 9 (the artifact-less variant), the restore build (sequenced after).
 
 **Failure half:** parent sidecar unreadable at gather → parent `unaddressable`, pair still written (parent is not a required payload) · required payload gather fails (Context registry entry unreadable) → **no pair at all** (spec B-1) · pair write throws → delete reply still ok · trash move itself fails → no pair attempted, the existing error path is untouched.
 
 **Negative control:** the all-or-nothing rule — break the registry read in a fixture, delete a Context, assert no pair exists; restore the read, assert the pair carries the entry.
 
-**Must agree:** the pair's recorded parent id must be resolvable by Task 11's resolver against the same fixture tree — one test crosses gather and resolve.
+**Must agree:** `writePair` → `readPair` round-trips byte-stable per kind, and the recorded parent id matches the id the walk assigns that folder in the same fixture — one test crosses the gather and the walk.
 
 **Steps:**
 - [ ] Failing tests per kind: page, Set (parent id), root Collection (parent root), Space (membership), Context (registry entry + membership map), dual-mode (system trash → no pair).
@@ -288,9 +283,9 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 #### Task 9: Absorb the snapshot; remove the residue
 
-**Requirement:** 6(F-2, F-3) · **Shape: removal** — inventory below is the bucketing.
+**Requirement:** 4(F-2, F-3) · **Shape: removal** — inventory below is the bucketing.
 
-**Why:** The Delete snapshot is the pair's artifact-less variant (nothing is trashed; the orphan prune exempts it). The residue is dead regardless: `removed_at` written and never read; four `cascade.ok` branches whose precondition every caller resolves; the stale `crud delete*` comment.
+**Why:** The Delete snapshot is the pair's artifact-less variant (nothing is trashed; a future orphan prune exempts it). The residue is dead regardless: `removed_at` written and never read; four `cascade.ok` branches whose precondition every caller resolves; the stale `crud delete*` comment.
 
 **Files:**
 - Modify: `src/main/crud/deleteProperty.ts` — the raw `writeFile` snapshot becomes a `provenance.ts` variant write (atomic, de-collided).
@@ -311,93 +306,24 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 - [ ] Remove residue; let the type gate enumerate fallout; gates green.
 - [ ] Commit: `refactor(crud): the snapshot joins the pair; the residue leaves`
 
-#### Gate 3 — every delete leaves a truthful record
-- [ ] Gates green; simplification + review on the range; concerns fixed or ruled.
-- [ ] Derivations re-run: `removed_at` 0, `cascade.ok` 0, control 15.
-- [ ] The G-1a fix's both controls re-confirmed post-widening.
-
----
-
-### Phase 4 — The resolver spends the pairs
-
-#### Task 10: One reconciliation loop
-
-**Requirement:** 6(F-4)
-
-**Why:** Tag re-application is the Remove cache's spend-per-landed-write shape. Extract the loop from `restoreCachedValues`, point both at it. The cache's storage and type-revalidation branches stay in place — only the iteration/spend skeleton moves.
-
-**Files:**
-- Create: `src/main/crud/reconcile.ts` — the loop: entries → attempt write → spend on landed, keep on refused, skip on gone.
-- Modify: `src/main/crud/removeProperty.ts` — `restoreCachedValues` consumes it; behavior identical (its tests pass unmodified — the refactor invariant).
-- Test: `reconcile.test.ts` + the untouched existing suite as the baseline invariant.
-
-**Interfaces**
-- Produces: `reconcile(entries, apply): { spent, kept }`.
-- Assumed by: Task 12.
-
-**Steps:**
-- [ ] Extract; existing removeProperty tests pass **unmodified**; gates green.
-- [ ] Commit: `refactor(crud): one spend-per-landed-write loop`
-
-#### Task 11: The resolver
-
-**Requirement:** 2
-
-**Why:** Spec E-1..E-5. Pure decision: pair + current tree → `{ place: { dir, finalName, finalTitle? } } | { refuse: reason }`. Reasons: parent gone · parent cannot hold this kind · parent unaddressable · trashed outside the nexus · id already live. Collisions disambiguate for every kind, Contexts included — the resolver returns final names; choosing is deciding (E-2/E-3). A child of a still-trashed parent refuses (E-4).
-
-**Files:**
-- Create: resolver in `src/main/provenance.ts` (the pair's one reader — same module, spec: the halves share a module and nothing else).
-- Test: the resolver matrix in `provenance.test.ts`.
-
-**Failure half:** parent id resolves to a folder that is now the *wrong kind* → refuse (cannot hold) · recorded parent AND a live id collision together → the id refusal wins (nothing may write) · malformed pair JSON → refuse as unreadable, never throw.
-
-**Must agree:** the resolver's "parent gone" and the walk's admission must agree on what exists — the shared fixture crosses both (a resolver that consults a stale tree would place into a folder the walk refuses).
-
-**Steps:**
-- [ ] Failing matrix tests; implement; gates green.
-- [ ] Commit: `feat(provenance): the resolver decides; a placement or a typed refusal`
-
-#### Task 12: Restore
-
-**Requirement:** 3 · **Coordination point (live data + design):** the trigger surface needs Nathan's pick before this task's final step; the op and IPC land regardless.
-
-**Why:** The mover: a `restore` mutate op takes a trash-relative pair reference, calls the resolver, executes the placement — move the artifact (drop the stamp, apply final name), delete the pair, and per kind: re-insert the Context registry entry (append, final title), re-apply membership through Task 10's loop under final titles, re-apply the Space list. Branches on nothing (E-2).
-
-**Files:**
-- Modify: `src/shared/mutate.ts` — the `restore` op; `src/main/mutate.ts` — the arm.
-- Modify: `src/main/provenance.ts` — `listPairs(root)` for the trigger (prunes orphans as encountered, exempting the artifact-less variant — B-7).
-- Test: end-to-end fixture tests — the acceptance criterion's first two sequences live here.
-
-**Interfaces**
-- Consumes: T8 pairs, T10 loop, T11 resolver.
-- Assumed by: the trigger surface (final step) and the docs task.
-
-**Failure half:** artifact gone but pair present → orphan; listing prunes it · restore into a parent that vanished between list and click → the resolver re-runs inside the op; refusal surfaces as the op's error · membership re-apply partially lands → loop semantics: spent entries spent, kept entries reported, never a rollback of the placed artifact.
-
-**Steps:**
-- [ ] Failing end-to-end tests (renamed-parent restore; Space round-trip with tags).
-- [ ] Implement op + arm; gates green.
-- [ ] **HOLD — Nathan picks the trigger** (hypothesis: an app-menu "Restore Recently Deleted…" listing the newest pairs with a confirm naming what and where; no keybinding).
-- [ ] Build the picked trigger; interaction sweep; CDP screenshot or Nathan's live check.
-- [ ] Commit: `feat(trash): restore — the pair spends`
-
-#### Task 13: The record tells the docs
+#### Task 10: The record tells the docs
 
 **Requirement:** closes the Made False ledger.
 
-**Why:** Docs ride the commit that falsifies them; these four outlived their commits only because the plan batches doc-truth at the surface's landing.
+**Why:** Docs ride the commit that falsifies them; these three claims go false across Phase 3 and are trued here with the History and Handoff entries.
 
-**Files:** the four Made False entries + `History.md` (one entry, durable voice) + `Handoff.md` session block.
+**Files:** the three Made False entries + `History.md` (one entry, durable voice) + `Handoff.md` session block + the spec's C-2/A-5 hand-off wording aligned to the as-built reading (T3/T5's Whys carry the reasoning).
 
 **Steps:**
 - [ ] Rewrite each claim; closing sweep: `removed_at` → 0 against control `property_cache` → 15.
-- [ ] Align the spec's C-2/A-5 hand-off wording to the as-built reading (T3/T5's Whys carry the reasoning).
-- [ ] Commit: `docs(record): the trash carries its provenance and the docs say so`
+- [ ] Commit: `docs(record): the journal exists and the docs say so`
 
-#### Gate 4 — the acceptance criterion, whole
-- [ ] The acceptance sequence runs green as tests; the trigger confirmed against the running app.
-- [ ] Simplification + review on the phase range; comment-killer pass on the full plan diff; concerns fixed or ruled.
-- [ ] Closeout per the skill: Delivery Claim → neutral verifier (against the SPEC) → attack pass → Nathan's live check.
+#### Gate 3 — every delete leaves a truthful record
+- [ ] Gates green; simplification + review on the phase range; comment-killer pass on the full plan diff; concerns fixed or ruled.
+- [ ] Derivations re-run: `removed_at` 0, `cascade.ok` 0, control 15.
+- [ ] The G-1a fix's both controls re-confirmed post-widening.
+- [ ] The acceptance sequence runs green as tests.
+- [ ] Closeout per the skill: Delivery Claim → neutral verifier (against the SPEC) → attack pass → Nathan's word on the live check (pairs inspectable by hand in `.trash`).
 
 ---
 
@@ -416,18 +342,17 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
   - [ ] Task 7 — the sweep tells the truth
   - [ ] Task 8 — the pair
   - [ ] Task 9 — absorb the snapshot; remove the residue
-- [ ] **Phase 4** — the resolver spends the pairs
-  - [ ] Task 10 — one reconciliation loop
-  - [ ] Task 11 — the resolver
-  - [ ] Task 12 — restore
-  - [ ] Task 13 — the record tells the docs
+  - [ ] Task 10 — the record tells the docs
 
 ### Rulings
+- Restore is out of scope for this build — the journal is the deliverable (Nathan, pre-ratification).
+
 ### Open Against Later Tasks
 ### Deviations
 ### Lessons
 ### Sequenced After
-- The trash browse surface and any compare surface (Prospects — both read what Core records).
+- **Restore** — the resolver, the op, a minimal trigger, then the browse surface. Spec section E holds the settled design; the reconciliation-loop extraction (spec F-4) lands with it.
+- Any compare surface (reads the drift row Core records).
 - Crash-safe cascades on the pair + settle shape.
 - The rename cascade's refused list has no consumer (pre-existing; noted by the verification round).
 
