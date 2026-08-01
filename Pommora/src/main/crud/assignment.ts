@@ -46,8 +46,9 @@ export function withoutCacheBlock(
 }
 
 // Unchained internals — the chained publics compose them; a chained fn awaiting another
-// chained fn would deadlock the schema chain.
-async function assignInner(
+// chained fn would deadlock the schema chain. `assignInner` is exported for exactly that reason:
+// the property restore is itself a chained op and composes the assign inside its own slot.
+export async function assignInner(
   root: string,
   collectionFolder: string,
   propertyId: string,

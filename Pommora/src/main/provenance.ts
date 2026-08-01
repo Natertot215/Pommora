@@ -20,6 +20,7 @@ import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import { mutateRegistryFile } from './contextsRegistry'
 import type { SweepCapture, UnlinkOutcome } from './crud/contextCascade'
 import { reconcile } from './crud/reconcile'
+import { restoreProperty } from './crud/restoreProperty'
 import { sweepAdmits } from './crud/util'
 import { hiddenName } from './exclusion'
 import { BUNDLE_SUFFIX, mintBundle, pathExists, readJsonObject, writeJson } from './io/atomicWrite'
@@ -74,6 +75,9 @@ export const recordFile = z.discriminatedUnion('entity', [
     def: z.looseObject({ id: z.string() }),
     /** Page id → the raw value the scrub stripped. Ids, never paths. */
     values: z.record(z.string(), z.unknown()),
+    /** Collection sidecar ids that assigned it — without these a restored property belongs to
+     *  nothing and shows nowhere. Absent on records written before it was recorded. */
+    assignments: z.array(z.string()).optional(),
     partial: z.literal(true).optional(),
   }),
   z.looseObject({
@@ -484,8 +488,14 @@ export async function restoreArtifact(root: string, bundleAbs: string): Promise<
     return fail('operation-failed', 'Only a trash record can be restored.')
   const record = await readRecord(bundleAbs)
   if (!record) return fail('operation-failed', 'That restore record is unreadable.')
-  if (record.entity === 'property')
-    return fail('operation-failed', 'A property record has no artifact to restore.')
+  // A property has no artifact to place — its whole restore is a rebuild from the record, and it
+  // spends the same bundle on the same terms.
+  if (record.entity === 'property') {
+    const rebuilt = await restoreProperty(root, record)
+    if (!rebuilt.ok) return rebuilt
+    await rm(bundleAbs, { recursive: true, force: true })
+    return ok(null)
+  }
   const artifactAbs = await bundleArtifact(bundleAbs)
   if (!artifactAbs)
     return fail('not-found', 'That deletion never finished; there is nothing to restore.')
