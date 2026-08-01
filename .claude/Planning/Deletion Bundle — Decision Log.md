@@ -48,7 +48,7 @@
 
 #### E — Blast Radius
 
-- **E-1:** [confirmed] [[NexusRecord]]'s Provenance sections go false and are rewritten as-built at ship; History carries the arc. `record.ts`, `remint.ts`, the shared types, the IPC surface (`restore` keeps its one-path shape), and the baseline half are untouched.
+- **E-1:** [confirmed] [[NexusRecord]]'s Provenance sections go false and are rewritten as-built at ship; History carries the arc. `record.ts` and the baseline half are untouched; `remint.ts` changes only by exporting three private helpers (C-4); the `restore` op keeps its one-path shape with the field renamed `pairPath` → `bundlePath` (two references repo-wide, zero renderer-side).
 - **E-2:** [confirmed] The provenance test suite re-points at the bundle layout; the assertion matrix (gather content, resolver decisions, restore round-trips, guard pins) carries over.
 
 ### Core (must-have)

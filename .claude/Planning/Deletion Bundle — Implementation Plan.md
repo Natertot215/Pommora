@@ -35,7 +35,7 @@ In one fixture nexus: delete a Context carrying members → exactly one `.delete
 
 ### Work Shapes
 
-- **Additive + changed behavior:** every new refusal (B-3, B-4) gets its failing test first; the delete arms' existing tests invert in the same commit that reorders them.
+- **Additive + changed behavior:** every new refusal (B-3, B-4) gets its failing test first; no ordering tests exist today, so Task 3 writes the write-ahead pins as new failing tests in the commit that reorders the arms.
 - **Fix:** the Space reorder is a fix — sibling sweep: the Context arm consumed the same sweep-then-gather shape and is reordered in the same task.
 - **Refactor baseline invariant:** the resolver matrix and restore-guard pin tests pass unchanged (assertions untouched, only setup re-pointed at bundles); the 1,994-test count may only grow.
 - **Not a data migration:** clean break (D-1) — no backup/census tasks; the format has zero consumers today.
