@@ -9,6 +9,7 @@
 - **Success Criteria:**
   - A page is trashed; its parent folder is renamed; the page restores into the renamed folder.
   - A folder is trashed with pages inside it; restoring the folder restores its contents intact.
+  - A Space tagged on many pages is deleted and restored; the pages that still exist carry its tag again.
   - Opening a nexus reports structural change made since the last open.
   - Adding a tracked fact later is additive — no entry-shape change, no differ rewrite.
   - The code that performs a restore holds no domain policy of its own.
@@ -41,7 +42,11 @@ They share a module and nothing else. Conflating them is what broke V1.
 #### A — Scope
 
 - **A-1:** [assumed] The record tracks **structural facts** — identity, location, parentage, existence. No *continuous* content snapshotting. Values may enter as event payloads bounded by an event; they never become baseline fields.
-- **A-1a:** [assumed] **Membership stripped from other files is out of scope, and Core's restore promise is qualified accordingly.** Deleting a Space or Context first sweeps its key or value off every page in the nexus; provenance rides the departing artifact and can carry nothing about what was stripped elsewhere. Restoring the folder returns the Space, not its forty tagged pages. This is the one class the memory-on-the-thing shape structurally cannot cover, and the restore surface must say so rather than implying a full undo.
+- **A-1a:** [assumed] **Membership stripped from other files IS covered, and it costs nothing to capture.** Deleting a Space or Context first sweeps its key or value off every page in the nexus. That sweep already returns `{ touched, skipped }` — the exact set of files it rewrote — and the delete arm currently calls it with no assignment, so the list is built and discarded at the one call site that needs it. Better: the sweep hands its callback each file's parsed frontmatter, which carries the kind key, so the page's **id** is in hand at the exact moment its tag is removed. Record ids, not paths, and the list survives every later move.
+
+  This is precisely the event payload A-1 reserves: bounded by how many pages tagged that Space, and a list of ULIDs. It rides the trashed artifact's own provenance, so it obeys the same memory-on-the-thing rule as everything else.
+
+  Restore re-applies the tag to the pages that still exist and reconciles per entry the way the Remove cache does — spend an entry only on a landed write, keep the rest. A page deleted or moved in the meantime is skipped, not an error. **No standing reverse index is created**: nothing maintains "which pages tag this Space" between deletes, and nothing needs to — the set is computed once, at removal, by a sweep that already runs.
 - **A-2:** [assumed] Compare **reports** external drift; it never auto-reverts. Separately, the app's own *interrupted* work may complete unattended — that is what the rename journal already does at open, and forbidding it would forbid the record's best future use.
 - **A-3:** [assumed] Un-adopted entities are out of scope, and the projection must **actively filter** `adopted-`-prefixed ids. The walk assigns them to every excluded or sidecar-less entity, so without a filter they enter the baseline and report as delete-plus-create forever.
 - **A-4:** [assumed] Out of scope entirely, stated rather than discovered: **block tiles** (no id key, `.nexus`-resident, invisible to the walk, and restoring one is a database row insert, not a placement) and **Tasks/Events** (the walk emits no agenda nodes and no delete arm reaches them; this widens for free when Agenda joins the walk).
