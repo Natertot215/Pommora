@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { PAGE_ID_KEY } from '@shared/identity'
 import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -27,7 +27,23 @@ const liveDef = async (id: string): Promise<PropertyDefinition> => {
 let root: string
 let notes: string
 let tasks: string
+/** Whether the snapshot was already on disk when the scrub first touched a page — the write-ahead
+ *  pin, taken from inside the real strip path rather than asserted after the fact. */
+let recordedBeforeScrub: boolean | undefined
+
+vi.mock('../io/fileLock', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../io/fileLock')>()
+  return {
+    ...actual,
+    rewritePageSerialized: async (...args: Parameters<typeof actual.rewritePageSerialized>) => {
+      recordedBeforeScrub ??= (await readdir(join(root, '.trash')).catch(() => [])).length > 0
+      return actual.rewritePageSerialized(...args)
+    },
+  }
+})
+
 beforeEach(async () => {
+  recordedBeforeScrub = undefined
   root = await mkdtemp(join(tmpdir(), 'pom-del-'))
   const a = await createFolderEntity(root, 'collection', 'Notes')
   const b = await createFolderEntity(root, 'collection', 'Tasks')
@@ -79,6 +95,8 @@ describe('deleteProperty', () => {
     expect(name?.endsWith('.deleted')).toBe(true)
     const record = await readRecord(join(root, '.trash', name ?? ''))
     expect(record).toMatchObject({ entity: 'property', id })
+    // Write-ahead: the recovery net existed before the scrub stripped its first value.
+    expect(recordedBeforeScrub).toBe(true)
     const values = (record as { values: Record<string, unknown> }).values
     for (const path of [p1.value.path, p2.value.path]) {
       const pid = readFrontmatterFields(await readFile(path, 'utf8'))[PAGE_ID_KEY] as string
