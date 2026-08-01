@@ -1,15 +1,15 @@
 ## NexusRecord — Decision Log
 
-> **Status:** settled — verification complete. **This build is the journal only**: the pair and the baseline are written; nothing spends them. Restore — the resolver, the op, any surface — is sequenced after, its design recorded in section E for the plan that builds it.
+> **Status:** settled — verification complete. Scope ruling: the restore **actions** ship — resolver, op, listing — with no user interface; every surface is sequenced after. Every decision below is ratified by Nathan or derived from a verified fact; none is open.
 
 ### Frame
 
-- **Purpose:** Record everything a future restore needs — where a departed entity belonged, by id — and notice structural change made while the app was closed. The journal is the deliverable; putting things back is a later build that reads it.
+- **Purpose:** Let Pommora put a trashed entity back into the folder it belonged to — even when that folder has since been renamed or moved — and let it notice structural change made while it was closed.
 - **Core Value:** Pommora can always answer *where is this now*. It cannot answer *where was this then*. Two separate mechanisms close that, each the smallest thing that does its half.
 - **Success Criteria:**
-  - A trashed page's pair names its parent by id, so a later restore resolves it even after the parent renames.
-  - A trashed folder's passengers ride intact — nesting preserved, no key stripped from anything inside the subtree.
-  - A deleted Space's pair carries the ids of every page that tagged it; a deleted Context's pair carries its registry entry and its membership map.
+  - A page is trashed; its parent folder is renamed; the page restores into the renamed folder.
+  - A folder is trashed with pages inside it; restoring the folder restores its contents intact.
+  - A Space tagged on many pages is deleted and restored; the pages that still exist carry its tag again.
   - A duplicated file or folder stops sharing its twin's identity: the copy is adjudicated against the prior baseline and re-minted.
   - Adding a tracked fact later is additive — no entry-shape change, no differ rewrite.
   - The code that performs a restore holds no domain policy of its own.
@@ -70,7 +70,7 @@ They share a module and nothing else.
   - pages and ordinary containers carry parent + identity and nothing else.
   - the **property snapshot** is the pair shape's one **artifact-less variant** — nothing is trashed when a property is deleted, so there is no leaf to pair with; the orphan prune exempts the variant, or it would eat the recovery net the delete confirmation promises.
 - **B-6:** [assumed] Under **system trash mode** the artifact leaves the nexus through the OS and no pair is written — there is nowhere valid for it to point. The restore surface covers nexus-trash mode only and says so; the delete confirmation already distinguishes the modes.
-- **B-7:** [assumed] A pair whose artifact is gone — trash emptied by hand in Finder — is orphaned and harmless; a future restore listing prunes orphans as it encounters them, exempting the artifact-less variant. A hand-restored artifact leaves its pair behind the same way, and carries no residue into the live tree. Pairs die with their artifacts, which is what keeps a journal with no spender bounded — the unbounded-growth concern belonged to the central document, where entries had no co-located artifact to die with.
+- **B-7:** [assumed] A pair whose artifact is gone — trash emptied by hand in Finder — is orphaned and harmless; restore listing prunes orphans as it encounters them, exempting the artifact-less variant. A hand-restored artifact leaves its pair behind the same way, and carries no residue into the live tree.
 
 #### C — Baseline (the compare half)
 
@@ -91,7 +91,7 @@ They share a module and nothing else.
 - **D-3:** [assumed] **Leave the order arrays alone.** Absorbing them means inventing a purge that does not exist.
 - **D-4:** [confirmed by evidence] No migration anywhere: zero `property_cache` blocks exist on either live nexus, and the pair mechanism creates files only in `.trash`.
 
-#### E — Resolution (deferred — the restore build's settled design, not this one's scope)
+#### E — Resolution
 
 - **E-1:** [assumed] The record **decides** and returns the decision as data: a placement — directory, final name, and for a Context the final registry title — or a typed refusal: parent gone · parent cannot hold this kind · parent unaddressable · trashed outside the nexus · id already live.
 - **E-2:** [assumed] The acting code branches on nothing — a mover, not a decider. Every name and title choice is the resolver's, since choosing is deciding.
@@ -104,7 +104,7 @@ They share a module and nothing else.
 - **F-1:** [confirmed — Nathan] The feature absorbs its neighbourhood **now**. A future consolidation pass must not find mechanisms this work should have taken; simplicity and cohesion outrank minimal diff.
 - **F-2:** [assumed] Absorbed outright: the **property Delete snapshot** becomes the pair's artifact-less variant (fixing, in one move, its path key, its non-atomic raw write, and its flat un-collided placement).
 - **F-3:** [assumed] Residue removed in the same work, because the delete path is already open under the editor: the `removed_at` field the Remove cache writes and nothing reads · the four unreachable cascade-failure branches in the context cascade · the stale comment claiming the trash primitive is shared by crud delete helpers that do not exist.
-- **F-4:** [deferred — with restore] **One reconciliation loop.** Tag re-application is the Remove cache's spend-per-landed-write shape; when the restore build lands it extracts that loop and points both at it rather than writing a parallel one. Extracting now would be an abstraction with one consumer. The Remove cache stays exactly where it is.
+- **F-4:** [assumed] **One reconciliation loop.** Tag re-application on restore is the Remove cache's spend-per-landed-write shape; the plan extracts that loop and points both at it — never a parallel one. The Remove cache's storage and its type-revalidation branches stay exactly where they are.
 - **F-5:** [assumed] **The per-entity tuple gets one owner.** The baseline's `{ id, kind, title, path }` shape is declared once in `src/shared/`, and the renderer's tree-index record aligns to it rather than restating it.
 - **F-6:** [assumed] Explicitly not absorbed, each a different mechanism rather than a deferred absorption: the **Remove cache** (a value cache on a live entity — nothing departs) · the **rename journal** (a transaction log whose discard branches are domain law) · the **order arrays** (display state with read-time tolerance). A future pass finding these should find this paragraph.
 
@@ -114,19 +114,20 @@ They share a module and nothing else.
 - **G-1a:** [assumed] **The sweep never strips a passenger.** A root that sits *under the entity being deleted* is leaving with its owner, and its key is still true inside the trashed subtree — stripping it records a loss the same operation then ships to trash, and a restored Context would come back with its internal Space-to-Space links destroyed. The unlink sweeps skip roots under the delete target by path prefix; the damage is removed at its source rather than captured and re-applied.
 - **G-2:** [assumed] This is a **signature change to the shared sweep, not a free ride**: the callback gains the file path beside the parsed frontmatter, the return gains the captured values, and the widening reaches the rename cascade, which shares the sweep. The sweep also grows a **third list** for admission-refused roots — a dual-key page keeps its context key through the delete and today appears in neither `touched` nor `skipped` — and the pair records itself **partial** when that list or `skipped` is non-empty, rather than claiming completeness.
 - **G-3:** [confirmed — Nathan] A **Context** delete records, per swept root, the Space list its stripped key held, each Space as `{ id, title }` — one root may carry several values, and a root-only record would restore the key empty. The id is the identity; the title is a label for the resolver, which re-applies under final titles per E-3.
-- **G-4:** [assumed] The captured set is computed once, at removal, by a sweep that already runs; no standing reverse index exists or is created. Its re-application belongs to the restore build, per F-4's loop.
+- **G-4:** [assumed] Restore re-applies per entry through the shared reconciliation loop — spend an entry only on a landed write, skip what has since moved or died. No standing reverse index exists or is created; the set is computed once, at removal, by a sweep that already runs.
 
 ### Core (must-have)
 
 - The pair: its shape, the parent union, per-kind payloads and the artifact-less variant, written best-effort by the delete arm from reads made at the three gather points.
+- The resolver, returning a placement with final names or a typed refusal.
+- **The restore op** — IPC-reachable and end-to-end tested, spending pairs through the resolver. No surface ships; the op is the spend path until one does.
 - The baseline projection, the open path's one explicit walk, the union-diff with three-state existence, the last-non-empty result row.
 - The duplicate-id re-mint at open — content and container — baseline-adjudicated, evidence-preserving, refusing when it cannot adjudicate.
 
 #### Prospects
 
-- **Restore** — the resolver, the op, and a minimal trigger, per section E's settled design; then the browse surface. First in line: it spends what this build records.
 - **Crash-safe cascades** — the write→act→settle shape with no record today; a page rename's only safety net is an in-memory reverse a crash defeats. The pair + settle shape covers it nearly free.
-- A trash browse-and-restore surface, and any compare surface — both read what Core already records.
+- Every surface — the restore trigger, the trash browser, any compare view. The actions they call all ship in Core; the surfaces read and invoke what already exists.
 - Property and frontmatter change capture, as event payloads.
 - Git as opt-in content history — complementary, never the record; Pommora must never auto-commit.
 
