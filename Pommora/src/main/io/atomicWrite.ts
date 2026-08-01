@@ -26,7 +26,7 @@ export async function atomicWriteBinary(filePath: string, data: Buffer): Promise
 /** The canonical on-disk JSON bytes: stable, sorted keys + a trailing newline. The one
  *  source of the sidecar serialization shape, so a caller that holds bytes before writing
  *  them produces a file identical to one written directly. */
-export function serializeJson(value: unknown): string {
+function serializeJson(value: unknown): string {
   return `${stableStringify(value)}\n`
 }
 

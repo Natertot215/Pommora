@@ -15,7 +15,7 @@ import { z } from 'zod'
 import type { ContextsRegistry } from '@shared/contexts'
 import { contentId } from '@shared/identity'
 import type { Result } from '@shared/result'
-import type { SweepCapture, SweepResult } from './crud/contextCascade'
+import type { SweepCapture, UnlinkOutcome } from './crud/contextCascade'
 import { pathExists, readJsonObject, writeJson } from './io/atomicWrite'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from './paths'
 import { splitFrontmatter } from './readNexus'
@@ -78,7 +78,6 @@ export const pairFile = z.discriminatedUnion('entity', [
 
 export type PairFile = z.infer<typeof pairFile>
 export type ParentRef = z.infer<typeof parentRef>
-export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
 
 export function pairPathFor(artifactDest: string): string {
   return `${artifactDest}${PAIR_SUFFIX}`
@@ -144,8 +143,10 @@ export async function gatherContentPair(
   return { entity: kind, ...(id ? { id } : {}), parent }
 }
 
-const sweepPartial = (swept: UnlinkOutcome | null): { partial: true } | Record<never, never> =>
-  swept === null || swept.skipped.length > 0 || swept.refused.length > 0 ? { partial: true } : {}
+/** A sweep that never ran, could not read a root, or was refused one left the membership thinner
+ *  than the truth — the pair says so rather than reading complete. */
+const sweepIncomplete = (swept: UnlinkOutcome | null): boolean =>
+  swept === null || swept.skipped.length > 0 || swept.refused.length > 0
 
 /** A Space's own id is its required payload — its sidecar unreadable means no pair. The parent
  *  Context resolves through the registry read taken before the erase. */
@@ -158,15 +159,19 @@ export async function gatherSpacePair(
   if (!id) return null
   const contextTitle = basename(dirname(abs))
   const def = registry?.ok ? registry.value.contexts.find((c) => c.title === contextTitle) : undefined
-  const members = (swept?.captured ?? [])
+  const captured = swept?.captured ?? []
+  const members = captured
     .filter((c): c is SweepCapture & { id: string } => typeof c.id === 'string')
     .map((c) => ({ id: c.id, kind: c.kind }))
+  // An id-less tagging root was genuinely stripped but cannot be restored — the members
+  // list is thinner than the truth and the pair says so.
+  const partial = sweepIncomplete(swept) || members.length < captured.length
   return {
     entity: 'space',
     id,
     parent: def ? { kind: 'context', id: def.id } : { kind: 'unaddressable' },
     members,
-    ...sweepPartial(swept),
+    ...(partial ? { partial: true as const } : {}),
   }
 }
 
@@ -217,6 +222,11 @@ export function buildContextPair(evidence: ContextEvidence, swept: UnlinkOutcome
       return id ? { id, title } : { title }
     }),
   }))
-  const partial = evidence.unresolved ? { partial: true as const } : sweepPartial(swept)
-  return { entity: 'context', registry: evidence.entry, membership, ...partial }
+  const partial = evidence.unresolved || sweepIncomplete(swept)
+  return {
+    entity: 'context',
+    registry: evidence.entry,
+    membership,
+    ...(partial ? { partial: true as const } : {}),
+  }
 }

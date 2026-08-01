@@ -343,9 +343,9 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - [x] Commit: `refactor(crud): the snapshot joins the pair; the residue leaves`
 
 #### Gate 3 — every delete leaves a truthful record
-- [ ] Gates green; simplification + review on the range; concerns fixed or ruled.
-- [ ] Derivations re-run: `removed_at` 0, `cascade.ok` 0, control 15.
-- [ ] The G-1a fix's both controls re-confirmed post-widening.
+- [x] Gates green; simplification + review on the range; concerns fixed or ruled.
+- [x] Derivations re-run: `removed_at` 0, `cascade.ok` 0, control 15.
+- [x] The G-1a fix's both controls re-confirmed post-widening.
 
 ---
 
@@ -442,11 +442,11 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - [x] **Phase 2** — the re-mint · base `5bc40a2c`
   - [x] Task 4 — detection and adjudication · `9c97b376`
   - [x] Task 5 — the re-mint writes · `0c34dd2a`
-- [ ] **Phase 3** — the sweep and the pair · base `f136d56b`
-  - [x] Task 6 — the sweep never strips a passenger
-  - [x] Task 7 — the sweep tells the truth
-  - [x] Task 8 — the pair
-  - [x] Task 9 — absorb the snapshot; remove the residue
+- [x] **Phase 3** — the sweep and the pair · base `f136d56b`
+  - [x] Task 6 — the sweep never strips a passenger · `fbb7f1d3`
+  - [x] Task 7 — the sweep tells the truth · `435c6f12`
+  - [x] Task 8 — the pair · `3fa49491`
+  - [x] Task 9 — absorb the snapshot; remove the residue · `91d7a225`
 - [ ] **Phase 4** — the resolver spends the pairs
   - [ ] Task 10 — one reconciliation loop
   - [ ] Task 11 — the resolver
@@ -464,6 +464,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - **Needs Nathan's ruling (Gate 1, review finding — code shipped with the proxy):** `latchBaseline` is pure, so A-5's drop condition "the recorded path no longer exists at all" is implemented as "no walked claimant sits at the recorded path and it is not on the unreadable list." Wider than the spec's literal condition in one edge: a duplicated id whose recorded home left the walk for a *non-destructive* reason (its subtree added to `excluded_folders` while closed, or the id key hand-stripped) drops its evidence, and the next open records the surviving copy walk-order-first. The reviewer judged the proxy defensible; ruling wanted on whether the exclusion edge deserves a stat-based check instead.
 
 ### Deviations
+- **Gate 3:** simplifier landed 2 (the `UnlinkOutcome` intersection named once at its producer; `sweepPartial` flattened to the `sweepIncomplete` predicate). Correctness review: 1 Medium + 4 Low + 1 informational, all verified. Folded: **the partial-marker family got its red-capable tests** (a refused root, an id-less tagging root, an unreadable in-Context sidecar each mark their pair partial; `writePropertyPair` de-collision pinned under fake timers — the T9 checkbox had claimed coverage that wasn't there); **id-less members now mark the Space pair partial** (they are stripped truth the members list omits); **a duplicated page id in the property snapshot marks it partial** (last-wins collapse, stated); `serializeJson`'s consumer-less export un-exported (F-3's own lens). Recorded, not fixed: a self-tagged Space's own sidecar is swept before the move (UI-improbable, captured for re-apply, the plan's no-skip reason was incomplete); spec B-1's "a parent that could not resolve" sentence contradicts B-4 and the ratified failure-half — the code follows the ratified side, T13 aligns the spec wording.
 - **Gate 2 (no-baseline refusal negative-controlled red-then-green):** simplifier landed 3 small collapses (one delete in `applyRemints`' tail, a hoisted fixture constant, an unused import — the range's only lint warning). Correctness review: 1 Medium + 2 Low, all verified. Folded: the **must-agree crossing test** — a third open after the re-mint proves the fresh id re-enters through a genuine disk walk and admission, not just the in-memory fix-up (the T5 checkbox had claimed it without the test existing). Recorded, not fixed: the in-lock id re-checks and partial-re-mint arm have no red-capable fixtures (race guards, traced correct by both reviewer and author); a container copy's copied `activeView` row dangles against the copy's re-minted view ids and falls back to the first view at render (plan-prescribed verbatim copy; renderer tolerance verified at `pickView`). Hook order re-assessed as built: walk → adjudicate/write → fix-up → latch → drift → baseline, renderer walks after — holds; T6+ interfaces unaffected.
 - **T5:** the "patch the node ids" step lands as `applyRemints(projection, reminted)` — a projection fix-up, not a tree mutation. The walked tree's page nodes are the parse cache's own objects (`cachedParse` hands them out), so an in-place id patch would edit cache state; the projection is this pass's only consumer and remapping it is equivalent and side-effect-free. A duplicated **context** id (only reachable by hand-editing the registry — no file-copy mechanism reproduces a registry entry) defers instead of rewriting `contexts.json` blind. The re-minted page re-reads inside the file lock and skips if the contested id is no longer the one on disk.
 - **T4:** two departures from the written task, both spec-grounded. (1) `adjudicate` takes the walk's unreadable list as a third parameter — the "original at recorded path but unreadable → defer, never guess" arm is undecidable without it, and the plan's two-argument signature predates T2a's producer. (2) The "id ambiguous in the prior baseline too → defer" arm is NOT implemented: an ambiguous mark is A-5's *preserved evidence*, kept exactly so a later session can spend it — a blanket defer would freeze adjudication for as long as the duplication persists, the same hoarding round 3 removed from the no-prior case. Ambiguous-marked entries adjudicate identically to unmarked ones; the deferring states are exactly no-baseline · no-entry · unreadable-recorded-path · no-claimant-at-recorded-path. Test pins the spend. **Flagged for Nathan's post-hoc ruling.**
