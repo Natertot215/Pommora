@@ -338,6 +338,10 @@ async function adoptNexus(path: string, latchRecord = true): Promise<void> {
 }
 
 async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void> {
+  // Re-adopting the already-open nexus (Open Recent's head, a re-pick in the picker) is a
+  // re-point of a live session, not a genuine open — the latch below compares roots and
+  // stands down, or every in-session change would diff against the launch baseline as drift.
+  const priorRoot = sessionRoot()
   await openSession(path)
   // openSession canonicalized the root (realpath); thread THAT everywhere below so the watcher's
   // session-match guard and the persistence layer key off the same string — a raw path here
@@ -350,7 +354,7 @@ async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void
   openSessionDb(root)
   // The record's one explicit walk — BEFORE the watcher starts, so the baseline latches what
   // the closed window left rather than whatever a sync daemon materializes first.
-  if (latchRecord) await runOpenRecord(root)
+  if (latchRecord && root !== priorRoot) await runOpenRecord(root)
   // A user-initiated open always has a window; launch-restore starts its watcher after
   // createWindow below instead.
   if (mainWindow) void startWatcher(root, mainWindow)
