@@ -1,6 +1,6 @@
 ## Deletion Bundle — Implementation Plan
 
-**Status:** review-certified, rulings folded — pending ratification.
+**Status:** ratified — in execution.
 **Spec input:** [[Deletion Bundle — Decision Log]] (same folder). Decisions cited as A-1…D-1.
 
 ### Goal
@@ -126,4 +126,4 @@ Trash browser + restore surface (reads `listBundles`, invokes `restore`) · empt
 
 ### Log
 
-*(base commits recorded per phase at execution; deviations and rulings land here)*
+- **Phase 1 base:** `13fc4742`.

@@ -1,6 +1,6 @@
 ## Deletion Bundle — Decision Log
 
-**Status:** review-certified, rulings folded — pending ratification.
+**Status:** ratified — in execution.
 
 ### Frame
 
