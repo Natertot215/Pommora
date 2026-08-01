@@ -1315,7 +1315,7 @@ serveBridge(
     },
 
     // `get` hydrates the renderer's store on open (whole cached map); `fetch` resolves one URL
-    // (cache hit or a live network fetch), persisting successes to `.nexus/linkTitles.json`.
+    // (cache hit or a live network fetch), persisting successes to the device-local title cache.
     'linkTitles:get': {
       kind: 'raw',
       fn: async (): Promise<LinkTitleCache> => {

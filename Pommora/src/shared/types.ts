@@ -331,7 +331,7 @@ export interface PreviewSetRecord {
   activeIndex: number
 }
 
-/** The `page-previews.json` sidecar: the NavWindow flavor's one set, the per-origin page-preview
+/** The preview-tab state, one device-local row: the NavWindow flavor's one set, the per-origin
  *  sets keyed by origin page id (re-keyed on re-parent), and which preview was open (recorded
  *  for the map; launch never auto-summons). */
 export interface PreviewsFile {
