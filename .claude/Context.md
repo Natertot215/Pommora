@@ -20,6 +20,12 @@ Deleting something was answered only by the trash's mirrored folder chain — a 
 
 Restore is a pure resolver plus a mover that branches on nothing — final titles are the resolver's (an impostor can mint a freed title while the original sits in trash), membership re-applies through the one shared spend-per-landed-write loop, and everything refuses rather than guesses. The design killed a central record document and provenance-in-frontmatter on verified facts before settling here; the closeout attack then found five defects that were each two correct mechanisms nobody had crossed, all fixed the same pass. Actions only — every surface is deliberately sequenced after, and the property delete's recovery snapshot was absorbed as the record's one artifact-less shape. → [[NexusRecord]] · `History.md`.
 
+#### Property Restore (08-01)
+
+The property delete had been promising a recovery snapshot that nothing could actually spend — the record was written, restore refused it outright, and recovering by hand meant matching ULIDs across page frontmatter by eye. It restores properly now, and the rule that shapes it is that only what still validates comes back: the registry decides whether the definition may return at all, and each value is decoded strictly against it, so a deleted select option or a page that's since gone just doesn't return.
+
+The one thing missing from the record was which Collections had assigned it — without that a restored property belongs to nothing and shows in no view, which isn't a restore. That join reads the sidecars directly rather than the tree, since the tree answers with a path-derived placeholder for any folder without a persisted id. → [[NexusRecord]] · `History.md`.
+
 #### The Deletion Bundle (08-01)
 
 The record shipped named after the artifact's stamped trash destination, which quietly forbade the thing it most wanted to do — write itself *before* the destruction it describes — because its own identity was the outcome of that act. One deletion is now one folder holding the artifact under its real name plus the record, so the two can't be separated by a rename or a sync race, and the record lands inside while the artifact is still live.

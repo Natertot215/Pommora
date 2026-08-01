@@ -17,7 +17,7 @@ The artifact keeping its real name is what lets the record drop a stored basenam
 
 Each record carries a **parent as a discriminated union**: the nexus root, a container by sidecar id, a Context by registry id, or `unaddressable`. A parent that cannot resolve records `unaddressable` honestly rather than pretending to a bare id, and the record still writes.
 
-Per-kind payloads ride the same shape. A **Context** carries its own registry entry — its identity lives only in the registry, which the delete erases — plus the membership map: per swept root, the Space list its stripped key held, each Space as id + title. A **Space** carries the id-bearing roots that tagged it. Pages and ordinary containers carry parent + identity and nothing else. A **property delete** takes the same shape with nothing to hold: its bundle carries the record alone, values keyed by page id.
+Per-kind payloads ride the same shape. A **Context** carries its own registry entry — its identity lives only in the registry, which the delete erases — plus the membership map: per swept root, the Space list its stripped key held, each Space as id + title. A **Space** carries the id-bearing roots that tagged it. Pages and ordinary containers carry parent + identity and nothing else. A **property delete** takes the same shape with nothing to hold: its bundle carries the record alone — the definition, the Collections that assigned it by sidecar id, and the values keyed by page id.
 
 #### II. Write-Ahead
 
@@ -40,6 +40,8 @@ The delete's unlink sweep holds the laws the record depends on. **It never strip
 The record **decides**; the acting code moves. The resolver takes a record and the current tree and returns a placement — directory, final name, and for a Space or Context the final title — or a typed refusal: parent gone, parent cannot hold this kind, parent unaddressable, id already live. A live id outranks every other answer; nothing may write over a living identity.
 
 **Final titles are the resolver's, never the recorded ones.** Title uniqueness holds only at a moment — an impostor can mint a freed title while the original sits in trash — so a collision disambiguates for every kind, Contexts included, and the restored folder, registry entry, re-applied membership keys, and the restored subtree's own passenger keys all wear the final title.
+
+**A property restores by rebuilding, and only what still validates returns.** It has no artifact to place, so its record is spent rather than moved: the definition re-enters the registry, every Collection that carried it gets it back, and each recorded value is written home. The registry itself is the judge of whether the definition may return — a name another property has since taken refuses the whole restore, because two properties cannot share a frontmatter key. Below that, each value is decoded strictly against the definition and dropped unless it survives: an option that no longer exists, a value the type can no longer hold, a page that has since died. A record is evidence of what was, never a mandate to recreate it, and what didn't land is named rather than silently claimed.
 
 The restore op is a mover branching on nothing. It takes a bundle, reads its record, and takes the artifact to place from the one entry inside the walk does not hide. It re-resolves inside the op (the world may have changed since listing), refuses a target it cannot contain — a plain basename, exactly in the resolver's chosen directory, inside the nexus, outside the trash — and refuses an occupied target rather than clobbering what nothing adjudicated. A **Context re-enters the registry before anything moves**: the append is the reversible half, the move is not, so a refused write leaves the bundle intact and the restore retryable, while a failed move rolls the append back. The entry appends at the end — recorded positions rot. Membership re-applies through the shared reconciliation loop, joined by id against the as-restored folder names: an entry is spent only on a landed write, kept on refusal, skipped when its root has since died, and what did not land is named, never silently claimed. The same spend-per-landed-write loop serves the Remove cache's restore — the loop is shared, the storage is not.
 
@@ -66,8 +68,6 @@ A duplicated id — content and container alike — stops sharing its twin's ide
 **Every surface** — the restore trigger, the trash browser, any compare view. The actions they invoke exist and are end-to-end tested; the surfaces read and call what already ships.
 
 **Crash-safe cascades beyond the delete** — the write→act→settle shape the bundle proves out, applied to the rename and move cascades.
-
-**A property restore path** — the property record is written and read but nothing spends it yet; it waits on a surface.
 
 **Property and frontmatter change capture** as event payloads — the record shape widens additively; no entry-shape change, no differ rewrite.
 
