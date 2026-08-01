@@ -1,11 +1,11 @@
 import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from './io/atomicWrite'
 import { handleMutate, type MutateDeps } from './mutate'
 import { contextsDir, contextsRegistryFile } from './paths'
-import { readPair } from './provenance'
+import { readPair, writePropertyPair } from './provenance'
 import { readNexus } from './readNexus'
 import { closeSession, openSession } from './session'
 
@@ -172,5 +172,54 @@ describe('the pair — one JSON beside every nexus-trashed artifact', () => {
     expect(r.ok).toBe(true)
     const { pair } = await onlyPair()
     expect(pair).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'unaddressable' } })
+  })
+
+  it('a refused root marks the Space pair partial — the members list is thinner than the truth', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Dual.md'),
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVB\nTaskID: 01KVGMT8BFG350FZZXAMG1QDVC\n(Projects):\n  - Pommora\n---\n',
+    )
+    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' }, nexusDeps)
+    const { pair } = await onlyPair()
+    expect(pair).toMatchObject({ entity: 'space', partial: true })
+  })
+
+  it('an id-less tagging root marks the Space pair partial — its membership is unrestorable', async () => {
+    await writeFile(join(root, 'Notes', 'Daily', 'NoId.md'), '---\n(Projects):\n  - Pommora\n---\n')
+    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' }, nexusDeps)
+    const { pair } = await onlyPair()
+    expect(pair).toMatchObject({ entity: 'space', partial: true })
+    const members = (pair as { members: { id: string }[] }).members
+    expect(members.every((m) => typeof m.id === 'string')).toBe(true)
+  })
+
+  it('an unreadable Space sidecar inside the Context marks its pair partial', async () => {
+    await mkdir(join(contextsDir(root), 'Projects', 'Broken'), { recursive: true })
+    await writeFile(join(contextsDir(root), 'Projects', 'Broken', '_space.json'), '{corrupt')
+    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
+    const { pair } = await onlyPair()
+    expect(pair).toMatchObject({ entity: 'context', partial: true })
+  })
+})
+
+describe('writePropertyPair', () => {
+  it('de-collides within one timestamp — a same-stamp double delete keeps both pairs', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
+    try {
+      const pair = {
+        entity: 'property' as const,
+        id: 'prop_x',
+        def: { id: 'prop_x' },
+        values: { a: 1 },
+      }
+      const first = await writePropertyPair(root, pair)
+      const second = await writePropertyPair(root, { ...pair, values: { a: 2 } })
+      expect(second).not.toBe(first)
+      expect(await readPair(first)).toMatchObject({ values: { a: 1 } })
+      expect(await readPair(second)).toMatchObject({ values: { a: 2 } })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

@@ -47,6 +47,8 @@ async function snapshot(
       }
       if (!(key in fm)) continue
       const id = contentId(fm)
+      // A duplicated id can hold only one entry — last wins, and the pair says it is thin.
+      if (id && id in values) partial = true
       if (id) values[id] = fm[key]
       else partial = true
     }
