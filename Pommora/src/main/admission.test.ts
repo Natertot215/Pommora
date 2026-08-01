@@ -162,6 +162,35 @@ describe('the move backstop', () => {
     expect(r.error.code).toBe('invalid-path')
   })
 
+  // A registered singleton is a real, adopted, root-level folder — everything a Collection is —
+  // and still not a place a page may land. The backstop refuses every agenda destination the same
+  // way, registered or not, which is what lets the cheap check here stay equivalent to the full one.
+  it('refuses a page moved into a registered agenda singleton', async () => {
+    const TASKS = '01KVGMT8BFG350FZZXAMG1QDT1'
+    await writeFile(
+      nexusConfig(root, NEXUS_CONFIG_FILES.identity),
+      JSON.stringify({
+        id: '01KVGMT8BFG350FZZXAMG1QDNX',
+        createdAt: '2026',
+        agenda_singletons: { tasks: TASKS },
+      }),
+    )
+    await mkdir(join(root, 'Tasks'), { recursive: true })
+    await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.taskConfig), JSON.stringify({ id: TASKS }))
+    await openSession(root)
+
+    const r = await handleMutate(
+      { op: 'movePage', path: 'Notes/Member.md', newParentPath: 'Tasks' },
+      deps,
+    )
+    expect(r.ok).toBe(false)
+    if (r.ok) return
+    // The MESSAGE, not just the code: resolveUnderRoot refuses with `invalid-path` as well, so a
+    // code-only assertion passes for a destination that never reached the backstop at all.
+    expect(r.error.message).toBe('Pages live in Collections and Sets.')
+    expect(await bytes('Member.md')).toContain(KIND_ID_KEY.page)
+  })
+
   it('still allows a move into a real Set', async () => {
     await openSession(root)
     await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
