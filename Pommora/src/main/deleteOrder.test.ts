@@ -20,7 +20,7 @@ let root: string
 /** The record as it stood when the destructive step ran — the whole point of these tests. */
 let atSweep: unknown
 let atSettle: unknown
-let settleFails: Error | null = null
+let settleFails = false
 
 async function firstRecordUnder(dir: string): Promise<unknown> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
@@ -58,7 +58,7 @@ vi.mock('./io/atomicWrite', async (importOriginal) => {
     ...actual,
     settleBundle: async (bundleDir: string, absPath: string) => {
       atSettle = await actual.readJsonObject(join(bundleDir, '_record.json'))
-      if (settleFails) throw settleFails
+      if (settleFails) throw new Error('the process died before the artifact moved')
       return actual.settleBundle(bundleDir, absPath)
     },
   }
@@ -67,7 +67,7 @@ vi.mock('./io/atomicWrite', async (importOriginal) => {
 beforeEach(async () => {
   atSweep = undefined
   atSettle = undefined
-  settleFails = null
+  settleFails = false
   root = await mkdtemp(join(tmpdir(), 'pom-order-'))
   await mkdir(join(root, '.nexus'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: '2026' }))
@@ -144,7 +144,7 @@ describe('the record is written before the destruction it describes', () => {
 
 describe('a deletion cut short leaves evidence, never silence', () => {
   it('a content delete that dies before the settle keeps the artifact and skips the listing', async () => {
-    settleFails = new Error('the process died before the artifact moved')
+    settleFails = true
     const r = await handleMutate({ op: 'delete', path: 'Notes/Alpha.md', kind: 'page' }, nexusDeps)
     expect(r.ok).toBe(false)
     // Nothing was destroyed — the page is still exactly where it was.
@@ -155,7 +155,7 @@ describe('a deletion cut short leaves evidence, never silence', () => {
   })
 
   it('a Space delete that dies before the settle still names what the sweep took', async () => {
-    settleFails = new Error('the process died before the artifact moved')
+    settleFails = true
     const r = await handleMutate(
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
@@ -169,16 +169,4 @@ describe('a deletion cut short leaves evidence, never silence', () => {
     expect(await listBundles(root)).toHaveLength(0)
   })
 
-  it('a losing racer answers what the sequential double-press answers', async () => {
-    // Both deletes clear the existence check; the loser reaches the move and finds it gone.
-    const gone: NodeJS.ErrnoException = new Error('ENOENT: no such file or directory, rename')
-    gone.code = 'ENOENT'
-    settleFails = gone
-    const r = await handleMutate({ op: 'delete', path: 'Notes/Alpha.md', kind: 'page' }, nexusDeps)
-    expect(r.ok).toBe(false)
-    if (!r.ok) {
-      expect(r.error.code).toBe('not-found')
-      expect(r.error.message).toBe('Nothing to delete.')
-    }
-  })
 })

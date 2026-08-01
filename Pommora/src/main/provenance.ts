@@ -10,7 +10,7 @@
 // `unaddressable`.
 
 import type { Dirent } from 'node:fs'
-import { mkdir, readdir, readFile, realpath, rename, rm } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rename, rm } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, relative, sep } from 'node:path'
 import { z } from 'zod'
 import { contextKey, type ContextsRegistry } from '@shared/contexts'
@@ -499,9 +499,9 @@ async function restoredSpaceTitles(absContextDir: string): Promise<Map<string, s
  *  per kind re-enter the registry and re-apply membership through the shared reconcile loop.
  *  Branches on nothing — every decision is the resolver's. */
 export async function restoreArtifact(root: string, bundleAbs: string): Promise<Result<null>> {
-  // The root is realpath'd for the same reason `isReserved` does it: `bundleAbs` is canonical,
-  // so a symlinked root (macOS /var→/private/var) would mismatch and let the guard silently pass.
-  const trashPrefix = join(await realpath(root), '.trash') + sep
+  // Both sides are already canonical — the session root is realpath'd when it opens, and the
+  // op's path resolver realpaths both ends again before this is reached.
+  const trashPrefix = join(root, '.trash') + sep
   if (!bundleAbs.startsWith(trashPrefix) || !bundleAbs.endsWith(BUNDLE_SUFFIX))
     return fail('operation-failed', 'Only a trash record can be restored.')
   const record = await readRecord(bundleAbs)

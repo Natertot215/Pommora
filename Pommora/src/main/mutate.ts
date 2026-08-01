@@ -310,17 +310,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       } else if (write) {
         await write(await gatherContentRecord(root, req.kind, abs))
       }
-      if (bundle) {
-        try {
-          await settleBundle(bundle, abs)
-        } catch (e) {
-          // Two deletes of one entity can both clear the existence check above; the loser finds
-          // it already gone and answers exactly what the sequential double-press answers, rather
-          // than handing the renderer a raw filesystem path.
-          if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e
-          return fail('not-found', 'Nothing to delete.')
-        }
-      } else {
+      if (bundle) await settleBundle(bundle, abs)
+      else {
         recordWrite(abs) // in-nexus trash records inside settleBundle; the OS route records here
         await deps.trashToSystem(abs)
       }
