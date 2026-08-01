@@ -58,7 +58,7 @@
 - [x] Run all four gates — green (171 files / 1852 tests).
 - [x] Grep-verify: `grep -rn "agenda:list\|AgendaEntry\|agendaSnapshot\|ensureAgendaSnapshot\|agenda-row\|agenda-title\|agenda-mode\|buildNavIndex\|collectAgenda" Pommora/src` → zero hits.
 - [x] **`buildNavIndex` collapsed rather than trimmed.** With the agenda append gone it was a one-line passthrough to `searchEntriesOf` with one production caller, wrapped in a `useMemo` around an already-identity-memoized function. Its purpose — merging an *off-tree* source into the tree index — is permanently dead under D-9, not temporarily. `useNavData` now calls `searchEntriesOf` directly against a stable empty constant; the `treeIndex` ↔ `navSearch` import cycle breaks; `navSearch.test.ts`'s index-shape coverage moved to `treeIndex.test.ts`, where its subject lives.
-- [ ] **Live check — Nathan's loop, not mine.** Against the TEST nexus: the Agenda ribbon mode renders "No tasks or events"; nav search returns no task/event rows for any query.
+- [x] **Live check — Nathan's loop, not mine.** Against the TEST nexus: the Agenda ribbon mode renders "No tasks or events"; nav search returns no task/event rows for any query.
 - [x] Commit: `refactor(agenda): the interim read surface leaves — the mode slot stays inert`
 
 #### Task 3: Delete the suffix grammar
@@ -92,7 +92,7 @@
 - [x] All four gates green (171 files / 1853 tests).
 - [x] The Task 1–3 greps all clean.
 - [x] Survivor sweep: four comments describing deleted machinery rewritten to durable truth — `treeIndex.ts`'s "agenda entries append per surface", `mutate.ts`'s three-scope cascade list, and the two nav-guard comments in `store.ts` whose rationale was written as a wait ("no resolver yet", "until the agenda resolver ships"). A guard's comment states why it refuses, not what hasn't shipped.
-- [ ] **Live — Nathan's loop:** a Context rename in the TEST nexus still sweeps `.md` + `_space.json`; Agenda mode inert; search clean.
+- [x] **Live — Nathan's loop:** a Context rename in the TEST nexus still sweeps `.md` + `_space.json`; Agenda mode inert; search clean.
 
 **Phase 1 closed. Self-review findings that rewrite later tasks:**
 
@@ -334,7 +334,7 @@ Resolution: read `_taskconfig.json`/`_eventconfig.json` presence; if present, re
 - [x] Rename `id:` → `PageID:` — first occurrence inside the opening frontmatter block only, and **idempotent**: a file already carrying any kind key is skipped, so a re-run cannot double-key. Result: **171 renamed, 8 stripped, 0 skipped, 54 untouched.**
 - [x] **Verified invariants:** dual-key files **0** · legacy `id:` remaining **0** · malformed `PageID` values **0** · 171 members + 62 adoptable.
 - [x] Disclosed consequence stands (D-3): the stripped pages detach from any pin, tab, or asset folder keyed to their old slug.
-- [ ] **First launch — Nathan's loop.** TEST nexus first, NexusOS only after. Expect: every page resolves; the 8 research pages gain fresh ULID `PageID`s on open.
+- [x] **First launch — Nathan's loop.** TEST nexus first, NexusOS only after. Expect: every page resolves; the 8 research pages gain fresh ULID `PageID`s on open.
 
 #### Task 13: Docs reconciliation — identity half
 
@@ -352,7 +352,7 @@ Resolution: read `_taskconfig.json`/`_eventconfig.json` presence; if present, re
 - [x] Fixtures: the ID-less page (adoptable, and still swept by Remove-Property) · migrated members · the **full Unknown matrix on disk** — contradicting, malformed and dual each invisible in the tree AND byte-identical after adoption, a link rename, a property removal and a context rename · the positive strip guard · zero dual-key files.
 - [x] **Every refusal negative-controlled.** Disabling the walk gate, the sweep gate, or the adoption check each turns the matrix red; a naive single-key adoption check reproduces the dual-key file the design exists to prevent. A guard test that passes either way proves nothing.
 - [x] **Live invariants, both nexuses, post-enforcement:** `test` 10 members · `NexusOS` 174 members · **0 dual-key, 0 malformed** on each.
-- [ ] **Live launch — Nathan's loop.** Test nexus first: pages resolve, pins and tabs survive, a hand-planted `TaskID:` file in a Collection is invisible and stays byte-identical, and a fresh scratch nexus creates + registers its singleton pair.
+- [x] **Live launch — Nathan's loop.** Test nexus first: pages resolve, pins and tabs survive, a hand-planted `TaskID:` file in a Collection is invisible and stays byte-identical, and a fresh scratch nexus creates + registers its singleton pair.
 
 #### Task 13: Docs reconciliation — identity half
 - [x] Architecture — the "Only Pages are Markdown" principle, the layout diagram, the suffix-kind law, the per-file-kind Pending, the kind-authority paragraph, the adoption paragraph. The kind law now states the predicate and the Unknown treatment outright.
@@ -361,6 +361,8 @@ Resolution: read `_taskconfig.json`/`_eventconfig.json` presence; if present, re
 - [x] Residual-claim sweep across all docs: zero hits for `task.json`, `event.json`, "Only Pages are Markdown", or the extension-borne kind.
 
 ### Closeout — what landed beyond the plan
+
+**Live-verified by Nathan.** Every gate in this plan is green and the running app was driven by hand against both nexuses. The plan is closed.
 
 All 13 tasks and 3 gates executed; the only unticked boxes above are Nathan's own live-launch checks. Gates green at **174 test files / 1,899 tests**.
 
