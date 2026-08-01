@@ -1,6 +1,6 @@
 ## Deletion Bundle — Implementation Plan
 
-**Status:** review-certified across two adversarial rounds — pending Nathan's ratification.
+**Status:** review-certified, rulings folded — pending ratification.
 **Spec input:** [[Deletion Bundle — Decision Log]] (same folder). Decisions cited as A-1…D-1.
 
 ### Goal
@@ -34,7 +34,7 @@ In one fixture nexus: delete a Context carrying members → exactly one `.delete
 
 ### Work Shapes
 
-- **Additive + changed behavior:** every new refusal (B-3, B-4) gets its failing test first; no ordering tests exist today, so Task 3 writes the write-ahead pins as new failing tests in the commit that reorders the arms.
+- **Additive + changed behavior:** no ordering tests exist today, so Task 3 writes the write-ahead pins as new failing tests in the commit that reorders the arms.
 - **Fix:** the Space reorder is a fix — sibling sweep: the Context arm consumed the same sweep-then-gather shape and is reordered in the same task.
 - **Refactor baseline invariant:** the resolver matrix and restore-guard pin tests pass unchanged (assertions untouched, only setup re-pointed at bundles); the 1,994-test count may only grow.
 - **Not a data migration:** clean break (D-1) — no backup/census tasks; the format has zero consumers today.
@@ -60,7 +60,7 @@ In one fixture nexus: delete a Context carrying members → exactly one `.delete
 
 **Task 2 — Record grammar and listing.**
 *Why:* the record moves from a stamped sibling to a fixed name inside the bundle; the listing must speak the new shape and enforce the settle marker (A-2, A-3, B-1).
-*Files:* `src/main/provenance.ts` (schema, `writePair`/`readPair`/`pairPathFor` → `writeRecord(bundleDir)`/`readRecord(bundleDir)`/`RECORD_FILENAME = 'record.json'`; `writePropertyPair` → `writePropertyBundle`; `listPairs` → `listBundles`; the full rename set: `pairFile` schema → `recordFile`, `PairFile` → `RecordFile`, `ArtifactPair` → `ArtifactRecord`, `resolvePair` → `resolveRecord` (body unchanged per C-1), `PAIR_SUFFIX` **deleted**; the space variant's `id` relaxes to optional (B-4 — an adopted, id-less Space still records); also delete the `name` field, `artifactBaseName`, and the orphan prune), `provenance.test.ts`.
+*Files:* `src/main/provenance.ts` (schema, `writePair`/`readPair`/`pairPathFor` → `writeRecord(bundleDir)`/`readRecord(bundleDir)`/`RECORD_FILENAME = 'record.json'`; `writePropertyPair` → `writePropertyBundle`; `listPairs` → `listBundles`; the full rename set: `pairFile` schema → `recordFile`, `PairFile` → `RecordFile`, `ArtifactPair` → `ArtifactRecord`, `resolvePair` → `resolveRecord` (body unchanged per C-1), `PAIR_SUFFIX` **deleted**; also delete the `name` field, `artifactBaseName`, and the orphan prune), `provenance.test.ts`.
 *Interfaces:* `listBundles(root): Promise<{ bundlePath: string; record: RecordFile }[]>` — walks `.trash` for `*.deleted` directories and does **not descend into them** (a bundle's interior is trashed content, not trash structure; a user-created entity named `*.deleted` inside a trashed folder must never surface as a phantom bundle); a non-property bundle with no artifact entry is skipped (incomplete — left on disk, never removed); files outside bundles (old-format trash) are invisible. `bundleArtifact(bundleDir): Promise<string | null>` — the single non-`record.json` entry after ignoring `.`-/`_`-prefixed names (the house convention-skip: Finder's `.DS_Store` and AppleDouble litter must never render a bundle unrestorable, and `invalidName` already forbids those prefixes for real entities), null when absent or ambiguous (2+ candidates). Assumed by Tasks 3 and 5.
 *Steps:* failing tests (round-trip; property bundle listed with no artifact; incomplete content bundle skipped AND still on disk after listing; a `.DS_Store` beside the artifact changes nothing; old-format flat file + sibling pair ignored; no descent into bundle interiors) → implement → re-point the existing pair-matrix tests at bundles with assertions unchanged.
 *Failure half:* unreadable `record.json` ⇒ not a bundle, skipped, never deleted; 2+ non-ignored candidates ⇒ incomplete.
@@ -73,15 +73,14 @@ In one fixture nexus: delete a Context carrying members → exactly one `.delete
 **Task 3 — Reorder the four arms.**
 *Why:* the record must exist before the sweep/erase (B-1); the Space arm currently destroys before it can gather (B-4); refusal becomes possible and honest (B-3) (Goal: crash leaves evidence).
 *Files:* `src/main/mutate.ts` delete arm + `removeViaMode` (nexus branch becomes settle-into-pre-minted-bundle; system branch unchanged), arm-level tests.
-*Rollback is a property of every non-settling exit, stated once and shared by all arms (B-3): a failed record write, a refused gather, or the target vanishing between resolve and remove (the existing `pathExists` gate in `removeViaMode`) all remove the provably empty bundle dir before returning — no failed delete litters `.trash`.*
+*No refusal guards anywhere (B-3, B-4): a gather that yields no record skips the record and the delete proceeds — today's exact behavior — and a failed record write faults the op through the existing mutate catch before anything was destroyed. The recordless folder is invisible to the listing by its own not-a-bundle rule.*
 *Steps, per kind (nexus mode):*
-  - *content* — gather (parent ref + id) → mint → writeRecord → settle. Record-write failure refuses the delete with nothing destroyed.
-  - *space* — registry + sidecar read **first**; a **present-but-unreadable** sidecar refuses before the sweep; an id-less one records without `id`, partial (B-4 — adopted Spaces stay deletable); mint → writeRecord (members empty, `partial: true`) → `unlinkSpaceValue` → patch members in, `partial` **recomputed** by the existing gatherer from the sweep's real outcome — never cleared (B-2) → settle.
-  - *context* — `gatherContextEvidence` first; no evidence ⇒ refuse; mint → writeRecord (membership empty, `partial: true`) → `unlinkContextKey` + registry erase → patch membership in, `partial` recomputed from the sweep's outcome → settle.
+  - *content* — gather (parent ref + id) → mint → writeRecord → settle.
+  - *space* — registry + sidecar read **first** (B-4) → mint → writeRecord (members empty, `partial: true`) → `unlinkSpaceValue` → patch members in, `partial` **recomputed** by the existing gatherer from the sweep's real outcome — never cleared (B-2) → settle.
+  - *context* — `gatherContextEvidence` first → mint → writeRecord (membership empty, `partial: true`) → `unlinkContextKey` + registry erase → patch membership in, `partial` recomputed → settle.
   - *system mode* — unchanged: no gathers, no bundle, `trashToSystem`.
-*No ordering tests exist today to invert (current delete tests pin content and destinations, never sequence) — this task **writes** the ordering pins as new failing tests: for each arm, the record write precedes the first destructive call, driven through the arm's real code.*
-*One existing test DOES invert, by name: the all-or-nothing pin ("an unreadable registry means a Context delete writes no pair and the delete still lands") is the pair design's refusal philosophy and reverses under B-3 — it rewrites in the same commit to assert refusal, folder intact, zero bundles, mint rolled back. The gather-matrix partial pins ("a refused root marks the pair partial", "an id-less tagging root marks the pair partial") stay green by construction, since the patch step reuses the gatherers that computed them.*
-*Negative controls (both halves each):* (1) B-4 — a Space with a present-but-corrupt sidecar: delete refuses AND no page lost its tag; with the guard disabled the old destruction reproduces (red), guard restored (green); an id-less-but-readable sidecar deletes fine with a partial, id-less record. (2) Crash prefixes — content: mint+record then stop → record on disk, artifact live, listing skips. Sweep arms: mint+record+sweep then stop → destruction done, folder live, and the bundle's record **holds the swept membership** (the B-1 accepted cost, proven not assumed). (3) B-3 — a record write forced to fail (unwritable `.trash`) refuses the delete, the artifact never moves, and the empty bundle dir is gone.
+*No ordering tests exist today to invert (current delete tests pin content and destinations, never sequence) — this task **writes** the ordering pins as new failing tests: for each arm, the record write precedes the first destructive call, driven through the arm's real code. The existing all-or-nothing pin (unreadable registry → no record, delete still lands) and the gather-matrix partial pins stay green as written.*
+*Negative controls:* crash prefixes — content: mint+record then stop → record on disk, artifact live, listing skips. Sweep arms: mint+record+sweep then stop → destruction done, folder live, and the bundle's record **holds the swept membership** (the B-1 accepted cost, proven not assumed).
 *Must agree:* the arm's refusal set and `listBundles`' skip rule are two judgments of the same incompleteness — one crossing test drives the crash prefix through the arm's real code and asserts the listing's answer.
 
 **Task 4 — Property deletes join the shape.**
