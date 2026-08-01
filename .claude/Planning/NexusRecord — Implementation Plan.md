@@ -153,7 +153,8 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 **Steps:**
 - [ ] Failing test: corrupt sidecar + Unknown page + corrupt Space sidecar each land on the list.
-- [ ] Implement; gates green (the walk's existing consumers ignore the new field — additive).
+- [ ] Implement — recording at the **call sites**, never inside a parse closure: `cachedParse` caches non-null results, so a closure side effect would silently empty the list on every warm walk.
+- [ ] Gates green (the walk's existing consumers ignore the new field — additive).
 - [ ] Commit: `feat(walk): present-but-unreadable is its own answer`
 
 #### Task 3: The open path owns one walk
@@ -163,7 +164,7 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 **Why:** Spec C-2: latching to "whichever walk runs first" loses to the watcher on launch-restore — a sync daemon's changes would become the baseline instead of the drift. `adoptNexusInner` and launch-restore walk once, explicitly, after `openSessionDb`; prior baseline read → diff (ambiguous ids excluded) → drift written only if non-empty (C-7) → new baseline written, **with each ambiguous id's prior entry carried forward in place of the projected one**. Absent prior baseline: latch, report nothing (C-2a). The renderer's own `nexus:state` walk is untouched — it runs after the open path completes, so it sees post-re-mint disk, and the warm parse cache makes it stat-only. This satisfies C-2's hand-off *intent* (the baseline latches pre-watcher; the first render shows re-minted ids) without rewiring the state IPC; T13 aligns the spec's wording to this reading.
 
 **Files:**
-- Modify: `src/main/index.ts` — the two genuine open sites only (the `prepareOpenedNexus` + `replayPendingRename` caller pairs). **Not `adoptNexusInner` itself**: `nexus:rename` reuses it as a mid-session re-point, and a latch riding it would diff the live session against the launch baseline — every in-session change reporting as drift and overwriting the real closed-window record. The record block sits with the open callers, and the rename re-point runs none of it.
+- Modify: `src/main/index.ts` — the record block rides `adoptNexus`/`adoptNexusInner` behind an **opt-out parameter that only `nexus:rename` sets**, plus the launch-restore block. Every genuine open funnels through `adoptNexusInner` (picker, folder drop, Open Recent), so excluding it wholesale would wire the feature to launch-restore alone and it would never run on an ordinary open; but `nexus:rename` reuses the same function as a mid-session re-point, and a latch riding that would diff the live session against the launch baseline — every in-session change reporting as drift and overwriting the real closed-window record. The opt-out is one parameter; the re-point is its only setter. (The baseline itself survives a re-point untouched: `nexus.db` lives under the nexus root and travels, and recorded paths are nexus-relative.)
 - Test: extend `src/main/record.test.ts` with an open-sequence fixture test.
 
 One cost sentence: this moves the first cold walk ahead of `createWindow` — the renderer's own walk becomes warm-cache stat-only, so total parse work is unchanged; only its timing shifts earlier.
@@ -172,7 +173,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - Consumes: Task 2's four functions; `readNexus`.
 - Assumed by: Task 4 — the re-mint runs between this walk and the baseline write (order is load-bearing, spec C-2).
 
-**Failure half:** walk throws (unreadable root) → open proceeds, no baseline written this session, prior baseline retained · empty diff → drift row untouched (last non-empty preserved) · first-ever open → baseline latches, no drift.
+**Failure half:** walk throws (unreadable root) → open proceeds, no baseline written this session, prior baseline retained · empty diff → drift row untouched (last non-empty preserved) · first-ever open → baseline latches, no drift · an ambiguous id with **no prior entry** (created and copied inside one closed window) → **omitted from the baseline** — there is no evidence to preserve and any current path would be a guess; its first unambiguous appearance reads as an addition, once, and that is the accepted cost.
 
 **Steps:**
 - [ ] Fixture test: two opens with a rename between → drift names it; third uneventful open → drift unchanged.
@@ -217,7 +218,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 
 **Requirement:** 5
 
-**Why:** Executing a re-mint means: page → rewrite the kind key under the file lock (`serializeOnFile` + `mergeFrontmatter`); container → `writeSidecar` with the new id; then **copy — never move — the device-local rows** onto the fresh id: `blockDoc` (`space:<id>`), `activeView`, `folds`, `headingCols`, preview origins. The old-id rows belong to the **original**, which keeps that id; moving them would hand the original's authored board to the copy and leave the original blank — the exact inversion of the Goal's "the original keeps everything keyed to it." Duplicating them keeps the original untouched by construction and keeps the copy's ridden-along tile files referenced. Thumbnails: none for the fresh id, regenerated on use. Order arrays untouched (`resolveOrder` re-enters by title). Asset pointers untouched (stored rel paths travel). Then the open-path tree: patch the node ids so the baseline projection records the re-minted state. Nothing more — the handed tree's only consumer is the projection, whose fields are scalars; `contextValues` never enter it, and the renderer walks fresh after the re-mint completes (T3), so the spec's attach-pass clause is satisfied with no consumer left to need it.
+**Why:** Executing a re-mint means: page → rewrite the kind key under the file lock (`serializeOnFile` + `mergeFrontmatter`); container → `writeSidecar` with the new id; then **copy — never move — the device-local state** onto the fresh id. Three shapes, because the rows are not uniform: `activeView`, `folds`, `headingCols` are per-key rows and copy verbatim · `blockDoc`'s value is **not opaque** — its view-embed tiles carry `views[].config.id`, a live per-machine key two boards must never share (the codebase says so twice, and `duplicateBlockTile` already calls `remintConfigIds` for exactly this) — so the copied value passes through `remintConfigIds` before writing · `previews` is a **singleton row** with a nested `origins` map, so it is a read-modify-write through `readPreviewsState`/`writePreviewsState`, never `writeKey` (a keyed write there lands a junk row nothing reads). And the container re-mint's sidecar rewrite also re-mints the copy's `views[].id` in the same write — a file-copied Collection duplicates those too, and they key `viewOrder` per machine. The old-id rows belong to the **original**, which keeps that id; moving them would hand the original's authored board to the copy and leave the original blank — the exact inversion of the Goal's "the original keeps everything keyed to it." Duplicating them keeps the original untouched by construction and keeps the copy's ridden-along tile files referenced. Thumbnails: none for the fresh id, regenerated on use. Order arrays untouched (`resolveOrder` re-enters by title). Asset pointers untouched (stored rel paths travel). Then the open-path tree: patch the node ids so the baseline projection records the re-minted state. Nothing more — the handed tree's only consumer is the projection, whose fields are scalars; `contextValues` never enter it, and the renderer walks fresh after the re-mint completes (T3), so the spec's attach-pass clause is satisfied with no consumer left to need it.
 
 **Files:**
 - Modify: `src/main/remint.ts` — the write half.
@@ -231,7 +232,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Must agree:** the re-minted page must read as `member` through `admitContentFile` and appear in the next projection under the new id — one test crosses the re-mint, the admission predicate, and the projection.
 
 **Steps:**
-- [ ] Failing tests: page re-mint, container re-mint, row copies — asserting the ORIGINAL's rows are byte-identical after (the acceptance criterion's "keeps its folds" pinned directly) — and the must-agree crossing.
+- [ ] Failing tests: page re-mint, container re-mint (including fresh `views[].id` on the copy's sidecar), the three row-copy shapes — asserting the ORIGINAL's rows are byte-identical after AND that no view config id is shared between the two boards — and the must-agree crossing.
 - [ ] Implement; gates green.
 - [ ] Commit: `feat(remint): the copy takes a fresh id and duplicate chrome; the original never moves`
 
@@ -251,7 +252,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Why:** The unlink sweeps enumerate every `_space.json` under `contextsDir`, including those inside the Context being deleted — stripping keys that are still true inside the subtree the same operation ships to trash (execution-verified). Restore would return a Context with its internal Space-to-Space links destroyed. Fix at source: roots under the delete target are skipped by path prefix.
 
 **Files:**
-- Modify: `src/main/crud/contextCascade.ts` — `unlinkContextKey` / `unlinkSpaceValue` gain the target-prefix skip (threaded from the delete arm).
+- Modify: `src/main/crud/contextCascade.ts` — `unlinkContextKey` gains the target-prefix skip (threaded from the delete arm). `unlinkSpaceValue` does not need it: a deleted Space's subtree holds tile files the markdown sweep never reaches (`.nexus` is skipped top-level) and no other swept root.
 - Modify: `src/main/mutate.ts` — the delete arm passes the resolved target.
 - Test: `src/main/admission.test.ts` sibling or new — a Space inside the deleted Context keeps its key; an outside page still loses it (the control that proves the sweep ran).
 
@@ -292,7 +293,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 
 **Why:** Spec B-1..B-7. One JSON beside the trashed artifact, named from `trashWithTimestamp`'s returned leaf. Parent as the discriminated union (B-4); per-kind payloads (B-5); all-or-nothing per pair; best-effort — a pair failure never fails the delete. `trashTileFile` writes no pair (A-4).
 
-  **Four gather points, not three** — the Context arm needs a world snapshot: frontmatter stores Space *titles*, the sweep can only capture titles, and G-3's ratified `{id, title}` needs title→id resolution through `loadContextWorld`, whose window **closes at the registry erase**. So: (0) world snapshot before the sweep, for Space/Context deletes only · (1) registry entry before the erase · (2) membership during the sweep, resolved against the snapshot · (3) pair name after the move. Without point 0 the pair ships titles alone — the join key the spec's Considered & Rejected explicitly refused.
+  **Four gather points, not three** — frontmatter stores Space *titles*, the sweep can only capture titles, and G-3's ratified `{id, title}` needs title→id resolution whose window **closes at the registry erase**. Point 0 is scoped to what each arm needs, never the whole world: a **Space** delete reads `readRegistryStrict` alone (its parent Context's title→id; its own id is in its own sidecar) · a **Context** delete enumerates **its own folder** — `readdir` + `readJsonStrict` per `_space.json`, title = folder name — which is exactly the `{id, title}` set G-3 ratified. Not `loadContextWorld`: that fails the entire load on any unreadable Space sidecar anywhere in the nexus, so one evicted placeholder in an unrelated Context would suppress every Space and Context pair. Scoped, B-1's all-or-nothing means "this delete's own evidence is unreadable," never "some unrelated Context is sick." So: (0) the scoped id read · (1) registry entry before the erase · (2) membership during the sweep, resolved against 0 · (3) pair name after the move.
 
 **Files:**
 - Create: `src/main/provenance.ts` — pair shape (zod, loose), `gatherProvenance(kind, abs, root, capture)`, `writePair(dest, pair)`, `readPair(dest)`.
@@ -390,7 +391,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 
 **Requirement:** 3 · **Scope ruling (Nathan): actions only — no user interface.** The op, the listing, and the IPC arm ship end-to-end tested; every surface that would call them is sequenced after.
 
-**Why:** The mover: a `restore` mutate op takes a trash-relative pair reference, calls the resolver, executes the placement — move the artifact (drop the stamp, apply final name), delete the pair, and per kind: re-insert the Context registry entry (append, final title), re-apply membership through Task 10's loop — joined by the recorded Space **ids** against the restored `_space.json` files, whose **as-restored** titles are what gets written (E-3: recorded titles are labels; the resolver's final titles are what restore writes). Branches on nothing (E-2).
+**Why:** The mover: a `restore` mutate op takes a trash-relative pair reference, calls the resolver, executes the placement — move the artifact (drop the stamp, apply final name), delete the pair, and per kind: re-insert the Context registry entry (append, final title), re-apply membership through Task 10's loop — joined by the recorded Space **ids** against the restored Space folders — a Space's title IS its folder name; `_space.json` carries the id — so the as-restored folder names are what gets written (E-3: recorded titles are labels; the resolver's final titles are what restore writes). Branches on nothing (E-2).
 
 **Files:**
 - Modify: `src/shared/mutate.ts` — the `restore` op; `src/main/mutate.ts` — the arm.
@@ -453,6 +454,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 ### Rulings
 - Restore's **interface** is out of scope; its actions — resolver, op, listing — ship (Nathan, pre-ratification).
 - Plan review round 1: 8 findings — 3 High (row-copy direction · three-state producer · the fourth gather point), 3 Medium, 2 Low; 7 folded above, 1 moot post-scope-cut (the trigger/live-data contradiction named a step that no longer exists). The spec itself survived the round untouched; the T3/T5 hand-off deviation was verified correct against the real open sequence.
+- Plan review round 2 (scoped to round 1's folds): 5 findings — 1 High (the T3 wiring citation excluded the one funnel every ordinary open passes through; now an opt-out parameter only `nexus:rename` sets), 2 Medium (`blockDoc` values re-mint their view config ids through the existing `remintConfigIds`, and the copy's sidecar re-mints `views[].id`; gather point 0 scoped per arm instead of `loadContextWorld`, whose nexus-wide strictness would let one unrelated corrupt sidecar suppress every pair), 2 Low (`previews` is a singleton RMW, not a keyed row; an ambiguous id with no prior entry is omitted, its first unambiguous appearance reading as one addition). All folded; four of round 1's six folds survived scrutiny intact.
 
 ### Open Against Later Tasks
 ### Deviations
