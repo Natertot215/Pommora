@@ -173,9 +173,9 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
     const { dir, record } = await onlyBundle()
     expect(await readRecord(dir)).toEqual(record)
-    await writeFile(join(dir, 'record.json'), '{not a record')
+    await writeFile(join(dir, '_record.json'), '{not a record')
     expect(await readRecord(dir)).toBeNull()
-    await writeFile(join(dir, 'record.json'), JSON.stringify({ hello: 'world' }))
+    await writeFile(join(dir, '_record.json'), JSON.stringify({ hello: 'world' }))
     expect(await readRecord(dir)).toBeNull()
   })
 
@@ -254,7 +254,24 @@ describe('listBundles — what the trash offers', () => {
       expect(listed[0].record.entity).toBe('property')
     }
     // Never pruned — the record is the only evidence that destruction happened.
-    expect(await pathExists(join(dir, 'record.json'))).toBe(true)
+    expect(await pathExists(join(dir, '_record.json'))).toBe(true)
+  })
+
+  it('the record shares a folder with the artifact and can never collide with it', async () => {
+    // The one name that would collide if the record wore a plain one. `invalidName` lets a user
+    // choose it; the record's `_` prefix is what keeps the two namespaces apart.
+    await mkdir(join(root, 'record.json'), { recursive: true })
+    await writeFile(
+      join(root, 'record.json', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-odd' }),
+    )
+    const r = await handleMutate({ op: 'delete', path: 'record.json', kind: 'collection' }, nexusDeps)
+    expect(r.ok).toBe(true)
+    const [listed] = await listBundles(root)
+    expect(listed.record).toMatchObject({ entity: 'collection', id: 'col-odd' })
+    const restored = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+    expect(restored.ok).toBe(true)
+    expect(await pathExists(join(root, 'record.json', '_pagecollection.json'))).toBe(true)
   })
 
   it('Finder litter beside the artifact changes nothing', async () => {
@@ -272,7 +289,7 @@ describe('listBundles — what the trash offers', () => {
     const phantom = join(dir, 'Notes', 'Archive.deleted')
     await mkdir(phantom, { recursive: true })
     await writeFile(
-      join(phantom, 'record.json'),
+      join(phantom, '_record.json'),
       JSON.stringify({ entity: 'page', parent: { kind: 'root' } }),
     )
     const listed = await listBundles(root)
@@ -280,12 +297,41 @@ describe('listBundles — what the trash offers', () => {
     expect(listed[0].record.entity).toBe('collection')
   })
 
-  it('old-format trash entries are invisible', async () => {
-    await mkdir(join(root, '.trash', 'Notes'), { recursive: true })
-    await writeFile(join(root, '.trash', 'Notes', '2026-01-01T00-00-00-000Z__Old.md'), 'body')
+  it('a chain folder that merely wears the name is walked through, not read as a deletion', async () => {
+    // A Collection a user genuinely named "Archive.deleted" — its mirrored chain folder in
+    // .trash carries the same name and holds the real bundle.
+    await mkdir(join(root, 'Archive.deleted'), { recursive: true })
     await writeFile(
-      join(root, '.trash', 'Notes', '2026-01-01T00-00-00-000Z__Old.md.provenance.json'),
+      join(root, 'Archive.deleted', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-archive' }),
+    )
+    await writeFile(
+      join(root, 'Archive.deleted', 'Beta.md'),
+      '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVF\n---\nbody',
+    )
+    const r = await handleMutate(
+      { op: 'delete', path: 'Archive.deleted/Beta.md', kind: 'page' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    const listed = await listBundles(root)
+    expect(listed).toHaveLength(1)
+    expect(listed[0].record).toMatchObject({ entity: 'page' })
+  })
+
+  it('old-format trash entries are invisible', async () => {
+    // Both shapes the retired primitive left: a stamped file with a sibling pair, and a stamped
+    // FOLDER for a container delete.
+    const old = join(root, '.trash', 'Notes')
+    await mkdir(join(old, '2026-01-01T00-00-00-000Z__Journal'), { recursive: true })
+    await writeFile(join(old, '2026-01-01T00-00-00-000Z__Old.md'), 'body')
+    await writeFile(
+      join(old, '2026-01-01T00-00-00-000Z__Old.md.provenance.json'),
       JSON.stringify({ entity: 'page', id: 'old', parent: { kind: 'root' } }),
+    )
+    await writeFile(
+      join(old, '2026-01-01T00-00-00-000Z__Journal.provenance.json'),
+      JSON.stringify({ entity: 'set', id: 'old-set', parent: { kind: 'root' } }),
     )
     expect(await listBundles(root)).toHaveLength(0)
   })
@@ -493,7 +539,7 @@ describe('restore — the record spends, headless', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(false)
-    expect(await pathExists(join(dir, 'record.json'))).toBe(true)
+    expect(await pathExists(join(dir, '_record.json'))).toBe(true)
   })
 })
 
@@ -551,12 +597,12 @@ describe('restore — the gate-four pins', () => {
   it('only a trash bundle restores — an in-nexus path refuses', async () => {
     await mkdir(join(root, 'Notes', 'fake.deleted'), { recursive: true })
     await writeFile(
-      join(root, 'Notes', 'fake.deleted', 'record.json'),
+      join(root, 'Notes', 'fake.deleted', '_record.json'),
       JSON.stringify({ entity: 'page', id: 'x', parent: { kind: 'root' } }),
     )
     const r = await handleMutate({ op: 'restore', bundlePath: 'Notes/fake.deleted' }, nexusDeps)
     expect(r.ok).toBe(false)
-    expect(await pathExists(join(root, 'Notes', 'fake.deleted', 'record.json'))).toBe(true)
+    expect(await pathExists(join(root, 'Notes', 'fake.deleted', '_record.json'))).toBe(true)
   })
 
   it('a property record has no artifact to restore', async () => {
@@ -570,7 +616,7 @@ describe('restore — the gate-four pins', () => {
     const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.error.message).toContain('property')
-    expect(await pathExists(join(bundle, 'record.json'))).toBe(true)
+    expect(await pathExists(join(bundle, '_record.json'))).toBe(true)
   })
 })
 
@@ -578,9 +624,9 @@ describe('restore — the attack folds', () => {
   it('a record cannot steer the artifact outside the nexus', async () => {
     await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
     const [dir] = await bundleDirs(join(root, '.trash'))
-    const record = JSON.parse(await readFile(join(dir, 'record.json'), 'utf8'))
+    const record = JSON.parse(await readFile(join(dir, '_record.json'), 'utf8'))
     record.registry.title = '../../../escape-target'
-    await writeFile(join(dir, 'record.json'), JSON.stringify(record))
+    await writeFile(join(dir, '_record.json'), JSON.stringify(record))
     const [listed] = await listBundles(root)
     const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
