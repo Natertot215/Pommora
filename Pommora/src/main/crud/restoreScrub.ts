@@ -14,8 +14,10 @@
 
 import { contextKey } from '@shared/contexts'
 import { parseGovernedKey } from '@shared/governedKeys'
-import { propertyKey } from '@shared/propertyValue'
+import type { PropertyDefinition } from '@shared/properties'
+import { encodeValue, propertyKey } from '@shared/propertyValue'
 import type { NexusTree } from '@shared/types'
+import { contextTagStands, propertyValueStands } from './standing'
 import { readRegistry } from '../io/propertiesRegistry'
 import { rewritePageSerialized } from '../io/fileLock'
 import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
@@ -25,11 +27,12 @@ import { pageCollectionSidecar } from '@shared/schemas'
 import { readSidecar } from '../sidecarIO'
 import { sweepAdmits } from './util'
 
-/** The live world a returning page is measured against. */
+/** What governs each key at the destination — the only thing the caller can answer, and all
+ *  the standing check needs. A key absent from either map is governed by nothing. */
 interface LiveWorld {
-  /** Property keys the destination Collection actually carries — name-derived, as frontmatter is. */
-  propertyKeys: Set<string>
-  /** Context keys the registry still stands behind → the Space titles that Context still holds. */
+  /** Property key → the definition the destination Collection carries under that name. */
+  defs: Map<string, PropertyDefinition>
+  /** Context key → the Space titles that Context still holds. */
   contextSpaces: Map<string, Set<string>>
 }
 
@@ -38,44 +41,43 @@ async function liveWorld(
   tree: NexusTree,
   destCollectionFolder: string | null,
 ): Promise<LiveWorld> {
-  const defs = (await readRegistry(root)).defs
+  const registry = (await readRegistry(root)).defs
   const assigned: string[] = destCollectionFolder
     ? (((await readSidecar(destCollectionFolder, 'collection', pageCollectionSidecar))
         ?.properties as string[] | undefined) ?? [])
     : []
-  const propertyKeys = new Set(
-    assigned.map((id) => defs[id]).filter((d) => d !== undefined).map((d) => propertyKey(d)),
-  )
+  const defs = new Map<string, PropertyDefinition>()
+  for (const id of assigned) {
+    const def = registry[id]
+    if (def) defs.set(propertyKey(def), def)
+  }
   const contextSpaces = new Map(
     tree.contexts.map((g) => [contextKey(g.def.title), new Set(g.spaces.map((s) => s.title))]),
   )
-  return { propertyKeys, contextSpaces }
+  return { defs, contextSpaces }
 }
 
-/** The frontmatter this page should return with, or null when nothing needs dropping. */
+/** The frontmatter this page should return with, or null when nothing changes. Every decision
+ *  is the standing check's; this only spends the answer. */
 function reconciled(content: string, world: LiveWorld): string | null {
   const fields = splitFrontmatter(content)
   const drop: string[] = []
   const rewrite: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(fields)) {
+  for (const [key, raw] of Object.entries(fields)) {
     const governed = parseGovernedKey(key)
     if (!governed) continue
-    if (governed.layer === 'property') {
-      // No definition, or one the destination Collection no longer carries.
-      if (!world.propertyKeys.has(key)) drop.push(key)
-      continue
-    }
-    const spaces = world.contextSpaces.get(key)
-    if (!spaces) {
+    const standing =
+      governed.layer === 'property'
+        ? propertyValueStands(world.defs.get(key), raw)
+        : contextTagStands(world.contextSpaces.get(key), raw)
+    if (!standing.stands) {
       drop.push(key)
       continue
     }
-    const titles = Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : []
-    const kept = titles.filter((t) => spaces.has(t))
-    // An emptied value deletes its key — the no-empties rule reaches here too.
-    if (kept.length === titles.length) continue
-    if (kept.length) rewrite[key] = kept
-    else drop.push(key)
+    // A survivor is rewritten only when it actually narrowed — a multi-value kind that lost one
+    // of its options comes back holding the rest.
+    const next = standing.layer === 'property' ? encodeValue(standing.value) : standing.titles
+    if (JSON.stringify(next) !== JSON.stringify(raw)) rewrite[key] = next
   }
   const touched = [...drop, ...Object.keys(rewrite)]
   if (!touched.length) return null
