@@ -22,9 +22,9 @@
 
 #### A — The Bundle Shape
 
-- **A-1:** [confirmed] One deletion = one folder: `.trash/<mirrored-chain>/<stamp>__<base>.deleted/` containing the artifact under its **original basename** and `record.json`. The stamp stays ISO-with-`[:.]→-`; de-collision counters go on the bundle folder name (`<stamp>__<n>__<base>.deleted`), decided at `mkdir`.
+- **A-1:** [confirmed] One deletion = one folder: `.trash/<mirrored-chain>/<stamp>__<base>.deleted/` containing the artifact under its **original basename** and `_record.json`. The record wears the sidecar convention's underscore because it shares that folder with the artifact: `invalidName` forbids a leading `_` for every entity, so no name a user can choose collides with it, and the atomic writer's temp sibling is skipped by the same rule that skips Finder litter. The stamp stays ISO-with-`[:.]→-`; de-collision counters go on the bundle folder name (`<stamp>__<n>__<base>.deleted`), decided at `mkdir`.
 - **A-2:** [confirmed] The record schema is the pair schema minus the `name` field and its stamped-leaf parser (`artifactBaseName`) — the artifact keeps its real name, so both dissolve. The zod discriminated union, `parentRef`, per-kind payloads, and `partial` marker carry over unchanged.
-- **A-3:** [confirmed] Property deletes become ordinary artifact-less bundles — `.trash/<stamp>__property-<id>.deleted/` holding only `record.json`. The flat-file `writePropertyPair` path, its own de-collision loop, and the property exemption in the listing all dissolve; every deletion is now the same shape.
+- **A-3:** [confirmed] Property deletes become ordinary artifact-less bundles — `.trash/<stamp>__property-<id>.deleted/` holding only the record. The flat-file `writePropertyPair` path, its own de-collision loop, and the property exemption in the listing all dissolve; every deletion is now the same shape.
 - **A-4:** [confirmed] System-trash mode is unchanged: no bundle, no gathers — the artifact leaves the nexus and there is nowhere valid for a record to point.
 - **A-5:** [confirmed] A markdown-block tile file is **not an entity delete** — it has no record schema entity and no restore semantics. The flat, record-less trash primitive survives (renamed `trashFileFlat`) solely for `blocks.ts`; its tests are unchanged. Bundles are for entity deletes only.
 
@@ -37,7 +37,8 @@
 
 #### C — Restore & Listing
 
-- **C-1:** [confirmed] `restoreArtifact` takes a bundle path; the artifact is the single non-`record.json` entry inside; it moves out to the resolver's placement and the bundle is removed. The resolver, the containment/occupancy guards, registry-append-before-move with rollback, passenger re-keying, and the reconcile loop are all unchanged.
+- **C-1:** [confirmed] `restoreArtifact` takes a bundle path; the artifact is the single entry inside that the walk does not hide; it moves out to the resolver's placement and the bundle is removed. The resolver, the containment/occupancy guards, registry-append-before-move with rollback, passenger re-keying, and the reconcile loop are all unchanged.
+- **C-1b:** [confirmed] A bundle is a `.deleted` folder that HOLDS a record. The name alone cannot decide it: `.trash` mirrors the nexus, so a Collection a user named `Archive.deleted` puts that name on a chain folder, and a name-only rule would read the scaffold as a bundle and hide every deletion beneath it. The walk stops at a folder with a record and walks through everything else.
 - **C-2:** [confirmed] The orphan prune is **deleted**, not ported — a record inside the bundle cannot be separated from its artifact by a rename, hand-move, or sync race, so the failure the prune answered (and the data loss it caused, destroying non-derivable records over temporary artifact absence) no longer exists.
 - **C-3:** [confirmed] Restore trusts the record's ids without re-deriving them from the artifact. Reaching a disagreement requires hand-editing an id inside a file sitting in `.trash` — and even then, the resulting state (two live holders of one id) is exactly what the baseline's re-mint pass adjudicates at the next open. The record half never duplicates a net the baseline half already provides.
 

@@ -114,16 +114,22 @@ Trash browser + restore surface (reads `listBundles`, invokes `restore`) · empt
 
 ### Progress
 
-- [ ] T1 bundle primitives
-- [ ] T2 record grammar + listing
-- [ ] P1 gate
-- [ ] T3 write-ahead arms
-- [ ] T4 property bundles
+- [x] T1 bundle primitives — `9a9d7a3f`
+- [x] T2 record grammar + listing (absorbed T4 + T5) — `c29d13e1`
+- [x] P1 gate — folds in `9d43ef55`
+- [x] T3 write-ahead arms
+- [x] T4 property bundles — landed with T2
 - [ ] P2 gate
-- [ ] T5 restore on bundles
+- [x] T5 restore on bundles — landed with T2
 - [ ] T6 docs + sweep
 - [ ] P3 gate + closeout
 
 ### Log
 
 - **Phase 1 base:** `13fc4742`.
+- **Deviation — T4 and T5 landed inside T2.** The container change is atomic under the type gate: deleting `PAIR_SUFFIX` and the pair reader takes `restoreArtifact`'s input and `deleteProperty`'s writer with it, so separating them would have meant writing shims to be thrown away one commit later. The task boundaries collapsed to three commits — grammar + listing + restore, then the arms, then the docs — each independently reviewable.
+- **P1 gate — simplifier + correctness reviewer on `13fc4742..c29d13e1`.** Both flagged that the code claimed record-before-artifact while the arms still settled first; that was T3's work, not a defect, and it is now true. Three findings folded, each verified at the code first:
+  - The listing read a bundle by name alone, so a chain folder named `<x>.deleted` — a Collection a user genuinely named that — hid every deletion beneath it (reproduced by the reviewer). Fixed by C-1b: one criterion, not two.
+  - The record shared a namespace with the artifact, so a folder entity named `record.json` broke its own record write. **Nathan's ruling:** take the sidecar convention's underscore (A-1), which removes the collision at its source and also stops the atomic writer's temp sibling from reading as a second artifact.
+  - `restoreArtifact`'s containment check reads with its prefix hoisted out of the condition.
+- Not folded, on the reachability razor: nothing was added for states reachable only by hand-editing `.trash`.

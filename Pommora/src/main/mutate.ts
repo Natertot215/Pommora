@@ -268,22 +268,36 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!resolved.ok) return resolved
       const abs = resolved.value
       if (await isReserved(root, abs)) return fault('That item can’t be deleted.')
-      // The record gathers in the arm's real order — scoped id reads and the registry entry
-      // BEFORE the erase (the title→id window closes there), membership DURING the sweep.
-      // System-trash mode gathers nothing: the artifact leaves the nexus and there is nowhere
-      // valid for a record to live.
-      const wantRecord = deps.trashMode !== 'system'
-      let record: RecordFile | null = null
+      if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
+      // Write-ahead. The bundle is minted while the artifact is still live, the record lands
+      // inside it before the sweep that destroys what it describes, and the artifact moves in
+      // LAST — so a delete cut short leaves evidence rather than silence. Facts that only exist
+      // mid-delete (a sweep's captured membership) are patched in on the way past; `partial`
+      // is recomputed by the gatherers, never cleared, so a thin record always says so.
+      //
+      // System-trash mode records nothing: the artifact leaves the nexus entirely and there is
+      // nowhere valid for a record to live. `write` is null there, and every gather with it.
+      const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
+      const write = bundle
+        ? async (record: RecordFile | null): Promise<void> => {
+            if (record) await writeRecord(bundle, record)
+          }
+        : null
       if (req.kind === 'space') {
-        const registry = wantRecord ? await readRegistryStrict(root) : null
+        // The registry entry and the Space's own sidecar are read BEFORE the sweep — after it,
+        // the membership they anchor is already gone.
+        const registry = write ? await readRegistryStrict(root) : null
+        if (write) await write(await gatherSpaceRecord(abs, registry, null))
         // Unlink the Space's title as a value everywhere BEFORE the folder trashes.
         const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
-        if (wantRecord) record = await gatherSpaceRecord(abs, registry, swept.ok ? swept.value : null)
+        if (write) await write(await gatherSpaceRecord(abs, registry, swept.ok ? swept.value : null))
       } else if (req.kind === 'context') {
         const title = basename(abs)
-        const evidence = wantRecord
+        // The title→id window closes at the registry erase, so the evidence is taken first.
+        const evidence = write
           ? await gatherContextEvidence(abs, title, await readRegistryStrict(root))
           : null
+        if (write && evidence) await write(buildContextRecord(evidence, null))
         // Unlink the parenthesized key everywhere OUTSIDE the folder being trashed — the
         // subtree's own roots are passengers whose links stay true in the trash; then drop
         // the registry entry; the folder tree (its Spaces included) trashes recoverably below.
@@ -291,20 +305,15 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         await mutateRegistryFile(root, (cur) => ({
           contexts: cur.contexts.filter((c) => c.title !== title),
         }))
-        if (evidence) record = buildContextRecord(evidence, swept.ok ? swept.value : null)
-      } else if (wantRecord) {
-        record = await gatherContentRecord(root, req.kind, abs)
+        if (write && evidence)
+          await write(buildContextRecord(evidence, swept.ok ? swept.value : null))
+      } else if (write) {
+        await write(await gatherContentRecord(root, req.kind, abs))
       }
-      const removed = await removeViaMode(root, abs, deps)
-      if (!removed.ok) return removed
-      // Best-effort: the artifact is already irreversibly moved, so a record failure never
-      // fails the delete — the entity degrades to hand-restore, today's behavior.
-      if (record && removed.value.bundle) {
-        try {
-          await writeRecord(removed.value.bundle, record)
-        } catch (e) {
-          console.error('provenance: the record write failed; the delete stands:', errText(e))
-        }
+      if (bundle) await settleBundle(bundle, abs)
+      else {
+        recordWrite(abs) // in-nexus trash records inside settleBundle; the OS route records here
+        await deps.trashToSystem(abs)
       }
       return ok({})
     }
@@ -662,21 +671,3 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
   }
 }
 
-/** Remove a file/folder per the delete-target setting: an in-nexus `.trash` bundle (default,
- *  portable + recoverable, the bundle returned to hold the record) or the OS Trash (no bundle —
- *  the artifact leaves the nexus). */
-async function removeViaMode(
-  root: string,
-  abs: string,
-  deps: MutateDeps,
-): Promise<Result<{ bundle: string | null }>> {
-  if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
-  if (deps.trashMode === 'system') {
-    recordWrite(abs) // in-nexus trash records inside settleBundle; the OS route records here
-    await deps.trashToSystem(abs)
-    return ok({ bundle: null })
-  }
-  const bundle = await mintBundle(root, abs)
-  await settleBundle(bundle, abs)
-  return ok({ bundle })
-}
