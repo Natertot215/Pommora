@@ -1,7 +1,6 @@
 ## NexusRecord — Implementation Plan
 
-> **Status:** ratified — in execution · Spec: [[NexusRecord — Decision Log]] · Execute tasks in order.
-> Citations name files and symbols; re-derive before editing.
+> **Status:** executed — all 14 tasks and 4 gates closed; the closeout's neutral verifier and attack pass both ran and folded. Open: Nathan's live check plus the three rulings flagged in the Log (Deviations · Open Against Later Tasks). Spec: [[NexusRecord — Decision Log]].
 
 **Goal**
 
