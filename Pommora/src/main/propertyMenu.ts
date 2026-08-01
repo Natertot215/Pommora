@@ -33,7 +33,7 @@ export function popPropertyMenu(
             cancelId: 1,
             message: `Delete “${ctx.name}” everywhere?`,
             detail:
-              'It is removed from every collection; a recovery snapshot lands in the nexus’s .trash folder.',
+              'It is removed from every collection; a restorable record lands in the nexus’s .trash folder.',
           })
           resolve(response === 0 ? 'property:destroy' : null)
         },
