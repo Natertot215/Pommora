@@ -3,7 +3,7 @@
 // the structure-classification path (raw/un-adopted folders, e.g. ~/test).
 // No file is ever opened for writing.
 
-import { readdir, readFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { parseDocument } from 'yaml'
 import { admitContentFile } from '@shared/identity'
@@ -45,6 +45,7 @@ import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas
 import type { PropertyDefinition } from '@shared/properties'
 import { adoptedId } from './ids'
 import { pathExists, readJsonObject, readJsonStrict } from './io/atomicWrite'
+import { listEntries } from './io/walk'
 import { orderedDefs, readRegistry, type PropertyRegistry } from './io/propertiesRegistry'
 import { asString, asStringArray, basenameNoMd } from './coerce'
 import { shouldSkipDir } from './exclusion'
@@ -155,14 +156,6 @@ export function readLabels(raw: unknown): NexusLabels {
     pageSet: pair(L.page_set, DEFAULT_LABELS.pageSet),
     agendaTask: pair(L.agenda_task, DEFAULT_LABELS.agendaTask),
     agendaEvent: pair(L.agenda_event, DEFAULT_LABELS.agendaEvent),
-  }
-}
-
-async function listEntries(dir: string): Promise<import('node:fs').Dirent[]> {
-  try {
-    return await readdir(dir, { withFileTypes: true })
-  } catch {
-    return []
   }
 }
 

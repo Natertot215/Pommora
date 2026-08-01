@@ -1,9 +1,23 @@
-// Recursive `.md` enumeration for mutation cascades (delete-property strips, rename
-// cascades, Context unlinks). This is the simple "find the files to rewrite" walk — distinct
-// from readNexus, which builds the typed tree with exclusions, depth caps, and adoption.
+// Directory enumeration for the passes that walk a nexus: the recursive `.md` sweep behind the
+// mutation cascades (delete-property strips, rename cascades, Context unlinks) and the shallow
+// listing the read walk and the adoption pass step through. Distinct from readNexus, which builds
+// the typed tree with exclusions, depth caps, and adoption.
 
 import { readdir } from 'node:fs/promises'
+import type { Dirent } from 'node:fs'
 import { join } from 'node:path'
+
+/** One level of `dir`, or [] when it can't be read. Every caller walks a tree of independent
+ *  entities, so a directory that vanished mid-walk or refuses to open costs only itself — the
+ *  levels above and beside it still enumerate. Shared so that stays one decision: two copies of
+ *  a swallowed error drift into two different failure behaviours and nothing catches it. */
+export async function listEntries(dir: string): Promise<Dirent[]> {
+  try {
+    return await readdir(dir, { withFileTypes: true })
+  } catch {
+    return []
+  }
+}
 
 /** Every `.md` file under `dir` (recursive), as absolute paths. `skipTopLevel` drops
  *  entries whose first path segment matches (e.g. `['.nexus', '.trash']` for a nexus-wide
