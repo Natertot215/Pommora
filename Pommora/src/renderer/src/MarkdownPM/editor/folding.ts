@@ -12,7 +12,8 @@ import { docString } from './docCache'
 import { createBlockDragGesture } from './blockDrag'
 import { lineElementAt } from './lineDom'
 
-/** Per-page fold persistence seam — reads/writes `.nexus/folds.json` via the host (kept Electron-free here). */
+/** Per-page fold persistence seam — reads/writes the device-local fold state via the host (kept
+ *  Electron-free here, so this file never learns where that state lives). */
 export interface FoldsApi {
   load: () => Promise<string[]>
   save: (keys: string[]) => void
@@ -26,7 +27,7 @@ export interface HeadingSection {
   /** End of the heading line's text — the body to fold begins on the next line. */
   lineEnd: number
   level: number
-  /** Ordinal-disambiguated key for `.nexus/folds.json` (stable across heading-level changes). */
+  /** Ordinal-disambiguated key for the saved fold set (stable across heading-level changes). */
   key: string
   /** End of the section: the last line before the next equal-or-higher heading (or document end). */
   to: number

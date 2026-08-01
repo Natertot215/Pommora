@@ -136,7 +136,7 @@ const api = {
   nav: { read: ask('nav:read'), write: ask('nav:write') },
   // The tab set — one device-local db row (unpinned tabs + active + per-tab history refs).
   tabs: { load: ask('tabs:load'), save: ask('tabs:save') },
-  // The preview tab sets — synced page-previews.json (nav set + per-origin sets + open pointer).
+  // The preview tab sets — one device-local db row (nav set + per-origin sets + open pointer).
   previews: { load: ask('previews:load'), save: ask('previews:save') },
   // capture returns the nexus-asset:// URL; evict prunes thumbnails outside the live recents∪pins set.
   capture: { thumbnail: ask('capture:thumbnail'), evict: ask('nav:evictThumbs') },

@@ -216,7 +216,7 @@ export function MarkdownEditor({
       }),
     ]
     // Warm rehydration: seed the fresh mount from the cached serialized state — doc + selection +
-    // undo history (historyField is the only serialized field; folds ride folds.json below). A corrupt
+    // undo history (historyField is the only serialized field; folds persist separately). A corrupt
     // or cross-version payload falls back to a cold mount rather than throwing the editor away.
     const saved = warm?.restore()
     let warmState: EditorState | null = null
