@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from './io/atomicWrite'
 import { handleMutate, type MutateDeps } from './mutate'
 import { contextsDir, contextsRegistryFile } from './paths'
-import { readPair, writePropertyPair } from './provenance'
+import { artifactBaseName, readPair, resolvePair, writePropertyPair } from './provenance'
 import { readNexus } from './readNexus'
 import { closeSession, openSession } from './session'
 
@@ -221,5 +221,138 @@ describe('writePropertyPair', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe('resolvePair — a placement with final names, or a typed refusal', () => {
+  const P = (over: Partial<import('@shared/types').PageNode> = {}) =>
+    ({ kind: 'page', id: 'page-x', title: 'X', path: 'Notes/X.md', ...over }) as import('@shared/types').PageNode
+  const treeOf = (
+    contexts: import('@shared/types').ContextGroup[],
+    collections: Partial<import('@shared/types').CollectionNode>[],
+  ) => ({ contexts, collections }) as unknown as import('@shared/types').NexusTree
+
+  const journal = (over: Partial<import('@shared/types').SetNode> = {}) =>
+    ({
+      kind: 'set',
+      id: 'set-daily',
+      title: 'Journal',
+      path: 'Notes/Journal',
+      pages: [],
+      sets: [],
+      ...over,
+    }) as import('@shared/types').SetNode
+
+  const notes = (sets: import('@shared/types').SetNode[] = [journal()], pages: import('@shared/types').PageNode[] = []) => ({
+    kind: 'collection' as const,
+    id: 'col-notes',
+    title: 'Notes',
+    path: 'Notes',
+    sets,
+    pages,
+  })
+
+  const pagePair = { entity: 'page' as const, id: PAGE_A, parent: { kind: 'container' as const, id: 'set-daily' } }
+
+  it('places a page into its parent container at the container’s CURRENT path', () => {
+    const r = resolvePair(pagePair, 'Alpha.md', treeOf([], [notes()]))
+    expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha.md' } })
+  })
+
+  it('disambiguates a taken title, matching the create convention', () => {
+    const taken = journal({ pages: [P({ id: 'page-o', title: 'Alpha', path: 'Notes/Journal/Alpha.md' })] })
+    const r = resolvePair(pagePair, 'Alpha.md', treeOf([], [notes([taken])]))
+    expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha 2.md' } })
+  })
+
+  it('a set title also blocks a page name — one folder cannot hold both', () => {
+    const inner = journal({ sets: [journal({ id: 'set-inner', title: 'Alpha', path: 'Notes/Journal/Alpha' })] })
+    const r = resolvePair(pagePair, 'Alpha.md', treeOf([], [notes([inner])]))
+    expect(r).toEqual({ place: { dir: 'Notes/Journal', finalName: 'Alpha 2.md' } })
+  })
+
+  it('refuses when the parent is gone — a still-trashed parent is the same answer', () => {
+    expect(resolvePair(pagePair, 'Alpha.md', treeOf([], [notes([])]))).toEqual({ refuse: 'parent-gone' })
+  })
+
+  it('refuses when the parent id resolves to a kind that cannot hold this one', () => {
+    const tree = treeOf(
+      [{ def: { id: 'ctx_a', title: 'Areas' }, spaces: [{ kind: 'space', id: 'set-daily', title: 'S', path: '.nexus/contexts/Areas/S', contextId: 'ctx_a' } as import('@shared/types').SpaceNode] }],
+      [notes([])],
+    )
+    expect(resolvePair(pagePair, 'Alpha.md', tree)).toEqual({ refuse: 'cannot-hold' })
+  })
+
+  it('a live id refuses, and it outranks every other answer', () => {
+    const tree = treeOf([], [notes([], [P({ id: PAGE_A, title: 'Elsewhere', path: 'Notes/Elsewhere.md' })])])
+    expect(resolvePair(pagePair, 'Alpha.md', tree)).toEqual({ refuse: 'id-live' })
+  })
+
+  it('an unaddressable parent refuses', () => {
+    const pair = { entity: 'page' as const, id: PAGE_A, parent: { kind: 'unaddressable' as const } }
+    expect(resolvePair(pair, 'Alpha.md', treeOf([], [notes()]))).toEqual({ refuse: 'unaddressable' })
+  })
+
+  it('a collection returns to the root, disambiguated against its siblings', () => {
+    const pair = { entity: 'collection' as const, id: 'col-back', parent: { kind: 'root' as const } }
+    const r = resolvePair(pair, 'Notes', treeOf([], [notes()]))
+    expect(r).toEqual({ place: { dir: '', finalName: 'Notes 2' } })
+  })
+
+  it('a Space follows its Context to the Context’s CURRENT title, colliding titles disambiguated', () => {
+    const tree = treeOf(
+      [
+        {
+          def: { id: 'ctx_projects', title: 'Ventures' },
+          spaces: [
+            { kind: 'space', id: 'sp-other', title: 'Pommora', path: '.nexus/contexts/Ventures/Pommora', contextId: 'ctx_projects' } as import('@shared/types').SpaceNode,
+          ],
+        },
+      ],
+      [],
+    )
+    const pair = {
+      entity: 'space' as const,
+      id: 'sp-pom',
+      parent: { kind: 'context' as const, id: 'ctx_projects' },
+      members: [],
+    }
+    const r = resolvePair(pair, 'Pommora', tree)
+    expect(r).toEqual({
+      place: { dir: '.nexus/contexts/Ventures', finalName: 'Pommora 2', finalTitle: 'Pommora 2' },
+    })
+  })
+
+  it('a Context re-enters the registry under a disambiguated final title', () => {
+    const tree = treeOf([{ def: { id: 'ctx_new', title: 'Projects' }, spaces: [] }], [])
+    const pair = {
+      entity: 'context' as const,
+      registry: { id: 'ctx_projects', title: 'Projects' },
+      membership: [],
+    }
+    const r = resolvePair(pair, 'Projects', tree)
+    expect(r).toEqual({
+      place: { dir: '.nexus/contexts', finalName: 'Projects 2', finalTitle: 'Projects 2' },
+    })
+  })
+
+  it('a Context whose registry id is already live refuses', () => {
+    const tree = treeOf([{ def: { id: 'ctx_projects', title: 'Elsewhere' }, spaces: [] }], [])
+    const pair = {
+      entity: 'context' as const,
+      registry: { id: 'ctx_projects', title: 'Projects' },
+      membership: [],
+    }
+    expect(resolvePair(pair, 'Projects', tree)).toEqual({ refuse: 'id-live' })
+  })
+})
+
+describe('artifactBaseName', () => {
+  it('strips the stamp, the de-collision counter, and nothing else', () => {
+    expect(artifactBaseName('2026-08-01T12-00-00-000Z__Alpha.md')).toBe('Alpha.md')
+    expect(artifactBaseName('2026-08-01T12-00-00-000Z__3__Alpha.md')).toBe('Alpha.md')
+    expect(artifactBaseName('2026-08-01T12-00-00-000Z__My__Odd__Name.md')).toBe('My__Odd__Name.md')
+    expect(artifactBaseName('2026-08-01T12-00-00-000Z__2')).toBe('2')
+    expect(artifactBaseName('2026-08-01T12-00-00-000Z__1__2')).toBe('2')
   })
 })
