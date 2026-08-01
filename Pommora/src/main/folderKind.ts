@@ -6,10 +6,10 @@
 // guard, which is what makes a duplicated, hand-made or relocated config inert bytes instead of a
 // second singleton feeding the same list. No special case does that work.
 
-import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { baseSidecar } from '@shared/schemas'
 import { pathExists } from './io/atomicWrite'
+import { listEntries } from './io/walk'
 import { SIDECAR_FILENAME, type SidecarKind } from './paths'
 import { readSidecar } from './sidecarIO'
 
@@ -122,20 +122,15 @@ export async function agendaContext(
   const registered = readAgendaRegistration(identity)
   if (Object.keys(registered).length === 0) return { agenda: {}, sidecarMode, root }
 
-  let entries: string[]
-  try {
-    entries = (await readdir(root, { withFileTypes: true }))
-      .filter((e) => e.isDirectory())
-      .map((e) => e.name)
-  } catch {
-    return { agenda: registered, sidecarMode, root }
-  }
-
+  // An unreadable root yields no entries, which counts no claims, which contests no slot — the
+  // recorded registration stands. That is the right answer: a root Pommora cannot list is no
+  // evidence that anything duplicated it.
+  const entries = (await listEntries(root)).filter((e) => e.isDirectory())
   // Counting is order-independent, so the reads fan out — this runs on every walk, and a serial
   // pass costs one round trip per root folder per slot before anything can render.
   const found = await Promise.all(
-    entries.flatMap((name) =>
-      AGENDA_SLOTS.map((s) => readSidecar(join(root, name), s.sidecar, baseSidecar)),
+    entries.flatMap((e) =>
+      AGENDA_SLOTS.map((s) => readSidecar(join(root, e.name), s.sidecar, baseSidecar)),
     ),
   )
   const claims = new Map<string, number>()

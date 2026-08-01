@@ -1,9 +1,9 @@
 // Open-time write-pass that stamps a real ULID into every entity still lacking a persisted id.
 // Idempotent; folder position decides kind — a root child is a Collection, anything nested a Set.
 
-import { readdir, readFile, rename } from 'node:fs/promises'
-import type { Dirent } from 'node:fs'
+import { readFile, rename } from 'node:fs/promises'
 import { basename, join } from 'node:path'
+import { listEntries } from './io/walk'
 import { admitContentFile, KIND_ID_KEY, type ContentKind } from '@shared/identity'
 import { newId } from './ids'
 import { atomicWriteFile, readJsonObject, readJsonStrict, pathExists } from './io/atomicWrite'
@@ -21,14 +21,6 @@ import {
   type FolderKindContext,
 } from './folderKind'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, nexusConfig } from './paths'
-
-async function listEntries(dir: string): Promise<Dirent[]> {
-  try {
-    return await readdir(dir, { withFileTypes: true })
-  } catch {
-    return []
-  }
-}
 
 /**
  * Move a registered singleton back to the nexus root when it is found nested. The registration IS
