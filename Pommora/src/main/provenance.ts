@@ -495,7 +495,6 @@ export async function restoreArtifact(root: string, pairAbs: string): Promise<Re
   const roots = projectBaseline(tree).entries
   if (pair.entity === 'context') {
     const titlesById = await restoredSpaceTitles(targetAbs)
-    const key = contextKey(title)
     const additions: Record<string, string[]> = {}
     for (const m of pair.membership) {
       if (!m.root.id) continue
