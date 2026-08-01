@@ -11,7 +11,7 @@ import { createFolderEntity } from './folderEntity'
 import { createPage, updatePageProperty } from './page'
 import { readFrontmatterFields } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
-import { readPair } from '../provenance'
+import { readRecord } from '../provenance'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
@@ -72,14 +72,14 @@ describe('deleteProperty', () => {
       expect(content).not.toContain('<Priority>')
       expect(content).toContain(`${PAGE_ID_KEY}:`)
     }
-    // The recovery snapshot is the pair's artifact-less variant — a valid pair file whose
-    // values key by page id, never by path.
+    // The recovery snapshot is an artifact-less bundle — a valid record whose values key by
+    // page id, never by path.
     const trashed = await readdir(join(root, '.trash'))
     const name = trashed.find((f) => f.includes(`property-${id}`))
-    expect(name?.endsWith('.provenance.json')).toBe(true)
-    const pair = await readPair(join(root, '.trash', name ?? ''))
-    expect(pair).toMatchObject({ entity: 'property', id })
-    const values = (pair as { values: Record<string, unknown> }).values
+    expect(name?.endsWith('.deleted')).toBe(true)
+    const record = await readRecord(join(root, '.trash', name ?? ''))
+    expect(record).toMatchObject({ entity: 'property', id })
+    const values = (record as { values: Record<string, unknown> }).values
     for (const path of [p1.value.path, p2.value.path]) {
       const pid = readFrontmatterFields(await readFile(path, 'utf8'))[PAGE_ID_KEY] as string
       expect(values[pid]).toBe('hi')
