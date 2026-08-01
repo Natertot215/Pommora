@@ -313,9 +313,9 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 **Must agree:** `writePair` → `readPair` round-trips byte-stable per kind, and the recorded parent id matches the id the walk assigns that folder in the same fixture. The gather↔resolver crossing lives in **Task 11's** steps — the resolver does not exist yet, and a crossing named here would have no task to write it.
 
 **Steps:**
-- [ ] Failing tests per kind: page, Set (parent id), root Collection (parent root), Space (membership), Context (registry entry + membership map), dual-mode (system trash → no pair).
-- [ ] Implement; gates green.
-- [ ] Commit: `feat(provenance): every nexus-trash delete writes its pair`
+- [x] Failing tests per kind: page, Set (parent id), root Collection (parent root), Space (membership), Context (registry entry + membership map), dual-mode (system trash → no pair).
+- [x] Implement; gates green.
+- [x] Commit: `feat(provenance): every nexus-trash delete writes its pair`
 
 #### Task 9: Absorb the snapshot; remove the residue
 
@@ -445,7 +445,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 - [ ] **Phase 3** — the sweep and the pair · base `f136d56b`
   - [x] Task 6 — the sweep never strips a passenger
   - [x] Task 7 — the sweep tells the truth
-  - [ ] Task 8 — the pair
+  - [x] Task 8 — the pair
   - [ ] Task 9 — absorb the snapshot; remove the residue
 - [ ] **Phase 4** — the resolver spends the pairs
   - [ ] Task 10 — one reconciliation loop

@@ -28,7 +28,15 @@ import {
   unlinkContextKey,
   unlinkSpaceValue,
 } from './crud/contextCascade'
-import { mutateRegistryFile } from './contextsRegistry'
+import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
+import {
+  buildContextPair,
+  gatherContentPair,
+  gatherContextEvidence,
+  gatherSpacePair,
+  type PairFile,
+  writePair,
+} from './provenance'
 import { setSpaceOrder } from './crud/reorder'
 import { renameCascade } from './crud/cascade'
 import { rewriteBlockConnections } from './blocks'
@@ -258,22 +266,44 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!resolved.ok) return resolved
       const abs = resolved.value
       if (await isReserved(root, abs)) return fault('That item can’t be deleted.')
+      // The pair gathers in the arm's real order — scoped id reads and the registry entry
+      // BEFORE the erase (the title→id window closes there), membership DURING the sweep,
+      // the pair name AFTER the move returns. System-trash mode gathers nothing: the
+      // artifact leaves the nexus and there is nowhere valid for a pair to point.
+      const wantPair = deps.trashMode !== 'system'
+      let pair: PairFile | null = null
       if (req.kind === 'space') {
+        const registry = wantPair ? await readRegistryStrict(root) : null
         // Unlink the Space's title as a value everywhere BEFORE the folder trashes.
-        await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
-      }
-      if (req.kind === 'context') {
+        const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
+        if (wantPair) pair = await gatherSpacePair(abs, registry, swept.ok ? swept.value : null)
+      } else if (req.kind === 'context') {
+        const title = basename(abs)
+        const evidence = wantPair
+          ? await gatherContextEvidence(abs, title, await readRegistryStrict(root))
+          : null
         // Unlink the parenthesized key everywhere OUTSIDE the folder being trashed — the
         // subtree's own roots are passengers whose links stay true in the trash; then drop
         // the registry entry; the folder tree (its Spaces included) trashes recoverably below.
-        const title = basename(abs)
-        await unlinkContextKey(root, title, abs)
+        const swept = await unlinkContextKey(root, title, abs)
         await mutateRegistryFile(root, (cur) => ({
           contexts: cur.contexts.filter((c) => c.title !== title),
         }))
+        if (evidence) pair = buildContextPair(evidence, swept.ok ? swept.value : null)
+      } else if (wantPair) {
+        pair = await gatherContentPair(root, req.kind, abs)
       }
       const removed = await removeViaMode(root, abs, deps)
       if (!removed.ok) return removed
+      // Best-effort: the artifact is already irreversibly moved, so a pair failure never
+      // fails the delete — the entity degrades to hand-restore, today's behavior.
+      if (pair && removed.value.dest) {
+        try {
+          await writePair(removed.value.dest, pair)
+        } catch (e) {
+          console.error('provenance: the pair write failed; the delete stands:', errText(e))
+        }
+      }
       return ok({})
     }
 
@@ -626,11 +656,16 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
 /** Remove a file/folder per the delete-target setting: in-nexus .trash (default, portable +
  *  recoverable) or the OS Trash. trashWithTimestamp is the shared primitive crud's delete*
  *  uses; this adds the mode branch the crud helpers don't cover. */
-async function removeViaMode(root: string, abs: string, deps: MutateDeps): Promise<Result<null>> {
+async function removeViaMode(
+  root: string,
+  abs: string,
+  deps: MutateDeps,
+): Promise<Result<{ dest: string | null }>> {
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
   if (deps.trashMode === 'system') {
     recordWrite(abs) // in-nexus trash records inside trashWithTimestamp; the OS route records here
     await deps.trashToSystem(abs)
-  } else await trashWithTimestamp(root, abs)
-  return ok(null)
+    return ok({ dest: null })
+  }
+  return ok({ dest: await trashWithTimestamp(root, abs) })
 }
