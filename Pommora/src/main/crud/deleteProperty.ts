@@ -1,9 +1,9 @@
-// Global property delete — the one nexus-wide destructive fan-out. Snapshot-first (a
-// timestamped JSON of the def + every page value lands in `.trash`, so the scrub is
-// recoverable), then strips the value from every collection's page under its file lock, drops
-// the id from every assignment, purges every Remove-cache block, and finally removes the def
-// from the registry. The daily non-destructive op is Remove (crud/removeProperty); this is the
-// rare one, and it saves nothing restorable in-app.
+// Global property delete — the nexus-wide fan-out that removes a definition outright. Record-first
+// (an artifact-less bundle in `.trash` holds the def, the Collections that assigned it, and every
+// page value keyed by page id), then strips the value from every collection's page under its file
+// lock, drops the id from every assignment, purges every Remove-cache block, and finally removes
+// the def from the registry. That bundle is what restore spends to rebuild it. The daily
+// non-destructive op is Remove (crud/removeProperty); this is the rare one.
 
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { invalidName } from './util'
+import { invalidName, sweepAdmits, sweepAdmitsBody } from './util'
+import { readFrontmatterFields } from '../io/pageFile'
 
 describe('invalidName', () => {
   it('accepts ordinary titles', () => {
@@ -37,5 +38,31 @@ describe('invalidName', () => {
   it('rejects names the tree would hide', () => {
     for (const n of ['_Draft', '_', '_Archive', '.hidden', '.nexus', ' _Draft', ' .hidden'])
       expect(invalidName(n), JSON.stringify(n)).toBe(true)
+  })
+})
+
+// Two disjoint ways frontmatter refuses a field write, and a sweep must survive both: one page
+// nobody can parse is skipped, never allowed to fail the fan-out around it.
+const ALIAS = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\nsomething: *word\n---\nbody'
+const TAB = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n(Projects):\n\t- Pommora\n---\nbody'
+const HEALTHY = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n(Projects):\n  - Pommora\n---\nbody'
+
+describe('sweepAdmits — the field-write gate', () => {
+  it('an unresolvable alias reads as empty rather than throwing', () => {
+    expect(readFrontmatterFields(ALIAS)).toEqual({})
+  })
+
+  it('refuses both shapes of unwritable frontmatter', () => {
+    expect(sweepAdmits(ALIAS)).toBe(false)
+    expect(sweepAdmits(TAB)).toBe(false)
+  })
+
+  it('admits a page whose frontmatter round-trips', () => {
+    expect(sweepAdmits(HEALTHY)).toBe(true)
+  })
+
+  it('a body-only rewrite asks the identity half alone — a link still heals on a broken page', () => {
+    expect(sweepAdmitsBody(TAB)).toBe(true)
+    expect(sweepAdmitsBody(HEALTHY)).toBe(true)
   })
 })
