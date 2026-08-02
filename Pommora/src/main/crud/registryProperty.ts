@@ -3,8 +3,7 @@ import { validateDefinition, validateName } from '../properties/schema'
 import { mintPropertyId } from '../ids'
 import { defaultStatusSeed, defaultSelectSeed, type PropertyDefinition } from '@shared/properties'
 import { ok, fail, type Result } from '@shared/result'
-import { parseDocument, isMap } from 'yaml'
-import { assembleEnvelope, splitEnvelope } from '../io/pageFile'
+import { renameFrontmatterKey, type KeyCollision } from '../io/pageFile'
 import {
   wrapKey,
   normalizePropertyName,
@@ -54,32 +53,18 @@ export function createProperty(
   })
 }
 
-/** Rewrite one property's key across every page that holds it. The new key always wins: the
- *  registry has already switched, so any value written while this runs used the new name and is
- *  the fresher of the two. Returns null for a page holding neither key, so an untouched page is
- *  never rewritten — and never re-dated, because a key-only rename is not a content edit. */
+/** A property rename commits the registry BEFORE its sweep, so a value written while the sweep runs
+ *  already resolved the new name: a key already wearing it is genuinely the fresher of the two. */
+const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
+
+/** Rewrite one property's key across every page that holds it, in place — the key keeps its
+ *  position and its comment. A page holding neither key is left untouched. */
 export function renameSweep(root: string, oldName: string, newName: string): Promise<void> {
   const oldKey = wrapKey('property', oldName)
   const newKey = wrapKey('property', newName)
-  return cascadePages(root, (content) => {
-    const { frontmatter, body } = splitEnvelope(content)
-    const doc = parseDocument(frontmatter)
-    // Parsing directly (to keep the key's position and comments) forfeits splitFrontmatter's
-    // leniency, so one hand-edited page would otherwise throw and strand the sweep half-applied.
-    if (doc.errors.length > 0 || !isMap(doc.contents)) return null
-    const pair = doc.contents.items.find((i) => String(i.key) === oldKey)
-    if (!pair) return null
-    if (doc.get(newKey) === undefined) {
-      // Rename the key in place rather than delete-and-set: the pair keeps its position and any
-      // comment attached to it, which a re-add would drop.
-      ;(pair.key as { value: string }).value = newKey
-    } else {
-      // Already present ⇒ a write landed under the new name while this ran, and it is the fresher
-      // of the two. Drop the stale one.
-      doc.delete(oldKey)
-    }
-    return assembleEnvelope(doc.toString({ lineWidth: 0 }), body)
-  })
+  return cascadePages(root, (content) =>
+    renameFrontmatterKey(content, oldKey, newKey, NEW_KEY_IS_FRESHER),
+  )
 }
 
 /** The old and new names a committed rename has to sweep across the pages, or null when the edit
