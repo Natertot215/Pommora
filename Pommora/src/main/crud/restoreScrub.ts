@@ -8,11 +8,15 @@
 // that name inherits values the page never legitimately held.
 //
 // So the returning content is reconciled against the CURRENT world before it lands: a governed
-// key survives only if what it names still exists. Only orphaned keys are dropped — a value the
-// live tree would merely fail to resolve is left exactly as the user wrote it, because restore
-// must never be stricter about a user's file than the tree it restores into.
+// key survives only if what it names still exists, and whether a value stands is asked the way
+// the destination asks it. A Space title matches through the shared coercion every live path
+// uses, so a spelling the tree resolves is a value that stands; a property value is decoded
+// strictly against its definition, because a read renders whatever text a value holds while a
+// restore writes it back into a live schema. What survives comes back exactly as the file spelled
+// it — restore drops what nothing stands behind and narrows a multi-value key to its survivors,
+// and never rewrites a value that stands.
 
-import { contextKey } from '@shared/contexts'
+import { contextKey, normalizeContextValue } from '@shared/contexts'
 import { parseGovernedKey } from '@shared/governedKeys'
 import type { PropertyDefinition } from '@shared/properties'
 import { encodeValue, propertyKey } from '@shared/propertyValue'
@@ -32,7 +36,7 @@ import { sweepAdmits } from './util'
 interface LiveWorld {
   /** Property key → the definition the destination Collection carries under that name. */
   defs: Map<string, PropertyDefinition>
-  /** Context key → the Space titles that Context still holds. */
+  /** Context key → that Context's live Space titles, coerced for matching. */
   contextSpaces: Map<string, Set<string>>
 }
 
@@ -52,7 +56,10 @@ async function liveWorld(
     if (def) defs.set(propertyKey(def), def)
   }
   const contextSpaces = new Map(
-    tree.contexts.map((g) => [contextKey(g.def.title), new Set(g.spaces.map((s) => s.title))]),
+    tree.contexts.map((g) => [
+      contextKey(g.def.title),
+      new Set(g.spaces.map((s) => normalizeContextValue(s.title))),
+    ]),
   )
   return { defs, contextSpaces }
 }
