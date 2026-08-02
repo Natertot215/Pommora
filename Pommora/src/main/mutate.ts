@@ -302,9 +302,12 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         // subtree's own roots are passengers whose links stay true in the trash; then drop
         // the registry entry; the folder tree (its Spaces included) trashes recoverably below.
         const swept = await unlinkContextKey(root, title, abs)
-        await mutateRegistryFile(root, (cur) => ({
-          contexts: cur.contexts.filter((c) => c.title !== title),
-        }))
+        // By id, never by title: the gather already resolved which entry this is, and two entries
+        // sharing a title would otherwise erase both while only one folder is trashed.
+        await mutateRegistryFile(root, (cur) => {
+          const id = evidence?.entry.id ?? cur.contexts.find((c) => c.title === title)?.id
+          return id ? { contexts: cur.contexts.filter((c) => c.id !== id) } : cur
+        })
         if (write && evidence)
           await write(buildContextRecord(evidence, swept.ok ? swept.value : null))
       } else if (write) {
