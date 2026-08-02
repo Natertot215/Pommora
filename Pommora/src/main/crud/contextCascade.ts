@@ -4,30 +4,24 @@
 // the reconcile owns those). Scopes: every `.md` frontmatter and every `_space.json` root — each
 // under its own file lock.
 
-import { readFile, rename } from 'node:fs/promises'
+import { rename } from 'node:fs/promises'
 import { basename, join, sep } from 'node:path'
 import {
   contextKey,
-  
-  isGovernedContextKey,
   normalizeContextValue,
   type ContextsRegistry,
 } from '@shared/contexts'
 import { contentId } from '@shared/identity'
 import { ok, fail, errText, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
-import { atomicWriteFile, pathExists, readJsonObject, writeJson } from '../io/atomicWrite'
-import { serializeOnFile } from '../io/fileLock'
-import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
-import { listFilesRecursive, listMarkdownFiles } from '../io/walk'
+import { pathExists, readJsonObject } from '../io/atomicWrite'
 import { recordWrite } from '../io/writeEcho'
-import { splitFrontmatter } from '../readNexus'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { clearJournal, readJournal, writeJournal, type RenameJournal } from './contextJournal'
+import { sweepGovernedRoots } from './governedSweep'
 import { loadContextWorld } from './contextWrite'
-import { invalidName, sweepAdmits, invalidContextTitle } from './util'
+import { invalidName, invalidContextTitle } from './util'
 
-const SKIP_TOP_LEVEL = ['.nexus', '.trash']
 type Raw = Record<string, unknown>
 
 /** The key/value rewrite one root undergoes, or null when untouched. */
@@ -84,58 +78,20 @@ export interface SweepResult {
 /** What an unlink sweep returns: the sweep's own truth plus what each stripped root gave up. */
 export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
 
-/** Sweep every context-bearing root through `rewrite` (null = untouched), each under
- *  its file lock. The one walk every key/value cascade and unlink shares; the callback
- *  gets the root's absolute path beside its parsed form. */
+/** Sweep every context-bearing root through `rewrite` (null = untouched). The scope is the one
+ *  fact that makes this the CONTEXT sweep: a tag is legal on any page and on a Space sidecar. */
 export async function sweepContextRoots(
   root: string,
   rewrite: (raw: Raw, file: string) => Raw | null,
 ): Promise<SweepResult> {
-  const touched: string[] = []
-  const skipped: string[] = []
-  const refused: string[] = []
-
-  for (const file of await listMarkdownFiles(root, { skipTopLevel: SKIP_TOP_LEVEL })) {
-    await serializeOnFile(file, async () => {
-      let content: string
-      try {
-        content = await readFile(file, 'utf8')
-      } catch {
-        skipped.push(file)
-        return
-      }
-      if (!sweepAdmits(content)) {
-        refused.push(file)
-        return
-      }
-      const raw = splitFrontmatter(content)
+  const { touched, skipped, refused } = await sweepGovernedRoots<never>(
+    root,
+    { kind: 'nexus' },
+    (raw, file) => {
       const next = rewrite(raw, file)
-      if (next === null) return
-      const keys = new Set([...Object.keys(raw), ...Object.keys(next)])
-      const governed = [...keys].filter(isGovernedContextKey)
-      const modeled: Raw = {}
-      for (const k of governed) if (k in next) modeled[k] = next[k]
-      await atomicWriteFile(
-        file,
-        mergeFrontmatter(content, modeled, governed, splitEnvelope(content).body),
-      )
-      touched.push(file)
-    })
-  }
-
-  for (const file of await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])) {
-    await serializeOnFile(file, async () => {
-      const raw = await readJsonObject(file)
-      if (!raw) {
-        skipped.push(file)
-        return
-      }
-      const next = rewrite(raw, file)
-      if (next === null) return
-      await writeJson(file, next)
-      touched.push(file)
-    })
-  }
+      return next === null ? null : { next }
+    },
+  )
   return { touched, skipped, refused }
 }
 
