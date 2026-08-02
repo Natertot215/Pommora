@@ -18,11 +18,14 @@ import { pathExists, readJsonObject } from '../io/atomicWrite'
 import { recordWrite } from '../io/writeEcho'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { clearJournal, readJournal, writeJournal, type RenameJournal } from './contextJournal'
-import { sweepGovernedRoots } from './governedSweep'
+import {
+  type Raw,
+  type SweepResult as GovernedSweepResult,
+  sweepGovernedRoots,
+} from './governedSweep'
 import { loadContextWorld } from './contextWrite'
 import { invalidName, invalidContextTitle } from './util'
 
-type Raw = Record<string, unknown>
 
 /** The key/value rewrite one root undergoes, or null when untouched. */
 function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | null {
@@ -67,13 +70,7 @@ export interface SweepCapture {
   values: string[]
 }
 
-export interface SweepResult {
-  touched: string[]
-  /** Unreadable roots — the file could not be read or parsed. */
-  skipped: string[]
-  /** Admission-refused roots (a dual-key page keeps its context key); named, never touched. */
-  refused: string[]
-}
+export type SweepResult = Omit<GovernedSweepResult<never>, 'captured'>
 
 /** What an unlink sweep returns: the sweep's own truth plus what each stripped root gave up. */
 export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
