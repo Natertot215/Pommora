@@ -27,6 +27,15 @@ export function invalidName(name: string): boolean {
   )
 }
 
+/** A Context title names a folder under `.nexus/contexts/`, so it carries the basename rules plus
+ *  the hidden-prefix ban every naming gate holds — the walk hides those names, and the record
+ *  claims the prefix for itself. The sigil needs no ban of its own: a key is stripped
+ *  positionally, so a title carrying either glyph round-trips intact. A managed extension is
+ *  legal here where it is not on a page: nothing appends one to a Context folder. */
+export function invalidContextTitle(title: string): boolean {
+  return invalidBasename(title) || hiddenName(title.trim())
+}
+
 /** Whether a nexus-wide sweep may rewrite this `.md` AT ALL. Unknown files — a key contradicting
  *  their folder, a malformed value, two kind keys — are invisible and stay byte-untouched, the
  *  same treatment a stray `.png` in a Collection gets.

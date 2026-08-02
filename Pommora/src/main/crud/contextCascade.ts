@@ -8,7 +8,7 @@ import { readFile, rename } from 'node:fs/promises'
 import { basename, join, sep } from 'node:path'
 import {
   contextKey,
-  invalidContextTitle,
+  
   isGovernedContextKey,
   normalizeContextValue,
   type ContextsRegistry,
@@ -25,7 +25,7 @@ import { splitFrontmatter } from '../readNexus'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { clearJournal, readJournal, writeJournal, type RenameJournal } from './contextJournal'
 import { loadContextWorld } from './contextWrite'
-import { invalidName, sweepAdmits } from './util'
+import { invalidName, sweepAdmits, invalidContextTitle } from './util'
 
 const SKIP_TOP_LEVEL = ['.nexus', '.trash']
 type Raw = Record<string, unknown>

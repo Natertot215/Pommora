@@ -8,7 +8,7 @@ import { readFile, mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   contextKey,
-  invalidContextTitle,
+  
   isGovernedContextKey,
   normalizeContextValue,
   type ContextDef,
@@ -33,7 +33,7 @@ import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { splitFrontmatter } from '../readNexus'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { createFolderEntity } from './folderEntity'
-import { nowIso } from './util'
+import { nowIso, invalidContextTitle } from './util'
 
 type Raw = Record<string, unknown>
 
