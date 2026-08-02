@@ -131,6 +131,47 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect((await fm('Notes/Alpha.md'))['(Projects)']).toEqual(['Pommora'])
   })
 
+  it('keeps a near-miss Space title exactly as the file spelled it', async () => {
+    // The live tree resolves `pommora` to the Space "Pommora"; so does restore. And it comes back
+    // as written — standing decides what to drop, never what to rewrite.
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      `---\nPageID: ${PAGE_A}\n(Projects):\n  - pommora\n---\nbody`,
+    )
+    await cycle('Notes/Alpha.md', 'page', async () => {})
+    expect((await fm('Notes/Alpha.md'))['(Projects)']).toEqual(['pommora'])
+  })
+
+  it('a value an outside write left as a number still names its Space', async () => {
+    await mkdir(join(contextsDir(root), 'Projects', '2024'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Projects', '2024', '_space.json'),
+      JSON.stringify({ id: 'sp-2024' }),
+    )
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      `---\nPageID: ${PAGE_A}\n(Projects):\n  - 2024\n---\nbody`,
+    )
+    await cycle('Notes/Alpha.md', 'page', async () => {})
+    expect((await fm('Notes/Alpha.md'))['(Projects)']).toEqual([2024])
+  })
+
+  it('prunes the dead Space from a near-miss tag and leaves the survivor as written', async () => {
+    await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
+      JSON.stringify({ id: 'sp-sap' }),
+    )
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      `---\nPageID: ${PAGE_A}\n(Projects):\n  - pommora\n  - Sapphire\n---\nbody`,
+    )
+    await cycle('Notes/Alpha.md', 'page', async () => {
+      await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
+    })
+    expect((await fm('Notes/Alpha.md'))['(Projects)']).toEqual(['pommora'])
+  })
+
   it('reconciles every page inside a returning folder, not just a lone file', async () => {
     await writeFile(
       join(root, 'Notes', 'Daily', 'Journal.md'),
