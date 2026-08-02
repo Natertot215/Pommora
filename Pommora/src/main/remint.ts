@@ -69,9 +69,9 @@ export async function runRemintPass(
   const done: RemintedEntity[] = []
   for (const target of remint) {
     const fresh = newId()
-    const written = await writeFreshId(root, target, fresh)
-    if (!written) continue
-    copyDeviceRows(target, fresh)
+    const viewIds = await writeFreshId(root, target, fresh)
+    if (!viewIds) continue
+    copyDeviceRows(target, fresh, viewIds)
     done.push({ target, newId: fresh })
   }
   return done
@@ -80,14 +80,21 @@ export async function runRemintPass(
 /** No duplication mechanism reproduces a registry ENTRY (copying the folder copies the whole
  *  nexus), so a duplicated context id is a hand-edit; it defers rather than rewriting the
  *  registry blind. */
-async function writeFreshId(root: string, target: RemintTarget, fresh: string): Promise<boolean> {
+async function writeFreshId(
+  root: string,
+  target: RemintTarget,
+  fresh: string,
+): Promise<Map<string, string> | null> {
   try {
-    if (target.kind === 'page') return await remintPageFile(join(root, target.path), target.id, fresh)
-    if (target.kind === 'context') return false
+    // The map is what the copy's device rows join on; a page carries no views, so a landed page
+    // write is an empty one — null keeps its single meaning, a refused write.
+    if (target.kind === 'page')
+      return (await remintPageFile(join(root, target.path), target.id, fresh)) ? new Map() : null
+    if (target.kind === 'context') return null
     return await remintSidecar(join(root, target.path), target.kind, target.id, fresh)
   } catch (e) {
     console.error(`remint: the write for ${target.path} refused; the defer stands:`, errText(e))
-    return false
+    return null
   }
 }
 
@@ -110,27 +117,40 @@ async function remintSidecar(
   kind: 'space' | 'collection' | 'set',
   oldId: string,
   fresh: string,
-): Promise<boolean> {
+): Promise<Map<string, string> | null> {
   const file = join(absFolder, SIDECAR_FILENAME[kind])
   const current = await readJsonStrict(file)
-  if (!current.ok || current.value.id !== oldId) return false
+  if (!current.ok || current.value.id !== oldId) return null
+  const viewIds = new Map<string, string>()
   const next: Record<string, unknown> = { ...current.value, id: fresh }
   // A file-copied container duplicated its saved views' ids too — they key per-machine
-  // viewOrder rows, so the copy's views re-mint in the same write.
+  // viewOrder rows, so the copy's views re-mint in the same write. The correspondence travels:
+  // anything device-local that NAMES a view must follow it to the copy's own id.
   if (Array.isArray(next.views))
-    next.views = next.views.map((v) => (isPlainObject(v) ? { ...v, id: newId() } : v))
+    next.views = next.views.map((v) => {
+      if (!isPlainObject(v)) return v
+      const minted = newId()
+      if (typeof v.id === 'string') viewIds.set(v.id, minted)
+      return { ...v, id: minted }
+    })
   await writeJson(file, next)
-  return true
+  return viewIds
 }
 
-const COPY_SCOPES = ['folds', 'activeView', 'headingCols'] as const
+const COPY_SCOPES = ['folds', 'headingCols'] as const
 
-function copyDeviceRows(target: RemintTarget, fresh: string): void {
+function copyDeviceRows(target: RemintTarget, fresh: string, viewIds: Map<string, string>): void {
   try {
     for (const scope of COPY_SCOPES) {
       const value = readKey(scope, target.id)
       if (value !== null) writeKey(scope, fresh, value)
     }
+    // The selection is a view id, not opaque chrome: it travels through the same map that
+    // re-minted the views, so it names the copy's own. A selection with no counterpart — a
+    // stale row naming a view the container no longer has — does not travel at all.
+    const active = readKey<string>('activeView', target.id)
+    const moved = active === null ? undefined : viewIds.get(active)
+    if (moved) writeKey('activeView', fresh, moved)
     if (target.kind === 'space') copyBlockDocRow(target.id, fresh)
     const previews = readPreviewsState()
     const origin = previews.origins[target.id]

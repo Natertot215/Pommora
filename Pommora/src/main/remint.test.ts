@@ -143,7 +143,10 @@ describe('the re-mint writes', () => {
       join(root, 'Library', 'Fiction', '_pageset.json'),
       JSON.stringify({
         id: SET,
-        views: [{ id: 'view-1', name: 'Table', type: 'table', property_order: [], hidden_properties: [] }],
+        views: [
+          { id: 'view-1', name: 'Table', type: 'table', property_order: [], hidden_properties: [] },
+          { id: 'view-2', name: 'Board', type: 'table', property_order: [], hidden_properties: [] },
+        ],
       }),
     )
     await writeFile(
@@ -208,7 +211,7 @@ describe('the re-mint writes', () => {
   })
 
   it('a copied container re-mints its sidecar id AND its views[].id; the board never shares a config id', async () => {
-    writeKey('activeView', SET, 'view-1')
+    writeKey('activeView', SET, 'view-2')
     writeKey('blockDoc', blockHostKey({ kind: 'space', id: SPACE }), {
       blocks: [
         {
@@ -253,8 +256,11 @@ describe('the re-mint writes', () => {
     expect(isUlidShaped(copySpace.id)).toBe(true)
     expect(copySpace.keep_me).toBe('foreign')
 
-    expect(readKey('activeView', SET)).toBe('view-1')
-    expect(readKey('activeView', copySet.id)).toBe('view-1')
+    // The selection follows the view it names into the copy's own id namespace — asserting the
+    // SECOND view is what makes this a proof of the map rather than a coincidence.
+    expect(readKey('activeView', SET)).toBe('view-2')
+    expect(readKey('activeView', copySet.id)).toBe(copySet.views[1].id)
+    expect(readKey('activeView', copySet.id)).not.toBe('view-2')
 
     type Doc = { blocks: { views: { config: { id: string } }[] }[] }
     const originalDoc = readKey<Doc>('blockDoc', blockHostKey({ kind: 'space', id: SPACE }))!
@@ -264,6 +270,25 @@ describe('the re-mint writes', () => {
     expect(copyDoc.blocks[0].views[0].config.id).not.toBe(
       originalDoc.blocks[0].views[0].config.id,
     )
+  })
+
+  it('a selection naming a view the container no longer has does not travel at all', async () => {
+    // The copy must not inherit a reference it cannot resolve — copying it anyway is precisely
+    // the dangling row this join exists to prevent.
+    writeKey('activeView', SET, 'view-ghost')
+    const bytes = await readFile(join(root, 'Library', 'Fiction', '_pageset.json'), 'utf8')
+    await mkdir(join(root, 'Library', 'Fiction copy'), { recursive: true })
+    await writeFile(join(root, 'Library', 'Fiction copy', '_pageset.json'), bytes)
+
+    await runOpenRecord(root)
+    await runOpenRecord(root)
+
+    const copySet = JSON.parse(
+      await readFile(join(root, 'Library', 'Fiction copy', '_pageset.json'), 'utf8'),
+    )
+    expect(copySet.id).not.toBe(SET)
+    expect(readKey('activeView', SET)).toBe('view-ghost')
+    expect(readKey('activeView', copySet.id)).toBeNull()
   })
 
   it('duplicates present at the very first open converge: record one, adjudicate next open', async () => {
