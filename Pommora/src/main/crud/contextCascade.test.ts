@@ -336,3 +336,23 @@ describe('replayPendingRename (D-7a crash windows)', () => {
 afterEach(async () => {
   await clearJournal(root).catch(() => {})
 })
+
+describe('clearing a value re-dates the page; renaming a key does not', () => {
+  it('unlinkSpaceValue stamps the roots it strips', async () => {
+    const before = (await fmOf(page())).modified_at
+    const { unlinkSpaceValue } = await import('./contextCascade')
+    expect((await unlinkSpaceValue(root, 'Projects', 'Pommora')).ok).toBe(true)
+    const after = (await fmOf(page())).modified_at
+    expect(after).toBeTypeOf('string')
+    expect(after).not.toBe(before)
+  })
+
+  it('a key-only rename leaves the page’s date alone — the relation is unchanged', async () => {
+    const { renameContextOp } = await import('./contextCascade')
+    const before = (await fmOf(page())).modified_at
+    const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
+    expect(r.ok).toBe(true)
+    expect((await fmOf(page()))['(Ventures)']).toBeDefined()
+    expect((await fmOf(page())).modified_at).toBe(before)
+  })
+})
