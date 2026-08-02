@@ -3,7 +3,7 @@
 Pommora always answers *where is this now*; the record closes *where was this then*. Two mechanisms, each the smallest thing that does its half, sharing a module boundary and nothing else:
 
 - **Provenance** — where a departed entity belonged and what it carried. A JSON inside the artifact's own deletion bundle in `.trash`, written by the delete before it destroys anything, read by restore, spent with the bundle.
-- **Baseline** — what the walk last saw. A derived, per-machine projection in `nexus.db`, written once per open, read once per open, rebuildable by definition.
+- **Baseline** — what the walk last saw. A derived, per-machine projection in `nexus.db`, latched once per open against the last one, rebuildable by definition.
 
 The governing law is **ids, never name-based locations** — a rename rots a name, an id survives it. Everything either half stores joins on ids; titles ride along only as labels.
 
@@ -63,7 +63,7 @@ A duplicated id — content and container alike — stops sharing its twin's ide
 
 **The refusal preserves its evidence and spends or drops it, never hoards it.** A deferred id keeps its prior-session path marked ambiguous; the mark is spent the session its path answers again. With no prior evidence at all, the baseline records the **eldest claimant by birth time** — a copy is born after its original, and birth time survives a rename — so the next open's adjudication crowns the likely original rather than whatever the walk enumerated first.
 
-**The copy takes duplicates of the device-local rows; the original is untouched by construction.** Folds, active view, heading columns, and preview origins copy to the fresh id; a Space's block document copies with each view tile's payload ids re-minted — two boards must never share one — and a copied container's sidecar re-mints its saved views' ids in the same write. Thumbnails regenerate on use; order arrays need nothing, since the entity re-enters by title. Disk writes land first, row copies second: a refused frontmatter write skips that target with the defer standing, and a row failure leaves the copy on default chrome — never a half-minted identity.
+**The copy takes duplicates of the device-local rows; the original is untouched by construction.** Folds, heading columns, and preview origins copy to the fresh id. A copied container's sidecar re-mints its saved views' ids in the same write, and the recorded view selection travels through that same map — it names the copy's own view, never the original's, and a selection with no counterpart doesn't travel at all. A Space's block document copies with each view tile's payload ids re-minted — two boards must never share one. Thumbnails regenerate on use; order arrays need nothing, since the entity re-enters by title. Disk writes land first, row copies second: a refused frontmatter write skips that target with the defer standing, and a row failure leaves the copy on default chrome — never a half-minted identity.
 
 ### Pending
 
