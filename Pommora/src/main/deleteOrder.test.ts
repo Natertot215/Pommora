@@ -142,6 +142,32 @@ describe('the record is written before the destruction it describes', () => {
   })
 })
 
+describe('one unparseable page never fails the sweep around it', () => {
+  // A hand-written tab indent and an unresolvable alias are the two ways frontmatter refuses a
+  // field write. Either one used to abort the fan-out mid-destruction.
+  const BROKEN = {
+    'Tabbed.md': '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVX\n(Projects):\n\t- Pommora\n---\nb',
+    'Aliased.md': '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVY\nsomething: *word\n---\nb',
+  }
+
+  for (const [name, content] of Object.entries(BROKEN)) {
+    it(`a Context delete completes past ${name}, and leaves it byte-identical`, async () => {
+      await writeFile(join(root, 'Notes', name), content)
+      const r = await handleMutate(
+        { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+        nexusDeps,
+      )
+      expect(r.ok).toBe(true)
+      // The sweep reached every page it could, and the erase and the move both landed.
+      expect(await tagOf()).toBeUndefined()
+      expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(false)
+      // The page nobody can parse is untouched, and the record admits the sweep was thin.
+      expect(await readFile(join(root, 'Notes', name), 'utf8')).toBe(content)
+      expect(await anyRecord()).toMatchObject({ entity: 'context', partial: true })
+    })
+  }
+})
+
 describe('a deletion cut short leaves evidence, never silence', () => {
   it('a content delete that dies before the settle keeps the artifact and skips the listing', async () => {
     settleFails = true

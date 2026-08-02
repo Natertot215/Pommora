@@ -3,7 +3,7 @@
 // a save because the ORIGINAL frontmatter parses into a yaml Document and only `set`/`delete`
 // touches the modeled keys — the object is never reconstructed.
 
-import { parseDocument, isMap } from 'yaml'
+import { type Document, parseDocument, isMap } from 'yaml'
 import { readFile } from 'node:fs/promises'
 import { atomicWriteFile } from './atomicWrite'
 
@@ -24,10 +24,38 @@ export function splitEnvelope(content: string): PageEnvelope {
   return { frontmatter: m[1], body }
 }
 
-/** Parse the file's frontmatter into a plain object — for reading modeled fields (id, cover) before a merge. */
+/** Parse the file's frontmatter into a plain object — for reading modeled fields (id, cover) before
+ *  a merge. Unrecoverable YAML reads as empty, the same answer the walk's reader gives: a file
+ *  nobody can parse holds no fields, and one such page must never fail the pass around it. */
 export function readFrontmatterFields(content: string): Record<string, unknown> {
-  const obj = parseDocument(splitEnvelope(content).frontmatter).toJSON()
-  return obj && typeof obj === 'object' ? (obj as Record<string, unknown>) : {}
+  try {
+    const obj = parseDocument(splitEnvelope(content).frontmatter).toJSON()
+    return obj && typeof obj === 'object' ? (obj as Record<string, unknown>) : {}
+  } catch {
+    return {}
+  }
+}
+
+/** Broken frontmatter must never be re-serialized — the yaml doc holds only what the parser
+ *  recovered, so writing it back destroys the rest. Broken is anything that can't round-trip:
+ *  parse errors, a non-map, or a doc that parses clean yet refuses to serialize (an alias token
+ *  like `*word` is exactly that). */
+const mergeable = (doc: Document): boolean =>
+  doc.errors.length === 0 && (doc.contents == null || isMap(doc.contents))
+
+const serialized = (doc: Document): string | null => {
+  try {
+    return doc.toString({ lineWidth: 0 })
+  } catch {
+    return null
+  }
+}
+
+/** Whether a field write can round-trip this file's frontmatter. A sweep asks before it rewrites
+ *  a page, so one unparseable file is skipped rather than failing the fan-out around it. */
+export function frontmatterWritable(content: string): boolean {
+  const doc = parseDocument(splitEnvelope(content).frontmatter)
+  return mergeable(doc) && serialized(doc) !== null
 }
 
 /** Assemble canonical envelope bytes: `---\n<fm>---\n<body>` (fm must end in \n).
@@ -54,22 +82,15 @@ export function mergeFrontmatter(
   const { frontmatter } = splitEnvelope(existingContent)
   // Empty frontmatter ⇒ contents is null; doc.set auto-creates a block map below.
   const doc = parseDocument(frontmatter)
-  // Broken frontmatter must never be re-serialized — the yaml doc holds only what the parser
-  // recovered, so writing it back destroys the rest. Broken is anything that can't round-trip:
-  // parse errors, a non-map, or a doc that parses clean yet refuses to serialize (an alias
-  // token like `*word` is exactly that). The body still saves with the original frontmatter
-  // bytes passed through verbatim (a body-only write governs no key a broken map can lose);
-  // a field write refuses instead.
-  if (doc.errors.length === 0 && (doc.contents == null || isMap(doc.contents))) {
+  // The body still saves with the original frontmatter bytes passed through verbatim (a body-only
+  // write governs no key a broken map can lose); a field write refuses instead.
+  if (mergeable(doc)) {
     for (const key of modeledKeys) {
       if (key in modeled && modeled[key] !== undefined) doc.set(key, modeled[key])
       else doc.delete(key)
     }
-    try {
-      return assembleEnvelope(doc.toString({ lineWidth: 0 }), body)
-    } catch {
-      /* unserializable — fall through to the broken branch */
-    }
+    const out = serialized(doc)
+    if (out !== null) return assembleEnvelope(out, body)
   }
   if (modeledKeys.some((k) => k !== 'modified_at')) {
     throw new Error(
