@@ -75,11 +75,17 @@ export type SweepResult = Omit<GovernedSweepResult<never>, 'captured'>
 /** What an unlink sweep returns: the sweep's own truth plus what each stripped root gave up. */
 export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
 
+/** Clearing a value IS a content edit — the page no longer holds what it held — so an unlink
+ *  re-dates every root it strips, exactly as clearing a property value does. A key-only rename
+ *  does not: the relation is unchanged, only its spelling. */
+const STAMP_ON_CLEAR = { stamp: true }
+
 /** Sweep every context-bearing root through `rewrite` (null = untouched). The scope is the one
  *  fact that makes this the CONTEXT sweep: a tag is legal on any page and on a Space sidecar. */
 export async function sweepContextRoots(
   root: string,
   rewrite: (raw: Raw, file: string) => Raw | null,
+  opts: { stamp?: boolean } = {},
 ): Promise<SweepResult> {
   const { touched, skipped, refused } = await sweepGovernedRoots<never>(
     root,
@@ -88,6 +94,7 @@ export async function sweepContextRoots(
       const next = rewrite(raw, file)
       return next === null ? null : { next }
     },
+    opts,
   )
   return { touched, skipped, refused }
 }
@@ -137,7 +144,7 @@ export async function unlinkContextKey(
     const next = { ...raw }
     delete next[key]
     return next
-  })
+  }, STAMP_ON_CLEAR)
   return ok({ ...swept, captured })
 }
 
@@ -159,7 +166,7 @@ export async function unlinkSpaceValue(
     if (kept.length) next[key] = kept
     else delete next[key]
     return next
-  })
+  }, STAMP_ON_CLEAR)
   return ok({ ...swept, captured })
 }
 
