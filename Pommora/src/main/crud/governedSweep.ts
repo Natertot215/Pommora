@@ -18,8 +18,7 @@ import { atomicWriteFile, readJsonObject, writeJson } from '../io/atomicWrite'
 import { serializeOnFile } from '../io/fileLock'
 import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { listFilesRecursive, listMarkdownFiles } from '../io/walk'
-import { SPACE_SIDECAR } from '../paths'
-import { contextsDir } from '../paths'
+import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { splitFrontmatter } from '../readNexus'
 import { nowIso, sweepAdmits } from './util'
 
@@ -33,8 +32,6 @@ export type SweepScope =
   | { kind: 'nexus' }
   /** Every `.md` under each given Collection folder. */
   | { kind: 'collections'; folders: string[] }
-  /** One `.md`, or a folder's pages and Space sidecars — a returning artifact in the trash. */
-  | { kind: 'artifact'; abs: string }
 
 /** What the sweep did, per root. `skipped` is a root it could not read, `refused` one it may not
  *  rewrite — kept apart because a record built from this reports them as the same kind of
@@ -56,26 +53,31 @@ const changedKeys = (raw: Raw, next: Raw): string[] =>
   )
 
 async function pageRoots(root: string, scope: SweepScope): Promise<string[]> {
-  if (scope.kind === 'nexus') return listMarkdownFiles(root, { skipTopLevel: ['.nexus', '.trash'] })
-  if (scope.kind === 'collections') {
-    const out: string[] = []
-    for (const folder of scope.folders) out.push(...(await listMarkdownFiles(folder)))
-    return out
+  switch (scope.kind) {
+    case 'nexus':
+      return listMarkdownFiles(root, { skipTopLevel: ['.nexus', '.trash'] })
+    case 'collections': {
+      const out: string[] = []
+      for (const folder of scope.folders) out.push(...(await listMarkdownFiles(folder)))
+      return out
+    }
+    default: {
+      const _exhaustive: never = scope
+      return _exhaustive
+    }
   }
-  return scope.abs.toLowerCase().endsWith('.md') ? [scope.abs] : listMarkdownFiles(scope.abs)
 }
 
+/** Space sidecars are context roots, so only a nexus-wide sweep reaches them: a property value
+ *  answers to a Collection's schema, and no schema governs a Space. */
 const sidecarRoots = (root: string, scope: SweepScope): Promise<string[]> =>
-  scope.kind === 'nexus'
-    ? listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])
-    : scope.kind === 'artifact'
-      ? listFilesRecursive(scope.abs, [SPACE_SIDECAR])
-      : Promise.resolve([])
+  scope.kind === 'nexus' ? listFilesRecursive(contextsDir(root), [SPACE_SIDECAR]) : Promise.resolve([])
 
 /**
- * Run `rewrite` over every root the scope reaches, each under its own file lock, writing back only
- * the governed keys that actually changed — so a root the decision left alone is never re-dated or
- * re-serialized, and foreign keys and the body never move.
+ * Run `rewrite` over every root the scope reaches, each under its own file lock. A page is merged
+ * key-wise — only the governed keys that actually changed, so foreign frontmatter and the body
+ * never move and a page the decision left alone is never re-dated. A sidecar is written whole,
+ * which is what a JSON root has always taken; `null` is how a decision says "untouched" on both.
  */
 export async function sweepGovernedRoots<C>(
   root: string,
