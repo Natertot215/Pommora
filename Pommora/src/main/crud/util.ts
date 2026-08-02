@@ -5,7 +5,7 @@
 import { invalidBasename } from '@shared/contexts'
 import { hiddenName } from '../exclusion'
 import { admitContentFile } from '@shared/identity'
-import { readFrontmatterFields } from '../io/pageFile'
+import { frontmatterWritable, readFrontmatterFields } from '../io/pageFile'
 
 export { pathExists } from '../io/atomicWrite'
 
@@ -27,15 +27,25 @@ export function invalidName(name: string): boolean {
   )
 }
 
-/** Whether a nexus-wide sweep may rewrite this `.md`. Unknown files — a key contradicting their
- *  folder, a malformed value, two kind keys — are invisible and stay byte-untouched, the same
- *  treatment a stray `.png` in a Collection gets.
+/** Whether a nexus-wide sweep may rewrite this `.md` AT ALL. Unknown files — a key contradicting
+ *  their folder, a malformed value, two kind keys — are invisible and stay byte-untouched, the
+ *  same treatment a stray `.png` in a Collection gets.
  *
  *  An identity-LESS page is admitted, deliberately: the sweeps exist to change or clear values, and
  *  identity only decides whether a value can be handed back afterwards. Gating on membership alone
- *  would leave a page holding the very value a Remove ran to clear. */
-export function sweepAdmits(content: string): boolean {
+ *  would leave a page holding the very value a Remove ran to clear.
+ *
+ *  This is the identity half alone — a body-only rewrite asks it directly, because a body write
+ *  governs no key that unparseable frontmatter could lose. */
+export function sweepAdmitsBody(content: string): boolean {
   return admitContentFile(readFrontmatterFields(content), 'page').state !== 'unknown'
+}
+
+/** Whether a nexus-wide sweep may rewrite this page's FIELDS. Identity admits it, and its
+ *  frontmatter can round-trip — one file nobody can parse is skipped, never allowed to fail the
+ *  fan-out around it and leave the destruction half-applied. */
+export function sweepAdmits(content: string): boolean {
+  return sweepAdmitsBody(content) && frontmatterWritable(content)
 }
 
 /** The ISO-8601 timestamp written to governance fields (`created_at` / `modified_at`). */
