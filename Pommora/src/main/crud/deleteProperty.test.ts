@@ -35,9 +35,9 @@ vi.mock('../io/fileLock', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../io/fileLock')>()
   return {
     ...actual,
-    rewritePageSerialized: async (...args: Parameters<typeof actual.rewritePageSerialized>) => {
+    serializeOnFile: async (...args: Parameters<typeof actual.serializeOnFile>) => {
       recordedBeforeScrub ??= (await readdir(join(root, '.trash')).catch(() => [])).length > 0
-      return actual.rewritePageSerialized(...args)
+      return actual.serializeOnFile(...args)
     },
   }
 })
