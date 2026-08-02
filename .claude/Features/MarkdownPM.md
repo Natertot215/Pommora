@@ -1,6 +1,6 @@
 ## MarkdownPM
 
-Pommora's in-house Markdown editor for [[Studio/Pommora/II. Features/Pages|Pages]]: a dynamic-syntax editor on a web-native (CodeMirror 6) substrate. 
+Pommora's in-house Markdown editor for Pages: a dynamic-syntax editor on a web-native (CodeMirror 6) substrate. 
 ### Architecture — Three Strata, One Owned
 
 | Stratum | React uses | Ownership |
@@ -24,13 +24,13 @@ A construct's Markdown markers are **revealed** (literal editable text) when the
 
 ### Constructs
 
-- **Inline marks** — bold / italic / bold-italic, strikethrough, inline code, links, [[Studio/Pommora/II. Features/Connections|Connections]]; caret-aware marker reveal; heading-aware sizing; suppressed inside code + literal targets.
+- **Inline marks** — bold / italic / bold-italic, strikethrough, inline code, links, Connections; caret-aware marker reveal; heading-aware sizing; suppressed inside code + literal targets.
 
 - **Headings** — H1–H6 on the em scale; `#` reveals on caret. The context menu offers Paragraph plus H1–H5. **Foldable** via a chevron in the fold gutter reusing the sidebar's disclosure language (chevron on hover when open, persistent when folded); fold state is per-machine, in `nexus.db`.
 
 - **Lists** — bullet (`-` → `•`), `+`, arrow `→` (typed `->`), ordered, and GFM task checkboxes — all sharing one indent/spacing zone and the full behavior set (continuation, indent, drag). On disk all are portable CommonMark except the arrow line (`→ text`, a Pommora render directive legible anywhere but only rendered as a list inside Pommora). **Drag-to-reorder by the glyph**: grab a list glyph to move the item with its nested sub-block; dropping beside a shallower item re-nests, ordered runs renumber — one source-line transaction, one undo. Pure logic in a unit-tested `editor/listDragModel.ts` under the `editor/listDrag.ts` gesture.
 
-- **Outliner rails** — an optional hairline guide down each nested run (personalization `outlinerLines`, → [[Configuration]]). One rail per **ancestor** level, emitted as a side widget per nested line and drawn **run-based** — square through the middle so segments connect, rounded caps and an end-gap only at each run's first/last line, exactly the blockquote bar's first/last trick. A rail centres on its **ancestor's** glyph (so a nested checkbox under a bullet takes the bullet's centre, not its own) and paints on the neutral segment-separator token. **Scoped to dash-bullets + checkboxes.** Run + type logic in `decorations/intent.ts` (unit-tested), the widget in `editor/decorations.ts`, all knobs in `Styles.css`.
+- **Outliner rails** — an optional hairline guide down each nested run (personalization `outlinerLines`, → [[ConfigurationPM]]). One rail per **ancestor** level, emitted as a side widget per nested line and drawn **run-based** — square through the middle so segments connect, rounded caps and an end-gap only at each run's first/last line, exactly the blockquote bar's first/last trick. A rail centres on its **ancestor's** glyph (so a nested checkbox under a bullet takes the bullet's centre, not its own) and paints on the neutral segment-separator token. **Scoped to dash-bullets + checkboxes.** Run + type logic in `decorations/intent.ts` (unit-tested), the widget in `editor/decorations.ts`, all knobs in `Styles.css`.
 
 - **Code** — inline and fenced share the mono family and nothing else: inline code wears the code colour over a code-tinted fill, a fenced block a neutral secondary fill.
 

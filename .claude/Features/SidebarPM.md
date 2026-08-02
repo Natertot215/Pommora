@@ -10,19 +10,19 @@ A **surface launcher** — each icon points at a surface, and surfaces live in d
 
 - **Homepage** — pinned at the top, drawn as the Nexus's identity icon. Selecting it opens the Homepage in the main pane; it does **not** change what the content column shows.
 
-- **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage in that default order, **drag-to-reorder**. **Collections · Contexts · Agenda** switch the content column's mode; **Navigation** summons the NavWindow (→ `Navigation.md`) and **Settings** the floating Settings window (→ `Configuration.md`). The Collections and Contexts tabs draw an entity default, so a personalization override moves them; the rest carry fixed glyphs.
+- **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage in that default order, **drag-to-reorder**. **Collections · Contexts · Agenda** switch the content column's mode; **Navigation** summons the NavWindow (→ `NavigationPM.md`) and **Settings** the floating Settings window (→ `ConfigurationPM.md`). The Collections and Contexts tabs draw an entity default, so a personalization override moves them; the rest carry fixed glyphs.
 
-The ribbon collapses and expands *with* the sidebar, and toggles on its own inside the open sidebar: the `toggle-ribbon` command (⌘E by default → `Configuration.md`) slides the strip off the panel's left edge on the sidebar's collapse motion while the content column reclaims the width. Ribbon visibility is transient window state, like the sidebar's collapse; the active mode and ribbon order persist per-Nexus.
+The ribbon collapses and expands *with* the sidebar, and toggles on its own inside the open sidebar: the `toggle-ribbon` command (⌘E by default → `ConfigurationPM.md`) slides the strip off the panel's left edge on the sidebar's collapse motion while the content column reclaims the width. Ribbon visibility is transient window state, like the sidebar's collapse; the active mode and ribbon order persist per-Nexus.
 
 #### II. Content Modes
 
 The content column renders one mode at a time. A ribbon switch plays the **overtake sweep**: the incoming mode slides in rightward from the ribbon edge over the sitting content. Both layers are transparent glass, so the cover is two complementary clip sweeps tiling the width rather than a plain overlay, which would read as text over text; the outgoing layer holds still, counter-translated so its visible window doesn't jump when the scroll snaps to the incoming's top. The ribbon tab names the mode, so the column carries no heading:
 
-- **Collections** — the top-level Collections. A Collection discloses its Sets and its loose Pages, recursively; a depth-1 Set is selectable and opens its scoped view, a Sub-Set is expand-only here, and Pages are leaf rows. Full container behaviour → `Collections.md` + `PageSets.md`.
+- **Collections** — the top-level Collections. A Collection discloses its Sets and its loose Pages, recursively; a depth-1 Set is selectable and opens its scoped view, a Sub-Set is expand-only here, and Pages are leaf rows. Full container behaviour → `CollectionsPM.md` + `PageSetsPM.md`.
 
-- **Contexts** — every registry Context as a disclosure of its draggable Space rows, in registry order; group headers drag to reorder the registry itself. A Context header is a pure expand/collapse toggle — a Context has no destination view, Spaces do. Full behaviour → `Contexts.md`.
+- **Contexts** — every registry Context as a disclosure of its draggable Space rows, in registry order; group headers drag to reorder the registry itself. A Context header is a pure expand/collapse toggle — a Context has no destination view, Spaces do. Full behaviour → `ContextsPM.md`.
 
-- **Agenda** — the Ribbon's third mode, holding its place with an empty state → `Agenda.md`. The slot is form-independent: whatever Agenda becomes surfaces here. Any list it renders must be fetched by the *sidebar*, not the mode component — the mode-switch overlay renders a second copy of the outgoing layer, and a component fetching its own list brings that copy up empty over the list it is animating away.
+- **Agenda** — the Ribbon's third mode, holding its place with an empty state → `AgendaPM.md`. The slot is form-independent: whatever Agenda becomes surfaces here. Any list it renders must be fetched by the *sidebar*, not the mode component — the mode-switch overlay renders a second copy of the outgoing layer, and a component fetching its own list brings that copy up empty over the list it is animating away.
 
 #### II. Creation
 

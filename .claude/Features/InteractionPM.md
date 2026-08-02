@@ -12,7 +12,7 @@ The single source is `design-system/tokens/motion.ts`, surfaced as CSS vars thro
 
 - **Bloom curve** (Pommora-native, Apple-inspired) is the open + close curve for both dropdown motions, which share one set of keyframes. It's the one special-cased named curve, living in `animations.css.ts` rather than the everyday token set.
 
-**z-index** is formalized as three separate ladders in `tokens/stack.ts` — the shell frame, in-context lifts, and the top layer of fixed and portalled surfaces — published as named `--z-*` steps; a step ranks only within its own ladder, never against another's. **Shadow** is one `--shadow-standard` token feeding every frost surface. **Spacing and radius** stay partly ad-hoc pending a Figma lift (see [[Resources/II. Pommora/II. Features/Design]]).
+**z-index** is formalized as three separate ladders in `tokens/stack.ts` — the shell frame, in-context lifts, and the top layer of fixed and portalled surfaces — published as named `--z-*` steps; a step ranks only within its own ladder, never against another's. **Shadow** is one `--shadow-standard` token feeding every frost surface. **Spacing and radius** stay partly ad-hoc pending a Figma lift (see [[DesignPM]]).
 
 ### Named Animations
 
@@ -46,7 +46,7 @@ A single registered `@property --io` (`<number>`, 0 = closed → 1 = open, `styl
 
 The **content-inset reflow does not ride the progress.** `--content-inset-right` is a plain, unregistered custom property that flips between two values, and each surface reading it — the detail body, the editor, the subfield, the banner — runs its own padding transition and re-declares its own resize suppression. They land together because they share the base token, not because one variable carries them. Whether the insets should be derived from `--io` or stay independent is open.
 
-**Why the glass voids as a two-layer pill, not a fade:** liquid glass can't be CSS-faded in place (its `backdrop-filter` displacement is a generated SVG-filter id CSS can't interpolate), so `Toolbar/ToolbarTrio` is a fading glass layer behind a solid bare-button layer. Full rationale → [[Resources/II. Pommora/II. Features/Design]] + History.
+**Why the glass voids as a two-layer pill, not a fade:** liquid glass can't be CSS-faded in place (its `backdrop-filter` displacement is a generated SVG-filter id CSS can't interpolate), so `Toolbar/ToolbarTrio` is a fading glass layer behind a solid bare-button layer. Full rationale → [[DesignPM]] + History.
 
 ### Reveal — The Expand/Collapse Primitive
 

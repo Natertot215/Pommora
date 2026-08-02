@@ -1,6 +1,6 @@
 ## Pages
 
-A Page is one Markdown file inside a [Collection](Collections.md) — the operational entity that holds free prose. A Page is a single `.md`: YAML frontmatter for identity and property values, then a Markdown body. Membership is by location — a file inside a Collection, or one of its Sets at any depth, is a Page in that Collection and conforms to that Collection's property schema; there's no container field. The body is portable Markdown, edited in [[Studio/Pommora/II. Features/MarkdownPM|MarkdownPM]] → `MarkdownPM.md`.
+A Page is one Markdown file inside a [Collection](CollectionsPM.md) — the operational entity that holds free prose. A Page is a single `.md`: YAML frontmatter for identity and property values, then a Markdown body. Membership is by location — a file inside a Collection, or one of its Sets at any depth, is a Page in that Collection and conforms to that Collection's property schema; there's no container field. The body is portable Markdown, edited in MarkdownPM → `MarkdownPM.md`.
 
 ### Features
 
@@ -12,19 +12,19 @@ Frontmatter carries `PageID` — the key naming the kind, holding a bare ULID �
 
 #### II. Title + Membership
 
-The filename minus `.md` is the title — there's no `title` field, and a rename is a file rename. Within a folder, names must be unique: a colliding create auto-disambiguates with a numeric suffix, and a colliding rename is rejected. Titles aren't unique Nexus-wide, though — two Pages in different folders can share one, and a `[[Title]]` to a shared title resolves as ambiguous (→ `Connections.md`). Membership is purely positional: moving the file between [[Collections]] or [[Studio/Pommora/II. Features/PageSets|PageSets]] changes its membership, with no field to update. Moving across Collections brings the Page under the destination schema → `Collections.md`.
+The filename minus `.md` is the title — there's no `title` field, and a rename is a file rename. Within a folder, names must be unique: a colliding create auto-disambiguates with a numeric suffix, and a colliding rename is rejected. Titles aren't unique Nexus-wide, though — two Pages in different folders can share one, and a `[[Title]]` to a shared title resolves as ambiguous (→ `ConnectionsPM.md`). Membership is purely positional: moving the file between Collections or PageSets changes its membership, with no field to update. Moving across Collections brings the Page under the destination schema → `CollectionsPM.md`.
 
 #### II. Properties Surface
 
-A Page's property values are written and read straight off the file, with no query layer between. The one shipped surface that edits them is the Page Preview's front-matter inspector → `PagePreview.md`; the main pane renders no property rows. The catalog and schema mechanics → `Properties.md`.
+A Page's property values are written and read straight off the file, with no query layer between. The one shipped surface that edits them is the Page Preview's front-matter inspector → `PagePreviewPM.md`; the main pane renders no property rows. The catalog and schema mechanics → `PropertiesPM.md`.
 
 #### II. Opening Behavior
 
-Clicking a Page opens it in the active tab, replacing that tab's selection, and the editor auto-saves on a debounce. A Collection can route its Pages to the floating Page Preview window instead via `open_in` — title clicks (and sidebar rows) open the preview, and ⌘-click always bypasses to a full page in a new tab. Routing → `Collections.md`; the window → `PagePreview.md`.
+Clicking a Page opens it in the active tab, replacing that tab's selection, and the editor auto-saves on a debounce. A Collection can route its Pages to the floating Page Preview window instead via `open_in` — title clicks (and sidebar rows) open the preview, and ⌘-click always bypasses to a full page in a new tab. Routing → `CollectionsPM.md`; the window → `PagePreviewPM.md`.
 
 #### II. Connections
 
-A Page's body can hold inline `[[Title]]` [[Studio/Pommora/II. Features/Connections|Connections]] — Obsidian-compatible wikilinks that render as styled colored inline text and navigate on click. Canonical spec → `Connections.md`; the bracketed Context-key counterpart → `Contexts.md` + `Properties.md`.
+A Page's body can hold inline `[[Title]]` Connections — Obsidian-compatible wikilinks that render as styled colored inline text and navigate on click. Canonical spec → `ConnectionsPM.md`; the bracketed Context-key counterpart → `ContextsPM.md` + `PropertiesPM.md`.
 
 #### II. Editor UI State
 

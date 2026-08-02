@@ -68,10 +68,10 @@ Central `.nexus/record.json` · provenance written into the artifact's frontmatt
 
 | Doc | Claim | What falsifies it | Task |
 | --- | --- | --- | --- |
-| `Features/Architecture.md` | "Nothing browses or restores the trash; the path record it needs is on disk." | the pair + the restore op (nothing *browses* stays true — no surface) | 12 |
-| `Features/Architecture.md` | trash layout shows only mirrored chain + stamped leaf | pair files beside artifacts | 8 |
-| `Features/Contexts.md` | Space/Context delete described without capture or restore | pair payloads + restore | 12 |
-| `Features/Properties.md` | Delete snapshot described as path-keyed file nothing reads | artifact-less pair variant | 9 |
+| `Features/ArchitecturePM.md` | "Nothing browses or restores the trash; the path record it needs is on disk." | the pair + the restore op (nothing *browses* stays true — no surface) | 12 |
+| `Features/ArchitecturePM.md` | trash layout shows only mirrored chain + stamped leaf | pair files beside artifacts | 8 |
+| `Features/ContextsPM.md` | Space/Context delete described without capture or restore | pair payloads + restore | 12 |
+| `Features/PropertiesPM.md` | Delete snapshot described as path-keyed file nothing reads | artifact-less pair variant | 9 |
 
 **Dead Vocabulary**
 - `removed_at` → expect 0. Legitimate hits: none (source + tests all convert).

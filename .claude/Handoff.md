@@ -26,7 +26,7 @@ The back half was the **NexusRecord**, run full-cycle. The design went through /
 
 Execution ran all 14 tasks across 4 phases, failing-test-first, every guard negative-controlled (disabled → red → restored). Each phase gate ran an independent simplifier + correctness reviewer on the commit range; every finding was re-verified at the cited code before folding. The gates earned their keep: a same-root re-adopt drift-clobber, ids-in-flux leaving the diff, the corrupt-registry mass-deletion guard, a Context re-entering the registry before anything moves. The closeout ran Delivery Claim → neutral verifier (claim stands, every number reproduced) → build-breaking attack, which confirmed **five uncrossed-mechanism defects by execution** — passenger keys stranded under a disambiguated Context restore, walk-order record-one able to re-mint the live original, a self-poisoning ghost registry entry on a failed move, a hand-edited record steering data out of the nexus, and the stamped leaf mis-parsing a user's own `12__Notes.md`. All five folded red-first the same pass.
 
-**What It Ended With:** The NexusRecord ships whole and headless: every nexus-trash delete records what departed and where it belonged, every genuine open latches the baseline and silently keeps the last non-empty drift, duplicated ids re-mint against the prior baseline with the original untouched by construction, and a `restore` mutate op spends those records through a pure resolver — renamed parents resolve to their renamed homes, final titles land everywhere, membership re-applies through the one shared reconcile loop. D-15 is closed by the re-mint. Closing state: **typecheck 0 · lint 0 warnings · 1,994 tests / 179 files · build clean**, ~25 commits from base `680d996f`, tree clean, `main` unpushed. Docs are trued: [[NexusRecord]] is the feature's home, the Made False ledger closed across [[Architecture]] · [[Contexts]] · [[Properties]], History carries the arc, and the spec + plan both read as built.
+**What It Ended With:** The NexusRecord ships whole and headless: every nexus-trash delete records what departed and where it belonged, every genuine open latches the baseline and silently keeps the last non-empty drift, duplicated ids re-mint against the prior baseline with the original untouched by construction, and a `restore` mutate op spends those records through a pure resolver — renamed parents resolve to their renamed homes, final titles land everywhere, membership re-applies through the one shared reconcile loop. D-15 is closed by the re-mint. Closing state: **typecheck 0 · lint 0 warnings · 1,994 tests / 179 files · build clean**, ~25 commits from base `680d996f`, tree clean, `main` unpushed. Docs are trued: [[NexusRecordPM]] is the feature's home, the Made False ledger closed across [[ArchitecturePM]] · [[ContextsPM]] · [[PropertiesPM]], History carries the arc, and the spec + plan both read as built.
 
 **Next Session:**
 
@@ -43,7 +43,7 @@ Execution ran all 14 tasks across 4 phases, failing-test-first, every guard nega
 
 **Session Pointers**
 
-- The plan (`Planning/NexusRecord — Implementation Plan.md`) is the execution record — its Log holds every gate round, deviation, and pending ruling; the Decision Log beside it is the ratified spec, wording aligned to as-built. The feature's durable home is [[NexusRecord]]; the code map lives in `Context.md`'s Lessons.
+- The plan (`Planning/NexusRecord — Implementation Plan.md`) is the execution record — its Log holds every gate round, deviation, and pending ruling; the Decision Log beside it is the ratified spec, wording aligned to as-built. The feature's durable home is [[NexusRecordPM]]; the code map lives in `Context.md`'s Lessons.
 - The identity arc's planning docs are purged (executed); its record lives in `History.md` and the Features docs.
 
 **Landmines**
@@ -67,7 +67,7 @@ Execution ran all 14 tasks across 4 phases, failing-test-first, every guard nega
 
 ### Recent Sessions
 
-- 07-30 · (parallel) · The band-seam law — Table/Cards disclosure seams state-free in shared GroupBand chrome behind `--band-clearance`; menu/pane disclosures audited rightly unique. → [[CardView]] · [[TableView]].
+- 07-30 · (parallel) · The band-seam law — Table/Cards disclosure seams state-free in shared GroupBand chrome behind `--band-clearance`; menu/pane disclosures audited rightly unique. → [[CardViewPM]] · [[TableViewPM]].
 
 ### Working Notes
 

@@ -101,7 +101,7 @@ In one fixture nexus: delete a Context carrying members → exactly one `.delete
 
 **Task 6 — Docs and the sweep.**
 *Why:* the blast radius (E-1, E-2) is a deliverable, not an afterthought.
-*Files:* `Features/NexusRecord.md` (Provenance sections rewritten as-built: the bundle, the settle marker, the refusal semantics; the pair described nowhere), `History.md` (one entry), this plan's Log closed out.
+*Files:* `Features/NexusRecordPM.md` (Provenance sections rewritten as-built: the bundle, the settle marker, the refusal semantics; the pair described nowhere), `History.md` (one entry), this plan's Log closed out.
 *Steps:* rewrite → grep the docs for `provenance.json`, `pair`, `artifactBaseName` (control token: `record.json` present) → grep `src` for the retired code spellings `PAIR_SUFFIX`, `pairPathFor`, `trashWithTimestamp`, `artifactBaseName` (control token: `RECORD_FILENAME` present; expected hits: zero) → full gates → the acceptance criterion runs as a test, not a claim.
 
 **Phase 3 gate:** as Phase 2, plus the closeout: Delivery Claim → neutral verifier → attack pass briefed to interleave mechanisms (the crossings lesson: this feature's defects live where two correct mechanisms meet).

@@ -1,6 +1,6 @@
 ## Page Sets
 
-The recursive sub-container on the [[Studio/Pommora/II. Features/Pages|Pages]] side. A Page Set is a folder inside [[Collections]] that nests to any depth. One type, two roles by depth:
+The recursive sub-container on the Pages side. A Page Set is a folder inside Collections that nests to any depth. One type, two roles by depth:
 
 - **Set** (depth-1, a direct child of the Collection) — carries its own views and is selectable in the sidebar.
 - **Sub-Set** (depth-2+) — a plain organizing folder, expand-only in the sidebar.
@@ -19,21 +19,21 @@ Discovery, rendering, and navigation all recurse on the real folder tree: depth 
 
 #### II. Depth-1 View Rule
 
-Only a depth-1 Set is offered the view switcher, and only it mints an active view on open. Eligibility is a render-time check against the folder tree, not stored state, so it's move-safe: reparent a Set deeper and its views stop being offered; lift it back to depth-1 and they return. The views stay in the sidecar throughout, and the renderer takes no depth — a Sub-Set reached as a selection renders from its own saved views. The saved-view model → `Views.md`.
+Only a depth-1 Set is offered the view switcher, and only it mints an active view on open. Eligibility is a render-time check against the folder tree, not stored state, so it's move-safe: reparent a Set deeper and its views stop being offered; lift it back to depth-1 and they return. The views stay in the sidecar throughout, and the renderer takes no depth — a Sub-Set reached as a selection renders from its own saved views. The saved-view model → `ViewsPM.md`.
 
 #### II. Selection + Navigation
 
-A selected depth-1 Set opens its own scoped view and carries its path for rename-safe reconciliation; a Sub-Set's row only toggles its disclosure. The depth rule is the sidebar's alone: nav search indexes every Set at any depth, and a `set` selection mounts the container view whatever its depth, so the view paths test for depth-1 rather than trusting it — a reparent plus a Back-nav replay can surface a Sub-Set as a selection. Sidebar layout → `Sidebar.md`.
+A selected depth-1 Set opens its own scoped view and carries its path for rename-safe reconciliation; a Sub-Set's row only toggles its disclosure. The depth rule is the sidebar's alone: nav search indexes every Set at any depth, and a `set` selection mounts the container view whatever its depth, so the view paths test for depth-1 rather than trusting it — a reparent plus a Back-nav replay can surface a Sub-Set as a selection. Sidebar layout → `SidebarPM.md`.
 
 #### II. Moves
 
-Within one Collection, moving a Page or a whole Set at any depth is a pure filesystem move with no property loss — Sets carry no schema of their own. Cross-Collection moves are governed by the destination schema → `Collections.md`.
+Within one Collection, moving a Page or a whole Set at any depth is a pure filesystem move with no property loss — Sets carry no schema of their own. Cross-Collection moves are governed by the destination schema → `CollectionsPM.md`.
 
 ### Architecture
 
 #### II. CRUD
 
-Page Sets run through the same generic folder-entity CRUD as Collections and Spaces. A move reparents the whole subtree, and a delete sends the folder with its Sub-Sets and Pages to the configured delete target (→ `Configuration.md`). Reorder persists the parent's orders on each drag.
+Page Sets run through the same generic folder-entity CRUD as Collections and Spaces. A move reparents the whole subtree, and a delete sends the folder with its Sub-Sets and Pages to the configured delete target (→ `ConfigurationPM.md`). Reorder persists the parent's orders on each drag.
 
 ### Pending
 

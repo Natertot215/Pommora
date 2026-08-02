@@ -15,7 +15,7 @@
 - `src/main/io/atomicWrite.ts` — `trashWithTimestamp`, the primitive this replaces.
 - `src/main/crud/deleteProperty.ts` — already write-ahead (snapshot before scrub); the ordering this design generalizes.
 - `src/main/record.ts` — `projectBaseline`, restore's id-live check; untouched.
-- [[NexusRecord]] — the feature's durable home; its Provenance sections go false and are rewritten at ship.
+- [[NexusRecordPM]] — the feature's durable home; its Provenance sections go false and are rewritten at ship.
 - The architecture review of 08-01: an alternatives sweep (db table, central ledger, frontmatter stamps, path-encoded placement, journal, tombstones — all scored and rejected) and an execution-verified attack on the pair design, which converged on one root flaw: naming the record after the artifact's stamped destination makes write-ahead structurally impossible.
 
 ### Decisions
@@ -48,7 +48,7 @@
 
 #### E — Blast Radius
 
-- **E-1:** [confirmed] [[NexusRecord]]'s Provenance sections go false and are rewritten as-built at ship; History carries the arc. `record.ts`, `remint.ts`, and the baseline half are untouched; the `restore` op keeps its one-path shape with the field renamed `pairPath` → `bundlePath` (two references repo-wide, zero renderer-side).
+- **E-1:** [confirmed] [[NexusRecordPM]]'s Provenance sections go false and are rewritten as-built at ship; History carries the arc. `record.ts`, `remint.ts`, and the baseline half are untouched; the `restore` op keeps its one-path shape with the field renamed `pairPath` → `bundlePath` (two references repo-wide, zero renderer-side).
 - **E-2:** [confirmed] The provenance test suite re-points at the bundle layout; the assertion matrix (gather content, resolver decisions, restore round-trips, guard pins) carries over.
 
 ### Core (must-have)

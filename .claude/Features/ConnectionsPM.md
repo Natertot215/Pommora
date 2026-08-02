@@ -30,7 +30,7 @@ Every file is rewritten under the same lock a live edit takes, frontmatter untou
 
 #### II. Rendering
 
-A resolved connection is inline text in the connection color — never a chip — brackets hidden until the caret enters it. Click opens it, routed by the **Open Connections In Preview** personalization knob; ⌘-click opens a new tab; hover raises the preview hover card (→ `PagePreview.md`); right-click pops a native menu whose one action is **Open in Preview**. Ambiguous links keep that same bracket treatment in their muted tone; phantom text renders raw and inert.
+A resolved connection is inline text in the connection color — never a chip — brackets hidden until the caret enters it. Click opens it, routed by the **Open Connections In Preview** personalization knob; ⌘-click opens a new tab; hover raises the preview hover card (→ `PagePreviewPM.md`); right-click pops a native menu whose one action is **Open in Preview**. Ambiguous links keep that same bracket treatment in their muted tone; phantom text renders raw and inert.
 
 #### II. Autocomplete
 
@@ -40,7 +40,7 @@ Typing inside `[[ ]]` filters Pages nexus-wide by title prefix; an empty query l
 
 #### II. Resolver + Index
 
-An in-memory map from normalized title to the Page IDs holding it resolves every link and drives the cascade, rebuilt whenever the page tree reloads. Nothing persists the edges: the map is the whole mechanism, and every consumer runs off it in memory. Backlinks and Linked-From are what a stored edge table would be *for*, and it gets written alongside the query layer that reads it. Full data layer → `Architecture.md`.
+An in-memory map from normalized title to the Page IDs holding it resolves every link and drives the cascade, rebuilt whenever the page tree reloads. Nothing persists the edges: the map is the whole mechanism, and every consumer runs off it in memory. Backlinks and Linked-From are what a stored edge table would be *for*, and it gets written alongside the query layer that reads it. Full data layer → `ArchitecturePM.md`.
 
 ### Prospects
 
