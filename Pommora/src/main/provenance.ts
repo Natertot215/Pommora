@@ -17,6 +17,7 @@ import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { contentId } from '@shared/identity'
 import { errText, fail, ok, type Result } from '@shared/result'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
+import { ensureFolderId } from './adopt'
 import { mutateRegistryFile } from './contextsRegistry'
 import type { SweepCapture, UnlinkOutcome } from './crud/contextCascade'
 import { reconcile } from './crud/reconcile'
@@ -139,14 +140,24 @@ const sidecarId = async (absFolder: string, name: string): Promise<string | unde
   return typeof raw?.id === 'string' ? raw.id : undefined
 }
 
-/** The parent of a content entity, best-effort: the nexus root, a container by sidecar id, or
- *  `unaddressable` (absent, unreadable, or id-less — an address is not an identity). */
+/** The parent of a content entity: the nexus root, a container by sidecar id, or `unaddressable`.
+ *
+ *  A folder the filesystem handed Pommora — made in Finder, or by an agent — carries no persisted
+ *  id until an open stamps it, and the tree's placeholder for it is a path hash, which this record
+ *  may never store. So the parent is given an identity before it is named by one; only a sidecar
+ *  that exists and cannot be read stays `unaddressable`, because minting over it would destroy the
+ *  schema and views it still holds. */
 async function gatherParentRef(root: string, absEntity: string): Promise<ParentRef> {
   const parentDir = dirname(absEntity)
   if (parentDir === root) return { kind: 'root' }
-  const id =
+  const read = async (): Promise<string | undefined> =>
     (await sidecarId(parentDir, SIDECAR_FILENAME.set)) ??
     (await sidecarId(parentDir, SIDECAR_FILENAME.collection))
+  let id = await read()
+  if (!id) {
+    await ensureFolderId(root, parentDir)
+    id = await read()
+  }
   return id ? { kind: 'container', id } : { kind: 'unaddressable' }
 }
 

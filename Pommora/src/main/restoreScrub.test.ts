@@ -6,6 +6,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { pathExists } from './io/atomicWrite'
 import { handleMutate, type MutateDeps } from './mutate'
 import { contextsDir, contextsRegistryFile } from './paths'
 import { listBundles } from './provenance'
@@ -329,5 +330,41 @@ describe('a Space sidecar is a context root too', () => {
       true,
     )
     expect((await sidecar('Projects/Sapphire'))['(Projects)']).toEqual(['Pommora'])
+  })
+})
+
+describe('a parent the filesystem handed Pommora can still be named by id', () => {
+  it('a page deleted from a Finder-made folder records a real parent and restores', async () => {
+    // No sidecar: exactly what appears when a folder is created outside the app.
+    await mkdir(join(root, 'Notes', 'Inbox'), { recursive: true })
+    await writeFile(
+      join(root, 'Notes', 'Inbox', 'Idea.md'),
+      `---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVC\n---\nbody`,
+    )
+    const d = await handleMutate(
+      { op: 'delete', path: 'Notes/Inbox/Idea.md', kind: 'page' },
+      nexusDeps,
+    )
+    expect(d.ok).toBe(true)
+
+    const [listed] = await listBundles(root)
+    expect(listed.record).toMatchObject({ entity: 'page', parent: { kind: 'container' } })
+    const r = await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+    expect(r.ok).toBe(true)
+    expect(await pathExists(join(root, 'Notes', 'Inbox', 'Idea.md'))).toBe(true)
+  })
+
+  it('a sidecar that exists but cannot be read is never minted over', async () => {
+    await mkdir(join(root, 'Notes', 'Broken'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Broken', '_pageset.json'), '{corrupt')
+    await writeFile(
+      join(root, 'Notes', 'Broken', 'Idea.md'),
+      `---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVD\n---\nbody`,
+    )
+    await handleMutate({ op: 'delete', path: 'Notes/Broken/Idea.md', kind: 'page' }, nexusDeps)
+    const [listed] = await listBundles(root)
+    // Honest rather than destructive: the folder keeps the schema and views it still holds.
+    expect(listed.record).toMatchObject({ parent: { kind: 'unaddressable' } })
+    expect(await readFile(join(root, 'Notes', 'Broken', '_pageset.json'), 'utf8')).toBe('{corrupt')
   })
 })
