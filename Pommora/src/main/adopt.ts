@@ -2,7 +2,7 @@
 // Idempotent; folder position decides kind — a root child is a Collection, anything nested a Set.
 
 import { readFile, rename } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { isContentFile, listEntries } from './io/walk'
 import { admitContentFile, KIND_ID_KEY, type ContentKind } from '@shared/identity'
 import { newId } from './ids'
@@ -168,6 +168,21 @@ async function stampTree(
     }
   }
   return count
+}
+
+/**
+ * Give ONE folder a persisted identity if it has none, resolving its kind exactly as the open-time
+ * pass does. A folder the filesystem handed Pommora — made in Finder, or by an agent — carries only
+ * a path-derived placeholder until an open stamps it, and a placeholder is an address, not an
+ * identity: anything recording it would be recording a path in disguise. So a caller that must name
+ * this folder by id asks for one first.
+ */
+export async function ensureFolderId(root: string, absDir: string): Promise<void> {
+  const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
+  const kindCtx = await agendaContext(root, identity, false)
+  const depth = dirname(absDir) === root ? 'root' : 'nested'
+  const kind = await resolveFolderKind(absDir, depth, kindCtx)
+  if (kind === 'collection' || kind === 'set') await stampFolder(absDir, kind)
 }
 
 /**
