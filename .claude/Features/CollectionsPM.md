@@ -5,10 +5,10 @@ The operational layer's schema-bearing tier. A Page Collection is a folder at th
 | Entity              | Role                                                              | On disk                                           |
 | ------------------- | ----------------------------------------------------------------- | ------------------------------------------------- |
 | **Page Collection** | Assigns the properties every Page inside shares                   | Folder + `_pagecollection.json` at the Nexus root |
-| **Page Set**        | Organizing sub-folder at any depth; inherits the schema, adds none | Folder + `_pageset.json` → `PageSets.md`          |
+| **Page Set**        | Organizing sub-folder at any depth; inherits the schema, adds none | Folder + `_pageset.json` → `PageSetsPM.md`          |
 | **Content**         | Pages only (`.md`)                                                | Files at any level                                |
 
-Property definitions live in the nexus-wide registry (`.nexus/properties.json`); the assignment lives **only** on the Collection, and Sets inherit it whole. Nesting is unbounded. The default UI label is "Collection," renameable per Nexus. Each Collection carries its own saved views — the view model, pipeline, and renderers live in `Views.md`. The recursive Set mechanics → `PageSets.md`; the page document → `Pages.md`.
+Property definitions live in the nexus-wide registry (`.nexus/properties.json`); the assignment lives **only** on the Collection, and Sets inherit it whole. Nesting is unbounded. The default UI label is "Collection," renameable per Nexus. Each Collection carries its own saved views — the view model, pipeline, and renderers live in `ViewsPM.md`. The recursive Set mechanics → `PageSetsPM.md`; the page document → `PagesPM.md`.
 
 ### Features
 
@@ -16,15 +16,15 @@ Property definitions live in the nexus-wide registry (`.nexus/properties.json`);
 
 `_pagecollection.json` holds the Collection's identity, its `properties` assignment, its children's order — the parent owns the order of both its child Sets and its root Pages — its saved views, its open-in mode, and its presentation keys. The sidecar's full shape is `shared/schemas.ts`. The title is the folder name, not a field, and foreign keys ride through on every write.
 
-Creating a Collection mints a ULID and seeds one default view, with no properties. The full property catalog, value shapes, and schema mechanics → `Properties.md`.
+Creating a Collection mints a ULID and seeds one default view, with no properties. The full property catalog, value shapes, and schema mechanics → `PropertiesPM.md`.
 
 #### II. Collection Settings
 
-The schema editor — create properties, rename, reorder, change a type, and seed per-type options; renames, type changes, and option edits change the global definition for every assigning Collection. Removing a property lifts each member's value into a restore cache on the Collection's sidecar, then clears the key from every member's frontmatter; re-assigning replays the cached values that still validate. A page carrying no identity key is cleared without being cached, so its value doesn't come back — identity decides whether a value can be handed back, never whether it may be cleared. The rare nexus-wide delete snapshots the definition and every value into `.trash` first and strips per file after — recoverable from that snapshot rather than atomic across the fan-out. The pane is the Properties leaf of the toolbar's Settings dropdown. Full schema behavior → `Properties.md`.
+The schema editor — create properties, rename, reorder, change a type, and seed per-type options; renames, type changes, and option edits change the global definition for every assigning Collection. Removing a property lifts each member's value into a restore cache on the Collection's sidecar, then clears the key from every member's frontmatter; re-assigning replays the cached values that still validate. A page carrying no identity key is cleared without being cached, so its value doesn't come back — identity decides whether a value can be handed back, never whether it may be cleared. The rare nexus-wide delete snapshots the definition and every value into `.trash` first and strips per file after — recoverable from that snapshot rather than atomic across the fan-out. The pane is the Properties leaf of the toolbar's Settings dropdown. Full schema behavior → `PropertiesPM.md`.
 
 #### II. Open-In Mode
 
-Each Collection carries an `open_in` field deciding where its Pages open — the main detail pane or the floating Page Preview window, defaulting to full-page when absent. Container-view title clicks and sidebar rows both honor it; ⌘-click is always the explicit full-page bypass to a new tab. The field is set from the SettingsPane's Configuration leaf. Opening behavior → `Pages.md`; the window → `PagePreview.md`.
+Each Collection carries an `open_in` field deciding where its Pages open — the main detail pane or the floating Page Preview window, defaulting to full-page when absent. Container-view title clicks and sidebar rows both honor it; ⌘-click is always the explicit full-page bypass to a new tab. The field is set from the SettingsPane's Configuration leaf. Opening behavior → `PagesPM.md`; the window → `PagePreviewPM.md`.
 
 #### II. Move Semantics
 
@@ -51,4 +51,4 @@ Collections live as siblings at the Nexus root — there's no `Pages/` wrapper. 
 
 #### II. CRUD
 
-One generic folder-entity CRUD. Create writes the folder plus its sidecar; a name already taken disambiguates on a numeric suffix so a new entity always appears, while a rename onto a taken name fails outright. Both reject a name the walk could never surface again. Delete moves the folder, and everything under it, to the configured delete target → `Configuration.md`. Top-level Collections persist their order in `.nexus/state.json`; a Collection holds its children's order in its own sidecar.
+One generic folder-entity CRUD. Create writes the folder plus its sidecar; a name already taken disambiguates on a numeric suffix so a new entity always appears, while a rename onto a taken name fails outright. Both reject a name the walk could never surface again. Delete moves the folder, and everything under it, to the configured delete target → `ConfigurationPM.md`. Top-level Collections persist their order in `.nexus/state.json`; a Collection holds its children's order in its own sidecar.

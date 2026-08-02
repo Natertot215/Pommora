@@ -1,8 +1,8 @@
 ### Configuration
 
-How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nexus/settings.json` — **personalization**, **labels**, and the profile (image + subtitle) — that travels with the Nexus and syncs, and a per-device **app config** that stays on the machine. A third scope — per-machine chrome (folds, active view, view order, table headings, the tab and preview sets, the visited-entity history) — is never synced and lives in the Nexus's device-local database (→ `Architecture.md`).
+How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nexus/settings.json` — **personalization**, **labels**, and the profile (image + subtitle) — that travels with the Nexus and syncs, and a per-device **app config** that stays on the machine. A third scope — per-machine chrome (folds, active view, view order, table headings, the tab and preview sets, the visited-entity history) — is never synced and lives in the Nexus's device-local database (→ `ArchitecturePM.md`).
 
-### Personalization (per-Nexus)
+### Personalization (Per-Nexus)
 
 Nexus-wide interface config, stored as the `personalization` object in `.nexus/settings.json`. It resolves through one schema, one read-side coercion pass, one **apply-map**, and one generic setter. The coercion pass is what admits a key at all — a key it doesn't parse is dropped on read, so the toggle appears to work and reverts on the next open. The apply-map is narrower: it holds a row only for a knob with a DOM effect, and the knobs the renderer simply reads carry none.
 
@@ -36,28 +36,28 @@ Nexus-wide interface config, stored as the `personalization` object in `.nexus/s
 
 Accent, connection colour, default icons, both placement knobs, and the default view scale have no writer — they're hand-set in `settings.json`, and the watcher applies the change live. Every other knob is written by the surface that owns it. The boolean knobs are round-trip tested together against the silent-drop failure; a new one joins that test.
 
-### Commands (per-Nexus)
+### Commands (Per-Nexus)
 
 Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings.json` maps command ids to shortcut specs, and every future rebindable shortcut registers as a row in this map. Defaults live in code and are overlaid with the on-disk block on read, so every id always resolves — a malformed or absent entry falls back to its built-in binding rather than losing the shortcut. Specs are `+`-joined modifier chains ending in a key, matched exactly so overlapping bindings can't double-fire. Rebinding is hand-edited.
 
-- **toggle-ribbon** — slides the sidebar's ribbon strip away and back (→ `Sidebar.md`).
-- **toggle-nav** — summons the Navigation window (→ `Navigation.md`).
+- **toggle-ribbon** — slides the sidebar's ribbon strip away and back (→ `SidebarPM.md`).
+- **toggle-nav** — summons the Navigation window (→ `NavigationPM.md`).
 
 #### II. Write Discipline
 
 Every `settings.json` write funnels through one per-file serialize lock (the same lock the page-write path uses), so concurrent writers can't drop each other's keys. Unrecognized keys are preserved by value on write, so a key one build doesn't know — desktop ↔ mobile version skew — survives the round-trip.
 
-### Labels (per-Nexus)
+### Labels (Per-Nexus)
 
 Every entity kind carries a **renameable display label** in `settings.json` — the code identity is fixed, the shown name is the user's. Each is a **LabelPair** of singular and plural; the deeper-Set label derives from the Set singular and is never stored. Seeding a fresh Nexus's Context registry takes its Context titles from the matching label plurals — from then on live Context names read from the registry itself, not from labels. A partial or absent `labels` blob falls back per field, so an unset name still resolves to its default.
 
-### App Config (per-device)
+### App Configuration (Per-Device)
 
-Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target (in-Nexus trash vs the system trash). It is never part of a Nexus, so it never syncs. The Navigation layer's own recents are a different stream entirely — visited entities inside one Nexus, held in that Nexus's database (→ `Navigation.md`).
+Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target (in-Nexus trash vs the system trash). It is never part of a Nexus, so it never syncs. The Navigation layer's own recents are a different stream entirely — visited entities inside one Nexus, held in that Nexus's database (→ `NavigationPM.md`).
 
 ### The Settings Window
 
-A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface (→ `PagePreview.md`), inheriting its glass shell, geometry, and dismissal contract rather than re-declaring them, and opening smaller than a content window through that surface's bounds override. A category rail runs the window's full height as an in-flow side pane; the rail is the roster new panels register in.
+A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface (→ `PagePreviewPM.md`), inheriting its glass shell, geometry, and dismissal contract rather than re-declaring them, and opening smaller than a content window through that surface's bounds override. A category rail runs the window's full height as an in-flow side pane; the rail is the roster new panels register in.
 
 Its rows are the per-Nexus boolean knobs, written through the same generic setter every other personalization writer uses, so a flipped switch applies live with no new IPC. A knob whose default is ON stores only its OFF state — re-enabling removes the key entirely, so an untouched nexus keeps a clean settings file.
 

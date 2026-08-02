@@ -58,7 +58,7 @@ A Nexus is a single folder. Pommora opens it via picker and treats it as canonic
 
 Every sidecar's field shape is canonical in `src//shared//schemas.ts`.
 
-**Classification by sidecar + folder position.** A root folder carrying a Pages sidecar IS a Page Collection — regardless of folder name; folders rename freely via Finder. The per-kind sidecar filenames (`_pagecollection.json` / `_taskconfig.json` / `_eventconfig.json`) are the kind discriminators at the root. Below the root, position alone decides: every non-excluded subfolder of a Collection or Set is itself a Set, to any depth, with no cap, and a Set carries its own saved views wherever it sits (→ `// Features//PageSets.md`).
+**Classification by sidecar + folder position.** A root folder carrying a Pages sidecar IS a Page Collection — regardless of folder name; folders rename freely via Finder. The per-kind sidecar filenames (`_pagecollection.json` / `_taskconfig.json` / `_eventconfig.json`) are the kind discriminators at the root. Below the root, position alone decides: every non-excluded subfolder of a Collection or Set is itself a Set, to any depth, with no cap, and a Set carries its own saved views wherever it sits (→ `// Features//PageSetsPM.md`).
 
 **No wrapper folders.** Page Collections and the Tasks / Events singletons all live as siblings at the nexus root — there is no `Pages/` or `Agenda/` container folder.
 
@@ -78,7 +78,7 @@ Every sidecar's field shape is canonical in `src//shared//schemas.ts`.
 
 **Hidden + private.** `.nexus/` and `.trash/` are hidden from the sidebar and from non-Pommora tools by convention (matches `.obsidian/`).
 
-**The trash mirrors the nexus, and every departure carries its record.** A deleted entity keeps the folder chain it came from, and each deletion is one **bundle** — a stamped folder holding the artifact under the name it always had, plus a record naming what departed and where it belonged by id, never by name. Collisions within one folder de-collide on the bundle, so the same title deleted twice keeps both. The record is written before anything is destroyed and the artifact moves in last, so a delete cut short leaves evidence rather than silence; it never enters the live tree, and nothing in the trash is ever pruned. The **restore op** spends a bundle by resolving it against the *current* tree, so an item returns to its parent's since-renamed home rather than a stale path; the resolver decides placement and final names or returns a typed refusal, and what comes back is reconciled against the world it returns to → [[NexusRecord]].
+**The trash mirrors the nexus, and every departure carries its record.** A deleted entity keeps the folder chain it came from, and each deletion is one **bundle** — a stamped folder holding the artifact under the name it always had, plus a record naming what departed and where it belonged by id, never by name. Collisions within one folder de-collide on the bundle, so the same title deleted twice keeps both. The record is written before anything is destroyed and the artifact moves in last, so a delete cut short leaves evidence rather than silence; it never enters the live tree, and nothing in the trash is ever pruned. The **restore op** spends a bundle by resolving it against the *current* tree, so an item returns to its parent's since-renamed home rather than a stale path; the resolver decides placement and final names or returns a typed refusal, and what comes back is reconciled against the world it returns to → [[NexusRecordPM]].
 
 > **Pending — trash restore surface.** The restore action is IPC-reachable and end-to-end tested; no surface browses the trash or invokes it yet.
 
@@ -130,13 +130,13 @@ The bridge is pure types plus nothing — the sandboxed preload's bundle may req
 
 Every file write goes through an atomic path — temp-file + rename, so a crash mid-write leaves either the whole old file or the whole new file, never a half-written one:
 
-- **YAML+Markdown write** — Pages. The body follows the closing fence directly, with no separator blank line, so a note never opens with an empty line under Obsidian's properties panel. Only modeled keys are re-serialized; every foreign frontmatter key and comment survives by value. The preserving-merge mechanics are canonical in `// Features//Pages.md` § "Read + Write".
+- **YAML+Markdown write** — Pages. The body follows the closing fence directly, with no separator blank line, so a note never opens with an empty line under Obsidian's properties panel. Only modeled keys are re-serialized; every foreign frontmatter key and comment survives by value. The preserving-merge mechanics are canonical in `// Features//PagesPM.md` § "Read + Write".
 
 - **JSON write** — sidecars, Contexts, Settings, Homepage.
 
 - **Schema transaction** — multi-file commits that must succeed-or-fail as a unit: a Collection-scoped property delete or a lossy type change rewrites the sidecar *and* strips the property from every member page. Two-phase — stage every payload to a temp sibling, then rename each over its target, rolling the filesystem back on any failure. The nexus-wide property delete deliberately opts out: it snapshots every value to `.trash` first and runs per-file, so a partial run re-runs cleanly rather than rolling back.
 
-**Page save contract.** The editor binds only to `body`, so it cannot destroy frontmatter — that's held as a typed struct and re-serialized on save. Autosave belongs to one **path-keyed flush registry** shared by every editor host: edits debounce per page path, any path flushes on demand, and everything flushes on teardown, nexus switch and window close. No host carries its own debounce, so a page can never race two savers. Write mechanics → `// Features//Pages.md` § "Read + Write".
+**Page save contract.** The editor binds only to `body`, so it cannot destroy frontmatter — that's held as a typed struct and re-serialized on save. Autosave belongs to one **path-keyed flush registry** shared by every editor host: edits debounce per page path, any path flushes on demand, and everything flushes on teardown, nexus switch and window close. No host carries its own debounce, so a page can never race two savers. Write mechanics → `// Features//PagesPM.md` § "Read + Write".
 
 ---
 
@@ -152,7 +152,7 @@ Surviving events debounce to a settle, then main re-derives the tree with a **ve
 
 #### Adoption — opening any folder as a Nexus
 
-Opening a folder as a Nexus stamps every un-adopted entity with a real ULID: a raw folder gets its sidecar, an externally-authored page gets its kind's id key. Each entity's id is its own — nothing stamped depends on a sibling or a parent having been stamped first. Root folders holding content become Page Collections and everything nested becomes a Set; excluded and hidden folders, empty sidecar-less folders, and anything the resolver can't place are left alone, and an unrecognized sidecar stays inert beside the one Pommora writes. A **registered** agenda singleton stamps its own direct `.md` members under the agenda kind, never container-stamps itself — its id already lives in its config sidecar — and never recurses, because agenda is flat. The pass is silent, best-effort, idempotent, and safe to re-run on partial state. Full per-shape detail → `// Features//Collections.md`.
+Opening a folder as a Nexus stamps every un-adopted entity with a real ULID: a raw folder gets its sidecar, an externally-authored page gets its kind's id key. Each entity's id is its own — nothing stamped depends on a sibling or a parent having been stamped first. Root folders holding content become Page Collections and everything nested becomes a Set; excluded and hidden folders, empty sidecar-less folders, and anything the resolver can't place are left alone, and an unrecognized sidecar stays inert beside the one Pommora writes. A **registered** agenda singleton stamps its own direct `.md` members under the agenda kind, never container-stamps itself — its id already lives in its config sidecar — and never recurses, because agenda is flat. The pass is silent, best-effort, idempotent, and safe to re-run on partial state. Full per-shape detail → `// Features//CollectionsPM.md`.
 
 **A move is refused unless its destination holds pages.** Every page and Set move passes one main-side check that resolves the destination's kind and admits only a Collection or a Set — not the nexus root, not an agenda singleton, not a folder the resolver can't place. No surface can offer such a move, so this guards the programmatic accident rather than the user.
 
@@ -187,6 +187,6 @@ Deliberately *not* built:
 #### Reference
 
 - `PommoraPRD.md` — high-altitude product spec; storage model.
-- `// Features//Structure.md` — 2-layer model + PARA mapping + linking model.
-- `// Features//Properties.md` — property catalog; the synthesized context properties; the nexus-wide registry + assignment model.
+- `// Features//StructurePM.md` — 2-layer model + PARA mapping + linking model.
+- `// Features//PropertiesPM.md` — property catalog; the synthesized context properties; the nexus-wide registry + assignment model.
 - `// Features//MarkdownPM.md` — editor architecture + save pipeline.

@@ -6,7 +6,7 @@ How Pommora's three-pane desktop shell becomes a phone. Structural and interacti
 
 The desktop's three panes (sidebar / main / inspector) can't sit side by side on a phone. They collapse to one center pane with two drawers: swipe right to reveal the **sidebar** (browse), swipe left to reveal the **inspector** — each sliding over or pushing the center pane aside, the pattern every mobile LLM app uses. The center pane holds one entity at a time: a Page in the editor, the Homepage, or a Context.
 
-The drawer is a maintained edge-swipe primitive or a small gesture-plus-motion build that reuses Pommora's single motion source rather than importing a second animation engine — Interaction.md is the law, and the drawer mounts to it. Edge-swipe arms only from a screen-edge hit-zone so it never competes with content gestures. Safe-area insets (notch, home indicator) are handled with the standard viewport-cover meta plus inset variables — no plugin needed on iOS.
+The drawer is a maintained edge-swipe primitive or a small gesture-plus-motion build that reuses Pommora's single motion source rather than importing a second animation engine — InteractionPM.md is the law, and the drawer mounts to it. Edge-swipe arms only from a screen-edge hit-zone so it never competes with content gestures. Safe-area insets (notch, home indicator) are handled with the standard viewport-cover meta plus inset variables — no plugin needed on iOS.
 
 ### Navigation — Sidebar Drill-Down Only (v1)
 

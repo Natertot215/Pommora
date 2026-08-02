@@ -1,12 +1,12 @@
 ## CardView
 
-The Cards renderer draws a [Collection's](Collections.md) (or a depth-1 Set's) Pages as a resizable card grid, over the same pure pipeline that feeds the [Table](TableView.md) — columns → filter → group → sort. It's the first of the non-Table renderers; a Collection or Set switches to it from the ViewSettings type grid, and it draws the same inside a [view embed](SurfacePM.md), at the embed's zoom.
+The Cards renderer draws a [Collection's](CollectionsPM.md) (or a depth-1 Set's) Pages as a resizable card grid, over the same pure pipeline that feeds the [Table](TableViewPM.md) — columns → filter → group → sort. It's the first of the non-Table renderers; a Collection or Set switches to it from the ViewSettings type grid, and it draws the same inside a [view embed](SurfacePM.md), at the embed's zoom.
 
 ### Features
 
 #### II. Card Anatomy & Sizing
 
-A page card is an image band over a text area — title, then properties, then an optional location footing. The image band is a fixed height scaled by the card factor; the text extends below, and every card in a grid row matches its tallest sibling. The grid is an auto-fill track set off a column-width floor, so a partly-filled band keeps the same card size as a full one rather than ballooning. The card chassis — grid mechanics, borders, and the shared hover-pop lift — starts from the [Navigation](Navigation.md) gallery card's values; the inner title and property area is the cards renderer's own and free to diverge. Card and Set titles read one shared type source, and the location breadcrumb is always seated as a footing, pinned to the card's bottom under a divider whether or not properties sit above it.
+A page card is an image band over a text area — title, then properties, then an optional location footing. The image band is a fixed height scaled by the card factor; the text extends below, and every card in a grid row matches its tallest sibling. The grid is an auto-fill track set off a column-width floor, so a partly-filled band keeps the same card size as a full one rather than ballooning. The card chassis — grid mechanics, borders, and the shared hover-pop lift — starts from the [Navigation](NavigationPM.md) gallery card's values; the inner title and property area is the cards renderer's own and free to diverge. Card and Set titles read one shared type source, and the location breadcrumb is always seated as a footing, pinned to the card's bottom under a divider whether or not properties sit above it.
 
 **Scale** is a slider in the ViewSettings footing, drafting live while dragging and writing the view on release; the scrub is scoped per view so a sibling cards embed on the same surface isn't dragged along. The factor persists as `card_size`, a bare number.
 
