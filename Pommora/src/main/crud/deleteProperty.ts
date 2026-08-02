@@ -14,8 +14,7 @@ import { readRegistry, type PropertyRegistry } from '../io/propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
 import { allCollectionFolders } from './assignment'
 import { serializeSchemaOp } from './schemaChain'
-import { rewritePageSerialized } from '../io/fileLock'
-import { stripPageMember } from './pageValue'
+import { sweepGovernedRoots } from './governedSweep'
 import { readSidecar } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
@@ -23,7 +22,7 @@ import { SIDECAR_FILENAME } from '../paths'
 import { writeJson } from '../io/atomicWrite'
 import { splitFrontmatter } from '../readNexus'
 import { isPlainObject, propertyKey } from '@shared/propertyValue'
-import { nowIso, sweepAdmits } from './util'
+import { nowIso } from './util'
 import { fail, type Result } from '@shared/result'
 
 /** The recovery net the delete confirmation promises: an artifact-less bundle, values keyed by
@@ -84,14 +83,22 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   const folders = await allCollectionFolders(root)
   await snapshot(root, propertyId, def, folders)
 
+  // Strip the value from every page a Collection's schema governs — the one sweep, scoped to
+  // the folders that carry the schema this definition belonged to.
+  await sweepGovernedRoots(
+    root,
+    { kind: 'collections', folders },
+    (raw) => {
+      if (!(key in raw)) return null
+      const next = { ...raw }
+      delete next[key]
+      return { next }
+    },
+    { stamp: true },
+  )
+
   for (const folder of folders) {
-    // Strip the value from every page under its file lock (shared with the cell-write path).
-    for (const file of await listMarkdownFiles(folder)) {
-      await rewritePageSerialized(file, (content) =>
-        sweepAdmits(content) ? stripPageMember(content, key) : null,
-      )
-    }
-    // Then unassign + purge the Remove-cache on the collection sidecar (JSON, never raced by a
+    // Unassign + purge the Remove-cache on the collection sidecar (JSON, never raced by a
     // cell-write). The .trash snapshot above is the recovery net, so this needn't be atomic.
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
     if (!sidecar) continue

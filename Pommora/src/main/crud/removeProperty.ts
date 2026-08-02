@@ -10,13 +10,14 @@ import { contentId } from '@shared/identity'
 import { rewritePageSerialized } from '../io/fileLock'
 import { stripPageMember } from './pageValue'
 import { readSidecar } from '../sidecarIO'
+import { propertyValueStands } from './standing'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
 import { SIDECAR_FILENAME } from '../paths'
 import { readTextOrNull, rmwJsonStrict } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
-import { decodeValue, encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
+import { encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
 import { reconcile } from './reconcile'
 import { serializeSchemaOp } from './schemaChain'
 import { nowIso, sweepAdmits } from './util'
@@ -135,21 +136,23 @@ export async function restoreCachedValues(
     if (id) byId.set(id, file)
   }
   // Each entry leaves the cache only as its page write lands; what didn't restore — a page
-  // that vanished, a value the def's CURRENT type/options reject (the decoder's strict mode,
-  // not a second decoder), a page whose frontmatter refuses the write — stays cached.
+  // that vanished, a value the def's CURRENT type/options reject, a page whose frontmatter
+  // refuses the write — stays cached.
   // rewritePageSerialized RESOLVES false for a page it couldn't read — only a landed write
   // resolves true — so the resolved boolean is the spend signal, with refusals mapped in.
   const { kept: survivors } = await reconcile(block.values, async (pageId, raw) => {
     const file = byId.get(pageId)
     if (!file) return false
-    const value = decodeValue(def, raw, { strict: true })
-    if (value.kind === 'null') return false
+    // The same standing check restore asks — one predicate, so a cached value and a recorded
+    // one can never disagree about whether they may come back.
+    const standing = propertyValueStands(def, raw)
+    if (!standing.stands) return false
     return rewritePageSerialized(file, (content) =>
       !sweepAdmits(content)
         ? null
         : mergeFrontmatter(
             content,
-            { [key]: encodeValue(value), modified_at: nowIso() },
+            { [key]: encodeValue(standing.value), modified_at: nowIso() },
             [key, 'modified_at'],
             splitEnvelope(content).body,
           ),
