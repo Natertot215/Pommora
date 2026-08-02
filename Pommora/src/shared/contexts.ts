@@ -57,13 +57,6 @@ export function invalidBasename(name: string): boolean {
   )
 }
 
-/** A Context title names a folder under `.nexus/contexts/`, so it carries the basename rules and
- *  nothing more. The sigil needs no ban of its own: a key is stripped positionally, so a title
- *  carrying either glyph round-trips intact. */
-export function invalidContextTitle(title: string): boolean {
-  return invalidBasename(title)
-}
-
 /** Read-side value coercion before any registry match: an outside write of `- 2024` / `- true`
  *  parses as number/boolean and must still match a Space titled "2024"; NFD input must match
  *  NFC titles. Both sides of every comparison pass through here. */

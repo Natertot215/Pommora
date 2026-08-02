@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { invalidName, sweepAdmits, sweepAdmitsBody } from './util'
+import { invalidContextTitle, invalidName, sweepAdmits, sweepAdmitsBody } from './util'
 import { readFrontmatterFields } from '../io/pageFile'
 
 describe('invalidName', () => {
@@ -64,5 +64,36 @@ describe('sweepAdmits — the field-write gate', () => {
   it('a body-only rewrite asks the identity half alone — a link still heals on a broken page', () => {
     expect(sweepAdmitsBody(TAB)).toBe(true)
     expect(sweepAdmitsBody(HEALTHY)).toBe(true)
+  })
+})
+
+describe('invalidContextTitle', () => {
+  it('rejects path separators and empties', () => {
+    expect(invalidContextTitle('a/b')).toBe(true)
+    expect(invalidContextTitle('a\\b')).toBe(true)
+    expect(invalidContextTitle('')).toBe(true)
+    expect(invalidContextTitle('  ')).toBe(true)
+  })
+
+  it('refuses a hidden prefix — the walk hides it and the record claims it', () => {
+    expect(invalidContextTitle('_Work')).toBe(true)
+    expect(invalidContextTitle('.Work')).toBe(true)
+    expect(invalidContextTitle(' _Work')).toBe(true)
+  })
+
+  it('the ban is a prefix, not a character, and a Context is not a page', () => {
+    expect(invalidContextTitle('Side_Projects')).toBe(false)
+    expect(invalidContextTitle('Work_')).toBe(false)
+    // Nothing appends a managed extension to a Context folder.
+    expect(invalidContextTitle('Q1.md')).toBe(false)
+  })
+
+  it('accepts ordinary titles, and titles carrying a sigil glyph', () => {
+    expect(invalidContextTitle('Projects')).toBe(false)
+    expect(invalidContextTitle('Side Projects')).toBe(false)
+    // The sigil needs no ban of its own — a key is stripped positionally, so a title
+    // carrying a glyph round-trips intact.
+    expect(invalidContextTitle('Q3 (Draft)')).toBe(false)
+    expect(invalidContextTitle('Pro[ject')).toBe(false)
   })
 })

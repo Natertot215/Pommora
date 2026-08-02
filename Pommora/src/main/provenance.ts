@@ -34,9 +34,9 @@ import { readNexus, splitFrontmatter } from './readNexus'
 import { projectBaseline } from './record'
 
 /** The underscore is load-bearing, not decoration: the artifact shares this folder under its own
- *  real name, and `invalidName` forbids a leading `_` for every entity — so no name a user can
- *  choose collides with the record, and the atomic writer's temp sibling is skipped by the same
- *  rule that skips Finder litter. */
+ *  real name, so the record wears a prefix no entity may. Every naming gate refuses a hidden
+ *  prefix — the same convention the walk hides by — and the atomic writer's temp sibling inherits
+ *  this name's prefix, so it is skipped alongside Finder's litter. */
 export const RECORD_FILENAME = '_record.json'
 
 const parentRef = z.discriminatedUnion('kind', [

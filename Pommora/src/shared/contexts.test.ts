@@ -3,7 +3,6 @@ import {
   createSpaceLabel,
   contextKey,
   contextsRegistry,
-  invalidContextTitle,
   normalizeContextValue,
   parseContextKey,
   seededRegistry,
@@ -31,24 +30,6 @@ describe('contextKey / parseContextKey', () => {
 
   it('refuses the property layer, so a same-named Context and property never collide', () => {
     expect(parseContextKey('<Projects>')).toBeNull()
-  })
-})
-
-describe('invalidContextTitle', () => {
-  it('rejects path separators and empties', () => {
-    expect(invalidContextTitle('a/b')).toBe(true)
-    expect(invalidContextTitle('a\\b')).toBe(true)
-    expect(invalidContextTitle('')).toBe(true)
-    expect(invalidContextTitle('  ')).toBe(true)
-  })
-
-  it('accepts ordinary titles, and titles carrying a sigil glyph', () => {
-    expect(invalidContextTitle('Projects')).toBe(false)
-    expect(invalidContextTitle('Side Projects')).toBe(false)
-    // The sigil needs no ban of its own — a key is stripped positionally, so a title
-    // carrying a glyph round-trips intact.
-    expect(invalidContextTitle('Q3 (Draft)')).toBe(false)
-    expect(invalidContextTitle('Pro[ject')).toBe(false)
   })
 })
 
