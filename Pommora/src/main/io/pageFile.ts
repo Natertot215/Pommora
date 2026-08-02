@@ -3,7 +3,15 @@
 // a save because the ORIGINAL frontmatter parses into a yaml Document and only `set`/`delete`
 // touches the modeled keys — the object is never reconstructed.
 
-import { type Document, parseDocument, isMap } from 'yaml'
+import {
+  type Document,
+  type Pair,
+  type ParsedNode,
+  parseDocument,
+  isMap,
+  isScalar,
+  isSeq,
+} from 'yaml'
 import { readFile } from 'node:fs/promises'
 import { atomicWriteFile } from './atomicWrite'
 
@@ -98,6 +106,71 @@ export function mergeFrontmatter(
     )
   }
   return assembleEnvelope(frontmatter, body)
+}
+
+/** What a rename does with a page already holding BOTH keys. The two governed renames commit their
+ *  registry at opposite ends of their sweep, and that ordering — not taste — decides which side can
+ *  possibly be the fresher, so the policy belongs to the caller and is named at its call site by
+ *  the ordering that causes it. */
+export type KeyCollision =
+  /** The key already wearing the new name wins; the old one drops. */
+  | 'prefer-new'
+  /** Both value lists survive as one, deduped. */
+  | 'merge'
+
+/** One frontmatter key and its value, as the parser produced them. */
+type FrontmatterPair = Pair<ParsedNode, ParsedNode | null>
+
+/** Fold the rival key's values in front of the renamed key's own and drop the duplicates. Scalars
+ *  compare by value and nothing else counts as a duplicate of anything; two values that aren't both
+ *  lists have nothing to fold, so the renamed key's own value stands. */
+function foldValues(pair: FrontmatterPair, rival: FrontmatterPair): void {
+  const into = pair.value
+  const from = rival.value
+  if (!isSeq(into) || !isSeq(from)) return
+  const held = new Set<unknown>()
+  for (const item of from.items) if (isScalar(item)) held.add(item.value)
+  into.items = [...from.items, ...into.items.filter((i) => !(isScalar(i) && held.has(i.value)))]
+}
+
+/**
+ * Rename one frontmatter key where it sits, so the key keeps its position and any comment attached
+ * to it — a delete-and-re-add moves the pair to the bottom and destroys the comment.
+ *
+ * `null` means the file is left alone, and both reasons matter: a page not holding `oldKey` is
+ * never rewritten and so never re-dated (a key-only rename is not a content edit), and frontmatter
+ * that cannot round-trip is skipped rather than allowed to fail the fan-out around it. Pure.
+ */
+export function renameFrontmatterKey(
+  content: string,
+  oldKey: string,
+  newKey: string,
+  collision: KeyCollision,
+): string | null {
+  const { frontmatter, body } = splitEnvelope(content)
+  // Parsing directly (the only way to reach a key's position and comments) forfeits the lenient
+  // reader's recovery, so anything it can't take answers null instead of throwing.
+  const doc = parseDocument(frontmatter)
+  if (doc.errors.length > 0 || !isMap(doc.contents)) return null
+  const items = doc.contents.items
+  const pair = items.find((i) => String(i.key) === oldKey)
+  if (!pair) return null
+  const drop = (p: FrontmatterPair): void => {
+    items.splice(items.indexOf(p), 1)
+  }
+
+  const rival = items.find((i) => String(i.key) === newKey)
+  if (rival && collision === 'prefer-new') {
+    drop(pair)
+  } else {
+    if (rival) {
+      foldValues(pair, rival)
+      drop(rival)
+    }
+    ;(pair.key as { value: string }).value = newKey
+  }
+  const out = serialized(doc)
+  return out === null ? null : assembleEnvelope(out, body)
 }
 
 /** Read the existing page (if any), merge modeled fields preserving foreign data,

@@ -47,6 +47,22 @@ export interface SweepResult<C> {
  *  caller wants remembered about it. `null` leaves the root untouched. */
 export type Rewrite<C> = (raw: Raw, file: string) => { next: Raw; capture?: C } | null
 
+/** A page decision stated as the file's TEXT rather than as its values. A raw decision is a
+ *  decision about VALUES: it merges key-wise, and a key's own position and comment are not things
+ *  it can name, let alone keep. Renaming a key where it sits needs the yaml document, which only
+ *  the bytes carry — so that decision arrives as text and owns the whole file it returns. `null`
+ *  leaves the root untouched, the same answer a raw decision gives. */
+export type RewriteText = (content: string, file: string) => string | null
+
+export interface SweepOptions {
+  /** Re-date every page the sweep changed. What a governed key means to a page differs by layer,
+   *  so whether changing one is a content edit is the caller's to say. */
+  stamp?: boolean
+  /** Pages take this instead of the raw decision; sidecars keep the raw one, JSON having neither
+   *  position nor comments to preserve. */
+  rewriteText?: RewriteText
+}
+
 const changedKeys = (raw: Raw, next: Raw): string[] =>
   [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
     (k) => parseGovernedKey(k) !== null && JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
@@ -76,14 +92,15 @@ const sidecarRoots = (root: string, scope: SweepScope): Promise<string[]> =>
 /**
  * Run `rewrite` over every root the scope reaches, each under its own file lock. A page is merged
  * key-wise — only the governed keys that actually changed, so foreign frontmatter and the body
- * never move and a page the decision left alone is never re-dated. A sidecar is written whole,
- * which is what a JSON root has always taken; `null` is how a decision says "untouched" on both.
+ * never move and a page the decision left alone is never re-dated — unless the caller states its
+ * page decision as text, which then owns the file whole. A sidecar is written whole, which is what
+ * a JSON root has always taken; `null` is how a decision says "untouched" everywhere.
  */
 export async function sweepGovernedRoots<C>(
   root: string,
   scope: SweepScope,
   rewrite: Rewrite<C>,
-  opts: { stamp?: boolean } = {},
+  opts: SweepOptions = {},
 ): Promise<SweepResult<C>> {
   const out: SweepResult<C> = { touched: [], skipped: [], refused: [], captured: [] }
 
@@ -100,6 +117,13 @@ export async function sweepGovernedRoots<C>(
       // named as refused so a record built from this sweep can admit it was thin.
       if (!sweepAdmits(content)) {
         out.refused.push(file)
+        return
+      }
+      if (opts.rewriteText) {
+        const next = opts.rewriteText(content, file)
+        if (next === null) return
+        await atomicWriteFile(file, next)
+        out.touched.push(file)
         return
       }
       const raw = splitFrontmatter(content)

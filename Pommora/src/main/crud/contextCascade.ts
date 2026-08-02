@@ -15,11 +15,13 @@ import { contentId } from '@shared/identity'
 import { ok, fail, errText, type Result } from '@shared/result'
 import { mutateRegistryFile, readRegistryStrict } from '../contextsRegistry'
 import { pathExists, readJsonObject } from '../io/atomicWrite'
+import { renameFrontmatterKey, type KeyCollision } from '../io/pageFile'
 import { recordWrite } from '../io/writeEcho'
 import { contextsDir, SPACE_SIDECAR } from '../paths'
 import { clearJournal, readJournal, writeJournal, type RenameJournal } from './contextJournal'
 import {
   type Raw,
+  type SweepOptions,
   type SweepResult as GovernedSweepResult,
   sweepGovernedRoots,
 } from './governedSweep'
@@ -27,12 +29,16 @@ import { loadContextWorld } from './contextWrite'
 import { invalidName, invalidContextTitle } from './util'
 
 
-/** The key/value rewrite one root undergoes, or null when untouched. */
+/** A Context rename commits its registry LAST, so a tag written during the cascade still lands under
+ *  the OLD key and a key already wearing the new title can only be inert or hand-authored. Neither
+ *  list is the fresher of the two, and dropping either would silently lose tags. */
+const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
+
+/** The key/value rewrite one raw root undergoes, or null when untouched. */
 function rewriteRoot(raw: Raw, contextTitle: string, j: RenameJournal): Raw | null {
   if (j.spaceId === undefined) {
-    // Context rename: [oldTitle] → [newTitle]. A pre-existing (inert, hand-authored)
-    // [newTitle] key merges + dedupes into the renamed one — overwriting would silently
-    // drop one of the two value sets.
+    // Context rename: [oldTitle] → [newTitle], merging into a key already wearing the new title
+    // for the reason NEITHER_KEY_IS_FRESHER states.
     const oldKey = contextKey(j.oldTitle)
     const newKey = contextKey(j.newTitle)
     if (!(oldKey in raw)) return null
@@ -85,7 +91,7 @@ const STAMP_ON_CLEAR = { stamp: true }
 export async function sweepContextRoots(
   root: string,
   rewrite: (raw: Raw, file: string) => Raw | null,
-  opts: { stamp?: boolean } = {},
+  opts: SweepOptions = {},
 ): Promise<SweepResult> {
   const { touched, skipped, refused } = await sweepGovernedRoots<never>(
     root,
@@ -107,6 +113,18 @@ function captureRoot(raw: Raw, file: string, values: string[]): SweepCapture {
   return { ...(id ? { id } : {}), kind: isSpace ? 'space' : 'page', values }
 }
 
+/** How the cascade rewrites a PAGE. A Context rename moves a KEY, and a key's position and the
+ *  comment above it live only in the file's own text. A Space rename moves VALUES under a key that
+ *  stays where it is, which the raw decision already says exactly. */
+function pageLeg(j: RenameJournal): SweepOptions {
+  if (j.spaceId !== undefined) return {}
+  const oldKey = contextKey(j.oldTitle)
+  const newKey = contextKey(j.newTitle)
+  return {
+    rewriteText: (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER),
+  }
+}
+
 /** Run the title cascade for a journal record. `contextTitle` is the owning
  *  Context's CURRENT registry title (the key Space values live under). Every caller
  *  resolves the def before journaling, so an unknown context sweeps nothing. */
@@ -119,7 +137,7 @@ export async function cascadeTitle(
   if (!def) return { touched: [], skipped: [], refused: [] }
   // A context rename's own registry title may already read old or new — the key being
   // rewritten comes from the journal, never the registry.
-  return sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j))
+  return sweepContextRoots(root, (raw) => rewriteRoot(raw, def.title, j), pageLeg(j))
 }
 
 /** Strip a deleted Context's parenthesized KEY from every context-bearing root. A root under
