@@ -29,6 +29,14 @@ describe('renameSweep', () => {
     expect(out).not.toContain('<Status>')
   })
 
+  it('keeps the key’s position and the comment attached to it', async () => {
+    await seed('id: p1\n# which stage this is at\n<Status>: Old\nauthor: Nathan\n')
+    await renameSweep(root, 'Status', 'Stage')
+    expect(await readFile(page, 'utf8')).toBe(
+      '---\nid: p1\n# which stage this is at\n<Stage>: Old\nauthor: Nathan\n---\nbody\n',
+    )
+  })
+
   it('drops the old key where the new one already holds a value', async () => {
     // A write landed under the new name while the sweep was running: it is the fresher of the two.
     await seed('id: p1\n<Status>: Stale\n<Stage>: Fresh\n')

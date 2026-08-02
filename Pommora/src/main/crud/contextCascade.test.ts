@@ -101,6 +101,40 @@ describe('renameContextOp', () => {
   })
 })
 
+describe('a renamed Context key keeps its place on every page carrying it', () => {
+  it('rewrites the key where it sits, with the comment attached to it', async () => {
+    const before =
+      '---\ntitle: Alpha\n# which clients this is for\n(Projects):\n  - Pommora\nstatus: draft\nauthor: Nathan\n---\nbody'
+    await writeFile(other(), before)
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    expect(await readFile(other(), 'utf8')).toBe(
+      '---\ntitle: Alpha\n# which clients this is for\n(Ventures):\n  - Pommora\nstatus: draft\nauthor: Nathan\n---\nbody',
+    )
+  })
+
+  it('a merge into a pre-existing key lands at the renamed key’s place', async () => {
+    await writeFile(
+      other(),
+      '---\nid: p2\n# tags\n(Projects):\n  - Pommora\n(Ventures):\n  - Other\nforeign: 1\n---\nbody',
+    )
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    expect(await readFile(other(), 'utf8')).toBe(
+      '---\nid: p2\n# tags\n(Ventures):\n  - Other\n  - Pommora\nforeign: 1\n---\nbody',
+    )
+  })
+
+  it('a page whose frontmatter cannot round-trip is left byte-identical, and the rename completes around it', async () => {
+    // A tab-indented sequence: admitted by identity, refused by the round-trip gate.
+    const unwritable = '---\nPageID: 01KVGMT8BFG350FZZXAMG1QDVA\n(Projects):\n\t- Pommora\n---\nbody'
+    await writeFile(other(), unwritable)
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    expect(await readFile(other(), 'utf8')).toBe(unwritable)
+    expect((await fmOf(page()))['(Ventures)']).toEqual(['Pommora', 'pommora'])
+    expect(await regTitle('ctx_projects')).toBe('Ventures')
+    expect(await readJournal(root)).toBeNull()
+  })
+})
+
 describe('renameSpaceOp', () => {
   it('rewrites ONLY the exact canonical old title as a value (near-miss forms stay)', async () => {
     const r = await renameSpaceOp(root, 'sp-pom', 'Pommora 2')
