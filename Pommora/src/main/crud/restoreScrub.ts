@@ -22,12 +22,14 @@ import type { PropertyDefinition } from '@shared/properties'
 import { encodeValue, propertyKey } from '@shared/propertyValue'
 import type { NexusTree } from '@shared/types'
 import { contextTagStands, propertyValueStands } from './standing'
+import { readJsonObject, writeJson } from '../io/atomicWrite'
 import { readRegistry } from '../io/propertiesRegistry'
-import { rewritePageSerialized } from '../io/fileLock'
+import { rewritePageSerialized, serializeOnFile } from '../io/fileLock'
 import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
-import { listMarkdownFiles } from '../io/walk'
+import { listFilesRecursive, listMarkdownFiles } from '../io/walk'
 import { splitFrontmatter } from '../readNexus'
 import { pageCollectionSidecar } from '@shared/schemas'
+import { SPACE_SIDECAR } from '../paths'
 import { readSidecar } from '../sidecarIO'
 import { sweepAdmits } from './util'
 
@@ -91,16 +93,47 @@ function reconciled(content: string, world: LiveWorld): string | null {
   return mergeFrontmatter(content, rewrite, touched, splitEnvelope(content).body)
 }
 
+/** A Space sidecar's context keys, judged exactly as a page's are. Only the context layer is
+ *  asked: no schema governs a Space, so a property-shaped key here is foreign data that rides
+ *  through untouched, as every other key on the sidecar does. */
+function reconciledSidecar(
+  raw: Record<string, unknown>,
+  world: LiveWorld,
+  inTransitKey: string | undefined,
+): Record<string, unknown> | null {
+  const next = { ...raw }
+  let changed = false
+  for (const [key, value] of Object.entries(raw)) {
+    if (key === inTransitKey || parseGovernedKey(key)?.layer !== 'context') continue
+    const standing = contextTagStands(world.contextSpaces.get(key), value)
+    if (!standing.stands) {
+      delete next[key]
+      changed = true
+    } else if (JSON.stringify(standing.titles) !== JSON.stringify(value)) {
+      next[key] = standing.titles
+      changed = true
+    }
+  }
+  return changed ? next : null
+}
+
 /**
  * Reconcile a returning artifact against the live world, IN THE TRASH, before anything moves.
  * `absArtifact` is a page file or a folder; `destCollectionFolder` is the Collection whose schema
  * the returning pages will answer to (null when the artifact is not landing under one).
+ *
+ * `inTransitKey` names the returning Context's own key. The live world cannot answer for a subject
+ * still in the trash — it is absent from the tree by definition, and a Context that has since
+ * taken its title would answer in its place — so that one key is left for the post-move rekey,
+ * which is what settles it. Nothing under a trashed Context can have gone stale beneath its own
+ * key: the whole subtree froze together.
  */
 export async function scrubReturning(
   root: string,
   tree: NexusTree,
   absArtifact: string,
   destCollectionFolder: string | null,
+  inTransitKey?: string,
 ): Promise<void> {
   const world = await liveWorld(root, tree, destCollectionFolder)
   const pages = absArtifact.toLowerCase().endsWith('.md')
@@ -112,5 +145,15 @@ export async function scrubReturning(
     await rewritePageSerialized(file, (content) =>
       sweepAdmits(content) ? reconciled(content, world) : null,
     ).catch(() => false)
+  }
+  // A Space sidecar is a context root too — the sweeps have always treated it as one, so the
+  // reconcile reaches it on the way back for the same reason.
+  for (const file of await listFilesRecursive(absArtifact, [SPACE_SIDECAR])) {
+    await serializeOnFile(file, async () => {
+      const raw = await readJsonObject(file)
+      if (!raw) return
+      const next = reconciledSidecar(raw, world, inTransitKey)
+      if (next) await writeJson(file, next)
+    })
   }
 }
