@@ -26,7 +26,7 @@ import { readJsonObject, writeJson } from '../io/atomicWrite'
 import { readRegistry } from '../io/propertiesRegistry'
 import { rewritePageSerialized, serializeOnFile } from '../io/fileLock'
 import { mergeFrontmatter, splitEnvelope } from '../io/pageFile'
-import { listFilesRecursive, listMarkdownFiles } from '../io/walk'
+import { isMarkdownFile, listFilesRecursive, listMarkdownFiles } from '../io/walk'
 import { splitFrontmatter } from '../readNexus'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { SPACE_SIDECAR } from '../paths'
@@ -136,9 +136,7 @@ export async function scrubReturning(
   inTransitKey?: string,
 ): Promise<void> {
   const world = await liveWorld(root, tree, destCollectionFolder)
-  const pages = absArtifact.toLowerCase().endsWith('.md')
-    ? [absArtifact]
-    : await listMarkdownFiles(absArtifact)
+  const pages = isMarkdownFile(absArtifact) ? [absArtifact] : await listMarkdownFiles(absArtifact)
   for (const file of pages) {
     // Under the page lock, and admission-gated exactly as every other nexus-wide sweep is: an
     // Unknown file is left byte-identical here too.
