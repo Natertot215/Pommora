@@ -263,3 +263,71 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(raw).not.toContain('<Priority>')
   })
 })
+
+describe('a Space sidecar is a context root too', () => {
+  /** Sapphire rides inside Projects and tags a Space in Areas — a passenger link across Contexts. */
+  async function seedPassenger(): Promise<void> {
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({
+        contexts: [
+          { id: 'ctx_projects', title: 'Projects' },
+          { id: 'ctx_areas', title: 'Areas' },
+        ],
+      }),
+    )
+    await mkdir(join(contextsDir(root), 'Areas', 'Work'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Areas', 'Work', '_space.json'),
+      JSON.stringify({ id: 'sp-work' }),
+    )
+    await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
+      JSON.stringify({ id: 'sp-sap', '(Areas)': ['Work'], '<Status>': 'Done', color: 'blue' }),
+    )
+  }
+
+  const sidecar = async (rel: string): Promise<Record<string, unknown>> =>
+    JSON.parse(await readFile(join(contextsDir(root), rel, '_space.json'), 'utf8'))
+
+  it('drops a passenger tag whose Context died while the subtree sat in the trash', async () => {
+    await seedPassenger()
+    expect(
+      (await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps))
+        .ok,
+    ).toBe(true)
+    expect(
+      (await handleMutate({ op: 'delete', path: '.nexus/contexts/Areas', kind: 'context' }, nexusDeps))
+        .ok,
+    ).toBe(true)
+    const projects = (await listBundles(root)).find(
+      (b) => b.record.entity === 'context' && b.bundlePath.includes('Projects'),
+    )
+    expect(projects).toBeDefined()
+    const r = await handleMutate({ op: 'restore', bundlePath: projects?.bundlePath ?? '' }, nexusDeps)
+    expect(r.ok).toBe(true)
+
+    const sap = await sidecar('Projects/Sapphire')
+    expect(sap['(Areas)']).toBeUndefined()
+    // Its identity and its foreign keys ride through — only what nothing stands behind goes.
+    expect(sap.id).toBe('sp-sap')
+    expect(sap.color).toBe('blue')
+    expect(sap['<Status>']).toBe('Done')
+  })
+
+  it('a returning Context’s own key is left for the rekey, never judged mid-transit', async () => {
+    await seedPassenger()
+    // Sapphire also tags a Space in its OWN Context — the passenger the delete deliberately keeps.
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
+      JSON.stringify({ id: 'sp-sap', '(Projects)': ['Pommora'] }),
+    )
+    await handleMutate({ op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, nexusDeps)
+    const [listed] = await listBundles(root)
+    expect((await handleMutate({ op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok).toBe(
+      true,
+    )
+    expect((await sidecar('Projects/Sapphire'))['(Projects)']).toEqual(['Pommora'])
+  })
+})

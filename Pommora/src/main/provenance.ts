@@ -524,20 +524,23 @@ export async function restoreArtifact(root: string, bundleAbs: string): Promise<
   if (await pathExists(targetAbs))
     return fail('exists', 'Something already sits at the restored location.')
   // The bundle was frozen at its delete while the world moved on, so the returning content is
-  // reconciled against the CURRENT world here — in the trash, before anything lands. Content
-  // entities only: a Space or Context holds block documents, not schema-bearing pages.
-  if (record.entity !== 'space' && record.entity !== 'context') {
-    const owner =
-      record.entity === 'collection'
-        ? artifactAbs
-        : tree.collections.find((c) => dir === c.path || dir.startsWith(`${c.path}/`))?.path
-    await scrubReturning(
-      root,
-      tree,
-      artifactAbs,
-      owner === undefined ? null : owner === artifactAbs ? artifactAbs : join(root, owner),
-    )
-  }
+  // reconciled against the CURRENT world here — in the trash, before anything lands. Every root
+  // the Contexts layer governs is reached: a page's frontmatter and a Space's sidecar alike. A
+  // returning Context is the one subject the live world cannot answer for — it is still in
+  // transit — so its own key is left for the post-move rekey to settle, and the rest is judged.
+  const owner =
+    record.entity === 'collection'
+      ? artifactAbs
+      : record.entity === 'page' || record.entity === 'set'
+        ? tree.collections.find((c) => dir === c.path || dir.startsWith(`${c.path}/`))?.path
+        : undefined
+  await scrubReturning(
+    root,
+    tree,
+    artifactAbs,
+    owner === undefined ? null : owner === artifactAbs ? artifactAbs : join(root, owner),
+    record.entity === 'context' ? contextKey(record.registry.title) : undefined,
+  )
   // A Context's identity lives ONLY in its registry entry, so it re-enters BEFORE anything
   // moves: a refused write leaves the bundle intact — the restore is retryable — where an
   // append after the move would destroy the evidence on failure and reply ok.
