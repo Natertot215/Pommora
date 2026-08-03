@@ -14,6 +14,7 @@ import { PaneDnd, RowShell, usePaneRegions } from './paneDnd'
 import type { PaneDrop, PaneRow } from './paneDndModel'
 import { contextIdsOf, contextsByIdOf } from '../../Detail/Views/pipeline/contextIdentity'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './hiddenPaneModel'
+import { EyeToggle } from './EyeToggle'
 import { PropertyTypeIcon } from './PropertyTypes'
 import { cx } from '../../design-system/cx'
 import * as s from './settingsPane.css'
@@ -25,37 +26,6 @@ function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
   if (id === RESERVED_PROPERTY_ID.modifiedAt)
     return <PropertyTypeIcon type="last_edited_time" size={s.ICON.doc} />
   return <PropertyTypeIcon type="context" size={s.ICON.doc} />
-}
-
-/** The eye toggle — rest shows the current state's glyph, hover previews the toggle: a hidden
- *  row runs the same pair in reverse. Both glyphs mount; CSS swaps them. */
-function EyeToggle({
-  hidden,
-  name,
-  onToggle,
-}: {
-  hidden: boolean
-  name: string
-  onToggle: () => void
-}): React.JSX.Element {
-  return (
-    <button
-      type="button"
-      className={s.eyeButton}
-      aria-label={`${hidden ? 'Show' : 'Hide'} ${name}`}
-      onClick={(e) => {
-        e.stopPropagation()
-        onToggle()
-      }}
-    >
-      <span className={s.eyeRestGlyph}>
-        <Icon name={hidden ? 'eye-off' : 'eye'} size={s.ICON.eye} />
-      </span>
-      <span className={s.eyeHoverGlyph}>
-        <Icon name={hidden ? 'eye' : 'eye-off'} size={s.ICON.eye} />
-      </span>
-    </button>
-  )
 }
 
 /** Lives outside the pane so rows never remount on its re-renders; the region keys

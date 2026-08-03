@@ -55,6 +55,36 @@ export function subtreeIds(node: SetTreeNode): string[] {
   return [node.id, ...node.children.flatMap(subtreeIds)]
 }
 
+/** Hidden-set prune, ahead of resolution: a hidden node leaves with its whole subtree, so every
+ *  structural path — nested, flattened, sub-grouped — excludes its pages by construction. */
+export function pruneHiddenSets(tree: SetTreeNode[], hidden: ReadonlySet<string>): SetTreeNode[] {
+  return tree.flatMap((node) =>
+    hidden.has(node.id)
+      ? []
+      : [{ id: node.id, children: pruneHiddenSets(node.children, hidden) }],
+  )
+}
+
+/** The hidden-groups key for a sub-group bucket — value-keyed, not set-scoped: one toggle hides
+ *  that bucket under every parent set (the pane's global sub-order rule). */
+export const subHiddenKey = (bucket: string): string => `sub/${bucket}`
+
+/** Drop hidden property/date buckets — top-level bands by their bucket key, sub-group children
+ *  by value through subHiddenKey. Structural sets are pruned from the tree instead (above). */
+export function dropHiddenGroups(
+  groups: ResolvedGroup[],
+  hidden: ReadonlySet<string>,
+): ResolvedGroup[] {
+  return groups.flatMap((group) => {
+    if (group.kind === 'property' && hidden.has(group.bucket ?? group.key)) return []
+    const { children: nested, ...band } = group
+    const children = nested?.filter(
+      (c) => c.kind !== 'property' || !hidden.has(subHiddenKey(c.bucket ?? c.key)),
+    )
+    return [children?.length ? { ...band, children } : band]
+  })
+}
+
 function toRow(
   page: PageNode,
   parentSetId: string | undefined,
@@ -207,13 +237,13 @@ function property(
 
   const groups: ResolvedGroup[] = []
   // bucketOrder yields the FULL schema option order for select/status, so an empty option renders
-  // as an empty band — hide_empty_groups is the knob that drops those. Only LIVE schema keys earn
-  // an empty band: a stale manual-order key (deleted option, an old date bucket snapshotted by a
-  // band drag) must never render a ghost band.
+  // as an empty band — the view's Hide Empty Groups knob drops those (pruneEmptyBuckets, applied
+  // by the orchestrator). Only LIVE schema keys earn an empty band: a stale manual-order key
+  // (deleted option, an old date bucket snapshotted by a band drag) must never render a ghost band.
   const liveKeys = new Set(schemaOptionOrder(def) ?? (isCheckbox ? ['false', 'true'] : []))
   for (const key of bucketOrder(group, def, new Set(buckets.keys()))) {
     const items = buckets.get(key) ?? []
-    if (items.length === 0 && (group.hide_empty_groups || !liveKeys.has(key))) continue
+    if (items.length === 0 && !liveKeys.has(key)) continue
     groups.push({
       key,
       kind: 'property',
@@ -395,9 +425,21 @@ function structuralSubGrouped(
   )
 }
 
-/** Drop the structural bands a filter emptied, bottom-up — a set whose every descendant was
- *  filtered out goes with them. Structural only: property bands answer to their own
- *  hide_empty_groups knob, and the ungrouped tail is only built when it holds rows. */
+/** Drop empty property/date bands — the view's Hide Empty Groups knob, property half. The
+ *  ungrouped tail never builds empty, and structural emptiness is pruneEmptyGroups' (below):
+ *  compose bucket-first so a set whose sub-buckets all emptied goes with them. */
+export function pruneEmptyBuckets(groups: ResolvedGroup[]): ResolvedGroup[] {
+  return groups.flatMap((group) => {
+    const { children: nested, ...band } = group
+    const children = nested ? pruneEmptyBuckets(nested) : undefined
+    if (group.kind === 'property' && group.items.length === 0 && !children?.length) return []
+    return [children?.length ? { ...band, children } : band]
+  })
+}
+
+/** Drop the structural bands a filter (or Hide Empty Groups) emptied, bottom-up — a set whose
+ *  every descendant went goes with it. Structural only: the ungrouped tail is only built when
+ *  it holds rows. */
 export function pruneEmptyGroups(groups: ResolvedGroup[]): ResolvedGroup[] {
   return groups.flatMap((group) => {
     if (group.kind !== 'structural-set') return [group]

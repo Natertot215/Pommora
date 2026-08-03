@@ -4,7 +4,13 @@ import type { CollectionNode, PageNode, SetNode, ViewRow } from '@shared/types'
 import type { GroupConfig } from '@shared/views'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { PropertyDefinition } from '@shared/properties'
-import { dateBucketKey, flattenContainer, resolveGroups, subGroupKey } from './group'
+import {
+  dateBucketKey,
+  flattenContainer,
+  pruneEmptyBuckets,
+  resolveGroups,
+  subGroupKey,
+} from './group'
 import { propsAtRoot } from '@renderer/testing/propsAtRoot'
 
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
@@ -280,7 +286,7 @@ describe('property grouping — status manual order', () => {
     expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
   })
 
-  it('hide_empty_groups drops the empty buckets; the no-value tail stays (placement governs it)', () => {
+  it('resolution keeps live empty buckets — dropping them is the orchestrator’s (pruneEmptyBuckets); the no-value tail stays', () => {
     const { rows, setTree } = flattenContainer(col, values)
     const groups = resolveGroups(
       rows,
@@ -289,7 +295,13 @@ describe('property grouping — status manual order', () => {
       setTree,
       null,
     )
-    expect(keys(groups)).toEqual(['in_progress', 'not_started', 'done', '_ungrouped'])
+    expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
+    expect(keys(pruneEmptyBuckets(groups))).toEqual([
+      'in_progress',
+      'not_started',
+      'done',
+      '_ungrouped',
+    ])
   })
 })
 
