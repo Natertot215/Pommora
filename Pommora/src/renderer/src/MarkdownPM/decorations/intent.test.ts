@@ -130,6 +130,18 @@ describe('decoration intents', () => {
     ).toBe(true)
   })
 
+  it('every list type marks its content as the line’s one wrapping region', () => {
+    for (const t of ['- item text', '3. item text', '→ item text', '+ item text', '- [ ] item text']) {
+      const intents = decorationsFor(t, tokenize(t), new Set(), 99)
+      const mark = intents.find((d) => d.kind === 'class' && d.className === 'md-li-text')
+      expect(mark, t).toBeDefined()
+      expect(mark?.kind === 'class' && t.slice(mark.from, mark.to)).toBe('item text')
+    }
+    // an empty item has no content region to mark
+    const empty = decorationsFor('- ', tokenize('- '), new Set(), 99)
+    expect(empty.some((d) => d.kind === 'class' && d.className === 'md-li-text')).toBe(false)
+  })
+
   it('dash bullet, caret in the CONTENT (just in the line) → still • widget, never raw', () => {
     const t = '- item'
     const intents = decorationsFor(t, tokenize(t), new Set(), 4) // caret inside "item"

@@ -233,6 +233,13 @@ export function decorationsFor(
     // one replace — CM drops a widget-replace that merely *touches* a preceding replace at the same offset.
     const li = pushConstruct(intents, line, ls, base, selStart)
     if (li) {
+      // The item's content wears md-li-text: the line itself suppresses every wrap opportunity (the
+      // marker zone is full of them — spaces, a number's period, and the atomic cm-widgetBuffer imgs
+      // CM plants beside every replace) and this span alone restores wrapping, so a long unbroken word
+      // fills beside the glyph and breaks mid-word instead of dropping below the marker.
+      const contentFrom = ls + base + li.contentStart
+      if (contentFrom < le)
+        intents.push({ kind: 'class', from: contentFrom, to: le, className: 'md-li-text' })
       listLevels[i] = li.level
       listKinds[i] = railTypeClass(li) ?? '' // "" = a rendered list line, but not a railed type
     }
