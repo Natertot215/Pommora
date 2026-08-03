@@ -13,7 +13,7 @@
   /* The portal pads like the embed, not a page — MarkdownPM's page-level insets don't apply inside
      a foreign surface. The fold gutter scales off --mdpm-scale (set inline by PageEmbed from its single
      EMBED_SCALE knob), so the whole embed's geometry follows one variable. */
-  --fold-gutter: calc(20px * var(--mdpm-scale));
+  --fold-gutter: calc(var(--fold-gutter-base) * var(--mdpm-scale));
 }
 .spm-tile.is-editing-tile .pgembed {
   overflow-y: auto;

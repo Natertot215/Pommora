@@ -21,8 +21,8 @@
   border-spacing: 0;
   table-layout: fixed;
   font: inherit;
-  border-top: 1px solid var(--separator-border);
-  border-left: 1px solid var(--separator-border);
+  border-top: var(--border-cell);
+  border-left: var(--border-cell);
 }
 
 .mdpm-tbl-grip-zone {
@@ -72,7 +72,7 @@
 .mdpm-tbl-subject {
   position: relative;
   z-index: 2;
-  opacity: 0.55;
+  opacity: var(--state-ghost);
   /* Fill the grabbed row/column so it glides as one solid band — without it an empty cell has nothing
      visible to move and the column appears to tear (only populated cells slide). */
   background: var(--fill-tertiary);
@@ -87,8 +87,8 @@
   overflow-wrap: anywhere;
   vertical-align: top;
   text-align: left;
-  border-right: 1px solid var(--separator-border);
-  border-bottom: 1px solid var(--separator-border);
+  border-right: var(--border-cell);
+  border-bottom: var(--border-cell);
 }
 
 .mdpm-tbl thead .mdpm-tbl-cell {

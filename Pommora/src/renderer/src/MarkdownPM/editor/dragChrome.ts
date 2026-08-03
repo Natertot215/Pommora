@@ -49,10 +49,10 @@ export class Overlay {
       const l = document.createElement('div')
       l.setAttribute('aria-hidden', 'true')
       l.style.cssText =
-        'position:fixed;height:2px;border-radius:2px;background:var(--accent);pointer-events:none;z-index:var(--z-floating)'
+        'position:fixed;height:var(--drop-line-thickness);border-radius:var(--drop-line-thickness);background:var(--drag-line);pointer-events:none;z-index:var(--z-floating)'
       const dot = document.createElement('span')
       dot.style.cssText =
-        'position:absolute;left:-3px;top:-2.5px;width:7px;height:7px;border-radius:50%;background:var(--accent)'
+        'position:absolute;left:calc(var(--drop-dot-size) / -2);top:calc((var(--drop-line-thickness) - var(--drop-dot-size)) / 2);width:var(--drop-dot-size);height:var(--drop-dot-size);border-radius:50%;background:var(--drag-line)'
       l.appendChild(dot)
       document.body.appendChild(l)
       this.line = l

@@ -62,6 +62,11 @@ const controlScale = createGlobalTheme(':root', {
  *  to `--disclosure-indent` for plain CSS). A number, not a var: drop-line math multiplies it. */
 export const DISCLOSURE_INDENT = 14
 
+/** The shared left lane the fold chevron + block grips render in — one lane width agreed on by the
+ *  editor, table views, block tiles, and embeds (theme-vars bridges it to `--fold-gutter`; embeds
+ *  override with the same base scaled by `--mdpm-scale`). */
+export const FOLD_GUTTER = 20
+
 /** One token object: `size.icon.md`, `size.control['button-large'].height`, … */
 export const size = {
   icon: iconScale.icon,

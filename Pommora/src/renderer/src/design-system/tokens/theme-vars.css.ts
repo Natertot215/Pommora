@@ -2,7 +2,7 @@ import { globalStyle } from '@vanilla-extract/css'
 import { DEFAULT_ACCENT } from '@shared/types'
 import { vars as colorVars } from './color.css'
 import { font } from './typography.css'
-import { DISCLOSURE_INDENT, size } from './size.css'
+import { DISCLOSURE_INDENT, FOLD_GUTTER, size } from './size.css'
 import { TINT_STEPS } from './tint'
 import { duration, easing } from './motion'
 import { stack } from './stack'
@@ -105,6 +105,16 @@ globalStyle(':root', {
     '--text-subline-size': font.scale.subline.size,
     // The per-level disclosure inset every hierarchy steps by (sidebar, table nesting, panes).
     '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
+    // The fold/grip lane the editor, table views, block tiles, and embeds all carve from the content
+    // inset. `-base` is the unscaled width so a scaling host (embeds) can rebuild --fold-gutter from
+    // it without restating the number.
+    '--fold-gutter-base': `${FOLD_GUTTER}px`,
+    '--fold-gutter': 'var(--fold-gutter-base)',
+    // Masked-glyph assets shared across module boundaries: the 6-dot drag grip (lucide grip-vertical,
+    // read by MarkdownPM's rail grips AND SurfacePM's block handle) and the fold chevron
+    // (lucide chevron-right, a CSS mask because it paints on a line ::before — an <Icon> can't).
+    '--grip-glyph': `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='12' r='1'/%3E%3Ccircle cx='9' cy='5' r='1'/%3E%3Ccircle cx='9' cy='19' r='1'/%3E%3Ccircle cx='15' cy='12' r='1'/%3E%3Ccircle cx='15' cy='5' r='1'/%3E%3Ccircle cx='15' cy='19' r='1'/%3E%3C/svg%3E")`,
+    '--fold-chevron-mask': `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E")`,
     // Icon-size ladder — so plain-CSS glyphs (e.g. the fold chevron) route to the same steps.
     '--icon-xs': size.icon.xs,
     '--icon-sm': size.icon.sm,
