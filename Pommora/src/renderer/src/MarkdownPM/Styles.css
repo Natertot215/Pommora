@@ -362,6 +362,10 @@
   --number-zone: 1.3em;
   --task-zone: 1.8em;
   --bullet-size: 1.25em;
+  /* No wrap opportunities outside the content span: the marker zone is full of them (spaces, the
+     ordered period, CM's atomic widget-buffer imgs beside every replace), and any one of them drops a
+     long word below its marker. `pre` keeps source whitespace exact; md-li-text restores wrapping. */
+  white-space: pre;
   /* Writing-column origin: 0 at the page margin, the callout's inner edge inside a box (set by .md-callout).
      Every list padding adds onto it, so a list indents from wherever its column starts — DRY, no special case. */
   --li-origin: 0px;
@@ -446,6 +450,13 @@
   font-size: var(--bullet-size);
   /* Cap the 1.25em glyph's leading so it never swells a wrapped bullet's first line box. */
   line-height: 1;
+}
+
+/* The one region of a list line that wraps (see the `pre` on .md-li). */
+.mdpm-editor .cm-line.md-li .md-li-text {
+  white-space: break-spaces;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 /* Every list glyph (bullet / number / checkbox) is the drag handle for list reorder (see
