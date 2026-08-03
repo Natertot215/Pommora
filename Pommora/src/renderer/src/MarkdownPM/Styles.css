@@ -8,10 +8,7 @@
   initial-value: 1;
 }
 
-/* The 6-dot drag-grip glyph (lucide grip-vertical), on :root: kept global on purpose since
-   consumers outside this file (SurfacePM's block handle) read it too. */
 :root {
-  --grip-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='12' r='1'/%3E%3Ccircle cx='9' cy='5' r='1'/%3E%3Ccircle cx='9' cy='19' r='1'/%3E%3Ccircle cx='15' cy='12' r='1'/%3E%3Ccircle cx='15' cy='5' r='1'/%3E%3Ccircle cx='15' cy='19' r='1'/%3E%3C/svg%3E");
   /* --mdpm-scale: the editor's SINGLE size factor — every px-fixed dimension
      (glyphs, gutter, chrome) derives from it; a host scales the whole editor by
      setting it on any ancestor (embeds pair it with the matching font zoom).
@@ -20,15 +17,14 @@
 }
 
 .mdpm-shell {
-  /* --fold-gutter (set on .detail-page) is the width of the left strip the fold chevron lives in, carved
-     from the --content-inset margin so the body still lands on --content-inset. --fold-chevron-size:
-     chevron glyph size (title3). (--label-control is the single global :root def.) */
+  /* --fold-gutter (the root design-system token) is the width of the left strip the fold chevron lives
+     in, carved from the --content-inset margin so the body still lands on --content-inset.
+     --fold-chevron-size: chevron glyph size (title3). (--label-control is the single global :root def.) */
   /* Glyph scale = the structural px scale × the per-block Scale. Structural dims (gutter WIDTH,
      content padding) stay on --mdpm-scale and never see --block-zoom; only glyphs read this. Absent
      --block-zoom (full-page editor, or a 1.0 tile) makes this identical to --mdpm-scale. */
   --glyph-scale: calc(var(--mdpm-scale) * var(--block-zoom, 1));
   --fold-chevron-size: calc(var(--text-title3-size) * var(--glyph-scale));
-  --fold-chevron-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
   position: relative;
   /* Own stacking context, below the sidebar's step, so the absolutely-positioned banner header can
      layer above the editor body WITHOUT its z-index escaping to cover the floating sidebar. */
@@ -128,9 +124,10 @@
   padding: 6px 0 14px var(--content-inset);
 }
 .mdpm-divider {
-  height: 2px;
+  /* The shared heading↔body seam, worn as an inset rounded rule rather than a full-bleed border. */
+  height: 0;
+  border-bottom: var(--border-heading);
   margin: 0 var(--gutter) 0 var(--content-inset);
-  background: var(--separator-border);
   border-radius: 999px;
 }
 
@@ -167,7 +164,7 @@
    estimates off-screen variable-height blocks (callouts, folds) at the default height — so a gutter chevron
    below such a block drifts from its heading by a scroll-dependent amount. A line ::before shares the
    heading's own layout box and can't drift. Closed: points right, dim + persistent (a standing affordance);
-   open: points down, hover-only. KNOBS: --fold-gutter (chevron offset into the inset, on .detail-page) ·
+   open: points down, hover-only. KNOBS: --fold-gutter (chevron offset into the inset, the root token) ·
    --fold-chevron-size · motion via --disclosure / --ease-standard. */
 .mdpm-editor .cm-line.md-foldable {
   position: relative;
@@ -209,8 +206,8 @@
 .mdpm-editor .cm-line.md-block-handle::before,
 .mdpm-editor .cm-line.md-bq-first .md-bq-grip,
 .mdpm-editor .cm-line.md-callout-first::after {
-  width: calc(14px * var(--glyph-scale));
-  height: calc(14px * var(--glyph-scale));
+  width: calc(var(--icon-sm) * var(--glyph-scale));
+  height: calc(var(--icon-sm) * var(--glyph-scale));
   background-color: var(--label-secondary);
   -webkit-mask: var(--grip-glyph) center / contain no-repeat;
   mask: var(--grip-glyph) center / contain no-repeat;
@@ -224,10 +221,10 @@
 .mdpm-editor .cm-line.md-block-handle::before {
   content: "";
   position: absolute;
-  left: calc(-1 * var(--fold-gutter) + (var(--fold-gutter) - 14px * var(--glyph-scale)) / 2);
+  left: calc(-1 * var(--fold-gutter) + (var(--fold-gutter) - var(--icon-sm) * var(--glyph-scale)) / 2);
   /* Centre on the FIRST visual row's text, so it lines up with the content even when the block's
      first line wraps. --grip-top is the knob; box blocks raise it. */
-  top: var(--grip-top, calc(0.8em - 7px * var(--glyph-scale)));
+  top: var(--grip-top, calc(0.8em - var(--icon-sm) / 2 * var(--glyph-scale)));
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 .mdpm-editor .cm-line.md-block-handle.md-grip-hot::before {
@@ -238,8 +235,8 @@
    but positioned + hover-revealed exactly like the rail grips. The drag rides md-bq-first. */
 .mdpm-editor .cm-line.md-bq-first .md-bq-grip {
   position: absolute;
-  left: calc(-1 * var(--fold-gutter) + (var(--fold-gutter) - 14px * var(--glyph-scale)) / 2);
-  top: var(--grip-top, calc(0.8em - 7px * var(--glyph-scale)));
+  left: calc(-1 * var(--fold-gutter) + (var(--fold-gutter) - var(--icon-sm) * var(--glyph-scale)) / 2);
+  top: var(--grip-top, calc(0.8em - var(--icon-sm) / 2 * var(--glyph-scale)));
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 .mdpm-editor .cm-line.md-bq-first.md-grip-hot .md-bq-grip {
