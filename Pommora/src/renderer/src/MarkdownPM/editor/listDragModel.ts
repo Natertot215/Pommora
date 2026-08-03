@@ -3,6 +3,7 @@
 // Everything operates on the doc string + offsets so it's unit-testable without an editor.
 import { parseListMarkerPrefixed as parseListMarker, quoteDepth, lineOffsets } from '../detect'
 import { lineStartAt, lineEndAt } from '../input'
+import { docMathRanges } from './mathRanges'
 
 export interface ChangeSpec {
   from: number
@@ -40,18 +41,25 @@ export function subBlockAt(doc: string, pos: number): SubBlock | null {
   if (head === null) return null
   const headDepth = quoteDepth(doc.slice(from, headEnd))
 
+  const maths = docMathRanges(doc)
   let to = headEnd
   for (let p = headEnd; p < doc.length; ) {
     const fs = p + 1 // skip the '\n'
     const fe = lineEndAt(doc, fs)
     const fline = doc.slice(fs, fe)
-    if (quoteDepth(fline) !== headDepth) break // a different `>` depth is a different box, never a child
+    // A line inside a math range whose opener already rides this sub-block is formula content — blanks
+    // and marker-lookalikes included — mirroring blockModel's absorb rule, through the same docMathRanges.
+    const inJoinedMath = (): boolean => {
+      const r = maths.find(([f, t]) => fs >= f && fs <= t)
+      return r !== undefined && r[0] >= from && r[0] <= to
+    }
+    if (quoteDepth(fline) !== headDepth && !inJoinedMath()) break // a different `>` depth is a different box, never a child
     const lm = parseListMarker(fline)
     if (lm === null) {
       // A wrapped item's continuation body (non-blank, indented) rides with its item — moving the marker
       // line alone would strand it. Mirrors blockModel's list-membership rule.
-      if (fline.trim() === '' || !/^[ \t]/.test(fline)) break
-    } else if (lm.level <= head.level) break // a descendant marker must be deeper
+      if ((fline.trim() === '' || !/^[ \t]/.test(fline)) && !inJoinedMath()) break
+    } else if (lm.level <= head.level && !inJoinedMath()) break // a descendant marker must be deeper
     to = fe
     p = fe
   }

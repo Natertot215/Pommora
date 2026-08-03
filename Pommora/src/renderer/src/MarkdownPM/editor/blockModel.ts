@@ -3,10 +3,6 @@
 //
 // `to` is EXCLUSIVE of the trailing newline — matching SubBlock.to / headingSections.to / TableRegion.to,
 // which the drag's self-drop guard relies on. Do not return an inclusive `to`.
-//
-// Block math (`$$…$$`) is intentionally NOT a distinct kind: it's a span token. KNOWN DEFECT: a
-// multi-line `$$…$$` containing a blank line splits into two paragraphs with orphaned `$$` — this
-// CORRUPTS the document, it does not merely mis-select. A block-range pass would close it.
 import {
   calloutLines,
   isBlockquoteLine,
@@ -17,6 +13,7 @@ import {
   type CalloutLine,
 } from '../detect'
 import { fencedCodeRanges } from '../detect'
+import { docMathRanges } from './mathRanges'
 import { tableRegions } from '../Tables/regions'
 import { headingSections } from './folding'
 
@@ -27,6 +24,7 @@ export type BlockKind =
   | 'blockquote'
   | 'code'
   | 'table'
+  | 'math'
   | 'hr'
   | 'paragraph'
 
@@ -35,6 +33,7 @@ export interface Block {
   to: number // line end of the block's last line, exclusive of the trailing newline
   kind: BlockKind
 }
+
 
 // Per-line classification shared by blockAt + blockStarts: the line table and every "what owns this line"
 // predicate, built once. `kindAt(i)` returns the membership kind of line i (paragraph here means "claimed by
@@ -46,6 +45,9 @@ interface BlockContext {
   ends: number[]
   callout: (CalloutLine | undefined)[]
   listMember: boolean[]
+  fences: [number, number][]
+  tables: { from: number; to: number }[]
+  maths: [number, number][]
   claimed: (i: number) => boolean
   kindAt: (i: number) => BlockKind | null
 }
@@ -59,16 +61,25 @@ function blockContext(doc: string): BlockContext {
   const callout = calloutLines(lines)
   const fences = fencedCodeRanges(doc)
   const tables = tableRegions(doc)
+  const maths = docMathRanges(doc)
   const inFence = (i: number): boolean =>
     i >= 0 && i < n && fences.some(([f, t]) => starts[i] >= f && starts[i] <= t)
   const inTable = (i: number): boolean =>
     i >= 0 && i < n && tables.some((r) => starts[i] >= r.from && starts[i] <= r.to)
+  const inMath = (i: number): boolean =>
+    i >= 0 && i < n && maths.some(([f, t]) => starts[i] >= f && starts[i] <= t)
 
   // List membership: marker lines PLUS their indented continuations (a wrapped item body), but only where a
   // run actually holds a marker — so a bare indented paragraph isn't swept in. A blank line breaks a run, so
   // blank-separated "loose" items split into separate list blocks (a V1 decision); a multi-line item stays whole.
+  // A math range whose opener joined the run (an indented `$$` — continuation-shaped) rides the run WHOLE:
+  // its internal blank lines can't break the item, so a bullet's formula always moves with the bullet.
+  // A range whose opener sits outside the run (top-level math glued below a list) never gets pulled in.
   const isMarker = (i: number): boolean => parseListMarkerPrefixed(lines[i]) !== null
   const isListCont = (i: number): boolean => lines[i].trim() !== '' && /^[ \t]/.test(lines[i])
+  const mathOpenLine = maths.map(([f]) => starts.indexOf(f))
+  const mathIdxAt = (k: number): number =>
+    maths.findIndex(([f, t]) => starts[k] >= f && starts[k] <= t)
   const listMember = new Array<boolean>(n).fill(false)
   for (let i = 0; i < n; ) {
     if (!isMarker(i) && !isListCont(i)) {
@@ -76,7 +87,18 @@ function blockContext(doc: string): BlockContext {
       continue
     }
     let j = i
-    while (j + 1 < n && (isMarker(j + 1) || isListCont(j + 1))) j++
+    while (j + 1 < n) {
+      if (isMarker(j + 1) || isListCont(j + 1)) {
+        j++
+        continue
+      }
+      const m = mathIdxAt(j + 1)
+      if (m >= 0 && mathOpenLine[m] >= i && mathOpenLine[m] <= j) {
+        j++
+        continue
+      }
+      break
+    }
     let hasMarker = false
     for (let k = i; k <= j && !hasMarker; k++) hasMarker = isMarker(k)
     if (hasMarker) for (let k = i; k <= j; k++) listMember[k] = true
@@ -94,12 +116,16 @@ function blockContext(doc: string): BlockContext {
     bq[i] ||
     inFence(i) ||
     inTable(i) ||
+    inMath(i) ||
     heading[i] ||
     listMember[i] ||
     hr[i]
 
-  // Box-first precedence: a callout/quote line resolves to its box; code/table beat heading/list so a `#`/`-`
-  // inside a fence or table isn't mis-read; hr beats paragraph so it's never absorbed. paragraph is the catch-all.
+  // Box-first precedence: a callout/quote line resolves to its box (so quoted math stays box content);
+  // code/table/math beat heading/list so a `#`/`-` inside a fence, table, or math span isn't mis-read; hr
+  // beats paragraph so it's never absorbed. paragraph is the catch-all. A blank line resolves null even
+  // inside a math/fence range — the RANGE claims it (see `claimed`), so a `$$…$$` holding a blank line
+  // still resolves as one block from any of its content lines instead of splitting into two paragraphs.
   const kindAt = (i: number): BlockKind | null => {
     if (i < 0 || i >= n) return null // a neighbour-lookup off either doc edge owns no block
     if (lines[i].trim() === '') return null
@@ -107,13 +133,14 @@ function blockContext(doc: string): BlockContext {
     if (bq[i]) return 'blockquote'
     if (inFence(i)) return 'code'
     if (inTable(i)) return 'table'
+    if (inMath(i)) return 'math'
     if (heading[i]) return 'heading'
     if (listMember[i]) return 'list'
     if (hr[i]) return 'hr'
     return 'paragraph'
   }
 
-  return { lines, n, starts, ends, callout, listMember, claimed, kindAt }
+  return { lines, n, starts, ends, callout, listMember, fences, tables, maths, claimed, kindAt }
 }
 
 /** The top-level block owning the line at `pos`, or null on a blank/unowned line (nothing to grab). */
@@ -151,6 +178,10 @@ export function blockAt(doc: string, pos: number): Block | null {
       return fenceBlockAt(doc, starts[li])
     case 'table':
       return tableBlockAt(doc, starts[li])
+    case 'math': {
+      const r = ctx.maths.find(([f, t]) => starts[li] >= f && starts[li] <= t)!
+      return { from: r[0], to: r[1], kind: 'math' }
+    }
     case 'heading': {
       const sec = headingSections(doc).find((s) => s.from === starts[li])
       return sec
@@ -201,7 +232,11 @@ export function blockStarts(doc: string): BlockStart[] {
   for (let i = 0; i < n; i++) {
     const kind = ctx.kindAt(i)
     if (kind === null) continue
-    // Only the FIRST line of a multi-line block starts a draggable block (a continuation line repeats its kind).
+    // Only the FIRST line of a multi-line block starts a draggable block (a continuation line repeats its
+    // kind). Range-backed kinds test by RANGE IDENTITY, never by the previous line's kind — a neighbour
+    // test both double-starts a block whose interior holds a blank line (kindAt is null there, so the next
+    // line reads as a fresh start — a drop candidate INSIDE a code fence) and swallows the second of two
+    // glued blocks (the previous line is the first block's closer, same kind).
     let first: boolean
     switch (kind) {
       case 'callout':
@@ -211,10 +246,13 @@ export function blockStarts(doc: string): BlockStart[] {
         first = i === 0 || ctx.kindAt(i - 1) !== 'blockquote' || !!callout[i - 1]
         break
       case 'code':
-        first = ctx.kindAt(i - 1) !== 'code'
+        first = ctx.fences.some(([f]) => f === starts[i])
         break
       case 'table':
-        first = ctx.kindAt(i - 1) !== 'table'
+        first = ctx.tables.some((r) => r.from === starts[i])
+        break
+      case 'math':
+        first = ctx.maths.some(([f]) => f === starts[i])
         break
       case 'list':
         first = !listMember[i - 1]
