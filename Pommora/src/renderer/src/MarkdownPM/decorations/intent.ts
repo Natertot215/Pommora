@@ -13,6 +13,7 @@ import {
   type FenceInfo,
   type ListMarker,
 } from '../detect'
+import { docMathRanges } from '../editor/mathRanges'
 
 // A line is a nested quote INSIDE a callout when it's a callout line whose content (after the callout's own
 // `>` level) is itself a blockquote. Drives the md-bq-in run's first/last across a contiguous nested-quote run.
@@ -51,6 +52,7 @@ export interface DocScan {
   fences: (FenceInfo | undefined)[]
   callouts: (CalloutLine | undefined)[]
   fencedRanges: [number, number][]
+  maths: [number, number][]
 }
 
 export function scanDoc(text: string): DocScan {
@@ -62,6 +64,7 @@ export function scanDoc(text: string): DocScan {
     fences,
     callouts: calloutLines(lines, fences),
     fencedRanges: fences.flatMap((f) => (f?.role === 'open' ? [[f.from, f.to] as [number, number]] : [])),
+    maths: docMathRanges(text),
   }
 }
 
@@ -129,7 +132,13 @@ export function decorationsFor(
       for (const [s, e] of tk.markerRanges) intents.push({ kind: 'hide', from: s, to: e })
   })
 
-  const { lines, lineStarts, fences, callouts } = scan ?? scanDoc(text)
+  const { lines, lineStarts, fences, callouts, maths } = scan ?? scanDoc(text)
+
+  // A line inside a display-math span is formula source: box chrome still applies (boxes beat math,
+  // as in the block model), but list/heading/hr constructs never render there — a `- b` term must not
+  // become a bullet with a live drag glyph inside the formula.
+  const inMathLine = (k: number): boolean =>
+    maths.some(([f, t]) => lineStarts[k] >= f && lineStarts[k] <= t)
 
   // A line is literal code — content of a CLOSED unquoted fence — exactly when quote chrome must not
   // touch it. An unclosed fence claims every line to EOF while being typed, so it keeps chrome.
@@ -212,6 +221,11 @@ export function decorationsFor(
       if (base > 0) intents.push({ kind: 'hide', from: ls, to: innerStart })
       if (fence.role !== 'content' && !caretInBlock)
         intents.push({ kind: 'hide', from: innerStart, to: le })
+      continue
+    }
+
+    if (inMathLine(i)) {
+      if (base > 0) intents.push({ kind: 'hide', from: ls, to: ls + base })
       continue
     }
 

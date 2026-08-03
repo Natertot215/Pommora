@@ -1,4 +1,24 @@
 import { describe, it, expect } from 'vitest'
+
+describe('subBlockAt × block math', () => {
+  it('indented math with an internal blank rides the item — the reorder gesture cannot tear it', () => {
+    const doc = '- one\n  $$\n  x\n\n  y\n  $$\n- two'
+    const b = subBlockAt(doc, 0)
+    expect(doc.slice(b!.from, b!.to)).toBe('- one\n  $$\n  x\n\n  y\n  $$')
+  })
+
+  it('a marker-looking line inside absorbed math stays formula content', () => {
+    const doc = '- one\n  $$\n- x\n  $$\n- two'
+    const b = subBlockAt(doc, 0)
+    expect(doc.slice(b!.from, b!.to)).toBe('- one\n  $$\n- x\n  $$')
+  })
+
+  it('top-level math glued below an item is never absorbed by the gesture', () => {
+    const doc = '- one\n$$\nx\n\ny\n$$'
+    const b = subBlockAt(doc, 0)
+    expect(doc.slice(b!.from, b!.to)).toBe('- one')
+  })
+})
 import {
   subBlockAt,
   dropChanges,

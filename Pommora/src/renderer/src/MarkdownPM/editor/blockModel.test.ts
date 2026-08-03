@@ -134,10 +134,103 @@ describe('blockAt', () => {
     expect(slice(doc, blockAt(doc, doc.indexOf('Second')))).toBe('> [!tip] Second\n> b')
   })
 
-  it('block math with an internal blank splits — known V1 gap, pinned', () => {
+  it('multi-line block math is ONE block, even across an internal blank line', () => {
     const doc = '$$\nx=1\n\ny=2\n$$'
-    expect(blockAt(doc, 0)?.kind).toBe('paragraph')
-    expect(slice(doc, blockAt(doc, 0))).toBe('$$\nx=1')
+    const b = blockAt(doc, 0)
+    expect(b?.kind).toBe('math')
+    expect(slice(doc, b)).toBe(doc)
+    expect(slice(doc, blockAt(doc, doc.indexOf('y=2')))).toBe(doc)
+  })
+
+  it('a math block bounded by paragraphs claims only its own lines', () => {
+    const doc = 'before\n$$\nx=1\n$$\nafter'
+    expect(slice(doc, blockAt(doc, 0))).toBe('before')
+    expect(slice(doc, blockAt(doc, doc.indexOf('x=1')))).toBe('$$\nx=1\n$$')
+    expect(slice(doc, blockAt(doc, doc.indexOf('after')))).toBe('after')
+  })
+
+  it('single-line $$x$$ stays inline — its line is an ordinary paragraph', () => {
+    const doc = 'see $$x=1$$ here\nmore'
+    const b = blockAt(doc, 0)
+    expect(b?.kind).toBe('paragraph')
+    expect(slice(doc, b)).toBe(doc)
+  })
+
+  it('a $$ pair inside a code fence is code, never math', () => {
+    const doc = '```\n$$\nx=1\n$$\n```'
+    const b = blockAt(doc, doc.indexOf('x=1'))
+    expect(b?.kind).toBe('code')
+    expect(slice(doc, b)).toBe(doc)
+  })
+
+  it('a heading-looking line inside block math is math content', () => {
+    const doc = '$$\n# not a heading\n$$'
+    expect(blockAt(doc, doc.indexOf('# not'))?.kind).toBe('math')
+  })
+
+  it('blockStarts marks a math block once, at its opening line', () => {
+    const doc = 'p\n\n$$\nx=1\n\ny=2\n$$\n\nq'
+    const starts = blockStarts(doc)
+    expect(starts.filter((s) => s.kind === 'math')).toEqual([{ from: 3, kind: 'math' }])
+  })
+
+  it('a stray $$ in prose or inline code never pairs with a real math delimiter', () => {
+    const doc = 'Wrap in `$$` to display.\n\n$$\na\n\nb\n$$\n\ntail'
+    expect(slice(doc, blockAt(doc, 0))).toBe('Wrap in `$$` to display.')
+    const math = blockAt(doc, doc.indexOf('a\n'))
+    expect(math?.kind).toBe('math')
+    expect(slice(doc, math)).toBe('$$\na\n\nb\n$$')
+    expect(slice(doc, blockAt(doc, doc.indexOf('tail')))).toBe('tail')
+  })
+
+  it('mid-line $$ occurrences (prices, shell) are never math delimiters', () => {
+    const doc = 'price $$50 today\n\ntotal $$70 tomorrow'
+    expect(blockStarts(doc).every((s) => s.kind === 'paragraph')).toBe(true)
+  })
+
+  it('hanging delimiters ($$ sharing a line with content) stay ordinary paragraph lines', () => {
+    const doc = '$$ x = 1 +\n2 $$'
+    const b = blockAt(doc, 0)
+    expect(b?.kind).toBe('paragraph')
+    expect(slice(doc, b)).toBe(doc)
+  })
+
+  it('an unpaired lone $$ line claims nothing', () => {
+    const doc = 'p\n\n$$\n\nq'
+    expect(blockAt(doc, 3)?.kind).toBe('paragraph')
+    expect(slice(doc, blockAt(doc, 3))).toBe('$$')
+  })
+
+  it('a fenced block holding a blank line starts ONCE — no drop candidate inside the code', () => {
+    const doc = '```js\nconst a = 1\n\nconst b = 2\n```'
+    const starts = blockStarts(doc)
+    expect(starts).toEqual([{ from: 0, kind: 'code' }])
+  })
+
+  it('two glued fences each keep their own block start', () => {
+    const doc = '```\na\n```\n```\nb\n```'
+    expect(blockStarts(doc).filter((s) => s.kind === 'code')).toHaveLength(2)
+  })
+
+  it('indented math with an internal blank rides its list item whole — dragging the bullet cannot tear it', () => {
+    const doc = '- item one\n  $$\n  x\n\n  y\n  $$\n- item two'
+    const b = blockAt(doc, 0)
+    expect(b?.kind).toBe('list')
+    expect(slice(doc, b)).toBe(doc) // the run holds both items and the whole formula
+    expect(blockAt(doc, doc.indexOf('  x'))?.kind).toBe('math')
+  })
+
+  it('indented math without a blank stays inside its list block (unchanged shape)', () => {
+    const doc = '- item\n  $$\n  x\n  $$'
+    expect(slice(doc, blockAt(doc, 0))).toBe(doc)
+  })
+
+  it('top-level math glued below a list is never pulled into the run', () => {
+    const doc = '- item\n$$\nx\n\ny\n$$'
+    expect(slice(doc, blockAt(doc, 0))).toBe('- item')
+    const math = blockAt(doc, doc.indexOf('x'))
+    expect(math?.kind).toBe('math')
+    expect(slice(doc, math)).toBe('$$\nx\n\ny\n$$')
   })
 
   it('blockStarts marks the heading line and each block inside its section, with kinds', () => {

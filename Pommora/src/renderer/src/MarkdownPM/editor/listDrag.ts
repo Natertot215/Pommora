@@ -6,6 +6,8 @@ import { EditorView } from '@codemirror/view'
 import { ACTIVATION } from '../../design-system/interactions/shared'
 import { startAutoScroll } from '../../design-system/interactions/autoscroll'
 import { parseListMarkerPrefixed as parseListMarker } from '../detect'
+import { docString } from './docCache'
+import { docMathRanges } from './mathRanges'
 import { Overlay, forEachLine, setShade, shadeField } from './dragChrome'
 import { focusAt } from './input'
 import { lineElementAt } from './lineDom'
@@ -67,12 +69,15 @@ function collectCands(view: EditorView, block: SubBlock): Cand[] {
   const contentRect = view.contentDOM.getBoundingClientRect()
   const padRight = parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0
   const gutterRight = contentRect.right - padRight // the wrap boundary — the line spans out to here
+  // A marker-lookalike inside display math is formula source, never a drop target.
+  const maths = docMathRanges(docString(doc))
   const out: Cand[] = []
   for (const { from, to } of view.visibleRanges) {
     forEachLine(doc, from, to, (line) => {
       const lm = parseListMarker(line.text)
       const inBlock = line.from >= block.from && line.from <= block.to
       if (lm === null || inBlock) return
+      if (maths.some(([f, t]) => line.from >= f && line.from <= t)) return
       const cTop = view.coordsAtPos(line.from)
       const cEnd = view.coordsAtPos(line.to)
       const cMarker = view.coordsAtPos(line.from + lm.markerStart)

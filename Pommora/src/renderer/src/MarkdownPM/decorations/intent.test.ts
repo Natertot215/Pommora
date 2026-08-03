@@ -107,6 +107,16 @@ describe('decoration intents', () => {
     ).toBe(true)
   })
 
+  it('a marker-lookalike inside display math renders as formula source — no bullet, no glyph', () => {
+    const t = '$$\nE = mc^2\n- b\n\ny = 2\n$$'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 99)
+    expect(intents.some((d) => d.kind === 'line' && d.className.startsWith('md-li'))).toBe(false)
+    expect(intents.some((d) => d.kind === 'widget')).toBe(false)
+    // control — the same line outside math is a bullet
+    const out = decorationsFor('- b', tokenize('- b'), new Set(), 99)
+    expect(out.some((d) => d.kind === 'widget' && d.spec.type === 'bullet')).toBe(true)
+  })
+
   it('dash bullet, caret off the line → • widget replaces just the dash (in-flow)', () => {
     const t = '- item'
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
