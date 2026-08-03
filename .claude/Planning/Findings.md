@@ -26,14 +26,11 @@
 
 ### Instructions That Don't Work As Intended
 
-| Instruction | What it says | What it actually produces | Why the gap |
-|---|---|---|---|
-| Review-Discipline loop vs cap | "runs until a round comes back genuinely clean" and "Run 3 runs max" | Improvised statuses ("folded, not ratified") invented per session | Direct self-contradiction; no defined outcome for a dirty round 3 |
-| StudioMD S37 line counts | "Always report +/- line-count differences after significant changes" | Nathan asks every time; built `/diff` to compensate | "Significant" undefined, no mechanism named; `/diff` and S37 don't reference each other |
-| docs-audit trigger | "Use proactively… even when not explicitly asked… before adding a doc" | Body + memory say the opposite, citing Nathan's explicit rejection | Frontmatter (the invocation surface) was never updated when the body was |
-| studio-brainstorm never-rethink | Architecture (storage, sync, integrity) "never rethink" | The Deletion Bundle arc successfully rethought ratified storage architecture on evidence | Skill absolute conflicts with Pommora's evidence + sign-off escape hatch |
-| code-simplification Rule of Three | "Rule of Three" gates extraction | Nathan ruled "Rule of two, not three. Fix" | Ruling landed in a session and one dispatch brief, never in the skill |
-| Handoff "no standing content here" | Durable rules live in Context.md | Nine durable rules sit in Handoff, Cornerstone included | No enforcement moment; `/handoff` reads the rule and the violations in the same file |
+| Instruction                        | What it says                                                           | What it actually produces                                                                | Why the gap                                                                             |
+| ---------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Review-Discipline loop vs cap      | "runs until a round comes back genuinely clean" and "Run 3 runs max"   | Improvised statuses ("folded, not ratified") invented per session                        | Direct self-contradiction; no defined outcome for a dirty round 3                       |
+| StudioMD S37 line counts           | "Always report +/- line-count differences after significant changes"   | Nathan asks every time; built `/diff` to compensate                                      | "Significant" undefined, no mechanism named; `/diff` and S37 don't reference each other |
+| code-simplification Rule of Three  | "Rule of Three" gates extraction                                       | Nathan ruled "Rule of two, not three. Fix"                                               | Ruling landed in a session and one dispatch brief, never in the skill                   |
 
 ### Proposed Fixes
 
@@ -91,23 +88,7 @@ The fix moves each piece to the tier where it always loads: gates and their trap
 
 **Counterfactual:** 08-01T23:04, session `6dc9212b` — the simplification pass presented rule-of-three deferrals and Nathan had to overrule ("that flips two of my calls, and the stamped-leaf one I'd half-hidden behind the count"). With the skill corrected, those consolidations ship in the first pass.
 
-#### Fix 5 — Move Handoff's Durable Rules to Their Owners
-
-**Overview:** Handoff.md's own Rules block forbids standing content, yet its User Feedback section carries four durable rules (scope-words-name-layers; clean-rewrite-not-amendments; the consolidation lens; file+"what" citations with the Workflow ban) and its Lessons carry the Crockford-alphabet landmine. These are exactly the rules that should outlive the session, parked in the one file that rotates every session. Two of them cover the corpus's costliest uncovered mechanisms: the "restore is out of scope" misread (a full over-cut and revert) and the five-round fold-residue loop.
-
-The fix promotes the two behavioral rules to StudioMD's Working With Nathan, the citation rule to Review-Discipline, and deletes the Handoff copies — honoring both the no-standing-content rule and the one-fact-one-home doctrine.
-
-**Instruction (StudioMD, two bullets):** `**Scope words name layers.** "X is out of scope" means one layer of X — confirm which (interface, actions, data) before cutting.` and `**Fold feedback by rewriting, not stitching.** After folding corrections into any doc, re-read it whole and rewrite so it reads written-once; incremental patching leaves contradiction residue.`
-
-**Instruction (Review-Discipline, one bullet):** `Review findings cite file + "what," never line numbers — line citations rot as the tree moves.`
-
-**Placement:** StudioMD → Working With Nathan — two inserted bullets. Review-Discipline → How To Apply — one inserted bullet. Handoff.md → User Feedback — **deletion** of the promoted lines once landed (the Workflow half of the citation line is already in Review-Discipline and just gets deleted).
-
-**Tier rationale:** Scope-words and fold-residue are about working with Nathan across all projects — StudioMD. Citation format is review mechanics — Review-Discipline. None are Pommora-specific.
-
-**Counterfactual:** 08-01T05:08–05:11, session `6dc9212b` — "restore is out of scope, all this does is create the journal" → whole restore machinery cut → "no, i just ment the user interface. not the actions" → revert. With scope-words loaded, the first response is "which layer — the surface or the actions?" and the cut/revert cycle never runs.
-
-#### Fix 6 — Retarget S37 at /diff
+#### Fix 5 — Retarget S37 at /diff
 
 **Overview:** "Always report +/- line-count differences after significant changes" never fires proactively — Nathan asked for the numbers at least four separate times in one session, and then built `/diff` (a 195-line command) to produce exactly this report. The instruction and its implementation don't reference each other. The fix replaces the vague directive with one that names the mechanism, so "report the diff" resolves to a defined, already-built output instead of ad-hoc git arithmetic.
 
@@ -119,19 +100,7 @@ The fix promotes the two behavioral rules to StudioMD's Working With Nathan, the
 
 **Counterfactual:** 07-30T22:53, session `6dc9212b` — "Whats the final diff and result here?" (and three later variants). With this loaded, the batch closes with the report already rendered and those turns become confirmations, not requests.
 
-#### Fix 7 — Fix docs-audit's Trigger to Match Its Body
-
-**Overview:** The skill's frontmatter — the only part the session sees when deciding whether to invoke — says "use proactively… before adding a doc or section… even when not explicitly asked." Its body says the reverse, and cites Nathan's explicit rejection, which a memory independently records. This is the highest false-trigger surface in the roster: an obedient session invokes the audit as a pre-write gate exactly where Nathan has said not to. Replacing the description with the body's actual contract removes the trap at its source rather than relying on the memory to counteract the frontmatter every time.
-
-**Instruction:** `description: Audit EXISTING project documentation for contradiction, drift, bloat, and false confidence — when two docs disagree, a doc feels stale or bloated, or claims may not match code or Nathan's decisions. Never a pre-write gate: freshly-ratified specs get written directly.`
-
-**Placement:** `~//.claude//skills//docs-audit-skill//SKILL.md` — **replacement** of the frontmatter `description` value.
-
-**Tier rationale:** The defect is in the skill's own registration surface; no stack tier can override a skill description at invocation-decision time.
-
-**Counterfactual:** The memory `feedback-docs-audit-not-for-new-specs` exists because a session followed the frontmatter and Nathan rejected it. With the description fixed, that memory becomes redundant insurance instead of the only guardrail.
-
-#### Fix 8 — Sweep the Last Swift Residue From the comment-killer
+#### Fix 6 — Sweep the Last Swift Residue From the comment-killer
 
 **Overview:** The keep-list itself is clean now; two Swift-era residues survive in the agent file. The caution paragraph still biases toward keeping "a Swift-6 quirk" — vocabulary that's dead in the React build and that Pommora orders flagged for removal — and the description's second dispatch example still narrates "recently-changed Swift files" and `SidebarView`, a SwiftUI-era filename that also anchors `code-simplifier.md`'s third example. Small, but each dispatch still carries them.
 
@@ -143,19 +112,7 @@ The fix promotes the two behavioral rules to StudioMD's Working With Nathan, the
 
 **Counterfactual:** Any comment pass over surviving Swift-flavored comments — with "Swift-6 quirk" in the brief, the agent is nudged to preserve exactly the narration the remnant sweeps exist to kill.
 
-#### Fix 9 — Align studio-brainstorm's Never-Rethink Table with the Locked-Decision Rule
-
-**Overview:** The skill's may/never-rethink table puts "load-bearing technical architecture (storage, sync, data integrity, the canonical-file paradigm)" in the never column. Pommora's CLAUDE.md — and the corpus's own history — say otherwise: locked decisions are questionable with stated conflict, evidence, and Nathan's sign-off, and the Deletion Bundle arc *was* precisely such a rethink of ratified storage architecture, initiated on evidence, shipped green. As written, the skill would have refused the corpus's best architectural correction. The fix rewrites the never column to protect process integrity (security, QA, review protocols) while routing architecture challenges through the evidence + sign-off gate instead of banning them.
-
-**Instruction:** `| May rethink | Product and behavior calls; architecture — only via the locked-decision gate: state the conflict, bring evidence, get Nathan's explicit sign-off | Never rethink | Security, quality assurance, and review protocols |`
-
-**Placement:** `//The Studio//.claude//skills//studio-brainstorm//SKILL.md` — **replacement** of the may/never-rethink table row naming load-bearing architecture, and the matching parenthetical in the "spec locks intent, not physics" line.
-
-**Tier rationale:** The conflict is skill-vs-stack; the stack's rule (Pommora CM-25) is the ratified one, demonstrated in practice, so the skill bends.
-
-**Counterfactual:** 08-01T19:05, session `6dc9212b` — Nathan: "honestly assess the pros and cons of the following approach and re-factor of the NexusRecord." Under the skill's table, the correct response is refusal (storage architecture, never rethink). What actually happened — grounded assessment, two-agent challenge, the Deletion Bundle — is what the aligned rule prescribes.
-
-#### Fix 10 — The Roster's Standing Rule
+#### Fix 7 — The Roster's Standing Rule
 
 **Overview:** StudioMD's Agents/Skills lists are the stack's only routing surface, and they rot silently — the superpowers routings were dead for weeks before a mid-plan `Skill(writing-plans)` failure exposed it, costing a five-tool-call detour inside a live arc. The registrations themselves are now sound (real frontmatter throughout, the transcription-agent listed, Transcripts routed through it); what remains is the standing rule that keeps the next rot visible: the roster names dispatch-critical entries, the session listing is the full registry, and a listed-but-unloadable skill is a defect to surface, never to silently route around.
 
@@ -167,7 +124,7 @@ The fix promotes the two behavioral rules to StudioMD's Working With Nathan, the
 
 **Counterfactual:** 07-31T19:24, session `6dc9212b` — `Skill(skill=writing-plans)` failed mid-arc and the session improvised a workaround before flagging. With this loaded, the failure is a one-line flag to Nathan the moment it happens, and the dead routing dies weeks earlier.
 
-#### Fix 11 — Post-Compact Prompts Become Standing Behavior
+#### Fix 8 — Post-Compact Prompts Become Standing Behavior
 
 **Overview:** Every compaction boundary in the long session was preceded by Nathan requesting an orientation prompt ("give a full post-compact prompt… everything an agent would need with zero record of this conversation"). The prompts demonstrably work — each post-compact segment resumed cleanly — but the trigger is manual, and a boundary that skips one starts cold. One StudioMD line makes the behavior default. With Fix 2 landed, these prompts also shrink to genuinely session-specific content.
 
@@ -179,7 +136,7 @@ The fix promotes the two behavioral rules to StudioMD's Working With Nathan, the
 
 **Counterfactual:** 08-01T21:43, session `6dc9212b` — "give a post-compact prompt to execute. Everything an agent would need to know if they had zero record of this conversation." With this loaded, the prompt is already in Nathan's hands when he types `/compact`, and that request (made four times across the session) disappears.
 
-#### Fix 12 — True the Stale Records: PRD Trash, Framework Queue, Superseded Planning Docs
+#### Fix 9 — True the Stale Records: PRD Trash, Framework Queue, Superseded Planning Docs
 
 **Overview:** Three records now contradict shipped reality. The PRD says no surface browses or restores trash and "putting one back [is] a manual move" — restore ops shipped; the claim mis-briefs any agent grounding in the PRD. Framework's near-term queue lists the IPC channel map as upcoming and gates the store split behind it — the IPC map shipped 07-30. The NexusRecord pair-era spec and plan read as current with no supersession notice, while their central artifact was replaced by the Deletion Bundle; Handoff's own convention says executed planning docs leave the folder. These are deletions and replacements, not additions — per the replace-don't-amend rule, each gets restated correctly or removed.
 
@@ -196,25 +153,23 @@ The fix promotes the two behavioral rules to StudioMD's Working With Nathan, the
 Ranking = frequency of the failure × per-occurrence cost × inverse implementation effort.
 
 1. **Fix 1 — Reachability razor.** Frequency: highest correction rate in the corpus (6+ adjudications across two sessions). Cost: each is a multi-turn loop — review round, fold, Nathan's challenge, verification, unfold — plus the permanent complexity when a guard survives. Effort: two lines. Nothing else combines this recurrence with this cheapness.
-2. **Fix 2 — Execution canon into the stack.** Frequency: every execution prompt, every dispatch brief, every gate run. Cost: the largest token sink (2–4k per prompt, ~300–800 per brief), plus one demonstrated live failure (the lint-warnings miss) from the load-gated rule. Effort: three lines across two files. This is also the enabler that shrinks Fix 11's prompts.
-3. **Fix 5 — Handoff's stranded rules.** Frequency: the two behavioral rules cover mechanisms that each burned a full cycle (the restore over-cut; the five-round rewrite loop) and will recur — spec revision and scope conversation happen every arc. Cost: whole cut/revert or rewrite cycles. Effort: three bullets and a deletion; also repairs the Handoff self-violation.
-4. **Fix 4 — Rule of Two.** Frequency: every simplification dispatch re-imports the standard Nathan overruled. Cost: real consolidations deferred in the first pass, then re-litigated. Effort: one replacement in the skill both agents load — the cheapest fix on the list relative to how often the skill fires.
-5. **Fix 10 — The roster rule.** Frequency: continuous background risk rather than per-session incident, but the one recorded failure landed mid-plan and rot re-accumulates without a visibility rule. Cost: moderate per incident. Effort: one line. Ranked fifth because the failures are intermittent and the registration surface itself is already sound.
+2. **Fix 2 — Execution canon into the stack.** Frequency: every execution prompt, every dispatch brief, every gate run. Cost: the largest token sink (2–4k per prompt, ~300–800 per brief), plus one demonstrated live failure (the lint-warnings miss) from the load-gated rule. Effort: three lines across two files. This is also the enabler that shrinks Fix 8's prompts.
+3. **Fix 4 — Rule of Two.** Frequency: every simplification dispatch re-imports the standard Nathan overruled. Cost: real consolidations deferred in the first pass, then re-litigated. Effort: one replacement in the skill both agents load — the cheapest fix on the list relative to how often the skill fires.
+4. **Fix 7 — The roster rule.** Frequency: continuous background risk rather than per-session incident, but the one recorded failure landed mid-plan and rot re-accumulates without a visibility rule. Cost: moderate per incident. Effort: one line.
+5. **Fix 3 — The review-cap resolution.** Frequency: every review loop that ends dirty at round 3 — a state each long arc has hit. Cost: an improvised status and a judgment call per occurrence. Effort: one replacement bullet.
 
-Then: Fix 3 (defined round-3 outcome), Fix 11 (compaction prompts), Fix 6 (/diff), Fixes 7–9 (skill/agent contradictions — real but each fires only when its skill loads), Fix 12 (doc truth — cheap and load-bearing for the named next task).
+Then: Fix 8 (compaction prompts), Fix 5 (/diff), Fix 6 (the comment-killer residue), Fix 9 (doc truth — cheap and load-bearing for the named next task).
 
 ### Backfire Check
 
 - **Fix 1 (razor) is the highest-payoff and highest-risk item.** The skill-authoring session named the failure mode precisely: "'can this actually happen?' is also the exact sentence a lazy reviewer uses to wave off a real bug," and the adversarial-review log's history is that every missed bug lived in input space nobody tried. If the razor loads without its second clause, review passes get a one-line dismissal lever. The proposed text carries the fence (governs guards not structure; unproven ≠ unreachable) — do not shorten it to the first sentence.
-- **Fix 6 (/diff unprompted)** could spam short sessions — a two-line fix doesn't need a rendered tree. "Significant" stays judgment; if it over-fires, the cost is a wasted report, if it under-fires we're back to today. Acceptable either way, but worth watching the first week.
-- **Fix 11 (auto post-compact prompts)** risks ritual prompts on sessions that don't need them and a false sense that the prompt replaces the stack. The "never restate what the stack already loads" clause is the fence; without Fix 2 landing first, prompts stay long and this fix just automates bloat.
-- **Fix 5 (deleting Handoff's User Feedback)** loses the rules entirely if the StudioMD/Review-Discipline inserts don't land in the same change — the deletion and the inserts are one atomic operation, not two.
-- **Fix 9 (brainstorm architecture rethink)** re-opens a door the skill deliberately closed against mid-brainstorm scope creep. The gate (evidence + explicit sign-off) is the fence; if sessions start relitigating locked storage decisions without evidence, the never column was doing real work and the row should tighten to "architecture: raise only with evidence in hand, never as exploration."
-- **Fix 10's "flag, don't route around"** could stall a session on a broken-but-unneeded skill. The wording scopes it to *listed* skills that fail to load — an unlisted skill remains a non-event.
+- **Fix 5 (/diff unprompted)** could spam short sessions — a two-line fix doesn't need a rendered tree. "Significant" stays judgment; if it over-fires, the cost is a wasted report, if it under-fires we're back to today. Acceptable either way, but worth watching the first week.
+- **Fix 8 (auto post-compact prompts)** risks ritual prompts on sessions that don't need them and a false sense that the prompt replaces the stack. The "never restate what the stack already loads" clause is the fence; without Fix 2 landing first, prompts stay long and this fix just automates bloat.
+- **Fix 7's "flag, don't route around"** could stall a session on a broken-but-unneeded skill. The wording scopes it to *listed* skills that fail to load — an unlisted skill remains a non-event.
 - **Fix 2's gate block in CLAUDE.md** duplicates Build-Gotchas if that file keeps its copies — the intent is CLAUDE.md holds the commands + traps, Build-Gotchas keeps only diagnostic depth (split-brain dev server, worktree binary). If both keep full copies, this audit's own duplication finding grows by one.
 
 ### Net Instruction Change
 
-Additions: 8 instruction lines (Fixes 1–2, 5, 10–11 inserts; Fixes 3–4, 6–9, 12 are replacements or deletions that keep count neutral). Removals and merges: the R10/R11 merge (−1), Handoff's four User-Feedback rules deleted after promotion (−4 at that tier), two superseded Planning docs (−~640 lines), Rule of Three / S37 / docs-audit description / the brainstorm never-rethink row (replaced, 0 each).
+Additions: 5 instruction lines (Fixes 1–2, 7–8 inserts; Fixes 3–6 and 9 are replacements or deletions that keep count neutral). Removals and merges: the R10/R11 merge (−1), two superseded Planning docs (−~640 lines), Rule of Three / S37 (replaced, 0 each).
 
-**Net: approximately +8 instruction lines in the always-loaded stack, −5 instructions at wrong tiers, and roughly −650 lines corpus-wide** — the stack gets slightly denser where it's load-bearing, and the satellite corpus gets substantially smaller and truer.
+**Net: approximately +5 instruction lines in the always-loaded stack, −1 merged, and roughly −640 lines corpus-wide** — the stack gets slightly denser where it's load-bearing, and the satellite corpus gets substantially smaller and truer.

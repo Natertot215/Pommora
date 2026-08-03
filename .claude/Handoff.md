@@ -2,9 +2,6 @@
 
 > **User Prompt:** The record is built and closed out headless — pick up at Nathan's live check, the surfaces that spend it, and the rulings the plan flags for him.
 
-> ⚡ **Cornerstone — carry into every handoff, unchanged (Nathan's voice).**
-> *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
-
 ### Session Summary — the bridge, the index, identity kind-first, then the NexusRecord end to end
 
 **Session ID:** 6dc9212b-b419-4b10-9e15-aa2fb5aedb6e
@@ -68,11 +65,6 @@ Execution ran all 14 tasks across 4 phases, failing-test-first, every guard nega
 ### Recent Sessions
 
 - 07-30 · (parallel) · The band-seam law — Table/Cards disclosure seams state-free in shared GroupBand chrome behind `--band-clearance`; menu/pane disclosures audited rightly unique. → [[CardViewPM]] · [[TableViewPM]].
-
-### Working Notes
-
-- Launch: `env -u ELECTRON_RUN_AS_NODE npm run dev` — this env sets `ELECTRON_RUN_AS_NODE=1`, which crashes the GUI if not unset.
-- `src/main` + preload changes need a full dev-process restart; CM6 extension code needs ⌘R; only CSS truly HMRs.
 
 ### Rules
 
