@@ -1,6 +1,6 @@
 ## Group Hiding — Spec & Plan
 
-**Status:** written, pending Nathan's read — two `[assumed]` calls below are his to flip.
+**Status:** built and live-verified — every scenario below driven against a running instance (folder subtree, option, date bucket, sub-value, HEG switch, stale-key flat control).
 
 ### Frame
 

@@ -58,3 +58,20 @@ export const previewHeading = style([
   { color: c.label.secondary, padding: '6px 8px 2px' },
 ])
 export const chipRow = style({ display: 'flex', alignItems: 'center', padding: '3px 8px' })
+
+/** The group-row eye's right-edge slot — pushes the toggle flush against the row's end. */
+export const eyeSlot = style({ marginLeft: 'auto', display: 'flex' })
+
+/** Hover scope for a folder row's revealed eye — the wrap div around the row alone. */
+export const rowHoverScope = style({})
+
+/** The folder row's hover-revealed eye — invisible until its row is hovered (`&&` outranks the
+ *  accessory rest-ghost at equal specificity). A hidden row skips this class, so its eye rides
+ *  the plain always-visible recipe. */
+export const revealEye = style({
+  selectors: {
+    '&&': { opacity: 0 },
+    [`${rowHoverScope}:hover &&`]: { opacity: 'var(--state-ghost)' },
+    [`${rowHoverScope}:hover &&:hover`]: { opacity: 1 },
+  },
+})

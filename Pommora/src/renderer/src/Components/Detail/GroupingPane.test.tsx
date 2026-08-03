@@ -79,6 +79,7 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = {
     views: { save: saveSpy },
     activeViews: { set: vi.fn(async () => {}) },
+    loadValues: vi.fn(async () => ({})),
   }
   useSession.setState({ load: vi.fn(async () => {}) as never })
 })
@@ -205,10 +206,10 @@ describe('GroupingPane rows', () => {
     expect(texts()).not.toContain('Nested') // flat set list under sub-grouping
   })
 
-  it('footings: Ungrouped always; Hide Empty Groups under property grouping; Separation under numeric date formats', async () => {
+  it('footings: Ungrouped + Hide Empty Groups under every grouping; Separation under numeric date formats', async () => {
     await mount(view())
     expect(texts()).toContain('Ungrouped')
-    expect(texts()).not.toContain('Hide Empty Groups')
+    expect(texts()).toContain('Hide Empty Groups')
     expect(texts()).not.toContain('Separation')
     await mount(
       view({
@@ -235,6 +236,40 @@ describe('GroupingPane rows', () => {
       }),
     )
     expect(texts()).toContain('Separation')
+  })
+
+  it('an option row’s eye toggles its value in hidden_groups (add, then remove)', async () => {
+    const propView = view({
+      group: {
+        kind: 'property',
+        property_id: 'prop_status',
+        order_mode: 'configured',
+        empty_placement: 'bottom',
+        hide_empty_groups: false,
+      },
+    })
+    await mount(propView)
+    const eye = host.querySelector('button[aria-label="Hide Todo"]') as HTMLElement
+    await act(async () => {
+      eye.click()
+    })
+    expect(lastSaved().hidden_groups).toEqual(['todo'])
+    await mount({ ...propView, hidden_groups: ['todo'] })
+    const unhide = host.querySelector('button[aria-label="Show Todo"]') as HTMLElement
+    await act(async () => {
+      unhide.click()
+    })
+    expect(lastSaved().hidden_groups).toEqual([])
+  })
+
+  it('the Hide Empty Groups switch writes the VIEW-level knob, config field untouched', async () => {
+    await mount(view())
+    const sw = host.querySelector('button[aria-label="Hide Empty Groups"]') as HTMLElement
+    await act(async () => {
+      sw.click()
+    })
+    expect(lastSaved().hide_empty_groups).toBe(true)
+    expect(lastSaved().group).toEqual({ kind: 'structural' })
   })
 
   it('the Ungrouped footing toggles ungrouped_placement in place (dual-option control)', async () => {
@@ -291,7 +326,6 @@ describe('GroupingPane rows', () => {
     )
     expect(texts()).toContain('Location') // the truthful label — the table IS structural
     expect(texts()).toContain('Sub-Group')
-    expect(texts()).not.toContain('Hide Empty Groups')
   })
 
   it('switching Group By away and back preserves sub_group (view-level survival)', async () => {

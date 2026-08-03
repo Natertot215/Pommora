@@ -442,6 +442,210 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
   })
 })
 
+describe('resolveView — hidden groups + Hide Empty Groups', () => {
+  const set = (id: string, pages: PageNode[], sets: SetNode[] = []): SetNode => ({
+    kind: 'set',
+    id,
+    title: id,
+    path: id,
+    pages,
+    sets,
+  })
+  const keys = (groups: { key: string }[]): string[] => groups.map((g) => g.key)
+  const selectSchema: PropertyDefinition[] = [
+    {
+      id: 'prop_sel',
+      name: 'Sel',
+      type: 'select',
+      select_options: [
+        { value: 'Alpha', label: 'Alpha' },
+        { value: 'Beta', label: 'Beta' },
+        { value: 'Gamma', label: 'Gamma' },
+      ],
+    },
+  ]
+  const view = (patch: Partial<SavedView>): SavedView =>
+    savedView.parse({
+      id: 'v',
+      name: 'V',
+      type: 'table',
+      property_order: [],
+      hidden_properties: [],
+      ...patch,
+    })
+  const selValues: Record<string, PageFrontmatter> = {
+    p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_sel: 'Alpha' }, selectSchema) },
+    p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
+  }
+  const selInput = () => {
+    const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), selValues)
+    return { rows, setTree, schema: selectSchema }
+  }
+  // sOuter holds p_outer and nests sInner (p_inner); sB holds p_b.
+  const nested: CollectionNode = {
+    kind: 'collection',
+    id: 'col',
+    title: 'Col',
+    path: 'Col',
+    sets: [set('sOuter', [page('p_outer')], [set('sInner', [page('p_inner')])]), set('sB', [page('p_b')])],
+    pages: [],
+  }
+
+  it('negative control: absent and empty hidden_groups resolve identical groups, bands present', () => {
+    const base = resolveView({ ...selInput(), view: view({ group: propertyGroup() }) })
+    const empty = resolveView({
+      ...selInput(),
+      view: view({ group: propertyGroup(), hidden_groups: [] }),
+    })
+    expect(base.groups).toEqual(empty.groups)
+    expect(keys(base.groups)).toEqual(['Alpha', 'Beta', 'Gamma'])
+  })
+
+  const propertyGroup = () => ({
+    kind: 'property' as const,
+    property_id: 'prop_sel',
+    order_mode: 'configured' as const,
+    empty_placement: 'bottom' as const,
+    hide_empty_groups: false,
+  })
+
+  it('a hidden option bucket drops with its rows; the others are untouched', () => {
+    const { groups } = resolveView({
+      ...selInput(),
+      view: view({ group: propertyGroup(), hidden_groups: ['Alpha'] }),
+    })
+    expect(keys(groups)).toEqual(['Beta', 'Gamma'])
+    expect(groups.flatMap((g) => g.items.map((r) => r.id))).toEqual(['p2'])
+  })
+
+  it('a hidden set leaves with its whole subtree (structural)', () => {
+    const { rows, setTree } = flattenContainer(nested, {})
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({ hidden_groups: ['sOuter'] }),
+      schema: [],
+    })
+    expect(keys(groups)).toEqual(['sB'])
+  })
+
+  it('cards flatten excludes a hidden NESTED set’s pages from the parent band', () => {
+    const { rows, setTree } = flattenContainer(nested, {})
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({ type: 'cards', hidden_groups: ['sInner'] }),
+      schema: [],
+      flattenStructural: true,
+    })
+    expect(groups.find((g) => g.key === 'sOuter')?.items.map((r) => r.id)).toEqual(['p_outer'])
+  })
+
+  it('a flat/None view never loses pages to a stale hidden set id', () => {
+    const { rows, setTree } = flattenContainer(nested, {})
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({ type: 'cards', group: { kind: 'flat' }, hidden_groups: ['sOuter'] }),
+      schema: [],
+      flattenStructural: true,
+    })
+    expect(groups.flatMap((g) => g.items.map((r) => r.id)).sort()).toEqual([
+      'p_b',
+      'p_inner',
+      'p_outer',
+    ])
+  })
+
+  it('sub/<value> hides that sub-bucket under EVERY set', () => {
+    const twoSets: CollectionNode = {
+      kind: 'collection',
+      id: 'col',
+      title: 'Col',
+      path: 'Col',
+      sets: [set('sA', [page('p1'), page('p2')]), set('sB', [page('p3')])],
+      pages: [],
+    }
+    const values: Record<string, PageFrontmatter> = {
+      p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_sel: 'Alpha' }, selectSchema) },
+      p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
+      p3: { [PAGE_ID_KEY]: 'p3', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
+    }
+    const { rows, setTree } = flattenContainer(twoSets, values)
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({
+        sub_group: { property_id: 'prop_sel', order_mode: 'configured' },
+        hidden_groups: ['sub/Beta'],
+      }),
+      schema: selectSchema,
+    })
+    const buckets = (id: string): string[] | undefined =>
+      groups.find((g) => g.key === id)?.children?.map((c) => c.bucket ?? c.key)
+    expect(buckets('sA')).toEqual(['Alpha'])
+    expect(groups.find((g) => g.key === 'sB')?.children).toBeUndefined()
+  })
+
+  it('a hidden date bucket drops by its bucket key', () => {
+    const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'datetime' }]
+    const values: Record<string, PageFrontmatter> = {
+      p1: { [PAGE_ID_KEY]: 'p1', ...propsAtRoot({ prop_when: '2025-07-02' }, dateSchema) },
+      p2: { [PAGE_ID_KEY]: 'p2', ...propsAtRoot({ prop_when: '2025-08-03' }, dateSchema) },
+    }
+    const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), values)
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({
+        group: {
+          kind: 'property',
+          property_id: 'prop_when',
+          order_mode: 'configured',
+          date_granularity: 'month',
+          empty_placement: 'bottom',
+          hide_empty_groups: false,
+        },
+        hidden_groups: ['2025-07'],
+      }),
+      schema: dateSchema,
+    })
+    expect(keys(groups)).toEqual(['2025-08'])
+  })
+
+  it('Hide Empty Groups (view-level) drops empty option bands and empty sets alike', () => {
+    const prop = resolveView({
+      ...selInput(),
+      view: view({ group: propertyGroup(), hide_empty_groups: true }),
+    })
+    expect(keys(prop.groups)).toEqual(['Alpha', 'Beta']) // Gamma holds nothing
+    const { rows, setTree } = flattenContainer(nested, {})
+    const structural = resolveView({
+      rows,
+      setTree,
+      view: view({ hide_empty_groups: true }),
+      schema: [],
+    })
+    expect(keys(structural.groups)).toEqual(['sOuter', 'sB']) // sInner kept — it holds p_inner
+  })
+
+  it('the config-level flag still bites as fallback; an explicit view-level false overrides it', () => {
+    const legacy = resolveView({
+      ...selInput(),
+      view: view({ group: { ...propertyGroup(), hide_empty_groups: true } }),
+    })
+    expect(keys(legacy.groups)).toEqual(['Alpha', 'Beta'])
+    const overridden = resolveView({
+      ...selInput(),
+      view: view({
+        group: { ...propertyGroup(), hide_empty_groups: true },
+        hide_empty_groups: false,
+      }),
+    })
+    expect(keys(overridden.groups)).toEqual(['Alpha', 'Beta', 'Gamma'])
+  })
+})
+
 describe('mintDefaultView', () => {
   it('mints a Table view: sentinel id, title-only, structural, no sort or _modified_at', () => {
     const schema: PropertyDefinition[] = [
