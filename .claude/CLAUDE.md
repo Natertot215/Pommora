@@ -26,6 +26,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 
 **The Figma Library** (https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r) is used for designing; its specifics may lag behind the canonical in-code vie— mirror changes into the tokens at `/design-system.` The live showcase deploys from `Pommora/` to https://pommora-design-system.vercel.app.
 
+
 ### Hard Rules
 
 - **Main owns the filesystem.** All fs/Node lives in `src/main`, exposed to the renderer only through a **narrow typed IPC** bridge in `src/preload` (contextBridge). The renderer never touches `fs`/Node.
@@ -52,11 +53,11 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **CommonJS main/preload** (package is NOT `type: module`) — Electron's `require('electron')` fails on ESM named imports; CJS also lets the preload stay sandboxed. **`sandbox: true` + `contextIsolation: true` + `nodeIntegration: false`.**
 - **Single-window now, multi-window-ready seams** — data is main-owned + Query/store-cached per renderer; the live-refresh bus is a swappable transport; windows identified by serializable refs. No global singleton holding shared mutable client state.
 - **Most recent wins** is the primary philosophy around handling multi-tab, future cross-device, and outside editing conflicts.
-- **TS-native on-disk format** (bare, natively-typed values under wrapped title keys, zod-validated) — built and tested against a dedicated **test nexus at `~/test`** (override via `TEST_NEXUS_PATH`).
+- **TS-native on-disk format:** bare, natively-typed values under wrapped title keys, zod-validated.
 
 ### Run Gotcha (Read Before Launching)
 
-The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set to 1, which makes Electron run as plain Node → `require('electron')` returns a path string and the app crashes). Launch: `env -u ELECTRON_RUN_AS_NODE npm run dev` (HMR), or `… ./node_modules/.bin/electron .` after `npm run build`. `TEST_NEXUS_PATH` only steers tests, never the running app. Full notes in `Guidelines/Build-Gotchas.md`.
+The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set to 1, which makes Electron run as plain Node → `require('electron')` returns a path string and the app crashes). Launch: `env -u ELECTRON_RUN_AS_NODE npm run dev` (HMR), or `… ./node_modules/.bin/electron .` after `npm run build`. `TEST_NEXUS_PATH` only steers tests, never the running app. 
 
 **Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first `dev`/launch dies with `Error: Electron uninstall`. Fix: run `./node_modules/.bin/electron --version` once (downloads the binary), then relaunch.
 
@@ -79,5 +80,9 @@ Pommora was first built as a native SwiftUI app — that build was active for ar
 
 Feature specifications live in `Features/`; root docs (PRD · Handoff · History · Framework) sit at the `.claude` root.
 - **Features //** → Feature-specific documentation that **must** be updated every time relevant code is committed. 
-- **Guidelines //** → Read [[Build-Gotchas]] before running the GUI + for information on the toolchain, chip-components, and liquid glass.
+- **Guidelines //** → Behavioral rules and hard-won traps grouped by domain — indexed under Guidelines below.
 - **Planning //** → Self-explanatory; location for all planning and temporary specifications.
+
+#### II. Guidelines
+
+- [[Build-Gotchas]] -> Hard-won environment/toolchain traps. Add entries when a mistake is worth never repeating. Read before running the GUI + for information on the toolchain, chip-components, and liquid glass.
