@@ -56,6 +56,7 @@ export function DisclosureRow({
   onClick,
   selected = false,
   className,
+  trailing,
   wrap,
   children,
 }: {
@@ -68,6 +69,8 @@ export function DisclosureRow({
   onClick?: () => void
   selected?: boolean
   className?: string
+  /** Right-edge accessory, passed through to the MenuItem slot. */
+  trailing?: ReactNode
   /** Wraps the row ALONE, never the disclosed run — a drag rect must be the row's own height. */
   wrap?: (row: ReactNode) => ReactNode
   children?: ReactNode
@@ -82,6 +85,7 @@ export function DisclosureRow({
           {icon}
         </>
       }
+      trailing={trailing}
       onClick={onClick}
     >
       {title}

@@ -109,6 +109,12 @@ export interface SavedView {
   column_alignments?: Record<string, ColumnAlign>
   column_styles?: Record<string, ColumnStyle>
   collapsed_groups?: string[]
+  /** Hidden group bands — option values, set ids, date bucket keys, `sub/<value>` for
+   *  sub-group buckets (hidden globally by value). Same key vocabulary as collapsed_groups. */
+  hidden_groups?: string[]
+  /** Drop bands holding no rows — every grouping kind. View-level (the ungrouped_placement
+   *  hoist); the property config's own hide_empty_groups stays decode parity. Absent = off. */
+  hide_empty_groups?: boolean
   /** Cards-view card scale — the Scale step's factor (0.5–1.5). Absent = 1. */
   card_size?: number
   /** Cards-view card image source — the page banner (`cover`), the captured thumbnail
@@ -263,6 +269,8 @@ export const savedView = z.looseObject({
   column_alignments: z.record(z.string(), z.enum(COLUMN_ALIGNS)).optional(),
   column_styles: z.record(z.string(), columnStyle).catch({}).optional(),
   collapsed_groups: z.array(z.string()).optional(),
+  hidden_groups: z.array(z.string()).optional(),
+  hide_empty_groups: z.boolean().optional(),
   card_size: z.number().optional().catch(undefined),
   card_banner: z.enum(CARD_BANNERS).optional().catch(undefined),
   hide_location: z.boolean().optional(),

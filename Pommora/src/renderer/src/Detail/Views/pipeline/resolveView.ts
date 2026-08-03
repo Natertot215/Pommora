@@ -8,7 +8,15 @@ import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@shared/types'
 import { isLocationFsOrder, type SavedView } from '@shared/views'
 import { applyFilter } from './filter'
 import { orderGroups } from './bandOrder'
-import { groupsStructurally, pruneEmptyGroups, resolveGroups, type SetTreeNode } from './group'
+import {
+  dropHiddenGroups,
+  groupsStructurally,
+  pruneEmptyBuckets,
+  pruneEmptyGroups,
+  pruneHiddenSets,
+  resolveGroups,
+  type SetTreeNode,
+} from './group'
 import { makeSorter } from './sort'
 import { resolveColumns } from './columns'
 
@@ -48,11 +56,14 @@ export function resolveView(input: {
   // renders structurally), so the location gate + sub-group thread whenever the table draws sets.
   const structuralGrouping = groupsStructurally(view.group, schema)
   const locationOrdered = structuralGrouping && view.structural_order_mode === 'location'
-  const resolved = resolveGroups(
+  // A hidden set leaves the tree before resolution (subtree and pages with it) — only under an
+  // effective structural grouping, so a flat/None view never loses pages to a stale hidden id.
+  const hidden = new Set(view.hidden_groups ?? [])
+  let resolved = resolveGroups(
     filtered,
     view.group,
     schema,
-    setTree,
+    structuralGrouping && hidden.size > 0 ? pruneHiddenSets(setTree, hidden) : setTree,
     sorter,
     view.collapsed_groups,
     view.ungrouped_placement ?? 'bottom',
@@ -60,11 +71,13 @@ export function resolveView(input: {
     flattenStructural,
     useLocationFlat,
   )
-  // Empty Sets are shown deliberately — until a filter actually excludes something, at which point
-  // the view shows what matched and a band holding nothing is noise.
-  const groups = orderGroups(
-    filtered.length === rows.length ? resolved : pruneEmptyGroups(resolved),
-    locationOrdered ? undefined : view.group_order,
-  )
-  return { columns, groups }
+  if (hidden.size > 0) resolved = dropHiddenGroups(resolved, hidden)
+  // Hide Empty Groups is view-level (every grouping kind); the property config's field is the
+  // pre-hoist fallback. Off, empty Sets still prune once a filter actually excludes something —
+  // the view shows what matched, and a band holding nothing is noise.
+  const hideEmpty =
+    view.hide_empty_groups ?? (view.group?.kind === 'property' && view.group.hide_empty_groups)
+  if (hideEmpty) resolved = pruneEmptyGroups(pruneEmptyBuckets(resolved))
+  else if (filtered.length !== rows.length) resolved = pruneEmptyGroups(resolved)
+  return { columns, groups: orderGroups(resolved, locationOrdered ? undefined : view.group_order) }
 }

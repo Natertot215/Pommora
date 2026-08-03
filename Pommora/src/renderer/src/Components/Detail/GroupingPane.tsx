@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
+import type { PageFrontmatter } from '@shared/schemas'
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
 import type {
   DateGranularity,
@@ -26,10 +27,18 @@ import {
 } from '../../design-system/components/menu/menu.css'
 import { Reveal } from '../../design-system/components/Reveal'
 import { DragGhost } from './DragGhost'
+import { EyeToggle } from './EyeToggle'
+import { Switch } from '../../design-system/components/Switches/Switch'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
 import { declaredType } from '../../Detail/Views/pipeline/value'
-import { bucketOrder, groupsStructurally } from '../../Detail/Views/pipeline/group'
-import { NUMERIC_FORMATS } from '../../Detail/Views/PropertyEditing/formatValue'
+import {
+  bucketKey,
+  bucketOrder,
+  flattenContainer,
+  groupsStructurally,
+  subHiddenKey,
+} from '../../Detail/Views/pipeline/group'
+import { formatBucketLabel, NUMERIC_FORMATS } from '../../Detail/Views/PropertyEditing/formatValue'
 import type { Band } from '../../Detail/Views/Table/bandDndModel'
 import { reparentFsOrder, structuralOrderAfterDrop } from '../../Detail/Views/Table/bandDndModel'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
@@ -37,11 +46,11 @@ import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { Chip, chipShapeForType } from '../Chip'
 import { chipColorFor } from '../../design-system/tokens/colorMap'
 import { cx } from '../../design-system/cx'
-import { CheckboxGlyph } from '../../Detail/Views/Table/checkboxLook'
 import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import { propertyTypeIconName } from './PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupingDnd'
+import { hiddenRow, switchScale } from './settingsPane.css'
 import * as gp from './groupingPane.css'
 
 /** Checkbox is deliberately absent — the pipeline still renders it from a foreign sidecar; the
@@ -120,6 +129,16 @@ export function GroupingPane({
   const save = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const saveGroup = (group: GroupConfig): void => save({ group })
 
+  // Group hiding — one keyed list shared with collapse (option values, set ids, date bucket
+  // keys, sub/<value>); the pipeline drops what it names.
+  const hiddenSet = new Set(view.hidden_groups ?? [])
+  const toggleHidden = (key: string): void =>
+    save({
+      hidden_groups: hiddenSet.has(key)
+        ? (view.hidden_groups ?? []).filter((k) => k !== key)
+        : [...(view.hidden_groups ?? []), key],
+    })
+
   const group = view.group ?? { kind: 'structural' as const }
   // The pipeline's EFFECTIVE mode, not the raw kind — a dead-property grouping renders structurally
   // in the table, so the pane shows the structural chrome for it too (never a phantom "Location"
@@ -163,12 +182,31 @@ export function GroupingPane({
   }
 
   const saveSub = (sub: SubGroupConfig | undefined): void => save({ sub_group: sub })
-  // A date grouping has no finite option list — its middle region (and separator) collapses.
-  const hasMiddle =
-    group.kind !== 'property' || declaredType(group.property_id, schema) !== 'datetime'
+  // View-level with the property config's field as the pre-hoist fallback — resolveView's read.
+  const hideEmpty =
+    view.hide_empty_groups ?? (group.kind === 'property' && group.hide_empty_groups)
 
   const footings = groupByOpen ? undefined : (
     <MenuBottomRow>
+      <MenuItem
+        className={flushTrailing}
+        leading={
+          <span className={footingSymbol}>
+            <Icon name="eye-off" size={12} />
+          </span>
+        }
+        trailing={
+          <span className={switchScale}>
+            <Switch
+              checked={hideEmpty}
+              onChange={(next) => save({ hide_empty_groups: next })}
+              ariaLabel="Hide Empty Groups"
+            />
+          </span>
+        }
+      >
+        <span className={footingLabel}>Hide Empty Groups</span>
+      </MenuItem>
       <FootingPick
         icon="folder-minus"
         label="Ungrouped"
@@ -192,20 +230,6 @@ export function GroupingPane({
             onPick={(v) => save({ date_separator: v })}
           />
         )}
-      {!structural && group.kind === 'property' && (
-        <MenuItem
-          className={flushTrailing}
-          leading={
-            <span className={footingSymbol}>
-              <Icon name="eye-off" size={12} />
-            </span>
-          }
-          trailing={<CheckboxGlyph checked={group.hide_empty_groups} />}
-          onClick={() => saveGroup({ ...group, hide_empty_groups: !group.hide_empty_groups })}
-        >
-          <span className={footingLabel}>Hide Empty Groups</span>
-        </MenuItem>
-      )}
     </MenuBottomRow>
   )
 
@@ -323,33 +347,46 @@ export function GroupingPane({
               )}
             </>
           )}
-          {hasMiddle && (
-            <>
-              <MenuSeparator flush />
-              <div className={`${gp.middle} overflow-eclipse-y`}>
-                {!structural && group.kind === 'property' ? (
-                  group.order_mode === 'manual' ? (
-                    <CustomList
-                      group={group}
-                      def={activeDef}
-                      onSave={(order) => saveGroup({ ...group, order })}
-                    />
-                  ) : (
-                    <PropertyPreview group={group} def={activeDef} />
-                  )
-                ) : (
-                  <LocationHierarchy
-                    source={source}
-                    view={view}
-                    subDef={
-                      subGroup ? schema.find((d) => d.id === subGroup.property_id) : undefined
-                    }
-                    onSaveView={save}
-                  />
-                )}
-              </div>
-            </>
-          )}
+          <MenuSeparator flush />
+          <div className={`${gp.middle} overflow-eclipse-y`}>
+            {!structural && group.kind === 'property' ? (
+              declaredType(group.property_id, schema) === 'datetime' ? (
+                <DateBucketList
+                  source={source}
+                  view={view}
+                  group={group}
+                  def={activeDef}
+                  schema={schema}
+                  hiddenSet={hiddenSet}
+                  onToggleHidden={toggleHidden}
+                />
+              ) : group.order_mode === 'manual' ? (
+                <CustomList
+                  group={group}
+                  def={activeDef}
+                  onSave={(order) => saveGroup({ ...group, order })}
+                  hiddenSet={hiddenSet}
+                  onToggleHidden={toggleHidden}
+                />
+              ) : (
+                <PropertyPreview
+                  group={group}
+                  def={activeDef}
+                  hiddenSet={hiddenSet}
+                  onToggleHidden={toggleHidden}
+                />
+              )
+            ) : (
+              <LocationHierarchy
+                source={source}
+                view={view}
+                subDef={subGroup ? schema.find((d) => d.id === subGroup.property_id) : undefined}
+                onSaveView={save}
+                hiddenSet={hiddenSet}
+                onToggleHidden={toggleHidden}
+              />
+            )}
+          </div>
         </>
       )}
     </MenuScrollFrame>
@@ -390,19 +427,47 @@ export const optionsOf = (
 
 type PropertyGroupConfig = Extract<GroupConfig, { kind: 'property' }>
 
+/** The Grouping pane's per-row hide affordance — absent for the Sorting pane's usages. */
+interface HideControls {
+  hiddenSet?: ReadonlySet<string>
+  onToggleHidden?: (key: string) => void
+}
+
+/** A group row's trailing eye (always shown, ghosted at rest) — null when the host pane
+ *  doesn't hide (Sorting). `hideKey` is what the toggle writes; hidden state reads the same key. */
+function rowEye(
+  label: string,
+  hideKey: string,
+  { hiddenSet, onToggleHidden }: HideControls,
+): React.JSX.Element | null {
+  if (!onToggleHidden) return null
+  return (
+    <span className={gp.eyeSlot}>
+      <EyeToggle
+        hidden={hiddenSet?.has(hideKey) ?? false}
+        name={label}
+        onToggle={() => onToggleHidden(hideKey)}
+      />
+    </span>
+  )
+}
+
 /** Shared with the Sorting pane's example order — `group` is just the ordering pair. */
 export function PropertyPreview({
   group,
   def,
+  hiddenSet,
+  onToggleHidden,
 }: {
   group: Pick<PropertyGroupConfig, 'order_mode' | 'order'>
   def: PropertyDefinition | undefined
-}): React.JSX.Element | null {
+} & HideControls): React.JSX.Element | null {
   if (!def) return null
   const type = def.type === 'status' ? 'status' : 'select'
   const chip = (o: { value: string; label: string; color?: string }): React.JSX.Element => (
-    <div key={o.value} className={gp.chipRow}>
+    <div key={o.value} className={cx(gp.chipRow, hiddenSet?.has(o.value) && hiddenRow)}>
       <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShapeForType(type)} />
+      {rowEye(o.label, o.value, { hiddenSet, onToggleHidden })}
     </div>
   )
   if (def.status_groups) {
@@ -432,11 +497,13 @@ export function CustomList({
   group,
   def,
   onSave,
+  hiddenSet,
+  onToggleHidden,
 }: {
   group: Pick<PropertyGroupConfig, 'order_mode' | 'order'>
   def: PropertyDefinition | undefined
   onSave: (order: string[]) => void
-}): React.JSX.Element | null {
+} & HideControls): React.JSX.Element | null {
   const all = optionsOf(def)
   const ordered = bucketOrder(group, def, new Set(all.map((o) => o.value)))
   const byValue = new Map(all.map((o) => [o.value, o]))
@@ -459,10 +526,11 @@ export function CustomList({
             key={v}
             ref={dnd.rowRef(v)}
             {...dnd.rowHandle(v)}
-            className={gp.chipRow}
+            className={cx(gp.chipRow, hiddenSet?.has(v) && hiddenRow)}
             style={dnd.draggingId === v ? { opacity: 0.4 } : undefined}
           >
             <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShapeForType(type)} />
+            {rowEye(o.label, v, { hiddenSet, onToggleHidden })}
           </div>,
         ]
       })}
@@ -483,12 +551,14 @@ function LocationHierarchy({
   view,
   subDef,
   onSaveView,
+  hiddenSet,
+  onToggleHidden,
 }: {
   source: CollectionNode | SetNode
   view: SavedView
   subDef: PropertyDefinition | undefined
   onSaveView: (patch: Partial<SavedView>) => void
-}): React.JSX.Element {
+} & HideControls): React.JSX.Element {
   const mutate = useSession((st) => st.mutate)
   const hideChevrons = useSession((st) => st.personalization.hideChevrons ?? false)
   const expanded = useDisclosureSet()
@@ -628,10 +698,15 @@ function LocationHierarchy({
         key={o.value}
         ref={dnd.rowRef(id)}
         {...dnd.rowHandle(id)}
-        className={`${gp.chipRow} ${gp.subChip}`}
+        className={cx(
+          gp.chipRow,
+          gp.subChip,
+          hiddenSet?.has(subHiddenKey(o.value)) && hiddenRow,
+        )}
         style={dnd.draggingId === id ? { opacity: 0.4 } : undefined}
       >
         <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShapeForType(subType)} />
+        {rowEye(o.label, subHiddenKey(o.value), { hiddenSet, onToggleHidden })}
       </div>
     )
   }
@@ -641,6 +716,7 @@ function LocationHierarchy({
   const renderSet = (s: SetNode): React.JSX.Element => {
     const body = flat ? subChips.map((o) => subChipRow(s.id, o)) : (s.sets ?? []).map(renderSet)
     const disclosable = body.length > 0
+    const isHidden = hiddenSet?.has(s.id) ?? false
     return (
       <DisclosureRow
         key={s.id}
@@ -651,8 +727,20 @@ function LocationHierarchy({
         onToggle={() => expanded.toggle(s.id)}
         onClick={disclosable ? () => expanded.toggle(s.id) : undefined}
         selected={dnd.nestTarget === s.id}
+        className={cx(flushTrailing, isHidden && hiddenRow)}
+        trailing={
+          onToggleHidden && (
+            <EyeToggle
+              hidden={isHidden}
+              name={s.title}
+              className={isHidden ? undefined : gp.revealEye}
+              onToggle={() => onToggleHidden(s.id)}
+            />
+          )
+        }
         wrap={(row) => (
           <div
+            className={gp.rowHoverScope}
             ref={dnd.rowRef(s.id)}
             {...dnd.rowHandle(s.id)}
             style={dnd.draggingId === s.id ? { opacity: 0.4 } : undefined}
@@ -689,6 +777,62 @@ function LocationHierarchy({
       {dnd.line && <div className={gp.dropLine} style={{ top: dnd.line.y }} />}
       <DragGhost x={dnd.ghost?.x ?? null} y={dnd.ghost?.y ?? null} label={ghostLabel()} />
     </div>
+  )
+}
+
+/** A date grouping's middle region — no finite option list, so the rows are the buckets the
+ *  container's values actually produce (plus any hidden key whose bucket has since emptied, so
+ *  it can still be unhidden), ordered exactly as the view orders its bands. */
+function DateBucketList({
+  source,
+  view,
+  group,
+  def,
+  schema,
+  hiddenSet,
+  onToggleHidden,
+}: {
+  source: CollectionNode | SetNode
+  view: SavedView
+  group: PropertyGroupConfig
+  def: PropertyDefinition | undefined
+  schema: PropertyDefinition[]
+} & HideControls): React.JSX.Element | null {
+  const [values, setValues] = useState<Record<string, PageFrontmatter>>({})
+  useEffect(() => {
+    let cancelled = false
+    void window.nexus.loadValues(source.path).then((v) => {
+      if (!cancelled) setValues(v)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [source.path])
+
+  const granularity = group.date_granularity ?? 'month'
+  const present = new Set<string>()
+  for (const row of flattenContainer(source, values).rows) {
+    const key = bucketKey(row, group.property_id, schema, granularity)
+    if (key) present.add(key)
+  }
+  // Date bucket keys alone start with a year — the shared hidden list's other vocabularies
+  // (option values, set ULIDs, sub/<value>) never do.
+  for (const key of view.hidden_groups ?? []) if (/^\d{4}/.test(key)) present.add(key)
+  if (present.size === 0) return null
+
+  const dateFormat = view.column_styles?.[group.property_id]?.date_format ?? 'full'
+  return (
+    <>
+      {bucketOrder(group, def, present).map((key) => {
+        const label = formatBucketLabel(key, granularity, dateFormat, view.date_separator ?? 'dash')
+        return (
+          <div key={key} className={cx(gp.chipRow, hiddenSet?.has(key) && hiddenRow)}>
+            <span className={gp.subLabel}>{label}</span>
+            {rowEye(label, key, { hiddenSet, onToggleHidden })}
+          </div>
+        )
+      })}
+    </>
   )
 }
 
