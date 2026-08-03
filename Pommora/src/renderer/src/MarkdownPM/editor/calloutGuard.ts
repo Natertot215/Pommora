@@ -3,7 +3,7 @@
 // changes legitimately start at the line start. Verdicts below encode which repair each case needs.
 import { EditorState, Transaction, type Extension } from '@codemirror/state'
 import { calloutLines } from '../detect'
-import { calloutScan, docString } from './docCache'
+import { docScan, docString } from './docCache'
 
 type Verdict =
   | { kind: 'ok' }
@@ -78,7 +78,8 @@ export function stripsCalloutPrefix(doc: string, from: number, to: number): bool
 export const calloutGuard: Extension = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged) return tr
   const doc = docString(tr.startState.doc)
-  const scan = calloutScan(tr.startState.doc) // shared per-version — not re-split per change
+  const s = docScan(tr.startState.doc) // shared per-version — not re-split per change
+  const scan = { lines: s.lines, info: s.callouts }
   let cancel = false
   let repaired = false
   const changes: { from: number; to: number; insert: string }[] = []
