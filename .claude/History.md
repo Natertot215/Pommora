@@ -4,6 +4,10 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 ### Completion Timeline (Descending)
 
+#### Group Hiding + Hide Empty Groups Made View-Level (2026-08-02)
+
+Any group band can now be hidden outright from the Grouping pane: an eye on every group row — option chips and date buckets always wearing it ghosted, folder rows revealing on hover, a hidden row pinning it. Hiding is one view-level key list (the collapse vocabulary plus a sub-bucket prefix) filtered once at resolution, so a hidden Set leaves the tree with its whole subtree, a sub-bucket hides globally by value, a stale key under a different grouping hides nothing, and every renderer — current and future — inherits with no per-view code. Date grouping's empty middle region became the present-bucket list, which is what made date bands hideable at all. **Hide Empty Groups finished its half-implementation**: a Switch above Ungrouped, hoisted view-level to cover every grouping kind (the config field stays as decode-parity fallback), with the resolve-level drop as its one adjudicator. Live-verified across the full matrix against a scratch nexus. → [[ViewsPM]]
+
 #### The Record Surveyed, Then Six Defects Closed and the Sweeps Made One (2026-08-01)
 
 Five agents surveyed the whole NexusRecord under one question — what logic can be removed without losing functionality — and came back with more defects than duplication. Each was fixed at its source, one commit apiece, every one negative-controlled.
