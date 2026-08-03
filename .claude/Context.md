@@ -14,6 +14,12 @@ The baseline all of this counts forward from: the React rebuild passed the old S
 
 ### Recent Work
 
+#### Group Hiding (08-02)
+
+A grouped view could collapse a band but never make it leave — hiding a group meant authoring a filter that only approximated it. Now every group row in the Grouping pane carries the Visibility pane's eye: option chips, sub-chips, and date buckets wear it ghosted at rest, folder rows reveal theirs on hover, and a hidden row pins its eye so nothing hidden is ever unreachable. The state is one view-level key list sharing the collapse vocabulary, filtered once at resolution — a hidden Set leaves the tree with its whole subtree, a sub-group bucket hides globally by value under every parent, and a stale key under a different grouping hides nothing, so every renderer present and future inherits the behavior with no per-view code.
+
+Two things came along because the feature exposed them: date grouping's middle region, which had always been empty, became the list of buckets the container's values actually produce — that's what made date bands hideable at all — and Hide Empty Groups finished its half-implementation, becoming a Switch above Ungrouped and moving view-level so it covers structural and date groupings rather than property ones alone. Verified live against a scratch nexus across the whole matrix, hide and unhide both. → [[ViewsPM]] · `History.md`.
+
 #### The NexusRecord (08-01)
 
 Deleting something was answered only by the trash's mirrored folder chain — a path that rots the moment a parent gets renamed — and a Finder-copied file shared its twin's id forever, which is what D-15 measured. The record closes both with two small memories that share a module boundary and nothing else: a provenance record travelling inside every deletion's own bundle in `.trash`, holding ids instead of paths, and a per-machine baseline of what each open saw, which doubles as the adjudicator deciding which duplicate is the original.
