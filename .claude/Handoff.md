@@ -2,6 +2,9 @@
 
 > **User Prompt:** The record is built and closed out headless — pick up at Nathan's live check, the surfaces that spend it, and the rulings the plan flags for him.
 
+> ⚡ **Cornerstone — carry into every handoff, unchanged (Nathan's voice).**
+> *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every `file:line`, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
+
 ### Session Summary — the bridge, the index, identity kind-first, then the NexusRecord end to end
 
 **Session ID:** 6dc9212b-b419-4b10-9e15-aa2fb5aedb6e
