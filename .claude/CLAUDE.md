@@ -10,7 +10,7 @@ Pommora is a personal management app based on Nathan’s frustration with modern
 
 **Content:** The operational layer — what you actually make, linked to each other through **Connections** for content ↔ content relations, and with **Front-matter** for content ↔ Space relations. 
 
-- **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views; it nests Sets to any depth as organizing subfolders that inherit that schema.
+- **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views; it contains **Sets** as organizational subfolders that inherit that schema.
 - **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection’s properties. Pages use MarkdownPM for its editor surface, which includes in-line connections to other pages. 
 - **Agenda:** the calendar layer — **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each `.md` under its kind key. Their fields are unsettled: the inherited shape was removed rather than carried forward.
 - **Properties:** the nexus-wide typed attributes that collections inherit, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use. 
