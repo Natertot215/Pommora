@@ -6,10 +6,10 @@
 // programmatic dispatch, only CM's own default cursor-motion/deletion.
 import { EditorView, Decoration } from '@codemirror/view'
 import { RangeSetBuilder, type RangeSet } from '@codemirror/state'
-import { calloutScan } from './docCache'
+import { docScan } from './docCache'
 
 function prefixRanges(view: EditorView): RangeSet<Decoration> {
-  const { lines, info } = calloutScan(view.state.doc)
+  const { lines, callouts: info } = docScan(view.state.doc)
   const builder = new RangeSetBuilder<Decoration>()
   let off = 0
   for (let i = 0; i < lines.length; i++) {
