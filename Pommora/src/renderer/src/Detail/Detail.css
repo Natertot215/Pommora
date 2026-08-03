@@ -36,7 +36,6 @@
 /* Full-bleed like the banner-bearing scaffold: no padding here, so the banner spans the pane edge-to-edge
    and reaches the top. The body inset (and the reclaimed fold-chevron gutter) moves into .mdpm-editor. */
 .detail-page {
-  --fold-gutter: 20px;
   padding: 0;
   overflow: hidden;
 }
@@ -64,7 +63,6 @@
    a homepage/context tile that merely embeds a view carries a `.table-head` deep inside, and this flush
    treatment is for a WHOLE-PAGE table, never a surface that only contains one. */
 .detail-scroll.has-header .detail-body:has(.table-head):not(:has(.blk-surface)) {
-  --fold-gutter: 20px;
   padding-top: 0;
   padding-left: calc(var(--content-inset) - var(--fold-gutter));
 }

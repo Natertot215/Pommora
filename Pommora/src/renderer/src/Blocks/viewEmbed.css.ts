@@ -139,9 +139,8 @@ globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
 /** The dropdown-mode view list — the ViewPane's row anatomy inside a PickerMenu. */
 export const listPane = style({ minWidth: 150 })
 
-// The embed owns its table gutter (row grips + group chevrons strip) rather than inheriting
-// --fold-gutter from a host rule — the container-table treatment doesn't reach a block surface,
-// so the embedded table sets its own, the way .blk-md / .pgembed each set theirs.
+// The table gutter (row grips + group chevrons strip) resolves from the root --fold-gutter token,
+// so an embedded table shares the page lane without a host rule reaching in.
 //
 // SCROLL MODEL (edge-release): the rows scroll vertically inside the body (the header rows stay pinned
 // above it), and the default scroll-chaining releases to the page once the table bottoms out. A table
@@ -159,7 +158,7 @@ export const body = style({
   paddingTop: FADE_RISE,
   // The top scroll-fade spans the toolbar height (matches FADE_RISE), so a row dissolves fully as it
   // rises under the transparent switcher, disappearing at the title divider.
-  vars: { '--fold-gutter': '20px', '--edge-fade': FADE_RISE },
+  vars: { '--edge-fade': FADE_RISE },
 })
 
 /** The fixed embed zoom lands on the table's own token scope — the var is declared ON

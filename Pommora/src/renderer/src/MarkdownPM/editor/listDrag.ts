@@ -4,6 +4,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { ACTIVATION } from '../../design-system/interactions/shared'
+import { startAutoScroll } from '../../design-system/interactions/autoscroll'
 import { parseListMarkerPrefixed as parseListMarker } from '../detect'
 import { Overlay, forEachLine, setShade, shadeField } from './dragChrome'
 import { focusAt } from './input'
@@ -20,6 +21,7 @@ interface Gesture {
   pid: number
   startX: number
   startY: number
+  lastY: number
   active: boolean
   overlay: Overlay
   cands: Cand[]
@@ -33,8 +35,9 @@ interface ResolvedSlot extends Slot {
   indent: string // depth the dropped block adopts — the target line's leading whitespace
 }
 
-// A drop candidate — a visible list line outside the dragged block, measured ONCE at drag start in viewport
-// coords. The doc is static during a drag, so re-measuring per pointermove would be pure layout thrash.
+// A drop candidate — a visible list line outside the dragged block, measured in viewport coords at drag
+// start and re-measured only on scroll (wheel or the auto-scroll loop): the doc is static during a drag,
+// so re-measuring per pointermove would be pure layout thrash.
 interface Cand {
   from: number
   to: number
@@ -164,10 +167,25 @@ export const listDragExtension: Extension = [
         pid: e.pointerId,
         startX: e.clientX,
         startY: e.clientY,
+        lastY: e.clientY,
         active: false,
         overlay: new Overlay(),
         cands: [],
         slot: null,
+      }
+      let stopScroll: (() => void) | null = null
+
+      const repick = (): void => {
+        const slot = slotFrom(gesture.cands, gesture.lastY, block, view.state.doc.length)
+        gesture.slot = slot
+        if (slot) gesture.overlay.show(slot.lineLeft, slot.lineTop, slot.lineWidth)
+        else gesture.overlay.hide()
+      }
+      // Candidate coords are viewport-relative, so any scroll (wheel or the auto-scroll loop)
+      // invalidates them — re-measure against the new layout, then re-aim.
+      const remeasure = (): void => {
+        gesture.cands = collectCands(view, block)
+        repick()
       }
 
       const onMove = (ev: PointerEvent): void => {
@@ -182,19 +200,33 @@ export const listDragExtension: Extension = [
             // capture unavailable
           }
           view.dispatch({ effects: setShade.of({ from: block.from, to: block.to }) })
-          gesture.cands = collectCands(view, block) // measure once — the doc is static for the drag
+          gesture.cands = collectCands(view, block)
+          // The shared loop scrolls CM's viewport (explicit scroller — findScroller can't derive
+          // scrollDOM); its scrollBy fires the native `scroll` → onScroll → remeasure, so far
+          // candidates become targetable as they scroll in.
+          stopScroll = startAutoScroll({
+            getPoint: () => ({ x: 0, y: gesture.lastY }),
+            scroller: host,
+            dragEl: host,
+            axis: 'y',
+          })
         }
-        const slot = slotFrom(gesture.cands, ev.clientY, block, view.state.doc.length)
-        gesture.slot = slot
-        if (slot) gesture.overlay.show(slot.lineLeft, slot.lineTop, slot.lineWidth)
-        else gesture.overlay.hide()
+        gesture.lastY = ev.clientY
+        repick()
+      }
+
+      const onScroll = (): void => {
+        if (gesture.active) remeasure()
       }
 
       const finish = (commit: boolean): void => {
         document.body.style.cursor = ''
+        stopScroll?.()
+        stopScroll = null
         host.removeEventListener('pointermove', onMove)
         host.removeEventListener('pointerup', onUp)
         host.removeEventListener('pointercancel', onCancel)
+        host.removeEventListener('scroll', onScroll)
         try {
           host.releasePointerCapture(gesture.pid)
         } catch {
@@ -220,6 +252,7 @@ export const listDragExtension: Extension = [
       host.addEventListener('pointermove', onMove)
       host.addEventListener('pointerup', onUp)
       host.addEventListener('pointercancel', onCancel)
+      host.addEventListener('scroll', onScroll, { passive: true })
       return true
     },
   }),

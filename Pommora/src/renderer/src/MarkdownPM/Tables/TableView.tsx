@@ -340,7 +340,7 @@ export function TableView({
             })
           }}
         >
-          <Icon name="grip-horizontal" className="mdpm-tbl-grip" size={14} strokeWidth={2} />
+          <Icon name="grip-horizontal" className="mdpm-tbl-grip" size="sm" strokeWidth={2} />
         </div>
       ))}
       {geom.rows.map((r, j) => (
@@ -356,7 +356,7 @@ export function TableView({
             onMenu(j === 0 ? { kind: 'header', index: 0 } : { kind: 'row', index: j })
           }}
         >
-          <Icon name="grip-vertical" className="mdpm-tbl-grip" size={14} strokeWidth={2} />
+          <Icon name="grip-vertical" className="mdpm-tbl-grip" size="sm" strokeWidth={2} />
         </div>
       ))}
       {geom.cols.slice(0, -1).map((c, i) => (
