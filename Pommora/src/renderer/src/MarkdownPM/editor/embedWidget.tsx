@@ -4,7 +4,7 @@
 // embed. The claim (resolved + first-per-normalized-title) is claimedEmbeds — the same predicate
 // the token suppression reads, so the tile and the dim token can never disagree about a line.
 import { createRoot, type Root } from 'react-dom/client'
-import { createElement, lazy, Suspense } from 'react'
+import { createElement, Fragment, lazy, Suspense } from 'react'
 import {
   EditorState,
   type Extension,
@@ -56,7 +56,7 @@ export interface EmbedHeightsApi {
 }
 
 /** The resize floor — SurfacePM's own tile minimum. */
-export const EMBED_MIN_H = 64
+const EMBED_MIN_H = 64
 
 export interface TileRange {
   from: number
@@ -100,12 +100,13 @@ function EmbedResizeHandle({
     onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
       if (e.button !== 0) return
       e.preventDefault()
-      const span = (e.currentTarget as HTMLElement).parentElement
+      const strip = e.currentTarget
+      const span = strip.parentElement
       if (!span) return
       const startH = span.getBoundingClientRect().height
       const startY = e.clientY
       beginGesture({
-        el: e.currentTarget as HTMLElement,
+        el: strip,
         event: e,
         activation: 0, // a resize arms on the first move, the SurfacePM edge precedent
         onActivate: () => {
@@ -116,15 +117,14 @@ function EmbedResizeHandle({
           span.style.height = `${Math.max(EMBED_MIN_H, Math.round(startH + ev.clientY - startY))}px`
           view.requestMeasure()
         },
+        teardown: () => span.classList.remove('is-resizing-tile'),
         onDrop: () => {
-          span.classList.remove('is-resizing-tile')
           const h = Math.round(span.getBoundingClientRect().height)
           const heights = { ...view.state.field(embedField).heights, [targetId]: h }
           view.dispatch({ effects: setEmbedHeights.of(heights) })
           view.state.facet(embedHost).saveHeights?.(heights)
         },
         onAbort: () => {
-          span.classList.remove('is-resizing-tile')
           span.style.height = `${startH}px`
           view.requestMeasure()
         },
@@ -181,23 +181,29 @@ class EmbedTileWidget extends WidgetType {
     const conn = host.getConn()
     root.render(
       createElement(
-        Suspense,
-        { fallback: null },
+        Fragment,
+        null,
         createElement(
-          'div',
-          { className: 'tile-chassis-body' },
-          createElement(LazyPageEmbed, {
-            path: this.path,
-            editing: this.editing,
-            onBeginEdit: () => {
-              if (this.interactive) view.dispatch({ effects: setEmbedEditing.of(this.path) })
-            },
-            connections: conn,
-            locked: !this.interactive,
-            ancestors: this.ancestors,
-            chrome: 'page',
-          }),
+          Suspense,
+          { fallback: null },
+          createElement(
+            'div',
+            { className: 'tile-chassis-body' },
+            createElement(LazyPageEmbed, {
+              path: this.path,
+              editing: this.editing,
+              onBeginEdit: () => {
+                if (this.interactive) view.dispatch({ effects: setEmbedEditing.of(this.path) })
+              },
+              connections: conn,
+              locked: !this.interactive,
+              ancestors: this.ancestors,
+              chrome: 'page',
+            }),
+          ),
         ),
+        // Outside the Suspense boundary — the handle depends on nothing that suspends and must
+        // exist through the loading frame too.
         this.interactive && host.saveHeights
           ? createElement(EmbedResizeHandle, { view, targetId: this.targetId })
           : null,
