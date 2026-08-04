@@ -28,8 +28,12 @@ export function scanConnections(body: string): ScannedConnection[] {
 /** The cascade's prefilter: does this body mention `title` as a connection OR an embed?
  *  Code-interior matches stay samples for both syntaxes. */
 export function mentionsTitle(body: string, normalizedKey: string): boolean {
-  if (scanConnections(body).some((c) => c.normalizedTitle === normalizedKey)) return true
   const inCode = codeMask(body)
+  for (const m of body.matchAll(pageLinkPattern())) {
+    if (m.index !== undefined && inCode(m.index)) continue
+    const key = normalizeTitle(m[1])
+    if (key && key === normalizedKey) return true
+  }
   for (const m of body.matchAll(pageEmbedPattern())) {
     if (m.index !== undefined && inCode(m.index)) continue
     if (normalizeTitle(m[1]) === normalizedKey) return true
