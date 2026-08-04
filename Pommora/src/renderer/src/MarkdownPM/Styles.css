@@ -366,6 +366,29 @@
   --tile-border-color: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
   cursor: ns-resize;
 }
+/* A tile's fencing blanks are mechanism, not content — the line keeps its seat and its deletion
+   refusal but renders closed, so the tile sits against its real neighbors. Typing there re-derives
+   the line as content and it opens back up. */
+.mdpm-editor .cm-line.mdpm-embed-fence {
+  height: 0;
+  line-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+/* The tile's own line sheds the text strut its line-height would reserve — the tile's margins are
+   the block's real spacing. The widget-buffer imgs CM parks beside a block widget are 1em tall and
+   would hold the line open on their own; their seats survive at zero height (the drawn caret floors
+   a collapsed seat back to a legible bar). */
+.mdpm-editor .cm-line.mdpm-embed-line {
+  line-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.mdpm-editor .cm-line.mdpm-embed-line .cm-widgetBuffer {
+  height: 0;
+}
+
 /* A cycle renders as the inert dim token's text — a tile of an ancestor page cannot mount itself. */
 .mdpm-embed-cycle {
   color: var(--label-secondary);
