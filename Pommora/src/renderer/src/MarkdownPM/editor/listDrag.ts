@@ -4,7 +4,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { ACTIVATION } from '../../design-system/interactions/shared'
-import { startAutoScroll } from '../../design-system/interactions/autoscroll'
+import { findScroller, scrollableInAxis, startAutoScroll } from '../../design-system/interactions/autoscroll'
 import { parseListMarkerPrefixed as parseListMarker } from '../detect'
 import { docString } from './docCache'
 import { docMathRanges } from './mathRanges'
@@ -211,7 +211,15 @@ export const listDragExtension: Extension = [
           // candidates become targetable as they scroll in.
           stopScroll = startAutoScroll({
             getPoint: () => ({ x: 0, y: gesture.lastY }),
-            scroller: host,
+            scroller: ((): HTMLElement => {
+            // A non-overflowing scroller (an embed tile at rest, a grown host) scrolls nothing —
+            // climb to the ancestor that actually scrolls this axis, or the drag can't reach
+            // off-screen candidates.
+            const cs = getComputedStyle(host)
+            return scrollableInAxis(cs.overflowX, cs.overflowY, host, 'y')
+              ? host
+              : (findScroller(host, 'y') ?? host)
+          })(),
             dragEl: host,
             axis: 'y',
           })

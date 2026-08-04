@@ -13,7 +13,7 @@ import {
   StateEffect,
   StateField,
   type Text,
-  type Transaction,
+  Transaction,
 } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, WidgetType } from '@codemirror/view'
 import { cx } from '@renderer/design-system/cx'
@@ -189,22 +189,23 @@ function buildTiles(state: EditorState, editing: string | null): EmbedTiles {
   return { deco: builder.finish(), ranges, editing }
 }
 
+// Rebuild when the doc's embed set itself moved — read from the SAME cached scan every keystroke
+// already pays for, so the gate can never disagree with the scanner about what an embed is (a fence
+// typed above a tile changes the exclusion set without ever touching the tile's own lines).
 function editAffectsEmbeds(value: EmbedTiles, tr: Transaction): boolean {
   for (const r of value.ranges)
     if (tr.changes.touchesRange(Math.max(0, r.from - 1), r.to + 1) !== false) return true
-  let hit = false
-  tr.changes.iterChangedRanges((_fa: number, _ta: number, fb: number, tb: number) => {
-    if (hit) return
-    const doc = tr.newDoc
-    const a = doc.lineAt(Math.min(fb, doc.length)).number
-    const b = doc.lineAt(Math.min(tb, doc.length)).number
-    for (let ln = Math.max(1, a - 1); ln <= Math.min(doc.lines, b + 1); ln++)
-      if (doc.line(ln).text.includes('![[')) {
-        hit = true
-        return
-      }
-  })
-  return hit
+  const before = docScan(tr.startState.doc).embeds
+  const after = docScan(tr.state.doc).embeds
+  if (before.length !== after.length) return true
+  for (let i = 0; i < before.length; i++) {
+    if (
+      after[i].title !== before[i].title ||
+      after[i].from !== tr.changes.mapPos(before[i].from, 1)
+    )
+      return true
+  }
+  return false
 }
 
 export const embedField = StateField.define<EmbedTiles>({
@@ -275,13 +276,15 @@ const editingExit = ViewPlugin.fromClass(
 /** Per tile, the count of immediate neighbor lines that are non-blank — the fence predicate. A
  *  hand-typed glued embed is legal, so gluing is only refused when a DELETION grows this count
  *  (removing the lone fencing blank), the same result-doc mechanic the table merge-guard uses. */
-function gluedTileCount(doc: Text, ranges: readonly { from: number; to: number }[]): number {
+/** One tile's count of non-blank immediate neighbors — the fence predicate. Hand-typed gluing is
+ *  legal authoring, so a DELETION may never raise a tile's OWN count (removing its fencing blank).
+ *  Per tile, never a document-wide sum — a summed compare would let one tile's un-gluing pay for
+ *  another's regression. */
+function gluedOf(doc: Text, from: number): number {
   let glued = 0
-  for (const r of ranges) {
-    const n = doc.lineAt(Math.min(r.from, doc.length)).number
-    if (n > 1 && doc.line(n - 1).text.trim() !== '') glued++
-    if (n < doc.lines && doc.line(n + 1).text.trim() !== '') glued++
-  }
+  const n = doc.lineAt(Math.min(from, doc.length)).number
+  if (n > 1 && doc.line(n - 1).text.trim() !== '') glued++
+  if (n < doc.lines && doc.line(n + 1).text.trim() !== '') glued++
   return glued
 }
 
@@ -320,17 +323,12 @@ const embedGuard = EditorState.transactionFilter.of((tr) => {
     if (toA > fromA) hasDeletion = true
   })
   if (hasDeletion) {
-    const survivors = ranges
-      .map((r) => ({ from: tr.changes.mapPos(r.from, 1), to: tr.changes.mapPos(r.to, -1), title: r.title }))
-      .filter((r) => {
-        const line = tr.newDoc.lineAt(Math.min(r.from, tr.newDoc.length))
-        return loneEmbedTitle(line.text) === r.title
-      })
-    if (
-      survivors.length > 0 &&
-      gluedTileCount(tr.newDoc, survivors) > gluedTileCount(tr.startState.doc, ranges)
-    )
-      return []
+    for (const r of ranges) {
+      const mappedFrom = tr.changes.mapPos(r.from, 1)
+      const line = tr.newDoc.lineAt(Math.min(mappedFrom, tr.newDoc.length))
+      if (loneEmbedTitle(line.text) !== r.title) continue
+      if (gluedOf(tr.newDoc, mappedFrom) > gluedOf(tr.startState.doc, r.from)) return []
+    }
   }
   for (const r of ranges) {
     const mapped = tr.changes.mapPos(r.from, 1)
@@ -338,10 +336,18 @@ const embedGuard = EditorState.transactionFilter.of((tr) => {
     if (!line.text.includes(`![[${r.title}]]`)) continue // syntax gone whole → a legal removal
     if (loneEmbedTitle(line.text) !== null) continue // still lone → untouched or cleanly shifted
     const repair = boundaryRepair(tr, r)
-    if (repair)
+    if (repair) {
+      // The userEvent rides along — a filtered transaction rebuilds from startState and would
+      // otherwise drop it, splitting history grouping (the callout guard's own discipline).
+      const userEvent = tr.annotation(Transaction.userEvent)
       return [
-        { changes: { from: repair.from, insert: repair.insert }, selection: { anchor: repair.caret } },
+        {
+          changes: { from: repair.from, insert: repair.insert },
+          selection: { anchor: repair.caret },
+          annotations: userEvent ? Transaction.userEvent.of(userEvent) : undefined,
+        },
       ]
+    }
     return []
   }
   return tr
