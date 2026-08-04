@@ -62,9 +62,9 @@ Five scout reports (this session) verified every seam firsthand; the attack revi
 
 **Why:** every later layer (widget, grips, guards, menus) reads one derivation (A-2). Building the pure layers first keeps them unit-tested at the model tier before any DOM exists.
 
-**Task 1.1 — `embedRanges` detection derivation.**
-- **Why:** A-2/A-4/B-11 — lone-line, trimmed, fence/table-excluded, resolved-only, first-per-title.
-- **Files:** `MarkdownPM/detect/index.ts` (a `blockEmbedLines(text, excluded)` sibling to `blockMathRanges`, reusing `imageEmbedRegex`'s shape with a whole-trimmed-line anchor); `MarkdownPM/editor/embedRanges.ts` (new, mirroring `mathRanges.ts`: imports ONLY `../detect` + `../Tables/regions` — never `docCache`/`intent`, the cycle rule the scout verified).
+**Task 1.1 — `embedRanges` detection derivation + the token rename.**
+- **Why:** A-2/A-4/B-11 — lone-line, trimmed, fence/table-excluded, resolved-only, first-per-title. The `imageEmbed` naming dies here too: the token is the embed syntax's inert styling, and every rename site lives in this task's files — regex (`detect/index.ts:4`), token kind (`tokens/index.ts`), intent class (`decorations/intent.ts:106`), CSS class (`Styles.css:331`) — so the rename ships in this one commit and no later phase carries stale vocabulary.
+- **Files:** `MarkdownPM/detect/index.ts` (a `blockEmbedLines(text, excluded)` sibling to `blockMathRanges`, reusing the embed regex's shape with a whole-trimmed-line anchor); `MarkdownPM/editor/embedRanges.ts` (new, mirroring `mathRanges.ts`: imports ONLY `../detect` + `../Tables/regions` — never `docCache`/`intent`, the cycle rule the scout verified).
 - **Interfaces:** `docEmbedLines(doc: string): { from: number; to: number; title: string }[]` — raw candidates, order-preserved, exclusions applied. Resolution and dedup happen at the consumer (the StateField), because the pure layer has no title map. `DocScan` gains an `embeds` field computed in `scanDoc` (`decorations/intent.ts`), cached via docCache like `maths`.
 - **Must agree:** the detection, the blockModel kind (1.2), and the intent gate (1.3) all read this one derivation — one test crosses all three on the same document.
 - **Failure half:** empty title `![[]]`, whitespace-padded lines (trim per A-2), `![[x]]` inside a fence/table (excluded), two candidates same title (both emitted here; dedup downstream).
@@ -78,7 +78,7 @@ Five scout reports (this session) verified every seam firsthand; the attack revi
 **Task 1.3 — The intent gate.**
 - **Why:** an inline replace keeps the line, so without a gate the line still emits `md-image` token intents and a paragraph line class under the widget (scout-verified; the math gate at `decorations/intent.ts:226–229` is the template).
 - **Files:** `decorations/intent.ts` — `inEmbedLine` branch in `lineIntentsInto` (no constructs, no rail membership); token suppression for lone-line occurrences (the `insideFence` pattern at `editor/decorations.ts:156` extended, or an intent-level filter — pick whichever keeps non-lone `![[x]]` styling byte-identical).
-- **Negative control:** a non-lone `![[x]]` keeps today's `md-image` treatment (pin it); the gate test goes red with the gate disabled.
+- **Negative control:** a non-lone `![[x]]` keeps today's inert inline treatment under the renamed class (pin it); the pin must go red with the gate disabled.
 - **Gate (phase):** typecheck · vitest · lint · build. Simplification + review dispatch on the phase range.
 
 ---
@@ -88,23 +88,23 @@ Five scout reports (this session) verified every seam firsthand; the attack revi
 **Why:** the user-visible core. Everything here composes Phase 1's derivation with the chassis and the caret protections.
 
 **Task 2.1 — Hoist the shared tile chassis.**
-- **Why:** B-3 — one chrome definition; SurfacePM folds onto it rather than the embed copying it.
-- **Files:** new `design-system/components/TileChassis.tsx` + `tileChassis.css` (location follows the design-system component convention — verify neighbors before creating); `SurfacePM/surfacepm.css` + `SurfaceView.tsx` (TileShell composes the shared classes); `Blocks/blocks.css` + `Embeds/embeds.css` (the `.spm-tile`-keyed rest-scroll and edit-trap rules re-key to the shared class).
+- **Why:** B-3 — one chrome definition; SurfacePM folds onto it rather than the embed copying it. The shared artifact ships as a **stylesheet + class contract**, not a component: `TileShell` is inseparable from SurfacePM's rect/phase/handle machinery and would never mount a shared component, so a `TileChassis.tsx` would be single-consumer fragmentation — the embed's chassis markup is a ~10-line div pair inlined in the widget, both consumers keyed to the one stylesheet. (B-3's word was "component"; the class contract is the component — disclosed for Nathan's sign-off at plan approval.)
+- **Files:** new `design-system/tileChassis.css` (location per the design-system stylesheet convention — verify neighbors before creating); `SurfacePM/surfacepm.css` + `SurfaceView.tsx` (TileShell composes the shared classes); `Blocks/blocks.css` + `Embeds/embeds.css` (the `.spm-tile`-keyed rest-scroll and edit-trap rules re-key to the shared class).
 - **What moves:** the border/radius/border-color-transition block (`surfacepm.css:9–25` minus transform/zoom lines), the body clip (`85–90`), the page-embed accent rules (`191–206`, re-scoped off the `.blk-surface` gate). What stays: positioning, phases/Feel, lift, resize, handle, edges, zoom steps, borderless, placement.
-- **Refactor shape — baseline invariant:** SurfacePM tiles look and behave byte-identically after the fold. Verify in the running app (hover, edit, drag, resize, borderless) before the phase gate; CDP screenshots for the record.
+- **Refactor shape — baseline invariant:** the moved rules render identically on SurfacePM tiles after the fold — rest border/radius, hover/edit accent reveal, body clip — verified in the running app with CDP screenshots. The untouched rules (drag, resize, borderless) need no per-gesture re-verification; the phase's normal app pass covers them incidentally.
 - **Survivors:** the "Nathan tunes these live" comment travels with the moved rules; `--tile-border` stays the single source.
 
 **Task 2.2 — The embed StateField widget.**
 - **Why:** B-4/B-7 — the tile, height-map-visible, incremental.
 - **Files:** new `MarkdownPM/editor/embedWidget.tsx` (StateField + WidgetType + React root, the `Tables/widget.tsx` recipe minus `block: true` and minus the self-edit path); `MarkdownPM/index.tsx` (extension registration + facet supply).
 - **Interfaces:** a facet carrying `{ getConn, ancestors: readonly string[], onEditingChange }` (the `tableConnections` pattern); the widget resolves title → page via the facet's connections at build time; resolved-only — phantom/ambiguous emit nothing (A-5, scout-confirmed consistency). First-per-normalized-title dedup here (B-11), using `normalizeTitle` so dedup and resolution agree. `estimatedHeight` set for the loading frame. Update paths: map-forward vs rebuild on an `editAffectsEmbeds`-style ±1-line predicate. `ignoreEvent(): true`; `destroy` unmounts via `queueMicrotask`; root parked on the DOM node.
-- **The widget renders:** `TileChassis` (handle-less) → `PageEmbed` with `path`, `editing`, `onBeginEdit`, `connections`, `ancestors ∪ {hostPath}`, non-interactive when nested or when a same-path tile already edits (B-6/B-11). A failed `page:open` on a resolved page renders the inert-degrade, not an empty editor (scout-flagged gap).
+- **The widget renders:** the chassis div pair (handle-less, on the shared classes) → `PageEmbed` with `path`, `editing`, `onBeginEdit`, `connections`, `ancestors ∪ {hostPath}`, non-interactive when nested or when a same-path tile already edits (B-6/B-11). A failed `page:open` on a resolved page renders the inert-degrade, not an empty editor (scout-flagged gap).
 - **Editing state:** host-owned `editingId` equivalent (per-view state fed through the facet), stamping the editing class on the chassis; capture-phase document `pointerdown` + window-level gated Escape, the `BlockSurface.tsx:145–164` pair replicated at the extension level (C-4: signals and click-out match SurfacePM exactly).
 
 **Task 2.3 — Atomic absorb + guards + fencing.**
 - **Why:** B-9/B-13/D-3 — the caret protections the spike proved.
 - **Files:** `embedWidget.tsx` (or a sibling `embedAtomic.ts`): atomic facet reading the field's ranges widened to `[prevLine.to, nextLine.from]` (the spike's geometry, including its doc-edge resolution); `editor/input.ts`: mirrored boundary guards beside `onForwardDelete` (backspace at next-line start, forward-delete at prev-line end, both refusing per D-3); a `transactionFilter` merge-guard on the result-doc predicate (an embed line acquiring a non-blank neighbor via deletion = refused), the `tableMergeGuard` shape; the fenced insert helper (used by menus in Phase 4) shaped like `setBlock`'s table case.
-- **Negative controls (required, both halves):** each guard's test proves the refused gesture actually reached the guard (dispatch it, assert doc unchanged) AND goes red with the guard removed. Spanning-selection delete stays allowed and removes the tile cleanly (D-5 — pin the attack review's verified behavior).
+- **Negative controls:** each guard's test dispatches the real gesture and must go red with the guard deleted — for these guards one assertion carries both halves, since without the guard the atomic default deletes the whole block (a different doc), never a silent no-op. Spanning-selection delete stays allowed and removes the tile cleanly (D-5 — pin the attack review's verified behavior).
 - **Failure half:** delete-at-EOF (the `from -= 1` branch), an embed whose fencing blank is the doc's last line, undo of a refused-then-allowed sequence.
 - **Gate (phase):** all four commands + the running-app pass: type `![[Title]]` lone-line (manually — menus don't exist yet), see the tile, drive every caret gesture from the acceptance criterion. Simplification + review on the range; reviewers carry the doc-flagging mandate.
 
@@ -119,7 +119,7 @@ Five scout reports (this session) verified every seam firsthand; the attack revi
 
 **Task 3.2 — The hover breadcrumb.**
 - **Why:** C-2 — coverless pages show where they live.
-- **Files:** new shared treatment in `Tabs/` (the centered + two-tone classes hoisted from `previewTabStrip.css:6–34, 73–91` under a shared name; PagePreview re-keys onto it — its `pgpreview-`-specific morph/collapse rules stay); the embed's hover reveal (opacity on tile hover at `--duration-base`, matching the accent-border timing) lives with the embed chrome. `NavCrumbs` stays in Navigation/ (it's already multi-consumer); crumb data via `resolveIndexOf` + `resolveWith` exactly as `PreviewWindow.tsx:120–126`.
+- **Files:** the centered + two-tone classes hoist from `previewTabStrip.css:6–34, 73–91` into a named section of the existing `Tabs/tabStrip.css` (the file previewTabStrip already borrows motion classes from — ~3 rules, no new stylesheet); PagePreview re-keys onto it, its `pgpreview-`-specific morph/collapse rules staying put. The embed's hover reveal (opacity on tile hover at `--duration-base`, matching the accent-border timing) lives with the embed chrome. `NavCrumbs` stays in Navigation/ (it's already multi-consumer); crumb data via `resolveIndexOf` + `resolveWith` exactly as `PreviewWindow.tsx:120–126`.
 - **Baseline invariant:** the preview window's title renders identically after the re-key (screenshot before/after).
 - **Gate (phase):** four commands + running-app screenshots of banner-tile and breadcrumb-tile states (design-verification rule: show Nathan or CDP-capture).
 
@@ -129,9 +129,9 @@ Five scout reports (this session) verified every seam firsthand; the attack revi
 
 #### Phase 4a — The Tree-Projection Mini-Phase (explore-first, Nathan's directive)
 
-**Task 4a.1 — Dispatch the consolidation scout.** An explore-and-advise agent (read-only, no sub-agents) briefed with: the three consumers (cardMenu's `MoveTarget` walk at `CardsView.tsx:597–601`, `pagePickerItems` at `BlockSurface.tsx:40–60`, and the embed menus' need — Collections → Sets → Pages with per-consumer filtering); the constraint that native menus are icon-less while the React drill renders icons; and the question: the simplest single projection both menu systems consume, with per-consumer decoration staying local. Its report ratifies the shape before 4a.2 builds it.
+**Task 4a.1 — Dispatch the consolidation scout.** An explore-and-advise agent (read-only, no sub-agents) briefed with: the three consumers (cardMenu's `MoveTarget` walk at `CardsView.tsx:597–601`, `pagePickerItems` at `BlockSurface.tsx:40–60`, and the embed menus' need — Collections → Sets → Pages with per-consumer filtering); the constraint that native menus are icon-less while the React drill renders icons and the shapes are today disjoint by design (path-keyed containers-only vs id-keyed icon-carrying page-leafed); and the question: the simplest shape — a shared projection, or none. Its report ratifies before anything builds.
 
-**Task 4a.2 — Implement per the scout's advice.** One shared projection (expected home: a pure function in `shared/`, per the scout's recommendation), `cardMenu`'s walk and `pagePickerItems` folded onto it, the embed menus consuming it with the B-11 filter (already-embedded + host page omitted). Baseline invariant: Move To and the SurfacePM Source drill behave identically after the fold.
+**Task 4a.2 — Implement per the scout's verdict.** Two legitimate outcomes: (a) a shared projection both menu systems consume, cardMenu's walk and `pagePickerItems` folded on, with a baseline invariant that Move To and the SurfacePM Source drill behave identically; or (b) **no fold** — the embed menus get their own ~15-line MoveTarget-shaped walk with page leaves in `shared/embedMenu.ts`, beside cardMenu's, because a projection generic enough for three disjoint shapes costs more than the ~26 lines it deletes. The scout's evidence decides; a fold ships only on a demonstrated net win.
 
 #### Phase 4b — Grip Menus
 
@@ -140,14 +140,10 @@ Five scout reports (this session) verified every seam firsthand; the attack revi
 - **Files:** `MarkdownPM/index.tsx:170–172` (predicate: any grip-bearing line — note the scout's caveat that hover reports the hovered line, so the predicate keys on the grip's own line classes: `md-block-handle`, `md-callout-first`, `md-bq-grip` host); rename cascade across `main/editorMenu.ts:23–26,189`, `bridge.ts:297`, `preload/index.ts:197–198`, `main/index.ts:1605` + the comment sweep the docs catalog items 14–18 name.
 - **Negative control:** right-click a paragraph grip → exactly one menu; right-click line 2 of a multi-line block's gutter → the generic menu (the grip line is line 1 only).
 
-**Task 4b.2 — "Embed Page ▸" on the rail grips.**
-- **Why:** D-1 — creation lands aimed, via the tree, from any block's grip.
-- **Files:** new `MarkdownPM/editor/embedGripMenu.ts` (the `calloutGripMenu.ts` shape: contextmenu handler, gutter hit-test, `blockAt` span in closure, ask-channel promise, post-menu flag clear + focus); new `main/embedMenu.ts` (the `popCardMenu` recursive-tree pattern; parent-repeats-itself idiom); `shared/embedMenu.ts` (ctx/action types); one `Asks` entry in `bridge.ts` + preload dialer + `main/index.ts` registration. Insert dispatches the fenced-insert helper (2.3) below the grip's block.
-- **Interfaces:** ctx carries the 4a projection (filtered); action returns the picked page id as a template string.
-
-**Task 4b.3 — The embed tile's grip menu.**
-- **Why:** D-2/D-3 — Page Source ▸ re-aim + Delete.
-- **Files:** same modules — the embed grip's menu branches on `blockAt(...).kind === 'embed'`: Page Source ▸ (same tree; picking dispatches a same-line rewrite of the title), Delete (the callout-delete shape: line + one adjacent newline + its orphaned fencing blank, `userEvent: 'delete'`, one dispatch/undo unit).
+**Task 4b.2 — The grip menu (creation + tile, one unit).**
+- **Why:** D-1/D-2/D-3 — one handler, one menu module, one bridge entry, branching per grip kind; splitting would author the shared ctx/action union for half its variants and re-open all three files mid-phase.
+- **Files:** new `MarkdownPM/editor/embedGripMenu.ts` (the `calloutGripMenu.ts` shape: contextmenu handler, gutter hit-test, `blockAt` span in closure, ask-channel promise, post-menu flag clear + focus); new `main/embedMenu.ts` (the `popCardMenu` recursive-tree pattern; parent-repeats-itself idiom); `shared/embedMenu.ts` (ctx/action types + the tree walk per 4a's verdict); one `Asks` entry in `bridge.ts` + preload dialer + `main/index.ts` registration.
+- **Branches:** a non-embed grip offers "Embed Page ▸" (the filtered tree; pick → the fenced-insert helper from 2.3 below the grip's block); an embed grip (`blockAt(...).kind === 'embed'`) offers "Page Source ▸" (same tree; pick → same-line title rewrite) + "Delete" (the callout-delete shape: line + one adjacent newline + its orphaned fencing blank, `userEvent: 'delete'`, one dispatch/undo unit).
 - **Failure half:** re-aim to a title that duplicates an existing embed (refused by the B-11 filter — the tree omits it); delete of a doc-edge embed (EOF newline branch).
 - **Gate (phase):** four commands + running-app: create → re-aim → delete round-trip from the grips. Review with doc mandate.
 
@@ -181,7 +177,7 @@ Five scout reports (this session) verified every seam firsthand; the attack revi
 
 ### Phase 6 — Make It True (docs + comments) & Closeout
 
-**Task 6.1 — The falsified-claims sweep.** The docs scout's 25-item catalog is the derivation (its control: every item was quote-verified at plan time; re-verify quotes before editing — earlier phases' comment rewrites will have consumed items 10–22 piecemeal; this task sweeps the remainder and the Features docs). **Fix direction: when an enumeration went incomplete, remove the enumeration rather than widen it** — "every grip doubles as a drag handle and carries its own menu" outlives any per-kind list, which just drifts again at the next kind (ruled on item 2; apply across the catalog). Fix-or-remove per item: MarkdownPM.md (items 1–3 + the grip-menu convention), SurfacePM.md (4–5 — the Embed Framework ships both consumers; the banner Pending entry dies, replaced by the shipped rule), ConnectionsPM.md (6–8), ViewsPM.md (9), plus any comment items earlier phases left. The `imageEmbed` naming decision (item 13): rename token + regex + class to the embed vocabulary in whichever phase first touches each site; this task grep-verifies no stale `imageEmbed`/`md-image` naming survives (control token: the new name).
+**Task 6.1 — The falsified-claims sweep.** The docs scout's 25-item catalog is the derivation (its control: every item was quote-verified at plan time; re-verify quotes before editing — earlier phases' comment rewrites will have consumed items 10–22 piecemeal; this task sweeps the remainder and the Features docs). **Fix direction: when an enumeration went incomplete, remove the enumeration rather than widen it** — "every grip doubles as a drag handle and carries its own menu" outlives any per-kind list, which just drifts again at the next kind (ruled on item 2; apply across the catalog). Fix-or-remove per item: MarkdownPM.md (items 1–3 + the grip-menu convention), SurfacePM.md (4–5 — the Embed Framework ships both consumers; the banner Pending entry dies, replaced by the shipped rule), ConnectionsPM.md (6–8), ViewsPM.md (9), plus any comment items earlier phases left. (The `imageEmbed` rename shipped whole in Task 1.1 — item 13 needs no sweep here.)
 
 **Task 6.2 — Feature doc.** MarkdownPM.md gains the embed construct section (or a new `EmbedsPM.md` if the section outgrows it — judge at write time); Context.md's AutocompletePanel lesson line is deleted (resolved by 5.1); the decision log's role ends — the plan and Features docs carry everything forward.
 
@@ -191,7 +187,7 @@ Five scout reports (this session) verified every seam firsthand; the attack revi
 
 ### Blast Radius
 
-Code: `MarkdownPM/` (detect, tokens, decorations/intent, editor/{blockModel, blockHandles, input, docCache-adjacent, new embedRanges/embedWidget/embedGripMenu}, autocomplete, index.tsx, Styles.css) · `Embeds/` (PageEmbed, embeds.css, embedScale untouched) · `SurfacePM/` (chassis fold) · `Blocks/` (blocks.css re-key, pagePickerItems fold) · `design-system/` (TileChassis) · `Tabs/` (warmCache, crumb treatment) · `PagePreview/` (crumb re-key) · `Detail/` (pageFlush) · `Navigation/` (NavCrumbs comment) · `shared/` (connections, embedMenu, projection, bridge) · `main/` (embedMenu, editorMenu, connections/{scan,rewrite}, cascade, index).
+Code: `MarkdownPM/` (detect, tokens, decorations/intent, editor/{blockModel, blockHandles, input, docCache-adjacent, new embedRanges/embedWidget/embedGripMenu}, autocomplete, index.tsx, Styles.css) · `Embeds/` (PageEmbed, embeds.css, embedScale untouched) · `SurfacePM/` (chassis fold) · `Blocks/` (blocks.css re-key; pagePickerItems only if 4a folds) · `design-system/` (tileChassis.css) · `Tabs/` (warmCache, the crumb section in tabStrip.css) · `PagePreview/` (crumb re-key) · `Detail/` (pageFlush) · `Navigation/` (NavCrumbs comment) · `shared/` (connections, embedMenu, bridge) · `main/` (embedMenu, editorMenu, connections/{scan,rewrite}, cascade, index).
 Docs made false and repaired: the 25-item catalog (MarkdownPM.md, SurfacePM.md, ConnectionsPM.md, ViewsPM.md + comments).
 Behavior deliberately changed beyond the feature: connection restyle latency (5.4, fresher), autocomplete panel chrome (B-14), grip-flag naming (4b.1).
 
