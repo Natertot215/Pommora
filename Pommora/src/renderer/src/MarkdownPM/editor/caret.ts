@@ -2,6 +2,27 @@
 // hidden (`caret-color: transparent`), not the selection — so this is NOT drawSelection's all-or-nothing takeover.
 import { layer, RectangleMarker, type EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
+import { embedTileRanges } from './embedWidget'
+
+// A doc-edge tile owns the only legal seats INSIDE its atomic span — the clamped document edges.
+// Measuring those seats yields the tile box itself, and clamping that in place parks a caret at the
+// tile's top on the widget's own x. Draw instead where the seat's insertion will land (the guard
+// repairs typing here onto a fresh line): one line's worth above or below the tile, at the indent.
+function tileEdgeMarker(view: EditorView, head: number): RectangleMarker | null {
+  for (const t of embedTileRanges(view.state)) {
+    if (head !== t.from && head !== t.to) continue
+    const lb = view.lineBlockAt(t.from)
+    // forRange's own base: marker coords are document-relative (client minus scroll-adjusted origin).
+    const sr = view.scrollDOM.getBoundingClientRect()
+    const cr = view.contentDOM.getBoundingClientRect()
+    const pad = Number.parseFloat(getComputedStyle(view.contentDOM).paddingLeft)
+    const left = cr.left + pad - (sr.left - view.scrollDOM.scrollLeft)
+    const topDoc = head === t.to ? lb.bottom : lb.top - view.defaultLineHeight
+    const top = view.documentTop + topDoc - (sr.top - view.scrollDOM.scrollTop)
+    return new RectangleMarker('mdpm-caret', left, top, null, view.defaultLineHeight)
+  }
+  return null
+}
 
 function caretMarkers(view: EditorView): RectangleMarker[] {
   // A cursor placed against a block widget (e.g. a table) makes forRange return a marker spanning the whole
@@ -10,6 +31,13 @@ function caretMarkers(view: EditorView): RectangleMarker[] {
   const floor = 4 // under this a marker is a collapsed line's sliver (an embed's fencing blank), not a caret
   const out: RectangleMarker[] = []
   for (const r of view.state.selection.ranges) {
+    if (r.empty) {
+      const edge = tileEdgeMarker(view, r.head)
+      if (edge) {
+        out.push(edge)
+        continue
+      }
+    }
     const cursor = r.empty ? r : EditorSelection.cursor(r.head, r.assoc)
     // A seat whose assoc side faces a replaced range has no coords on that side, and forRange
     // returns nothing — the caret would silently not render at any seat bordering an embed tile.
