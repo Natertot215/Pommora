@@ -84,8 +84,9 @@ Pommora was first built as a native SwiftUI app — that build was active for ar
 
 ### Codebase Map
 
-Depth stops where the map stops earning its place: documentation is named file by file, source is named to the directory plus the modules the Hard Rules depend on. `.git`, `node_modules`, and build output are omitted.
+Depth stops where the map stops earning its place: documentation is named file by file, source is named to the directory plus the modules the Hard Rules depend on. Build output, dependencies, and generic configuration are omitted.
 
+```
 // [[Project Pommora]]                       | • Monorepo root — the app, its documentation, and deploy config
 ├── // [[.claude]]                           | • Project documentation and Claude configuration
 │   ├── [[CLAUDE]]                           | • This file — auto-loaded at session start
@@ -140,57 +141,49 @@ Depth stops where the map stops earning its place: documentation is named file b
 │   │   ├── [[Distribution]]                 | • Shipping a real build — signing, packaging, updates
 │   │   ├── [[Libraries]]                    | • The vetted library menu, tagged by decision state
 │   │   └── [[Mac-Integration]]              | • Where Electron lands on each macOS integration surface
-│   ├── // [[Planning]]                      | • Plans and temporary specifications; contents are transient
-│   ├── [[settings.json]]
-│   └── [[settings.local.json]]
-├── // [[Pommora]]                           | • The app — the codebase proper
-│   ├── // [[src]]
-│   │   ├── // [[main]]                      | • The Node main process — it alone touches the filesystem
-│   │   │   ├── // [[connections]]           | • Link scanning, and rewriting them on rename
-│   │   │   ├── // [[crud]]                  | • Mutations — writes, cascades, governed keys, options
-│   │   │   ├── // [[db]]                    | • nexus.db — the driver seam, schema, device-local state
-│   │   │   ├── // [[io]]                    | • Atomic writes, file locks, page and sidecar files, the walk
-│   │   │   ├── // [[properties]]            | • The property registry's schema
-│   │   │   ├── [[index.ts]]                 | • Main entry — window creation and app lifecycle
-│   │   │   ├── [[ipc.ts]]                   | • The channel handlers sitting behind the bridge
-│   │   │   ├── [[ids.ts]]                   | • The ULID seam
-│   │   │   └── [[readNexus.ts]]             | • The read path — read-only by construction
-│   │   ├── // [[preload]]                   | • The contextBridge — the renderer's only door into main
-│   │   ├── // [[shared]]                    | • The cross-process contract — no fs, no React
-│   │   │   ├── [[types.ts]]                 | • The contract both processes import
-│   │   │   ├── [[bridge.ts]]                | • Every IPC channel declared once; both sides derive from it
-│   │   │   ├── [[result.ts]]                | • The Result envelope IPC returns instead of throwing
-│   │   │   └── [[schemas.ts]]               | • The zod schemas the on-disk format validates against
-│   │   └── // [[renderer]]                  | • The React renderer — it never touches Node
-│   │       └── // [[src]]
-│   │           ├── // [[Blocks]]            | • Tile content for the dashboard layer
-│   │           ├── // [[Components]]        | • Shared components — chips, icons, editable titles
-│   │           ├── // [[Detail]]            | • The main pane — routed views, inspector, subfield, banner
-│   │           ├── // [[Embeds]]            | • The embed framework's consumers
-│   │           ├── // [[MarkdownPM]]        | • The editor — parser, tokens, decorations, input, tables
-│   │           ├── // [[NavWindow]]         | • The standalone navigation window
-│   │           ├── // [[Navigation]]        | • Tabs, history, breadcrumbs, search
-│   │           ├── // [[PagePreview]]       | • The floating page window
-│   │           ├── // [[Settings]]          | • The settings surface
-│   │           ├── // [[Sidebar]]           | • The ribbon and its content column
-│   │           ├── // [[SurfacePM]]         | • The dashboard engine — core and sensors
-│   │           ├── // [[Tabs]]              | • The toolbar tab bar
-│   │           ├── // [[Toolbar]]           | • The window toolbar
-│   │           ├── // [[design-system]]     | • The code mirror of the Figma library
-│   │           │   ├── // [[components]]    | • Design-system components — pickers, panes, fields
-│   │           │   ├── // [[interactions]]  | • PommoraDND — the drag-and-drop engine
-│   │           │   ├── // [[materials]]     | • Glass — surfaces, panes, windows, controls
-│   │           │   ├── // [[showcase]]      | • The deployed component-library site
-│   │           │   ├── // [[symbols]]       | • The curated icon registry — the primary glyph source
-│   │           │   └── // [[tokens]]        | • Color, type, motion, chip — the token source of truth
-│   │           ├── [[App.tsx]]              | • The shell — three panes and the routed surface
-│   │           └── [[store.ts]]             | • The Zustand store holding renderer state
-│   ├── // [[build]]                         | • App icon sources
-│   ├── // [[public]]                        | • Static assets — surface backgrounds
-│   ├── [[biome.json]]
-│   ├── [[design-system.html]]               | • The showcase's entry point
-│   ├── [[electron-builder.yml]]             | • Packaging config for the distributable
-│   ├── [[electron.vite.config.ts]]          | • The app build — main, preload, and renderer
-│   ├── [[package.json]]
-│   └── [[vitest.config.ts]]
-└── [[vercel.json]]                          | • Routes the showcase deploy
+│   └── // [[Planning]]                      | • Plans and temporary specifications; contents are transient
+└── // [[Pommora]]                           | • The app — the codebase proper
+    ├── // [[src]]
+    │   ├── // [[main]]                      | • The Node main process — it alone touches the filesystem
+    │   │   ├── // [[connections]]           | • Link scanning, and rewriting them on rename
+    │   │   ├── // [[crud]]                  | • Mutations — writes, cascades, governed keys, options
+    │   │   ├── // [[db]]                    | • nexus.db — the driver seam, schema, device-local state
+    │   │   ├── // [[io]]                    | • Atomic writes, file locks, page and sidecar files, the walk
+    │   │   ├── // [[properties]]            | • The property registry's schema
+    │   │   ├── [[index.ts]]                 | • Main entry — window creation and app lifecycle
+    │   │   ├── [[ipc.ts]]                   | • The channel handlers sitting behind the bridge
+    │   │   ├── [[ids.ts]]                   | • The ULID seam
+    │   │   └── [[readNexus.ts]]             | • The read path — read-only by construction
+    │   ├── // [[preload]]                   | • The contextBridge — the renderer's only door into main
+    │   ├── // [[shared]]                    | • The cross-process contract — no fs, no React
+    │   │   ├── [[types.ts]]                 | • The contract both processes import
+    │   │   ├── [[bridge.ts]]                | • Every IPC channel declared once; both sides derive from it
+    │   │   ├── [[result.ts]]                | • The Result envelope IPC returns instead of throwing
+    │   │   └── [[schemas.ts]]               | • The zod schemas the on-disk format validates against
+    │   └── // [[renderer]]                  | • The React renderer — it never touches Node
+    │       └── // [[src]]
+    │           ├── // [[Blocks]]            | • Tile content for the dashboard layer
+    │           ├── // [[Components]]        | • Shared components — chips, icons, editable titles
+    │           ├── // [[Detail]]            | • The main pane — routed views, inspector, subfield, banner
+    │           ├── // [[Embeds]]            | • The embed framework's consumers
+    │           ├── // [[MarkdownPM]]        | • The editor — parser, tokens, decorations, input, tables
+    │           ├── // [[NavWindow]]         | • The standalone navigation window
+    │           ├── // [[Navigation]]        | • Tabs, history, breadcrumbs, search
+    │           ├── // [[PagePreview]]       | • The floating page window
+    │           ├── // [[Settings]]          | • The settings surface
+    │           ├── // [[Sidebar]]           | • The ribbon and its content column
+    │           ├── // [[SurfacePM]]         | • The dashboard engine — core and sensors
+    │           ├── // [[Tabs]]              | • The toolbar tab bar
+    │           ├── // [[Toolbar]]           | • The window toolbar
+    │           ├── // [[design-system]]     | • The code mirror of the Figma library
+    │           │   ├── // [[components]]    | • Design-system components — pickers, panes, fields
+    │           │   ├── // [[interactions]]  | • PommoraDND — the drag-and-drop engine
+    │           │   ├── // [[materials]]     | • Glass — surfaces, panes, windows, controls
+    │           │   ├── // [[showcase]]      | • The deployed component-library site
+    │           │   ├── // [[symbols]]       | • The curated icon registry — the primary glyph source
+    │           │   └── // [[tokens]]        | • Color, type, motion, chip — the token source of truth
+    │           ├── [[App.tsx]]              | • The shell — three panes and the routed surface
+    │           └── [[store.ts]]             | • The Zustand store holding renderer state
+    ├── [[design-system.html]]               | • The showcase's entry point
+    └── [[electron.vite.config.ts]]          | • The app build — main, preload, and renderer
+```
