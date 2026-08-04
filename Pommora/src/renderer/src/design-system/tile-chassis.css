@@ -6,7 +6,11 @@
    decides WHAT the border is. Nathan tunes these live. */
 .tile-chassis {
   --tile-border: 1.25px; /* one source — hosts' handle/notch math reads it */
-  border: var(--tile-border) solid var(--tile-border-color, var(--separator-border));
+  /* Re-anchored on EVERY chassis: custom properties inherit where border-color wouldn't, so
+     without its own declaration a nested tile would wear its host's border state (a borderless
+     host would erase it entirely). Host triggers outrank this at (0,2,0)+ on the same element. */
+  --tile-border-color: var(--separator-border);
+  border: var(--tile-border) solid var(--tile-border-color);
   border-radius: 16px;
 }
 
