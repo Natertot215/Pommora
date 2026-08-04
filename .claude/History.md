@@ -2,6 +2,11 @@
 
 Changelog + the home for locked decisions — what shipped and the calls that got locked, **newest first**. Brief by design: current state lives in the feature docs + `PommoraPRD.md`, the roadmap + phase framing in `Framework.md`, editor internals in `Features/MarkdownPM.md`. Entries describe the arc and carry the decisions; file-level detail stays in the canonical spec each entry points to. **Page Previews + the Subfield unification close the React rebuild of the Swift paradigm — the live build (under `Pommora/`) reached Swift parity and passed it, standing at v0.5.0.** The **Swift origins** — the paradigm's first build, archived at `// The Studio // Archive // Pommora` with its git history on the `swift` branch — sit condensed at the bottom.
 
+#### Embedded Pages (2026-08-03 → 08-04)
+
+`![[Title]]` on its own line now embeds that page as a live tile in MarkdownPM — Obsidian's syntax, the shared Embed Framework's second consumer. The tile rides a real editor line under an atomic absorb and a lone-line guard (interior damage refuses whole, boundary insertions repair onto their own line, the fencing blank is protected); chrome is the shared tile chassis with banner-follows-the-page or the hover breadcrumb; creation runs through the `![[` autocomplete, any rail grip's native Embed Page ▸ tree, or hand-typing, with re-aim and delete on the tile's own grip. The rename cascade sweeps embeds through a parallel pattern (never a link-graph edge), a path-keyed warm slot with schedule-time write-through makes rehydration fetch-free, and a resolution nudge re-renders tiles the moment the tree changes. Six phases, each gated simplify-then-attack; the standout catches were a keymap census exposing syntax-motion caret seats a hand-picked test list missed, a code-mask misread on length-changing renames, and a live-found warm-restore clobber of the cascade's heal. → [[MarkdownPM]] §II. Embeddings.
+
+
 ### Completion Timeline (Descending)
 
 #### The Editor Bug-Hunt (2026-08-03)
