@@ -76,9 +76,8 @@ export function PageEmbed({
     // slot's metadata (id, title, cover): the seam serializes editor state, not page chrome.
     const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
     const cached = readPageDetail(path)
-    if (typeof doc === 'string')
-      return cached ? { ...entryFrom(path, cached), body: doc } : { path, body: doc }
-    return cached ? entryFrom(path, cached) : null
+    const slot = cached ? entryFrom(path, cached) : null
+    return typeof doc === 'string' ? { path, ...slot, body: doc } : slot
   })
   const entry = loaded?.path === path ? loaded : null
   const body = entry?.body ?? null
