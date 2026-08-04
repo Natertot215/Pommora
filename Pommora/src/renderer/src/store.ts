@@ -64,7 +64,7 @@ import {
   reorderWithinZone,
   tabKey,
 } from './Tabs/tabsModel'
-import { captureWarm, clearWarm, dropPageDetail, dropWarmDetail, dropWarmTab, readWarm } from './Tabs/warmCache'
+import { captureWarm, clearPageDetails, clearWarm, dropPageDetail, dropWarmDetail, dropWarmTab, readWarm } from './Tabs/warmCache'
 import { clearPreviewWarm, dropPreviewWarm } from './PagePreview/previewWarm'
 import { stashWindowMorph } from './PagePreview/WindowMorph'
 import { flushAllPageSaves } from './Detail/pageFlush'
@@ -1437,9 +1437,11 @@ export const useSession = create<SessionState>((set, get) => {
           }
           case 'rename':
             patched = renameNodeInTree(cur, req.path, req.newName)
-            // The path-keyed detail slot has no rename fence — its key IS the stale path, and the
-            // cascade may rewrite bodies besides; the tab-keyed entries fence themselves.
-            dropPageDetail(req.path)
+            // The cascade rewrites bodies NEXUS-WIDE — the whole path-keyed slot is suspect, and
+            // the open page's own detail is the same fact in another home: refetch it, or a tile
+            // rehydrating (or the next keystroke) writes the pre-cascade body back over the heal.
+            clearPageDetails()
+            if (get().pageDetail) void get().reloadPage()
             break
           case 'delete':
             patched = removeNodeInTree(cur, req.path)

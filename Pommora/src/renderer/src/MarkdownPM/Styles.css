@@ -873,8 +873,8 @@
 .mdpm-ac {
   --ac-radius: 12px;
   --ac-rows: 4;
-  position: fixed;
-  z-index: var(--z-lifted);
+  /* Positioning + the z rung live on the panel's WRAPPER (inline, from AutocompletePanel) — a fixed
+     inner pane would leave NotchedPane's measured wrapper zero-sized and its frame unrendered. */
   min-width: 180px;
   max-width: 320px;
   max-height: calc(var(--ac-rows) * 28px + 8px);

@@ -13,15 +13,17 @@ import { codeMask } from '@shared/markdownCode'
 export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
   const oldKey = normalizeTitle(oldTitle)
   const inCode = codeMask(body)
-  return body
-    .replace(
-      pageLinkPattern(),
-      (match, title: string, alias: string | undefined, offset: number) =>
-        !inCode(offset) && normalizeTitle(title) === oldKey
-          ? `[[${newTitle}${alias ? `|${alias}` : ''}]]`
-          : match,
-    )
-    .replace(pageEmbedPattern(), (match, title: string, offset: number) =>
-      !inCode(offset) && normalizeTitle(title) === oldKey ? `![[${newTitle}]]` : match,
-    )
+  const afterLinks = body.replace(
+    pageLinkPattern(),
+    (match, title: string, alias: string | undefined, offset: number) =>
+      !inCode(offset) && normalizeTitle(title) === oldKey
+        ? `[[${newTitle}${alias ? `|${alias}` : ''}]]`
+        : match,
+  )
+  // The embed pass sees POST-link-pass offsets — its mask must be built over the same string, or
+  // any length-changing link rewrite above shifts every later offset off the original mask.
+  const inCodeAfter = codeMask(afterLinks)
+  return afterLinks.replace(pageEmbedPattern(), (match, title: string, offset: number) =>
+    !inCodeAfter(offset) && normalizeTitle(title) === oldKey ? `![[${newTitle}]]` : match,
+  )
 }
