@@ -232,10 +232,6 @@ function lineIntentsInto(
     return null
   }
 
-  // An embed line renders no line constructs — the tile field owns its presentation, and a lone
-  // `![[…]]` can't be a list/heading/hr anyway. Prefix-free by definition: a quoted line isn't lone.
-  if (scan.embeds.some((e) => ls >= e.from && ls <= e.to)) return null
-
   // pushConstruct hides the prefix [ls, innerStart] itself, so a leading bullet/HR widget can ABSORB it into
   // one replace — CM drops a widget-replace that merely *touches* a preceding replace at the same offset.
   const li = pushConstruct(intents, line, ls, base, selStart)

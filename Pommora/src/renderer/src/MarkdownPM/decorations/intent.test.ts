@@ -416,19 +416,11 @@ describe('outliner rails', () => {
   })
 })
 
-describe('embed line gate', () => {
-  it('a lone-line embed emits no line constructs; its neighbors are untouched', () => {
+describe('embed token styling', () => {
+  it('a lone-line embed matches no line construct — no gate needed, pinned so one arriving would show', () => {
     const scan = scanDoc('- item\n![[Foo]]\n# Head')
     const { perLine } = docLineIntents(scan)
     expect(perLine[1]).toEqual([])
-    expect(perLine[0].length).toBeGreaterThan(0)
-    expect(perLine[2].length).toBeGreaterThan(0)
-  })
-
-  it('a non-lone embed line keeps its constructs (the token styles it instead)', () => {
-    const scan = scanDoc('- has ![[Foo]] inline')
-    const { perLine } = docLineIntents(scan)
-    expect(perLine[0].length).toBeGreaterThan(0)
   })
 
   it('the embed token wears the embed content class', () => {

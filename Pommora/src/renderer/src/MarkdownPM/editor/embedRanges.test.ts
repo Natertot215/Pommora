@@ -9,8 +9,13 @@ const status =
     map[title] ?? 'phantom'
 
 describe('blockEmbedLines', () => {
-  it('claims a lone-line embed, whole line, trimmed', () => {
-    expect(blockEmbedLines('a\n  ![[Foo]]  \nb', [])).toEqual([{ from: 2, to: 14, title: 'Foo' }])
+  it('claims a lone-line embed, trailing whitespace tolerated', () => {
+    expect(blockEmbedLines('a\n![[Foo]]  \nb', [])).toEqual([{ from: 2, to: 12, title: 'Foo' }])
+  })
+
+  it('a leading indent is continuation context, never an embed', () => {
+    expect(blockEmbedLines('- item\n  ![[Foo]]', [])).toEqual([])
+    expect(blockEmbedLines('  ![[Foo]]', [])).toEqual([])
   })
 
   it('rejects any line carrying more than the embed', () => {
@@ -30,6 +35,12 @@ describe('blockEmbedLines', () => {
 describe('docEmbedLines exclusions', () => {
   it('a fenced ![[…]] is code, not an embed', () => {
     expect(docEmbedLines('```\n![[Foo]]\n```')).toEqual([])
+  })
+
+  it('an ![[…]] inside display math is formula source, and cannot steal a later claim', () => {
+    expect(docEmbedLines('$$\n![[Foo]]\n$$\n\n![[Foo]]')).toEqual([
+      { from: 16, to: 24, title: 'Foo' },
+    ])
   })
 
   it('a lone-line embed between blocks still claims', () => {
