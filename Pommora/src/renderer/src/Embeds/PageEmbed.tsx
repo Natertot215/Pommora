@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { MarkdownEditor, type WarmSeam } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
+import { useSession } from '../store'
+import { NavCrumbs } from '../Navigation/NavList'
+import { resolveWith } from '../Navigation/navResolve'
+import { resolveIndexOf } from '../treeIndex'
+import { assetUrl } from '../assetUrl'
 import './embeds.css'
 import { EMBED_SCALE, EMBED_ZOOM } from './embedScale'
 
@@ -19,6 +24,7 @@ export function PageEmbed({
   onBody,
   warm,
   ancestors,
+  chrome = 'none',
 }: {
   path: string
   editing: boolean
@@ -34,12 +40,22 @@ export function PageEmbed({
   /** The embed-host chain above this page, cycle guard + nesting depth for the tiles inside it —
    *  this embed appends its own path before handing down. Absent = a top-level embed host. */
   ancestors?: readonly string[]
+  /** 'page' renders the page-follows header rule: the banner with its static title when the page
+   *  has a cover, the centered hover breadcrumb otherwise. Hosts that carry the location
+   *  themselves (the preview's title, a SurfacePM tile's handle menu) stay 'none'. */
+  chrome?: 'none' | 'page'
 }): React.JSX.Element {
   // Bound to the path it was loaded FOR — an un-keyed host re-aiming `path` blanks and refetches
   // exactly as a fresh mount would. A failed open is NOT an empty page: body stays null and the
   // render shows the inert fallback, never an editable blank that would overwrite the real file
   // on the first keystroke.
-  const [loaded, setLoaded] = useState<{ path: string; body: string | null } | null>(() => {
+  const [loaded, setLoaded] = useState<{
+    path: string
+    body: string | null
+    id?: string
+    title?: string
+    cover?: string
+  } | null>(() => {
     const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
     return typeof doc === 'string' ? { path, body: doc } : null
   })
@@ -57,7 +73,19 @@ export function PageEmbed({
     if (entry !== null) return
     let live = true
     void window.nexus.openPage(path).then((r) => {
-      if (live) setLoaded({ path, body: r.ok ? r.value.body : null })
+      if (!live) return
+      if (!r.ok) {
+        setLoaded({ path, body: null })
+        return
+      }
+      const cover = r.value.frontmatter.cover
+      setLoaded({
+        path,
+        body: r.value.body,
+        id: r.value.id,
+        title: r.value.title,
+        cover: typeof cover === 'string' ? cover : undefined,
+      })
     })
     return () => {
       live = false
@@ -73,6 +101,19 @@ export function PageEmbed({
 
   if (failed) return <div className="pgembed pgembed-failed">{titleOf(path)}</div>
   if (body === null) return <div className="pgembed" />
+  const header =
+    chrome === 'page' ? (
+      entry?.cover ? (
+        <EmbedBanner
+          path={path}
+          title={entry.title ?? titleOf(path)}
+          cover={entry.cover}
+          onChanged={() => setLoaded(null)}
+        />
+      ) : entry?.id ? (
+        <EmbedCrumbs id={entry.id} />
+      ) : null
+    ) : null
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
@@ -85,6 +126,7 @@ export function PageEmbed({
         onBeginEdit()
       }}
     >
+      {header}
       <MarkdownEditor
         initialBody={body}
         onChange={(next) => {
@@ -101,4 +143,56 @@ export function PageEmbed({
       />
     </div>
   )
+}
+
+/** The page's own banner with its title as static text — display-only chrome. The banner band keeps
+ *  its change/remove context menu (the page-surface control); rename and add-banner stay behind. */
+function EmbedBanner({
+  path,
+  title,
+  cover,
+  onChanged,
+}: {
+  path: string
+  title: string
+  cover: string
+  onChanged: () => void
+}): React.JSX.Element {
+  const mutate = useSession((s) => s.mutate)
+  const setBanner = async (dataUrl: string | null): Promise<void> => {
+    if (await mutate({ op: 'setBanner', path, kind: 'page', dataUrl })) onChanged()
+  }
+  const bannerMenu = async (): Promise<void> => {
+    const action = await window.nexus.bannerMenu()
+    if (action === 'change') {
+      const dataUrl = await window.nexus.pickImage()
+      if (dataUrl) await setBanner(dataUrl)
+    } else if (action === 'remove') await setBanner(null)
+  }
+  return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control
+    <div
+      className="mdpm-banner"
+      onContextMenu={(e) => {
+        e.preventDefault()
+        void bannerMenu()
+      }}
+    >
+      <img className="mdpm-banner-img" src={assetUrl(cover)} alt="" />
+      <div className="mdpm-banner-overlay">
+        <span className="detail-title-text pgembed-banner-title">{title}</span>
+      </div>
+    </div>
+  )
+}
+
+/** The coverless header: where the page lives, revealed on tile hover — Collection › Set › Page on
+ *  the shared two-tone treatment. */
+function EmbedCrumbs({ id }: { id: string }): React.JSX.Element | null {
+  const tree = useSession((s) => s.tree)
+  if (!tree) return null
+  const res = resolveWith(resolveIndexOf(tree), { kind: 'page', id })
+  if (!res) return null
+  const crumbs = [...res.path, { icon: res.icon, title: res.title }]
+  return <NavCrumbs path={crumbs} className="pgembed-crumbs crumb-two-tone" iconSize={11} />
 }

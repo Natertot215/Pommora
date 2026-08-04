@@ -119,6 +119,7 @@ class EmbedTileWidget extends WidgetType {
             connections: conn,
             locked: !this.interactive,
             ancestors: this.ancestors,
+            chrome: 'page',
           }),
         ),
       ),
