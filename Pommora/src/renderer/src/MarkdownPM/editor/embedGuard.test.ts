@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EditorState, type TransactionSpec } from '@codemirror/state'
-import { embedTiles } from './embedWidget'
+import { embedField, embedTiles } from './embedWidget'
 import { buildPageIndex, type ConnectionsApi } from '../connections'
 
 const conn: ConnectionsApi = {
@@ -13,6 +13,16 @@ const mk = (doc: string): EditorState =>
     doc,
     extensions: [embedTiles({ getConn: () => conn, ancestors: ['Host.md'] })],
   })
+
+const conn2: ConnectionsApi = {
+  ...buildPageIndex([
+    { id: '1', title: 'Alpha', path: 'Notes/Alpha.md' },
+    { id: '2', title: 'Beta', path: 'Notes/Beta.md' },
+  ]),
+  open: () => {},
+}
+const mk2 = (doc: string): EditorState =>
+  EditorState.create({ doc, extensions: [embedTiles({ getConn: () => conn2, ancestors: ['Host.md'] })] })
 
 const apply = (state: EditorState, spec: TransactionSpec): string =>
   state.update(spec).state.doc.toString()
@@ -84,5 +94,34 @@ describe('the fencing blank', () => {
   it('deleting the tile with its blanks stays legal', () => {
     const doc = 'alpha\n\n![[Alpha]]\n\nbeta'
     expect(apply(mk(doc), { changes: { from: 7, to: 19, insert: '' } })).toBe('alpha\n\nbeta')
+  })
+})
+
+describe('the rebuild gate reads the scanner', () => {
+  it('a fence typed above a tile dissolves it; deleting the fence restores it', () => {
+    // The field must track the scan's exclusion set, not just the tile's own lines.
+    let state = mk('x\n\n![[Alpha]]')
+    const tiles = (): number => state.field(embedField as never, false) === undefined ? -1 :
+      (state.field(embedField as never) as { ranges: unknown[] }).ranges.length
+    expect(tiles()).toBe(1)
+    state = state.update({ changes: { from: 0, to: 0, insert: '```\n' } }).state
+    expect(tiles()).toBe(0)
+    state = state.update({ changes: { from: 0, to: 4, insert: '' } }).state
+    expect(tiles()).toBe(1)
+  })
+})
+
+describe('per-tile fence accounting', () => {
+  it('removing one tile whole cannot legalize gluing another', () => {
+    // Hand-glued first tile + fenced second; spanning-delete of the first must not be paid for
+    // by the second losing its blank.
+    const doc = 'text\n![[Alpha]]\n\n![[Beta]]'
+    const out = apply(mk2(doc), { changes: { from: 5, to: 17, insert: '' } })
+    expect(out).toBe(doc) // Beta would become glued to text — refused
+  })
+
+  it('removing one tile with its own seams intact stays legal', () => {
+    const doc = 'text\n![[Alpha]]\n\n![[Beta]]'
+    expect(apply(mk2(doc), { changes: { from: 4, to: 15, insert: '' } })).toBe('text\n\n![[Beta]]')
   })
 })
