@@ -4,7 +4,7 @@
 
 - **Purpose:** Render a real Page as an embedded tile inside a MarkdownPM document, authored with Obsidian's `![[Title]]` syntax, riding the shared Embed Framework SurfacePM already uses.
 - **Core Value:** A page's content lives inline inside another page — readable and editable in place — without inventing a second page renderer or a second tile chrome.
-- **Success Criteria:** Typing `![[Title]]` on its own line produces a live tile matching SurfacePM's embed treatment (minus the handle); the raw syntax line never shows; a caret near the tile can't break it; deletion happens only through its menu.
+- **Success Criteria:** Typing `![[Title]]` on its own line produces a live tile matching SurfacePM's embed treatment (minus the handle); the raw syntax line never shows; a caret near the tile can't break it; deletion happens through its menu or a deliberate spanning selection, never a stray boundary keystroke.
 
 ### Sources
 
@@ -47,12 +47,11 @@
 
 #### D — Menus & Deletion
 
-- **D-1:** [confirmed] Creation affordance: "Embed Page" in the drag-handle menu. *(Placement scope — which grips carry the menu — still open, D-4.)*
+- **D-1:** [confirmed] Creation affordance: "Embed Page" in the rail grip's right-click menu, following the callout grip-menu mechanism.
 - **D-2:** [confirmed] An embedded tile's drag-handle menu carries "Page Source ▸" — a tree of Collections → Sets → Pages that re-aims the embed.
-- **D-3:** [confirmed] The embed is deletable only via its context menu.
-- **D-4:** [open] Where "Embed Page" lives — a new menu on every rail grip, an entry in the editor right-click Insert submenu, or both.
-- **D-5:** [open] Menu system for the grip menu — OS-native (the callout/table grip precedent, native tree via the cardMenu pattern) vs the React PickerMenu drill.
-- **D-6:** [open] The deletion guard's reach — whether a selection spanning the tile (⌘A → Delete, cut) may remove it, with only the boundary backspace refused.
+- **D-3:** [confirmed] Deletion happens through the tile's context menu or a deliberate spanning selection — the boundary backspace is refused.
+- **D-4:** [confirmed] All of it OS-native: the grip menu and the "Page Source ▸" recursive tree ride the native-menu pattern the callout, table, and card menus already use.
+- **D-5:** [confirmed] A selection spanning the tile deletes it like any content, and never collapses the tile into raw syntax — the widget stays rendered under selection.
 
 #### E — Performance & Lifecycle
 
