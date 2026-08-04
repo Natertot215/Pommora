@@ -1,86 +1,56 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { act, createElement } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
-import { EditorView } from '@codemirror/view'
-import { MarkdownEditor } from '@renderer/MarkdownPM'
+import { act } from 'react'
+import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
 import { useSession } from '@renderer/store'
 import type { EmbedMenuAction, EmbedMenuContext } from '@shared/embedMenu'
 import type { NexusTree } from '@shared/types'
 
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
 const calls: EmbedMenuContext[] = []
 let nextPick: EmbedMenuAction | null = null
-;(window as unknown as { nexus: unknown }).nexus = {
-  openPage: async () => ({
-    ok: true,
-    value: { id: 'x', title: 'Alpha', path: 'Notes/Alpha.md', frontmatter: {}, body: 'inner' },
-  }),
+stubEditorBridge({
   embedMenu: async (ctx: EmbedMenuContext) => {
     calls.push(ctx)
     return nextPick
   },
   setGripHot: () => {},
-}
+})
 
-const tree = {
-  collections: [
-    {
-      id: 'c1',
-      title: 'Notes',
-      path: 'Notes',
-      sets: [],
-      pages: [
-        { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
-        { id: 'p2', title: 'Beta', path: 'Notes/Beta.md' },
-        { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
-      ],
-      views: [],
-    },
-  ],
-} as unknown as NexusTree
+const pages = [
+  { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
+  { id: 'p2', title: 'Beta', path: 'Notes/Beta.md' },
+  { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
+]
 
-const conn: ConnectionsApi = {
-  ...buildPageIndex([
-    { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
-    { id: 'p2', title: 'Beta', path: 'Notes/Beta.md' },
-    { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
-  ]),
-  open: () => {},
-}
+const treeOf = (collectionPages: { id: string; title: string; path: string }[]): NexusTree =>
+  ({
+    collections: [
+      { id: 'c1', title: 'Notes', path: 'Notes', sets: [], pages: collectionPages, views: [] },
+    ],
+  }) as unknown as NexusTree
 
-let container: HTMLDivElement
-let root: Root
+const conn: ConnectionsApi = { ...buildPageIndex(pages), open: () => {} }
 
 beforeEach(() => {
   calls.length = 0
-  useSession.setState({ tree })
+  useSession.setState({ tree: treeOf(pages) })
 })
-afterEach(async () => {
-  await act(async () => root.unmount())
-  container.remove()
-})
+afterEach(cleanupEditor)
 
-async function mount(body: string): Promise<EditorView> {
-  container = document.createElement('div')
-  document.body.appendChild(container)
-  root = createRoot(container)
-  await act(async () => {
-    root.render(
-      createElement(MarkdownEditor, {
-        initialBody: body,
-        onChange: () => {},
-        connections: conn,
-        embedAncestors: ['Notes/EmbedHost.md'],
-      }),
-    )
-  })
-  const dom = container.querySelector('.cm-editor')
-  const v = dom && EditorView.findFromDOM(dom as HTMLElement)
-  if (!v) throw new Error('no EditorView')
-  return v
+const mount = (initialBody: string): Promise<EditorView> =>
+  mountEditor({ initialBody, connections: conn, embedAncestors: ['Notes/EmbedHost.md'] })
+
+/** Every page title the menu offered, at any depth of the pick tree. */
+const offeredTitles = (): string[] => {
+  const out: string[] = []
+  const walk = (n: { title?: string; children?: unknown[] }): void => {
+    if (n.title) out.push(n.title)
+    for (const ch of n.children ?? []) walk(ch as { title?: string })
+  }
+  for (const n of calls[0].tree) walk(n)
+  return out
 }
 
 /** Right-click a line's gutter strip — jsdom rects are all zero, so clientX −1 clears the hit-test.
@@ -107,13 +77,7 @@ describe('the embed grip menu, end to end', () => {
     await gripMenu(view, 'intro prose')
     expect(calls).toHaveLength(1)
     expect(calls[0].mode).toBe('create')
-    const titles: string[] = []
-    const walk = (n: { title?: string; children?: unknown[] }): void => {
-      if (n.title) titles.push(n.title)
-      for (const ch of n.children ?? []) walk(ch as { title?: string })
-    }
-    for (const n of calls[0].tree) walk(n)
-    expect(titles).toEqual(['Beta', 'Soup']) // Alpha embedded, EmbedHost is the host
+    expect(offeredTitles()).toEqual(['Beta', 'Soup']) // Alpha embedded, EmbedHost is the host
     expect(view.state.doc.toString()).toBe('intro prose\n\n![[Soup]]\n\n![[Alpha]]\n\nbelow')
   })
 
@@ -152,50 +116,23 @@ describe('the gate folds', () => {
 
   it('a bracket-bearing title is never offered — the syntax cannot express it', async () => {
     useSession.setState({
-      tree: {
-        collections: [
-          {
-            id: 'c1',
-            title: 'Notes',
-            path: 'Notes',
-            sets: [],
-            pages: [
-              { id: 'p9', title: 'Notes [Draft]', path: 'Notes/Notes [Draft].md' },
-              { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
-            ],
-            views: [],
-          },
-        ],
-      } as unknown as NexusTree,
+      tree: treeOf([
+        { id: 'p9', title: 'Notes [Draft]', path: 'Notes/Notes [Draft].md' },
+        { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
+      ]),
     })
     const view = await mount('intro prose')
     nextPick = null
     await gripMenu(view, 'intro prose')
-    const titles: string[] = []
-    const walk = (n: { title?: string; children?: unknown[] }): void => {
-      if (n.title) titles.push(n.title)
-      for (const ch of n.children ?? []) walk(ch as { title?: string })
-    }
-    for (const n of calls[0].tree) walk(n)
-    expect(titles).toEqual(['Soup'])
+    expect(offeredTitles()).toEqual(['Soup'])
   })
 
   it('a read-only editor pops no grip menu at all', async () => {
-    container = document.createElement('div')
-    document.body.appendChild(container)
-    root = createRoot(container)
-    await act(async () => {
-      root.render(
-        createElement(MarkdownEditor, {
-          initialBody: 'some prose',
-          onChange: () => {},
-          connections: conn,
-          readOnly: true,
-        }),
-      )
+    const view = await mountEditor({
+      initialBody: 'some prose',
+      connections: conn,
+      readOnly: true,
     })
-    const view = EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement)
-    if (!view) throw new Error('no view')
     await gripMenu(view, 'some prose')
     expect(calls).toHaveLength(0)
   })

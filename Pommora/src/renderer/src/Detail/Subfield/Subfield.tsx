@@ -8,7 +8,6 @@ import { SubfieldBreadcrumb } from './SubfieldBreadcrumb'
 import { DEFAULT_ITEMS, SubfieldItem, type SubfieldScope, isSubfieldItemId } from './subfieldItems'
 import './subfield.css'
 
-
 export function Subfield({ scope }: { scope?: SubfieldScope }): React.JSX.Element {
   const selection = useSession((s) => s.selection)
   const tree = useSession((s) => s.tree)

@@ -16,8 +16,8 @@ import {
 } from './editor/blockDrag'
 import { calloutGripMenu } from './editor/calloutGripMenu'
 import { embedGripMenu } from './editor/embedGripMenu'
-import { embedHostAncestors, embedTileRanges, embedTiles, resolutionNudge } from './editor/embedWidget'
-import { normalizeTitle, titleFromPath } from '@shared/connections'
+import { embedExclusions, embedTiles, resolutionNudge } from './editor/embedWidget'
+import { embeddable } from './editor/embedRanges'
 import { customCaret } from './editor/caret'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
@@ -127,15 +127,9 @@ export function MarkdownEditor({
       if (!conn) return []
       let pool = conn.candidates(query, AC_MAX * 2).filter((p) => p.title !== title)
       if (form === 'embed') {
-        // A page embeds once per document, never its own host chain, and never a title the
-        // syntax can't express — the same rules the grip menu's tree applies.
         const state = viewRef.current?.state
-        const taken = new Set<string>()
-        if (state) {
-          for (const t of embedTileRanges(state)) taken.add(normalizeTitle(t.title))
-          for (const a of embedHostAncestors(state)) taken.add(normalizeTitle(titleFromPath(a)))
-        }
-        pool = pool.filter((p) => !p.title.includes(']') && !taken.has(normalizeTitle(p.title)))
+        const taken = state ? embedExclusions(state) : new Set<string>()
+        pool = pool.filter((p) => embeddable(p.title, taken))
       }
       return pool.slice(0, AC_MAX)
     },
