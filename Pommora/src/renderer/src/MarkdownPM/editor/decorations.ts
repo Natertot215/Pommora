@@ -84,16 +84,20 @@ class CheckboxWidget extends WidgetType {
 // A non-replacing element pinned at a line's start (side -1) — e.g. the nested-quote bar, which must be a real
 // element to sit OVER the fill with its own rounded caps. Positioned + shaped entirely in CSS by its class.
 class LineWidget extends WidgetType {
-  constructor(readonly className: string) {
+  constructor(
+    readonly className: string,
+    readonly text?: string,
+  ) {
     super()
   }
   eq(o: LineWidget): boolean {
-    return o.className === this.className
+    return o.className === this.className && o.text === this.text
   }
   toDOM(): HTMLElement {
     const el = document.createElement('span')
     el.className = this.className
     el.setAttribute('aria-hidden', 'true')
+    if (this.text !== undefined) el.textContent = this.text
     return el
   }
 }
@@ -211,7 +215,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
     }
     if (it.kind === 'lineWidget') {
       ranges.push(
-        Decoration.widget({ widget: new LineWidget(it.className), side: -1 }).range(it.from),
+        Decoration.widget({ widget: new LineWidget(it.className, it.text), side: -1 }).range(it.from),
       )
       continue
     }
