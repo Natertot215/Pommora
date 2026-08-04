@@ -202,10 +202,20 @@ Live per-page refresh bus · per-embed zoom (`local_state` scope) · record-back
 
 - Phase 0 base: `90b97ff8` · shipped `59374823` — verdict: geometry HOLDS. Mid-doc + fence-adjacent: zero seats (vertical included, real layout). Doc edges: one visible boundary seat each, resolved by the guard's insertion-repair arm (folded into 2.3). Escape hatch not fired.
 - Phase 1 base: `59374823` · shipped `03d73226` (feature) + `d165dd34` (simplification) + `a7adaa4a` (gate fold). Gate: 2118/2118 · typecheck 0 · lint 0 · build green. Attack round: 1 High + 1 Medium + 1 Low + 1 Latent, all folded.
-- Phase 2 base: `a7adaa4a`
+- Phase 2 base: `a7adaa4a` · shipped `7d8b1847` (chassis) + `bbadc1bd` (widget/guards) + `2521cae2` (live-found fence hole) + `d92e68ce` (simplification) + `aa84d15a` (attack folds). Gate: 2135/2135 · typecheck 0 · lint 0 · build + showcase green · live pass (tile render, borders, caret hop, refusals, edit round-trip to disk, Esc, grip arm, sliver clicks, partial selections).
+- Phase 3 base: `aa84d15a`
 - Deviations:
   - **Lone-ness is trailing-tolerant only** — the gate proved (executed, five list shapes) that trim-both-sides made an indented `![[…]]` under a bullet an embed block mid-item: its grip and drop slot tore the list on one ordinary drag, because the same leading whitespace that made the line "lone" is what glues a continuation to its marker. A leading indent now reads as hosted context (inert token, rides its bullet), the same rule quotes and callouts already follow. Fixed at the derivation so every layer agrees at once.
   - **Display math joined the embed exclusion set** — an `![[…]]` inside `$$…$$` could claim first-in-document and demote the real embed to a duplicate; one line in `docEmbedLines`.
   - **Task 1.3's construct gate was removed as dead** — no line construct can match a lone `![[…]]` line, so the gate was a no-op no test could redden; a pin now documents the fact instead of a guard pretending to enforce it.
   - **Interim render accepted on record:** between this phase and 2.2's widget, a *claimed* lone-line embed renders as raw syntax (its token stands down for a tile that doesn't exist yet). Scratch-nexus content contains zero `![[` lines; the window closes when Phase 2 lands.
+- Phase 2 deviations & rulings:
+  - **The rebuild gate reads the cached scan** — the ±1-line `![[` string heuristic desynchronized the field from the scanner when a fence opened above a tile (attack-verified both directions, with a second-order un-editable line); the gate now compares the per-version cached scan's embed set, a net deletion.
+  - **The fence counts per tile** — a summed glue count let one tile's removal legalize gluing another; per-survivor comparison now.
+  - **The chassis re-anchors its border color** — custom properties inherit where border-color wouldn't, so a nested tile wore its host's border state (borderless host erased it, measured in real stylesheets); every `.tile-chassis` now declares its own.
+  - **The boundary repair carries `userEvent`** (the callout guard's own discipline; a filtered transaction rebuilds from startState and drops annotations).
+  - **The 2.2 autoscroll clause shipped late, in the gate fold** — the attack round caught it missing; the drag modules now validate their explicit scroller and climb axis-aware when it can't scroll.
+  - **Attack F5 rejected with evidence:** "ancestors only wired from PageView" — `PageEmbed` self-appends its own path unconditionally, so every PageEmbed host gets cycle protection and chain growth; `MarkdownBlock` has no page identity to thread and no cycle path through it. The breaker's repro exercised only the block host, whose behavior is the intended one.
+  - **Live-found:** the fence guard's original hole (backspace ate the lone fencing blank) — found driving the real app, fixed as `gluedOf`, pinned.
+  - Walkthrough seeds carried forward: SurfacePM visual baseline after the chassis fold · host block-drag over a tile · scroll-past `page:open` refetch (pairs with 5.2) · mid-doc boundary-seat mouse test · nested-tile border states (F3's fix, visually).
 - Rulings: —
