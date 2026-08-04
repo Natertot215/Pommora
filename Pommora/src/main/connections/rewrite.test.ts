@@ -80,9 +80,12 @@ describe('the embed sweep', () => {
     )
   })
 
-  it('a fenced sample of either syntax stays a sample', () => {
-    const body = '```\n[[Old]]\n![[Old]]\n```\n![[Old]]'
-    expect(rewriteConnections(body, 'Old', 'New')).toBe('```\n[[Old]]\n![[Old]]\n```\n![[New]]')
+  it('a fenced sample of either syntax stays a sample — under a LENGTH-CHANGING rename', () => {
+    // Same-length fixtures can't see a mask misread; the offsets must survive real drift.
+    const body = '[[Old]]\n![[Old]]\n```\n[[Old]]\n![[Old]]\n```\n![[Old]]'
+    expect(rewriteConnections(body, 'Old', 'A Much Longer Title')).toBe(
+      '[[A Much Longer Title]]\n![[A Much Longer Title]]\n```\n[[Old]]\n![[Old]]\n```\n![[A Much Longer Title]]',
+    )
   })
 
   it('mentionsTitle reaches embed-only bodies; scanConnections still never counts them', () => {

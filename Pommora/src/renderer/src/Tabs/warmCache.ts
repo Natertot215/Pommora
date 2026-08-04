@@ -72,6 +72,12 @@ export function dropPageDetail(path: string): void {
   detailByPath.delete(path)
 }
 
+/** The rename cascade rewrites bodies nexus-wide — every cached detail is suspect, not just the
+ *  renamed path's. A 40-entry accelerator refills in one fetch per visible tile. */
+export function clearPageDetails(): void {
+  detailByPath.clear()
+}
+
 /** Drop every warm `pageDetail` captured for `path`, across all tabs — a frontmatter fact changed
  *  outside the open copy, and a warm return would resurrect the pre-write value. Editor state and
  *  scroll stay warm; only the detail refetches. */

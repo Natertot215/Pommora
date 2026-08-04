@@ -19,7 +19,7 @@ import {
 } from '@shared/blocks'
 import { readKey, writeKey } from './db/localState'
 import { normalizeTitle } from '@shared/connections'
-import { scanConnections } from './connections/scan'
+import { mentionsTitle } from './connections/scan'
 import { rewriteConnections } from './connections/rewrite'
 import { newId } from './ids'
 import { atomicWriteFile, pathExists, trashFileFlat } from './io/atomicWrite'
@@ -268,7 +268,7 @@ export async function rewriteBlockConnections(
       } catch {
         return
       }
-      if (!scanConnections(body).some((c) => c.normalizedTitle === oldKey)) return
+      if (!mentionsTitle(body, oldKey)) return
       const next = rewriteConnections(body, oldTitle, newTitle)
       if (next !== body) await atomicWriteFile(file, next)
     })
