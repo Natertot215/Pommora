@@ -9,6 +9,12 @@ Changelog + the home for locked decisions — what shipped and the calls that go
 
 ### Completion Timeline (Descending)
 
+#### Embed Tiles Learn Height, Tight Seams, and Honest Carets (2026-08-04)
+
+Tiles took a bottom-edge resize — SurfacePM's south-edge gesture, the height persisted per host page and target in `nexus.db` (a per-machine viewing preference, never page content) and carried across remint with the folds. The review pipeline earned its keep: the simplifier caught the handle mounting inside the tile's `Suspense` (absent for the whole loading frame) and a cross-suite flake rooted in a fixture missing fields the tree walk dereferences; the breaker caught the drop re-deriving its height from a possibly-detached DOM node — a zero that would silently poison the page's entire height map — plus the heights load racing the warm scroll restore and the destroy-path adoption guard leaking every deleted tile's nested editor.
+
+The live-driven round then made tiles sit in the page like blocks: the banner parks on the tile's own scroll exactly as the full page header does (the editor's scroll timeline re-homed at the tile, same keyframes), the fencing blanks and the tile line's text strut render closed so the space stays mechanical, a click on the tile's line seats the caret by its nearer edge instead of CM's always-backward atomic snap, and the drawn caret survives every boundary seat — a null measurement side flips to the surviving side, a collapsed seam floors back to a full bar. → [[MarkdownPM]] §II. Embeddings.
+
 #### The Editor Bug-Hunt (2026-08-03)
 
 Both standing MarkdownPM Fix Log bugs closed, with the hunt's finds folded in the same pass.

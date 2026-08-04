@@ -66,7 +66,7 @@ The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set
 
 #### II. Swift Origins
 
-Pommora was first built as a native SwiftUI app — that build was active for around one month and designed and versioned the entire paradigm; React was initially scoped as an alternative contingency but was eventually determined to be the best long-term approach. The Swift build is archived at `// The Studio // Archive // Pommora` — source; its git history lives on the `swift` branch.
+Pommora was first built as a native SwiftUI app — that build was active for around one month and designed and versioned the entire paradigm; React was initially an alternative contingency but was eventually determined to be the best long-term approach. The Swift build is archived at `// The Studio // Archive // Pommora` — source; its git history lives on the `swift` branch.
 
 - **Why This Matters:** The initial rebuild brought along now obsolete swift-based code; swift-compatibility is not a constraint — any code that may appear functional but is solely an artifact of the swift origin must be flagged for removal.
 

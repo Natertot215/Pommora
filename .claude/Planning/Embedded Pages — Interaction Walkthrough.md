@@ -14,6 +14,8 @@ The pre-ship interaction checklist, hand-walked across every surface an embed ca
 6. Page Preview: tiles in a preview · warm reopen · `![[` autocomplete there; and in a table cell (must NOT fire).
 7. One real ⌘Q mid-debounce (type in a tile, quit immediately, relaunch — the edit should be on disk).
 8. In-app delete → trash restore of an embedded page through the real UI.
+9. The resize edge by hand: grab feel at real pointer speeds (activation is instant — does the strip catch, or fight text selection?), drag near the minimum floor, Escape mid-drag restoring, and whether the tile's new height feels right after a reload. The drag + persistence are CDP-verified; the *feel* isn't.
+10. The seam round by hand: scroll inside a banner tile (the band should slide away like a page header); click above/below tiles at real speeds (caret should land the near side, visible every time); type at a seam (the blank opens into a visible line, then closes back when emptied); and the tightened gaps at your zoom steps.
 
 
 ### A — The Page Editor (the feature's home)
