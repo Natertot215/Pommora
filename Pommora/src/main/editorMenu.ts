@@ -169,6 +169,7 @@ function pommoraItems(wc: WebContents, s: FormatState): MenuItemConstructorOptio
     {
       label: 'Insert',
       submenu: [
+        { label: 'Page', click: act('block:page') },
         { label: 'Table', click: act('block:table') },
         {
           label: 'Blockquote',
