@@ -118,7 +118,6 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 - Perf debt: no row virtualization yet (every row mounts, which bites at thousands), and an external value edit doesn't live-refresh an open table. The one-view-mounted multi-tab design deliberately dodges needing table virtualization.
 - iCloud-sync readiness (future) — `serializeOnFile` can't coordinate with the iCloud daemon under LWW, `.nexus/nexus.db` needs sync-exclusion, and the walk has to skip `.icloud` placeholders.
 - Mobile iOS companion — parked, spec at `.claude/Mobile/MobileSpec.md`, no build commitment.
-- Editor deep cut (post-scan-cache): the per-caret line/rail loop still walks every line — the full StateField split is the remaining step; needs live-editor verification.
 - Eight renderer sites repeat `if (!res.ok) showError(res.error.message)` — one `reportIfFailed(res)` helper collapses them when a ninth appears.
 - `SessionState.error` and `pageError` hold strings while the wire carries `PommoraError` whole — widening them is near-zero churn whenever a surface wants to branch on `code`.
 - **The kind key is a DELIBERATE second identity source — do not consolidate it away.** The file's kind key and its folder's sidecar declare the same thing on purpose: their *disagreement is the detection signal* that makes a mislocated file recognisable at all. A checksum, not the two-writers defect — the one place that lesson does not apply.
@@ -131,7 +130,7 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 - View format/grouping/banner saves still trigger a full vault walk — an optimistic view-slice patch skips it; `submitPropertyRename`'s walk wants the same targeted-patch treatment.
 - The sidebar mode cross-fade renders two full trees, each building its own DnD index — share the tree-keyed index memo across the exit/enter layers.
 - Id-keyed inline renames (ViewPane's view rename, the property-rename channel) each re-roll the `EditableInput` wrapper `RenamableTitle` provides for path-keyed rows — a state-driven `RenamableLabel` twin unifies them.
-- The rest of the gesture family (`sidebarDnd`, the table column drag, `useOptionReorder`/`useStatusReorder`, MarkdownPM's `listDrag`/`blockDrag`, SurfacePM's `pointerDrag`) still hand-roll the skeleton `gesture.ts` owns — migrate each onto `usePointerGesture()` opportunistically as its file is next touched.
+- The rest of the gesture family (`sidebarDnd`, the table column drag, `useOptionReorder`/`useStatusReorder`, MarkdownPM's `listDrag`/`blockDrag`, SurfacePM's `pointerDrag`) still hand-roll the skeleton `gesture.ts` owns — migrate each onto `usePointerGesture()` opportunistically as its file is next touched. `listDrag`/`blockDrag` carry a real blocker: both act on a sub-threshold release (checkbox toggle, heading fold), and the skeleton has no ended-without-activating hook — add one (an `onTap`) when the migration happens, don't approximate it with `teardown`.
 - **The full-weight inert affordances are adjudicated KEEP — never re-flag them.** The four unimplemented view tiles render at full weight and swallow the click, and the group-band "+" for structural Set bands carries an `aria-label` with no handler. Both read as live controls and do nothing on purpose; they wait on their features, not on a dimming pass.
 
 ### Lessons
@@ -162,6 +161,6 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 
 - The "File" property icon gets clipped by its vertical row padding on the ViewPane.
 - The link-rename field shows a leading empty space — a visual inset, not a stored character (deprioritized).
-- Block-math drag corrupts the doc: a multi-line `$$…$$` span with a blank line inside parses as two halves with orphaned `$$` (`blockModel.ts`, test-pinned but unguarded).
-- A single-word bullet that wraps drops the word below the marker — the `line-height` cap is the only part of the fix in place. → [[MarkdownPM]].
+- A bare `>` separator line splits a quote or callout into three blocks — `isBlockquoteLine` wants whitespace after the `>`, so the standard blank-inside-a-quote line reads as a paragraph, growing a mid-quote grip and drop slot (`blockModel.ts`).
+- `*` and `•` bullets render as plain text while the drag layer parses them as list markers — `LIST_MARKER_RE` accepts `[-*+•]` but no construct branch renders them, and `* [ ]` *does* render as a checkbox; whether `*` becomes a rendered bullet or the parser narrows is Nathan's call. → [[MarkdownPM]].
 - The Set-Card drag flash (drop snaps back, then jumps on reload) — the optimistic moveSet order patch is in; wants one live drag before this line drops. → [[CardViewPM]].

@@ -108,15 +108,19 @@ The wikilink resolver is **wired** to `@shared/connections`: resolution, styling
 
 - **Connection detection reuses `@shared/connections`, not its own regex** — so the editor can't drift from the scanner / resolver / rename-cascade, and a connection re-resolves against the live layer with no doc reparse and no editor-local connection cache.
 
-- **Hot-path reads share one per-doc-version scan** — the doc string and the whole-doc line / fence / callout scan are computed once per document version and cached against the CM6 doc, so decoration builds, callout guards and autocomplete read one scan instead of re-walking per keystroke. Inline tokenizing is deliberately *not* cached: it's scoped to the visible ranges, which is why a scroll rebuilds decorations too.
+- **Hot-path reads share one per-doc-version derivation** — the doc string, the whole-doc line / fence / callout scan, AND the caret-free per-line decoration intents are each computed once per document version and cached against the CM6 doc. A caret move re-derives only its own affected lines (its line, plus its fence's edge lines) and assembles the rest from the cache, so per-caret cost stops scaling with document length; the pure whole-doc derivation survives as the reference an equivalence test pins the assembly against. Inline tokenizing is deliberately *not* cached: it's scoped to the visible ranges, which is why a scroll rebuilds decorations too.
 
 - **All offsets are character offsets (UTF-16), never bytes** — micromark/mdast reports char offsets, dissolving the cmark byte-offset column-bug class; still guard astral-plane characters at parser boundaries.
 
 - **Box constructs float with an outer gap, never a line margin** — CM6 line margins break caret and arrow mapping, since only padding is measured. Each box paints its fill as an inset `::after` and pads its first and last line by its own gap knob, leaving space *outside* the fill so it reads as separated even with no blank line between neighbours. A box nested in a box drops its gap; the outer one already owns that spacing.
 
+- **A list line wraps only inside its content span** — the line itself is `white-space: pre` and the item's content wears the one wrapping region (`md-li-text`). The marker zone is saturated with soft-wrap opportunities the line must suppress: the marker-content space, an ordered number's period, and the atomic `cm-widgetBuffer` imgs CM plants beside every replace decoration — any one of them would drop a long unbroken word below its marker instead of filling beside the glyph. Don't re-enable wrapping on the line or remove the span without re-testing a single-long-word item at a narrow width.
+
+- **Display math is a block to every layer that can move or mark it** — a pair of LONE `$$` lines (fenceBlocks-style pairing; never the token layer's span regex, whose lazy pairing one stray `$$` flips document-wide). `editor/mathRanges.ts` is the one derivation, read by the block resolver, the list-item gesture, and the decoration pass — which renders a marker-lookalike line inside a formula as math source, never as a bullet with a live drag glyph. Indented math rides its list item whole (internal blank lines can't split the item); hanging delimiters and single-line `$$x$$` stay inline.
+
 ### Known Issues
 
-- **A bullet whose content is one long unbroken word drops the word below the marker** — the line-breaker takes the soft break between marker and content rather than force-breaking the word. `+` and arrow items share it; hiding the source space (the ordered/checkbox fix) doesn't survive a CM6 replace decoration, so only the glyph's `line-height` cap shipped.
+- **`*` and `•` bullets render as plain text** — the marker parser accepts them (so the drag layer sees list lines) but no construct branch renders them, and `* [ ]` *does* render as a checkbox. Whether `*` becomes a rendered bullet or the parser narrows is an open call.
 
 ### Deferred
 
