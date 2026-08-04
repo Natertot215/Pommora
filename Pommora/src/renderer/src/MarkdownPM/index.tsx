@@ -19,6 +19,7 @@ import { embedGripMenu } from './editor/embedGripMenu'
 import {
   type EmbedHeightsApi,
   embedExclusions,
+  embedField,
   embedTiles,
   resolutionNudge,
   setEmbedHeights,
@@ -303,17 +304,22 @@ export function MarkdownEditor({
       // != null, not truthy — a saved top-of-page (0) must still override CM's own restore scroll.
       if (saved?.scrollTop != null) view.scrollDOM.scrollTop = saved.scrollTop
     }
+    // Embed heights load alongside — tile heights move content by hundreds of px, so a scroll
+    // restored before they land would faithfully anchor the wrong content. A height the user
+    // already dragged while the load was in flight wins over the loaded value.
     const foldsLoad = foldsRef.current?.load()
-    if (foldsLoad)
-      void foldsLoad.then((keys) => {
-        applySavedFolds(view, keys)
+    const heightsLoad = embedHeightsRef.current?.load()
+    if (foldsLoad || heightsLoad)
+      void Promise.all([foldsLoad, heightsLoad]).then(([keys, h]) => {
+        if (keys) applySavedFolds(view, keys)
+        if (h && Object.keys(h).length > 0)
+          view.dispatch({
+            effects: setEmbedHeights.of({ ...h, ...view.state.field(embedField).heights }),
+          })
         restoreScroll()
       })
     else requestAnimationFrame(restoreScroll)
     void tableHeadingColsRef.current?.load().then((indices) => applySavedHeadingCols(view, indices))
-    void embedHeightsRef.current?.load().then((h) => {
-      if (Object.keys(h).length > 0) view.dispatch({ effects: setEmbedHeights.of(h) })
-    })
     // The header parks on scroll via a CSS scroll-driven animation (Styles.css) — no JS scroll handler.
     const unsubMenu = menuRef.current?.onAction((action) => applyEditorAction(view, action))
     return () => {

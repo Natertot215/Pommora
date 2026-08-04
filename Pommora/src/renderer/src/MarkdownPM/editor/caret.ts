@@ -10,12 +10,24 @@ function caretMarkers(view: EditorView): RectangleMarker[] {
   const out: RectangleMarker[] = []
   for (const r of view.state.selection.ranges) {
     const cursor = r.empty ? r : EditorSelection.cursor(r.head, r.assoc)
-    for (const m of RectangleMarker.forRange(view, 'mdpm-caret', cursor)) {
-      out.push(
-        m.height > cap
-          ? new RectangleMarker('mdpm-caret', m.left, m.top, m.width, view.defaultLineHeight)
-          : m,
+    // A seat whose assoc side faces a replaced range has no coords on that side, and forRange
+    // returns nothing — the caret would silently not render at any seat bordering an embed tile.
+    // The surviving side always measures; flip to it.
+    let markers = RectangleMarker.forRange(view, 'mdpm-caret', cursor)
+    if (markers.length === 0)
+      markers = RectangleMarker.forRange(
+        view,
+        'mdpm-caret',
+        EditorSelection.cursor(cursor.head, (cursor.assoc || 1) > 0 ? -1 : 1),
       )
+    for (const m of markers) {
+      if (m.height > cap)
+        out.push(new RectangleMarker('mdpm-caret', m.left, m.top, m.width, view.defaultLineHeight))
+      // A collapsed line (an embed's fencing blank) measures as a sliver — draw a legible caret
+      // seated at the seam rather than an invisible one.
+      else if (m.height < 4)
+        out.push(new RectangleMarker('mdpm-caret', m.left, m.top, m.width, view.defaultLineHeight))
+      else out.push(m)
     }
   }
   return out

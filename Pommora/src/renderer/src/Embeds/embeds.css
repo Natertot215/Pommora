@@ -77,6 +77,13 @@
 .pgembed {
   /* KNOB — the embed banner band's height. */
   --embed-banner-h: 96px;
+  /* Re-home the editor's scroll timeline at the tile, where the banner can bind it — the shell's
+     own scope (which serves the full page's header) is stood down inside a tile. Each nested tile
+     re-scopes, so every banner tracks its OWN page's scroller. */
+  timeline-scope: --mdpm-scroll;
+}
+.pgembed .mdpm-shell {
+  timeline-scope: none;
 }
 .pgembed .mdpm-banner {
   position: absolute;
@@ -85,6 +92,15 @@
   right: 0;
   height: var(--embed-banner-h);
   z-index: 2;
+  /* The page's own park, at tile scale: the band scrolls away with the content instead of sitting
+     glued to the tile's top. Same keyframes, range retargeted to the band's height. */
+  --header-zone: var(--embed-banner-h);
+  will-change: transform;
+  animation-name: mdpm-header-park;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-timeline: --mdpm-scroll;
+  animation-range: 0 var(--embed-banner-h);
 }
 .pgembed.has-banner .mdpm-editor .cm-content {
   padding-top: calc(var(--embed-banner-h) + 16px * var(--mdpm-scale));

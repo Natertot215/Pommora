@@ -6,6 +6,7 @@
 import { createRoot, type Root } from 'react-dom/client'
 import { createElement, Fragment, lazy, Suspense } from 'react'
 import {
+  EditorSelection,
   EditorState,
   type Extension,
   Facet,
@@ -105,6 +106,10 @@ function EmbedResizeHandle({
       if (!span) return
       const startH = span.getBoundingClientRect().height
       const startY = e.clientY
+      // The drop commits the height the drag computed, never a DOM re-read — a tile degrading under
+      // the pointer (target deleted or renamed mid-drag) detaches the span, and a detached rect's 0
+      // would fail the main-process guard and silently refuse every later save on this page.
+      let lastH = Math.round(startH)
       beginGesture({
         el: strip,
         event: e,
@@ -114,13 +119,13 @@ function EmbedResizeHandle({
           return undefined
         },
         onDragMove: (ev) => {
-          span.style.height = `${Math.max(EMBED_MIN_H, Math.round(startH + ev.clientY - startY))}px`
+          lastH = Math.max(EMBED_MIN_H, Math.round(startH + ev.clientY - startY))
+          span.style.height = `${lastH}px`
           view.requestMeasure()
         },
         teardown: () => span.classList.remove('is-resizing-tile'),
         onDrop: () => {
-          const h = Math.round(span.getBoundingClientRect().height)
-          const heights = { ...view.state.field(embedField).heights, [targetId]: h }
+          const heights = { ...view.state.field(embedField).heights, [targetId]: lastH }
           view.dispatch({ effects: setEmbedHeights.of(heights) })
           view.state.facet(embedHost).saveHeights?.(heights)
         },
@@ -231,19 +236,28 @@ class EmbedTileWidget extends WidgetType {
   }
 
   destroy(dom: HTMLElement): void {
-    // CM hands a tile's DOM to its successor widget on rebuilds and relocations — a node still in
-    // the document is ADOPTED, not dead, and unmounting its root would blank the reused tile.
-    if (dom.isConnected) return
+    // CM hands a tile's DOM to its successor widget on rebuilds and relocations, and calls destroy
+    // BEFORE detaching on a real delete — so connectivity is only decidable after the update
+    // settles: an adopted node is still in the document (unmounting would blank the reused tile),
+    // a deleted one is gone and its root must unmount or the nested editor leaks whole.
     const d = dom as TileDom
-    const root = d._root
-    d._root = undefined
-    if (root) queueMicrotask(() => root.unmount())
+    queueMicrotask(() => {
+      const root = d._root
+      if (d.isConnected || !root) return
+      d._root = undefined
+      root.unmount()
+    })
   }
 
   ignoreEvent(): boolean {
     return true
   }
 }
+
+const fenceLine = Decoration.line({ class: 'mdpm-embed-fence' })
+// The tile's own line drops its text strut — the leading a line-height reserves for glyphs that
+// aren't there — so the tile sits at its margins, not a phantom line of space below them.
+const embedLine = Decoration.line({ class: 'mdpm-embed-line' })
 
 function buildTiles(
   state: EditorState,
@@ -259,11 +273,22 @@ function buildTiles(
   const interactive = host.ancestors.length <= 1
   const builder = new RangeSetBuilder<Decoration>()
   const ranges: TileRange[] = []
+  // The fencing blanks are mechanism, not content: they keep their seat and their deletion
+  // refusal, but render collapsed so the tile sits against its real neighbors. A blank shared
+  // between two tiles is one line and gets the class once.
+  let lastFence = -1
   for (const e of claimed) {
     const r = conn.resolve(e.title)
     if (r.status !== 'resolved' || !r.page) continue
     const path = r.page.path
     const cyclic = host.ancestors.includes(path)
+    const tileLine = state.doc.lineAt(e.from)
+    if (tileLine.number > 1) {
+      const above = state.doc.line(tileLine.number - 1)
+      if (above.text.trim() === '' && above.from !== lastFence)
+        builder.add(above.from, above.from, fenceLine)
+    }
+    builder.add(tileLine.from, tileLine.from, embedLine)
     builder.add(
       e.from,
       e.to,
@@ -280,6 +305,13 @@ function buildTiles(
         ),
       }),
     )
+    if (tileLine.number < state.doc.lines) {
+      const below = state.doc.line(tileLine.number + 1)
+      if (below.text.trim() === '') {
+        builder.add(below.from, below.from, fenceLine)
+        lastFence = below.from
+      }
+    }
     // The cycle token joins too: exclusions already cover it via the ancestors chain, and without
     // a range here it would be the one replaced line with no absorb and no guard.
     ranges.push({ from: e.from, to: e.to, path, title: e.title })
@@ -291,8 +323,14 @@ function buildTiles(
 // already pays for, so the gate can never disagree with the scanner about what an embed is (a fence
 // typed above a tile changes the exclusion set without ever touching the tile's own lines).
 function editAffectsEmbeds(value: EmbedTiles, tr: Transaction): boolean {
-  for (const r of value.ranges)
-    if (tr.changes.touchesRange(Math.max(0, r.from - 1), r.to + 1) !== false) return true
+  const doc = tr.startState.doc
+  for (const r of value.ranges) {
+    // The whole adjacent lines, not just the boundary newlines — an interior edit on a neighbor
+    // can flip it blank ↔ non-blank, which moves the fence collapse.
+    const from = doc.lineAt(Math.max(0, r.from - 1)).from
+    const to = doc.lineAt(Math.min(doc.length, r.to + 1)).to
+    if (tr.changes.touchesRange(from, to) !== false) return true
+  }
   const before = docScan(tr.startState.doc).embeds
   const after = docScan(tr.state.doc).embeds
   if (before.length !== after.length) return true
@@ -482,6 +520,34 @@ export function embedExclusions(state: EditorState): Set<string> {
   return out
 }
 
+// A click landing on a tile's line seats by NEARER edge — CM's atomic default always snaps
+// backward, so a click at a tile's bottom sliver would otherwise teleport the caret to the seat
+// above the whole tile. Clicks inside the widget's own box stay the widget's (ignoreEvent).
+const embedClickSeat = EditorView.domEventHandlers({
+  mousedown(event, view) {
+    if (event.button !== 0) return false
+    if ((event.target as HTMLElement).closest?.('.mdpm-embed-tile')) return false
+    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
+    if (pos === null) return false
+    for (const r of view.state.field(embedField).ranges) {
+      if (pos < r.from || pos > r.to) continue
+      const block = view.lineBlockAt(r.from)
+      const yDoc =
+        event.clientY - view.scrollDOM.getBoundingClientRect().top + view.scrollDOM.scrollTop
+      const below = yDoc > (block.top + block.bottom) / 2
+      const len = view.state.doc.length
+      const seat = below
+        ? EditorSelection.cursor(Math.min(len, r.to + 1), 1)
+        : EditorSelection.cursor(Math.max(0, r.from - 1), -1)
+      view.dispatch({ selection: seat, userEvent: 'select.pointer' })
+      view.focus()
+      event.preventDefault()
+      return true
+    }
+    return false
+  },
+})
+
 export function embedTiles(host: EmbedHost): Extension {
-  return [embedHost.of(host), embedField, embedAtomic, embedGuard, editingExit]
+  return [embedHost.of(host), embedField, embedAtomic, embedGuard, embedClickSeat, editingExit]
 }
