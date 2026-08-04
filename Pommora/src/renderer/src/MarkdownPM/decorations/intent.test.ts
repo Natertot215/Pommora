@@ -1,6 +1,39 @@
 import { describe, it, expect } from 'vitest'
 import { tokenize, activeTokenIndices } from '../tokens'
-import { decorationsFor, type DecoIntent } from './intent'
+import {
+  assembleLineIntents,
+  decorationsFor,
+  docLineIntents,
+  scanDoc,
+  type DecoIntent,
+} from './intent'
+
+describe('cached assembly ≡ pure derivation', () => {
+  // The live build path assembles line intents from the per-version cache, re-deriving only the
+  // caret-affected lines. This pin holds it byte-equivalent to the pure whole-doc reference at EVERY
+  // caret position of every corpus doc — if a construct gains a new caret dependency without joining
+  // caretAffectedLines, this goes red.
+  const corpus = [
+    '- item\n\ttwo words here\n# Head\nbody\n---\npara',
+    '> [!note] Head\n> - inner\n> > nested\nafter',
+    '```js\nconst a = 1\n\nconst b = 2\n```\ntail',
+    '> quote\n> ```\n> code\n> ```\n> after',
+    '$$\nx=1\n\n- b\n$$\n- real\n1. num\n- [ ] task',
+    '→ arrow\n+ plus\n  - nested\n    - deeper\nplain **bold** text',
+    '',
+    '- ',
+  ]
+  const sorted = (xs: DecoIntent[]): string[] => xs.map((x) => JSON.stringify(x)).sort()
+  it.each(corpus.map((doc, i) => [i, doc] as const))('doc %#', (_i, doc) => {
+    const scan = scanDoc(doc)
+    const cached = docLineIntents(scan)
+    for (let sel = -1; sel <= doc.length; sel++) {
+      const pure = decorationsFor(doc, [], new Set(), sel, scan)
+      const assembled = assembleLineIntents(scan, cached, sel)
+      expect(sorted(assembled), `caret ${sel}`).toEqual(sorted(pure))
+    }
+  })
+})
 
 describe('decoration intents', () => {
   it('inactive bold → md-bold class on content + hidden markers', () => {
