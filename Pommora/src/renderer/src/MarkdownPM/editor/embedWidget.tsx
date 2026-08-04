@@ -17,6 +17,7 @@ import {
 } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, WidgetType } from '@codemirror/view'
 import { cx } from '@renderer/design-system/cx'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { normalizeTitle, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
 import { docScan } from './docCache'
@@ -29,6 +30,8 @@ export interface EmbedHost {
   /** The embed-host chain above this editor — cycle guard + nesting depth. A tile is interactive
    *  only while the chain is at most one deep; a target already in the chain renders inert. */
   ancestors: readonly string[]
+  /** Present only where heights can persist (the page surface) — the handle hides otherwise. */
+  saveHeights?: (heights: Record<string, number>) => void
 }
 
 const embedHost = Facet.define<EmbedHost, EmbedHost>({
@@ -42,6 +45,19 @@ export const setEmbedEditing = StateEffect.define<string | null>()
  *  connection styling react to a rename/delete/restore without waiting for a caret move. */
 export const resolutionNudge = StateEffect.define<null>()
 
+/** Replaces the host page's persisted tile heights (target page id → px) — loaded once at mount,
+ *  updated whole on each resize commit. */
+export const setEmbedHeights = StateEffect.define<Record<string, number>>()
+
+/** Persistence callbacks the host page supplies; absent (preview, blocks) hides the resize handle. */
+export interface EmbedHeightsApi {
+  load: () => Promise<Record<string, number>>
+  save: (heights: Record<string, number>) => void
+}
+
+/** The resize floor — SurfacePM's own tile minimum. */
+export const EMBED_MIN_H = 64
+
 export interface TileRange {
   from: number
   to: number
@@ -53,6 +69,8 @@ interface EmbedTiles {
   deco: DecorationSet
   ranges: TileRange[]
   editing: string | null
+  /** Persisted tile heights, target page id → px; {} until the host's load lands. */
+  heights: Record<string, number>
 }
 
 // PageEmbed mounts MarkdownEditor, which registers this extension — a static import would be the
@@ -66,6 +84,55 @@ interface TileDom extends HTMLElement {
   _root?: Root
 }
 
+/** The bottom-edge resize strip: drag sets the tile's height live (writing the widget span and
+ *  remeasuring — CM's observer watches only scrollDOM, so a widget growing inside it is invisible
+ *  without requestMeasure), Escape restores, drop persists through the host's save callback. */
+function EmbedResizeHandle({
+  view,
+  targetId,
+}: {
+  view: EditorView
+  targetId: string
+}): React.JSX.Element {
+  const beginGesture = usePointerGesture()
+  return createElement('div', {
+    className: 'mdpm-embed-resize',
+    onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return
+      e.preventDefault()
+      const span = (e.currentTarget as HTMLElement).parentElement
+      if (!span) return
+      const startH = span.getBoundingClientRect().height
+      const startY = e.clientY
+      beginGesture({
+        el: e.currentTarget as HTMLElement,
+        event: e,
+        activation: 0, // a resize arms on the first move, the SurfacePM edge precedent
+        onActivate: () => {
+          span.classList.add('is-resizing-tile')
+          return undefined
+        },
+        onDragMove: (ev) => {
+          span.style.height = `${Math.max(EMBED_MIN_H, Math.round(startH + ev.clientY - startY))}px`
+          view.requestMeasure()
+        },
+        onDrop: () => {
+          span.classList.remove('is-resizing-tile')
+          const h = Math.round(span.getBoundingClientRect().height)
+          const heights = { ...view.state.field(embedField).heights, [targetId]: h }
+          view.dispatch({ effects: setEmbedHeights.of(heights) })
+          view.state.facet(embedHost).saveHeights?.(heights)
+        },
+        onAbort: () => {
+          span.classList.remove('is-resizing-tile')
+          span.style.height = `${startH}px`
+          view.requestMeasure()
+        },
+      })
+    },
+  })
+}
+
 class EmbedTileWidget extends WidgetType {
   constructor(
     readonly path: string,
@@ -74,6 +141,8 @@ class EmbedTileWidget extends WidgetType {
     readonly interactive: boolean,
     readonly cyclic: boolean,
     readonly ancestors: readonly string[],
+    readonly targetId: string,
+    readonly height: number | undefined,
   ) {
     super()
   }
@@ -83,14 +152,16 @@ class EmbedTileWidget extends WidgetType {
       o.path === this.path &&
       o.editing === this.editing &&
       o.interactive === this.interactive &&
-      o.cyclic === this.cyclic
+      o.cyclic === this.cyclic &&
+      o.height === this.height
     )
   }
 
   // A real estimate (not the don't-estimate sentinel) so off-screen tiles hold scrollbar-true
-  // height before their first measure; CM corrects on render.
+  // height before their first measure; CM corrects on render. Tracks the persisted height so a
+  // resized tile reports true even before it scrolls in.
   get estimatedHeight(): number {
-    return 320
+    return this.height ?? 320
   }
 
   private renderInto(dom: TileDom, view: EditorView): void {
@@ -99,12 +170,15 @@ class EmbedTileWidget extends WidgetType {
       this.editing && 'is-editing-tile',
       !this.interactive && 'is-inert',
     )
+    if (this.height !== undefined) dom.style.height = `${this.height}px`
+    else dom.style.removeProperty('height')
     let root = dom._root
     if (!root) {
       root = createRoot(dom)
       dom._root = root
     }
-    const conn = view.state.facet(embedHost).getConn()
+    const host = view.state.facet(embedHost)
+    const conn = host.getConn()
     root.render(
       createElement(
         Suspense,
@@ -124,6 +198,9 @@ class EmbedTileWidget extends WidgetType {
             chrome: 'page',
           }),
         ),
+        this.interactive && host.saveHeights
+          ? createElement(EmbedResizeHandle, { view, targetId: this.targetId })
+          : null,
       ),
     )
   }
@@ -162,13 +239,17 @@ class EmbedTileWidget extends WidgetType {
   }
 }
 
-function buildTiles(state: EditorState, editing: string | null): EmbedTiles {
+function buildTiles(
+  state: EditorState,
+  editing: string | null,
+  heights: Record<string, number>,
+): EmbedTiles {
   const host = state.facet(embedHost)
   const conn = host.getConn()
   const embeds = docScan(state.doc).embeds
-  if (!conn || embeds.length === 0) return { deco: Decoration.none, ranges: [], editing }
+  if (!conn || embeds.length === 0) return { deco: Decoration.none, ranges: [], editing, heights }
   const claimed = claimedEmbeds(embeds, (t) => conn.resolve(t).status)
-  if (claimed.length === 0) return { deco: Decoration.none, ranges: [], editing }
+  if (claimed.length === 0) return { deco: Decoration.none, ranges: [], editing, heights }
   const interactive = host.ancestors.length <= 1
   const builder = new RangeSetBuilder<Decoration>()
   const ranges: TileRange[] = []
@@ -188,6 +269,8 @@ function buildTiles(state: EditorState, editing: string | null): EmbedTiles {
           interactive && !cyclic,
           cyclic,
           host.ancestors,
+          r.page.id,
+          heights[r.page.id],
         ),
       }),
     )
@@ -195,7 +278,7 @@ function buildTiles(state: EditorState, editing: string | null): EmbedTiles {
     // a range here it would be the one replaced line with no absorb and no guard.
     ranges.push({ from: e.from, to: e.to, path, title: e.title })
   }
-  return { deco: builder.finish(), ranges, editing }
+  return { deco: builder.finish(), ranges, editing, heights }
 }
 
 // Rebuild when the doc's embed set itself moved — read from the SAME cached scan every keystroke
@@ -218,18 +301,22 @@ function editAffectsEmbeds(value: EmbedTiles, tr: Transaction): boolean {
 }
 
 export const embedField = StateField.define<EmbedTiles>({
-  create: (state) => buildTiles(state, null),
+  create: (state) => buildTiles(state, null, {}),
   update(value, tr) {
     let editing = value.editing
+    let heights = value.heights
     let nudged = false
     for (const e of tr.effects) {
       if (e.is(setEmbedEditing)) editing = e.value
       else if (e.is(resolutionNudge)) nudged = true
+      else if (e.is(setEmbedHeights)) heights = e.value
     }
     if (!tr.docChanged) {
-      return nudged || editing !== value.editing ? buildTiles(tr.state, editing) : value
+      return nudged || editing !== value.editing || heights !== value.heights
+        ? buildTiles(tr.state, editing, heights)
+        : value
     }
-    if (editAffectsEmbeds(value, tr)) return buildTiles(tr.state, editing)
+    if (editAffectsEmbeds(value, tr)) return buildTiles(tr.state, editing, heights)
     return {
       deco: value.deco.map(tr.changes),
       ranges: value.ranges.map((r) => ({
@@ -238,6 +325,7 @@ export const embedField = StateField.define<EmbedTiles>({
         to: tr.changes.mapPos(r.to, -1),
       })),
       editing,
+      heights,
     }
   },
   provide: (f) => EditorView.decorations.from(f, (v) => v.deco),

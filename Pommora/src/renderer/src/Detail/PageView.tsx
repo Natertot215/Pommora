@@ -92,6 +92,10 @@ export function PageView(): React.JSX.Element {
               load: async () => (await window.nexus.folds.get())[pageDetail.id] ?? [],
               save: (keys) => void window.nexus.folds.set(pageDetail.id, keys),
             }}
+            embedHeights={{
+              load: async () => (await window.nexus.embedHeights.get())[pageDetail.id] ?? {},
+              save: (heights) => void window.nexus.embedHeights.set(pageDetail.id, heights),
+            }}
             tableHeadingColumns={{
               load: async () => (await window.nexus.tableHeadingColumns.get())[pageDetail.id] ?? [],
               save: (indices) => void window.nexus.tableHeadingColumns.set(pageDetail.id, indices),

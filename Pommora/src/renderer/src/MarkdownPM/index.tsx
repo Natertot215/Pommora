@@ -16,7 +16,13 @@ import {
 } from './editor/blockDrag'
 import { calloutGripMenu } from './editor/calloutGripMenu'
 import { embedGripMenu } from './editor/embedGripMenu'
-import { embedExclusions, embedTiles, resolutionNudge } from './editor/embedWidget'
+import {
+  type EmbedHeightsApi,
+  embedExclusions,
+  embedTiles,
+  resolutionNudge,
+  setEmbedHeights,
+} from './editor/embedWidget'
 import { embeddable } from './editor/embedRanges'
 import { customCaret } from './editor/caret'
 import { calloutAtomic } from './editor/calloutAtomic'
@@ -60,6 +66,8 @@ interface Props {
   connections?: ConnectionsApi
   /** The embed-host chain above this editor — feeds the tile facet (cycle guard + nesting depth). */
   embedAncestors?: readonly string[]
+  /** Per-machine tile heights for this page; absent (preview, blocks) hides the resize handle. */
+  embedHeights?: EmbedHeightsApi
   folds?: FoldsApi
   tableHeadingColumns?: TableHeadingColsApi
   menu?: EditorMenuApi
@@ -81,6 +89,7 @@ export function MarkdownEditor({
   zoom = ZOOM_DEFAULT,
   connections,
   embedAncestors,
+  embedHeights,
   folds,
   tableHeadingColumns,
   menu,
@@ -101,6 +110,8 @@ export function MarkdownEditor({
   connectionsRef.current = connections
   const embedAncestorsRef = useRef<readonly string[]>(embedAncestors ?? [])
   embedAncestorsRef.current = embedAncestors ?? []
+  const embedHeightsRef = useRef(embedHeights)
+  embedHeightsRef.current = embedHeights
   const foldsRef = useRef(folds)
   foldsRef.current = folds
   const tableHeadingColsRef = useRef(tableHeadingColumns)
@@ -183,7 +194,13 @@ export function MarkdownEditor({
       ),
       // A claimed lone-line ![[Title]] renders as a live page tile (its own StateField — the
       // decoration ViewPlugin never reaches CM's height map).
-      embedTiles({ getConn: () => connectionsRef.current, ancestors: embedAncestorsRef.current }),
+      embedTiles({
+        getConn: () => connectionsRef.current,
+        ancestors: embedAncestorsRef.current,
+        saveHeights: embedHeightsRef.current
+          ? (h) => embedHeightsRef.current?.save(h)
+          : undefined,
+      }),
       // Grab a list glyph (•, number, or checkbox) to drag-reorder the item; click toggles/places caret.
       listDragExtension,
       // Block-drag rail handles: a hover grip on each draggable block's first line (paragraph/code/quote/list).
@@ -294,6 +311,9 @@ export function MarkdownEditor({
       })
     else requestAnimationFrame(restoreScroll)
     void tableHeadingColsRef.current?.load().then((indices) => applySavedHeadingCols(view, indices))
+    void embedHeightsRef.current?.load().then((h) => {
+      if (Object.keys(h).length > 0) view.dispatch({ effects: setEmbedHeights.of(h) })
+    })
     // The header parks on scroll via a CSS scroll-driven animation (Styles.css) — no JS scroll handler.
     const unsubMenu = menuRef.current?.onAction((action) => applyEditorAction(view, action))
     return () => {
