@@ -46,7 +46,13 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
     },
     candidates(query, limit = 20) {
       const q = normalizeTitle(query)
-      if (!q) return []
+      // An empty query browses the whole index alphabetically — the just-inserted embed opener's
+      // state; whether an empty query shows anything at all is the autocomplete hook's call.
+      if (!q)
+        return entries
+          .map((x) => x.p)
+          .sort((a, b) => a.title.localeCompare(b.title))
+          .slice(0, limit)
       return entries
         .filter((x) => x.norm.startsWith(q))
         .sort((a, b) => {

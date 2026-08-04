@@ -61,8 +61,13 @@ export function useConnectionAutocomplete(
   candidatesForRef.current = candidatesFor
   const query = ac?.query ?? null
   const form = ac?.form ?? 'link'
+  // An empty query only browses for embeds — the just-typed opener pops the full list; link's
+  // auto-paired `[[]]` stays quiet until a first character.
   const candidates = useMemo(
-    () => (query === null ? [] : candidatesForRef.current(query, form)),
+    () =>
+      query === null || (query === '' && form === 'link')
+        ? []
+        : candidatesForRef.current(query, form),
     [query, form],
   )
 
