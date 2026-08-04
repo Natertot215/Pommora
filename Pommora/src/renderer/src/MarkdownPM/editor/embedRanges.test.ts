@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { blockEmbedLines } from '../detect'
 import { claimedEmbeds, docEmbedLines } from './embedRanges'
+import type { LinkStatus } from '@shared/connections'
 
 const status =
-  (map: Record<string, 'resolved' | 'phantom' | 'ambiguous'>) =>
-  (title: string): 'resolved' | 'phantom' | 'ambiguous' =>
+  (map: Record<string, LinkStatus>) =>
+  (title: string): LinkStatus =>
     map[title] ?? 'phantom'
 
 describe('blockEmbedLines', () => {

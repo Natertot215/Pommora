@@ -145,19 +145,19 @@ export function tokenize(text: string): Token[] {
   // Code tokenizes FIRST so connections and links inside `spans` are dropped like latex already is —
   // a [[link]] in code must render (and click) as literal code, not a live connection.
   const code = regexTokens(text, { kind: 'inlineCode', re: inlineCodeRegex(), open: 1, close: 1 })
-  const images = regexTokens(text, {
+  const embeds = regexTokens(text, {
     kind: 'embed',
     re: embedRegex(),
     open: 3,
     close: 2,
   })
-  const wikis = wikiLinkTokens(text).filter(notOverlapping([...images, ...code]))
+  const wikis = wikiLinkTokens(text).filter(notOverlapping([...embeds, ...code]))
   const links = regexTokens(text, {
     kind: 'link',
     re: markdownLinkRegex(),
     open: 1,
     close: 1,
-  }).filter(notOverlapping([...images, ...wikis, ...code]))
+  }).filter(notOverlapping([...embeds, ...wikis, ...code]))
   const blockTex = regexTokens(text, {
     kind: 'blockLatex',
     re: blockLatexRegex(),
@@ -172,7 +172,7 @@ export function tokenize(text: string): Token[] {
     accept: isInlineMathContent,
   }).filter(notOverlapping([...code, ...blockTex]))
 
-  tokens.push(...images, ...wikis, ...links, ...code, ...blockTex, ...inlineTex)
+  tokens.push(...embeds, ...wikis, ...links, ...code, ...blockTex, ...inlineTex)
   tokens.sort((a, b) => a.range[0] - b.range[0])
   return tokens
 }
