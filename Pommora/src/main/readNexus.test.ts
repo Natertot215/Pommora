@@ -434,6 +434,7 @@ describe('readNexus — personalization', () => {
     const keys = [
       'hideChevrons',
       'outlinerLines',
+      'codeblockLineCount',
       'navCloseOnSelect',
       'revealTabBarOnHover',
       'connectionsOpenInPreview',

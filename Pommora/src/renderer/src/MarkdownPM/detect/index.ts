@@ -23,7 +23,7 @@ export const quoteDepth = (line: string): number =>
 // A ``` fence, capturing its `>` prefix so open/close pair by quote-DEPTH: a `> ``` opens a callout/quote-internal
 // block closed only by another `> ``` (a bare ``` is a separate top-level block), and a quoted fence ends when its
 // blockquote does. Without the depth match, a top-level code block quoting a ``` (`> ```` as content) corrupts.
-const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(```|~~~)[ \t]*(\S*)/
+const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(```|~~~)[ \t]*([^`~\s]*)/
 // A fence line's quote depth AND marker char — a block pairs by BOTH, so a `~~~` line inside a ``` block
 // reads as content, not a close (matches isInsideCode's marker pairing; the two layers must agree).
 const fenceOf = (line: string): { depth: number; marker: string; info: string } | null => {
@@ -42,6 +42,8 @@ export interface FenceInfo {
   closed: boolean
   /** The opening fence's info word (```yaml → 'yaml') — absent on a bare fence. */
   lang?: string
+  /** A content line's 1-based number within its block — the line-count chrome's source. */
+  ordinal?: number
 }
 
 interface FenceBlock {
@@ -100,7 +102,8 @@ export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInf
     const base = { from: blk.from, to: blk.to, depth: blk.depth, closed: blk.closed, lang: blk.lang }
     out[blk.open] = { role: 'open', ...base }
     const contentEnd = blk.closed ? blk.close : blk.close + 1 // unclosed → the last line is content too
-    for (let k = blk.open + 1; k < contentEnd; k++) out[k] = { role: 'content', ...base }
+    for (let k = blk.open + 1; k < contentEnd; k++)
+      out[k] = { role: 'content', ...base, ordinal: k - blk.open }
     if (blk.closed) out[blk.close] = { role: 'close', ...base }
   }
   return out

@@ -269,36 +269,48 @@ describe('decoration intents', () => {
     expect(lines[1].className).toBe('md-bq md-bq-last')
   })
 
-  it('fenced code block → md-cb lines (open/content/close); fences hidden with caret outside', () => {
+  it('fenced code block → md-cb lines; backticks always show, only the info word hides', () => {
     const t = 'p\n```js\ncode\n```'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0) // caret on "p", outside the block
     const classes = intents
       .filter((d): d is Extract<typeof d, { kind: 'line' }> => d.kind === 'line')
       .map((d) => d.className)
     expect(classes).toEqual(['md-cb md-cb-first', 'md-cb', 'md-cb md-cb-last'])
-    expect(intents.filter((d) => d.kind === 'hide')).toHaveLength(2) // both fence lines' markers
+    const hides = intents.filter((d): d is Extract<typeof d, { kind: 'hide' }> => d.kind === 'hide')
+    expect(hides).toHaveLength(1) // the info word alone — never the backticks, never the close
+    expect(t.slice(hides[0].from, hides[0].to)).toBe('js')
   })
 
-  it('fence markers reveal only for the caret on their OWN line — content caret keeps both hidden', () => {
+  it('the caret on the open line trades the glyph back for the raw info word', () => {
     const t = '```js\ncode\n```'
     const inContent = decorationsFor(t, tokenize(t), new Set(), 7) // caret in "code"
-    expect(inContent.filter((d) => d.kind === 'hide')).toHaveLength(2)
+    expect(inContent.filter((d) => d.kind === 'hide')).toHaveLength(1)
     const onOpen = decorationsFor(t, tokenize(t), new Set(), 2) // caret on the ```js line
-    expect(onOpen.filter((d) => d.kind === 'hide')).toHaveLength(1) // the close stays hidden
+    expect(onOpen.filter((d) => d.kind === 'hide')).toHaveLength(0)
+    expect(onOpen.filter((d) => d.kind === 'lineWidget' && d.className === 'md-cb-lang')).toHaveLength(0)
   })
 
-  it('a typed fence wears its language glyph while hidden; a bare fence wears none', () => {
+  it('a typed fence wears its inline glyph at the info word; a bare fence wears none', () => {
     const t = 'p\n```yaml\nkey: 1\n```'
     const glyphs = decorationsFor(t, tokenize(t), new Set(), 0).filter(
       (d): d is Extract<typeof d, { kind: 'lineWidget' }> => d.kind === 'lineWidget',
     )
-    expect(glyphs.filter((g) => g.className === 'md-cb-lang')).toHaveLength(1)
-    expect(glyphs.find((g) => g.className === 'md-cb-lang')?.text).toBe('yaml')
+    const lang = glyphs.find((g) => g.className === 'md-cb-lang')
+    expect(lang?.text).toBe('yaml')
+    expect(lang?.from).toBe(t.indexOf('yaml')) // in-line, right where the info word sits
     const bare = 'p\n```\nx\n```'
     const none = decorationsFor(bare, tokenize(bare), new Set(), 0).filter(
       (d) => d.kind === 'lineWidget' && d.className === 'md-cb-lang',
     )
     expect(none).toHaveLength(0)
+  })
+
+  it('content lines carry their 1-based line-count chrome; fence lines carry none', () => {
+    const t = '```js\na\nb\n```'
+    const nums = decorationsFor(t, tokenize(t), new Set(), 0)
+      .filter((d): d is Extract<typeof d, { kind: 'lineWidget' }> => d.kind === 'lineWidget')
+      .filter((d) => d.className === 'md-cb-ln')
+    expect(nums.map((n) => n.text)).toEqual(['1', '2'])
   })
 })
 
