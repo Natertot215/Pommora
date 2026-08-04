@@ -25,6 +25,7 @@ import '@renderer/design-system/tile-chassis.css'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../detect'
 import { claimedEmbeds } from './embedRanges'
+import { tileWarmSeam } from '@renderer/Embeds/tileWarm'
 import type { ConnectionsApi } from '../connections'
 
 export interface EmbedHost {
@@ -202,6 +203,7 @@ class EmbedTileWidget extends WidgetType {
               locked: !this.interactive,
               ancestors: this.ancestors,
               chrome: 'page',
+              warm: tileWarmSeam([...this.ancestors, this.path]),
             }),
           ),
         ),
