@@ -108,15 +108,10 @@ export const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
   blockLatex: 'md-latex',
 }
 
-export function decorationsFor(
-  text: string,
-  tokens: Token[],
-  active: Set<number>,
-  selStart: number,
-  scan?: DocScan,
-): DecoIntent[] {
+/** The token-derived intents (content classes + marker hides for inactive tokens). Wiki links and
+ *  external links stay out — decorations.ts renders those from resolution/validity. */
+export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[] {
   const intents: DecoIntent[] = []
-
   tokens.forEach((tk, i) => {
     if (tk.kind === 'wikiLink') return // resolution-dependent; rendered in decorations.ts by status
     if (tk.kind === 'link') return // validity-dependent; rendered in decorations.ts (valid vs invalid)
@@ -131,8 +126,22 @@ export function decorationsFor(
     if (!active.has(i))
       for (const [s, e] of tk.markerRanges) intents.push({ kind: 'hide', from: s, to: e })
   })
+  return intents
+}
 
-  const { lines, lineStarts, fences, callouts, maths } = scan ?? scanDoc(text)
+/** One line's intents, pushed into `intents`; returns the line's list marker (for the rail pass).
+ *  `selStart` is the caret (or NO_CARET) — the ONLY caret-sensitive outputs are this line's own
+ *  marker/heading/hr reveal and, on a fence's open/close lines, the caret-in-block fence reveal. */
+function lineIntentsInto(
+  scan: DocScan,
+  i: number,
+  selStart: number,
+  intents: DecoIntent[],
+): ListMarker | null {
+  const { lines, lineStarts, fences, callouts, maths } = scan
+  const line = lines[i]
+  const ls = lineStarts[i]
+  const le = ls + line.length
 
   // A line inside a display-math span is formula source: box chrome still applies (boxes beat math,
   // as in the block model), but list/heading/hr constructs never render there — a `- b` term must not
@@ -148,109 +157,104 @@ export function decorationsFor(
   }
   const quoteChromeAt = (k: number): boolean => isBlockquoteLine(lines[k]) && !literalQuoteAt(k)
 
-  // Per-line list nesting depth (-1 = not a rendered list line) + the rail type-class of the marker there.
-  // Fed by pushConstruct's return; the outliner-rail pass below reads them to find run boundaries per level.
-  const listLevels = new Array<number>(lines.length).fill(-1)
-  const listKinds = new Array<string>(lines.length).fill('')
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    const ls = lineStarts[i]
-    const le = ls + line.length
-
-    // Box chrome (callout/quote) is independent of what's inside it: a `> - item` gets BOTH the box line-class
-    // AND the bullet, a `> ```` code block keeps its box. `base` is where the inner content begins, so every
-    // construct renders identically whether it's top-level or behind a `>` prefix. Inside a CLOSED fence,
-    // chrome extends exactly to the fence's own quote depth — every `>` beyond it is code bytes.
-    const fence = fences[i]
-    let base = 0
-    const co = callouts[i]
-    if (co) {
+  // Box chrome (callout/quote) is independent of what's inside it: a `> - item` gets BOTH the box line-class
+  // AND the bullet, a `> ```` code block keeps its box. `base` is where the inner content begins, so every
+  // construct renders identically whether it's top-level or behind a `>` prefix. Inside a CLOSED fence,
+  // chrome extends exactly to the fence's own quote depth — every `>` beyond it is code bytes.
+  const fence = fences[i]
+  let base = 0
+  const co = callouts[i]
+  if (co) {
+    intents.push({
+      kind: 'line',
+      from: ls,
+      className: `md-callout${co.first ? ' md-callout-first' : ''}${co.last ? ' md-callout-last' : ''}`,
+    })
+    base = co.prefixEnd
+    // A blockquote nested inside the callout (`> > …`): render the inner `>` as an inset quote block (indent
+    // + bar + fill) rather than flattening it to plain callout body. first/last come from the quote depth.
+    const inner = line.slice(base)
+    const qm = blockquotePrefixRe.exec(inner) // all remaining `>` levels → one inset quote (depth flattens)
+    // Inside a closed fence, an inset quote is chrome only if the fence itself was opened behind one
+    // (depth ≥ 2 — callout level + inset level); a shallower fence's extra `>`s are code bytes.
+    if (qm && isBlockquoteLine(inner) && (fence === undefined || !fence.closed || fence.depth > 1)) {
+      // first/last span the contiguous run of nested-quote lines (not a depth match — a run can vary in depth
+      // yet flatten to one block), mirroring how the plain-quote branch tests its neighbours.
+      const first = !calloutNestedQuote(lines, callouts, i - 1)
+      const last = !calloutNestedQuote(lines, callouts, i + 1)
       intents.push({
         kind: 'line',
         from: ls,
-        className: `md-callout${co.first ? ' md-callout-first' : ''}${co.last ? ' md-callout-last' : ''}`,
+        className: `md-bq-in${first ? ' md-bq-in-first' : ''}${last ? ' md-bq-in-last' : ''}`,
       })
-      base = co.prefixEnd
-      // A blockquote nested inside the callout (`> > …`): render the inner `>` as an inset quote block (indent
-      // + bar + fill) rather than flattening it to plain callout body. first/last come from the quote depth.
-      const inner = line.slice(base)
-      const qm = blockquotePrefixRe.exec(inner) // all remaining `>` levels → one inset quote (depth flattens)
-      // Inside a closed fence, an inset quote is chrome only if the fence itself was opened behind one
-      // (depth ≥ 2 — callout level + inset level); a shallower fence's extra `>`s are code bytes.
-      if (qm && isBlockquoteLine(inner) && (fence === undefined || !fence.closed || fence.depth > 1)) {
-        // first/last span the contiguous run of nested-quote lines (not a depth match — a run can vary in depth
-        // yet flatten to one block), mirroring how the plain-quote branch tests its neighbours.
-        const first = !calloutNestedQuote(lines, callouts, i - 1)
-        const last = !calloutNestedQuote(lines, callouts, i + 1)
-        intents.push({
-          kind: 'line',
-          from: ls,
-          className: `md-bq-in${first ? ' md-bq-in-first' : ''}${last ? ' md-bq-in-last' : ''}`,
-        })
-        // The bar is a real element (a side widget) so it sits OVER the fill with its own rounded caps — a fill
-        // `::after` can't carry both the bar's cap radius and its own without clipping one.
-        intents.push({ kind: 'lineWidget', from: ls, className: 'md-bq-in-bar' })
-        base += qm[0].length
-      }
-    } else if (!literalQuoteAt(i) && isBlockquoteLine(line)) {
-      const bm = blockquotePrefixRe.exec(line)
-      if (bm) {
-        const first = i === 0 || !quoteChromeAt(i - 1)
-        const last = i === lines.length - 1 || !quoteChromeAt(i + 1)
-        intents.push({
-          kind: 'line',
-          from: ls,
-          className: `md-bq${first ? ' md-bq-first' : ''}${last ? ' md-bq-last' : ''}`,
-        })
-        base = bm[0].length
-      }
+      // The bar is a real element (a side widget) so it sits OVER the fill with its own rounded caps — a fill
+      // `::after` can't carry both the bar's cap radius and its own without clipping one.
+      intents.push({ kind: 'lineWidget', from: ls, className: 'md-bq-in-bar' })
+      base += qm[0].length
     }
-
-    if (fence) {
-      // Code block (composes with box chrome). Only the fence's own quote depth hides as prefix
-      // chrome — a deeper `>` run is code bytes and stays visible.
-      if (fence.closed && base > 0) base = Math.min(base, quotePrefixWidth(line, fence.depth))
-      const innerStart = ls + base
-      const caretInBlock = selStart >= fence.from && selStart <= fence.to
+  } else if (!literalQuoteAt(i) && isBlockquoteLine(line)) {
+    const bm = blockquotePrefixRe.exec(line)
+    if (bm) {
+      const first = i === 0 || !quoteChromeAt(i - 1)
+      const last = i === lines.length - 1 || !quoteChromeAt(i + 1)
       intents.push({
         kind: 'line',
         from: ls,
-        className: `md-cb${fence.role === 'open' ? ' md-cb-first' : ''}${fence.role === 'close' ? ' md-cb-last' : ''}`,
+        className: `md-bq${first ? ' md-bq-first' : ''}${last ? ' md-bq-last' : ''}`,
       })
-      if (base > 0) intents.push({ kind: 'hide', from: ls, to: innerStart })
-      if (fence.role !== 'content' && !caretInBlock)
-        intents.push({ kind: 'hide', from: innerStart, to: le })
-      continue
-    }
-
-    if (inMathLine(i)) {
-      if (base > 0) intents.push({ kind: 'hide', from: ls, to: ls + base })
-      continue
-    }
-
-    // pushConstruct hides the prefix [ls, innerStart] itself, so a leading bullet/HR widget can ABSORB it into
-    // one replace — CM drops a widget-replace that merely *touches* a preceding replace at the same offset.
-    const li = pushConstruct(intents, line, ls, base, selStart)
-    if (li) {
-      // The item's content wears md-li-text: the line itself suppresses every wrap opportunity (the
-      // marker zone is full of them — spaces, a number's period, and the atomic cm-widgetBuffer imgs
-      // CM plants beside every replace) and this span alone restores wrapping, so a long unbroken word
-      // fills beside the glyph and breaks mid-word instead of dropping below the marker.
-      const contentFrom = ls + base + li.contentStart
-      if (contentFrom < le)
-        intents.push({ kind: 'class', from: contentFrom, to: le, className: 'md-li-text' })
-      listLevels[i] = li.level
-      listKinds[i] = railTypeClass(li) ?? '' // "" = a rendered list line, but not a railed type
+      base = bm[0].length
     }
   }
 
-  // Outliner rails: one vertical guide per ANCESTOR level of each nested list line, each drawn as a continuous
-  // run per level with rounded caps only at the run's two ends (mirrors the blockquote bar's first/last). A
-  // level-K rail breaks wherever a neighbour's level ≤ K (or the neighbour isn't a list line). railKind tracks
-  // the current ancestor's marker type at each level so the rail lands on THAT glyph's centre.
+  if (fence) {
+    // Code block (composes with box chrome). Only the fence's own quote depth hides as prefix
+    // chrome — a deeper `>` run is code bytes and stays visible.
+    if (fence.closed && base > 0) base = Math.min(base, quotePrefixWidth(line, fence.depth))
+    const innerStart = ls + base
+    const caretInBlock = selStart >= fence.from && selStart <= fence.to
+    intents.push({
+      kind: 'line',
+      from: ls,
+      className: `md-cb${fence.role === 'open' ? ' md-cb-first' : ''}${fence.role === 'close' ? ' md-cb-last' : ''}`,
+    })
+    if (base > 0) intents.push({ kind: 'hide', from: ls, to: innerStart })
+    if (fence.role !== 'content' && !caretInBlock)
+      intents.push({ kind: 'hide', from: innerStart, to: le })
+    return null
+  }
+
+  if (inMathLine(i)) {
+    if (base > 0) intents.push({ kind: 'hide', from: ls, to: ls + base })
+    return null
+  }
+
+  // pushConstruct hides the prefix [ls, innerStart] itself, so a leading bullet/HR widget can ABSORB it into
+  // one replace — CM drops a widget-replace that merely *touches* a preceding replace at the same offset.
+  const li = pushConstruct(intents, line, ls, base, selStart)
+  if (li) {
+    // The item's content wears md-li-text: the line itself suppresses every wrap opportunity (the
+    // marker zone is full of them — spaces, a number's period, and the atomic cm-widgetBuffer imgs
+    // CM plants beside every replace) and this span alone restores wrapping, so a long unbroken word
+    // fills beside the glyph and breaks mid-word instead of dropping below the marker.
+    const contentFrom = ls + base + li.contentStart
+    if (contentFrom < le)
+      intents.push({ kind: 'class', from: contentFrom, to: le, className: 'md-li-text' })
+  }
+  return li
+}
+
+// Outliner rails: one vertical guide per ANCESTOR level of each nested list line, each drawn as a continuous
+// run per level with rounded caps only at the run's two ends (mirrors the blockquote bar's first/last). A
+// level-K rail breaks wherever a neighbour's level ≤ K (or the neighbour isn't a list line). railKind tracks
+// the current ancestor's marker type at each level so the rail lands on THAT glyph's centre.
+function railIntentsInto(
+  lineStarts: number[],
+  listLevels: number[],
+  listKinds: string[],
+  intents: DecoIntent[],
+): void {
   const railKind: string[] = []
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = 0; i < listLevels.length; i++) {
     const level = listLevels[i]
     if (level < 0) continue
     railKind[level] = listKinds[i]
@@ -264,11 +268,103 @@ export function decorationsFor(
         level: k,
         typeClass,
         first: i === 0 || listLevels[i - 1] <= k,
-        last: i === lines.length - 1 || listLevels[i + 1] <= k,
+        last: i === listLevels.length - 1 || listLevels[i + 1] <= k,
       })
     }
   }
+}
 
+/** The caret-free per-line intents + rails, cached per doc VERSION (docCache.docLineIntentsOf) — the
+ *  caret contributes nothing here, so a caret move re-derives only its own affected lines. */
+export interface CachedLineIntents {
+  perLine: DecoIntent[][]
+  rails: DecoIntent[]
+}
+
+export const NO_CARET = -1
+
+export function docLineIntents(scan: DocScan): CachedLineIntents {
+  const n = scan.lines.length
+  const perLine: DecoIntent[][] = new Array(n)
+  const listLevels = new Array<number>(n).fill(-1)
+  const listKinds = new Array<string>(n).fill('')
+  for (let i = 0; i < n; i++) {
+    perLine[i] = []
+    const li = lineIntentsInto(scan, i, NO_CARET, perLine[i])
+    if (li) {
+      listLevels[i] = li.level
+      listKinds[i] = railTypeClass(li) ?? '' // "" = a rendered list line, but not a railed type
+    }
+  }
+  const rails: DecoIntent[] = []
+  railIntentsInto(scan.lineStarts, listLevels, listKinds, rails)
+  return { perLine, rails }
+}
+
+/** The line indices whose intents actually read the caret: the caret's own line (marker/heading/hr
+ *  reveal) and, when the caret sits in a fence block, that fence's open/close lines (content reveal). */
+function caretAffectedLines(scan: DocScan, selStart: number): Set<number> {
+  const affected = new Set<number>()
+  if (selStart < 0) return affected
+  const { lines, lineStarts, fences } = scan
+  let lo = 0
+  let hi = lines.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1
+    if (lineStarts[mid] <= selStart) lo = mid
+    else hi = mid - 1
+  }
+  affected.add(lo)
+  const f = fences[lo]
+  if (f && selStart >= f.from && selStart <= f.to) {
+    for (let i = 0; i < lines.length; i++) {
+      const fi = fences[i]
+      if (fi && fi.from === f.from && fi.role !== 'content') affected.add(i)
+    }
+  }
+  return affected
+}
+
+/** The full line+rail intent list for a caret position, assembled from the cached caret-free lines
+ *  with only the caret-affected lines re-derived. Rails never read the caret, so the cached set rides
+ *  as-is (reveal never changes a line's list level). */
+export function assembleLineIntents(
+  scan: DocScan,
+  cached: CachedLineIntents,
+  selStart: number,
+): DecoIntent[] {
+  const affected = caretAffectedLines(scan, selStart)
+  const intents: DecoIntent[] = []
+  for (let i = 0; i < scan.lines.length; i++) {
+    if (affected.has(i)) lineIntentsInto(scan, i, selStart, intents)
+    else for (const it of cached.perLine[i]) intents.push(it)
+  }
+  for (const it of cached.rails) intents.push(it)
+  return intents
+}
+
+/** The pure whole-doc derivation — the reference the assembled path must match (see the equivalence
+ *  pin). The live build path assembles from the per-version cache instead. */
+export function decorationsFor(
+  text: string,
+  tokens: Token[],
+  active: Set<number>,
+  selStart: number,
+  scan?: DocScan,
+): DecoIntent[] {
+  const s = scan ?? scanDoc(text)
+  const intents: DecoIntent[] = tokenIntents(tokens, active)
+  const n = s.lines.length
+  const listLevels = new Array<number>(n).fill(-1)
+  const listKinds = new Array<string>(n).fill('')
+  for (let i = 0; i < n; i++) {
+    const li = lineIntentsInto(s, i, selStart, intents)
+    if (li) {
+      listLevels[i] = li.level
+      listKinds[i] = railTypeClass(li) ?? ''
+    }
+  }
+  railIntentsInto(s.lineStarts, listLevels, listKinds, intents)
   return intents
 }
 
