@@ -450,6 +450,13 @@
   font-size: var(--bullet-size);
   /* Cap the 1.25em glyph's leading so it never swells a wrapped bullet's first line box. */
   line-height: 1;
+  /* The marker-content gap: the widget swallows the source spaces, so the gap is this margin. */
+  margin-right: var(--list-gap);
+}
+
+/* Literal-glyph markers (`→` / `+`) whose source gap is hidden — the visible gap is this margin. */
+.md-li-mark {
+  margin-right: var(--list-gap);
 }
 
 /* The one region of a list line that wraps (see the `pre` on .md-li). */

@@ -117,7 +117,7 @@ describe('decoration intents', () => {
     expect(out.some((d) => d.kind === 'widget' && d.spec.type === 'bullet')).toBe(true)
   })
 
-  it('dash bullet, caret off the line → • widget replaces just the dash (in-flow)', () => {
+  it('dash bullet, caret off the line → • widget takes the whole marker slot through the gap', () => {
     const t = '- item'
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
     expect(intents.some((d) => d.kind === 'line' && d.className === 'md-li' && d.level === 0)).toBe(
@@ -125,7 +125,7 @@ describe('decoration intents', () => {
     )
     expect(
       intents.some(
-        (d) => d.kind === 'widget' && d.spec.type === 'bullet' && d.from === 0 && d.to === 1,
+        (d) => d.kind === 'widget' && d.spec.type === 'bullet' && d.from === 0 && d.to === 2,
       ),
     ).toBe(true)
   })
@@ -176,17 +176,18 @@ describe('decoration intents', () => {
   it.each([
     ['arrow', '→ step'],
     ['plus', '+ step'],
-  ])('%s list → marker kept as literal source (recolour + drag-handle class), no widget, bullet spacing', (_n, t) => {
+  ])('%s list → marker kept as literal source (recolour + drag-handle class), gap hidden, no widget', (_n, t) => {
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
     expect(
       intents.some(
         (d) =>
           d.kind === 'class' &&
-          d.className === 'md-control md-li-glyph' &&
+          d.className === 'md-li-mark md-control md-li-glyph' &&
           d.from === 0 &&
           d.to === 1,
       ),
     ).toBe(true)
+    expect(intents.some((d) => d.kind === 'hide' && d.from === 1 && d.to === 2)).toBe(true)
     expect(intents.some((d) => d.kind === 'line' && d.className === 'md-li')).toBe(true)
     expect(intents.some((d) => d.kind === 'widget')).toBe(false)
   })
