@@ -342,8 +342,9 @@ function pushConstruct(
     return lm
   } else if (lm?.kind === 'bullet' && lm.bullet === '-' && !lm.box) {
     // Raw `-` shows only when the caret is on the marker (then the leading indent hides separately); else a
-    // `•` widget takes its slot AND ABSORBS the leading indent whitespace (replace from the line/box start,
-    // not the marker) — otherwise the source tab renders on top of the --li-col padding and double-indents.
+    // `•` widget takes the whole marker slot — leading indent THROUGH the marker-content gap (replace from
+    // the line/box start) — so neither the source tab nor a pasted run of gap spaces occupies the in-flow
+    // slot; the visible gap is the glyph's own CSS margin.
     intents.push({ kind: 'line', from: ls, className: 'md-li', level: lm.level })
     if (onMarker) {
       if (lm.markerStart > 0)
@@ -352,14 +353,15 @@ function pushConstruct(
       intents.push({
         kind: 'widget',
         from: bulletAbsorbs ? ls : innerStart,
-        to: innerStart + lm.markerEnd,
+        to: innerStart + lm.contentStart,
         spec: { type: 'bullet' },
       })
     }
     return lm
   } else if (lm?.kind === 'arrow' || (lm?.kind === 'bullet' && lm.bullet === '+' && !lm.box)) {
     // `→` and `+` ARE their own glyphs, so they stay literal source (like the ordered number): recoloured +
-    // given the drag-handle class. Share the `.md-li` bullet zone.
+    // given the drag-handle class, the gap hidden the way the ordered branch hides its own (the visible
+    // gap is the glyph's CSS margin). Share the `.md-li` bullet zone.
     intents.push({ kind: 'line', from: ls, className: 'md-li', level: lm.level })
     if (lm.markerStart > 0)
       intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
@@ -367,7 +369,12 @@ function pushConstruct(
       kind: 'class',
       from: innerStart + lm.markerStart,
       to: innerStart + lm.markerEnd,
-      className: `md-control ${GLYPH_CLASS}`,
+      className: `md-li-mark md-control ${GLYPH_CLASS}`,
+    })
+    intents.push({
+      kind: 'hide',
+      from: innerStart + lm.markerEnd,
+      to: innerStart + lm.contentStart,
     })
     return lm
   } else if (lm?.kind === 'ordered') {
