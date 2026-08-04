@@ -76,7 +76,7 @@ The loop reads the last pointer point every frame — so holding still at an edg
 
 The module **owns a termination backstop** that stops the *loop only* — each surface still aborts its own gesture — so a focus-steal can't strand a running loop, and a single frame's delta is clamped so an rAF stall can't teleport the scroll.
 
-Every drag that edge-scrolls feeds this one loop, and no surface re-implements it. Not every drag is wired to it: the MarkdownPM list drag, the table's column reorder, the GFM-table drag, and the grouping pane are outstanding.
+Every drag that edge-scrolls feeds this one loop, and no surface re-implements it. Not every drag is wired to it: the table's column reorder, the GFM-table drag, and the grouping pane are outstanding.
 
 ### Mobile-Readiness (Prospective)
 
