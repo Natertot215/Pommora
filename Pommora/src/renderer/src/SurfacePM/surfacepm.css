@@ -64,7 +64,7 @@
    (defaults to the cell border; bump it for a heavier highlight). */
 .spm-tile.is-resizing,
 .spm-tile:has(> .spm-edge:hover) {
-  --tile-border-color: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
+  --tile-border-color: var(--accent-stroke-hot);
   border-width: var(--tile-border-hot, var(--tile-border));
 }
 
