@@ -150,9 +150,14 @@ class EmbedTileWidget extends WidgetType {
     return true
   }
 
-  destroy(): void {
-    const root = this.root
+  destroy(dom: HTMLElement): void {
     this.root = undefined
+    // CM hands a tile's DOM to its successor widget on rebuilds and relocations — a node still in
+    // the document is ADOPTED, not dead, and unmounting its root would blank the reused tile.
+    if (dom.isConnected) return
+    const d = dom as TileDom
+    const root = d._root
+    d._root = undefined
     if (root) queueMicrotask(() => root.unmount())
   }
 
