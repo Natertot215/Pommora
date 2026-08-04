@@ -87,6 +87,7 @@ export function PageView(): React.JSX.Element {
               schedulePageSave(pageDetail.path, body)
             }}
             connections={connections}
+            embedAncestors={[pageDetail.path]}
             folds={{
               load: async () => (await window.nexus.folds.get())[pageDetail.id] ?? [],
               save: (keys) => void window.nexus.folds.set(pageDetail.id, keys),

@@ -144,6 +144,11 @@ export interface EmbedLine {
 
 const loneEmbedRe = /^!\[\[([^\]\r\n]*)\]\][ \t]*$/
 
+/** The lone-line test for one line of text — the guard's per-line half of blockEmbedLines. */
+export function loneEmbedTitle(line: string): string | null {
+  return loneEmbedRe.exec(line)?.[1] ?? null
+}
+
 /** Lone-line page embeds: a line that IS exactly one `![[Title]]` — trailing whitespace doesn't
  *  break lone-ness, but a leading indent does: an indented line is a list continuation riding its
  *  marker (the same whitespace that would make it "lone" is what glues it to the item above), so it
