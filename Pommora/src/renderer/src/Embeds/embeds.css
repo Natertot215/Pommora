@@ -68,3 +68,33 @@
   overscroll-behavior: auto;
   overflow: visible;
 }
+
+/* Page-follows header chrome inside a tile (chrome='page'): the banner band scales with the embed;
+   the coverless breadcrumb floats centered at the top and reveals on tile hover, matching the
+   accent border's own timing. */
+.pgembed .mdpm-banner {
+  height: calc(230px * var(--mdpm-scale));
+}
+.pgembed-banner-title {
+  font-size: calc(28px * var(--mdpm-scale));
+  font-weight: 700;
+  color: var(--label-primary);
+}
+.pgembed .mdpm-banner-overlay {
+  left: calc(16px * var(--mdpm-scale));
+  right: calc(16px * var(--mdpm-scale));
+}
+.pgembed-crumbs {
+  position: absolute;
+  top: calc(8px * var(--mdpm-scale));
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 70%;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+.mdpm-embed-tile:hover .pgembed-crumbs {
+  opacity: 1;
+}

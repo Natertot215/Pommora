@@ -79,13 +79,4 @@
   /* The crumbs also hover-scroll, which reads its own knob. */
   --scroll-fade: 16px;
 }
-/* The trail reads dimmer; the page itself (the last crumb, icon + name) reads brighter. */
-.pgpreview-crumbs .nav-path-name {
-  color: var(--label-tertiary);
-}
-.pgpreview-crumbs .nav-path-name:last-of-type {
-  color: var(--label-control);
-}
-.pgpreview-crumbs .nav-path-icon:last-of-type {
-  color: var(--label-control);
-}
+/* Tone comes from the shared crumb-two-tone treatment (Tabs/tabStrip.css). */
