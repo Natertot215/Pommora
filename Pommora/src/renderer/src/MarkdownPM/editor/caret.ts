@@ -9,22 +9,20 @@ import { embedTileRanges } from './embedWidget'
 // tile's top on the widget's own x. Draw instead where the seat's insertion will land (the guard
 // repairs typing here onto a fresh line): one line's worth above or below the tile, at the indent.
 function tileEdgeMarker(view: EditorView, head: number): RectangleMarker | null {
-  for (const t of embedTileRanges(view.state)) {
-    if (head !== t.from && head !== t.to) continue
-    const lb = view.lineBlockAt(t.from)
-    // forRange's own base: marker coords are document-relative (client minus scroll-adjusted origin).
-    const sr = view.scrollDOM.getBoundingClientRect()
-    const cr = view.contentDOM.getBoundingClientRect()
-    const cs = getComputedStyle(view.contentDOM)
-    // Body height, not defaultLineHeight — CM measures the latter off its default font, which runs
-    // taller than the body lines actually render.
-    const lh = Number.parseFloat(cs.lineHeight) || view.defaultLineHeight
-    const left = cr.left + Number.parseFloat(cs.paddingLeft) - (sr.left - view.scrollDOM.scrollLeft)
-    const topDoc = head === t.to ? lb.bottom : lb.top - lh
-    const top = view.documentTop + topDoc - (sr.top - view.scrollDOM.scrollTop)
-    return new RectangleMarker('mdpm-caret', left, top, null, lh)
-  }
-  return null
+  const tile = embedTileRanges(view.state).find((t) => head === t.from || head === t.to)
+  if (!tile) return null
+  const lb = view.lineBlockAt(tile.from)
+  // forRange's own base: marker coords are document-relative (client minus scroll-adjusted origin).
+  const sr = view.scrollDOM.getBoundingClientRect()
+  const cr = view.contentDOM.getBoundingClientRect()
+  const cs = getComputedStyle(view.contentDOM)
+  // Body height, not defaultLineHeight — CM measures the latter off its default font, which runs
+  // taller than the body lines actually render.
+  const lh = Number.parseFloat(cs.lineHeight) || view.defaultLineHeight
+  const left = cr.left + Number.parseFloat(cs.paddingLeft) - (sr.left - view.scrollDOM.scrollLeft)
+  const topDoc = head === tile.to ? lb.bottom : lb.top - lh
+  const top = view.documentTop + topDoc - (sr.top - view.scrollDOM.scrollTop)
+  return new RectangleMarker('mdpm-caret', left, top, null, lh)
 }
 
 function caretMarkers(view: EditorView): RectangleMarker[] {

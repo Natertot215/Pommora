@@ -1,6 +1,6 @@
 ## Project Pommora
 
-Pommora is a personal management app based on Nathan's frustration with modern productivity apps that excel in one aspect but are absolutely terrible in others. Pommora's main leverage is taking the extremely flexible, properties-based categorization of Notion and the inherently agentic-legible, local-first approach used by Obsidian, aiming to create a true local-first, all-in-one productivity and organizational platform. Pommora's structure is based on relating **Content** ↔ **Content** through *Connections*, with their attributes given through their **Collection's** schema-based **Properties,** and linking them all together through relationships to **Contexts.**
+Pommora is a personal management app based on Nathan's frustration with modern productivity apps that excel in certain aspects but are absolutely terrible in others. Pommora's main leverage is taking the extremely flexible, properties-based categorization of Notion and the inherently agentic-legible, local-first approach used by Obsidian, aiming to create a true local-first, all-in-one productivity and organizational platform. Pommora's structure is based on relating **Content** ↔ **Content** through *Connections*, with their attributes given through their **Collection's** schema-based **Properties,** and linking them all together through relationships to **Contexts.**
 
 ### The Model
 
@@ -24,11 +24,9 @@ Pommora is a personal management app based on Nathan's frustration with modern p
 
 Pommora is an **Electron** desktop app — a **React + TypeScript** renderer over a Node main process that owns the filesystem. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5 (compat pin — newer plugin-react needs Vite 8, which electron-vite doesn't support yet) · Zustand · TanStack Virtual · `react-markdown` + `remark-gfm` · `eemeli/yaml` · `lucide-react` (the curated icon registry — `design-system/symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 build behind a swappable editor seam. The codebase lives at `Pommora/` on the monorepo's main branch.
 
-**No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `db//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
-
-**The Figma Library** (https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r) is used for designing; its specifics may lag behind the canonical in-code view — mirror changes into the tokens at `design-system/tokens`. The live showcase deploys from `Pommora/` to https://pommora-design-system.vercel.app.
-
-**Gates.** `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers both `tsconfig` projects. `npm run test` is Vitest; `npm run lint` is Biome and runs clean, so a change that adds a diagnostic isn't done → [[Lint-And-Accessibility]]. Formatting is Biome's as well (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align or run Biome yourself — an Edit failing on whitespace means Biome reformatted, so re-read and retry.
+- **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `db//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
+- **The Figma Library** (https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r) is used for designing; its specifics may lag behind the canonical in-code view — mirror changes into the tokens at `design-system/tokens`. The live showcase deploys from `Pommora/` to https://pommora-design-system.vercel.app.
+- **Gates.** `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers both `tsconfig` projects. `npm run test` is Vitest; `npm run lint` is Biome and runs clean, so a change that adds a diagnostic isn't done → [[Lint-And-Accessibility]]. Formatting is Biome's as well (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align or run Biome yourself — an Edit failing on whitespace means Biome reformatted, so re-read and retry.
 
 #### Run Gotcha (Read Before Launching)
 
@@ -47,7 +45,7 @@ The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set
 - **Never** reference plans, decision logs, or any other session-dependent phrasing in documentation or code comments.
 - **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they never restate exact code values. Name the token and its treatment ("the red solid at a low opacity"), never the literal `#hex` / `%` / line-for-line code stays in the code itself. The same discipline must be held true equally to code comments.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves. *Void when Nathan's unreachable:* proceed on the best record of his design wishes and the existing design logic, but disclose every such decision and assumption as you make it.
-- **Tokens must** be pulled from their sources in `design-system` — never hand-roll tokens without explicit direction; dual-optionmenu toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
+- **Tokens must** be pulled from their sources in `design-system` — never hand-roll tokens without explicit direction; dual-option menu toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
 
 ### Locked Decisions
 
@@ -69,7 +67,7 @@ Pommora was first built as a native SwiftUI app — that build was active for ar
 **Sapphire** is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime: it brings Pommora-style capabilities to Obsidian natively and keeps NexusOS Pommora-compatible, so Nathan's daily vault stays aligned as Pommora matures — at a light weekly cadence, subordinate to the daily Pommora grind.
 
 ### Codebase Map
-````
+```
 // [[Project Pommora]]                       | • Monorepo root — the app, its documentation, and deploy config
 ├── // [[.claude]]                           | • Project documentation and Claude configuration
 │   ├── [[CLAUDE]]                           | • This file.
@@ -160,4 +158,4 @@ Pommora was first built as a native SwiftUI app — that build was active for ar
 │   │           │   └── // [[tokens]]        | • Color, type, motion, chip — the token source of truth
 │   │           ├── [[App.tsx]]              | • The shell — three panes and the routed surface
 │   │           └── [[store.ts]]             | • The Zustand store holding renderer state
-````
+```
