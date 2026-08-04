@@ -14,6 +14,7 @@ import {
 } from '../detect'
 import { fencedCodeRanges } from '../detect'
 import { docMathRanges } from './mathRanges'
+import { docEmbedLines } from './embedRanges'
 import { tableRegions } from '../Tables/regions'
 import { headingSections } from './folding'
 
@@ -25,6 +26,7 @@ export type BlockKind =
   | 'code'
   | 'table'
   | 'math'
+  | 'embed'
   | 'hr'
   | 'paragraph'
 
@@ -48,6 +50,7 @@ interface BlockContext {
   fences: [number, number][]
   tables: { from: number; to: number }[]
   maths: [number, number][]
+  embeds: { from: number; to: number }[]
   claimed: (i: number) => boolean
   kindAt: (i: number) => BlockKind | null
 }
@@ -62,12 +65,15 @@ function blockContext(doc: string): BlockContext {
   const fences = fencedCodeRanges(doc)
   const tables = tableRegions(doc)
   const maths = docMathRanges(doc)
+  const embeds = docEmbedLines(doc)
   const inFence = (i: number): boolean =>
     i >= 0 && i < n && fences.some(([f, t]) => starts[i] >= f && starts[i] <= t)
   const inTable = (i: number): boolean =>
     i >= 0 && i < n && tables.some((r) => starts[i] >= r.from && starts[i] <= r.to)
   const inMath = (i: number): boolean =>
     i >= 0 && i < n && maths.some(([f, t]) => starts[i] >= f && starts[i] <= t)
+  const inEmbed = (i: number): boolean =>
+    i >= 0 && i < n && embeds.some((e) => starts[i] >= e.from && starts[i] <= e.to)
 
   // List membership: marker lines PLUS their indented continuations (a wrapped item body), but only where a
   // run actually holds a marker — so a bare indented paragraph isn't swept in. A blank line breaks a run, so
@@ -117,6 +123,7 @@ function blockContext(doc: string): BlockContext {
     inFence(i) ||
     inTable(i) ||
     inMath(i) ||
+    inEmbed(i) ||
     heading[i] ||
     listMember[i] ||
     hr[i]
@@ -134,13 +141,14 @@ function blockContext(doc: string): BlockContext {
     if (inFence(i)) return 'code'
     if (inTable(i)) return 'table'
     if (inMath(i)) return 'math'
+    if (inEmbed(i)) return 'embed'
     if (heading[i]) return 'heading'
     if (listMember[i]) return 'list'
     if (hr[i]) return 'hr'
     return 'paragraph'
   }
 
-  return { lines, n, starts, ends, callout, listMember, fences, tables, maths, claimed, kindAt }
+  return { lines, n, starts, ends, callout, listMember, fences, tables, maths, embeds, claimed, kindAt }
 }
 
 /** The top-level block owning the line at `pos`, or null on a blank/unowned line (nothing to grab). */
@@ -197,6 +205,8 @@ export function blockAt(doc: string, pos: number): Block | null {
     }
     case 'hr':
       return { from: starts[li], to: ends[li], kind: 'hr' }
+    case 'embed':
+      return { from: starts[li], to: ends[li], kind: 'embed' }
     case 'paragraph': {
       let a = li
       while (a > 0 && !ctx.claimed(a - 1)) a--
@@ -261,7 +271,7 @@ export function blockStarts(doc: string): BlockStart[] {
         first = ctx.claimed(i - 1)
         break
       default:
-        first = true // heading + hr are always single-line block starts
+        first = true // heading, hr, and embed are always single-line block starts
     }
     if (first) out.push({ from: starts[i], kind })
   }

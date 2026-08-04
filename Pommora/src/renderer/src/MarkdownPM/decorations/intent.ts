@@ -10,10 +10,12 @@ import {
   scanFencedCode,
   splitWithOffsets,
   type CalloutLine,
+  type EmbedLine,
   type FenceInfo,
   type ListMarker,
 } from '../detect'
 import { docMathRanges } from '../editor/mathRanges'
+import { docEmbedLines } from '../editor/embedRanges'
 
 // A line is a nested quote INSIDE a callout when it's a callout line whose content (after the callout's own
 // `>` level) is itself a blockquote. Drives the md-bq-in run's first/last across a contiguous nested-quote run.
@@ -53,6 +55,7 @@ export interface DocScan {
   callouts: (CalloutLine | undefined)[]
   fencedRanges: [number, number][]
   maths: [number, number][]
+  embeds: EmbedLine[]
 }
 
 export function scanDoc(text: string): DocScan {
@@ -65,6 +68,7 @@ export function scanDoc(text: string): DocScan {
     callouts: calloutLines(lines, fences),
     fencedRanges: fences.flatMap((f) => (f?.role === 'open' ? [[f.from, f.to] as [number, number]] : [])),
     maths: docMathRanges(text),
+    embeds: docEmbedLines(text),
   }
 }
 
@@ -103,7 +107,7 @@ export const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
   italic: 'md-italic',
   strikethrough: 'md-strike',
   inlineCode: 'md-code',
-  imageEmbed: 'md-image',
+  embed: 'md-embed',
   inlineLatex: 'md-latex',
   blockLatex: 'md-latex',
 }
@@ -227,6 +231,10 @@ function lineIntentsInto(
     if (base > 0) intents.push({ kind: 'hide', from: ls, to: ls + base })
     return null
   }
+
+  // An embed line renders no line constructs — the tile field owns its presentation, and a lone
+  // `![[…]]` can't be a list/heading/hr anyway. Prefix-free by definition: a quoted line isn't lone.
+  if (scan.embeds.some((e) => ls >= e.from && ls <= e.to)) return null
 
   // pushConstruct hides the prefix [ls, innerStart] itself, so a leading bullet/HR widget can ABSORB it into
   // one replace — CM drops a widget-replace that merely *touches* a preceding replace at the same offset.
