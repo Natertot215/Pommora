@@ -58,6 +58,30 @@ export function embedDeleteSpan(
   return { from: r.from, to: r.to + 1 }
 }
 
+/** The Insert menu's Page: the same native pick tree the rail grip offers, aimed at the caret's
+ *  block — a caret on a blank line inserts fenced below that line. */
+export function embedInsertAtCaret(view: EditorView): boolean {
+  if (view.state.readOnly) return false
+  const tree = useSession.getState().tree
+  if (!tree) return false
+  const doc = docString(view.state.doc)
+  const head = view.state.selection.main.head
+  const block = blockAt(doc, head)
+  const after = block ? block.to : view.state.doc.lineAt(head).to
+  void window.nexus?.embedMenu
+    ?.({ mode: 'create', tree: embedPickTree(tree, embedExclusions(view.state)) })
+    .then((action) => {
+      if (action?.action === 'embed') {
+        view.dispatch({
+          changes: embedInsertAfter(docString(view.state.doc), after, action.title),
+          userEvent: 'input',
+        })
+      }
+      view.focus()
+    })
+  return true
+}
+
 export const embedGripMenu = EditorView.domEventHandlers({
   contextmenu(e, view) {
     if (view.state.readOnly) return false // a resting tile's inner grips offer nothing actionable
