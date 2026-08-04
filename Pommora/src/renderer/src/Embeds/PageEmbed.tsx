@@ -56,7 +56,7 @@ export function PageEmbed({
    *  shared `liveBody` slot (single-owner; a second writer would evict the main pane's count). */
   onBody?: (body: string) => void
   /** A restored entry mounts synchronously (its doc IS the body — no fetch/blank frame); capture
-   *  fires at unmount. Block tiles mount cold (no warm prop passed). */
+   *  fires at unmount. Block tiles ride the session tile cache (tileWarm), keyed by host chain. */
   warm?: WarmSeam
   /** The embed-host chain above this page, cycle guard + nesting depth for the tiles inside it —
    *  this embed appends its own path before handing down. Absent = a top-level embed host. */
@@ -71,11 +71,13 @@ export function PageEmbed({
   // render shows the inert fallback, never an editable blank that would overwrite the real file
   // on the first keystroke.
   const [loaded, setLoaded] = useState<EmbedEntry | null>(() => {
+    // The path-keyed slot rehydrates a scrolled-back tile — no IPC round-trip, no blank frame,
+    // and its body is write-through-fresh from any host's pending edit. A warm doc overlays the
+    // slot's metadata (id, title, cover): the seam serializes editor state, not page chrome.
     const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
-    if (typeof doc === 'string') return { path, body: doc }
-    // A scrolled-back tile rehydrates from the path-keyed slot — no IPC round-trip, no blank
-    // frame, and the slot's body is write-through-fresh from any host's pending edit.
     const cached = readPageDetail(path)
+    if (typeof doc === 'string')
+      return cached ? { ...entryFrom(path, cached), body: doc } : { path, body: doc }
     return cached ? entryFrom(path, cached) : null
   })
   const entry = loaded?.path === path ? loaded : null
