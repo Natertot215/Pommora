@@ -8,6 +8,8 @@ import { EMBED_SCALE, EMBED_ZOOM } from './embedScale'
 // Entering edit reconfigures the SAME CM6 view's editability — no remount, no jitter. Header
 // chrome (banner + title) is parked; returns with the ⋮ toggle pass.
 
+const titleOf = (path: string): string => (path.split('/').pop() ?? path).replace(/\.md$/i, '')
+
 export function PageEmbed({
   path,
   editing,
@@ -16,6 +18,7 @@ export function PageEmbed({
   locked = false,
   onBody,
   warm,
+  ancestors,
 }: {
   path: string
   editing: boolean
@@ -28,14 +31,21 @@ export function PageEmbed({
   /** A restored entry mounts synchronously (its doc IS the body — no fetch/blank frame); capture
    *  fires at unmount. Block tiles mount cold (no warm prop passed). */
   warm?: WarmSeam
+  /** The embed-host chain above this page, cycle guard + nesting depth for the tiles inside it —
+   *  this embed appends its own path before handing down. Absent = a top-level embed host. */
+  ancestors?: readonly string[]
 }): React.JSX.Element {
   // Bound to the path it was loaded FOR — an un-keyed host re-aiming `path` blanks and refetches
-  // exactly as a fresh mount would.
-  const [loaded, setLoaded] = useState<{ path: string; body: string } | null>(() => {
+  // exactly as a fresh mount would. A failed open is NOT an empty page: body stays null and the
+  // render shows the inert fallback, never an editable blank that would overwrite the real file
+  // on the first keystroke.
+  const [loaded, setLoaded] = useState<{ path: string; body: string | null } | null>(() => {
     const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
     return typeof doc === 'string' ? { path, body: doc } : null
   })
-  const body = loaded?.path === path ? loaded.body : null
+  const entry = loaded?.path === path ? loaded : null
+  const body = entry?.body ?? null
+  const failed = entry !== null && entry.body === null
 
   const onBodyRef = useRef(onBody)
   onBodyRef.current = onBody
@@ -44,15 +54,15 @@ export function PageEmbed({
   }, [body])
 
   useEffect(() => {
-    if (body !== null) return
+    if (entry !== null) return
     let live = true
     void window.nexus.openPage(path).then((r) => {
-      if (live) setLoaded({ path, body: r.ok ? r.value.body : '' })
+      if (live) setLoaded({ path, body: r.ok ? r.value.body : null })
     })
     return () => {
       live = false
     }
-  }, [path, body])
+  }, [path, entry])
 
   // Writes are keyed to the path they were scheduled under (pageFlush) — a host re-aiming `path`
   // can never land the old page's body on the new one.
@@ -61,6 +71,7 @@ export function PageEmbed({
     return () => void flushPageSave(path)
   }, [editing, path])
 
+  if (failed) return <div className="pgembed pgembed-failed">{titleOf(path)}</div>
   if (body === null) return <div className="pgembed" />
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
@@ -86,6 +97,7 @@ export function PageEmbed({
         zoom={EMBED_ZOOM}
         edgeFade
         warm={warm}
+        embedAncestors={[...(ancestors ?? []), path]}
       />
     </div>
   )

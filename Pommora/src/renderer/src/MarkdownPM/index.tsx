@@ -15,6 +15,7 @@ import {
   calloutDragExtension,
 } from './editor/blockDrag'
 import { calloutGripMenu } from './editor/calloutGripMenu'
+import { embedTiles } from './editor/embedWidget'
 import { customCaret } from './editor/caret'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
@@ -55,6 +56,8 @@ interface Props {
   onEditIcon?: () => void
   zoom?: number
   connections?: ConnectionsApi
+  /** The embed-host chain above this editor — feeds the tile facet (cycle guard + nesting depth). */
+  embedAncestors?: readonly string[]
   folds?: FoldsApi
   tableHeadingColumns?: TableHeadingColsApi
   menu?: EditorMenuApi
@@ -75,6 +78,7 @@ export function MarkdownEditor({
   onEditIcon,
   zoom = ZOOM_DEFAULT,
   connections,
+  embedAncestors,
   folds,
   tableHeadingColumns,
   menu,
@@ -93,6 +97,8 @@ export function MarkdownEditor({
   onChangeRef.current = onChange
   const connectionsRef = useRef(connections)
   connectionsRef.current = connections
+  const embedAncestorsRef = useRef<readonly string[]>(embedAncestors ?? [])
+  embedAncestorsRef.current = embedAncestors ?? []
   const foldsRef = useRef(folds)
   foldsRef.current = folds
   const tableHeadingColsRef = useRef(tableHeadingColumns)
@@ -161,6 +167,9 @@ export function MarkdownEditor({
         () => connectionsRef.current,
         (indices) => tableHeadingColsRef.current?.save(indices),
       ),
+      // A claimed lone-line ![[Title]] renders as a live page tile (its own StateField — the
+      // decoration ViewPlugin never reaches CM's height map).
+      embedTiles({ getConn: () => connectionsRef.current, ancestors: embedAncestorsRef.current }),
       // Grab a list glyph (•, number, or checkbox) to drag-reorder the item; click toggles/places caret.
       listDragExtension,
       // Block-drag rail handles: a hover grip on each draggable block's first line (paragraph/code/quote/list).

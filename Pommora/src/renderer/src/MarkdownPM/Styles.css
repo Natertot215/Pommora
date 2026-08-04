@@ -332,6 +332,29 @@
   color: var(--label-secondary);
 }
 
+/* The embedded-page tile — the shared chassis on a real .cm-line, gutter-width like the other box
+   constructs. Transitions are per-consumer by the chassis contract; the accent trigger (hover OR
+   live edit) is this host's own, riding the chassis's --tile-border-color. */
+.mdpm-embed-tile {
+  display: block;
+  /* KNOB — the tile's resting height; content past it rest-scrolls inside. */
+  height: 320px;
+  margin: 4px 0;
+  transition: border-color var(--duration-base) var(--ease-standard);
+}
+.mdpm-embed-tile:hover,
+.mdpm-embed-tile.is-editing-tile {
+  --tile-border-color: var(--accent-stroke);
+}
+/* Nested tiles are display-only — no edit, no menus, no click-through. */
+.mdpm-embed-tile.is-inert {
+  pointer-events: none;
+}
+/* A cycle renders as the inert dim token's text — a tile of an ancestor page cannot mount itself. */
+.mdpm-embed-cycle {
+  color: var(--label-secondary);
+}
+
 .md-control {
   color: var(--label-control);
 }
