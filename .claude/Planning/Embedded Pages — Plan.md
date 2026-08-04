@@ -199,6 +199,12 @@ Live per-page refresh bus · per-embed zoom (`local_state` scope) · record-back
 
 ### Log
 
-- Phase 0 base: `90b97ff8`
-- Deviations: —
+- Phase 0 base: `90b97ff8` · shipped `59374823` — verdict: geometry HOLDS. Mid-doc + fence-adjacent: zero seats (vertical included, real layout). Doc edges: one visible boundary seat each, resolved by the guard's insertion-repair arm (folded into 2.3). Escape hatch not fired.
+- Phase 1 base: `59374823` · shipped `03d73226` (feature) + `d165dd34` (simplification) + `a7adaa4a` (gate fold). Gate: 2118/2118 · typecheck 0 · lint 0 · build green. Attack round: 1 High + 1 Medium + 1 Low + 1 Latent, all folded.
+- Phase 2 base: `a7adaa4a`
+- Deviations:
+  - **Lone-ness is trailing-tolerant only** — the gate proved (executed, five list shapes) that trim-both-sides made an indented `![[…]]` under a bullet an embed block mid-item: its grip and drop slot tore the list on one ordinary drag, because the same leading whitespace that made the line "lone" is what glues a continuation to its marker. A leading indent now reads as hosted context (inert token, rides its bullet), the same rule quotes and callouts already follow. Fixed at the derivation so every layer agrees at once.
+  - **Display math joined the embed exclusion set** — an `![[…]]` inside `$$…$$` could claim first-in-document and demote the real embed to a duplicate; one line in `docEmbedLines`.
+  - **Task 1.3's construct gate was removed as dead** — no line construct can match a lone `![[…]]` line, so the gate was a no-op no test could redden; a pin now documents the fact instead of a guard pretending to enforce it.
+  - **Interim render accepted on record:** between this phase and 2.2's widget, a *claimed* lone-line embed renders as raw syntax (its token stands down for a tile that doesn't exist yet). Scratch-nexus content contains zero `![[` lines; the window closes when Phase 2 lands.
 - Rulings: —
