@@ -37,6 +37,10 @@ const embedHost = Facet.define<EmbedHost, EmbedHost>({
 /** Flips which tile (by target path) holds the live edit; null ends it. */
 export const setEmbedEditing = StateEffect.define<string | null>()
 
+/** The resolution nudge — dispatched when the page index changes identity, so tiles and
+ *  connection styling react to a rename/delete/restore without waiting for a caret move. */
+export const resolutionNudge = StateEffect.define<null>()
+
 export interface TileRange {
   from: number
   to: number
@@ -213,9 +217,13 @@ export const embedField = StateField.define<EmbedTiles>({
   create: (state) => buildTiles(state, null),
   update(value, tr) {
     let editing = value.editing
-    for (const e of tr.effects) if (e.is(setEmbedEditing)) editing = e.value
+    let nudged = false
+    for (const e of tr.effects) {
+      if (e.is(setEmbedEditing)) editing = e.value
+      else if (e.is(resolutionNudge)) nudged = true
+    }
     if (!tr.docChanged) {
-      return editing === value.editing ? value : buildTiles(tr.state, editing)
+      return nudged || editing !== value.editing ? buildTiles(tr.state, editing) : value
     }
     if (editAffectsEmbeds(value, tr)) return buildTiles(tr.state, editing)
     return {

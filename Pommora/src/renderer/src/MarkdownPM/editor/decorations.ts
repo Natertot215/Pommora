@@ -12,6 +12,7 @@ import { chipBoxGeometry } from '../../design-system/tokens'
 import { tokenize, activeTokenIndices, type Token } from '../tokens'
 import { docLineIntentsOf, docScan, docString } from './docCache'
 import { claimedEmbeds } from './embedRanges'
+import { resolutionNudge } from './embedWidget'
 import {
   assembleLineIntents,
   GLYPH_CLASS,
@@ -295,7 +296,13 @@ export function markdownDecorations(getConn: () => ConnectionsApi | undefined): 
       update(u: ViewUpdate): void {
         // Inline tokens are viewport-scoped, so scroll (viewportChanged) must rebuild too — newly
         // revealed lines need their decorations. Line-level chrome still spans the whole doc.
-        if (u.docChanged || u.selectionSet || u.focusChanged || u.viewportChanged)
+        if (
+          u.docChanged ||
+          u.selectionSet ||
+          u.focusChanged ||
+          u.viewportChanged ||
+          u.transactions.some((tr) => tr.effects.some((e) => e.is(resolutionNudge)))
+        )
           this.decorations = build(u.view, getConn())
       }
     },
