@@ -1,4 +1,5 @@
 import type { CollectionNode, NexusTree, SelectionState, SetNode } from '@shared/types'
+import { titleFromPath } from '@shared/connections'
 import type { SelectTarget, TrailEntry } from '../../store'
 import { findSpace } from '../Scope'
 
@@ -11,7 +12,6 @@ export interface Crumb {
   onClick?: () => void
 }
 
-const basename = (path: string): string => (path.split('/').pop() ?? path).replace(/\.md$/, '')
 
 const allCollections = (tree: NexusTree): CollectionNode[] => [...(tree.collections ?? [])]
 
@@ -103,7 +103,7 @@ export function subfieldCrumbs(
     }
     case 'page': {
       const chain = chainOf(tree, selection.id)
-      if (!chain) return [{ key: selection.id, title: basename(selection.path) }]
+      if (!chain) return [{ key: selection.id, title: titleFromPath(selection.path) }]
       const crumbs: Crumb[] = [
         {
           key: chain.collection.id,
@@ -119,7 +119,7 @@ export function subfieldCrumbs(
           onClick: isDepth1 ? () => select({ kind: 'set', id: s.id, path: s.path }) : undefined,
         })
       })
-      crumbs.push({ key: selection.id, title: basename(selection.path) })
+      crumbs.push({ key: selection.id, title: titleFromPath(selection.path) })
       return crumbs
     }
   }
