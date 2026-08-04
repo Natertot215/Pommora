@@ -5,36 +5,34 @@ function connectionColorCss(setting: ConnectionColorSetting | undefined): string
   return !setting || setting === 'accent' ? 'var(--accent)' : vars.color.solid[setting]
 }
 
+/** The knobs that render as a root class toggled by a boolean — a new one is an entry here. */
+const ROOT_CLASSES: Partial<Record<keyof Personalization, string>> = {
+  hideChevrons: 'hide-chevrons',
+  outlinerLines: 'outliner-lines',
+  codeblockLineCount: 'cb-line-count',
+}
+
 export function applyPersonalizationKey<K extends keyof Personalization>(
   key: K,
   value: Personalization[K],
 ): void {
   if (typeof document === 'undefined') return
   const el = document.documentElement
-  switch (key) {
-    case 'connectionColor':
-      el.style.setProperty(
-        '--connection',
-        connectionColorCss(value as ConnectionColorSetting | undefined),
-      )
-      return
-    case 'hideChevrons':
-      el.classList.toggle('hide-chevrons', value === true)
-      return
-    case 'outlinerLines':
-      el.classList.toggle('outliner-lines', value === true)
-      return
-    case 'codeblockLineCount':
-      el.classList.toggle('cb-line-count', value === true)
-      return
-    default: // accent → applyAccent; defaultIcons → resolved per-render — no DOM effect here.
-      return
+  if (key === 'connectionColor') {
+    el.style.setProperty(
+      '--connection',
+      connectionColorCss(value as ConnectionColorSetting | undefined),
+    )
+    return
   }
+  // Anything with no class here has no DOM effect at this seam: accent → applyAccent;
+  // defaultIcons → resolved per-render.
+  const cls = ROOT_CLASSES[key]
+  if (cls) el.classList.toggle(cls, value === true)
 }
 
 export function applyPersonalization(p: Personalization): void {
   applyPersonalizationKey('connectionColor', p.connectionColor)
-  applyPersonalizationKey('hideChevrons', p.hideChevrons)
-  applyPersonalizationKey('outlinerLines', p.outlinerLines)
-  applyPersonalizationKey('codeblockLineCount', p.codeblockLineCount)
+  for (const key of Object.keys(ROOT_CLASSES) as (keyof Personalization)[])
+    applyPersonalizationKey(key, p[key])
 }

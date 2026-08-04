@@ -922,26 +922,30 @@
 .mdpm-editor .cm-line.md-cb {
   --tok-tint: var(--tint-primary);
 }
+.mdpm-editor .md-cb :is(.tok-kw, .tok-str, .tok-num, .tok-prop, .tok-fn, .tok-type) {
+  color: color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--system-white));
+}
 .mdpm-editor .md-cb .tok-kw {
-  color: color-mix(in srgb, var(--solid-purple) var(--tok-tint), var(--system-white));
+  --tok-solid: var(--solid-purple);
 }
 .mdpm-editor .md-cb .tok-str {
-  color: color-mix(in srgb, var(--solid-green) var(--tok-tint), var(--system-white));
+  --tok-solid: var(--solid-green);
 }
 .mdpm-editor .md-cb .tok-num {
-  color: color-mix(in srgb, var(--solid-orange) var(--tok-tint), var(--system-white));
-}
-.mdpm-editor .md-cb .tok-com {
-  color: var(--label-tertiary);
+  --tok-solid: var(--solid-orange);
 }
 .mdpm-editor .md-cb .tok-prop {
-  color: color-mix(in srgb, var(--solid-light-blue) var(--tok-tint), var(--system-white));
+  --tok-solid: var(--solid-light-blue);
 }
 .mdpm-editor .md-cb .tok-fn {
-  color: color-mix(in srgb, var(--solid-yellow) var(--tok-tint), var(--system-white));
+  --tok-solid: var(--solid-yellow);
 }
 .mdpm-editor .md-cb .tok-type {
-  color: color-mix(in srgb, var(--solid-cyan) var(--tok-tint), var(--system-white));
+  --tok-solid: var(--solid-cyan);
+}
+/* The comment tone is a label step, not a spectrum pastel. */
+.mdpm-editor .md-cb .tok-com {
+  color: var(--label-tertiary);
 }
 
 /* The language chrome — `</> TYPE` at the block's top right; the always-visible ``` keeps its
@@ -952,7 +956,7 @@
   right: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   color: var(--code);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -962,7 +966,7 @@
 .mdpm-editor .md-cb .md-cb-lang::before {
   content: "";
   width: calc(1em + 1px);
-  height: calc(1em + 1px);
+  height: calc(1em + 44px);
   background: currentColor;
   -webkit-mask: var(--code-glyph) center / contain no-repeat;
   mask: var(--code-glyph) center / contain no-repeat;
