@@ -27,3 +27,47 @@ describe('connectionInsert', () => {
     expect(caret).toBe(4 + '[[Page A]]'.length)
   })
 })
+// The embed branch is opt-in (allowEmbeds) and local — table cells never pass the flag, so `![[`
+// can never complete there; the connections pattern itself is untouched.
+describe('embed autocomplete detection', () => {
+  it('an unclosed ![[ query resolves with the span to line end', () => {
+    expect(autocompleteQuery('x ![[Fo', 7, true)).toEqual({
+      query: 'Fo',
+      from: 2,
+      to: 7,
+      form: 'embed',
+    })
+  })
+
+  it('a closed ![[..]] span covers the closer', () => {
+    expect(autocompleteQuery('![[Fo]]', 5, true)).toEqual({
+      query: 'Fo',
+      from: 0,
+      to: 7,
+      form: 'embed',
+    })
+  })
+
+  it('without the flag, ![[ stays silent — the cell behavior', () => {
+    expect(autocompleteQuery('x ![[Fo', 7)).toBeNull()
+  })
+
+  it('a plain [[ query keeps its link form, flag or not', () => {
+    expect(autocompleteQuery('[[Fo]]', 4, true)).toEqual({
+      query: 'Fo',
+      from: 0,
+      to: 6,
+      form: 'link',
+    })
+  })
+})
+
+describe('connectionInsert forms', () => {
+  it('writes the embed form with the caret past the closer', () => {
+    expect(connectionInsert('Alpha', 3, 'embed')).toEqual({ insert: '![[Alpha]]', caret: 13 })
+  })
+
+  it('defaults to the link form', () => {
+    expect(connectionInsert('Alpha', 0)).toEqual({ insert: '[[Alpha]]', caret: 9 })
+  })
+})
