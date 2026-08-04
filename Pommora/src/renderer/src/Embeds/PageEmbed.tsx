@@ -109,7 +109,18 @@ export function PageEmbed({
           path={path}
           title={entry.title ?? titleOf(path)}
           cover={entry.cover}
-          onChanged={() => setLoaded(null)}
+          onChanged={() =>
+            void window.nexus.openPage(path).then((r) => {
+              // Merge the cover only — nulling would unmount the live editor mid-edit and race the
+              // debounced body write; the body seed stays untouched.
+              if (r.ok)
+                setLoaded((l) => {
+                  if (!l) return l
+                  const cover = r.value.frontmatter.cover
+                  return { ...l, cover: typeof cover === 'string' ? cover : undefined }
+                })
+            })
+          }
         />
       ) : entry?.id ? (
         <EmbedCrumbs id={entry.id} />
@@ -118,7 +129,7 @@ export function PageEmbed({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click-to-edit surface over a contenteditable that is already keyboard-reachable
     <div
-      className={`pgembed${editing ? ' is-editing' : ''}`}
+      className={`pgembed${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}`}
       style={{ '--mdpm-scale': EMBED_SCALE } as React.CSSProperties}
       onClick={() => {
         if (editing || locked) return // locked: no edit entry; selection still works
