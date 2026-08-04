@@ -79,7 +79,10 @@ export function push<K extends keyof Pushes>(
 
 /** An emptied value — no fold keys, no manual order, an unset pointer — deletes its key rather
  *  than persisting an empty container, matching the properties map and contexts. */
-const isEmptyValue = (v: unknown): boolean => v === '' || (Array.isArray(v) && v.length === 0)
+const isEmptyValue = (v: unknown): boolean =>
+  v === '' ||
+  (Array.isArray(v) && v.length === 0) ||
+  (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length === 0)
 
 /** The per-machine scope pair's handlers. The store is app-owned, so the only validation is
  *  here at the boundary, where the renderer's payload is still untrusted — one guard ladder

@@ -337,6 +337,7 @@
    live edit) is this host's own, riding the chassis's --tile-border-color. */
 .mdpm-embed-tile {
   display: block;
+  position: relative;
   /* KNOB — the tile's resting height; content past it rest-scrolls inside. */
   height: 320px;
   margin: 4px 0;
@@ -349,6 +350,21 @@
 /* Nested tiles are display-only — no edit, no menus, no click-through. */
 .mdpm-embed-tile.is-inert {
   pointer-events: none;
+}
+/* The bottom-edge resize strip — SurfacePM's south-edge geometry, straddling the border. */
+.mdpm-embed-resize {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -3px;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 2;
+}
+/* Mid-drag the border wears the stronger resize accent, matching SurfacePM's own. */
+.mdpm-embed-tile.is-resizing-tile {
+  --tile-border-color: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
+  cursor: ns-resize;
 }
 /* A cycle renders as the inert dim token's text — a tile of an ancestor page cannot mount itself. */
 .mdpm-embed-cycle {
