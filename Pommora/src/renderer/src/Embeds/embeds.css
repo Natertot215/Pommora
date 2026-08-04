@@ -69,11 +69,28 @@
   overflow: visible;
 }
 
-/* Page-follows header chrome inside a tile (chrome='page'): the banner band scales with the embed;
-   the coverless breadcrumb floats centered at the top and reveals on tile hover, matching the
-   accent border's own timing. */
+/* Page-follows header chrome inside a tile (chrome='page'): the banner band holds the page's OWN
+   layout contract — out of flow, its height reserved as editor padding — because an in-flow band
+   inside a fixed clipped tile would push the editor's viewport past the clip and strand it. Tile-
+   proportional, never the page's 230px. The coverless breadcrumb floats centered at the top and
+   reveals on tile hover, matching the accent border's own timing. */
+.pgembed {
+  /* KNOB — the embed banner band's height. */
+  --embed-banner-h: 96px;
+}
 .pgembed .mdpm-banner {
-  height: calc(230px * var(--mdpm-scale));
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--embed-banner-h);
+  z-index: 2;
+}
+.pgembed.has-banner .mdpm-editor .cm-content {
+  padding-top: calc(var(--embed-banner-h) + 16px * var(--mdpm-scale));
+}
+.pgembed .mdpm-banner-img {
+  -webkit-user-drag: none;
 }
 /* Size only — the span is a .detail-title-text, which already carries the weight and colour. */
 .pgembed .mdpm-banner-overlay {
