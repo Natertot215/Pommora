@@ -6,7 +6,7 @@ import {
   isInlineMathContent,
   parseListMarker,
   indentLevel,
-  imageEmbedRegex,
+  embedRegex,
   inlineCodeRegex,
   markdownLinkRegex,
   calloutLines,
@@ -102,7 +102,7 @@ describe('blockquote', () => {
 
 describe('inline matchers (verbatim regexes)', () => {
   it('image embed ![[name]]', () => {
-    const m = imageEmbedRegex().exec('see ![[pic]] here')
+    const m = embedRegex().exec('see ![[pic]] here')
     expect(m?.[1]).toBe('pic')
   })
   it('inline code `code`', () => {

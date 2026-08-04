@@ -50,7 +50,7 @@ describe('inline regex tokens + overlap rules', () => {
 
   it('image ![[pic]] wins over wikilink (no wikiLink emitted)', () => {
     const tokens = tokenize('![[pic]]')
-    expect(byKind(tokens, 'imageEmbed')).toHaveLength(1)
+    expect(byKind(tokens, 'embed')).toHaveLength(1)
     expect(byKind(tokens, 'wikiLink')).toHaveLength(0)
   })
 

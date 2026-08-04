@@ -4,7 +4,7 @@ import { parse } from '../parser'
 import { isInsideCode } from '@shared/markdownCode'
 import {
   isInlineMathContent,
-  imageEmbedRegex,
+  embedRegex,
   markdownLinkRegex,
   inlineCodeRegex,
   blockLatexRegex,
@@ -19,7 +19,7 @@ export type TokenKind =
   | 'inlineCode'
   | 'blockLatex'
   | 'inlineLatex'
-  | 'imageEmbed'
+  | 'embed'
   | 'wikiLink'
   | 'link'
 
@@ -146,8 +146,8 @@ export function tokenize(text: string): Token[] {
   // a [[link]] in code must render (and click) as literal code, not a live connection.
   const code = regexTokens(text, { kind: 'inlineCode', re: inlineCodeRegex(), open: 1, close: 1 })
   const images = regexTokens(text, {
-    kind: 'imageEmbed',
-    re: imageEmbedRegex(),
+    kind: 'embed',
+    re: embedRegex(),
     open: 3,
     close: 2,
   })

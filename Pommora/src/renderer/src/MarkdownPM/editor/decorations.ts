@@ -11,6 +11,7 @@ import type { Extension, Range } from '@codemirror/state'
 import { chipBoxGeometry } from '../../design-system/tokens'
 import { tokenize, activeTokenIndices, type Token } from '../tokens'
 import { docLineIntentsOf, docScan, docString } from './docCache'
+import { claimedEmbeds } from './embedRanges'
 import {
   assembleLineIntents,
   GLYPH_CLASS,
@@ -178,7 +179,19 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
   const scan = docScan(view.state.doc)
   const focused = view.hasFocus
   const sel = view.state.selection.main
-  const tokens = visibleInlineTokens(view, text, scan.fencedRanges)
+  let tokens = visibleInlineTokens(view, text, scan.fencedRanges)
+  // A CLAIMED embed line belongs to the tile field, so its token styling stands down — otherwise the
+  // dim token would underlie the widget. Unclaimed lone-lines (unresolved, ambiguous, or a later
+  // duplicate of a claimed title) keep the token: that dim text IS their rendering. The claim is the
+  // tile field's own predicate — one owner, so the two layers can't disagree.
+  if (conn && scan.embeds.length > 0) {
+    const claimed = claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)
+    if (claimed.length > 0)
+      tokens = tokens.filter(
+        (tk) =>
+          !(tk.kind === 'embed' && claimed.some((e) => tk.range[0] >= e.from && tk.range[1] <= e.to)),
+      )
+  }
   const active = focused ? activeTokenIndices(tokens, sel.from, sel.to) : NO_ACTIVE
   const head = focused ? sel.head : NO_CARET
   const intents = tokenIntents(tokens, active)

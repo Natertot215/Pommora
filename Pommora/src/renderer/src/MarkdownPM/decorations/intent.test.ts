@@ -5,6 +5,7 @@ import {
   decorationsFor,
   docLineIntents,
   scanDoc,
+  tokenIntents,
   type DecoIntent,
 } from './intent'
 
@@ -412,5 +413,29 @@ describe('outliner rails', () => {
     // B: run ends at the prose gap (next line not a list) → last true. C: run starts after the gap → first true.
     expect(rs.filter((r) => r.level === 0 && r.last).length).toBe(2) // B and C both cap at the break
     expect(rs.filter((r) => r.level === 0 && r.first).length).toBe(2)
+  })
+})
+
+describe('embed line gate', () => {
+  it('a lone-line embed emits no line constructs; its neighbors are untouched', () => {
+    const scan = scanDoc('- item\n![[Foo]]\n# Head')
+    const { perLine } = docLineIntents(scan)
+    expect(perLine[1]).toEqual([])
+    expect(perLine[0].length).toBeGreaterThan(0)
+    expect(perLine[2].length).toBeGreaterThan(0)
+  })
+
+  it('a non-lone embed line keeps its constructs (the token styles it instead)', () => {
+    const scan = scanDoc('- has ![[Foo]] inline')
+    const { perLine } = docLineIntents(scan)
+    expect(perLine[0].length).toBeGreaterThan(0)
+  })
+
+  it('the embed token wears the embed content class', () => {
+    const tokens = tokenize('see ![[Foo]] here')
+    const embed = tokens.find((t) => t.kind === 'embed')
+    expect(embed).toBeDefined()
+    const intents = tokenIntents(tokens, new Set())
+    expect(intents.some((i) => i.kind === 'class' && i.className === 'md-embed')).toBe(true)
   })
 })
