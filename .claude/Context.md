@@ -2,6 +2,8 @@
 
 ### Current Focus
 
+**Embedded pages shipped whole; what's left is Nathan's hands.** `![[Title]]` is live in MarkdownPM end to end — the tile, the guards, the menus, the autocomplete, the cache, the rename sweep — with every gate green and the interaction walkthrough driven headlessly. What no headless driver can honestly produce is collected as the NEEDS-NATHAN list in [[Embedded Pages — Interaction Walkthrough]]: the native menu picks, the real-pointer feel checks, one real ⌘Q mid-debounce, and the SurfacePM visual baseline. Driving that list is the arc's last mile.
+
 **The NexusRecord is finished as a mechanism, and now it needs a surface.** Every in-app delete produces one bundle in `.trash` — the artifact under the name it always had, plus a record of what it was and where it belonged, by id rather than by path — written before anything is destroyed, and restore spends it against the *current* tree, reconciled so it can't reintroduce a tag or a value nothing stands behind. The mechanism's full story is [[NexusRecordPM]]'s; what's open is reach: `listBundles` has no IPC channel and no caller, so everything here is addressable only from tests. The trash browser is what turns it into something usable, and its first task is one bridge entry.
 
 Below that: a no-op option rename still re-dates every page holding the option — the fix is moving the option cascade onto the governed sweep's change detection, a replumb of the cascade's call sites rather than a patch; the record's three flagged rulings (Pending, below); and pushing main.
@@ -9,6 +11,12 @@ Below that: a no-op option rename still re-dates every page holding the option �
 **Identity is kind-first** — the model itself is canonized in ClaudeMD. What the ledger adds is the half that isn't obvious from the model: an ID-less file is the *opposite* of Unknown and stays fully live — it adopts at open and is still swept, because identity decides whether a value can be handed back, never whether it may be cleared. One resolver owns folder classification at any depth, and an agenda config counts only where the nexus records its sidecar ID, which is what makes a hand-made or relocated config inert without a rule enforcing it. The old agenda architecture is gone rather than adapted — what replaces it starts from the settled identity model and an empty schema, because the shape both kinds carried was Apple's, never re-chosen.
 
 ### Recent Work
+
+#### Embedded Pages (08-03 → 08-04)
+
+The Embed Framework's second consumer finally arrived: typing `![[Title]]` on its own line in a page turns it into a live tile of that page — Obsidian's own syntax, so a Nexus keeps reading outside Pommora. The build leaned on what already existed at every seam: the tile chrome became one shared chassis both SurfacePM and the editor key onto, the panel rides the shared pane surface, the crumbs the preview already wore became the tile's hover breadcrumb, and the rename cascade sweeps embeds through a parallel pattern beside connections — an embed is deliberately never a link-graph edge.
+
+The mechanism Nathan called early — a real editor line, not a table-style block replace — held up under every round: an atomic absorb hops the caret over the tile, and the lone-line guard makes every reachable caret seat harmless, proven by a census of all 92 bound editor commands after a hand-picked four let one escape ship green. The claim (resolved, first-per-title) has exactly one owner read by five consumers, which is what kept the layers from ever disagreeing about a line. Six phases, each gated simplify-then-attack; the gates paid for themselves every single round. → [[MarkdownPM]] §II. Embeddings · History.md.
 
 #### Group Hiding (08-02)
 
@@ -158,6 +166,8 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 - The context machinery splits cleanly: pure resolution in `src/shared/contexts.ts` + `contextResolve.ts`, the write family in `crud/contextWrite.ts`, the cascade/journal/replay in `crud/contextCascade.ts` + `contextJournal.ts`, and every renderer surface resolving identity through `pipeline/contextIdentity.ts`. Context columns are default-OFF: absence from a view's `property_order` IS hidden, which is why creating a Context can never change an existing view.
 
 ### Fix Log
+
+- One unreproduced renderer crash during a programmatic scroll jump toward a table inside an embed tile — black window, no crash log, no console errors, clean on replay and under gradual scrolling. On watch, no repro.
 
 - The "File" property icon gets clipped by its vertical row padding on the ViewPane.
 - The link-rename field shows a leading empty space — a visual inset, not a stored character (deprioritized).

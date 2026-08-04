@@ -2,73 +2,35 @@
 
 > **User Prompt:** *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
 
-### Session Summary — the bridge, the index, identity kind-first, then the NexusRecord end to end
+### Session Summary — embedded pages, brainstorm to shipped, in one continuous arc
 
 **Session ID:** 6dc9212b-b419-4b10-9e15-aa2fb5aedb6e
-**Dates:** 07-30-2026 → 08-01-2026
+**Dates:** 08-03-2026 → 08-04-2026
 **Model:** Fable 5
-**Compactions:** 7 (best-effort)
-**Connectors:** none
-**Commands:** /compact · /handoff
-**Agents:** Explore (12x - census sweeps) · build-breaking (5x - plan attacks + the record's closeout attack) · code-simplifier (7x - per-arc + per-phase passes) · comment-killer (1x - full-diff audit) · general-purpose (12x - reviewers, implementers, the neutral verifier)
-**Skills:** studio-brainstorm · writing-plans-v2 · code-simplification · project-context
+**Compactions:** several (best-effort)
+**Agents:** Explore (9x — grounding scouts, the drag/autoscroll answer, the 4a verdict) · build-breaking (7x — spec attack, 3 plan rounds, 4 phase gates, the post-plan whole-feature attack) · code-simplifier (6x — per-phase + the post-plan cross-phase pass) · general-purpose (2x — the docs-falsified sweep, the live walkthrough driver)
+**Skills:** studio-brainstorm · writing-plans-v2 · code-simplification · build-breaking
 
-**What Started:** Nathan asked for a verified state-of-the-project and a ranked map of where his focus buys the most. Six Explore lenses swept code and docs, every load-bearing claim re-verified at the cited lines. The verification found the overnight campaigns genuinely green plus nine loose ends — including two Fix Log lies, a bug recorded open that was fixed and a fix recorded landed that never covered the op the drag emits.
+**What Started:** Nathan asked for an investigation of embedded pages in MarkdownPM — DRY-hoisted against SurfacePM's tiles, Obsidian's syntax, not-live-preview, nothing hot outside the active tab — with every uncertain assumption surfaced as a question. Three scouts found the ground unusually ready: the Embed Framework had been designed with `![[Embed]]` named as its second consumer, the syntax was already tokenized and fenced off from connections, and the table widget + display math held every precedent the mechanism needed.
 
-**What Happened Along the Way:** The early arcs ran in sequence, each closed with the simplifier-then-breaker loop. The landing-closeout batch and the docs truing landed first; Nathan's "fix the cause, not the symptom" pushed the fence fix into `detect/` as the one owner. The **IPC bridge** followed — every channel declared once in `shared/bridge.ts`, one `Result` envelope everywhere, five refusal spellings down to two — trimmed to correction-only on his directive. The **tree index** collapsed five hand-rolled per-gesture walks into `treeIndex.ts`'s one walk per tree identity with lazily cached projections; the breaker caught the one real regression pre-ship, a Map-keyed record set erasing a duplicated page id from search. A live-driven **view-embed polish batch** rode between the arcs.
+**What Happened Along the Way:** The decision log closed over several question rounds (lone-line only; skip-over caret; the shared cache with write-through; one embed per page per document; banner-follows-the-page display-only; native menus; the fencing blanks; the tree-projection mini-phase Nathan mandated explore-first). The plan survived a simplification round then three attack rounds before certification — the simplifier deleted a single-consumer component and a forced fold before the breakers ever saw them, and the breakers' biggest catches were a CSS shorthand split that would have silently killed every SurfacePM tile transition, and a resolution-blind gate that would have shown raw syntax exactly where the deleted-page token belonged.
 
-The **identity arc** then rebuilt content identity kind-first: `PageID:`/`TaskID:`/`EventID:` keys, one admission predicate shared verbatim by the walk and adoption, one depth-aware folder resolver, agenda registration by sidecar id, and the old agenda architecture deleted rather than adapted. The live migration renamed 171 real files and doubled as its own end-to-end adoption test. Post-ship verification found every remaining defect in the *seam between* two individually-correct mechanisms — the lesson that shaped everything after.
+Execution ran six phases, each gated simplify-then-attack, each attack briefed with the simplifier's flags pre-adjudicated. Every gate earned its keep: Phase 1's attack caught an indented embed tearing list items on drag (fixed at the derivation — leading indent is continuation context); Phase 2's caught the rebuild gate desyncing from the scanner when a fence opened above a tile, plus the chassis border becoming inherited state; Phase 3's caught the banner eating two-thirds of every covered tile; Phase 4's caught the re-aim menu dead exactly for stale tokens — its whole purpose; Phase 5's caught the rename sweep misreading its own code mask on any length-changing rename. The post-plan attack ran a 92-command keymap census and found the four syntax-motion seats the hand-picked test census couldn't see — fixed at the guard, never by chasing commands, and the test rebuilt around the true invariant: every reachable seat, every destructive key, harmless.
 
-The back half was the **NexusRecord**, run full-cycle. The design went through /studio-brainstorm into a decision log, killed two whole approaches on verified facts (a central `.nexus/record.json` — watched folder, ~1MB at scale, unspendable entries; provenance-in-frontmatter — lock races, refusing shapes, a strip pass), and settled on a record travelling with the artifact + baseline-in-db split over five adversarial review rounds. The plan was written with the WIP writing-plans-v2 skill, survived three review rounds (8 → 5 → 4 findings, severity falling), and Nathan ratified with the record-one judgment call explicitly presented.
+The live walkthrough (202 checks by a driver agent against the scratch nexus) then found what only a running app could: a stale warm tab restore silently clobbering the rename cascade's heal on disk (a rename now clears the warm cache whole), a grip-dragged tile blanking because CM adopts widget DOM and the old widget unmounted the root underneath it, and a stray banner click putting the caret one keystroke into the embedded page.
 
-Execution ran all 14 tasks across 4 phases, failing-test-first, every guard negative-controlled (disabled → red → restored). Each phase gate ran an independent simplifier + correctness reviewer on the commit range; every finding was re-verified at the cited code before folding. The gates earned their keep: a same-root re-adopt drift-clobber, ids-in-flux leaving the diff, the corrupt-registry mass-deletion guard, a Context re-entering the registry before anything moves. The closeout ran Delivery Claim → neutral verifier (claim stands, every number reproduced) → build-breaking attack, which confirmed **five uncrossed-mechanism defects by execution** — passenger keys stranded under a disambiguated Context restore, walk-order record-one able to re-mint the live original, a self-poisoning ghost registry entry on a failed move, a hand-edited record steering data out of the nexus, and the stamped leaf mis-parsing a user's own `12__Notes.md`. All five folded red-first the same pass.
+**What It Ended With:** The feature ships whole — tile, guards, chrome, native menus, autocomplete, cache, cascade, nudge — with **typecheck 0 · lint 0 · 2160 tests / 189 files · build + showcase clean**, main pushed throughout (the 169-commit backlog went to origin at the arc's start). Docs are trued: [[MarkdownPM]] carries §II. Embeddings, the falsified-claims catalog is consumed across nine docs and the comment sweep, and the walkthrough doc holds the verdicts plus the NEEDS-NATHAN hand-list.
 
-**What It Ended With:** The NexusRecord ships whole and headless: every nexus-trash delete records what departed and where it belonged, every genuine open latches the baseline and silently keeps the last non-empty drift, duplicated ids re-mint against the prior baseline with the original untouched by construction, and a `restore` mutate op spends those records through a pure resolver — renamed parents resolve to their renamed homes, final titles land everywhere, membership re-applies through the one shared reconcile loop. D-15 is closed by the re-mint. Closing state: **typecheck 0 · lint 0 warnings · 1,994 tests / 179 files · build clean**, ~25 commits from base `680d996f`, tree clean, `main` unpushed. Docs are trued: [[NexusRecordPM]] is the feature's home, the Made False ledger closed across [[ArchitecturePM]] · [[ContextsPM]] · [[PropertiesPM]], History carries the arc, and the spec + plan both read as built.
+**Lessons Learned:**
+
+- The one-owner claim predicate is why five consumers never disagreed about a line — protect invariants at the transaction layer, never by chasing motion commands.
+- CM hands widget DOM to successor widgets: `destroy(dom)` must treat a still-connected node as adopted.
+- A hand-picked command list in a caret-safety test is how an escape ships green; census the installed keymap.
+- Same-length rename fixtures cannot see a code-mask misread — regression pins must change lengths.
+- `Page.reload` is unsafe verification whenever `src/main` changed; relaunch.
 
 **Next Session:**
 
-1. **The trash surface.** `listBundles` has no IPC channel and no caller, so everything the record holds is addressable only from tests — one bridge entry, then a browser that reads it and invokes `restore`. This is what turns the whole arc into something usable.
-2. **The in-place Context key rename** — a rename currently moves the key to the bottom of every tagged page's frontmatter and drops any comment attached to it. The mechanism is shared with the property rename; the collision policies stay different, because the two commit their registry at opposite ends of their sweep.
-3. **Two calls the record survey left open:** whether an option rename should keep re-dating on a no-op, and whether `removeProperty`'s "no readable ids in a whole Collection" refusal survives the reachability razor.
-4. Push `main` — it is far ahead of origin, and that is the project's largest unmanaged risk.
-
-**Lessons Learned**
-
-- The writing-plans-v2 skill held up in anger: the Derivation-with-control pattern caught real drift twice, and the negative-control-every-guard rule caught two tests that passed with their guard disabled. Its 3-round review cap was right — round 3's findings were already half prescription.
-- The record's whole defect surface was crossings — the sweep's skip vs the resolver's rename, the drop rule vs the next open's adjudicator, shape validation vs path safety. Review rounds scoped per-phase structurally cannot see these; only the closeout attack, briefed to interleave mechanisms, found them.
-- A fixture ULID containing `U` cost a diagnosis detour *again* (Crockford has no I/L/O/U) — the landmine note existed and still got hit; generate ids or check the alphabet.
-
-**Session Pointers**
-
-- The plan (`Planning/NexusRecord — Implementation Plan.md`) is the execution record — its Log holds every gate round, deviation, and pending ruling; the Decision Log beside it is the ratified spec, wording aligned to as-built. The feature's durable home is [[NexusRecordPM]]; the code map lives in `Context.md`'s Lessons.
-- The identity arc's planning docs are purged (executed); its record lives in `History.md` and the Features docs.
-
-**Landmines**
-
-- Any dev session predating this arc dials a main process that has since gained the record wiring and the restore op — a fresh `env -u ELECTRON_RUN_AS_NODE npm run dev` before judging anything live.
-- The 8 test files stubbing `window.nexus` are `as unknown` casts with no compile-time protection against future envelope drift.
-
-**User Feedback**
-
-- "Restore is out of scope" meant the *interface* — the actions ship headless; scope words name layers, confirm which one.
-- "Fix the decision log, it has conflicts that have been resolved" — incremental patching leaves contradiction residue; a settled spec gets a clean rewrite, not amendments.
-- The consolidation lens, verbatim intent: leave the least adjacent-but-related code; future consolidation must never find things this feature should have absorbed.
-- Reviews cite file + "what," never line numbers; review agents are standard dispatches, never the Workflow tool.
-
-**Uncertain**
-
-- The compaction count is best-effort from a long multi-day session.
-- The eldest-by-birth-time record-one pick is only as good as the filesystem's birth-time support — correct on APFS, unverified elsewhere.
-
----
-
-### Recent Sessions
-
-- 07-30 · (parallel) · The band-seam law — Table/Cards disclosure seams state-free in shared GroupBand chrome behind `--band-clearance`; menu/pane disclosures audited rightly unique. → [[CardViewPM]] · [[TableViewPM]].
-
-### Rules
-
-- Resolve = delete + route, never tag — no (resolved) / (fixed) tombstones.
-- No standing content here — Pending Focuses / Fix Log / durable rules live in `Context.md`.
-- One block per session, in place; parallels share the doc, never edit another's block.
-- Verify before finalizing — run the no-stale-state checklist.
+1. **Drive the NEEDS-NATHAN list** in [[Embedded Pages — Interaction Walkthrough]] — native menu picks, real-pointer checks, one real ⌘Q, the SurfacePM visual baseline.
+2. **The trash surface** (standing) — `listBundles` bridge entry, then the browser.
+3. The `*`-bullet ruling and the option-rename replumb (standing).
