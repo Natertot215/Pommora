@@ -1,7 +1,7 @@
 /* The shared page-embed chrome — tile-agnostic: the host surface sizes it,
    the embed fills and scrolls. The embed IS the CM6 portal; its padding is its
    own (the editor's boundary-to-first-line standard), never the host's
-   insets. Header chrome (banner + title) is parked — returns with the ⋮ pass. */
+   insets. */
 
 /* Scroll model (edge-release, matching view embeds): at rest the embed scrolls its
    own overflow via the inner CM6 scroller, releasing to the page at its bound; a page
