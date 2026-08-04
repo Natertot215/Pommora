@@ -14,8 +14,11 @@ const RAIL = { min: 130, def: 170, max: 240 }
 
 const DRAG_SURFACES = '.settings-body, .settings-rail-list, .settings-section, .settings-heading'
 
-/** One entry for now — new panels register here. */
-const CATEGORIES = [{ key: 'general', label: 'General', icon: 'sliders-horizontal' }] as const
+/** New panels register here, with their toggle list keyed alongside. */
+const CATEGORIES = [
+  { key: 'general', label: 'General', icon: 'sliders-horizontal' },
+  { key: 'pages', label: 'Pages', icon: 'file-text' },
+] as const
 type CategoryKey = (typeof CATEGORIES)[number]['key']
 
 interface Toggle {
@@ -26,34 +29,43 @@ interface Toggle {
   defaultOn?: boolean
 }
 
-const GENERAL_TOGGLES: Toggle[] = [
-  {
-    key: 'hideChevrons',
-    label: 'Hide Disclosure Chevrons',
-    hint: "Collapse the sidebar's chevron gutter.",
-  },
-  {
-    key: 'outlinerLines',
-    label: 'Outliner Lines',
-    hint: 'Show indent rails on nested lists in the editor.',
-  },
-  {
-    key: 'navCloseOnSelect',
-    label: 'Close Navigation On Select',
-    hint: 'Picking an entity dismisses the Navigation window.',
-    defaultOn: true,
-  },
-  {
-    key: 'connectionsOpenInPreview',
-    label: 'Open Connections In Preview',
-    hint: 'A [[Connection]] click opens the preview window instead of navigating.',
-  },
-  {
-    key: 'revealTabBarOnHover',
-    label: 'Reveal Tab Bar On Hover',
-    hint: 'Keep the tab bar hidden until the pointer nears it.',
-  },
-]
+const TOGGLES: Record<CategoryKey, Toggle[]> = {
+  general: [
+    {
+      key: 'hideChevrons',
+      label: 'Hide Disclosure Chevrons',
+      hint: "Collapse the sidebar's chevron gutter.",
+    },
+    {
+      key: 'outlinerLines',
+      label: 'Outliner Lines',
+      hint: 'Show indent rails on nested lists in the editor.',
+    },
+    {
+      key: 'navCloseOnSelect',
+      label: 'Close Navigation On Select',
+      hint: 'Picking an entity dismisses the Navigation window.',
+      defaultOn: true,
+    },
+    {
+      key: 'connectionsOpenInPreview',
+      label: 'Open Connections In Preview',
+      hint: 'A [[Connection]] click opens the preview window instead of navigating.',
+    },
+    {
+      key: 'revealTabBarOnHover',
+      label: 'Reveal Tab Bar On Hover',
+      hint: 'Keep the tab bar hidden until the pointer nears it.',
+    },
+  ],
+  pages: [
+    {
+      key: 'codeblockLineCount',
+      label: 'Show Line Count In Code Blocks',
+      hint: "Number a codeblock's lines — display chrome, never editable text.",
+    },
+  ],
+}
 
 export function SettingsWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.settingsOpen)
@@ -114,7 +126,7 @@ function SettingsWindowBody({ closing }: { closing: boolean }): React.JSX.Elemen
           {CATEGORIES.find((c) => c.key === category)?.label}
         </h2>
         <div className="settings-section">
-          {GENERAL_TOGGLES.map((t) => (
+          {TOGGLES[category].map((t) => (
             <ToggleRow key={t.key} toggle={t} />
           ))}
         </div>

@@ -52,6 +52,10 @@
 .mdpm-editor .cm-editor {
   height: 100%;
   background: transparent;
+  /* Shared numbering geometry — ordered-list markers AND the codeblock line count ride the same
+     zone + gap, so the two number columns can never drift apart. */
+  --list-gap: 4px;
+  --number-zone: 1.3em;
 }
 .mdpm-editor .cm-editor.cm-focused {
   outline: none;
@@ -423,9 +427,7 @@
    The marker hangs in its zone; wrapped lines align to the text column.       */
 .mdpm-editor .cm-line.md-li {
   --list-indent: 20px;
-  --list-gap: 4px;
   --bullet-zone: 16px;
-  --number-zone: 1.3em;
   --task-zone: 1.8em;
   --bullet-size: 1.25em;
   /* No wrap opportunities outside the content span: the marker zone is full of them (spaces, the
@@ -942,17 +944,16 @@
   color: color-mix(in srgb, var(--solid-cyan) var(--tok-tint), var(--system-white));
 }
 
-/* The language chrome — `</> TYPE` at the block's top right, standing in for the hidden fence
-   syntax (the caret on that line trades it back for the raw ```lang). Icon rides currentColor at
-   text height, so the whole glyph tunes from the label tokens alone. */
+/* The language chrome — `</> TYPE` at the block's top right; the always-visible ``` keeps its
+   place, the raw info word hides beneath the glyph, and the caret on the line trades it back.
+   Icon rides currentColor a notch over text height; the whole glyph wears the code colour. */
 .mdpm-editor .md-cb .md-cb-lang {
   position: absolute;
   right: 12px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: var(--cb-size);
-  color: var(--label-tertiary);
+  color: var(--code);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   pointer-events: none;
@@ -960,11 +961,27 @@
 }
 .mdpm-editor .md-cb .md-cb-lang::before {
   content: "";
-  width: 1em;
-  height: 1em;
+  width: calc(1em + 1px);
+  height: calc(1em + 1px);
   background: currentColor;
   -webkit-mask: var(--code-glyph) center / contain no-repeat;
   mask: var(--code-glyph) center / contain no-repeat;
+}
+
+/* LINE COUNT — the "Show Line Count In Code Blocks" setting. Numbers are widget chrome sitting at
+   the line's own first-character position — the block's padding is the only left inset — on the
+   shared numbering zone + gap (so one- and two-digit blocks keep one code column), label-tertiary
+   in the block's own mono; fence lines carry no number. */
+.md-cb-ln {
+  display: none;
+}
+:root.cb-line-count .md-cb-ln {
+  display: inline-block;
+  min-width: var(--number-zone);
+  padding-right: var(--list-gap);
+  font-variant-numeric: tabular-nums;
+  color: var(--label-tertiary);
+  user-select: none;
 }
 
 /* KNOBS: --ac-radius / --ac-rows (visible before scroll) */
