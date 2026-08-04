@@ -67,8 +67,6 @@ interface TileDom extends HTMLElement {
 }
 
 class EmbedTileWidget extends WidgetType {
-  private root: Root | undefined
-
   constructor(
     readonly path: string,
     readonly title: string,
@@ -106,7 +104,6 @@ class EmbedTileWidget extends WidgetType {
       root = createRoot(dom)
       dom._root = root
     }
-    this.root = root
     const conn = view.state.facet(embedHost).getConn()
     root.render(
       createElement(
@@ -151,7 +148,6 @@ class EmbedTileWidget extends WidgetType {
   }
 
   destroy(dom: HTMLElement): void {
-    this.root = undefined
     // CM hands a tile's DOM to its successor widget on rebuilds and relocations — a node still in
     // the document is ADOPTED, not dead, and unmounting its root would blank the reused tile.
     if (dom.isConnected) return
