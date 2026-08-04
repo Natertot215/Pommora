@@ -182,7 +182,9 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
   const active = focused ? activeTokenIndices(tokens, sel.from, sel.to) : NO_ACTIVE
   const head = focused ? sel.head : NO_CARET
   const intents = tokenIntents(tokens, active)
-  intents.push(...assembleLineIntents(scan, docLineIntentsOf(view.state.doc), head))
+  // Loop, never spread — spreading into push throws past V8's argument ceiling on a huge outline,
+  // and CM answers a crashed plugin by deactivating it for good (the page falls back to raw source).
+  for (const it of assembleLineIntents(scan, docLineIntentsOf(view.state.doc), head)) intents.push(it)
   const ranges: Range<Decoration>[] = []
   for (const it of intents) {
     if (it.kind === 'line') {
