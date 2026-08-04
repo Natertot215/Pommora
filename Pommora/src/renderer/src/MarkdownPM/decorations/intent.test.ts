@@ -23,14 +23,15 @@ describe('cached assembly ≡ pure derivation', () => {
     '',
     '- ',
   ]
-  const sorted = (xs: DecoIntent[]): string[] => xs.map((x) => JSON.stringify(x)).sort()
+  // Sequence compare, not a sorted multiset — order decides stacked line-class order at a shared offset.
+  const seq = (xs: DecoIntent[]): string[] => xs.map((x) => JSON.stringify(x))
   it.each(corpus.map((doc, i) => [i, doc] as const))('doc %#', (_i, doc) => {
     const scan = scanDoc(doc)
     const cached = docLineIntents(scan)
     for (let sel = -1; sel <= doc.length; sel++) {
       const pure = decorationsFor(doc, [], new Set(), sel, scan)
       const assembled = assembleLineIntents(scan, cached, sel)
-      expect(sorted(assembled), `caret ${sel}`).toEqual(sorted(pure))
+      expect(seq(assembled), `caret ${sel}`).toEqual(seq(pure))
     }
   })
 })
