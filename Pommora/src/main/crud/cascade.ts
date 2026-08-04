@@ -8,7 +8,7 @@ import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'
 import { listMarkdownFiles } from '../io/walk'
 import { sweepAdmitsBody } from './util'
 import { rewritePageSerialized } from '../io/fileLock'
-import { scanConnections } from '../connections/scan'
+import { mentionsTitle } from '../connections/scan'
 import { rewriteConnections } from '../connections/rewrite'
 import { normalizeTitle } from '@shared/connections'
 import { ok, type Result } from '@shared/result'
@@ -29,7 +29,7 @@ export async function renameCascade(
   for (const file of await listMarkdownFiles(nexusRoot, { skipTopLevel: SKIP_TOP_LEVEL })) {
     const wrote = await rewritePageSerialized(file, (content) => {
       const { body } = splitEnvelope(content)
-      if (!scanConnections(body).some((c) => c.normalizedTitle === oldKey)) return null
+      if (!mentionsTitle(body, oldKey)) return null
       if (!sweepAdmitsBody(content)) return null // connections live only on files the tree admits
       const newBody = rewriteConnections(body, oldTitle, newTitle)
       if (newBody === body) return null

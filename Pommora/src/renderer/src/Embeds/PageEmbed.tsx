@@ -3,6 +3,7 @@ import { titleFromPath } from '@shared/connections'
 import { MarkdownEditor, type WarmSeam } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
+import { cachePageDetail, readPageDetail } from '@renderer/Tabs/warmCache'
 import { useSession } from '../store'
 import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { NavCrumbs } from '../Navigation/NavList'
@@ -58,7 +59,19 @@ export function PageEmbed({
     cover?: string
   } | null>(() => {
     const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
-    return typeof doc === 'string' ? { path, body: doc } : null
+    if (typeof doc === 'string') return { path, body: doc }
+    // A scrolled-back tile rehydrates from the path-keyed slot — no IPC round-trip, no blank
+    // frame, and the slot's body is write-through-fresh from any host's pending edit.
+    const cached = readPageDetail(path)
+    if (!cached) return null
+    const cover = cached.frontmatter.cover
+    return {
+      path,
+      body: cached.body,
+      id: cached.id,
+      title: cached.title,
+      cover: typeof cover === 'string' ? cover : undefined,
+    }
   })
   const entry = loaded?.path === path ? loaded : null
   const body = entry?.body ?? null
@@ -79,6 +92,7 @@ export function PageEmbed({
         setLoaded({ path, body: null })
         return
       }
+      cachePageDetail(r.value)
       const cover = r.value.frontmatter.cover
       setLoaded({
         path,

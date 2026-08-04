@@ -16,6 +16,11 @@
 export const titleFromPath = (path: string): string =>
   (path.split('/').pop() ?? path).replace(/\.md$/i, '')
 
+/** The parallel embed pattern — `![[Title]]` page embeds, matched for the rename cascade's sweep
+ *  ONLY. Never widened into pageLinkPattern: `![[` is not a connection (no link-graph edge), and
+ *  the connections pattern's four consumers must not start seeing it. Fresh per call. */
+export const pageEmbedPattern = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/g
+
 /** Trim + case-fold + NFC — the one normalization for connection titles (NFC so an
  *  NFD-composed outside write still matches the NFC title it names). */
 export function normalizeTitle(raw: string): string {
