@@ -105,6 +105,7 @@ import { showContextMenu } from './contextMenu'
 import { installAppMenu } from './menu'
 import { popTableMenu } from './tableMenu'
 import { popCalloutMenu } from './calloutMenu'
+import { popEmbedMenu } from './embedMenu'
 import { popColumnMenu } from './columnMenu'
 import { popCellMenu } from './cellMenu'
 import { popCardMenu } from './cardMenu'
@@ -137,7 +138,7 @@ import type {
 } from '@shared/identityMenus'
 import type { ViewButton, ViewStyle } from '@shared/types'
 import { VIEW_SCALE_DEFAULT } from '@shared/types'
-import { installEditorContextMenu, setFormatState, setCalloutGrip } from './editorMenu'
+import { installEditorContextMenu, setFormatState, setGripHot } from './editorMenu'
 import type { FormatState } from '@shared/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@shared/links'
 import { getTitleCache, resolveTitle, type LinkTitleCache } from './linkTitles'
@@ -1503,6 +1504,7 @@ serveBridge(
 
     // The callout grip's right-click menu.
     'callout-menu': { kind: 'menu', fn: popCalloutMenu },
+    'embed-menu': { kind: 'menu', fn: popEmbedMenu },
 
     // The table-view column header's right-click menu.
     'column-menu': { kind: 'menu', fn: popColumnMenu },
@@ -1600,9 +1602,9 @@ serveBridge(
       },
     },
 
-    // Flagged on hover so the generic editor menu stands down and the renderer's own Delete
-    // Callout menu is the only one that pops on the right-press.
-    'editor:callout-grip': { kind: 'raw', fn: (on: boolean) => setCalloutGrip(on) },
+    // Flagged on hover so the generic editor menu stands down and the hovered grip's own menu
+    // is the only one that pops on the right-press.
+    'editor:grip-hot': { kind: 'raw', fn: (on: boolean) => setGripHot(on) },
   },
 )
 

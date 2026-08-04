@@ -1,6 +1,6 @@
 // The callout grip's right-click menu (grip-only, mirrors the table heading-row grip). A right-press in a
 // callout's gutter strip pops a native Delete Callout menu; the generic editor menu stands down there because
-// the rail hover flags the callout grip to main (see blockGripHover → setCalloutGrip). `blockAt` resolves the
+// the rail hover flags the hot grip to main (see blockGripHover → setGripHot). `blockAt` resolves the
 // grip line to the whole callout box; delete removes those source lines plus one adjacent newline so no blank
 // line is orphaned.
 import { EditorView } from '@codemirror/view'
@@ -26,7 +26,7 @@ export const calloutGripMenu = EditorView.domEventHandlers({
       view.dispatch({ changes: { from, to, insert: '' }, userEvent: 'delete' })
       // The grip just vanished with the callout and no pointer moved (the native menu was modal), so the
       // hover flag would stay stale-true — clear it so the next right-click isn't wrongly suppressed.
-      window.nexus?.setCalloutGrip?.(false)
+      window.nexus?.setGripHot?.(false)
       view.focus()
     })
     return true
