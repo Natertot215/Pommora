@@ -80,8 +80,6 @@
   background: color-mix(in srgb, var(--accent) var(--tint-secondary), transparent);
 }
 
-/* Body clip is the shared .tile-chassis-body. */
-
 /* The block drag handle — a bordered chip NOTCHED into the left border: its own
    rounded border is the curve, its --main-bg fill erases the straight border line
    behind it, and its border-color inherits the tile's (so the accent resize/lift
