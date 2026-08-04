@@ -23,12 +23,12 @@ export const quoteDepth = (line: string): number =>
 // A ``` fence, capturing its `>` prefix so open/close pair by quote-DEPTH: a `> ``` opens a callout/quote-internal
 // block closed only by another `> ``` (a bare ``` is a separate top-level block), and a quoted fence ends when its
 // blockquote does. Without the depth match, a top-level code block quoting a ``` (`> ```` as content) corrupts.
-const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(```|~~~)/
+const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(```|~~~)[ \t]*(\S*)/
 // A fence line's quote depth AND marker char — a block pairs by BOTH, so a `~~~` line inside a ``` block
 // reads as content, not a close (matches isInsideCode's marker pairing; the two layers must agree).
-const fenceOf = (line: string): { depth: number; marker: string } | null => {
+const fenceOf = (line: string): { depth: number; marker: string; info: string } | null => {
   const m = FENCE_RE.exec(line)
-  return m ? { depth: m[1].match(/>/g)?.length ?? 0, marker: m[2][0] } : null
+  return m ? { depth: m[1].match(/>/g)?.length ?? 0, marker: m[2][0], info: m[3] } : null
 }
 
 export interface FenceInfo {
@@ -40,6 +40,8 @@ export interface FenceInfo {
   /** False while the fence is still being typed — an unclosed block claims every line to EOF, so
    *  treating it as settled code would restyle the whole document below the caret. */
   closed: boolean
+  /** The opening fence's info word (```yaml → 'yaml') — absent on a bare fence. */
+  lang?: string
 }
 
 interface FenceBlock {
@@ -49,6 +51,7 @@ interface FenceBlock {
   close: number
   closed: boolean
   depth: number
+  lang?: string
 }
 
 export function splitWithOffsets(text: string): { lines: string[]; lineStarts: number[] } {
@@ -84,6 +87,7 @@ function fenceBlocks(lines: string[], lineStarts: number[]): FenceBlock[] {
       close,
       closed,
       depth: open.depth,
+      lang: open.info || undefined,
     })
     i = closed ? j + 1 : j
   }
@@ -93,7 +97,7 @@ function fenceBlocks(lines: string[], lineStarts: number[]): FenceBlock[] {
 export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInfo | undefined)[] {
   const out: (FenceInfo | undefined)[] = new Array(lines.length)
   for (const blk of fenceBlocks(lines, lineStarts)) {
-    const base = { from: blk.from, to: blk.to, depth: blk.depth, closed: blk.closed }
+    const base = { from: blk.from, to: blk.to, depth: blk.depth, closed: blk.closed, lang: blk.lang }
     out[blk.open] = { role: 'open', ...base }
     const contentEnd = blk.closed ? blk.close : blk.close + 1 // unclosed → the last line is content too
     for (let k = blk.open + 1; k < contentEnd; k++) out[k] = { role: 'content', ...base }

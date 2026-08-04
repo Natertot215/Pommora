@@ -26,6 +26,7 @@ import {
 } from './editor/embedWidget'
 import { embeddable } from './editor/embedRanges'
 import { customCaret } from './editor/caret'
+import { codeHighlight, codeLanguages } from './editor/codeHighlight'
 import { registerScrollHeal } from '../Embeds/tileWarm'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
@@ -178,7 +179,8 @@ export function MarkdownEditor({
       // this editor replaces: the keymap auto-continues constructs MarkdownPM renders as plain prose
       // (e.g. `1)` lists) whenever the custom handlers decline, and pasteURLAsLink rewrites a URL pasted
       // over a selection into [selection](url) against the paste-preserves-literal-text rule.
-      markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false }),
+      markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false, codeLanguages }),
+      codeHighlight,
       EditorView.lineWrapping,
       // iOS soft-keyboard hints — no-ops on desktop; keep the on-screen keyboard from
       // auto-capitalizing and "correcting" Markdown / [[wikilinks]].

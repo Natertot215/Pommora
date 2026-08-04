@@ -279,10 +279,26 @@ describe('decoration intents', () => {
     expect(intents.filter((d) => d.kind === 'hide')).toHaveLength(2) // both fence lines' markers
   })
 
-  it('fenced code block → fence markers reveal when the caret is inside the block', () => {
+  it('fence markers reveal only for the caret on their OWN line — content caret keeps both hidden', () => {
     const t = '```js\ncode\n```'
-    const intents = decorationsFor(t, tokenize(t), new Set(), 7) // caret in "code"
-    expect(intents.filter((d) => d.kind === 'hide')).toHaveLength(0)
+    const inContent = decorationsFor(t, tokenize(t), new Set(), 7) // caret in "code"
+    expect(inContent.filter((d) => d.kind === 'hide')).toHaveLength(2)
+    const onOpen = decorationsFor(t, tokenize(t), new Set(), 2) // caret on the ```js line
+    expect(onOpen.filter((d) => d.kind === 'hide')).toHaveLength(1) // the close stays hidden
+  })
+
+  it('a typed fence wears its language glyph while hidden; a bare fence wears none', () => {
+    const t = 'p\n```yaml\nkey: 1\n```'
+    const glyphs = decorationsFor(t, tokenize(t), new Set(), 0).filter(
+      (d): d is Extract<typeof d, { kind: 'lineWidget' }> => d.kind === 'lineWidget',
+    )
+    expect(glyphs.filter((g) => g.className === 'md-cb-lang')).toHaveLength(1)
+    expect(glyphs.find((g) => g.className === 'md-cb-lang')?.text).toBe('yaml')
+    const bare = 'p\n```\nx\n```'
+    const none = decorationsFor(bare, tokenize(bare), new Set(), 0).filter(
+      (d) => d.kind === 'lineWidget' && d.className === 'md-cb-lang',
+    )
+    expect(none).toHaveLength(0)
   })
 })
 

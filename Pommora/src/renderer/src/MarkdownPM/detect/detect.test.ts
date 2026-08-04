@@ -13,6 +13,8 @@ import {
   lineInCallout,
   calloutHeadPrefixLen,
   parseListMarkerPrefixed,
+  scanFencedCode,
+  splitWithOffsets,
 } from './index'
 import { pageLinkPattern } from '@shared/connections'
 
@@ -183,5 +185,22 @@ describe('parseListMarkerPrefixed (lists behind a quote/callout prefix)', () => 
   })
   it('does NOT strip a `>` with no space after it (not a real quote — agrees with the renderer)', () => {
     expect(parseListMarkerPrefixed('>- x')).toBeNull() // `>-` isn't a quoted list; renderer shows it raw
+  })
+})
+
+describe('fence language capture', () => {
+  const scan = (text: string) => {
+    const { lines, lineStarts } = splitWithOffsets(text)
+    return scanFencedCode(lines, lineStarts)
+  }
+  it('the info word rides the whole block; a bare fence carries none', () => {
+    const typed = scan('```yaml\nkey: 1\n```')
+    expect(typed[0]?.lang).toBe('yaml')
+    expect(typed[1]?.lang).toBe('yaml')
+    const bare = scan('```\nx\n```')
+    expect(bare[0]?.lang).toBeUndefined()
+  })
+  it('only the first word counts, whitespace tolerated', () => {
+    expect(scan('``` json extra\n{}\n```')[0]?.lang).toBe('json')
   })
 })

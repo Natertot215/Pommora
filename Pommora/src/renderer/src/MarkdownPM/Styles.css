@@ -912,6 +912,60 @@
   border-bottom-right-radius: var(--cb-radius);
 }
 
+/* CODE TOKENS — a typed fence's nested parse, colored as spectrum-solid pastels (each solid mixed
+   toward system-white). Scoped under .md-cb so a tag outside a fence colors nothing; a bare fence
+   has no nested parse and keeps the plain mono look.
+   KNOBS: --tok-tint (the solid's share of the mix — lower reads more pastel) + the per-token solid routing */
+.mdpm-editor .cm-line.md-cb {
+  --tok-tint: 72%;
+}
+.mdpm-editor .md-cb .tok-kw {
+  color: color-mix(in srgb, var(--solid-purple) var(--tok-tint), var(--system-white));
+}
+.mdpm-editor .md-cb .tok-str {
+  color: color-mix(in srgb, var(--solid-green) var(--tok-tint), var(--system-white));
+}
+.mdpm-editor .md-cb .tok-num {
+  color: color-mix(in srgb, var(--solid-orange) var(--tok-tint), var(--system-white));
+}
+.mdpm-editor .md-cb .tok-com {
+  color: var(--label-tertiary);
+}
+.mdpm-editor .md-cb .tok-prop {
+  color: color-mix(in srgb, var(--solid-light-blue) var(--tok-tint), var(--system-white));
+}
+.mdpm-editor .md-cb .tok-fn {
+  color: color-mix(in srgb, var(--solid-yellow) var(--tok-tint), var(--system-white));
+}
+.mdpm-editor .md-cb .tok-type {
+  color: color-mix(in srgb, var(--solid-cyan) var(--tok-tint), var(--system-white));
+}
+
+/* The language chrome — `</> TYPE` at the block's top right, standing in for the hidden fence
+   syntax (the caret on that line trades it back for the raw ```lang). Icon rides currentColor at
+   text height, so the whole glyph tunes from the label tokens alone. */
+.mdpm-editor .md-cb .md-cb-lang {
+  position: absolute;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--cb-size);
+  color: var(--label-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  user-select: none;
+}
+.mdpm-editor .md-cb .md-cb-lang::before {
+  content: "";
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  -webkit-mask: var(--code-glyph) center / contain no-repeat;
+  mask: var(--code-glyph) center / contain no-repeat;
+}
+
 /* KNOBS: --ac-radius / --ac-rows (visible before scroll) */
 .mdpm-ac {
   --ac-radius: 12px;
