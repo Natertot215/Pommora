@@ -12,7 +12,6 @@ export interface Crumb {
   onClick?: () => void
 }
 
-
 const allCollections = (tree: NexusTree): CollectionNode[] => [...(tree.collections ?? [])]
 
 export function chainOf(

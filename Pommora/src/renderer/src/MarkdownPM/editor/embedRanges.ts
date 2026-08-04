@@ -14,6 +14,14 @@ export function docEmbedLines(doc: string): EmbedLine[] {
   ])
 }
 
+/** Whether a page title can be embedded here: the `![[…]]` syntax cannot express a `]`, and a title
+ *  already held by a tile in this document — or by a host above it — would only ever land the inert
+ *  duplicate token or the cycle. The grip menu's pick tree and the `![[` autocomplete pool both read
+ *  this one rule, so they can never offer different pages. */
+export function embeddable(title: string, exclude: ReadonlySet<string>): boolean {
+  return !title.includes(']') && !exclude.has(normalizeTitle(title))
+}
+
 /** The tile-ownership claim: an embed line is claimed when its title resolves to exactly one page AND
  *  it is the first line naming that page — a later duplicate stays the inert token, so two tiles can
  *  never edit one page from one document. The token suppression and the tile field both read this one

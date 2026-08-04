@@ -17,6 +17,7 @@ import {
 } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, WidgetType } from '@codemirror/view'
 import { cx } from '@renderer/design-system/cx'
+import { normalizeTitle, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../detect'
@@ -282,9 +283,6 @@ const editingExit = ViewPlugin.fromClass(
   },
 )
 
-/** Per tile, the count of immediate neighbor lines that are non-blank — the fence predicate. A
- *  hand-typed glued embed is legal, so gluing is only refused when a DELETION grows this count
- *  (removing the lone fencing blank), the same result-doc mechanic the table merge-guard uses. */
 /** One tile's count of non-blank immediate neighbors — the fence predicate. Hand-typed gluing is
  *  legal authoring, so a DELETION may never raise a tile's OWN count (removing its fencing blank).
  *  Per tile, never a document-wide sum — a summed compare would let one tile's un-gluing pay for
@@ -367,9 +365,13 @@ export function embedTileRanges(state: EditorState): readonly TileRange[] {
   return state.field(embedField, false)?.ranges ?? []
 }
 
-/** The editor's embed-host chain, for consumers outside the field (the grip menu's exclusions). */
-export function embedHostAncestors(state: EditorState): readonly string[] {
-  return state.facet(embedHost).ancestors
+/** The titles this document may not embed — every tile it already holds, plus its whole host chain.
+ *  The grip menu's pick tree and the `![[` autocomplete pool both filter on this one set. */
+export function embedExclusions(state: EditorState): Set<string> {
+  const out = new Set<string>()
+  for (const t of embedTileRanges(state)) out.add(normalizeTitle(t.title))
+  for (const a of state.facet(embedHost).ancestors) out.add(normalizeTitle(titleFromPath(a)))
+  return out
 }
 
 export function embedTiles(host: EmbedHost): Extension {
