@@ -11,12 +11,12 @@ Pommora is a personal management app based on Nathan’s frustration with modern
 **Content:** The operational layer — what you actually make, linked to each other through **Connections** for content ↔ content relations, and front-matter for content ↔ Space relations. 
 
 - **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views; it contains **Sets** as organizational subfolders that inherit that schema.
-- **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection’s properties. Pages use MarkdownPM for its editor surface, which includes in-line connections to other pages. 
-- **Agenda:** the calendar layer — **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each `.md` under its kind key. Their fields are unsettled: the inherited shape was removed rather than carried forward.
+- **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection’s properties, identified via its` PageID` key. Pages use MarkdownPM for its editor surface, which includes in-line connections to other pages. 
+- **Agenda:** the calendar layer — **Tasks** (reminder-shaped; keyed with `TaskID`; located within `/Tasks`) and **Events** (calendar-shaped; keyed with `EventID`; located within `/Events`) — each Markdown files distinguished via its key and validated against its folder placement. 
 - **Properties:** the nexus-wide typed attributes that collections inherit, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use. 
 - **Connections:** inline `[[Title]]` colored-text links that live in a Page's Markdown body (the canonical source) and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix.
 
-**Files are canonical for content.** Pages, Tasks and Events are all markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself never the extension — files whose key contradicts what it’s folder expects is Unknown: invisible, untouched, never stamped over. Foreign keys are preserved on every write. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development — but legibility concerns *context*, not every byte the app stores: per-machine operational info, helpers and accelerators, or derived caches belong in `nexus.db`, not in hand-editable and exposed JSON.
+**Files are canonical for content.** Pages, Tasks and Events are all markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — files whose key contradicts what it’s folder expects is Unknown: invisible, untouched, never stamped over. Foreign keys are preserved on every write. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development — but legibility concerns *context*, not every byte the app stores: per-machine operational info, helpers and accelerators, or derived caches belong in `nexus.db`, not in hand-editable and exposed JSON.
 ### Stack
 
 Pommora is an **Electron** desktop app — a **React + TypeScript** renderer over a Node main process that owns the filesystem. electron-vite · Electron 42 · React 19 · TypeScript 6 · Vite 7 + `@vitejs/plugin-react` 5 (compat pin — newer plugin-react needs Vite 8, which electron-vite doesn't support yet) · Zustand · TanStack Virtual · `react-markdown` + `remark-gfm` · `eemeli/yaml` · `lucide-react` (the curated icon registry — `design-system/symbols`; `@tabler/icons-react` stays installed as a second source to pull from per-icon) · Vitest. Editor: **MarkdownPM** — a CodeMirror 6 build behind a swappable editor seam. The codebase lives at `Pommora/` on the monorepo's main branch.
@@ -24,7 +24,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 **No dependency lock-in.** Every library sits behind a thin seam (SQLite behind `db//driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `Surface`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 
 **The Figma Library** (https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r) is used for designing; its specifics may lag behind the canonical in-code vie— mirror changes into the tokens at `/design-system.` The live showcase deploys from `Pommora/` to https://pommora-design-system.vercel.app.
-
 
 ### Hard Rules
 
@@ -52,13 +51,13 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **CommonJS main/preload** (package is NOT `type: module`) — Electron's `require('electron')` fails on ESM named imports; CJS also lets the preload stay sandboxed. **`sandbox: true` + `contextIsolation: true` + `nodeIntegration: false`.**
 - **Single-window now, multi-window-ready seams** — data is main-owned + Query/store-cached per renderer; the live-refresh bus is a swappable transport; windows identified by serializable refs. No global singleton holding shared mutable client state.
 - **Most recent wins** is the primary philosophy around handling multi-tab, future cross-device, and outside editing conflicts.
-- **TS-native on-disk format:** bare, natively-typed values under wrapped title keys, zod-validated.
+- **TS-native on-disk format:** bare, natively typed values under wrapped title keys, zod-validated.
 
 ### Run Gotcha (Read Before Launching)
 
 The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set to 1, which makes Electron run as plain Node → `require('electron')` returns a path string and the app crashes). Launch: `env -u ELECTRON_RUN_AS_NODE npm run dev` (HMR), or `… ./node_modules/.bin/electron .` after `npm run build`. `TEST_NEXUS_PATH` only steers tests, never the running app. 
 
-**Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first `dev`/launch dies with `Error: Electron uninstall`. Fix: run `./node_modules/.bin/electron --version` once (downloads the binary), then relaunch.
+**Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first `dev`/launch dies with `Error: Electron uninstall`. Fix: run `./node_modules/.bin/electron --version` once (downloads the binary), then relaunch. Kill any test instances once you’re done with them — don’t leave them running.
 
 ### Important Information 
 
@@ -67,7 +66,7 @@ The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set
 
 #### II. Swift Origins
 
-Pommora was first built as a native SwiftUI app — that build was active for around one month and designed and versioned the entire paradigm; React was initially scoped as an alternative contingenc but was eventually determined to be the best long-term approach. The Swift build is archived at `// The Studio // Archive // Pommora` — source; its git history lives on the `swift` branch.
+Pommora was first built as a native SwiftUI app — that build was active for around one month and designed and versioned the entire paradigm; React was initially scoped as an alternative contingency but was eventually determined to be the best long-term approach. The Swift build is archived at `// The Studio // Archive // Pommora` — source; its git history lives on the `swift` branch.
 
 - **Why This Matters:** The initial rebuild brought along now obsolete swift-based code; swift-compatibility is not a constraint — any code that may appear functional but is solely an artifact of the swift origin must be flagged for removal.
 
@@ -77,11 +76,10 @@ Pommora was first built as a native SwiftUI app — that build was active for ar
 
 #### II. Documentation
 
-Feature specifications live in `Features/`; root docs (PRD · Handoff · History · Framework) sit at the `.claude` root.
 - **Features //** → Feature-specific documentation that **must** be updated every time relevant code is committed. 
 - **Guidelines //** → Behavioral rules and hard-won traps grouped by domain — indexed under Guidelines below.
 - **Planning //** → Self-explanatory; location for all planning and temporary specifications.
 
 #### II. Guidelines
 
-- [[Build-Gotchas]] -> Hard-won environment/toolchain traps. Add entries when a mistake is worth never repeating. Read before running the GUI + for information on the toolchain, chip-components, and liquid glass.
+- [[Build-Gotchas]] -> Hard-won environment/toolchain traps. Add entries when a mistake is worth never repeating. Read before running the GUI + for information on the toolchain, chip components, and liquid glass.
