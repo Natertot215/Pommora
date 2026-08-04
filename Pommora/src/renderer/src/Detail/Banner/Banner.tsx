@@ -8,6 +8,7 @@ import { DetailTitleHeader } from '../DetailTitleHeader'
 import { EditableInput } from '../../Components/EditableInput'
 import { AddBannerButton } from './AddBannerButton'
 import { assetUrl } from '../../assetUrl'
+import { useBannerMenu } from './useBannerMenu'
 
 export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
@@ -66,18 +67,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
         {owner.name}
       </span>
     )
-  const setBanner = (dataUrl: string | null): Promise<boolean> =>
-    mutate({ op: 'setBanner', path: owner.path, kind: owner.kind, dataUrl })
-
-  const addOrChange = async (): Promise<void> => {
-    const dataUrl = await window.nexus.pickImage()
-    if (dataUrl) await setBanner(dataUrl)
-  }
-  const openMenu = async (): Promise<void> => {
-    const action = await window.nexus.bannerMenu()
-    if (action === 'change') await addOrChange()
-    else if (action === 'remove') await setBanner(null)
-  }
+  const { openMenu, addOrChange } = useBannerMenu(owner.path, owner.kind)
 
   const homeClass = owner.kind === 'homepage' ? ' is-homepage' : ''
   const surfaceClass = isSurfaceKind(owner.kind) ? ' is-surface' : ''
