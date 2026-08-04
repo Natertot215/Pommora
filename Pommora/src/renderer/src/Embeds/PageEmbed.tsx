@@ -138,8 +138,11 @@ export function PageEmbed({
     <div
       className={`pgembed${editing ? ' is-editing' : ''}${chrome === 'page' && entry?.cover ? ' has-banner' : ''}`}
       style={{ '--mdpm-scale': EMBED_SCALE } as React.CSSProperties}
-      onClick={() => {
+      onClick={(e) => {
         if (editing || locked) return // locked: no edit entry; selection still works
+        // The banner band is chrome with its own menu — a stray click on it must not put the
+        // caret one keystroke away from the embedded page's first line.
+        if ((e.target as HTMLElement).closest?.('.mdpm-banner')) return
         const sel = window.getSelection()
         if (sel && !sel.isCollapsed) return
         onBeginEdit()

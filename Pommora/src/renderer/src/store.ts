@@ -64,7 +64,7 @@ import {
   reorderWithinZone,
   tabKey,
 } from './Tabs/tabsModel'
-import { captureWarm, clearPageDetails, clearWarm, dropPageDetail, dropWarmDetail, dropWarmTab, readWarm } from './Tabs/warmCache'
+import { captureWarm, clearWarm, dropPageDetail, dropWarmDetail, dropWarmTab, readWarm } from './Tabs/warmCache'
 import { clearPreviewWarm, dropPreviewWarm } from './PagePreview/previewWarm'
 import { stashWindowMorph } from './PagePreview/WindowMorph'
 import { flushAllPageSaves } from './Detail/pageFlush'
@@ -1437,10 +1437,11 @@ export const useSession = create<SessionState>((set, get) => {
           }
           case 'rename':
             patched = renameNodeInTree(cur, req.path, req.newName)
-            // The cascade rewrites bodies NEXUS-WIDE — the whole path-keyed slot is suspect, and
-            // the open page's own detail is the same fact in another home: refetch it, or a tile
-            // rehydrating (or the next keystroke) writes the pre-cascade body back over the heal.
-            clearPageDetails()
+            // The cascade rewrites bodies NEXUS-WIDE — every warm copy is suspect, and the
+            // tab-keyed editorState has no path fence (its key survives the rename): a warm
+            // restore would revive the pre-cascade body and the next keystroke would write it
+            // back over the heal. Warmth is an accelerator; a rename trades it for correctness.
+            clearWarm()
             if (get().pageDetail) void get().reloadPage()
             break
           case 'delete':
