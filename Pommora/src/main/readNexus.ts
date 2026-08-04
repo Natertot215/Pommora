@@ -109,6 +109,7 @@ export function readPersonalization(raw: unknown): Personalization {
         : undefined,
     hideChevrons: bool(p.hideChevrons),
     outlinerLines: bool(p.outlinerLines),
+    codeblockLineCount: bool(p.codeblockLineCount),
     navCloseOnSelect: bool(p.navCloseOnSelect),
     defaultIcons: Object.keys(defaultIcons).length ? defaultIcons : undefined,
     favoriteIcons: favoriteIcons.length ? favoriteIcons : undefined,

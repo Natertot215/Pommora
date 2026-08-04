@@ -24,6 +24,9 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
     case 'outlinerLines':
       el.classList.toggle('outliner-lines', value === true)
       return
+    case 'codeblockLineCount':
+      el.classList.toggle('cb-line-count', value === true)
+      return
     default: // accent → applyAccent; defaultIcons → resolved per-render — no DOM effect here.
       return
   }
@@ -33,4 +36,5 @@ export function applyPersonalization(p: Personalization): void {
   applyPersonalizationKey('connectionColor', p.connectionColor)
   applyPersonalizationKey('hideChevrons', p.hideChevrons)
   applyPersonalizationKey('outlinerLines', p.outlinerLines)
+  applyPersonalizationKey('codeblockLineCount', p.codeblockLineCount)
 }

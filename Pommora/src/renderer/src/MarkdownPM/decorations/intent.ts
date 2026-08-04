@@ -222,13 +222,17 @@ function lineIntentsInto(
       className: `md-cb${fence.role === 'open' ? ' md-cb-first' : ''}${fence.role === 'close' ? ' md-cb-last' : ''}`,
     })
     if (base > 0) intents.push({ kind: 'hide', from: ls, to: innerStart })
-    if (fence.role !== 'content' && !caretOnLine) {
-      intents.push({ kind: 'hide', from: innerStart, to: le })
-      // A typed block wears its language as chrome where the raw fence hid — the caret on the
-      // line trades the glyph back for the syntax.
-      if (fence.role === 'open' && fence.lang)
-        intents.push({ kind: 'lineWidget', from: ls, className: 'md-cb-lang', text: fence.lang })
+    // The backticks always show; a typed block trades only its info word for the styled `</> TYPE`
+    // glyph, in the info word's own place — the caret on the line trades it back for the raw text.
+    const infoStart = innerStart + 3
+    if (fence.role === 'open' && fence.lang && !caretOnLine && infoStart < le) {
+      intents.push({ kind: 'lineWidget', from: infoStart, className: 'md-cb-lang', text: fence.lang })
+      intents.push({ kind: 'hide', from: infoStart, to: le })
     }
+    // Line-count chrome: every content line carries its number; the personalization root class
+    // decides whether any of it renders.
+    if (fence.ordinal !== undefined)
+      intents.push({ kind: 'lineWidget', from: ls, className: 'md-cb-ln', text: String(fence.ordinal) })
     return null
   }
 

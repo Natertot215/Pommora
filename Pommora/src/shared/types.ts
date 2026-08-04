@@ -53,6 +53,8 @@ export interface Personalization {
   connectionColor?: ConnectionColorSetting
   hideChevrons?: boolean
   outlinerLines?: boolean
+  /** Line numbers on codeblock content lines (rendered chrome, never editable text). */
+  codeblockLineCount?: boolean
   /** Whether selecting an entity from the NavWindow closes it. Absent = closes (default true). */
   navCloseOnSelect?: boolean
   defaultIcons?: Partial<Record<EntityIconKind, string>>
