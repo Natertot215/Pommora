@@ -48,7 +48,7 @@ export const blockHandles = EditorView.decorations.compute(['doc'], (state) => {
 // Grips can't self-hover (a pseudo has no independent `:hover`, and a line's own `:hover` fires over its text
 // too), so `md-grip-hot` is toggled here whenever the pointer sits in the gutter strip of ANY line within a
 // grippable block — revealing the grip on that block's first line (paragraphs already behave this way, being a
-// single doc line). `onHotChange` reports the HOVERED line, not the revealed one, so the host's callout-grip
+// single doc line). `onHotChange` reports the HOVERED line, not the revealed one, so the host's hot-grip
 // flag (the seam the right-click delete menu rides on) stays on the grip's own line, not anywhere in the box.
 export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void): Extension {
   let hotLine: HTMLElement | null = null

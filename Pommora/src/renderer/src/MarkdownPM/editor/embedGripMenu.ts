@@ -1,0 +1,113 @@
+// The embed grip's native menu — "Embed Page ▸" on any rail grip (inserting a fenced embed below
+// that block), "Page Source ▸" + "Delete Embed" on an embed tile's own grip. Mirrors the callout
+// grip menu's shape: gutter hit-test, block span resolved before the ask, pick applied on the
+// promise, hot flag cleared after the modal menu (no mousemove fires under it).
+import { EditorView } from '@codemirror/view'
+import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
+import type { EmbedPickNode } from '@shared/embedMenu'
+import { normalizeTitle } from '@shared/connections'
+import { useSession } from '../../store'
+import { blockAt } from './blockModel'
+import { docString } from './docCache'
+import { embedHostAncestors, embedTileRanges } from './embedWidget'
+
+/** The Collections → Sets → Pages pick tree, minus excluded titles (already-embedded + the host
+ *  page); a container with nothing pickable beneath it drops out entirely. */
+export function embedPickTree(tree: NexusTree, exclude: ReadonlySet<string>): EmbedPickNode[] {
+  const page = (p: { title: string }): EmbedPickNode | null =>
+    exclude.has(normalizeTitle(p.title)) ? null : { label: p.title, title: p.title }
+  const setNode = (s: SetNode): EmbedPickNode | null => {
+    const children = [...(s.sets ?? []).map(setNode), ...s.pages.map(page)].filter(
+      (n): n is EmbedPickNode => n !== null,
+    )
+    return children.length > 0 ? { label: s.title, children } : null
+  }
+  const collection = (c: CollectionNode): EmbedPickNode | null => {
+    const children = [...c.sets.map(setNode), ...c.pages.map(page)].filter(
+      (n): n is EmbedPickNode => n !== null,
+    )
+    return children.length > 0 ? { label: c.title, children } : null
+  }
+  return tree.collections.map(collection).filter((n): n is EmbedPickNode => n !== null)
+}
+
+/** The fenced insert below a block: always blank-separated above, and below whenever the next
+ *  line holds content. Returns a change spec; the caller dispatches. */
+export function embedInsertAfter(
+  doc: string,
+  blockTo: number,
+  title: string,
+): { from: number; to: number; insert: string } {
+  const embed = `![[${title}]]`
+  if (blockTo >= doc.length) return { from: doc.length, to: doc.length, insert: `\n\n${embed}` }
+  const nextLineStart = blockTo + 1
+  const nextLineEnd = doc.indexOf('\n', nextLineStart)
+  const nextLine = doc.slice(nextLineStart, nextLineEnd === -1 ? doc.length : nextLineEnd)
+  const trail = nextLine.trim() === '' ? '' : '\n'
+  return { from: blockTo, to: blockTo, insert: `\n\n${embed}${trail}` }
+}
+
+/** The menu delete's span: the tile line and its trailing newline, plus one fencing blank when the
+ *  tile sat between two (a single separator survives); at EOF the preceding newline goes instead. */
+export function embedDeleteSpan(
+  doc: string,
+  r: { from: number; to: number },
+): { from: number; to: number } {
+  const prevBlank = ((): boolean => {
+    if (r.from < 2) return false
+    const prevEnd = r.from - 1
+    const prevStart = doc.lastIndexOf('\n', prevEnd - 1) + 1
+    return doc.slice(prevStart, prevEnd).trim() === ''
+  })()
+  const hasTrailingNewline = r.to < doc.length && doc[r.to] === '\n'
+  if (!hasTrailingNewline) return { from: Math.max(0, r.from - 1), to: r.to }
+  const nextStart = r.to + 1
+  const nextEnd = doc.indexOf('\n', nextStart)
+  const nextBlank = doc.slice(nextStart, nextEnd === -1 ? doc.length : nextEnd).trim() === ''
+  if (prevBlank && nextBlank && nextEnd !== -1) return { from: r.from, to: nextEnd + 1 }
+  return { from: r.from, to: r.to + 1 }
+}
+
+const hostTitleOf = (state: EditorView['state']): string | undefined => {
+  const chain = embedHostAncestors(state)
+  const last = chain[chain.length - 1]
+  return last ? (last.split('/').pop() ?? last).replace(/\.md$/i, '') : undefined
+}
+
+export const embedGripMenu = EditorView.domEventHandlers({
+  contextmenu(e, view) {
+    const line = (e.target as HTMLElement).closest?.('.cm-line.md-block-handle') as HTMLElement | null
+    if (!line || e.clientX >= line.getBoundingClientRect().left) return false
+    const doc = docString(view.state.doc)
+    const block = blockAt(doc, view.posAtDOM(line))
+    if (!block) return false
+    const tree = useSession.getState().tree
+    if (!tree) return false
+    e.preventDefault()
+    const exclude = new Set(embedTileRanges(view.state).map((t) => normalizeTitle(t.title)))
+    const host = hostTitleOf(view.state)
+    if (host) exclude.add(normalizeTitle(host))
+    const mode = block.kind === 'embed' ? ('tile' as const) : ('create' as const)
+    void window.nexus?.embedMenu?.({ mode, tree: embedPickTree(tree, exclude) }).then((action) => {
+      window.nexus?.setGripHot?.(false)
+      if (action) {
+        const current = docString(view.state.doc)
+        if (action.action === 'embed') {
+          view.dispatch({ changes: embedInsertAfter(current, block.to, action.title), userEvent: 'input' })
+        } else if (action.action === 'source') {
+          const tile = embedTileRanges(view.state).find((t) => t.from === block.from)
+          if (tile)
+            view.dispatch({
+              changes: { from: tile.from, to: tile.to, insert: `![[${action.title}]]` },
+              userEvent: 'input',
+            })
+        } else {
+          const span = embedDeleteSpan(current, block)
+          view.dispatch({ changes: { from: span.from, to: span.to, insert: '' }, userEvent: 'delete' })
+        }
+      }
+      view.focus()
+    })
+    return true
+  },
+})
