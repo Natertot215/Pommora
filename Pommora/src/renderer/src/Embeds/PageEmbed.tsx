@@ -14,8 +14,7 @@ import { assetUrl } from '../assetUrl'
 import './embeds.css'
 import { EMBED_SCALE, EMBED_ZOOM } from './embedScale'
 
-// Entering edit reconfigures the SAME CM6 view's editability — no remount, no jitter. Header
-// chrome (banner + title) is parked; returns with the ⋮ toggle pass.
+// Entering edit reconfigures the SAME CM6 view's editability — no remount, no jitter.
 
 /** What the tile keeps of a page. `body: null` is a failed open, never an empty page. */
 interface EmbedEntry {

@@ -5,20 +5,18 @@
 import { EditorView } from '@codemirror/view'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { EmbedMenuContext, EmbedPickNode } from '@shared/embedMenu'
-import { normalizeTitle, titleFromPath } from '@shared/connections'
 import { useSession } from '../../store'
 import { blockAt } from './blockModel'
 import { docString } from './docCache'
-import { embedHostAncestors, embedTileRanges } from './embedWidget'
+import { embeddable } from './embedRanges'
+import { embedExclusions } from './embedWidget'
 
-/** The Collections → Sets → Pages pick tree, minus excluded titles (already-embedded + the host
- *  page); a container with nothing pickable beneath it drops out entirely. */
+/** The Collections → Sets → Pages pick tree, minus everything `embeddable` rules out; a container
+ *  with nothing pickable beneath it drops out entirely. */
 export function embedPickTree(tree: NexusTree, exclude: ReadonlySet<string>): EmbedPickNode[] {
   const kept = (n: EmbedPickNode | null): n is EmbedPickNode => n !== null
   const page = (p: { title: string }): EmbedPickNode | null =>
-    p.title.includes(']') || exclude.has(normalizeTitle(p.title))
-      ? null // a `]` kills the embed regex — never offer a pick the syntax can't express
-      : { label: p.title, title: p.title }
+    embeddable(p.title, exclude) ? { label: p.title, title: p.title } : null
   const container = (c: CollectionNode | SetNode): EmbedPickNode | null => {
     const children = [...(c.sets ?? []).map(container), ...c.pages.map(page)].filter(kept)
     return children.length > 0 ? { label: c.title, children } : null
@@ -60,8 +58,6 @@ export function embedDeleteSpan(
   return { from: r.from, to: r.to + 1 }
 }
 
-
-
 export const embedGripMenu = EditorView.domEventHandlers({
   contextmenu(e, view) {
     if (view.state.readOnly) return false // a resting tile's inner grips offer nothing actionable
@@ -73,10 +69,7 @@ export const embedGripMenu = EditorView.domEventHandlers({
     const tree = useSession.getState().tree
     if (!tree) return false
     e.preventDefault()
-    const exclude = new Set(embedTileRanges(view.state).map((t) => normalizeTitle(t.title)))
-    // The whole host chain is out — a nested editor must not offer its outer hosts (the pick could
-    // only ever land the cycle token).
-    for (const a of embedHostAncestors(view.state)) exclude.add(normalizeTitle(titleFromPath(a)))
+    const exclude = embedExclusions(view.state)
     const mode: EmbedMenuContext['mode'] = block.kind === 'embed' ? 'tile' : 'create'
     void window.nexus?.embedMenu?.({ mode, tree: embedPickTree(tree, exclude) }).then((action) => {
       if (action) {

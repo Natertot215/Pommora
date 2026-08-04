@@ -1,47 +1,20 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { act, createElement } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
 import { EditorSelection } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
-import { MarkdownEditor } from '@renderer/MarkdownPM'
+import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
 
-;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-;(window as unknown as { nexus: unknown }).nexus = {
-  openPage: async () => ({
-    ok: true,
-    value: { id: 'x', title: 'Alpha', path: 'Notes/Alpha.md', frontmatter: {}, body: 'inner' },
-  }),
-}
-
-let container: HTMLDivElement
-let root: Root
-
-afterEach(async () => {
-  await act(async () => root.unmount())
-  container.remove()
-})
+stubEditorBridge()
+afterEach(cleanupEditor)
 
 const conn: ConnectionsApi = {
   ...buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
   open: () => {},
 }
 
-async function mount(body: string): Promise<EditorView> {
-  container = document.createElement('div')
-  document.body.appendChild(container)
-  root = createRoot(container)
-  await act(async () => {
-    root.render(
-      createElement(MarkdownEditor, { initialBody: body, onChange: () => {}, connections: conn }),
-    )
-  })
-  const dom = container.querySelector('.cm-editor')
-  const v = dom && EditorView.findFromDOM(dom as HTMLElement)
-  if (!v) throw new Error('no EditorView')
-  return v
-}
+const mount = (initialBody: string): Promise<EditorView> =>
+  mountEditor({ initialBody, connections: conn })
 
 const key = (view: EditorView, k: string): void => {
   view.contentDOM.dispatchEvent(
