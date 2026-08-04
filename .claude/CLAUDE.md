@@ -14,11 +14,11 @@ Pommora is a personal management app based on Nathan's frustration with modern p
 
 - **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views; it contains **Sets** as organizational subfolders that inherit that schema.
 - **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection's properties, identified via its `PageID` key. Pages use MarkdownPM for its editor surface, which includes in-line connections to other pages.
-- **Agenda:** the calendar layer — **Tasks** (reminder-shaped; keyed with `TaskID`) and **Events** (calendar-shaped; keyed with `EventID`) — each a Markdown file living in its own singleton folder, declared by a config sidecar rather than by folder name. Agenda is **de-scaffolded**: the shape it inherited from the Swift build was removed rather than built on, so there is no on-disk format, no CRUD, and no read surface today. What survives is the plumbing that holds for any form it takes → [[AgendaPM]].
+- **Agenda:** the calendar layer — **Tasks** (reminder-shaped; keyed with `TaskID`; located within `/Tasks`) and **Events** (calendar-shaped; keyed with `EventID`; located within `/Events`) — each Markdown files distinguished via its key and validated against its folder placement.
 - **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use.
-- **Connections:** inline `[[Title]]` colored-text links that live in a Page's Markdown body (the canonical source) and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix. They **aren't** displayed in any container views *(tables, galleries, lists…)*, and content ↔ content relational properties **don't** exist.
+- **Connections:** inline `[[Title]]` colored-text links that live in a Page's Markdown body (the canonical source) and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix. They **aren't** displayed in any container views *(tables, galleries, lists…)*, and content-to-content relational properties **don't** exist.
 
-**Files are canonical for content.** Pages, Tasks and Events are all markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — a file whose key contradicts what its folder expects is Unknown: invisible, untouched, never stamped over. Foreign keys are preserved on every write. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development — but legibility concerns *context*, not every byte the app stores: per-machine operational info, helpers and accelerators, or derived caches belong in `nexus.db`, not in hand-editable and exposed JSON.
+**Files are canonical for content.** Pages, Tasks, and Events are all markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — a file whose key contradicts what its folder expects is Unknown: invisible, untouched, never stamped over. Foreign keys are preserved on every write. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development — but legibility concerns *context*, not every byte the app stores: per-machine operational info, helpers and accelerators, or derived caches belong in `nexus.db`, not in hand-editable and exposed JSON.
 
 ### Codebase Information
 
@@ -46,15 +46,8 @@ The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full rebuild / re-walk when an incremental or cached update works — cache, memoize, snapshot, subscribe narrowly. It's THE lag source.
 - **Never** reference plans, decision logs, or any other session-dependent phrasing in documentation or code comments.
 - **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they never restate exact code values. Name the token and its treatment ("the red solid at a low opacity"), never the literal `#hex` / `%` / line-for-line code stays in the code itself. The same discipline must be held true equally to code comments.
-
-#### Design Rules
-
-- **Dual-option** menu toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
-- **Tokens must** be pulled from their sources in `design-system` — never hand-roll tokens without explicit direction.
-
-### Working Discipline
-
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves. *Void when Nathan's unreachable:* proceed on the best record of his design wishes and the existing design logic, but disclose every such decision and assumption as you make it.
+- **Tokens must** be pulled from their sources in `design-system` — never hand-roll tokens without explicit direction; dual-optionmenu toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
 
 ### Locked Decisions
 
@@ -75,21 +68,11 @@ Pommora was first built as a native SwiftUI app — that build was active for ar
 
 **Sapphire** is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime: it brings Pommora-style capabilities to Obsidian natively and keeps NexusOS Pommora-compatible, so Nathan's daily vault stays aligned as Pommora matures — at a light weekly cadence, subordinate to the daily Pommora grind.
 
-#### Documentation
-
-- **Features //** → Feature-specific documentation that **must** be updated every time relevant code is committed.
-- **Guidelines //** → Behavioral rules and hard-won traps grouped by domain.
-- **Planning //** → Self-explanatory; location for all planning and temporary specifications.
-- **Mobile //** and **Resources //** → The companion iPhone build, and forward-looking reference for work not yet built.
-
 ### Codebase Map
-
-Depth stops where the map stops earning its place: documentation is named file by file, source is named to the directory plus the modules the Hard Rules depend on. Build output, dependencies, and generic configuration are omitted.
-
-```
+````
 // [[Project Pommora]]                       | • Monorepo root — the app, its documentation, and deploy config
 ├── // [[.claude]]                           | • Project documentation and Claude configuration
-│   ├── [[CLAUDE]]                           | • This file — auto-loaded at session start
+│   ├── [[CLAUDE]]                           | • This file.
 │   ├── [[Context]]                          | • Where things stand — required session-start reading
 │   ├── [[Framework]]                        | • The road to v1.0.0 and what each version closes
 │   ├── [[Handoff]]                          | • Session-continuity record, newest session first
@@ -128,62 +111,53 @@ Depth stops where the map stops earning its place: documentation is named file b
 │   │   ├── [[Lint-And-Accessibility]]       | • The lint floor and the three rules disabled on purpose
 │   │   └── [[UI-Copy]]                      | • The running app never displays build-status or meta text
 │   ├── // [[Mobile]]                        | • The companion iPhone build — specs, architecture, sync
-│   │   ├── [[MobileSpec]]                   | • Read first — what the companion is and what it never becomes
-│   │   ├── [[MobileArchitecture]]           | • How the desktop build is reused and what has to be new
-│   │   ├── [[MobileDecisionLog]]            | • Confirmed, assumed, and open calls from the research pass
-│   │   ├── [[MobilePM]]                     | • MarkdownPM adapted to touch
-│   │   ├── [[MobileResources]]              | • The tools and libraries targeted for the companion
-│   │   ├── [[FormFactor]]                   | • Three panes collapsed to one center pane and two drawers
-│   │   └── [[NexusSync]]                    | • The iCloud model — most-recent-wins, no merge
 │   ├── // [[Resources]]                     | • Forward-looking reference for work not yet built
 │   │   ├── [[README]]                       | • Read the Resources folder as a menu, not a commitment
 │   │   ├── [[Deployment]]                   | • The Vercel deploy — the showcase only, never the app
 │   │   ├── [[Distribution]]                 | • Shipping a real build — signing, packaging, updates
 │   │   ├── [[Libraries]]                    | • The vetted library menu, tagged by decision state
 │   │   └── [[Mac-Integration]]              | • Where Electron lands on each macOS integration surface
-│   └── // [[Planning]]                      | • Plans and temporary specifications; contents are transient
-└── // [[Pommora]]                           | • The app — the codebase proper
-    ├── // [[src]]
-    │   ├── // [[main]]                      | • The Node main process — it alone touches the filesystem
-    │   │   ├── // [[connections]]           | • Link scanning, and rewriting them on rename
-    │   │   ├── // [[crud]]                  | • Mutations — writes, cascades, governed keys, options
-    │   │   ├── // [[db]]                    | • nexus.db — the driver seam, schema, device-local state
-    │   │   ├── // [[io]]                    | • Atomic writes, file locks, page and sidecar files, the walk
-    │   │   ├── // [[properties]]            | • The property registry's schema
-    │   │   ├── [[index.ts]]                 | • Main entry — window creation and app lifecycle
-    │   │   ├── [[ipc.ts]]                   | • The channel handlers sitting behind the bridge
-    │   │   ├── [[ids.ts]]                   | • The ULID seam
-    │   │   └── [[readNexus.ts]]             | • The read path — read-only by construction
-    │   ├── // [[preload]]                   | • The contextBridge — the renderer's only door into main
-    │   ├── // [[shared]]                    | • The cross-process contract — no fs, no React
-    │   │   ├── [[types.ts]]                 | • The contract both processes import
-    │   │   ├── [[bridge.ts]]                | • Every IPC channel declared once; both sides derive from it
-    │   │   ├── [[result.ts]]                | • The Result envelope IPC returns instead of throwing
-    │   │   └── [[schemas.ts]]               | • The zod schemas the on-disk format validates against
-    │   └── // [[renderer]]                  | • The React renderer — it never touches Node
-    │       └── // [[src]]
-    │           ├── // [[Blocks]]            | • Tile content for the dashboard layer
-    │           ├── // [[Components]]        | • Shared components — chips, icons, editable titles
-    │           ├── // [[Detail]]            | • The main pane — routed views, inspector, subfield, banner
-    │           ├── // [[Embeds]]            | • The embed framework's consumers
-    │           ├── // [[MarkdownPM]]        | • The editor — parser, tokens, decorations, input, tables
-    │           ├── // [[NavWindow]]         | • The standalone navigation window
-    │           ├── // [[Navigation]]        | • Tabs, history, breadcrumbs, search
-    │           ├── // [[PagePreview]]       | • The floating page window
-    │           ├── // [[Settings]]          | • The settings surface
-    │           ├── // [[Sidebar]]           | • The ribbon and its content column
-    │           ├── // [[SurfacePM]]         | • The dashboard engine — core and sensors
-    │           ├── // [[Tabs]]              | • The toolbar tab bar
-    │           ├── // [[Toolbar]]           | • The window toolbar
-    │           ├── // [[design-system]]     | • The code mirror of the Figma library
-    │           │   ├── // [[components]]    | • Design-system components — pickers, panes, fields
-    │           │   ├── // [[interactions]]  | • PommoraDND — the drag-and-drop engine
-    │           │   ├── // [[materials]]     | • Glass — surfaces, panes, windows, controls
-    │           │   ├── // [[showcase]]      | • The deployed component-library site
-    │           │   ├── // [[symbols]]       | • The curated icon registry — the primary glyph source
-    │           │   └── // [[tokens]]        | • Color, type, motion, chip — the token source of truth
-    │           ├── [[App.tsx]]              | • The shell — three panes and the routed surface
-    │           └── [[store.ts]]             | • The Zustand store holding renderer state
-    ├── [[design-system.html]]               | • The showcase's entry point
-    └── [[electron.vite.config.ts]]          | • The app build — main, preload, and renderer
-```
+│   ├── // [[Planning]]                      | • Plans and temporary specifications; contents are transient
+├── // [[Pommora]]                           | • The app — the codebase proper
+│   ├── // [[src]]
+│   │   ├── // [[main]]                      | • The Node main process — it alone touches the filesystem
+│   │   │   ├── // [[connections]]           | • Link scanning, and rewriting them on rename
+│   │   │   ├── // [[crud]]                  | • Mutations — writes, cascades, governed keys, options
+│   │   │   ├── // [[db]]                    | • nexus.db — the driver seam, schema, device-local state
+│   │   │   ├── // [[io]]                    | • Atomic writes, file locks, page and sidecar files, the walk
+│   │   │   ├── // [[properties]]            | • The property registry's schema
+│   │   │   ├── [[index.ts]]                 | • Main entry — window creation and app lifecycle
+│   │   │   ├── [[ipc.ts]]                   | • The channel handlers sitting behind the bridge
+│   │   │   ├── [[ids.ts]]                   | • The ULID seam
+│   │   │   └── [[readNexus.ts]]             | • The read path — read-only by construction
+│   │   ├── // [[preload]]                   | • The contextBridge — the renderer's only door into main
+│   │   ├── // [[shared]]                    | • The cross-process contract — no fs, no React
+│   │   │   ├── [[types.ts]]                 | • The contract both processes import
+│   │   │   ├── [[bridge.ts]]                | • Every IPC channel declared once; both sides derive from it
+│   │   │   ├── [[result.ts]]                | • The Result envelope IPC returns instead of throwing
+│   │   │   └── [[schemas.ts]]               | • The zod schemas the on-disk format validates against
+│   │   └── // [[renderer]]                  | • The React renderer — it never touches Node
+│   │       └── // [[src]]
+│   │           ├── // [[Blocks]]            | • Tile content for the dashboard layer
+│   │           ├── // [[Components]]        | • Shared components — chips, icons, editable titles
+│   │           ├── // [[Detail]]            | • The main pane — routed views, inspector, subfield, banner
+│   │           ├── // [[Embeds]]            | • The embed framework's consumers
+│   │           ├── // [[MarkdownPM]]        | • The editor — parser, tokens, decorations, input, tables
+│   │           ├── // [[NavWindow]]         | • The standalone navigation window
+│   │           ├── // [[Navigation]]        | • Tabs, history, breadcrumbs, searchr
+│   │           ├── // [[PagePreview]]       | • The floating page window
+│   │           ├── // [[Settings]]          | • The settings surface
+│   │           ├── // [[Sidebar]]           | • The ribbon and its content column
+│   │           ├── // [[SurfacePM]]         | • The dashboard engine — core and sensors
+│   │           ├── // [[Tabs]]              | • The tabs + navigational overlays.
+│   │           ├── // [[Toolbar]]           | • The window toolbar
+│   │           ├── // [[design-system]]     | • The design system.
+│   │           │   ├── // [[components]]    | • Design-system components — pickers, panes, fields
+│   │           │   ├── // [[interactions]]  | • PommoraDND — the drag-and-drop engine
+│   │           │   ├── // [[materials]]     | • Glass — surfaces, panes, windows, controls
+│   │           │   ├── // [[showcase]]      | • The deployed component-library site
+│   │           │   ├── // [[symbols]]       | • The curated icon registry — the primary glyph source
+│   │           │   └── // [[tokens]]        | • Color, type, motion, chip — the token source of truth
+│   │           ├── [[App.tsx]]              | • The shell — three panes and the routed surface
+│   │           └── [[store.ts]]             | • The Zustand store holding renderer state
+````
