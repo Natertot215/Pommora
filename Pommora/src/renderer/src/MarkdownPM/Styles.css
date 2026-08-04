@@ -915,9 +915,10 @@
 /* CODE TOKENS — a typed fence's nested parse, colored as spectrum-solid pastels (each solid mixed
    toward system-white). Scoped under .md-cb so a tag outside a fence colors nothing; a bare fence
    has no nested parse and keeps the plain mono look.
-   KNOBS: --tok-tint (the solid's share of the mix — lower reads more pastel) + the per-token solid routing */
+   KNOBS: --tok-tint (the solid's share of the mix, routed to the tint scale — a lower step reads
+   more pastel) + the per-token solid routing */
 .mdpm-editor .cm-line.md-cb {
-  --tok-tint: 72%;
+  --tok-tint: var(--tint-primary);
 }
 .mdpm-editor .md-cb .tok-kw {
   color: color-mix(in srgb, var(--solid-purple) var(--tok-tint), var(--system-white));
