@@ -190,7 +190,9 @@ function buildTiles(state: EditorState, editing: string | null): EmbedTiles {
         ),
       }),
     )
-    if (!cyclic) ranges.push({ from: e.from, to: e.to, path, title: e.title })
+    // The cycle token joins too: exclusions already cover it via the ancestors chain, and without
+    // a range here it would be the one replaced line with no absorb and no guard.
+    ranges.push({ from: e.from, to: e.to, path, title: e.title })
   }
   return { deco: builder.finish(), ranges, editing }
 }
@@ -241,8 +243,9 @@ export const embedField = StateField.define<EmbedTiles>({
 })
 
 // The skip-over absorb: each tile's atomic range swallows its boundary newlines (clamped at doc
-// edges), so no motion command can seat the caret on the embed line. Doc-edge boundary seats are
-// visible beside the tile and covered by the lone-line guard's insertion repair.
+// edges). Char/vertical motion can never seat the caret on the embed line; doc-edge boundary seats
+// and syntax-aware word motion can — every keystroke from ANY seat is guarded (interior damage is
+// refused, boundary insertions repair onto their own line).
 const embedAtomic = EditorView.atomicRanges.of((view) => {
   const { ranges } = view.state.field(embedField)
   if (ranges.length === 0) return Decoration.none
@@ -338,6 +341,16 @@ const embedGuard = EditorState.transactionFilter.of((tr) => {
     }
   }
   for (const r of ranges) {
+    // A change landing STRICTLY INSIDE the token is in-place damage, never a removal — the atomic
+    // absorb stops motion, but syntax-aware word motion (and any future seat) bypasses it, and a
+    // damaged token would otherwise slip the gone-whole test below. Refused outright.
+    let interior = false
+    tr.changes.iterChangedRanges((fromA, toA) => {
+      const overlaps = fromA < r.to && toA > r.from
+      const covers = fromA <= r.from && toA >= r.to
+      if (overlaps && !covers) interior = true
+    })
+    if (interior) return []
     const mapped = tr.changes.mapPos(r.from, 1)
     const line = tr.newDoc.lineAt(Math.min(mapped, tr.newDoc.length))
     if (!line.text.includes(`![[${r.title}]]`)) continue // syntax gone whole → a legal removal
