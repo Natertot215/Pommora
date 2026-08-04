@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { titleFromPath } from '@shared/connections'
 import type { SelectionState } from '@shared/types'
 import { text } from '@renderer/design-system/tokens'
 import { useSession } from '../../store'
@@ -7,7 +8,6 @@ import { SubfieldBreadcrumb } from './SubfieldBreadcrumb'
 import { DEFAULT_ITEMS, SubfieldItem, type SubfieldScope, isSubfieldItemId } from './subfieldItems'
 import './subfield.css'
 
-const basename = (path: string): string => (path.split('/').pop() ?? path).replace(/\.md$/, '')
 
 export function Subfield({ scope }: { scope?: SubfieldScope }): React.JSX.Element {
   const selection = useSession((s) => s.selection)
@@ -26,7 +26,7 @@ export function Subfield({ scope }: { scope?: SubfieldScope }): React.JSX.Elemen
     recordTrail(containerId, {
       id: selection.id,
       path: selection.path,
-      title: pageDetail?.title ?? basename(selection.path),
+      title: pageDetail?.title ?? titleFromPath(selection.path),
     })
   }, [scope, selection, tree, pageDetail, recordTrail])
 

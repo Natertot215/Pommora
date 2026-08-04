@@ -14,6 +14,10 @@
 
 /** Trim + case-fold + NFC — the one normalization for connection titles (NFC so an
  *  NFD-composed outside write still matches the NFC title it names). */
+/** A page's display title from its Nexus-relative path — the basename, extension dropped. */
+export const titleFromPath = (path: string): string =>
+  (path.split('/').pop() ?? path).replace(/\.md$/i, '')
+
 export function normalizeTitle(raw: string): string {
   return raw.trim().toLowerCase().normalize('NFC')
 }

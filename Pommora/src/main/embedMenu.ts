@@ -19,17 +19,15 @@ export function popEmbedMenu(
         n.children
           ? { label: n.label, submenu: n.children.map(node(kind)) }
           : { label: n.label, click: pick({ action: kind, title: n.title ?? n.label }) }
+    const pickRoot = (label: string, kind: 'embed' | 'source'): MenuItemConstructorOptions =>
+      ctx.tree.length > 0
+        ? { label, submenu: ctx.tree.map(node(kind)) }
+        : { label, enabled: false }
     const items: MenuItemConstructorOptions[] =
       ctx.mode === 'create'
-        ? [
-            ctx.tree.length > 0
-              ? { label: 'Embed Page', submenu: ctx.tree.map(node('embed')) }
-              : { label: 'Embed Page', enabled: false },
-          ]
+        ? [pickRoot('Embed Page', 'embed')]
         : [
-            ctx.tree.length > 0
-              ? { label: 'Page Source', submenu: ctx.tree.map(node('source')) }
-              : { label: 'Page Source', enabled: false },
+            pickRoot('Page Source', 'source'),
             { type: 'separator' },
             { label: 'Delete Embed', click: pick({ action: 'delete' }) },
           ]

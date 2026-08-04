@@ -4,8 +4,8 @@
 // promise, hot flag cleared after the modal menu (no mousemove fires under it).
 import { EditorView } from '@codemirror/view'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
-import type { EmbedPickNode } from '@shared/embedMenu'
-import { normalizeTitle } from '@shared/connections'
+import type { EmbedMenuContext, EmbedPickNode } from '@shared/embedMenu'
+import { normalizeTitle, titleFromPath } from '@shared/connections'
 import { useSession } from '../../store'
 import { blockAt } from './blockModel'
 import { docString } from './docCache'
@@ -14,21 +14,14 @@ import { embedHostAncestors, embedTileRanges } from './embedWidget'
 /** The Collections → Sets → Pages pick tree, minus excluded titles (already-embedded + the host
  *  page); a container with nothing pickable beneath it drops out entirely. */
 export function embedPickTree(tree: NexusTree, exclude: ReadonlySet<string>): EmbedPickNode[] {
+  const kept = (n: EmbedPickNode | null): n is EmbedPickNode => n !== null
   const page = (p: { title: string }): EmbedPickNode | null =>
     exclude.has(normalizeTitle(p.title)) ? null : { label: p.title, title: p.title }
-  const setNode = (s: SetNode): EmbedPickNode | null => {
-    const children = [...(s.sets ?? []).map(setNode), ...s.pages.map(page)].filter(
-      (n): n is EmbedPickNode => n !== null,
-    )
-    return children.length > 0 ? { label: s.title, children } : null
-  }
-  const collection = (c: CollectionNode): EmbedPickNode | null => {
-    const children = [...c.sets.map(setNode), ...c.pages.map(page)].filter(
-      (n): n is EmbedPickNode => n !== null,
-    )
+  const container = (c: CollectionNode | SetNode): EmbedPickNode | null => {
+    const children = [...(c.sets ?? []).map(container), ...c.pages.map(page)].filter(kept)
     return children.length > 0 ? { label: c.title, children } : null
   }
-  return tree.collections.map(collection).filter((n): n is EmbedPickNode => n !== null)
+  return tree.collections.map(container).filter(kept)
 }
 
 /** The fenced insert below a block: always blank-separated above, and below whenever the next
@@ -53,12 +46,9 @@ export function embedDeleteSpan(
   doc: string,
   r: { from: number; to: number },
 ): { from: number; to: number } {
-  const prevBlank = ((): boolean => {
-    if (r.from < 2) return false
-    const prevEnd = r.from - 1
-    const prevStart = doc.lastIndexOf('\n', prevEnd - 1) + 1
-    return doc.slice(prevStart, prevEnd).trim() === ''
-  })()
+  const prevEnd = r.from - 1
+  const prevStart = doc.lastIndexOf('\n', prevEnd - 1) + 1
+  const prevBlank = r.from >= 2 && doc.slice(prevStart, prevEnd).trim() === ''
   const hasTrailingNewline = r.to < doc.length && doc[r.to] === '\n'
   if (!hasTrailingNewline) return { from: Math.max(0, r.from - 1), to: r.to }
   const nextStart = r.to + 1
@@ -71,7 +61,7 @@ export function embedDeleteSpan(
 const hostTitleOf = (state: EditorView['state']): string | undefined => {
   const chain = embedHostAncestors(state)
   const last = chain[chain.length - 1]
-  return last ? (last.split('/').pop() ?? last).replace(/\.md$/i, '') : undefined
+  return last ? titleFromPath(last) : undefined
 }
 
 export const embedGripMenu = EditorView.domEventHandlers({
@@ -87,7 +77,7 @@ export const embedGripMenu = EditorView.domEventHandlers({
     const exclude = new Set(embedTileRanges(view.state).map((t) => normalizeTitle(t.title)))
     const host = hostTitleOf(view.state)
     if (host) exclude.add(normalizeTitle(host))
-    const mode = block.kind === 'embed' ? ('tile' as const) : ('create' as const)
+    const mode: EmbedMenuContext['mode'] = block.kind === 'embed' ? 'tile' : 'create'
     void window.nexus?.embedMenu?.({ mode, tree: embedPickTree(tree, exclude) }).then((action) => {
       window.nexus?.setGripHot?.(false)
       if (action) {
