@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import { useSession } from '../store'
+import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { AddBannerButton } from '../Detail/Banner/AddBannerButton'
 import { DetailTitleHeader } from '../Detail/DetailTitleHeader'
 import { assetUrl } from '../assetUrl'
@@ -23,21 +24,8 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
   { path, title, cover, onRename, onEditIcon },
   ref,
 ) {
-  const mutate = useSession((s) => s.mutate)
   const reloadPage = useSession((s) => s.reloadPage)
-
-  const setBanner = async (dataUrl: string | null): Promise<void> => {
-    if (await mutate({ op: 'setBanner', path, kind: 'page', dataUrl })) await reloadPage()
-  }
-  const addOrChange = async (): Promise<void> => {
-    const dataUrl = await window.nexus.pickImage()
-    if (dataUrl) await setBanner(dataUrl)
-  }
-  const bannerMenu = async (): Promise<void> => {
-    const action = await window.nexus.bannerMenu()
-    if (action === 'change') await addOrChange()
-    else if (action === 'remove') await setBanner(null)
-  }
+  const { openMenu: bannerMenu, addOrChange } = useBannerMenu(path, 'page', () => void reloadPage())
 
   const titleHeader = (
     <DetailTitleHeader
