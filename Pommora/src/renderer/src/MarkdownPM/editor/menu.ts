@@ -39,7 +39,7 @@ function editFor(action: string, doc: string, from: number, to: number): FormatE
 export function applyEditorAction(view: EditorView, raw: string): boolean {
   if (!raw.startsWith(EDITOR_ACTION_PREFIX)) return false
   const action = raw.slice(EDITOR_ACTION_PREFIX.length)
-  // Page embeds insert through the native pick tree, not a text transform.
+  // Page embeds type the opener and hand off to the autocomplete, not a plain format edit.
   if (action === 'block:page') return embedInsertAtCaret(view)
   const sel = view.state.selection.main
   const edit = editFor(action, view.state.doc.toString(), sel.from, sel.to)

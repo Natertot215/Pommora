@@ -25,19 +25,30 @@ export function embedPickTree(tree: NexusTree, exclude: ReadonlySet<string>): Em
 }
 
 /** The fenced insert below a block: always blank-separated above, and below whenever the next
- *  line holds content. Returns a change spec; the caller dispatches. */
+ *  line holds content. `token` is the placed text — a full `![[Title]]`, or the bare opener when
+ *  the autocomplete finishes the title. Returns the change spec plus where the caret lands. */
 export function embedInsertAfter(
   doc: string,
   blockTo: number,
-  title: string,
-): { from: number; to: number; insert: string } {
-  const embed = `![[${title}]]`
-  if (blockTo >= doc.length) return { from: doc.length, to: doc.length, insert: `\n\n${embed}` }
+  token: string,
+): { from: number; to: number; insert: string; caret: number } {
+  if (blockTo >= doc.length)
+    return {
+      from: doc.length,
+      to: doc.length,
+      insert: `\n\n${token}`,
+      caret: doc.length + 2 + token.length,
+    }
   const nextLineStart = blockTo + 1
   const nextLineEnd = doc.indexOf('\n', nextLineStart)
   const nextLine = doc.slice(nextLineStart, nextLineEnd === -1 ? doc.length : nextLineEnd)
   const trail = nextLine.trim() === '' ? '' : '\n'
-  return { from: blockTo, to: blockTo, insert: `\n\n${embed}${trail}` }
+  return {
+    from: blockTo,
+    to: blockTo,
+    insert: `\n\n${token}${trail}`,
+    caret: blockTo + 2 + token.length,
+  }
 }
 
 /** The menu delete's span: the tile line and its trailing newline, plus one fencing blank when the
@@ -58,27 +69,22 @@ export function embedDeleteSpan(
   return { from: r.from, to: r.to + 1 }
 }
 
-/** The Insert menu's Page: the same native pick tree the rail grip offers, aimed at the caret's
- *  block — a caret on a blank line inserts fenced below that line. */
+/** The Insert menu's Page: types the full embed pair on a fenced line below the caret's block and
+ *  lands the caret between the brackets, so the embed autocomplete takes over from there. */
 export function embedInsertAtCaret(view: EditorView): boolean {
   if (view.state.readOnly) return false
-  const tree = useSession.getState().tree
-  if (!tree) return false
   const doc = docString(view.state.doc)
   const head = view.state.selection.main.head
   const block = blockAt(doc, head)
   const after = block ? block.to : view.state.doc.lineAt(head).to
-  void window.nexus?.embedMenu
-    ?.({ mode: 'create', tree: embedPickTree(tree, embedExclusions(view.state)) })
-    .then((action) => {
-      if (action?.action === 'embed') {
-        view.dispatch({
-          changes: embedInsertAfter(docString(view.state.doc), after, action.title),
-          userEvent: 'input',
-        })
-      }
-      view.focus()
-    })
+  const c = embedInsertAfter(doc, after, '![[]]')
+  view.dispatch({
+    changes: c,
+    selection: { anchor: c.caret - ']]'.length },
+    userEvent: 'input',
+    scrollIntoView: true,
+  })
+  view.focus()
   return true
 }
 
@@ -99,7 +105,10 @@ export const embedGripMenu = EditorView.domEventHandlers({
       if (action) {
         const current = docString(view.state.doc)
         if (action.action === 'embed') {
-          view.dispatch({ changes: embedInsertAfter(current, block.to, action.title), userEvent: 'input' })
+          view.dispatch({
+            changes: embedInsertAfter(current, block.to, `![[${action.title}]]`),
+            userEvent: 'input',
+          })
         } else if (action.action === 'source') {
           // The block span IS the embed line (claimed or not) — an unresolved or duplicate token
           // re-aims exactly like a live tile; acting through the claimed set would dead-end the
