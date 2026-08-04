@@ -523,7 +523,9 @@ export function embedExclusions(state: EditorState): Set<string> {
 // above the whole tile. Clicks inside the widget's own box stay the widget's (ignoreEvent).
 const embedClickSeat = EditorView.domEventHandlers({
   mousedown(event, view) {
-    if (event.button !== 0) return false
+    // Only a plain single left press is this handler's: extending selections, double/triple-click,
+    // and other buttons keep CM's own semantics even beside a tile.
+    if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
     // Cheapest first — a page holding no tiles pays neither the ancestor walk nor the hit-test.
     const { ranges } = view.state.field(embedField)
     if (ranges.length === 0) return false
@@ -535,7 +537,12 @@ const embedClickSeat = EditorView.domEventHandlers({
       const block = view.lineBlockAt(r.from)
       // documentTop, not a hand-rolled scroller offset — block positions start below .cm-content's
       // top padding (the header zone), which a scrollDOM-based conversion silently omits.
-      const below = event.clientY - view.documentTop > (block.top + block.bottom) / 2
+      const y = event.clientY - view.documentTop
+      // The band gate: posAtCoords clamps presses in the content's padding onto the nearest
+      // position, so a doc ENDING in a tile would hand this handler the entire bottom padding —
+      // outside the tile's own band the press stays CM's (drag-select lives there).
+      if (y < block.top || y > block.bottom) return false
+      const below = y > (block.top + block.bottom) / 2
       const len = view.state.doc.length
       const seat = below
         ? EditorSelection.cursor(Math.min(len, r.to + 1), 1)

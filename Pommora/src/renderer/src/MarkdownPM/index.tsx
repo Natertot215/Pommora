@@ -310,11 +310,13 @@ export function MarkdownEditor({
     const foldsLoad = foldsRef.current?.load()
     const heightsLoad = embedHeightsRef.current?.load()
     if (foldsLoad || heightsLoad)
-      void Promise.all([foldsLoad, heightsLoad]).then(([keys, h]) => {
-        if (keys) applySavedFolds(view, keys)
-        if (h && Object.keys(h).length > 0)
+      // allSettled, never all — one load failing must not drop the other's result, and the scroll
+      // restore runs regardless (a preference that can't be read degrades to defaults, not a hang).
+      void Promise.allSettled([foldsLoad, heightsLoad]).then(([keys, h]) => {
+        if (keys.status === 'fulfilled' && keys.value) applySavedFolds(view, keys.value)
+        if (h.status === 'fulfilled' && h.value && Object.keys(h.value).length > 0)
           view.dispatch({
-            effects: setEmbedHeights.of({ ...h, ...view.state.field(embedField).heights }),
+            effects: setEmbedHeights.of({ ...h.value, ...view.state.field(embedField).heights }),
           })
         restoreScroll()
       })
