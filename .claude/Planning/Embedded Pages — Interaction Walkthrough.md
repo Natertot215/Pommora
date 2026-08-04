@@ -20,7 +20,7 @@ The pre-ship interaction checklist, hand-walked across every surface an embed ca
 - ▢ In-app rename of an embedded page (the cascade): `![[Old]]` rewrites to `![[New]]` in the host file AND the tile survives without degrading (needs a rename via the sidebar/title menu).
 - ▢ In-app delete of an embedded page → tile degrades to dim token; restore from trash → tile returns.
 - ▢ Undo after: menu delete · menu insert · re-aim · a refused boundary key (nothing to undo) · the boundary-seat repair (one undo unit, caret sane).
-- ▢ Mid-document boundary-seat via mouse: click exactly between two glued blocks near a tile — can any click seat a caret that types onto the tile line? (The guard repairs if so — verify the repair lands on its own line.)
+- ▢ Mid-document interior seat, both routes: (1) click the tile's very top/bottom edge, (2) caret at the end of the line above + `Ctrl-→` (syntax word-motion — note whether macOS delivers it or Mission Control eats it). From any seat that lands: Backspace, Delete, and typing must all be REFUSED (doc unchanged) — interior damage refuses whole; a boundary-seat insertion repairs onto its own line.
 
 ### B — The Tile Itself
 
