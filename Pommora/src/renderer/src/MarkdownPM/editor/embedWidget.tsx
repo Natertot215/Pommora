@@ -267,6 +267,22 @@ const editingExit = ViewPlugin.fromClass(
   },
 )
 
+/** Per tile, the count of immediate neighbor lines that are non-blank — the fence predicate. A
+ *  hand-typed glued embed is legal, so gluing is only refused when a DELETION grows this count
+ *  (removing the lone fencing blank), the same result-doc mechanic the table merge-guard uses. */
+function gluedTileCount(
+  doc: { lineAt: (pos: number) => { number: number; text: string }; line: (n: number) => { text: string }; lines: number; length: number },
+  ranges: readonly { from: number; to: number }[],
+): number {
+  let glued = 0
+  for (const r of ranges) {
+    const n = doc.lineAt(Math.min(r.from, doc.length)).number
+    if (n > 1 && doc.line(n - 1).text.trim() !== '') glued++
+    if (n < doc.lines && doc.line(n + 1).text.trim() !== '') glued++
+  }
+  return glued
+}
+
 // The lone-line guard: a CLAIMED embed line (a live tile) can be removed whole — the menu's delete,
 // a spanning selection — but never eroded in place. A transaction that leaves the tile's `![[…]]`
 // on a no-longer-lone line is a join or an edge-seat insertion: pure boundary-seat insertions are
@@ -276,6 +292,25 @@ const embedGuard = EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged) return tr
   const { ranges } = tr.startState.field(embedField)
   if (ranges.length === 0) return tr
+  // The fence: a deletion that leaves a surviving tile glued to content it was blank-separated
+  // from has removed the lone fencing blank — refused, exactly as the table refuses fusion.
+  let hasDeletion = false
+  tr.changes.iterChangedRanges((fromA, toA) => {
+    if (toA > fromA) hasDeletion = true
+  })
+  if (hasDeletion) {
+    const survivors = ranges
+      .map((r) => ({ from: tr.changes.mapPos(r.from, 1), to: tr.changes.mapPos(r.to, -1), title: r.title }))
+      .filter((r) => {
+        const line = tr.newDoc.lineAt(Math.min(r.from, tr.newDoc.length))
+        return loneEmbedTitle(line.text) === r.title
+      })
+    if (
+      survivors.length > 0 &&
+      gluedTileCount(tr.newDoc, survivors) > gluedTileCount(tr.startState.doc, ranges)
+    )
+      return []
+  }
   for (const r of ranges) {
     const mapped = tr.changes.mapPos(r.from, 1)
     const line = tr.newDoc.lineAt(Math.min(mapped, tr.newDoc.length))

@@ -61,3 +61,28 @@ describe('embed lone-line guard', () => {
     expect(apply(mk(doc2), { changes: { from: 1, to: 2, insert: '' } })).toBe('a![[Nowhere]]')
   })
 })
+
+describe('the fencing blank', () => {
+  it('refuses deleting the lone blank below a tile', () => {
+    const doc = 'alpha\n\n![[Alpha]]\n\nbeta'
+    // Backspace-at-beta-start shape: deletes the newline joining beta up onto the blank.
+    expect(apply(mk(doc), { changes: { from: 18, to: 19, insert: '' } })).toBe(doc)
+  })
+
+  it('refuses deleting the lone blank above a tile', () => {
+    const doc = 'alpha\n\n![[Alpha]]\n\nbeta'
+    expect(apply(mk(doc), { changes: { from: 5, to: 6, insert: '' } })).toBe(doc)
+  })
+
+  it('typing on the fence blank stays legal — hand-gluing is authoring, not erosion', () => {
+    const doc = 'alpha\n\n![[Alpha]]\n\nbeta'
+    expect(apply(mk(doc), { changes: { from: 18, to: 18, insert: 'x' } })).toBe(
+      'alpha\n\n![[Alpha]]\nx\nbeta',
+    )
+  })
+
+  it('deleting the tile with its blanks stays legal', () => {
+    const doc = 'alpha\n\n![[Alpha]]\n\nbeta'
+    expect(apply(mk(doc), { changes: { from: 7, to: 19, insert: '' } })).toBe('alpha\n\nbeta')
+  })
+})
