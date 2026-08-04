@@ -15,6 +15,7 @@ import {
   calloutDragExtension,
 } from './editor/blockDrag'
 import { calloutGripMenu } from './editor/calloutGripMenu'
+import { embedGripMenu } from './editor/embedGripMenu'
 import { embedTiles } from './editor/embedWidget'
 import { customCaret } from './editor/caret'
 import { calloutAtomic } from './editor/calloutAtomic'
@@ -175,9 +176,14 @@ export function MarkdownEditor({
       // Block-drag rail handles: a hover grip on each draggable block's first line (paragraph/code/quote/list).
       blockHandles,
       // Reveal each grip only while the pointer is in its gutter strip (not over the line's text); the hot-line
-      // callback flags a callout-grip hover to main so the generic editor menu stands down there.
+      // callback flags any grip hover to main so the generic editor menu stands down there.
       blockGripHover((line) =>
-        window.nexus?.setCalloutGrip?.(!!line && line.classList.contains('md-callout-first')),
+        window.nexus?.setGripHot?.(
+          !!line &&
+            (line.classList.contains('md-block-handle') ||
+              line.classList.contains('md-callout-first') ||
+              !!line.querySelector(':scope > .md-bq-grip')),
+        ),
       ),
       // Press a block grip → drag the whole block → drop it at the nearest block boundary.
       blockDragExtension,
@@ -187,6 +193,8 @@ export function MarkdownEditor({
       blockquoteDragExtension,
       // Right-press the callout grip → native Delete Callout menu (the flag above suppresses the generic one).
       calloutGripMenu,
+      // Right-press a rail grip → Embed Page ▸; an embed tile's grip → Page Source ▸ + Delete.
+      embedGripMenu,
       // Drawn caret (rounded bar in text, I-beam on empty lines, smooth fade) — native caret hidden in CSS.
       customCaret,
       // The hidden `> [!type] ` callout head is atomic — caret can't enter it, so the tag can't be corrupted.

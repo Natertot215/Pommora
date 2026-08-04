@@ -179,6 +179,8 @@ const api = {
   tableMenu: ask('table-menu'),
   // The callout grip's right-click menu.
   calloutMenu: ask('callout-menu'),
+  // The embed grip's menu — Embed Page ▸ on rail grips, Page Source ▸ + Delete on a tile's.
+  embedMenu: ask('embed-menu'),
   // The table-view column header's right-click menu.
   columnMenu: ask('column-menu'),
   // A table cell's right-click menu (title meta / per-type Style / Edit).
@@ -194,8 +196,8 @@ const api = {
   propertyMenu: ask('property-menu'),
   // An option chip's native menu (Rename / Remove / Clear); Remove + Clear confirm in main first.
   optionMenu: ask('option-menu'),
-  // Flag (on hover) whether the pointer sits on a callout grip, so the generic editor menu stands down there.
-  setCalloutGrip: tell('editor:callout-grip'),
+  // Flag (on hover) whether the pointer sits on a block grip, so the generic editor menu stands down there.
+  setGripHot: tell('editor:grip-hot'),
   // Rename the open nexus's root folder + re-point the live session to the new path.
   renameNexus: ask('nexus:rename'),
   // Native-menu actions pushed from main; each subscriber returns an unsubscribe.

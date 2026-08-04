@@ -37,7 +37,7 @@ const embedHost = Facet.define<EmbedHost, EmbedHost>({
 /** Flips which tile (by target path) holds the live edit; null ends it. */
 export const setEmbedEditing = StateEffect.define<string | null>()
 
-interface TileRange {
+export interface TileRange {
   from: number
   to: number
   path: string
@@ -354,9 +354,14 @@ const embedGuard = EditorState.transactionFilter.of((tr) => {
   return tr
 })
 
-/** The claimed-tile spans, for the boundary-delete refusals in the input keymap. */
-export function embedTileRanges(state: EditorState): readonly { from: number; to: number }[] {
+/** The claimed-tile spans — the boundary-delete refusals and the grip menu both read them. */
+export function embedTileRanges(state: EditorState): readonly TileRange[] {
   return state.field(embedField, false)?.ranges ?? []
+}
+
+/** The editor's embed-host chain, for consumers outside the field (the grip menu's exclusions). */
+export function embedHostAncestors(state: EditorState): readonly string[] {
+  return state.facet(embedHost).ancestors
 }
 
 export function embedTiles(host: EmbedHost): Extension {

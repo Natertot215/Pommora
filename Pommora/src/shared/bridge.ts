@@ -31,6 +31,7 @@ import type { PropertyDefinition, PropertyType, StatusGroup } from './properties
 import type { PageFrontmatter } from './schemas'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import type { CalloutMenuAction } from './calloutMenu'
+import type { EmbedMenuAction, EmbedMenuContext } from './embedMenu'
 import type { CellMenuAction, CellMenuContext } from './cellMenu'
 import type { CardMenuAction, CardMenuContext } from './cardMenu'
 import type { ConnMenuAction } from './connections'
@@ -279,6 +280,7 @@ export interface Asks {
   }
   'table-menu': { args: [ctx: TableMenuContext]; reply: TableMenuAction | null }
   'callout-menu': { args: []; reply: CalloutMenuAction | null }
+  'embed-menu': { args: [ctx: EmbedMenuContext]; reply: EmbedMenuAction | null }
   'column-menu': { args: [ctx: ColumnMenuContext]; reply: ColumnMenuAction | null }
   'cell-menu': { args: [ctx: CellMenuContext]; reply: CellMenuAction | null }
   'card-menu': { args: [ctx: CardMenuContext]; reply: CardMenuAction | null }
@@ -294,7 +296,7 @@ export interface Tells {
   'editor:format-state': [state: FormatState]
   'win:dragBy': [dx: number, dy: number]
   'win:zoom': []
-  'editor:callout-grip': [on: boolean]
+  'editor:grip-hot': [on: boolean]
 }
 
 /** Main→renderer pushes — the preload derives an `on*` subscriber (returning an unsubscribe)
