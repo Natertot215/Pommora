@@ -10,7 +10,7 @@ It lives in the body and nowhere else: the text is canonical and Obsidian-readab
 
 The parser matches on the title alone, so `[[Title|alias]]` resolves to the same Page while the piped tail renders as plain text beside the styled title. **A pipe can't appear in a title** — it opens that tail, so a title holding one could never resolve back to itself; the shared name rule rejects it at creation everywhere.
 
-`![[ ]]` isn't a connection — the tokenizer claims it as an image embed — and `{{ }}` renders as written. Nothing offers a Page its own title and a self-link is dropped, though a hand-typed one navigates normally.
+`![[ ]]` isn't a connection — it's the page-embed syntax (→ [[MarkdownPM]] §II. Embeddings), never a link-graph edge — and `{{ }}` renders as written. The rename cascade still reaches it: one sweep rewrites `[[` and `![[` together through a parallel pattern, so a rename can't strand an embed. Nothing offers a Page its own title and a self-link is dropped, though a hand-typed one navigates normally.
 
 **Code is never a connection.** A `[[Title]]` inside a fence or an inline span is a sample: it doesn't tokenize, doesn't index an edge, and no rename touches it. One shared mask decides where code is, so the editor and the write side can't disagree.
 
@@ -34,7 +34,7 @@ A resolved connection is inline text in the connection color — never a chip �
 
 #### II. Autocomplete
 
-Typing inside `[[ ]]` filters Pages nexus-wide by title prefix; an empty query lists nothing. The panel anchors below the caret, flipping above only to avoid overflowing the viewport. Arrows move the selection, Return commits a bare `[[Title]]`, Escape closes — each falling through to the editor's own binding while the panel is closed. One state machine drives the page editor, block tiles, and markdown table cells alike.
+Typing inside `[[ ]]` filters Pages nexus-wide by title prefix; an empty query lists nothing. The panel anchors below the caret, flipping above only to avoid overflowing the viewport. Arrows move the selection, Return commits the form being typed — a bare `[[Title]]`, or `![[Title]]` when the panel fired on the embed syntax, where the pool also drops already-embedded pages, the host chain, and titles the embed grammar can't express. Escape closes — each key falling through to the editor's own binding while the panel is closed. One state machine drives the page editor, block tiles, and markdown table cells alike; the embed form fires only in page-body editors, never in cells.
 
 ### Architecture
 
