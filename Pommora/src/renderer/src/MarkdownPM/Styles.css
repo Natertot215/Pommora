@@ -328,7 +328,7 @@
   color: var(--label-secondary);
 }
 .md-latex,
-.md-image {
+.md-embed {
   color: var(--label-secondary);
 }
 

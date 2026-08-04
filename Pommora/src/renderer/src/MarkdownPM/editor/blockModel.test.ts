@@ -256,3 +256,36 @@ describe('blockAt', () => {
     expect(blockStarts(doc)[0]).toEqual({ from: 0, kind: 'table' })
   })
 })
+
+describe('embed blocks', () => {
+  it('a lone-line embed glued under prose is its own block, not paragraph-absorbed', () => {
+    const doc = 'Some text\n![[Foo]]\nMore text'
+    const b = blockAt(doc, 12)
+    expect(b?.kind).toBe('embed')
+    expect(slice(doc, b)).toBe('![[Foo]]')
+    expect(blockStarts(doc).map((s) => s.kind)).toEqual(['paragraph', 'embed', 'paragraph'])
+  })
+
+  it('an embed inside a list run is its own block', () => {
+    const doc = '- item one\n  ![[Foo]]\n- item two'
+    const b = blockAt(doc, 14)
+    expect(b?.kind).toBe('embed')
+    expect(slice(doc, b)).toBe('  ![[Foo]]')
+  })
+
+  it('blank-fenced embed keeps single-line drag boundaries', () => {
+    const doc = 'para\n\n![[Foo]]\n\npara two'
+    const b = blockAt(doc, 8)
+    expect(b).toEqual({ from: 6, to: 14, kind: 'embed' })
+  })
+
+  it('a fenced ![[…]] stays code', () => {
+    const doc = '```\n![[Foo]]\n```'
+    expect(blockAt(doc, 6)?.kind).toBe('code')
+  })
+
+  it('a non-lone ![[…]] line stays paragraph', () => {
+    const doc = 'see ![[Foo]] here'
+    expect(blockAt(doc, 6)?.kind).toBe('paragraph')
+  })
+})
