@@ -3,7 +3,7 @@
 // embed line is reads THIS: the block resolver, the decoration pass's gates, and the tile field.
 import { blockEmbedLines, type EmbedLine, fencedCodeRanges } from '../detect'
 import { tableRegions } from '../Tables/regions'
-import { normalizeTitle } from '@shared/connections'
+import { normalizeTitle, type LinkStatus } from '@shared/connections'
 
 export function docEmbedLines(doc: string): EmbedLine[] {
   return blockEmbedLines(doc, [
@@ -18,7 +18,7 @@ export function docEmbedLines(doc: string): EmbedLine[] {
  *  predicate; splitting it is how they'd disagree. */
 export function claimedEmbeds(
   embeds: readonly EmbedLine[],
-  statusOf: (title: string) => 'resolved' | 'phantom' | 'ambiguous',
+  statusOf: (title: string) => LinkStatus,
 ): EmbedLine[] {
   const seen = new Set<string>()
   const out: EmbedLine[] = []
