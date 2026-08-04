@@ -19,6 +19,7 @@ import {
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, WidgetType } from '@codemirror/view'
 import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
 import { normalizeTitle, titleFromPath } from '@shared/connections'
 import '@renderer/design-system/tile-chassis.css'
 import { docScan } from './docCache'
@@ -55,9 +56,6 @@ export interface EmbedHeightsApi {
   load: () => Promise<Record<string, number>>
   save: (heights: Record<string, number>) => void
 }
-
-/** The resize floor — SurfacePM's own tile minimum. */
-const EMBED_MIN_H = 64
 
 export interface TileRange {
   from: number
@@ -119,7 +117,7 @@ function EmbedResizeHandle({
           return undefined
         },
         onDragMove: (ev) => {
-          lastH = Math.max(EMBED_MIN_H, Math.round(startH + ev.clientY - startY))
+          lastH = Math.max(TILE_MIN_PX, Math.round(startH + ev.clientY - startY))
           span.style.height = `${lastH}px`
           view.requestMeasure()
         },
@@ -526,15 +524,18 @@ export function embedExclusions(state: EditorState): Set<string> {
 const embedClickSeat = EditorView.domEventHandlers({
   mousedown(event, view) {
     if (event.button !== 0) return false
+    // Cheapest first — a page holding no tiles pays neither the ancestor walk nor the hit-test.
+    const { ranges } = view.state.field(embedField)
+    if (ranges.length === 0) return false
     if ((event.target as HTMLElement).closest?.('.mdpm-embed-tile')) return false
     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
     if (pos === null) return false
-    for (const r of view.state.field(embedField).ranges) {
+    for (const r of ranges) {
       if (pos < r.from || pos > r.to) continue
       const block = view.lineBlockAt(r.from)
-      const yDoc =
-        event.clientY - view.scrollDOM.getBoundingClientRect().top + view.scrollDOM.scrollTop
-      const below = yDoc > (block.top + block.bottom) / 2
+      // documentTop, not a hand-rolled scroller offset — block positions start below .cm-content's
+      // top padding (the header zone), which a scrollDOM-based conversion silently omits.
+      const below = event.clientY - view.documentTop > (block.top + block.bottom) / 2
       const len = view.state.doc.length
       const seat = below
         ? EditorSelection.cursor(Math.min(len, r.to + 1), 1)

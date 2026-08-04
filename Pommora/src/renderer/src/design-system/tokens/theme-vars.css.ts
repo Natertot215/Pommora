@@ -81,6 +81,10 @@ globalStyle(':root', {
     // (hovered page embeds, the active table cell, the open gallery card, the handle menu's title
     // field). Color only, one global source; each surface keeps its own border width.
     '--accent-stroke': 'color-mix(in srgb, var(--accent) var(--tint-secondary), transparent)',
+    // The same stroke a notch stronger — worn while a surface is being actively manipulated, so a
+    // resize reads hotter than the hover that revealed it (SurfacePM's blocks, MarkdownPM's page
+    // tiles). Color only; each surface keeps its own border width.
+    '--accent-stroke-hot': 'color-mix(in srgb, var(--accent) var(--tint-primary), transparent)',
     '--accent-text': 'var(--accent)',
     // The OS/system accent, always reflected (applySystemAccent overrides it at
     // runtime from the OS, independent of the Pommora --accent setting). Seeded
