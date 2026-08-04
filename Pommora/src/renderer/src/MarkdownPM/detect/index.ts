@@ -144,7 +144,8 @@ export interface EmbedLine {
 
 const loneEmbedRe = /^!\[\[([^\]\r\n]*)\]\][ \t]*$/
 
-/** The lone-line test for one line of text — the guard's per-line half of blockEmbedLines. */
+/** The lone-line test for one line of text — the per-line half blockEmbedLines and the tile guard
+ *  both read, so a line can never be lone to one and not the other. */
 export function loneEmbedTitle(line: string): string | null {
   return loneEmbedRe.exec(line)?.[1] ?? null
 }
@@ -159,10 +160,10 @@ export function blockEmbedLines(text: string, excluded: [number, number][]): Emb
   const { lines, lineStarts } = splitWithOffsets(text)
   const out: EmbedLine[] = []
   for (let i = 0; i < lines.length; i++) {
-    const m = loneEmbedRe.exec(lines[i])
-    if (!m) continue
+    const title = loneEmbedTitle(lines[i])
+    if (title === null) continue
     if (excluded.some(([f, t]) => lineStarts[i] >= f && lineStarts[i] <= t)) continue
-    out.push({ from: lineStarts[i], to: lineStarts[i] + lines[i].length, title: m[1] })
+    out.push({ from: lineStarts[i], to: lineStarts[i] + lines[i].length, title })
   }
   return out
 }

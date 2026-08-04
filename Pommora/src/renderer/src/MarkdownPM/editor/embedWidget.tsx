@@ -12,9 +12,12 @@ import {
   RangeSetBuilder,
   StateEffect,
   StateField,
+  type Text,
   type Transaction,
 } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, WidgetType } from '@codemirror/view'
+import { cx } from '@renderer/design-system/cx'
+import '@renderer/design-system/tile-chassis.css'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../detect'
 import { claimedEmbeds } from './embedRanges'
@@ -88,9 +91,11 @@ class EmbedTileWidget extends WidgetType {
   }
 
   private renderInto(dom: TileDom, view: EditorView): void {
-    dom.className = `mdpm-embed-tile tile-chassis${this.editing ? ' is-editing-tile' : ''}${
-      this.interactive ? '' : ' is-inert'
-    }`
+    dom.className = cx(
+      'mdpm-embed-tile tile-chassis',
+      this.editing && 'is-editing-tile',
+      !this.interactive && 'is-inert',
+    )
     let root = dom._root
     if (!root) {
       root = createRoot(dom)
@@ -270,10 +275,7 @@ const editingExit = ViewPlugin.fromClass(
 /** Per tile, the count of immediate neighbor lines that are non-blank — the fence predicate. A
  *  hand-typed glued embed is legal, so gluing is only refused when a DELETION grows this count
  *  (removing the lone fencing blank), the same result-doc mechanic the table merge-guard uses. */
-function gluedTileCount(
-  doc: { lineAt: (pos: number) => { number: number; text: string }; line: (n: number) => { text: string }; lines: number; length: number },
-  ranges: readonly { from: number; to: number }[],
-): number {
+function gluedTileCount(doc: Text, ranges: readonly { from: number; to: number }[]): number {
   let glued = 0
   for (const r of ranges) {
     const n = doc.lineAt(Math.min(r.from, doc.length)).number
@@ -281,6 +283,25 @@ function gluedTileCount(
     if (n < doc.lines && doc.line(n + 1).text.trim() !== '') glued++
   }
   return glued
+}
+
+/** The insertion repair for an eroded tile line, or null when the transaction has to be refused.
+ *  Only ONE pure non-empty insertion seated exactly at a tile boundary repairs — it lands on its
+ *  own fresh line, carrying the caret to the end of what was typed. */
+function boundaryRepair(
+  tr: Transaction,
+  r: TileRange,
+): { from: number; insert: string; caret: number } | null {
+  const changes: { from: number; to: number; text: string }[] = []
+  tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+    changes.push({ from: fromA, to: toA, text: inserted.toString() })
+  })
+  if (changes.length !== 1) return null
+  const [{ from, to, text }] = changes
+  if (from !== to || text === '') return null
+  if (from === r.from) return { from, insert: `${text}\n`, caret: from + text.length }
+  if (from === r.to) return { from, insert: `\n${text}`, caret: from + 1 + text.length }
+  return null
 }
 
 // The lone-line guard: a CLAIMED embed line (a live tile) can be removed whole — the menu's delete,
@@ -316,23 +337,11 @@ const embedGuard = EditorState.transactionFilter.of((tr) => {
     const line = tr.newDoc.lineAt(Math.min(mapped, tr.newDoc.length))
     if (!line.text.includes(`![[${r.title}]]`)) continue // syntax gone whole → a legal removal
     if (loneEmbedTitle(line.text) !== null) continue // still lone → untouched or cleanly shifted
-    // A single pure insertion at a boundary seat repairs onto its own line; anything else cancels.
-    let repaired: { from: number; insert: string; caretAfter: boolean } | null | 'cancel' = null
-    tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
-      if (repaired === 'cancel') return
-      if (repaired !== null || fromA !== toA || inserted.length === 0) {
-        repaired = 'cancel'
-        return
-      }
-      if (fromA === r.from) repaired = { from: r.from, insert: `${inserted.toString()}\n`, caretAfter: false }
-      else if (fromA === r.to) repaired = { from: r.to, insert: `\n${inserted.toString()}`, caretAfter: true }
-      else repaired = 'cancel'
-    })
-    if (repaired && repaired !== 'cancel') {
-      const rep = repaired as { from: number; insert: string; caretAfter: boolean }
-      const caret = rep.caretAfter ? rep.from + rep.insert.length : rep.from + rep.insert.length - 1
-      return [{ changes: { from: rep.from, insert: rep.insert }, selection: { anchor: caret } }]
-    }
+    const repair = boundaryRepair(tr, r)
+    if (repair)
+      return [
+        { changes: { from: repair.from, insert: repair.insert }, selection: { anchor: repair.caret } },
+      ]
     return []
   }
   return tr
