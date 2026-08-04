@@ -3,7 +3,12 @@
 // result — with several extensions each doing both per transaction, this was the lag source. Keyed on the
 // immutable Text via WeakMap, so old versions collect with the history.
 import type { Text } from '@codemirror/state'
-import { scanDoc, type DocScan } from '../decorations/intent'
+import {
+  docLineIntents,
+  scanDoc,
+  type CachedLineIntents,
+  type DocScan,
+} from '../decorations/intent'
 
 const strings = new WeakMap<Text, string>()
 export function docString(doc: Text): string {
@@ -25,4 +30,17 @@ export function docScan(doc: Text): DocScan {
     scans.set(doc, s)
   }
   return s
+}
+
+// The caret-free per-line decoration intents + rails, one per doc VERSION — a caret move re-derives
+// only its own affected lines (the caret's line + its fence's edge lines) and reads the rest from here,
+// so the per-caret cost stops scaling with document length.
+const lineIntents = new WeakMap<Text, CachedLineIntents>()
+export function docLineIntentsOf(doc: Text): CachedLineIntents {
+  let v = lineIntents.get(doc)
+  if (!v) {
+    v = docLineIntents(docScan(doc))
+    lineIntents.set(doc, v)
+  }
+  return v
 }

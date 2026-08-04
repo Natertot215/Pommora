@@ -10,8 +10,14 @@ import {
 import type { Extension, Range } from '@codemirror/state'
 import { chipBoxGeometry } from '../../design-system/tokens'
 import { tokenize, activeTokenIndices, type Token } from '../tokens'
-import { docScan, docString } from './docCache'
-import { decorationsFor, GLYPH_CLASS, type WidgetSpec } from '../decorations/intent'
+import { docLineIntentsOf, docScan, docString } from './docCache'
+import {
+  assembleLineIntents,
+  GLYPH_CLASS,
+  NO_CARET,
+  tokenIntents,
+  type WidgetSpec,
+} from '../decorations/intent'
 import type { ConnectionsApi } from '../connections'
 import { isValidLink } from '@shared/links'
 
@@ -166,16 +172,19 @@ function visibleInlineTokens(view: EditorView, text: string, fences: [number, nu
 
 function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSet {
   const text = docString(view.state.doc)
-  // One whole-doc scan per doc VERSION (docCache) — a caret move / focus flip / scroll reuses it,
-  // so the per-rebuild cost is the viewport tokenize + the line loop, never the O(doc) re-scans.
+  // One whole-doc scan AND one caret-free line-intent derivation per doc VERSION (docCache) — a caret
+  // move / focus flip / scroll re-derives only the caret's own affected lines plus the viewport
+  // tokenize, never an O(doc) line walk.
   const scan = docScan(view.state.doc)
   const focused = view.hasFocus
   const sel = view.state.selection.main
   const tokens = visibleInlineTokens(view, text, scan.fencedRanges)
   const active = focused ? activeTokenIndices(tokens, sel.from, sel.to) : NO_ACTIVE
-  const head = focused ? sel.head : -1
+  const head = focused ? sel.head : NO_CARET
+  const intents = tokenIntents(tokens, active)
+  intents.push(...assembleLineIntents(scan, docLineIntentsOf(view.state.doc), head))
   const ranges: Range<Decoration>[] = []
-  for (const it of decorationsFor(text, tokens, active, head, scan)) {
+  for (const it of intents) {
     if (it.kind === 'line') {
       const spec =
         it.level === undefined
