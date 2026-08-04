@@ -50,7 +50,6 @@ interface BlockContext {
   fences: [number, number][]
   tables: { from: number; to: number }[]
   maths: [number, number][]
-  embeds: { from: number; to: number }[]
   claimed: (i: number) => boolean
   kindAt: (i: number) => BlockKind | null
 }
@@ -148,7 +147,7 @@ function blockContext(doc: string): BlockContext {
     return 'paragraph'
   }
 
-  return { lines, n, starts, ends, callout, listMember, fences, tables, maths, embeds, claimed, kindAt }
+  return { lines, n, starts, ends, callout, listMember, fences, tables, maths, claimed, kindAt }
 }
 
 /** The top-level block owning the line at `pos`, or null on a blank/unowned line (nothing to grab). */

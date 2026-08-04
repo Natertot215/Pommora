@@ -142,16 +142,17 @@ export interface EmbedLine {
   title: string
 }
 
+const loneEmbedRe = /^!\[\[([^\]\r\n]*)\]\]$/
+
 /** Lone-line page embeds: a line whose TRIMMED content is exactly one `![[Title]]` — surrounding
  *  whitespace doesn't break lone-ness, anything else on the line does. Same exclusion contract as
  *  blockMathRanges: an embed line inside a fence or table region is content there, never an embed,
  *  and `excluded` is required so two callers can't silently disagree on the embed model. */
 export function blockEmbedLines(text: string, excluded: [number, number][]): EmbedLine[] {
-  const lone = /^!\[\[([^\]\r\n]*)\]\]$/
   const { lines, lineStarts } = splitWithOffsets(text)
   const out: EmbedLine[] = []
   for (let i = 0; i < lines.length; i++) {
-    const m = lone.exec(lines[i].trim())
+    const m = loneEmbedRe.exec(lines[i].trim())
     if (!m) continue
     if (excluded.some(([f, t]) => lineStarts[i] >= f && lineStarts[i] <= t)) continue
     out.push({ from: lineStarts[i], to: lineStarts[i] + lines[i].length, title: m[1] })
