@@ -37,8 +37,9 @@ describe('candidates (prefix, ranked exact → shortest → A–Z)', () => {
     const titles = idx.candidates('pro').map((p) => p.title)
     expect(titles).toEqual(['Pro', 'Projects', 'Project Atlas'])
   })
-  it('empty query → no candidates', () => {
-    expect(idx.candidates('')).toEqual([])
+  it('empty query → the whole index, A–Z', () => {
+    const titles = idx.candidates('').map((p) => p.title)
+    expect(titles).toEqual(['Notes', 'Pro', 'Project Atlas', 'Projects'])
   })
   it('respects the limit', () => {
     expect(idx.candidates('p', 1)).toHaveLength(1)
