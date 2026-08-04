@@ -7,6 +7,7 @@ function caretMarkers(view: EditorView): RectangleMarker[] {
   // A cursor placed against a block widget (e.g. a table) makes forRange return a marker spanning the whole
   // widget — a giant, mis-placed caret. Clamp anything far taller than a text line back to one line's height.
   const cap = view.defaultLineHeight * 2.5 // headings (~1.8em) stay tall; a widget-spanning marker is clamped
+  const floor = 4 // under this a marker is a collapsed line's sliver (an embed's fencing blank), not a caret
   const out: RectangleMarker[] = []
   for (const r of view.state.selection.ranges) {
     const cursor = r.empty ? r : EditorSelection.cursor(r.head, r.assoc)
@@ -20,15 +21,14 @@ function caretMarkers(view: EditorView): RectangleMarker[] {
         'mdpm-caret',
         EditorSelection.cursor(cursor.head, (cursor.assoc || 1) > 0 ? -1 : 1),
       )
-    for (const m of markers) {
-      if (m.height > cap)
-        out.push(new RectangleMarker('mdpm-caret', m.left, m.top, m.width, view.defaultLineHeight))
-      // A collapsed line (an embed's fencing blank) measures as a sliver — draw a legible caret
-      // seated at the seam rather than an invisible one.
-      else if (m.height < 4)
-        out.push(new RectangleMarker('mdpm-caret', m.left, m.top, m.width, view.defaultLineHeight))
-      else out.push(m)
-    }
+    // Either end of the legible band takes the same repair — one line's height at the marker's own
+    // seat, so a widget-spanning marker shrinks to a caret and a collapsed seam draws one at all.
+    for (const m of markers)
+      out.push(
+        m.height > cap || m.height < floor
+          ? new RectangleMarker('mdpm-caret', m.left, m.top, m.width, view.defaultLineHeight)
+          : m,
+      )
   }
   return out
 }

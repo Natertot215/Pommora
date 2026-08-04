@@ -363,7 +363,7 @@
 }
 /* Mid-drag the border wears the stronger resize accent, matching SurfacePM's own. */
 .mdpm-embed-tile.is-resizing-tile {
-  --tile-border-color: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
+  --tile-border-color: var(--accent-stroke-hot);
   cursor: ns-resize;
 }
 /* A tile's fencing blanks are mechanism, not content — the line keeps its seat and its deletion

@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import { DEFAULT_FEEL, type Feel } from '@renderer/design-system/interactions/feel'
 import { SETTLE_FALLBACK } from '@renderer/design-system/interactions/shared'
+import { TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
 import { findTile } from './core/model'
 import type { DividerRef, Edge, SurfaceLayout } from './core/model'
 import { resolveEdge } from './core/edges'
@@ -207,7 +208,7 @@ export function SurfaceView({
   onLayoutChange,
   renderTile,
   gap = 8,
-  minTilePx = 64,
+  minTilePx = TILE_MIN_PX,
   bandZonePx = 10,
   bottomPadPx = 28,
   snapPx = 9,

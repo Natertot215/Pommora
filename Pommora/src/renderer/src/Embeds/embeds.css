@@ -93,14 +93,15 @@
   height: var(--embed-banner-h);
   z-index: 2;
   /* The page's own park, at tile scale: the band scrolls away with the content instead of sitting
-     glued to the tile's top. Same keyframes, range retargeted to the band's height. */
+     glued to the tile's top. Keyframes and range both read --header-zone, so re-pointing it at the
+     band's height is the whole retarget. */
   --header-zone: var(--embed-banner-h);
   will-change: transform;
   animation-name: mdpm-header-park;
   animation-timing-function: linear;
   animation-fill-mode: both;
   animation-timeline: --mdpm-scroll;
-  animation-range: 0 var(--embed-banner-h);
+  animation-range: 0 var(--header-zone);
 }
 .pgembed.has-banner .mdpm-editor .cm-content {
   padding-top: calc(var(--embed-banner-h) + 16px * var(--mdpm-scale));
