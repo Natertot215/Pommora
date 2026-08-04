@@ -12,12 +12,12 @@
 // fs, no React. normalizeTitle is the SINGLE normalization the scanner, the phantom key,
 // resolution, and uniqueness all share, so they can never disagree.
 
-/** Trim + case-fold + NFC — the one normalization for connection titles (NFC so an
- *  NFD-composed outside write still matches the NFC title it names). */
 /** A page's display title from its Nexus-relative path — the basename, extension dropped. */
 export const titleFromPath = (path: string): string =>
   (path.split('/').pop() ?? path).replace(/\.md$/i, '')
 
+/** Trim + case-fold + NFC — the one normalization for connection titles (NFC so an
+ *  NFD-composed outside write still matches the NFC title it names). */
 export function normalizeTitle(raw: string): string {
   return raw.trim().toLowerCase().normalize('NFC')
 }

@@ -181,8 +181,7 @@ export function MarkdownEditor({
         window.nexus?.setGripHot?.(
           !!line &&
             (line.classList.contains('md-block-handle') ||
-              line.classList.contains('md-callout-first') ||
-              !!line.querySelector(':scope > .md-bq-grip')),
+              line.classList.contains('md-callout-first')),
         ),
       ),
       // Press a block grip → drag the whole block → drop it at the nearest block boundary.

@@ -140,3 +140,63 @@ describe('the embed grip menu, end to end', () => {
     expect(view.state.doc.toString()).toBe(doc)
   })
 })
+
+describe('the gate folds', () => {
+  it('Page Source re-aims an UNRESOLVED embed line — the stale token is exactly what needs re-aiming', async () => {
+    const view = await mount('intro\n\n![[Ghost]]\n\nbelow')
+    nextPick = { action: 'source', title: 'Beta' }
+    await gripMenu(view, 'Ghost')
+    expect(calls[0]?.mode).toBe('tile')
+    expect(view.state.doc.toString()).toBe('intro\n\n![[Beta]]\n\nbelow')
+  })
+
+  it('a bracket-bearing title is never offered — the syntax cannot express it', async () => {
+    useSession.setState({
+      tree: {
+        collections: [
+          {
+            id: 'c1',
+            title: 'Notes',
+            path: 'Notes',
+            sets: [],
+            pages: [
+              { id: 'p9', title: 'Notes [Draft]', path: 'Notes/Notes [Draft].md' },
+              { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
+            ],
+            views: [],
+          },
+        ],
+      } as unknown as NexusTree,
+    })
+    const view = await mount('intro prose')
+    nextPick = null
+    await gripMenu(view, 'intro prose')
+    const titles: string[] = []
+    const walk = (n: { title?: string; children?: unknown[] }): void => {
+      if (n.title) titles.push(n.title)
+      for (const ch of n.children ?? []) walk(ch as { title?: string })
+    }
+    for (const n of calls[0].tree) walk(n)
+    expect(titles).toEqual(['Soup'])
+  })
+
+  it('a read-only editor pops no grip menu at all', async () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () => {
+      root.render(
+        createElement(MarkdownEditor, {
+          initialBody: 'some prose',
+          onChange: () => {},
+          connections: conn,
+          readOnly: true,
+        }),
+      )
+    })
+    const view = EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement)
+    if (!view) throw new Error('no view')
+    await gripMenu(view, 'some prose')
+    expect(calls).toHaveLength(0)
+  })
+})

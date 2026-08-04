@@ -3,6 +3,7 @@
 // optimism and waits for the reload.
 
 import type { MutateRequest, StateOrderKey } from '@shared/mutate'
+import { titleFromPath } from '@shared/connections'
 import type {
   CollectionNode,
   ContextGroup,
@@ -162,7 +163,7 @@ export function insertCreatedInTree(
         ? {
             kind: 'page',
             id: created.id,
-            title: basename(created.path).replace(/\.md$/, ''),
+            title: titleFromPath(created.path),
             path: created.path,
           }
         : {
