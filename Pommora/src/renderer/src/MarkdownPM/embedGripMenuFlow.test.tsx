@@ -24,8 +24,12 @@ const pages = [
   { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
 ]
 
+// nexus + personalization are non-optional on a real tree — treeIndex's walk dereferences both,
+// and the tiles' lazy chunk resolves against this store tree after the mounting test has ended.
 const treeOf = (collectionPages: { id: string; title: string; path: string }[]): NexusTree =>
   ({
+    nexus: { name: 'Test' },
+    personalization: {},
     collections: [
       { id: 'c1', title: 'Notes', path: 'Notes', sets: [], pages: collectionPages, views: [] },
     ],

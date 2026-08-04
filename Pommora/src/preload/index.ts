@@ -105,9 +105,9 @@ const api = {
   registry: { reorder: ask('registry:reorder') },
   // Batch frontmatter read for a container's view pipeline (pageId → frontmatter), lazy on open.
   loadValues: ask('view:loadValues'),
-  // Which tables' first column renders as a heading (a Pommora-only visual, not in the .md).
   // Per-machine embed-tile heights, keyed host page id → target page id.
   embedHeights: { get: ask('embedHeights:get'), set: ask('embedHeights:set') },
+  // Which tables' first column renders as a heading (a Pommora-only visual, not in the .md).
   tableHeadingColumns: { get: ask('tableHeadingCols:get'), set: ask('tableHeadingCols:set') },
   // The block document behind the BlockHost seam — targeted per-host load + locked
   // partial writes (layout / blocks / locked) on the host's config.
