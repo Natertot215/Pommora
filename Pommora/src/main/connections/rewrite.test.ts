@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections } from './rewrite'
-import { scanConnections } from './scan'
+import { mentionsTitle, scanConnections } from './scan'
+import { pageEmbedPattern } from '@shared/connections'
 
 describe('rewriteConnections', () => {
   it('rewrites a normalized-matching link to the new title', () => {
@@ -19,9 +20,11 @@ describe('rewriteConnections', () => {
     expect(rewriteConnections('[[Old|]]', 'Old', 'New')).toBe('[[New]]')
   })
 
-  it('leaves non-matching links and image embeds untouched', () => {
+  it('leaves non-matching links untouched; a matching embed follows the rename', () => {
+    // An embed names a page the same way a connection does — the sweep reaches both, so a page
+    // renamed away from a file-looking title carries its embeds with it.
     expect(rewriteConnections('[[Other]] and ![[Old.png]]', 'Old.png', 'X')).toBe(
-      '[[Other]] and ![[Old.png]]',
+      '[[Other]] and ![[X]]',
     )
   })
 
@@ -66,5 +69,46 @@ describe('rewriteConnections — code is a sample, never a connection', () => {
     expect(rewriteConnections(body, 'Old', 'New')).toBe(
       ['~~~', '[[Old]]', '```', '[[Old]]', '~~~', '[[New]]'].join('\n'),
     )
+  })
+})
+
+describe('the embed sweep', () => {
+  it('rewrites ![[Old]] alongside [[Old]], one sweep', () => {
+    const body = 'see [[Old]] and\n\n![[Old]]\n\nand [[Old|alias]]'
+    expect(rewriteConnections(body, 'Old', 'New')).toBe(
+      'see [[New]] and\n\n![[New]]\n\nand [[New|alias]]',
+    )
+  })
+
+  it('a fenced sample of either syntax stays a sample', () => {
+    const body = '```\n[[Old]]\n![[Old]]\n```\n![[Old]]'
+    expect(rewriteConnections(body, 'Old', 'New')).toBe('```\n[[Old]]\n![[Old]]\n```\n![[New]]')
+  })
+
+  it('mentionsTitle reaches embed-only bodies; scanConnections still never counts them', () => {
+    const body = 'no links here\n\n![[Old]]'
+    expect(mentionsTitle(body, 'old')).toBe(true)
+    expect(scanConnections(body)).toEqual([])
+  })
+})
+
+describe('one title grammar across the layers', () => {
+  // The embed pattern, the renderer's embed regex, and the autocomplete's embed branch must accept
+  // the same titles — one corpus feeds all three shapes.
+  const corpus = ['Plain', 'With Space', 'Dotted 3.5', 'ümlaut', 'a|pipe', 'brack]et', '']
+  it('the shared pattern and the lone-line regex agree on every title', () => {
+    for (const t of corpus) {
+      const line = `![[${t}]]`
+      const viaPattern = [...line.matchAll(pageEmbedPattern())].map((m) => m[1])
+      const lone = /^!\[\[([^\]\r\n]*)\]\][ \t]*$/.exec(line)?.[1] ?? null
+      // `]` breaks both the same way; `|` rides through both (an embed has no alias split).
+      if (t.includes(']')) {
+        expect(lone).not.toBe(t)
+        expect(viaPattern).not.toContain(t)
+      } else {
+        expect(lone).toBe(t)
+        expect(viaPattern).toEqual([t])
+      }
+    }
   })
 })

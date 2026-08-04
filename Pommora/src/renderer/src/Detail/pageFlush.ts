@@ -4,11 +4,16 @@
 // the newest edit from ANY host owns the file's single pending write, and every teardown path (host
 // unmount, nexus adopt, window close) flushes here instead of each host re-implementing the machinery.
 
+import { writeThroughBody } from '../Tabs/warmCache'
+
 const SAVE_DEBOUNCE_MS = 400
 
 const pending = new Map<string, { body: string; timer: ReturnType<typeof setTimeout> }>()
 
 export function schedulePageSave(path: string, body: string): void {
+  // Write through to the warm detail slot at schedule time — cache and disk converge even across
+  // a failed write's requeue, and a remounting embed can never seed on pre-edit prose.
+  writeThroughBody(path, body)
   const p = pending.get(path)
   if (p) clearTimeout(p.timer)
   pending.set(path, {

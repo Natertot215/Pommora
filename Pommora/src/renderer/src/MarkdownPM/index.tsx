@@ -16,7 +16,7 @@ import {
 } from './editor/blockDrag'
 import { calloutGripMenu } from './editor/calloutGripMenu'
 import { embedGripMenu } from './editor/embedGripMenu'
-import { embedHostAncestors, embedTileRanges, embedTiles } from './editor/embedWidget'
+import { embedHostAncestors, embedTileRanges, embedTiles, resolutionNudge } from './editor/embedWidget'
 import { normalizeTitle, titleFromPath } from '@shared/connections'
 import { customCaret } from './editor/caret'
 import { calloutAtomic } from './editor/calloutAtomic'
@@ -108,6 +108,14 @@ export function MarkdownEditor({
   const menuRef = useRef(menu)
   menuRef.current = menu
   const lastFormatRef = useRef<FormatState | null>(null)
+
+  // The restyle nudge: connection colors and embed tiles resolve against the live page index, but
+  // decorations rebuild only on editor updates — a tree change (rename, delete, restore) would
+  // otherwise wait for the next caret move. One empty transaction per index identity re-renders
+  // both layers; identity changes only on a REAL tree change (echo pushes keep object identity).
+  useEffect(() => {
+    if (connections) viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
+  }, [connections])
 
   // CM6 extensions are built once at mount, so they read live state + actions through refs. The `[[…]]`
   // autocomplete state machine is shared with table cells; this editor's seams are the candidate source
