@@ -16,7 +16,9 @@ import { embedHostAncestors, embedTileRanges } from './embedWidget'
 export function embedPickTree(tree: NexusTree, exclude: ReadonlySet<string>): EmbedPickNode[] {
   const kept = (n: EmbedPickNode | null): n is EmbedPickNode => n !== null
   const page = (p: { title: string }): EmbedPickNode | null =>
-    exclude.has(normalizeTitle(p.title)) ? null : { label: p.title, title: p.title }
+    p.title.includes(']') || exclude.has(normalizeTitle(p.title))
+      ? null // a `]` kills the embed regex — never offer a pick the syntax can't express
+      : { label: p.title, title: p.title }
   const container = (c: CollectionNode | SetNode): EmbedPickNode | null => {
     const children = [...(c.sets ?? []).map(container), ...c.pages.map(page)].filter(kept)
     return children.length > 0 ? { label: c.title, children } : null
@@ -58,14 +60,11 @@ export function embedDeleteSpan(
   return { from: r.from, to: r.to + 1 }
 }
 
-const hostTitleOf = (state: EditorView['state']): string | undefined => {
-  const chain = embedHostAncestors(state)
-  const last = chain[chain.length - 1]
-  return last ? titleFromPath(last) : undefined
-}
+
 
 export const embedGripMenu = EditorView.domEventHandlers({
   contextmenu(e, view) {
+    if (view.state.readOnly) return false // a resting tile's inner grips offer nothing actionable
     const line = (e.target as HTMLElement).closest?.('.cm-line.md-block-handle') as HTMLElement | null
     if (!line || e.clientX >= line.getBoundingClientRect().left) return false
     const doc = docString(view.state.doc)
@@ -75,25 +74,28 @@ export const embedGripMenu = EditorView.domEventHandlers({
     if (!tree) return false
     e.preventDefault()
     const exclude = new Set(embedTileRanges(view.state).map((t) => normalizeTitle(t.title)))
-    const host = hostTitleOf(view.state)
-    if (host) exclude.add(normalizeTitle(host))
+    // The whole host chain is out — a nested editor must not offer its outer hosts (the pick could
+    // only ever land the cycle token).
+    for (const a of embedHostAncestors(view.state)) exclude.add(normalizeTitle(titleFromPath(a)))
     const mode: EmbedMenuContext['mode'] = block.kind === 'embed' ? 'tile' : 'create'
     void window.nexus?.embedMenu?.({ mode, tree: embedPickTree(tree, exclude) }).then((action) => {
-      window.nexus?.setGripHot?.(false)
       if (action) {
         const current = docString(view.state.doc)
         if (action.action === 'embed') {
           view.dispatch({ changes: embedInsertAfter(current, block.to, action.title), userEvent: 'input' })
         } else if (action.action === 'source') {
-          const tile = embedTileRanges(view.state).find((t) => t.from === block.from)
-          if (tile)
-            view.dispatch({
-              changes: { from: tile.from, to: tile.to, insert: `![[${action.title}]]` },
-              userEvent: 'input',
-            })
+          // The block span IS the embed line (claimed or not) — an unresolved or duplicate token
+          // re-aims exactly like a live tile; acting through the claimed set would dead-end the
+          // menu precisely when a stale embed needs re-aiming.
+          view.dispatch({
+            changes: { from: block.from, to: block.to, insert: `![[${action.title}]]` },
+            userEvent: 'input',
+          })
         } else {
           const span = embedDeleteSpan(current, block)
           view.dispatch({ changes: { from: span.from, to: span.to, insert: '' }, userEvent: 'delete' })
+          // The grip is gone with its block, and no mousemove fired under the modal — clear by hand.
+          window.nexus?.setGripHot?.(false)
         }
       }
       view.focus()
