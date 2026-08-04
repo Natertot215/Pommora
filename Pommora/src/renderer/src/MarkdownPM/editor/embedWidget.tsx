@@ -16,7 +16,14 @@ import {
   type Text,
   Transaction,
 } from '@codemirror/state'
-import { Decoration, type DecorationSet, EditorView, ViewPlugin, WidgetType } from '@codemirror/view'
+import {
+  Decoration,
+  type DecorationSet,
+  EditorView,
+  ViewPlugin,
+  type ViewUpdate,
+  WidgetType,
+} from '@codemirror/view'
 import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { TILE_MIN_PX } from '@renderer/design-system/tokens/size.css'
@@ -25,7 +32,7 @@ import '@renderer/design-system/tile-chassis.css'
 import { docScan } from './docCache'
 import { loneEmbedTitle } from '../detect'
 import { claimedEmbeds } from './embedRanges'
-import { tileWarmSeam } from '@renderer/Embeds/tileWarm'
+import { healTileScrolls, tileWarmSeam } from '@renderer/Embeds/tileWarm'
 import type { ConnectionsApi } from '../connections'
 
 export interface EmbedHost {
@@ -558,6 +565,27 @@ const embedClickSeat = EditorView.domEventHandlers({
   },
 })
 
+// Any update can re-slot tile DOM (a rebuild's DOM sync moves nodes via detach + re-insert), and
+// the detach zeroes every scroller inside the tile with no event and — on full reuse — no widget
+// callback. The update cycle is the one signal a re-slot can't dodge: after each update on a
+// tile-bearing doc, run the warm editors' scroll self-checks in the measure phase, before paint.
+const healMeasure = { read: healTileScrolls, key: healTileScrolls }
+const reslotHeal = ViewPlugin.fromClass(
+  class {
+    update(u: ViewUpdate): void {
+      if (u.state.field(embedField).ranges.length > 0) u.view.requestMeasure(healMeasure)
+    }
+  },
+)
+
 export function embedTiles(host: EmbedHost): Extension {
-  return [embedHost.of(host), embedField, embedAtomic, embedGuard, embedClickSeat, editingExit]
+  return [
+    embedHost.of(host),
+    embedField,
+    embedAtomic,
+    embedGuard,
+    embedClickSeat,
+    editingExit,
+    reslotHeal,
+  ]
 }
