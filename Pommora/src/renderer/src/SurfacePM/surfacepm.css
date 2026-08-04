@@ -4,15 +4,13 @@
   min-height: 120px;
 }
 
-/* Block chassis — Nathan tunes these live. No background: blocks sit
-   transparent on the surface. */
+/* The chassis geometry (border, radius, body clip) is the shared tile-chassis; what's here is
+   SurfacePM's own layer — placement, motion, and the state selectors that drive the chassis's
+   --tile-border-color. No background: blocks sit transparent on the surface. */
 .spm-tile {
   position: absolute;
   top: 0;
   left: 0;
-  --tile-border: 1.25px; /* one source — the handle's outline + centering math read it */
-  border: var(--tile-border) solid var(--separator-border);
-  border-radius: 16px;
   transition:
     transform var(--duration-base) var(--ease-standard),
     width var(--duration-base) var(--ease-standard),
@@ -66,7 +64,7 @@
    (defaults to the cell border; bump it for a heavier highlight). */
 .spm-tile.is-resizing,
 .spm-tile:has(> .spm-edge:hover) {
-  border-color: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
+  --tile-border-color: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
   border-width: var(--tile-border-hot, var(--tile-border));
 }
 
@@ -82,12 +80,7 @@
   background: color-mix(in srgb, var(--accent) var(--tint-secondary), transparent);
 }
 
-.spm-tile-body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  border-radius: inherit;
-}
+/* Body clip is the shared .tile-chassis-body. */
 
 /* The block drag handle — a bordered chip NOTCHED into the left border: its own
    rounded border is the curve, its --main-bg fill erases the straight border line
@@ -185,12 +178,12 @@
 .spm-tile.is-borderless:not(.is-lifted):not(.is-resizing):not(.handle-pinned):not(
   :has(> .spm-edge:hover)
 ):not(:has(> .spm-handle:hover)) {
-  border-color: transparent;
+  --tile-border-color: transparent;
 }
 
 /* An embedded PAGE reads as one at a glance: an accent border (accent @ tint-secondary) while the
-   pointer is over it OR the caret is inside it — the handle's menu carries the exact location, so the
-   border only signals "this is an embed." Non-locked only (a lock, host or per-tile, keeps the
+   pointer is over it OR the caret is inside it — SurfacePM's location carrier is the handle menu, so
+   the border only signals "this is an embed." Non-locked only (a lock, host or per-tile, keeps the
    separator); it yields to the stronger resize accent (tint-primary) at the edges. The doubled
    .spm-tile outranks the borderless-hide rule (equal base specificity) so a borderless embed still
    shows the accent on hover, independent of source order. */
@@ -202,7 +195,7 @@
   .spm-tile.spm-tile:not(.is-locked):has(.pgembed).is-editing-tile:not(.is-resizing):not(
     :has(> .spm-edge:hover)
   ) {
-  border-color: var(--accent-stroke);
+  --tile-border-color: var(--accent-stroke);
 }
 
 /* Resize zones ride the block's own edges and corners (window-style), straddling

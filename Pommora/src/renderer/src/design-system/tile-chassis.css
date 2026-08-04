@@ -1,0 +1,18 @@
+/* The tile chassis — one chrome definition every embedded-tile host keys onto: SurfacePM's blocks
+   and MarkdownPM's embedded pages. Geometry and color binding only. Transitions are deliberately
+   per-consumer — `transition` is a shorthand, so a shared one would replace a host's own list
+   wholesale instead of merging. The border color routes through --tile-border-color so each host's
+   own trigger selectors decide WHEN the accent shows (hover, editing, lock states); this file only
+   decides WHAT the border is. Nathan tunes these live. */
+.tile-chassis {
+  --tile-border: 1.25px; /* one source — hosts' handle/notch math reads it */
+  border: var(--tile-border) solid var(--tile-border-color, var(--separator-border));
+  border-radius: 16px;
+}
+
+.tile-chassis-body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+}
