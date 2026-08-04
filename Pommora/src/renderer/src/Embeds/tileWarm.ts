@@ -28,3 +28,19 @@ export function tileWarmSeam(chain: readonly string[]): WarmSeam {
     capture: (state) => tileWarm.set(key, state),
   }
 }
+
+// The browser zeroes every scroller inside a disconnected subtree, and the outer editor detaches
+// tile DOM mid-sync whenever it re-slots a rebuild's range — silently: no scroll event, no
+// unmount, and a full-reuse re-slot skips the widget callbacks entirely. So warm editors register
+// a self-check here, and the host editor runs the set from its measure phase after any update on
+// a tile-bearing doc — the one signal that always accompanies a re-slot.
+const heals = new Set<() => void>()
+
+export function registerScrollHeal(fn: () => void): () => void {
+  heals.add(fn)
+  return () => heals.delete(fn)
+}
+
+export function healTileScrolls(): void {
+  for (const fn of heals) fn()
+}

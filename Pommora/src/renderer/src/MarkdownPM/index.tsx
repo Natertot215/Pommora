@@ -26,6 +26,7 @@ import {
 } from './editor/embedWidget'
 import { embeddable } from './editor/embedRanges'
 import { customCaret } from './editor/caret'
+import { registerScrollHeal } from '../Embeds/tileWarm'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
 import { connectionClicks } from './editor/connections'
@@ -288,21 +289,17 @@ export function MarkdownEditor({
     const onWarmScroll = (): void => {
       lastScrollTop = view.scrollDOM.scrollTop
     }
-    // The browser zeroes scroll state inside a disconnected subtree, and a host that re-slots this
-    // editor's DOM (the outer editor moves tile DOM when it rebuilds the tile's range) wipes the
-    // position without ever firing a scroll event — so the tracker still holds the truth. The
-    // observer fires on every reattach; a zeroed scroller the tracker never saw at zero is the
-    // wipe, reasserted before paint.
-    let reattachHeal: ResizeObserver | null = null
+    // A host that re-slots this editor's DOM wipes its scroll position without a scroll event, so
+    // the tracker still holds the truth — the heal registry (tileWarm) runs this self-check from
+    // the host's measure phase, before paint: a zeroed scroller the tracker never saw at zero is
+    // the wipe, reasserted.
+    let unregisterHeal: (() => void) | null = null
     if (warm) {
       view.scrollDOM.addEventListener('scroll', onWarmScroll, { passive: true })
-      if (typeof ResizeObserver !== 'undefined') {
-        reattachHeal = new ResizeObserver(() => {
-          if (view.scrollDOM.scrollTop === 0 && lastScrollTop > 0)
-            view.scrollDOM.scrollTop = lastScrollTop
-        })
-        reattachHeal.observe(view.scrollDOM)
-      }
+      unregisterHeal = registerScrollHeal(() => {
+        if (view.scrollDOM.scrollTop === 0 && lastScrollTop > 0)
+          view.scrollDOM.scrollTop = lastScrollTop
+      })
     }
     // Embed treatment: the shared scroll-edge fade rides the CM scroller (the real scroll element), so
     // top/bottom content dissolves as it scrolls — same mask + scroll-timeline as every other faded box.
@@ -342,7 +339,7 @@ export function MarkdownEditor({
     return () => {
       unsubMenu?.()
       if (warm) {
-        reattachHeal?.disconnect()
+        unregisterHeal?.()
         view.scrollDOM.removeEventListener('scroll', onWarmScroll)
         // `warm` is the mount-render prop (deps []), so this capture lands under the identity this
         // editor mounted with — never the next tab's, even though the switch already updated the store.
