@@ -2,6 +2,7 @@
 // plain strings with no identity but their position — the index IS the key.
 import './widget.css'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { Icon } from '@renderer/design-system/symbols'
 import type { Align, TableModel } from './model'
 import type { TableMenuContext } from '@shared/tableMenu'
@@ -146,42 +147,45 @@ export function TableView({
     return () => document.removeEventListener('pointerdown', onDown, true)
   }, [active])
 
+  // Both grips ride the shared gesture skeleton: activation gate, window-bound listener trio,
+  // deferred capture, Escape/pointercancel abort, teardown. The grip element is re-rendered mid-drag
+  // (setDrag + the ResizeObserver on the transform reflow), which is exactly why the skeleton binds
+  // its listeners on window — a capture-released grip can't strand the drag.
+  const beginGesture = usePointerGesture()
+
   const startDrag = (e: React.PointerEvent<HTMLDivElement>, axis: Axis, index: number): void => {
     if (e.button !== 0) return // only the left button drags; a right-press falls through to the context menu
     e.preventDefault()
     const wrap = wrapRef.current
     if (!wrap) return
-    // Capture the pointer to the grip (so moves over the nested cell editors report to it, not get
-    // swallowed), but bind move/up on WINDOW: the grip element is re-rendered mid-drag (setDrag + the
-    // ResizeObserver on the transform reflow), and listeners hung on it get dropped when the node detaches
-    // — capture then implicitly releases WITHOUT firing pointerup, so the drag would never clear (freeze).
-    const grip = e.currentTarget
-    grip.setPointerCapture(e.pointerId)
     const box = wrap.getBoundingClientRect()
     const origin = axis === 'col' ? box.left : box.top
     const start = axis === 'col' ? e.clientX : e.clientY
     let current: Drag = { axis, from: index, to: index, delta: 0 }
-    setDrag(current)
-    const onMove = (ev: PointerEvent): void => {
-      const pos = axis === 'col' ? ev.clientX : ev.clientY
-      let to = slotAt(axis, geom, pos - origin)
-      if (axis === 'row') to = Math.max(1, to)
-      current = { axis, from: index, to, delta: pos - start }
-      setDrag(current)
-    }
-    const onUp = (ev: PointerEvent): void => {
-      grip.releasePointerCapture(ev.pointerId)
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
+    beginGesture({
+      el: e.currentTarget,
+      event: e,
+      onActivate: () => {
+        setDrag(current)
+        return undefined
+      },
+      onDragMove: (ev) => {
+        const pos = axis === 'col' ? ev.clientX : ev.clientY
+        let to = slotAt(axis, geom, pos - origin)
+        if (axis === 'row') to = Math.max(1, to)
+        current = { axis, from: index, to, delta: pos - start }
+        setDrag(current)
+      },
       // A real reorder clears drag via the model-change effect; a no-op (same serialization) won't re-render, so clear here.
-      if (current.to === current.from || !onReorder(axis, current.from, current.to)) setDrag(null)
-    }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
+      onDrop: () => {
+        if (current.to === current.from || !onReorder(axis, current.from, current.to)) setDrag(null)
+      },
+      onAbort: () => setDrag(null),
+    })
   }
 
   // Preview is pixel-exact (override both <col> widths in px); on release we quantize the new left width
-  // to whole dashes and commit one resizeColumn. Same window-bound pointer-capture pattern as startDrag.
+  // to whole dashes and commit one resizeColumn.
   const startResize = (e: React.PointerEvent<HTMLDivElement>, boundaryIndex: number): void => {
     if (e.button !== 0) return
     e.preventDefault()
@@ -194,27 +198,32 @@ export function TableView({
     const combinedPx = startLeftPx + startRightPx
     if (combinedPx === 0) return
     const oneDashPx = combinedPx / combinedDashes
-    const handle = e.currentTarget
-    handle.setPointerCapture(e.pointerId)
     const startX = e.clientX
     let leftPx = startLeftPx
-    setResize({ boundaryIndex: i, leftPx: startLeftPx, rightPx: startRightPx })
-    const onMove = (ev: PointerEvent): void => {
-      const delta = clamp(ev.clientX - startX, -(startLeftPx - oneDashPx), startRightPx - oneDashPx)
-      leftPx = startLeftPx + delta
-      setResize({ boundaryIndex: i, leftPx, rightPx: startRightPx - delta })
-    }
-    const onUp = (ev: PointerEvent): void => {
-      handle.releasePointerCapture(ev.pointerId)
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      const newLeftDashes = clamp(Math.round(leftPx / oneDashPx), 1, combinedDashes - 1)
-      const dashDelta = newLeftDashes - leftDashes
-      // No change (or a no-op commit) won't re-render → clear the preview here, like reorder's onUp.
-      if (dashDelta === 0 || !onResize(i, dashDelta)) setResize(null)
-    }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
+    beginGesture({
+      el: e.currentTarget,
+      event: e,
+      onActivate: () => {
+        setResize({ boundaryIndex: i, leftPx: startLeftPx, rightPx: startRightPx })
+        return undefined
+      },
+      onDragMove: (ev) => {
+        const delta = clamp(
+          ev.clientX - startX,
+          -(startLeftPx - oneDashPx),
+          startRightPx - oneDashPx,
+        )
+        leftPx = startLeftPx + delta
+        setResize({ boundaryIndex: i, leftPx, rightPx: startRightPx - delta })
+      },
+      onDrop: () => {
+        const newLeftDashes = clamp(Math.round(leftPx / oneDashPx), 1, combinedDashes - 1)
+        const dashDelta = newLeftDashes - leftDashes
+        // No change (or a no-op commit) won't re-render → clear the preview here, like reorder's onDrop.
+        if (dashDelta === 0 || !onResize(i, dashDelta)) setResize(null)
+      },
+      onAbort: () => setResize(null),
+    })
   }
 
   const navigate = (row: number, col: number, dir: NavDir): void => {
