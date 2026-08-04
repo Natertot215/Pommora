@@ -32,7 +32,7 @@ A construct's Markdown markers are **revealed** (literal editable text) when the
 
 - **Outliner rails** — an optional hairline guide down each nested run (personalization `outlinerLines`, → [[ConfigurationPM]]). One rail per **ancestor** level, emitted as a side widget per nested line and drawn **run-based** — square through the middle so segments connect, rounded caps and an end-gap only at each run's first/last line, exactly the blockquote bar's first/last trick. A rail centres on its **ancestor's** glyph (so a nested checkbox under a bullet takes the bullet's centre, not its own) and paints on the neutral segment-separator token. **Scoped to dash-bullets + checkboxes.** Run + type logic in `decorations/intent.ts` (unit-tested), the widget in `editor/decorations.ts`, all knobs in `Styles.css`.
 
-- **Code** — inline and fenced share the mono family and nothing else: inline code wears the code colour over a code-tinted fill, a fenced block a neutral secondary fill.
+- **Code** — inline and fenced share the mono family and nothing else: inline code wears the code colour over a code-tinted fill, a fenced block a neutral secondary fill. A fence's info word (```` ```yaml ````) types the block: a curated language set (JSON, YAML, JS/TS, CSS, HTML, Swift) gets a real nested parse whose tokens color as spectrum-solid pastels — each solid mixed toward system-white, the whole palette one KNOB block in the stylesheet — while a bare fence gets no parse and keeps the plain mono look. A typed block wears its language as top-right chrome (`</> TYPE`, the lucide code glyph at label tone) standing in for the hidden fence syntax; fence markers reveal per line — only a caret directly on a fence line trades its glyph back for the raw syntax.
 
 - **Blockquote** — always-show rounded card + accent bar. Block constructs nest inside it (and inside callouts): the `>` prefix is stripped and the inner line renders as its own construct — `> - item` is a real bullet, `> # h` a heading, `> ---` an inner rule. Same renderer at the top level or behind a prefix (no exclusivity).
 
@@ -150,3 +150,5 @@ The wikilink resolver is **wired** to `@shared/connections`: resolution, styling
 - **Outliner rails on ordered / arrow / `+` lists** — the guide is bullets + checkboxes only; a right-aligned number and the arrow / `+` glyphs need their own glyph-centre and vertical-evenness maths before their rails read straight.
 
 - **Border-anchored "+" insert** (hover a column/row edge to insert) — deferred while tables are full-width; the grip's right-click Insert covers the need.
+
+- **Codeblock Style ▸ Language grip menu** — retyping a block's language from its rail grip; today the info word is edited on the fence line directly. Widening the curated language set is one description in the highlight module plus its package.

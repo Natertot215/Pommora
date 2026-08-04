@@ -81,7 +81,7 @@ export type DecoIntent =
   | { kind: 'class'; from: number; to: number; className: string }
   | { kind: 'hide'; from: number; to: number }
   | { kind: 'widget'; from: number; to: number; spec: WidgetSpec }
-  | { kind: 'lineWidget'; from: number; className: string }
+  | { kind: 'lineWidget'; from: number; className: string; text?: string }
   | { kind: 'line'; from: number; className: string; level?: number }
   | {
       kind: 'rail'
@@ -215,15 +215,20 @@ function lineIntentsInto(
     // chrome — a deeper `>` run is code bytes and stays visible.
     if (fence.closed && base > 0) base = Math.min(base, quotePrefixWidth(line, fence.depth))
     const innerStart = ls + base
-    const caretInBlock = selStart >= fence.from && selStart <= fence.to
+    const caretOnLine = selStart >= ls && selStart <= le
     intents.push({
       kind: 'line',
       from: ls,
       className: `md-cb${fence.role === 'open' ? ' md-cb-first' : ''}${fence.role === 'close' ? ' md-cb-last' : ''}`,
     })
     if (base > 0) intents.push({ kind: 'hide', from: ls, to: innerStart })
-    if (fence.role !== 'content' && !caretInBlock)
+    if (fence.role !== 'content' && !caretOnLine) {
       intents.push({ kind: 'hide', from: innerStart, to: le })
+      // A typed block wears its language as chrome where the raw fence hid — the caret on the
+      // line trades the glyph back for the syntax.
+      if (fence.role === 'open' && fence.lang)
+        intents.push({ kind: 'lineWidget', from: ls, className: 'md-cb-lang', text: fence.lang })
+    }
     return null
   }
 
@@ -305,12 +310,12 @@ export function docLineIntents(scan: DocScan): CachedLineIntents {
   return { perLine, rails }
 }
 
-/** The line indices whose intents actually read the caret: the caret's own line (marker/heading/hr
- *  reveal) and, when the caret sits in a fence block, that fence's open/close lines (content reveal). */
+/** The line indices whose intents actually read the caret: only the caret's own line — every
+ *  reveal (marker, heading, hr, and the fence lines' syntax-vs-glyph trade) is line-local. */
 function caretAffectedLines(scan: DocScan, selStart: number): Set<number> {
   const affected = new Set<number>()
   if (selStart < 0) return affected
-  const { lines, lineStarts, fences } = scan
+  const { lines, lineStarts } = scan
   let lo = 0
   let hi = lines.length - 1
   while (lo < hi) {
@@ -319,13 +324,6 @@ function caretAffectedLines(scan: DocScan, selStart: number): Set<number> {
     else hi = mid - 1
   }
   affected.add(lo)
-  const f = fences[lo]
-  if (f && selStart >= f.from && selStart <= f.to) {
-    for (let i = 0; i < lines.length; i++) {
-      const fi = fences[i]
-      if (fi && fi.from === f.from && fi.role !== 'content') affected.add(i)
-    }
-  }
   return affected
 }
 
