@@ -17,6 +17,7 @@ import {
 import { computeGeometry, type Rect, type SurfaceGeometry } from './core/rects'
 import { snapAxis, xCandidates, yCandidates } from './core/snap'
 import { startPointerDrag } from './sensors/pointerDrag'
+import '../design-system/tile-chassis.css'
 import './surfacepm.css'
 
 // Moving a block lifts THE BLOCK ITSELF under the pointer (shadowed, 1:1, no ghost) while its
@@ -128,7 +129,7 @@ const TileShell = memo(
     const cornerRef = useRef<{ x: number; y: number } | null>(null)
     return (
       <div
-        className={`spm-tile${phase === 'lifted' || phase === 'settling' ? ' is-lifted' : ''}${
+        className={`spm-tile tile-chassis${phase === 'lifted' || phase === 'settling' ? ' is-lifted' : ''}${
           resizing ? ' is-resizing' : ''
         }${extraClass ? ` ${extraClass}` : ''}${handleNear ? ' handle-near' : ''}`}
         onPointerEnter={(e) => {
@@ -180,7 +181,7 @@ const TileShell = memo(
             onPointerDown={(e) => onEdgeDown(id, edges, e)}
           />
         ))}
-        <div className="spm-tile-body">{renderTile(id, rect)}</div>
+        <div className="tile-chassis-body">{renderTile(id, rect)}</div>
       </div>
     )
   },

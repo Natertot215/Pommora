@@ -15,7 +15,7 @@
      EMBED_SCALE knob), so the whole embed's geometry follows one variable. */
   --fold-gutter: calc(var(--fold-gutter-base) * var(--mdpm-scale));
 }
-.spm-tile.is-editing-tile .pgembed {
+.tile-chassis.is-editing-tile .pgembed {
   overflow-y: auto;
   overscroll-behavior: contain;
 }
