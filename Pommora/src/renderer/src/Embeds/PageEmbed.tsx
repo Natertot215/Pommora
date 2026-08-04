@@ -3,6 +3,7 @@ import { MarkdownEditor, type WarmSeam } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
 import { useSession } from '../store'
+import { useBannerMenu } from '../Detail/Banner/useBannerMenu'
 import { NavCrumbs } from '../Navigation/NavList'
 import { resolveWith } from '../Navigation/navResolve'
 import { resolveIndexOf } from '../treeIndex'
@@ -158,17 +159,7 @@ function EmbedBanner({
   cover: string
   onChanged: () => void
 }): React.JSX.Element {
-  const mutate = useSession((s) => s.mutate)
-  const setBanner = async (dataUrl: string | null): Promise<void> => {
-    if (await mutate({ op: 'setBanner', path, kind: 'page', dataUrl })) onChanged()
-  }
-  const bannerMenu = async (): Promise<void> => {
-    const action = await window.nexus.bannerMenu()
-    if (action === 'change') {
-      const dataUrl = await window.nexus.pickImage()
-      if (dataUrl) await setBanner(dataUrl)
-    } else if (action === 'remove') await setBanner(null)
-  }
+  const { openMenu: bannerMenu } = useBannerMenu(path, 'page', onChanged)
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control
     <div
@@ -180,7 +171,7 @@ function EmbedBanner({
     >
       <img className="mdpm-banner-img" src={assetUrl(cover)} alt="" />
       <div className="mdpm-banner-overlay">
-        <span className="detail-title-text pgembed-banner-title">{title}</span>
+        <span className="detail-title-text">{title}</span>
       </div>
     </div>
   )

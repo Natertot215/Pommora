@@ -79,4 +79,4 @@
   /* The crumbs also hover-scroll, which reads its own knob. */
   --scroll-fade: 16px;
 }
-/* Tone comes from the shared crumb-two-tone treatment (Tabs/tabStrip.css). */
+/* Tone comes from the shared crumb-two-tone treatment beside NavCrumbs (navList.css). */

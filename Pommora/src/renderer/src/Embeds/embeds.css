@@ -75,12 +75,11 @@
 .pgembed .mdpm-banner {
   height: calc(230px * var(--mdpm-scale));
 }
-.pgembed-banner-title {
-  font-size: calc(28px * var(--mdpm-scale));
-  font-weight: 700;
-  color: var(--label-primary);
-}
+/* Size only — the span is a .detail-title-text, which already carries the weight and colour. */
 .pgembed .mdpm-banner-overlay {
+  /* The title size var the shared .detail-title-text reads — defined here because the embed omits
+     .mdpm-header (the parking layer), whose scope normally carries it. */
+  --detail-title-size: calc(28px * var(--mdpm-scale));
   left: calc(16px * var(--mdpm-scale));
   right: calc(16px * var(--mdpm-scale));
 }

@@ -105,3 +105,14 @@
 .nav-row-menu {
   min-width: 150px;
 }
+
+/* The centered two-tone location crumb — one treatment wherever a page's whereabouts is shown as a
+   title: the preview window's single-tab title and the embedded-page tile's hover breadcrumb. The
+   trail reads dimmer; the page itself (the last crumb, icon + name) reads brighter. */
+.crumb-two-tone .nav-path-name {
+  color: var(--label-tertiary);
+}
+.crumb-two-tone .nav-path-name:last-of-type,
+.crumb-two-tone .nav-path-icon:last-of-type {
+  color: var(--label-control);
+}
