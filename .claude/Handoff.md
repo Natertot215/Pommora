@@ -32,5 +32,4 @@ The live walkthrough (202 checks by a driver agent against the scratch nexus) th
 **Next Session:**
 
 1. **Drive the NEEDS-NATHAN list** in [[Embedded Pages — Interaction Walkthrough]] — native menu picks, real-pointer checks, one real ⌘Q, the SurfacePM visual baseline.
-2. **The trash surface** (standing) — `listBundles` bridge entry, then the browser.
-3. The `*`-bullet ruling and the option-rename replumb (standing).
+2. The `*`-bullet ruling and the option-rename replumb (standing).
