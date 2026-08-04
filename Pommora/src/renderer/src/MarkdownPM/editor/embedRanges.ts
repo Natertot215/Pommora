@@ -2,6 +2,7 @@
 // a fence or table region is content there, never an embed). Every layer that must agree on what an
 // embed line is reads THIS: the block resolver, the decoration pass's gates, and the tile field.
 import { blockEmbedLines, type EmbedLine, fencedCodeRanges } from '../detect'
+import { docMathRanges } from './mathRanges'
 import { tableRegions } from '../Tables/regions'
 import { normalizeTitle, type LinkStatus } from '@shared/connections'
 
@@ -9,6 +10,7 @@ export function docEmbedLines(doc: string): EmbedLine[] {
   return blockEmbedLines(doc, [
     ...fencedCodeRanges(doc),
     ...tableRegions(doc).map((r): [number, number] => [r.from, r.to]),
+    ...docMathRanges(doc),
   ])
 }
 

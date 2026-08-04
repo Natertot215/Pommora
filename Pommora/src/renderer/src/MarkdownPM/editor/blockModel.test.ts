@@ -266,11 +266,17 @@ describe('embed blocks', () => {
     expect(blockStarts(doc).map((s) => s.kind)).toEqual(['paragraph', 'embed', 'paragraph'])
   })
 
-  it('an embed inside a list run is its own block', () => {
-    const doc = '- item one\n  ![[Foo]]\n- item two'
+  it('an indented embed rides its list item — no mid-item block, grip, or drop slot', () => {
+    const doc = '- item one\n  ![[Foo]]\n  more body\n- item two'
     const b = blockAt(doc, 14)
-    expect(b?.kind).toBe('embed')
-    expect(slice(doc, b)).toBe('  ![[Foo]]')
+    expect(b?.kind).toBe('list')
+    expect(slice(doc, b)).toBe(doc)
+    expect(blockStarts(doc).map((s) => s.kind)).toEqual(['list'])
+  })
+
+  it('a top-level indented ![[…]] line is an ordinary paragraph', () => {
+    const doc = 'para\n\n  ![[Foo]]'
+    expect(blockAt(doc, 10)?.kind).toBe('paragraph')
   })
 
   it('blank-fenced embed keeps single-line drag boundaries', () => {
