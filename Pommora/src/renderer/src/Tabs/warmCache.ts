@@ -21,7 +21,15 @@ const WARM_CAP_PER_TAB = 20
 
 const cache = new Map<string, Map<string, WarmEntry>>()
 
-/** LRU by Map insertion order — every capture re-inserts, so `.keys().next()` is always the stalest. */
+/** LRU by Map insertion order — every write re-inserts, so `.keys().next()` is always the stalest. */
+function trimToCap<V>(map: Map<string, V>, cap: number): void {
+  while (map.size > cap) {
+    const oldest = map.keys().next().value
+    if (oldest === undefined) break
+    map.delete(oldest)
+  }
+}
+
 export function captureWarm(tabId: string, navKey: string, patch: Partial<WarmEntry>): void {
   let tabMap = cache.get(tabId)
   if (!tabMap) {
@@ -31,11 +39,7 @@ export function captureWarm(tabId: string, navKey: string, patch: Partial<WarmEn
   const merged = { ...tabMap.get(navKey), ...patch }
   tabMap.delete(navKey)
   tabMap.set(navKey, merged)
-  while (tabMap.size > WARM_CAP_PER_TAB) {
-    const oldest = tabMap.keys().next().value
-    if (oldest === undefined) break
-    tabMap.delete(oldest)
-  }
+  trimToCap(tabMap, WARM_CAP_PER_TAB)
 }
 
 export function readWarm(tabId: string, navKey: string): WarmEntry | undefined {
@@ -47,15 +51,10 @@ const DETAIL_CAP = 40
 
 const detailByPath = new Map<string, PageDetail>()
 
-/** LRU like the tab maps: every write re-inserts. */
 export function cachePageDetail(detail: PageDetail): void {
   detailByPath.delete(detail.path)
   detailByPath.set(detail.path, detail)
-  while (detailByPath.size > DETAIL_CAP) {
-    const oldest = detailByPath.keys().next().value
-    if (oldest === undefined) break
-    detailByPath.delete(oldest)
-  }
+  trimToCap(detailByPath, DETAIL_CAP)
 }
 
 export function readPageDetail(path: string): PageDetail | undefined {

@@ -48,10 +48,11 @@ export function AutocompletePanel({
       animationClass={closing ? dropdownClose : dropdownOpen}
       style={
         {
+          // position must be inline — NotchedPane's own root class sets relative, and only an
+          // inline style reliably outranks it; the z rung stays .mdpm-ac's token.
           position: 'fixed',
           left: v.left,
           top: v.top,
-          zIndex: 1000,
           '--dropdown-origin': 'top left',
           ...(closing ? { pointerEvents: 'none' } : null),
         } as React.CSSProperties
