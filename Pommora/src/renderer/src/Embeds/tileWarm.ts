@@ -1,0 +1,30 @@
+import type { WarmSeam } from '@renderer/MarkdownPM'
+import { readPageDetail } from '../Tabs/warmCache'
+
+// The tile counterpart of the tab and preview warm caches: the outer editor tears a tile's DOM
+// down whenever it leaves the viewport or a rebuild drops the widget, and the nested editor
+// re-creates from scratch — this holds its doc, selection, undo history, and scroll for the
+// session, keyed by the full host chain so the same page embedded under two hosts keeps two
+// positions. In-memory only: a fresh session mounts cold.
+const tileWarm = new Map<string, { editorState: unknown; scrollTop: number }>()
+
+export function tileWarmSeam(chain: readonly string[]): WarmSeam {
+  const key = chain.join('\n')
+  const path = chain[chain.length - 1]
+  return {
+    restore: () => {
+      const entry = tileWarm.get(key)
+      if (!entry) return undefined
+      // A page edited elsewhere since the capture invalidates the whole entry — selection and
+      // history are positions into a doc that no longer exists; mount cold from the fresh slot.
+      const fresh = readPageDetail(path)?.body
+      const doc = (entry.editorState as { doc?: unknown }).doc
+      if (fresh !== undefined && fresh !== doc) {
+        tileWarm.delete(key)
+        return undefined
+      }
+      return entry
+    },
+    capture: (state) => tileWarm.set(key, state),
+  }
+}
