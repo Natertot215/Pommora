@@ -105,7 +105,7 @@ Five scout reports (this session) verified every seam firsthand; the attack revi
 
 **Task 2.3 — Atomic absorb + guards + fencing.**
 - **Why:** B-9/B-13/D-3 — the caret protections the spike proved.
-- **Files:** `embedWidget.tsx` (or a sibling `embedAtomic.ts`): atomic facet reading the field's ranges widened to `[prevLine.to, nextLine.from]` (the spike's geometry, including its doc-edge resolution); `editor/input.ts`: mirrored boundary guards beside `onForwardDelete` (backspace at next-line start, forward-delete at prev-line end, both refusing per D-3); a `transactionFilter` merge-guard on the result-doc predicate (an embed line acquiring a non-blank neighbor via deletion = refused), the `tableMergeGuard` shape; the fenced insert helper (used by menus in Phase 4) shaped like `setBlock`'s table case.
+- **Files:** `embedWidget.tsx` (or a sibling `embedAtomic.ts`): atomic facet reading the field's ranges widened to `[prevLine.to, nextLine.from]` (the spike's geometry, including its doc-edge resolution); `editor/input.ts`: mirrored boundary guards beside `onForwardDelete` (backspace at next-line start, forward-delete at prev-line end, both refusing per D-3); a `transactionFilter` merge-guard on the result-doc predicate (an embed line acquiring a non-blank neighbor via deletion = refused), the `tableMergeGuard` shape — plus its **insertion-repair arm**: the spike proved document-edge embeds retain one visible boundary seat each (position 0 on a first-line embed, line end on a last-line embed; mid-document has none), so an insertion made from a boundary seat is repaired onto a fresh adjacent line rather than joining the embed line, keeping B-9's "no keystroke can break lone-ness" true at the edges; the fenced insert helper (used by menus in Phase 4) shaped like `setBlock`'s table case.
 - **Negative controls:** each guard's test dispatches the real gesture and must go red with the guard deleted — for these guards one assertion carries both halves, since without the guard the atomic default deletes the whole block (a different doc), never a silent no-op. Spanning-selection delete stays allowed and removes the tile cleanly (D-5 — pin the attack review's verified behavior).
 - **Failure half:** delete-at-EOF (the `from -= 1` branch), an embed whose fencing blank is the doc's last line, undo of a refused-then-allowed sequence.
 - **Gate (phase):** all commands (incl. `build:showcase` — this phase touches `design-system/`) + the running-app pass: type `![[Title]]` lone-line (manually — menus don't exist yet), see the tile, drive every caret gesture from the acceptance criterion, **plus the three round-2 unknowns**: a drag-selection released *inside* the tile then Delete (partial selections may bypass atomic adjustment); a click on the tile's top/bottom boundary sliver (can a mouse seat a caret where commands can't); and — once 4b ships — the grip-menu Delete against the merge-guard (the guard must not refuse the menu's own transaction). These three also seed the pre-ship interaction walkthrough. Simplification + review on the range; reviewers carry the doc-flagging mandate.
@@ -199,6 +199,6 @@ Live per-page refresh bus · per-embed zoom (`local_state` scope) · record-back
 
 ### Log
 
-- Phase 0 base: —
+- Phase 0 base: `90b97ff8`
 - Deviations: —
 - Rulings: —
