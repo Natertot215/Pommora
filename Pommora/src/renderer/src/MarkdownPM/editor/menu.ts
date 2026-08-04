@@ -1,5 +1,6 @@
 import type { EditorView } from '@codemirror/view'
 import { EDITOR_ACTION_PREFIX, type FormatState } from '@shared/editorMenu'
+import { embedInsertAtCaret } from './embedGripMenu'
 import {
   toggleInline,
   setHeading,
@@ -37,13 +38,11 @@ function editFor(action: string, doc: string, from: number, to: number): FormatE
 /** Apply a `mdpm:*` menu action to the editor; ignores actions from other `menu:action` senders. */
 export function applyEditorAction(view: EditorView, raw: string): boolean {
   if (!raw.startsWith(EDITOR_ACTION_PREFIX)) return false
+  const action = raw.slice(EDITOR_ACTION_PREFIX.length)
+  // Page embeds insert through the native pick tree, not a text transform.
+  if (action === 'block:page') return embedInsertAtCaret(view)
   const sel = view.state.selection.main
-  const edit = editFor(
-    raw.slice(EDITOR_ACTION_PREFIX.length),
-    view.state.doc.toString(),
-    sel.from,
-    sel.to,
-  )
+  const edit = editFor(action, view.state.doc.toString(), sel.from, sel.to)
   if (!edit) return false
   view.dispatch({
     changes: edit.changes,
