@@ -1,6 +1,20 @@
 ## Embedded Pages — Interaction Walkthrough
 
-The pre-ship interaction checklist, hand-walked across every surface an embed can appear on or interact with. ✔ = already verified live this arc (evidence in the Plan's Log); ▢ = the live-test agent drives it against the scratch ManualNexus instance (CDP, port 9333 — no Playwright). Anything broken or finnicky gets the most minimal fix.
+The pre-ship interaction checklist, hand-walked across every surface an embed can appear on or interact with, then driven live (202 checks against the scratch ManualNexus instance). ✔ = verified live; ✖→✔ = failed live, minimally fixed, fix committed; **NN** = NEEDS-NATHAN — native menus, real-pointer feel, or OS-level gestures a headless driver can't honestly produce. Everything not marked NN passed.
+
+**Live-run outcomes folded:** the rename-cascade heal was clobbered by a stale warm tab restore (✖→✔ — a rename now clears the warm cache whole); a grip-dragged tile blanked until reopen (✖→✔ — a still-connected DOM is adopted, its root survives); a stray banner click entered editing one keystroke from the page's first line (✖→✔ — the band no longer triggers edit); release-inside drag-delete removes the tile WHOLE with one undo (ruled in-contract: removal by deliberate selection, not erosion — the earlier "must survive" wording was stricter than the spec). One unreproducible renderer crash during an inner-scroll jump (no console errors, clean on replay — on watch). SIGTERM mid-debounce loses the flush by nature; a real ⌘Q pass is on the NN list.
+
+### The NEEDS-NATHAN List (drive these by hand)
+
+1. Every native grip menu pick: rail grip → Embed Page ▸ (tree, insert, no double menu) · tile grip → Page Source ▸ / Delete · callout → Delete Callout · table grips · blockquote grip → generic menu.
+2. Right-click a resolved `[[connection]]` → exactly one menu.
+3. Banner: Change/Remove from inside a tile (native picker) · drag the banner image (must not ghost into the host) · zoom steps via the View menu.
+4. `Ctrl-→` on YOUR keyboard beside a tile (does Mission Control eat it? If delivered: Backspace must refuse).
+5. SurfacePM: the visual baseline (drag/resize/borderless/Scale/host-lock accent) · a `![[` tile inside a markdown block · nested-tile border independence.
+6. Page Preview: tiles in a preview · warm reopen · `![[` autocomplete there; and in a table cell (must NOT fire).
+7. One real ⌘Q mid-debounce (type in a tile, quit immediately, relaunch — the edit should be on disk).
+8. In-app delete → trash restore of an embedded page through the real UI.
+
 
 ### A — The Page Editor (the feature's home)
 
