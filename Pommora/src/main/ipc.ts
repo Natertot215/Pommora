@@ -88,7 +88,15 @@ const isEmptyValue = (v: unknown): boolean =>
  *  here at the boundary, where the renderer's payload is still untrusted — one guard ladder
  *  and one emptiness rule for all four scopes. */
 export function scopeGet<T>(scope: Scope): () => Record<string, T> {
-  return () => readScope<T>(scope)
+  // Self-wrapped like nexus:state — raw channels have no envelope net, and a scope that can't be
+  // read (corrupt db, missing table, gone volume) degrades to its empty default, never a rejection.
+  return () => {
+    try {
+      return readScope<T>(scope)
+    } catch {
+      return {}
+    }
+  }
 }
 
 export function scopeSet<T>(
