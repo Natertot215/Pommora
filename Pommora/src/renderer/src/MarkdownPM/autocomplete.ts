@@ -3,12 +3,18 @@ import { lineStartAt, lineEndAt } from './input'
 
 export interface AutocompleteQuery {
   query: string
-  /** The full `[[…]]` span to replace when a candidate is accepted. */
+  /** The full marker span to replace when a candidate is accepted. */
   from: number
   to: number
+  /** `[[Title]]` connection vs `![[Title]]` embed — decides the committed form. */
+  form: 'link' | 'embed'
 }
 
-export function autocompleteQuery(doc: string, caret: number): AutocompleteQuery | null {
+export function autocompleteQuery(
+  doc: string,
+  caret: number,
+  allowEmbeds = false,
+): AutocompleteQuery | null {
   const lineStart = lineStartAt(doc, caret)
   const line = doc.slice(lineStart, lineEndAt(doc, caret))
   const rel = caret - lineStart
@@ -17,13 +23,35 @@ export function autocompleteQuery(doc: string, caret: number): AutocompleteQuery
     const open = m.index
     const close = m.index + m[0].length
     if (rel >= open + 2 && rel <= close - 2)
-      return { query: m[1], from: lineStart + open, to: lineStart + close }
+      return { query: m[1], from: lineStart + open, to: lineStart + close, form: 'link' }
+  }
+  // The embed branch is a LOCAL match — the connections pattern excludes `![[` by design (four
+  // consumers depend on that), and `[` doesn't auto-pair after `!`, so an in-progress embed is
+  // usually unclosed: the span runs to the closer when one exists, else to the line end.
+  if (allowEmbeds) {
+    for (let idx = line.indexOf('![['); idx !== -1; idx = line.indexOf('![[', idx + 3)) {
+      const contentStart = idx + 3
+      const closeIdx = line.indexOf(']]', contentStart)
+      const contentEnd = closeIdx === -1 ? line.length : closeIdx
+      const spanEnd = closeIdx === -1 ? line.length : closeIdx + 2
+      if (rel >= contentStart && rel <= contentEnd)
+        return {
+          query: line.slice(contentStart, contentEnd),
+          from: lineStart + idx,
+          to: lineStart + spanEnd,
+          form: 'embed',
+        }
+    }
   }
   return null
 }
 
-export function connectionInsert(title: string, from: number): { insert: string; caret: number } {
-  const insert = `[[${title}]]`
+export function connectionInsert(
+  title: string,
+  from: number,
+  form: 'link' | 'embed' = 'link',
+): { insert: string; caret: number } {
+  const insert = form === 'embed' ? `![[${title}]]` : `[[${title}]]`
   return { insert, caret: from + insert.length }
 }
 

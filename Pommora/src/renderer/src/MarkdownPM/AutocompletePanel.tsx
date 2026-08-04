@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
-import { GlassControls } from '@renderer/design-system/materials'
+import { NotchedPane } from '@renderer/design-system/components/NotchedPane'
 import { dropdownOpen, dropdownClose } from '@renderer/design-system/animations.css'
 import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import type { ConnPage } from './connections'
@@ -40,12 +40,18 @@ export function AutocompletePanel({
   // to ITSELF — misplacing and clipping the panel. Popups never render inside a
   // tile's subtree.
   return createPortal(
-    <GlassControls
-      className={`${closing ? dropdownClose : dropdownOpen} mdpm-ac`}
+    // The shared beak-less pane surface (PickerMenu's own), beak height zero — the panel stays
+    // caret-anchored fixed with no backdrop; only the chrome is shared.
+    <NotchedPane
+      notchHeight={0}
+      className="mdpm-ac"
+      animationClass={closing ? dropdownClose : dropdownOpen}
       style={
         {
+          position: 'fixed',
           left: v.left,
           top: v.top,
+          zIndex: 1000,
           '--dropdown-origin': 'top left',
           ...(closing ? { pointerEvents: 'none' } : null),
         } as React.CSSProperties
@@ -68,7 +74,7 @@ export function AutocompletePanel({
           </span>
         </div>
       ))}
-    </GlassControls>,
+    </NotchedPane>,
     document.body,
   )
 }

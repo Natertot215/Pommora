@@ -16,7 +16,8 @@ import {
 } from './editor/blockDrag'
 import { calloutGripMenu } from './editor/calloutGripMenu'
 import { embedGripMenu } from './editor/embedGripMenu'
-import { embedTiles } from './editor/embedWidget'
+import { embedHostAncestors, embedTileRanges, embedTiles } from './editor/embedWidget'
+import { normalizeTitle, titleFromPath } from '@shared/connections'
 import { customCaret } from './editor/caret'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
@@ -113,13 +114,23 @@ export function MarkdownEditor({
   // (over-fetch one to drop the page's own title) and the inline panel placement (rendered below).
   const { ac, setAc, candidates, acIndex, acTop, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
-    (query) =>
-      connectionsRef.current
-        ? connectionsRef.current
-            .candidates(query, AC_MAX + 1)
-            .filter((p) => p.title !== title)
-            .slice(0, AC_MAX)
-        : [],
+    (query, form) => {
+      const conn = connectionsRef.current
+      if (!conn) return []
+      let pool = conn.candidates(query, AC_MAX * 2).filter((p) => p.title !== title)
+      if (form === 'embed') {
+        // A page embeds once per document, never its own host chain, and never a title the
+        // syntax can't express — the same rules the grip menu's tree applies.
+        const view = viewRef.current
+        const out = new Set(
+          view ? embedTileRanges(view.state).map((t) => normalizeTitle(t.title)) : [],
+        )
+        if (view)
+          for (const a of embedHostAncestors(view.state)) out.add(normalizeTitle(titleFromPath(a)))
+        pool = pool.filter((p) => !p.title.includes(']') && !out.has(normalizeTitle(p.title)))
+      }
+      return pool.slice(0, AC_MAX)
+    },
   )
 
   useEffect(() => {
@@ -228,7 +239,7 @@ export function MarkdownEditor({
           menuRef.current?.pushState(fs)
         }
 
-        if (u.docChanged || u.selectionSet) detectConnectionQuery(u.view, setAc)
+        if (u.docChanged || u.selectionSet) detectConnectionQuery(u.view, setAc, true)
       }),
     ]
     // Warm rehydration: seed the fresh mount from the cached serialized state — doc + selection +

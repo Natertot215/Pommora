@@ -8,6 +8,7 @@ export interface AcState {
   query: string
   from: number
   to: number
+  form: 'link' | 'embed'
   left: number
   caretTop: number
   caretBottom: number
@@ -45,7 +46,7 @@ export interface ConnectionAutocomplete {
 // with detectConnectionQuery() in the editor's updateListener.
 export function useConnectionAutocomplete(
   viewRef: RefObject<EditorView | null>,
-  candidatesFor: (query: string) => ConnPage[],
+  candidatesFor: (query: string, form: 'link' | 'embed') => ConnPage[],
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
   const [acIndex, setAcIndex] = useState(0)
@@ -54,12 +55,16 @@ export function useConnectionAutocomplete(
   const candidatesForRef = useRef(candidatesFor)
   candidatesForRef.current = candidatesFor
   const query = ac?.query ?? null
-  const candidates = useMemo(() => (query === null ? [] : candidatesForRef.current(query)), [query])
+  const form = ac?.form ?? 'link'
+  const candidates = useMemo(
+    () => (query === null ? [] : candidatesForRef.current(query, form)),
+    [query, form],
+  )
 
   const commit = (page: ConnPage): void => {
     const view = viewRef.current
     if (!view || !ac) return
-    const { insert, caret } = connectionInsert(page.title, ac.from)
+    const { insert, caret } = connectionInsert(page.title, ac.from, ac.form)
     view.dispatch({
       changes: { from: ac.from, to: ac.to, insert },
       selection: { anchor: caret },
@@ -90,13 +95,17 @@ export function useConnectionAutocomplete(
 
 // setAc (a useState setter) is stable, so capturing it once at mount is safe; this is a free
 // function rather than a closure so both editors share one detection path.
-export function detectConnectionQuery(view: EditorView, setAc: (s: AcState | null) => void): void {
+export function detectConnectionQuery(
+  view: EditorView,
+  setAc: (s: AcState | null) => void,
+  allowEmbeds = false,
+): void {
   const sel = view.state.selection.main
   let next: AcState | null = null
   if (sel.empty) {
     // docString hits the per-doc-version cache — a raw toString() re-joins the whole rope on
     // every keystroke/caret-move for a read that only touches the caret's line.
-    const q = autocompleteQuery(docString(view.state.doc), sel.head)
+    const q = autocompleteQuery(docString(view.state.doc), sel.head, allowEmbeds)
     const c = q && view.coordsAtPos(sel.head)
     if (q && c)
       next = {
