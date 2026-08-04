@@ -32,7 +32,7 @@ class HrWidget extends WidgetType {
   }
 }
 
-// In-flow (replaces just the dash) so it sits in the dash's exact slot — no shift when the caret reveals the raw `- `.
+// In-flow, replacing the marker slot through its gap — the visible spacing is the glyph's own margin.
 class BulletWidget extends WidgetType {
   eq(): boolean {
     return true
