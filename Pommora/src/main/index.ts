@@ -388,6 +388,11 @@ async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void
 // chrome, kept out of the portable `.md` and out of the synced container sidecars.
 const isString = (v: unknown): v is string => typeof v === 'string'
 const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every(isString)
+const isHeightMap = (v: unknown): v is Record<string, number> =>
+  typeof v === 'object' &&
+  v !== null &&
+  !Array.isArray(v) &&
+  Object.values(v).every((h) => typeof h === 'number' && Number.isFinite(h) && h > 0)
 const isIndexArray = (v: unknown): v is number[] =>
   Array.isArray(v) && v.every((x) => Number.isInteger(x) && x >= 0)
 
@@ -693,6 +698,11 @@ serveBridge(
     'folds:set': {
       kind: 'envelope',
       fn: scopeSet('folds', isStringArray, 'Fold keys must be a string array.'),
+    },
+    'embedHeights:get': { kind: 'raw', fn: scopeGet<Record<string, number>>('embedHeights') },
+    'embedHeights:set': {
+      kind: 'envelope',
+      fn: scopeSet('embedHeights', isHeightMap, 'Embed heights must map ids to positive numbers.'),
     },
     'activeViews:get': { kind: 'raw', fn: scopeGet<string>('activeView') },
     'activeViews:set': {
