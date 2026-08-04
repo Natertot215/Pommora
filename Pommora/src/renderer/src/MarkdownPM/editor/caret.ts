@@ -15,11 +15,14 @@ function tileEdgeMarker(view: EditorView, head: number): RectangleMarker | null 
     // forRange's own base: marker coords are document-relative (client minus scroll-adjusted origin).
     const sr = view.scrollDOM.getBoundingClientRect()
     const cr = view.contentDOM.getBoundingClientRect()
-    const pad = Number.parseFloat(getComputedStyle(view.contentDOM).paddingLeft)
-    const left = cr.left + pad - (sr.left - view.scrollDOM.scrollLeft)
-    const topDoc = head === t.to ? lb.bottom : lb.top - view.defaultLineHeight
+    const cs = getComputedStyle(view.contentDOM)
+    // Body height, not defaultLineHeight — CM measures the latter off its default font, which runs
+    // taller than the body lines actually render.
+    const lh = Number.parseFloat(cs.lineHeight) || view.defaultLineHeight
+    const left = cr.left + Number.parseFloat(cs.paddingLeft) - (sr.left - view.scrollDOM.scrollLeft)
+    const topDoc = head === t.to ? lb.bottom : lb.top - lh
     const top = view.documentTop + topDoc - (sr.top - view.scrollDOM.scrollTop)
-    return new RectangleMarker('mdpm-caret', left, top, null, view.defaultLineHeight)
+    return new RectangleMarker('mdpm-caret', left, top, null, lh)
   }
   return null
 }
