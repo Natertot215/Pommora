@@ -1,7 +1,7 @@
 // The block-drag rail handles: a grip on each draggable block's first line, content-anchored like the fold
 // chevron (a `::before` on the line, so it can't drift below callouts/folds). Headings use the chevron,
-// callouts keep their own grip, and the table widget supplies its own — so the rail grip covers paragraph,
-// code, hr, and a list (grabbed at item 1, the list block's first line).
+// callouts keep their own grip, and the table widget supplies its own — the rail grip covers every other
+// draggable kind (GRIP_KINDS; a list is grabbed at item 1, its block's first line).
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 import { docString } from './docCache'
 import type { Extension, Range } from '@codemirror/state'

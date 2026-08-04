@@ -27,7 +27,7 @@ export function normalizeTitle(raw: string): string {
   return raw.trim().toLowerCase().normalize('NFC')
 }
 
-/** A fresh global regex matching `[[Title]]` / `[[Title|alias]]`, excluding `![[ ]]` image embeds.
+/** A fresh global regex matching `[[Title]]` / `[[Title|alias]]`, excluding `![[ ]]` page embeds.
  *  `[[ ]]` is the only connection syntax. Returned fresh per call so callers never share
  *  `lastIndex`. Capture group 1 = the raw title, group 2 = the alias when one is present.
  *
