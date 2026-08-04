@@ -1,13 +1,15 @@
 import { pageLinkPattern } from '@shared/connections'
 import { lineStartAt, lineEndAt } from './input'
 
+/** `[[Title]]` connection vs `![[Title]]` embed — decides the committed form. */
+export type ConnectionForm = 'link' | 'embed'
+
 export interface AutocompleteQuery {
   query: string
   /** The full marker span to replace when a candidate is accepted. */
   from: number
   to: number
-  /** `[[Title]]` connection vs `![[Title]]` embed — decides the committed form. */
-  form: 'link' | 'embed'
+  form: ConnectionForm
 }
 
 export function autocompleteQuery(
@@ -49,7 +51,7 @@ export function autocompleteQuery(
 export function connectionInsert(
   title: string,
   from: number,
-  form: 'link' | 'embed' = 'link',
+  form: ConnectionForm = 'link',
 ): { insert: string; caret: number } {
   const insert = form === 'embed' ? `![[${title}]]` : `[[${title}]]`
   return { insert, caret: from + insert.length }

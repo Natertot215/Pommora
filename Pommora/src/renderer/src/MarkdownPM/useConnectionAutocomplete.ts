@@ -1,14 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { EditorView } from '@codemirror/view'
 import type { ConnPage } from './connections'
-import { autocompleteQuery, connectionInsert, acPanelTop } from './autocomplete'
+import {
+  autocompleteQuery,
+  connectionInsert,
+  acPanelTop,
+  type ConnectionForm,
+} from './autocomplete'
 import { docString } from './editor/docCache'
 
 export interface AcState {
   query: string
   from: number
   to: number
-  form: 'link' | 'embed'
+  form: ConnectionForm
   left: number
   caretTop: number
   caretBottom: number
@@ -46,7 +51,7 @@ export interface ConnectionAutocomplete {
 // with detectConnectionQuery() in the editor's updateListener.
 export function useConnectionAutocomplete(
   viewRef: RefObject<EditorView | null>,
-  candidatesFor: (query: string, form: 'link' | 'embed') => ConnPage[],
+  candidatesFor: (query: string, form: ConnectionForm) => ConnPage[],
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
   const [acIndex, setAcIndex] = useState(0)

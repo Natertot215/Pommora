@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { titleFromPath } from '@shared/connections'
+import type { PageDetail } from '@shared/types'
 import { MarkdownEditor, type WarmSeam } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
@@ -16,6 +17,25 @@ import { EMBED_SCALE, EMBED_ZOOM } from './embedScale'
 // Entering edit reconfigures the SAME CM6 view's editability — no remount, no jitter. Header
 // chrome (banner + title) is parked; returns with the ⋮ toggle pass.
 
+/** What the tile keeps of a page. `body: null` is a failed open, never an empty page. */
+interface EmbedEntry {
+  path: string
+  body: string | null
+  id?: string
+  title?: string
+  cover?: string
+}
+
+const coverOf = (detail: PageDetail): string | undefined =>
+  typeof detail.frontmatter.cover === 'string' ? detail.frontmatter.cover : undefined
+
+const entryFrom = (path: string, detail: PageDetail): EmbedEntry => ({
+  path,
+  body: detail.body,
+  id: detail.id,
+  title: detail.title,
+  cover: coverOf(detail),
+})
 
 export function PageEmbed({
   path,
@@ -51,27 +71,13 @@ export function PageEmbed({
   // exactly as a fresh mount would. A failed open is NOT an empty page: body stays null and the
   // render shows the inert fallback, never an editable blank that would overwrite the real file
   // on the first keystroke.
-  const [loaded, setLoaded] = useState<{
-    path: string
-    body: string | null
-    id?: string
-    title?: string
-    cover?: string
-  } | null>(() => {
+  const [loaded, setLoaded] = useState<EmbedEntry | null>(() => {
     const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
     if (typeof doc === 'string') return { path, body: doc }
     // A scrolled-back tile rehydrates from the path-keyed slot — no IPC round-trip, no blank
     // frame, and the slot's body is write-through-fresh from any host's pending edit.
     const cached = readPageDetail(path)
-    if (!cached) return null
-    const cover = cached.frontmatter.cover
-    return {
-      path,
-      body: cached.body,
-      id: cached.id,
-      title: cached.title,
-      cover: typeof cover === 'string' ? cover : undefined,
-    }
+    return cached ? entryFrom(path, cached) : null
   })
   const entry = loaded?.path === path ? loaded : null
   const body = entry?.body ?? null
@@ -93,14 +99,7 @@ export function PageEmbed({
         return
       }
       cachePageDetail(r.value)
-      const cover = r.value.frontmatter.cover
-      setLoaded({
-        path,
-        body: r.value.body,
-        id: r.value.id,
-        title: r.value.title,
-        cover: typeof cover === 'string' ? cover : undefined,
-      })
+      setLoaded(entryFrom(path, r.value))
     })
     return () => {
       live = false
@@ -127,12 +126,7 @@ export function PageEmbed({
             void window.nexus.openPage(path).then((r) => {
               // Merge the cover only — nulling would unmount the live editor mid-edit and race the
               // debounced body write; the body seed stays untouched.
-              if (r.ok)
-                setLoaded((l) => {
-                  if (!l) return l
-                  const cover = r.value.frontmatter.cover
-                  return { ...l, cover: typeof cover === 'string' ? cover : undefined }
-                })
+              if (r.ok) setLoaded((l) => (l ? { ...l, cover: coverOf(r.value) } : l))
             })
           }
         />

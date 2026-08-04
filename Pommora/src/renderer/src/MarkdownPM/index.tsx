@@ -129,13 +129,13 @@ export function MarkdownEditor({
       if (form === 'embed') {
         // A page embeds once per document, never its own host chain, and never a title the
         // syntax can't express — the same rules the grip menu's tree applies.
-        const view = viewRef.current
-        const out = new Set(
-          view ? embedTileRanges(view.state).map((t) => normalizeTitle(t.title)) : [],
-        )
-        if (view)
-          for (const a of embedHostAncestors(view.state)) out.add(normalizeTitle(titleFromPath(a)))
-        pool = pool.filter((p) => !p.title.includes(']') && !out.has(normalizeTitle(p.title)))
+        const state = viewRef.current?.state
+        const taken = new Set<string>()
+        if (state) {
+          for (const t of embedTileRanges(state)) taken.add(normalizeTitle(t.title))
+          for (const a of embedHostAncestors(state)) taken.add(normalizeTitle(titleFromPath(a)))
+        }
+        pool = pool.filter((p) => !p.title.includes(']') && !taken.has(normalizeTitle(p.title)))
       }
       return pool.slice(0, AC_MAX)
     },
