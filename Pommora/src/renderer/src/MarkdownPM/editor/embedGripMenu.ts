@@ -32,13 +32,6 @@ export function embedInsertAfter(
   blockTo: number,
   token: string,
 ): { from: number; to: number; insert: string; caret: number } {
-  if (blockTo >= doc.length)
-    return {
-      from: doc.length,
-      to: doc.length,
-      insert: `\n\n${token}`,
-      caret: doc.length + 2 + token.length,
-    }
   const nextLineStart = blockTo + 1
   const nextLineEnd = doc.indexOf('\n', nextLineStart)
   const nextLine = doc.slice(nextLineStart, nextLineEnd === -1 ? doc.length : nextLineEnd)

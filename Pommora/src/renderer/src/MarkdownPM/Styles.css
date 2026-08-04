@@ -384,9 +384,10 @@
   line-height: 0;
   padding-top: 0;
   padding-bottom: 0;
-  /* The grip nests at the tile's top corner (margin + a nudge into the box, the callout's own
-     shape) — the collapsed line's zero-height text row is no anchor. */
-  --grip-top: calc(4px + 4px * var(--glyph-scale));
+  /* KNOB — the grip's seat at the tile's top corner, eye-tuned to where the rounding ends.
+     Fixed pixels: the collapsed line's zero-height text row is no anchor, and the tile's box
+     doesn't ride the glyph zoom. */
+  --grip-top: 28px;
 }
 .mdpm-editor .cm-line.mdpm-embed-line .cm-widgetBuffer {
   height: 0;
