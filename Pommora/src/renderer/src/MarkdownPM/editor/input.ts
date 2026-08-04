@@ -17,6 +17,7 @@ import {
   type Edit,
 } from '../input'
 import { tableRegions } from '../Tables/regions'
+import { embedTileRanges } from './embedWidget'
 import { docString } from './docCache'
 
 function apply(view: EditorView, edit: Edit | null): boolean {
@@ -58,6 +59,11 @@ const onEnter = (view: EditorView): boolean => {
 const onForwardDelete = (view: EditorView): boolean => {
   const s = view.state.selection.main
   if (!s.empty) return false
+  // A claimed embed tile refuses its boundary deletes in BOTH directions — the atomic default
+  // would otherwise expand the delete over the whole absorbed range and remove the tile from a
+  // keystroke; removal is the menu's or a spanning selection's, never a stray boundary key.
+  if (embedTileRanges(view.state).some((r) => s.from === r.from - 1 || s.from === r.from))
+    return true
   const doc = docString(view.state.doc)
   if (doc[s.from] !== '\n') return false
   const r = tableRegions(doc).find((r) => r.from === s.from + 1)
@@ -68,6 +74,11 @@ const onForwardDelete = (view: EditorView): boolean => {
 
 const onBackspace = (view: EditorView): boolean => {
   const s = view.state.selection.main
+  if (
+    s.empty &&
+    embedTileRanges(view.state).some((r) => s.from === r.to + 1 || s.from === r.to)
+  )
+    return true
   const doc = docString(view.state.doc)
   return apply(view, smartBackspace(doc, s.from, s.to) ?? autoDelete(doc, s.from, s.to))
 }

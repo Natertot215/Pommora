@@ -2,10 +2,16 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { MarkdownEditor } from './index'
-import { buildPageIndex, type ConnectionsApi } from './connections'
+import { MarkdownEditor } from '@renderer/MarkdownPM'
+import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+// A claimed line mounts a real tile whose PageEmbed fetches through the bridge — stub the one
+// channel it reads so the widget can settle in jsdom. Reads only; no write channel exists here.
+;(window as unknown as { nexus: unknown }).nexus = {
+  openPage: async () => ({ ok: true, value: { id: 'x', title: 'Alpha', path: 'Notes/Alpha.md', frontmatter: {}, body: 'inner body' } }),
+}
 
 let container: HTMLDivElement
 let root: Root

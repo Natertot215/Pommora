@@ -1,0 +1,63 @@
+import { describe, expect, it } from 'vitest'
+import { EditorState, type TransactionSpec } from '@codemirror/state'
+import { embedTiles } from './embedWidget'
+import { buildPageIndex, type ConnectionsApi } from '../connections'
+
+const conn: ConnectionsApi = {
+  ...buildPageIndex([{ id: '1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+  open: () => {},
+}
+
+const mk = (doc: string): EditorState =>
+  EditorState.create({
+    doc,
+    extensions: [embedTiles({ getConn: () => conn, ancestors: ['Host.md'] })],
+  })
+
+const apply = (state: EditorState, spec: TransactionSpec): string =>
+  state.update(spec).state.doc.toString()
+
+// The lone-line guard: a live tile can be removed whole but never eroded in place; boundary-seat
+// insertions repair onto their own line. Each refusal test dispatches the real change shape and
+// must go red with the guard deleted — without it the change lands and the doc differs.
+describe('embed lone-line guard', () => {
+  it('refuses a join that would drag prose onto the tile line', () => {
+    const doc = 'alpha\n![[Alpha]]\nbeta'
+    // Deleting the newline between the embed line and beta (a backspace-join shape).
+    expect(apply(mk(doc), { changes: { from: 16, to: 17, insert: '' } })).toBe(doc)
+  })
+
+  it('repairs an insertion at the tile-start boundary onto its own line, mid-document too', () => {
+    const doc = 'alpha\n![[Alpha]]\nbeta'
+    expect(apply(mk(doc), { changes: { from: 6, to: 6, insert: 'x ' } })).toBe(
+      'alpha\nx \n![[Alpha]]\nbeta',
+    )
+  })
+
+  it('allows a spanning delete that removes the tile whole', () => {
+    const doc = 'alpha\n![[Alpha]]\nbeta'
+    expect(apply(mk(doc), { changes: { from: 6, to: 17, insert: '' } })).toBe('alpha\nbeta')
+  })
+
+  it('repairs a doc-start boundary-seat insertion onto its own line above', () => {
+    const doc = '![[Alpha]]\nbeta'
+    const out = apply(mk(doc), { changes: { from: 0, to: 0, insert: 'x' } })
+    expect(out).toBe('x\n![[Alpha]]\nbeta')
+  })
+
+  it('repairs a doc-end boundary-seat insertion onto its own line below', () => {
+    const doc = 'alpha\n![[Alpha]]'
+    const out = apply(mk(doc), { changes: { from: 16, to: 16, insert: 'x' } })
+    expect(out).toBe('alpha\n![[Alpha]]\nx')
+  })
+
+  it('leaves edits elsewhere untouched, and unclaimed lines free', () => {
+    const doc = 'alpha\n![[Alpha]]\n![[Nowhere]]'
+    expect(apply(mk(doc), { changes: { from: 0, to: 5, insert: 'gamma' } })).toBe(
+      'gamma\n![[Alpha]]\n![[Nowhere]]',
+    )
+    // The unresolved line is plain text — joining into it is ordinary editing.
+    const doc2 = 'a\n![[Nowhere]]'
+    expect(apply(mk(doc2), { changes: { from: 1, to: 2, insert: '' } })).toBe('a![[Nowhere]]')
+  })
+})

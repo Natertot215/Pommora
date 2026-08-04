@@ -20,6 +20,16 @@
   overscroll-behavior: contain;
 }
 
+/* A page:open that fails while the title still resolves — the embed renders its target's name as
+   dim inert text, never an editable blank (whose first keystroke would overwrite the real file). */
+.pgembed-failed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--label-secondary);
+  pointer-events: none;
+}
+
 .pgembed .mdpm-editor {
   padding-left: 0;
   padding-right: 0;
