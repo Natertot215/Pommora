@@ -26,7 +26,7 @@
 
 - **A-1:** [confirmed] Obsidian syntax `![[Title]]`, creatable by manual typing.
 - **A-2:** [confirmed] Lone-line only — the embed resolves (and its menu appears) only when it is the line's sole content, so it can never clobber surrounding text. Mirrors the display-math lone-line model, trimming included: surrounding whitespace doesn't break lone-ness. Detection is a whole-doc, per-version derivation on that same pattern — the embed regex over lone lines, fence and table regions excluded, cached beside the other doc derivations — because the tile's StateField needs doc-wide ranges the viewport-scoped token pass can't supply. The token pass keeps styling non-lone occurrences inline, as it does today.
-- **A-3:** [confirmed] The rename cascade extends to `![[` targets so a page rename can't break embeds. One-regex change: the scanner's two consumers use it only as a mention prefilter, so the blast radius is contained.
+- **A-3:** [confirmed] The rename cascade extends to `![[` targets so a page rename can't break embeds — via a **parallel embed pattern** beside the connections pattern, never a widening of it: the connections pattern has four consumers (scan, rewrite, the token layer, the autocomplete trigger) and declares `![[` a non-connection by design. The cascade runs both patterns in one sweep.
 - **A-4:** [confirmed] Resolution is the only discriminator: a title that resolves to a page becomes a tile; anything else stays the inert token. No extension branch — an image target like `file.png` stays inert for free because no page holds that title, and dotted page titles (`Chapter 3.5`) embed without a special case.
 - **A-5:** [confirmed] An unresolved target stays inert dim text and becomes a tile when its title resolves — mirroring phantom connections.
 
@@ -53,7 +53,7 @@
 - **C-2:** [confirmed] The hover location display reuses `NavCrumbs` (centered, Collection › Set › Page), revealed on cursor hover at the same duration as the tile's accent-border tint reveal (`--duration-base`). The centered two-tone crumb treatment already exists preview-local (`.pgpreview-title` / `.pgpreview-crumbs` over the `.nav-path-*` classes, in `PagePreview/previewTabStrip.css`) — it hoists to the shared home in `Tabs/`, beside the tab-strip motion classes it already borrows, so the preview and the embed read one definition.
 - **C-3:** [confirmed] The accent-border reveal is the signal, as on SurfacePM page-embed tiles — the chassis carries no blur and no separate focus ring.
 - **C-4:** [confirmed] Signals match SurfacePM exactly: hover and editing share the accent stroke with no third step, and click-out mirrors SurfacePM's host-owned outside-pointerdown ending the edit.
-- **C-5:** [confirmed] A deleted target degrades exactly as connections do today: the title leaves the live map, resolution fails, and the tile falls back to the inert dim token through the same live re-resolution that restyles a connection as its target appears or dies — zero extra machinery. The `.trash` deletion bundle preserves restore, and a restored page's tile returns the same way.
+- **C-5:** [confirmed] A deleted target degrades exactly as connections do: the title leaves the live map, resolution fails, and the tile falls back to the inert dim token. One honest mechanical note: that restyle currently refreshes on the editor's next update (caret, focus, scroll) — clicks and hovers always resolve live, but styling is lazy. The implementation adds the one missing nudge — a re-decorate when the page index changes — so tiles and connection colors both react without waiting for an interaction. The `.trash` deletion bundle preserves restore, and a restored page's tile returns the same way.
 
 #### D — Menus & Deletion
 
@@ -77,7 +77,7 @@
 - **F-3:** [confirmed] No embed behind a prefix — `> ![[B]]` isn't lone-line, so tiles can't live inside callouts or blockquotes, and block-dragging a tile into a box degrades it to the inert token. Prefix-aware lone-ness is a prospect, consistent with the already-deferred prefix-aware tables.
 - **F-4:** [confirmed] On disk the syntax is exactly Obsidian's embed — a Nexus stays Obsidian-legible and Sapphire-compatible with no translation.
 - **F-5:** [confirmed] Future sub-target and alias forms (`![[B#Heading]]`, `![[B^block]]`, `![[B|alias]]`) capture as titles that don't resolve, so they degrade to the inert token today and arrive later as additive parsing — nothing forecloses them.
-- **F-6:** [confirmed] The rename cascade rewrites `[[` and `![[` in one sweep; the mention prefilter widens with the same regex change, and its two consumers use it only as a prefilter, so nothing else shifts.
+- **F-6:** [confirmed] The rename cascade rewrites `[[` and `![[` in one sweep through the parallel embed pattern; the connections pattern itself never widens, so its token-layer and autocomplete consumers don't shift.
 
 ### Core (must-have)
 
