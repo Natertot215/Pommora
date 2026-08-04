@@ -134,8 +134,8 @@ export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[]
 }
 
 /** One line's intents, pushed into `intents`; returns the line's list marker (for the rail pass).
- *  `selStart` is the caret (or NO_CARET) — the ONLY caret-sensitive outputs are this line's own
- *  marker/heading/hr reveal and, on a fence's open/close lines, the caret-in-block fence reveal. */
+ *  `selStart` is the caret (or NO_CARET) — every caret-sensitive output is line-local: the line's
+ *  own marker/heading/hr reveal, and an open fence's syntax-vs-glyph trade. */
 function lineIntentsInto(
   scan: DocScan,
   i: number,
@@ -314,11 +314,10 @@ export function docLineIntents(scan: DocScan): CachedLineIntents {
   return { perLine, rails }
 }
 
-/** The line indices whose intents actually read the caret: only the caret's own line — every
- *  reveal (marker, heading, hr, and the fence lines' syntax-vs-glyph trade) is line-local. */
-function caretAffectedLines(scan: DocScan, selStart: number): Set<number> {
-  const affected = new Set<number>()
-  if (selStart < 0) return affected
+/** The one line whose intents actually read the caret: the caret's own — every reveal (marker,
+ *  heading, hr, and the fence lines' syntax-vs-glyph trade) is line-local. NO_CARET = none. */
+function caretLine(scan: DocScan, selStart: number): number {
+  if (selStart < 0) return NO_CARET
   const { lines, lineStarts } = scan
   let lo = 0
   let hi = lines.length - 1
@@ -327,8 +326,7 @@ function caretAffectedLines(scan: DocScan, selStart: number): Set<number> {
     if (lineStarts[mid] <= selStart) lo = mid
     else hi = mid - 1
   }
-  affected.add(lo)
-  return affected
+  return lo
 }
 
 /** The full line+rail intent list for a caret position, assembled from the cached caret-free lines
@@ -339,10 +337,10 @@ export function assembleLineIntents(
   cached: CachedLineIntents,
   selStart: number,
 ): DecoIntent[] {
-  const affected = caretAffectedLines(scan, selStart)
+  const caret = caretLine(scan, selStart)
   const intents: DecoIntent[] = []
   for (let i = 0; i < scan.lines.length; i++) {
-    if (affected.has(i)) lineIntentsInto(scan, i, selStart, intents)
+    if (i === caret) lineIntentsInto(scan, i, selStart, intents)
     else for (const it of cached.perLine[i]) intents.push(it)
   }
   for (const it of cached.rails) intents.push(it)
