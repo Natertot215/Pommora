@@ -82,4 +82,4 @@ A view write saves the whole view and then refetches: the watcher echo-suppresse
 
 ### Prospects
 
-**In-Line View Embeds in Pages:** A saved view embedded as a live widget inside a Page body. Block-host surfaces get embeds — Linked + Custom view tiles, → [[SurfacePM]]; Page bodies don't.
+**In-Line View Embeds in Pages:** A saved view embedded as a live widget inside a Page body. Block-host surfaces get *view* embeds — Linked + Custom view tiles, → [[SurfacePM]]; a Page body embeds pages, never views (→ [[MarkdownPM]] §II. Embeddings).

@@ -124,7 +124,7 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 - `useExitPresence`'s default exit window is a raw constant decoupled from the motion tokens — derive it from `duration.slow` + slack or menus flash on close if the tokens are ever retuned.
 - `useDismiss` coordinates with picker portals via per-event DOM queries — a shared open-picker counter removes the DOM handshake.
 - The preview window fetches the same page twice (PageEmbed's body load + PreviewInspector's frontmatter fetch) — lift one `openPage` result to the window and pass both halves down.
-- AutocompletePanel is a hand-rolled body portal that PickerMenu's beak-less surface could host; and when a third boolean-dropdown consumer appears, extract the `useMenuPresence` bundle — at two consumers it is indirection, not DRY.
+- When a third boolean-dropdown consumer appears, extract the `useMenuPresence` bundle — at two consumers it is indirection, not DRY.
 - `group.tsx`'s `cellAt` rebuilds the zone's column model per item per over-flip — hoist lefts/stride/cols to a per-zone computation.
 - `sidebarDnd`'s collection/context branch re-filters the sibling set per pointermove — snapshot it at activation (invariant mid-drag).
 - View format/grouping/banner saves still trigger a full vault walk — an optimistic view-slice patch skips it; `submitPropertyRename`'s walk wants the same targeted-patch treatment.
