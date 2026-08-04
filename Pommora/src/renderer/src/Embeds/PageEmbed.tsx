@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { titleFromPath } from '@shared/connections'
 import { MarkdownEditor, type WarmSeam } from '@renderer/MarkdownPM'
 import type { ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { flushPageSave, schedulePageSave } from '@renderer/Detail/pageFlush'
@@ -14,7 +15,6 @@ import { EMBED_SCALE, EMBED_ZOOM } from './embedScale'
 // Entering edit reconfigures the SAME CM6 view's editability — no remount, no jitter. Header
 // chrome (banner + title) is parked; returns with the ⋮ toggle pass.
 
-const titleOf = (path: string): string => (path.split('/').pop() ?? path).replace(/\.md$/i, '')
 
 export function PageEmbed({
   path,
@@ -100,14 +100,14 @@ export function PageEmbed({
     return () => void flushPageSave(path)
   }, [editing, path])
 
-  if (failed) return <div className="pgembed pgembed-failed">{titleOf(path)}</div>
+  if (failed) return <div className="pgembed pgembed-failed">{titleFromPath(path)}</div>
   if (body === null) return <div className="pgembed" />
   const header =
     chrome === 'page' ? (
       entry?.cover ? (
         <EmbedBanner
           path={path}
-          title={entry.title ?? titleOf(path)}
+          title={entry.title ?? titleFromPath(path)}
           cover={entry.cover}
           onChanged={() =>
             void window.nexus.openPage(path).then((r) => {
