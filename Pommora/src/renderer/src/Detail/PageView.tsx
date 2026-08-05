@@ -4,7 +4,7 @@ import { MarkdownEditor } from '../MarkdownPM'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { pageIndexOf } from '../treeIndex'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
-import { useConnectionHover } from '../Embeds/ConnectionHoverCard'
+import { hoverConnection } from '../Embeds/ConnectionHoverCard'
 import { IconPicker } from '../Components/IconPicker'
 import { navKey } from '../Navigation/navRecents'
 import { captureWarm, readWarm } from '../Tabs/warmCache'
@@ -29,7 +29,6 @@ export function PageView(): React.JSX.Element {
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
 
-  const { hover, card: hoverCard } = useConnectionHover()
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
     const idx = pageIndexOf(tree)
@@ -41,10 +40,10 @@ export function PageView(): React.JSX.Element {
           : void select({ kind: 'page', id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      hover,
+      hover: hoverConnection,
       menu: showConnectionMenu,
     }
-  }, [tree, select, openPreview, openInPreview, hover])
+  }, [tree, select, openPreview, openInPreview])
 
   // The debounced body write lives in the shared path-keyed autosave (pageFlush) — teardown paths
   // (unmount inside the debounce, window close, nexus adopt) all flush THERE, so a pending write
@@ -69,7 +68,6 @@ export function PageView(): React.JSX.Element {
       if (!pageDetail) return <div className="detail-placeholder">Page render — coming next</div>
       return (
         <>
-          {hoverCard}
           <MarkdownEditor
             key={pageDetail.path}
             initialBody={pageDetail.body}

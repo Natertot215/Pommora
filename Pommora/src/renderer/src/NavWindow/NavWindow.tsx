@@ -11,7 +11,7 @@ import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
-import { useConnectionHover } from '../Embeds/ConnectionHoverCard'
+import { hoverConnection } from '../Embeds/ConnectionHoverCard'
 import { moveByKey } from '../Navigation/navRecents'
 import { pageIndexOf, resolveIndexOf } from '../treeIndex'
 import { useSession } from '../store'
@@ -130,7 +130,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   useEffect(() => setEditing(false), [pageTarget?.path])
   const pageScrollRef = useRef<HTMLDivElement>(null)
   const warmSeam = usePreviewWarm(pageScrollRef, pageTarget?.path)
-  const { hover, card: hoverCard } = useConnectionHover()
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
     const idx = pageIndexOf(tree)
@@ -139,10 +138,10 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       open: (page) => openPreviewTab({ id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      hover,
+      hover: hoverConnection,
       menu: showConnectionMenu,
     }
-  }, [tree, openPreviewTab, select, hover])
+  }, [tree, openPreviewTab, select])
 
   return (
     <PreviewPane
@@ -257,7 +256,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
           </div>
         )}
       </div>
-      {hoverCard}
     </PreviewPane>
   )
 }

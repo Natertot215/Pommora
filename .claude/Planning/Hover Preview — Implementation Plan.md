@@ -351,7 +351,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 - [ ] **Phase 1** — lifecycle · base `3ce8b642`
   - [x] Task 1 — trigger cancel + element handover
-  - [ ] Task 2 — card lifecycle
+  - [x] Task 2 — card lifecycle · single app-level mount
 - [ ] **Phase 2** — body
   - [ ] Task 3 — resolve-first + resolve-only
   - [ ] Task 4 — mount
@@ -373,7 +373,11 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 ### Deviations
 
+- Task 2 gained a timing fix the plan didn't predict: the link-leaves-viewport close checked `isConnected` synchronously inside the scroll event, but CM6 prunes off-viewport nodes in its own scheduled update after the burst — the last scroll event always saw the element alive and the card stayed open, parked on a zero rect. The check now rides a coalesced double rAF (the codebase's async-heights timing), verified live.
+
 ### Lessons
+
+- `ConnectionHoverCard.tsx` is a module-singleton seam (`present`): HMR swaps the module but importers keep the old binding's dead entry — edits to it need a full renderer reload to test, exactly like the CM extensions.
 
 ### Sequenced After
 
