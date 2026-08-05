@@ -28,7 +28,7 @@ import {
 } from '@renderer/design-system/components/menu/menu.css'
 import { reorder, SortableZone, useDragItem } from '@renderer/design-system/interactions/drag'
 import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
-import { EditableInput } from '@renderer/Components/EditableInput'
+import { RenamableLabel } from '@renderer/Components/RenamableLabel'
 import { IconPicker } from '@renderer/Components/IconPicker'
 import { findCollection, findCollectionForSet, findSet } from '@renderer/Detail/Scope'
 import { ViewRenderer } from '@renderer/Detail/Views/ViewRenderer'
@@ -427,14 +427,15 @@ export function ViewEmbedBlock({
   }
 
   const renameField = (i: number): React.JSX.Element => (
-    <EditableInput
+    <RenamableLabel
+      renames="title"
+      editing
       value={views[i].name}
       className={rowInput}
       autoSize
-      caretAtEnd
       onCommit={(next) => {
         setRenaming(null)
-        if (next && next !== views[i].name) persistConfig(i, { ...views[i], name: next })
+        persistConfig(i, { ...views[i], name: next })
       }}
       onCancel={() => setRenaming(null)}
     />
