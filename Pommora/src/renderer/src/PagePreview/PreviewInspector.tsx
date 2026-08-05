@@ -29,6 +29,7 @@ import { resolveFieldValue } from '../Detail/Views/pipeline/value'
 import { isValidLink } from '@shared/links'
 import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
+import { cachePageDetail, readPageDetail } from '../Tabs/warmCache'
 import { useSession, type PreviewTarget } from '../store'
 
 // Editable through the SAME primitives the table views use (Cell render, PropertyPicker/
@@ -60,11 +61,21 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   const rowMenuRef = useRef<HTMLSpanElement | null>(null)
 
   useEffect(() => {
+    setEditing(null)
+    // The warm path-keyed detail slot first — the embed half of this window feeds it (and vice
+    // versa), so the page is fetched once per window and a warm hit skips the blank frame. Any
+    // frontmatter write drops the slot, so a hit is never staler than the page beside it.
+    const cached = readPageDetail(target.path)
+    if (cached) {
+      setFm(cached.frontmatter as PageFrontmatter)
+      setTitle(cached.title)
+      return
+    }
     let live = true
     setFm(null)
-    setEditing(null)
     void window.nexus.openPage(target.path).then((r) => {
       if (!live || !r.ok) return
+      cachePageDetail(r.value)
       setFm(r.value.frontmatter as PageFrontmatter)
       setTitle(r.value.title)
     })

@@ -55,6 +55,7 @@ export function DetailTitleHeader({
         // span keeps showing the live title until the tree confirms a change.
         <EditableInput
           value={title}
+          caretAtEnd
           className="detail-title-input"
           onCommit={(next) => {
             setEditing(false)
