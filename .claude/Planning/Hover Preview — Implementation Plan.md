@@ -349,8 +349,8 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 ### Progress
 
-- [ ] **Phase 1** — lifecycle · base `<commit>`
-  - [ ] Task 1 — trigger cancel + live measure
+- [ ] **Phase 1** — lifecycle · base `3ce8b642`
+  - [x] Task 1 — trigger cancel + element handover
   - [ ] Task 2 — card lifecycle
 - [ ] **Phase 2** — body
   - [ ] Task 3 — resolve-first + resolve-only

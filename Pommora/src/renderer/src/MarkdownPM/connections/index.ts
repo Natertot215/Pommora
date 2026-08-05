@@ -23,8 +23,9 @@ export interface ConnectionsApi extends PageIndex {
   menu?: (page: ConnPage) => void
   /** ⌘-click takes the OTHER route from `open` (preview ⇄ new tab); absent = ⌘ ignored. */
   bypass?: (page: ConnPage) => void
-  /** Fired after the hover-intent delay on a resolved connection, with the link's rect. */
-  hover?: (page: ConnPage, rect: DOMRect) => void
+  /** Fired after the hover-intent delay on a resolved connection, with the link's live element —
+   *  the consumer measures it (and detects detachment) itself. */
+  hover?: (page: ConnPage, el: Element) => void
 }
 
 export function buildPageIndex(pages: ConnPage[]): PageIndex {

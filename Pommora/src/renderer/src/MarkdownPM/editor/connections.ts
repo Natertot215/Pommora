@@ -46,10 +46,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       if (!el) return false
       const page = resolvedPageAt(view, api, event)
       if (!page) return false
-      hoverTimer = setTimeout(
-        () => api.hover?.(page, el.getBoundingClientRect()),
-        CONN_HOVER_INTENT_MS,
-      )
+      hoverTimer = setTimeout(() => api.hover?.(page, el), CONN_HOVER_INTENT_MS)
       return false
     },
     mouseout() {
@@ -59,6 +56,9 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
     // Navigate on a plain single-click. Handled on `click`, not `mousedown`, and skipped when the
     // selection is non-empty — so dragging across a connection highlights it instead of navigating away.
     click(event, view) {
+      // A click consumes the link — an intent armed during the dwell must not bloom over
+      // whatever the click opened.
+      cancelHover()
       if (event.button !== 0 || event.detail !== 1 || !view.state.selection.main.empty) return false
       const api = getApi()
       if (!api) return false
@@ -72,6 +72,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
     },
     // Right-click on a resolved connection hands off to the host's menu hook (Open in Preview et al).
     contextmenu(event, view) {
+      cancelHover()
       const api = getApi()
       if (!api?.menu) return false
       const page = resolvedPageAt(view, api, event)
