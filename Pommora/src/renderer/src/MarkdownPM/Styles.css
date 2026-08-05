@@ -52,10 +52,9 @@
 .mdpm-editor .cm-editor {
   height: 100%;
   background: transparent;
-  /* Shared numbering geometry — ordered-list markers AND the codeblock line count ride the same
-     zone + gap, so the two number columns can never drift apart. */
+  /* The shared marker↔text gap — ordered-list markers and the codeblock line count keep one
+     distance between a number and what follows it. */
   --list-gap: 4px;
-  --number-zone: 1.3em;
 }
 .mdpm-editor .cm-editor.cm-focused {
   outline: none;
@@ -428,6 +427,7 @@
 .mdpm-editor .cm-line.md-li {
   --list-indent: 20px;
   --bullet-zone: 16px;
+  --number-zone: 1.3em;
   --task-zone: 1.8em;
   --bullet-size: 1.25em;
   /* No wrap opportunities outside the content span: the marker zone is full of them (spaces, the
@@ -978,15 +978,15 @@
 }
 
 /* LINE COUNT — the "Show Line Count In Code Blocks" setting. Numbers are widget chrome sitting at
-   the line's own first-character position — the block's padding is the only left inset — on the
-   shared numbering zone + gap (so one- and two-digit blocks keep one code column), label-tertiary
-   in the block's own mono; fence lines carry no number. */
+   the line's own first-character position — the block's padding is the only left inset — in the
+   block's own mono at label-tertiary; fence lines carry no number. The zone is ch-based (three
+   digits in THIS font), so the code column holds through 999 lines. */
 .md-cb-ln {
   display: none;
 }
 :root.cb-line-count .md-cb-ln {
   display: inline-block;
-  min-width: var(--number-zone);
+  min-width: calc(3ch + var(--list-gap));
   padding-right: var(--list-gap);
   font-variant-numeric: tabular-nums;
   color: var(--label-tertiary);

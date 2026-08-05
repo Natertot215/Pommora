@@ -222,9 +222,11 @@ function lineIntentsInto(
       className: `md-cb${fence.role === 'open' ? ' md-cb-first' : ''}${fence.role === 'close' ? ' md-cb-last' : ''}`,
     })
     if (base > 0) intents.push({ kind: 'hide', from: ls, to: innerStart })
-    // The backticks always show; a typed block trades only its info word for the styled `</> TYPE`
-    // glyph, in the info word's own place — the caret on the line trades it back for the raw text.
-    const infoStart = innerStart + 3
+    // The backticks always show; a typed block trades only its info word for the styled `<TYPE>`
+    // chrome, in the info word's own place — the caret on the line trades it back for the raw
+    // text. The offset comes from the fence grammar itself (markerEnd), so an indented or quoted
+    // fence never hides its own marker.
+    const infoStart = ls + fence.markerEnd
     if (fence.role === 'open' && fence.lang && !caretOnLine && infoStart < le) {
       intents.push({ kind: 'lineWidget', from: infoStart, className: 'md-cb-lang', text: fence.lang })
       intents.push({ kind: 'hide', from: infoStart, to: le })
