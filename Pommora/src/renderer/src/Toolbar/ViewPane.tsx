@@ -16,7 +16,7 @@ import { ViewSettings } from '../Components/Detail/ViewSettings'
 import { PaneDnd, RowShell, usePaneRegions } from '../Components/Detail/paneDnd'
 import type { PaneDrop, PaneRow, paneSlot } from '../Components/Detail/paneDndModel'
 import { useSaveView, useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
-import { EditableInput } from '../Components/EditableInput'
+import { RenamableLabel } from '../Components/RenamableLabel'
 import { IconPicker } from '../Components/IconPicker'
 import { useSession } from '../store'
 import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
@@ -106,7 +106,7 @@ export function ViewPane({
 
   const commitRename = (v: SavedView, next: string): void => {
     setRenamingId(null)
-    if (next && next !== v.name) void saveView({ ...v, name: next })
+    void saveView({ ...v, name: next })
   }
   const rowMenu = async (v: SavedView, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
@@ -172,17 +172,14 @@ export function ViewPane({
                   onClick={renamingId === v.id ? undefined : () => switchTo(v.id)}
                   onContextMenu={(e) => void rowMenu(v, e)}
                 >
-                  {renamingId === v.id ? (
-                    <EditableInput
-                      value={v.name}
-                      className={titleInput}
-                      caretAtEnd
-                      onCommit={(next) => commitRename(v, next)}
-                      onCancel={() => setRenamingId(null)}
-                    />
-                  ) : (
-                    v.name
-                  )}
+                  <RenamableLabel
+                    renames="title"
+                    editing={renamingId === v.id}
+                    value={v.name}
+                    className={titleInput}
+                    onCommit={(next) => commitRename(v, next)}
+                    onCancel={() => setRenamingId(null)}
+                  />
                 </MenuItem>
               </RowShell>
             ))}
