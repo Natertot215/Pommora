@@ -41,7 +41,8 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 - Eight resize zones were rejected: an anchored pane has pinned edges, and honest zones are only where the drag can track the pointer. FloatingWindow's grips were rejected for position-coupling.
 - The frozen-rect anchor was the placeholder's design; every "the 200ms grace hides it" behavior resurfaces under a 30s linger — that's why the lifecycle work in Phase 1 precedes the body.
 - The card resolving content *before* opening is a deliberate divergence from PageEmbed's self-fetching (reconciles A-2 with A-5 and kills the blank-frame bloom).
-- The single-card registry, resize flag, and size cache are renderer-module singletons — sanctioned by B-7 (one card app-wide) under today's single `BrowserWindow`. If the preview/nav windows ever become real OS windows, B-7 degrades to one-card-per-window and the size cache needs cross-window invalidation; that's a named revisit, not a today-problem.
+- The card is one app-level mount — one-card-app-wide by construction, no registry. The `hoverConnection` entry, resize flag, and size cache are renderer-module singletons, sanctioned by B-7 under today's single `BrowserWindow`. If the preview/nav windows ever become real OS windows, B-7 degrades to one-card-per-window and the size cache needs cross-window invalidation; that's a named revisit, not a today-problem.
+- A simplification round ran after the attack round: it hoisted the card to the single mount, replaced the measure closure with the element itself, collapsed the pending-fetch watcher to a resolve-time `:hover` check, and dropped the Settings row union for a bespoke row. Its KEEPs: the `onDirection` callback (no existing placement fact is readable from JS before first paint), the intent-delay helper, per-surface resize strips over a premature shared primitive, the singleton scope + channel pair.
 
 **Grounding** *(re-open these; don't cite them)*
 
@@ -101,20 +102,20 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 **Why:** A click inside the 450ms window leaves the timer armed and a card blooms over whatever the click opened — invisible today, an artifact under a linger. And the card's anchor is a rect frozen at fire time; a lingering card must track the link through editor scroll and know when it's gone. Both live in the same file and the same signature, so they're one task.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/connections.ts` — `cancelHover()` added to the `click` and `contextmenu` handlers; the hover fire builds a measure closure.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/connections.ts` — `cancelHover()` added to the `click` and `contextmenu` handlers; the hover fire passes the link element (`el`) through.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/connections/index.ts` — `ConnectionsApi.hover` signature.
-- Modify: `Pommora/src/renderer/src/Embeds/ConnectionHoverCard.tsx` — the hook's `hover` signature takes `measure` and calls it once at open (frozen-rect behavior preserved this commit; Task 2 makes it live). Without this the tree doesn't typecheck between the two commits — the four hosts thread the card's `hover` straight into the api.
+- Modify: `Pommora/src/renderer/src/Embeds/ConnectionHoverCard.tsx` — the hook's `hover` signature takes the element and measures it once at open (frozen-rect behavior preserved this commit; Task 2 makes it live). Without this the tree doesn't typecheck between the two commits — the four hosts thread the card's `hover` straight into the api.
 - Test: extend the editor-harness coverage beside the existing connection tests (locate via `grep -rn "connectionClicks" --include="*.test.*"`; if none exists, add one on `testing/editorHarness.ts`).
 
 **Interfaces**
-- Produces: `hover?: (page: ConnPage, measure: () => DOMRect | null) => void` — `measure` returns the link's current viewport rect, or `null` once the link can't be measured (out of viewport / node gone). Editor-side it wraps the fire-time element: `el.isConnected ? el.getBoundingClientRect() : null`.
-- Assumed by: Task 2 (the card stores `measure` instead of a rect), Task 9 (table cells build their own closure over the span).
+- Produces: `hover?: (page: ConnPage, el: Element) => void` — the live link element itself, no closure wrapper: both producers (the editor's span, Task 9's cell span) hold one at fire time, and a closure around `el.isConnected ? getBoundingClientRect() : null` duplicated at two sites is the abstraction the rule of three forbids. The isConnected-null branch lives **once** in the card.
+- Assumed by: Task 2 (the card measures the element live), Task 3 (the resolve-time `:hover` check needs the element), Task 9 (table cells pass the span).
 
-**Failure half:** a measure whose element detached mid-linger returns `null`, never a zero rect; the card treats `null` as a close condition (Task 2), so nothing downstream sees `0×0` coordinates.
+**Failure half:** an element detached mid-linger measures as `null` in the card's one measuring seam, never a zero rect; the card treats `null` as a close condition (Task 2), so nothing downstream sees `0×0` coordinates.
 
 **Steps:**
 - [ ] Update the signature in `connections/index.ts`; let typecheck enumerate every consumer (the four hosts' `hover` wiring plus the card).
-- [ ] Add `cancelHover()` first in both `click` and `contextmenu`; build the measure closure in the `mouseover` timer fire.
+- [ ] Add `cancelHover()` first in both `click` and `contextmenu`; the `mouseover` timer fire hands `el` through.
 - [ ] Test: armed timer + click → no hover fires past the click (fake timers over the harness).
 - [ ] Gates green → commit `fix(connections): a click consumes the hover intent — and hover hands over a live measure`.
 
@@ -122,20 +123,21 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 **Requirement:** 4, 8 (and the B-5 grace re-arm groundwork Task 7 rides)
 
-**Why:** Every placeholder behavior the 200ms grace was hiding must go before the body makes cards worth keeping open: the frozen anchor, the ready-branch teardown, per-host duplication, and the per-open flip decision that a linger lets go stale across retargets.
+**Why:** Every placeholder behavior the 200ms grace was hiding must go before the body makes cards worth keeping open: the frozen anchor, the ready-branch teardown, per-host duplication, and the per-open flip decision that a linger lets go stale across retargets. The four-host topology is one React root with a body-portalled card, so the card **hoists to a single app-level mount** — one-card-app-wide becomes true by construction, and the per-host mounts, render sites, and any cross-host coordination all delete.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/Embeds/ConnectionHoverCard.tsx` — the bulk of the task.
-- Modify: `Pommora/src/renderer/src/Detail/PageView.tsx` — `{hoverCard}` hoisted out of the `'ready'` case; close-on-navigation effect keyed on the page path.
-- Modify: `Blocks/BlockSurface.tsx`, `NavWindow/NavWindow.tsx`, `PagePreview/PreviewWindow.tsx` — the same close-on-target-change effect where the host has a changing target.
+- Modify: `Pommora/src/renderer/src/Embeds/ConnectionHoverCard.tsx` — the bulk of the task: the hook becomes one component mounted once, plus a module entry `hoverConnection(page, el)` hosts wire directly.
+- Modify: `Pommora/src/renderer/src/App.tsx` — `<ConnectionHoverCard />` mounts beside the app-level windows (`App.tsx:269-271`).
+- Modify: `Detail/PageView.tsx`, `Blocks/BlockSurface.tsx`, `NavWindow/NavWindow.tsx`, `PagePreview/PreviewWindow.tsx` — each drops its `useConnectionHover()` call and `{hoverCard}` render site; the api wiring becomes the static `hover: hoverConnection`. (This also retires the ready-branch teardown by construction — the card no longer lives inside any host's status switch.)
 
 **Interfaces**
-- Produces: module-level `closeActiveHoverCard(): void` exported from `ConnectionHoverCard.tsx` — closes whichever host's card is live. The hook registers/unregisters its own closer on open/close; a second host's `hover` firing calls the previous closer first (one card app-wide).
-- The hook stores `{ page, measure }`; the fixed anchor div's position updates from `measure()` on the same rAF-coalesced scroll/resize listeners the grace already needs, and `measure() === null` closes the card.
-- Retarget (hover fires while a card is open, same host or other): close, then open the new target on the next frame — the closed beat resets PickerMenu's flip decision and replays the Bloom at the new link.
+- Produces: `hoverConnection(page: ConnPage, el: Element): void` and `closeActiveHoverCard(): void`, module exports from `ConnectionHoverCard.tsx` (the latter is Task 9's cell-activation hook and the navigation closer's target).
+- The card stores `{ page, el }` and measures live in one seam (`el.isConnected ? el.getBoundingClientRect() : null`); the fixed anchor div's position updates from it on the same rAF-coalesced scroll/resize listeners the grace already needs, and a `null` measure closes the card.
+- Close-on-navigation: one store subscription in the card over the navigation targets (selection/page path, preview target, nav target) — closing on *any* navigation is conservative and correct for a hover affordance. Fallback if the conditions genuinely diverge at execution: per-host one-line `closeActiveHoverCard()` calls in existing effects; record the choice in the Log.
+- Retarget (hover fires while a card is open — any source): close, then open the new target on the next frame — the closed beat resets PickerMenu's flip decision and replays the Bloom at the new link.
 - Assumed by: Task 6 (suspend flag around the resize drag), Task 7 (grace duration becomes a parameter), Task 9 (cell activation calls `closeActiveHoverCard`).
 
-**Failure half:** a host unmounting with its card open unregisters its closer (effect cleanup) — `closeActiveHoverCard` after that is a no-op, never a call into a dead setter.
+**Failure half:** `hoverConnection` called while no card component is mounted (app not `'ready'`) is a no-op — the entry guards on the mounted setter, never a call into a dead one.
 
 **Steps:**
 - [ ] Rework the hook: `measure` storage, anchor-div tracking, null-measure close, single-card registry, retarget-through-null.
@@ -166,11 +168,10 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 **Must agree:** the card's "openable" predicate (detail resolved, body non-null) and PageEmbed's own failure render must reach the same answer — the card never opens on a detail PageEmbed would refuse. One test: a `body: null` detail never sets `hovered`.
 
-**Failure half:** the fetch resolving after the pointer left (intent fired, fetch slow, pointer flicked away) → no card. A last-hover-wins token alone can't see a pointer that merely *left*, so the card's lifecycle listeners start at **pending**, not at open: from the moment the fetch begins, the mousemove watcher runs against the link's `measure()` — a pointer observed outside marks the pending open stale, and a resolve landing on a stale token opens nothing. A pointer that never moved is still on the link (the intent delay proves it was there), so opening is correct and the watcher is already live for the grace the moment it moves. A second hover mid-fetch supersedes the first.
+**Failure half:** the fetch resolving after the pointer left (intent fired, fetch slow, pointer flicked away) → no card. With the element in hand the check is one synchronous line at resolve time: open only if the token is still current **and `el.matches(':hover')`** — a pointer that left can't match, a detached span can't match (the mid-fetch teardown folds in free), and no pending-phase watcher exists at all. The rare false negative — a decoration rebuild replacing the span mid-fetch under a resting pointer — costs a card that silently doesn't open, which is A-5's conservative direction. A second hover mid-fetch supersedes the first (last-wins token).
 
 **Steps:**
-- [ ] Implement resolve-first open + pending-phase lifecycle + the staleness token; unit-test the gate over a stubbed `window.nexus.openPage` (the store tests' stubbing pattern) — including the flick-away-during-fetch case.
-- [ ] Measure the cold-open window once in the dev console (`performance.now()` around `openPage` on an untouched page) and note it in the Log — it sizes how routine the stale path is.
+- [ ] Implement resolve-first open: sync warm hit opens immediately; a miss fetches and gates the open on `token && el.matches(':hover')`. Unit-test the gate over a stubbed `window.nexus.openPage` (the store tests' stubbing pattern) — including the flick-away-during-fetch case.
 - [ ] Build the resolve-only api.
 - [ ] Gates green → commit `feat(embeds): the hover card resolves before it blooms`.
 
@@ -238,7 +239,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 **Files:**
 - Modify: `ConnectionHoverCard.tsx` — three strips (`e`, `s`, `se`) absolutely positioned on the card wrapper, cursors `ew-resize`/`ns-resize`/`nwse-resize`, driven by `usePointerGesture` (`activation: 0`, `swallowActiveEscape: true`, the embed-tile resize precedent at `embedWidget.tsx:94-142`); drag writes the size state live (placement re-derives per frame — width distributes around the beak); a module `resizing` flag gates the grace `onMove` (B-5), and after the drop the grace arms only once the pointer has been seen inside again.
 - The flipped-up rule: `onDirection` from Task 5 — direction `'up'` hides the `s` and `se` strips.
-- Size floors: `KNOB` block — default `{w, h}` and min `{w, h}` (seed sensibly, Nathan tunes). The max is **rendered, not stored**: the card wrapper's width caps at `innerWidth − 2·VIEWPORT_MARGIN` and its height at the band actually available on the placed side of the link (from `measure()` + gap + margin) — PickerMenu's centered branch has no vertical clamp and its flip never re-checks, so a viewport-tall stored size would otherwise open with its top third above the screen where the card's own scroller can't reach.
+- Size floors: `KNOB` block — default `{w, h}` and min `{w, h}` (seed sensibly, Nathan tunes). The max is **rendered, not stored**: the card wrapper's width caps at `innerWidth − 2·VIEWPORT_MARGIN` and its height at the band actually available on the placed side of the link (from the link's live rect + gap + margin) — PickerMenu's centered branch has no vertical clamp and its flip never re-checks, so a viewport-tall stored size would otherwise open with its top third above the screen where the card's own scroller can't reach.
 - Post-drop rule: the grace re-arms on the **first pointer movement after the drop** — not on inside-then-out, which leaves a card released beyond the size cap standing forever (the pointer never re-crosses it).
 - Docs (falsified here): the `PagePreviewPM.md` hover paragraph gains the free-edge resize.
 
@@ -258,7 +259,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 **Files:**
 - Modify: `Pommora/src/main/db/localState.ts` — `'hoverCard'` joins the `Scope` union (singleton key).
 - Modify: `Pommora/src/shared/bridge.ts` + `Pommora/src/preload/index.ts` + `Pommora/src/main/index.ts` — `hoverCard:get` / `hoverCard:set` channels on the **tabs/previews/recents singleton shape** (`readValue`/`writeValue`), not the key-scoped embedHeights generator; main-side shape check (`{w: number, h: number}`).
-- Create: `Pommora/src/renderer/src/Embeds/hoverCardSize.ts` — THE accessor: async-seeded module cache, clamp against min on read (the sidebar-width precedent, `store.ts:83-92`), write-through on set. Signature takes an optional page path from day one (`size(pagePath?)` — today it ignores it) so the per-page-default prospect adds rows beside the singleton without touching call sites.
+- Create: `Pommora/src/renderer/src/Embeds/hoverCardSize.ts` — THE accessor: async-seeded module cache, clamp against min on read (the sidebar-width precedent, `store.ts:83-92`), write-through on set. Argument-free — the per-page-default prospect adds an *optional* parameter later at zero call-site cost, so carrying an ignored one today is speculative generality. The accessor's existence alone is the door.
 - Modify: `ConnectionHoverCard.tsx` — grace duration read from a parameter with the 200ms default (Task 8 wires the setting).
 - Docs (falsified here): `ConfigurationPM.md:3` — the per-machine-chrome enumeration gains the hover-card size; the `PagePreviewPM.md` hover paragraph gains the one remembered size; `ArchitecturePM.md`'s per-machine scope-pair count is already stale (says four, five exist) — restate it countlessly while in the file.
 
@@ -287,7 +288,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 - Modify: `Pommora/src/shared/types.ts` — `hoverPreviewLinger?: number` on `Personalization` (seconds, 1–30; absent = None) + a `coerceHoverLinger` beside `coerceViewScale` (round, clamp, drop 0/invalid to undefined).
 - Modify: `Pommora/src/main/readNexus.ts` — the key joins `readPersonalization`'s explicit field list through the coercion.
 - Modify: `Pommora/src/main/readNexus.test.ts` — the round-trip key list gains it (the C-3 three-site contract).
-- Modify: `Pommora/src/renderer/src/Settings/SettingsWindow.tsx` — `Toggle` becomes a discriminated `Row` union (`{kind:'toggle',…} | {kind:'slider', key, label, hint, min, max, step, format}`); the render path switches on `kind`; the slider row mounts `design-system/components/Slider` (min 0, max 30, step 1, `format: v => v === 0 ? 'None' : `${v}s``), committing 0 as `undefined` (the clean-file discipline).
+- Modify: `Pommora/src/renderer/src/Settings/SettingsWindow.tsx` — no schema change: `TOGGLES` and its map render stay untouched; the slider is one bespoke `LingerRow` component beside `ToggleRow`, rendered after the toggle map when the Pages category is active. It mounts `design-system/components/Slider` (min 0, max 30, step 1, `format: v => v === 0 ? 'None' : `${v}s``), committing 0 as `undefined` (the clean-file discipline). A row-kind union is deliberately not built at first occurrence — it earns itself when a second non-toggle row exists to shape it.
 - Modify: `ConnectionHoverCard.tsx` hosts' wiring — the grace parameter reads the store's `personalization.hoverPreviewLinger` (seconds → ms; absent → 200).
 - Docs (falsified here): `.claude/Features/ConfigurationPM.md` — the knob joins §Knobs; the Settings-window "boolean knobs" phrasing widened; §Knobs' closing "the **boolean** knobs are round-trip tested together" widens too, since the numeric key joins that test.
 
@@ -316,7 +317,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 **Files:**
 - Modify: `Pommora/src/renderer/src/MarkdownPM/editor/connections.ts` — the intent arm/cancel extracted as a small shared helper (same file or beside it; the editor handler keeps its CM hit-test, the helper owns the timer + delay constant).
-- Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/TableView.tsx` — delegated `onMouseOver`/`onMouseOut` on the table root: class-gate `closest('.md-connection-resolved')` first, resolve by the span's textContent through the threaded `connections` getter, arm the helper with `measure = () => span.isConnected ? span.getBoundingClientRect() : null`.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/TableView.tsx` — delegated `onMouseOver`/`onMouseOut` on the table root: class-gate `closest('.md-connection-resolved')` first, resolve by the span's textContent through the threaded `connections` getter, arm the helper with the span element — the card's one measuring seam handles detachment.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/cellStatic.tsx` — `StaticCell`'s activate calls `closeActiveHoverCard()` (import from Embeds) alongside its editor swap; the pending intent cancels on the same mousedown.
 - Docs (falsified here): `.claude/Features/MarkdownPM.md` — the cells' connections line gains hover; `.claude/Features/TableViewPM.md` if it describes cell link behavior (check at execution).
 
