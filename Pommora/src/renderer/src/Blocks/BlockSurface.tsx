@@ -19,7 +19,7 @@ import {
   type ContainerCore,
 } from '@renderer/treeIndex'
 import { showConnectionMenu } from '@renderer/Embeds/connectionMenu'
-import { useConnectionHover } from '@renderer/Embeds/ConnectionHoverCard'
+import { hoverConnection } from '@renderer/Embeds/ConnectionHoverCard'
 import { attachBelow, insertBand, removeTile as removeLeaf } from '@renderer/SurfacePM/core/ops'
 import { getTile } from '@renderer/SurfacePM/core/model'
 import { SurfaceView, type BackdropTarget } from '@renderer/SurfacePM/SurfaceView'
@@ -123,7 +123,6 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
   const containersByPath = tree ? containersByPathOf(tree) : NO_CONTAINERS
 
   const openPreview = useSession((s) => s.openPreview)
-  const { hover, card: hoverCard } = useConnectionHover()
   // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
   const openInPreview = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const connections = useMemo<ConnectionsApi | undefined>(() => {
@@ -137,10 +136,10 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
           : void select({ kind: 'page', id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      hover,
+      hover: hoverConnection,
       menu: showConnectionMenu,
     }
-  }, [tree, select, openPreview, openInPreview, hover])
+  }, [tree, select, openPreview, openInPreview])
 
   useEffect(() => {
     if (!editingId) return
@@ -383,7 +382,6 @@ export function BlockSurface({ host }: { host: BlockHostRef }): React.JSX.Elemen
     <div
       className={`blk-surface${editingId ? ' has-live-editor' : ''}${hostLocked ? ' is-host-locked' : ''}`}
     >
-      {hoverCard}
       <SurfaceView
         layout={layout}
         onLayoutChange={setLayout}

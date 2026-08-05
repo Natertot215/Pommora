@@ -12,7 +12,7 @@ import { Subfield } from '../Detail/Subfield/Subfield'
 import type { SubfieldScope } from '../Detail/Subfield/subfieldItems'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
-import { useConnectionHover } from '../Embeds/ConnectionHoverCard'
+import { hoverConnection } from '../Embeds/ConnectionHoverCard'
 import { getDetailPaneRect } from '../Detail/DetailPane'
 import { NavCrumbs } from '../Navigation/NavList'
 import { resolveWith } from '../Navigation/navResolve'
@@ -103,7 +103,6 @@ function PreviewWindowBody({
 
   // ⌘-click (bypass) is ADDITIVE — a new app tab opens behind, the preview stays.
   const openPreviewTab = useSession((s) => s.openPreviewTab)
-  const { hover, card: hoverCard } = useConnectionHover()
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
     const idx = pageIndexOf(tree)
@@ -112,10 +111,10 @@ function PreviewWindowBody({
       open: (page) => openPreviewTab({ id: page.id, path: page.path }),
       bypass: (page) =>
         void select({ kind: 'page', id: page.id, path: page.path }, { newTab: true }),
-      hover,
+      hover: hoverConnection,
       menu: showConnectionMenu,
     }
-  }, [tree, openPreviewTab, select, hover])
+  }, [tree, openPreviewTab, select])
 
   const resolveIndex = tree ? resolveIndexOf(tree) : null
 
@@ -234,7 +233,6 @@ function PreviewWindowBody({
           warm={warmSeam}
         />
       </div>
-      {hoverCard}
     </PreviewPane>
   )
 }
