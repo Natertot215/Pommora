@@ -15,6 +15,7 @@ import { InspectorPanel } from './Detail/InspectorPanel/InspectorPanel'
 import { NavWindow } from './NavWindow/NavWindow'
 import { PreviewWindow } from './PagePreview/PreviewWindow'
 import { SettingsWindow } from './Settings/SettingsWindow'
+import { ConnectionHoverCard } from './Embeds/ConnectionHoverCard'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
 import { Icon } from '@renderer/design-system/symbols'
@@ -269,6 +270,7 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <NavWindow />}
       {status === 'ready' && <PreviewWindow />}
       {status === 'ready' && <SettingsWindow />}
+      {status === 'ready' && <ConnectionHoverCard />}
       {status === 'ready' && inspectorOpen && (
         <div
           className="inspector-resize"
