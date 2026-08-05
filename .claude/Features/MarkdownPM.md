@@ -62,7 +62,7 @@ GFM pipe-tables render as an editable HTML table — a CodeMirror **block-replac
 
 - **Self-healing** — a region is a widget iff it parses as a single GFM table, re-evaluated per change; a half-typed / broken table falls back to raw text with the caret preserved. Empty cells are real min-height cells; a header-only table is valid; deleting the last column deletes the table; a foreign table round-trips byte-identical; no horizontal scroll (many columns narrow and wrap).
 
-- **Structural edits via grips** — hovering reveals a quiet grip, one at a time (top per-column, left per-row). Dragging reorders live (a no-op move snaps back); right-click pops the OS-native menu (align / insert / clear / delete · Make Heading Column on the first column · Delete Table on the header grip), and the header-row grip's **left-press drags the whole table** (see Block Drag); dragging a column boundary resizes by moving whole dashes between the two neighbors (total conserved, 1-dash floor, the moving columns are the only feedback). Creation is the Insert menu's Table.
+- **Structural edits via grips** — hovering reveals a quiet grip, one at a time (top per-column, left per-row). Dragging reorders live (a no-op move snaps back); right-click pops the OS-native menu (align / insert / clear / delete · Make Heading Column on the first column · Delete Table on the header grip), and the header-row grip's **left-press drags the whole table** (see Block Drag); dragging a column boundary resizes by moving whole dashes between the two neighbors (total conserved, 1-dash floor, the moving columns are the only feedback). Hovering the table also reveals a pair of border append strips — a table-height strip on the right edge adds a column, a table-width strip below adds a row — always appended at the end, so a mounted cell editor and the caret stay exactly where they were. Creation is the Insert menu's Table.
 
 - **Module shape** — `MarkdownPM/Tables/`: a framework-free headless core (model / codec / regions / operations / navigation, unit-tested standalone) under thin adapters (`widget.tsx` the block-replace decoration, `TableView` / `CellEditor`, `sync.ts` the minimal-diff commit); `index.ts` exports the one CM6 extension — unregister it and tables degrade to plain text.
 
@@ -150,7 +150,5 @@ The wikilink resolver is **wired** to `@shared/connections`: resolution, styling
 - **Aliased connections** — the pipe segment of `[[Title|alias]]` parses and survives every rewrite, but nothing renders it as the display text, so it shows as plain text beside the styled title. The display treatment and the authoring gesture are both unbuilt.
 
 - **Outliner rails on ordered / arrow / `+` lists** — the guide is bullets + checkboxes only; a right-aligned number and the arrow / `+` glyphs need their own glyph-centre and vertical-evenness maths before their rails read straight.
-
-- **Border-anchored "+" insert** (hover a column/row edge to insert) — deferred while tables are full-width; the grip's right-click Insert covers the need.
 
 - **Codeblock Style ▸ Language grip menu** — retyping a block's language from its rail grip; today the info word is edited on the fence line directly. Widening the curated language set is one description in the highlight module plus its package.

@@ -69,6 +69,7 @@ export function TableView({
   onExit,
   onReorder,
   onResize,
+  onAppend,
   onMenu,
   onTableDrag,
   onUndo,
@@ -81,6 +82,7 @@ export function TableView({
   onExit: (dir: 'before' | 'after') => void
   onReorder: (axis: Axis, from: number, to: number) => boolean
   onResize: (boundaryIndex: number, dashDelta: number) => boolean
+  onAppend: (axis: Axis) => void
   onMenu: (ctx: TableMenuContext) => void
   onTableDrag: (e: PointerEvent) => void
   onUndo: () => void
@@ -368,6 +370,25 @@ export function TableView({
           <Icon name="grip-vertical" className="mdpm-tbl-grip" size="sm" strokeWidth={2} />
         </div>
       ))}
+      <button
+        type="button"
+        className="mdpm-tbl-add mdpm-tbl-add-col"
+        style={{ top: tableTop, height: tableHeight }}
+        aria-label="Add Column"
+        onMouseDown={swallowCaret}
+        onClick={() => onAppend('col')}
+      >
+        <Icon name="plus" size={14} />
+      </button>
+      <button
+        type="button"
+        className="mdpm-tbl-add mdpm-tbl-add-row"
+        aria-label="Add Row"
+        onMouseDown={swallowCaret}
+        onClick={() => onAppend('row')}
+      >
+        <Icon name="plus" size={14} />
+      </button>
       {geom.cols.slice(0, -1).map((c, i) => (
         // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
         <div

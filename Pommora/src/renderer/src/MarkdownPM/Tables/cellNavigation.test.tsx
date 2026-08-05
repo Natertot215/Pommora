@@ -39,6 +39,7 @@ const props = {
   onTableDrag: noop,
   onUndo: noop,
   onRedo: noop,
+  onAppend: noop,
 }
 
 let container: HTMLDivElement

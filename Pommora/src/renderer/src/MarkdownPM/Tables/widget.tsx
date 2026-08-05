@@ -156,6 +156,16 @@ class TableWidget extends WidgetType {
       view.dispatch({ changes: change })
       return true
     }
+    // End-append only: new indices land past every existing cell, so a mounted cell editor keeps its
+    // {row, col} and the main caret maps cleanly past the grown region.
+    const append = (axis: 'col' | 'row'): void => {
+      const change = structuralEditChange(docString(view.state.doc), this.tableIndex, (m) =>
+        axis === 'col'
+          ? insertColumn(m, m.columns.length - 1, 'right')
+          : insertRow(m, m.rows.length - 1, 'below'),
+      )
+      if (change) view.dispatch({ changes: change })
+    }
     const resize = (boundaryIndex: number, dashDelta: number): boolean => {
       const change = structuralEditChange(docString(view.state.doc), this.tableIndex, (m) =>
         resizeColumn(m, boundaryIndex, dashDelta),
@@ -210,6 +220,7 @@ class TableWidget extends WidgetType {
         onExit={exit}
         onReorder={reorder}
         onResize={resize}
+        onAppend={append}
         onMenu={onMenu}
         onTableDrag={tableDrag}
         onUndo={() => undo(view)}
