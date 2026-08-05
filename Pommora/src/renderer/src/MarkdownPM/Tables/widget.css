@@ -4,11 +4,18 @@
 
 .mdpm-tbl-wrap {
   --grip-gutter: 18px;
+  --tbl-add-size: 14px;
+  --tbl-add-gap: 6px;
+  --tbl-add-span: calc(var(--tbl-add-gap) + var(--tbl-add-size));
+  /* The right gutter grows with the append strip's gap + size: the content column sits flush against the
+     editor's scroll edge, so a strip poking past the wrap would clip or hand the page a horizontal
+     scrollbar — growing the gutter keeps it inside, trading table width instead. */
+  --gutter-right: max(var(--grip-gutter), var(--tbl-add-span));
   position: relative;
   /* Top + left gutters reserve hoverable space for the grips INSIDE the wrap (a negative-margin gutter
      hanging into the editor's chrome renders but can't be hovered — the chrome intercepts it). The right
-     padding mirrors the left purely for visual symmetry — no grips live there. */
-  padding: var(--grip-gutter) var(--grip-gutter) 0 var(--grip-gutter);
+     gutter holds the column append strip. */
+  padding: var(--grip-gutter) var(--gutter-right) 0 var(--grip-gutter);
 }
 
 .mdpm-tbl {
@@ -51,6 +58,63 @@
 }
 .mdpm-tbl-grip-zone:hover .mdpm-tbl-grip {
   opacity: 1;
+}
+
+/* Border append strips: a glyph-width, table-height strip in the right gutter adds a column; a
+   table-width, glyph-height strip below the table adds a row. Revealed by hovering the table; the strip
+   is a wrap child, so hovering it keeps the reveal alive even where it hangs past the wrap's box. The
+   pointer-events gate keeps the hidden row strip from stealing clicks aimed at the content below. */
+.mdpm-tbl-add {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: var(--border-cell);
+  border-radius: 4px;
+  background: none;
+  color: var(--label-tertiary);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--duration-base) var(--ease-standard, ease),
+    background var(--duration-base) var(--ease-standard, ease);
+}
+.mdpm-tbl-wrap:hover .mdpm-tbl-add {
+  opacity: 1;
+  pointer-events: auto;
+}
+.mdpm-tbl-add:hover {
+  background: var(--state-hover);
+}
+/* The approach gap between table and strip is bridged by an invisible extension of the button itself —
+   a pointer crossing it must not drop the wrap's hover, or the strip hides before it can be reached. */
+.mdpm-tbl-add::before {
+  content: "";
+  position: absolute;
+}
+.mdpm-tbl-add-col::before {
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--tbl-add-gap) - 1px);
+  width: calc(var(--tbl-add-gap) + 1px);
+}
+.mdpm-tbl-add-row::before {
+  left: 0;
+  right: 0;
+  top: calc(-1 * var(--tbl-add-gap) - 1px);
+  height: calc(var(--tbl-add-gap) + 1px);
+}
+.mdpm-tbl-add-col {
+  right: calc(var(--gutter-right) - var(--tbl-add-span));
+  width: var(--tbl-add-size);
+}
+.mdpm-tbl-add-row {
+  left: var(--grip-gutter);
+  right: var(--grip-gutter);
+  top: calc(100% + var(--tbl-add-gap));
+  height: var(--tbl-add-size);
 }
 
 /* Column-boundary resize handles: invisible hit-strips. The live column widths ARE the drag feedback, so
@@ -158,8 +222,10 @@
   overflow-wrap: anywhere;
   cursor: text;
 }
-/* An empty cell has no line box, so it'd render a line-height shorter than a filled one — a zero-width
-   placeholder gives it that line box so every cell is the same height with or without text. */
-.mdpm-tbl-cell-static:empty::before {
+/* A zero-width placeholder after the text gives the cell's tail its line box: an empty cell would
+   otherwise render shorter than a filled one, and a cell ending in a line break would render one line
+   shorter than its editor — pre-wrap draws no line box after a trailing newline, but the editor does,
+   so the cell would jump taller on click-to-edit. */
+.mdpm-tbl-cell-static::after {
   content: "\200b";
 }
