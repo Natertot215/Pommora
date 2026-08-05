@@ -16,7 +16,7 @@ const inRect = (r: DOMRect, x: number, y: number): boolean =>
   y <= r.bottom + RECT_SLOP
 
 export function useConnectionHover(): {
-  hover: (page: ConnPage, rect: DOMRect) => void
+  hover: (page: ConnPage, el: Element) => void
   card: React.ReactNode
 } {
   const [hovered, setHovered] = useState<{ page: ConnPage; rect: DOMRect } | null>(null)
@@ -72,6 +72,9 @@ export function useConnectionHover(): {
       </PickerMenu>
     </>
   )
-  const hover = useCallback((page: ConnPage, rect: DOMRect) => setHovered({ page, rect }), [])
+  const hover = useCallback(
+    (page: ConnPage, el: Element) => setHovered({ page, rect: el.getBoundingClientRect() }),
+    [],
+  )
   return { hover, card }
 }
