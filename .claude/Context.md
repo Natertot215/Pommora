@@ -104,7 +104,7 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 
 #### Debt & Ride-Alongs
 
-- `schema:changeType` is fully built in main, exposed in preload, and has no renderer call site — only test mocks, which read as coverage it doesn't have.
+- `schema:changeType` is intentional pre-scaffolding — fully built in main, exposed in preload, no renderer call site by design; it stays until the type-change surface is built properly, never removed as dead code. Its only references are test mocks, so a green suite there isn't coverage.
 - NOR filters are hand-authoring only — the mode lives on disk and in the evaluator; the pane offers All and Any, and a hand-authored NOR decodes as `locked`.
 - `bounds` and `scanLabel` on PreviewPane have no caller yet; hard-coding them would force the first new consumer to edit the component instead of configuring it.
 - Four affordances whose features haven't arrived are `disabled` rather than wired to a no-op — the Space pane's actions ellipsis, the ViewPane's More menu, the ViewSettings icon picker, and the Page Preview's own Settings button.
