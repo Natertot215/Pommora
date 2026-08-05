@@ -5,7 +5,7 @@ import { IconPicker } from '@renderer/Components/IconPicker'
 import { useSession } from '../../store'
 import { isSurfaceKind, type BannerOwner } from '../Scope'
 import { DetailTitleHeader } from '../DetailTitleHeader'
-import { EditableInput } from '../../Components/EditableInput'
+import { RenamableLabel } from '../../Components/RenamableLabel'
 import { AddBannerButton } from './AddBannerButton'
 import { assetUrl } from '../../assetUrl'
 import { useBannerMenu } from './useBannerMenu'
@@ -43,23 +43,21 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
   // submitRename, which the other title header (below) uses.
   const commitHome = (next: string): void => {
     setEditingHome(false)
-    if (!next || next === owner.name) return
     void window.nexus.renameNexus(next).then(async (res) => {
       if (!res.ok) await window.nexus.showError(res.error.message)
       else await load()
     })
   }
-  const homeTitle = (className: string): React.ReactNode =>
-    editingHome ? (
-      <EditableInput
-        value={owner.name}
-        caretAtEnd
-        className={className}
-        onCommit={commitHome}
-        onCancel={() => setEditingHome(false)}
-      />
-    ) : (
-      // biome-ignore lint/a11y/noStaticElementInteractions: a double-click shortcut; the same action has a primary control
+  const homeTitle = (className: string): React.ReactNode => (
+    <RenamableLabel
+      renames="title"
+      editing={editingHome}
+      value={owner.name}
+      className={className}
+      onCommit={commitHome}
+      onCancel={() => setEditingHome(false)}
+    >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: a double-click shortcut; the same action has a primary control */}
       <span
         className={className}
         onDoubleClick={() => setEditingHome(true)}
@@ -67,7 +65,8 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
       >
         {owner.name}
       </span>
-    )
+    </RenamableLabel>
+  )
   const { openMenu, addOrChange } = useBannerMenu(owner.path, owner.kind)
 
   const homeClass = owner.kind === 'homepage' ? ' is-homepage' : ''

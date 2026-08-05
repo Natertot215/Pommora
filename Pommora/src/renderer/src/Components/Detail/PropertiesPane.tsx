@@ -31,7 +31,7 @@ import { flushTrailing, titleInput } from '../../design-system/components/menu/m
 import { Reveal } from '../../design-system/components/Reveal'
 import { duration } from '../../design-system/tokens/motion'
 import { IconPicker } from '../IconPicker'
-import { EditableInput } from '../EditableInput'
+import { RenamableLabel } from '../RenamableLabel'
 import { InlineEditHeader } from './InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
 import { StatusEditor } from './StatusEditor'
@@ -74,22 +74,18 @@ function ListGroups({
   onRenameCancel: () => void
 }): React.JSX.Element {
   const { assignedRef, allRef, allHighlighted } = usePaneRegions()
-  // The row title swaps to the store-driven inline rename input — the RenamableTitle UX
-  // over the property-keyed channel (properties are registry ids, not paths).
-  const title = (d: PropertyDefinition): ReactNode =>
-    renamingId === d.id ? (
-      <EditableInput
-        value={d.name}
-        className={cx(titleInput, 'row-title-input')}
-        onCommit={(next) => {
-          if (next && next !== d.name) onRenameCommit(next)
-          else onRenameCancel()
-        }}
-        onCancel={onRenameCancel}
-      />
-    ) : (
-      d.name
-    )
+  // The row title swaps to the inline rename input over the property-keyed channel
+  // (properties are registry ids, not paths).
+  const title = (d: PropertyDefinition): ReactNode => (
+    <RenamableLabel
+      renames="row"
+      editing={renamingId === d.id}
+      value={d.name}
+      className={cx(titleInput, 'row-title-input')}
+      onCommit={onRenameCommit}
+      onCancel={onRenameCancel}
+    />
+  )
   return (
     <>
       <div data-group="assigned" ref={assignedRef}>

@@ -1,7 +1,7 @@
 import { type Ref, useState } from 'react'
 import { InteractionField, fieldInputClass } from '../../design-system/components/InteractionField'
 import { Icon } from '../../design-system/symbols'
-import { EditableInput } from '../EditableInput'
+import { RenamableLabel } from '../RenamableLabel'
 import { DashIcon } from './DashIcon'
 import * as s from './settingsPane.css'
 
@@ -41,25 +41,24 @@ export function InlineEditHeader({
       >
         {icon ? <Icon name={icon} /> : <DashIcon />}
       </button>
-      {editing && !readOnly ? (
-        <EditableInput
-          value={value}
-          caretAtEnd
-          className={`${fieldInputClass} ${s.titleField}`}
-          onCommit={(next) => {
-            setEditing(false)
-            if (next && next !== value) onCommit(next)
-          }}
-          onCancel={() => setEditing(false)}
-        />
-      ) : (
+      <RenamableLabel
+        renames="title"
+        editing={editing && !readOnly}
+        value={value}
+        className={`${fieldInputClass} ${s.titleField}`}
+        onCommit={(next) => {
+          setEditing(false)
+          onCommit(next)
+        }}
+        onCancel={() => setEditing(false)}
+      >
         <InteractionField
           className={s.titleField}
           onClick={readOnly ? undefined : () => setEditing(true)}
         >
           {value}
         </InteractionField>
-      )}
+      </RenamableLabel>
     </div>
   )
 }

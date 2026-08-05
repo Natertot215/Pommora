@@ -1,6 +1,6 @@
 import { type Ref, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
-import { EditableInput } from '@renderer/Components/EditableInput'
+import { RenamableLabel } from '@renderer/Components/RenamableLabel'
 import './DetailTitleHeader.css'
 
 interface Props {
@@ -50,25 +50,24 @@ export function DetailTitleHeader({
           onContextMenu={editing ? undefined : openMenu}
         />
       )}
-      {editing ? (
-        // A refused rename needs no revert here — the field unmounts on commit and the resting
-        // span keeps showing the live title until the tree confirms a change.
-        <EditableInput
-          value={title}
-          caretAtEnd
-          className="detail-title-input"
-          onCommit={(next) => {
-            setEditing(false)
-            if (next && next !== title) void onRename(next)
-          }}
-          onCancel={() => setEditing(false)}
-        />
-      ) : (
-        // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
+      {/* A refused rename needs no revert here — the field unmounts on commit and the resting
+          span keeps showing the live title until the tree confirms a change. */}
+      <RenamableLabel
+        renames="title"
+        editing={editing}
+        value={title}
+        className="detail-title-input"
+        onCommit={(next) => {
+          setEditing(false)
+          void onRename(next)
+        }}
+        onCancel={() => setEditing(false)}
+      >
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <span className="detail-title-text" onContextMenu={openMenu}>
           {title}
         </span>
-      )}
+      </RenamableLabel>
     </div>
   )
 }
