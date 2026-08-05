@@ -26,9 +26,18 @@ export const quoteDepth = (line: string): number =>
 const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(```|~~~)[ \t]*([^`~\s]*)/
 // A fence line's quote depth AND marker char — a block pairs by BOTH, so a `~~~` line inside a ``` block
 // reads as content, not a close (matches isInsideCode's marker pairing; the two layers must agree).
-const fenceOf = (line: string): { depth: number; marker: string; info: string } | null => {
+const fenceOf = (
+  line: string,
+): { depth: number; marker: string; info: string; markerEnd: number } | null => {
   const m = FENCE_RE.exec(line)
-  return m ? { depth: m[1].match(/>/g)?.length ?? 0, marker: m[2][0], info: m[3] } : null
+  return m
+    ? {
+        depth: m[1].match(/>/g)?.length ?? 0,
+        marker: m[2][0],
+        info: m[3],
+        markerEnd: m[1].length + m[2].length,
+      }
+    : null
 }
 
 export interface FenceInfo {
@@ -42,6 +51,9 @@ export interface FenceInfo {
   closed: boolean
   /** The opening fence's info word (```yaml → 'yaml') — absent on a bare fence. */
   lang?: string
+  /** Where the OPEN line's fence marker ends (its whitespace/quote prefix plus the three marker
+   *  chars, line-relative) — the info word starts here, wherever the fence is indented. */
+  markerEnd: number
   /** A content line's 1-based number within its block — the line-count chrome's source. */
   ordinal?: number
 }
@@ -54,6 +66,7 @@ interface FenceBlock {
   closed: boolean
   depth: number
   lang?: string
+  markerEnd: number
 }
 
 export function splitWithOffsets(text: string): { lines: string[]; lineStarts: number[] } {
@@ -90,6 +103,7 @@ function fenceBlocks(lines: string[], lineStarts: number[]): FenceBlock[] {
       closed,
       depth: open.depth,
       lang: open.info || undefined,
+      markerEnd: open.markerEnd,
     })
     i = closed ? j + 1 : j
   }
@@ -99,7 +113,14 @@ function fenceBlocks(lines: string[], lineStarts: number[]): FenceBlock[] {
 export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInfo | undefined)[] {
   const out: (FenceInfo | undefined)[] = new Array(lines.length)
   for (const blk of fenceBlocks(lines, lineStarts)) {
-    const base = { from: blk.from, to: blk.to, depth: blk.depth, closed: blk.closed, lang: blk.lang }
+    const base = {
+      from: blk.from,
+      to: blk.to,
+      depth: blk.depth,
+      closed: blk.closed,
+      lang: blk.lang,
+      markerEnd: blk.markerEnd,
+    }
     out[blk.open] = { role: 'open', ...base }
     const contentEnd = blk.closed ? blk.close : blk.close + 1 // unclosed → the last line is content too
     for (let k = blk.open + 1; k < contentEnd; k++)

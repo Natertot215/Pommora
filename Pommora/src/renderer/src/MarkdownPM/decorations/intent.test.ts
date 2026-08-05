@@ -290,6 +290,15 @@ describe('decoration intents', () => {
     expect(onOpen.filter((d) => d.kind === 'lineWidget' && d.className === 'md-cb-lang')).toHaveLength(0)
   })
 
+  it('an indented typed fence hides only its info word — never its own backticks', () => {
+    const t = '- item\n  ```yaml\n  key: 1\n  ```'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 0) // caret on the list line
+    const hides = intents.filter((d): d is Extract<typeof d, { kind: 'hide' }> => d.kind === 'hide')
+    expect(hides.map((h) => t.slice(h.from, h.to))).toEqual(['yaml'])
+    const lang = intents.find((d) => d.kind === 'lineWidget' && d.className === 'md-cb-lang')
+    expect(lang && 'from' in lang ? lang.from : -1).toBe(t.indexOf('yaml'))
+  })
+
   it('a typed fence wears its inline glyph at the info word; a bare fence wears none', () => {
     const t = 'p\n```yaml\nkey: 1\n```'
     const glyphs = decorationsFor(t, tokenize(t), new Set(), 0).filter(

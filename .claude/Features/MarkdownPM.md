@@ -58,7 +58,7 @@ GFM pipe-tables render as an editable HTML table — a CodeMirror **block-replac
 
 - **Connections in cells** — `[[…]]` render + autocomplete inside a cell (Tab / Enter accepts). Autocomplete inserts alias-free `[[Title]]`: cell encoding backslash-escapes a literal pipe, so an aliased form typed into a cell can't survive the round-trip as one connection.
 
-- **On-disk: dash-count width** — column width is the dash count per delimiter cell (Pandoc convention), rendered as `<colgroup>` ratios with `table-layout: fixed`; orthogonal to alignment (re-aligning never resizes). Best-effort cosmetic (Pandoc honors, GitHub / Obsidian ignore, a reformatter may normalize away) — widths are never data, so losing them never loses content. Rides the portable source because CSS renders custom widths natively.
+- **On-disk: dash-count width** — column width is the dash count per delimiter cell (Pandoc convention), rendered as `<colgroup>` ratios with `table-layout: fixed`; orthogonal to alignment (re-aligning never resizes). Best-effort cosmetic (Pandoc honors, GitHub / Obsidian ignore, a reformatter may normalize away). Rides the portable source because CSS renders custom widths natively.
 
 - **Self-healing** — a region is a widget iff it parses as a single GFM table, re-evaluated per change; a half-typed / broken table falls back to raw text with the caret preserved. Empty cells are real min-height cells; a header-only table is valid; deleting the last column deletes the table; a foreign table round-trips byte-identical; no horizontal scroll (many columns narrow and wrap).
 
@@ -140,6 +140,8 @@ The wikilink resolver is **wired** to `@shared/connections`: resolution, styling
 ### Known Issues
 
 - **`*` and `•` bullets render as plain text** — the marker parser accepts them (so the drag layer sees list lines) but no construct branch renders them, and `* [ ]` *does* render as a checkbox. Whether `*` becomes a rendered bullet or the parser narrows is an open call.
+
+- **A four-backtick typed fence colorizes but carries no chrome** — the info capture stops at the fourth backtick, so the nested parse runs (CodeMirror reads the info string itself) while the glyph and info-word hide stay off and the raw ````` ````yaml ````` remains visible. Bounded by the pre-existing pairing rule, under which a longer fence closes on the first inner ```` ``` ````.
 
 ### Deferred
 
