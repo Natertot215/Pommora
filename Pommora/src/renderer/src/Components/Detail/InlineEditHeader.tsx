@@ -44,6 +44,7 @@ export function InlineEditHeader({
       {editing && !readOnly ? (
         <EditableInput
           value={value}
+          caretAtEnd
           className={`${fieldInputClass} ${s.titleField}`}
           onCommit={(next) => {
             setEditing(false)

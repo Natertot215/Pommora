@@ -53,6 +53,7 @@ export function Banner({ owner }: { owner: BannerOwner }): React.JSX.Element {
     editingHome ? (
       <EditableInput
         value={owner.name}
+        caretAtEnd
         className={className}
         onCommit={commitHome}
         onCancel={() => setEditingHome(false)}
