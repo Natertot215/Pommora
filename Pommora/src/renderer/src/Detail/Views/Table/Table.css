@@ -29,7 +29,7 @@
 
 /* The grid container: a vertical stack of full-width bands. Each band that shows columns is itself a
    grid reading --cols. min-width (the summed column widths, inline) makes it scroll; width:100% lets
-   the trailing 1fr filler track eat slack. zoom is the Compact density knob. */
+   the trailing 1fr filler track eat slack. */
 .table-grid {
   width: 100%;
   /* Base density (--zoom) × the per-block Scale (--block-zoom, set on a SurfacePM tile; absent = 1). The

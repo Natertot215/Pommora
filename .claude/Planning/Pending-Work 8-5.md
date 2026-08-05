@@ -100,10 +100,6 @@ The pipe form parses, resolves, and survives every rename cascade — but nothin
 
 Cards can turn grouping off and hide the location subtitle; tables can do neither — the Grouping pane gates "None" behind the cards type and the pipeline never flattens for a table. The Figma already shows both toggles and the table's footing is waiting to take them. Closes a story the feature half-told, and a plain ungrouped table is what many collections actually want.
 
-#### Make the Table's Compact Toggle Do Something
-
-ViewSettings persists Standard/Compact and shows the current label, but only the Cards files read it — in a table the control moves, saves, and changes nothing. Either wire a compact row-height variant into the table grid or hide the toggle for tables; a control that visibly lies is worse than an absent one, and it's a small change either way.
-
 #### Two Markdown Parser Paper Cuts
 
 Both live in `MarkdownPM/detect/`. `*` and `•` bullets render as plain text — the marker regex accepts them so the drag layer sees list lines, but no construct branch draws the bullet (while `* [ ]` does render as a checkbox). And a bare `>` line splits a quote or callout into three blocks, because the blockquote predicate requires whitespace after the `>` — so the standard blank line inside a quote reads as a paragraph and grows a stray mid-quote drag grip.

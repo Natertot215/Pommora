@@ -188,7 +188,7 @@ describe('decodeGroupConfig (lenient, never throws)', () => {
   })
 })
 
-describe('SavedView format', () => {
+describe('SavedView format (the cards density field)', () => {
   const base = { id: 'view_x', name: 'B', property_order: [], hidden_properties: [] }
   it('coerces an unknown type to table and round-trips a valid format', () => {
     const v = savedView.parse({ ...base, type: 'board', format: 'compact' })
@@ -196,7 +196,7 @@ describe('SavedView format', () => {
     expect(v.format).toBe('compact')
   })
   it('drops an unknown format value', () => {
-    const v = savedView.parse({ ...base, type: 'table', format: 'huge' })
+    const v = savedView.parse({ ...base, type: 'cards', format: 'huge' })
     expect(v.format).toBeUndefined()
   })
 })

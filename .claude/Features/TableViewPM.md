@@ -76,8 +76,6 @@ A single density token scales text, chips, padding, and widths together, compoun
 
 - **The group-header "+":** the creation surface behind the affordance is the open piece. A property bucket can't infer a create location, so a bucket-header "+" would have to create in a chosen location with the bucket's value pre-filled.
 
-- **Compact density:** a view's Standard / Compact format persists per-view and its toggle ships in the view editor, but the table's density token doesn't read it — the table draws at Standard either way.
-
 ### Known Issues
 
 - **Row grips scroll with their row on horizontal scroll.** The disclosure headers + chevrons stay pinned, but the hover-only drag grips ride their row's cell off to the left. Freezing them cleanly means freezing the whole title column (a frozen first column), which is an open decision.
