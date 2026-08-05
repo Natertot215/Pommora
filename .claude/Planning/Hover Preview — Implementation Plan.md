@@ -41,6 +41,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 - Eight resize zones were rejected: an anchored pane has pinned edges, and honest zones are only where the drag can track the pointer. FloatingWindow's grips were rejected for position-coupling.
 - The frozen-rect anchor was the placeholder's design; every "the 200ms grace hides it" behavior resurfaces under a 30s linger — that's why the lifecycle work in Phase 1 precedes the body.
 - The card resolving content *before* opening is a deliberate divergence from PageEmbed's self-fetching (reconciles A-2 with A-5 and kills the blank-frame bloom).
+- The single-card registry, resize flag, and size cache are renderer-module singletons — sanctioned by B-7 (one card app-wide) under today's single `BrowserWindow`. If the preview/nav windows ever become real OS windows, B-7 degrades to one-card-per-window and the size cache needs cross-window invalidation; that's a named revisit, not a today-problem.
 
 **Grounding** *(re-open these; don't cite them)*
 
@@ -75,7 +76,10 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 | --- | --- | --- | --- |
 | [[PagePreviewPM]] :35 | "The trigger, chassis, and dismissal are live; the card's page content is a blank pane." | The body renders the page | 4 |
 | [[PagePreviewPM]] :49 (Pending) | "The hover card's embedded page content — its body is a blank pane." | Same | 4 |
-| [[ConfigurationPM]] §Knobs + §Settings Window | Knob list lacks the linger; "rows are the per-Nexus boolean knobs" | New numeric key + slider row | 8 |
+| [[PagePreviewPM]] :35 (same paragraph, later beats) | Hover paragraph silent on beak flow / resize / remembered size | Tasks 5–7 add each behavior | 5, 6, 7 |
+| [[ConfigurationPM]] :3 | Per-machine chrome enumeration omits hover-card geometry | The size joins `nexus.db` | 7 |
+| [[ConfigurationPM]] §Knobs + §Settings Window | Knob list lacks the linger; "rows are the per-Nexus boolean knobs"; "the boolean knobs are round-trip tested together" | New numeric key + slider row | 8 |
+| [[ArchitecturePM]] (scope-pair count) | "the four per-machine scope pairs ride one generator" — five exist pre-plan | Already stale; restated countlessly in passing | 7 |
 | [[MarkdownPM]] §Tables (grips bullet region) | Cells' connections described without hover | Static cells raise the card | 9 |
 | `.claude/Planning/Pending-Work 8-5.md` (hover-card entry) | Lists the card body as pending work | It ships | 10 |
 
@@ -99,6 +103,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 **Files:**
 - Modify: `Pommora/src/renderer/src/MarkdownPM/editor/connections.ts` — `cancelHover()` added to the `click` and `contextmenu` handlers; the hover fire builds a measure closure.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/connections/index.ts` — `ConnectionsApi.hover` signature.
+- Modify: `Pommora/src/renderer/src/Embeds/ConnectionHoverCard.tsx` — the hook's `hover` signature takes `measure` and calls it once at open (frozen-rect behavior preserved this commit; Task 2 makes it live). Without this the tree doesn't typecheck between the two commits — the four hosts thread the card's `hover` straight into the api.
 - Test: extend the editor-harness coverage beside the existing connection tests (locate via `grep -rn "connectionClicks" --include="*.test.*"`; if none exists, add one on `testing/editorHarness.ts`).
 
 **Interfaces**
@@ -135,7 +140,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 **Steps:**
 - [ ] Rework the hook: `measure` storage, anchor-div tracking, null-measure close, single-card registry, retarget-through-null.
 - [ ] Hoist the card in `PageView` above the status switch; add the navigation-close effects per host.
-- [ ] Verify in the running app (CDP): card tracks editor scroll; scrolling the link out closes it; click a link → destination loads with no re-bloom; two hosts → one card.
+- [ ] Verify in the running app (CDP): card tracks editor scroll; scrolling the link out closes it; click a link → destination loads with no re-bloom; two hosts → one card; retarget link A → link B **re-blooms from B's beak** rather than teleporting (the closed beat must actually restart the animation — if it doesn't, key the PickerMenu mount per target).
 - [ ] Gates green → commit `fix(embeds): the hover card earns a lifetime — live anchor, one card, honest closes`.
 
 #### Gate 1 — lifecycle sound while the body is still blank
@@ -161,10 +166,11 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 **Must agree:** the card's "openable" predicate (detail resolved, body non-null) and PageEmbed's own failure render must reach the same answer — the card never opens on a detail PageEmbed would refuse. One test: a `body: null` detail never sets `hovered`.
 
-**Failure half:** the fetch resolving after the pointer left (intent fired, fetch slow, pointer gone) → the staleness gate drops it, no card; a second hover mid-fetch supersedes the first (last-wins token).
+**Failure half:** the fetch resolving after the pointer left (intent fired, fetch slow, pointer flicked away) → no card. A last-hover-wins token alone can't see a pointer that merely *left*, so the card's lifecycle listeners start at **pending**, not at open: from the moment the fetch begins, the mousemove watcher runs against the link's `measure()` — a pointer observed outside marks the pending open stale, and a resolve landing on a stale token opens nothing. A pointer that never moved is still on the link (the intent delay proves it was there), so opening is correct and the watcher is already live for the grace the moment it moves. A second hover mid-fetch supersedes the first.
 
 **Steps:**
-- [ ] Implement resolve-first open + the staleness token; unit-test the gate over a stubbed `window.nexus.openPage` (the store tests' stubbing pattern).
+- [ ] Implement resolve-first open + pending-phase lifecycle + the staleness token; unit-test the gate over a stubbed `window.nexus.openPage` (the store tests' stubbing pattern) — including the flick-away-during-fetch case.
+- [ ] Measure the cold-open window once in the dev console (`performance.now()` around `openPage` on an untouched page) and note it in the Log — it sizes how routine the stale path is.
 - [ ] Build the resolve-only api.
 - [ ] Gates green → commit `feat(embeds): the hover card resolves before it blooms`.
 
@@ -176,7 +182,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 **Files:**
 - Modify: `Pommora/src/renderer/src/Embeds/ConnectionHoverCard.tsx` — the empty div becomes: `<PageEmbed path={…} editing={false} onBeginEdit={noop} locked connections={resolveOnly} ancestors={[hostSentinel]} />` inside a sizing/scroll wrapper. `ancestors` non-empty makes every nested tile inert (`interactive = length <= 1` with the embed appending its own path → 2). `--mdpm-scale`/zoom via the same `EMBED_SCALE` pair the preview window sets.
-- Modify: `Pommora/src/renderer/src/Embeds/embeds.css` (or a card-scoped block beside it) — the card's scroll-owning wrapper: fixed card size, body `overflow-y: auto`, `edge-fade`; content wraps to card width (the condensation is width + embed scale, per the log).
+- Modify: `Pommora/src/renderer/src/Embeds/embeds.css` (or a card-scoped block beside it) — the card's scroll-owning wrapper: fixed card size, body `overflow-y: auto`; content wraps to card width (the condensation is width + embed scale, per the log). Plain `.pgembed` inside it, **never** `.pgembed-grows` (that class hands scroll to the host and the CM scroller then owns the wheel correctly at rest); the edge fade comes from PageEmbed's own `edgeFade` prop — don't add it twice.
 - Docs (falsified here): `.claude/Features/PagePreviewPM.md` — the hover paragraph (:35) rewritten to the real behavior; the Pending blank-pane line removed.
 
 **Failure half:** a page whose body is empty string renders as an empty scroll area (valid page, valid card), never the failure fallback — `body: ''` ≠ `body: null`.
@@ -203,17 +209,16 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 **Why:** The ratified placement — card centered on the link, clamped, beak pointing at it from wherever the card settles — via the toolbar trio's pattern: NotchedPane already takes an arbitrary inset and clamps it clear of the corners; only PickerMenu's centered branch fails to compute one.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/design-system/components/PickerMenu/PickerMenu.tsx` — the `origin === 'center'` branch computes `notchInsetLeft = c − left` (the link's center minus the clamped pane edge) and passes it in `setPos`; an optional `onDirection?: (dir) => void` reports the effective direction (Task 6's flipped-up rule needs it).
+- Modify: `Pommora/src/renderer/src/design-system/components/PickerMenu/PickerMenu.tsx` — the `origin === 'center'` branch computes **`notchInsetLeft = c − (left − pw / 2)`** and passes it in `setPos`. `pos.left` is the pane's *center* (the layer renders `translateX(-50%)` under center origin, `PickerMenu.tsx:368-371`) while NotchedPane measures the inset from the left *edge* — subtract the half-width or the beak lands half a card off the link. Unclamped this reduces to `pw / 2`, today's centered beak exactly. Also: an optional `onDirection?: (dir) => void` reports the effective direction (Task 6's flipped-up rule needs it).
 - Modify: `ConnectionHoverCard.tsx` — the PickerMenu mount gains `origin="center"`.
-- Verify: showcase or existing pickers using `origin='center'` (`grep -rn "origin=\"center\"\|origin: 'center'" src/renderer`) still render their beak centered — the inset computation must produce the same centered result when the pane isn't clamped (center minus center = w/2), so no visual change for existing consumers; state the check result in the commit body.
 
 **Derivation**
-- `rg -F "origin=\"center\"" src/renderer` + `rg -F "anchorX" src/renderer` → consumers at planning time: `CardPickerHost.tsx:179`, `PropertyPicker.tsx:87-88`. Legitimate hits: both keep working unchanged.
+- `rg -l 'origin="center"' src/renderer` → 6 files at planning time: `Blocks/BlockHandleMenu.tsx`, `Components/IconPicker.tsx`, `Components/Detail/PickerControl.tsx`, `design-system/components/TextPicker/TextPicker.tsx`, `PagePreview/PreviewInspector.tsx` (×2 mounts), `Detail/Views/PropertyEditing/PropertyPicker.tsx` (conditional, when `anchorX` set — fed by `CardPickerHost.tsx:179`). Legitimate hits: all keep working — unclamped panes render the identical centered beak; a *clamped* pane's beak now aims at its anchor instead of the pane center, which is the fix, not a regression (the Cards click-anchored picker gains click-aimed beaks near viewport edges).
 - Control: `rg -F "PickerMenu" src/renderer` → >10. Zero means the search never ran.
 
 **Steps:**
 - [ ] Implement; CDP-verify the three sketch cases: left-edge link (beak left of card center), right-edge link, mid-page link — screenshots to Nathan.
-- [ ] Verify the Cards click-anchored picker unchanged.
+- [ ] Spot-check the six existing consumers unclamped (beak centered as before) and one clamped (beak aims the anchor); state the result in the commit body.
 - [ ] Gates green → commit `feat(design-system): the centered pane's beak slides to its anchor`.
 
 #### Gate 3 — placement
@@ -233,12 +238,15 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 **Files:**
 - Modify: `ConnectionHoverCard.tsx` — three strips (`e`, `s`, `se`) absolutely positioned on the card wrapper, cursors `ew-resize`/`ns-resize`/`nwse-resize`, driven by `usePointerGesture` (`activation: 0`, `swallowActiveEscape: true`, the embed-tile resize precedent at `embedWidget.tsx:94-142`); drag writes the size state live (placement re-derives per frame — width distributes around the beak); a module `resizing` flag gates the grace `onMove` (B-5), and after the drop the grace arms only once the pointer has been seen inside again.
 - The flipped-up rule: `onDirection` from Task 5 — direction `'up'` hides the `s` and `se` strips.
-- Size floors: `KNOB` block — default `{w, h}` and min `{w, h}` (seed sensibly, Nathan tunes); max = viewport dimensions applied at the same place the size is set.
+- Size floors: `KNOB` block — default `{w, h}` and min `{w, h}` (seed sensibly, Nathan tunes). The max is **rendered, not stored**: the card wrapper's width caps at `innerWidth − 2·VIEWPORT_MARGIN` and its height at the band actually available on the placed side of the link (from `measure()` + gap + margin) — PickerMenu's centered branch has no vertical clamp and its flip never re-checks, so a viewport-tall stored size would otherwise open with its top third above the screen where the card's own scroller can't reach.
+- Post-drop rule: the grace re-arms on the **first pointer movement after the drop** — not on inside-then-out, which leaves a card released beyond the size cap standing forever (the pointer never re-crosses it).
+- Docs (falsified here): the `PagePreviewPM.md` hover paragraph gains the free-edge resize.
 
 **Failure half:** Escape mid-drag aborts the drag to the pre-drag size and the card stays open (`swallowActiveEscape`); `pointercancel`/`lostpointercapture` abort identically (the gesture skeleton owns this).
 
 **Steps:**
-- [ ] Build; CDP-verify: e/s/se track the pointer 1:1 on their axes (centered card width grows both sides — expected), drag released outside the card doesn't close it, Escape aborts without closing, flipped-up card shows no bottom/corner strips.
+- [ ] Build; CDP-verify: e/s/se track the pointer 1:1 on their axes (centered card width grows both sides — expected), drag released outside the card doesn't close it and the next movement arms the grace, Escape aborts without closing, flipped-up card shows no bottom/corner strips, a tall card near a mid-page link caps to the available band.
+- [ ] Corner reachability check: NotchedPane clips via `path()` and clip-path clips hit-testing — press the exact rounded corner; if the `se` strip is unreachable there, seat the strips on the un-clipped wrapper layer.
 - [ ] Gates green → commit `feat(embeds): the hover card resizes from its free edges`.
 
 #### Task 7: The universal size persists — and the grace learns to read
@@ -249,9 +257,10 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 **Files:**
 - Modify: `Pommora/src/main/db/localState.ts` — `'hoverCard'` joins the `Scope` union (singleton key).
-- Modify: `Pommora/src/shared/bridge.ts` + `Pommora/src/preload/index.ts` + `Pommora/src/main/index.ts` — `hoverCard:get` / `hoverCard:set` channels on the embedHeights pattern, main-side shape check (`{w: number, h: number}`).
-- Create: `Pommora/src/renderer/src/Embeds/hoverCardSize.ts` — THE accessor: async-seeded module cache, clamp against min/viewport on read (the sidebar-width precedent, `store.ts:83-92`), write-through on set. The card reads/writes only through it (the Prospects don't-foreclose).
+- Modify: `Pommora/src/shared/bridge.ts` + `Pommora/src/preload/index.ts` + `Pommora/src/main/index.ts` — `hoverCard:get` / `hoverCard:set` channels on the **tabs/previews/recents singleton shape** (`readValue`/`writeValue`), not the key-scoped embedHeights generator; main-side shape check (`{w: number, h: number}`).
+- Create: `Pommora/src/renderer/src/Embeds/hoverCardSize.ts` — THE accessor: async-seeded module cache, clamp against min on read (the sidebar-width precedent, `store.ts:83-92`), write-through on set. Signature takes an optional page path from day one (`size(pagePath?)` — today it ignores it) so the per-page-default prospect adds rows beside the singleton without touching call sites.
 - Modify: `ConnectionHoverCard.tsx` — grace duration read from a parameter with the 200ms default (Task 8 wires the setting).
+- Docs (falsified here): `ConfigurationPM.md:3` — the per-machine-chrome enumeration gains the hover-card size; the `PagePreviewPM.md` hover paragraph gains the one remembered size; `ArchitecturePM.md`'s per-machine scope-pair count is already stale (says four, five exist) — restate it countlessly while in the file.
 
 **Failure half:** an absent row → defaults; a malformed stored value (hand-edited db, stale shape) → the clamp floor/defaults, never NaN into layout.
 
@@ -280,7 +289,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 - Modify: `Pommora/src/main/readNexus.test.ts` — the round-trip key list gains it (the C-3 three-site contract).
 - Modify: `Pommora/src/renderer/src/Settings/SettingsWindow.tsx` — `Toggle` becomes a discriminated `Row` union (`{kind:'toggle',…} | {kind:'slider', key, label, hint, min, max, step, format}`); the render path switches on `kind`; the slider row mounts `design-system/components/Slider` (min 0, max 30, step 1, `format: v => v === 0 ? 'None' : `${v}s``), committing 0 as `undefined` (the clean-file discipline).
 - Modify: `ConnectionHoverCard.tsx` hosts' wiring — the grace parameter reads the store's `personalization.hoverPreviewLinger` (seconds → ms; absent → 200).
-- Docs (falsified here): `.claude/Features/ConfigurationPM.md` — the knob joins §Knobs; the Settings-window "boolean knobs" phrasing widened.
+- Docs (falsified here): `.claude/Features/ConfigurationPM.md` — the knob joins §Knobs; the Settings-window "boolean knobs" phrasing widened; §Knobs' closing "the **boolean** knobs are round-trip tested together" widens too, since the numeric key joins that test.
 
 **Negative control:** the round-trip test red with the `readNexus.ts` line removed (the silent-drop failure this key class breeds), green with it — prove both halves once while writing it.
 
