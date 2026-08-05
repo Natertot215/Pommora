@@ -115,7 +115,6 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 - Eight renderer sites repeat `if (!res.ok) showError(res.error.message)` — one `reportIfFailed(res)` helper collapses them when a ninth appears.
 - `SessionState.error` and `pageError` hold strings while the wire carries `PommoraError` whole — widening them is near-zero churn whenever a surface wants to branch on `code`.
 - **The kind key is a DELIBERATE second identity source — do not consolidate it away.** The file's kind key and its folder's sidecar declare the same thing on purpose: their *disagreement is the detection signal* that makes a mislocated file recognisable at all. A checksum, not the two-writers defect — the one place that lesson does not apply.
-- `useExitPresence`'s default exit window is a raw constant decoupled from the motion tokens — derive it from `duration.slow` + slack or menus flash on close if the tokens are ever retuned.
 - `useDismiss` coordinates with picker portals via per-event DOM queries — a shared open-picker counter removes the DOM handshake.
 - The preview window fetches the same page twice (PageEmbed's body load + PreviewInspector's frontmatter fetch) — lift one `openPage` result to the window and pass both halves down.
 - When a third boolean-dropdown consumer appears, extract the `useMenuPresence` bundle — at two consumers it is indirection, not DRY.
