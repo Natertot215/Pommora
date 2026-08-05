@@ -957,6 +957,8 @@
   right: 12px;
   color: var(--code);
   text-transform: uppercase;
+  /* The line-count hanging indent inherits — reset it or the chrome slides left by the zone. */
+  text-indent: 0;
   pointer-events: none;
   user-select: none;
 }
@@ -980,14 +982,21 @@
 /* LINE COUNT — the "Show Line Count In Code Blocks" setting. Numbers are widget chrome sitting at
    the line's own first-character position — the block's padding is the only left inset — in the
    block's own mono at label-tertiary; fence lines carry no number. The zone is ch-based (three
-   digits in THIS font), so the code column holds through 999 lines. */
+   digits in THIS font), so the code column holds through 999 lines; the ordered-list hanging
+   indent keeps a wrapped line's continuation rows under the code, never under the number. */
 .md-cb-ln {
   display: none;
 }
+:root.cb-line-count .mdpm-editor .cm-line.md-cb {
+  --cb-ln-zone: calc(3ch + var(--list-gap));
+  padding-left: calc(12px + var(--cb-ln-zone));
+  text-indent: calc(-1 * var(--cb-ln-zone));
+}
 :root.cb-line-count .md-cb-ln {
   display: inline-block;
-  min-width: calc(3ch + var(--list-gap));
+  min-width: var(--cb-ln-zone);
   padding-right: var(--list-gap);
+  text-indent: 0;
   font-variant-numeric: tabular-nums;
   color: var(--label-tertiary);
   user-select: none;

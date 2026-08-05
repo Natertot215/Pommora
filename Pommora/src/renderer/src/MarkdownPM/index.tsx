@@ -44,6 +44,7 @@ import {
   whenAcOpen,
 } from './useConnectionAutocomplete'
 import { AutocompletePanel } from './AutocompletePanel'
+import { useSession } from '../store'
 import type { ConnectionsApi } from './connections'
 import { PageHeader } from './PageHeader'
 import { ZOOM_DEFAULT, zoomFontSize } from './zoom'
@@ -130,6 +131,13 @@ export function MarkdownEditor({
   useEffect(() => {
     if (connections) viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
   }, [connections])
+
+  // The line-count flip rewraps every code line from CSS alone — CM never hears it, and a stale
+  // height map mis-seats clicks on wrapped lines. Re-measure on the knob.
+  const cbLineCount = useSession((s) => s.personalization.codeblockLineCount)
+  useEffect(() => {
+    viewRef.current?.requestMeasure()
+  }, [cbLineCount])
 
   // CM6 extensions are built once at mount, so they read live state + actions through refs. The `[[…]]`
   // autocomplete state machine is shared with table cells; this editor's seams are the candidate source
