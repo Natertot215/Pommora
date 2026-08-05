@@ -952,24 +952,29 @@
    place, the raw info word hides beneath the glyph, and the caret on the line trades it back.
    Icon rides currentColor a notch over text height; the whole glyph wears the code colour. */
 .mdpm-editor .md-cb .md-cb-lang {
+  --code-bracket-y: 0em;
   position: absolute;
   right: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   color: var(--code);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
   pointer-events: none;
   user-select: none;
 }
-.mdpm-editor .md-cb .md-cb-lang::before {
+.mdpm-editor .md-cb .md-cb-lang::before,
+.mdpm-editor .md-cb .md-cb-lang::after {
   content: "";
-  width: calc(1em + 1px);
-  height: calc(1em + 44px);
+  display: inline-block;
+  width: 1cap;
+  height: 1cap;
   background: currentColor;
-  -webkit-mask: var(--code-glyph) center / contain no-repeat;
-  mask: var(--code-glyph) center / contain no-repeat;
+  /* The chevron stroke spans half its SVG viewBox — 200% makes the DRAWN glyph fill the cap box. */
+  -webkit-mask: var(--code-chevron-mask) center / 200% no-repeat;
+  mask: var(--code-chevron-mask) center / 200% no-repeat;
+  position: relative;
+  top: var(--code-bracket-y);
+}
+.mdpm-editor .md-cb .md-cb-lang::before {
+  transform: scaleX(-1);
 }
 
 /* LINE COUNT — the "Show Line Count In Code Blocks" setting. Numbers are widget chrome sitting at
