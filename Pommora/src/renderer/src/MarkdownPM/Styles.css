@@ -888,6 +888,10 @@
   font-size: var(--cb-size);
   padding-left: 12px;
   padding-right: 12px;
+  /* Code wraps like an editor, never like prose: every row fills to the edge and breaks between
+     any two characters — a long token is never relocated whole to the next row. The line-count
+     numbers are what distinguish a fresh line from a wrap. */
+  word-break: break-all;
 }
 .mdpm-editor .cm-line.md-cb::after {
   content: "";
