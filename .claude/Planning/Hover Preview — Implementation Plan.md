@@ -1,6 +1,6 @@
 ## Hover Preview — Implementation Plan
 
-> **Status:** written, pending review · Spec: [[Hover Preview — Decision Log]] · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: [[Hover Preview — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
