@@ -58,7 +58,7 @@ const scrubCardScale = (v: number, viewId: string): void => {
 }
 
 // ── KNOB — ViewSettings' own height ceiling (its own, not the shared MENU_MAX_HEIGHT): the full door
-// stacks the tallest content (title + grid + four leaf rows + the pinned Format), so it earns more
+// stacks the tallest content (title + grid + four leaf rows + the pinned footing), so it earns more
 // room before the body scrolls. Applies to the editor + its Layout leaf. ──
 const VIEWSETTINGS_MAX_HEIGHT = 375
 // ── KNOB — the leaf slider's floors (matches the SettingsPane sibling): a blank Group/Filter/Sort leaf
@@ -260,10 +260,6 @@ export function ViewSettings({
     </div>
   )
 
-  const formatRow =
-    view.type === 'table' ? (
-      <MenuBottomRow>{formatToggle('layers-2', 'Format')}</MenuBottomRow>
-    ) : null
 
   const header =
     door === 'full' ? (
@@ -298,7 +294,7 @@ export function ViewSettings({
   const mainFrame = (
     <MenuScrollFrame
       header={header}
-      footer={view.type === 'cards' ? cardsFooting : formatRow}
+      footer={view.type === 'cards' ? cardsFooting : null}
       maxHeight={VIEWSETTINGS_MAX_HEIGHT}
     >
       {/* The full door carries its own click-to-edit identity; the flat door (SettingsPane → Layout)

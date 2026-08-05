@@ -262,9 +262,9 @@ export const bottomRow = style([
  *  context (margin-top:auto is a no-op there), so panes already pinning it via a frame are unchanged. */
 export const bottomBar = style({ marginTop: 'auto' })
 
-// ── Footing tone knobs — the pinned footer's parts (the Format control, the +/⋮ BottomRow). A footing
+// ── Footing tone knobs — the pinned footer's parts (the cards Style row, the +/⋮ BottomRow). A footing
 // reads a step quieter than a body row, an ancillary action; its symbol sits a step under the TopBar
-// chevron. One source; the Format row + MenuBottomRow route here.
+// chevron. One source; the Style row + MenuBottomRow route here.
 export const footingLabel = style([text.callout.emphasized, { color: c.label.secondary }])
 export const footingSymbol = style({
   display: 'inline-flex',
