@@ -65,9 +65,9 @@ For this; the distingushment of what type of code it is should come alongside th
 ```JSON
 ```Ect...
 
-These are examples of what ive seem; the type of code would be displayed as a right-side glyph on the codeblock; not within the ``` line when the caret is't directly on it.
+These are examples of what I've seen; the type of code would be displayed as a right-side glyph on the code block, not within the ``` line when the caret isn't directly on it.
 
-Propsectives here can include a drag-handle menue of "Style" > Languages; changing the type of codeblock here.
+Prospectives here can include a drag-handle menu of "Style" > Languages; changing the type of code block here.
 
 ##### Claude
 

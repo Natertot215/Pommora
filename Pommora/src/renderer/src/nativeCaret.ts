@@ -121,10 +121,13 @@ function fieldCaret(el: Field): CaretRect | null {
   m.textContent = ''
   const x = sr.left - el.scrollLeft
   const y = sr.top - el.scrollTop
-  // No box (detached / display:none), or the caret scrolled out of view on either axis.
+  // No box (detached / display:none).
   if (rect.width === 0 && rect.height === 0) return null
-  if (x < rect.left - 1 || x > rect.right + 1 || y < rect.top - 1 || y > rect.bottom + 1)
-    return null
+  // Scrolled out of view. Horizontally the caret is a point, so a point test holds. Vertically it's
+  // a bar that can overhang the field's border box at rest — a line-height tighter than the font's
+  // own content area gives the line box negative half-leading — so the bar need only intersect.
+  if (x < rect.left - 1 || x > rect.right + 1) return null
+  if (y + styledH <= rect.top || y >= rect.bottom) return null
   return { x, y, h: styledH }
 }
 
