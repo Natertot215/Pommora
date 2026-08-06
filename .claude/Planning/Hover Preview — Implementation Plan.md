@@ -338,7 +338,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 #### Task 10: Sweep, claim, verify, attack
 
-- [ ] `.claude/Planning/Pending-Work 8-5.md` hover-card entry removed; `Context.md` untouched here (the handoff owns it).
+- [ ] `.claude/Planning/Pending-Work 8-5.md` hover-card entry removed; `ContextPM.md` untouched here (the handoff owns it).
 - [ ] Dead-vocabulary sweep with its control; full gates; the Delivery Claim written.
 - [ ] Neutral verifier (claim vs spec vs commit range), then the attack pass, then the running-thing interface pass.
 - [ ] Lessons routed; Log closed.
@@ -354,7 +354,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
   - [x] Task 2 — card lifecycle · single app-level mount
 - [ ] **Phase 2** — body
   - [x] Task 3 — resolve-first open (the resolve-only api rides Task 4, its one consumer)
-  - [ ] Task 4 — mount
+  - [x] Task 4 — mount
 - [ ] **Phase 3** — beak
   - [ ] Task 5 — center placement + sliding beak
 - [ ] **Phase 4** — size
