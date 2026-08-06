@@ -353,7 +353,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
   - [x] Task 1 — trigger cancel + element handover
   - [x] Task 2 — card lifecycle · single app-level mount
 - [ ] **Phase 2** — body
-  - [ ] Task 3 — resolve-first + resolve-only
+  - [x] Task 3 — resolve-first open (the resolve-only api rides Task 4, its one consumer)
   - [ ] Task 4 — mount
 - [ ] **Phase 3** — beak
   - [ ] Task 5 — center placement + sliding beak
