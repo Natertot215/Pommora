@@ -355,8 +355,8 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 - [x] **Phase 2** — body · gate closed
   - [x] Task 3 — resolve-first open (the resolve-only api rides Task 4, its one consumer)
   - [x] Task 4 — mount
-- [ ] **Phase 3** — beak
-  - [ ] Task 5 — center placement + sliding beak
+- [x] **Phase 3** — beak · gate closed
+  - [x] Task 5 — center placement + sliding beak
 - [ ] **Phase 4** — size
   - [ ] Task 6 — free-edge resize
   - [ ] Task 7 — persisted universal size

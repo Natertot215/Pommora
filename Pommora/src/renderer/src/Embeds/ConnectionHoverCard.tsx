@@ -163,7 +163,13 @@ export function ConnectionHoverCard(): React.JSX.Element {
   }, [hovered])
 
   return (
-    <PickerMenu solid open={hovered !== null} triggerRef={anchorRef} manageFocus={false}>
+    <PickerMenu
+      solid
+      open={hovered !== null}
+      triggerRef={anchorRef}
+      manageFocus={false}
+      origin="center"
+    >
       <div ref={cardRef} className="conn-hover-body" style={{ width: CARD.w, height: CARD.h }}>
         {hovered && (
           <PageEmbed
