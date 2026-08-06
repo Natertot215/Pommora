@@ -304,7 +304,9 @@ export function TableRowDnd({
     <Ctx.Provider value={value}>
       <div ref={content} className="table-dnd">
         {children}
-        {drag.slot && (
+        {/* A noop slot draws nothing: the line promises a move, and the release commits only where the
+            slot differs from the row's own position. */}
+        {drag.slot && !drag.slot.noop && (
           <div
             className="table-drop-line"
             aria-hidden

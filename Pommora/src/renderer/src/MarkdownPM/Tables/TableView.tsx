@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/noArrayIndexKey: a Markdown table's rows, columns, and cells are
 // plain strings with no identity but their position — the index IS the key.
 import './widget.css'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { Icon } from '@renderer/design-system/symbols'
 import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
@@ -127,38 +127,46 @@ export function TableView({
   // O(rows) forced layout on the highest-frequency trigger there is. Text that reflows a row still lands —
   // it changes the table's own box, which the observer below catches.
   const shape = `${model.rows.length}x${model.columns.map((c) => `${c.align}:${c.dashes}`).join('|')}`
+  const measure = useCallback((): void => {
+    const table = tableRef.current
+    const wrap = wrapRef.current
+    if (!table || !wrap) return
+    const w = wrap.getBoundingClientRect()
+    const headerCells = table.tHead?.rows[0]?.cells
+    const colGeom = headerCells
+      ? Array.from(headerCells).map((c) => {
+          const b = c.getBoundingClientRect()
+          return { left: b.left - w.left, width: b.width }
+        })
+      : []
+    const allRows = [...(table.tHead?.rows ?? []), ...(table.tBodies[0]?.rows ?? [])]
+    const rowGeom = allRows.map((r) => {
+      const b = r.getBoundingClientRect()
+      return { top: b.top - w.top, height: b.height }
+    })
+    setGeom({ cols: colGeom, rows: rowGeom })
+  }, [])
   useLayoutEffect(() => {
-    const measure = (): void => {
-      const table = tableRef.current
-      const wrap = wrapRef.current
-      if (!table || !wrap) return
-      const w = wrap.getBoundingClientRect()
-      const headerCells = table.tHead?.rows[0]?.cells
-      const colGeom = headerCells
-        ? Array.from(headerCells).map((c) => {
-            const b = c.getBoundingClientRect()
-            return { left: b.left - w.left, width: b.width }
-          })
-        : []
-      const allRows = [...(table.tHead?.rows ?? []), ...(table.tBodies[0]?.rows ?? [])]
-      const rowGeom = allRows.map((r) => {
-        const b = r.getBoundingClientRect()
-        return { top: b.top - w.top, height: b.height }
-      })
-      setGeom({ cols: colGeom, rows: rowGeom })
-    }
     measure()
     const ro = new ResizeObserver(measure)
     if (tableRef.current) ro.observe(tableRef.current)
     return () => ro.disconnect()
-  }, [shape])
+  }, [shape, measure])
+
+  // A reorder permutes row heights while leaving both the shape and the table's own box untouched, so
+  // neither the sweep above nor the observer would fire — the grips and the next drop's slot math would
+  // keep measuring the pre-drop rows. The drop arms this; the model landing spends it.
+  const remeasure = useRef(false)
 
   // updateDOM re-renders in place (no re-mount), so a live drag survives the model update.
   // Clear when the model changes so the dropped item settles without holding its drag transform.
   useLayoutEffect(() => {
     setDrag(null)
     setResize(null)
-  }, [model])
+    if (!remeasure.current) return
+    remeasure.current = false
+    measure()
+  }, [model, measure])
 
   // One editor at a time: a pointer-down anywhere outside the table demotes the active cell back to
   // static. Cell↔cell moves go through `navigate`/`onActivate` (which set a new active), so this only
@@ -205,6 +213,7 @@ export function TableView({
       // A real reorder clears drag via the model-change effect; a no-op (same serialization) won't re-render, so clear here.
       onDrop: () => {
         if (current.to === current.from || !onReorder(axis, current.from, current.to)) setDrag(null)
+        else remeasure.current = true
       },
       onAbort: () => setDrag(null),
     })

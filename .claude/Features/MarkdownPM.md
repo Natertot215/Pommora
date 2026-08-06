@@ -123,6 +123,8 @@ The wikilink resolver is **wired** to `@shared/connections`: resolution, styling
 
 - **Emphasis markers are located by geometry, not width-subtraction** — per side, take the *tighter* of the content bounds and place the `*`/`_` run exactly that many chars adjacent; naive `start + width` mislocates whenever an inner span abuts the delimiter run (`**a *b* c**`). The one genuinely subtle AST algorithm; re-validate against the parser's offset semantics if the parser is swapped.
 
+- **A closed top-level fence owns its bytes against every box construct** — a `>` or `[!callout]` line inside one is code text, so it grows no quote chrome, no block grip, and no drop slot. A *quoted* fence is the exception, keeping its box because the `>` is real there. The block resolver and the decoration pass read the same closed-and-unquoted rule; a layer deciding this for itself is how a grip comes to offer lines out of a code block.
+
 - **Block constructs confirm by parsing a single line in isolation** — which is why a bare `---` is *always* a thematic break. Setext H2 was removed; a setext-underline guard must never be reintroduced.
 
 - **`WidgetType.ignoreEvent` defaults to TRUE** — a CM6 widget swallows every event from its own DOM, so an interactive glyph widget (bullet, checkbox) needs an explicit `ignoreEvent → false` or a pointerdown never reaches its handler (the bug that made bullet-drag silently dead).
