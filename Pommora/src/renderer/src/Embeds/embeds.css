@@ -23,9 +23,11 @@
 /* The connection hover card's body: a floating surface, so its scroll always contains — an
    over-scroll must never reach the editor underneath (moving that editor detaches the card's
    own anchor). */
+/* No overflow here: the pane's clip-path bounds the visuals and the pgembed owns the scroll,
+   while the resize strips straddle this box's edge — clipping would leave the visible border
+   inert under the pointer. */
 .conn-hover-body {
   position: relative;
-  overflow: hidden;
 }
 .conn-hover-body .pgembed {
   overflow-y: auto;

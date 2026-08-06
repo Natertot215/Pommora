@@ -148,23 +148,34 @@ export function ConnectionHoverCard(): React.JSX.Element {
       })
     }
 
+  const retargetRaf = useRef(0)
   useEffect(() => {
     present = (next) => {
+      // A close or a newer target always beats a queued retarget — an uncancelled beat would
+      // re-open the card right after the navigation that closed it.
+      if (retargetRaf.current) {
+        cancelAnimationFrame(retargetRaf.current)
+        retargetRaf.current = 0
+      }
       const cur = hoveredRef.current
       // Retarget routes through a closed beat: PickerMenu re-decides its flip only on open=false,
-      // and the Bloom replays at the new link.
-      if (next && cur && next.page.id !== cur.page.id) {
+      // and the Bloom replays at the new link. A different ELEMENT for the same page retargets
+      // too — placement captured the old node, so an in-place swap would leave the card frozen
+      // over the first link.
+      if (next && cur && (next.page.id !== cur.page.id || next.el !== cur.el)) {
         setHovered(null)
-        requestAnimationFrame(() => setHovered(next))
+        retargetRaf.current = requestAnimationFrame(() => {
+          retargetRaf.current = 0
+          setHovered(next)
+        })
         return
       }
-      // Same target while open refreshes the element in place (a re-entry re-fires the intent, and
-      // a decoration rebuild hands us a fresh span) — never a close/reopen flicker.
       if (next) setSize(hoverCardSize()) // every open adopts the current universal size
       setHovered(next)
     }
     return () => {
       present = null
+      if (retargetRaf.current) cancelAnimationFrame(retargetRaf.current)
     }
   }, [])
 
@@ -204,8 +215,12 @@ export function ConnectionHoverCard(): React.JSX.Element {
     // rebuild the same-target refresh didn't heal) there is nothing to point at.
     const onMove = (e: MouseEvent): void => {
       // A live resize suspends the whole leave lifecycle — the drag routinely exits the card, and
-      // the grace re-arms naturally on the first movement after the drop.
-      if (resizingRef.current) return
+      // the grace re-arms naturally on the first movement after the drop. Clearing (not just
+      // skipping) also disarms a countdown that pre-dates the drag, or it fires mid-resize.
+      if (resizingRef.current) {
+        clearGrace()
+        return
+      }
       if (!hovered.el.isConnected) {
         close()
         return

@@ -395,6 +395,10 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 ### Closeout
 
+**Attack pass (post-claim):** five verified findings, all at cross-phase seams. Fixed in the closing commit: a same-page second link now retargets the card (element identity joined the retarget condition); a close landing inside the retarget beat can no longer be undone by the queued frame (the rAF is held and cancelled); a linger countdown armed before a resize clears when the drag begins; the card body's overflow clip came off so the resize strips' straddle is reachable. **Ruled, not fixed:** symmetric width growth under the centered anchor (the edge tracks at half the cursor) is B-2's ratified "distributes around the link" — Nathan judges the feel in the walkthrough, with 2×-delta as the alternative if 1:1 edge tracking wins. Two unknowns carry ten-second in-app checks: the height band under a very short window, and a possible one-frame height pop when consecutive cards open on opposite sides.
+
+**Verdicts:** neutral claim verification TRUE-WITH-NOTES (notes resolved in the record); attack pass 5 findings / 10 kills / 2 unknowns; gates green throughout (2,188 tests at close).
+
 **Delivery Claim** — the hover preview shipped as ratified, base `3ce8b642` through the gate-close commit:
 
 1. Every requirement (1–10) traces to a landed task; the plan's Progress tree names each commit.
