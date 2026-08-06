@@ -364,8 +364,8 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
   - [x] Task 8 — the Settings slider
 - [x] **Phase 6** — cells
   - [x] Task 9 — resting-cell trigger
-- [ ] **Phase 7** — closeout
-  - [ ] Task 10
+- [x] **Phase 7** — closeout
+  - [x] Task 10 — sweep run (PLACEHOLDER contract → 0; control LEAVE_GRACE_MS → 2)
 
 ### Rulings
 
@@ -392,3 +392,11 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 - In-card connection clicks opening a preview (Nathan's parked call) · live-cell connection handlers · per-page default size (prospect; the accessor seam is the door).
 
 ### Closeout
+
+**Delivery Claim** — the hover preview shipped as ratified, base `3ce8b642` through the gate-close commit:
+
+1. Every requirement (1–10) traces to a landed task; the plan's Progress tree names each commit.
+2. The acceptance criterion's behaviors were verified in the running app through Phase 2–3 (bloom with content, no banner/title, in-card scroll contained, tiles and links inert, click-mid-intent no-orphan, navigation close, scroll-follow, detach close, retarget re-bloom, sliding beak centered and clamped); Phases 4–6 verified by gates + review with the interaction pass deferred to Nathan's walkthrough at his direction.
+3. No new dependency. No duplicated mechanism: the body is PageEmbed, placement is PickerMenu's centered branch, resize rides the shared gesture skeleton, persistence the localState singleton shape, the slider the design-system Slider, the intent timer one hoisted helper.
+4. Nothing left with nothing to vary; the one scaffold (empty div) became the body.
+5. Nothing added to a high-frequency path ahead of its class gate; the mouseover paths read no layout before gating.

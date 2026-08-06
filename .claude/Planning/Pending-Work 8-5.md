@@ -84,10 +84,6 @@ A complete spec for an embeddable drawing surface exists, and it should stay unb
 
 ### Tweaks & Completions
 
-#### The Connection Hover Card Is an Empty Box
-
-Hovering an inline `[[Link]]` pops a glass panel with nothing in it — `Embeds/ConnectionHoverCard.tsx` renders a bare placeholder div inside the PickerMenu. It fires constantly during ordinary writing, making it probably the most-seen unfinished thing in the app. The body renderer already exists one file over as `PageEmbed`, and the hover already carries the target page — mostly wiring a body into a shell that's already positioned and dismissed.
-
 #### A Trash Surface So Deleting Stops Being Permanent
 
 The restore op is a live arm in `main/mutate.ts`; what's missing is one line — `listBundles` has no entry in `shared/bridge.ts` — so nothing in the renderer can ask what's in the trash. That channel plus a simple list surface turns a fully-built mechanism into something usable, and makes deletion feel safe for the first time.
