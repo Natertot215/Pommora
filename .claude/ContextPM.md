@@ -2,15 +2,15 @@
 
 ### Current Focus
 
-**Embedded pages shipped whole; what's left is Nathan's hands.** `![[Title]]` is live in MarkdownPM end to end — the tile, the guards, the menus, the autocomplete, the cache, the rename sweep — with every gate green and the interaction walkthrough driven headlessly. What no headless driver can honestly produce is collected as the NEEDS-NATHAN list in [[Embedded Pages — Interaction Walkthrough]]: the native menu picks, the real-pointer feel checks, one real ⌘Q mid-debounce, and the SurfacePM visual baseline. Driving that list is the arc's last mile.
+The active stretch is MarkdownPM. Embedded pages are complete end to end — the tile, the guards, the menus, the autocomplete, the warm cache, and the rename sweep — followed by the typed codeblocks, the table append strips, and, most recently, the connection hover previews: resting on a resolved `[[Connection]]` opens a compact read-only preview of the target page, anchored to the link, resizable to one per-machine remembered size, with a Settings ▸ Pages linger slider and the same trigger in resting table cells.
 
-**The NexusRecord is finished as a mechanism, and now it needs a surface.** Every in-app delete produces one bundle in `.trash` — the artifact under the name it always had, plus a record of what it was and where it belonged, by id rather than by path — written before anything is destroyed, and restore spends it against the *current* tree, reconciled so it can't reintroduce a tag or a value nothing stands behind. The mechanism's full story is [[NexusRecordPM]]'s; what's open is reach: `listBundles` has no IPC channel and no caller, so everything here is addressable only from tests. The trash browser is what turns it into something usable, and its first task is one bridge entry.
-
-Below that: a no-op option rename still re-dates every page holding the option — the fix is moving the option cascade onto the governed sweep's change detection, a replumb of the cascade's call sites rather than a patch; the record's three flagged rulings (Pending, below); and pushing main.
-
-**Identity is kind-first** — the model itself is canonized in ClaudeMD. What the ledger adds is the half that isn't obvious from the model: an ID-less file is the *opposite* of Unknown and stays fully live — it adopts at open and is still swept, because identity decides whether a value can be handed back, never whether it may be cleared. One resolver owns folder classification at any depth, and an agenda config counts only where the nexus records its sidecar ID, which is what makes a hand-made or relocated config inert without a rule enforcing it. The old agenda architecture is gone rather than adapted — what replaces it starts from the settled identity model and an empty schema, because the shape both kinds carried was Apple's, never re-chosen.
+What remains on the stretch is hand verification. The embedded-pages checks that a headless driver can't honestly produce — the native menu picks, the real-pointer feel checks, one real ⌘Q mid-debounce, and the SurfacePM visual baseline — plus the hover card's feel decisions, chiefly whether the symmetric width resize (the edge tracks at half the cursor because the card grows around its anchor) should flip to 1:1 edge tracking. The local commit batch on `main` is unpushed until then.
 
 ### Recent Work
+
+#### Hover Previews (08-05)
+
+The connection hover card received its body: resting on a resolved `[[Connection]]` opens a compact read-only preview of the target page through the shared embed framework, without its banner or inline title. The card anchors to the live link with the pane's beak following it, resizes from its right edge, bottom edge, and corner to a single per-machine remembered size, and holds glance-only interaction — content scrolls, headings fold on click, and the caret never enters. A Settings ▸ Pages slider sets how long the card lingers after hover-off, and resting table cells raise the same card on the shared intent delay. The build also consolidated the hover lifecycle: one card exists app-wide, a click consumes a pending intent, and navigation closes an open card. → [[MarkdownPM]] §II. Hover Previews · HistoryPM.md
 
 #### MarkdownPM Tweaks (08-04)
 
@@ -42,7 +42,7 @@ Swift parity came out wholesale — the settings seed, the date shim, the color 
 
 #### The Band-Seam Law (07-30)
 
-Every disclosure-band seam in Table and Cards reads two shoulders of the view's content rhythm, state-free, owned once in the shared GroupBand chrome behind a per-view `--band-clearance` binding — collapsed heads shed their dead clearance, a band opening a disclosure leads by a single shoulder, embedded cards gained their tail seam, and the menu/pane disclosure surfaces were audited as rightly unique.
+Every disclosure-band seam in Table and Cards reads two shoulders of the view's content rhythm, state-free, owned once in the shared GroupBand chrome behind a per-view `--band-clearance` binding — collapsed heads shed their dead clearance, a band opening a disclosure leads by a single shoulder, embedded cards gained their tail seam, and the menu/pane disclosure surfaces were audited as rightly unique. A shared ActionBand component was also established; it's currently only in use by SurfacePM embeddeds for view selection and the per-view settings button, although future use-cases are intended.
 
 #### The Hardening Campaign & Its Inverse (07-29)
 
@@ -54,7 +54,7 @@ Two HOIST markers in the icon picker turned into a design-system pass: the outli
 
 #### One Syntax For Every Pommora-Owned Key (07-28 → 07-29)
 
-Properties keyed values by ULID inside a nested map while Contexts keyed theirs by name at the root — exact mirror images, each paying the cost the other refused. A page now carries `<Status>: Complete` at its root and Contexts moved to parentheses, both reading one module that owns the glyphs, the key build and parse, and every refusal message. Naming the key removed the reason four different decoders existed, and a title is unique nexus-wide because the title *is* the key its values write under. → [[PropertiesPM]] · [[ContextsPM]].
+Properties were changed to key their values under wrapped title syntax — a page carries `<Status>: Complete` at its root — with Contexts using parenthesized titles; this replaced the previous split where Properties keyed by ULID inside a nested map and Contexts by name at the root. Both syntaxes read one module that owns the glyphs, the key build and parse, and every refusal message. Naming the key removed the reason four different decoders existed, and a title is unique nexus-wide because the title is the key its values write under. → [[PropertiesPM]] · [[ContextsPM]].
 
 **Deferred:** definitions into `nexus.db` + SavedViews into `nexus.db` + an inline field-error surface + duplicate property names.
 
@@ -90,7 +90,6 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 
 - **Revisit how Pages and their data are stored in the DB** — wants a dedicated session. The content index is the adjacent question; this one is the Page storage model itself.
 - **In-view page creation.** Sparse across every surface — the item that would be felt daily; wants a brainstorm loop, not a patch.
-- **PagePreview hover.** Unbuilt, self-contained, no dependencies.
 - **Cross-location card reordering** in views — scoped and mechanical.
 - **Canvas** — the spec sits at `Planning/6-26 - Canvas Spec.md`, unbuilt.
 
@@ -114,6 +113,7 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 - Mobile iOS companion — parked, spec at `.claude/Mobile/MobileSpec.md`, no build commitment.
 - Eight renderer sites repeat `if (!res.ok) showError(res.error.message)` — one `reportIfFailed(res)` helper collapses them when a ninth appears.
 - `SessionState.error` and `pageError` hold strings while the wire carries `PommoraError` whole — widening them is near-zero churn whenever a surface wants to branch on `code`.
+- The NexusRecord's reach is tests-only: `listBundles` has no IPC channel and no caller, so the trash browser's first task is one bridge entry.
 - **The kind key is a DELIBERATE second identity source — do not consolidate it away.** The file's kind key and its folder's sidecar declare the same thing on purpose: their *disagreement is the detection signal* that makes a mislocated file recognisable at all. A checksum, not the two-writers defect — the one place that lesson does not apply.
 - `useDismiss` coordinates with picker portals via per-event DOM queries — a shared open-picker counter removes the DOM handshake.
 - The preview window fetches the same page twice (PageEmbed's body load + PreviewInspector's frontmatter fetch) — lift one `openPage` result to the window and pass both halves down.
