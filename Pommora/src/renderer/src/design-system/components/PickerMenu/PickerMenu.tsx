@@ -64,6 +64,7 @@ export function PickerMenu({
   manageFocus = true,
   contentClassName,
   style,
+  onDirection,
 }: {
   children: ReactNode
   open?: boolean
@@ -86,6 +87,9 @@ export function PickerMenu({
   manageFocus?: boolean
   contentClassName?: string
   style?: CSSProperties
+  /** Reports the effective (post-flip) direction each placement pass — for a consumer whose own
+   *  chrome depends on which side the pane opened (NotchedPane.onResize's publication pattern). */
+  onDirection?: (dir: 'down' | 'up' | 'left' | 'right') => void
 }): React.JSX.Element | null {
   const selfManaged = open !== undefined
   const { mounted, closing: exitClosing } = useExitPresence(open ?? true)
@@ -157,6 +161,7 @@ export function PickerMenu({
         decidedDir.current = eff
       }
       setEffDir(eff)
+      onDirection?.(eff)
       // Sideways: vertical mirror of the right-anchored default — anchor the far edge, beak `reserve` from it.
       if (eff === 'left' || eff === 'right') {
         const cy = t.top + t.height / 2
@@ -172,8 +177,12 @@ export function PickerMenu({
           Math.max(c, VIEWPORT_MARGIN + half),
           window.innerWidth - VIEWPORT_MARGIN - half,
         )
-        if (eff === 'up') setPos({ bottom: window.innerHeight - t.top + GAP, left })
-        else setPos({ top: t.bottom + GAP, left })
+        // The beak slides to the anchor: the layer is translateX(-50%)-anchored, so the inset
+        // measures from its left EDGE (left − half). Unclamped this reduces to half — exactly the
+        // centered beak every existing consumer already shows; a viewport clamp is what moves it.
+        const notchInsetLeft = c - (left - half)
+        if (eff === 'up') setPos({ bottom: window.innerHeight - t.top + GAP, left, notchInsetLeft })
+        else setPos({ top: t.bottom + GAP, left, notchInsetLeft })
         return
       }
       // Mirror of the default: pin the LEFT edge `reserve` before the anchor so the pane grows
@@ -216,7 +225,7 @@ export function PickerMenu({
       window.removeEventListener('scroll', measureOnFrame, true)
       window.removeEventListener('resize', measureOnFrame)
     }
-  }, [selfManaged, mounted, reserve, triggerRef, closing, origin, direction, anchorX, width])
+  }, [selfManaged, mounted, reserve, triggerRef, closing, origin, direction, anchorX, width, onDirection])
 
   // Outside clicks dismiss via the backdrop below the pane (rendered in the portal). Escape is handled
   // here since the backdrop only catches pointers.
