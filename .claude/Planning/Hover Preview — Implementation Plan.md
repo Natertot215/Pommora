@@ -349,7 +349,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 ### Progress
 
-- [ ] **Phase 1** — lifecycle · base `3ce8b642`
+- [x] **Phase 1** — lifecycle · base `3ce8b642` · gate closed
   - [x] Task 1 — trigger cancel + element handover
   - [x] Task 2 — card lifecycle · single app-level mount
 - [ ] **Phase 2** — body
@@ -368,6 +368,8 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
   - [ ] Task 10
 
 ### Rulings
+
+- Gate 1 review's one Critical held up under verification: an intent timer armed under a resting pointer survives keyboard-driven navigation (no mouseout fires when the DOM is torn out beneath a motionless cursor) and re-opened the card on a detached element. Fixed at the entry — `hoverConnection` refuses a disconnected element — plus the keydown-scheduled detach check for rebuilds under a resting pointer; both pinned by `Embeds/connectionHoverCard.test.tsx`. The simplifier's pass folded in the same commit (dispatcher inversion, inlined single-use helper, test hygiene).
 
 ### Open Against Later Tasks
 
