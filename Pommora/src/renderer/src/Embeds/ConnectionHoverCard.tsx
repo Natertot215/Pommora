@@ -100,7 +100,9 @@ export function ConnectionHoverCard(): React.JSX.Element {
 
   // Free-edge resize: right + bottom + corner, on the tile gesture skeleton. The card never grows
   // upward — a flipped-up card's bottom edge is the anchored one, so it offers width alone.
+  // The ref gates the leave lifecycle per-event; the state drives the accent-stroke class.
   const resizingRef = useRef(false)
+  const [resizing, setResizing] = useState(false)
   const begin = usePointerGesture()
   const startResize =
     (axes: { x?: boolean; y?: boolean }) =>
@@ -117,6 +119,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
         swallowActiveEscape: true,
         onActivate: () => {
           resizingRef.current = true
+          setResizing(true)
           return true
         },
         onDragMove: (ev) => {
@@ -132,6 +135,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
         },
         onDrop: () => {
           resizingRef.current = false
+          setResizing(false)
           // Only the dragged axes persist — the other rides the stored value, or a width-only
           // drag near a cramped link would silently ratchet the universal height down to that
           // link's band-clamped render.
@@ -143,6 +147,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
         },
         onAbort: () => {
           resizingRef.current = false
+          setResizing(false)
           setSize(start)
         },
       })
@@ -276,7 +281,11 @@ export function ConnectionHoverCard(): React.JSX.Element {
       origin="center"
       onDirection={setDir}
     >
-      <div ref={cardRef} className="conn-hover-body" style={{ width: shown.w, height: shown.h }}>
+      <div
+        ref={cardRef}
+        className={`conn-hover-body${resizing ? ' is-resizing' : ''}`}
+        style={{ width: shown.w, height: shown.h }}
+      >
         {hovered && (
           <PageEmbed
             key={hovered.page.path}
