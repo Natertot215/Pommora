@@ -21,10 +21,11 @@ Nathan's live refinements then tightened the card: a scroll-only interior (no gu
 
 #### Pending Focuses
 
-- Restart the dev process (the `hoverCard` IPC is main-side), then feel out the card: the symmetric width resize (a one-line flip to 1:1 edge tracking if it reads laggy), the two ten-second checks above, and the linger slider end to end.
+- Restart the dev process (the `hoverCard` IPC is main-side), then fill out the card: the two ten-second checks above and the linger slider end-to-end.
 - Drive the NEEDS-NATHAN list in the embedded-pages walkthrough doc — native menu picks, real-pointer checks, one real ⌘Q, the SurfacePM visual baseline.
 - Push the local batch when satisfied.
-- The prioritized future-work survey stands in `Planning/Pending-Work 8-5.md`; the `*`-bullet ruling and the option-rename replumb remain standing.
+- The prioritized future-work survey is in Planning/Pending-Work 8-5.md; the option-rename replumb remains in effect.
+- Migrate `listDrag` and `blockDrag` onto `beginPointerGesture` — scoped as its own pass after the fix batch settles; the rest of the gesture family stays on the standing Debt line.
 
 #### Session Pointers
 
@@ -43,7 +44,7 @@ Nathan's live refinements then tightened the card: a scroll-only interior (no gu
 
 ## Transcript
 
-**==COMPACTION==**
+**|| COMPACTION ||**
 
 ##### Claude
 
@@ -118,6 +119,7 @@ Don't test yourself. Make sure the auto-complete works too, since the mirrored ]
 ##### Claude
 
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/editor/embedGripMenu.ts
+  
 Critical check — must make sure a bare `![[]]` doesn't get claimed as an embed token itself (which would mount a widget over the line and swallow the caret):
 
 - **Read:** Pommora/src/renderer/src/MarkdownPM/editor/embedRanges.ts
@@ -132,6 +134,7 @@ Critical check — must make sure a bare `![[]]` doesn't get claimed as an embed
 - **Bash:** Check panel hide condition
 - **Bash:** Run typecheck, tests, lint
 - **Edit:** .claude/Features/MarkdownPM.md
+  
 All green — 2164 tests, typecheck and lint clean. Committing (explicit paths, doc bundled):
 
 - **Bash:** Commit the Insert ▸ Page autocomplete handoff
@@ -174,6 +177,7 @@ Two threads now — dispatching the grip-alignment fix to a subagent as asked, w
 - **Read:** Pommora/src/renderer/src/Embeds/tileWarm.ts
 - **Edit:** Pommora/src/renderer/src/Embeds/tileWarm.ts
 - **Write:** Pommora/src/renderer/src/Embeds/tileWarm.ts
+  
 Now wiring the seam into the widget and merging cached metadata on warm restore in PageEmbed:
 
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/editor/embedWidget.tsx
@@ -181,19 +185,23 @@ Now wiring the seam into the widget and merging cached metadata on warm restore 
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/editor/embedWidget.tsx
 - **Edit:** Pommora/src/renderer/src/Embeds/PageEmbed.tsx
 - **Edit:** Pommora/src/renderer/src/Embeds/PageEmbed.tsx
+  
 Adding a compact test pinning the seam's roundtrip, invalidation, and per-chain isolation:
 
 - **Bash:** Check PageDetail shape for test fixture
 - **Write:** Pommora/src/renderer/src/Embeds/tileWarm.test.ts
 - **Bash:** Run typecheck, tests, lint
+  
 All green — 2166 tests. Adding the Features doc line, then committing:
 
 - **Bash:** Find the embed-tile paragraph in the Features doc
 - **Edit:** .claude/Features/MarkdownPM.md
 - **Bash:** Commit the tile warm cache
+  
 The `connections.test.ts` update (the empty-query A–Z pin) missed the earlier autocomplete commit — folding it in now:
 
 - **Bash:** Commit the missed test file
+  
 Found it and built the fix in the system's own natural home. Summary of both threads:
 
 **The scroll/caret reset.** The editing flip itself was innocent — the tile re-renders its same React root and only reconfigures editability, no remount. The real loss path is the outer editor's viewport management: CodeMirror tears down a tile's DOM whenever it leaves the rendered viewport or a rebuild drops the widget, the nested editor unmounts whole, and it re-created *cold* — because block tiles were the one embed surface with no warm seam. Tabs and the floating preview already cache editor state through the `WarmSeam` (capture at unmount, restore at mount), and `PageEmbed` already accepted one; tiles just never passed it.
@@ -213,6 +221,7 @@ move the grip -4pt.
 - **Bash:** Read the current grip-top rule
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/Styles.css
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/Styles.css
+  
 Moved — `--grip-top` is now `16px` (was `4px + 16px`), live via CSS HMR. The comment now marks it as a KNOB tuned by eye rather than claiming a derivation the value no longer matches. Still uncommitted with the rest of the grip work — say the word when it looks right and I'll fold it into the batch.
 
 ##### Nathan
@@ -289,6 +298,7 @@ The warm seam didn't cure the flip itself, so the editing exit must genuinely re
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/index.tsx
 - **Bash:** Re-run gates
 - **Bash:** Commit the reattach heal
+
 Found the real mechanism this time. The editing flip never unmounts the inner editor — CodeMirror reuses the tile's DOM (that's why the warm cache never fired) — but while rebuilding the tile's range it briefly detaches and re-inserts that DOM, and the browser silently zeroes the scroll position of every scroller inside a disconnected subtree. No scroll event fires, no unmount happens; the React tree survives with its position simply wiped to top.
 
 That silence is also the opening for the fix: the editor's live scroll tracker (`lastScrollTop`, which already feeds the warm capture) never sees the wipe, so it still holds the true position. A ResizeObserver on the scroller — which fires on every reattach, before paint — now reasserts the tracked position whenever the scroller reads zero without the tracker ever having recorded a scroll to zero. A genuine scroll to top updates the tracker first, so it's never fought. This heals the caret-exit flip, and equally any other rebuild that re-slots tile DOM.
@@ -314,6 +324,7 @@ The observer was the wrong signal — a full-reuse re-slot (widget unchanged, as
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/index.tsx
 - **Bash:** Check import style in index.tsx
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/index.tsx
+
 Now the trigger side in the widget module:
 
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/editor/embedWidget.tsx
@@ -322,6 +333,7 @@ Now the trigger side in the widget module:
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/editor/embedWidget.tsx
 - **Bash:** Run gates
 - **Bash:** Commit the registry-driven heal
+
 Replaced, at the source this time. The ResizeObserver missed your cases because a full-reuse re-slot — what happens when a table, codeblock, or blockquote redraw rebuilds the tile's neighborhood — fires *no* widget callback and doesn't change the scroller's box size, so nothing observable happened from inside the tile. The one signal a re-slot can never dodge is the outer editor's own update cycle, since CodeMirror is the only thing that ever moves that DOM.
 
 So the heal is now registry-driven: every warm-seamed editor registers a self-check in the tile cache module (scroller reads zero while the live tracker holds a real position → the wipe → reassert), and the outer editor runs the whole set from its measure phase after *any* update on a tile-bearing document. That covers every trigger class at once — caret into tables, codeblocks, quotes, grip redraws, editing flips, future glyphs — rather than enumerating them. It runs before paint (no top-flash), the check is a handful of `scrollTop` reads batched into CM's own measure pass, and a false fire is a no-op since a genuine scroll to top updates the tracker first.
@@ -342,11 +354,7 @@ Please find what already exists for this within CM6 or Pommora if included -- es
 
 For this; the distingushment of what type of code it is should come alongside the syntax; or follow obsidan/commonmark specifications:
 
-```YAML
-```JSON
-```Ect...
-
-These are examples of what ive seem; the type of code would be displayed as a right-side glyph on the codeblock; not within the ``` line when the caret is't directly on it.
+These are examples of what I've seen; the type of code would be displayed as a right-side glyph on the code block, not within the line when the caret isn't directly on it.
 
 Propsectives here can include a drag-handle menue of "Style" > Languages; changing the type of codeblock here.
 
@@ -395,6 +403,7 @@ While the simplifier runs, starting the codeblock investigation — read-only, n
 - **Read:** Pommora/src/renderer/src/MarkdownPM/Styles.css
 - **Bash:** Find md-cb application and fence info string parsing
 - **Bash:** Read fence regex and the codeblock decoration pass
+
 The fence layer is fully mapped — now the color primitives side:
 
 - **Bash:** List design tokens and find the solids
@@ -404,6 +413,7 @@ The fence layer is fully mapped — now the color primitives side:
 - **Bash:** Check solid var bridge and tint steps
 - **Bash:** Check installed CM language packages
 - **Bash:** See full working-tree state
+
 Status while the Opus simplifier finishes its pass (it's already collapsed a few things — the EOF branch in `embedInsertAfter`, a find-based `tileEdgeMarker`, the PageEmbed initializer — and is still running):
 
 **Codeblock research is done.** The picture: Pommora's fence model is entirely hand-rolled (`fenceBlocks` in the detect layer feeds the `md-cb` line chassis, and the ```` ``` ```` delimiter lines already hide their syntax when the caret's outside the block — which is exactly the seam the language glyph wants). Fence *content* is deliberately excluded from the inline token pass, so codeblocks render as plain mono text — no highlighting exists yet. On the CM side, the Lezer markdown parser is already running and supports nested language parsing per fence info string; `lang-javascript`, `lang-css`, and `lang-html` are already in `node_modules`, and the `HighlightStyle` machinery ships with `@codemirror/language` — nothing is wired. On the token side, the spectrum solids exist only as hashed vanilla-extract values (no literal `--solid-*` CSS vars yet — only `--accent`, `--code`, `--error` derive from them), and the established pastel mechanism is `color-mix` — so your "solids + light white tint" maps cleanly onto existing machinery without new primitives.
@@ -423,10 +433,12 @@ Simplifier's still working — full fold, commit, and the design proposal when i
 Simplifier's back — its three edits were already visible to me and all check out (the EOF-branch collapse is byte-identical by construction, the `.find()` rewrite is mechanical, and the PageEmbed initializer preserves the overlay rule). It also correctly declined merging the empty-query browse into the ranked pipeline — the sort axes genuinely differ. Verifying the grip value it mentioned (28px — looks like your hand-tune) and running the gates myself:
 
 - **Bash:** Confirm grip value and run gates
+
 All green. Applying the one doc reframe, then committing:
 
 - **Edit:** .claude/Features/MarkdownPM.md
 - **Bash:** Commit simplifier fold, docs, and CSS tweaks
+
 Committed as `c44c0537` — the simplifier's fold (net −12 lines: the EOF branch, the `.find()` rewrite, the slot merge), your CLAUDE.md and Handoff edits, the 28px grip tune, and the Features doc's re-slot-heal clause. Only `tileA.png` remains untracked. The simplifier's one cross-file flag for your awareness: there are now three warm caches sharing a shape (tabs, preview, tiles), but each carries a different invalidation policy, so it recommended against a shared factory — I agree.
 
 ---
@@ -468,11 +480,13 @@ Line-level reveal it is, and the glyph is `</> TYPE` from the lucide code symbol
 - **Bash:** Find intent types and lineWidget materialization
 - **Bash:** Read lineWidget materializer and WidgetSpec
 - **Bash:** Read LineWidget class
+
 All mechanisms mapped. Building now — deps first, then the layers:
 
 - **Bash:** Install language deps and find pinning tests
 - **Bash:** See what the tests pin about fences
 - **Bash:** Read the caret-affected-lines mechanism
+
 Line-level reveal actually simplifies the caret-dependency machinery — the fence-block loop in `caretAffectedLines` drops entirely. Writing all layers:
 
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/detect/index.ts
@@ -484,6 +498,7 @@ Line-level reveal actually simplifies the caret-dependency machinery — the fen
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/decorations/intent.ts
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/editor/decorations.ts
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/editor/decorations.ts
+
 Now the highlighting engine module:
 
 - **Write:** Pommora/src/renderer/src/MarkdownPM/editor/codeHighlight.ts
@@ -499,6 +514,7 @@ Now the highlighting engine module:
 - **Edit:** Pommora/src/renderer/src/MarkdownPM/detect/detect.test.ts
 - **Bash:** Add lang capture tests and run gates
 - **Bash:** See the failing test
+
 That failure is the old block-level pin — the deliberately inverted behavior. Rewriting it to pin the new line-level rule:
 
 - **Read:** Pommora/src/renderer/src/MarkdownPM/decorations/intent.test.ts
@@ -517,6 +533,7 @@ Builds green. Documenting and committing:
 - **Bash:** Read the Deferred section
 - **Edit:** .claude/Features/MarkdownPM.md
 - **Bash:** Fold the deferred entry into the feature commit
+
 Typed codeblocks are built and committed as `179a3867`. What landed:
 
 **The engine.** A fence's info word now selects a real nested parse — the curated set is JSON, YAML, JS, TS, CSS, HTML, and Swift (Swift rides the legacy-modes stream grammar; the rest are official grammars, three of which were already installed). Tokens map to classes only; all color lives in the stylesheet. A bare ```` ``` ```` fence gets no parse and keeps today's plain mono exactly, per your keep-rule. Adding a language later is one entry in [codeHighlight.ts](Pommora/src/renderer/src/MarkdownPM/editor/codeHighlight.ts) plus its package.
