@@ -23,14 +23,10 @@ A simplification pass and a sibling sweep then ran against that batch, and the s
 The gesture-family consolidation was surveyed by four scouts before being decided, and the survey argued against it: `listDrag` and `blockDrag` are close to nine-tenths CodeMirror logic, so the skeleton would absorb about a tenth of each, and both rely on a sub-threshold release the skeleton cannot yet express — migrating today would make a cancelled press toggle a checkbox or fold a heading, with no test anywhere able to catch it. The pass took the findings that stood alone instead: the editor's grip hover stopped running a hit-test and a rect read on every pointer move, three more surfaces stopped re-measuring geometry that holds still, the two reorder hooks gained the unmount cleanup they never had, list drag gained the Escape abort its sibling always had, and a scroller-resolution block both editor drags had copied moved into the module that owns it.
 
 - **Verified:** typecheck and lint clean, 2,194 tests across 194 files, every commit local on `main` (68 unpushed).
-- **Unverified:** the table jitter fix against a real document at scale — the mechanism is fixed and green, but whether it now reads smooth on 15+ tables is a judgment only the live app answers. The sidebar drop fix and its three siblings each want one live drag. The hover card's two ten-second checks stand from the closeout attack — clipping under a very short window, and a possible one-frame height pop when consecutive cards open on opposite sides — and its size-persistence IPC still needs a dev-process restart before it is live.
+
 
 #### Pending Focuses
 
-- **NATHAN NOTICED:** Jittery MarkdownPM tables during in-cell editing, produced on a document with 15+ tables and ~250+ total rows; sidebar drag-to-order often locks and doesn't execute reordering properly — Fix applied; pending live verification.
-- Restart the dev process (the `hoverCard` IPC is main-side), then fill out the card: the two ten-second checks above and the linger slider end-to-end.
-- Drive the NEEDS-NATHAN list on the Embedded Pages plan document — native menu picks, real-pointer checks, one real ⌘Q, the SurfacePM visual baseline.
-- Push the local batch when satisfied.
 - The prioritized future-work survey is in Planning/Pending-Work 8-5.md; the option-rename replumb remains in effect.
 - Migrate `listDrag` and `blockDrag` onto the shared gesture skeleton — gated on `gesture.ts` growing an `onTap(e)` (release-before-activation, silent on Escape and cancel), which lands with this work rather than ahead of it. The survey's full reasoning and the other four candidates sit on the standing Debt line.
 
