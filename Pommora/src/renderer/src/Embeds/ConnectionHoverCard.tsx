@@ -224,6 +224,14 @@ export function ConnectionHoverCard(): React.JSX.Element {
       }
     }
     const close = (): void => setHovered(null)
+    // Both boxes hold still between scrolls, keystrokes, window resizes, and card resizes — so they
+    // are measured once and dropped on exactly those, rather than re-read on every pointer move.
+    let linkBox: DOMRect | null = null
+    let cardBox: DOMRect | null = null
+    const dropBoxes = (): void => {
+      linkBox = null
+      cardBox = null
+    }
     // The link element is the anchor; once it leaves the DOM (scrolled out of CM's viewport, or a
     // rebuild the same-target refresh didn't heal) there is nothing to point at.
     const onMove = (e: MouseEvent): void => {
@@ -232,16 +240,17 @@ export function ConnectionHoverCard(): React.JSX.Element {
       // skipping) also disarms a countdown that pre-dates the drag, or it fires mid-resize.
       if (resizingRef.current) {
         clearGrace()
+        dropBoxes() // the drag moves the card's own edges
         return
       }
       if (!hovered.el.isConnected) {
         close()
         return
       }
-      const link = hovered.el.getBoundingClientRect()
-      const cardRect = cardRef.current?.getBoundingClientRect()
-      const overCard = cardRect ? inRect(cardRect, e.clientX, e.clientY) : false
-      if (overCard || inRect(link, e.clientX, e.clientY)) clearGrace()
+      linkBox ??= hovered.el.getBoundingClientRect()
+      cardBox ??= cardRef.current?.getBoundingClientRect() ?? null
+      const overCard = cardBox ? inRect(cardBox, e.clientX, e.clientY) : false
+      if (overCard || inRect(linkBox, e.clientX, e.clientY)) clearGrace()
       else if (!grace) grace = setTimeout(close, graceMs)
     }
     // CM6 replaces or prunes decoration nodes in its own scheduled update AFTER the triggering
@@ -250,6 +259,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
     // (the codebase's async-heights timing).
     let raf = 0
     const checkDetached = (): void => {
+      dropBoxes()
       if (raf) return
       raf = requestAnimationFrame(() =>
         requestAnimationFrame(() => {
@@ -271,12 +281,14 @@ export function ConnectionHoverCard(): React.JSX.Element {
     window.addEventListener('mousemove', onMove)
     window.addEventListener('scroll', checkDetached, true)
     window.addEventListener('keydown', onKey)
+    window.addEventListener('resize', dropBoxes)
     return () => {
       clearGrace()
       if (raf) cancelAnimationFrame(raf)
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('scroll', checkDetached, true)
       window.removeEventListener('keydown', onKey)
+      window.removeEventListener('resize', dropBoxes)
     }
   }, [hovered, graceMs])
 

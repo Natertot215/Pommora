@@ -46,6 +46,15 @@ export function findScroller(el: HTMLElement | null, axis: Axis = 'xy'): HTMLEle
   return null
 }
 
+/** The scroller to hand a drag that already knows its own element, for a surface whose element may or
+ *  may not be the thing that scrolls. One that overflows scrolls itself; one at rest (an embed tile, a
+ *  host grown to its content) scrolls nothing, so the drag climbs to the ancestor that does — without
+ *  which it can never reach a candidate off-screen. Falls back to the element so a caller always has one. */
+export function resolveScroller(el: HTMLElement, axis: Axis = 'xy'): HTMLElement {
+  const cs = getComputedStyle(el)
+  return scrollableInAxis(cs.overflowX, cs.overflowY, el, axis) ? el : (findScroller(el, axis) ?? el)
+}
+
 /** Signed velocity for one axis: negative toward `lo`, positive toward `hi`. Pre-acceleration,
  *  pre-limit — composed with accelFactor/clampToLimit downstream. */
 export function edgeVelocity(

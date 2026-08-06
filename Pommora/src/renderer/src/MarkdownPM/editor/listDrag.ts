@@ -4,7 +4,7 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { ACTIVATION } from '../../design-system/interactions/shared'
-import { findScroller, scrollableInAxis, startAutoScroll } from '../../design-system/interactions/autoscroll'
+import { resolveScroller, startAutoScroll } from '../../design-system/interactions/autoscroll'
 import { parseListMarkerPrefixed as parseListMarker } from '../detect'
 import { docString } from './docCache'
 import { docMathRanges } from './mathRanges'
@@ -25,6 +25,7 @@ interface Gesture {
   startY: number
   lastY: number
   active: boolean
+  done: boolean
   overlay: Overlay
   cands: Cand[]
   slot: ResolvedSlot | null
@@ -174,6 +175,7 @@ export const listDragExtension: Extension = [
         startY: e.clientY,
         lastY: e.clientY,
         active: false,
+        done: false,
         overlay: new Overlay(),
         cands: [],
         slot: null,
@@ -211,15 +213,7 @@ export const listDragExtension: Extension = [
           // candidates become targetable as they scroll in.
           stopScroll = startAutoScroll({
             getPoint: () => ({ x: 0, y: gesture.lastY }),
-            scroller: ((): HTMLElement => {
-            // A non-overflowing scroller (an embed tile at rest, a grown host) scrolls nothing —
-            // climb to the ancestor that actually scrolls this axis, or the drag can't reach
-            // off-screen candidates.
-            const cs = getComputedStyle(host)
-            return scrollableInAxis(cs.overflowX, cs.overflowY, host, 'y')
-              ? host
-              : (findScroller(host, 'y') ?? host)
-          })(),
+            scroller: resolveScroller(host, 'y'),
             dragEl: host,
             axis: 'y',
           })
@@ -231,8 +225,13 @@ export const listDragExtension: Extension = [
       const onScroll = (): void => {
         if (gesture.active) remeasure()
       }
+      const onKey = (ev: KeyboardEvent): void => {
+        if (ev.key === 'Escape') finish(false)
+      }
 
       const finish = (commit: boolean): void => {
+        if (gesture.done) return // a drag ends once — the Escape path must not re-enter a finished one
+        gesture.done = true
         document.body.style.cursor = ''
         stopScroll?.()
         stopScroll = null
@@ -240,6 +239,7 @@ export const listDragExtension: Extension = [
         host.removeEventListener('pointerup', onUp)
         host.removeEventListener('pointercancel', onCancel)
         host.removeEventListener('scroll', onScroll)
+        window.removeEventListener('keydown', onKey)
         try {
           host.releasePointerCapture(gesture.pid)
         } catch {
@@ -266,6 +266,7 @@ export const listDragExtension: Extension = [
       host.addEventListener('pointerup', onUp)
       host.addEventListener('pointercancel', onCancel)
       host.addEventListener('scroll', onScroll, { passive: true })
+      window.addEventListener('keydown', onKey)
       return true
     },
   }),
