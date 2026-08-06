@@ -14,10 +14,6 @@ Frontmatter carries `PageID` — the key naming the kind, holding a bare ULID �
 
 The filename minus `.md` is the title — there's no `title` field, and a rename is a file rename. Within a folder, names must be unique: a colliding create auto-disambiguates with a numeric suffix, and a colliding rename is rejected. Titles aren't unique Nexus-wide, though — two Pages in different folders can share one, and a `[[Title]]` to a shared title resolves as ambiguous (→ `ConnectionsPM.md`). Membership is purely positional: moving the file between Collections or PageSets changes its membership, with no field to update. Moving across Collections brings the Page under the destination schema → `CollectionsPM.md`.
 
-#### II. Page Menu
-
-The toolbar's Settings dropdown resolves to the Page's own menu when a Page is selected, the same door that carries a container's view configuration. It opens on the shared inline header — the Page's glyph, which raises the icon picker, beside its click-to-edit title. Both route through the same two writers the editor's own header uses and read the same loaded Page, so the menu and the document can never disagree about what the Page is called or how it's marked.
-
 #### II. Properties Surface
 
 A Page's property values are written and read straight off the file, with no query layer between. The one shipped surface that edits them is the Page Preview's front-matter inspector → `PagePreviewPM.md`; the main pane renders no property rows. The catalog and schema mechanics → `PropertiesPM.md`.
