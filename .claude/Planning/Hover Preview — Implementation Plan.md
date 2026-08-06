@@ -350,24 +350,26 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 ### Progress
 
 - [x] **Phase 1** — lifecycle · base `3ce8b642` · gate closed
-  - [x] Task 1 — trigger cancel + element handover
-  - [x] Task 2 — card lifecycle · single app-level mount
+  - [x] Task 1 — trigger cancel + element handover · `ec552eca`
+  - [x] Task 2 — card lifecycle · single app-level mount · `139a0f23` · gate `159e988d`
 - [x] **Phase 2** — body · gate closed
-  - [x] Task 3 — resolve-first open (the resolve-only api rides Task 4, its one consumer)
-  - [x] Task 4 — mount
+  - [x] Task 3 — resolve-first open (the resolve-only api rides Task 4, its one consumer) · `205c7ce6`
+  - [x] Task 4 — mount · `0240eab5` · gate `d462b160`
 - [x] **Phase 3** — beak · gate closed
-  - [x] Task 5 — center placement + sliding beak
+  - [x] Task 5 — center placement + sliding beak · `ee283b92`
 - [x] **Phase 4** — size
-  - [x] Task 6 — free-edge resize
-  - [x] Task 7 — persisted universal size
+  - [x] Task 6 — free-edge resize · `dd692bcb`
+  - [x] Task 7 — persisted universal size · `8e96530a`
 - [x] **Phase 5** — linger
-  - [x] Task 8 — the Settings slider
+  - [x] Task 8 — the Settings slider · `7c710ed2`
 - [x] **Phase 6** — cells
-  - [x] Task 9 — resting-cell trigger
+  - [x] Task 9 — resting-cell trigger · `51912670` · combined gate `c94e01d9`
 - [x] **Phase 7** — closeout
   - [x] Task 10 — sweep run (PLACEHOLDER contract → 0; control LEAVE_GRACE_MS → 2)
 
 ### Rulings
+
+- Nathan, mid-plan: user-verifiable interactions are his to check — per-task CDP verification stops, one what-to-expect walkthrough lands at plan end. The claim's interaction-pass deferral cites this ruling.
 
 - The combined Phases 3–6 gate held one Critical: a single-axis resize persisted the untouched axis's band-clamped render, silently ratcheting the universal size down to the most cramped link ever resized near. Fixed at the drop — only dragged axes persist, the other merging from the stored value. The gate's simplifier pass (isCardSize predicate, the PickerDirection type, ~−10 lines) rides the same commit.
 
