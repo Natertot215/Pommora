@@ -352,7 +352,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 - [x] **Phase 1** — lifecycle · base `3ce8b642` · gate closed
   - [x] Task 1 — trigger cancel + element handover
   - [x] Task 2 — card lifecycle · single app-level mount
-- [ ] **Phase 2** — body
+- [x] **Phase 2** — body · gate closed
   - [x] Task 3 — resolve-first open (the resolve-only api rides Task 4, its one consumer)
   - [x] Task 4 — mount
 - [ ] **Phase 3** — beak
@@ -369,6 +369,8 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 
 ### Rulings
 
+- Gate 2's one Critical held: the autocomplete detector ran on every selection change regardless of `EditorState.readOnly`, so clicking a rendered link inside ANY read-only mount (the hover card, a locked embed) seated the caret in the closed `[[Title]]` and popped the picker. Fixed at the shared layer — detection now gates on the editor being editable — pinned by a two-half test (panel opens in an editable mount, blocked read-only). Root cause predates this arc; the card was merely its first purpose-built victim.
+
 - Gate 1 review's one Critical held up under verification: an intent timer armed under a resting pointer survives keyboard-driven navigation (no mouseout fires when the DOM is torn out beneath a motionless cursor) and re-opened the card on a detached element. Fixed at the entry — `hoverConnection` refuses a disconnected element — plus the keydown-scheduled detach check for rebuilds under a resting pointer; both pinned by `Embeds/connectionHoverCard.test.tsx`. The simplifier's pass folded in the same commit (dispatcher inversion, inlined single-use helper, test hygiene).
 
 ### Open Against Later Tasks
@@ -378,6 +380,8 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 - Task 2 gained a timing fix the plan didn't predict: the link-leaves-viewport close checked `isConnected` synchronously inside the scroll event, but CM6 prunes off-viewport nodes in its own scheduled update after the burst — the last scroll event always saw the element alive and the card stayed open, parked on a zero rect. The check now rides a coalesced double rAF (the codebase's async-heights timing), verified live.
 
 ### Lessons
+
+- CDP's `Input.dispatchMouseEvent` wheel acks can stall ~30s when the wheel lands on a contained scroll surface at its bound — the renderer stays healthy (evals answer, CPU idle); use fire-and-forget input dispatch for wheels in verification tooling.
 
 - `ConnectionHoverCard.tsx` is a module-singleton seam (`present`): HMR swaps the module but importers keep the old binding's dead entry — edits to it need a full renderer reload to test, exactly like the CM extensions.
 
