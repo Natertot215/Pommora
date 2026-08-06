@@ -37,9 +37,10 @@
   --fold-gutter: 0px;
 }
 /* KNOB — the card's interior inset: no vertical padding (scroll-only chrome earns none),
-   symmetric sides. */
+   symmetric sides. The caret never enters, so no I-beam either. */
 .conn-hover-body .pgembed .mdpm-editor .cm-content {
   padding: 0 calc(14px * var(--mdpm-scale));
+  cursor: default;
 }
 
 /* Resizing wears the hot accent stroke tiles and embeds use, painted onto the pane's own frame
