@@ -20,6 +20,17 @@
   overscroll-behavior: contain;
 }
 
+/* The connection hover card's body: a floating surface, so its scroll always contains — an
+   over-scroll must never reach the editor underneath (moving that editor detaches the card's
+   own anchor). */
+.conn-hover-body {
+  overflow: hidden;
+}
+.conn-hover-body .pgembed {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 /* A page:open that fails while the title still resolves — the embed renders its target's name as
    dim inert text, never an editable blank (whose first keystroke would overwrite the real file). */
 .pgembed-failed {

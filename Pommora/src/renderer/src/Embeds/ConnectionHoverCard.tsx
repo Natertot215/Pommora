@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import type { ConnPage } from '@renderer/MarkdownPM/connections'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ConnectionsApi, ConnPage } from '@renderer/MarkdownPM/connections'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
+import { pageIndexOf } from '../treeIndex'
 import { cachePageDetail, readPageDetail } from '../Tabs/warmCache'
 import { useSession } from '../store'
+import { PageEmbed } from './PageEmbed'
 
 // Contract: no dismiss backdrop and `manageFocus={false}` — a hover affordance must never eat
 // the next click or pull focus out of the editor. Mounted ONCE at app level; every host reaches
@@ -11,6 +13,10 @@ import { useSession } from '../store'
 const CARD = { w: 260, h: 120 }
 const LEAVE_GRACE_MS = 200
 const RECT_SLOP = 6
+// A non-path host chain: nested `![[Embed]]` tiles inside the body count their depth past 1 and
+// render inert (a hover card must never put a third page's editor behind a click), while no real
+// page path can ever collide with it in the cycle guard.
+const HOVER_ANCESTORS = ['hover-card'] as const
 
 const inRect = (r: DOMRect, x: number, y: number): boolean =>
   x >= r.left - RECT_SLOP &&
@@ -88,6 +94,15 @@ export function ConnectionHoverCard(): React.JSX.Element {
   const preview = useSession((s) => s.preview)
   useEffect(() => closeActiveHoverCard(), [selection, activeTabId, preview])
 
+  // Resolve-only: the body's links style correctly but arm nothing — no hover (a card must not
+  // hover its own contents), no menu, no bypass, and `open` deliberately inert (clicks inside
+  // the card do nothing).
+  const tree = useSession((s) => s.tree)
+  const resolveOnly = useMemo<ConnectionsApi | undefined>(
+    () => (tree ? { ...pageIndexOf(tree), open: () => {} } : undefined),
+    [tree],
+  )
+
   useEffect(() => {
     if (!hovered) return
     let grace: ReturnType<typeof setTimeout> | null = null
@@ -149,7 +164,19 @@ export function ConnectionHoverCard(): React.JSX.Element {
 
   return (
     <PickerMenu solid open={hovered !== null} triggerRef={anchorRef} manageFocus={false}>
-      <div ref={cardRef} style={{ width: CARD.w, height: CARD.h }} />
+      <div ref={cardRef} className="conn-hover-body" style={{ width: CARD.w, height: CARD.h }}>
+        {hovered && (
+          <PageEmbed
+            key={hovered.page.path}
+            path={hovered.page.path}
+            editing={false}
+            onBeginEdit={() => {}}
+            locked
+            connections={resolveOnly}
+            ancestors={HOVER_ANCESTORS}
+          />
+        )}
+      </div>
     </PickerMenu>
   )
 }
