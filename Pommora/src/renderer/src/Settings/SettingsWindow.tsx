@@ -3,8 +3,9 @@ import { cx } from '@renderer/design-system/cx'
 import { Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
 import { Switch } from '@renderer/design-system/components/Switches/Switch'
+import { Slider } from '@renderer/design-system/components/Slider/Slider'
 import { PreviewPane } from '@renderer/design-system/components/PreviewPane/PreviewPane'
-import type { Personalization } from '@shared/types'
+import { HOVER_LINGER_MAX, type Personalization } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
 import './settingsWindow.css'
@@ -129,9 +130,37 @@ function SettingsWindowBody({ closing }: { closing: boolean }): React.JSX.Elemen
           {TOGGLES[category].map((t) => (
             <ToggleRow key={t.key} toggle={t} />
           ))}
+          {category === 'pages' && <LingerRow />}
         </div>
       </div>
     </PreviewPane>
+  )
+}
+
+// A bespoke row rather than a row-kind union: the schema generalizes when a second non-toggle
+// row exists to shape it.
+function LingerRow(): React.JSX.Element {
+  const value = useSession((s) => s.personalization.hoverPreviewLinger ?? 0)
+  const setPersonalization = useSession((s) => s.setPersonalization)
+  return (
+    <div className="settings-row">
+      <div className="settings-row-text">
+        <span className={cx('settings-row-label', text.body.standard)}>Hover Preview Linger</span>
+        <span className={cx('settings-row-hint', text.footnote.standard)}>
+          How long a connection's hover preview stays open after hovering off.
+        </span>
+      </div>
+      <Slider
+        value={value}
+        min={0}
+        max={HOVER_LINGER_MAX}
+        step={1}
+        ariaLabel="Hover Preview Linger"
+        format={(v) => (v === 0 ? 'None' : `${v}s`)}
+        // None stores no key — the clean-file discipline every default-valued row follows.
+        onCommit={(v) => setPersonalization('hoverPreviewLinger', v > 0 ? Math.round(v) : undefined)}
+      />
+    </div>
   )
 }
 

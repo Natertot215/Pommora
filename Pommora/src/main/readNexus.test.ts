@@ -444,6 +444,15 @@ describe('readNexus — personalization', () => {
     )
     for (const k of keys) expect(t.personalization[k], k).toBe(true)
   })
+  it('the linger survives the round-trip, clamped; zero and junk read as None', async () => {
+    const at = async (v: unknown): Promise<number | undefined> =>
+      (await readNexus(mk({ personalization: { hoverPreviewLinger: v } }))).personalization
+        .hoverPreviewLinger
+    expect(await at(5)).toBe(5)
+    expect(await at(900)).toBe(30)
+    expect(await at(0)).toBeUndefined()
+    expect(await at('abc')).toBeUndefined()
+  })
   it('absent personalization → empty block', async () => {
     const t = await readNexus(mk({}))
     expect(t.personalization.connectionColor).toBeUndefined()
