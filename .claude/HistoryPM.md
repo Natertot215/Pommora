@@ -4,6 +4,10 @@ Changelog and the record of the decisions behind it — what was built and the c
 
 ### Completion Timeline (Descending)
 
+#### MarkdownPM — Hover Previews (2026-08-05)
+
+The connection hover card received its body: resting on a resolved `[[Connection]]` opens a compact, read-only preview of the target page through the shared embed framework, without its banner or inline title. The card anchors to the live link with the pane's beak sliding to keep pointing at it, and holds glance-only interaction — content scrolls within it, headings fold on click, and the caret never enters. It resizes from its right edge, bottom edge, and corner to a single per-machine remembered size, and a Settings ▸ Pages slider sets how long it lingers after hover-off, defaulting to None. Resting table cells raise the same card through the intent delay the editor's own links use. The build consolidated the hover lifecycle along the way: the card became one app-level mount, a click consumes a pending intent, and navigation closes an open card.
+
 #### MarkdownPM Tweaks — Embedded Pages + CodeblocksV2 +  Table Append Strips (2026-08-03 → 08-04)
 
 MarkdownPM gained page-in-page embedding via line-reserved *(embeddings are only validated when they're the only text on a given line)*`![[Title]]` syntax— Obsidian-compatible and the SurfacePM-shared Embed Framework's second consumer. Embedded pages use MarkdownPM under an atomic absorb and a lone-line guard (interior damage refuses whole, boundary insertions repair onto their own line, the fencing blank is protected); chrome is the shared tile chassis with banner-follows-the-page or the hover breadcrumb; creation runs through the `![[` autocomplete; the drag-handle menu handles changing the embedded page's source and the tiles' deletion; rename cascade sweeps embeds through a parallel pattern with title-change rendering and tree-resolution. 
