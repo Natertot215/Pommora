@@ -357,11 +357,11 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
   - [x] Task 4 — mount
 - [x] **Phase 3** — beak · gate closed
   - [x] Task 5 — center placement + sliding beak
-- [ ] **Phase 4** — size
+- [x] **Phase 4** — size
   - [x] Task 6 — free-edge resize
   - [x] Task 7 — persisted universal size
-- [ ] **Phase 5** — linger
-  - [ ] Task 8 — the Settings slider
+- [x] **Phase 5** — linger
+  - [x] Task 8 — the Settings slider
 - [ ] **Phase 6** — cells
   - [ ] Task 9 — resting-cell trigger
 - [ ] **Phase 7** — closeout

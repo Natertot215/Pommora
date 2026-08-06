@@ -34,7 +34,9 @@ Nexus-wide interface config, stored as the `personalization` object in `.nexus/s
 
 - **defaultViewScale** — the window zoom a nexus opens at, and what ⌘0 resets to. Clamped on read and applied main-side, so a hand-typed value can't push the renderer somewhere unusable.
 
-Accent, connection colour, default icons, both placement knobs, and the default view scale have no writer — they're hand-set in `settings.json`, and the watcher applies the change live. Every other knob is written by the surface that owns it. The boolean knobs are round-trip tested together against the silent-drop failure; a new one joins that test.
+- **hoverPreviewLinger** — how long a connection's hover preview stays open after hovering off, in whole seconds. Absent is **None**: only the short pointer-travel grace. Written by the Settings window's Pages slider; clamped on read, with zero or junk reading as None.
+
+Accent, connection colour, default icons, both placement knobs, and the default view scale have no writer — they're hand-set in `settings.json`, and the watcher applies the change live. Every other knob is written by the surface that owns it. The knobs are round-trip tested against the silent-drop failure — the booleans together, the numeric ones with their clamps; a new knob joins that suite.
 
 ### Commands (Per-Nexus)
 
@@ -59,7 +61,7 @@ Cross-session, machine-local state in `pommora.json` under the app's userData di
 
 A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface (→ `PagePreviewPM.md`), inheriting its glass shell, geometry, and dismissal contract rather than re-declaring them, and opening smaller than a content window through that surface's bounds override. A category rail runs the window's full height as an in-flow side pane; the rail is the roster new panels register in.
 
-Its rows are the per-Nexus boolean knobs, written through the same generic setter every other personalization writer uses, so a flipped switch applies live with no new IPC. A knob whose default is ON stores only its OFF state — re-enabling removes the key entirely, so an untouched nexus keeps a clean settings file.
+Its rows are per-Nexus knobs — boolean switches plus the hover-preview linger's slider — written through the same generic setter every other personalization writer uses, so a change applies live with no new IPC. A knob resting at its default stores no key (a default-ON switch stores only its OFF state, the slider's None stores nothing), so an untouched nexus keeps a clean settings file.
 
 ### Pending
 

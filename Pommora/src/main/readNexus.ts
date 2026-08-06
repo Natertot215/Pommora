@@ -38,6 +38,7 @@ import {
   DEFAULT_LABELS,
   DEFAULT_TIME_FORMAT,
   ENTITY_ICON_KINDS,
+  coerceHoverLinger,
   coerceViewScale,
 } from '@shared/types'
 import { savedView, type SavedView } from '@shared/views'
@@ -120,6 +121,7 @@ export function readPersonalization(raw: unknown): Personalization {
     connectionsOpenInPreview: bool(p.connectionsOpenInPreview),
     ribbonOrder: ribbonOrder.length ? ribbonOrder : undefined,
     defaultViewScale: coerceViewScale(p.defaultViewScale),
+    hoverPreviewLinger: coerceHoverLinger(p.hoverPreviewLinger),
   }
 }
 

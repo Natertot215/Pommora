@@ -76,6 +76,9 @@ export interface Personalization {
   /** The window zoom the nexus opens at (and ⌘0 resets to). Absent = 1.0; ⌘ +/− nudge live from
    *  it. Applied main-side (webContents zoom). */
   defaultViewScale?: number
+  /** How long the connection hover card lingers after hover-off, in whole seconds (1–30).
+   *  Absent = None: only the short pointer-travel grace. */
+  hoverPreviewLinger?: number
 }
 
 /** The per-nexus default window zoom (`personalization.defaultViewScale`). Clamped so a hand-typed
@@ -86,6 +89,15 @@ export const VIEW_SCALE_MAX = 3
 export function coerceViewScale(v: unknown): number {
   if (typeof v !== 'number' || !Number.isFinite(v)) return VIEW_SCALE_DEFAULT
   return Math.min(VIEW_SCALE_MAX, Math.max(VIEW_SCALE_MIN, v))
+}
+
+/** The hover card's linger ceiling (`personalization.hoverPreviewLinger`). Whole seconds; a
+ *  hand-typed value clamps in, and zero or junk reads as None (the key's absence). */
+export const HOVER_LINGER_MAX = 30
+export function coerceHoverLinger(v: unknown): number | undefined {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return undefined
+  const s = Math.round(v)
+  return s >= 1 ? Math.min(HOVER_LINGER_MAX, s) : undefined
 }
 
 /** Nexus-wide keyboard commands — the `commands` object in `.nexus/settings.json`. Keys are
