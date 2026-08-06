@@ -362,8 +362,8 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
   - [x] Task 7 — persisted universal size
 - [x] **Phase 5** — linger
   - [x] Task 8 — the Settings slider
-- [ ] **Phase 6** — cells
-  - [ ] Task 9 — resting-cell trigger
+- [x] **Phase 6** — cells
+  - [x] Task 9 — resting-cell trigger
 - [ ] **Phase 7** — closeout
   - [ ] Task 10
 

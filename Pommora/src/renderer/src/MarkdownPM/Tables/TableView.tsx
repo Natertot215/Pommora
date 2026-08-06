@@ -1,9 +1,10 @@
 // biome-ignore-all lint/suspicious/noArrayIndexKey: a Markdown table's rows, columns, and cells are
 // plain strings with no identity but their position — the index IS the key.
 import './widget.css'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { Icon } from '@renderer/design-system/symbols'
+import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
 import type { Align, TableModel } from './model'
 import type { TableMenuContext } from '@shared/tableMenu'
 import { CellEditor } from './CellEditor'
@@ -12,6 +13,7 @@ import { cellToDisplay } from './codec'
 import { clamp } from './operations'
 import { nextCell, type NavDir } from './navigate'
 import type { ConnectionsApi } from '../connections'
+import { hoverIntent } from '../editor/connections'
 
 function alignClass(align: Align): string {
   return `mdpm-tbl-align-${align ?? 'left'}`
@@ -96,6 +98,23 @@ export function TableView({
 
   const wrapRef = useRef<HTMLDivElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
+
+  // Resting cells raise the hover card — the same intent delay as the editor's own links, armed
+  // by delegation off the wrap (the class gate first, per the every-mouseover hard rule). Only
+  // static cells: the live cell editor carries no link behavior.
+  const intent = useMemo(hoverIntent, [])
+  useEffect(() => intent.cancel, [intent])
+  const onLinkOver = (e: React.MouseEvent): void => {
+    const api = connections?.()
+    if (!api?.hover) return
+    intent.cancel()
+    const el = (e.target as HTMLElement).closest?.('.md-connection-resolved')
+    if (!el?.closest('.mdpm-tbl-cell-static')) return
+    const res = api.resolve(el.textContent ?? '')
+    if (res.status !== 'resolved' || !res.page) return
+    const page = res.page
+    intent.arm(() => api.hover?.(page, el))
+  }
   const [geom, setGeom] = useState<Geom>({ cols: [], rows: [] })
   const [drag, setDrag] = useState<Drag | null>(null)
   const [resize, setResize] = useState<Resize | null>(null)
@@ -259,6 +278,10 @@ export function TableView({
         text={display}
         connections={connections}
         onActivate={(coords) => {
+          // Activation swaps the cell into its editor — a pending or open hover card over the
+          // cell must not hang above the editing seat.
+          intent.cancel()
+          closeActiveHoverCard()
           caretCoords.current = coords
           setActive({ row, col })
         }}
@@ -290,9 +313,13 @@ export function TableView({
   const tableHeight = lastRow ? lastRow.top + lastRow.height - tableTop : 0
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: hover-intent delegation on a container — the cells carry their own semantics
+    // biome-ignore lint/a11y/useKeyWithMouseEvents: a pointer-only hover affordance; keyboard focus never reaches a resting cell
     <div
       className={`mdpm-tbl-wrap${drag ? ' mdpm-tbl-dragging' : ''}${resize ? ' mdpm-tbl-resizing' : ''}`}
       ref={wrapRef}
+      onMouseOver={onLinkOver}
+      onMouseOut={intent.cancel}
     >
       <table className="mdpm-tbl" ref={tableRef}>
         <colgroup>
