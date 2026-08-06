@@ -70,6 +70,13 @@ describe('parseListMarker (single marker source)', () => {
     expect(parseListMarker('-[] a')!.kind).toBe('bullet')
     expect(parseListMarker('1. [ ] a')!.kind).toBe('ordered')
   })
+  it('only `-` and `+` bullet: `*` and `•` are prose, checkbox included', () => {
+    expect(parseListMarker('- a')!.kind).toBe('bullet')
+    expect(parseListMarker('+ a')!.kind).toBe('bullet')
+    expect(parseListMarker('* a')).toBeNull()
+    expect(parseListMarker('• a')).toBeNull()
+    expect(parseListMarker('* [ ] a')).toBeNull()
+  })
   it('arrow: `→ ` is a list marker (the glyph IS the marker), nesting via indent', () => {
     const m = parseListMarker('→ go')!
     expect(m.kind).toBe('arrow')
@@ -90,10 +97,14 @@ describe('parseListMarker (single marker source)', () => {
 })
 
 describe('blockquote', () => {
-  it('needs > then a space/tab (bare > does not activate)', () => {
+  it('needs > then a space/tab, or the line end (>a does not activate)', () => {
     expect(isBlockquoteLine('> a')).toBe(true)
     expect(isBlockquoteLine('>a')).toBe(false)
-    expect(isBlockquoteLine('>')).toBe(false)
+  })
+
+  it('a bare > is the blank line inside a quote', () => {
+    expect(isBlockquoteLine('>')).toBe(true)
+    expect(isBlockquoteLine('>>')).toBe(true)
   })
 
   it('nested >> activates', () => {

@@ -39,6 +39,16 @@ describe('blockAt', () => {
     expect(slice(doc, b)).toBe('> quote one\n> quote two')
   })
 
+  it('a bare `>` separator keeps its quote whole instead of splitting it', () => {
+    const doc = 'p\n\n> quote one\n>\n> quote two\nafter'
+    const b = blockAt(doc, doc.indexOf('quote two'))
+    expect(b?.kind).toBe('blockquote')
+    expect(slice(doc, b)).toBe('> quote one\n>\n> quote two')
+    // One block start, so no grip or drop slot appears mid-quote.
+    expect(blockStarts(doc).filter((s) => s.kind === 'blockquote')).toHaveLength(1)
+    expect(blockStarts(doc).some((s) => s.from === doc.indexOf('> quote two'))).toBe(false)
+  })
+
   it('a fenced code block is one block, and a `#` inside it is not mis-read as a heading', () => {
     const doc = 'p\n\n```\n# not a heading\ncode\n```\nafter'
     const b = blockAt(doc, doc.indexOf('# not a heading'))

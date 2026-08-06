@@ -22,8 +22,8 @@ export const lineEndAt = (doc: string, pos: number): number => {
   return i === -1 ? doc.length : i
 }
 
-const lineMarkerRe = /^(\s*)(?:\d+\.|[-*+•→]|>|#{1,6})(?:[ \t]*\[[ xX]?\])?[ \t]+/
-const shorthandCheckboxRe = /^([ \t]*)([-*+])\[([ xX]?)\]$/
+const lineMarkerRe = /^(\s*)(?:\d+\.|[-+→]|>|#{1,6})(?:[ \t]*\[[ xX]?\])?[ \t]+/
+const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
 
 // Every list op reads the marker after this prefix and re-emits it on the new line — this is why a list
 // indents correctly inside a callout. Gated to REAL blockquotes only (whitespace after `>`) so `>x` isn't

@@ -4,6 +4,10 @@ Changelog and the record of the decisions behind it — what was built and the c
 
 ### Completion Timeline (Descending)
 
+#### MarkdownPM — The Ledger Sweep (2026-08-06)
+
+The fix log's standing MarkdownPM entries were traced to their causes and cleared. Table editing at scale had been jittery because a cell keystroke rebuilt its table's model, and the geometry effect keyed on that model's identity re-read a rect for every column and every row on each character; the sweep now runs on the table's shape and leaves reflow to the observer, and resting cells memoize on their text so one cell's typing stops re-rendering the rest. The bullet parser was narrowed to `-` and `+`, the two characters that have render branches, so `*` and `•` no longer hand the drag and renumber layers items nothing draws. A blockquote marker gained the line's end as a valid terminator, which makes the standard bare `>` the quote's own blank line rather than a paragraph splitting the box into three blocks. The sidebar's drop indicator also stopped drawing over slots flagged as no-ops, where it had promised a move that the release then declined to make.
+
 #### MarkdownPM — Hover Previews (2026-08-05)
 
 The connection hover card received its body: resting on a resolved `[[Connection]]` opens a compact, read-only preview of the target page through the shared embed framework, without its banner or inline title. The card anchors to the live link with the pane's beak sliding to keep pointing at it, and holds glance-only interaction — content scrolls within it, headings fold on click, and the caret never enters. It resizes from its right edge, bottom edge, and corner to a single per-machine remembered size, and a Settings ▸ Pages slider sets how long it lingers after hover-off, defaulting to None. Resting table cells raise the same card through the intent delay the editor's own links use. The build consolidated the hover lifecycle along the way: the card became one app-level mount, a click consumes a pending intent, and navigation closes an open card.

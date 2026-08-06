@@ -96,10 +96,6 @@ The pipe form parses, resolves, and survives every rename cascade — but nothin
 
 Cards can turn grouping off and hide the location subtitle; tables can do neither — the Grouping pane gates "None" behind the cards type and the pipeline never flattens for a table. The Figma already shows both toggles and the table's footing is waiting to take them. Closes a story the feature half-told, and a plain ungrouped table is what many collections actually want.
 
-#### Two Markdown Parser Paper Cuts
-
-Both live in `MarkdownPM/detect/`. `*` and `•` bullets render as plain text — the marker regex accepts them so the drag layer sees list lines, but no construct branch draws the bullet (while `* [ ]` does render as a checkbox). And a bare `>` line splits a quote or callout into three blocks, because the blockquote predicate requires whitespace after the `>` — so the standard blank line inside a quote reads as a paragraph and grows a stray mid-quote drag grip.
-
 #### Prefix-Aware Headings and Tables Inside Callouts
 
 A heading inside a callout renders but gets no fold chevron — the fold scanner never strips the `>` prefix — and a table inside a callout doesn't render at all. The fix pattern already exists in the same codebase (the prefix-aware list parser strips, parses, and shifts offsets back), so this is applying a solved technique to two more constructs.

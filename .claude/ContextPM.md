@@ -4,7 +4,7 @@
 
 The active stretch is MarkdownPM. Embedded pages are complete end to end — the tile, the guards, the menus, the autocomplete, the warm cache, and the rename sweep — followed by the typed codeblocks, the table append strips, and, most recently, the connection hover previews: resting on a resolved `[[Connection]]` opens a compact read-only preview of the target page, anchored to the link, resizable to one per-machine remembered size, with a Settings ▸ Pages linger slider and the same trigger in resting table cells.
 
-What remains on the stretch is hand verification. The embedded-pages checks that a headless driver can't honestly produce — the native menu picks, the real-pointer feel checks, one real ⌘Q mid-debounce, and the SurfacePM visual baseline — plus the hover card's feel decisions, chiefly whether the symmetric width resize (the edge tracks at half the cursor because the card grows around its anchor) should flip to 1:1 edge tracking. The local commit batch on `main` is unpushed until then.
+What remains on the stretch is hand verification: the embedded-pages checks that a headless driver can't honestly produce — the native menu picks, the real-pointer feel checks, one real ⌘Q mid-debounce, and the SurfacePM visual baseline. The local commit batch on `main` is unpushed until then.
 
 ### Recent Work
 
@@ -98,7 +98,6 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 - **Is a Context's folder worth what its rename costs?** A Space's membership is inferred from which Context folder it sits in, and that folder is named by the Context's title — so a Context rename is the most complex write in the codebase: journal, folder rename, cascade through every member file, registry commit, settle, crash-replay. A `context_id` on `_space.json` would collapse it to one registry write plus the frontmatter cascade. The counter-argument is the reason it's built this way: `contexts/Projects/Pommora/` tells an agent what it is without opening a single JSON file, and that legibility is a core construct. Parked — it's a data-model change, and the journal only stops being worth it if the complexity starts biting.
 
 - **Redundant identity sources.** Anywhere "what this is" resolves from more than one place. The exemplar: `PropertyValue.kind` is a runtime copy of `def.type`, and the picker *constructs* the tag from the very type it's nominally independent of — so a bare status value would have rendered as a select chip with no error anywhere. The sweep for these hasn't run and the suspicion is that more are hiding.
-
 - **The NavPane toolbar dropdown** is a blank placeholder — what a compact nav dropdown holds versus the fuller NavWindow is an open call before building into it.
 
 #### Debt & Ride-Alongs
@@ -151,10 +150,6 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 
 ### Fix Log
 
-- One unreproduced renderer crash during a programmatic scroll jump toward a table inside an embed tile — black window, no crash log, no console errors, clean on replay and under gradual scrolling. On watch, no repro.
-
 - The "File" property icon gets clipped by its vertical row padding on the ViewPane.
 - The link-rename field shows a leading empty space — a visual inset, not a stored character (deprioritized).
-- A bare `>` separator line splits a quote or callout into three blocks — `isBlockquoteLine` wants whitespace after the `>`, so the standard blank-inside-a-quote line reads as a paragraph, growing a mid-quote grip and drop slot (`blockModel.ts`).
-- `*` and `•` bullets render as plain text while the drag layer parses them as list markers — `LIST_MARKER_RE` accepts `[-*+•]` but no construct branch renders them, and `* [ ]` *does* render as a checkbox; whether `*` becomes a rendered bullet or the parser narrows is Nathan's call. 
 - The Set-Card drag flash (drop snaps back, then jumps on reload) — the optimistic moveSet order patch is in; wants one live drag before this line drops. 
