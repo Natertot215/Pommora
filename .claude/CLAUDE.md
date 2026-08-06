@@ -28,9 +28,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **The Figma Library** (https://www.figma.com/file/fYZ5oiK7stC3diRhaBHl1r) is used for designing; its specifics may lag behind the canonical in-code view — mirror changes into the tokens at `design-system/tokens`. The live showcase deploys from `Pommora/` to https://pommora-design-system.vercel.app.
 - **Gates.** `npm run typecheck` is the *only* type gate — the build strips types unchecked — and it covers both `tsconfig` projects. `npm run test` is Vitest; `npm run lint` is Biome and runs clean, so a change that adds a diagnostic isn't done → [[Lint-And-Accessibility]]. Formatting is Biome's as well (a PostToolUse hook formats every TS/CSS/JSON write; single-quote, no semicolons): never hand-align or run Biome yourself — an Edit failing on whitespace means Biome reformatted, so re-read and retry.
 
-#### Run Gotcha (Read Before Launching)
-
-The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set to 1, which makes Electron run as plain Node → `require('electron')` returns a path string and the app crashes). Launch: `env -u ELECTRON_RUN_AS_NODE npm run dev` (HMR), or `… ./node_modules/.bin/electron .` after `npm run build`. `TEST_NEXUS_PATH` only steers tests, never the running app.
+**Read Before Launching:** The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set to 1, which makes Electron run as plain Node → `require('electron')` returns a path string and the app crashes). Launch: `env -u ELECTRON_RUN_AS_NODE npm run dev` (HMR), or `… ./node_modules/.bin/electron .` after `npm run build`. `TEST_NEXUS_PATH` only steers tests, never the running app.
 
 **Worktree Electron binary:** a worktree's `node_modules` is typically installed for the Vitest/Node gate only and **omits the Electron binary**, so the first `dev`/launch dies with `Error: Electron uninstall`. Fix: run `./node_modules/.bin/electron --version` once (downloads the binary), then relaunch. Kill any test instances once you're done with them — don't leave them running. Further traps live in [[Build-Gotchas]], which also covers the toolchain, chip components, and liquid glass.
 
@@ -56,15 +54,12 @@ The GUI only launches with `ELECTRON_RUN_AS_NODE` **unset** (this env has it set
 - **Most recent wins** is the primary philosophy around handling multi-tab, future cross-device, and outside editing conflicts.
 - **TS-native on-disk format:** bare, natively typed values under wrapped title keys, zod-validated.
 
-#### Swift Origins
+#### Important Information
 
-Pommora was first built as a native SwiftUI app — that build was active for around one month and defined the entire initial paradigm; React was initially an alternative contingency but was eventually determined to be the best long-term approach. The Swift build is archived at `// The Studio // Archive // Pommora` — source; its git history lives on the `swift` branch.
-
+- **Swift Origins:** Pommora was first built as a native SwiftUI app — that build was active for around one month and defined the entire initial paradigm; React was initially an alternative contingency but was eventually determined to be the best long-term approach. The Swift build is archived at `// The Studio // Archive // Pommora` — source; its git history lives on the `swift` branch.
 - **Why This Matters:** The initial rebuild introduced now-obsolete Swift-based code; Swift compatibility is not a constraint — any code that may appear functional but is solely an artifact of its Swift origin must be flagged for removal.
-
-#### Project Sapphire
-
-**Sapphire** is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime: it brings Pommora-style capabilities to Obsidian natively and keeps NexusOS Pommora-compatible, so Nathan's daily vault stays aligned as Pommora matures — at a light weekly cadence, subordinate to the daily Pommora grind.
+- **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime: it brings Pommora-style capabilities to Obsidian natively and keeps NexusOS Pommora-compatible, so Nathan's daily vault stays aligned as Pommora matures — at a light weekly cadence, subordinate to the daily Pommora grind.
+- **NexusOS** is both an Obsidian vault *and* a Pommora nexus — frontmatter appearing not to conform to Pommora's standards (eg,. bare `Areas:`, `Topics:`, `Projects:`, `Status:`  etc...) isn't Pommora's concern; folders like `/Agenda,` even though Pommora pre-seeds `/Tasks` + `/Events`aren't duplicates; they're temporary Obsidian-functionality fixtures until Pommora is actually completed. 
 
 ### Codebase Map
 ```
@@ -103,12 +98,7 @@ Pommora was first built as a native SwiftUI app — that build was active for ar
 │   │   ├── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
 │   │   └── [UI-Copy.md]                 | • The running app never displays build-status or meta text
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
-│   ├── // Resources                     | • Forward-looking reference for work not yet built
-│   │   ├── [README.md]                  | • Read the Resources folder as a menu, not a commitment
-│   │   ├── [Deployment.md]              | • The Vercel deploy — the showcase only, never the app
-│   │   ├── [Distribution.md]            | • Shipping a real build — signing, packaging, updates
-│   │   ├── [Libraries.md]               | • The vetted library menu, tagged by decision state
-│   │   └── [Mac-Integration.md]         | • Where Electron lands on each macOS integration surface
+│   ├── // Resources                     | • Reference of external resources; both in-use and future prospectives.
 │   ├── // Planning                      | • Plans and temporary specifications; contents are transient
 │   └── // Sessions                      | • Session transcripts — filled by /handoff retirement or /transcribe
 ├── // Pommora                           | • The app — the codebase proper
