@@ -169,6 +169,12 @@ export function ConnectionHoverCard(): React.JSX.Element {
   const preview = useSession((s) => s.preview)
   useEffect(() => closeActiveHoverCard(), [selection, activeTabId, preview])
 
+  // The linger: None (absent) keeps the short pointer-travel grace; a set duration holds the
+  // card open that long after the pointer leaves link and card, re-entry cancelling the countdown
+  // — the same timer, only its length changes.
+  const linger = useSession((s) => s.personalization.hoverPreviewLinger)
+  const graceMs = linger !== undefined ? linger * 1000 : LEAVE_GRACE_MS
+
   // Resolve-only: the body's links style correctly but arm nothing — no hover (a card must not
   // hover its own contents), no menu, no bypass, and `open` deliberately inert (clicks inside
   // the card do nothing).
@@ -202,7 +208,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
       const cardRect = cardRef.current?.getBoundingClientRect()
       const overCard = cardRect ? inRect(cardRect, e.clientX, e.clientY) : false
       if (overCard || inRect(link, e.clientX, e.clientY)) clearGrace()
-      else if (!grace) grace = setTimeout(close, LEAVE_GRACE_MS)
+      else if (!grace) grace = setTimeout(close, graceMs)
     }
     // CM6 replaces or prunes decoration nodes in its own scheduled update AFTER the triggering
     // event (a scroll burst, a keystroke's rebuild), so a synchronous check reads the element as
@@ -238,7 +244,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
       window.removeEventListener('scroll', checkDetached, true)
       window.removeEventListener('keydown', onKey)
     }
-  }, [hovered])
+  }, [hovered, graceMs])
 
   return (
     <PickerMenu
