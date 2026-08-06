@@ -20,6 +20,7 @@ export type Scope =
   | 'previews'
   | 'recents'
   | 'record'
+  | 'hoverCard'
 
 /** The key a whole-scope singleton stores under — tabs, previews and recents are always read and
  *  written whole, so a row per entry would buy nothing. */

@@ -324,6 +324,12 @@ export interface StoredTab {
 }
 
 /** The persisted row's shape — StoredTab entries under the same pointer. */
+/** The connection hover card's one universal size — device-local, every card opens at it. */
+export interface HoverCardSize {
+  w: number
+  h: number
+}
+
 export interface StoredTabSet {
   tabs: StoredTab[]
   activeTabId: string
