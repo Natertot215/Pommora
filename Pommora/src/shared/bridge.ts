@@ -15,6 +15,7 @@ import type {
   OpenIn,
   PageDetail,
   Personalization,
+  HoverCardSize,
   PreviewsFile,
   SubfieldConfig,
   StoredTabSet,
@@ -228,6 +229,9 @@ export interface Asks {
   'tabs:save': { args: [set: StoredTabSet]; reply: Result<null> }
   'previews:load': { args: []; reply: Result<PreviewsFile> }
   'previews:save': { args: [file: PreviewsFile]; reply: Result<null> }
+  // The hover card's universal size — one device-local db row.
+  'hoverCard:load': { args: []; reply: Result<HoverCardSize | null> }
+  'hoverCard:save': { args: [size: HoverCardSize]; reply: Result<null> }
   'capture:thumbnail': {
     args: [navKey: string, rect: ThumbRect, scaleFactor: number]
     reply: Result<{ url: string }>

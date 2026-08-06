@@ -22,6 +22,12 @@ let root: Root
 
 beforeEach(() => {
   useSession.setState({ activeTabId: 'tab-1' })
+  ;(window as unknown as { nexus: unknown }).nexus = {
+    hoverCard: {
+      load: async () => ({ ok: true, value: null }),
+      save: async () => ({ ok: true, value: null }),
+    },
+  }
   cachePageDetail(detail)
   host = document.createElement('div')
   document.body.appendChild(host)

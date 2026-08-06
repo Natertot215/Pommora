@@ -6,15 +6,19 @@ import { pageIndexOf } from '../treeIndex'
 import { cachePageDetail, readPageDetail } from '../Tabs/warmCache'
 import { useSession } from '../store'
 import { PageEmbed } from './PageEmbed'
+import {
+  CARD_MIN,
+  hoverCardSize,
+  seedHoverCardSize,
+  setHoverCardSize,
+} from './hoverCardSize'
 
 // Contract: no dismiss backdrop and `manageFocus={false}` — a hover affordance must never eat
 // the next click or pull focus out of the editor. Mounted ONCE at app level; every host reaches
 // it through `hoverConnection`, so one card app-wide holds by construction.
 
-// KNOB — the card's default and floor sizes. The ceiling is never a knob: width caps at the
-// viewport and height at the band actually available on the card's side of the link.
-const CARD = { w: 260, h: 120 }
-const CARD_MIN = { w: 180, h: 100 }
+// The size knobs and their persistence live in hoverCardSize.ts — the ceiling is never a knob:
+// width caps at the viewport and height at the band actually available on the card's side.
 const VIEWPORT_MARGIN = 8
 const ANCHOR_GAP = 6
 const LEAVE_GRACE_MS = 200
@@ -68,7 +72,8 @@ export function closeActiveHoverCard(): void {
 
 export function ConnectionHoverCard(): React.JSX.Element {
   const [hovered, setHovered] = useState<Hovered | null>(null)
-  const [size, setSize] = useState(CARD)
+  const [size, setSize] = useState(hoverCardSize)
+  useEffect(seedHoverCardSize, [])
   const [dir, setDir] = useState<'down' | 'up' | 'left' | 'right'>('down')
   const cardRef = useRef<HTMLDivElement | null>(null)
   const anchorRef = useRef<Element | null>(null)
@@ -128,6 +133,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
         },
         onDrop: () => {
           resizingRef.current = false
+          setHoverCardSize(shownRef.current)
         },
         onAbort: () => {
           resizingRef.current = false
@@ -148,6 +154,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
       }
       // Same target while open refreshes the element in place (a re-entry re-fires the intent, and
       // a decoration rebuild hands us a fresh span) — never a close/reopen flicker.
+      if (next) setSize(hoverCardSize()) // every open adopts the current universal size
       setHovered(next)
     }
     return () => {

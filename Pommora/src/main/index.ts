@@ -12,6 +12,7 @@ import type { OpenDialogOptions } from 'electron'
 import { basename, dirname, extname, join, sep } from 'node:path'
 import { readFile, rename } from 'node:fs/promises'
 import type {
+  HoverCardSize,
   NavigationState,
   NavViewModes,
   NexusState,
@@ -71,6 +72,7 @@ import {
   writeNavigationState,
 } from './io/navigationFile'
 import { readTabsState, sanitizeTabSet, writeTabsState } from './io/tabsState'
+import { readValue, writeValue } from './db/localState'
 import { readPreviewsState, sanitizePreviews, writePreviewsState } from './io/previewState'
 import { captureThumbnail, evictThumbnails } from './io/thumbnails'
 import { saveView, reorderViews, deleteView } from './crud/views'
@@ -573,6 +575,32 @@ serveBridge(
         const clean = sanitizePreviews(file)
         if (!clean) return fail('operation-failed', 'Bad previews file.')
         if (!writePreviewsState(clean)) return NO_NEXUS
+        return ok(null)
+      },
+    },
+
+    // The hover card's universal size — one device-local row, validated at the boundary.
+    'hoverCard:load': {
+      kind: 'envelope',
+      fn: () => {
+        if (sessionRoot() === null) return NO_NEXUS
+        return ok(readValue<HoverCardSize>('hoverCard'))
+      },
+    },
+
+    'hoverCard:save': {
+      kind: 'raw',
+      fn: (size: unknown) => {
+        if (adopting()) return BUSY
+        if (
+          !isPlainObject(size) ||
+          typeof size.w !== 'number' ||
+          typeof size.h !== 'number' ||
+          !Number.isFinite(size.w) ||
+          !Number.isFinite(size.h)
+        )
+          return fail('operation-failed', 'A card size needs finite w and h.')
+        if (!writeValue('hoverCard', { w: size.w, h: size.h })) return NO_NEXUS
         return ok(null)
       },
     },
