@@ -24,8 +24,12 @@ interface Hovered {
 
 let present: ((next: Hovered | null) => void) | null = null
 
-/** The ConnectionsApi.hover entry every host wires. A call before the card mounts is a no-op. */
+/** The ConnectionsApi.hover entry every host wires. A call before the card mounts is a no-op —
+ *  and so is one whose element already left the DOM: the intent timer outlives its editor (no
+ *  mouseout fires when navigation tears the node out under a resting pointer), and a card must
+ *  never open anchored to nothing. */
 export function hoverConnection(page: ConnPage, el: Element): void {
+  if (!el.isConnected) return
   present?.({ page, el })
 }
 
@@ -35,25 +39,24 @@ export function closeActiveHoverCard(): void {
 
 export function ConnectionHoverCard(): React.JSX.Element {
   const [hovered, setHovered] = useState<Hovered | null>(null)
-  const anchorRef = useRef<Element | null>(null)
-  anchorRef.current = hovered?.el ?? null
   const cardRef = useRef<HTMLDivElement | null>(null)
+  const anchorRef = useRef<Element | null>(null)
   const hoveredRef = useRef(hovered)
+  anchorRef.current = hovered?.el ?? null
   hoveredRef.current = hovered
 
   useEffect(() => {
     present = (next) => {
       const cur = hoveredRef.current
-      // Same target while open: refresh the element in place (a re-entry re-fires the intent, and
-      // a decoration rebuild hands us a fresh span) — never a close/reopen flicker.
-      if (next && cur && next.page.id === cur.page.id) return setHovered(next)
       // Retarget routes through a closed beat: PickerMenu re-decides its flip only on open=false,
       // and the Bloom replays at the new link.
-      if (next && cur) {
+      if (next && cur && next.page.id !== cur.page.id) {
         setHovered(null)
         requestAnimationFrame(() => setHovered(next))
         return
       }
+      // Same target while open refreshes the element in place (a re-entry re-fires the intent, and
+      // a decoration rebuild hands us a fresh span) — never a close/reopen flicker.
       setHovered(next)
     }
     return () => {
@@ -80,24 +83,23 @@ export function ConnectionHoverCard(): React.JSX.Element {
     const close = (): void => setHovered(null)
     // The link element is the anchor; once it leaves the DOM (scrolled out of CM's viewport, or a
     // rebuild the same-target refresh didn't heal) there is nothing to point at.
-    const linkRect = (): DOMRect | null =>
-      hovered.el.isConnected ? hovered.el.getBoundingClientRect() : null
     const onMove = (e: MouseEvent): void => {
-      const link = linkRect()
-      if (!link) {
+      if (!hovered.el.isConnected) {
         close()
         return
       }
+      const link = hovered.el.getBoundingClientRect()
       const cardRect = cardRef.current?.getBoundingClientRect()
       const overCard = cardRect ? inRect(cardRect, e.clientX, e.clientY) : false
       if (overCard || inRect(link, e.clientX, e.clientY)) clearGrace()
       else if (!grace) grace = setTimeout(close, LEAVE_GRACE_MS)
     }
-    // CM6 prunes off-viewport nodes in its own scheduled update AFTER the scroll event burst, so a
-    // synchronous check reads the element as still connected and no later scroll re-runs it. The
-    // double rAF lands the check behind CM's update (the codebase's async-heights timing).
+    // CM6 replaces or prunes decoration nodes in its own scheduled update AFTER the triggering
+    // event (a scroll burst, a keystroke's rebuild), so a synchronous check reads the element as
+    // still connected and nothing re-runs it. The double rAF lands the check behind CM's update
+    // (the codebase's async-heights timing).
     let raf = 0
-    const onScroll = (): void => {
+    const checkDetached = (): void => {
       if (raf) return
       raf = requestAnimationFrame(() =>
         requestAnimationFrame(() => {
@@ -107,18 +109,23 @@ export function ConnectionHoverCard(): React.JSX.Element {
       )
     }
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape') return
-      e.preventDefault() // the house contract — window closers skip a handled Escape
-      close()
+      if (e.key === 'Escape') {
+        e.preventDefault() // the house contract — window closers skip a handled Escape
+        close()
+        return
+      }
+      // Any other key can rebuild decorations under a resting pointer (typing, arrows) — the
+      // swap strands the anchor with no mouse or scroll event to notice.
+      checkDetached()
     }
     window.addEventListener('mousemove', onMove)
-    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('scroll', checkDetached, true)
     window.addEventListener('keydown', onKey)
     return () => {
       clearGrace()
       if (raf) cancelAnimationFrame(raf)
       window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('scroll', checkDetached, true)
       window.removeEventListener('keydown', onKey)
     }
   }, [hovered])
