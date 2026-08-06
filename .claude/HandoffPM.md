@@ -5,10 +5,10 @@
 ### Session Summary
 
 **Session ID:** 6dc9212b-b419-4b10-9e15-aa2fb5aedb6e
-**Dates:** 08-03-2026 → 08-05-2026
+**Dates:** 08-03-2026 → 08-06-2026
 **Model:** Fable 5
 
-The session opened on embedded pages in MarkdownPM and carried that arc from brainstorm through a six-phase certified plan to a shipped feature — `![[Title]]` tiles on the shared Embed Framework, with the guards, chrome, native menus, autocomplete, warm cache, and rename cascade that surround them. That arc closed with a 202-check live walkthrough, trued documentation, and a green board, and its remaining hand-checks sit in the NEEDS-NATHAN list of the walkthrough document.
+The session opened on embedded pages in MarkdownPM and carried that arc from brainstorm through a six-phase certified plan to a shipped feature — `![[Title]]` tiles on the shared Embed Framework, with the guards, chrome, native menus, autocomplete, warm cache, and rename cascade that surround them. That arc closed with a 202-check live walkthrough, trued documentation, and a green board, and its remaining hand-checks sit in the NEEDS-NATHAN list on the Embedded Pages plan document.
 
 A middle stretch cleared the decks: the table append strips landed with their elastic gutter and a cell line-box fix, the post-0.5.0 History records were reshaped into milestone arcs (the reshaping conventions were saved to memory), three scouts surveyed future work into `Planning/Pending-Work 8-5.md`, the dead table-Compact format was excised end to end with Cards' live density mode preserved, and the inline-rename surfaces were consolidated onto one `RenamableLabel` wrapper carrying the ratified caret policy (caret-at-end for titles, select-all for rows).
 
@@ -16,13 +16,20 @@ The closing arc built the connection hover previews. A brainstorm produced a rev
 
 Nathan's live refinements then tightened the card: a scroll-only interior (no gutter lane or vertical padding), the shared hot accent stroke on resize breathing on the tile border's beat, no caret entry at all (the press dies at the card's edge), click-to-fold headings replacing the chevron, and a held-content fix so the bloom-out fades the card whole. The symmetric width-resize feel (the edge tracks at half the cursor because the card grows around its anchor) was explained and accepted. Along the way the `studio-context` skill's voice section was rewritten to ask for professional documentation phrasing rather than stylized imitation, and Hover Previews entered HistoryPM and MarkdownPM §II with PagePreviewPM condensed to a pointer.
 
-- **Verified:** typecheck and lint clean, 2,188 tests across 194 files, every arc commit local on `main` (the batch is unpushed). 
-- **Unverified:** the two ten-second checks from the closeout attack — card clipping under a very short window, and a possible one-frame height pop when consecutive cards open on opposite sides — plus the size-persistence IPC needs a dev-process restart before it is live.
+The closing day turned from building to clearing. Every MarkdownPM entry standing in the fix log and the debt notes was traced to its cause before anything was written, which produced a ruling apiece: the table jitter came from a geometry sweep keyed on a model rebuilt per keystroke, so it now keys on the table's shape and resting cells memoize on their text; the bare `>` that split a quote into three blocks came from a prefilter refusing a marker at the line's end; `*` and `•` were narrowed out of the bullet parser, the two characters having no render branch; and the sidebar's drop line stopped drawing over slots the release would decline. The hover card's symmetric resize was ruled a non-issue and left as built.
+
+A simplification pass and a sibling sweep then ran against that batch, and the sweep is what justified it — four of the fixes had siblings left broken one file away, including a word-count helper still holding the old bullet set and three drop indicators carrying the sidebar's exact bug. It also caught two regressions the batch itself introduced: a callout delete going dead on a prefix-only line, and a row reorder leaving the table's measured geometry stale. Both were fixed at their cause, along with a pre-existing precedence bug the blockquote change had made far easier to hit, where a `>` inside a code fence resolved as a quote and offered to drag lines out of the block.
+
+The gesture-family consolidation was surveyed by four scouts before being decided, and the survey argued against it: `listDrag` and `blockDrag` are close to nine-tenths CodeMirror logic, so the skeleton would absorb about a tenth of each, and both rely on a sub-threshold release the skeleton cannot yet express — migrating today would make a cancelled press toggle a checkbox or fold a heading, with no test anywhere able to catch it. The pass took the findings that stood alone instead: the editor's grip hover stopped running a hit-test and a rect read on every pointer move, three more surfaces stopped re-measuring geometry that holds still, the two reorder hooks gained the unmount cleanup they never had, list drag gained the Escape abort its sibling always had, and a scroller-resolution block both editor drags had copied moved into the module that owns it.
+
+- **Verified:** typecheck and lint clean, 2,194 tests across 194 files, every commit local on `main` (68 unpushed).
+- **Unverified:** the table jitter fix against a real document at scale — the mechanism is fixed and green, but whether it now reads smooth on 15+ tables is a judgment only the live app answers. The sidebar drop fix and its three siblings each want one live drag. The hover card's two ten-second checks stand from the closeout attack — clipping under a very short window, and a possible one-frame height pop when consecutive cards open on opposite sides — and its size-persistence IPC still needs a dev-process restart before it is live.
 
 #### Pending Focuses
 
+- **NATHAN NOTICED:** Jittery MarkdownPM tables during in-cell editing, produced on a document with 15+ tables and ~250+ total rows; sidebar drag-to-order often locks and doesn't execute reordering properly — Fix applied; pending live verification.
 - Restart the dev process (the `hoverCard` IPC is main-side), then fill out the card: the two ten-second checks above and the linger slider end-to-end.
-- Drive the NEEDS-NATHAN list in the embedded-pages walkthrough doc — native menu picks, real-pointer checks, one real ⌘Q, the SurfacePM visual baseline.
+- Drive the NEEDS-NATHAN list on the Embedded Pages plan document — native menu picks, real-pointer checks, one real ⌘Q, the SurfacePM visual baseline.
 - Push the local batch when satisfied.
 - The prioritized future-work survey is in Planning/Pending-Work 8-5.md; the option-rename replumb remains in effect.
 - Migrate `listDrag` and `blockDrag` onto the shared gesture skeleton — gated on `gesture.ts` growing an `onTap(e)` (release-before-activation, silent on Escape and cancel), which lands with this work rather than ahead of it. The survey's full reasoning and the other four candidates sit on the standing Debt line.
