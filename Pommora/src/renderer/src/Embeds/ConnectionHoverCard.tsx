@@ -4,6 +4,8 @@ import {
   PickerMenu,
   type PickerDirection,
 } from '@renderer/design-system/components/PickerMenu/PickerMenu'
+import { EditorView } from '@codemirror/view'
+import { toggleFoldAt } from '@renderer/MarkdownPM/editor/folding'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import type { HoverCardSize } from '@shared/types'
 import { pageIndexOf } from '../treeIndex'
@@ -281,6 +283,8 @@ export function ConnectionHoverCard(): React.JSX.Element {
       origin="center"
       onDirection={setDir}
     >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the card never takes focus by contract */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a hover affordance */}
       <div
         ref={cardRef}
         className={`conn-hover-body${resizing ? ' is-resizing' : ''}`}
@@ -289,6 +293,14 @@ export function ConnectionHoverCard(): React.JSX.Element {
         // selection or taking focus, while wheel scrolling and the strips' pointer gestures
         // (dispatched before mousedown) stay live.
         onMouseDownCapture={(e) => e.preventDefault()}
+        // With no caret to conflict, a heading click IS the fold toggle — the chevron stays
+        // hidden here and the whole line becomes the affordance, through the same fold logic.
+        onClick={(e) => {
+          const line = (e.target as HTMLElement).closest?.('.cm-line.md-foldable')
+          const editor = line?.closest('.cm-editor')
+          const view = editor && EditorView.findFromDOM(editor as HTMLElement)
+          if (line && view) toggleFoldAt(view, view.posAtDOM(line))
+        }}
       >
         {hovered && (
           <PageEmbed

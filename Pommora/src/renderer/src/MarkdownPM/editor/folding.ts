@@ -266,6 +266,15 @@ function toggleFold(view: EditorView, s: HeadingSection): void {
   if (caretInBody) view.contentDOM.blur()
 }
 
+/** Toggle the fold of the heading whose line starts at `pos`. The chevron's own gesture and the
+ *  hover card's click-a-heading affordance both land here, so fold behavior stays one fact. */
+export function toggleFoldAt(view: EditorView, pos: number): boolean {
+  const s = sectionsOf(view.state.doc).find((x) => x.from === pos)
+  if (!s) return false
+  toggleFold(view, s)
+  return true
+}
+
 // Every foldable heading carries a chevron anchored to its line in the CONTENT layer (a ::before), NOT a CM
 // gutter. The gutter is positioned from CM's line-height MODEL, which only measures the visible viewport and
 // estimates off-screen variable-height blocks (callouts, folds) at the default height — so every gutter
