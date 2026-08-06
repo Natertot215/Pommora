@@ -2,6 +2,7 @@ import { useSession } from '../../store'
 import { viewSettingsScope } from '../../Detail/ViewSettingsScope'
 import { MenuSurface } from '../../design-system/components/menu'
 import { SettingsPane } from './SettingsPane'
+import { PageMenu } from './PageMenu'
 import { SettingsScaffold } from './SettingsScaffold'
 import { SpaceSettingsContent } from '../../Detail/Settings/SpaceSettings'
 import * as s from './settingsPane.css'
@@ -21,6 +22,8 @@ export function SettingsDropdown({
       <MenuSurface closing={closing} notchInsetRight={notchInsetRight}>
         {scope === 'view' ? (
           <SettingsPane />
+        ) : scope === 'page' ? (
+          <PageMenu />
         ) : scope === 'space' && selection.kind === 'space' ? (
           <SpaceSettingsContent id={selection.id} />
         ) : scope === 'homepage' || scope === 'context' ? (
