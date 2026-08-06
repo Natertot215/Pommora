@@ -309,7 +309,10 @@ export interface ListMarker {
   checked?: boolean
 }
 
-const LIST_MARKER_RE = /^([ \t]*)(?:(\d+)\.|([-*+•]))(?:[ \t]*(\[([ xX]?)\]))?([ \t]+)(.*)$/d
+// `-` and `+` are the only bullet characters: each has a render branch, so every line this admits is a
+// line the reader sees as a list item. `*` and `•` stay prose — parsing them would hand the drag and
+// renumber layers items nothing draws.
+const LIST_MARKER_RE = /^([ \t]*)(?:(\d+)\.|([-+]))(?:[ \t]*(\[([ xX]?)\]))?([ \t]+)(.*)$/d
 const ARROW_MARKER_RE = /^([ \t]*)→([ \t]+)/
 
 export function parseListMarker(line: string): ListMarker | null {
@@ -337,7 +340,7 @@ export function parseListMarker(line: string): ListMarker | null {
   const box = b ? { start: b[0], end: b[1], inner: m[5] ?? '' } : undefined
   const bullet = m[3]
 
-  if (bullet !== undefined && box && box.inner !== '' && '-*+'.includes(bullet)) {
+  if (bullet !== undefined && box && box.inner !== '' && '-+'.includes(bullet)) {
     return {
       kind: 'checkbox',
       bullet,
@@ -391,7 +394,7 @@ export function parseListMarkerPrefixed(line: string): ListMarker | null {
 }
 
 const headingPrefilter = /^[ ]{0,3}#{1,6}([ \t]|$)/
-const blockquotePrefilter = /^[ \t]*>+[ \t]/
+const blockquotePrefilter = /^[ \t]*>+([ \t]|$)/
 
 export function isThematicBreakLine(line: string): boolean {
   const t = line.trim()
@@ -414,7 +417,8 @@ export function headingParts(
   return m ? { indent: m[1], hashes: m[2], space: m[3], content: m[4] } : null
 }
 
-/** Needs whitespace after the last `>`: `> a` and `>> a` activate; `>a`, `>>a`, bare `>` do not. */
+/** Needs whitespace or the line's end after the last `>`: `> a`, `>> a` and a bare `>` activate — the bare
+ *  one is the blank line inside a quote, so a quote holding one stays a single block. `>a` and `>>a` do not. */
 export function isBlockquoteLine(line: string): boolean {
   if (!blockquotePrefilter.test(line)) return false
   return parse(line).children.some((n) => n.type === 'blockquote')
