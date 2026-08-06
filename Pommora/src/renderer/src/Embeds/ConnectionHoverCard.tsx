@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnectionsApi, ConnPage } from '@renderer/MarkdownPM/connections'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { pageIndexOf } from '../treeIndex'
 import { cachePageDetail, readPageDetail } from '../Tabs/warmCache'
 import { useSession } from '../store'
@@ -10,7 +11,12 @@ import { PageEmbed } from './PageEmbed'
 // the next click or pull focus out of the editor. Mounted ONCE at app level; every host reaches
 // it through `hoverConnection`, so one card app-wide holds by construction.
 
+// KNOB — the card's default and floor sizes. The ceiling is never a knob: width caps at the
+// viewport and height at the band actually available on the card's side of the link.
 const CARD = { w: 260, h: 120 }
+const CARD_MIN = { w: 180, h: 100 }
+const VIEWPORT_MARGIN = 8
+const ANCHOR_GAP = 6
 const LEAVE_GRACE_MS = 200
 const RECT_SLOP = 6
 // A non-path host chain: nested `![[Embed]]` tiles inside the body count their depth past 1 and
@@ -62,11 +68,73 @@ export function closeActiveHoverCard(): void {
 
 export function ConnectionHoverCard(): React.JSX.Element {
   const [hovered, setHovered] = useState<Hovered | null>(null)
+  const [size, setSize] = useState(CARD)
+  const [dir, setDir] = useState<'down' | 'up' | 'left' | 'right'>('down')
   const cardRef = useRef<HTMLDivElement | null>(null)
   const anchorRef = useRef<Element | null>(null)
   const hoveredRef = useRef(hovered)
   anchorRef.current = hovered?.el ?? null
   hoveredRef.current = hovered
+
+  // The ceiling, live: viewport width, and the vertical band on the card's side of the link.
+  const maxSize = (): { w: number; h: number } => {
+    const w = window.innerWidth - 2 * VIEWPORT_MARGIN
+    const link = hoveredRef.current?.el.isConnected
+      ? hoveredRef.current.el.getBoundingClientRect()
+      : null
+    if (!link) return { w, h: window.innerHeight - 2 * VIEWPORT_MARGIN }
+    const band =
+      dir === 'up'
+        ? link.top - ANCHOR_GAP - VIEWPORT_MARGIN
+        : window.innerHeight - link.bottom - ANCHOR_GAP - VIEWPORT_MARGIN
+    return { w, h: Math.max(CARD_MIN.h, band) }
+  }
+  const max = maxSize()
+  const shown = { w: Math.min(size.w, max.w), h: Math.min(size.h, max.h) }
+  const shownRef = useRef(shown)
+  shownRef.current = shown
+
+  // Free-edge resize: right + bottom + corner, on the tile gesture skeleton. The card never grows
+  // upward — a flipped-up card's bottom edge is the anchored one, so it offers width alone.
+  const resizingRef = useRef(false)
+  const begin = usePointerGesture()
+  const startResize =
+    (axes: { x?: boolean; y?: boolean }) =>
+    (e: React.PointerEvent): void => {
+      if (e.button !== 0) return
+      const start = { ...shownRef.current }
+      const sx = e.clientX
+      const sy = e.clientY
+      begin({
+        el: e.currentTarget as HTMLElement,
+        event: e,
+        activation: 0,
+        capture: true,
+        swallowActiveEscape: true,
+        onActivate: () => {
+          resizingRef.current = true
+          return true
+        },
+        onDragMove: (ev) => {
+          const cap = maxSize()
+          setSize({
+            w: axes.x
+              ? Math.min(cap.w, Math.max(CARD_MIN.w, start.w + (ev.clientX - sx)))
+              : start.w,
+            h: axes.y
+              ? Math.min(cap.h, Math.max(CARD_MIN.h, start.h + (ev.clientY - sy)))
+              : start.h,
+          })
+        },
+        onDrop: () => {
+          resizingRef.current = false
+        },
+        onAbort: () => {
+          resizingRef.current = false
+          setSize(start)
+        },
+      })
+    }
 
   useEffect(() => {
     present = (next) => {
@@ -116,6 +184,9 @@ export function ConnectionHoverCard(): React.JSX.Element {
     // The link element is the anchor; once it leaves the DOM (scrolled out of CM's viewport, or a
     // rebuild the same-target refresh didn't heal) there is nothing to point at.
     const onMove = (e: MouseEvent): void => {
+      // A live resize suspends the whole leave lifecycle — the drag routinely exits the card, and
+      // the grace re-arms naturally on the first movement after the drop.
+      if (resizingRef.current) return
       if (!hovered.el.isConnected) {
         close()
         return
@@ -169,8 +240,9 @@ export function ConnectionHoverCard(): React.JSX.Element {
       triggerRef={anchorRef}
       manageFocus={false}
       origin="center"
+      onDirection={setDir}
     >
-      <div ref={cardRef} className="conn-hover-body" style={{ width: CARD.w, height: CARD.h }}>
+      <div ref={cardRef} className="conn-hover-body" style={{ width: shown.w, height: shown.h }}>
         {hovered && (
           <PageEmbed
             key={hovered.page.path}
@@ -181,6 +253,16 @@ export function ConnectionHoverCard(): React.JSX.Element {
             connections={resolveOnly}
             ancestors={HOVER_ANCESTORS}
           />
+        )}
+        <div className="conn-hover-resize-e" onPointerDown={startResize({ x: true })} />
+        {dir !== 'up' && (
+          <>
+            <div className="conn-hover-resize-s" onPointerDown={startResize({ y: true })} />
+            <div
+              className="conn-hover-resize-se"
+              onPointerDown={startResize({ x: true, y: true })}
+            />
+          </>
         )}
       </div>
     </PickerMenu>

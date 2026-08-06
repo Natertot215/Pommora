@@ -24,11 +24,42 @@
    over-scroll must never reach the editor underneath (moving that editor detaches the card's
    own anchor). */
 .conn-hover-body {
+  position: relative;
   overflow: hidden;
 }
 .conn-hover-body .pgembed {
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* Free-edge resize strips — right, bottom, and their corner (the tile-edge treatment: a thin
+   band straddling the edge, inset clear of the pane's rounded corners). */
+.conn-hover-resize-e,
+.conn-hover-resize-s,
+.conn-hover-resize-se {
+  position: absolute;
+  z-index: 2;
+}
+.conn-hover-resize-e {
+  top: 10px;
+  bottom: 16px;
+  right: -6px;
+  width: 10px;
+  cursor: ew-resize;
+}
+.conn-hover-resize-s {
+  left: 10px;
+  right: 16px;
+  bottom: -6px;
+  height: 10px;
+  cursor: ns-resize;
+}
+.conn-hover-resize-se {
+  right: -6px;
+  bottom: -6px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
 }
 
 /* A page:open that fails while the title still resolves — the embed renders its target's name as
