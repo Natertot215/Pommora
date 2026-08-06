@@ -25,7 +25,7 @@ Nathan's live refinements then tightened the card: a scroll-only interior (no gu
 - Drive the NEEDS-NATHAN list in the embedded-pages walkthrough doc — native menu picks, real-pointer checks, one real ⌘Q, the SurfacePM visual baseline.
 - Push the local batch when satisfied.
 - The prioritized future-work survey is in Planning/Pending-Work 8-5.md; the option-rename replumb remains in effect.
-- Migrate `listDrag` and `blockDrag` onto `beginPointerGesture` — scoped as its own pass after the fix batch settles; the rest of the gesture family stays on the standing Debt line.
+- The gesture-family survey settled what migrates and what doesn't; the remaining candidates and the reasoning sit on the standing Debt line, to be taken as each file is next opened.
 
 #### Session Pointers
 
