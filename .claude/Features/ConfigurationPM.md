@@ -1,6 +1,6 @@
 ### Configuration
 
-How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nexus/settings.json` — **personalization**, **labels**, and the profile (image + subtitle) — that travels with the Nexus and syncs, and a per-device **app config** that stays on the machine. A third scope — per-machine chrome (folds, active view, view order, table headings, the tab and preview sets, the visited-entity history) — is never synced and lives in the Nexus's device-local database (→ `ArchitecturePM.md`).
+How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nexus/settings.json` — **personalization**, **labels**, and the profile (image + subtitle) — that travels with the Nexus and syncs, and a per-device **app config** that stays on the machine. A third scope — per-machine chrome (folds, active view, view order, table headings, the tab and preview sets, the hover card's size, the visited-entity history) — is never synced and lives in the Nexus's device-local database (→ `ArchitecturePM.md`).
 
 ### Personalization (Per-Nexus)
 
