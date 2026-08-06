@@ -270,7 +270,11 @@ export function MarkdownEditor({
           menuRef.current?.pushState(fs)
         }
 
-        if (u.docChanged || u.selectionSet) detectConnectionQuery(u.view, setAc, true)
+        // Read-only mounts never autocomplete: a click seating the caret inside a rendered
+        // [[Title]] would otherwise pop the picker over a surface that can't accept an edit —
+        // a locked embed, or the hover card gazing at its own links.
+        if ((u.docChanged || u.selectionSet) && !u.state.readOnly)
+          detectConnectionQuery(u.view, setAc, true)
       }),
     ]
     // Warm rehydration: seed the fresh mount from the cached serialized state — doc + selection +

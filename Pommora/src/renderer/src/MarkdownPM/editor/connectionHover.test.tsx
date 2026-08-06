@@ -1,8 +1,16 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+
+class ResizeObserverStub {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 stubEditorBridge()
 beforeEach(() => {
@@ -72,5 +80,21 @@ describe('the hover intent', () => {
     over(span)
     vi.advanceTimersByTime(500)
     expect(hover).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('read-only autocomplete gate', () => {
+  const coords = { left: 10, right: 10, top: 10, bottom: 20 }
+  it('a caret seated inside a link opens the picker only when the editor can edit', async () => {
+    const editable = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
+    vi.spyOn(editable, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => editable.dispatch({ selection: { anchor: 3 } }))
+    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
+    await cleanupEditor()
+
+    const locked = await mountEditor({ initialBody: '[[Alpha]]', connections: conn, readOnly: true })
+    vi.spyOn(locked, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => locked.dispatch({ selection: { anchor: 3 } }))
+    expect(document.querySelector('.mdpm-ac')).toBeNull()
   })
 })
