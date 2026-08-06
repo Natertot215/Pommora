@@ -9,7 +9,7 @@ import { blockAt, blockStarts } from './blockModel'
 import { Overlay, setShade, shadeField } from './dragChrome'
 import { lineElementAt } from './lineDom'
 import { blockMoveChanges } from './listDragModel'
-import { findScroller, scrollableInAxis, startAutoScroll } from '../../design-system/interactions/autoscroll'
+import { resolveScroller, startAutoScroll } from '../../design-system/interactions/autoscroll'
 
 // The OUTER bottom of the content block above a gap (skipping blank lines), so the insertion line reads "the
 // dragged block goes BELOW this" and sits OUTSIDE a box (below a callout's border, not inside it).
@@ -124,15 +124,7 @@ export function startBlockDrag(
       // → `remeasure`, so far candidates (CM only renders ~viewport) become targetable as they scroll in.
       stopScroll = startAutoScroll({
         getPoint: () => ({ x: 0, y: g.lastY }),
-        scroller: ((): HTMLElement => {
-            // A non-overflowing scroller (an embed tile at rest, a grown host) scrolls nothing —
-            // climb to the ancestor that actually scrolls this axis, or the drag can't reach
-            // off-screen candidates.
-            const cs = getComputedStyle(host)
-            return scrollableInAxis(cs.overflowX, cs.overflowY, host, 'y')
-              ? host
-              : (findScroller(host, 'y') ?? host)
-          })(),
+        scroller: resolveScroller(host, 'y'),
         dragEl: host,
         axis: 'y',
       })

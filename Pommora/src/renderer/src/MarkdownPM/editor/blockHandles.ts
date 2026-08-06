@@ -67,28 +67,51 @@ export function blockGripHover(onHotChange?: (line: HTMLElement | null) => void)
   // blockAt parses the doc, so resolve the block only when the hovered doc-line changes, not every pixel.
   let cachedFrom = -1
   let cachedFirstFrom = -1
-  return EditorView.domEventHandlers({
-    mousemove(e, view) {
-      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY }, false)
-      const hovered = pos == null ? null : lineElementAt(view, view.state.doc.lineAt(pos).from)
-      if (pos == null || !hovered || e.clientX >= hovered.getBoundingClientRect().left) {
+  // Every line's left edge IS the content column's, so the gutter test needs one measurement rather
+  // than a per-line rect. It leads the handler: past the column edge — the whole text area, and most
+  // of the pointer's travel — the answer is no grip, reached without a hit-test or a parse.
+  let textLeft = -1
+  const columnLeft = (view: EditorView): number => {
+    if (textLeft < 0) {
+      const box = view.contentDOM.getBoundingClientRect()
+      textLeft = box.left + parseFloat(getComputedStyle(view.contentDOM).paddingLeft || '0')
+    }
+    return textLeft
+  }
+  return [
+    // The column moves only when the editor's own geometry does — never on scroll, a doc edit, or a
+    // caret move, which is what makes one cached edge safe across a whole hover session.
+    EditorView.updateListener.of((u) => {
+      if (u.geometryChanged) textLeft = -1
+    }),
+    EditorView.domEventHandlers({
+      mousemove(e, view) {
+        if (e.clientX >= columnLeft(view)) {
+          setHot(null)
+          report(null)
+          return
+        }
+        const pos = view.posAtCoords({ x: e.clientX, y: e.clientY }, false)
+        const lineFrom = pos == null ? null : view.state.doc.lineAt(pos).from
+        const hovered = lineFrom == null ? null : lineElementAt(view, lineFrom)
+        if (pos == null || lineFrom == null || !hovered) {
+          setHot(null)
+          report(null)
+          return
+        }
+        if (lineFrom !== cachedFrom) {
+          cachedFrom = lineFrom
+          const block = blockAt(docString(view.state.doc), pos)
+          cachedFirstFrom =
+            block && GRIP_BLOCKS.has(block.kind) ? view.state.doc.lineAt(block.from).from : -1
+        }
+        setHot(cachedFirstFrom < 0 ? null : lineElementAt(view, cachedFirstFrom))
+        report(hovered)
+      },
+      mouseleave() {
         setHot(null)
         report(null)
-        return
-      }
-      const lineFrom = view.state.doc.lineAt(pos).from
-      if (lineFrom !== cachedFrom) {
-        cachedFrom = lineFrom
-        const block = blockAt(docString(view.state.doc), pos)
-        cachedFirstFrom =
-          block && GRIP_BLOCKS.has(block.kind) ? view.state.doc.lineAt(block.from).from : -1
-      }
-      setHot(cachedFirstFrom < 0 ? null : lineElementAt(view, cachedFirstFrom))
-      report(hovered)
-    },
-    mouseleave() {
-      setHot(null)
-      report(null)
-    },
-  })
+      },
+    }),
+  ]
 }
