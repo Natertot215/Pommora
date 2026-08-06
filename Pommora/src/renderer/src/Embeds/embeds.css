@@ -42,6 +42,14 @@
   padding: 0 calc(14px * var(--mdpm-scale));
   cursor: default;
 }
+/* No chevron in the card — with the caret disabled, clicking the heading itself is the fold
+   toggle, and the whole line signals it. */
+.conn-hover-body .mdpm-editor .cm-line.md-foldable::before {
+  display: none;
+}
+.conn-hover-body .mdpm-editor .cm-line.md-foldable {
+  cursor: pointer;
+}
 
 /* Resizing wears the hot accent stroke tiles and embeds use, painted onto the pane's own frame
    path (the pop div is the one holding both the card and its frame svg). */
