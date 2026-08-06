@@ -358,7 +358,7 @@ Deliberately not solved here: in-card clicks opening previews (parked), live-cel
 - [x] **Phase 3** — beak · gate closed
   - [x] Task 5 — center placement + sliding beak
 - [ ] **Phase 4** — size
-  - [ ] Task 6 — free-edge resize
+  - [x] Task 6 — free-edge resize
   - [ ] Task 7 — persisted universal size
 - [ ] **Phase 5** — linger
   - [ ] Task 8 — the Settings slider
