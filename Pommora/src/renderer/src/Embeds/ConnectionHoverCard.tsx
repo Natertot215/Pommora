@@ -81,6 +81,11 @@ export function ConnectionHoverCard(): React.JSX.Element {
   const hoveredRef = useRef(hovered)
   anchorRef.current = hovered?.el ?? null
   hoveredRef.current = hovered
+  // The Bloom-out rides the last real target (PreviewWindow's `held` pattern): the body keeps its
+  // content and the size stays frozen through the exit, and the next open supersedes the hold.
+  const heldRef = useRef(hovered)
+  if (hovered) heldRef.current = hovered
+  const held = hovered ?? heldRef.current
 
   // The ceiling, live: viewport width, and the vertical band on the card's side of the link.
   const maxSize = (): HoverCardSize => {
@@ -96,9 +101,10 @@ export function ConnectionHoverCard(): React.JSX.Element {
     return { w, h: Math.max(CARD_MIN.h, band) }
   }
   const max = maxSize()
-  const shown = { w: Math.min(size.w, max.w), h: Math.min(size.h, max.h) }
-  const shownRef = useRef(shown)
-  shownRef.current = shown
+  const live = { w: Math.min(size.w, max.w), h: Math.min(size.h, max.h) }
+  const shownRef = useRef(live)
+  if (hovered) shownRef.current = live
+  const shown = shownRef.current
 
   // Free-edge resize: right + bottom + corner, on the tile gesture skeleton. The card never grows
   // upward — a flipped-up card's bottom edge is the anchored one, so it offers width alone.
@@ -302,10 +308,10 @@ export function ConnectionHoverCard(): React.JSX.Element {
           if (line && view) toggleFoldAt(view, view.posAtDOM(line))
         }}
       >
-        {hovered && (
+        {held && (
           <PageEmbed
-            key={hovered.page.path}
-            path={hovered.page.path}
+            key={held.page.path}
+            path={held.page.path}
             editing={false}
             onBeginEdit={() => {}}
             locked
