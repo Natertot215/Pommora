@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { ACTIVATION, suppressNextClick } from '@renderer/design-system/interactions/shared'
 
 // The multi-region cousin of useOptionReorder. A drag can reorder within a group OR cross into
@@ -185,6 +185,10 @@ export function useStatusReorder(
       onCancel()
     }
   }
+
+  // The listeners live on the window, so a pane closing mid-drag would otherwise strand all five of
+  // them for the rest of the session.
+  useEffect(() => detach, [])
 
   const onRowPointerDown = (value: string, e: ReactPointerEvent): void => {
     if (e.button !== 0 || !e.isPrimary || g.current) return

@@ -102,6 +102,9 @@ export function DetailPane(): React.JSX.Element {
   // Cursor in the chevron's general area (a large bottom-right region) → reveal the toggle. Tracked
   // here rather than with a giant invisible button so the reveal zone never blocks clicks beneath it.
   const [near, setNear] = useState(false)
+  // Measured lazily and cached: a rect per mousemove forces a layout on every pointer move. The pane
+  // only moves when the surrounding panes do, and the pointer leaving is a free moment to re-measure.
+  const paneRect = useRef<DOMRect | null>(null)
 
   const showSubfield =
     selectionKind === 'collection' ||
@@ -124,10 +127,14 @@ export function DetailPane(): React.JSX.Element {
       }}
       onMouseMove={(e) => {
         if (!showSubfield) return
-        const r = e.currentTarget.getBoundingClientRect()
+        paneRect.current ??= e.currentTarget.getBoundingClientRect()
+        const r = paneRect.current
         setNear(e.clientX > r.right - 260 && e.clientY > r.bottom - 120)
       }}
-      onMouseLeave={() => setNear(false)}
+      onMouseLeave={() => {
+        paneRect.current = null
+        setNear(false)
+      }}
     >
       <div ref={viewRef} className={frozen ? 'detail-pane-view is-frozen' : 'detail-pane-view'}>
         <DetailView />
