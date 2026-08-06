@@ -285,6 +285,10 @@ export function ConnectionHoverCard(): React.JSX.Element {
         ref={cardRef}
         className={`conn-hover-body${resizing ? ' is-resizing' : ''}`}
         style={{ width: shown.w, height: shown.h }}
+        // The caret never enters the preview — swallowing the press keeps CM from seating a
+        // selection or taking focus, while wheel scrolling and the strips' pointer gestures
+        // (dispatched before mousedown) stay live.
+        onMouseDownCapture={(e) => e.preventDefault()}
       >
         {hovered && (
           <PageEmbed
