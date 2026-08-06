@@ -44,6 +44,8 @@ const tabStops = (root: HTMLElement): HTMLElement[] =>
 // ancestor; its backdrop also covers the trigger so a toggle can't dismiss-then-reopen. Manual
 // (pass `closing`, mount it yourself) is for bespoke close logic. Both layers carry
 // `data-picker-portal` because useDismiss's containment check can't see through the portal.
+export type PickerDirection = 'down' | 'up' | 'left' | 'right'
+
 export function PickerMenu({
   children,
   open,
@@ -76,7 +78,7 @@ export function PickerMenu({
   notchWidth?: number
   notchHeight?: number
   notchCurve?: number
-  direction?: 'down' | 'up' | 'left' | 'right'
+  direction?: PickerDirection
   origin?: 'right' | 'center' | 'left'
   anchorX?: number
   maxHeight?: number
@@ -89,7 +91,7 @@ export function PickerMenu({
   style?: CSSProperties
   /** Reports the effective (post-flip) direction each placement pass — for a consumer whose own
    *  chrome depends on which side the pane opened (NotchedPane.onResize's publication pattern). */
-  onDirection?: (dir: 'down' | 'up' | 'left' | 'right') => void
+  onDirection?: (dir: PickerDirection) => void
 }): React.JSX.Element | null {
   const selfManaged = open !== undefined
   const { mounted, closing: exitClosing } = useExitPresence(open ?? true)
@@ -120,10 +122,10 @@ export function PickerMenu({
   } | null>(null)
   // Auto-flips to 'down' when the requested direction wouldn't fit the viewport. Down is the
   // terminal fallback, so flips always converge.
-  const [effDir, setEffDir] = useState<'down' | 'up' | 'left' | 'right'>(direction)
+  const [effDir, setEffDir] = useState<PickerDirection>(direction)
   // Decided ONCE per open: re-deciding on every re-measure would let a growing pane teleport above
   // its trigger mid-interaction, yanking rows out from under the cursor.
-  const decidedDir = useRef<'down' | 'up' | 'left' | 'right' | null>(null)
+  const decidedDir = useRef<PickerDirection | null>(null)
   // Keyed on `open`, not `mounted`: a fast reopen during the exit-timer window would otherwise
   // inherit stale placement and, if the trigger moved, park the pane off-screen.
   if (open === false && decidedDir.current !== null) decidedDir.current = null

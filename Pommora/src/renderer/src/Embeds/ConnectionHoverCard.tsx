@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnectionsApi, ConnPage } from '@renderer/MarkdownPM/connections'
-import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
+import {
+  PickerMenu,
+  type PickerDirection,
+} from '@renderer/design-system/components/PickerMenu/PickerMenu'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import type { HoverCardSize } from '@shared/types'
 import { pageIndexOf } from '../treeIndex'
 import { cachePageDetail, readPageDetail } from '../Tabs/warmCache'
 import { useSession } from '../store'
 import { PageEmbed } from './PageEmbed'
-import {
-  CARD_MIN,
-  hoverCardSize,
-  seedHoverCardSize,
-  setHoverCardSize,
-} from './hoverCardSize'
+import { CARD_MIN, hoverCardSize, seedHoverCardSize, setHoverCardSize } from './hoverCardSize'
 
 // Contract: no dismiss backdrop and `manageFocus={false}` — a hover affordance must never eat
 // the next click or pull focus out of the editor. Mounted ONCE at app level; every host reaches
@@ -74,7 +73,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
   const [hovered, setHovered] = useState<Hovered | null>(null)
   const [size, setSize] = useState(hoverCardSize)
   useEffect(seedHoverCardSize, [])
-  const [dir, setDir] = useState<'down' | 'up' | 'left' | 'right'>('down')
+  const [dir, setDir] = useState<PickerDirection>('down')
   const cardRef = useRef<HTMLDivElement | null>(null)
   const anchorRef = useRef<Element | null>(null)
   const hoveredRef = useRef(hovered)
@@ -82,7 +81,7 @@ export function ConnectionHoverCard(): React.JSX.Element {
   hoveredRef.current = hovered
 
   // The ceiling, live: viewport width, and the vertical band on the card's side of the link.
-  const maxSize = (): { w: number; h: number } => {
+  const maxSize = (): HoverCardSize => {
     const w = window.innerWidth - 2 * VIEWPORT_MARGIN
     const link = hoveredRef.current?.el.isConnected
       ? hoveredRef.current.el.getBoundingClientRect()
@@ -133,7 +132,14 @@ export function ConnectionHoverCard(): React.JSX.Element {
         },
         onDrop: () => {
           resizingRef.current = false
-          setHoverCardSize(shownRef.current)
+          // Only the dragged axes persist — the other rides the stored value, or a width-only
+          // drag near a cramped link would silently ratchet the universal height down to that
+          // link's band-clamped render.
+          const stored = hoverCardSize()
+          setHoverCardSize({
+            w: axes.x ? shownRef.current.w : stored.w,
+            h: axes.y ? shownRef.current.h : stored.h,
+          })
         },
         onAbort: () => {
           resizingRef.current = false
