@@ -32,7 +32,7 @@ Warmth is session-only and per-tab: serialized editor state, undo included, plus
 
 - **⌘N while the floating preview is open** promotes the active tab to a new app tab and closes it (the window when it was the last) — routed through the native menu's new-tab message, since a renderer keydown can't beat a native accelerator.
 
-- **Hover**: resting on a resolved connection past the intent delay blooms the hover card — a backdrop-free pane anchored to the link, dismissed by grace-timed pointer-leave or Escape. The trigger, chassis, and dismissal are live; the card's page content is a blank pane.
+- **Hover**: resting on a resolved connection past the intent delay blooms the hover card — a backdrop-free pane anchored to the live link, showing a compact read-only preview of the target page through the shared embed framework: no banner and no inline title, the body scrolling inside the card with its scroll contained, links styled but inert, and any embed tiles within rendered inert — a glance surface, never an editor. The card resolves its content before it opens, so a page that can't load simply blooms nothing. One card exists app-wide, mounted once at app level; it follows the link through editor scroll and closes on grace-timed pointer-leave, Escape, any navigation, or the link leaving the viewport. The pointer entering the card never counts as leaving.
 
 ### The NavWindow Flavor
 
@@ -45,8 +45,6 @@ The right-hand pane is a PreviewPane **side slot** in its overlay mode — it ri
 **The window has a real Subfield footer.** It fills PreviewPane's **footer slot** — the surface owns the bar's collapse, its squeeze away from an open side pane, and the chevron's reveal; the preview supplies the content. The floating window mounts the shared Subfield scoped to its active tab, re-scoping when you switch tabs, so it carries the same location breadcrumb and live counts a full page does. The counts come from a **local** body the window owns, never the app-wide live-body slot, so editing a preview never disturbs the main pane's live count. The footer content aligns to the embed's text column.
 
 ### Pending
-
-- The hover card's embedded page content — its body is a blank pane.
 
 - The engulf's landing when the promoted page's main-pane fetch outlasts the FLIP; the pane can show the prior view for a beat, usually masked by warmth.
 
