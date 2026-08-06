@@ -14,7 +14,7 @@ function stripMarkdown(md: string): string {
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → text
     .replace(/\[\[([^\]|]*)(?:\|([^\]]*))?\]\]/g, (_m, a, b) => b || a) // wikilinks → display text
-    .replace(/^\s{0,3}(?:#{1,6}|>|[-*+])\s+/gm, '') // heading / quote / bullet markers
+    .replace(/^\s{0,3}(?:#{1,6}|>|[-+])\s+/gm, '') // heading / quote / bullet markers
     .replace(/^\s{0,3}\d+\.\s+/gm, '') // ordered-list markers
     .replace(/^\s*[-=*_]{3,}\s*$/gm, ' ') // hr / setext rule
     .replace(/[*_~]/g, '') // emphasis markers

@@ -12,7 +12,7 @@ import {
   parseListMarkerPrefixed,
   type CalloutLine,
 } from '../detect'
-import { fencedCodeRanges } from '../detect'
+import { fencedCodeRanges, scanFencedCode } from '../detect'
 import { docMathRanges } from './mathRanges'
 import { docEmbedLines } from './embedRanges'
 import { tableRegions } from '../Tables/regions'
@@ -60,7 +60,7 @@ function blockContext(doc: string): BlockContext {
   const starts = lineOffsets(lines)
   const ends = starts.map((s, i) => s + lines[i].length)
 
-  const callout = calloutLines(lines)
+  const rawCallout = calloutLines(lines)
   const fences = fencedCodeRanges(doc)
   const tables = tableRegions(doc)
   const maths = docMathRanges(doc)
@@ -110,9 +110,20 @@ function blockContext(doc: string): BlockContext {
     i = j + 1
   }
 
+  // A closed top-level fence owns its bytes outright, so a `>` inside one is code text rather than a
+  // quote — the same rule the decoration pass draws by, kept in agreement here so a grip can never
+  // offer to drag two lines out of a code block. A QUOTED fence keeps its box: the `>` is real there.
+  const fenceAt = scanFencedCode(lines, starts)
+  const literalCode = (i: number): boolean => {
+    const f = fenceAt[i]
+    return f?.closed === true && f.depth === 0
+  }
+
+  const callout = rawCallout.map((c, i) => (literalCode(i) ? undefined : c))
+
   const heading = lines.map(isHeadingLine)
   const hr = lines.map(isThematicBreakLine)
-  const bq = lines.map(isBlockquoteLine)
+  const bq = lines.map((l, i) => !literalCode(i) && isBlockquoteLine(l))
   const claimed = (i: number): boolean =>
     i < 0 ||
     i >= n ||

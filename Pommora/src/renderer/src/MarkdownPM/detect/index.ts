@@ -294,7 +294,7 @@ export function indentLevel(ws: string): number {
 }
 
 /** The single list-marker parser. Every layer reads markers through this — never its own regex.
- *  `kind` is `checkbox` only when a non-empty box follows a `-`/`*`/`+` bullet (`1. [ ]` stays `ordered`).
+ *  `kind` is `checkbox` only when a non-empty box follows a bullet (`1. [ ]` stays `ordered`).
  *  `arrow` is the `→ ` list (typed `-> `, auto-converted to the glyph by `dashArrow`); it behaves like a
  *  bullet but its marker IS the on-disk glyph, so it's kept as literal source rather than widget-swapped. */
 export interface ListMarker {
@@ -340,7 +340,7 @@ export function parseListMarker(line: string): ListMarker | null {
   const box = b ? { start: b[0], end: b[1], inner: m[5] ?? '' } : undefined
   const bullet = m[3]
 
-  if (bullet !== undefined && box && box.inner !== '' && '-+'.includes(bullet)) {
+  if (bullet !== undefined && box && box.inner !== '') {
     return {
       kind: 'checkbox',
       bullet,

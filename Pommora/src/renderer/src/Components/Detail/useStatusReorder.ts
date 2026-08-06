@@ -151,7 +151,13 @@ export function useStatusReorder(
     if (!hit) return
     s.toGroupId = hit.groupId
     s.toIndex = hit.index
-    setDrop({ groupId: hit.groupId, top: hit.top })
+    // The line mirrors the release's own condition — a same-group slot resolving to the value's current
+    // position draws nothing rather than promising a move the drop then declines.
+    const fromGroup = orderRef.current.find((grp) => grp.values.includes(s.value))
+    const fromIndex = fromGroup?.values.indexOf(s.value) ?? -1
+    const sameGroup = fromGroup?.id === hit.groupId
+    const toIndex = sameGroup && hit.index > fromIndex ? hit.index - 1 : hit.index
+    setDrop(sameGroup && toIndex === fromIndex ? null : { groupId: hit.groupId, top: hit.top })
   }
   const onUp = (): void => {
     const s = g.current
