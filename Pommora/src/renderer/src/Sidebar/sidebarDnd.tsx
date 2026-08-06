@@ -417,7 +417,9 @@ export function SidebarDnd({
     <Ctx.Provider value={value}>
       <div ref={contentRef} style={{ position: 'relative' }}>
         {children}
-        {drag.target && (
+        {/* A noop target draws nothing: the line promises a move, and the drop commits only when the
+            slot differs from where the row already sits. */}
+        {drag.target && !drag.target.noop && (
           <div
             aria-hidden
             style={{

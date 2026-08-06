@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { tokenize } from '../tokens'
 import { CONTENT_CLASS } from '../decorations/intent'
 import { isValidLink } from '@shared/links'
@@ -64,7 +65,7 @@ export function renderCellContent(
   return out
 }
 
-export function StaticCell({
+function StaticCellImpl({
   text,
   connections,
   onActivate,
@@ -89,3 +90,8 @@ export function StaticCell({
     </div>
   )
 }
+
+/** Text is the only prop that changes what a resting cell draws: its handlers close over a fixed grid
+ *  position, and the connections getter is read at render time rather than captured. Comparing text alone
+ *  is what keeps one cell's keystroke from re-rendering every other cell in a long table. */
+export const StaticCell = memo(StaticCellImpl, (a, b) => a.text === b.text)

@@ -122,6 +122,11 @@ export function TableView({
   const [active, setActive] = useState<{ row: number; col: number } | null>(null)
   const caretCoords = useRef<{ x: number; y: number } | null>(null)
 
+  // The measure sweep reads a rect per column and per row, so it runs on the table's SHAPE, never on the
+  // model's identity: a cell keystroke rebuilds the model every character, and re-measuring there is an
+  // O(rows) forced layout on the highest-frequency trigger there is. Text that reflows a row still lands —
+  // it changes the table's own box, which the observer below catches.
+  const shape = `${model.rows.length}x${model.columns.map((c) => `${c.align}:${c.dashes}`).join('|')}`
   useLayoutEffect(() => {
     const measure = (): void => {
       const table = tableRef.current
@@ -146,7 +151,7 @@ export function TableView({
     const ro = new ResizeObserver(measure)
     if (tableRef.current) ro.observe(tableRef.current)
     return () => ro.disconnect()
-  }, [model])
+  }, [shape])
 
   // updateDOM re-renders in place (no re-mount), so a live drag survives the model update.
   // Clear when the model changes so the dropped item settles without holding its drag transform.
