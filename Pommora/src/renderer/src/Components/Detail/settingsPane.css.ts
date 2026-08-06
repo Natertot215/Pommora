@@ -75,12 +75,14 @@ export const anchor = style(dropdownAnchor('right', stack.local.lifted))
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** The icon + title header row. Its left inset aligns the icon-button's centered dash with the
- *  row-icon column used elsewhere. */
+ *  row-icon column used elsewhere. Seeds the resting field border on the shared OutlineTint
+ *  channel, so both halves wear it as one — a caller's `outline` tint overrides from the element. */
 export const header = style({
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
   padding: '2px 0 6px 2px',
+  vars: { '--field-ring': c.separator.line },
 })
 
 /** Square icon button — opens the icon picker. Paints the shared OutlineTint channel so a
