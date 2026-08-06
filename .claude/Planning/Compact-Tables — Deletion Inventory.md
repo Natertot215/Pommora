@@ -28,8 +28,8 @@ The only direct coverage is `shared/views.test.ts:191-200`, which tests the **co
 - `Features/ViewsPM.md:73` — delete the whole "Compact Table Density" Pending entry; its cards claim is already at CardViewPM.
 - `Features/TableViewPM.md:79` — delete the whole "Compact density" Prospects bullet.
 - `Planning/Pending-Work 8-5.md:103-105` — delete the "Make the Table's Compact Toggle Do Something" section; this inventory resolves it.
-- `Context.md` Debt line "View format/grouping/banner saves still trigger a full vault walk" — drop "format/" or leave as-is by ruling: the `format` write path still exists for Cards, so the line stays technically true.
-- `History.md` (the 0.5.x Multi-View entry naming "the Table Format control" and the `format` sidecar key) — **historical record, stays verbatim.** CardViewPM's Standard/Compact card-layout section stays — it is the live feature's home.
+- `ContextPM.md` Debt line "View format/grouping/banner saves still trigger a full vault walk" — drop "format/" or leave as-is by ruling: the `format` write path still exists for Cards, so the line stays technically true.
+- `HistoryPM.md` (the 0.5.x Multi-View entry naming "the Table Format control" and the `format` sidecar key) — **historical record, stays verbatim.** CardViewPM's Standard/Compact card-layout section stays — it is the live feature's home.
 
 ### Decisions the Cut Should Carry
 

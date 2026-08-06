@@ -23,7 +23,7 @@ They share a module and nothing else.
 
 ### Sources
 
-- The identity arc's D-15 (duplicate ids — folds in via the baseline, see A-5) and D-17 (one record serving structural revert and trash restore); the arc itself is recorded in `History.md`.
+- The identity arc's D-15 (duplicate ids — folds in via the baseline, see A-5) and D-17 (one record serving structural revert and trash restore); the arc itself is recorded in `HistoryPM.md`.
 - Commit `be671378` — *"parent_id leaves — folder nesting was always the parentage."* Constrains B-3.
 - `src/main/io/atomicWrite.ts` — `trashWithTimestamp`: mirrors the folder chain, stamps the leaf, de-collides with a counter, moves a whole subtree in one rename, and returns the final destination the pair name derives from.
 - `src/main/mutate.ts` — the `delete` arm's real order (sweep → registry erase → move) and `removeViaMode`'s two trash modes.

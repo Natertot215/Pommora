@@ -71,10 +71,6 @@ Pommora was first built as a native SwiftUI app — that build was active for ar
 // [[Project Pommora]]                       | • Monorepo root — the app, its documentation, and deploy config
 ├── // [[.claude]]                           | • Project documentation and Claude configuration
 │   ├── [[CLAUDE]]                           | • This file.
-│   ├── [[Context]]                          | • Where things stand — required session-start reading
-│   ├── [[Framework]]                        | • The road to v1.0.0 and what each version closes
-│   ├── [[Handoff]]                          | • Session-continuity record, newest session first
-│   ├── [[History]]                          | • Changelog and locked decisions, newest first
 │   ├── [[PommoraPRD]]                       | • Vision, scope, and product decisions — stack-independent
 │   ├── // [[Features]]                      | • Per-feature documentation, updated with every relevant commit
 │   │   ├── [[AgendaPM]]                     | • Tasks and Events — de-scaffolded; the plumbing that survives

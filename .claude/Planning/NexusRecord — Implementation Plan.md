@@ -416,7 +416,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 
 **Why:** Docs ride the commit that falsifies them; these four outlived their commits only because the plan batches doc-truth at the surface's landing.
 
-**Files:** the four Made False entries + `History.md` (one entry, durable voice) + `Handoff.md` session block.
+**Files:** the four Made False entries + `HistoryPM.md` (one entry, durable voice) + `HandoffPM.md` session block.
 
 **Steps:**
 - [x] Rewrite each claim; closing sweep: `removed_at` → 0 against control `property_cache` → 15.
@@ -426,7 +426,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 #### Gate 4 — the acceptance criterion, whole
 - [x] The acceptance sequence runs green as tests — headless; no trigger exists.
 - [x] Simplification + review on the phase range; comment-killer pass on the full plan diff; concerns fixed or ruled.
-- [x] Closeout per the skill: Delivery Claim → neutral verifier (against the SPEC — claim stands, every number reproduced) → attack pass (5 confirmed crossings, all folded red-first; catalog in Deviations) → **Nathan's live check pending** (the two-step walkthrough is in Handoff's Next Session).
+- [x] Closeout per the skill: Delivery Claim → neutral verifier (against the SPEC — claim stands, every number reproduced) → attack pass (5 confirmed crossings, all folded red-first; catalog in Deviations) → **Nathan's live check pending** (the two-step walkthrough is in HandoffPM's Next Session).
 
 ---
 

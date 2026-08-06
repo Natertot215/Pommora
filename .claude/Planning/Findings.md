@@ -1,6 +1,6 @@
 ## Findings — The Instruction-Stack Audit
 
-> **Scope:** ClaudeOS → StudioMD → Pommora CLAUDE.md, their satellite docs (Handoff, Context, History, Framework, PRD, Guidelines, Planning), and the Nathan-authored skills, agents, and commands — diagnosed against the five most recent session logs. Proposals only; nothing here has been applied.
+> **Scope:** ClaudeOS → StudioMD → Pommora CLAUDE.md, their satellite docs (HandoffPM, ContextPM, HistoryPM, VersioningPM, PRD, Guidelines, Planning), and the Nathan-authored skills, agents, and commands — diagnosed against the five most recent session logs. Proposals only; nothing here has been applied.
 
 ### Consistent Patterns
 
@@ -114,7 +114,7 @@ The fix moves each piece to the tier where it always loads: gates and their trap
 
 #### Fix 7 — The Roster's Standing Rule
 
-**Overview:** StudioMD's Agents/Skills lists are the stack's only routing surface, and they rot silently — the superpowers routings were dead for weeks before a mid-plan `Skill(writing-plans)` failure exposed it, costing a five-tool-call detour inside a live arc. The registrations themselves are now sound (real frontmatter throughout, the transcription-agent listed, Transcripts routed through it); what remains is the standing rule that keeps the next rot visible: the roster names dispatch-critical entries, the session listing is the full registry, and a listed-but-unloadable skill is a defect to surface, never to silently route around.
+**Overview:** StudioMD's Agents/Skills lists are the stack's only routing surface, and they rot silently — the superpowers routings were dead for weeks before a mid-plan `Skill(writing-plans)` failure exposed it, costing a five-tool-call detour inside a live arc. The registrations themselves are now sound (real frontmatter throughout, the transcription-agent listed, Sessions routed through it); what remains is the standing rule that keeps the next rot visible: the roster names dispatch-critical entries, the session listing is the full registry, and a listed-but-unloadable skill is a defect to surface, never to silently route around.
 
 **Instruction:** `Rosters name dispatch-critical entries only — the session skill listing is the full registry; a listed skill that fails to load is a defect to flag, not to route around silently.`
 
@@ -136,17 +136,17 @@ The fix moves each piece to the tier where it always loads: gates and their trap
 
 **Counterfactual:** 08-01T21:43, session `6dc9212b` — "give a post-compact prompt to execute. Everything an agent would need to know if they had zero record of this conversation." With this loaded, the prompt is already in Nathan's hands when he types `/compact`, and that request (made four times across the session) disappears.
 
-#### Fix 9 — True the Stale Records: PRD Trash, Framework Queue, Superseded Planning Docs
+#### Fix 9 — True the Stale Records: PRD Trash, VersioningPM Queue, Superseded Planning Docs
 
-**Overview:** Three records now contradict shipped reality. The PRD says no surface browses or restores trash and "putting one back [is] a manual move" — restore ops shipped; the claim mis-briefs any agent grounding in the PRD. Framework's near-term queue lists the IPC channel map as upcoming and gates the store split behind it — the IPC map shipped 07-30. The NexusRecord pair-era spec and plan read as current with no supersession notice, while their central artifact was replaced by the Deletion Bundle; Handoff's own convention says executed planning docs leave the folder. These are deletions and replacements, not additions — per the replace-don't-amend rule, each gets restated correctly or removed.
+**Overview:** Three records now contradict shipped reality. The PRD says no surface browses or restores trash and "putting one back [is] a manual move" — restore ops shipped; the claim mis-briefs any agent grounding in the PRD. VersioningPM's near-term queue lists the IPC channel map as upcoming and gates the store split behind it — the IPC map shipped 07-30. The NexusRecord pair-era spec and plan read as current with no supersession notice, while their central artifact was replaced by the Deletion Bundle; HandoffPM's own convention says executed planning docs leave the folder. These are deletions and replacements, not additions — per the replace-don't-amend rule, each gets restated correctly or removed.
 
-**Instruction:** No new instruction — three doc corrections: (1) PRD trash paragraph rewritten to the bundle + headless-restore truth (surface still pending); (2) Framework queue line drops the IPC entry; (3) the two NexusRecord pair-era Planning docs purged (their record already lives in History + NexusRecordPM), or failing that, status-lined as superseded by the Deletion Bundle docs.
+**Instruction:** No new instruction — three doc corrections: (1) PRD trash paragraph rewritten to the bundle + headless-restore truth (surface still pending); (2) VersioningPM queue line drops the IPC entry; (3) the two NexusRecord pair-era Planning docs purged (their record already lives in HistoryPM + NexusRecordPM), or failing that, status-lined as superseded by the Deletion Bundle docs.
 
-**Placement:** PommoraPRD.md → the trash/database paragraph (**replacement**); Framework.md → the near-term queue line (**replacement**); Planning → `NexusRecord — Implementation Plan.md` + `NexusRecord — Decision Log.md` (**deletion**, per the executed-docs-leave-Planning convention).
+**Placement:** PommoraPRD.md → the trash/database paragraph (**replacement**); VersioningPM.md → the near-term queue line (**replacement**); Planning → `NexusRecord — Implementation Plan.md` + `NexusRecord — Decision Log.md` (**deletion**, per the executed-docs-leave-Planning convention).
 
 **Tier rationale:** Each fix lands in the file that holds the false claim; no instruction tier is involved.
 
-**Counterfactual:** Any next session grounding trash work in the PRD (the trash-surface task is literally next in Handoff) would read "no surface restores it, manual move only" and either re-derive the truth from code or mis-scope the browser. With the docs trued, grounding starts from reality.
+**Counterfactual:** Any next session grounding trash work in the PRD (the trash-surface task is literally next in HandoffPM) would read "no surface restores it, manual move only" and either re-derive the truth from code or mis-scope the browser. With the docs trued, grounding starts from reality.
 
 ### Ranked Priority
 
