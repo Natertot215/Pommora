@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ConnPage } from '@renderer/MarkdownPM/connections'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
+import { cachePageDetail, readPageDetail } from '../Tabs/warmCache'
 import { useSession } from '../store'
 
 // Contract: no dismiss backdrop and `manageFocus={false}` — a hover affordance must never eat
@@ -24,13 +25,29 @@ interface Hovered {
 
 let present: ((next: Hovered | null) => void) | null = null
 
+// Supersession token for the cold-page fetch: only the newest hover's resolve may open.
+let pendingFetch = 0
+
 /** The ConnectionsApi.hover entry every host wires. A call before the card mounts is a no-op —
  *  and so is one whose element already left the DOM: the intent timer outlives its editor (no
  *  mouseout fires when navigation tears the node out under a resting pointer), and a card must
- *  never open anchored to nothing. */
+ *  never open anchored to nothing.
+ *
+ *  The body is resolved BEFORE the card opens: a warm page blooms with content in hand, a cold
+ *  one blooms only once its fetch lands — still under the pointer (`:hover` — a flick-away or a
+ *  mid-fetch teardown can't match) — and a failed open blooms nothing at all. */
 export function hoverConnection(page: ConnPage, el: Element): void {
   if (!el.isConnected) return
-  present?.({ page, el })
+  if (readPageDetail(page.path)) {
+    present?.({ page, el })
+    return
+  }
+  const token = ++pendingFetch
+  void window.nexus.openPage(page.path).then((r) => {
+    if (token !== pendingFetch || !r.ok) return
+    cachePageDetail(r.value)
+    if (el.matches(':hover')) present?.({ page, el })
+  })
 }
 
 export function closeActiveHoverCard(): void {
