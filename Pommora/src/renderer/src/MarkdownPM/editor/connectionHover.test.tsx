@@ -5,7 +5,10 @@ import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connec
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
 
 stubEditorBridge()
-beforeEach(() => vi.useFakeTimers())
+beforeEach(() => {
+  vi.useFakeTimers()
+  hover.mockClear()
+})
 afterEach(async () => {
   vi.useRealTimers()
   await cleanupEditor()
@@ -21,7 +24,6 @@ const conn: ConnectionsApi = {
 // jsdom draws no layout, so posAtCoords can't hit-test — pin it to the link's first character.
 // The link starts the doc, so position 0 sits inside the wikiLink token either way.
 async function mountLink(): Promise<{ view: EditorView; span: HTMLElement }> {
-  hover.mockClear()
   const view = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
   vi.spyOn(view, 'posAtCoords').mockReturnValue(0)
   const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
