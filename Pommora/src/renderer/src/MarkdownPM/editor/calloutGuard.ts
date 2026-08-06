@@ -40,6 +40,9 @@ export function calloutDeleteVerdict(
       }
       // Removing the line WITH its newline (or through EOF) keeps the remaining box contiguous.
       if (to >= lineEnd + 1 || to >= doc.length) return { kind: 'ok' }
+      // A prefix-only line — the box's own blank `>` — holds no content for the clamp to protect, so
+      // clamping it would only turn the delete into a zero-length no-op.
+      if (co.prefixEnd >= lines[i].length) return { kind: 'ok' }
       if (to >= off + co.prefixEnd) return { kind: 'clamp', from: off + co.prefixEnd }
       return { kind: 'cancel' }
     }

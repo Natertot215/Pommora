@@ -129,7 +129,11 @@ export function useOptionReorder(
     setGhost({ x: e.clientX + 12, y: e.clientY + 8 })
     const { index, top } = locate(e.clientY)
     s.index = index
-    setLineTop(top)
+    // The line mirrors the release's own condition — a slot resolving to the option's current position
+    // draws nothing rather than promising a move the drop then declines.
+    const from = orderRef.current.indexOf(s.value)
+    const to = index > from ? index - 1 : index
+    setLineTop(from >= 0 && to !== from ? top : null)
   }
   const onUp = (): void => {
     const s = g.current

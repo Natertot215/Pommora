@@ -14,6 +14,10 @@ describe('calloutGuard — stripsCalloutPrefix (body prefix is uncorruptible)', 
   it('ALLOWS a join — a delete reaching back past the line start (merges into the callout above)', () => {
     expect(stripsCalloutPrefix(doc, 17, 20)).toBe(false) // deletes `\n> `
   })
+  it('ALLOWS deleting a prefix-only body line — there is no content for the clamp to protect', () => {
+    const d = '> [!callout] head\n>\n> tail' // the bare `>` blank line sits at [18, 19)
+    expect(stripsCalloutPrefix(d, 18, 19)).toBe(false)
+  })
   it('ALLOWS deleting content after the prefix', () => {
     expect(stripsCalloutPrefix(doc, 20, 24)).toBe(false) // deletes "body"
   })

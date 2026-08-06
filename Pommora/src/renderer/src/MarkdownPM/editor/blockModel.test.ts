@@ -49,6 +49,19 @@ describe('blockAt', () => {
     expect(blockStarts(doc).some((s) => s.from === doc.indexOf('> quote two'))).toBe(false)
   })
 
+  it('a `>` inside a closed top-level fence is code, never a quote with its own grip', () => {
+    const doc = 'p\n\n```\n> a\n>\nb\n```\nafter'
+    const b = blockAt(doc, doc.indexOf('> a'))
+    expect(b?.kind).toBe('code')
+    expect(slice(doc, b)).toBe('```\n> a\n>\nb\n```')
+    expect(blockStarts(doc).some((s) => s.kind === 'blockquote')).toBe(false)
+  })
+
+  it('a QUOTED fence keeps its box — the `>` is real there', () => {
+    const doc = 'p\n\n> ```\n> code\n> ```\nafter'
+    expect(blockAt(doc, doc.indexOf('code'))?.kind).toBe('blockquote')
+  })
+
   it('a fenced code block is one block, and a `#` inside it is not mis-read as a heading', () => {
     const doc = 'p\n\n```\n# not a heading\ncode\n```\nafter'
     const b = blockAt(doc, doc.indexOf('# not a heading'))
