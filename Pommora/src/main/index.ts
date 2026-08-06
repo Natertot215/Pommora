@@ -299,6 +299,9 @@ function createWindow(): void {
 const isRect = (v: unknown): v is ThumbRect =>
   isPlainObject(v) && ['x', 'y', 'width', 'height'].every((k) => typeof v[k] === 'number')
 
+const isCardSize = (v: unknown): v is HoverCardSize =>
+  isPlainObject(v) && ['w', 'h'].every((k) => typeof v[k] === 'number' && Number.isFinite(v[k]))
+
 // Shared by every path that opens a nexus, run after openSession and before anything reads it:
 // ensures `.nexus/nexus.json` exists so sidecar mode has an identity, then stamps any un-adopted
 // entity with a real ULID so every later write gets a stable id instead of a transient
@@ -592,14 +595,7 @@ serveBridge(
       kind: 'raw',
       fn: (size: unknown) => {
         if (adopting()) return BUSY
-        if (
-          !isPlainObject(size) ||
-          typeof size.w !== 'number' ||
-          typeof size.h !== 'number' ||
-          !Number.isFinite(size.w) ||
-          !Number.isFinite(size.h)
-        )
-          return fail('operation-failed', 'A card size needs finite w and h.')
+        if (!isCardSize(size)) return fail('operation-failed', 'A card size needs finite w and h.')
         if (!writeValue('hoverCard', { w: size.w, h: size.h })) return NO_NEXUS
         return ok(null)
       },
