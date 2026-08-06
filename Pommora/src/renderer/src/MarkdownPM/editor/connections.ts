@@ -6,6 +6,25 @@ type GetApi = () => ConnectionsApi | undefined
 
 const CONN_HOVER_INTENT_MS = 450
 
+/** One pending hover intent — re-arming replaces it, cancel is idempotent. Shared by the editor's
+ *  own handlers and the table's resting-cell trigger, so the delay stays one fact. */
+export function hoverIntent(): { arm: (fire: () => void) => void; cancel: () => void } {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  const cancel = (): void => {
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+  }
+  return {
+    arm: (fire) => {
+      cancel()
+      timer = setTimeout(fire, CONN_HOVER_INTENT_MS)
+    },
+    cancel,
+  }
+}
+
 function wikiLinkAt(view: EditorView, pos: number): { title: string } | null {
   const line = view.state.doc.lineAt(pos)
   const rel = pos - line.from
@@ -28,29 +47,23 @@ function resolvedPageAt(view: EditorView, api: ConnectionsApi, event: MouseEvent
 export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.domEventHandlers> {
   // The pending hover intent — armed on mouseover of a resolved connection, cancelled the
   // moment the pointer leaves it (mouseout fires per CM6 text span; re-entry re-arms fresh).
-  let hoverTimer: ReturnType<typeof setTimeout> | null = null
-  const cancelHover = (): void => {
-    if (hoverTimer) {
-      clearTimeout(hoverTimer)
-      hoverTimer = null
-    }
-  }
+  const intent = hoverIntent()
   return EditorView.domEventHandlers({
     mouseover(event, view) {
       const api = getApi()
       if (!api?.hover) return false
-      cancelHover()
+      intent.cancel()
       // Cheap class gate FIRST (the every-mouseover hard rule): only a resolved connection's
       // decoration span warrants the layout read + line tokenize below.
       const el = (event.target as HTMLElement).closest?.('.md-connection-resolved')
       if (!el) return false
       const page = resolvedPageAt(view, api, event)
       if (!page) return false
-      hoverTimer = setTimeout(() => api.hover?.(page, el), CONN_HOVER_INTENT_MS)
+      intent.arm(() => api.hover?.(page, el))
       return false
     },
     mouseout() {
-      cancelHover()
+      intent.cancel()
       return false
     },
     // Navigate on a plain single-click. Handled on `click`, not `mousedown`, and skipped when the
@@ -58,7 +71,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
     click(event, view) {
       // A click consumes the link — an intent armed during the dwell must not bloom over
       // whatever the click opened.
-      cancelHover()
+      intent.cancel()
       if (event.button !== 0 || event.detail !== 1 || !view.state.selection.main.empty) return false
       const api = getApi()
       if (!api) return false
@@ -72,7 +85,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
     },
     // Right-click on a resolved connection hands off to the host's menu hook (Open in Preview et al).
     contextmenu(event, view) {
-      cancelHover()
+      intent.cancel()
       const api = getApi()
       if (!api?.menu) return false
       const page = resolvedPageAt(view, api, event)
