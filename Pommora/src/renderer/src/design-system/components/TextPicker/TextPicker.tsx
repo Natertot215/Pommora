@@ -30,6 +30,9 @@ export function TextPicker({
     <EditableInput
       value={value}
       className={hasTrailing ? s.suffixInput : s.input}
+      // The bare variant wears the shared field chrome — fill and ring — so it truncates rather
+      // than letting the eclipse dissolve its own box. The suffix variant carries no chrome.
+      boxed={!hasTrailing}
       maxLength={maxLength}
       caretAtEnd
       onCommit={onCommit}

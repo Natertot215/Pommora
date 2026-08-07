@@ -157,10 +157,10 @@ export function PickerMenu({
         ? { left: anchorX, right: anchorX, top: anchorY, bottom: anchorY, width: 0, height: 0 }
         : null
     const trigger = triggerRef?.current ?? markerRef.current?.parentElement
-    const anchor = point ?? trigger
-    if (!anchor) return
+    const rectOf = point ? () => point : trigger ? () => trigger.getBoundingClientRect() : null
+    if (!rectOf) return
     const measure = (): void => {
-      const t = 'getBoundingClientRect' in anchor ? anchor.getBoundingClientRect() : anchor
+      const t = rectOf()
       const c = anchorX ?? t.left + t.width / 2
       const { w: pw, h: ph } = paneBox.current
       let eff = decidedDir.current ?? direction
@@ -416,6 +416,27 @@ export function PickerMenu({
         document.body,
       )}
     </>
+  )
+}
+
+/**
+ * A menu opened AT a point — the cursor of the right-click that spawned it, rather than an element.
+ * The caller holds that point in state and keeps its own `state && …` guard, which is what narrows
+ * the rest of the state it captured alongside the coordinates.
+ */
+export function PointMenu({
+  at,
+  onDismiss,
+  children,
+}: {
+  at: { x: number; y: number }
+  onDismiss: () => void
+  children: ReactNode
+}): React.JSX.Element {
+  return (
+    <PickerMenu solid open onDismiss={onDismiss} anchorX={at.x} anchorY={at.y} origin="center">
+      {children}
+    </PickerMenu>
   )
 }
 

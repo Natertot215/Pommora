@@ -12,7 +12,7 @@ import {
   AccessoryButton,
 } from '../design-system/components/menu'
 import { titleInput } from '../design-system/components/menu/menu.css'
-import { PickerMenu } from '../design-system/components/PickerMenu'
+import { PointMenu } from '../design-system/components/PickerMenu'
 import { PaneSlider } from '../Components/Detail/PaneSlider'
 import { ViewSettings } from '../Components/Detail/ViewSettings'
 import { PaneDnd, RowShell, usePaneRegions } from '../Components/Detail/paneDnd'
@@ -213,19 +213,12 @@ export function ViewPane({
         minHeight={PANE_SQUARE}
       />
       {rowMenuAt && (
-        <PickerMenu
-          solid
-          open
-          onDismiss={() => setRowMenuAt(null)}
-          anchorX={rowMenuAt.x}
-          anchorY={rowMenuAt.y}
-          origin="center"
-        >
+        <PointMenu at={rowMenuAt} onDismiss={() => setRowMenuAt(null)}>
           <MenuItem
             leading={<Icon name="pencil" size={13} />}
             onClick={() => {
-              setRenamingId(rowMenuAt.view.id)
               setRowMenuAt(null)
+              setRenamingId(rowMenuAt.view.id)
             }}
           >
             Rename
@@ -233,8 +226,8 @@ export function ViewPane({
           <MenuItem
             leading={<Icon name="smile" size={13} />}
             onClick={() => {
-              setIconFor(rowMenuAt.view)
               setRowMenuAt(null)
+              setIconFor(rowMenuAt.view)
             }}
           >
             Edit Icon
@@ -251,7 +244,7 @@ export function ViewPane({
           >
             Delete
           </MenuItem>
-        </PickerMenu>
+        </PointMenu>
       )}
       <IconPicker
         open={!!iconFor}
