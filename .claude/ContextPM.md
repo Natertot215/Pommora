@@ -2,11 +2,23 @@
 
 ### Current Focus
 
-The active stretch is MarkdownPM. Embedded pages are complete end to end — the tile, the guards, the menus, the autocomplete, the warm cache, and the rename sweep — followed by the typed codeblocks, the table append strips, and, most recently, the connection hover previews: resting on a resolved `[[Connection]]` opens a compact read-only preview of the target page, anchored to the link, resizable to one per-machine remembered size, with a Settings ▸ Pages linger slider and the same trigger in resting table cells.
+The active stretch is the PageMenu — the Settings dropdown's page scope, which until now resolved to an empty spacer. It carries the Page's identity header and a Properties leaf holding the Contexts and property values that Page fills, and Aliases is the leaf still to be specified. That work also settled how the dropdown family pops a row's context menu: the in-app picker is the default, and a native menu is reserved for a destructive pick.
 
-What remains on the stretch is hand verification: the embedded-pages checks that a headless driver can't honestly produce — the native menu picks, the real-pointer feel checks, one real ⌘Q mid-debounce, and the SurfacePM visual baseline. The local commit batch on `main` is unpushed until then.
+What remains is hand verification of the menus that moved — the three converted to the in-app picker and the native Clear/Remove on a property row. None has been exercised by a real right-click, and a picker opened from inside a dropdown has to survive that dropdown's own dismiss.
+
+The MarkdownPM stretch behind it still owes its own hand checks: the embedded-pages verifications a headless driver can't honestly produce — the native menu picks, the real-pointer feel checks, one real ⌘Q mid-debounce, and the SurfacePM visual baseline. The local commit batch on `main` is unpushed until both are done.
 
 ### Recent Work
+
+#### The PageMenu and the Menu Convergence (08-06 → 08-07)
+
+A Page's Settings dropdown rendered nothing: `viewSettingsScope` had always resolved a `page` case that no surface answered. It now opens on the Page's identity — the shared inline header, its glyph over the icon picker beside a click-to-edit title — and drills into a Properties leaf listing the Contexts and property values that Page holds. The leaf is deliberately an arrangement rather than a new mechanism: every value is entered through the same primitives the table, cards, and preview inspector compose, so no second way to write frontmatter exists. Contexts open shown so a Page states what it could be filed under before it is, and a row's menu carries Clear beside Remove — Clear empties the value and leaves the row to be refilled, Remove empties it and takes the row away, with Contexts re-addable through the same picker as properties. Neither touches the schema.
+
+The same stretch settled how the Settings dropdown pops a row's context menu, which had two idioms answering one gesture. The in-app picker became the default on two grounds: it costs no round-trip through the file-owning process, and it cannot collide — that process pops its own editor menu over any editable target and the renderer cannot suppress it, which is why the Space header's menu had been carving out a dead zone over its own title. The Space header's Change Color, the ViewSettings ⋮, and the per-view row menu converted, and their four-layer stacks were deleted with them. A destructive pick stays native, which is where the property row's Clear/Remove lives. `PickerMenu` gained a point anchor in the process, retiring two hand-rolled marker spans that had been positioned inside a transformed track and were therefore never in viewport space at all.
+
+Two defects surfaced underneath. A Page's inline title renamed without a visible caret because the app hides every native caret and repaints its own, and that overlay's out-of-view guard required the drawn bar's top edge to sit inside the field's box — a line-height tighter than the font's own content area seats it a fraction above, so only the larger page title crossed the tolerance; the test now intersects rather than contains. Separately, every drilled pane showed a hairline down its leading edge: the slider shifts its track by a measured width while the settled slot sits at its true one, so the neighbour showed through. A settled off-screen slot no longer paints. → [[PagesPM]] · [[ViewsPM]] · [[InteractionPM]] · HistoryPM.md
+
+**Deferred:** Aliases as its own leaf + the three menus still native (two for their confirm, one for its submenu) + how wide a value may run in the properties leaf.
 
 #### Hover Previews (08-05)
 
@@ -133,6 +145,8 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 - **A survey scoped as cleanup is worth running for the bugs.** Several agents on one system, each on its own lens, found more real defects than consolidations — and the worst was invisible to every per-feature review that had already passed. Brief them to report what should *stay* apart as well as what merges; that section catches more than the merge list.
 - **An agent that found a defect is the right one to size its fix.** Resumed with their reasoning intact, they correct their own surveys, refuse adjacent fixes that are disguised features, and talk you out of instinct repairs. Ask each for the load-bearing unknown it can't answer from memory — that's where the real work is.
 - Two-writers-for-one-fact is the defect class the tab and nav work kept breeding — every real bug reduced to it, and the fix was always one writer or a lockstep rule. The navigation consolidation made it structural: one validation boundary, one strip (`toNavRef`), one hydrator owning restore lockstep, one keeper owning the active pointer.
+- **A caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.** `Carets.css` hides the browser's own caret on every text input and CodeMirror surface app-wide, and the drawn replacement is positioned by JS over whichever field holds focus. The I-beam hover cursor comes from a sibling rule in the same file, so a working cursor beside a missing caret points at the overlay rather than at focus.
+- **A native menu collides with the one main pops for editable targets.** The file-owning process opens its own editor context menu over any input or contenteditable, and a renderer `preventDefault` cannot suppress it, so a native right-click menu near an inline-rename field has to yield the gesture and carve out a dead zone. An in-app menu has no such constraint, which is a correctness argument for the picker rather than a stylistic one.
 - CDP has two quirks that keep biting: synthetic clicks work on tabs/rows/buttons but never fire PickerMenu items (drive those via `el.click()` in `Runtime.evaluate`), and a non-integer dpr throws off screenshot clip math — crop the full-frame PNG with PIL instead.
 - Where the navigation code lives: `Tabs/` (`tabsModel.ts` pure with its own tests; `warmCache.ts` for the session LRU; every tab-bar visual knob in `tabBar.css`'s `.tab-bar` block); `main/io/navigationFile.ts` is the one persistence owner; `select` is the single nav entry point; the pin toggle shared between list rows and gallery cards is `NavPinButton` in `NavList.tsx`.
 - A whole-surface drag handle steals its own children's clicks: the drag engine `setPointerCapture`s on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags. Also: Zod 4's `z.number()` already rejects Infinity/NaN where Zod 3 didn't, and native Electron menus are OS-level — CDP can't screenshot or drive them, so their pure models get unit-tested and the popup needs a human.
@@ -149,6 +163,7 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 
 ### Fix Log
 
+- Multi-select chips render with no gap between them in the Page Preview's inspector and on a card. The chip cell reads a spacing knob the table scopes to itself, so the value resolves to nothing wherever that cell renders outside a table; the Page's properties leaf states its own and is unaffected.
 - The "File" property icon gets clipped by its vertical row padding on the ViewPane.
 - The link-rename field shows a leading empty space — a visual inset, not a stored character (deprioritized).
 - The Set-Card drag flash (drop snaps back, then jumps on reload) — the optimistic moveSet order patch is in; wants one live drag before this line drops. 
