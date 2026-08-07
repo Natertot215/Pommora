@@ -44,15 +44,26 @@ export const row = style([item])
 export const label = style([titleText, { flex: '0 1 auto' }])
 
 /** Content-sized and pushed right, so a picker anchors to the value rather than to the row's empty
- *  middle. */
+ *  middle. Capped at a share of the pane's own ceiling: past that a value scrolls inside itself
+ *  instead of growing the pane further, so a chip run can never crowd the name it belongs to. */
 export const value = style({
   marginLeft: 'auto',
   flex: '0 1 auto',
   minWidth: 0,
+  maxWidth: `calc(${PAGE_PROPERTIES_MAX_WIDTH} * 2 / 3)`,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-end',
   textAlign: 'right',
+})
+
+/** The scroller inside a value: chips stay on one line and ride the shared eclipse once they outrun
+ *  the cap above. */
+export const valueScroll = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: '4px',
 })
 
 export const empty = style([text.caption.standard, { color: c.label.tertiary }])
