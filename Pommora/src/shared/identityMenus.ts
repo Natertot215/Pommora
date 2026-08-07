@@ -8,6 +8,4 @@ export type TitleMenuAction = 'rename' | 'editIcon' | 'toggleIcon'
 
 export type BannerMenuAction = 'change' | 'remove'
 
-export type SpaceHeaderMenuAction = 'change-color'
-
 export type IconFavoriteMenuAction = 'toggle'

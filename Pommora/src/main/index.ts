@@ -122,20 +122,15 @@ import { popIconFavoriteMenu } from './iconFavoriteMenu'
 import { popViewButtonMenu } from './viewButtonMenu'
 import { popReturningMenu } from './returningMenu'
 import { popEmbedTitleMenu, popEmbedAreaMenu } from './viewEmbedMenu'
-import { popViewItemMenu } from './viewItemMenu'
-import { popViewRowMenu } from './viewRowMenu'
 import type {
   EmbedAreaMenuAction,
   EmbedTitleMenuAction,
   ViewButtonMenuAction,
-  ViewItemMenuAction,
-  ViewRowMenuAction,
 } from '@shared/viewMenus'
 import type {
   BannerMenuAction,
   IconFavoriteMenuAction,
   NexusIconAction,
-  SpaceHeaderMenuAction,
   TitleMenuAction,
 } from '@shared/identityMenus'
 import type { ViewButton, ViewStyle } from '@shared/types'
@@ -1405,16 +1400,6 @@ serveBridge(
       },
     },
 
-    // The Space settings pane's (Icon)(Title) row right-click menu.
-    'space-header-menu': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow): Promise<SpaceHeaderMenuAction | null> => {
-        return popReturningMenu<SpaceHeaderMenuAction>(win, (pick) => [
-          { label: 'Change Color', click: pick('change-color') },
-        ])
-      },
-    },
-
     // The view embed's title-row right-click menu (Hide/Show Icon · Title Size · Hide Title).
     'view-embed-title-menu': {
       kind: 'menu',
@@ -1433,29 +1418,6 @@ serveBridge(
         return popEmbedAreaMenu(win, {
           viewStyle: c?.viewStyle === 'dropdown' ? 'dropdown' : 'toolbar',
           titleShown: c?.titleShown !== false,
-        })
-      },
-    },
-
-    // The ViewSettings ⋮ menu (Duplicate / Delete) — resolves the action to the renderer.
-    'view-item-menu': {
-      kind: 'menu',
-      fn: async (win: BrowserWindow, canDelete: unknown): Promise<ViewItemMenuAction | null> => {
-        return popViewItemMenu(win, { canDelete: canDelete === true })
-      },
-    },
-
-    // The per-view right-click menu (ViewPane rows + embed segments).
-    'view-row-menu': {
-      kind: 'menu',
-      fn: async (
-        win: BrowserWindow,
-        canDelete: unknown,
-        labeled: unknown,
-      ): Promise<ViewRowMenuAction | null> => {
-        return popViewRowMenu(win, {
-          canDelete: canDelete === true,
-          labeled: typeof labeled === 'boolean' ? labeled : undefined,
         })
       },
     },

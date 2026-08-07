@@ -41,18 +41,11 @@ import type { NavRowMenuAction, NavRowMenuContext } from './navRowMenu'
 import type { PropertyMenuAction, PropertyMenuContext } from './propertyMenu'
 import type { OptionMenuAction, OptionMenuContext } from './optionMenu'
 import type { ColumnMenuAction, ColumnMenuContext } from './columnMenu'
-import type {
-  EmbedAreaMenuAction,
-  EmbedTitleMenuAction,
-  ViewButtonMenuAction,
-  ViewItemMenuAction,
-  ViewRowMenuAction,
-} from './viewMenus'
+import type { EmbedAreaMenuAction, EmbedTitleMenuAction, ViewButtonMenuAction } from './viewMenus'
 import type {
   BannerMenuAction,
   IconFavoriteMenuAction,
   NexusIconAction,
-  SpaceHeaderMenuAction,
   TitleMenuAction,
 } from './identityMenus'
 
@@ -77,7 +70,10 @@ export interface Asks {
   'viewOrders:get': { args: []; reply: Record<string, string[]> }
   'viewOrders:set': { args: [viewId: string, order: string[]]; reply: Result<null> }
   'embedHeights:get': { args: []; reply: Record<string, Record<string, number>> }
-  'embedHeights:set': { args: [pageId: string, heights: Record<string, number>]; reply: Result<null> }
+  'embedHeights:set': {
+    args: [pageId: string, heights: Record<string, number>]
+    reply: Result<null>
+  }
   'tableHeadingCols:get': { args: []; reply: Record<string, number[]> }
   'tableHeadingCols:set': { args: [pageId: string, indices: number[]]; reply: Result<null> }
 
@@ -259,7 +255,6 @@ export interface Asks {
     args: [current: { viewButton: ViewButton; viewStyle: ViewStyle }]
     reply: ViewButtonMenuAction | null
   }
-  'space-header-menu': { args: []; reply: SpaceHeaderMenuAction | null }
   'view-embed-title-menu': {
     args: [arg: { iconShown: boolean; level: number }]
     reply: EmbedTitleMenuAction | null
@@ -268,8 +263,6 @@ export interface Asks {
     args: [current: { viewStyle: ViewStyle; titleShown: boolean }]
     reply: EmbedAreaMenuAction | null
   }
-  'view-item-menu': { args: [canDelete: boolean]; reply: ViewItemMenuAction | null }
-  'view-row-menu': { args: [canDelete: boolean, labeled?: boolean]; reply: ViewRowMenuAction | null }
   'icon-favorite-menu': { args: [favorited: boolean]; reply: IconFavoriteMenuAction | null }
   'nexus:iconMenu': {
     args: [opts: { hasPhoto: boolean; hasGlyph: boolean }]
