@@ -11,6 +11,9 @@ type MenuItemProps = {
   detail?: ReactNode
   trailing?: ReactNode
   selected?: boolean
+  /** Shown but unable to act — dimmed, unhittable, and its click dropped, so a rule the write path
+   *  enforces reads on the row instead of offering a pick that only bounces. */
+  disabled?: boolean
   indent?: number
   onClick?: (e: React.MouseEvent) => void
   onContextMenu?: (e: MouseEvent) => void
@@ -27,6 +30,7 @@ export function MenuItem({
   detail,
   trailing,
   selected = false,
+  disabled = false,
   indent = 0,
   onClick,
   onContextMenu,
@@ -38,15 +42,16 @@ export function MenuItem({
     ? { paddingLeft: 8 + indent * DISCLOSURE_INDENT }
     : undefined
   const hasTrailing = detail != null || trailing != null
+  const act = disabled ? undefined : onClick
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
-      className={cx(s.item, selected && s.itemSelected, className)}
+      className={cx(s.item, selected && s.itemSelected, disabled && s.rowDisabled, className)}
       style={rowStyle}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={onClick ? onActivateClick : undefined}
+      role={act ? 'button' : undefined}
+      tabIndex={act ? 0 : undefined}
+      onClick={act}
+      onKeyDown={act ? onActivateClick : undefined}
       onContextMenu={onContextMenu}
       onPointerDown={onPointerDown}
     >

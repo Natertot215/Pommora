@@ -55,13 +55,10 @@ const api = {
   container: { configure: ask('container:configure') },
   // The ViewDropdown right-click menu — resolves the picked action (or null on dismiss).
   viewButtonMenu: ask('view-button-menu'),
-  // The Space settings pane's (Icon)(Title) row right-click menu.
   // The view embed's title-row right-click menu (Hide/Show Icon · Title Size · Hide Title).
   viewEmbedTitleMenu: ask('view-embed-title-menu'),
   // The view embed switcher area's right-click menu (Hide/Show Titles · New View · Style).
   viewEmbedAreaMenu: ask('view-embed-area-menu'),
-  // The ViewSettings ⋮ menu (Duplicate / Delete); Delete disabled when the view can't be removed.
-  // A ViewPane view row's right-click menu (Rename / Edit Icon / Delete); Delete disabled on the last view.
   // The icon picker's right-click Favorite/Remove menu — resolves 'toggle' on click, null on dismiss.
   iconFavoriteMenu: ask('icon-favorite-menu'),
   // Property schema CRUD on a Collection's page schema. containerPath is the schema-owning

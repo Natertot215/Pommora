@@ -11,7 +11,7 @@ import {
   MenuSeparator,
   AccessoryButton,
 } from '../design-system/components/menu'
-import { rowDisabled, titleInput } from '../design-system/components/menu/menu.css'
+import { titleInput } from '../design-system/components/menu/menu.css'
 import { PickerMenu } from '../design-system/components/PickerMenu'
 import { PaneSlider } from '../Components/Detail/PaneSlider'
 import { ViewSettings } from '../Components/Detail/ViewSettings'
@@ -71,7 +71,9 @@ export function ViewPane({
   const storedActive = useSession((s) => s.activeViews[node.id])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
-  const [iconOpen, setIconOpen] = useState(false)
+  // Holds the view whose glyph is being picked, not a bare flag: the picker opens from a ROW's menu,
+  // and the pane's `editing` is the drill target — null whenever that list is on screen.
+  const [iconFor, setIconFor] = useState<SavedView | null>(null)
   const [rowMenuAt, setRowMenuAt] = useState<{ view: SavedView; x: number; y: number } | null>(null)
   const scope = useViewEmbedScope()
   // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
@@ -231,38 +233,32 @@ export function ViewPane({
           <MenuItem
             leading={<Icon name="smile" size={13} />}
             onClick={() => {
-              setIconOpen(true)
+              setIconFor(rowMenuAt.view)
               setRowMenuAt(null)
             }}
           >
             Edit Icon
           </MenuItem>
           <MenuSeparator />
-          {/* The write path refuses a container's last view; the row mirrors that rather than
-              offering a click that only bounces. */}
+          {/* The write path refuses a container's last view; the row mirrors that rule. */}
           <MenuItem
-            className={views.length > 1 ? undefined : rowDisabled}
+            disabled={views.length < 2}
             leading={<Icon name="trash" size={13} />}
-            onClick={
-              views.length > 1
-                ? () => {
-                    const v = rowMenuAt.view
-                    setRowMenuAt(null)
-                    void deleteRow(v)
-                  }
-                : undefined
-            }
+            onClick={() => {
+              setRowMenuAt(null)
+              void deleteRow(rowMenuAt.view)
+            }}
           >
             Delete
           </MenuItem>
         </PickerMenu>
       )}
       <IconPicker
-        open={iconOpen}
-        onClose={() => setIconOpen(false)}
-        value={editing?.icon}
+        open={!!iconFor}
+        onClose={() => setIconFor(null)}
+        value={iconFor?.icon}
         onSelect={(icon) => {
-          if (editing) void saveView({ ...editing, icon })
+          if (iconFor) void saveView({ ...iconFor, icon })
         }}
       />
     </>
