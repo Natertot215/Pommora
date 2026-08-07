@@ -64,6 +64,8 @@ export function PaneSlider({
     const a = aRef.current
     const b = bRef.current
     if (!a || !b) return
+    // Layout box, never a client rect: the surface opens on a scale, and a transformed rect would
+    // read that mid-animation size as the pane's real one.
     const measure = (): void =>
       setSize({ aw: a.offsetWidth, ah: a.offsetHeight, bw: b.offsetWidth, bh: b.offsetHeight })
     measure()
@@ -97,6 +99,8 @@ export function PaneSlider({
   const height = active === 'a' ? size.ah : size.bh
   // Slide left by slot A's width to bring B flush against the viewport's left edge.
   const shift = active === 'b' ? size.aw : 0
+  // Settled, the slot that isn't showing stops painting — see `slotIdle`.
+  const idle = (slot: 'a' | 'b'): boolean => !navigating && active !== slot
   return (
     <div
       className={cx(s.viewport, enabled && s.viewportAnimated, navigating && s.viewportNav)}
@@ -106,12 +110,12 @@ export function PaneSlider({
         className={cx(s.track, enabled && s.trackAnimated)}
         style={{ transform: `translateX(-${shift}px)` }}
       >
-        <div className={s.slot} inert={active === 'b'}>
+        <div className={cx(s.slot, idle('a') && s.slotIdle)} inert={active === 'b'}>
           <div ref={aRef} className={s.slotContent} style={{ minWidth, minHeight }}>
             {root}
           </div>
         </div>
-        <div className={s.slot} inert={active === 'a'}>
+        <div className={cx(s.slot, idle('b') && s.slotIdle)} inert={active === 'a'}>
           <div ref={bRef} className={s.slotContent} style={{ minWidth, minHeight }}>
             {shownDetail}
           </div>
