@@ -212,6 +212,21 @@ describe('renderer fence engine agrees with isInsideCode on ~~~ (no cross-layer 
   })
 })
 
+describe('a longer fence holds shorter ones — both layers, one block', () => {
+  const doc = '`````\nintro\n```js\nsee [[LivePage]]\n```\noutro\n`````\nprose [[LivePage]]'
+  it('the whole span is one block, not three carved around the inner fences', () => {
+    const ranges = fencedCodeRanges(doc)
+    expect(ranges.length).toBe(1)
+    expect(ranges[0][0]).toBe(0)
+    expect(ranges[0][1]).toBe(doc.indexOf('\nprose'))
+  })
+  it('a rename can never reach a connection inside the inner block', () => {
+    // The one that corrupts a file rather than a render: an under-masked line gets its [[Title]] rewritten.
+    expect(isInsideCode(doc.indexOf('[[LivePage]]'), doc)).toBe(true)
+    expect(isInsideCode(doc.lastIndexOf('[[LivePage]]'), doc)).toBe(false) // the prose one stays live
+  })
+})
+
 describe('dashArrow — link-target guard (relative paths, anchors)', () => {
   it('keeps -- literal inside a relative link target', () => {
     const doc = '[text](../foo--'

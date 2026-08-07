@@ -1,5 +1,6 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { parse } from '../parser'
+import { fenceLang, fenceSpans, lineOffsetsOf, quoteDepthOf } from '@shared/markdownCode'
 
 export const embedRegex = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/dg
 export const markdownLinkRegex = (): RegExp => /\[([^\]\r\n]+)\]\(([^)\r\n]+)\)/dg
@@ -16,29 +17,10 @@ export function stripQuotePrefix(line: string): string {
   return line.replace(oneQuoteLevelRe, '$1')
 }
 
-/** A line's quote depth: how many `>` levels it's nested under, ignoring list indent. */
-export const quoteDepth = (line: string): number =>
-  /^[ \t]*(?:>[ \t]?)*/.exec(line)?.[0].match(/>/g)?.length ?? 0
-
-// A ``` fence, capturing its `>` prefix so open/close pair by quote-DEPTH: a `> ``` opens a callout/quote-internal
-// block closed only by another `> ``` (a bare ``` is a separate top-level block), and a quoted fence ends when its
-// blockquote does. Without the depth match, a top-level code block quoting a ``` (`> ```` as content) corrupts.
-const FENCE_RE = /^([ \t]*(?:>[ \t]?)*)(```|~~~)[ \t]*([^`~\s]*)/
-// A fence line's quote depth AND marker char — a block pairs by BOTH, so a `~~~` line inside a ``` block
-// reads as content, not a close (matches isInsideCode's marker pairing; the two layers must agree).
-const fenceOf = (
-  line: string,
-): { depth: number; marker: string; info: string; markerEnd: number } | null => {
-  const m = FENCE_RE.exec(line)
-  return m
-    ? {
-        depth: m[1].match(/>/g)?.length ?? 0,
-        marker: m[2][0],
-        info: m[3],
-        markerEnd: m[1].length + m[2].length,
-      }
-    : null
-}
+/** The shared line-table and quote-depth primitives under this module's names — every doc-walking layer
+ *  reaches them through `detect`, but `@shared/markdownCode` is where they're defined. */
+export const quoteDepth = quoteDepthOf
+export const lineOffsets = lineOffsetsOf
 
 export interface FenceInfo {
   role: 'open' | 'content' | 'close'
@@ -51,8 +33,8 @@ export interface FenceInfo {
   closed: boolean
   /** The opening fence's info word (```yaml → 'yaml') — absent on a bare fence. */
   lang?: string
-  /** Where the OPEN line's fence marker ends (its whitespace/quote prefix plus the three marker
-   *  chars, line-relative) — the info word starts here, wherever the fence is indented. */
+  /** Where the OPEN line's marker run ends (its whitespace/quote prefix plus the run, line-relative) —
+   *  the info word starts here, whatever the fence's indent and however long its run. */
   markerEnd: number
   /** A content line's 1-based number within its block — the line-count chrome's source. */
   ordinal?: number
@@ -74,40 +56,20 @@ export function splitWithOffsets(text: string): { lines: string[]; lineStarts: n
   return { lines, lineStarts: lineOffsets(lines) }
 }
 
-// One scan of ``` fences → block extents. Shared by the per-line role map (scanFencedCode) and the flat
-// range list (fencedCodeRanges) so the two never drift on what counts as a code block.
+// Block extents in this module's offset-bearing shape. The pairing itself is `fenceSpans` in the shared
+// code module — the one pass both processes read, so the renderer and the rename mask can never disagree
+// about where a code block ends.
 function fenceBlocks(lines: string[], lineStarts: number[]): FenceBlock[] {
-  const blocks: FenceBlock[] = []
-  let i = 0
-  while (i < lines.length) {
-    const open = fenceOf(lines[i])
-    if (open === null) {
-      i++
-      continue
-    }
-    // The close is a fence at the SAME depth AND same marker char; the block also ends if the surrounding
-    // blockquote drops below that depth (a quoted fence can't outlive its `>` lines).
-    const isClose = (line: string): boolean => {
-      const f = fenceOf(line)
-      return f !== null && f.depth === open.depth && f.marker === open.marker
-    }
-    let j = i + 1
-    while (j < lines.length && !isClose(lines[j]) && quoteDepth(lines[j]) >= open.depth) j++
-    const closed = j < lines.length && isClose(lines[j])
-    const close = closed ? j : j - 1 // unclosed → the last line still in the block (the open itself if j === i+1)
-    blocks.push({
-      from: lineStarts[i],
-      to: lineStarts[close] + lines[close].length,
-      open: i,
-      close,
-      closed,
-      depth: open.depth,
-      lang: open.info || undefined,
-      markerEnd: open.markerEnd,
-    })
-    i = closed ? j + 1 : j
-  }
-  return blocks
+  return fenceSpans(lines).map((span) => ({
+    from: lineStarts[span.open],
+    to: lineStarts[span.close] + lines[span.close].length,
+    open: span.open,
+    close: span.close,
+    closed: span.closed,
+    depth: span.fence.depth,
+    lang: fenceLang(span.fence) || undefined,
+    markerEnd: span.fence.markerEnd,
+  }))
 }
 
 export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInfo | undefined)[] {
@@ -271,17 +233,6 @@ export function lineInCallout(doc: string, pos: number): boolean {
     off = end + 1
   }
   return calloutLines(lines)[idx] !== undefined
-}
-
-/** Start offset of each line in `text` (parallel to `text.split('\n')`). The one source for the line table
- *  every doc-walking layer needs. */
-export function lineOffsets(lines: string[]): number[] {
-  const out = new Array<number>(lines.length)
-  for (let p = 0, i = 0; i < lines.length; i++) {
-    out[i] = p
-    p += lines[i].length + 1
-  }
-  return out
 }
 
 export const MAX_NESTING_LEVEL = 3
