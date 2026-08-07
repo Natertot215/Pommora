@@ -28,9 +28,10 @@ import {
 } from '../../Detail/Views/PropertyEditing/PropertyPicker'
 import { DatetimeValuePicker } from '../../Detail/Views/PropertyEditing/DatetimeValuePicker'
 import { parseEditorValue } from '../../Detail/Views/Cards/cardValueInput'
+import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
+import { side } from '../../design-system/components/menu/menu.css'
 import { propertyTypeIconName } from './PropertyTypes'
 import { iconOption } from './pickerControl.css'
-import { ICON } from './settingsPane.css'
 import { useSession } from '../../store'
 import * as s from './pageProperties.css'
 
@@ -234,7 +235,9 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
                       setRowMenu({ id, x: e.clientX, y: e.clientY })
                     }}
                   >
-                    <Icon name={icon} size={ICON.doc} />
+                    <span className={side}>
+                      <Icon name={icon} size="xs" />
+                    </span>
                     <span className={s.label}>{label}</span>
                     {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
                     <span
@@ -270,9 +273,21 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
                           onCancel={() => setEditing(null)}
                         />
                       ) : (
-                        (Cell({ row, column, ctx, hideIcon: false, style: { look: 'pill' } }) ?? (
-                          <span className={s.empty}>—</span>
-                        ))
+                        <OverflowScroll className={s.valueScroll}>
+                          {Cell({
+                            row,
+                            column,
+                            ctx,
+                            hideIcon: false,
+                            style: { look: 'pill' },
+                            // The chip's hover × hands back what survives it — a Context keeps its
+                            // remaining Spaces, a property its remaining options.
+                            remove: def
+                              ? (next) => commitValue(id, next)
+                              : (next) =>
+                                  commitContext(id, next?.kind === 'context' ? next.value : []),
+                          }) ?? <span className={s.empty}>—</span>}
+                        </OverflowScroll>
                       )}
                     </span>
                   </div>
@@ -283,7 +298,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
         )}
         {hiddenProps.length > 0 && (
           <button type="button" ref={addRef} className={s.add} onClick={() => setAddOpen(true)}>
-            <Icon name="plus" size={11} />
+            <Icon name="plus" size="xs" />
             <span>Add Property</span>
           </button>
         )}
