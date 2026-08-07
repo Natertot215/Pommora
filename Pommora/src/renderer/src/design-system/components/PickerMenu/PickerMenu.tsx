@@ -60,6 +60,7 @@ export function PickerMenu({
   direction = 'down',
   origin = 'right',
   anchorX,
+  anchorY,
   maxHeight,
   width,
   bareSurface = false,
@@ -81,6 +82,9 @@ export function PickerMenu({
   direction?: PickerDirection
   origin?: 'right' | 'center' | 'left'
   anchorX?: number
+  /** Pair with `anchorX` to open at a POINT — a right-click's cursor — instead of against an
+   *  element. Both together stand in for the trigger entirely, so no `triggerRef` is needed. */
+  anchorY?: number
   maxHeight?: number
   /** Pair with `origin="left"`: without this, widening content near a viewport edge still drags
    *  every row sideways via the position clamp. */
@@ -146,10 +150,17 @@ export function PickerMenu({
     // Freeze the pane's position through the Bloom-out: once closing, a trigger that detached or moved
     // (e.g. a pick re-grouped its row) must not re-measure to zeros and snap the fading pane away.
     if (!selfManaged || !mounted || closing) return
+    // A point anchor is a zero-size rect at the cursor: every branch below reads the trigger's
+    // edges, and collapsing them onto one coordinate is what "open here" means.
+    const point =
+      anchorX !== undefined && anchorY !== undefined
+        ? { left: anchorX, right: anchorX, top: anchorY, bottom: anchorY, width: 0, height: 0 }
+        : null
     const trigger = triggerRef?.current ?? markerRef.current?.parentElement
-    if (!trigger) return
+    const anchor = point ?? trigger
+    if (!anchor) return
     const measure = (): void => {
-      const t = trigger.getBoundingClientRect()
+      const t = 'getBoundingClientRect' in anchor ? anchor.getBoundingClientRect() : anchor
       const c = anchorX ?? t.left + t.width / 2
       const { w: pw, h: ph } = paneBox.current
       let eff = decidedDir.current ?? direction
@@ -217,7 +228,7 @@ export function PickerMenu({
       })
     }
     const ro = new ResizeObserver(measure)
-    ro.observe(trigger)
+    if (trigger && !point) ro.observe(trigger)
     window.addEventListener('scroll', measureOnFrame, true)
     window.addEventListener('resize', measureOnFrame)
     return () => {
@@ -227,7 +238,19 @@ export function PickerMenu({
       window.removeEventListener('scroll', measureOnFrame, true)
       window.removeEventListener('resize', measureOnFrame)
     }
-  }, [selfManaged, mounted, reserve, triggerRef, closing, origin, direction, anchorX, width, onDirection])
+  }, [
+    selfManaged,
+    mounted,
+    reserve,
+    triggerRef,
+    closing,
+    origin,
+    direction,
+    anchorX,
+    anchorY,
+    width,
+    onDirection,
+  ])
 
   // Outside clicks dismiss via the backdrop below the pane (rendered in the portal). Escape is handled
   // here since the backdrop only catches pointers.
