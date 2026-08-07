@@ -8,11 +8,14 @@ export function RenamableTitle({
   kind,
   title,
   className,
+  boxed,
 }: {
   path: string
   kind: MutableKind
   title: string
   className: string
+  /** The field carries its own border and fill — see `EditableInput`. */
+  boxed?: boolean
 }): React.JSX.Element {
   const renamingPath = useSession((s) => s.renamingPath)
   const cancelRename = useSession((s) => s.cancelRename)
@@ -23,6 +26,7 @@ export function RenamableTitle({
       editing={renamingPath === path}
       value={title}
       className={className}
+      boxed={boxed}
       onCommit={(next) => void submitRename(path, kind, next)}
       onCancel={cancelRename}
     />

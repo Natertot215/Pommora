@@ -1,8 +1,6 @@
 import type { CSSProperties, RefObject } from 'react'
 import { EditableInput } from '@renderer/Components/EditableInput'
-import { cx } from '../../cx'
 import { PickerMenu } from '../PickerMenu/PickerMenu'
-import '../../edge-fade.css'
 import * as s from './textPicker.css'
 
 /** The field grows with typing between a 100px floor and a 200px cap, then scrolls. Enter or
@@ -31,7 +29,7 @@ export function TextPicker({
   const field = (
     <EditableInput
       value={value}
-      className={hasTrailing ? cx(s.suffixInput, 'overflow-eclipse') : s.input}
+      className={hasTrailing ? s.suffixInput : s.input}
       maxLength={maxLength}
       caretAtEnd
       onCommit={onCommit}

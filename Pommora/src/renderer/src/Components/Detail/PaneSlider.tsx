@@ -84,7 +84,10 @@ export function PaneSlider({
   // beat, and the viewport can't lag-chase a ResizeObserver that fires every animating frame (the bounce).
   const [navigating, setNavigating] = useState(false)
   const firstFlip = useRef(true)
-  useEffect(() => {
+  // Before paint, not after: the idle slot stops painting off this flag, and a passive effect would
+  // let the frame where `active` has already moved paint with the outgoing slot hidden — a blink at
+  // the head of every slide.
+  useLayoutEffect(() => {
     if (firstFlip.current) {
       firstFlip.current = false
       return
