@@ -36,7 +36,15 @@ The gesture-family consolidation was surveyed by four scouts before being decide
 - The card's knobs: `Pommora/src/renderer/src/Embeds/hoverCardSize.ts` (default and floor sizes) and the interior inset KNOB in `Embeds/embeds.css`.
 - The card is a module-singleton seam — edits to `ConnectionHoverCard.tsx` need a full renderer reload to test; HMR leaves hosts holding a dead entry.
 
-#### Handoff Guidelines
+#### Working Notes
+
+> **This section survives every /handoff run.** It holds pending prerequisites for changes to the skills and rules themselves, which outlive any one session — carry it forward verbatim until each entry is resolved, and never fold it into the Summary or Pending Focus.
+
+- **Row context menus are converging on the in-app picker.** The Settings-dropdown family had two idioms for a right-click menu: a native Electron menu popped through IPC, and a renderer `PickerMenu` drawn at the cursor. The picker wins on routing — no IPC round-trip — and on correctness: main pops its own editor menu for any editable target and a renderer `preventDefault` cannot suppress it, so a native menu near an inline-rename field has to yield the gesture and carve out a dead zone. `spaceHeaderMenu`, `viewItemMenu`, and `viewRowMenu` have converted; their whole IPC stacks are gone.
+- **Three menus are deliberately still native, each blocked on a decision:**
+  - `optionMenu` (Remove · Clear) and `propertyMenu` (Delete) are native *because of their confirm*, not their menu — main pops `dialog.showMessageBox` and resolves only on confirm, so the renderer never runs an unconfirmed strip. Converting means either keeping a native confirm behind its own channel (the `blocks:confirmRemove` precedent already does exactly this) or building an in-app confirm surface, which does not exist.
+  - `viewButtonMenu` carries a submenu with checked state. The in-app equivalent exists (`BlockHandleMenu` drills through `PaneSlider`), but a native submenu flies out on hover while a drill replaces the pane — a real interaction difference, not a port.
+- **`iconFavoriteMenu` should probably stay native.** Its host, `IconPicker`, *is* a `PickerMenu`, so converting nests a picker inside a picker and puts the outer backdrop and dismiss against the inner one.
 
 - The Summary and Pending Focus restate to current truth on every run; the transcript is the memory, so past compactions and earlier passes are read there rather than re-told.
 - Resolve = delete + route — a handled item leaves the document for its real home (Context, History, Features) with no tombstone left behind.

@@ -21,6 +21,7 @@ import {
   MenuBottomRow,
   MenuItem,
   MenuScrollFrame,
+  MenuSeparator,
 } from '@renderer/design-system/components/menu'
 import {
   titleInput as rowInput,
@@ -236,6 +237,12 @@ export function ViewEmbedBlock({
   const [renaming, setRenaming] = useState<number | null>(null)
   const [iconFor, setIconFor] = useState<number | null>(null)
   const [colorFor, setColorFor] = useState<number | null>(null)
+  const [rowMenuAt, setRowMenuAt] = useState<{
+    i: number
+    animate: boolean
+    x: number
+    y: number
+  } | null>(null)
   // The right-clicked segment/row — captured at menu time so every follow-up picker
   // (icon, color) drops from the chip itself, never the embed.
   const menuAnchorRef = useRef<HTMLElement | null>(null)
@@ -408,17 +415,12 @@ export function ViewEmbedBlock({
     else if (action === 'style-toolbar') patchEntry({ view_style: undefined })
   }
   // `animate` routes the pill's delete through the slide-out; the dropdown list removes in place.
-  const rowMenu = async (i: number, e: React.MouseEvent, animate: boolean): Promise<void> => {
+  const rowMenu = (i: number, e: React.MouseEvent, animate: boolean): void => {
     e.preventDefault()
     e.stopPropagation() // the switcher row underneath owns the area menu
     if (locked) return
     menuAnchorRef.current = e.currentTarget as HTMLElement
-    const action = await window.nexus.viewRowMenu(entry.views.length > 1, labeled)
-    if (action === 'view:rename') setRenaming(i)
-    else if (action === 'view:edit-icon') setIconFor(i)
-    else if (action === 'view:change-color') setColorFor(i)
-    else if (action === 'view:toggle-titles') toggleTitles()
-    else if (action === 'view:delete') (animate ? beginDeleteView : deleteViewAt)(i)
+    setRowMenuAt({ i, animate, x: e.clientX, y: e.clientY })
   }
   const pillAnimEnd = (id: string): void => {
     if (exitingId === id) finishExit(id)
@@ -499,7 +501,7 @@ export function ViewEmbedBlock({
             labeled={labeled}
             renameNode={renaming === i ? renameField(i) : null}
             onSwitch={() => patchEntry({ active: i })}
-            onMenu={(e) => void rowMenu(i, e, true)}
+            onMenu={(e) => rowMenu(i, e, true)}
             onAnimEnd={() => pillAnimEnd(v.id)}
           />
         ))}
@@ -529,7 +531,11 @@ export function ViewEmbedBlock({
                     icon scales with the title level in lockstep with the text. */}
                 <Icon
                   name={viewIcon(view)}
-                  className={cx(`md-h${titleLevel}`, 'title-icon-reveal', !iconShown && 'is-hidden')}
+                  className={cx(
+                    `md-h${titleLevel}`,
+                    'title-icon-reveal',
+                    !iconShown && 'is-hidden',
+                  )}
                 />
                 <EmbedTitle
                   title={entry.display_title ?? source.title}
@@ -580,7 +586,7 @@ export function ViewEmbedBlock({
                     className={i === index ? optionRing : undefined}
                     leading={<Icon name={viewIcon(v)} size={16} />}
                     onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
-                    onContextMenu={(e) => void rowMenu(i, e, false)}
+                    onContextMenu={(e) => rowMenu(i, e, false)}
                   >
                     {renaming === i ? renameField(i) : v.name}
                   </MenuItem>
@@ -589,6 +595,54 @@ export function ViewEmbedBlock({
             </MenuScrollFrame>
           </div>
         </PickerMenu>
+        {rowMenuAt && (
+          <PickerMenu
+            solid
+            open
+            onDismiss={() => setRowMenuAt(null)}
+            anchorX={rowMenuAt.x}
+            anchorY={rowMenuAt.y}
+            origin="center"
+          >
+            {(
+              [
+                ['pencil', 'Rename', () => setRenaming(rowMenuAt.i)],
+                ['smile', 'Edit Icon', () => setIconFor(rowMenuAt.i)],
+                ['palette', 'Edit Color', () => setColorFor(rowMenuAt.i)],
+                ['type', labeled ? 'Hide Titles' : 'Show Titles', toggleTitles],
+              ] as const
+            ).map(([glyph, label, run]) => (
+              <MenuItem
+                key={label}
+                leading={<Icon name={glyph} size={13} />}
+                onClick={() => {
+                  setRowMenuAt(null)
+                  run()
+                }}
+              >
+                {label}
+              </MenuItem>
+            ))}
+            <MenuSeparator />
+            {/* The write path refuses a container's last view; the row mirrors that rather than
+                offering a click that only bounces. */}
+            <MenuItem
+              className={entry.views.length > 1 ? undefined : rowDisabled}
+              leading={<Icon name="trash" size={13} />}
+              onClick={
+                entry.views.length > 1
+                  ? () => {
+                      const { i, animate } = rowMenuAt
+                      setRowMenuAt(null)
+                      ;(animate ? beginDeleteView : deleteViewAt)(i)
+                    }
+                  : undefined
+              }
+            >
+              Delete
+            </MenuItem>
+          </PickerMenu>
+        )}
         <IconPicker
           open={iconFor !== null}
           onClose={() => setIconFor(null)}
