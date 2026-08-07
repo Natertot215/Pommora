@@ -8,6 +8,7 @@ import {
   type Range,
 } from '@codemirror/state'
 import { headingParts, isHeadingLine, lineOffsets } from '../detect'
+import { fencedLineMask } from '@shared/markdownCode'
 import { docString } from './docCache'
 import { createBlockDragGesture } from './blockDrag'
 import { lineElementAt } from './lineDom'
@@ -43,14 +44,9 @@ export function headingSections(doc: string): HeadingSection[] {
   const seen = new Map<string, number>()
   // Fence parity: a `# comment` inside a code block is code, not a heading — treating it as one gives it
   // a chevron, corrupts heading-drag extents, and poisons the persisted fold keys.
-  let fence: '`' | '~' | null = null
+  const fenced = fencedLineMask(lines)
   for (let i = 0; i < lines.length; i++) {
-    const marker = /^\s*(```|~~~)/.exec(lines[i])?.[1][0] as '`' | '~' | undefined
-    if (marker && (fence === null || fence === marker)) {
-      fence = fence === null ? marker : null
-      continue
-    }
-    if (fence !== null) continue
+    if (fenced[i]) continue
     if (!isHeadingLine(lines[i])) continue
     const m = headingParts(lines[i])
     if (!m) continue
