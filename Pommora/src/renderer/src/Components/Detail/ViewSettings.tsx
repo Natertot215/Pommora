@@ -17,7 +17,6 @@ import {
   footingLabel,
   footingSymbol,
   item,
-  rowDisabled,
   side,
 } from '../../design-system/components/menu/menu.css'
 import { PickerMenu } from '../../design-system/components/PickerMenu'
@@ -293,19 +292,14 @@ export function ViewSettings({
                 Duplicate
               </MenuItem>
               <MenuSeparator />
-              {/* Refusing the last view is the write path's rule; the row mirrors it rather than
-                  offering a click that would only bounce. */}
+              {/* Refusing the last view is the write path's rule; the row mirrors it. */}
               <MenuItem
-                className={canDelete ? undefined : rowDisabled}
+                disabled={!canDelete}
                 leading={<Icon name="trash" size={13} />}
-                onClick={
-                  canDelete
-                    ? () => {
-                        setItemMenuOpen(false)
-                        void deleteView()
-                      }
-                    : undefined
-                }
+                onClick={() => {
+                  setItemMenuOpen(false)
+                  void deleteView()
+                }}
               >
                 Delete
               </MenuItem>
