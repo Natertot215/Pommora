@@ -10,6 +10,10 @@ The MarkdownPM stretch behind it still owes its own hand checks: the embedded-pa
 
 ### Recent Work
 
+#### The Fence Owns Its Length (08-07)
+
+A fenced block now ends only at a run at least as long as the one that opened it, so a longer fence holds shorter ones as literal content instead of splitting at the first inner one — and the four layers that had each recognized fences for themselves read one shared pass, which closes the gap that let a rename reach a `[[Title]]` inside a nested code sample. → [[MarkdownPM]]
+
 #### The PageMenu and the Menu Convergence (08-06 → 08-07)
 
 A Page's Settings dropdown rendered nothing: `viewSettingsScope` had always resolved a `page` case that no surface answered. It now opens on the Page's identity — the shared inline header, its glyph over the icon picker beside a click-to-edit title — and drills into a Properties leaf listing the Contexts and property values that Page holds. The leaf is deliberately an arrangement rather than a new mechanism: every value is entered through the same primitives the table, cards, and preview inspector compose, so no second way to write frontmatter exists. Contexts open shown so a Page states what it could be filed under before it is, and a row's menu carries Clear beside Remove — Clear empties the value and leaves the row to be refilled, Remove empties it and takes the row away, with Contexts re-addable through the same picker as properties. Neither touches the schema.

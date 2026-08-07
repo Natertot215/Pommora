@@ -214,4 +214,75 @@ describe('fence language capture', () => {
   it('only the first word counts, whitespace tolerated', () => {
     expect(scan('``` json extra\n{}\n```')[0]?.lang).toBe('json')
   })
+  it('the info word rides a run of any length', () => {
+    expect(scan('````yaml\nk: 1\n````')[0]?.lang).toBe('yaml')
+    expect(scan('`````yaml\nk: 1\n`````')[0]?.lang).toBe('yaml')
+  })
+  it('markerEnd tracks the run, so the info word hides in its own place', () => {
+    expect(scan('```yaml\nx\n```')[0]?.markerEnd).toBe(3)
+    expect(scan('````yaml\nx\n````')[0]?.markerEnd).toBe(4)
+    expect(scan('> `````yaml\n> x\n> `````')[0]?.markerEnd).toBe(7)
+  })
+})
+
+describe('fence run length — a longer fence holds shorter ones', () => {
+  const roles = (text: string): (string | undefined)[] => {
+    const { lines, lineStarts } = splitWithOffsets(text)
+    return scanFencedCode(lines, lineStarts).map((f) => f?.role)
+  }
+  it('a ``` line inside a ````` block is content, not a close', () => {
+    expect(roles('`````\na\n```\nb\n```\nc\n`````\nafter')).toEqual([
+      'open',
+      'content',
+      'content',
+      'content',
+      'content',
+      'content',
+      'close',
+      undefined,
+    ])
+  })
+  it('an equal or longer run closes; a shorter one never does', () => {
+    expect(roles('`````\na\n`````\nafter')).toEqual(['open', 'content', 'close', undefined])
+    expect(roles('`````\na\n```````\nafter')).toEqual(['open', 'content', 'close', undefined])
+    expect(roles('`````\na\n```\nafter')).toEqual(['open', 'content', 'content', 'content'])
+  })
+  it('a closer carrying an info word is content — only a bare run ends the block', () => {
+    expect(roles('```\n```js\nx\n```\nafter')).toEqual([
+      'open',
+      'content',
+      'content',
+      'close',
+      undefined,
+    ])
+  })
+  it('length pairs alongside marker and quote depth, never instead of them', () => {
+    expect(roles('`````\n~~~\nx\n~~~\n`````')).toEqual([
+      'open',
+      'content',
+      'content',
+      'content',
+      'close',
+    ])
+    expect(roles('`````\n> ```\nx\n> ```\n`````')).toEqual([
+      'open',
+      'content',
+      'content',
+      'content',
+      'close',
+    ])
+  })
+  it('a backtick fence whose info string holds a backtick is prose, not a fence', () => {
+    expect(roles('```a`b\nx\nafter')).toEqual([undefined, undefined, undefined])
+  })
+  it('a CRLF document still fences (the trailing \\r is not an info string)', () => {
+    expect(roles('`````\r\na\r\n```\r\nb\r\n`````\r\nafter\r')).toEqual([
+      'open',
+      'content',
+      'content',
+      'content',
+      'close',
+      undefined,
+    ])
+  })
 })
