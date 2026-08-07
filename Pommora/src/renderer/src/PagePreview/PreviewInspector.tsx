@@ -58,7 +58,6 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   const [addOpen, setAddOpen] = useState(false)
   const addRef = useRef<HTMLButtonElement | null>(null)
   const [rowMenu, setRowMenu] = useState<{ id: string; x: number; y: number } | null>(null)
-  const rowMenuRef = useRef<HTMLSpanElement | null>(null)
 
   useEffect(() => {
     setEditing(null)
@@ -305,34 +304,28 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
         )}
       </div>
       {rowMenu && (
-        <>
-          <span
-            ref={rowMenuRef}
-            aria-hidden
-            style={{ position: 'fixed', left: rowMenu.x, top: rowMenu.y, width: 0, height: 0 }}
-          />
-          <PickerMenu
-            solid
-            open
-            onDismiss={() => setRowMenu(null)}
-            triggerRef={rowMenuRef}
-            origin="center"
-          >
-            <div className="nav-row-menu">
-              <MenuItem
-                leading={<Icon name="x" size={13} />}
-                onClick={() => {
-                  if (isContextRow(rowMenu.id)) commitContext(rowMenu.id, [])
-                  else commitValue(rowMenu.id, null)
-                  setRevealed((prev) => new Set([...prev].filter((r) => r !== rowMenu.id)))
-                  setRowMenu(null)
-                }}
-              >
-                {isContextRow(rowMenu.id) ? 'Remove Context' : 'Remove Property'}
-              </MenuItem>
-            </div>
-          </PickerMenu>
-        </>
+        <PickerMenu
+          solid
+          open
+          onDismiss={() => setRowMenu(null)}
+          anchorX={rowMenu.x}
+          anchorY={rowMenu.y}
+          origin="center"
+        >
+          <div className="nav-row-menu">
+            <MenuItem
+              leading={<Icon name="x" size={13} />}
+              onClick={() => {
+                if (isContextRow(rowMenu.id)) commitContext(rowMenu.id, [])
+                else commitValue(rowMenu.id, null)
+                setRevealed((prev) => new Set([...prev].filter((r) => r !== rowMenu.id)))
+                setRowMenu(null)
+              }}
+            >
+              {isContextRow(rowMenu.id) ? 'Remove Context' : 'Remove Property'}
+            </MenuItem>
+          </div>
+        </PickerMenu>
       )}
       {addOpen && (
         <PickerMenu

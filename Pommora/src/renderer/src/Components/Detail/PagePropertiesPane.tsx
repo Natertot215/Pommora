@@ -61,7 +61,6 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
   const [rowMenu, setRowMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
   const addRef = useRef<HTMLButtonElement | null>(null)
-  const rowMenuRef = useRef<HTMLSpanElement | null>(null)
 
   const path = pageDetail?.path ?? ''
   const stored = pageDetail?.frontmatter
@@ -301,34 +300,28 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
         )}
       </div>
       {rowMenu && (
-        <>
-          <span
-            ref={rowMenuRef}
-            aria-hidden
-            style={{ position: 'fixed', left: rowMenu.x, top: rowMenu.y, width: 0, height: 0 }}
-          />
-          <PickerMenu
-            solid
-            open
-            onDismiss={() => setRowMenu(null)}
-            triggerRef={rowMenuRef}
-            origin="center"
+        <PickerMenu
+          solid
+          open
+          onDismiss={() => setRowMenu(null)}
+          anchorX={rowMenu.x}
+          anchorY={rowMenu.y}
+          origin="center"
+        >
+          <MenuItem
+            leading={<Icon name="x" size={13} />}
+            onClick={() => {
+              if (isContextRow(rowMenu.id)) commitContext(rowMenu.id, [])
+              else {
+                commitValue(rowMenu.id, null)
+                setRevealed((prev) => new Set([...prev].filter((r) => r !== rowMenu.id)))
+              }
+              setRowMenu(null)
+            }}
           >
-            <MenuItem
-              leading={<Icon name="x" size={13} />}
-              onClick={() => {
-                if (isContextRow(rowMenu.id)) commitContext(rowMenu.id, [])
-                else {
-                  commitValue(rowMenu.id, null)
-                  setRevealed((prev) => new Set([...prev].filter((r) => r !== rowMenu.id)))
-                }
-                setRowMenu(null)
-              }}
-            >
-              {isContextRow(rowMenu.id) ? 'Remove Context' : 'Remove Property'}
-            </MenuItem>
-          </PickerMenu>
-        </>
+            {isContextRow(rowMenu.id) ? 'Remove Context' : 'Remove Property'}
+          </MenuItem>
+        </PickerMenu>
       )}
       {addOpen && (
         <PickerMenu
