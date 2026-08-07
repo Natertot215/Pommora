@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
-import { applyValueAtRoot, propertyKey } from '@shared/propertyValue'
+import { applyValueAtRoot, isBlankValue, propertyKey } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { contextKey, type ContextsRegistry } from '@shared/contexts'
@@ -162,9 +162,9 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     if (def.type === 'number' || def.type === 'url') setEditing({ id: def.id, mode: 'editor' })
   }
 
-  // A native menu on purpose: emptying a row is its one destructive gesture, and the OS menu is what
-  // the rest of the app pops for a destructive pick. Clear empties the value and leaves the row to be
-  // refilled; Remove empties it and takes the row away, back into Add Property.
+  // Clear empties the value and leaves the row to be refilled; Remove empties it and takes the row
+  // away, back into Add Property. Whether a row counts as filled is the house predicate's call — an
+  // empty multi-select or context array holds a value shape but nothing to clear.
   const rowMenu = async (id: string, name: string, filled: boolean): Promise<void> => {
     const action = await window.nexus.propertyMenu({ kind: 'page-value', name, filled })
     if (action !== 'value:clear' && action !== 'value:remove') return
@@ -248,7 +248,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
                     data-page-prop={id}
                     onContextMenu={(e) => {
                       e.preventDefault()
-                      void rowMenu(id, label, resolveFieldValue(row, id, schema).kind !== 'null')
+                      void rowMenu(id, label, !isBlankValue(resolveFieldValue(row, id, schema)))
                     }}
                   >
                     <span className={side}>
