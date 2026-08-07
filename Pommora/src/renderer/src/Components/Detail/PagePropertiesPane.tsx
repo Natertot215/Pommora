@@ -160,13 +160,10 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
   // Clearing a value is a native menu on purpose: it is the one destructive gesture on a row, and
   // the OS menu is what the rest of the app pops for a destructive pick.
   const removeRowMenu = async (id: string, name: string): Promise<void> => {
-    const action = await window.nexus.propertyMenu({
-      kind: 'page-value',
-      name,
-      context: isContextRow(id),
-    })
+    const context = isContextRow(id)
+    const action = await window.nexus.propertyMenu({ kind: 'page-value', name, context })
     if (action !== 'value:clear') return
-    if (isContextRow(id)) commitContext(id, [])
+    if (context) commitContext(id, [])
     else {
       commitValue(id, null)
       setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
