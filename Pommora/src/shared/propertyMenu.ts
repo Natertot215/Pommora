@@ -7,8 +7,14 @@ export type PropertyMenuContext =
   | { kind: 'editor'; name: string }
   | { kind: 'assigned-row'; name: string }
   | { kind: 'registry-row'; name: string }
+  /** A value row on an entity, where Remove clears what this one holds and touches no schema. */
+  | { kind: 'page-value'; name: string; context: boolean }
 
-export type PropertyMenuAction = 'property:rename' | 'property:remove' | 'property:destroy'
+export type PropertyMenuAction =
+  | 'property:rename'
+  | 'property:remove'
+  | 'property:destroy'
+  | 'value:clear'
 
 export interface PropertyMenuItem {
   label: string
@@ -31,5 +37,7 @@ export function propertyMenuModel(ctx: PropertyMenuContext): PropertyMenuItem[] 
       ]
     case 'registry-row':
       return [{ label: 'Rename', action: 'property:rename' }]
+    case 'page-value':
+      return [{ label: ctx.context ? 'Remove Context' : 'Remove Property', action: 'value:clear' }]
   }
 }
