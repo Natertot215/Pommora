@@ -41,8 +41,9 @@ export const row = style([item])
 export const label = style([titleText, { flex: '0 1 auto' }])
 
 /** Content-sized and pushed right, so a picker anchors to the value rather than to the row's empty
- *  middle. Capped at a share of the pane's own ceiling: past that a value scrolls inside itself
- *  instead of growing the pane further, so a chip run can never crowd the name it belongs to. */
+ *  middle. Capped at a share of the pane's own ceiling, which is what stops a chip run from growing
+ *  the pane until it crowds the name it belongs to — the rendered value brings its own scroller, so
+ *  the cap bounds the box and never has to clip what's inside it. */
 export const value = style({
   marginLeft: 'auto',
   flex: '0 1 auto',

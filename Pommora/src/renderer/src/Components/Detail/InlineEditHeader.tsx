@@ -46,6 +46,7 @@ export function InlineEditHeader({
         editing={editing && !readOnly}
         value={value}
         className={`${fieldInputClass} ${s.titleField}`}
+        boxed
         onCommit={(next) => {
           setEditing(false)
           onCommit(next)
