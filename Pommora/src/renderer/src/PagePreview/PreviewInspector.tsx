@@ -8,7 +8,7 @@ import { cx } from '@renderer/design-system/cx'
 import { asRenderableIcon, entityIcon, Icon } from '@renderer/design-system/symbols'
 import { propertyTypeIconName } from '../Components/Detail/PropertyTypes'
 import { text } from '@renderer/design-system/tokens'
-import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
+import { PickerMenu, PickerOption, PointMenu } from '@renderer/design-system/components/PickerMenu'
 import { MenuItem } from '@renderer/design-system/components/menu'
 import { iconOption } from '../Components/Detail/pickerControl.css'
 import { Cell } from '../Detail/Views/Table/Cell'
@@ -304,14 +304,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
         )}
       </div>
       {rowMenu && (
-        <PickerMenu
-          solid
-          open
-          onDismiss={() => setRowMenu(null)}
-          anchorX={rowMenu.x}
-          anchorY={rowMenu.y}
-          origin="center"
-        >
+        <PointMenu at={rowMenu} onDismiss={() => setRowMenu(null)}>
           <div className="nav-row-menu">
             <MenuItem
               leading={<Icon name="x" size={13} />}
@@ -325,7 +318,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
               Remove
             </MenuItem>
           </div>
-        </PickerMenu>
+        </PointMenu>
       )}
       {addOpen && (
         <PickerMenu

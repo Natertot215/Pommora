@@ -31,7 +31,7 @@ export const suffixField = style([
 
 /** The bare inner value input — no chrome (the wrapper owns the fill + stroke); fills the space left of
  *  the pinned hint and scrolls its own overflow. The eclipse fade is the shared `overflow-eclipse` mask
- *  (added at the call site) — the same edge-fade every overflowing surface uses. */
+ *  every unboxed `EditableInput` wears — the same edge-fade every overflowing surface uses. */
 export const suffixInput = style({
   flex: '1 1 auto',
   minWidth: 0,
