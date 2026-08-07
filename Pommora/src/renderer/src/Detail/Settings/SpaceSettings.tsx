@@ -3,7 +3,7 @@ import { useRef, useState } from 'react'
 import { SOLID_COLORS, type SolidColor } from '@shared/types'
 import { Icon, entityIcon } from '@renderer/design-system/symbols'
 import { MenuBottomRow, MenuItem, MenuScrollFrame } from '@renderer/design-system/components/menu'
-import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
+import { PointMenu } from '@renderer/design-system/components/PickerMenu'
 import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
@@ -86,14 +86,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
         </div>
       </MenuScrollFrame>
       {headerMenu && (
-        <PickerMenu
-          solid
-          open
-          onDismiss={() => setHeaderMenu(null)}
-          anchorX={headerMenu.x}
-          anchorY={headerMenu.y}
-          origin="center"
-        >
+        <PointMenu at={headerMenu} onDismiss={() => setHeaderMenu(null)}>
           <MenuItem
             leading={<Icon name="palette" size={13} />}
             onClick={() => {
@@ -103,7 +96,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
           >
             Change Color
           </MenuItem>
-        </PickerMenu>
+        </PointMenu>
       )}
       <IconPicker
         open={pickerOpen}

@@ -14,7 +14,7 @@ import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { ColorPicker } from '@renderer/Components/Detail/ColorPicker'
-import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
+import { PickerMenu, PointMenu } from '@renderer/design-system/components/PickerMenu'
 import {
   AccessoryButton,
   Menu,
@@ -596,14 +596,7 @@ export function ViewEmbedBlock({
           </div>
         </PickerMenu>
         {rowMenuAt && (
-          <PickerMenu
-            solid
-            open
-            onDismiss={() => setRowMenuAt(null)}
-            anchorX={rowMenuAt.x}
-            anchorY={rowMenuAt.y}
-            origin="center"
-          >
+          <PointMenu at={rowMenuAt} onDismiss={() => setRowMenuAt(null)}>
             {(
               [
                 ['pencil', 'Rename', () => setRenaming(rowMenuAt.i)],
@@ -635,7 +628,7 @@ export function ViewEmbedBlock({
             >
               Delete
             </MenuItem>
-          </PickerMenu>
+          </PointMenu>
         )}
         <IconPicker
           open={iconFor !== null}
