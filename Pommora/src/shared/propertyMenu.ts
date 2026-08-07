@@ -7,14 +7,16 @@ export type PropertyMenuContext =
   | { kind: 'editor'; name: string }
   | { kind: 'assigned-row'; name: string }
   | { kind: 'registry-row'; name: string }
-  /** A value row on an entity, where Remove clears what this one holds and touches no schema. */
-  | { kind: 'page-value'; name: string; context: boolean }
+  /** A value row on an entity: Clear empties what this one holds, Remove also takes the row away.
+   *  Neither touches the schema — the property stays assigned to its Collection either way. */
+  | { kind: 'page-value'; name: string; filled: boolean }
 
 export type PropertyMenuAction =
   | 'property:rename'
   | 'property:remove'
   | 'property:destroy'
   | 'value:clear'
+  | 'value:remove'
 
 export interface PropertyMenuItem {
   label: string
@@ -38,6 +40,12 @@ export function propertyMenuModel(ctx: PropertyMenuContext): PropertyMenuItem[] 
     case 'registry-row':
       return [{ label: 'Rename', action: 'property:rename' }]
     case 'page-value':
-      return [{ label: ctx.context ? 'Remove Context' : 'Remove Property', action: 'value:clear' }]
+      // Nothing to clear on an empty row, so Clear stands down rather than showing inert.
+      return ctx.filled
+        ? [
+            { label: 'Clear', action: 'value:clear' },
+            { label: 'Remove', action: 'value:remove' },
+          ]
+        : [{ label: 'Remove', action: 'value:remove' }]
   }
 }

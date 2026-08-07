@@ -79,9 +79,14 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
   // A property with no key still shows once it's been added this session — session-only, because
   // an empty row holds nothing on disk and that is what keeps an untouched Page untouched.
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
+  // Contexts are the mirror: they open as standing slots, and Remove sets one aside for the session
+  // until Add Property offers it back. Both sets are session-only — an empty row holds nothing on
+  // disk, which is what keeps an untouched Page untouched.
+  const [setAside, setSetAside] = useState<ReadonlySet<string>>(new Set())
   useEffect(() => {
     setEditing(null)
     setRevealed(new Set())
+    setSetAside(new Set())
   }, [tree])
 
   const schema = useMemo(() => schemaForPage(tree, path), [tree, path])
@@ -157,17 +162,18 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     if (def.type === 'number' || def.type === 'url') setEditing({ id: def.id, mode: 'editor' })
   }
 
-  // Clearing a value is a native menu on purpose: it is the one destructive gesture on a row, and
-  // the OS menu is what the rest of the app pops for a destructive pick.
-  const removeRowMenu = async (id: string, name: string): Promise<void> => {
+  // A native menu on purpose: emptying a row is its one destructive gesture, and the OS menu is what
+  // the rest of the app pops for a destructive pick. Clear empties the value and leaves the row to be
+  // refilled; Remove empties it and takes the row away, back into Add Property.
+  const rowMenu = async (id: string, name: string, filled: boolean): Promise<void> => {
+    const action = await window.nexus.propertyMenu({ kind: 'page-value', name, filled })
+    if (action !== 'value:clear' && action !== 'value:remove') return
     const context = isContextRow(id)
-    const action = await window.nexus.propertyMenu({ kind: 'page-value', name, context })
-    if (action !== 'value:clear') return
     if (context) commitContext(id, [])
-    else {
-      commitValue(id, null)
-      setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
-    }
+    else commitValue(id, null)
+    if (action !== 'value:remove') return
+    if (context) setSetAside((prev) => new Set([...prev, id]))
+    else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
 
   const revealAndEdit = (def: PropertyDefinition): void => {
@@ -203,21 +209,20 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     (schema.find((d) => d.id === editing.id) ??
       (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined))
 
-  // A property shows once it holds a key or was added this session; every Context shows always, so
-  // a Page states what it could be filed under even before it is.
+  // A property shows once it holds a key or was added this session; a Context shows unless it was
+  // set aside, so a Page states what it could be filed under before it is.
   const isShown = (def: PropertyDefinition): boolean =>
     revealed.has(def.id) || (fm as Record<string, unknown>)[propertyKey(def)] !== undefined
   const hiddenProps = schema.filter((d) => !isShown(d))
+  const hiddenContexts = contextRows.filter((t) => setAside.has(t.id))
+  const contextField = (t: (typeof contextRows)[number]): Field => ({
+    ...t,
+    icon: entityIcon('space', t.icon, defaultIcons),
+    def: null,
+  })
 
   const groups: [string, Field[]][] = [
-    [
-      'contexts',
-      contextRows.map((t) => ({
-        ...t,
-        icon: entityIcon('space', t.icon, defaultIcons),
-        def: null,
-      })),
-    ],
+    ['contexts', contextRows.filter((t) => !setAside.has(t.id)).map(contextField)],
     [
       'properties',
       schema
@@ -242,7 +247,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
                     data-page-prop={id}
                     onContextMenu={(e) => {
                       e.preventDefault()
-                      void removeRowMenu(id, label)
+                      void rowMenu(id, label, resolveFieldValue(row, id, schema).kind !== 'null')
                     }}
                   >
                     <span className={side}>
@@ -304,7 +309,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
             </div>
           ),
         )}
-        {hiddenProps.length > 0 && (
+        {(hiddenProps.length > 0 || hiddenContexts.length > 0) && (
           <button type="button" ref={addRef} className={s.add} onClick={() => setAddOpen(true)}>
             <Icon name="plus" size="xs" />
             <span>Add Property</span>
@@ -319,6 +324,20 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
           triggerRef={addRef}
           origin="center"
         >
+          {hiddenContexts.map((t) => (
+            <PickerOption
+              key={t.id}
+              onClick={() => {
+                setAddOpen(false)
+                setSetAside((prev) => new Set([...prev].filter((r) => r !== t.id)))
+              }}
+            >
+              <span className={iconOption}>
+                <Icon name={entityIcon('space', t.icon, defaultIcons)} size={13} />
+                {t.label}
+              </span>
+            </PickerOption>
+          ))}
           {hiddenProps.map((def) => (
             <PickerOption key={def.id} onClick={() => revealAndEdit(def)}>
               <span className={iconOption}>
