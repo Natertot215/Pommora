@@ -61,4 +61,4 @@ The sweep above is read-only and safe to fan out. **Agents that WRITE are not.**
 
 The section above is deliberately written as an executable procedure so it can be lifted into a skill without rewriting. A skill built from it takes the surface under construction as input, runs Steps 1–6 as a dispatched read-only agent, and returns the four-way action table plus the violations list. Steps 3, 4, and 6 are the ones that carry the value — a version that drops the citation requirement, the permission to report nothing, or the unprompted violation hunt degrades into a summary and should not ship.
 
-**Related:** [[Build-Gotchas]] · the review → revise loop in the Studio's Review-Discipline rules.
+**Related:** [[Build-Gotchas]] · the review → revise loop carried by the brainstorming and planning skills.
