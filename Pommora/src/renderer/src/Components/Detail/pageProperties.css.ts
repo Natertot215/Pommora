@@ -2,18 +2,15 @@ import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
 import { item, titleText } from '../../design-system/components/menu/menu.css'
+import { growToContent } from '../../design-system/components/menu/paneGrowth'
 
 const c = colorVars.color
 
 /** KNOB — the pane's content-driven width ceiling. */
 const PAGE_PROPERTIES_MAX_WIDTH = '350px'
 
-/** Fill the host leaf first — its width is the real minimum — then stretch with the longest row up
- *  to the ceiling, so a chip stack or a long select value gets room before anything truncates. */
 export const pane = style({
-  minWidth: '100%',
-  width: 'max-content',
-  maxWidth: PAGE_PROPERTIES_MAX_WIDTH,
+  ...growToContent(PAGE_PROPERTIES_MAX_WIDTH),
   display: 'flex',
   flexDirection: 'column',
 })
@@ -55,15 +52,6 @@ export const value = style({
   alignItems: 'center',
   justifyContent: 'flex-end',
   textAlign: 'right',
-})
-
-/** The scroller inside a value: chips stay on one line and ride the shared eclipse once they outrun
- *  the cap above. */
-export const valueScroll = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-end',
-  gap: '4px',
 })
 
 export const empty = style([text.caption.standard, { color: c.label.tertiary }])

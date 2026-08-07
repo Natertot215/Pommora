@@ -28,7 +28,6 @@ import {
 } from '../../Detail/Views/PropertyEditing/PropertyPicker'
 import { DatetimeValuePicker } from '../../Detail/Views/PropertyEditing/DatetimeValuePicker'
 import { parseEditorValue } from '../../Detail/Views/Cards/cardValueInput'
-import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
 import { side } from '../../design-system/components/menu/menu.css'
 import { propertyTypeIconName } from './PropertyTypes'
 import { iconOption } from './pickerControl.css'
@@ -273,21 +272,19 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
                           onCancel={() => setEditing(null)}
                         />
                       ) : (
-                        <OverflowScroll className={s.valueScroll}>
-                          {Cell({
-                            row,
-                            column,
-                            ctx,
-                            hideIcon: false,
-                            style: { look: 'pill' },
-                            // The chip's hover × hands back what survives it — a Context keeps its
-                            // remaining Spaces, a property its remaining options.
-                            remove: def
-                              ? (next) => commitValue(id, next)
-                              : (next) =>
-                                  commitContext(id, next?.kind === 'context' ? next.value : []),
-                          }) ?? <span className={s.empty}>—</span>}
-                        </OverflowScroll>
+                        (Cell({
+                          row,
+                          column,
+                          ctx,
+                          hideIcon: false,
+                          style: { look: 'pill' },
+                          // The chip's hover × hands back what survives it — a Context keeps its
+                          // remaining Spaces, a property its remaining options.
+                          remove: def
+                            ? (next) => commitValue(id, next)
+                            : (next) =>
+                                commitContext(id, next?.kind === 'context' ? next.value : []),
+                        }) ?? <span className={s.empty}>—</span>)
                       )}
                     </span>
                   </div>

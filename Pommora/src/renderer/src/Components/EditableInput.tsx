@@ -15,6 +15,7 @@ export function EditableInput({
   maxLength,
   autoSize,
   caretAtEnd,
+  boxed,
   onCommit,
   onCancel,
 }: {
@@ -23,6 +24,9 @@ export function EditableInput({
   maxLength?: number
   autoSize?: boolean
   caretAtEnd?: boolean
+  /** This field draws its own border and fill. A mask fades an element WHOLE, so the eclipse would
+   *  dissolve the box along with the text it's hiding — such a field truncates instead. */
+  boxed?: boolean
   onCommit: (next: string) => void
   onCancel: () => void
 }): React.JSX.Element {
@@ -45,7 +49,7 @@ export function EditableInput({
       ref={inputRef}
       // The input is its own inline scroller, so the eclipse fade follows the caret to whichever
       // edge is hiding text — an ellipsis can't; Chromium drops it while a field is focused.
-      className={cx(className, 'overflow-eclipse', autoSize && autoSizeInput)}
+      className={cx(className, !boxed && 'overflow-eclipse', autoSize && autoSizeInput)}
       defaultValue={value}
       size={autoSize ? 1 : undefined}
       // Every consumer is a title field — proper nouns, not prose; squiggles are noise.

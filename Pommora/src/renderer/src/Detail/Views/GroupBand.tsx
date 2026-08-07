@@ -55,7 +55,13 @@ export function resolveBandHead(
         <span className="group-name">
           <EntityIcon kind="set" icon={setIcons.get(group.key)} size={13} />
           {setPath ? (
-            <RenamableTitle path={setPath} kind="set" title={title} className="band-title-input" />
+            <RenamableTitle
+              path={setPath}
+              kind="set"
+              title={title}
+              className="band-title-input"
+              boxed
+            />
           ) : (
             title
           )}
