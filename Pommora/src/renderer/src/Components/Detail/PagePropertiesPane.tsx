@@ -9,7 +9,7 @@ import { resolveContextKeys } from '@shared/contextResolve'
 import { isValidLink } from '@shared/links'
 import { asRenderableIcon, entityIcon, Icon } from '@renderer/design-system/symbols'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
-import { MenuItem, MenuPaneTopRow, MenuScrollFrame } from '../../design-system/components/menu'
+import { MenuPaneTopRow, MenuScrollFrame } from '../../design-system/components/menu'
 import { Cell } from '../../Detail/Views/Table/Cell'
 import { buildResolveContext, type ResolveContext } from '../../Detail/Views/Table/resolveContext'
 import { parseLink, urlValueFromEdit } from '../../Detail/Views/Table/linkValue'
@@ -58,7 +58,6 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
   const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const [editing, setEditing] = useState<Editing>(null)
   const [addOpen, setAddOpen] = useState(false)
-  const [rowMenu, setRowMenu] = useState<{ id: string; x: number; y: number } | null>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
   const addRef = useRef<HTMLButtonElement | null>(null)
 
@@ -158,6 +157,22 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     if (def.type === 'number' || def.type === 'url') setEditing({ id: def.id, mode: 'editor' })
   }
 
+  // Clearing a value is a native menu on purpose: it is the one destructive gesture on a row, and
+  // the OS menu is what the rest of the app pops for a destructive pick.
+  const removeRowMenu = async (id: string, name: string): Promise<void> => {
+    const action = await window.nexus.propertyMenu({
+      kind: 'page-value',
+      name,
+      context: isContextRow(id),
+    })
+    if (action !== 'value:clear') return
+    if (isContextRow(id)) commitContext(id, [])
+    else {
+      commitValue(id, null)
+      setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
+    }
+  }
+
   const revealAndEdit = (def: PropertyDefinition): void => {
     const id = def.id
     setAddOpen(false)
@@ -230,7 +245,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
                     data-page-prop={id}
                     onContextMenu={(e) => {
                       e.preventDefault()
-                      setRowMenu({ id, x: e.clientX, y: e.clientY })
+                      void removeRowMenu(id, label)
                     }}
                   >
                     <span className={side}>
@@ -299,30 +314,6 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
           </button>
         )}
       </div>
-      {rowMenu && (
-        <PickerMenu
-          solid
-          open
-          onDismiss={() => setRowMenu(null)}
-          anchorX={rowMenu.x}
-          anchorY={rowMenu.y}
-          origin="center"
-        >
-          <MenuItem
-            leading={<Icon name="x" size={13} />}
-            onClick={() => {
-              if (isContextRow(rowMenu.id)) commitContext(rowMenu.id, [])
-              else {
-                commitValue(rowMenu.id, null)
-                setRevealed((prev) => new Set([...prev].filter((r) => r !== rowMenu.id)))
-              }
-              setRowMenu(null)
-            }}
-          >
-            {isContextRow(rowMenu.id) ? 'Remove Context' : 'Remove Property'}
-          </MenuItem>
-        </PickerMenu>
-      )}
       {addOpen && (
         <PickerMenu
           solid
