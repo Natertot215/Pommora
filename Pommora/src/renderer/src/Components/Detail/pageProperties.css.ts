@@ -41,9 +41,7 @@ export const row = style([item])
 export const label = style([titleText, { flex: '0 1 auto' }])
 
 /** Content-sized and pushed right, so a picker anchors to the value rather than to the row's empty
- *  middle. Capped at a share of the pane's own ceiling, which is what stops a chip run from growing
- *  the pane until it crowds the name it belongs to — the rendered value brings its own scroller, so
- *  the cap bounds the box and never has to clip what's inside it. */
+ *  middle. */
 export const value = style({
   // The chip run's spacing is the field's own: the cell renderer reads a gap the table scopes to
   // itself, so a field hosting those chips outside a table states the rhythm it wants.
@@ -51,7 +49,6 @@ export const value = style({
   marginLeft: 'auto',
   flex: '0 1 auto',
   minWidth: 0,
-  maxWidth: `calc(${PAGE_PROPERTIES_MAX_WIDTH} * 2 / 3)`,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-end',
