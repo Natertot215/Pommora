@@ -215,14 +215,15 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     revealed.has(def.id) || (fm as Record<string, unknown>)[propertyKey(def)] !== undefined
   const hiddenProps = schema.filter((d) => !isShown(d))
   const hiddenContexts = contextRows.filter((t) => setAside.has(t.id))
-  const contextField = (t: (typeof contextRows)[number]): Field => ({
-    ...t,
-    icon: entityIcon('space', t.icon, defaultIcons),
-    def: null,
-  })
+  const contextIcon = (own: unknown): string => entityIcon('space', own, defaultIcons)
 
   const groups: [string, Field[]][] = [
-    ['contexts', contextRows.filter((t) => !setAside.has(t.id)).map(contextField)],
+    [
+      'contexts',
+      contextRows
+        .filter((t) => !setAside.has(t.id))
+        .map((t) => ({ ...t, icon: contextIcon(t.icon), def: null })),
+    ],
     [
       'properties',
       schema
@@ -333,7 +334,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
               }}
             >
               <span className={iconOption}>
-                <Icon name={entityIcon('space', t.icon, defaultIcons)} size={13} />
+                <Icon name={contextIcon(t.icon)} size={13} />
                 {t.label}
               </span>
             </PickerOption>

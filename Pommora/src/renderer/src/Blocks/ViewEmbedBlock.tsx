@@ -624,20 +624,14 @@ export function ViewEmbedBlock({
               </MenuItem>
             ))}
             <MenuSeparator />
-            {/* The write path refuses a container's last view; the row mirrors that rather than
-                offering a click that only bounces. */}
+            {/* The write path refuses a container's last view; the row mirrors that rule. */}
             <MenuItem
-              className={entry.views.length > 1 ? undefined : rowDisabled}
+              disabled={entry.views.length < 2}
               leading={<Icon name="trash" size={13} />}
-              onClick={
-                entry.views.length > 1
-                  ? () => {
-                      const { i, animate } = rowMenuAt
-                      setRowMenuAt(null)
-                      ;(animate ? beginDeleteView : deleteViewAt)(i)
-                    }
-                  : undefined
-              }
+              onClick={() => {
+                setRowMenuAt(null)
+                ;(rowMenuAt.animate ? beginDeleteView : deleteViewAt)(rowMenuAt.i)
+              }}
             >
               Delete
             </MenuItem>
