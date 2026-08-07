@@ -13,6 +13,7 @@ import { vars as colorVars } from '../../design-system/tokens/color.css'
 import { text } from '../../design-system/tokens/typography.css'
 import { field as fieldBase } from '../../design-system/components/interactionField.css'
 import { focusRing } from '../../design-system/components/fieldRing'
+import { growToContent } from '../../design-system/components/menu/paneGrowth'
 import { divider as segmentHairline } from '../../design-system/components/Segmented-Controls/segmented.css'
 
 const c = colorVars.color
@@ -37,13 +38,7 @@ const FILTER_MIN_HEIGHT = '245px'
 const REMOVE_INSET = '2px'
 
 export const pane = style({
-  // Fill the host leaf first — its floor is the real minimum — then stretch with the longest row up
-  // to the ceiling. Without that floor a bare `max-content` collapses the pane to its widest
-  // row (~112px on an empty filter) INSIDE a 225px host, leaving every row and separator stranded
-  // at half the surface's width.
-  minWidth: '100%',
-  width: 'max-content',
-  maxWidth: FILTER_MAX_WIDTH,
+  ...growToContent(FILTER_MAX_WIDTH),
   minHeight: FILTER_MIN_HEIGHT,
   display: 'flex',
   flexDirection: 'column',

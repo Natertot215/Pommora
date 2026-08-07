@@ -11,6 +11,7 @@ export function RenamableLabel({
   value,
   className,
   autoSize,
+  boxed,
   onCommit,
   onCancel,
   children,
@@ -20,6 +21,8 @@ export function RenamableLabel({
   value: string
   className: string
   autoSize?: boolean
+  /** The field carries its own border and fill — see `EditableInput`. */
+  boxed?: boolean
   onCommit: (next: string) => void
   onCancel: () => void
   children?: React.ReactNode
@@ -30,6 +33,7 @@ export function RenamableLabel({
       value={value}
       className={className}
       autoSize={autoSize}
+      boxed={boxed}
       caretAtEnd={renames === 'title'}
       onCommit={(next) => (next && next !== value ? onCommit(next) : onCancel())}
       onCancel={onCancel}
