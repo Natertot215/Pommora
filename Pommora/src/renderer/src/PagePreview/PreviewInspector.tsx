@@ -322,7 +322,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                 setRowMenu(null)
               }}
             >
-              {isContextRow(rowMenu.id) ? 'Remove Context' : 'Remove Property'}
+              Remove
             </MenuItem>
           </div>
         </PickerMenu>
