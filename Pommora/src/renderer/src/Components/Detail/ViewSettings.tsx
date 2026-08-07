@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { DEFAULT_VIEW_ID, isCompact, type SavedView, type ViewType } from '@shared/views'
@@ -17,8 +17,10 @@ import {
   footingLabel,
   footingSymbol,
   item,
+  rowDisabled,
   side,
 } from '../../design-system/components/menu/menu.css'
+import { PickerMenu } from '../../design-system/components/PickerMenu'
 import { Slider } from '../../design-system/components/Slider/Slider'
 import { useSession } from '../../store'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
@@ -103,6 +105,8 @@ export function ViewSettings({
   const load = useSession((s) => s.load)
   const tree = useSession((s) => s.tree)
   const [leaf, setLeaf] = useState<Leaf | null>(null)
+  const [itemMenuOpen, setItemMenuOpen] = useState(false)
+  const itemMenuRef = useRef<HTMLButtonElement>(null)
   const views = source.views ?? []
   const canDelete = views.length > 1 && view.id !== DEFAULT_VIEW_ID
 
@@ -121,25 +125,23 @@ export function ViewSettings({
   // Two-option double-chevron = a direct toggle, never a dropdown (the Open In idiom).
   const toggleFormat = (): void => write({ format: isCompact(view) ? 'standard' : 'compact' })
 
-  const openItemMenu = async (): Promise<void> => {
-    const action = await window.nexus.viewItemMenu(canDelete)
-    if (action === 'view:duplicate') {
-      const res = await window.nexus.views.save(source.path, source.kind, {
-        ...view,
-        id: DEFAULT_VIEW_ID,
-      })
-      if (res.ok) {
-        const ids = views.map((v) => v.id).filter((id) => id !== res.value.id)
-        const at = ids.indexOf(view.id)
-        ids.splice(at < 0 ? ids.length : at + 1, 0, res.value.id)
-        await window.nexus.views.reorder(source.path, source.kind, ids)
-      }
-      await load()
-    } else if (action === 'view:delete') {
-      await window.nexus.views.delete(source.path, source.kind, view.id)
-      onClose()
-      await load()
+  const duplicateView = async (): Promise<void> => {
+    const res = await window.nexus.views.save(source.path, source.kind, {
+      ...view,
+      id: DEFAULT_VIEW_ID,
+    })
+    if (res.ok) {
+      const ids = views.map((v) => v.id).filter((id) => id !== res.value.id)
+      const at = ids.indexOf(view.id)
+      ids.splice(at < 0 ? ids.length : at + 1, 0, res.value.id)
+      await window.nexus.views.reorder(source.path, source.kind, ids)
     }
+    await load()
+  }
+  const deleteView = async (): Promise<void> => {
+    await window.nexus.views.delete(source.path, source.kind, view.id)
+    onClose()
+    await load()
   }
 
   const formatToggle = (glyph: IconName, label: string): React.JSX.Element => (
@@ -260,20 +262,55 @@ export function ViewSettings({
     </div>
   )
 
-
   const header =
     door === 'full' ? (
       <MenuPaneTopRow
         label="Views"
         onBack={onBack}
         trailing={
-          <AccessoryButton
-            icon="ellipsis-vertical"
-            size={14}
-            box={20}
-            ariaLabel="View menu"
-            onClick={() => void openItemMenu()}
-          />
+          <>
+            <AccessoryButton
+              ref={itemMenuRef}
+              icon="ellipsis-vertical"
+              size={14}
+              box={20}
+              ariaLabel="View menu"
+              onClick={() => setItemMenuOpen(true)}
+            />
+            <PickerMenu
+              solid
+              open={itemMenuOpen}
+              onDismiss={() => setItemMenuOpen(false)}
+              triggerRef={itemMenuRef}
+            >
+              <MenuItem
+                leading={<Icon name="copy" size={13} />}
+                onClick={() => {
+                  setItemMenuOpen(false)
+                  void duplicateView()
+                }}
+              >
+                Duplicate
+              </MenuItem>
+              <MenuSeparator />
+              {/* Refusing the last view is the write path's rule; the row mirrors it rather than
+                  offering a click that would only bounce. */}
+              <MenuItem
+                className={canDelete ? undefined : rowDisabled}
+                leading={<Icon name="trash" size={13} />}
+                onClick={
+                  canDelete
+                    ? () => {
+                        setItemMenuOpen(false)
+                        void deleteView()
+                      }
+                    : undefined
+                }
+              >
+                Delete
+              </MenuItem>
+            </PickerMenu>
+          </>
         }
       />
     ) : (

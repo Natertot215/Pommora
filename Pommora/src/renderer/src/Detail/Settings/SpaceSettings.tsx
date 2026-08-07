@@ -2,7 +2,8 @@ import { blockHostKey } from '@shared/blocks'
 import { useRef, useState } from 'react'
 import { SOLID_COLORS, type SolidColor } from '@shared/types'
 import { Icon, entityIcon } from '@renderer/design-system/symbols'
-import { MenuBottomRow, MenuScrollFrame } from '@renderer/design-system/components/menu'
+import { MenuBottomRow, MenuItem, MenuScrollFrame } from '@renderer/design-system/components/menu'
+import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
 import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
@@ -23,6 +24,7 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
   const headerRef = useRef<HTMLDivElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [colorOpen, setColorOpen] = useState(false)
+  const [headerMenu, setHeaderMenu] = useState<{ x: number; y: number } | null>(null)
   const node = findSpace(tree, id)
   const color = spaceColor(tree, id)
   if (!node) return null
@@ -61,15 +63,13 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
         <div
           ref={headerRef}
           onContextMenu={(e) => {
-            // Main pops the editor menu for ANY editable target, and a renderer preventDefault does
-            // not suppress it — so right-clicking the title mid-rename would put two native menus on
-            // one window and lose both picks. Yield the gesture there; ours owns the rest of the row.
+            // Main pops its own editor menu for ANY editable target and a renderer preventDefault
+            // can't suppress it, so the gesture stays yielded mid-rename — two menus over one field
+            // would lose both picks. This row's own menu owns everywhere else.
             if ((e.target as HTMLElement).closest('input, textarea, [contenteditable]')) return
             e.preventDefault()
             e.stopPropagation()
-            void window.nexus.spaceHeaderMenu().then((action) => {
-              if (action === 'change-color') setColorOpen(true)
-            })
+            setHeaderMenu({ x: e.clientX, y: e.clientY })
           }}
         >
           <InlineEditHeader
@@ -85,6 +85,26 @@ export function SpaceSettingsContent({ id }: { id: string }): React.JSX.Element 
           />
         </div>
       </MenuScrollFrame>
+      {headerMenu && (
+        <PickerMenu
+          solid
+          open
+          onDismiss={() => setHeaderMenu(null)}
+          anchorX={headerMenu.x}
+          anchorY={headerMenu.y}
+          origin="center"
+        >
+          <MenuItem
+            leading={<Icon name="palette" size={13} />}
+            onClick={() => {
+              setHeaderMenu(null)
+              setColorOpen(true)
+            }}
+          >
+            Change Color
+          </MenuItem>
+        </PickerMenu>
+      )}
       <IconPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}

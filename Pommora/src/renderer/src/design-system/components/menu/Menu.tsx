@@ -1,4 +1,4 @@
-import type { ReactNode, MouseEvent, CSSProperties } from 'react'
+import { forwardRef, type ReactNode, type MouseEvent, type CSSProperties } from 'react'
 import { DISCLOSURE_INDENT } from '../../tokens/size.css'
 import { Icon, type IconName } from '../../symbols'
 import * as s from './menu.css'
@@ -149,27 +149,26 @@ export function Menu({
 }
 
 /** No dedicated `variant` prop — ghost/hidden-rest styling composes via `className`. */
-export function AccessoryButton({
-  icon,
-  size,
-  ariaLabel,
-  box,
-  onClick,
-  className,
-  disabled = false,
-}: {
-  icon: IconName
-  size: number
-  ariaLabel: string
-  box?: number
-  onClick: () => void
-  className?: string
-  /** A feature that hasn't landed — inert and dimmed, never a live button wired to a no-op
-   *  (which reads as broken rather than pending). */
-  disabled?: boolean
-}): React.JSX.Element {
+export const AccessoryButton = forwardRef<
+  HTMLButtonElement,
+  {
+    icon: IconName
+    size: number
+    ariaLabel: string
+    box?: number
+    onClick: () => void
+    className?: string
+    /** A feature that hasn't landed — inert and dimmed, never a live button wired to a no-op
+     *  (which reads as broken rather than pending). */
+    disabled?: boolean
+  }
+>(function AccessoryButton(
+  { icon, size, ariaLabel, box, onClick, className, disabled = false },
+  ref,
+): React.JSX.Element {
   return (
     <button
+      ref={ref}
       type="button"
       disabled={disabled}
       className={cx(s.accessoryButton, className)}
@@ -183,7 +182,7 @@ export function AccessoryButton({
       <Icon name={icon} size={size} />
     </button>
   )
-}
+})
 
 export function MenuPaneTopRow({
   label,

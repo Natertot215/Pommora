@@ -8,9 +8,11 @@ import {
   MenuItem,
   MenuBottomRow,
   MenuScrollFrame,
+  MenuSeparator,
   AccessoryButton,
 } from '../design-system/components/menu'
-import { titleInput } from '../design-system/components/menu/menu.css'
+import { rowDisabled, titleInput } from '../design-system/components/menu/menu.css'
+import { PickerMenu } from '../design-system/components/PickerMenu'
 import { PaneSlider } from '../Components/Detail/PaneSlider'
 import { ViewSettings } from '../Components/Detail/ViewSettings'
 import { PaneDnd, RowShell, usePaneRegions } from '../Components/Detail/paneDnd'
@@ -70,6 +72,7 @@ export function ViewPane({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [iconOpen, setIconOpen] = useState(false)
+  const [rowMenuAt, setRowMenuAt] = useState<{ view: SavedView; x: number; y: number } | null>(null)
   const scope = useViewEmbedScope()
   // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
   if (scope) return null
@@ -108,16 +111,14 @@ export function ViewPane({
     setRenamingId(null)
     void saveView({ ...v, name: next })
   }
-  const rowMenu = async (v: SavedView, e: React.MouseEvent): Promise<void> => {
+  const rowMenu = (v: SavedView, e: React.MouseEvent): void => {
     e.preventDefault()
-    const action = await window.nexus.viewRowMenu(views.length > 1)
-    if (action === 'view:rename') setRenamingId(v.id)
-    else if (action === 'view:edit-icon') setIconOpen(true)
-    else if (action === 'view:delete') {
-      const res = await window.nexus.views.delete(node.path, node.kind, v.id)
-      if (!res.ok) return void window.nexus.showError(res.error.message)
-      await load()
-    }
+    setRowMenuAt({ view: v, x: e.clientX, y: e.clientY })
+  }
+  const deleteRow = async (v: SavedView): Promise<void> => {
+    const res = await window.nexus.views.delete(node.path, node.kind, v.id)
+    if (!res.ok) return void window.nexus.showError(res.error.message)
+    await load()
   }
 
   const list = (
@@ -170,7 +171,7 @@ export function ViewPane({
                     </button>
                   }
                   onClick={renamingId === v.id ? undefined : () => switchTo(v.id)}
-                  onContextMenu={(e) => void rowMenu(v, e)}
+                  onContextMenu={(e) => rowMenu(v, e)}
                 >
                   <RenamableLabel
                     renames="title"
@@ -209,6 +210,53 @@ export function ViewPane({
         minWidth={PANE_SQUARE}
         minHeight={PANE_SQUARE}
       />
+      {rowMenuAt && (
+        <PickerMenu
+          solid
+          open
+          onDismiss={() => setRowMenuAt(null)}
+          anchorX={rowMenuAt.x}
+          anchorY={rowMenuAt.y}
+          origin="center"
+        >
+          <MenuItem
+            leading={<Icon name="pencil" size={13} />}
+            onClick={() => {
+              setRenamingId(rowMenuAt.view.id)
+              setRowMenuAt(null)
+            }}
+          >
+            Rename
+          </MenuItem>
+          <MenuItem
+            leading={<Icon name="smile" size={13} />}
+            onClick={() => {
+              setIconOpen(true)
+              setRowMenuAt(null)
+            }}
+          >
+            Edit Icon
+          </MenuItem>
+          <MenuSeparator />
+          {/* The write path refuses a container's last view; the row mirrors that rather than
+              offering a click that only bounces. */}
+          <MenuItem
+            className={views.length > 1 ? undefined : rowDisabled}
+            leading={<Icon name="trash" size={13} />}
+            onClick={
+              views.length > 1
+                ? () => {
+                    const v = rowMenuAt.view
+                    setRowMenuAt(null)
+                    void deleteRow(v)
+                  }
+                : undefined
+            }
+          >
+            Delete
+          </MenuItem>
+        </PickerMenu>
+      )}
       <IconPicker
         open={iconOpen}
         onClose={() => setIconOpen(false)}
