@@ -307,9 +307,7 @@
 .cell-chips {
   display: inline-flex;
   align-items: center;
-  /* Falls back because the knob is table-scoped and this cell also renders outside the table
-     (the preview inspector, a card, the page's properties leaf). */
-  gap: var(--chips-gap, 4px);
+  gap: var(--chips-gap);
   max-width: 100%;
   min-width: 0;
 }
