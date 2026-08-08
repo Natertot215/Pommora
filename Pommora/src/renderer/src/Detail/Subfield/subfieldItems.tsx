@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { SelectionState } from '@shared/types'
-import { subSetLabel } from '@shared/types'
-import { DEFAULT_NEW_NAME } from '@shared/mutate'
+import { DEFAULT_LABELS } from '@shared/types'
+import { containerCreators } from '@shared/mutate'
 import { Icon } from '@renderer/design-system/symbols'
 import { openPageBody, useSession } from '../../store'
 import { findCollection } from '../Scope'
@@ -65,28 +65,15 @@ function AddMenuItem(): React.JSX.Element | null {
   const labels = tree?.labels
   const parentPath =
     selection.kind === 'set' ? selection.path : (findCollection(tree, selection.id)?.path ?? '')
-  const containerLabel =
-    selection.kind === 'collection'
-      ? (labels?.pageSet.singular ?? 'Set')
-      : labels
-        ? subSetLabel(labels)
-        : 'Sub-Set'
-  const onAdd = (): void => {
-    void useSession.getState().createFromMenu([
-      { label: 'New Page', req: { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME } },
-      {
-        label: `New ${containerLabel}`,
-        req: { op: 'createContainer', parentPath, kind: 'set', name: DEFAULT_NEW_NAME },
-      },
-    ])
-  }
+  const creators = containerCreators(selection.kind, parentPath, labels ?? DEFAULT_LABELS)
+  const onAdd = (): void => void useSession.getState().createFromMenu(creators)
   return (
     <button
       type="button"
       className="subfield-add"
       onClick={onAdd}
       aria-label="Add"
-      title={`New Page / New ${containerLabel}`}
+      title={creators.map((c) => c.label).join(' / ')}
     >
       <Icon name="plus" size="sm" />
     </button>
