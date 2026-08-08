@@ -26,7 +26,7 @@ The content column renders one mode at a time. A ribbon switch plays the **overt
 
 #### II. Creation
 
-Creation is right-click-first: a mode's empty area pops its native "New" menu — a lone **New Collection** or **New Context** by mode; right-clicking inside a Context group creates a Space there, labelled from that Context's singular. Right-clicking a row pops its own menu instead. The native menu only *picks*: the store executes the returned request with an **optimistic tree insert**, so the new row lands instantly with its rename input focused while the confirming re-walk follows behind at one walk and no lost keystrokes.
+Creation is right-click-first: a mode's empty area pops its native "New" menu — a lone **New Collection** or **New Context** by mode; right-clicking inside a Context group creates a Space there, labelled from that Context's singular. Right-clicking a row pops its own menu instead, offering what that row can contain — a Collection and a Set both take a Page and a nested container, differing only in whether the nested one reads as a Set or a Sub-Set. That rule is shared rather than restated per surface, so the subfield's add button offers the same pair the row's menu does, and both name the container from the nexus labels. The native menu only *picks*: the store executes the returned request with an **optimistic tree insert**, so the new row lands instantly with its rename input focused while the confirming re-walk follows behind at one walk and no lost keystrokes.
 
 A create always lands **visible**: the new row's inline rename forces its collapsed ancestor disclosures open, and a click that settles a header's rename never doubles as its disclosure toggle.
 

@@ -30,7 +30,7 @@ export function OutlineDropdown(): React.JSX.Element | null {
       icon="list-tree"
       title="Outline"
       edgeInset={EDGE_INSET}
-      classNames={{ wrapper: s.wrapper, button: s.button, anchor: s.anchor, pane: o.pane }}
+      classNames={{ ...s.chrome, pane: o.pane }}
     >
       {() => <OutlinePane />}
     </MenuDropdown>

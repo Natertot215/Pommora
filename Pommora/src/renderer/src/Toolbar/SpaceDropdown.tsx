@@ -14,7 +14,7 @@ export function SpaceDropdown(): React.JSX.Element | null {
     <MenuDropdown
       icon={entityIcon('space', undefined, defaultIcons)}
       title="Space"
-      classNames={{ wrapper: s.wrapper, button: s.button, anchor: s.anchor }}
+      classNames={s.chrome}
     >
       {() => <div style={{ width: PANE_SQUARE, height: PANE_SQUARE }} />}
     </MenuDropdown>
