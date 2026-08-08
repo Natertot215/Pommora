@@ -280,10 +280,18 @@ export function autoPair(
 ): Edit | null {
   if (selStart !== selEnd) return null
   const c = selStart
-  if (isInsideCode(c, doc)) return null
-  const prev = doc[c - 1]
   const pair = PAIRS[inserted]
   if (!pair) return null
+  // Nothing auto-closes hard against a word: the closer would land buried in the text already ahead of
+  // the caret (`|word` + `(` → `(|)word`), which is never what the keystroke meant. Reads only what
+  // FOLLOWS the caret — what precedes it is GATED_PAIRS' separate rule. The construct's own closer is
+  // exempt because `_` is itself a word char, so without that the type-over paths below would never be
+  // reached for `_` and its doubled form could never promote.
+  if (doc[c] !== pair.close && isWordCh(doc[c])) return null
+  // Last, not first: this scans the whole document, while everything above is a character lookup. Every
+  // ordinary letter typed in prose leaves through a guard above and never pays for it.
+  if (isInsideCode(c, doc)) return null
+  const prev = doc[c - 1]
 
   if (pair.multi && prev === inserted) {
     // Consume an already-paired closer so `[|]` + `[` → `[[|]]`, not a stray `[[|]]]`.

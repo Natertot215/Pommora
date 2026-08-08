@@ -8,13 +8,19 @@ const BUTTON = {
 }
 
 /** The button + its anchored dropdown share this relative box, so the pane hangs off the button
- *  (not the trio cluster). Sits left of the trio via the toolbar's inter-cluster gap. */
+ *  (not the trio cluster). Sits left of the trio via the toolbar's inter-cluster gap. Shared by every
+ *  toolbar dropdown — Views, Outline, Space — only one of which the selection ever puts on screen. */
 export const wrapper = style({
   position: 'relative',
   display: 'flex',
   alignItems: 'center',
   pointerEvents: 'auto',
   WebkitAppRegion: 'no-drag',
+  // Rides the trio's swallow shift so the dropdown keeps its gap to the trio's left. It belongs to the
+  // wrapper rather than to the cluster's first child: the three dropdowns appear on different
+  // selections, so "first child" names a different component depending on what is open. Outside the
+  // toolbar the var is unset and the declaration simply doesn't apply.
+  transform: 'translateX(calc(-1 * var(--toolbar-swallow)))',
 } as Parameters<typeof style>[0])
 
 /** The dropdown anchor — hangs straight down, centred on the button (the beak points up at its

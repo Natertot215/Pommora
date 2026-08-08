@@ -53,7 +53,6 @@ export interface DocScan {
   lineStarts: number[]
   fences: (FenceInfo | undefined)[]
   callouts: (CalloutLine | undefined)[]
-  fencedRanges: [number, number][]
   maths: [number, number][]
   embeds: EmbedLine[]
 }
@@ -66,7 +65,6 @@ export function scanDoc(text: string): DocScan {
     lineStarts,
     fences,
     callouts: calloutLines(lines, fences),
-    fencedRanges: fences.flatMap((f) => (f?.role === 'open' ? [[f.from, f.to] as [number, number]] : [])),
     maths: docMathRanges(text),
     embeds: docEmbedLines(text),
   }

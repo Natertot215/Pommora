@@ -9,6 +9,7 @@ import {
   type CachedLineIntents,
   type DocScan,
 } from '../decorations/intent'
+import type { Token } from '../tokens'
 
 const strings = new WeakMap<Text, string>()
 export function docString(doc: Text): string {
@@ -43,4 +44,18 @@ export function docLineIntentsOf(doc: Text): CachedLineIntents {
     lineIntents.set(doc, v)
   }
   return v
+}
+
+// The inline tokenize over the visible spans, one per doc VERSION + span set. It is the dominant cost
+// of a decoration build and answers to nothing but the text under those spans, so a caret move, a focus
+// flip, and a resolution nudge read it back rather than re-parsing. One slot per version is enough: a
+// scroll moves the span set forward and never returns to the one it left.
+const spanTokens = new WeakMap<Text, { key: string; tokens: Token[] }>()
+export function docSpanTokens(doc: Text, key: string, derive: () => Token[]): Token[] {
+  let v = spanTokens.get(doc)
+  if (v?.key !== key) {
+    v = { key, tokens: derive() }
+    spanTokens.set(doc, v)
+  }
+  return v.tokens
 }

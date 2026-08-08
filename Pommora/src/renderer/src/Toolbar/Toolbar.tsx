@@ -7,6 +7,7 @@ import { useDismiss } from '@renderer/design-system/components/useDismiss'
 import { ToolbarTrio } from './ToolbarTrio'
 import { ViewDropdown } from './ViewDropdown'
 import { SpaceDropdown } from './SpaceDropdown'
+import { OutlineDropdown } from './OutlineDropdown'
 import { NavPane } from './NavPane'
 import { TabBar } from '../Tabs/TabBar'
 import { activeUnpinnedTab } from '../Tabs/tabsModel'
@@ -108,6 +109,7 @@ export function Toolbar({
       <TabBar />
       <div className="app-toolbar-right">
         <ViewDropdown />
+        <OutlineDropdown />
         <SpaceDropdown />
         <div className="app-toolbar-cluster app-toolbar-cluster--trio" ref={trioRef}>
           <ToolbarTrio segments={trio} />

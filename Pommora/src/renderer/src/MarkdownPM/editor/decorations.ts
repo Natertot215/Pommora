@@ -10,11 +10,12 @@ import {
 import type { Extension, Range } from '@codemirror/state'
 import { chipBoxGeometry } from '../../design-system/tokens'
 import { tokenize, activeTokenIndices, type Token } from '../tokens'
-import { docLineIntentsOf, docScan, docString } from './docCache'
+import { docLineIntentsOf, docScan, docSpanTokens, docString } from './docCache'
 import { claimedEmbeds } from './embedRanges'
 import { resolutionNudge } from './embedWidget'
 import {
   assembleLineIntents,
+  type DocScan,
   GLYPH_CLASS,
   NO_CARET,
   tokenIntents,
@@ -145,46 +146,62 @@ function widgetFor(spec: WidgetSpec): WidgetType {
 const hideMarker = Decoration.replace({})
 const NO_ACTIVE = new Set<number>()
 
+const INDENTED = /^[ \t]/
+
+/** A slice carries no memory of the lines above it, so it opens on a line whose block context is
+ *  self-evident. Resuming inside a fence would read that fence's closer as an opener and invert the
+ *  parity of every line below it; opening on a bare indented line reads the indent as an indented code
+ *  block, which swallows the emphasis its owning list line would have licensed. */
+export function sliceStartLine(scan: DocScan, line: number): number {
+  let i = line
+  while (i < scan.lines.length && scan.fences[i] && scan.fences[i]?.role !== 'open') i++
+  while (i > 0 && INDENTED.test(scan.lines[i]) && !scan.fences[i - 1]) i--
+  return i
+}
+
 // Tokenize only the on-screen lines, not the whole document — the heavy mdast parse + global-regex
-// passes per keystroke/caret-move are what made long docs lag and the caret jitter. Tokens are shifted
-// back to absolute offsets, and any landing inside a fence opened above the viewport are dropped (a
-// viewport-only tokenize can't see that fence). Paired with a rebuild on `viewportChanged` (scroll).
-function visibleInlineTokens(view: EditorView, text: string, fences: [number, number][]): Token[] {
+// passes over the whole document are what made long docs lag and the caret jitter. Tokens are shifted
+// back to absolute offsets; the slice's own fence model suppresses what falls inside a code block.
+// Paired with a rebuild on `viewportChanged` (scroll), and memoized so only a doc edit or a moved
+// viewport pays the parse.
+function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Token[] {
   const doc = view.state.doc
   const spans: [number, number][] = []
   for (const { from, to } of view.visibleRanges) {
-    const a = doc.lineAt(from).from
+    const a = scan.lineStarts[sliceStartLine(scan, doc.lineAt(from).number - 1)]
     const b = doc.lineAt(to).to
+    if (a >= b) continue
     const prev = spans[spans.length - 1]
     if (prev && a <= prev[1] + 1) prev[1] = Math.max(prev[1], b)
     else spans.push([a, b])
   }
-  const insideFence = (p: number): boolean => fences.some(([fa, fb]) => p >= fa && p < fb)
-  const out: Token[] = []
-  for (const [a, b] of spans) {
-    for (const tk of tokenize(text.slice(a, b))) {
-      const start = tk.range[0] + a
-      if (insideFence(start)) continue
-      out.push({
-        kind: tk.kind,
-        range: [start, tk.range[1] + a],
-        contentRange: [tk.contentRange[0] + a, tk.contentRange[1] + a],
-        markerRanges: tk.markerRanges.map(([s, e]) => [s + a, e + a] as [number, number]),
-      })
+  const key = spans.map(([a, b]) => `${a}:${b}`).join(',')
+  return docSpanTokens(doc, key, () => {
+    const out: Token[] = []
+    for (const [a, b] of spans) {
+      for (const tk of tokenize(text.slice(a, b))) {
+        const start = tk.range[0] + a
+        out.push({
+          kind: tk.kind,
+          range: [start, tk.range[1] + a],
+          contentRange: [tk.contentRange[0] + a, tk.contentRange[1] + a],
+          markerRanges: tk.markerRanges.map(([s, e]) => [s + a, e + a] as [number, number]),
+        })
+      }
     }
-  }
-  return out
+    return out
+  })
 }
 
 function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSet {
   const text = docString(view.state.doc)
-  // One whole-doc scan AND one caret-free line-intent derivation per doc VERSION (docCache) — a caret
-  // move / focus flip / scroll re-derives only the caret's own affected lines plus the viewport
-  // tokenize, never an O(doc) line walk.
+  // The whole-doc scan, the caret-free line intents, AND the viewport tokenize are each one derivation
+  // per doc VERSION (docCache) — a caret move or focus flip re-derives only the caret's own affected
+  // lines, never an O(doc) line walk and never the parse.
   const scan = docScan(view.state.doc)
   const focused = view.hasFocus
   const sel = view.state.selection.main
-  let tokens = visibleInlineTokens(view, text, scan.fencedRanges)
+  let tokens = visibleInlineTokens(view, text, scan)
   // A CLAIMED embed line belongs to the tile field, so its token styling stands down — otherwise the
   // dim token would underlie the widget. Unclaimed lone-lines (unresolved, ambiguous, or a later
   // duplicate of a claimed title) keep the token: that dim text IS their rendering. The claim is the

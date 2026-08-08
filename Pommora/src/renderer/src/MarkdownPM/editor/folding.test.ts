@@ -1,5 +1,28 @@
 import { describe, it, expect } from 'vitest'
-import { headingSections } from './folding'
+import { headingOutline, headingSections } from './folding'
+
+describe('headingOutline — every heading, not just the foldable ones', () => {
+  it('keeps a heading with no body beneath it (headingSections drops those)', () => {
+    expect(headingOutline('# One\n# Two\nbody').map((h) => h.text)).toEqual(['One', 'Two'])
+    expect(headingSections('# One\n# Two\nbody').map((s) => s.key)).toEqual(['Two'])
+  })
+  it('keeps a trailing heading at the document end', () => {
+    expect(headingOutline('# One\nbody\n# Last').map((h) => h.text)).toEqual(['One', 'Last'])
+  })
+  it('strips the markers and reports the line start as the jump target', () => {
+    const doc = 'intro\n\n### Deep Heading\nbody'
+    const [h] = headingOutline(doc)
+    expect(h.text).toBe('Deep Heading')
+    expect(h.level).toBe(3)
+    expect(doc.slice(h.from, h.from + 3)).toBe('###')
+  })
+  it('a heading inside a code fence is code, not a heading', () => {
+    expect(headingOutline('# Real\n```\n# Not\n```\ntail').map((h) => h.text)).toEqual(['Real'])
+  })
+  it('duplicate text stays tellable apart by key, sharing the sections ordinal', () => {
+    expect(headingOutline('# Notes\nb\n# Notes\nb').map((h) => h.key)).toEqual(['Notes', 'Notes 2'])
+  })
+})
 
 describe('headingSections', () => {
   it('a heading folds down to the next equal-or-higher heading', () => {
