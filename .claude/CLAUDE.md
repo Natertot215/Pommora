@@ -14,7 +14,7 @@ Pommora is a personal management app based on Nathan's frustration with modern p
 
 - **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views; it contains **Sets** as organizational subfolders that inherit that schema.
 - **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection's properties, identified via its `PageID` key. Pages use MarkdownPM for its editor surface, which includes in-line connections to other pages.
-- **Agenda:** the calendar layer — **Tasks** (reminder-shaped; keyed with `TaskID`; located within `/Tasks`) and **Events** (calendar-shaped; keyed with `EventID`; located within `/Events`) — each Markdown files distinguished via its key and validated against its folder placement.
+- **Agenda:** the calendar layer — **Tasks** (reminder-shaped; keyed with `TaskID`; located within `/Tasks`) and **Events** (calendar-shaped; keyed with `EventID`; located within `/Events`) — each as Markdown files distinguished via their key and validated against their folder placement.
 - **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use.
 - **Connections:** inline `[[Title]]` colored-text links that live in a Page's Markdown body (the canonical source) and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix. They **aren't** displayed in any container views *(tables, galleries, lists…)*, and content-to-content relational properties **don't** exist.
 
@@ -60,6 +60,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Why This Matters:** The initial rebuild introduced now-obsolete Swift-based code; Swift compatibility is not a constraint — any code that may appear functional but is solely an artifact of its Swift origin must be flagged for removal.
 - **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime: it brings Pommora-style capabilities to Obsidian natively and keeps NexusOS Pommora-compatible, so Nathan's daily vault stays aligned as Pommora matures — at a light weekly cadence, subordinate to the daily Pommora grind.
 - **NexusOS** is both an Obsidian vault *and* a Pommora nexus — frontmatter appearing not to conform to Pommora's standards (eg,. bare `Areas:`, `Topics:`, `Projects:`, `Status:`  etc...) isn't Pommora's concern; folders like `/Agenda,` even though Pommora pre-seeds `/Tasks` + `/Events`aren't duplicates; they're temporary Obsidian-functionality fixtures until Pommora is actually completed. 
+- **History:** Project Pommora was created on the Swift side on 04-26-2026 and kept its record in a single document until the framework's `// History` shift on 08-07-2026.
 
 ### Codebase Map
 ```
@@ -97,6 +98,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [Design-Sources.md]          | • What the design system already owns, and never to duplicate it
 │   │   ├── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
 │   │   └── [UI-Copy.md]                 | • The running app never displays build-status or meta text
+│   ├── // History                       | • Incremental implementation history.
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
 │   ├── // Resources                     | • Reference of external resources; both in-use and future prospectives.
 │   ├── // Planning                      | • Plans and temporary specifications; contents are transient
