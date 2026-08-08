@@ -15,6 +15,7 @@ import type { RecordFile } from '../provenance'
 import { projectBaseline } from '../record'
 import { readNexus } from '../readNexus'
 import { readSidecar } from '../sidecarIO'
+import { serializeOnFile } from '../io/fileLock'
 import { allCollectionFolders, assignInner } from './assignment'
 import { updatePageProperty } from './page'
 import { createProperty } from './registryProperty'
@@ -76,7 +77,8 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
       dropped++
       continue
     }
-    const written = await updatePageProperty(join(root, entry.path), def, standing.value)
+    const file = join(root, entry.path)
+    const written = await serializeOnFile(file, () => updatePageProperty(file, def, standing.value))
     if (!written.ok) dropped++
   }
   if (dropped) console.warn(`restore: ${dropped} value(s) of ${def.name} no longer validate`)

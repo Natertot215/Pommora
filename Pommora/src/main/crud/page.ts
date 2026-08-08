@@ -112,8 +112,14 @@ export async function movePage(
  * Set or clear one property value on a page. Governs only that property's own key, so every other
  * key — id, Contexts, sibling properties, foreign frontmatter, comments — is preserved. A null
  * value (or the `null` kind) or an empty one removes the key entirely; a page without a value
- * carries no key at all. The definition arrives resolved: main builds the key inside the file
- * lock, and no key is ever built renderer-side except for the optimistic patch.
+ * carries no key at all. The definition arrives resolved, and no key is ever built renderer-side
+ * except for the optimistic patch.
+ *
+ * CALL THIS UNDER THE PAGE'S OWN `serializeOnFile` LOCK. Unlike `updatePageBody` it does not take
+ * one for itself, because its callers need a WIDER span than the write: the definition has to be
+ * resolved inside the same slot, or a rename sweep that passes this page between the read and the
+ * write leaves the value written under a key the sweep has already moved past. Taking the lock
+ * here would deadlock those callers, since the chain is sequential rather than reentrant.
  */
 export async function updatePageProperty(
   absFile: string,
