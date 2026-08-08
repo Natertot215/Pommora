@@ -31,10 +31,11 @@ The survey that opened this session produced a ranked read of what to build next
 
 #### Feedback
 
-- *"I have ADHD so I want a clear reccomendation, independent from what the Handoff or ContextPM claims, about what's actually appropriate to do next."* — Rank and recommend; do not survey and hand back options. Treat the standing documents as hypotheses to challenge, not as the source list.
-- *"Grounded in what's real: Open the actual files, docs, and call sites — don't recall them… Don't be satisfied with a description of a mechanism or feature you haven't actually seen yourself — descriptions of how something works aren't a guarantee that it works the way it's described."* — A doc's description of a mechanism is a hypothesis. This caught a real one: the retired Handoff's account of why three menus stayed native was wrong about three-quarters of `propertyMenu`.
-- *"Please explain if theres actually a decision to make here."* — Said after I relayed a prior session's framing without checking it. Before presenting a decision, verify the fork exists.
-- *"Find the simplest fix to these issues."* — And *"Explain this to non-technical Nathan"* before implementing. Both were asked mid-arc and both improved the result.
+- *"I have ADHD so I want a clear reccomendation, independent from what the Handoff or ContextPM claims, about what's actually appropriate to do next."*
+- *"Grounded in what's real: Open the actual files, docs, and call sites — don't recall them. A claim about a file, type, or behavior you haven't opened is a hypothesis, not a fact. Don't be satisfied with a description of a mechanism or feature you haven't actually seen yourself — descriptions of how something works aren't a guarantee that it works the way it's described; explore the chain and ground yourself in truth independently."*
+- *"Please explain if theres actually a decision to make here."*
+- *"Find the simplest fix to these issues."*
+- *"Explain this to non-technical Nathan."*
 
 #### Session Pointers
 
@@ -56,12 +57,13 @@ The survey that opened this session produced a ranked read of what to build next
 - **Consolidation that stops one layer short of its own module is a repeat shape.** `sidecarPath` was added and then not used inside the file that defines sidecar reads and writes.
 - **`ViewPane`'s disabled More menu may be redundant rather than pending** — a view row already carries a working context menu with the same actions. That one wants a product call, not a build.
 
-#### Guidelines
+#### Handoff Guidelines
 
-- The Summary and Pending Focus restate to current truth on every run; the transcript is the memory, so past compactions and earlier passes are read there rather than re-told.
+- The Summary and Pending Focus restate to current truth on every run; multi-compact sessions may advance ideas or reconcile information while preserving the handoff's cohesion standards.
 - Resolve = delete + route — a handled item leaves the document for its real home (Context, History, Features) with no tombstone left behind.
 - Standing content lives in ContextPM.md — the durable backlog, rules, and fix log; this document carries only the session.
 - Handoff must not accumulate bloat: if something has been resolved, route it to Context's § Recent Work; if what you're writing doesn't need to be preserved, don't preserve it.
+- Continuity: when you're given the /handoff, the document is yours, and it's your job to pass it along as standing context for future agents; preserve what the next session needs to know, remove what it doesn't.
 - Parallel sessions: the latest /handoff owns the document, and every session's transcript survives through retirement into // Sessions.
 - If additional guidelines appear here that aren't in the handoffs template, it means they've been user-added and should be preserved.
 
