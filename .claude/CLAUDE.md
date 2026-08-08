@@ -56,11 +56,10 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 
 #### Important Information
 
-- **Swift Origins:** Pommora was first built as a native SwiftUI app — that build was active for around one month and defined the entire initial paradigm; React was initially an alternative contingency but was eventually determined to be the best long-term approach. The Swift build is archived at `// The Studio // Archive // Pommora` — source; its git history lives on the `swift` branch.
+- **Swift Origins:** Pommora was first built as a native SwiftUI app on 04-26-2026 — that build was active for around one month and defined the entire initial paradigm; React was initially an alternative contingency but was eventually determined to be the best long-term approach. The Swift build is archived at `// The Studio // Archive // Pommora` — source; its git history lives on the `swift` branch.
 - **Why This Matters:** The initial rebuild introduced now-obsolete Swift-based code; Swift compatibility is not a constraint — any code that may appear functional but is solely an artifact of its Swift origin must be flagged for removal.
 - **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime: it brings Pommora-style capabilities to Obsidian natively and keeps NexusOS Pommora-compatible, so Nathan's daily vault stays aligned as Pommora matures — at a light weekly cadence, subordinate to the daily Pommora grind.
 - **NexusOS** is both an Obsidian vault *and* a Pommora nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian-functionality fixtures until Pommora is actually completed.
-- **History:** Project Pommora was created on the Swift side on 04-26-2026 and kept its record in a single document until the framework's `// History` shift on 08-07-2026.
 
 ### Codebase Map
 ```
