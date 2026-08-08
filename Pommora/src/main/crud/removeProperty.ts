@@ -5,7 +5,6 @@
 // them. Re-assigning restores each cached value that still conforms to the def's CURRENT type +
 // options (per-value reconciliation); the global Delete purges these caches.
 
-import { join } from 'node:path'
 import { contentId } from '@shared/identity'
 import { rewritePageSerialized } from '../io/fileLock'
 import { stripPageMember } from './pageValue'
@@ -13,7 +12,7 @@ import { readSidecar, withSidecarLock } from '../sidecarIO'
 import { propertyValueStands } from './standing'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
-import { SIDECAR_FILENAME } from '../paths'
+import { sidecarPath } from '../paths'
 import { readTextOrNull, rmwJsonStrict } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
@@ -65,7 +64,7 @@ async function removeInner(
   // Cache-before-strip keeps the values safely persisted before any page loses them, so a
   // failure mid-strip is recoverable, never lossy.
   const written = await withSidecarLock(collectionFolder, 'collection', () =>
-    rmwJsonStrict(join(collectionFolder, SIDECAR_FILENAME.collection), (cur) =>
+    rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
       patchCacheBlock(
         { ...cur, properties: ids.filter((id) => id !== propertyId) },
         propertyId,
@@ -149,11 +148,16 @@ export async function restoreCachedValues(
           ),
     )
   })
-  const written = await rmwJsonStrict(join(collectionFolder, SIDECAR_FILENAME.collection), (cur) =>
-    patchCacheBlock(
-      cur,
-      propertyId,
-      Object.keys(survivors).length ? { ...block, values: survivors } : undefined,
+  // The page walk above deliberately runs unlocked, so the cache clear takes the sidecar's lock
+  // for itself rather than inheriting one — it is a read-merge-write of a file five other
+  // surfaces also rewrite whole.
+  const written = await withSidecarLock(collectionFolder, 'collection', () =>
+    rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
+      patchCacheBlock(
+        cur,
+        propertyId,
+        Object.keys(survivors).length ? { ...block, values: survivors } : undefined,
+      ),
     ),
   )
   if (!written.ok) return written

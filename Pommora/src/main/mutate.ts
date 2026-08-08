@@ -160,8 +160,10 @@ function setOrDrop(
   return next
 }
 
-/** Strict read-modify-write of one config file, locked on the file itself — the block-doc
- *  writers share homepage.json, and two unlocked read-merge-writes lose whole keys. */
+/** Strict read-modify-write of one config file, locked on the file itself — the block-doc writers
+ *  share homepage.json, and two unlocked read-merge-writes lose whole keys. When the file is a
+ *  folder sidecar the key must come from `sidecarPath`: that is the same key `withSidecarLock`
+ *  takes, and a second spelling of the path would queue these writes behind nothing. */
 function patchConfig(
   cfgPath: string,
   patch: (cur: Record<string, unknown>) => Record<string, unknown>,
