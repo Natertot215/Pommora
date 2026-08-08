@@ -144,7 +144,7 @@ There is no free-form text type yet — the filename is the title, and text-shap
 
 #### Views
 
-A view is a saved presentation of a Collection's (or depth-1 Set's) Pages — it never modifies its source. Each container's sidecar holds an ordered list of saved views; the active view is tracked per-machine so switching it doesn't churn the synced file. A view records its renderer type, property layout (column order plus a hidden set), and its sort / filter / group config, fed by one pure pipeline: **fetch → filter → group → sort**.
+A view is a saved presentation of a Collection's (or depth-1 Set's) Pages; each container's sidecar holds an ordered list of saved views; the active view is tracked per-machine so switching it doesn't churn the synced file. A view records its renderer type, property layout (column order plus a hidden set), and its sort / filter / group config, fed by one pure pipeline: **fetch → filter → group → sort**.
 
 The registered view types are **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — Table and Cards carry renderers; the rest are registered types with none. Views also embed as tiles in block-host surfaces — a **Linked View** referencing a saved view, or a **Custom View** with embed-owned, nexus-wide config. Two capabilities go beyond the baseline: multi-key sort, and recursive AND/OR filter groups. Full detail → `Features/ViewsPM.md`.
 
