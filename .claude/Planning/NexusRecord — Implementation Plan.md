@@ -416,7 +416,7 @@ One cost sentence: this moves the first cold walk ahead of `createWindow` — th
 
 **Why:** Docs ride the commit that falsifies them; these four outlived their commits only because the plan batches doc-truth at the surface's landing.
 
-**Files:** the four Made False entries + `HistoryPM.md` (one entry, durable voice) + `HandoffPM.md` session block.
+**Files:** the four Made False entries + `HandoffPM.md` session block.
 
 **Steps:**
 - [x] Rewrite each claim; closing sweep: `removed_at` → 0 against control `property_cache` → 15.

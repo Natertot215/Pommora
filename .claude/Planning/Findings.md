@@ -1,6 +1,6 @@
 ## Findings — The Instruction-Stack Audit
 
-> **Scope:** ClaudeOS → StudioMD → Pommora CLAUDE.md, their satellite docs (HandoffPM, ContextPM, HistoryPM, VersioningPM, PRD, Guidelines, Planning), and the Nathan-authored skills, agents, and commands — diagnosed against the five most recent session logs. Proposals only; nothing here has been applied.
+> **Scope:** ClaudeOS → StudioMD → Pommora CLAUDE.md, their satellite docs (HandoffPM, ContextPM, VersioningPM, PRD, Guidelines, Planning), and the Nathan-authored skills, agents, and commands — diagnosed against the five most recent session logs. Proposals only; nothing here has been applied.
 
 ### Consistent Patterns
 
@@ -140,7 +140,7 @@ The fix moves each piece to the tier where it always loads: gates and their trap
 
 **Overview:** Three records now contradict shipped reality. The PRD says no surface browses or restores trash and "putting one back [is] a manual move" — restore ops shipped; the claim mis-briefs any agent grounding in the PRD. VersioningPM's near-term queue lists the IPC channel map as upcoming and gates the store split behind it — the IPC map shipped 07-30. The NexusRecord pair-era spec and plan read as current with no supersession notice, while their central artifact was replaced by the Deletion Bundle; HandoffPM's own convention says executed planning docs leave the folder. These are deletions and replacements, not additions — per the replace-don't-amend rule, each gets restated correctly or removed.
 
-**Instruction:** No new instruction — three doc corrections: (1) PRD trash paragraph rewritten to the bundle + headless-restore truth (surface still pending); (2) VersioningPM queue line drops the IPC entry; (3) the two NexusRecord pair-era Planning docs purged (their record already lives in HistoryPM + NexusRecordPM), or failing that, status-lined as superseded by the Deletion Bundle docs.
+**Instruction:** No new instruction — three doc corrections: (1) PRD trash paragraph rewritten to the bundle + headless-restore truth (surface still pending); (2) VersioningPM queue line drops the IPC entry; (3) the two NexusRecord pair-era Planning docs purged (their record already lives in NexusRecordPM), or failing that, status-lined as superseded by the Deletion Bundle docs.
 
 **Placement:** PommoraPRD.md → the trash/database paragraph (**replacement**); VersioningPM.md → the near-term queue line (**replacement**); Planning → `NexusRecord — Implementation Plan.md` + `NexusRecord — Decision Log.md` (**deletion**, per the executed-docs-leave-Planning convention).
 
