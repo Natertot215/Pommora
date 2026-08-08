@@ -13,3 +13,4 @@ export {
 export { DisclosureRow, useDisclosureSet, type TwistyKind } from './DisclosureRow'
 export { MENU_MAX_HEIGHT, itemEmphasized, titleInput } from './menu.css'
 export { MenuSurface } from './MenuSurface'
+export { MenuDropdown } from './MenuDropdown'

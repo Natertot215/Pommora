@@ -64,7 +64,7 @@
 }
 /* The trio slides by the shared --toolbar-swallow magnitude so it lands flush in the inspector's left
    corner. Each dropdown slides with it; that rule keys on the dropdown wrapper's own class and lives
-   in viewDropdown.css.ts, because which dropdown is present depends on the selection — a positional
+   in toolbarDropdown.css.ts, because which dropdown is present depends on the selection — a positional
    selector here would aim at whichever one happened to survive. */
 .app-toolbar-cluster--trio {
   transform: translateX(calc(-1 * var(--toolbar-swallow)));
