@@ -9,12 +9,14 @@
 // ghost page beside the renamed one.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, readdir } from 'node:fs/promises'
+import { mkdtemp, rm, readdir, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { SavedView } from '@shared/views'
+import type { PropertyDefinition } from '@shared/properties'
+import { serializeOnFile } from '../io/fileLock'
 import { createFolderEntity } from './folderEntity'
-import { createPage, updatePageBody, renamePage } from './page'
+import { createPage, updatePageBody, renamePage, updatePageProperty } from './page'
 import { setChildOrder } from './reorder'
 import { saveView } from './views'
 import { setContainerConfig } from './containerConfig'
@@ -73,6 +75,27 @@ describe('concurrent sidecar writers', () => {
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
     expect(sidecar?.page_order).toEqual(['p1', 'p2'])
     expect((sidecar?.views as SavedView[] | undefined)?.length).toBe(1)
+  })
+})
+
+describe('a value write racing a body write on one page', () => {
+  // `updatePageProperty` deliberately takes no lock of its own — its callers need a wider span —
+  // so this pins the law at the shape both of them use.
+  it('keeps both, since each caller writes under the page key', async () => {
+    const p = await createPage(folder, 'Note', { body: 'first' })
+    if (!p.ok) throw new Error('setup failed')
+    const def: PropertyDefinition = { id: 'p1', name: 'Priority', type: 'select' }
+
+    await Promise.all([
+      updatePageBody(p.value.path, 'second'),
+      serializeOnFile(p.value.path, () =>
+        updatePageProperty(p.value.path, def, { kind: 'select', value: 'hi' }),
+      ),
+    ])
+
+    const content = await readFile(p.value.path, 'utf8')
+    expect(content).toContain('<Priority>')
+    expect(content).toContain('second')
   })
 })
 
