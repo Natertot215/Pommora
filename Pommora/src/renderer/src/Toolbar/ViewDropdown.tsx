@@ -57,12 +57,7 @@ function ViewDropdownInner({ node }: { node: CollectionNode | SetNode }): React.
       label={view.name}
       labelCollapsed={!labeled}
       onContextMenu={(e) => void onContextMenu(e)}
-      classNames={{
-        wrapper: s.wrapper,
-        button: s.button,
-        buttonSlot: s.buttonSlot,
-        anchor: s.anchor,
-      }}
+      classNames={{ ...s.chrome, buttonSlot: s.buttonSlot }}
     >
       {({ close }) => <ViewPane node={node} schema={schema} onClose={close} />}
     </MenuDropdown>
