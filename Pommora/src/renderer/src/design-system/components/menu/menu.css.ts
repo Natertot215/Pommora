@@ -12,14 +12,26 @@ const c = colorVars.color
  * Menu Item row — the menu / sidebar row primitive. Composes Body/Standard so
  * the title matches the macOS standard content size (NSFont.systemFontSize).
  */
+// The row's own metrics. Named because the disclosure rail is placed FROM them — a rail column stated
+// independently drifts the moment a row's padding or gap moves.
+const ROW_PAD_X = 6
+const ROW_GAP = 8
+const TWISTY_W = 12
+
+/** The column a row's title starts at when its leading slot holds only the twisty. A disclosed run on
+ *  an icon-less surface hangs from here, so the children sit under their parent's text rather than
+ *  under its glyph. A surface whose rows carry an icon starts its title further right and sets its
+ *  own `--menu-rail-x` accordingly. */
+export const TITLE_X_TWISTY_ONLY = ROW_PAD_X + TWISTY_W + ROW_GAP
+
 export const item = style([
   text.body.standard,
   {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
+    gap: `${ROW_GAP}px`,
     minHeight: '24px',
-    padding: '6px 6px',
+    padding: `6px ${ROW_PAD_X}px`,
     borderRadius: '8px',
     color: c.label.primary,
     cursor: 'default',
@@ -54,20 +66,24 @@ export const twisty = style({
 export const twistyOpen = style({ transform: 'rotate(90deg)' })
 
 /** A leaf row's stand-in for the chevron, so its icon lines up under a disclosure row's. */
-export const twistySpacer = style({ width: '12px', flex: '0 0 auto' })
+export const twistySpacer = style({ width: `${TWISTY_W}px`, flex: '0 0 auto' })
 
-/** KNOB — the rail's x. It rides the parent row's DISCLOSURE column, nudged a hair right — not the
- *  icon column, since a row's icon sits well past its chevron, which would put the rail through the
- *  child titles. */
-// The rail rides the shared disclosure step, holding a fixed clearance to the indented content.
-const RAIL_X = `${DISCLOSURE_INDENT - 6}px`
+// The children's clearance past the rail — the gap between the line and what it encloses.
+const RAIL_CLEARANCE = 6
+
+/** KNOB — the rail's x, and with it the indent of everything it encloses. Default: one clearance left
+ *  of the shared disclosure step, so an unset surface indents by that step and the rail reads as a
+ *  gutter beside rows whose icon fills the space to its right. A surface sets `--menu-rail-x` to move it —
+ *  to its own title column, so a group hangs from its parent's text — and the disclosed run follows,
+ *  because a rail the children don't clear would draw straight through their glyphs. */
+const RAIL_X = `var(--menu-rail-x, ${DISCLOSURE_INDENT - RAIL_CLEARANCE}px)`
 
 /** A disclosed child run — rides the shared list-outline rail with rounded caps, children indenting
  *  past it. Lives here, not in a pane: the rail is what "these rows belong to the one above" looks
  *  like, and every disclosing surface needs it. */
 export const railRow = style({
   position: 'relative',
-  paddingLeft: `${DISCLOSURE_INDENT}px`,
+  paddingLeft: `calc(${RAIL_X} + ${RAIL_CLEARANCE}px)`,
   '::before': {
     content: '""',
     position: 'absolute',
@@ -85,6 +101,11 @@ export const itemSelected = style({
   background: c.state.selected,
   selectors: { '&:hover': { background: c.state.selected } },
 })
+
+/** Row variant: the title carries weight. For rows that ARE structure rather than choices — an
+ *  outline's headings — so the hierarchy reads without a second glyph or colour doing the work.
+ *  KNOB: step to `text.body.semibold`/`.bold` for a heavier outline. */
+export const itemEmphasized = style([text.body.emphasized])
 
 /** A structurally-present but inert row or affordance — dimmed and unhittable. The one treatment
  *  every "shown, can't act" state wears (a lock's frozen rows, an unlanded affordance). */

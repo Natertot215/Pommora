@@ -5,15 +5,18 @@ import { Reveal } from '../Reveal'
 import { MenuItem } from './Menu'
 import { railRow, twisty, twistyOpen, twistySpacer } from './menu.css'
 
-export function useDisclosureSet(): {
+/** Which nodes are disclosed. The set holds the EXCEPTIONS to `defaultOpen`, never the open nodes
+ *  themselves — so a default-open tree needs no seed and stays right as nodes appear and vanish
+ *  beneath it, which a seeded set of ids can't do without re-seeding on every change. */
+export function useDisclosureSet(defaultOpen = false): {
   has: (id: string) => boolean
   toggle: (id: string) => void
 } {
-  const [open, setOpen] = useState<ReadonlySet<string>>(new Set())
+  const [flipped, setFlipped] = useState<ReadonlySet<string>>(new Set())
   return {
-    has: (id) => open.has(id),
+    has: (id) => flipped.has(id) !== defaultOpen,
     toggle: (id) =>
-      setOpen((prev) => {
+      setFlipped((prev) => {
         const next = new Set(prev)
         if (!next.delete(id)) next.add(id)
         return next
@@ -96,8 +99,10 @@ export function DisclosureRow({
   return (
     <>
       {wrap ? wrap(row) : row}
+      {/* `fill` caps the disclosed column at the container's width — without it the column is
+          `max-content` and a nowrap title widens the run instead of truncating inside it. */}
       {children != null && (
-        <Reveal open={open}>
+        <Reveal open={open} fill>
           <div className={railRow}>{children}</div>
         </Reveal>
       )}

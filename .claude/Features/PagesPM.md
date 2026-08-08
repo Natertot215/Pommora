@@ -26,6 +26,12 @@ Clicking a Page opens it in the active tab, replacing that tab's selection, and 
 
 A Page's body can hold inline `[[Title]]` Connections — Obsidian-compatible wikilinks that render as styled colored inline text and navigate on click. Canonical spec → `ConnectionsPM.md`; the bracketed Context-key counterpart → `ContextsPM.md` + `PropertiesPM.md`.
 
+#### II. Outline
+
+A page's own table of contents, in the toolbar. Present only while the detail pane holds a Page, it takes the Views button's slot rather than adding one — a selection is either a container or a Page, so the two are never on screen together. Rows carry each heading's own text at the emphasized weight with its markers stripped, nested by heading level and opened fully: an outline's job is to show a page's shape, not to be unpacked before it can. Levels may skip freely, so a heading attaches to the nearest shallower one above it rather than assuming its parent sits exactly one level up. A heading with nothing beneath it still appears — the fold machinery drops those, having nothing to fold, but an outline that omitted them would show only the second of two consecutive headings.
+
+The two gestures are separate and neither dismisses the pane, so a long document can be worked through without reopening the list. The chevron collapses a group in the dropdown alone and leaves the page untouched. The row travels to its heading — a scroll glide rather than a cut, so the page's own movement shows where it went (→ [[InteractionPM]]) — never editing the document and never moving the caret, but **opening any collapsed section hiding it**, because arriving at a heading whose body is still folded is indistinguishable from having gone nowhere — and waiting for that reveal to land before scrolling, since a folded section has no height to measure against. A heading arrives at the band the page header occupies, the same height its own inline title reads at, rather than pinned to the viewport's edge. Long headings truncate in the row and scroll on hover; the pane widens with its content only until its edge would leave the window.
+
 #### II. Editor UI State
 
 Per-page editor UI state lives per-machine in the database, never in the portable `.md`: heading-fold state and per-table heading-column choices, each keyed by page ID. Keeping this state out of the frontmatter leaves the `.md` out of cloud-sync churn.

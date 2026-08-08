@@ -5,6 +5,9 @@ import {
   clampToLimit,
   edgeVelocity,
   gateIntent,
+  easeOutQuint,
+  glideMs,
+  scrollGlide,
   scrollableInAxis,
   startAutoScroll,
   stepPixels,
@@ -368,5 +371,96 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     y = 299
     flush(40)
     expect(onScrolled).toHaveBeenCalled()
+  })
+})
+
+describe('glideMs — distance-proportional, clamped both ends', () => {
+  const P = { speed: 3, minMs: 180, maxMs: 350 }
+  it('a short hop takes the floor, not less', () => {
+    expect(glideMs(60, P)).toBe(180)
+    expect(glideMs(0, P)).toBe(180)
+  })
+  it('a mid-range jump scales with the distance', () => {
+    expect(glideMs(750, P)).toBe(250)
+  })
+  it('a long jump is capped, so crossing a document is never a wait', () => {
+    expect(glideMs(30_000, P)).toBe(350)
+  })
+  it('direction does not change the duration', () => {
+    expect(glideMs(-750, P)).toBe(glideMs(750, P))
+  })
+})
+
+describe('easeOutQuint', () => {
+  it('spans 0 to 1 exactly', () => {
+    expect(easeOutQuint(0)).toBe(0)
+    expect(easeOutQuint(1)).toBe(1)
+  })
+  it('front-loads the travel — most of the distance is covered early', () => {
+    expect(easeOutQuint(0.5)).toBeGreaterThan(0.9)
+  })
+})
+
+describe('scrollGlide — the destination is re-read, not resolved once', () => {
+  let rafMap = new Map<number, (ts: number) => void>()
+  let rafId = 0
+  let clock = 0
+  const flush = (times: number, stepMs = 16): void => {
+    for (let i = 0; i < times; i++) {
+      const pending = [...rafMap.values()]
+      rafMap = new Map()
+      clock += stepMs
+      for (const cb of pending) cb(clock)
+    }
+  }
+  const makeScroller = (): HTMLElement =>
+    ({ scrollTop: 0, scrollHeight: 10_000, clientHeight: 500 }) as unknown as HTMLElement
+
+  beforeEach(() => {
+    rafMap = new Map()
+    rafId = 0
+    clock = 0
+    vi.stubGlobal('requestAnimationFrame', (cb: (ts: number) => void) => {
+      rafMap.set(++rafId, cb)
+      return rafId
+    })
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => void rafMap.delete(id))
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  const G = { speed: 3, minMs: 180, maxMs: 350 }
+
+  it('lands on a fixed target', () => {
+    const el = makeScroller()
+    scrollGlide(el, 600, G)
+    flush(40)
+    expect(el.scrollTop).toBe(600)
+  })
+
+  it('lands on where the target MOVED to, not where it started — no correction left over', () => {
+    const el = makeScroller()
+    let want = 600
+    scrollGlide(el, () => want, G)
+    flush(3) // underway against the first estimate
+    want = 900 // the host measured the real content and the destination sharpened
+    flush(40)
+    expect(el.scrollTop).toBe(900)
+  })
+
+  it('never exceeds the scroller’s own limit', () => {
+    const el = makeScroller()
+    scrollGlide(el, 99_999, G)
+    flush(40)
+    expect(el.scrollTop).toBe(9500) // scrollHeight - clientHeight
+  })
+
+  it('a drag claims the scroller from a travel in flight', () => {
+    const el = makeScroller()
+    scrollGlide(el, 900, G)
+    flush(2)
+    const midway = el.scrollTop
+    startAutoScroll({ getPoint: () => ({ x: 0, y: 0 }), scroller: null })
+    flush(20)
+    expect(el.scrollTop).toBe(midway)
   })
 })

@@ -17,6 +17,8 @@ import { subBlockAt, renumberOrderedRun } from './editor/listDragModel'
 import { calloutDeleteVerdict } from './editor/calloutGuard'
 import { headingSections } from './editor/folding'
 import { fencedCodeRanges } from './detect'
+import { scanDoc } from './decorations/intent'
+import { sliceStartLine } from './editor/decorations'
 
 describe('isInsideCode — tilde fences + inline spans', () => {
   it('treats ~~~ fences as code', () => {
@@ -64,6 +66,32 @@ describe('autoPair — doubled-marker branch', () => {
   it('still promotes a fresh pair to the doubled form', () => {
     // `*|*` + `*` → `**|**` (consume the auto-inserted closer)
     expect(autoPair('**', 1, 1, '*')).toEqual({ from: 1, to: 1, insert: '**', selection: 2 })
+  })
+})
+
+describe('autoPair — never closes hard against a word', () => {
+  // The gate used to read only the character BEHIND the caret, so every opener closed into the text
+  // ahead of it: `|word` + `(` produced `(|)word`.
+  const OPENERS = ['(', '[', '`', '"', "'", '*', '_']
+  it('stays literal with a word immediately after the caret', () => {
+    for (const ch of OPENERS) {
+      expect(autoPair('word', 0, 0, ch)).toBeNull() // at the word's head
+      expect(autoPair('a word', 2, 2, ch)).toBeNull() // after a space, still against it
+      expect(autoPair('word', 2, 2, ch)).toBeNull() // mid-word
+    }
+  })
+  it('still pairs where nothing follows the caret', () => {
+    for (const ch of OPENERS) expect(autoPair('word ', 5, 5, ch)).not.toBeNull()
+  })
+  it('a closer ahead of the caret still type-overs', () => {
+    expect(autoPair("'hello'", 6, 6, "'")).toEqual({ from: 6, to: 6, insert: '', selection: 7 })
+    expect(autoPair('[]', 1, 1, '[')).toEqual({ from: 1, to: 1, insert: '[]', selection: 2 })
+  })
+  it('`_` is itself a word char, so its own closer has to be exempt from the guard', () => {
+    // The naive forward guard swallowed both underscore paths: `_word|_` lost its type-over and the
+    // doubled form could never promote.
+    expect(autoPair('_word_', 5, 5, '_')).toEqual({ from: 5, to: 5, insert: '', selection: 6 })
+    expect(autoPair('__', 1, 1, '_')).toEqual({ from: 1, to: 1, insert: '__', selection: 2 })
   })
 })
 
@@ -245,5 +273,56 @@ describe('headingSections — fence-blind no more', () => {
     expect(sections).toHaveLength(1)
     expect(sections[0].key).toBe('Real')
     expect(sections[0].to).toBe(doc.length) // section runs past the fence, not cut at the comment
+  })
+})
+
+describe('the viewport slice opens where the block context is self-evident', () => {
+  const lines = [
+    'Intro **bold** `code` [[Link]]',
+    '```ts',
+    'const a = "**x** `y` [[Z]]"',
+    '```',
+    '',
+    'Middle **bold** `code` [[Link]]',
+    '`````md',
+    '```',
+    'nested **fence** body',
+    '```',
+    '`````',
+    '',
+    '- top **bold** item',
+    '    - nested **bold** one',
+    '        - deeper **bold** two',
+    '',
+    'Tail **bold** `code` [[Link]]',
+  ]
+  const doc = lines.join('\n')
+  const scan = scanDoc(doc)
+
+  it('resumes past a fence it would otherwise open inside', () => {
+    expect(sliceStartLine(scan, 2)).toBe(4) // content line → past the closer
+    expect(sliceStartLine(scan, 3)).toBe(4) // the closer itself, which would read as an opener
+    expect(sliceStartLine(scan, 1)).toBe(1) // an opener is already unambiguous — stay
+    expect(sliceStartLine(scan, 8)).toBe(11) // inside the ````` block, past its inner ``` lines
+  })
+
+  it('backs up to the line owning an indented run', () => {
+    expect(sliceStartLine(scan, 14)).toBe(12)
+    expect(sliceStartLine(scan, 13)).toBe(12)
+    expect(sliceStartLine(scan, 12)).toBe(12)
+  })
+
+  it('every viewport start yields the whole-document tokens (fence parity never inverts)', () => {
+    const key = (t: { kind: string; range: [number, number] }, off = 0) =>
+      `${t.kind}@${t.range[0] + off}`
+    const truth = tokenize(doc).map((t) => key(t))
+    for (let start = 0; start < lines.length; start++) {
+      const from = scan.lineStarts[start]
+      const a = scan.lineStarts[sliceStartLine(scan, start)]
+      const seen = tokenize(doc.slice(a))
+        .map((t) => key(t, a))
+        .filter((k) => Number(k.split('@')[1]) >= from)
+      expect(seen).toEqual(truth.filter((k) => Number(k.split('@')[1]) >= from))
+    }
   })
 })

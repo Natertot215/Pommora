@@ -12,21 +12,36 @@ The session opened on two asks that turned out to be one misdirection and one re
 
 The PageMenu then grew a Properties leaf through a full brainstorm loop. Grounding produced the decisions rather than opinions: `PagesPM`'s own law — the wrap is what separates a property from a modeled root field, which is why `cover` never appears in a properties surface — settled that Aliases takes its own leaf, and reading `PreviewInspector` showed the editing primitives were already shared from `Detail/Views/`, so a second surface adds an arrangement rather than a second way to write. The leaf ships: Contexts in one field block, properties in the next, values through the shared pickers, `+ Add Property`, and a native Clear/Remove on each row. Live verification corrected the log twice — the preview inspector does *not* pre-show Contexts by design, and what looked like inherited behaviour was a session-only reveal set.
 
-The design-system rule got broken and then paid for. `Design-Sources.md` mandates a dispatched sweep before building a surface and after it goes green; neither ran, and the four things Nathan caught by eye afterwards — a hand-rolled inset over `MENU_GUTTER`, caption-sized rows instead of the `item` primitive, an unwired chip hover-×, glyph tone and sizes off their ladder — are precisely what its capability decomposition finds. Running it properly afterwards returned a defect I had created an hour earlier while fixing design-system violations (a second `OverflowScroll` wrapping the one `Cell` already returns), plus chips rendering with no gap at all outside the table. A subsequent adversarial review found the `boxed` opt-out shipped on one surface while the precondition — a resting ring seeded one commit earlier at Nathan's request — had made five others boxed too.
+The design-system rule got broken and then paid for. `Design-Sources.md` mandates a dispatched sweep before building a surface and after it goes green; neither ran, and the four things Nathan caught by eye afterward — a hand-rolled inset over `MENU_GUTTER`, caption-sized rows instead of the `item` primitive, an unwired chip hover-×, glyph tone and sizes off their ladder — are precisely what its capability decomposition finds. Running it properly afterward returned a defect I had created an hour earlier while fixing design-system violations (a second `OverflowScroll` wrapping the one `Cell` already returns), plus chips rendering with no gap at all outside the table. A subsequent adversarial review found that the boxed opt-out shipped on one surface, while the precondition — a resting ring seeded one commit earlier at Nathan's request — had boxed five others too.
 
-The closing arc converged the Settings dropdown's row menus. The dropdown spoke two idioms for one gesture, and the picker won on two grounds: no IPC round-trip, and no collision — main pops its own editor menu over any editable target and a renderer `preventDefault` cannot suppress it, which is why the Space header's menu had been carving out a dead zone over its own title. Three menus converted with their four-layer stacks deleted; three stay native for reasons recorded below. The Page's value rows went the *other* way on Nathan's call, since emptying a row is its one destructive gesture. `PickerMenu` gained a point anchor along the way, which retired two hand-rolled marker spans and silently fixed a mis-anchoring bug nobody had written down: those spans were `position: fixed` inside a transformed track, so they had never been in viewport space at all.
+**The Settings dropdown arc closed** by converging its row menus. The dropdown spoke two idioms for one gesture, and the picker won on two grounds: no IPC round-trip, and no collision — main pops its own editor menu over any editable target and a renderer `preventDefault` cannot suppress it, which is why the Space header's menu had been carving out a dead zone over its own title. Three menus converted with their four-layer stacks deleted; three stay native for reasons recorded below. The Page's value rows went the *other* way on Nathan's call, since emptying a row is its one destructive gesture. `PickerMenu` gained a point anchor along the way, which retired two hand-rolled marker spans and silently fixed a mis-anchoring bug nobody had written down: those spans were `position: fixed` inside a transformed track, so they had never been in viewport space at all. That work is committed and the PageMenu is whole apart from Aliases.
 
-**Verified:** typecheck clean on both projects, `biome lint` clean over 717 files, formatting clean on touched files, 2,194 tests across 194 files. Fourteen commits local on `main`, unpushed. **Unverified:** every converted menu is unexercised by hand — the three in-app ones and the native Clear/Remove all want a real right-click.
+A fence arc landed between the two. A code block ended at the next fence of the same marker, so a five-backtick fence wrapping three-backtick ones was carved into pieces with the sample's own code stranded as prose. Run length is now part of a fence's identity, and the pairing moved to the shared code module beside the mask the write side reads — four layers had each recognized fences for themselves, and the mask's disagreement was the one that could edit a file, since it reported a nested block's lines as not-code and left a `[[Title]]` there reachable by a rename. Built against mdast and swept over forty constructed documents, which caught two defects in the fix itself.
 
+**The current closeout is the page Outline** — a toolbar dropdown listing a page's heading tree and travelling to a chosen heading, opening any collapsed section on the way and seating the heading where the page's own inline title reads. It was assembled from existing primitives rather than built, and the interesting part is what it broke on the way: three shared mechanisms had latent defects that only a consumer with no row icons and arbitrarily long labels could expose. `DisclosureRow` rendered its `Reveal` without `fill`, so nested rows never truncated; `useDisclosureSet` had no seam for a default-open tree; and the auto-pair gate read only behind the caret, so every opener closed into text already ahead of it. The interaction layer also gained its first animated scroll — a distance-proportional glide in the autoscroll module, re-reading its destination each frame so an estimated height converges into the motion rather than being corrected with a jump at the end.
+
+Three corrections were mine and worth naming. I diverged from the shared dropdown placement to paper over an overflow whose real cause was a width ceiling I had set; I introduced a forward-guard regression that swallowed the underscore's own type-over, which four review agents caught and my own passing tests did not; and I diagnosed the auto-pair fault as a code-mask problem and began editing `markdownCode.ts` before Nathan corrected the premise. All three are reverted or fixed, and the last is why the pairing entry now reads as a half-built rule rather than a broken one.
+
+**Verified:** typecheck clean on both projects, `biome lint` clean over 722 files, formatting clean on touched files, 2,228 tests across 195 files. The Outline was visually confirmed by Nathan, including the glide and the first-character rail. **Unverified:** every converted menu remains unexercised by hand — the three in-app ones and the native Clear/Remove all want a real right-click.
+
+#### Next Session
+
+- **Commit the Outline arc and fill `PM-001`'s change block.** The whole arc sits uncommitted in the working tree, and the history entry's `COMMITS` section carries a stated placeholder rather than invented hashes. Committing resolves both in one move.
+- **Drive the converted menus once.** Right-click a ViewPane row, an embed segment, the Space settings header, and a page property row; click the ViewSettings ⋮. A picker opened from inside a dropdown has to survive that dropdown's own dismiss — proven for the properties leaf, unproven for the new hosts.
 #### Pending Focus
 
-- **Drive the converted menus once.** Right-click a ViewPane row, an embed segment, the Space settings header, and a page property row; click the ViewSettings ⋮. A picker opened from inside a dropdown has to survive that dropdown's own dismiss — proven for the properties leaf, unproven for the new hosts.
-- **Aliases.** The last open item on the decision log, and the reason the PageMenu isn't whole. Its vocabulary collision with the `[[Title|alias]]` prospect has to settle before it can be specified — they sit at opposite ends of one link and cannot share a word.
+- **Aliases.** The last open item on the decision log, and the reason the PageMenu isn't whole. Its vocabulary collides with the [[Title|alias]] prospect, which has to settle before it can be specified — they sit at opposite ends of a single link and cannot share a word.
 - **The three menus still native**, each waiting on a decision recorded in Working Notes.
 - **How wide a value may run** in the properties leaf — two attempts came out, and the shape that would work is stated in Working Notes rather than guessed at again.
+- **Four findings the `/simplify` pass raised and left**, each its own task: the toolbar dropdown shell now written three times; `codeMask` never entered `docCache`, so a whole-document scan runs per keystroke through `dashArrow`; `pageEditor` reaching the editor by CSS selector where `DetailPane` has a registered-handle precedent; and `expandFoldsAt` sleeping on a duration when `folding.ts` owns the real completion signal.
 
 #### Session Pointers
 
+- The page Outline: `Toolbar/OutlineDropdown.tsx` with its nesting in `Toolbar/outlineTree.ts`; the travel is `Detail/pageEditor.ts`.
+- The scroll glide lives beside the drag loop in `design-system/interactions/autoscroll.ts` — `scrollGlide`, with `glideMs` and `easeOutQuint` as its unit-tested math.
+- The heading scan is `scanHeadings` in `MarkdownPM/editor/folding.ts`; `headingSections` drops body-less headings and `headingOutline` keeps them, deliberately.
+- The disclosure rail's column is `--menu-rail-x` in `menu.css.ts`, defaulting to the shared step; the child indent is stated as a clearance past it, so the two move together.
+- Implementation history lives in `// History` (`PM-History-Index.md` + numbered entries) under `//The Studio//.claude//references//History-Format.md`; the pre-08-07 record is archived in that index under §04-26-2026 → 08-07-2026.
 - The PageMenu record: `Planning/PageMenu — Decision Log.md`, with A-1 the only item still `[open]`.
 - The leaf itself: `Components/Detail/PagePropertiesPane.tsx` and `pageProperties.css.ts`; `PAGE_PROPERTIES_MAX_WIDTH` is the pane's growth ceiling and the one knob in it.
 - The caret nobody sees: `Carets.css` hides every native caret app-wide, `nativeCaret.ts` repaints it. A missing caret is that file's, never the field's.
@@ -41,7 +56,8 @@ The closing arc converged the Settings dropdown's row menus. The dropdown spoke 
 - **`iconFavoriteMenu` should probably stay native.** Its host *is* a `PickerMenu`, so converting nests a picker inside a picker and puts the outer backdrop and dismiss against the inner one.
 - **Unresolved — how wide a value may run in the properties leaf.** Two attempts came out: a cap derived from the pane's ceiling, which meant nothing at the pane's floor and only bound at full width; and a fixed number no pane width could justify. A proportional share is the shape wanted and CSS cannot state one here — a percentage resolves against a `max-content` parent circularly, which is the same property that lets the pane grow with its content at all. Whatever lands must hold at every width between floor and ceiling, and must bound the branches carrying no scroller of their own (the empty dash, the inline editor) as well as the chips, which have one.
 - **The Studio's own skills are not invocable this session.** `handoff`, `code-simplification`, `build-breaking`, and `studio-brainstorm` exist under `//The Studio//.claude//skills//` but do not resolve through the Skill tool here; two agents independently reported `code-simplification` as missing. They were read and followed directly from disk instead.
-- **The two entity value surfaces still run different row menus.** Both say "Remove", but the Page's properties leaf pops a native menu carrying Clear beside it while `PreviewInspector` draws an in-app picker with Remove alone. The mechanism is what's left to reconcile, and a hoist is being scoped rather than assumed.
+- **The Outline's travel is the gesture MarkdownPM's open crash describes.** That Known Issue is an unreproduced black window on a *programmatic scroll toward a table inside an embed tile*, and it notes that gradual scrolling replays cleanly. The glide is gradual where the first version was a jump, so it is likely the safer shape — but it is the same gesture against the same content, and it is the first thing to suspect if a page holding embedded tables ever goes black.
+- **Two subsystems own a variable named for the same idea.** The editor's outliner rails use `--rail-x` for a list glyph's centre (`MarkdownPM/Styles.css`); the menu's disclosure rail uses `--menu-rail-x`. Custom properties inherit, so the qualified name is what keeps a menu rendered inside an editor line from picking up the wrong one.
 
 #### Guidelines
 
@@ -1777,4 +1793,42 @@ Now the Context gate. This session clearly moved the standing ledger, so reading
 Context updated. Now the transcript — the last piece of the handoff.
 
 - DISPATCH: transcription-agent — Render this session's transcript
+- BASH: gather the change arithmetic -> check the History-framework instructional changes
+
+Nathan's own instructional changes **did** land project-side — `CLAUDE.md` now maps `// History` and marks `HistoryPM.md` superseded. The gap is only in StudioMD, which is your handwritten file, so I'll flag it rather than edit it.
+
+Computing the code-only arithmetic the format asks for:
+
+- BASH: compute per-file code-only deltas
+
+Column slip — numstat puts the path in field 3. Redoing:
+
+- BASH: compute per-file code-only deltas, corrected
+
+Arithmetic in hand. The transcription agent is writing to `HandoffPM.md`, so I'll leave that file alone until it returns and do the History entry first — different files, no collision.
+
+- BASH: create the History folder
+- WRITE: [.claude/History/PM-History-Index.md] -> [.claude/History/PM-001.md]
+
+Now Step 4's routing. The Fix Log entry is already cleared; Current Focus and Recent Work still point at the retired stretch:
+
+- BASH: read ContextPM Current Focus verbatim
+- EDIT: [.claude/ContextPM.md]
+- BASH: check Known Issues for anything this work resolved
+
+History written. Routing done except the Handoff, which I'm deliberately holding — the transcription agent is appending to that file right now and editing it concurrently would have one of us clobber the other.
+
+**`// History` created** with the index and `PM-001 — The Page Outline`, following the format: Summary carrying the why and the mechanism with sub-labels for the travel, the glide, and the shared-mechanism corrections; the change block with per-file code-only counts (tests hold their rows uncounted, as specified); Changes Made as the literal register; and eight entries under Issues Resolved.
+
+The arithmetic is **+144 / −28** across twelve modified files and four added. The **COMMITS block is a stated placeholder** — the format is explicit that commits are the block's provenance, and this arc is entirely uncommitted, so I left an honest line rather than invent hashes. It fills in the moment you want it committed.
+
+**Routing applied:** the auto-pair Fix Log entry left ContextPM for Issues Resolved; Current Focus now reads the Outline as the closed stretch with the PageMenu behind it and its hand-verification still outstanding; Recent Work gained the Outline entry pointing at `[[PM-001]]`.
+
+**Two things you should know.**
+
+Your instructional changes *did* land — `CLAUDE.md` maps `// History` and marks `HistoryPM.md` superseded, and the History document is re-titled to its date range. But **StudioMD still describes `History{ABVR}.md` as the implementation history** at [.claude/CLAUDE.md:9](.claude/CLAUDE.md#L9), and that's the Studio-wide instruction governing every project. I didn't touch it — StudioMD is yours by hand — but a fresh agent reading it will still be told to append to the retired document.
+
+And a connection worth having before you exercise this: MarkdownPM's one remaining Known Issue is *"an unreproduced renderer crash on a **programmatic scroll toward a table inside an embed tile**"*, which notes the jump replays cleanly and **gradual scrolling does too**. The outline's travel is exactly that gesture. The glide changes its shape from an instant jump to a gradual scroll — which by that note's own description is the safer of the two — but it's the same gesture against the same content, so it's the thing to watch first if a page with embedded tables ever goes black.
+
+The Handoff body follows as soon as the transcript agent lands.
 `````

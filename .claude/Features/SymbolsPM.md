@@ -67,6 +67,8 @@ Every type carries a glyph, but only **Table and Cards have renderers** — the 
 
 ### Misc
 
+`list-tree` is the page outline's glyph — the toolbar button that opens a page's heading tree (→ [[PagesPM]]). It reads as nested structure rather than a flat list, which is what separates it from `list-rounded`'s view type and `list-filter`'s predicate.
+
 `link-2` is the Connections glyph — registered and reserved for the `[[Title]]` connections surface, which doesn't render it. The Context property type wears `layout-grid`, matching the sidebar Contexts.
 
 ### The Picker

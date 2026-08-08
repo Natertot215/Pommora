@@ -3,7 +3,7 @@ import type { SelectionState } from '@shared/types'
 import { subSetLabel } from '@shared/types'
 import { DEFAULT_NEW_NAME } from '@shared/mutate'
 import { Icon } from '@renderer/design-system/symbols'
-import { useSession } from '../../store'
+import { openPageBody, useSession } from '../../store'
 import { findCollection } from '../Scope'
 import { computeStats } from './subfieldStats'
 
@@ -45,11 +45,7 @@ export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
 function PageStatsItem({ scope }: SubfieldItemProps): React.JSX.Element {
   const pageDetail = useSession((s) => s.pageDetail)
   const liveBody = useSession((s) => s.liveBody)
-  const body = scope
-    ? scope.body
-    : liveBody && liveBody.path === pageDetail?.path
-      ? liveBody.body
-      : (pageDetail?.body ?? '')
+  const body = scope ? scope.body : openPageBody(pageDetail, liveBody)
   const stats = useMemo(() => computeStats(body), [body])
   return (
     <span className="subfield-stats" title="Lines · Words · Characters">
