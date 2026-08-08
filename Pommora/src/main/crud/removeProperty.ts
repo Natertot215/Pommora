@@ -9,7 +9,7 @@ import { join } from 'node:path'
 import { contentId } from '@shared/identity'
 import { rewritePageSerialized } from '../io/fileLock'
 import { stripPageMember } from './pageValue'
-import { readSidecar } from '../sidecarIO'
+import { readSidecar, withSidecarLock } from '../sidecarIO'
 import { propertyValueStands } from './standing'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
@@ -60,16 +60,18 @@ async function removeInner(
     // just isn't restorable; Remove must not leak the value it exists to clear.
     if (id) values[id] = raw
   }
-  // Cache + unassign FIRST (through the strict RMW, so the page-read window above can't
-  // revert a concurrent icon/banner/view write), THEN strip each page under its file lock.
+  // Cache + unassign FIRST — under the sidecar's own lock, so the page-read window above can't
+  // revert a concurrent icon/banner/view write — THEN strip each page under its file lock.
   // Cache-before-strip keeps the values safely persisted before any page loses them, so a
   // failure mid-strip is recoverable, never lossy.
-  const written = await rmwJsonStrict(join(collectionFolder, SIDECAR_FILENAME.collection), (cur) =>
-    patchCacheBlock(
-      { ...cur, properties: ids.filter((id) => id !== propertyId) },
-      propertyId,
-      // No value, no key — a block with nothing in it is the same violation as an empty map.
-      Object.keys(values).length ? { values } : undefined,
+  const written = await withSidecarLock(collectionFolder, 'collection', () =>
+    rmwJsonStrict(join(collectionFolder, SIDECAR_FILENAME.collection), (cur) =>
+      patchCacheBlock(
+        { ...cur, properties: ids.filter((id) => id !== propertyId) },
+        propertyId,
+        // No value, no key — a block with nothing in it is the same violation as an empty map.
+        Object.keys(values).length ? { values } : undefined,
+      ),
     ),
   )
   if (!written.ok) return written

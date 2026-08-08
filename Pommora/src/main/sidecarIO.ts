@@ -6,8 +6,21 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { z } from 'zod'
-import { SIDECAR_FILENAME, type SidecarKind } from './paths'
+import { SIDECAR_FILENAME, sidecarPath, type SidecarKind } from './paths'
 import { writeJson } from './io/atomicWrite'
+import { serializeOnFile } from './io/fileLock'
+
+/** Run a sidecar read-modify-write under that sidecar's own lock, reading FRESH inside it.
+ *  Views, container config, orders, properties and the banner/icon patches all rewrite the
+ *  same file whole, so they queue on one key — the sidecar's path — or the last writer back
+ *  silently drops whatever the others just set. */
+export function withSidecarLock<T>(
+  absFolder: string,
+  kind: SidecarKind,
+  fn: () => Promise<T>,
+): Promise<T> {
+  return serializeOnFile(sidecarPath(absFolder, kind), fn)
+}
 
 /** Read + validate a folder's sidecar with its schema. Returns null when the file is
  *  absent, unparseable, or fails validation (the caller treats that as un-adopted). */

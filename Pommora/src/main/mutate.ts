@@ -55,7 +55,7 @@ import { isAssetPath, readNavigationFile, writeNavigationState } from './io/navi
 import { serializeOnFile } from './io/fileLock'
 import { splitEnvelope, mergeFrontmatter, readFrontmatterFields } from './io/pageFile'
 import { basenameNoMd } from './coerce'
-import { nexusConfig, SIDECAR_FILENAME, NEXUS_CONFIG_FILES } from './paths'
+import { nexusConfig, sidecarPath, NEXUS_CONFIG_FILES } from './paths'
 import { ensureIdentity } from './identity'
 import { resolveFolderKind } from './folderKind'
 import { updateSettings } from './settings'
@@ -443,7 +443,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         const resolved = await resolveUnderRoot(root, req.path)
         if (!resolved.ok) return resolved
         if (await isReserved(root, resolved.value)) return fault('That item can’t take a banner.')
-        cfgPath = `${resolved.value}/${SIDECAR_FILENAME[req.kind]}`
+        cfgPath = sidecarPath(resolved.value, req.kind)
         existing = await readJsonObject(cfgPath)
         const id = typeof existing?.id === 'string' ? existing.id : null
         if (!id) return fault('That item has no id to key its banner.')
@@ -484,7 +484,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       } else {
         const resolved = await resolveUnderRoot(root, req.path)
         if (!resolved.ok) return resolved
-        cfgPath = `${resolved.value}/${SIDECAR_FILENAME[req.kind]}`
+        cfgPath = sidecarPath(resolved.value, req.kind)
         const id = (await readJsonObject(cfgPath))?.id
         if (typeof id !== 'string') return fault('That item has no id.')
         fallback = { id }
@@ -535,7 +535,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         }))
         return r.ok ? ok({}) : r
       }
-      const cfgPath = `${resolved.value}/${SIDECAR_FILENAME[req.kind]}`
+      const cfgPath = sidecarPath(resolved.value, req.kind)
       // One strict read: the id gate rides inside the mutator (the throw lands as the op's
       // fault), and a vanished sidecar fails not-found rather than being reseeded.
       const written = await patchConfig(cfgPath, (cur) => {
@@ -571,11 +571,10 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const r = await movePage(src.value, dst.value)
       if (!r.ok) return r
       // Persist the destination's new page order (reorder + drop-at-position). The source's
-      // stale id self-drops on the next read, so only the destination is rewritten.
-      if (req.order) {
-        const o = await setChildOrder(dst.value, 'page_order', req.order)
-        if (!o.ok) return o
-      }
+      // stale id self-drops on the next read, so only the destination is rewritten. Best-effort:
+      // the file has already moved, and reporting a failed order write as a failed move leaves
+      // the renderer showing the page where it no longer is. Order falls back to title instead.
+      if (req.order) await setChildOrder(dst.value, 'page_order', req.order)
       return ok({})
     }
 
@@ -589,8 +588,8 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (!destOk.ok) return destOk
       const r = await moveFolderEntity(src.value, dst.value)
       if (!r.ok) return r
-      const o = await setChildOrder(dst.value, 'set_order', req.order)
-      if (!o.ok) return o
+      // Best-effort for the same reason as movePage — the folder has already moved.
+      await setChildOrder(dst.value, 'set_order', req.order)
       return ok({})
     }
 

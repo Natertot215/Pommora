@@ -48,7 +48,6 @@ import {
 import { pathExists } from './io/atomicWrite'
 import { readAppConfig, writeAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
-import { serializeOnFile } from './io/fileLock'
 import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
 import { ensureIdentity } from './identity'
@@ -708,7 +707,7 @@ serveBridge(
         if (!resolved.ok) return resolved
         // Under the page's file lock — the editor autosave and a link-rename cascade both rewrite
         // this page's body, so they must serialize rather than clobber each other.
-        const r = await serializeOnFile(resolved.value, () => updatePageBody(resolved.value, body))
+        const r = await updatePageBody(resolved.value, body)
         return r.ok ? ok(null) : r
       },
     },
@@ -751,7 +750,7 @@ serveBridge(
         const parsed = savedView.safeParse(view)
         if (!parsed.success) return fail('operation-failed', 'Invalid view payload.')
         const { folder, kind: k } = c.value
-        const r = await serializeOnFile(folder, () => saveView(folder, k, parsed.data))
+        const r = await saveView(folder, k, parsed.data)
         return r.ok ? ok({ id: r.value.id }) : r
       },
     },
@@ -764,7 +763,7 @@ serveBridge(
           return fail('operation-failed', 'orderedIds must be a string array.')
         }
         const { folder, kind: k } = c.value
-        const r = await serializeOnFile(folder, () => reorderViews(folder, k, orderedIds))
+        const r = await reorderViews(folder, k, orderedIds)
         return r.ok ? ok(null) : r
       },
     },
@@ -775,13 +774,13 @@ serveBridge(
         if (!c.ok) return c
         if (typeof viewId !== 'string') return fail('operation-failed', 'A view id is required.')
         const { folder, kind: k } = c.value
-        const r = await serializeOnFile(folder, () => deleteView(folder, k, viewId))
+        const r = await deleteView(folder, k, viewId)
         return r.ok ? ok(null) : r
       },
     },
 
     // Per-container non-view settings (open_in / view_button / view_style) — the synced sidecar write
-    // behind the ViewDropdown context menu + the Configuration/Open In row. Serialized like the view writes.
+    // behind the ViewDropdown context menu + the Configuration/Open In row.
     'container:configure': {
       kind: 'envelope',
       fn: async (containerPath: unknown, kind: unknown, patch: unknown) => {
@@ -789,9 +788,7 @@ serveBridge(
         if (!c.ok) return c
         if (patch === null || typeof patch !== 'object') return NEEDS_CONFIG_PATCH
         const { folder, kind: k } = c.value
-        const r = await serializeOnFile(folder, () =>
-          setContainerConfig(folder, k, patch as ContainerConfigPatch),
-        )
+        const r = await setContainerConfig(folder, k, patch as ContainerConfigPatch)
         return r.ok ? ok(null) : r
       },
     },
@@ -1604,9 +1601,27 @@ serveBridge(
   },
 )
 
+// Every write lock in this process — the per-file chains, the schema chain, the watcher's
+// self-write suppression — is module state, so a SECOND process on the same nexus shares none of
+// it and its writes race every one of ours with no coordination at all. One instance is therefore
+// a correctness boundary, not a convenience: the loser exits before it can open a session, and a
+// relaunch raises the window that already exists. Multi-window stays reachable — one process may
+// own many windows; what it may not do is become a second process over one nexus.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (!mainWindow) return
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.focus()
+  })
+}
+
 app
   .whenReady()
   .then(async () => {
+    // A losing second instance is already quitting; whenReady can still fire before it exits.
+    if (!app.hasSingleInstanceLock()) return
     // Restore the last nexus if it's still an existing directory; otherwise launch
     // empty. No picker/modal here — a launch must never block (headless / tests).
     // Restore failures degrade to empty state (never fatal); only a failure to

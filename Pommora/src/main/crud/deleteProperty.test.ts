@@ -36,7 +36,11 @@ vi.mock('../io/fileLock', async (importOriginal) => {
   return {
     ...actual,
     serializeOnFile: async (...args: Parameters<typeof actual.serializeOnFile>) => {
-      recordedBeforeScrub ??= (await readdir(join(root, '.trash')).catch(() => [])).length > 0
+      // Page locks only. Sidecar writes take the same primitive, and an assignment during setup
+      // would otherwise pin this before the act under test has begun.
+      if (args[0].endsWith('.md')) {
+        recordedBeforeScrub ??= (await readdir(join(root, '.trash')).catch(() => [])).length > 0
+      }
       return actual.serializeOnFile(...args)
     },
   }
