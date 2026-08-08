@@ -26,22 +26,48 @@ Two hypotheses died first, and both were mine before they were anyone's. I logge
 
 Three corrections were mine and worth naming. I diverged from the shared dropdown placement to paper over an overflow whose real cause was a width ceiling I had set; I introduced a forward-guard regression that swallowed the underscore's own type-over, which four review agents caught and my own passing tests did not; and I diagnosed the auto-pair fault as a code-mask problem and began editing `markdownCode.ts` before Nathan corrected the premise. All three are reverted or fixed, and the last is why the pairing entry now reads as a half-built rule rather than a broken one.
 
-**Verified:** typecheck clean on both projects, `biome lint` clean over 723 files, formatting clean on touched files, 2,234 tests across 196 files. The Outline was visually confirmed by Nathan, including the glide and the first-character rail. The editor fixes were measured in the running app rather than inferred: forty real arrow-key events took the parse count from forty to zero and the per-keystroke cost from 2.43ms to 0.06ms, and a scroll walk matched rendered decorations against whole-document truth at every position, including three where the viewport opened inside a code block. The arc is committed. **Unverified:** every converted menu remains unexercised by hand — the three in-app ones and the native Clear/Remove all want a real right-click.
+**The menu layer closed the session.** The three toolbar dropdowns each held the same open state, dismissal, retract beat, and mounted-pane branch around a shared surface, while their CSS was already shared under a stylesheet named for one of the three — which is why the duplication read as behavior rather than styling and stayed out of sight. `MenuDropdown` owns that shell now. A sweep for what else the menu surfaces state twice returned less than expected: the beak clearances and gutters that look duplicated are each what their own surface is for, and the real defect was two constants describing that deliberate separation as drift. Both were corrected rather than made true. The creator rule went the other way — a Set could not be given a nested Set from the sidebar though the subfield offered exactly that, and two creator labels were literals where every other one resolves the nexus label, so `containerCreators` is now the one rule both processes read.
 
-#### Next Session
+**Verified:** typecheck clean on both projects, `biome lint` clean over 725 files, formatting clean on touched files, 2,240 tests across 197 files. The Outline was visually confirmed by Nathan, including the glide and the first-character rail. The editor fixes were measured in the running app rather than inferred: forty real arrow-key events took the parse count from forty to zero and the per-keystroke cost from 2.43ms to 0.06ms, and a scroll walk matched rendered decorations against whole-document truth at every position, including three where the viewport opened inside a code block. The arc is committed. **Unverified:** every converted menu remains unexercised by hand — the three in-app ones and the native Clear/Remove all want a real right-click.
 
-- **Drive the converted menus once.** Right-click a ViewPane row, an embed segment, the Space settings header, and a page property row; click the ViewSettings ⋮. A picker opened from inside a dropdown has to survive that dropdown's own dismiss — proven for the properties leaf, unproven for the new hosts.
+#### When You're Back — Five Minutes of Clicking
+
+Nothing here is suspected broken; all of it shipped green and none of it has been touched by a hand. Two of the three shells changed who owns their state, which is the kind of change gates cannot see.
+
+- **Right-click a Set in the sidebar.** It should now offer **New Sub-Set** beneath New Page — that was the reported gap. Right-click a Collection too: it reads **New Set**. Same option, named by depth, and both should create into the row you clicked.
+- **Open the Views, Outline, and Space dropdowns.** Each should open, close on an outside click, and close on a second click of its own button. On a page with long headings the Outline should still stop at the window's right edge rather than running past it.
+- **Select a Space, open its dropdown, navigate away, and come back.** It must come back closed. It used to reappear on its own, which is the defect the gate move fixed.
+- **Drive the five converted menus once** — right-click a ViewPane row, an embed segment, the Space settings header, and a page property row; click the ViewSettings ⋮. A picker opened from inside a dropdown has to survive that dropdown's own dismiss, which is proven for the properties leaf and unproven for these hosts.
+
+#### The Native-Menu Decision
+
+Three menus are still native, and they are not waiting on work — they are waiting on one call from you. The blocker is the same for two of them: **they are native for their confirmation, not for their menu.**
+
+`optionMenu` (Remove · Clear) and `propertyMenu` (Delete) pop `dialog.showMessageBox` from the main process and only resolve once you approve, so the renderer is structurally incapable of running an unconfirmed strip. Converting them to in-app pickers means giving that guarantee up or rebuilding it. Two ways to keep it:
+
+- **A native confirm behind its own channel.** The menu becomes an in-app picker and only the confirmation stays native. `blocks:confirmRemove` already works this way, so there is a precedent to copy rather than a mechanism to invent. Cheapest, and it keeps the guarantee exactly as strong.
+- **An in-app confirm surface.** A real confirmation dialog in the design system, which the app does not currently have. More work, and it needs its own design pass — but it is the only route to a destructive gesture that looks like the rest of the app, and something will want it eventually.
+
+**Recommendation: the first.** It closes the two menus now at a fraction of the cost, and it does not foreclose the second — an in-app confirm can replace the native one later without touching the pickers, because the channel is the seam.
+
+`viewButtonMenu` is a separate question with no confirm involved. It carries a submenu with checked state that flies out on hover; the in-app equivalent drills through a pane instead. That is an interaction difference rather than a port, so converting it means accepting that its behavior changes. **Recommendation: leave it native** until the pane-drill pattern is something you want everywhere.
+
+`iconFavoriteMenu` should stay native regardless — its host *is* a `PickerMenu`, so converting nests a picker inside a picker and puts the outer backdrop against the inner one.
+
 #### Pending Focus
 
 - **Aliases.** The last open item on the decision log, and the reason the PageMenu isn't whole. Its vocabulary collides with the [[Title|alias]] prospect, which has to settle before it can be specified — they sit at opposite ends of a single link and cannot share a word.
-- **The three menus still native**, each waiting on a decision recorded in Working Notes.
+- **The three menus still native** — the call is written out above under The Native-Menu Decision, with a recommendation for each.
 - **How wide a value may run** in the properties leaf — two attempts came out, and the shape that would work is stated in Working Notes rather than guessed at again.
-- **Three findings the `/simplify` pass raised and left**, each its own task: the toolbar dropdown shell now written three times; `pageEditor` reaching the editor by CSS selector where `DetailPane` has a registered-handle precedent; and `expandFoldsAt` sleeping on a duration when `folding.ts` owns the real completion signal. The fourth, the whole-document code scan on the typing path, is closed in [[PM-002]].
+- **Two findings the `/simplify` pass raised and left**, each its own task: `pageEditor` reaching the editor by CSS selector where `DetailPane` has a registered-handle precedent, and `expandFoldsAt` sleeping on a duration when `folding.ts` owns the real completion signal. Of the original four, the whole-document code scan is closed in [[PM-002]] and the triplicated dropdown shell in [[PM-003]].
+- **The `Creator` shape is stated three times** — the named type in `shared/mutate.ts`, and inline in `shared/bridge.ts` (the `create-menu` channel) and `store.ts` (`createFromMenu`). Surfaced by the closeout simplifier and left alone to hold scope; retiring the two restatements against the named type is a small, contained follow-up.
 
 #### Session Pointers
 
 - The page Outline: `Toolbar/OutlineDropdown.tsx` with its nesting in `Toolbar/outlineTree.ts`; the travel is `Detail/pageEditor.ts`.
 - The scroll glide lives beside the drag loop in `design-system/interactions/autoscroll.ts` — `scrollGlide`, with `glideMs` and `easeOutQuint` as its unit-tested math.
+- The dropdown shell is `MenuDropdown` in `design-system/components/menu` — open state, dismissal, retract beat, anchored surface, and an optional window-edge bound. It carries no CSS; the toolbar's own chrome is `toolbarDropdown.css.ts`, whose `chrome` export is what the three dropdowns spread.
+- What a container offers on creation is `containerCreators` in `shared/mutate.ts`, read by main's context menu and the subfield alike. Labels resolve from the nexus, never literals — the same discipline `createSpaceLabel` already held for Spaces.
 - The inline tokenize slices the visible ranges and opens on a self-evident block boundary — `sliceStartLine` in `MarkdownPM/editor/decorations.ts`. Its parse is memoized per doc version and span set by `docSpanTokens` in `editor/docCache.ts`, beside the scan and the line intents.
 - The heading scan is `scanHeadings` in `MarkdownPM/editor/folding.ts`; `headingSections` drops body-less headings and `headingOutline` keeps them, deliberately.
 - The disclosure rail's column is `--menu-rail-x` in `menu.css.ts`, defaulting to the shared step; the child indent is stated as a clearance past it, so the two move together.
