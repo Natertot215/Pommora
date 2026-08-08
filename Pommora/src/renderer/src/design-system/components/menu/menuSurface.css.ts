@@ -5,9 +5,12 @@ import { titleText } from './menu.css'
 const c = colorVars.color
 
 /**
- * The inside horizontal gutter shared by every large dropdown. Matches the sidebar's edge padding
- * (Sidebar.css) so menu items and dividers align into the same empty gutter. Single source — all
- * dropdown surfaces route here, so the gutter never drifts between them.
+ * The inside horizontal gutter for the large dropdown surface below. Matches the sidebar's edge
+ * padding (Sidebar.css) so menu items and dividers align into the same empty gutter.
+ *
+ * It governs this surface, not every pane that wears a beak. The picker, the text popup and the icon
+ * grid each state a tighter gutter of their own, which is a difference in what those surfaces are for
+ * rather than drift: a menu only ever drops, while a picker opens in whichever direction it fits.
  */
 export const MENU_GUTTER = '10px'
 

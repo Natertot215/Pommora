@@ -301,11 +301,12 @@ globalStyle(`${bottomBar} ${detail}`, { color: c.label.secondary })
 // ── Scroll frame — the shared pinned-header/footer + scrolling-body primitive (MenuScrollFrame) ──
 // A pane's optional header and footer stay put (flush against the surface, never scrolling) while the
 // rows scroll BETWEEN them: the body is the only overflow region, so nothing ever slides under an edge
-// (no bleed-through, no occlusion tricks). The frame caps at MENU_MAX_HEIGHT — the one dropdown height
-// ceiling; PaneSlider caps its slot at the same value, so a non-framed pane scrolls its slot instead.
+// (no bleed-through, no occlusion tricks). The frame caps at MENU_MAX_HEIGHT unless its caller states
+// a height of its own.
 
-/** The dropdown height ceiling — a pane grows to this, then scrolls. Shared by PaneSlider (its slot
- *  cap) and MenuScrollFrame (its body cap) so the two never drift. */
+/** MenuScrollFrame's default height ceiling — a pane grows to this, then scrolls. A pane wanting a
+ *  different one passes `maxHeight`, and several do: a picker sits shorter than a menu, ViewSettings
+ *  taller. This is the default those panes decline, not a ceiling they are breaking. */
 export const MENU_MAX_HEIGHT = 320
 
 /** The frame — a flex column that fills its slot; the body inside scrolls. The height ceiling rides an
