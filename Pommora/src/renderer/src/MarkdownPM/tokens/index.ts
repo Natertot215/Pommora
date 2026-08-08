@@ -1,7 +1,7 @@
 // Emphasis is located on the mdast AST so `_`/`*` mixing/nesting is correct and code spans never emit emphasis.
 import type { Root, RootContent, PhrasingContent } from 'mdast'
 import { parse } from '../parser'
-import { isInsideCode } from '@shared/markdownCode'
+import { codeMask } from '@shared/markdownCode'
 import {
   isInlineMathContent,
   embedRegex,
@@ -91,7 +91,7 @@ interface RegexSpec {
   accept?: (content: string) => boolean
 }
 
-function regexTokens(text: string, spec: RegexSpec): Token[] {
+function regexTokens(text: string, spec: RegexSpec, inCode: (offset: number) => boolean): Token[] {
   const tokens: Token[] = []
   for (const m of text.matchAll(spec.re)) {
     const indices = m.indices
@@ -100,7 +100,7 @@ function regexTokens(text: string, spec: RegexSpec): Token[] {
     const [fs, fe] = fullSpan
     const content: Span = indices[1] ?? [fs + spec.open, fe - spec.close]
     if (spec.accept && !spec.accept(m[1] ?? '')) continue
-    if (isInsideCode(fs, text)) continue
+    if (inCode(fs)) continue
     tokens.push({
       kind: spec.kind,
       range: [fs, fe],
@@ -115,13 +115,13 @@ function regexTokens(text: string, spec: RegexSpec): Token[] {
 }
 
 // No `d` flag, so offsets are derived from the known `[[` prefix.
-function wikiLinkTokens(text: string): Token[] {
+function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Token[] {
   const tokens: Token[] = []
   for (const m of text.matchAll(pageLinkPattern())) {
     if (m.index == null) continue
     const fs = m.index
     const fe = fs + m[0].length
-    if (isInsideCode(fs, text)) continue
+    if (inCode(fs)) continue
     const contentStart = fs + 2
     const contentEnd = contentStart + (m[1]?.length ?? 0)
     tokens.push({
@@ -141,30 +141,33 @@ export function tokenize(text: string): Token[] {
   const ast = parse(text)
   const tokens: Token[] = []
   walkEmphasis(ast, tokens)
+  // One mask per body, queried per match — the per-offset form re-walks the text for every one.
+  const inCode = codeMask(text)
+  const scan = (spec: RegexSpec): Token[] => regexTokens(text, spec, inCode)
 
   // Code tokenizes FIRST so connections and links inside `spans` are dropped like latex already is —
   // a [[link]] in code must render (and click) as literal code, not a live connection.
-  const code = regexTokens(text, { kind: 'inlineCode', re: inlineCodeRegex(), open: 1, close: 1 })
-  const embeds = regexTokens(text, {
+  const code = scan({ kind: 'inlineCode', re: inlineCodeRegex(), open: 1, close: 1 })
+  const embeds = scan({
     kind: 'embed',
     re: embedRegex(),
     open: 3,
     close: 2,
   })
-  const wikis = wikiLinkTokens(text).filter(notOverlapping([...embeds, ...code]))
-  const links = regexTokens(text, {
+  const wikis = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
+  const links = scan({
     kind: 'link',
     re: markdownLinkRegex(),
     open: 1,
     close: 1,
   }).filter(notOverlapping([...embeds, ...wikis, ...code]))
-  const blockTex = regexTokens(text, {
+  const blockTex = scan({
     kind: 'blockLatex',
     re: blockLatexRegex(),
     open: 2,
     close: 2,
   }).filter(notOverlapping(code))
-  const inlineTex = regexTokens(text, {
+  const inlineTex = scan({
     kind: 'inlineLatex',
     re: inlineLatexRegex(),
     open: 1,

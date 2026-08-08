@@ -1,5 +1,5 @@
 import { parse } from '../parser'
-import { isInsideCode } from '@shared/markdownCode'
+import { codeMask } from '@shared/markdownCode'
 import { normalize, type Column, type TableModel } from './model'
 import { splitRow, parseDelimiter, docLines, type CellSpan } from './codec'
 
@@ -33,6 +33,7 @@ let cacheRegions: TableRegion[] = []
 export function tableRegions(doc: string): TableRegion[] {
   if (doc === cacheDoc) return cacheRegions
   const lines = docLines(doc)
+  const inCode = codeMask(doc)
   const regions: TableRegion[] = []
   let i = 1
   while (i < lines.length) {
@@ -42,7 +43,7 @@ export function tableRegions(doc: string): TableRegion[] {
       !columns ||
       header.text.trim() === '' ||
       header.text.trimStart()[0] === '>' ||
-      isInsideCode(header.from, doc) ||
+      inCode(header.from) ||
       !isTable(doc.slice(header.from, lineTo(lines[i])))
     ) {
       i++
