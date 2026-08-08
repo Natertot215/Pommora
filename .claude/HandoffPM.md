@@ -36,7 +36,7 @@ Three corrections were mine and worth naming. I diverged from the shared dropdow
 - **Aliases.** The last open item on the decision log, and the reason the PageMenu isn't whole. Its vocabulary collides with the [[Title|alias]] prospect, which has to settle before it can be specified — they sit at opposite ends of a single link and cannot share a word.
 - **The three menus still native**, each waiting on a decision recorded in Working Notes.
 - **How wide a value may run** in the properties leaf — two attempts came out, and the shape that would work is stated in Working Notes rather than guessed at again.
-- **Four findings the `/simplify` pass raised and left**, each its own task: the toolbar dropdown shell now written three times; `codeMask` never entered `docCache`, so a whole-document scan runs per keystroke through `dashArrow`; `pageEditor` reaching the editor by CSS selector where `DetailPane` has a registered-handle precedent; and `expandFoldsAt` sleeping on a duration when `folding.ts` owns the real completion signal.
+- **Three findings the `/simplify` pass raised and left**, each its own task: the toolbar dropdown shell now written three times; `pageEditor` reaching the editor by CSS selector where `DetailPane` has a registered-handle precedent; and `expandFoldsAt` sleeping on a duration when `folding.ts` owns the real completion signal. The fourth, the whole-document code scan on the typing path, is closed in [[PM-002]].
 
 #### Session Pointers
 
