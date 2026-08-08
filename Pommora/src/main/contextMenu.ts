@@ -12,26 +12,19 @@ import { resolveUnderRoot } from './pathSafety'
 import { handleMutate, type MutateDeps } from './mutate'
 import { readRegistryStrict } from './contextsRegistry'
 import { createSpaceLabel } from '@shared/contexts'
-import { DEFAULT_NEW_NAME } from '@shared/mutate'
-import type { ContextTarget, MutableKind, MutateRequest } from '@shared/mutate'
+import { containerCreators } from '@shared/mutate'
+import type { ContextTarget, Creator, MutableKind, MutateRequest } from '@shared/mutate'
+import { readNexusLabels } from './readNexus'
 
 /** The "New …" creators a container offers; pages + Spaces + the legacy area/topic/project
- *  kinds offer none. A Context group offers "New <Singular>" — resolved from the registry by
- *  the folder's title. */
-async function creatorsFor(
-  root: string,
-  kind: MutableKind,
-  parentPath: string,
-): Promise<{ label: string; req: MutateRequest }[]> {
-  const name = DEFAULT_NEW_NAME
+ *  kinds offer none. Collections and Sets route through the shared rule, so this menu and the
+ *  subfield's add button can't come to offer different things inside the same container. A Context
+ *  group offers "New <Singular>" — resolved from the registry by the folder's title. */
+async function creatorsFor(root: string, kind: MutableKind, parentPath: string): Promise<Creator[]> {
   switch (kind) {
     case 'collection':
-      return [
-        { label: 'New Page', req: { op: 'createPage', parentPath, name } },
-        { label: 'New Set', req: { op: 'createContainer', parentPath, kind: 'set', name } },
-      ]
     case 'set':
-      return [{ label: 'New Page', req: { op: 'createPage', parentPath, name } }]
+      return containerCreators(kind, parentPath, await readNexusLabels(root))
     case 'context': {
       const reg = await readRegistryStrict(root)
       const def = reg.ok
