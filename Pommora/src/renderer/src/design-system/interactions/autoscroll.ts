@@ -160,6 +160,7 @@ export type { StartCfg }
  *  (e.g. unmount cleanup). */
 export function startAutoScroll(cfg: StartCfg): () => void {
   stopAutoScroll()
+  stopGlide() // a drag takes the scroller from any travel in flight
   const axis = cfg.axis ?? 'xy'
   const scroller = cfg.scroller ?? findScroller(cfg.dragEl ?? null, axis)
   if (!scroller) return () => {} // no scrollable container — the drag still works, just no auto-scroll
@@ -196,6 +197,104 @@ export function stopAutoScroll(): void {
   if (live.raf) cancelAnimationFrame(live.raf)
   live.teardown()
   live = null
+}
+
+// ── Glide ──────────────────────────────────────────────────────────────────────
+// The other way this module scrolls a container: a finite travel to a known destination, for a
+// surface sending the reader somewhere. It shares this module's scroller resolution and its
+// one-owner-at-a-time rule, and nothing else — the drag loop above is open-ended and takes its speed
+// from the pointer's distance to an edge, which is a different animation, not a parameter of this one.
+
+export interface GlideParams {
+  /** px per ms of travel — the apparent speed the document moves at, before the floor and ceiling. */
+  speed: number
+  /** Floor, so a short hop still reads as movement rather than a cut. */
+  minMs: number
+  /** Ceiling, so crossing a long document never becomes a wait. */
+  maxMs: number
+}
+
+/** How long a glide over `distance` px runs. Proportional to the distance so near and far jumps travel
+ *  at one apparent speed, clamped at both ends. */
+export function glideMs(distance: number, { speed, minMs, maxMs }: GlideParams): number {
+  return Math.min(maxMs, Math.max(minMs, Math.abs(distance) / speed))
+}
+
+/** The JS mirror of the `out` easing token (ease-out quint) — a CSS cubic-bezier can't drive a
+ *  scrollTop, so the curve is stated twice on purpose. Change them together. */
+export function easeOutQuint(t: number): number {
+  return 1 - (1 - t) ** 5
+}
+
+let glide: { raf: number; teardown: () => void } | null = null
+
+export function stopGlide(): void {
+  if (!glide) return
+  cancelAnimationFrame(glide.raf)
+  glide.teardown()
+  glide = null
+}
+
+/** Travel `scroller` to `to` over a distance-proportional beat. Returns an instance-scoped stopper.
+ *
+ *  `to` may be a THUNK, and should be wherever the destination is measured rather than known: it is
+ *  re-read every frame and the travel eases toward wherever it currently is. A host that renders
+ *  lazily only estimates the height of what it hasn't drawn, so the destination sharpens as the
+ *  travel reveals it — converging into the easing costs nothing, while landing on the first estimate
+ *  and correcting afterwards is a visible jump at the end of an otherwise smooth move.
+ *
+ *  Cancels on any real scroll input — a glide that keeps pulling while the reader scrolls away fights
+ *  them, which the drag loop never has to worry about because the pointer is held. Honours
+ *  reduced-motion by arriving immediately. */
+export function scrollGlide(
+  scroller: HTMLElement,
+  to: number | (() => number),
+  params: GlideParams,
+  onArrive?: () => void,
+): () => void {
+  stopAutoScroll() // one owner of programmatic scrolling at a time
+  stopGlide()
+  const seek = typeof to === 'function' ? to : (): number => to
+  const target = (): number =>
+    Math.max(0, Math.min(seek(), scroller.scrollHeight - scroller.clientHeight))
+  const from = scroller.scrollTop
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  if (reduced || target() === from) {
+    scroller.scrollTop = target()
+    onArrive?.()
+    return () => {}
+  }
+  // The beat is fixed from the opening distance, so a destination that shifts underfoot changes where
+  // the travel lands but never how long it takes.
+  const ms = glideMs(target() - from, params)
+  // Timed from the first FRAME, not from dispatch: the gap between them is dead time the easing would
+  // otherwise have already spent by the time anything is drawn.
+  let started: number | null = null
+  const onInterrupt = (): void => stopGlide()
+  for (const ev of ['wheel', 'touchstart', 'keydown'] as const)
+    window.addEventListener(ev, onInterrupt, { passive: true })
+  const teardown = (): void => {
+    for (const ev of ['wheel', 'touchstart', 'keydown'] as const)
+      window.removeEventListener(ev, onInterrupt)
+  }
+  const step = (now: number): void => {
+    const g = glide
+    if (!g) return
+    started ??= now
+    const t = Math.min(1, (now - started) / ms)
+    scroller.scrollTop = from + (target() - from) * easeOutQuint(t)
+    if (t < 1) {
+      g.raf = requestAnimationFrame(step)
+      return
+    }
+    stopGlide()
+    onArrive?.()
+  }
+  glide = { raf: requestAnimationFrame(step), teardown }
+  const mine = glide
+  return () => {
+    if (glide === mine) stopGlide()
+  }
 }
 
 function tick(ts: number): void {

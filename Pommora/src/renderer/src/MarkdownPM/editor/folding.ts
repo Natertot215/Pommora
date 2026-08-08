@@ -7,7 +7,7 @@ import {
   type Text,
   type Range,
 } from '@codemirror/state'
-import { headingParts, isHeadingLine, lineOffsets } from '../detect'
+import { headingParts, isHeadingLine, lineOffsets, splitWithOffsets } from '../detect'
 import { fencedLineMask } from '@shared/markdownCode'
 import { docString } from './docCache'
 import { createBlockDragGesture } from './blockDrag'
@@ -34,13 +34,19 @@ export interface HeadingSection {
   to: number
 }
 
-/** Every heading's foldable section. A section reaching no body lines is dropped (nothing to fold),
- *  but still consumes its ordinal so duplicate-text keys stay stable. */
-export function headingSections(doc: string): HeadingSection[] {
-  const lines = doc.split('\n')
-  const starts = lineOffsets(lines)
+interface ScannedHeading {
+  idx: number
+  level: number
+  /** The heading's own text, markers stripped. */
+  text: string
+  /** Ordinal-disambiguated identity — duplicate text stays tellable apart across renders and folds. */
+  key: string
+}
 
-  const heads: { idx: number; level: number; key: string }[] = []
+/** Every heading line in document order. THE heading scan — the fold sections and the outline both
+ *  read it, so the two can never disagree about what counts as a heading. */
+function scanHeadings(lines: string[]): ScannedHeading[] {
+  const heads: ScannedHeading[] = []
   const seen = new Map<string, number>()
   // Fence parity: a `# comment` inside a code block is code, not a heading — treating it as one gives it
   // a chevron, corrupts heading-drag extents, and poisons the persisted fold keys.
@@ -53,8 +59,37 @@ export function headingSections(doc: string): HeadingSection[] {
     const text = m.content.trim()
     const n = (seen.get(text) ?? 0) + 1
     seen.set(text, n)
-    heads.push({ idx: i, level: m.hashes.length, key: n === 1 ? text : `${text} ${n}` })
+    heads.push({ idx: i, level: m.hashes.length, text, key: n === 1 ? text : `${text} ${n}` })
   }
+  return heads
+}
+
+export interface OutlineHeading {
+  /** Offset of the heading line's start — what a jump scrolls to. */
+  from: number
+  level: number
+  text: string
+  key: string
+}
+
+/** Every heading, body-less ones included. `headingSections` drops those because there is nothing to
+ *  fold; an outline still has to list them, or two consecutive headings would show only the second. */
+export function headingOutline(doc: string): OutlineHeading[] {
+  const { lines, lineStarts } = splitWithOffsets(doc)
+  return scanHeadings(lines).map((h) => ({
+    from: lineStarts[h.idx],
+    level: h.level,
+    text: h.text,
+    key: h.key,
+  }))
+}
+
+/** Every heading's foldable section. A section reaching no body lines is dropped (nothing to fold),
+ *  but still consumes its ordinal so duplicate-text keys stay stable. */
+export function headingSections(doc: string): HeadingSection[] {
+  const lines = doc.split('\n')
+  const starts = lineOffsets(lines)
+  const heads = scanHeadings(lines)
 
   const out: HeadingSection[] = []
   for (let h = 0; h < heads.length; h++) {
@@ -260,6 +295,20 @@ function toggleFold(view: EditorView, s: HeadingSection): void {
     effects: foldEffect.of({ headingFrom: s.from, from: bodyStart, to: s.to, animate: true }),
   })
   if (caretInBody) view.contentDOM.blur()
+}
+
+/** Open every fold hiding `pos` — the innermost and each ancestor above it, since a heading can sit
+ *  several collapsed sections deep. Returns whether anything was opened: a caller travelling to `pos`
+ *  has to let the reveal land before it measures, because a folded section has no height to scroll to. */
+export function expandFoldsAt(view: EditorView, pos: number): boolean {
+  // An entry spans its heading's BODY, so a heading is opened by its own entry (matched on
+  // headingFrom) and by every ancestor entry whose body contains it.
+  const hiding = view.state
+    .field(foldField)
+    .filter((e) => e.headingFrom === pos || (pos >= e.from && pos <= e.to))
+  if (hiding.length === 0) return false
+  view.dispatch({ effects: hiding.map((e) => expandEffect.of(e.headingFrom)) })
+  return true
 }
 
 /** Toggle the fold of the heading whose line starts at `pos`. The chevron's own gesture and the

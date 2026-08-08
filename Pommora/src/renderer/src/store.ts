@@ -112,6 +112,18 @@ export type { SelectTarget }
 
 export type PreviewTarget = { id: string; path: string }
 
+/** The open page's CURRENT text. `pageDetail.body` is the load snapshot — autosave never updates it —
+ *  so the live editing buffer wins whenever it belongs to this same page. Every steady-state reader of
+ *  the open body goes through here; the outgoing-tab capture keys on `selection.path` instead, because
+ *  it deliberately runs while `pageDetail` is still the leaving page's. */
+export function openPageBody(
+  pageDetail: { path: string; body: string } | null,
+  liveBody: { path: string; body: string } | null,
+): string {
+  if (!pageDetail) return ''
+  return liveBody?.path === pageDetail.path ? liveBody.body : pageDetail.body
+}
+
 export interface TrailEntry {
   id: string
   path: string
