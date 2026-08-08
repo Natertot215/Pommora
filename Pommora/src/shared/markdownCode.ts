@@ -181,7 +181,22 @@ export function codeMask(text: string): (offset: number) => boolean {
   return (offset) => ranges.some(([a, b]) => offset >= a && offset < b)
 }
 
-/** Single-offset form, for callers holding one position rather than a run of matches. */
+/** Single-offset form, for callers holding one position rather than a run of matches. Fence pairing
+ *  has to start from the document's first line — a line cannot know it sits in a block without them —
+ *  but inline spans are a line-local question, so only the offset's own line is scanned for them.
+ *  Answers exactly what `codeMask` answers; a caller with a run of offsets still wants that instead. */
 export function isInsideCode(offset: number, text: string): boolean {
-  return codeMask(text)(offset)
+  if (offset < 0) return false
+  const lines = text.split('\n')
+  const fenced = fencedLineMask(lines)
+  for (let i = 0, start = 0; i < lines.length; i++) {
+    const next = start + lines[i].length + 1
+    if (offset < next) {
+      if (fenced[i]) return true
+      const rel = offset - start
+      return inlineSpans(lines[i]).some(([a, b]) => rel >= a && rel < b)
+    }
+    start = next
+  }
+  return false
 }

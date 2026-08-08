@@ -1,7 +1,7 @@
 // Pins for specific parser/editor bugs found during review — each case is a fixed break, kept
 // here so it can't quietly return. Grouped by the seam it guards.
 import { describe, it, expect } from 'vitest'
-import { isInsideCode } from '@shared/markdownCode'
+import { codeMask, isInsideCode } from '@shared/markdownCode'
 import { splitRow } from './Tables/codec'
 import { tokenize } from './tokens'
 import {
@@ -324,5 +324,41 @@ describe('the viewport slice opens where the block context is self-evident', () 
         .filter((k) => Number(k.split('@')[1]) >= from)
       expect(seen).toEqual(truth.filter((k) => Number(k.split('@')[1]) >= from))
     }
+  })
+})
+
+describe('isInsideCode answers exactly what codeMask answers, at every offset', () => {
+  // Every construct the two disagree about if the single-offset form stops being line-local:
+  // nested runs, tilde blocks, quoted fences, an unclosed opener, and a span left open at EOF.
+  const doc = [
+    'plain **bold** and `code` here',
+    '`````md',
+    '```js',
+    'const a = `inner`',
+    '```',
+    '`````',
+    '',
+    '> ```',
+    '> quoted code',
+    '> ```',
+    '~~~',
+    'tilde body with `span`',
+    '~~~',
+    'tail `closed` and `unclosed',
+  ].join('\n')
+
+  it('agrees offset for offset', () => {
+    const mask = codeMask(doc)
+    const disagreements: number[] = []
+    for (let o = 0; o <= doc.length; o++) if (isInsideCode(o, doc) !== mask(o)) disagreements.push(o)
+    expect(disagreements).toEqual([])
+  })
+
+  it('agrees on a CRLF body too', () => {
+    const crlf = doc.split('\n').join('\r\n')
+    const mask = codeMask(crlf)
+    const disagreements: number[] = []
+    for (let o = 0; o <= crlf.length; o++) if (isInsideCode(o, crlf) !== mask(o)) disagreements.push(o)
+    expect(disagreements).toEqual([])
   })
 })
