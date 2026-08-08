@@ -2,13 +2,19 @@
 
 ### Current Focus
 
-The active stretch is the PageMenu — the Settings dropdown's page scope, which until now resolved to an empty spacer. It carries the Page's identity header and a Properties leaf holding the Contexts and property values that Page fills, and Aliases is the leaf still to be specified. That work also settled how the dropdown family pops a row's context menu: the in-app picker is the default, and a native menu is reserved for a destructive pick.
+The active stretch is the page Outline — a toolbar dropdown listing a page's heading tree and travelling to a chosen heading, closed out and visually confirmed. It landed with the shared mechanisms beneath it corrected in place: the disclosure primitive's nested rows, the editor's heading scan, and the auto-pair gate. The interaction layer also gained its first animated scroll.
 
-What remains is hand verification of the menus that moved — the three converted to the in-app picker and the native Clear/Remove on a property row. None has been exercised by a real right-click, and a picker opened from inside a dropdown has to survive that dropdown's own dismiss.
+The PageMenu stretch before it is closed — the Settings dropdown's page scope, its Properties leaf, and the convergence of the dropdown family's row menus onto the in-app picker, with a native menu reserved for a destructive pick. Aliases remains the leaf still to be specified.
+
+What remains from it is hand verification of the menus that moved — the three converted to the in-app picker and the native Clear/Remove on a property row. None has been exercised by a real right-click, and a picker opened from inside a dropdown has to survive that dropdown's own dismiss.
 
 The MarkdownPM stretch behind it still owes its own hand checks: the embedded-pages verifications a headless driver can't honestly produce — the native menu picks, the real-pointer feel checks, one real ⌘Q mid-debounce, and the SurfacePM visual baseline. The local commit batch on `main` is unpushed until both are done.
 
 ### Recent Work
+
+#### The Page Outline (08-07)
+
+A page now carries its own table of contents: a toolbar dropdown, present only on a Page, listing its headings as a nested tree and travelling to whichever one is chosen — opening any collapsed section on the way, and seating the heading where the page's own inline title reads. The derivation shares the editor's heading scan rather than adding a second one, with the outline and the fold sections keeping their different rules about headings that carry no body. Three shared mechanisms were corrected underneath it, each latent until a consumer with no row icons and arbitrarily long labels arrived: the disclosure primitive's nested rows never truncated, its default-open state had no seam, and the auto-pair gate read only behind the caret. The interaction layer gained its first animated scroll, a distance-proportional glide that re-reads its destination each frame. → [[PM-001]]
 
 #### The Fence Owns Its Length (08-07)
 
@@ -20,13 +26,13 @@ A Page's Settings dropdown rendered nothing: `viewSettingsScope` had always reso
 
 The same stretch settled how the Settings dropdown pops a row's context menu, which had two idioms answering one gesture. The in-app picker became the default on two grounds: it costs no round-trip through the file-owning process, and it cannot collide — that process pops its own editor menu over any editable target and the renderer cannot suppress it, which is why the Space header's menu had been carving out a dead zone over its own title. The Space header's Change Color, the ViewSettings ⋮, and the per-view row menu converted, and their four-layer stacks were deleted with them. A destructive pick stays native, which is where the property row's Clear/Remove lives. `PickerMenu` gained a point anchor in the process, retiring two hand-rolled marker spans that had been positioned inside a transformed track and were therefore never in viewport space at all.
 
-Two defects surfaced underneath. A Page's inline title renamed without a visible caret because the app hides every native caret and repaints its own, and that overlay's out-of-view guard required the drawn bar's top edge to sit inside the field's box — a line-height tighter than the font's own content area seats it a fraction above, so only the larger page title crossed the tolerance; the test now intersects rather than contains. Separately, every drilled pane showed a hairline down its leading edge: the slider shifts its track by a measured width while the settled slot sits at its true one, so the neighbour showed through. A settled off-screen slot no longer paints. → [[PagesPM]] · [[ViewsPM]] · [[InteractionPM]] · HistoryPM.md
+Two defects surfaced underneath. A Page's inline title renamed without a visible caret because the app hides every native caret and repaints its own, and that overlay's out-of-view guard required the drawn bar's top edge to sit inside the field's box — a line-height tighter than the font's own content area seats it a fraction above, so only the larger page title crossed the tolerance; the test now intersects rather than contains. Separately, every drilled pane showed a hairline down its leading edge: the slider shifts its track by a measured width while the settled slot sits at its true one, so the neighbour showed through. A settled off-screen slot no longer paints. → [[PagesPM]] · [[ViewsPM]] · [[InteractionPM]]
 
 **Deferred:** Aliases as its own leaf + the three menus still native (two for their confirm, one for its submenu) + how wide a value may run in the properties leaf.
 
 #### Hover Previews (08-05)
 
-The connection hover card received its body: resting on a resolved `[[Connection]]` opens a compact read-only preview of the target page through the shared embed framework, without its banner or inline title. The card anchors to the live link with the pane's beak following it, resizes from its right edge, bottom edge, and corner to a single per-machine remembered size, and holds glance-only interaction — content scrolls, headings fold on click, and the caret never enters. A Settings ▸ Pages slider sets how long the card lingers after hover-off, and resting table cells raise the same card on the shared intent delay. The build also consolidated the hover lifecycle: one card exists app-wide, a click consumes a pending intent, and navigation closes an open card. → [[MarkdownPM]] §II. Hover Previews · HistoryPM.md
+The connection hover card received its body: resting on a resolved `[[Connection]]` opens a compact read-only preview of the target page through the shared embed framework, without its banner or inline title. The card anchors to the live link with the pane's beak following it, resizes from its right edge, bottom edge, and corner to a single per-machine remembered size, and holds glance-only interaction — content scrolls, headings fold on click, and the caret never enters. A Settings ▸ Pages slider sets how long the card lingers after hover-off, and resting table cells raise the same card on the shared intent delay. The build also consolidated the hover lifecycle: one card exists app-wide, a click consumes a pending intent, and navigation closes an open card. → [[MarkdownPM]] §II. Hover Previews
 
 #### MarkdownPM Tweaks (08-04)
 
@@ -171,4 +177,4 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff 
 - The "File" property icon gets clipped by its vertical row padding on the ViewPane.
 - The link-rename field shows a leading empty space — a visual inset, not a stored character (deprioritized).
 - The Set-Card drag flash (drop snaps back, then jumps on reload) — the optimistic moveSet order patch is in; wants one live drag before this line drops. 
-- MarkdownPM code-syntax doesn't apply the same pairing considerations and conditional-application that quotes, parentheses, and brackets do; it's the mechanism that *doesn't* automatically pair them when they're right next to a character. 
+ 

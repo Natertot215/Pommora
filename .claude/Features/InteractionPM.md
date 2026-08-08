@@ -46,7 +46,7 @@ A single registered `@property --io` (`<number>`, 0 = closed → 1 = open, `styl
 
 The **content-inset reflow does not ride the progress.** `--content-inset-right` is a plain, unregistered custom property that flips between two values, and each surface reading it — the detail body, the editor, the subfield, the banner — runs its own padding transition and re-declares its own resize suppression. They land together because they share the base token, not because one variable carries them. Whether the insets should be derived from `--io` or stay independent is open.
 
-**Why the glass voids as a two-layer pill, not a fade:** liquid glass can't be CSS-faded in place (its `backdrop-filter` displacement is a generated SVG-filter id CSS can't interpolate), so `Toolbar/ToolbarTrio` is a fading glass layer behind a solid bare-button layer. Full rationale → [[DesignPM]] + HistoryPM.
+**Why the glass voids as a two-layer pill, not a fade:** liquid glass can't be CSS-faded in place (its `backdrop-filter` displacement is a generated SVG-filter id CSS can't interpolate), so `Toolbar/ToolbarTrio` is a fading glass layer behind a solid bare-button layer. Full rationale → [[DesignPM]].
 
 ### Reveal — The Expand/Collapse Primitive
 
@@ -69,6 +69,14 @@ The slider only slides and resizes — it never caps, scrolls, or pins. A slot n
 ### Drag Motion
 
 Owned by the in-house engine — see [[PommoraDND]]. In brief: a live "feel" (duration + easing) shared across every surface via `--ix-dur`/`--ix-ease` (presets Glide / Smooth-default / Snappy, `interactions/feel.tsx`); **decide-then-animate** (the accept/reject is resolved first, then one transition settles the item, committing on `transitionend`); and the app-wide **auto-scroll** primitive — one token-driven, edge-proximity-ramped, dampened rAF loop that every drag feeds (see [[PommoraDND]] §II. Autoscroll). The **sidebar** uses a bespoke insertion-line treatment (muted row in place + a portal-rendered ghost), and the **editor block-drag** has its own chrome (in-place shade decoration + a `position:fixed` accent line/dot, `editor/blockDrag.ts` + `dragChrome.ts`) — all positioned 1:1 with the pointer, not timed.
+
+### Scroll Glide
+
+Travel to a known destination, for a surface sending the reader somewhere in a document they're already in — the page Outline's jump is its first caller (→ [[PagesPM]]). It shares its module with the drag auto-scroll and reuses that primitive's scroller resolution and one-owner-at-a-time rule, but not its motion: the drag loop is open-ended and takes its speed from the pointer's distance to a container edge, which is a different animation rather than a parameter of this one. A drag beginning mid-travel claims the scroller and the glide stands down.
+
+The destination is **re-read every frame, never resolved once**. A host that renders lazily only estimates the height of what it hasn't drawn, so the true position sharpens as the travel reveals it; easing toward a live measurement absorbs that drift into the motion, while landing on the first estimate and reconciling afterwards puts a visible jump at the end of an otherwise smooth move. The beat is fixed from the opening distance, so a destination that shifts underfoot changes where the travel lands but never how long it takes.
+
+The beat is **proportional to the distance and clamped at both ends**, so near and far jumps move the document at one apparent speed while a short hop still reads as movement and crossing a long page never becomes a wait. The curve is the `out` easing token, mirrored as a function because a CSS cubic-bezier cannot drive a `scrollTop` — the two are stated separately and change together. Any real scroll input cancels it: a travel that keeps pulling while the reader scrolls away fights them, which the drag loop never has to consider because the pointer is held. Reduced-motion arrives immediately.
 
 ### Floating Windows
 
