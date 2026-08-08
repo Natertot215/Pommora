@@ -1,8 +1,7 @@
 // Every writer of a container's sidecar rewrites that file WHOLE — views, within-folder orders,
 // the open_in/view_button config, property assignments, the icon/banner patch — so they all have
-// to serialize on one key: the sidecar's own path. They used to key off three different things
-// (the file, the bare folder, a hand-built string) and one took no lock at all, which meant a
-// read-merge-write racing a sibling silently dropped whatever that sibling had just set.
+// to serialize on one key: the sidecar's own path. A read-merge-write that takes any other key
+// races its siblings and silently drops whatever they just set.
 //
 // The page half is the same law across a path change. A relocate takes the SOURCE page's lock, so
 // a body write already in flight lands first, and one queued behind the move finds its path gone

@@ -4,16 +4,9 @@
 // clobber other state keys.
 
 import { mkdir } from 'node:fs/promises'
-import { join } from 'node:path'
 import type { z } from 'zod'
 import { rmwJsonStrict, pathExists } from '../io/atomicWrite'
-import {
-  nexusDir,
-  nexusConfig,
-  NEXUS_CONFIG_FILES,
-  SIDECAR_FILENAME,
-  type SidecarKind,
-} from '../paths'
+import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES, sidecarPath, type SidecarKind } from '../paths'
 import { updateFolderSidecar } from './folderEntity'
 import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
 import { ok, type Result } from '@shared/result'
@@ -101,7 +94,7 @@ export async function setChildOrder(
   ids: string[],
 ): Promise<Result<null>> {
   for (const { kind, schema } of CONTAINER_SIDECARS) {
-    if (await pathExists(join(absFolder, SIDECAR_FILENAME[kind]))) {
+    if (await pathExists(sidecarPath(absFolder, kind))) {
       const r = await setContainerOrder(absFolder, kind, schema, key, ids)
       if (!r.ok) return r
       return ok(null)

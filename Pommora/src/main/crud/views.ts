@@ -23,7 +23,7 @@ const viewsOf = (sidecar: { views?: SavedView[] }): SavedView[] => sidecar.views
 
 /** Upsert a view by id. A `view_default` sentinel id is swapped for a real `view_<ulid>` and the
  *  assigned id is returned. Other views + foreign keys ride through untouched. */
-export async function saveView(
+export function saveView(
   folder: string,
   kind: ViewContainerKind,
   view: SavedView,
@@ -43,7 +43,7 @@ export async function saveView(
 }
 
 /** Reorder views to match `orderedIds`; any views not named ride along at the end (defensive). */
-export async function reorderViews(
+export function reorderViews(
   folder: string,
   kind: ViewContainerKind,
   orderedIds: string[],
@@ -64,7 +64,7 @@ export async function reorderViews(
 }
 
 /** Delete a view by id; refuses to remove the last one (a container always keeps ≥1 view). */
-export async function deleteView(
+export function deleteView(
   folder: string,
   kind: ViewContainerKind,
   viewId: string,

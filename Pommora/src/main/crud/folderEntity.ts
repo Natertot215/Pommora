@@ -70,7 +70,7 @@ export async function moveFolderEntity(
 
 /** Read-modify-write a folder entity's sidecar, merging `patch` over the current
  *  (foreign keys retained). Returns the written sidecar. */
-export async function updateFolderSidecar<S extends z.ZodType>(
+export function updateFolderSidecar<S extends z.ZodType>(
   absFolder: string,
   kind: SidecarKind,
   schema: S,

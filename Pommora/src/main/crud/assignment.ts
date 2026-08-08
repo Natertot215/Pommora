@@ -53,8 +53,8 @@ export async function assignInner(
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<null>> {
-  // The restore stays OUTSIDE the sidecar lock: it rewrites pages, not the sidecar, and it is
-  // long enough that holding the lock across it would stall every sibling sidecar write.
+  // The restore stays OUTSIDE the sidecar lock: it walks and rewrites every member page, long
+  // enough that holding the lock across it would stall every sibling sidecar write.
   const appended = await withSidecarLock(collectionFolder, 'collection', async () => {
     const r = await read(collectionFolder)
     if (!r) return fail('not-found', 'Collection not found.')
@@ -67,7 +67,7 @@ export async function assignInner(
   return restoreCachedValues(root, collectionFolder, propertyId)
 }
 
-async function reorderInner(
+function reorderInner(
   collectionFolder: string,
   propertyId: string,
   toIndex: number,
