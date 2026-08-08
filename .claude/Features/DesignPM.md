@@ -73,6 +73,8 @@ The reusable pieces mirror the Figma library. The shape they're built toward is 
 
 **The ActionBand** (`Detail/ActionBand.css`) is the shared home for toolbar-row affordances any surface mounts — **ViewSegments** first (the view-switcher segment chassis: hairline border whose stroke is the one place a view's chip color lands, active lift on the selected fill, create/delete slide) plus the hover-revealed settings button, whose reveal *scope* each host binds itself while the chrome stays shared. A segment's collapsible title rides Segmented-Controls' `labelSlot` — the 1fr→0fr grid morph on the `titleReveal` timing is written exactly once, and the toolbar view button, the embed segments, and the embed's dropdown-mode button all mount that same slot.
 
+**The dropdown shell** splits in two. `MenuSurface` is the pane itself — the notched glass, its open and retract beats — and stays free of state, because the toolbar trio shares a single dismiss region across two panes and owns that state itself. `MenuDropdown` is the shell around a trigger: it holds the open state, the outside-dismiss, the retract beat, and the anchored surface, and optionally bounds the pane's growth so its right edge keeps a stated gap from the window. It carries no styling of its own, so surface-specific geometry stays with the surface that means it.
+
 **The disclosure step** is one literal: `DISCLOSURE_INDENT` in the size tokens, bridged to `--disclosure-indent`. Every hierarchy — the sidebar tree, table group nesting, pane disclosure runs and their rail — derives its per-level inset from it, so a new disclosing surface reads the token rather than minting its own step.
 
 ### Pending
