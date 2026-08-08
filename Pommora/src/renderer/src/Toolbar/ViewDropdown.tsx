@@ -1,18 +1,11 @@
-import { useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
-import {
-  SegmentedButton,
-  type Segment,
-} from '@renderer/design-system/components/Segmented-Controls'
-import { useDismiss } from '@renderer/design-system/components/useDismiss'
-import { MenuSurface } from '@renderer/design-system/components/menu'
+import { MenuDropdown } from '@renderer/design-system/components/menu'
 import { iconNameOr } from '@renderer/design-system/symbols'
-import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import { useSession } from '../store'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../Detail/Scope'
 import { useActiveView } from '../Detail/Views/useActiveView'
 import { ViewPane } from './ViewPane'
-import * as s from './viewDropdown.css'
+import * as s from './toolbarDropdown.css'
 
 /** Renders only on a Collection / depth-1 Set (sub-Sets don't own saved views). The `view_style`
  *  branch is a seam — Toolbar mode reuses this dropdown button until ViewBar lands. */
@@ -32,10 +25,6 @@ export function ViewDropdown(): React.JSX.Element | null {
 function ViewDropdownInner({ node }: { node: CollectionNode | SetNode }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
   const load = useSession((st) => st.load)
-  const [open, setOpen] = useState(false)
-  const wrapRef = useRef<HTMLDivElement>(null)
-  useDismiss(wrapRef, () => setOpen(false), open)
-  const paneP = useExitPresence(open)
   const labeled = (node.viewButton ?? 'icon') === 'labeled'
 
   const schema =
@@ -61,31 +50,21 @@ function ViewDropdownInner({ node }: { node: CollectionNode | SetNode }): React.
     await load()
   }
 
-  const segment: Segment = {
-    icon: iconNameOr(view.icon, 'table'),
-    title: 'Views',
-    active: open,
-    onClick: () => setOpen((o) => !o),
-  }
-
   return (
-    <div ref={wrapRef} className={s.wrapper}>
-      {/* display:contents — a right-click on the open pane (a sibling below) must never reach this menu. */}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-      <span className={s.buttonSlot} onContextMenu={(e) => void onContextMenu(e)}>
-        <SegmentedButton
-          segments={[{ ...segment, label: view.name }]}
-          className={s.button}
-          labelCollapsed={!labeled}
-        />
-      </span>
-      {paneP.mounted && (
-        <div className={s.anchor}>
-          <MenuSurface closing={paneP.closing}>
-            <ViewPane node={node} schema={schema} onClose={() => setOpen(false)} />
-          </MenuSurface>
-        </div>
-      )}
-    </div>
+    <MenuDropdown
+      icon={iconNameOr(view.icon, 'table')}
+      title="Views"
+      label={view.name}
+      labelCollapsed={!labeled}
+      onContextMenu={(e) => void onContextMenu(e)}
+      classNames={{
+        wrapper: s.wrapper,
+        button: s.button,
+        buttonSlot: s.buttonSlot,
+        anchor: s.anchor,
+      }}
+    >
+      {({ close }) => <ViewPane node={node} schema={schema} onClose={close} />}
+    </MenuDropdown>
   )
 }
