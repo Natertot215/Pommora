@@ -1,24 +1,18 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
-import {
-  SegmentedButton,
-  type Segment,
-} from '@renderer/design-system/components/Segmented-Controls'
-import { useDismiss } from '@renderer/design-system/components/useDismiss'
+import { useMemo } from 'react'
 import {
   DisclosureRow,
   MenuCaption,
+  MenuDropdown,
   MenuScrollFrame,
-  MenuSurface,
   itemEmphasized,
   useDisclosureSet,
 } from '@renderer/design-system/components/menu'
-import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import { openPageBody, useSession } from '../store'
 import { viewSettingsScope } from '../Detail/ViewSettingsScope'
 import { revealPageOffset } from '../Detail/pageEditor'
 import { headingOutline } from '../MarkdownPM/editor/folding'
 import { outlineTree, type OutlineNode } from './outlineTree'
-import * as s from './viewDropdown.css'
+import * as s from './toolbarDropdown.css'
 import * as o from './outlineDropdown.css'
 
 // KNOB — the gap the pane keeps from the window's right edge at full width.
@@ -28,58 +22,18 @@ const EDGE_INSET = 10
  *  container or a Page, so this and `ViewDropdown` are never on screen together. */
 export function OutlineDropdown(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
-  // Gate ABOVE the state, so leaving the Page unmounts it. Returning null below the hooks would keep
-  // `open` alive with no wrapper to dismiss against — the pane would reappear, unasked, on return.
-  return viewSettingsScope(selection) === 'page' ? <OutlineDropdownInner /> : null
-}
-
-function OutlineDropdownInner(): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  const wrapRef = useRef<HTMLDivElement>(null)
-  useDismiss(wrapRef, () => setOpen(false), open)
-  const paneP = useExitPresence(open)
-  // How wide the pane may grow before its right edge leaves the window. It is centred on the button,
-  // so the room to that button's right counts twice. Measured from a live rect rather than offsetWidth
-  // because the comparison is against the window: the cluster rides a translate, and the on-screen
-  // position is precisely what that transform contributes.
-  const anchorRef = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => {
-    if (!paneP.mounted) return
-    // Written straight to the node, never held as state: nothing renders from it, and a resize fires
-    // per frame while the window is dragged — routing it through React would re-render every row of
-    // the outline on each one. Refs are read inside the callback, never captured: a detached node
-    // measures all zeros, which reads as a successful measurement and silently uncaps the pane.
-    const measure = (): void => {
-      const wrap = wrapRef.current
-      const anchor = anchorRef.current
-      if (!wrap || !anchor) return
-      const r = wrap.getBoundingClientRect()
-      const max = 2 * Math.max(0, window.innerWidth - EDGE_INSET - (r.left + r.width / 2))
-      anchor.style.setProperty('--outline-max', `${max}px`)
-    }
-    measure()
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [paneP.mounted])
-
-  const segment: Segment = {
-    icon: 'list-tree',
-    title: 'Outline',
-    active: open,
-    onClick: () => setOpen((v) => !v),
-  }
-
+  // Gate ABOVE the dropdown, so leaving the Page unmounts it. Rendering null below the shell's hooks
+  // would keep `open` alive with no wrapper to dismiss against — the pane would reappear, unasked.
+  if (viewSettingsScope(selection) !== 'page') return null
   return (
-    <div ref={wrapRef} className={s.wrapper}>
-      <SegmentedButton segments={[segment]} className={s.button} labelCollapsed />
-      {paneP.mounted && (
-        <div ref={anchorRef} className={s.anchor}>
-          <MenuSurface closing={paneP.closing} className={o.pane}>
-            <OutlinePane />
-          </MenuSurface>
-        </div>
-      )}
-    </div>
+    <MenuDropdown
+      icon="list-tree"
+      title="Outline"
+      edgeInset={EDGE_INSET}
+      classNames={{ wrapper: s.wrapper, button: s.button, anchor: s.anchor, pane: o.pane }}
+    >
+      {() => <OutlinePane />}
+    </MenuDropdown>
   )
 }
 

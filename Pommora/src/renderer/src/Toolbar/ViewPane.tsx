@@ -22,7 +22,7 @@ import { RenamableLabel } from '../Components/RenamableLabel'
 import { IconPicker } from '../Components/IconPicker'
 import { useSession } from '../store'
 import { optionRing } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
-import * as vd from './viewDropdown.css'
+import * as vd from './toolbarDropdown.css'
 
 // Width/height floor — a sparse list reserves the square (footer pinned to bottom); rows fill
 // top-down and only grow the pane past it.
