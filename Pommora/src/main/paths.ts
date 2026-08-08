@@ -18,6 +18,12 @@ export const SIDECAR_FILENAME: Record<SidecarKind, string> = {
   eventConfig: '_eventconfig.json',
 }
 
+/** A folder entity's sidecar file. Every read-modify-write of that file serializes on this
+ *  exact string, so it is built here rather than spelled out at a call site. */
+export function sidecarPath(absFolder: string, kind: SidecarKind): string {
+  return join(absFolder, SIDECAR_FILENAME[kind])
+}
+
 export function nexusDir(root: string): string {
   return join(root, '.nexus')
 }

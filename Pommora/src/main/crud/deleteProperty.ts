@@ -15,7 +15,7 @@ import { removeFromRegistry } from './registryProperty'
 import { allCollectionFolders } from './assignment'
 import { serializeSchemaOp } from './schemaChain'
 import { sweepGovernedRoots } from './governedSweep'
-import { readSidecar } from '../sidecarIO'
+import { readSidecar, withSidecarLock } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
 import { SIDECAR_FILENAME } from '../paths'
@@ -98,23 +98,26 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
   )
 
   for (const folder of folders) {
-    // Unassign + purge the Remove-cache on the collection sidecar (JSON, never raced by a
-    // cell-write). The .trash snapshot above is the recovery net, so this needn't be atomic.
-    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
-    if (!sidecar) continue
-    const assigned = (sidecar.properties as string[] | undefined) ?? []
-    const cacheAll = isPlainObject(sidecar.property_cache) ? sidecar.property_cache : undefined
-    const hadCache = cacheAll !== undefined && propertyId in cacheAll
-    if (!assigned.includes(propertyId) && !hadCache) continue
-    const next: Record<string, unknown> = {
-      ...sidecar,
-      properties: assigned.filter((id) => id !== propertyId),
-      modified_at: nowIso(),
-    }
-    // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE,
-    // and assign only copies keys that are present.
-    const scrubbed = hadCache ? withoutCacheBlock(next, propertyId) : next
-    await writeJson(join(folder, SIDECAR_FILENAME.collection), scrubbed)
+    // Unassign + purge the Remove-cache on the collection sidecar, under that sidecar's lock so
+    // a concurrent view/order/icon write can't be reverted by this read-merge-write. The .trash
+    // snapshot above is the recovery net, so this needn't be atomic.
+    await withSidecarLock(folder, 'collection', async () => {
+      const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
+      if (!sidecar) return
+      const assigned = (sidecar.properties as string[] | undefined) ?? []
+      const cacheAll = isPlainObject(sidecar.property_cache) ? sidecar.property_cache : undefined
+      const hadCache = cacheAll !== undefined && propertyId in cacheAll
+      if (!assigned.includes(propertyId) && !hadCache) return
+      const next: Record<string, unknown> = {
+        ...sidecar,
+        properties: assigned.filter((id) => id !== propertyId),
+        modified_at: nowIso(),
+      }
+      // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE,
+      // and assign only copies keys that are present.
+      const scrubbed = hadCache ? withoutCacheBlock(next, propertyId) : next
+      await writeJson(join(folder, SIDECAR_FILENAME.collection), scrubbed)
+    })
   }
   return removeFromRegistry(root, propertyId)
 }
