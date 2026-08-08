@@ -6,7 +6,7 @@
 
 ### Vision
 
-A personal management platform combining Obsidian's customization and local-first ethos with Notion's database and view capabilities. [[Pommora]] is a simpler Notion that's also a more capable Obsidian — without the trade-offs that push people to bounce between the two.
+A personal management platform combining Obsidian's customization and local-first ethos with Notion's database and view capabilities. Pommora is a simpler Notion that's also a more capable Obsidian — without the trade-offs that push people to bounce between the two.
 
 Pages are Markdown documents that live inside **Page Collections** — folder-based database entities that carry a shared property schema and saved views. A Collection nests **Page Sets** to any depth: schema-less organizing sub-folders that inherit the Collection's schema. **Contexts** are free-standing, user-defined groups of **Spaces** — the things content tags and gathers under (the registry seeds Areas, Topics, and Projects as ordinary entries). The whole product is a folder of plain files the user owns outright.
 
@@ -18,7 +18,7 @@ Pages are Markdown documents that live inside **Page Collections** — folder-ba
 
 - Obsidian shines until you need real task management or cross-page coordination. Notion shines until you hit an interface decision you can't change.
 
-Pommora's bet: a Markdown-canonical foundation with a fast property and query engine, and a clean separation between content (Pages), structure (Page Collections + Sets), and interface (Contexts) — delivering Notion's most-loved features without giving up Obsidian's open, hackable, local-first nature.
+Pommora's bet: a Markdown-canonical foundation with a fast property and query engine, and a clean separation between content (Pages), structure (Page Collections + Sets), and interface (Contexts) — delivering Notion's most-loved features without giving up Obsidian's open and local-first nature.
 
 ### Audience and Posture
 
@@ -36,21 +36,21 @@ Two layers, PARA-aligned. The organization layer holds categorical anchors; the 
 
 User-defined, **free-standing** Context groups holding Spaces — the registry seeds three as ordinary, fully manageable entries. No Context contains, parents, or is restricted to another — a Project is not "inside" a Topic; a Topic does not belong to an Area. Each operational entity tags whichever Spaces fit, independently.
 
-| Seeded Context | Role |
-|---|---|
-| Areas | Broad life domains — Personal, Academics, Work |
-| Topics | Subject areas — Productivity, Side Projects, Reading List |
-| Projects | Specifics — CS 161, Pommora, "Atomic Habits" |
+| Seeded Context | Role                                                      |
+| -------------- | --------------------------------------------------------- |
+| Areas          | Broad life domains — Personal, Academics, Work            |
+| Topics         | Subject areas — Productivity, Side Projects, Reading List |
+| Projects       | Specifics — CS 161, Pommora, "Atomic Habits"              |
 
 #### Operational layer
 
-| Entity | Role | Default UI label |
-|---|---|---|
-| **Page Collection** | Schema-bearing top container for Pages | "Collection" |
-| **Page Set** | Recursive sub-folder inside a Collection (any depth); inherits the schema. Depth-1 carries its own views; deeper is plain | "Set" / "Sub-Set" |
-| **Page** | Markdown document — prose plus frontmatter | "Page" |
-| **Task** | Reminder-shaped; its field vocabulary is the Agenda work's to settle | "Task" |
-| **Event** | Calendar-event-shaped; same | "Event" |
+| Entity              | Role                                                                                                                      | Default UI label  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| **Page Collection** | Schema-bearing top container for Pages                                                                                    | "Collection"      |
+| **Page Set**        | Recursive sub-folder inside a Collection (any depth); inherits the schema. Depth-1 carries its own views; deeper is plain | "Set" / "Sub-Set" |
+| **Page**            | Markdown document — prose plus frontmatter                                                                                | "Page"            |
+| **Task**            | Reminder-shaped; its field vocabulary is the Agenda work's to settle                                                      | "Task"            |
+| **Event**           | Calendar-event-shaped; same                                                                                               | "Event"           |
 
 Tasks and Events sit under the **Agenda** parent schema. The Page Collection's property schema applies to every Page inside it at any depth — all Sets inherit it whole.
 
@@ -61,7 +61,7 @@ Tasks and Events sit under the **Agenda** parent schema. The Page Collection's p
 
 #### Identity and linking
 
-- **`id`** — a stable ULID assigned at creation, never changing. A content file stores it under a key that names its kind (`PageID` / `TaskID` / `EventID`), which is also how a file placed in the wrong folder is recognised and left alone. No on-disk reference carries an id. A body connection is a title, a Context link is a title, and a property value sits under its property's name — each resolved at read time, each held correct across a rename by a sweep over the files that hold it.
+- **`id`** — a stable ULID assigned at creation, never changing. A content file stores it under a key that names its kind (`PageID` / `TaskID` / `EventID`), which is also how a file placed in the wrong folder is recognized and left alone. A body connection is a title, a Context link is a title, and a property value sits under its property's name — each resolved at read time, each held correct across a rename by a sweep over the files that hold it.
 - **Title** — the display name, carried as the filename (minus extension), freely renameable. Renames are filesystem renames; in-memory references resolve to the current title at render time. Within a container, a colliding Page create auto-disambiguates and a rename is rejected. Titles aren't unique Nexus-wide — a connection to a title shared by two Pages resolves as ambiguous.
 
 Operational entities tag Spaces through parenthesized Context keys — `(Projects):` over a block sequence of bare Space titles at the frontmatter root (or, for a Space, its sidecar root) — the **only** relation-type connection. Page-to-Page links are body `[[Title]]` connections. Full model and the linking catalog → `Features/StructurePM.md` plus the per-entity docs.
@@ -84,7 +84,7 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 2. **Cloud-sync-ready and cross-nexus queryable.** Collections aren't isolated silos — property definitions live nexus-wide, so one shared property id means the same thing in every Collection that assigns it and a single query matches across all of them; any Page or Context can query, link, or embed any Collection's contents regardless of where it sits on disk. The on-disk model maps cleanly onto a cloud database, so sync arrives later as an additive translation rather than a rewrite. A Nexus placed in iCloud Drive, Dropbox, or any synced folder already gets device-to-device sync for free.
 
-3. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read the content, and understand the context of the user's Nexus (Pages, schemas, Areas, relations, properties) straight from plain files. The bar is convention-aware, not instant to an outsider: a `[[wikilink]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob. The device-local database holds per-machine chrome, and no content.
+3. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read the content, and understand the context of the user's Nexus (Pages, schemas, Contexts, properties) straight from plain files. The bar is convention-aware, not instant to an outsider: a `[[wikilink]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob. The device-local database holds per-machine chrome, and no content.
 
 #### Storage Philosophy
 
@@ -94,13 +94,13 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault leaves notes byte-identical until the user edits them.
 
-**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present — not a hard-locked decision, and open to reconsideration. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from, so the layout itself records where an item lived; no surface browses or restores it, which makes putting one back a manual move.
+**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present — not a hard-locked decision, and open to reconsideration. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from, so the layout itself records where an item lived; no surface browses or restores it yet, which makes putting one back a manual move.
 
 Full on-disk spec → `Features/ArchitecturePM.md`.
 
 #### Pages
 
-A Page is a Markdown document — one continuous stream, not a stack of blocks. The filename is the title (there is no separate title field), and the parent Page Collection is implied by location. Pages conform to their Collection's schema; values live in YAML frontmatter, each under its property's own name.
+A Page is a Markdown document — one continuous stream, not a stack of blocks. The filename *is* the title, and the parent Page Collection is implied by location. Pages conform to their Collection's schema, and its values live in YAML frontmatter, each under their property's own name.
 
 Pages support everything in standard Markdown — paragraphs, headings, bulleted / numbered / task lists, fenced and inline code, images, GFM tables, blockquotes, and horizontal rules — all of which round-trip natively to any external tool. **Headings fold**, with the fold state held per-machine in the database rather than the portable `.md`. On top of that, Pages support two Pommora rendering directives, each degrading to plain Markdown for external tools:
 
@@ -125,7 +125,7 @@ A Context link is a **dual surface**: an operational entity tags a Space by hold
 
 #### Agenda (Tasks + Events)
 
-The calendar layer, two peer kinds, each in its own singleton folder that the nexus registers by the config sidecar's id — a config it does not record is inert:
+The calendar layer, two peer kinds, each in its own singleton folder that the nexus registers by the config sidecar's ID — a config it does not record is inert:
 
 - **Tasks** (`.md`, `TaskID`) — reminder-shaped.
 - **Events** (`.md`, `EventID`) — calendar-event-shaped.
@@ -140,7 +140,7 @@ Property **definitions** live in one nexus-wide registry (`.nexus/properties.jso
 
 - **Number**, **Checkbox**, **Date** (date-only or with-time), **Select**, **Multi-select**, **Status**, **URL**, **Context** (registry-minted, one per Context), **Last Edited Time** (derived), and **File / Attachment**.
 
-There is no free-form text type — the filename is the title, and text-shaped values use creatable Select options. **Status** groups are an open set — seeded with three whose completion semantics drive calendar compatibility — with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, never typed inline. Values are bare — a Status stores its label, a Number a number, a Date a timestamp — because the key already says which property the value belongs to. Context values are parenthesized title keys at the entity root over bare Space titles. Full catalog → `Features/PropertiesPM.md`.
+There is no free-form text type yet — the filename is the title, and text-shaped values use creatable Select options. **Status** groups are an open set — seeded with three whose completion semantics drive calendar compatibility — with user-editable options inside each. There are no user-creatable relation properties — the Context link is the sole relation — and option lists are managed through the schema editor, not typed inline. Values are bare — a Status stores its label, a Number a number, a Date a timestamp — because the key already says which property the value belongs to. Context values are parenthesized title keys at the entity root over bare Space titles. Full catalog → `Features/PropertiesPM.md`.
 
 #### Views
 
