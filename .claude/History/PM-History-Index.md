@@ -1,6 +1,7 @@
 ### Pommora History Index
 | Date       | Document   | Description                                                                                                                                                                                                                                                                                                      |
 | ---------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 08-08-2026 | [[PM-003]] | Fence pairing gained run-length identity and moved to one shared pass its four consumers read, the three toolbar dropdowns collapsed onto a single shell, and two menu constants stopped claiming a reach they never had. |
 | 08-08-2026 | [[PM-002]] | The editor's code-position test stopped scanning the whole document to answer about one offset, and the tokenizer and table scan moved to a single shared mask; measured in the running app rather than inferred. |
 | 08-07-2026 | [[PM-001]] | Full implementation of the page Outline — a toolbar dropdown listing a page's heading tree and traveling to a chosen heading — with the shared disclosure, heading-scan, and MarkdownPM auto-pair mechanisms corrected, scroll-glide primitive added to the interaction layer, and the viewport tokenizer fixed. |
 
