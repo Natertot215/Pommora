@@ -1,0 +1,103 @@
+// Every writer of a container's sidecar rewrites that file WHOLE — views, within-folder orders,
+// the open_in/view_button config, property assignments, the icon/banner patch — so they all have
+// to serialize on one key: the sidecar's own path. They used to key off three different things
+// (the file, the bare folder, a hand-built string) and one took no lock at all, which meant a
+// read-merge-write racing a sibling silently dropped whatever that sibling had just set.
+//
+// The page half is the same law across a path change. A relocate takes the SOURCE page's lock, so
+// a body write already in flight lands first, and one queued behind the move finds its path gone
+// and fails — rather than re-creating the vacated file around its own stale content and leaving a
+// ghost page beside the renamed one.
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { mkdtemp, rm, readdir } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import type { SavedView } from '@shared/views'
+import { createFolderEntity } from './folderEntity'
+import { createPage, updatePageBody, renamePage } from './page'
+import { setChildOrder } from './reorder'
+import { saveView } from './views'
+import { setContainerConfig } from './containerConfig'
+import { readSidecar } from '../sidecarIO'
+import { pageCollectionSidecar } from '@shared/schemas'
+
+const view = (id: string): SavedView => ({
+  id,
+  name: 'V',
+  type: 'table',
+  property_order: [],
+  hidden_properties: [],
+})
+
+let root: string
+let folder: string
+beforeEach(async () => {
+  root = await mkdtemp(join(tmpdir(), 'pom-sidecar-race-'))
+  const c = await createFolderEntity(root, 'collection', 'Notes')
+  if (!c.ok) throw new Error('setup failed')
+  folder = c.value.path
+})
+afterEach(async () => {
+  await rm(root, { recursive: true, force: true })
+})
+
+describe('concurrent sidecar writers', () => {
+  it('an order write and a view save both survive each other', async () => {
+    await Promise.all([
+      setChildOrder(folder, 'page_order', ['p1', 'p2']),
+      saveView(folder, 'collection', view('view_1')),
+    ])
+    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
+    expect(sidecar?.page_order).toEqual(['p1', 'p2'])
+    expect((sidecar?.views as SavedView[] | undefined)?.map((v) => v.id)).toEqual(['view_1'])
+  })
+
+  it('three different writers land together without dropping a key', async () => {
+    await Promise.all([
+      setChildOrder(folder, 'set_order', ['s1']),
+      saveView(folder, 'collection', view('view_1')),
+      setContainerConfig(folder, 'collection', { view_style: 'toolbar' }),
+    ])
+    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
+    expect(sidecar?.set_order).toEqual(['s1'])
+    expect((sidecar?.views as SavedView[] | undefined)?.map((v) => v.id)).toEqual(['view_1'])
+    expect(sidecar?.view_style).toBe('toolbar')
+    // The sidecar's own identity is never a casualty of a merge that lost its base.
+    expect(typeof sidecar?.id).toBe('string')
+  })
+
+  it('a later view save still sees the order an earlier one persisted', async () => {
+    await setChildOrder(folder, 'page_order', ['p1'])
+    await saveView(folder, 'collection', view('view_1'))
+    await setChildOrder(folder, 'page_order', ['p1', 'p2'])
+    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
+    expect(sidecar?.page_order).toEqual(['p1', 'p2'])
+    expect((sidecar?.views as SavedView[] | undefined)?.length).toBe(1)
+  })
+})
+
+describe('a rename racing the body write it interrupted', () => {
+  it('leaves exactly one page — no ghost at the vacated path', async () => {
+    const p = await createPage(folder, 'Old', { body: 'first' })
+    if (!p.ok) throw new Error('setup failed')
+
+    // Both dispatched before either resolves — the shape of typing, then renaming inside the
+    // editor's autosave debounce.
+    await Promise.all([updatePageBody(p.value.path, 'second'), renamePage(p.value.path, 'New')])
+
+    const md = (await readdir(folder)).filter((f) => f.endsWith('.md'))
+    expect(md).toEqual(['New.md'])
+  })
+
+  it('reports not-found for a body write that arrives after the rename', async () => {
+    const p = await createPage(folder, 'Old', { body: 'first' })
+    if (!p.ok) throw new Error('setup failed')
+    const renamed = await renamePage(p.value.path, 'New')
+    expect(renamed.ok).toBe(true)
+
+    const late = await updatePageBody(p.value.path, 'second')
+    expect(late.ok).toBe(false)
+    expect((await readdir(folder)).filter((f) => f.endsWith('.md'))).toEqual(['New.md'])
+  })
+})

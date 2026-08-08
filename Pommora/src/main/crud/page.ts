@@ -10,6 +10,7 @@ import { newId } from '../ids'
 import { writePageFile, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { atomicWriteFile } from '../io/atomicWrite'
 import { recordWrite } from '../io/writeEcho'
+import { serializeOnFile } from '../io/fileLock'
 import { encodeValue, isBlankValue, propertyKey, type PropertyValue } from '@shared/propertyValue'
 import { PAGE_MODELED_KEYS } from '@shared/schemas'
 import { ok, fail, type Result } from '@shared/result'
@@ -46,17 +47,23 @@ export async function createPage(
  *  both change the page, so they share one primitive; governing only modified_at leaves every
  *  other frontmatter key untouched. */
 async function relocatePage(absFile: string, target: string): Promise<void> {
-  recordWrite(absFile)
-  recordWrite(target)
-  await rename(absFile, target)
-  const existing = await readFile(target, 'utf8')
-  const content = mergeFrontmatter(
-    existing,
-    { modified_at: nowIso() },
-    ['modified_at'],
-    splitEnvelope(existing).body,
-  )
-  await atomicWriteFile(target, content)
+  // Under the SOURCE path's lock — the same key every other write to this page takes. An
+  // in-flight body or value write finishes before the file moves; one that queues behind the
+  // move finds its path gone and fails not-found, rather than recreating the vacated file
+  // around its own stale content and leaving a ghost beside the renamed page.
+  await serializeOnFile(absFile, async () => {
+    recordWrite(absFile)
+    recordWrite(target)
+    await rename(absFile, target)
+    const existing = await readFile(target, 'utf8')
+    const content = mergeFrontmatter(
+      existing,
+      { modified_at: nowIso() },
+      ['modified_at'],
+      splitEnvelope(existing).body,
+    )
+    await atomicWriteFile(target, content)
+  })
 }
 
 /** Rename a page file (filename = title). No-op when unchanged; bumps modified_at
@@ -76,9 +83,13 @@ export async function renamePage(
 /** Replace the body, bumping modified_at. Governs only modified_at, so all other
  *  frontmatter (id, Contexts, properties, foreign keys, comments) is preserved. */
 export async function updatePageBody(absFile: string, body: string): Promise<Result<null>> {
-  if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.', 'page')
-  await writePageFile(absFile, { modified_at: nowIso() }, ['modified_at'], body)
-  return ok(null)
+  // Locked here rather than at the caller: the existence check and the write have to sit inside
+  // the same slot as a relocate, or a rename landing between them re-creates the vacated file.
+  return serializeOnFile(absFile, async () => {
+    if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.', 'page')
+    await writePageFile(absFile, { modified_at: nowIso() }, ['modified_at'], body)
+    return ok(null)
+  })
 }
 
 /** Move a page to a different container folder (same filename), bumping modified_at — a location

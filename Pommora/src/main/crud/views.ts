@@ -7,7 +7,7 @@ import { pageCollectionSidecar, pageSetSidecar } from '@shared/schemas'
 import { DEFAULT_VIEW_ID, VIEW_ID_PREFIX, type SavedView } from '@shared/views'
 import { ok, fail, type Result } from '@shared/result'
 import { newId } from '../ids'
-import { readSidecar, writeSidecar } from '../sidecarIO'
+import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { nowIso } from './util'
 
 /** Collection vs Set picks the sidecar kind + schema; both carry `views[]`. */
@@ -28,16 +28,18 @@ export async function saveView(
   kind: ViewContainerKind,
   view: SavedView,
 ): Promise<Result<{ id: string }>> {
-  const sidecar = await readViewSidecar(folder, kind)
-  if (sidecar === null) return fail('not-found', 'Container sidecar not found.', kind)
-  const id = view.id === DEFAULT_VIEW_ID ? `${VIEW_ID_PREFIX}${newId()}` : view.id
-  const finalView: SavedView = { ...view, id }
-  const views = [...viewsOf(sidecar)]
-  const idx = views.findIndex((v) => v.id === id)
-  if (idx >= 0) views[idx] = finalView
-  else views.push(finalView)
-  await writeSidecar(folder, kind, { ...sidecar, views, modified_at: nowIso() })
-  return ok({ id })
+  return withSidecarLock(folder, kind, async () => {
+    const sidecar = await readViewSidecar(folder, kind)
+    if (sidecar === null) return fail('not-found', 'Container sidecar not found.', kind)
+    const id = view.id === DEFAULT_VIEW_ID ? `${VIEW_ID_PREFIX}${newId()}` : view.id
+    const finalView: SavedView = { ...view, id }
+    const views = [...viewsOf(sidecar)]
+    const idx = views.findIndex((v) => v.id === id)
+    if (idx >= 0) views[idx] = finalView
+    else views.push(finalView)
+    await writeSidecar(folder, kind, { ...sidecar, views, modified_at: nowIso() })
+    return ok({ id })
+  })
 }
 
 /** Reorder views to match `orderedIds`; any views not named ride along at the end (defensive). */
@@ -46,17 +48,19 @@ export async function reorderViews(
   kind: ViewContainerKind,
   orderedIds: string[],
 ): Promise<Result<null>> {
-  const sidecar = await readViewSidecar(folder, kind)
-  if (sidecar === null) return fail('not-found', 'Container sidecar not found.', kind)
-  const views = viewsOf(sidecar)
-  const byId = new Map(views.map((v) => [v.id, v]))
-  const named = new Set(orderedIds)
-  const reordered: SavedView[] = [
-    ...orderedIds.map((id) => byId.get(id)).filter((v): v is SavedView => v !== undefined),
-    ...views.filter((v) => !named.has(v.id)),
-  ]
-  await writeSidecar(folder, kind, { ...sidecar, views: reordered, modified_at: nowIso() })
-  return ok(null)
+  return withSidecarLock(folder, kind, async () => {
+    const sidecar = await readViewSidecar(folder, kind)
+    if (sidecar === null) return fail('not-found', 'Container sidecar not found.', kind)
+    const views = viewsOf(sidecar)
+    const byId = new Map(views.map((v) => [v.id, v]))
+    const named = new Set(orderedIds)
+    const reordered: SavedView[] = [
+      ...orderedIds.map((id) => byId.get(id)).filter((v): v is SavedView => v !== undefined),
+      ...views.filter((v) => !named.has(v.id)),
+    ]
+    await writeSidecar(folder, kind, { ...sidecar, views: reordered, modified_at: nowIso() })
+    return ok(null)
+  })
 }
 
 /** Delete a view by id; refuses to remove the last one (a container always keeps ≥1 view). */
@@ -65,12 +69,14 @@ export async function deleteView(
   kind: ViewContainerKind,
   viewId: string,
 ): Promise<Result<null>> {
-  const sidecar = await readViewSidecar(folder, kind)
-  if (sidecar === null) return fail('not-found', 'Container sidecar not found.', kind)
-  const views = viewsOf(sidecar)
-  if (views.length <= 1) return fail('operation-failed', 'Cannot delete the last view.', kind)
-  const next = views.filter((v) => v.id !== viewId)
-  if (next.length === views.length) return fail('not-found', 'View not found.', kind)
-  await writeSidecar(folder, kind, { ...sidecar, views: next, modified_at: nowIso() })
-  return ok(null)
+  return withSidecarLock(folder, kind, async () => {
+    const sidecar = await readViewSidecar(folder, kind)
+    if (sidecar === null) return fail('not-found', 'Container sidecar not found.', kind)
+    const views = viewsOf(sidecar)
+    if (views.length <= 1) return fail('operation-failed', 'Cannot delete the last view.', kind)
+    const next = views.filter((v) => v.id !== viewId)
+    if (next.length === views.length) return fail('not-found', 'View not found.', kind)
+    await writeSidecar(folder, kind, { ...sidecar, views: next, modified_at: nowIso() })
+    return ok(null)
+  })
 }

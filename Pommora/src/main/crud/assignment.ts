@@ -3,7 +3,7 @@
 // name-clash check and restores any Remove-cache; the unassign leg lives in crud/removeProperty.
 
 import { join } from 'node:path'
-import { readSidecar, writeSidecar } from '../sidecarIO'
+import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { readNexus } from '../readNexus'
 import { restoreCachedValues } from './removeProperty'
@@ -53,10 +53,17 @@ export async function assignInner(
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<null>> {
-  const r = await read(collectionFolder)
-  if (!r) return fail('not-found', 'Collection not found.')
-  if (r.ids.includes(propertyId)) return ok(null)
-  await write(collectionFolder, r.sidecar, [...r.ids, propertyId])
+  // The restore stays OUTSIDE the sidecar lock: it rewrites pages, not the sidecar, and it is
+  // long enough that holding the lock across it would stall every sibling sidecar write.
+  const appended = await withSidecarLock(collectionFolder, 'collection', async () => {
+    const r = await read(collectionFolder)
+    if (!r) return fail('not-found', 'Collection not found.')
+    if (r.ids.includes(propertyId)) return ok(false)
+    await write(collectionFolder, r.sidecar, [...r.ids, propertyId])
+    return ok(true)
+  })
+  if (!appended.ok) return appended
+  if (!appended.value) return ok(null)
   return restoreCachedValues(root, collectionFolder, propertyId)
 }
 
@@ -65,15 +72,17 @@ async function reorderInner(
   propertyId: string,
   toIndex: number,
 ): Promise<Result<null>> {
-  const r = await read(collectionFolder)
-  if (!r) return fail('not-found', 'Collection not found.')
-  const from = r.ids.indexOf(propertyId)
-  if (from < 0) return fail('not-found', 'Property not assigned.')
-  const next = [...r.ids]
-  const [moved] = next.splice(from, 1)
-  next.splice(Math.min(Math.max(toIndex, 0), next.length), 0, moved)
-  await write(collectionFolder, r.sidecar, next)
-  return ok(null)
+  return withSidecarLock(collectionFolder, 'collection', async () => {
+    const r = await read(collectionFolder)
+    if (!r) return fail('not-found', 'Collection not found.')
+    const from = r.ids.indexOf(propertyId)
+    if (from < 0) return fail('not-found', 'Property not assigned.')
+    const next = [...r.ids]
+    const [moved] = next.splice(from, 1)
+    next.splice(Math.min(Math.max(toIndex, 0), next.length), 0, moved)
+    await write(collectionFolder, r.sidecar, next)
+    return ok(null)
+  })
 }
 
 /** Assign appends the id (idempotent), then restores any Remove-cache for it —

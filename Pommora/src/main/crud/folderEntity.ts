@@ -7,7 +7,7 @@ import { mkdir, rename } from 'node:fs/promises'
 import { join, dirname, basename } from 'node:path'
 import type { z } from 'zod'
 import { newId } from '../ids'
-import { readSidecar, writeSidecar } from '../sidecarIO'
+import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { recordWrite } from '../io/writeEcho'
 import { pathExists, invalidName } from './util'
 import type { SidecarKind } from '../paths'
@@ -76,9 +76,11 @@ export async function updateFolderSidecar<S extends z.ZodType>(
   schema: S,
   patch: Partial<z.infer<S>>,
 ): Promise<Result<z.infer<S>>> {
-  const current = await readSidecar(absFolder, kind, schema)
-  if (current === null) return fail('not-found', 'Sidecar not found or invalid.', kind)
-  const next = { ...current, ...patch }
-  await writeSidecar(absFolder, kind, next)
-  return ok(next)
+  return withSidecarLock(absFolder, kind, async () => {
+    const current = await readSidecar(absFolder, kind, schema)
+    if (current === null) return fail('not-found', 'Sidecar not found or invalid.', kind)
+    const next = { ...current, ...patch }
+    await writeSidecar(absFolder, kind, next)
+    return ok(next)
+  })
 }
