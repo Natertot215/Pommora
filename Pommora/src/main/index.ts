@@ -705,8 +705,6 @@ serveBridge(
         if (typeof body !== 'string') return fail('operation-failed', 'A body string is required.')
         const resolved = await resolveUnderRoot(root, relPath)
         if (!resolved.ok) return resolved
-        // Under the page's file lock — the editor autosave and a link-rename cascade both rewrite
-        // this page's body, so they must serialize rather than clobber each other.
         const r = await updatePageBody(resolved.value, body)
         return r.ok ? ok(null) : r
       },

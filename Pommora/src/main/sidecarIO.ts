@@ -1,19 +1,20 @@
-// The single read/write pair for folder sidecars. Validates through a zod schema on
-// read (foreign keys retained via looseObject) and writes atomically with stable,
-// sorted JSON. CRUD reads the sidecar, mutates modeled fields on the returned object
-// (foreign keys ride along), and writes it back — so foreign data is preserved.
+// The single read/write pair for folder sidecars, and the lock every read-modify-write of one
+// runs under. Validates through a zod schema on read (foreign keys retained via looseObject) and
+// writes atomically with stable, sorted JSON. CRUD reads the sidecar, mutates modeled fields on
+// the returned object (foreign keys ride along), and writes it back — so foreign data is
+// preserved.
 
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import type { z } from 'zod'
-import { SIDECAR_FILENAME, sidecarPath, type SidecarKind } from './paths'
+import { sidecarPath, type SidecarKind } from './paths'
 import { writeJson } from './io/atomicWrite'
 import { serializeOnFile } from './io/fileLock'
 
 /** Run a sidecar read-modify-write under that sidecar's own lock, reading FRESH inside it.
- *  Views, container config, orders, properties and the banner/icon patches all rewrite the
- *  same file whole, so they queue on one key — the sidecar's path — or the last writer back
- *  silently drops whatever the others just set. */
+ *  Views, container config, within-folder orders, property assignment and the Remove cache all
+ *  rewrite the same file whole, so they queue on one key or the last writer back silently drops
+ *  whatever the others just set. The banner and icon patches share that key without coming
+ *  through here — they hold a raw JSON writer and lock on `sidecarPath` themselves. */
 export function withSidecarLock<T>(
   absFolder: string,
   kind: SidecarKind,
@@ -31,7 +32,7 @@ export async function readSidecar<S extends z.ZodType>(
 ): Promise<z.infer<S> | null> {
   let raw: unknown
   try {
-    raw = JSON.parse(await readFile(join(absFolder, SIDECAR_FILENAME[kind]), 'utf8'))
+    raw = JSON.parse(await readFile(sidecarPath(absFolder, kind), 'utf8'))
   } catch {
     return null
   }
@@ -46,5 +47,5 @@ export async function writeSidecar(
   kind: SidecarKind,
   value: unknown,
 ): Promise<void> {
-  await writeJson(join(absFolder, SIDECAR_FILENAME[kind]), value)
+  await writeJson(sidecarPath(absFolder, kind), value)
 }

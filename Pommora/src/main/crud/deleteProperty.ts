@@ -5,7 +5,6 @@
 // the def from the registry. That bundle is what restore spends to rebuild it. The daily
 // non-destructive op is Remove (crud/removeProperty); this is the rare one.
 
-import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { contentId } from '@shared/identity'
 import { writePropertyBundle } from '../provenance'
@@ -15,11 +14,9 @@ import { removeFromRegistry } from './registryProperty'
 import { allCollectionFolders } from './assignment'
 import { serializeSchemaOp } from './schemaChain'
 import { sweepGovernedRoots } from './governedSweep'
-import { readSidecar, withSidecarLock } from '../sidecarIO'
+import { readSidecar, writeSidecar, withSidecarLock } from '../sidecarIO'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
-import { SIDECAR_FILENAME } from '../paths'
-import { writeJson } from '../io/atomicWrite'
 import { splitFrontmatter } from '../readNexus'
 import { isPlainObject, propertyKey } from '@shared/propertyValue'
 import { nowIso } from './util'
@@ -97,27 +94,28 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<nul
     { stamp: true },
   )
 
-  for (const folder of folders) {
-    // Unassign + purge the Remove-cache on the collection sidecar, under that sidecar's lock so
-    // a concurrent view/order/icon write can't be reverted by this read-merge-write. The .trash
-    // snapshot above is the recovery net, so this needn't be atomic.
-    await withSidecarLock(folder, 'collection', async () => {
-      const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
-      if (!sidecar) return
-      const assigned = (sidecar.properties as string[] | undefined) ?? []
-      const cacheAll = isPlainObject(sidecar.property_cache) ? sidecar.property_cache : undefined
-      const hadCache = cacheAll !== undefined && propertyId in cacheAll
-      if (!assigned.includes(propertyId) && !hadCache) return
-      const next: Record<string, unknown> = {
-        ...sidecar,
-        properties: assigned.filter((id) => id !== propertyId),
-        modified_at: nowIso(),
-      }
-      // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE,
-      // and assign only copies keys that are present.
-      const scrubbed = hadCache ? withoutCacheBlock(next, propertyId) : next
-      await writeJson(join(folder, SIDECAR_FILENAME.collection), scrubbed)
-    })
-  }
+  for (const folder of folders) await unassignAndPurge(folder, propertyId)
   return removeFromRegistry(root, propertyId)
+}
+
+/** Drop the id from one Collection's assignments and purge its Remove-cache block, under that
+ *  sidecar's lock so a concurrent view/order/icon write can't be reverted by this read-merge-write.
+ *  The `.trash` bundle is the recovery net, so this needn't be atomic. */
+function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
+  return withSidecarLock(folder, 'collection', async () => {
+    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
+    if (!sidecar) return
+    const assigned = (sidecar.properties as string[] | undefined) ?? []
+    const cacheAll = isPlainObject(sidecar.property_cache) ? sidecar.property_cache : undefined
+    const hadCache = cacheAll !== undefined && propertyId in cacheAll
+    if (!assigned.includes(propertyId) && !hadCache) return
+    const next: Record<string, unknown> = {
+      ...sidecar,
+      properties: assigned.filter((id) => id !== propertyId),
+      modified_at: nowIso(),
+    }
+    // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE,
+    // and assign only copies keys that are present.
+    await writeSidecar(folder, 'collection', hadCache ? withoutCacheBlock(next, propertyId) : next)
+  })
 }
