@@ -5,6 +5,7 @@
 
 import type { Result } from './result'
 import type { PropertyValue } from './propertyValue'
+import { subSetLabel, type NexusLabels } from './types'
 
 /** The mutate channel's reply — `created` appears only on the create ops. */
 export type MutateReply = Result<{ created?: { id: string; path: string } }>
@@ -103,4 +104,30 @@ export interface ContextTarget {
   id?: string
   /** Whether the entity is already open in a tab — flips the item label to "Open" (focus). */
   alreadyOpen?: boolean
+}
+
+/** A "New …" offer: what it reads as, and the write it performs. */
+export interface Creator {
+  label: string
+  req: MutateRequest
+}
+
+/** What may be created inside a container, and what each is called. Both processes read this —
+ *  the sidebar's native context menu and the subfield's add button offer the same pair because a
+ *  container's contents are a property of the container, not of the surface asking.
+ *
+ *  A Set nests to any depth, so it offers what a Collection offers; only the nested container's
+ *  label differs, since a Set inside a Set is a Sub-Set. Labels are per-nexus and resolved here
+ *  rather than written literally, which is what keeps a renamed Set named the same in both menus. */
+export function containerCreators(
+  kind: MutableContainerKind,
+  parentPath: string,
+  labels: NexusLabels,
+): Creator[] {
+  const name = DEFAULT_NEW_NAME
+  const nested = kind === 'collection' ? labels.pageSet.singular : subSetLabel(labels)
+  return [
+    { label: 'New Page', req: { op: 'createPage', parentPath, name } },
+    { label: `New ${nested}`, req: { op: 'createContainer', parentPath, kind: 'set', name } },
+  ]
 }
