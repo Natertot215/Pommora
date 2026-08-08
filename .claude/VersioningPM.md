@@ -1,6 +1,6 @@
 ### Versioning — Roadmap
 
-Pommora's path to v1.0.0. The React + Electron build rebuilt the Swift paradigm from the ground up, reached parity, then passed it — **Page Previews + the Subfield unification closed the rebuild, and the build stands at v0.5.0**. Each minor version ships green and standalone — shipped detail → `HistoryPM.md`, session state → `HandoffPM.md`. Numbers are soft — order and grouping firm up as each cluster lands. Scope is the **core 7** (data · properties · connections · markdown · navigation · table · cards) plus the deferred frontier (the remaining view renderers, block-surface completion, Agenda surfacing, the settings UI, global search, the LLM-chat inspector, OS integrations).
+Pommora's path to v1.0.0. The React + Electron build rebuilt the Swift paradigm from the ground up, reached parity, then passed it — **Page Previews + the Subfield unification closed the rebuild, and the build stands at v0.5.0**.  Numbers are soft — order and grouping firm up as each cluster lands. Scope is the **core 7** (data · properties · connections · markdown · navigation · table · cards) plus the deferred frontier.
 
 ### Versioning
 
@@ -8,7 +8,7 @@ Pommora's path to v1.0.0. The React + Electron build rebuilt the Swift paradigm 
 
 ### Completed
 
-The rebuild arc to **v0.5.0** — locked decisions and full detail per milestone in `HistoryPM.md`.
+The rebuild arc to **v0.5.0** — locked decisions and full detail per milestone in `PM-History-Index.md` §04-26-2026 → 08-07-2026.
 
 - Genesis → walking skeleton — one nexus walk over IPC into a Zustand store
 - Headless data layer + the desktop write path

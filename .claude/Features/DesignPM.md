@@ -55,7 +55,7 @@ Text color is separate from surface color: three label tones — primary, second
 
 Two recipes in `materials/`. **Frost** is a blur plus a slight dimming of what's behind, carrying the drop shadow from the one shadow token; it dresses the window tier, the panel and popover surfaces, and the dropdown pane, each kept as its own component so a tier can diverge later. The **liquid** recipe is Apple **"Liquid Glass"** — a real edge-refraction over the live app — worn by the in-use button controls and by the small on-control segments, whose optics are spread from the controls' so the two stay one source. Layout is always the consumer's.
 
-**Voiding Liquid Glass can't be done in place** — its `backdrop-filter` displacement is a dynamically-generated SVG filter id CSS can neither reconstruct nor interpolate. So the inspector "swallow" renders the pill as a **two-layer** control, a fading glass layer behind a solid bare-button layer, rather than fading one fused control. → `HistoryPM.md`.
+**Voiding Liquid Glass can't be done in place** — its `backdrop-filter` displacement is a dynamically-generated SVG filter id CSS can neither reconstruct nor interpolate. So the inspector "swallow" renders the pill as a **two-layer** control, a fading glass layer behind a solid bare-button layer, rather than fading one fused control.
 
 **Scrollbars are hidden app-wide** — Electron's default Chromium bar reads heavy and the native auto-hiding overlay isn't reliably available, so scrolling is trackpad and wheel only.
 
