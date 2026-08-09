@@ -16,6 +16,8 @@ The JSON read-modify-write had named serialization as its caller's job, so seven
 
 Folding the lock in would have made the atomic writer and the lock mutually dependent, so the page-rewrite helper moved to sit beside the writers it composes and the lock module now imports nothing at all. The property registry's private promise chain retired onto the shared per-path mechanism its sibling registry already used, and the app config's two read-then-overwrite pairs collapsed into one owner that merges onto the raw record, so a key the current version does not model survives a write. An unreadable app config now refuses the write rather than replacing it; the read side stays lenient, so a damaged file still degrades to defaults at launch.
 
+Giving two primitives their own key made re-taking a held key an ordinary mistake to write, and unrefused that wedges a file for the life of the process rather than failing it, so the lock now rejects a re-entrant take before touching its chain — a refusal cannot wedge the file it names, and nesting different keys stays legal.
+
 The arc carries no bug justification. The sequence originally offered for `state.json` — two overlapping sidebar drags — cannot occur, and the work was ratified on cohesion instead. → [[ArchitecturePM]] · [[PM-005]]
 
 #### One Lock Per File (08-08)

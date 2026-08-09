@@ -22,7 +22,6 @@ A dead-code floor landed first so the refactor started clean: `PommoraError.scop
 
 #### Next Session
 
-- **Rule on the one open finding.** The non-reentrancy rule the fold depends on has a docstring and no enforcement: calling `rmwJsonStrict` or `rewritePageSerialized` from inside a lock on the same path hangs rather than rejecting, and the hung slot poisons that file's chain for the life of the process. Nothing produces it today — enumeration is clean and an instrumented run of the main-process suite recorded zero reentrant acquisitions — but the next sidecar read-modify-write is written in exactly the shape that trips it. Roughly six lines converts a wedge into a rejection. Stated in full in the plan's Open Against Later Tasks; it is a call rather than a task because it adds lines to an arc ratified as removal-only.
 - **Push.** 125 commits sit unpushed on `main`.
 
 #### Pending Focus
@@ -44,7 +43,7 @@ The survey's three keepers are Next-Feature Candidates in ContextPM — the tras
 
 - **A regression test that passes before the fix proves nothing.** Every test added across both arcs was confirmed red against the unfixed tree — stash the source, keep the untracked test, run, restore. It caught that the ghost page reproduces exactly, and that an unlocked registry silently drops the first of two concurrent writes.
 - **Stage explicit paths, never a directory.** A `git add Pommora/src` swept an uncommitted comment strip into an unrelated commit and took a `(Nathan's call)` marker off `RenamableLabel` with it. The attack found it; the rule was already in the record.
-- **`serializeOnFile` is not reentrant and hangs rather than rejecting.** A nested acquisition on one key wedges that file for the process's life, silently. The docstring says so; nothing enforces it.
+- **`serializeOnFile` refuses a re-entrant take rather than hanging.** It holds the keys of the call in flight and rejects a second take of one, before the chain is touched — so the refusal cannot wedge the file it names. Nesting different keys stays legal. A primitive that takes its own key (`rmwJsonStrict`, `rewritePageSerialized`) therefore cannot be called from inside a lock on the same path.
 - **A doc's description of a mechanism is a hypothesis.** The retired handoff's account of why three menus stayed native was wrong about three-quarters of `propertyMenu`, and a review agent's claim that five sidecar sites need an async decision inside their lock was wrong about all five.
 - **Three `tabBar.css` knobs do nothing, and one of them says it does.** `--tab-icon`, `--tab-x` and `--tab-plus` sit under the `KNOBS` header while `TabBar.tsx` passes 14, 11 and 13 as literals past them. Left deliberately — the question is what they were meant to drive.
 - **`ViewPane`'s disabled More menu may be redundant rather than pending** — a view row already carries a working context menu with the same actions. A product call, not a build.
