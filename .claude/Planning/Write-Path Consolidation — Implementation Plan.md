@@ -223,12 +223,13 @@ The suite alone cannot prove the window shut. `setIcon` and `setHeadingIconHidde
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — The JSON read-modify-write owns its lock · base `<commit>`
-  - [ ] Task 1 — Fold the lock into `rmwJsonStrict` and strip all seven wrappers · `<commit>`
-- [ ] **Phase 2** — One serialization mechanism
-  - [ ] Task 2 — Retire the property registry's private chain · `<commit>`
-- [ ] **Phase 3** — The read-then-write pairs, and the record
-  - [ ] Task 3 — One owner for the app config, and the docs catch up · `<commit>`
+- [x] **Phase 1** — The JSON read-modify-write owns its lock · base `1f034d1a`
+  - [x] Task 1 — Fold the lock into `rmwJsonStrict` and strip all seven wrappers · `c421b686`
+  - [x] Gate 1 simplification · `9ac7a0ef` — review returned clean, no findings
+- [x] **Phase 2** — One serialization mechanism
+  - [x] Task 2 — Retire the property registry's private chain · `db30b820`
+- [x] **Phase 3** — The read-then-write pairs, and the record
+  - [x] Task 3 — One owner for the app config, and the docs catch up · `d849cbd9`
 
 ### Rulings
 - **08-08** (planning) — Task 3's foreign-key test is dropped; merging onto the raw object stays. Merging raw is the simpler implementation rather than a defense, but a *test* for a key with no current producer is the guard the Forced By line forbids. The type gate already forces the implementer to handle `recents` off a raw record.
@@ -238,6 +239,9 @@ The suite alone cannot prove the window shut. `setIcon` and `setHeadingIconHidde
 ### Open Against Later Tasks
 
 ### Deviations
+- **Task 1 hit an import cycle the plan never foresaw.** Folding `serializeOnFile` into `rmwJsonStrict` would have made `io/atomicWrite.ts` and `io/fileLock.ts` mutually dependent, because `fileLock` imported `atomicWriteFile` for `rewritePageSerialized`. Rather than accept a cycle that happens to resolve, `rewritePageSerialized` moved to sit beside the writers it uses and `io/fileLock.ts` now imports nothing — a lock primitive depending on the writers had the arrow backwards. Six importers were re-pointed; the compiler enumerated them.
+- **Test counts ran two above the plan.** Task 1 was written for two new arms and shipped three (set, clear-drops-the-key, and the no-id refusal); Task 3 added two rather than the one its Ruling left. The invariant only forbids lowering.
+- **A simplification finding was declined mid-gate.** `rewritePageSerialized`'s tests still live in `fileLock.test.ts` after the function moved. Relocating them needs the fixtures duplicated across two files, which is a test reorganisation rather than a behaviour-preserving simplification, so it went to Sequenced After instead of riding this phase.
 - **Review round 1 (`build-breaking-agent`), all findings verified against code before folding.** Task 2's deadlock check was a grep that matched nothing — every production caller spells `mutateRegistry<…>(`, so the check would have passed by seeing one test file; the count was nine and is ten. `patchConfig` has four call sites, not three. The Goal asserted a universal the Acceptance could not test, with `adopt.ts:100` and `remint.ts:136` sitting unlocked in the gap; the Goal is narrowed and both are named in Sequenced After. Three falsified docstrings were missing from Made False. Task 3 silently changed `pommora.json`'s self-healing recovery; the trade is now stated. The foreign-key test was dropped as a guard the plan forbids.
 - **The hazard window's proof was wrong and the review's Unknown proved worse than reported.** The plan named the test suite as evidence the window shut. `setIcon` and `setHeadingIconHidden` have zero tests — two of four `patchConfig` arms — so the suite could not have caught a missed wrapper there. The proof is now a structural read, and Task 1 adds the two missing arms.
 - **Planning-time correction.** The survey that produced this plan reported that only the two `removeProperty` sites would deadlock under the fold. Reading all seven spans showed every one locks the same key the inner call passes, so all seven must be unwrapped in the same commit. Task 1 is written to that, and the hazard window exists because of it.
@@ -249,6 +253,7 @@ The suite alone cannot prove the window shut. `setIcon` and `setHeadingIconHidde
 - **The folder relocate pair.** `renameFolderEntity` and `moveFolderEntity` are near-identical bodies differing only in how the target is computed — the pair `crud/page.ts` already collapsed into `relocatePage`. Small; do it when that file is next open.
 - **Two unlocked sidecar read-modify-writes survive this plan**, and the narrowed Goal is narrow precisely because of them. `adopt.ts:100` (`stampFolder`) reads a sidecar strictly and writes it through `writeSidecar` with no lock; `remint.ts:136` (`remintSidecar`) does the same and hand-builds its path instead of using `sidecarPath`, while its own sibling `remintPageFile` goes through `rewritePageSerialized`. Both run in the open pass, so neither is reachable concurrently today — they are listed as cohesion debt, not as defects, and they are the reason `ArchitecturePM` must not be amended to claim a universal law.
 - **`identity.ts`'s three write branches** could route through `rmwJsonStrict` and inherit the lock. Roughly a wash on line count, so it waits for a reason beyond tidiness.
+- **`rewritePageSerialized`'s tests** stayed in `io/fileLock.test.ts` after the function moved to `io/atomicWrite.ts`, so that file imports a subject it isn't testing and `atomicWrite.test.ts` has no coverage of a function it owns. A fixture-sharing move, small but not behaviour-preserving.
 - **The branded lock token** that would make `writeSidecar` uncallable without a key. Adds ~18 lines and buys type-level unrepresentability of the defect class. Declined here because this work is scoped to removal; worth revisiting if a fourth bare sidecar writer ever appears.
 - **Enumeration freshness.** The sweeps walk `listMarkdownFiles` outside any lock, then lock each file individually, so a page created between the walk and the writes is never visited. No per-file fixture closes this. Whether the contract should state the exclusion is an open question, not a task.
 

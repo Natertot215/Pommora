@@ -44,7 +44,7 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   return { registry: { order, defs }, unparsed }
 }
 
-/** Lenient read: absent / corrupt → empty. READ PATH ONLY — the mutation chain below does its
+/** Lenient read: absent / corrupt → empty. READ PATH ONLY — `mutateRegistry` below does its
  *  own strict read, so a transiently-unreadable file can never feed a write. */
 export async function readRegistry(root: string): Promise<RegistryFile> {
   const obj = await readJsonObject(registryPath(root))
@@ -65,9 +65,10 @@ export function orderedDefs(reg: RegistryFile): PropertyDefinition[] {
   ]
 }
 
-/** Overwrite the whole registry file — module-private, so every write rides `mutateRegistry`'s
- *  chain (a bare write outside it can lose a concurrent mutation's update). Takes the on-disk
- *  shape (defs loosely typed) so the chain can carry unparsed entries through unmodeled. */
+/** Overwrite the whole registry file — module-private, so every write rides `mutateRegistry` and
+ *  therefore the registry file's lock (a bare write outside it can lose a concurrent mutation's
+ *  update). Takes the on-disk shape (defs loosely typed) so unparsed entries carry through
+ *  unmodeled. */
 async function writeRegistry(
   root: string,
   registry: { order: string[]; defs: Record<string, unknown> },
