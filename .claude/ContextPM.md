@@ -165,7 +165,7 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff.
 
 ### Fix Log
 
-- [ ] The "File" property icon gets clipped by its vertical row padding on the ViewPane.
+- [ ] The "File" property icon gets clipped by its vertical row padding on the PropertiesPane.
 - [ ] The link-rename field shows a leading empty space — a visual inset, not a stored character, since the alias is trimmed both on parse and on commit. The inset is the shared field recipe's horizontal padding surviving the TextPicker input override, with the pane gutter adding to it (deprioritized).
 - [ ] Extending a line on MarkdownPM directly above a codeblock jumps into the codeblock rather than creating a new line. Tables answer the same hazard with a boundary guard on Enter; fences have no counterpart in that chain.
 - [ ] The Set-Card drag flash (drop snaps back, then jumps on reload) — the optimistic moveSet order patch is in; wants one live drag before this line drops. 
