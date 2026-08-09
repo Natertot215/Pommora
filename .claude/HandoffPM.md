@@ -33,14 +33,7 @@ The survey's three keepers are Next-Feature Candidates in ContextPM — the tras
 
 #### Feedback
 
-- *"Nathan doesn't like the longer than necessary responses, and the final response in this session is a good example of what to-the-point looks like, even though it's still quite verbose."*
-- *"I have ADHD so I want a clear reccomendation, independent from what the Handoff or ContextPM claims, about what's actually appropriate to do next."*
-- *"Grounded in what's real: Open the actual files, docs, and call sites — don't recall them. A claim about a file, type, or behavior you haven't opened is a hypothesis, not a fact. Don't be satisfied with a description of a mechanism or feature you haven't actually seen yourself — descriptions of how something works aren't a guarantee that it works the way it's described; explore the chain and ground yourself in truth independently."*
-- *"The headline may not adhere to the reachability razor, think about it — how can that ACTUALLY happen? and if it can, would fixing it be a net-logic-increase or reduction/hoist?"*
-- *"what would this actually cost me in terms i may want to do in the future."*
-- *"Please explain if theres actually a decision to make here."*
-- *"Find the simplest fix to these issues."*
-- *"Explain this to non-technical Nathan."*
+- Be disciplined with [[ContextPM]] — remove what isn’t context anymore and stop allowing bloat to accumulate.
 
 #### Session Pointers
 

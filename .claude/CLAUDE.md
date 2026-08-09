@@ -100,6 +100,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   ├── // History                       | • Incremental implementation history.
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
 │   ├── // Resources                     | • Reference of external resources; both in-use and future prospectives.
+│   ├── // references                    | • Standing reference material — Nate's notes
 │   ├── // Planning                      | • Plans and temporary specifications; contents are transient
 │   └── // Sessions                      | • Session transcripts — filled by /handoff retirement or /transcribe
 ├── // Pommora                           | • The app — the codebase proper
