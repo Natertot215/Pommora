@@ -42,6 +42,9 @@ export type MutateRequest =
   | { op: 'delete'; path: string; kind: MutableKind }
   // Spend a deletion bundle: resolve against the CURRENT tree and put the artifact back — into
   // its parent's renamed home if it moved. `bundlePath` is nexus-relative, from the listing.
+  // Parked, NOT dead code: the whole restore path is built and tested main-side and has no
+  // renderer caller by design, because the trash browser that would supply a bundlePath hasn't
+  // been built. It waits on that surface — see `listBundles`, which has no bridge channel yet.
   | { op: 'restore'; bundlePath: string }
   // dataUrl set ⇒ decode + copy into `.nexus/assets/<nexusID>/profile-<token>.<ext>` + record
   // the rel path in `settings.profile_image`; null ⇒ clear the field + delete the file.

@@ -389,7 +389,10 @@ export interface ListedBundle {
  *  structure, so the walk stops at one and never reads a deletion out of what it holds.
  *
  *  A content bundle with no artifact is a deletion that never finished: skipped, and never
- *  removed — the record is the only evidence that destruction happened. */
+ *  removed — the record is the only evidence that destruction happened.
+ *
+ *  Parked, NOT dead code: no bridge channel exposes this, so its only callers are tests. It is
+ *  the trash browser's read side, waiting on that surface rather than on any work here. */
 export async function listBundles(root: string): Promise<ListedBundle[]> {
   const out: ListedBundle[] = []
   const walk = async (dir: string): Promise<void> => {
