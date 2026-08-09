@@ -184,14 +184,12 @@ export async function setSpaceContext(
   const titles = targetTitles(world, targetSpaceIds)
   if (!titles.ok) return titles
   const sidecar = join(ref.dir, SPACE_SIDECAR)
-  return serializeOnFile(sidecar, async () => {
-    const written = await rmwJsonStrict(sidecar, (raw) => {
-      const applied = applyTarget(world, raw, contextId, titles.value)
-      if (!applied.ok) throw new Error(applied.error.message)
-      return { ...applied.value.root, modified_at: nowIso() }
-    }).catch(() => fail('operation-failed', 'Context write failed.'))
-    return written.ok ? ok(null) : written
-  })
+  const written = await rmwJsonStrict(sidecar, (raw) => {
+    const applied = applyTarget(world, raw, contextId, titles.value)
+    if (!applied.ok) throw new Error(applied.error.message)
+    return { ...applied.value.root, modified_at: nowIso() }
+  }).catch(() => fail('operation-failed', 'Context write failed.'))
+  return written.ok ? ok(null) : written
 }
 
 export async function setContextOnPath(
@@ -280,13 +278,11 @@ export async function setSpaceColor(
   const ref = world.value.spaceById.get(spaceId)
   if (!ref) return fail('not-found', 'Unknown Space.')
   const sidecar = join(ref.dir, SPACE_SIDECAR)
-  const written = await serializeOnFile(sidecar, () =>
-    rmwJsonStrict(sidecar, (cur) => {
-      const next: Raw = { ...cur, modified_at: nowIso() }
-      if (color === undefined) delete next.color
-      else next.color = color
-      return next
-    }),
-  )
+  const written = await rmwJsonStrict(sidecar, (cur) => {
+    const next: Raw = { ...cur, modified_at: nowIso() }
+    if (color === undefined) delete next.color
+    else next.color = color
+    return next
+  })
   return written.ok ? ok(null) : written
 }

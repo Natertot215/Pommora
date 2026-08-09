@@ -722,3 +722,58 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     expect(r.ok).toBe(false)
   })
 })
+
+// The two config arms that had no coverage at all. They share the strict JSON read-modify-write
+// with the banner arm, so a mistake in that primitive shows up here rather than only in the app.
+describe('handleMutate — setIcon and setHeadingIconHidden on a container sidecar', () => {
+  it('sets an icon and drops the key again when it is cleared, keeping foreign keys', async () => {
+    expect(
+      (await handleMutate({ op: 'setIcon', path: 'Notes', kind: 'collection', icon: 'star' }, nexusDeps))
+        .ok,
+    ).toBe(true)
+    let sc = JSON.parse(await read('Notes/_pagecollection.json'))
+    expect(sc.icon).toBe('star')
+    expect(sc.id).toBe('pt')
+
+    expect(
+      (await handleMutate({ op: 'setIcon', path: 'Notes', kind: 'collection', icon: null }, nexusDeps))
+        .ok,
+    ).toBe(true)
+    sc = JSON.parse(await read('Notes/_pagecollection.json'))
+    expect('icon' in sc).toBe(false)
+    expect(sc.id).toBe('pt')
+  })
+
+  it('refuses an icon on a sidecar with no id rather than reseeding one', async () => {
+    await writeFile(join(root, 'Notes/_pagecollection.json'), JSON.stringify({ views: [] }))
+    const r = await handleMutate(
+      { op: 'setIcon', path: 'Notes', kind: 'collection', icon: 'star' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(false)
+  })
+
+  it('round-trips the heading-icon flag, and absence is the shown default', async () => {
+    expect(
+      (
+        await handleMutate(
+          { op: 'setHeadingIconHidden', path: 'Notes', kind: 'collection', hidden: true },
+          nexusDeps,
+        )
+      ).ok,
+    ).toBe(true)
+    expect(JSON.parse(await read('Notes/_pagecollection.json')).heading_icon_hidden).toBe(true)
+
+    expect(
+      (
+        await handleMutate(
+          { op: 'setHeadingIconHidden', path: 'Notes', kind: 'collection', hidden: false },
+          nexusDeps,
+        )
+      ).ok,
+    ).toBe(true)
+    const sc = JSON.parse(await read('Notes/_pagecollection.json'))
+    expect('heading_icon_hidden' in sc).toBe(false)
+    expect(sc.id).toBe('pt')
+  })
+})

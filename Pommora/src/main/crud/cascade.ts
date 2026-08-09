@@ -5,9 +5,9 @@
 // partly-applied cascade is recoverable by re-running.
 
 import { splitEnvelope, mergeFrontmatter } from '../io/pageFile'
+import { rewritePageSerialized } from '../io/atomicWrite'
 import { listMarkdownFiles } from '../io/walk'
 import { sweepAdmitsBody } from './util'
-import { rewritePageSerialized } from '../io/fileLock'
 import { mentionsTitle } from '../connections/scan'
 import { rewriteConnections } from '../connections/rewrite'
 import { normalizeTitle } from '@shared/connections'

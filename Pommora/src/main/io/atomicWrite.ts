@@ -9,6 +9,7 @@ import { join, basename, dirname, relative, isAbsolute } from 'node:path'
 import { isPlainObject } from '@shared/propertyValue'
 import { fail, ok, type Result } from '@shared/result'
 import { recordWrite } from './writeEcho'
+import { serializeOnFile } from './fileLock'
 
 /** Atomically write a UTF-8 string to `filePath`. Recorded for watcher echo
  *  suppression — the app's own writes never trigger its own re-walk. */
@@ -56,25 +57,53 @@ export async function readJsonStrict(absPath: string): Promise<Result<Record<str
   }
 }
 
-/** STRICT read-modify-write — the ONE way to write a JSON file based on a prior read.
- *  Absent is a fact: with `seedOnAbsent` the mutation starts from the seed (first-run),
- *  without it a missing file is a `fail`. Unreadable is ignorance: any other read failure
- *  (an evicted iCloud placeholder, a corrupt file) is a `fail` and NO write happens —
- *  never a fallback-to-empty clobber. Callers needing serialization wrap this in their
- *  own `serializeOnFile`. */
-export async function rmwJsonStrict(
+/** STRICT read-modify-write — the ONE way to write a JSON file based on a prior read, taken
+ *  under that file's own lock so the read and the write cannot be split by a sibling writer and
+ *  a caller cannot forget to serialize. Absent is a fact: with `seedOnAbsent` the mutation starts
+ *  from the seed (first-run), without it a missing file is a `fail`. Unreadable is ignorance: any
+ *  other read failure (an evicted iCloud placeholder, a corrupt file) is a `fail` and NO write
+ *  happens — never a fallback-to-empty clobber.
+ *
+ *  The lock is not reentrant, so this must not be called from inside a `serializeOnFile` on the
+ *  same path — that hangs rather than failing. A caller needing a span wider than the write, or
+ *  a schema-validated read, holds its own lock over `readSidecar`/`writeSidecar` instead. */
+export function rmwJsonStrict(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
   seedOnAbsent?: () => Record<string, unknown>,
 ): Promise<Result<Record<string, unknown>>> {
-  const current = await readJsonStrict(absPath)
-  let base: Record<string, unknown>
-  if (current.ok) base = current.value
-  else if (current.error.code === 'not-found' && seedOnAbsent) base = seedOnAbsent()
-  else return current
-  const next = mutate(base)
-  await writeJson(absPath, next)
-  return ok(next)
+  return serializeOnFile(absPath, async () => {
+    const current = await readJsonStrict(absPath)
+    let base: Record<string, unknown>
+    if (current.ok) base = current.value
+    else if (current.error.code === 'not-found' && seedOnAbsent) base = seedOnAbsent()
+    else return current
+    const next = mutate(base)
+    await writeJson(absPath, next)
+    return ok(next)
+  })
+}
+
+/** Rewrite ONE page under its file lock, reading FRESH inside the lock so a concurrent
+ *  cell-write is never clobbered by a stale pre-read. `rewrite` maps current content → next
+ *  content, or null to leave the page untouched. An unreadable file is skipped. Returns
+ *  whether the page was written. */
+export function rewritePageSerialized(
+  file: string,
+  rewrite: (content: string) => string | null,
+): Promise<boolean> {
+  return serializeOnFile(file, async () => {
+    let content: string
+    try {
+      content = await readFile(file, 'utf8')
+    } catch {
+      return false
+    }
+    const next = rewrite(content)
+    if (next === null) return false
+    await atomicWriteFile(file, next)
+    return true
+  })
 }
 
 /** Read a file's text, or null if it's missing or unreadable. The text-side analog of
