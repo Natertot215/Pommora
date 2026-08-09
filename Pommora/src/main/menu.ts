@@ -13,17 +13,17 @@ type AdoptFn = (path: string) => Promise<void>
 // (Open Recent, Reveal, Reload) act here. Rebuilt whenever the session or recents change.
 export async function installAppMenu(win: BrowserWindow, adopt: AdoptFn): Promise<void> {
   const userData = app.getPath('userData')
-  const stored = (await readAppConfig(userData)).recents
+  const stored = (await readAppConfig(userData)).recents ?? []
   // Drop deleted (trashed) nexuses so Open Recent never lists a dead path; self-heal the stored
   // list when the prune removes any, so the debris doesn't linger in the config.
-  const recents = stored ? await pruneRecents(stored) : []
-  if (stored && recents.length !== stored.length) {
+  const recents = await pruneRecents(stored)
+  if (recents.length !== stored.length) {
     await updateAppConfig(userData, () => ({ recents }))
   }
   const hasSession = sessionRoot() !== null
   const send = (action: string): void => push(win, 'menu:action', action)
 
-  const recentItems: MenuItemConstructorOptions[] = recents?.length
+  const recentItems: MenuItemConstructorOptions[] = recents.length
     ? recents.map((p) => ({
         label: basename(p),
         click: async () => {
