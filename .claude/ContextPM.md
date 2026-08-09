@@ -10,6 +10,14 @@ The PageMenu, the fence pass, and the menu-surface consolidation are all closed 
 
 ### Recent Work
 
+#### The Write Primitive Owns Its Lock (08-08)
+
+The JSON read-modify-write had named serialization as its caller's job, so seven callers supplied the missing half by hand and two never did. The primitive takes it now, keyed on the path it writes, which makes a second spelling of that key unexpressible and covers `.nexus/state.json`'s two writers without either being edited — the difference between moving a lock down a layer and adding one. All seven wrappers came off in the same commit, because the chain is not reentrant and every one of them held the same key its inner call passed. `patchConfig` went with them.
+
+Folding the lock in would have made the atomic writer and the lock mutually dependent, so the page-rewrite helper moved to sit beside the writers it composes and the lock module now imports nothing at all. The property registry's private promise chain retired onto the shared per-path mechanism its sibling registry already used, and the app config's two read-then-overwrite pairs collapsed into one owner that merges onto the raw record, so a key the current version does not model survives a write. An unreadable app config now refuses the write rather than replacing it; the read side stays lenient, so a damaged file still degrades to defaults at launch.
+
+The arc carries no bug justification. The sequence originally offered for `state.json` — two overlapping sidebar drags — cannot occur, and the work was ratified on cohesion instead. → [[ArchitecturePM]] · [[PM-005]]
+
 #### One Lock Per File (08-08)
 
 A container's sidecar is rewritten whole by an unusual number of unrelated surfaces — views, within-folder orders, the open-in configuration, property assignment, the Remove cache and its clear, and the icon/banner patch — and they had been taking three different lock keys between them, with several taking none at all. Since each is a read-merge-write, a writer that had read before a sibling's write landed put the file back without it, so dragging a page into a Collection while a view saved could silently revert either one. The key is now built in the path module and every writer takes it, which also removed the hand-built string that had been spelling the same path a second way.
