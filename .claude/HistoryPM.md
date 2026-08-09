@@ -1,42 +1,53 @@
 ### Pommora History Index
 
-| Date               | ID     | Entry                                     |
-| ------------------ | ------ | ----------------------------------------- |
-| 08-08-2026         | PM-025 | The Simplification Gates That Never Ran   |
-| 08-08-2026         | PM-005 | The JSON Write Primitive Takes Its Lock   |
-| 08-08-2026         | PM-026 | The Dead-Code Floor Under The Write Path  |
-| 08-08-2026         | PM-004 | One Lock Per File, One Instance Per Nexus |
-| 08-08-2026         | PM-003 | Dropdown Shell & Menu Consolidation      |
-| 08-07-2026 → 08-08 | PM-002 | One Shared Pass Over Fenced Code          |
-| 08-08-2026         | PM-001 | The Page Outline                          |
-| 08-06-2026 → 08-07 | PM-027 | The PageMenu And The In-App Picker        |
-| 08-06-2026         | PM-006 | Pointer Handler Logic Unification         |
-| 08-06-2026         | PM-007 | Table Geometry And The Marker Rules       |
-| 08-05-2026         | PM-008 | The Connection Hover Card                 |
-| 08-04-2026 → 08-05 | PM-028 | Four Consolidations Off The Debt Ledger   |
-| 08-04-2026         | PM-009 | Table Border Append Strips                |
-| 08-04-2026         | PM-010 | Type-Specific Codeblocks                  |
-| 08-03-2026 → 08-04 | PM-011 | Embedded Pages                            |
-| 08-03-2026         | PM-018 | Display Math And List Wrapping            |
-| 08-02-2026         | PM-012 | Hidden Groups                             |
-| 08-01-2026         | PM-013 | The NexusRecord                           |
-| 07-31-2026         | PM-014 | Identity Goes Kind-First                  |
-| 07-30-2026         | PM-029 | The Band-Seam Law                         |
-| 07-30-2026         | PM-015 | ActionBand And The Per-View Color         |
-| 07-30-2026         | PM-016 | The Tree Index                            |
-| 07-30-2026         | PM-017 | The Bridge Map                            |
-| 07-30-2026         | PM-030 | One Fence Scan For The Editor Chrome      |
-| 07-29-2026         | PM-024 | Six Hand-Rolled Borders Take One Token    |
-| 07-29-2026         | PM-023 | One Source For The Spectrum               |
-| 07-27-2026 → 07-28 | PM-022 | One Owner Per IPC Shape                   |
-| 07-27-2026         | PM-021 | The Feature Docs Audited Against The Code |
-| 07-27-2026         | PM-020 | The tierN Compatibility Surface Comes Out |
-| 07-25-2026         | PM-019 | Lint And Accessibility Reach Clean        |
+| Date               | ID     | Entry                                       |
+| ------------------ | ------ | ------------------------------------------- |
+| 08-08-2026         | PM-025 | Write-Path Docstrings Catch Up To The Code  |
+| 08-08-2026         | PM-005 | The JSON Write Primitive Takes Its Lock     |
+| 08-08-2026         | PM-026 | The Dead-Code Floor Under The Write Path    |
+| 08-08-2026         | PM-004 | One Lock Per File, One Instance Per Nexus   |
+| 08-08-2026         | PM-003 | Dropdown Shell & Menu Consolidation         |
+| 08-07-2026 → 08-08 | PM-002 | One Shared Pass Over Fenced Code            |
+| 08-08-2026         | PM-001 | The Page Outline                            |
+| 08-06-2026 → 08-07 | PM-027 | The PageMenu And The In-App Picker          |
+| 08-06-2026         | PM-006 | Pointer Handler Logic Unification           |
+| 08-06-2026         | PM-007 | Table Geometry And The Marker Rules         |
+| 08-05-2026         | PM-008 | The Connection Hover Card                   |
+| 08-04-2026 → 08-05 | PM-028 | Four Consolidations Off The Debt Ledger     |
+| 08-04-2026         | PM-009 | Table Border Append Strips                  |
+| 08-04-2026         | PM-010 | Type-Specific Codeblocks                    |
+| 08-03-2026 → 08-04 | PM-011 | Embedded Pages                              |
+| 08-03-2026         | PM-018 | Display Math And List Wrapping              |
+| 08-02-2026         | PM-012 | Hidden Groups                               |
+| 08-01-2026         | PM-013 | The NexusRecord                             |
+| 07-31-2026         | PM-014 | Identity Goes Kind-First                    |
+| 07-30-2026         | PM-029 | The Band-Seam Law                           |
+| 07-30-2026         | PM-015 | ActionBand And The Per-View Color           |
+| 07-30-2026         | PM-016 | The Tree Index                              |
+| 07-30-2026         | PM-017 | The Bridge Map                              |
+| 07-30-2026         | PM-030 | One Fence Scan For The Editor Chrome        |
+| 07-29-2026 → 07-30 | PM-031 | The Erasure Campaigns                       |
+| 07-29-2026         | PM-024 | Six Hand-Rolled Borders Take One Token      |
+| 07-29-2026         | PM-032 | Sidecar Writes Take One Strict Primitive    |
+| 07-28-2026 → 07-29 | PM-033 | Property Values Take Name-Keyed Frontmatter |
+| 07-29-2026         | PM-023 | One Source For The Spectrum                 |
+| 07-28-2026         | PM-034 | Operational State Leaves The Filesystem     |
+| 07-27-2026 → 07-28 | PM-022 | One Owner Per IPC Shape                     |
+| 07-27-2026         | PM-021 | The Feature Docs Audited Against The Code   |
+| 07-27-2026         | PM-020 | The tierN Compatibility Surface Comes Out   |
+| 07-26-2026 → 07-27 | PM-035 | The FilterPane Returns                      |
+| 07-25-2026         | PM-019 | Lint And Accessibility Reach Clean          |
+| 07-25-2026         | PM-036 | The Settings Window And The Dangle Sweep    |
+| 07-25-2026         | PM-037 | PreviewPane Absorbs Both Floating Windows   |
+| 07-24-2026         | PM-038 | The Docs Stop Describing The Tier Era       |
+| 07-22-2026 → 07-23 | PM-039 | Contexts And Spaces Replace The Three Tiers |
+| 07-20-2026 → 07-21 | PM-040 | One Vault Walk Per Structural Mutation      |
+| 07-18-2026 → 07-20 | PM-041 | Cards — The First v0.6.0 Renderer           |
 
-#### PM-025 || The Simplification Gates That Never Ran
+#### PM-025 || Write-Path Docstrings Catch Up To The Code
 **DATE:** 08-08-2026
 
-The write-path consolidation's plan called for a simplifier and a reviewer at each of three gates and only the first was dispatched, so this pass covered the registry retirement, the app-config owner, and the re-entrancy guard. Docstrings in `main/io/propertiesRegistry.ts`, `main/appConfig.ts`, and the re-entrancy tests described what the code had stopped doing, and `updateAppConfig`'s was wrong about the mechanism besides — unmodeled keys survive through the overlay rather than through the mutator seeing a raw object. `main/io/fileLock.ts`'s header lost its consumer inventory and its import restatement while keeping the key-spelling rule, the deadlock explanation, and the fact that the refusal precedes the chain read. The contexts-registry concurrency test moved into the module it exercises, dropping an aliased import and a setup line its destination already performs, and `main/menu.ts` collapsed a ternary the read expresses directly along with an optional chain that could no longer be undefined. The per-acquisition Set allocation and `updateAppConfig`'s cast stayed, with reasons recorded. → [[ArchitecturePM]]
+Docstrings in `main/io/propertiesRegistry.ts`, `main/appConfig.ts`, and the re-entrancy tests described what the code had stopped doing, and `updateAppConfig`'s was wrong about the mechanism besides — unmodeled keys survive through the overlay rather than through the mutator seeing a raw object. `main/io/fileLock.ts`'s header lost its consumer inventory and its import restatement while keeping the key-spelling rule, the deadlock explanation, and the fact that the refusal precedes the chain read. The contexts-registry concurrency test moved into the module it exercises, dropping an aliased import and a setup line its destination already performs, and `main/menu.ts` collapsed a ternary the read expresses directly along with an optional chain that could no longer be undefined. The per-acquisition Set allocation and `updateAppConfig`'s cast stayed, with reasons recorded. → [[ArchitecturePM]]
 
 - **Commits:** `416f3d55`
 - **Diff:** Net −7 | +21 / −28
@@ -235,6 +246,14 @@ Every IPC channel had been hand-written at both ends with its types kept in a th
 - **Commits:** `cfdb307e` · `fcd3621b`
 - **Diff:** Net +93 | +193 / −100
 
+#### PM-031 || The Erasure Campaigns
+**DATE:** 07-29-2026 → 07-30
+
+The Swift-compatibility layer came out wholesale: the settings seed and its backfills, the decoder date shim, the accent and colour exchange maps, the legacy view vocabulary, every Swift-citing comment, and the on-disk residue across both real nexuses — forty-seven sidecar version stamps, forty view-icon aliases, and nine legacy colour words. Navigation persistence then collapsed onto one contract, where `navigation.json` holds pinned and favorites as ordered arrays of bare `{kind, id}` refs beside the NavView banner pointer, recents stay a device-local row in the same shape, and `isNavRef` with the shared `toNavRef` strip gates every ref crossing either store. Seven IPC channels became a read and a write; stored tabs and previews dropped their paths and are hydrated at restore by the one owner that prunes dead refs, mints paths, and recomputes the history pointer. The pins folder, `navFavorites.json`, and `navview.json` left both disks by hand, with no migration code shipped. A closing attack caught an ungated banner pointer feeding a file delete and a patch-writer reading through the lenient reader, both closed the same night. → [[NavigationPM]] · [[ArchitecturePM]]
+
+- **Commits:** `fb52b501^..8ad70f03`
+- **Diff:** Net −198 | +904 / −1102
+
 #### PM-024 || Six Hand-Rolled Borders Take One Token
 **DATE:** 07-29-2026
 
@@ -243,6 +262,22 @@ Two HOIST markers in the icon picker became a design-system pass. The outlined-b
 - **Commits:** `b6270097`
 - **Diff:** Net −3 | +55 / −58
 
+#### PM-032 || Sidecar Writes Take One Strict Primitive
+**DATE:** 07-29-2026
+
+Every read-modify-write on a JSON sidecar came onto one strict primitive that separates an absent file from an unreadable one and refuses the write on the second, which closed the class where a transiently unreadable file was silently replaced by a default. Glyph resolution collapsed to one rule, and the nexus walk went parallel behind a stat-gated per-page cache, so an untouched file incurs no reads. The inverse pass then removed roughly thirty-four lines of guards defending states that cannot occur, and tracing those call sites surfaced a real defect: a property-restore spend signal was counting a failed write as spent. → [[ArchitecturePM]]
+
+- **Commits:** `c1b488c7^..0887f11f`
+- **Diff:** Net +117 | +610 / −493
+
+#### PM-033 || Property Values Take Name-Keyed Frontmatter
+**DATE:** 07-28-2026 → 07-29
+
+Page and agenda property values left the ULID-keyed `properties:` map and became wrapped, name-keyed entries at the frontmatter root — the shape Contexts already used, which moved from square brackets to parentheses so one module owns both. Values stay bare, so a number reads as a number and a date as a timestamp to any tool reading the vault. Because the key names the property, nothing is inferred from a value's shape, which collapsed four decoders into one: a shape guesser, the re-tagger that corrected its guesses, a hand-rolled decoder written to avoid it, and a per-type switch in the page-value writers. Property titles became unique nexus-wide, since the title is the key values write under, and a rename commits the registry and then sweeps once. A wrapped key is Pommora's without being a property, so resolution runs definition-first — walk the schema, build each key from its name, read that key. → [[PropertiesPM]] · [[PagesPM]]
+
+- **Commits:** `229dd31c^..e9a3da1e^` · `6a1209a6..2f62e67e`
+- **Diff:** Net +149 | +830 / −681
+
 #### PM-023 || One Source For The Spectrum
 **DATE:** 07-29-2026
 
@@ -250,6 +285,14 @@ The solid palette had been written three times: eleven hexes in the colour token
 
 - **Commits:** `e9a3da1e^..6a1209a6`
 - **Diff:** Net −24 | +62 / −86
+
+#### PM-034 || Operational State Leaves The Filesystem
+**DATE:** 07-28-2026
+
+The database had never run: `better-sqlite3` compiles against Node's ABI while Electron requires its own, so the open failed on every launch, the degradation path swallowed it, and Vitest running under plain Node returned null silently. `node:sqlite` ships inside Electron's runtime and removed the native dependency, the rebuild scripts, and that failure class with it. Eight `.nexus/` files holding per-machine chrome, plus the block layout buried inside two more, became rows — each had been JSON because everything beside it was JSON, and each paid a whole-file read-merge-write to change one key, which retired the coalescing engine, the drain contract, the per-file locks, and a quit gate that could defer the app's exit. Pinned and favorites stayed files, carrying cross-machine intent rather than per-machine chrome. The nine-table content mirror went too, having no query consumer anywhere, and search was rewritten to one tree walk, one lowercase, and one scan per query. → [[ArchitecturePM]] · [[ConfigurationPM]]
+
+- **Commits:** `ef70bf33^..e78e7b57`
+- **Diff:** Net −1875 | +675 / −2550
 
 #### PM-022 || One Owner Per IPC Shape
 **DATE:** 07-27-2026 → 07-28
@@ -275,6 +318,14 @@ Both nexuses were confirmed on the registry shape — the real one through daily
 - **Commits:** `2707533d^..a0315e2b`
 - **Diff:** Net −252 | +112 / −364
 
+#### PM-035 || The FilterPane Returns
+**DATE:** 07-26-2026 → 07-27
+
+The authoring pane came back rebuilt around the sizing failure that had killed it: every cell sizes to its own row's content with no cross-row column geometry, and the pane fills its host before stretching toward its width knob. `none` became a real NOR mode evaluated at every depth, which forced disabling onto its own `filter_enabled` field and demanded a third verdict in the evaluator, so a rule that cannot be applied abstains rather than passing. Filter targets come off the Contexts registry instead of a hardcoded tier list, so a user-defined Context filters like a seeded one; Location's four operators are any-of over a chip set of Sets, and Date collapsed to Is, Before, and After. Three review rounds produced three durable traps — two writes in one gesture, Back suppressing pointerdown, and an index-keyed exit animation handing a departing row's collapse to its successor. The branch closed on design-system hoists: one anchor, one measurement owner, one disclosure row, and a z-index scale derived from what the layers already were. → [[ViewsPM]] · [[DesignPM]]
+
+- **Commits:** `adfcb828^..05a98344`
+- **Diff:** Net +2037 | +2727 / −690
+
 #### PM-019 || Lint And Accessibility Reach Clean
 **DATE:** 07-25-2026
 
@@ -283,64 +334,56 @@ Both nexuses were confirmed on the registry shape — the real one through daily
 - **Commits:** `78383686^..c0b40cd2`
 - **Diff:** Net +135 | +445 / −310
 
-### 04-26-2026 → 07-29-2026
+#### PM-036 || The Settings Window And The Dangle Sweep
+**DATE:** 07-25-2026
 
-#### The Erasure Campaigns — Swift Parity Out, Navigation Consolidated (07-29-2026 → 07-30)
+`PreviewPane`'s first non-content consumer arrived as a Settings window off the ribbon's settings glyph, which had been a documented no-op since the ribbon shipped — a full-height category rail, rows writing through the same generic personalization setter, and a default-ON knob storing only its OFF state. It retroactively justified two surface props a simplification pass had wanted to delete for having no caller. The preview's tab strip stopped hard-cutting labels mid-word and began compacting off an open side pane, stopping at the pane's leading edge rather than merely clearing the trailing button pair. The sweep then found `connectionsOpenInPreview` consumed in three places but never parsed on read, ten inert `eslint-disable` directives for a linter absent from the toolchain, seven stale `biome-ignore` comments, and the tier migration's residue across fourteen files. → [[ConfigurationPM]] · [[PagePreviewPM]]
 
-Two campaigns under one rule: structure supplies the information, and nothing at rest may go stale. The Swift-compatibility layer came out wholesale — the settings seed and its backfills, the decoder date shim, the accent and color exchange maps, the legacy view vocabulary, and the on-disk residue across both real nexuses — because a compatibility path whose last consumer is archived can never again be exercised against real input.
+- **Commits:** `8689045f^..3d8e38aa`
+- **Diff:** Net +247 | +374 / −127
 
-Navigation persistence then collapsed into a single contract: navigation.json holds pinned and favorites as ordered arrays of bare `{kind, id}` refs beside the NavView banner pointer, with a single validation boundary gating every ref crossing either store. Seven IPC channels became read-only and write-only; stored tabs and previews dropped their paths, and were hydrated at restore by the one owner that prunes dead refs, mints paths, and recomputes the history pointer. The closing review caught an ungated banner pointer feeding a file delete and a patch-writer reading through the lenient reader — both closed the same night, with the banner gate now guarding every replaced-image delete in the app.
+#### PM-037 || PreviewPane Absorbs Both Floating Windows
+**DATE:** 07-25-2026
 
-#### The Hardening Campaign & Its Inverse (07-29-2026)
+The Page Preview and the NavWindow had duplicated an entire chassis — the glass shell and its scale in and out, the close ×, the Escape contract, the side-pane geometry and resize strip, the `--io` openness driver, and the trailing-button swallow — with a third copy in `FloatingPane`. The tell was cross-namespace CSS, where the NavWindow declared the preview's vars because the values had to match and nothing shared owned them. `PreviewPane` now owns the shell, geometry, dismissal, a toolbar in band or floating form, left and right side slots each overlay or in-flow, an optional collapsing footer, and the glass tint as a property — previously impossible to expose, since the frost material hard-sets a transparent background. A window supplies its interior and padding while the surface owns every position, transition, and driver var; a FLIP measures from the surface's own root ref rather than by walking up from an inner node, where the old `parentElement` walks would have animated the wrong element. Verification ran against a captured pre-refactor baseline at 15 of 15 states pixel-identical, plus fifteen behavioural checks for what a settled frame cannot show. → [[PagePreviewPM]] · [[NavigationPM]]
 
-A ten-lens state-of-the-app pass ranked the systemic risks, and three got root-cause fixes rather than patches. Every read-modify-write on a JSON sidecar rides one strict primitive under one rule — absent is a fact, unreadable is ignorance, and a write may act on a fact, never on ignorance — closing the class where a transiently unreadable file was silently replaced by a default. Glyph resolution collapsed to a single rule, and the nexus walk ran in parallel with a stat-gated per-page cache, so an untouched file incurs no reads at all. The inverse pass then removed the guards defending states that cannot occur — resurrection seeds for sidecars only deletion could remove, re-validations of invariants established lines earlier, catch-arms on channels that structurally cannot reject — and the tracing surfaced one real bug, a property-restore spend signal that counted a failed write as spent.
+- **Commits:** `fb868095^..0d3246c2`
+- **Diff:** Net −8 | +974 / −982
 
-#### Version 0.5.6: Operational State Decentralization + Property Syntax Unification (07-28-2026 → 07-29-2026)
+#### PM-038 || The Docs Stop Describing The Tier Era
+**DATE:** 07-24-2026
 
-**Database ↔ Configuration Decentralization:** The database had never run: `better-sqlite3` compiles against Node's ABI while Electron requires its own, so the open failed on every launch and the degradation path silently returned null. `node:sqlite` ships inside Electron's own runtime, which removed the native dependency, the rebuild scripts, and the entire class of failure. It was decided that a store should determine its database-versus-config based on the information it contains rather than on where its neighbors live. Eight `.nexus/` files held per-machine chrome — folded headings, active views, manual orders, heading columns, a fetched-title cache, the tab set, the preview sets, the recents stream — plus the block layout buried inside two more, each JSON because everything beside it was JSON, and each paying a whole-file read-merge-write behind a temp file and a rename to change one key.
+The tier-era claims were swept out of the PRD and the feature documentation so the docs described what the code did, with per-session residue stripped from the durable specs and the roadmap trued to verified state. The PRD's vision paragraph was rewritten to describe Contexts holding Spaces. No source changed.
 
-**Property Syntax Unification:** Property values for files left the ULID-keyed `properties:` map and became wrapped, name-keyed entries at the frontmatter root — `<Status>: Complete` — the shape Contexts already used, which moved from square brackets to parentheses so one module owns both. Values stay bare, so a number is a number and a date a timestamp to any tool that reads the vault. The key names the property, so nothing is inferred from a value's shape — which collapsed four decoders into one, with restore's schema-currency gate surviving as an argument rather than a rival implementation. Property-titles became unique nexus-wide because the title is the key its values are written under; renames commits the registry and then sweeps once; the new key wins wherever both appear, since any value written during the sweep already resolved the new name. The sigil governs and the registry registers: a wrapped key is Pommora's — sweepable and hideable — without being a property, and resolution runs definition-first, so a key naming nothing the registry knows sits inert.
+- **Commits:** `9ac3fcea^..14ae87e8`
 
+#### PM-039 || Contexts And Spaces Replace The Three Tiers
+**DATE:** 07-22-2026 → 07-23
 
-#### Version 0.5.5: Contexts & Spaces (07-27-2026)
+The fixed three-tier model gave way to a user-defined registry: a Context is an entry holding Spaces, and Areas, Topics, and Projects became seeded rows rather than types. Every hard-coded consumer was rewritten against it — the walk, the index, the sidebar, selection, navigation, table resolution, column labels, and the DnD model — with membership carried as a parenthesized title key in frontmatter, resolved against the registry at assembly. Registry writes run under a lock with a journal, so an interrupted rename cascade resumes rather than half-applying, and the `tierN` migration keyed its re-entry on the schema version, since the tier folders could not be the signal when the step that moved them consumed them. Spaces became the second BlockHost through `SpaceView` and space block hosts. A rename to a leading-underscore name wrote a real file and dropped it from the tree permanently, indistinguishable from a delete with no error and no way back; that closed here. → [[ContextsPM]] · [[StructurePM]]
 
-The fixed three-tier context model is gone. A Context is now a user-defined registry entry holding Spaces — Areas, Topics, and Projects are seeded rows, not types — and every consumer that had hard-coded three tiers was rewritten against it: the walk, the index, the sidebar, selection, navigation, table resolution, column labels, the DnD model. Membership is a parenthesized title key in front-matter, resolved against the registry at assembly. Registry writes run under a lock with a journal, so an interrupted rename cascade resumes instead of half-applying, and the `tierN` migration keyed its re-entry on the version alone, since the tier folders could not be the signal — the step that moved them consumed them.
+- **Commits:** `c7c210da^..ae139217`
+- **Diff:** Net +2135 | +3391 / −1256
 
-Spaces became the second BlockHost, which surfaced a second problem: three near-identical floating windows and no shared chassis. Extracting **PreviewPane** absorbed the Page Preview and the NavWindow, retired `FloatingPane`, and made a real Settings window cheap enough to build — the ribbon's Settings glyph had been a documented no-op since the ribbon shipped. Verified against a captured baseline at 15/15 states pixel-identical. **PickerMenu** became the second shared chassis on the FilterPane's return, gaining a growth origin, a height cap through the shared scroll frame, a fixed width, a selection ring that merges across adjacent rows, and a keyboard focus contract.
+#### PM-040 || One Vault Walk Per Structural Mutation
+**DATE:** 07-20-2026 → 07-21
 
-The branch closed on three adversarial passes — CSS, behavior, interaction — and the cleanup they drove. They found six real defects, four introduced by the branch's own final session, and caught two shipped tests that certified guarantees they had never tested. Then eight parked items were closed against agents and verified by hand: the filter's abstain guarantee extended from leaves to groups, writes stopped rebuilding from stale render snapshots, a locked embed stopped reporting success while dropping the write, the Toolbar's dropdown beaks moved off hard-coded fractions that were already wrong, two ResizeObservers over one box became one publisher, and the duplicated dropdown anchor, disclosure row, Space-glyph derivation and scattered z-index values each collapsed to a single source.
+Structural mutations came to cost exactly one vault walk: every create, move, rename, delete, and reorder patches the in-memory tree optimistically through pure `treeMove.ts` transforms while `writeEcho`'s self-write suppression keeps the watcher external-only, with the confirming reload following. Creation moved to pick-natively and execute-in-store, so the create menu returns the chosen request instead of running it and a new row lands instantly with its icon and a focused rename. Every bespoke drag surface consolidated onto `beginPointerGesture`, one raw-pointer primitive owning activation, listeners, Escape, capture, and per-gesture abort, while the cross-zone engine moved its pointer-follow to imperative transforms. The editor's hot path took a per-doc-version scan cache, value clicks routed through a shared `valueClick` router, page autosave became a path-keyed flush registry, and the dead `Popover` fell with its `useDismiss` extracted. Certification caught four defects along the way — grandchild path corruption on reparent, a root-path character eaten by `parentOf`, a refused begin clobbering a live gesture's handle, and an inspector writing stored-`false` checkboxes. → [[ArchitecturePM]] · [[PommoraDND]]
 
-#### Version 0.5.5: View Filtering Pane (07-26-2026)
+- **Commits:** `bac7ba93^..a66a0ec8`
+- **Diff:** Net +1153 | +2248 / −1095
 
-The **FilterPane** returned, rebuilt around the one thing that killed it: **sizing**. Every cell sizes to its OWN row's content with no cross-row column geometry — an `Is` operator field is visibly narrower than a `Doesn't Contain` one — with the operator hugging tightest and the value absorbing the spare. The pane fills its host before stretching toward its width knob; the original collapsed to its widest row *inside* a wider host, stranding every row at half the surface. Rows read `[connector][property][operator][value]`, a permanent lead row (placeholder `Where`) means the pane opens ready to author, and the footer carries the match mode beside an on/off toggle.
+#### PM-041 || Cards — The First v0.6.0 Renderer
+**DATE:** 07-18-2026 → 07-20
 
-Two semantics changed underneath. **`none` became a real NOR mode** — "matches none of these", evaluated at every depth — which forced disabling onto its own field, `filter_enabled`, so parking a filter costs it neither rules nor mode. That repurpose then demanded a **third verdict in the evaluator**: a rule that can't be applied now *abstains* instead of returning `true`, because under NOR a pass reads as a match and would exclude every row on a half-authored rule. Encoding keeps the root's mode across a run split (NOR over runs is De-Morgan-exact); rewriting it to `any` there inverted the filter's polarity on one connector click.
+The Gallery view type was activated, renamed Cards, and built end-to-end on the `cards-view` branch: the card canvas, the Set Cards row, flattened disclosure bands, the location footing, per-value interaction routing through the ratified per-kind matrix, and the two-stage add picker. Group By None with Sort By Location superseded an earlier flatten switch. `CardPickerHost` sits at grid level as the single home for the value, calendar, and add pickers, so row churn cannot tear an open picker; every picker mounts persistently and Blooms in and out under a dev guard, and a chip's remove-× stays inert until hover-revealed so a stray click opens the picker rather than deleting a value. Three agent-fanned sweeps followed — an eight-agent per-type audit, the number Bar look gated by one `numberDivisor` predicate, and an eleven-agent verification pass whose catches included a calendar sub-menu z-burial, a dead empty-cell menu, a blur-committing pane Back row, and a StrictMode spurious calendar write.
 
-Three review rounds ran against it. The ones worth recording as durable traps: **two writes in one gesture** (a value's blur-commit and the click that caused the blur) both built from the same render prop and the second dropped the first — pane writes now derive from the last-written view, read at call time since a write updates a ref without re-rendering; **Back suppresses pointerdown** to protect focus, so leaving that way fires no blur and the edit is lost — the value input flushes on unmount, capturing its node at mount because React detaches refs before passive cleanups; and an **index-keyed exit animation** handed the departing row's collapse to the survivor that shifted into its index, so the exit beat was removed rather than patched.
+**Riding the same branch:** the design system gained a `Slider` primitive that the Cards Scale control consumed; the thumbnail cache became persistent, with `existingNavKeys` supplying the tree's complete key set and an existence-prune at nexus-open replacing recents-window eviction so covers survive relaunch; and the main tab strip's labels took hover eclipse-scroll on the shared `OverflowScroll`. A view save stopped walking the tree twice, and MarkdownPM rebuilt an edited table's widget on cell commit. → [[CardViewPM]] · [[ViewsPM]]
 
-#### Version 0.5.4: The Settings Window + Tab Fixes +  Dangle Sweep (07-25-2026)
+- **Commits:** `dd6f6d1b^..3ab0bd51`
+- **Diff:** Net +3147 | +3984 / −837
 
-`PreviewPane`'s first consumer that isn't a content window: a **Settings window** off the sidebar ribbon's settings glyph, which had been a documented no-op since the ribbon was built. A category rail runs the window's full height, its rows write through the same generic personalization setter every other writer uses, and a default-ON knob stores only its OFF state so an untouched nexus keeps a clean settings file. It is also what justified the two surface props a simplification pass had wanted to delete for having no caller — the bounds override, and the in-flow left slot are exactly what a settings sheet needs.
-
-Two tab fixes alongside it. An overflowing tab label had been **hard-cutting** mid-word: the strip rendered a plain span while every other truncating surface wraps text in the shared eclipse box, and the strip's own stylesheet had long declared fade knobs for a mechanism nothing ever attached. And the strip now **compacts off an open side pane**, stopping at the pane's leading edge rather than merely clearing the trailing button pair — which the pair's own travel cannot express, since it deliberately lands *inside* the pane's corner.
-
-**A sweep for what was dangling.** The `connectionsOpenInPreview` knob was consumed in three places but never parsed on read, so its new toggle would have reverted on every relaunch — now fixed, with the boolean knobs round-trip tested *together* so the next one can't skip the read path silently. The repo also carried a decommissioned linter's ghost: ESLint is nowhere in the toolchain, yet ten `eslint-disable` directives sat inert across the codebase, alongside seven `biome-ignore` comments suppressing rules that no longer fire. Both classes were resolved by keeping the reasoning and dropping the dead directive. Plus the tier-migration's residue: an identity pane still carrying state for a branch it no longer renders, a dead helper, two dead parameters, and unused imports across fourteen files.
-
-#### Version 0.5.3: PreviewPane — One Floating-Window Surface (07-25-2026)
-
-The Page Preview and the NavWindow had been duplicating an entire chassis: the glass shell and its scale in/out, the close `×`, the Escape contract, the side-pane geometry and resize strip, the `--io` openness driver, the trailing-button swallow, and the embed-grows scroll override — each written twice, plus a third copy of the shell in the old `FloatingPane`. The tell was cross-namespace CSS: the NavWindow declared the *preview's* vars because the values had to match and nothing shared owned them. All of it collapsed into **`PreviewPane`**, which absorbed and retired `FloatingPane`: it owns the shell, geometry, dismissal, a toolbar in a full-width **band** or corner-pinned **floating** form, left/right side slots each **overlay** or **in-flow**, an optional collapsing footer, and the **glass tint as a property** (previously impossible to expose, since the frost material hard-sets a transparent background and each window had to override it inline). Two windows, one surface, and the backwards dependency that had the NavWindow importing its bounds from the preview is gone.
-
-The dividing rule: a window supplies its interior and its own padding — the preview runs edge-to-edge, the NavWindow rings on the glass inset — while the surface owns every position, transition, and driver var. The openness drivers stay declared on the window root, because they are *inheriting* registered properties and the main pane's inspector would otherwise drive a floating window's pane. A window wanting a custom exit **suppresses** the shell's scale-out rather than layering a second motion over it.
-
-**Verified** against a captured pre-refactor baseline rather than by inspection: a deterministic driver (store-driven, pinned viewport, fresh renderer per run) proved reproducible by two identical runs, then every state re-captured and pixel-diffed — 15/15 identical, every recorded rect unchanged, both FLIP keyframe sets and the driver shield intact, plus 15 behavioral checks for what a settled frame cannot show (move allow-list, corner and rail resize, Escape ordering, the shared inspector width slot).
-
-#### Version 0.5.2: The Certified Cleanup Campaign — One-Walk Mutations + Shared Interaction Primitives (07-20-2026 → 07-21)
-
-The pre-merge hardening of `cards-view`: a six-agent sector scope distilled the app's jank and duplication into eight fixtures, and each ran a fix → gate → build-breaker loop until adversarially certified. What locked in: **structural mutations cost exactly one vault walk** — every create/move/rename/delete/reorder patches the in-memory tree optimistically through pure `treeMove.ts` transforms while `writeEcho`'s self-write suppression (exact-path + prefix windows at both endpoints of a move) keeps the watcher external-only, and the confirming reload follows; **creation picks natively, executes in the store** — the create menu returns the chosen request instead of running it, so the new row lands instantly with its icon and a focused renam; the bespoke drag surfaces (table rows, bands, panes, grouping) consolidated onto **`beginPointerGesture`** — one raw-pointer primitive owning activation, listeners, Esc, capture, and per-gesture abort — while the cross-zone engine moved its pointer-follow to imperative transforms and gained shared scroll-tracked autoscroll; the editor's hot path reads **one per-doc-version scan cache**; property value clicks route through the **shared `valueClick` router** (checkbox stays true-or-absent); and page autosave became the **path-keyed flush registry** every host shares.
-
-#### Version 0.5.1: Cards View — Renderer + Interaction Hardening + the Picker-Host Architecture (07-18-2026 → 07-20)
-
-The first v0.6.0 renderer shipped end-to-end on `cards-view`, then was hardened by agent-fanned sweeps until the interaction surface held: an 8-agent per-type audit (its value-loss ×-steal, link-alias, and reveal-consistency fixes all landed), the number Bar look (full-width own-row; one `numberDivisor` predicate gates Bar across cell menu, header menu, editor pane, and render), the add menu redesigned around *list exactly what's not shown, picking reveals* (hidden tiers/contexts fill through the context picker), and an 11-agent verification sweep whose confirmed catches — a calendar sub-menu z-burial, the dead empty-cell menu, a blur-committing pane Back row, a StrictMode spurious calendar write, compact's un-settable blank tiers — were folded with regression tests. The closing architecture locks the Bloom law: `CardPickerHost` is the one grid-level home for the value/calendar/add pickers (row churn can never tear an open picker; a value Compact drops mid-edit dismisses animated), every picker mounts persistently and Blooms in/out with a dev-guard enforcing it, and the chip remove-× is inert until hover-revealed so a stray click opens the picker instead of deleting a value.
+### 04-26-2026 → 07-17-2026
 
 ##### PRE-Version 0.5.0
 
