@@ -4,7 +4,7 @@
 
 import { stat } from 'node:fs/promises'
 import { join } from 'node:path'
-import { type BaselineDiff, diffBaselines, type EntityRecord, isEmptyDiff } from '@shared/record'
+import type { EntityRecord } from '@shared/record'
 import { errText } from '@shared/result'
 import type { NexusTree, PageNode, SetNode } from '@shared/types'
 import { readKey, writeKey } from './db/localState'
@@ -132,19 +132,9 @@ async function recordEldest(
   }
 }
 
-/** Entries in flux leave both sides of the diff: an ambiguous-marked prior entry and any id
- *  the current walk saw at 2+ paths. Their paths are stale or contested by construction, and
- *  a phantom add or remove would overwrite the last-non-empty drift row. */
-const diffable = (
-  b: Baseline,
-  duplicates: Record<string, EntityRecord[]>,
-): Record<string, EntityRecord> =>
-  Object.fromEntries(Object.entries(b).filter(([id, e]) => !e.ambiguous && !(id in duplicates)))
-
-/** The open path's record pass: one explicit walk, latched against the prior session, the
- *  drift kept only when it says something (an uneventful open must not overwrite the one
- *  interesting record), the new baseline written last. Best-effort end to end — a failed walk
- *  or a failed row write retains the prior record, and the open itself proceeds. */
+/** The open path's record pass: one explicit walk, latched against the prior session, the new
+ *  baseline written last. Best-effort end to end — a failed walk or a failed row write retains
+ *  the prior record, and the open itself proceeds. */
 export async function runOpenRecord(root: string): Promise<void> {
   try {
     const tree = await readNexus(root)
@@ -156,15 +146,7 @@ export async function runOpenRecord(root: string): Promise<void> {
     const reminted = await runRemintPass(root, walked, prior, unreadablePaths)
     const projection = applyRemints(walked, reminted)
     await recordEldest(root, projection, prior)
-    const next = latchBaseline(projection, unreadablePaths, prior)
-    if (prior !== null) {
-      const drift = diffBaselines(
-        diffable(prior, projection.duplicates),
-        diffable(next, projection.duplicates),
-      )
-      if (!isEmptyDiff(drift)) writeDrift(drift)
-    }
-    writeBaseline(next)
+    writeBaseline(latchBaseline(projection, unreadablePaths, prior))
   } catch (e) {
     console.error('record: the open pass failed; the prior record stands:', errText(e))
   }
@@ -176,12 +158,4 @@ export function readBaseline(): Baseline | null {
 
 export function writeBaseline(baseline: Baseline): boolean {
   return writeKey('record', 'baseline', baseline)
-}
-
-export function readDrift(): BaselineDiff | null {
-  return readKey<BaselineDiff>('record', 'drift')
-}
-
-export function writeDrift(drift: BaselineDiff): boolean {
-  return writeKey('record', 'drift', drift)
 }

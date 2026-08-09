@@ -10,10 +10,8 @@ import {
   latchBaseline,
   projectBaseline,
   readBaseline,
-  readDrift,
   runOpenRecord,
   writeBaseline,
-  writeDrift,
 } from './record'
 import { closeSessionDb, openSessionDb } from './sessionDb'
 
@@ -279,7 +277,6 @@ describe('the record rows', () => {
 
   it('reads null before any baseline is written — absence is not an empty map', () => {
     expect(readBaseline()).toBeNull()
-    expect(readDrift()).toBeNull()
   })
 
   it('round-trips the baseline, ambiguous markers included', () => {
@@ -293,18 +290,10 @@ describe('the record rows', () => {
     expect(readBaseline()).toEqual({})
   })
 
-  it('round-trips the drift row', () => {
-    const drift = { added: [entry], removed: [], changed: [] }
-    expect(writeDrift(drift)).toBe(true)
-    expect(readDrift()).toEqual(drift)
-  })
-
   it('with no database open, reads are null and writes report failure', () => {
     closeSessionDb()
     expect(readBaseline()).toBeNull()
-    expect(readDrift()).toBeNull()
     expect(writeBaseline({})).toBe(false)
-    expect(writeDrift({ added: [], removed: [], changed: [] })).toBe(false)
   })
 })
 
@@ -328,22 +317,16 @@ describe('runOpenRecord — the open sequence', () => {
     await rm(root, { recursive: true, force: true })
   })
 
-  it('latches silently, names a closed-window rename, and an uneventful open preserves the drift', async () => {
+  it('latches silently, and a closed-window rename follows the id to its new path', async () => {
     await runOpenRecord(root)
-    expect(readDrift()).toBeNull()
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Notes.md')
 
     await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'Journal.md'))
     await runOpenRecord(root)
-    const drift = readDrift()
-    expect(drift?.added).toEqual([])
-    expect(drift?.removed).toEqual([])
-    expect(drift?.changed).toHaveLength(1)
-    expect(drift?.changed[0].before.path).toBe('Library/Notes.md')
-    expect(drift?.changed[0].after.path).toBe('Library/Journal.md')
+    expect(readBaseline()?.[NOTES]?.path).toBe('Library/Journal.md')
 
+    // An uneventful open re-latches the same answer rather than drifting off it.
     await runOpenRecord(root)
-    expect(readDrift()).toEqual(drift)
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Journal.md')
   })
 
@@ -358,7 +341,6 @@ describe('runOpenRecord — the open sequence', () => {
     await rm(join(root, 'Library'), { recursive: true, force: true })
     await runOpenRecord(root)
     expect(readBaseline()).toEqual({})
-    expect(readDrift()).toBeNull()
   })
 
   it('with no prior evidence the eldest claimant records — the original never re-mints', async () => {
@@ -380,16 +362,15 @@ describe('runOpenRecord — the open sequence', () => {
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Zed.md')
   })
 
-  it('an id in flux never enters the drift — a dropped duplicate is not a removal', async () => {
+  it('a dropped duplicate leaves the baseline without being recorded as a removal', async () => {
     await runOpenRecord(root)
     const body = `---\nPageID: ${NOTES}\n---\nbody`
     await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'A.md'))
     await writeFile(join(root, 'Library', 'B.md'), body)
     await runOpenRecord(root)
-    // Two claimants, neither at the recorded path: the entry drops from the baseline, and the
-    // drift stays silent about it — two copies on disk are not a deletion.
+    // Two claimants, neither at the recorded path: the entry drops from the baseline, because
+    // two copies on disk are not a deletion and the id is in flux until one is adjudicated.
     expect(readBaseline()?.[NOTES]).toBeUndefined()
-    expect(readDrift()).toBeNull()
   })
 
   it('a sidecar corrupted while closed reads as an unreadable transition, never a removal', async () => {
@@ -404,10 +385,5 @@ describe('runOpenRecord — the open sequence', () => {
       path: 'Library',
       state: 'unreadable',
     })
-    const drift = readDrift()
-    expect(drift?.removed).toEqual([])
-    expect(drift?.changed.map((c) => [c.before.state, c.after.state])).toEqual([
-      ['present', 'unreadable'],
-    ])
   })
 })

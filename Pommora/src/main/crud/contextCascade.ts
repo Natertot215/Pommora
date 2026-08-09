@@ -207,7 +207,7 @@ export async function renameContextOp(
   const reg = await readRegistryStrict(root)
   if (!reg.ok) return reg
   const entry = reg.value.contexts.find((c) => c.id === contextId)
-  if (!entry) return fail('not-found', 'Unknown Context.', 'contexts')
+  if (!entry) return fail('not-found', 'Unknown Context.')
   if (entry.title === newName) return ok(null)
   // Case-insensitive vs OTHER groups (the filesystem is); a case-only rename of itself passes.
   if (
@@ -231,7 +231,7 @@ export async function renameContextOp(
     }
   } catch (e) {
     await clearJournal(root)
-    return fail('operation-failed', errText(e), 'contexts')
+    return fail('operation-failed', errText(e))
   }
 
   const cascade = await cascadeTitle(root, reg.value, j)
@@ -266,7 +266,7 @@ export async function renameSpaceOp(
   const world = await loadContextWorld(root)
   if (!world.ok) return world
   const ref = world.value.spaceById.get(spaceId)
-  if (!ref) return fail('not-found', 'Unknown Space.', 'contexts')
+  if (!ref) return fail('not-found', 'Unknown Space.')
   if (ref.title === newName) return ok(null)
   const target = join(contextsDir(root), ref.contextTitle, newName)
   // A case-only rename of ITSELF hits its own folder on a case-insensitive filesystem —
@@ -288,7 +288,7 @@ export async function renameSpaceOp(
     await rename(ref.dir, target)
   } catch (e) {
     await clearJournal(root)
-    return fail('operation-failed', errText(e), 'contexts')
+    return fail('operation-failed', errText(e))
   }
 
   const cascade = await cascadeTitle(root, world.value.registry, j)

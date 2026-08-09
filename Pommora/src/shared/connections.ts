@@ -45,11 +45,6 @@ export function pageLinkPattern(): RegExp {
   return /(?<!!)\[\[((?:[^\]\r\n|]|\](?!\])){1,255})(?:\|([^\]\r\n]{0,255}))?\]\]/g
 }
 
-/** A `[[Title]]` occurrence found in a body, aggregated by normalized title. */
-export interface ScannedConnection {
-  normalizedTitle: string
-  multiplicity: number
-}
 
 /** Resolution outcome for a scanned title against the nexus link index. */
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'

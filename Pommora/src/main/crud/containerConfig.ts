@@ -37,11 +37,11 @@ export async function setContainerConfig(
   patch: ContainerConfigPatch,
 ): Promise<Result<null>> {
   if (kind === 'set' && patch.open_in !== undefined) {
-    return fail('operation-failed', 'Open In is collection-owned.', kind)
+    return fail('operation-failed', 'Open In is collection-owned.')
   }
   return withSidecarLock(folder, kind, async () => {
     const sidecar = await readCfgSidecar(folder, kind)
-    if (sidecar === null) return fail('not-found', 'Container sidecar not found.', kind)
+    if (sidecar === null) return fail('not-found', 'Container sidecar not found.')
     await writeSidecar(folder, kind, { ...sidecar, ...definedOnly(patch), modified_at: nowIso() })
     return ok(null)
   })

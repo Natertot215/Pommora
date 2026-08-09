@@ -28,9 +28,9 @@ export async function createPage(
   name: string,
   opts: { icon?: string; body?: string } = {},
 ): Promise<Result<{ id: string; path: string }>> {
-  if (invalidName(name)) return fail('invalid-name', `"${name}" is not a valid name.`, 'page')
+  if (invalidName(name)) return fail('invalid-name', `"${name}" is not a valid name.`)
   const file = join(parentDir, name + MD)
-  if (await pathExists(file)) return fail('exists', `"${name}" already exists.`, 'page')
+  if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
   const id = newId()
   const now = nowIso()
   const modeled: Record<string, unknown> = {
@@ -72,10 +72,10 @@ export async function renamePage(
   absFile: string,
   newName: string,
 ): Promise<Result<{ path: string }>> {
-  if (invalidName(newName)) return fail('invalid-name', `"${newName}" is not a valid name.`, 'page')
+  if (invalidName(newName)) return fail('invalid-name', `"${newName}" is not a valid name.`)
   const target = join(dirname(absFile), newName + MD)
   if (target === absFile) return ok({ path: absFile })
-  if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`, 'page')
+  if (await pathExists(target)) return fail('exists', `"${newName}" already exists.`)
   await relocatePage(absFile, target)
   return ok({ path: target })
 }
@@ -86,7 +86,7 @@ export async function updatePageBody(absFile: string, body: string): Promise<Res
   // Locked here rather than at the caller: the existence check and the write have to sit inside
   // the same slot as a relocate, or a rename landing between them re-creates the vacated file.
   return serializeOnFile(absFile, async () => {
-    if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.', 'page')
+    if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
     await writePageFile(absFile, { modified_at: nowIso() }, ['modified_at'], body)
     return ok(null)
   })
@@ -103,7 +103,7 @@ export async function movePage(
   const target = join(newParentDir, basename(absFile))
   if (target === absFile) return ok({ path: absFile })
   if (await pathExists(target))
-    return fail('exists', `A page named "${basename(absFile)}" already exists there.`, 'page')
+    return fail('exists', `A page named "${basename(absFile)}" already exists there.`)
   await relocatePage(absFile, target)
   return ok({ path: target })
 }
@@ -126,7 +126,7 @@ export async function updatePageProperty(
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Promise<Result<null>> {
-  if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.', 'page')
+  if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
   const key = propertyKey(def)
   const clear = value === null || isBlankValue(value)
   await setGovernedRootKeys(absFile, clear ? {} : { [key]: encodeValue(value) }, [key])

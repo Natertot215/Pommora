@@ -3,7 +3,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ensureContextsRegistry, mutateRegistryFile, readRegistry } from './contextsRegistry'
-import { contextsRegistryFile, nexusDir, spaceDir } from './paths'
+import { contextsRegistryFile, nexusDir } from './paths'
 import { readJsonStrict, rmwJsonStrict } from './io/atomicWrite'
 import { DEFAULT_LABELS } from '@shared/types'
 
@@ -17,11 +17,8 @@ afterEach(async () => {
 })
 
 describe('paths', () => {
-  it('lays out the registry file and space dirs under .nexus', () => {
+  it('lays the registry file out under .nexus', () => {
     expect(contextsRegistryFile(root)).toBe(join(root, '.nexus', 'contexts.json'))
-    expect(spaceDir(root, 'Projects', 'Pommora')).toBe(
-      join(root, '.nexus', 'contexts', 'Projects', 'Pommora'),
-    )
   })
 })
 
