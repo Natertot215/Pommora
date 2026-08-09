@@ -1,6 +1,6 @@
 ## Write-Path Consolidation — Implementation Plan
 
-> **Status:** ratified — in execution · Spec: none — grounded in this session's five-lens survey and the verification below · Execute tasks in order.
+> **Status:** delivered — closed out · Spec: none — grounded in this session's five-lens survey and the verification below · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -237,6 +237,7 @@ The suite alone cannot prove the window shut. `setIcon` and `setHeadingIconHidde
 - **08-08** (Nathan) — The restore surface is parked, not dead; annotated in `shared/mutate.ts` and `provenance.ts`. The drift row is removed — he does not inspect `nexus.db` by hand.
 
 ### Open Against Later Tasks
+- **The non-reentrancy rule has no enforcement point, only a docstring.** The closeout attack proved empirically that calling `rmwJsonStrict` or `rewritePageSerialized` from inside a `serializeOnFile` on the same path hangs rather than rejecting, and that the hung slot poisons that path's chain for the life of the process — every later writer of that file hangs too, silently, until restart. Nothing produces it today: enumeration is clean and an instrumented run of the main-process suite (60 files, 670 tests) recorded zero reentrant acquisitions. The producer is the next person writing a sidecar read-modify-write, and the codebase's dominant sidecar idiom — `withSidecarLock` around a read and a write — is exactly the shape that trips it; `removeProperty` carried that shape in two places until this arc removed them. Roughly six lines in `io/fileLock.ts` (an `AsyncLocalStorage` held-key set that throws on same-key reentry) converts a permanent wedge into a rejection the `Result` envelope already carries. **Left for Nathan**: it adds lines, and this arc was ratified as removal-only, so it is his call rather than a task's.
 
 ### Deviations
 - **Task 1 hit an import cycle the plan never foresaw.** Folding `serializeOnFile` into `rmwJsonStrict` would have made `io/atomicWrite.ts` and `io/fileLock.ts` mutually dependent, because `fileLock` imported `atomicWriteFile` for `rewritePageSerialized`. Rather than accept a cycle that happens to resolve, `rewritePageSerialized` moved to sit beside the writers it uses and `io/fileLock.ts` now imports nothing — a lock primitive depending on the writers had the arrow backwards. Six importers were re-pointed; the compiler enumerated them.
@@ -258,3 +259,9 @@ The suite alone cannot prove the window shut. `setIcon` and `setHeadingIconHidde
 - **Enumeration freshness.** The sweeps walk `listMarkdownFiles` outside any lock, then lock each file individually, so a page created between the walk and the writes is never visited. No per-file fixture closes this. Whether the contract should state the exclusion is an open question, not a task.
 
 ### Closeout
+
+**Delivered.** All seven requirements met; the Acceptance criterion holds — no `rmwJsonStrict` caller sits inside a same-key lock, and `patchConfig` sweeps to zero against a live control of 22. Gates at close: typecheck clean on both projects, `biome lint` clean over 725 files with zero warnings, **2,246 tests across 197 files** (baseline 2,239; seven added, none removed or weakened), build green. Net **−22 code lines** across `src/main`, comments and tests excluded.
+
+**The claim was verified before it was attacked, and the verifier corrected it three times.** Requirement 3's "four arms" described the plan rather than the shipped code — the simplification pass merged setBanner's set and clear arms, so there are three call sites. "Behaviour is unchanged" was overstated: `pommora.json` genuinely lost its self-heal on corruption, which the plan had accepted and the claim then forgot. And "nothing left behind" was false — the Made False table had run five of seven, leaving `withSidecarLock`'s and `writeRegistry`'s docstrings describing an arrangement that no longer existed. Both were rewritten before the attack ran.
+
+**The attack returned two findings against thirteen killed.** The surviving one is the missing enforcement point, recorded above for Nathan. The other was mine: a dir-level `git add` swept an uncommitted comment strip into an io-scoped commit, taking a `(Nathan's call)` marker off `RenamableLabel`. Restored, the range swept for others, and the lesson is the one already in the rules — stage explicit paths, never a directory.
