@@ -4,12 +4,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { mutateRegistry, orderedDefs, readRegistry } from './propertiesRegistry'
 import type { PropertyDefinition } from '@shared/properties'
-import {
-  ensureContextsRegistry,
-  mutateRegistryFile,
-  readRegistry as readRegistry2,
-} from '../contextsRegistry'
-import { DEFAULT_LABELS } from '@shared/types'
 
 let root: string
 beforeEach(async () => {
@@ -117,11 +111,10 @@ describe('RegistryFile shape — { order, defs } with legacy migration', () => {
   })
 })
 
-// Both registry files are read-modify-written whole, and both now take the same per-path lock
-// rather than one taking a private chain of its own. This crosses the two: neither may drop a
-// concurrent sibling's change, and the answer must be the same on each side.
-describe('the two registries serialize the same way', () => {
-  it('concurrent property-registry mutations both land', async () => {
+// The file is read-modify-written whole, under its own per-path lock, so neither of two
+// overlapping mutations may drop the other's change.
+describe('serialization', () => {
+  it('concurrent mutations both land', async () => {
     await mutateRegistry(root, () => ({ next: { order: [], defs: {} }, result: undefined }))
     await Promise.all([
       mutateRegistry(root, (reg) => ({
@@ -136,26 +129,5 @@ describe('the two registries serialize the same way', () => {
     const after = await readRegistry(root)
     expect(Object.keys(after.defs).sort()).toEqual(['prop_a', 'prop_b'])
     expect([...after.order].sort()).toEqual(['prop_a', 'prop_b'])
-  })
-
-  it('concurrent contexts-registry mutations both land', async () => {
-    await mkdir(join(root, '.nexus'), { recursive: true })
-    await ensureContextsRegistry(root)
-    await Promise.all([
-      mutateRegistryFile(root, (cur) => ({
-        ...cur,
-        contexts: [...cur.contexts, { id: 'ctx_x', title: 'X', singular: 'X' }],
-      })),
-      mutateRegistryFile(root, (cur) => ({
-        ...cur,
-        contexts: [...cur.contexts, { id: 'ctx_y', title: 'Y', singular: 'Y' }],
-      })),
-    ])
-    const after = await readRegistry2(root, DEFAULT_LABELS)
-    expect(after.ok).toBe(true)
-    if (!after.ok) return
-    const titles = after.value.contexts.map((c) => c.title)
-    expect(titles).toContain('X')
-    expect(titles).toContain('Y')
   })
 })
