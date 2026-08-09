@@ -350,13 +350,6 @@ The Page Preview and the NavWindow had duplicated an entire chassis — the glas
 - **Commits:** `fb868095^..0d3246c2`
 - **Diff:** Net −8 | +974 / −982
 
-#### PM-038 || The Docs Stop Describing The Tier Era
-**DATE:** 07-24-2026
-
-The tier-era claims were swept out of the PRD and the feature documentation so the docs described what the code did, with per-session residue stripped from the durable specs and the roadmap trued to verified state. The PRD's vision paragraph was rewritten to describe Contexts holding Spaces. No source changed.
-
-- **Commits:** `9ac3fcea^..14ae87e8`
-
 #### PM-039 || Contexts And Spaces Replace The Three Tiers
 **DATE:** 07-22-2026 → 07-23
 
