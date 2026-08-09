@@ -32,3 +32,8 @@ graphify-out/
 # never an ancestor's — so the Studio-wide skills are reached through a symlink.
 # No trailing slash: a dir-pattern ignore does not match a symlink.
 .claude/skills
+
+# Commands resolve the same way, through the same kind of symlink to the Studio's
+# own folder. The link is machine-local by construction — committed, it dangles on
+# every other checkout — so it stays out of the tree.
+.claude/commands
