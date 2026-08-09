@@ -5,7 +5,7 @@
 // pure Node and unit-testable without booting Electron.
 
 import { join } from 'node:path'
-import { readJsonObject, writeJson } from './io/atomicWrite'
+import { readJsonObject, rmwJsonStrict } from './io/atomicWrite'
 
 /** Where a delete sends the entity: the in-nexus `.trash` (portable, index-aware) or the
  *  macOS system Trash (Finder-recoverable). Device-level — system Trash isn't portable
@@ -44,9 +44,24 @@ export async function readAppConfig(userDataDir: string): Promise<AppConfig> {
   }
 }
 
-/** Write the config atomically (stable, sorted keys + trailing newline). */
-export async function writeAppConfig(userDataDir: string, config: AppConfig): Promise<void> {
-  await writeJson(appConfigPath(userDataDir), config)
+/** Read-modify-write the config under its own lock — the one writer, so the adopt path and the
+ *  menu's recents self-heal cannot each rebuild the file from a snapshot taken before the other
+ *  landed. `mutate` receives the RAW object rather than the projection above, so a key this
+ *  version doesn't model rides through instead of being dropped on every write.
+ *
+ *  An unreadable file fails the write rather than replacing it, which is the strict reader's
+ *  whole point and a change from the previous overwrite-on-corrupt behaviour. The read side
+ *  stays lenient, so a damaged config still degrades to empty defaults for launch. */
+export async function updateAppConfig(
+  userDataDir: string,
+  mutate: (current: AppConfig) => AppConfig,
+): Promise<void> {
+  const written = await rmwJsonStrict(
+    appConfigPath(userDataDir),
+    (cur) => ({ ...cur, ...mutate(cur as AppConfig) }),
+    () => ({}),
+  )
+  if (!written.ok) throw new Error(written.error.message)
 }
 
 /** Prepend `path` to recents, removing any prior occurrence (move-to-front) and
