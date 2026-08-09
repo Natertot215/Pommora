@@ -55,6 +55,7 @@ The survey that opened this session produced a ranked read of what to build next
 - **`setGovernedRootKeys` is an unlocked read-modify-write.** Both its callers now hold the page lock, so it is safe today, but the primitive itself offers no protection to a third.
 - **A regression test that passes before the fix proves nothing.** Every test added this session was confirmed red against the unfixed tree — stash the source, keep the untracked test, run, restore. It caught that the new value-write test had teeth and showed exactly which write disappears.
 - **Consolidation that stops one layer short of its own module is a repeat shape.** `sidecarPath` was added and then not used inside the file that defines sidecar reads and writes.
+- **Three `tabBar.css` knobs do nothing, and one of them says it does.** `--tab-icon`, `--tab-x` and `--tab-plus` sit under the `KNOBS — the whole bar tunes here` header while `TabBar.tsx` passes 14, 11 and 13 as literals past them; `--tab-icon`'s own comment concedes the TSX "mirrors it." Tuning them moves nothing. Left in place deliberately — the question to answer is what they were meant to drive, and whether the TSX should read them or they should go.
 - **`ViewPane`'s disabled More menu may be redundant rather than pending** — a view row already carries a working context menu with the same actions. That one wants a product call, not a build.
 
 #### Handoff Guidelines

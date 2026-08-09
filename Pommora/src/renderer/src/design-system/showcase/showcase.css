@@ -635,7 +635,7 @@ code {
 }
 .ds-switcher-btn {
   appearance: none;
-  border: 1px solid var(--separator-line, #71717a40);
+  border: 1px solid var(--separator-border);
   border-radius: 8px;
   background: var(--fill-quinary, transparent);
   color: var(--label-secondary, #f1f1f1a6);
