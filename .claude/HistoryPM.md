@@ -1,109 +1,157 @@
 ### Pommora History Index
 
-| Date                | ID     | Entry                                    |
-| ------------------- | ------ | ---------------------------------------- |
-| 08-08-2026          | PM-005 | The JSON Write Primitive Takes Its Lock  |
-| 08-08-2026          | PM-004 | One Lock Per File, One Instance Per Nexus |
-| 08-08-2026          | PM-003 | One Dropdown Shell, One Creator Rule     |
-| 08-07-2026 → 08-08  | PM-002 | One Shared Pass Over Fenced Code         |
-| 08-07-2026          | PM-001 | The Page Outline                         |
+| Date               | ID     | Entry                                     |
+| ------------------ | ------ | ----------------------------------------- |
+| 08-08-2026         | PM-005 | The JSON Write Primitive Takes Its Lock   |
+| 08-08-2026         | PM-004 | One Lock Per File, One Instance Per Nexus |
+| 08-08-2026         | PM-003 | One Dropdown Shell, One Creator Rule      |
+| 08-07-2026 → 08-08 | PM-002 | One Shared Pass Over Fenced Code          |
+| 08-07-2026         | PM-001 | The Page Outline                          |
+| 08-06-2026         | PM-006 | The Gesture Survey And Layout-Read Sweep  |
+| 08-06-2026         | PM-007 | The MarkdownPM Ledger Sweep               |
+| 08-05-2026         | PM-008 | The Connection Hover Card                 |
+| 08-04-2026         | PM-009 | Table Border Append Strips                |
+| 08-04-2026         | PM-010 | Type-Specific Codeblocks                  |
+| 08-03-2026 → 08-04 | PM-011 | Embedded Pages                            |
+| 08-02-2026         | PM-012 | Hidden Groups                             |
+| 08-01-2026         | PM-013 | The NexusRecord                           |
+| 07-31-2026         | PM-014 | Identity Goes Kind-First                  |
+| 07-30-2026         | PM-015 | The View-Embed Polish Batch               |
+| 07-30-2026         | PM-016 | The Tree Index                            |
+| 07-30-2026         | PM-017 | The Bridge Map                            |
 
 #### 08-08-2026 — PM-005 — The JSON Write Primitive Takes Its Lock
 
 `rmwJsonStrict` in `main/io/atomicWrite.ts` now wraps its read-merge-write in the per-file chain, keyed on the path it writes; the seven callers that had been supplying that lock by hand came out in the same commit, and the two writers of `.nexus/state.json` that never supplied it became covered. `rewritePageSerialized` moved out of `io/fileLock.ts` to sit beside the writers it composes, which left the lock module importing nothing. The property registry's private promise chain retired onto the shared per-path mechanism its sibling registry already used, and `updateAppConfig` replaced two read-then-overwrite pairs with a single owner that merges onto the raw record, so a key the current version does not model survives a write. `serializeOnFile` gained a refusal for a re-entrant take of a held key, which had been able to wedge a file for the life of the process. The change was made for cohesion; no defect prompted it. → [[ArchitecturePM]] · [[ConfigurationPM]]
 
 - **Commits:** `c421b686^..119278e1`
-- **Diff:** Net −8 | +120 / −128
+- **Diff:** Net +1 | +174 / −173
 
 #### 08-08-2026 — PM-004 — One Lock Per File, One Instance Per Nexus
 
 Every writer of a container sidecar was brought onto one lock key, built in `main/paths.ts` and applied through `withSidecarLock`, replacing three different keys and several call sites that held none — a read-merge-write that had read before a sibling's write landed could revert a view save or a page move with no error on either side. `relocatePage` was placed under the source path's key and `updatePageBody`'s existence check moved inside its own lock, closing a rename race that left a ghost file at the vacated path holding newer content than the renamed one. A move followed by a failed order write now reports success, since the relocation has already committed and order falls back to title. `main/index.ts` gained a single-instance lock: a losing launch exits, and a relaunch raises the window that already exists. → [[ArchitecturePM]] · [[PagesPM]]
 
 - **Commits:** `fea330d2^..277655c8`
-- **Diff:** Net +32 | +162 / −130
+- **Diff:** Net +78 | +229 / −151
 
 #### 08-08-2026 — PM-003 — One Dropdown Shell, One Creator Rule
 
 `MenuDropdown` was added to the design system to hold the open state, outside-dismiss, retract beat, and mounted-pane branch that `ViewDropdown`, `SpaceDropdown`, and `OutlineDropdown` had each carried separately, and `viewDropdown.css.ts` was renamed `toolbarDropdown.css.ts` after serving all three under the name of one. `MenuSurface` stayed state-free, because the toolbar trio shares one dismiss region across two panes and owns that state itself. `containerCreators` in `shared/mutate.ts` became the single rule for what a Collection or a Set offers on creation, correcting a sidebar context menu that gave a Set only New Page and two creator labels written as literals where every other one resolves the per-nexus label. Two constants in the menu layer described a reach they never had and were corrected rather than made true; no values moved. → [[DesignPM]] · [[CollectionsPM]]
 
 - **Commits:** `99559630^..b43d3a45`
-- **Diff:** Net −74 | +78 / −152
+- **Diff:** Net +37 | +216 / −179
 
 #### 08-07-2026 → 08-08 — PM-002 — One Shared Pass Over Fenced Code
 
 A fenced block's marker-run length became part of its identity, so a closer requires a run at least as long as its opener and carries no info word of its own, which lets a longer fence hold shorter ones as literal content. The fence grammar and its pairing pass moved into `shared/markdownCode.ts`, replacing four independent implementations across the detector, the folding scan, the subfield statistics, and the write-side mask — the mask's disagreement had left a `[[Title]]` inside a code sample reachable by a rename cascade. `isInsideCode` stopped delegating to `codeMask` and now scans only the offset's own line for inline spans, while `tokenize` and `tableRegions` moved to the build-once form the module's contract already documented. Measured in the running application against a 941-line body, a keystroke fell from 0.158ms to 0.043ms. → [[MarkdownPM]] · [[ConnectionsPM]]
 
 - **Commits:** `352ba5c5^..dab1c2b5`
-- **Diff:** Net +50 | +140 / −90
+- **Diff:** Net +538 | +710 / −172
 
 #### 08-07-2026 — PM-001 — The Page Outline
 
 A toolbar dropdown was added that lists a Page's headings as a nested tree and travels to a chosen heading, opening any collapsed section on the way and seating the heading where the page's own inline title reads. The heading derivation was extracted from `MarkdownPM/editor/folding.ts` as a shared `scanHeadings`, so the outline and the fold chevrons resolve one fence-aware scan while keeping their different rules about headings with no body. `scrollGlide` joined `design-system/interactions/autoscroll.ts` as the application's first animated scroll, re-reading its destination each frame so CodeMirror's estimated block heights resolve into the motion rather than into a correction at the end. Three shared mechanisms were corrected underneath it: nested disclosure rows gained truncation, the disclosure primitive gained a default-open seam, and the viewport tokenizer now opens its slice at a block boundary rather than inside a fence. → [[PagesPM]] · [[MarkdownPM]]
 
 - **Commits:** `7c87eb28`
-- **Diff:** Net +134 | +170 / −36
+- **Diff:** Net +454 | +516 / −62
 
 
-### 04-26-2026 → 08-07-2026
+#### 08-06-2026 — PM-006 — The Gesture Survey And Layout-Read Sweep
 
-#### MarkdownPM — The Ledger Sweep (08-06-2026)
+Four surveys mapped the drag family against the shared pointer skeleton before anything was consolidated, and the answer came back narrower than the standing note assumed: seven surfaces had already migrated, three stay hand-rolled by design, and MarkdownPM's list and block drags are close enough to pure CodeMirror logic that the skeleton would absorb about a tenth of each. The pass took only the findings that stood on their own. The editor's grip hover stopped reading a rect and running a hit-test on every pointer move, leading instead with one cached content-column edge, and the hover card, the detail pane, and the option and status reorders each stopped re-measuring geometry that holds still between scrolls and resizes. Both reorder hooks gained the unmount cleanup they never had, closing a listener leak that outlived every drag started in a pane that then closed, and the scroller resolution both editor drags had copied verbatim moved into the autoscroll module that owns that question. → [[InteractionPM]] · [[PommoraDND]]
 
-The fix log's standing MarkdownPM entries were traced to their causes and cleared. Table editing at scale had been jittery because a cell keystroke rebuilt its table's model, and the geometry effect keyed on that model's identity re-read a rect for every column and every row on each character; the sweep now runs on the table's shape and leaves reflow to the observer, and resting cells memoize on their text so one cell's typing stops re-rendering the rest. The bullet parser was narrowed to `-` and `+`, the two characters that have render branches, so `*` and `•` no longer handle the drag-and-renumber layers; items: nothing draws. A blockquote marker gained the line's end as a valid terminator, which makes the standard bare `>` the quote's own blank line rather than a paragraph splitting the box into three blocks. The sidebar's drop indicator also stopped drawing over slots flagged as no-ops, where it had promised a move that the release then declined to make.
+- **Commits:** `e3b001d1`
+- **Diff:** Net +52 | +102 / −50
 
-#### The Gesture Survey & The Layout-Read Sweep (08-06-2026)
+#### 08-06-2026 — PM-007 — The MarkdownPM Ledger Sweep
 
-Four surveys mapped the drag family against the shared pointer skeleton before anything was consolidated, and the answer came back narrower than the standing note assumed: seven surfaces had already migrated, three stay hand-rolled by design, and MarkdownPM's list and block drags are close enough to pure CodeMirror logic that the skeleton would absorb about a tenth of each — while a sub-threshold release, which both use to toggle a checkbox or fold a heading, is something the skeleton cannot yet express. The pass instead took the findings that stood on their own: the editor's grip hover stopped reading a rect and running a hit-test on every pointer move, now leading with one cached content-column edge that answers the common case in a single comparison; the hover card, the detail pane, and the option and status reorders each stopped re-measuring geometry that holds still between scrolls and resizes. The two reorder hooks also gained the unmount cleanup they never had, closing a listener leak that outlived every drag started in a pane that then closed. List drag gained the Escape abort its sibling always had, and the scroller resolution both editor drags had copied verbatim moved into the autoscroll module that owns that question.
+The fix log's standing MarkdownPM entries were traced to their causes and cleared. Table editing at scale had been jittery because a cell keystroke rebuilt its table's model and the geometry effect keyed on that model's identity re-read a rect for every column and row on each character; the sweep now runs on the table's shape and leaves reflow to the observer, with resting cells memoizing on their text so one cell's typing stops re-rendering the rest. The bullet parser narrowed to `-` and `+`, the two characters carrying render branches, and a blockquote marker gained the line's end as a valid terminator, which makes a bare `>` the quote's own blank line rather than a paragraph splitting the box into three. A follow-on pass carried each fix to its siblings — the marker set to the subfield statistics, the no-op drop guard to the table and both reorder surfaces — and closed two regressions the first batch had introduced. → [[MarkdownPM]]
 
-#### MarkdownPM — Hover Previews (08-05-2026)
+- **Commits:** `c2f40989^..7445c4e7`
+- **Diff:** Net +52 | +90 / −38
 
-The connection hover card received its body: resting on a resolved `[[Connection]]` opens a compact, read-only preview of the target page through the shared embed framework, without its banner or inline title. The card anchors to the live link with the pane's beak sliding to keep pointing at it, and holds glance-only interaction — content scrolls within it, headings fold on click, and the caret never enters. It resizes from its right edge, bottom edge, and corner to a single per-machine remembered size, and a Settings ▸ Pages slider sets how long it lingers after hover-off, defaulting to None. Resting table cells raise the same card through the intent delay the editor's own links use. The build consolidated the hover lifecycle along the way: the card became one app-level mount, a click consumes a pending intent, and navigation closes an open card.
+#### 08-05-2026 — PM-008 — The Connection Hover Card
 
-#### MarkdownPM Tweaks — Embedded Pages + CodeblocksV2 +  Table Append Strips (08-03-2026 → 08-04)
+Resting on a resolved `[[Connection]]` opens a compact read-only preview of the target page through the shared embed framework, without its banner or inline title. The card anchors to the live link with the pane's beak sliding to keep pointing at it, and holds glance-only interaction — content scrolls, headings fold on click, and the caret never enters. It resizes from its right edge, bottom edge, and corner to a single per-machine remembered size, and a Settings ▸ Pages slider sets how long it lingers after hover-off. Resting table cells raise the same card through the intent delay the editor's own links use. The build consolidated the hover lifecycle along the way: the card became one app-level mount, a click consumes a pending intent, and navigation closes an open card. → [[MarkdownPM]] · [[ConnectionsPM]]
 
-MarkdownPM gained page-in-page embedding via line-reserved *(embeddings are only validated when they're the only text on a given line)*`![[Title]]` syntax— Obsidian-compatible and the SurfacePM-shared Embed Framework's second consumer. Embedded pages use MarkdownPM under an atomic absorb and a lone-line guard (interior damage refuses whole, boundary insertions repair onto their own line, the fencing blank is protected); chrome is the shared tile chassis with banner-follows-the-page or the hover breadcrumb; creation runs through the `![[` autocomplete; the drag-handle menu handles changing the embedded page's source and the tiles' deletion; rename cascade sweeps embeds through a parallel pattern with title-change rendering and tree-resolution.
+- **Commits:** `71b423c1^..d6aba1d0`
+- **Diff:** Net +510 | +594 / −84
 
-- **Height, Seams, and Carets:** Tiles took a bottom-edge resize — SurfacePM's south-edge gesture; the height persisted per host page and target in `nexus.db` as a per-machine viewing preference, never page content. Tiles then learned to sit in the page like blocks: the banner parks on the tile's own scroll exactly as the full page header does, the fencing blanks render closed so the space stays mechanical, a click seats the caret by the tile's nearer edge, and the drawn caret survives every boundary seat.
-- **Insertion and Warm Reading State:** Insert ▸ Page types the empty`![[]]` pair on a fenced line below the caret's block with the embed autocomplete already open — an empty embed query browses the whole page index alphabetically. A tile's own reading state — scroll, caret, undo — survives host-page interaction via a session-scoped cache keyed by the full host chain, and a re-slotted warm editor restores the scroll position the browser silently zeroes during the host editor's measure phase.
+#### 08-04-2026 — PM-009 — Table Border Append Strips
 
-**Table Append:** Tables gained their border append affordance; hovering a table reveals two rounded strips — table-height on the right edge, adding a column; table-width below, adding a row — both appending at the end through the structural-edit path, so a mounted cell editor and the caret never move. The round also settled a rendering seam: a static cell now draws the line box for its trailing line break, where it previously rendered one line shorter than its own editor and jumped taller on click-to-edit.
+Hovering a table reveals two rounded append strips — one at table height on the right edge adding a column, one at table width below adding a row — both appending at the end through the structural-edit path, so a mounted cell editor and the caret never move. The same change settled a rendering seam: a static cell now draws the line box for its trailing line break, where it had rendered one line shorter than its own editor and jumped taller on click-to-edit. → [[MarkdownPM]] · [[TableViewPM]]
 
-**Type-Specific Codeblocks:** Codeblocks were expanded with a curated language set — JSON, YAML, JS/TS, CSS, HTML, Swift — that receives a real parse whose tokens color as spectrum-solid pastels, each solid mixed toward system white through a single stylesheet formula, while a bare fence keeps the plain mono look by design. The backticks always show; a typed block hides only its info word and wears its language top-right as a `<TYPE>` glyph in the code color, and the caret on the fence line trades the chrome back for the raw info word. The per-nexus **Show Line Count In Code Blocks** setting numbers a block's content lines as non-editable chrome at the first-character position, and code wraps as an editor does: rows fill to the block's edge, and continuations return to the code column, the row numbers carrying the distinction.
+- **Commits:** `8b493f10`
+- **Diff:** Net +98 | +103 / −5
 
-#### Hidden Groups (08-03-2026)
+#### 08-04-2026 — PM-010 — Type-Specific Codeblocks
 
-Any group band can be hidden from the Grouping pane: an eye on every group row — option chips and date buckets wearing it ghosted, folder rows revealing on hover, a hidden row pinning it. Hiding is one view-level key list filtered once at resolution, so a hidden Set leaves the tree with its whole subtree, a sub-bucket hides globally by value, and every renderer — current and future — inherits with no per-view code. Date grouping's empty middle region became the present-bucket list, and **Hide Empty Groups** finished its half-implementation: a Switch above Ungrouped, hoisted view-level to cover every grouping kind, with the resolve-level drop as its one adjudicator.
+Fenced code gained a curated typed-language set — JSON, YAML, JS/TS, CSS, HTML, and Swift — receiving a real parse whose tokens color as spectrum pastels, each mixed toward system white through one stylesheet formula, while a bare fence keeps the plain mono look by design. The backticks always show; a typed block hides only its info word and wears its language top-right as a `<TYPE>` glyph in the code color, and seating the caret on the fence line trades that chrome back for the raw info word. A per-nexus Show Line Count In Code Blocks setting numbers a block's content lines as non-editable chrome at the first-character position. Code wraps as an editor does, with rows filling to the block's edge and continuations returning to the code column, the row numbers carrying the distinction. → [[MarkdownPM]]
 
-#### The NexusRecord — Provenance, the Open Baseline, and Restore (08-01-2026)
+- **Commits:** `179a3867^..9fc6c6f9`
+- **Diff:** Net +299 | +380 / −81
 
-Pommora can now answer *where was this then*. Every nexus-trash delete records what departed — the parent as a discriminated union by id (root / container / Context / unaddressable), per-kind payloads, gathered in the delete arm's real order with the registry read taken before the erase closes the title→id window. The record stores IDs rather than name-based locations; it’s all-or-nothing, because a silently incomplete record would be trusted by restore; anything thinner than the truth marks itself partial. The restore op is headless — IPC-reachable, no surface — spending records through a pure resolver that returns a placement with final names or a typed refusal: a page trashed from a folder renamed while it sat in trash goes home to the renamed folder, a restored Space re-applies its tag to every surviving root, and a restored Context re-enters the registry under a collision-free final title.
+#### 08-03-2026 → 08-04 — PM-011 — Embedded Pages
 
-The baseline gives every open a memory: a single explicit walk — after the database opens, before the watcher starts — latches what the closed window left, and the diff runs with absence first-class and three-state existence, so a corrupt sidecar reads as an unreadable transition rather than a deletion. The baseline also adjudicates the duplicate-id re-mint: a file-copied page or container stops sharing its twin's identity at the next open, with the claimant at the prior session's recorded path keeping the original id and every other claimant taking a fresh one plus duplicates of the device-local rows. The delete sweep grew the two behaviors the record depends on: it never strips a passenger — a Context's own subtree keeps its internal links into the trash — and it returns what it removed.
+Typing `![[Title]]` on its own line turns it into a live tile of that page — Obsidian's own syntax, so a Nexus keeps reading outside Pommora — making the shared Embed Framework's second consumer. The claim has exactly one owner that every layer reads: an atomic absorb hops the caret over the tile, interior damage refuses whole, boundary insertions repair onto their own line, and the lone-line guard makes every reachable caret seat harmless. Chrome is the shared tile chassis, with the banner parking on the tile's own scroll exactly as a full page header does and the preview's crumbs serving as the hover breadcrumb; creation runs through the `![[` autocomplete, and the rename cascade sweeps embeds without an embed ever becoming a link-graph edge.
 
-**The Deletion Bundle:** One deletion is one folder — `.trash/<mirrored chain>/<stamp>__<base>.deleted/` holding the artifact under its original basename beside the record. The record is written before any destructive step and the artifact moves in last, so its presence is the settle marker: a bundle holding no artifact is a deletion that never finished, skipped by the listing and left as evidence — this replaced the old shape's refusal and rollback machinery outright; old flat entries stay on disk as plain hand-restorable files the listing ignores.
+**Height and Warm State:** Tiles took a bottom-edge resize through SurfacePM's south-edge gesture, persisted per host page and target in `nexus.db` as a per-machine viewing preference rather than page content. A tile's own scroll, caret, and undo survive host interaction through a session-scoped cache keyed by the full host chain, and a re-slotted editor restores the scroll position the browser zeroes during the host's measure phase. → [[MarkdownPM]] · [[PagesPM]]
 
-**Property Restore:** The global property delete's recovery snapshot became spendable: the registry judges whether the definition may return at all — a name another property has since taken refuses the whole restore, because two properties cannot share a frontmatter key — and each value decodes strictly against the definition, so a vanished option, an unholdable value, or a dead page simply doesn't return. The record grew the Collections that assigned it, by sidecar ID, so a restored property returns to its views rather than to nothing.
+- **Commits:** `3cdaf70a^..c44c0537`
+- **Diff:** Net +1540 | +1729 / −189
 
-#### Identity Goes Kind-First — The Kind-Stamped Key, Admission, and Agenda De-Scaffolded (07-31-2026)
+#### 08-02-2026 — PM-012 — Hidden Groups
 
-**Identification Rework:** The universal question inverted: identity used to be *what is this entity's id*; it is now *what is this*, answered by the folder's sidecar, and then *what is its id*, stored under the key that names the kind — `PageID:` / `TaskID:` / `EventID:`, value a bare ULID. The identification became an agreement between its ID key and the folder's configuration — the folder declares the kind and the file must agree — the migration was manual, by decision, with zero transition machinery.
+A grouped view could collapse a band but never make it leave, so hiding a group meant authoring a filter that only approximated it. Every group row in the Grouping pane now carries the Visibility pane's eye, and hiding resolves as one view-level key list filtered once — a hidden Set leaves the tree with its whole subtree, and a sub-group bucket hides globally by value — so every renderer present and future inherits it with no per-view code. Date grouping's empty middle region became the real bucket list, which is what made date bands hideable at all. Hide Empty Groups finished its half-implementation at view level, with the resolve-level drop as its one adjudicator. → [[ViewsPM]]
 
-- Admission became one predicate, shared verbatim by the walk and the adoption pass and the sole reader of all three keys, answering member / missing / Unknown. Unknown — a key contradicting the folder, a value that cannot be an identity, or two keys at once — is invisible to the tree, skipped by every nexus-wide write, and left byte-identical on disk: not an error, never surfaced, never stamped over. A file with no key is the opposite case and stays fully live — adopted at open and still swept — because identity decides whether a value can be handed back, never whether it may be cleared. Classification consolidated onto one depth-aware resolver, and registration replaced presence as the agenda authority: a nexus records its canonical Tasks and Events singletons by sidecar ID like it identifies specific collections.
+- **Commits:** `47aabb06`
+- **Diff:** Net +235 | +337 / −102
 
-**Agenda De-Scaffolding:** Agenda itself was de-scaffolded rather than adapted: the suffix grammar, the item schemas, the untouched CRUD, and the read-only channel all went — the shape both kinds carried was EventKit's, imported wholesale by the Swift build and never re-chosen. Tasks and Events will be `.md` under their kind keys, their field vocabulary deliberately open. The live migration renamed 171 files with the app closed and verified a real open at zero dual-key and zero malformed files. The verification that followed found its enduring lesson in the seams: every remaining defect lived between two mechanisms, each correct in its own right. The consolidations that answered it — one directory lister, one Markdown predicate, one table owning the agenda slot facts — follow from the general rule that a fact stated twice is one edit away from disagreeing with itself.
+#### 08-01-2026 — PM-013 — The NexusRecord
 
-#### The View-Embed Polish Batch (07-30-2026)
+Pommora gained a record of what it deletes. Every nexus-trash delete writes a provenance record holding ids rather than name-based locations — the parent as a discriminated union by id, per-kind payloads, gathered in the delete arm's real order with the registry read taken before the erase closes the title-to-id window — and the record is all-or-nothing, since a silently incomplete one would be trusted by restore. Restore is a headless op, IPC-reachable with no surface, spending records through a pure resolver that returns either a placement with final names or a typed refusal.
 
-A live-driven stream on the view-embed surface. The pill styling hoisted out of the embed into **ActionBand** — the shared toolbar-affordance home — with the collapsible title morph consolidated onto Segmented-Controls' one `labelSlot`, so the toolbar view button and both embed switcher modes ride a single written-once animation. Views gained a per-view color, worn only as the segment stroke at a tint and picked through the existing ColorPicker from the segment's own right-click menu; the rename field auto-sizes to the typed text, pickers anchor to the right-clicked chip, and every `EditableInput` consumer became a spellcheck-free title field.
+**The Open Baseline:** A single explicit walk, after the database opens and before the watcher starts, latches what the closed window left, and the diff runs with absence first-class and three-state existence, so a corrupt sidecar reads as an unreadable transition rather than a deletion. The same baseline adjudicates the duplicate-id re-mint: a file-copied page or container stops sharing its twin's identity at the next open, with the claimant at the prior session's recorded path keeping the original id.
 
-#### The Tree Index — Every Lookup a Projection of One Walk (07-30-2026)
+**The Deletion Bundle:** One deletion is one folder holding the artifact under its original basename beside its record. The record is written before any destructive step and the artifact moves in last, so the artifact's presence is the settle marker and a bundle holding none is a deletion that never finished — skipped by the listing and left as evidence.
 
-Five separately hand-rolled walks over the same tree — the reconcile index, the nav resolve index, the search entries, the connections title map, and the thumbnail keys — ran per gesture and per surface. `treeIndex.ts` now walks the tree once per identity, producing a record per entity plus the Context-group id set, cached against the tree object; every table is a lazily cached projection with its exact prior shape, so consumers swapped builder calls for accessors and nothing else, and a sixth lookup has nothing left to copy but the record.
+**Property Restore:** The global property delete's recovery snapshot became spendable. The registry judges whether a definition may return at all, since a name another property has since taken refuses the whole restore, and each value decodes strictly against the definition, so a vanished option or a dead page simply doesn't return. → [[NexusRecordPM]] · [[PropertiesPM]]
 
-Two latent defects died with the siblings: the reserved `context` selection kind had reconciled against the wrong universe and now refuses by declaration, and the never-imported `LinkIndex` contract was deleted rather than adopted. The record list keeps duplicated IDs listed — only the keyed projections collapse last-wins — so an ordinary file copy cannot erase a page from search and wikilink resolution.
+- **Commits:** `55b5fbc2^..7419a08b`
+- **Diff:** Net +1855 | +2159 / −304
 
-#### The Bridge Map — Every Channel Declared Once (07-30-2026)
+#### 07-31-2026 — PM-014 — Identity Goes Kind-First
 
-The IPC surface had every channel hand-written at both ends with its types in a third place, and the drift that invited was the defect class: five spellings of one refusal, three coexisting failure encodings, rich errors flattened to sentences. One map in `shared/bridge.ts` now declares each channel's name, direction, argument tuple, and reply; the preload derives its dialers from it and main answers through one exhaustive handler object, so a missing, extra, duplicate, or mismatched channel is a compile error. The envelope unified on the shared `Result` — the structured error crosses the wire whole — and the session refusals became two shared constants with their own codes.
+The identifying question inverted: an entity's kind now comes from its folder's sidecar and its id from the key naming that kind — `PageID:`, `TaskID:`, `EventID:`, each holding a bare ULID — so identification became an agreement between a file and the folder that declares it. Admission became one predicate shared by the walk and the adoption pass, answering member, missing, or Unknown; an Unknown file is invisible to the tree, skipped by every nexus-wide write, and left byte-identical on disk. Classification consolidated onto one depth-aware resolver, and registration replaced presence as the agenda authority. The frontmatter key migration renamed 171 files with the app closed and verified a real open at zero dual-key and zero malformed files, with no transition machinery written for it.
+
+**Agenda De-Scaffolding:** The plan's opening phase removed the old Agenda architecture before the identity cutover landed on it, following a stated sequencing rule that the two never interleave. The suffix grammar, the item schemas, the untouched CRUD, and the read-only channel all came out — the shape both kinds carried was EventKit's, imported wholesale by the Swift build and never re-chosen — leaving Tasks and Events to be `.md` under their kind keys with a deliberately open field vocabulary. That phase is a demolition where the identity work is a build, which is why the arc's totals come out negative. → [[ArchitecturePM]] · [[AgendaPM]] · [[PagesPM]]
+
+- **Commits:** `9b005cb8^..662f8cc5`
+- **Diff:** Net −394 | +763 / −1157
+
+#### 07-30-2026 — PM-015 — The View-Embed Polish Batch
+
+The view-embed surface took a live-driven polish pass. Pill styling hoisted out of the embed into ActionBand, the shared toolbar-affordance home, and the collapsible title morph consolidated onto Segmented-Controls' single `labelSlot`, so the toolbar view button and both embed switcher modes ride one written-once animation. Views gained a per-view color, worn only as the segment stroke at a tint and picked through the existing ColorPicker from the segment's own right-click menu. The rename field auto-sizes to its typed text, pickers anchor to the right-clicked chip, and every `EditableInput` consumer became a spellcheck-free title field. → [[ViewsPM]] · [[DesignPM]]
+
+- **Commits:** `eea34354^..f68d3ba9`
+- **Diff:** Net +189 | +418 / −229
+
+#### 07-30-2026 — PM-016 — The Tree Index
+
+Five hand-rolled walks over the same tree — the reconcile index, the nav resolve index, the search entries, the connections title map, and the thumbnail keys — each ran per gesture and per surface. `treeIndex.ts` now walks once per identity, producing a record per entity plus the Context-group id set and caching against the tree object, with every table a lazily cached projection holding its exact prior shape, so consumers swapped builder calls for accessors and nothing else. Two latent defects came out with the siblings: the reserved `context` selection kind had reconciled against the wrong universe and now refuses by declaration, and the never-imported `LinkIndex` contract was deleted rather than adopted. The record list keeps duplicated ids listed and only the keyed projections collapse last-wins, so an ordinary file copy cannot erase a page from search and wikilink resolution. → [[ArchitecturePM]] · [[NavigationPM]]
+
+- **Commits:** `3ee09a5f`
+- **Diff:** Net +98 | +331 / −233
+
+#### 07-30-2026 — PM-017 — The Bridge Map
+
+Every IPC channel had been hand-written at both ends with its types kept in a third place, and the drift that invited was the defect class: five spellings of one refusal, three coexisting failure encodings, and rich errors flattened to sentences. One map in `shared/bridge.ts` now declares each channel's name, direction, argument tuple, and reply; the preload derives its dialers from that map and main answers through a single exhaustive handler object, so a missing, extra, duplicate, or mismatched channel fails the typecheck. The envelope unified on the shared `Result`, which carries the structured error across the wire whole, and the two session refusals became shared constants with their own codes. → [[ArchitecturePM]]
+
+- **Commits:** `39aeb20f^..063e44fb`
+- **Diff:** Net +195 | +1874 / −1679
+
+
+### 04-26-2026 → 07-29-2026
 
 #### The Erasure Campaigns — Swift Parity Out, Navigation Consolidated (07-29-2026 → 07-30)
 
