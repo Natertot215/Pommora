@@ -12,7 +12,7 @@ import { propertyValueStands } from './standing'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
 import { sidecarPath } from '../paths'
-import { rewritePageSerialized, readTextOrNull, rmwJsonStrict } from '../io/atomicWrite'
+import { readTextOrNull, rewritePageSerialized, rmwJsonStrict } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
 import { encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
@@ -60,8 +60,6 @@ async function removeInner(
   }
   // Cache + unassign FIRST — under the sidecar's own lock, so the page-read window above can't
   // revert a concurrent icon/banner/view write — THEN strip each page under its file lock.
-  // Cache-before-strip keeps the values safely persisted before any page loses them, so a
-  // failure mid-strip is recoverable, never lossy.
   const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
     patchCacheBlock(
       { ...cur, properties: ids.filter((id) => id !== propertyId) },
@@ -145,8 +143,7 @@ export async function restoreCachedValues(
           ),
     )
   })
-  // The page walk above deliberately runs unlocked; the cache clear takes the sidecar's own key,
-  // which the primitive derives from the path it writes.
+  // The page walk above deliberately runs unlocked.
   const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
     patchCacheBlock(
       cur,

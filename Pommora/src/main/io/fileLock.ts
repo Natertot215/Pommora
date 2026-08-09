@@ -1,10 +1,9 @@
 // The per-file write lock. Every read-modify-write on disk runs under it — pages, container and
 // Space sidecars, settings, navigation — so overlapping RMWs on one file serialize instead of
 // racing: a stale snapshot losing to a fresh write, or a cascade dropping a value a concurrent
-// edit just set. A schema-op page cascade and a table cell edit on the same page are the
-// original pair; a container sidecar has six writers.
+// edit just set.
 //
-// It depends on nothing, deliberately: the writers depend on the lock and never the reverse.
+// It imports nothing, deliberately: the writers depend on the lock and never the reverse.
 //
 // The key is the literal string handed in, and nothing checks that two callers touching one file
 // hand over the same one. A file with more than one writer therefore builds its key in a single

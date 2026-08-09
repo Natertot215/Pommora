@@ -441,23 +441,16 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         assetKey = id
       }
       const prev = isAssetPath(existing?.banner) ? existing.banner : null
+      let rel: string | null = null
       if (req.dataUrl) {
-        const rel = await writeImageAsset(root, assetKey, req.dataUrl, 'banner')
+        rel = await writeImageAsset(root, assetKey, req.dataUrl, 'banner')
         if (!rel) return fault('Unsupported image data.')
-        // Set the field first; only THEN delete a replaced file, so a failed write never
-        // leaves `banner` pointing at a deleted file (mirrors the cover/photo ordering).
-        const written = await rmwJsonStrict(cfgPath, (cur) => setOrDrop(cur, 'banner', rel), seed)
-        if (!written.ok) return written
-        if (prev && prev !== rel) await rm(join(root, prev), { force: true }).catch(() => {})
-      } else {
-        const written = await rmwJsonStrict(
-          cfgPath,
-          (cur) => setOrDrop(cur, 'banner', undefined),
-          seed,
-        )
-        if (!written.ok) return written
-        if (prev) await rm(join(root, prev), { force: true }).catch(() => {})
       }
+      // Set the field first; only THEN delete a replaced file, so a failed write never
+      // leaves `banner` pointing at a deleted file (mirrors the cover/photo ordering).
+      const written = await rmwJsonStrict(cfgPath, (cur) => setOrDrop(cur, 'banner', rel), seed)
+      if (!written.ok) return written
+      if (prev && prev !== rel) await rm(join(root, prev), { force: true }).catch(() => {})
       return ok({})
     }
 
