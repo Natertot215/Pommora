@@ -88,6 +88,18 @@ Each phase ends with the entries written, committed, and reviewable on their own
 
 **Phase 8 — Settle IDs and build the index.** Assign every ID once, in one pass, then generate the index table from the finished entries.
 
+### Outcome
+
+All eight phases ran. `HistoryPM.md` carries **97 entries** covering 05-10-2026 through 08-08-2026 with no legacy block, IDs assigned chronologically so PM-001 is the repository's first commit, and every entry carrying a verified commit range and an Actionable diff computed under one rule.
+
+Corrections the pass made to the record itself: a duplicated paragraph removed, a claim describing a deleted migration restated, PM-001's date corrected to its commit day, an entry range that had swallowed another entry's whole commit recomputed (its figure was sixfold), the version-number titles dropped for having no tag behind them, the fused 0.5.6 split into the two subsystems it buried, Contexts & Spaces redated five days to the work it describes, and the CalendarPicker's date narrowed to the day its commits actually land.
+
+### Hazards Worth Keeping
+
+- **A mirrored document cannot be edited by script while the watcher is live.** `HistoryPM.md` was on the mirror-map during Phases 5 and 6; each write went `external → vault`, and the vault copy came back `vault → external` and overwrote it. Two phases of work were lost and re-applied, and two entries were destroyed outright before the cause was found in the watcher log. Take a document off the map before a scripted rewrite, and restore the row afterward.
+- **`git log --since=DATE` inherits the current time of day.** A bare date silently drops everything earlier than "now" on that date. Use an explicit `00:00`, or filter by commit date.
+- **A commit range is not an entry's commit set.** Where sessions interleave, a range spans foreign work; the diff has to be scoped by path or the range split around it, or one entry counts another's lines.
+
 ### Open Calls
 
 - **The ID scheme.** Minting in write-order puts the oldest entry at the highest number — tolerable at 17 entries, confusing at ~90. Chronological renumbering costs repointing roughly ten citations, all in documents under our control. Recommendation: renumber chronologically, at Phase 8, once the entry set is final.
