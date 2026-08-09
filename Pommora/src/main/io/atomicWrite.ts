@@ -130,7 +130,6 @@ export async function readJsonObject(absPath: string): Promise<Record<string, un
   }
 }
 
-
 /** Deterministic JSON: object keys sorted recursively, 2-space indent. Byte-stable
  *  across writes so re-saving unchanged data produces identical bytes. */
 export function stableStringify(value: unknown): string {

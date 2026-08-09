@@ -25,9 +25,16 @@ import { restoreProperty } from './crud/restoreProperty'
 import { scrubReturning } from './crud/restoreScrub'
 import { sweepAdmits } from './crud/util'
 import { hiddenName } from './exclusion'
-import { rewritePageSerialized, BUNDLE_SUFFIX, mintBundle, pathExists, readJsonObject, writeJson } from './io/atomicWrite'
+import {
+  BUNDLE_SUFFIX,
+  mintBundle,
+  pathExists,
+  readJsonObject,
+  rewritePageSerialized,
+  writeJson,
+} from './io/atomicWrite'
 import { listEntries } from './io/walk'
-import { serializeOnFile} from './io/fileLock'
+import { serializeOnFile } from './io/fileLock'
 import { mergeFrontmatter, splitEnvelope } from './io/pageFile'
 import { recordWrite } from './io/writeEcho'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from './paths'
