@@ -8,7 +8,6 @@ import { readFile, mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   contextKey,
-  
   isGovernedContextKey,
   normalizeContextValue,
   type ContextDef,
@@ -183,8 +182,7 @@ export async function setSpaceContext(
   if (!ref) return fail('not-found', 'Unknown Space.')
   const titles = targetTitles(world, targetSpaceIds)
   if (!titles.ok) return titles
-  const sidecar = join(ref.dir, SPACE_SIDECAR)
-  const written = await rmwJsonStrict(sidecar, (raw) => {
+  const written = await rmwJsonStrict(join(ref.dir, SPACE_SIDECAR), (raw) => {
     const applied = applyTarget(world, raw, contextId, titles.value)
     if (!applied.ok) throw new Error(applied.error.message)
     return { ...applied.value.root, modified_at: nowIso() }
@@ -277,8 +275,7 @@ export async function setSpaceColor(
   if (!world.ok) return world
   const ref = world.value.spaceById.get(spaceId)
   if (!ref) return fail('not-found', 'Unknown Space.')
-  const sidecar = join(ref.dir, SPACE_SIDECAR)
-  const written = await rmwJsonStrict(sidecar, (cur) => {
+  const written = await rmwJsonStrict(join(ref.dir, SPACE_SIDECAR), (cur) => {
     const next: Raw = { ...cur, modified_at: nowIso() }
     if (color === undefined) delete next.color
     else next.color = color
