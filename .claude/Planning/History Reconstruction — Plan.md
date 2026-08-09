@@ -10,7 +10,9 @@ This project wrote its history entries **into the repository, alongside the work
 | --- | --- | --- |
 | Swift `.claude/History.md` | `git show 9169b2e7:.claude/History.md` | 237 lines, 43 entries covering 05-10 → 06-19. Pruned 06-21 by `5f0f25f8`; this is the pre-prune state. |
 | React `.claude/History.md` | created 06-14 by `a863cf50` | Per-phase commit hashes, locked decisions, the Swift→React data-layer line comparison. |
-| Pre-reframe timeline | `git show 3aca8063^:.claude/History.md` | Branch names in every heading and **23 `Locked —` decision markers**. Today: 0. |
+| Pre-reframe timeline | `git show 3aca8063^:.claude/History.md` | Branch names in every heading, and the fuller prose behind entries later trimmed. |
+| React changelog (deleted) | `git show a97511d2^:React/.claude/History.md` | 142 lines covering 06-14 → 06-29, deleted without merging a word. |
+| Pre-condensation root | `git show 8709612f^:.claude/History.md` | 181 lines of dated per-arc entries, condensed to 45 on 07-03. |
 | The 07-30 state | `git show 0f1bc0e1:.claude/History.md` | **15 entries** for 07-18 → 07-30 where today's record carries 9. |
 
 Entry-authoring commits are identified for the whole 07-04 → 07-17 era and much of 07-18 → 07-29, so most entries can be anchored to the commit whose own diff wrote them.
@@ -33,12 +35,24 @@ Defects confirmed in the current document or in always-loaded instructions:
 | --- | --- | --- | --- | --- |
 | 05-10 → 06-13 · Swift | ~1,000 | 1 bullet entry | 6–8 short | Stays brief by decision. Reversals kept as named clauses. |
 | 06-14 → 06-19 · React opens | ~230 | 3 | 4 | Genesis, the data layer, the design system, glass and drag. |
-| 06-20 → 07-03 | ~500 | 5 | *pending survey* | Editor, chrome, views, tables, properties. |
+| 06-20 → 07-03 | 662 | 5 | 12–14 | The densest era in the project, with the sparsest coverage. |
 | 07-04 → 07-17 | 565 | 19 | ~22 | Correctly fine-grained; nine arcs had their own branch. |
 | 07-18 → 07-29 | ~260 | 9 | 13–16 | Six entries were deleted from this era alone. |
 | 07-30 → 08-08 | ~295 | 17 | ~24 | Normalized; seven unrecorded arcs found. |
 
-Swift and React commit to the same branch from 06-14 onward, minutes apart. Any date slice conflates them — Swift work is path-scoped to `Pommora/` and `External/`, React to everything else.
+Swift and React commit to the same branch from 06-14 onward, minutes apart. Any date slice conflates them — Swift work is path-scoped to `Pommora/` and `External/`, React to everything else. Through 06-27 the directory names are inverted from today's: `Pommora/` is the Swift app and `React/` is the React one, so a path quoted from that era reads as false unless restated in current terms.
+
+The proposed counts above follow each survey's own recommendation and are a floor rather than a target. Small same-day fixes each take their own short entry, which the surveys generally folded, so the real totals run higher — the figures assume only that nothing already shipped disappears.
+
+### Voice
+
+Entries record events. `History-Format.md` now carries the rule and its contrast table; the reconstruction applies it rather than restoring what the record used to do.
+
+- Language that marks a call as locked, ratified, or final comes out. A rule meant to bind future work is a guideline and belongs in `// Guidelines`; a reusable insight belongs in Context's Lessons. History says a call was made and what it settled.
+- Absolutes, double negatives, and this-not-that constructions state a rule where the sentence should state what happened.
+- Notes-to-self and agent-to-agent phrasing belong to neither document.
+
+The 07-17 pass that stripped the `Locked —` markers was correcting the record toward this, not damaging it. What that pass left unfinished is that the rules themselves never reached `// Guidelines`, so their content was lost along with their framing.
 
 ### What Cannot Be Recovered
 
