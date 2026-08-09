@@ -55,7 +55,7 @@ Docstrings in `main/io/propertiesRegistry.ts`, `main/appConfig.ts`, and the re-e
 #### PM-005 || The JSON Write Primitive Takes Its Lock
 **DATE:** 08-08-2026
 
-`rmwJsonStrict` in `main/io/atomicWrite.ts` now wraps its read-merge-write in the per-file chain, keyed on the path it writes; the seven callers that had been supplying that lock by hand came out in the same commit, and the two writers of `.nexus/state.json` that never supplied it became covered. `rewritePageSerialized` moved out of `io/fileLock.ts` to sit beside the writers it composes, which left the lock module importing nothing. The property registry's private promise chain retired onto the shared per-path mechanism its sibling registry already used, and `updateAppConfig` replaced two read-then-overwrite pairs with a single owner that merges onto the raw record, so a key the current version does not model survives a write. `serializeOnFile` gained a refusal for a re-entrant take of a held key, which had been able to wedge a file for the life of the process. The change was made for cohesion; no defect prompted it. → [[ArchitecturePM]] · [[ConfigurationPM]]
+`rmwJsonStrict` in `main/io/atomicWrite.ts` now wraps its read-merge-write in the per-file chain, keyed on the path it writes; the seven callers that had been supplying that lock by hand came out in the same commit, and the two writers of `.nexus/state.json` that never supplied it became covered. `rewritePageSerialized` was moved out of io/fileLock.ts to sit alongside the writers it composes, leaving the lock module importing nothing. The property registry's private promise chain retired onto the shared per-path mechanism its sibling registry already used, and `updateAppConfig` replaced two read-then-overwrite pairs with a single owner that merges onto the raw record, so a key the current version does not model survives a write. `serializeOnFile` gained a refusal for a re-entrant take of a held key, which had been able to wedge a file for the life of the process. The change was made for cohesion; no defect prompted it. → [[ArchitecturePM]] · [[ConfigurationPM]]
 
 - **Commits:** `c421b686^..119278e1`
 - **Diff:** Net +1 | +174 / −173
@@ -241,7 +241,7 @@ Every IPC channel had been hand-written at both ends with its types kept in a th
 #### PM-030 || One Fence Scan For The Editor Chrome
 **DATE:** 07-30-2026
 
-`decorations/intent.ts` stopped stripping a literal `>` inside a closed unquoted fence, so a quote marker beyond the fence's own depth reads as code rather than chrome. Its fence recognition then folded into the single scan owned by `MarkdownPM/detect/index.ts`, which makes blockquote chrome extend exactly to the fence's depth and leaves one source answering where code begins. → [[MarkdownPM]]
+`decorations/intent.ts` stopped stripping a literal `>` inside a closed unquoted fence, so a quote marker beyond the fence's own depth reads as code rather than chrome. Its fence recognition then folds into the single scan owned by MarkdownPM/detect/index.ts, which makes blockquote chrome extend exactly to the fence's depth and leaves a single source to answer where code begins. → [[MarkdownPM]]
 
 - **Commits:** `cfdb307e` · `fcd3621b`
 - **Diff:** Net +93 | +193 / −100
@@ -253,14 +253,6 @@ The Swift-compatibility layer came out wholesale: the settings seed and its back
 
 - **Commits:** `fb52b501^..8ad70f03`
 - **Diff:** Net −198 | +904 / −1102
-
-#### PM-024 || Six Hand-Rolled Borders Take One Token
-**DATE:** 07-29-2026
-
-Two HOIST markers in the icon picker became a design-system pass. The outlined-box border six surfaces had hand-rolled is `--border-cell` now, beside `--border-heading`, and the accent-tint active stroke four surfaces restated is `--accent-stroke` — colour only, since the weights genuinely differ per surface. The picker's hand-rolled focus ring moved onto the house `fieldRing` channel, and the virtualizer's cell size single-sourced out of the silent-drift pair it had been spelling twice. → [[DesignPM]]
-
-- **Commits:** `b6270097`
-- **Diff:** Net −3 | +55 / −58
 
 #### PM-032 || Sidecar Writes Take One Strict Primitive
 **DATE:** 07-29-2026
