@@ -4,8 +4,6 @@ import { vars as colorVars } from './color.css'
 
 const labelPrimary = colorVars.color.label.primary
 
-/** Opacity steps applied to a base color (the Figma "Tint" model: a tint is an opacity, not a
- *  baked color) — a component picks a step, the base color comes from the call site. */
 export const TINT_STEPS = {
   primary: 60,
   secondary: 40,

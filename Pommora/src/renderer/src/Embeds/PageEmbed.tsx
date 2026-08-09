@@ -68,12 +68,11 @@ export function PageEmbed({
 }): React.JSX.Element {
   // Bound to the path it was loaded FOR — an un-keyed host re-aiming `path` blanks and refetches
   // exactly as a fresh mount would. A failed open is NOT an empty page: body stays null and the
-  // render shows the inert fallback, never an editable blank that would overwrite the real file
-  // on the first keystroke.
+  // render shows the inert fallback.
   const [loaded, setLoaded] = useState<EmbedEntry | null>(() => {
     // The path-keyed slot rehydrates a scrolled-back tile — no IPC round-trip, no blank frame,
     // and its body is write-through-fresh from any host's pending edit. A warm doc overlays the
-    // slot's metadata (id, title, cover): the seam serializes editor state, not page chrome.
+    // slot's metadata (id, title, cover): the seam serializes editor state.
     const doc = (warm?.restore()?.editorState as { doc?: unknown } | undefined)?.doc
     const cached = readPageDetail(path)
     const slot = cached ? entryFrom(path, cached) : null
