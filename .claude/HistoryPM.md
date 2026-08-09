@@ -7,8 +7,8 @@
 | 08-08-2026         | PM-003 | One Dropdown Shell, One Creator Rule      |
 | 08-07-2026 → 08-08 | PM-002 | One Shared Pass Over Fenced Code          |
 | 08-07-2026         | PM-001 | The Page Outline                          |
-| 08-06-2026         | PM-006 | The Gesture Survey And Layout-Read Sweep  |
-| 08-06-2026         | PM-007 | The MarkdownPM Ledger Sweep               |
+| 08-06-2026         | PM-006 | Pointer Handlers Stop Re-Measuring        |
+| 08-06-2026         | PM-007 | Table Geometry And The Marker Rules       |
 | 08-05-2026         | PM-008 | The Connection Hover Card                 |
 | 08-04-2026         | PM-009 | Table Border Append Strips                |
 | 08-04-2026         | PM-010 | Type-Specific Codeblocks                  |
@@ -16,7 +16,7 @@
 | 08-02-2026         | PM-012 | Hidden Groups                             |
 | 08-01-2026         | PM-013 | The NexusRecord                           |
 | 07-31-2026         | PM-014 | Identity Goes Kind-First                  |
-| 07-30-2026         | PM-015 | The View-Embed Polish Batch               |
+| 07-30-2026         | PM-015 | ActionBand And The Per-View Color         |
 | 07-30-2026         | PM-016 | The Tree Index                            |
 | 07-30-2026         | PM-017 | The Bridge Map                            |
 
@@ -51,7 +51,7 @@ Every writer of a container sidecar was brought onto one lock key, built in `mai
 
 **DATE:** 08-07-2026 → 08-08
 
-A fenced block's marker-run length became part of its identity, so a closer requires a run at least as long as its opener and carries no info word of its own, which lets a longer fence hold shorter ones as literal content. The fence grammar and its pairing pass moved into `shared/markdownCode.ts`, replacing four independent implementations across the detector, the folding scan, the subfield statistics, and the write-side mask — the mask's disagreement had left a `[[Title]]` inside a code sample reachable by a rename cascade. `isInsideCode` stopped delegating to `codeMask` and now scans only the offset's own line for inline spans, while `tokenize` and `tableRegions` moved to the build-once form the module's contract already documented. Measured in the running application against a 941-line body, a keystroke fell from 0.158ms to 0.043ms. → [[MarkdownPM]] · [[ConnectionsPM]]
+A fenced block's marker-run length became part of its identity, so a closer requires a run at least as long as its opener and carries no info word of its own, which lets a longer fence hold shorter ones as literal content. The fence grammar and its pairing pass moved into `shared/markdownCode.ts`, replacing four independent implementations across the detector, the folding scan, the subfield statistics, and the write-side mask — the mask's disagreement had left a `[[Title]]` inside a code sample reachable by a rename cascade. `isInsideCode` stopped delegating to `codeMask` and now scans only the offset's own line for inline spans, while `tokenize` and `tableRegions` moved to the build-once form the module's contract already documented. On a 941-line body a keystroke costs 0.043ms where it had cost 0.158ms, the saving scaling with document length rather than sitting fixed. → [[MarkdownPM]] · [[ConnectionsPM]]
 
 - **Commits:** `352ba5c5^..dab1c2b5`
 - **Diff:** Net +538 | +710 / −172
@@ -66,20 +66,20 @@ A toolbar dropdown was added that lists a Page's headings as a nested tree and t
 - **Diff:** Net +454 | +516 / −62
 
 
-#### PM-006 || The Gesture Survey And Layout-Read Sweep
+#### PM-006 || Pointer Handlers Stop Re-Measuring
 
 **DATE:** 08-06-2026
 
-Four surveys mapped the drag family against the shared pointer skeleton before anything was consolidated, and the answer came back narrower than the standing note assumed: seven surfaces had already migrated, three stay hand-rolled by design, and MarkdownPM's list and block drags are close enough to pure CodeMirror logic that the skeleton would absorb about a tenth of each. The pass took only the findings that stood on their own. The editor's grip hover stopped reading a rect and running a hit-test on every pointer move, leading instead with one cached content-column edge, and the hover card, the detail pane, and the option and status reorders each stopped re-measuring geometry that holds still between scrolls and resizes. Both reorder hooks gained the unmount cleanup they never had, closing a listener leak that outlived every drag started in a pane that then closed, and the scroller resolution both editor drags had copied verbatim moved into the autoscroll module that owns that question. → [[InteractionPM]] · [[PommoraDND]]
+`blockHandles.ts`'s grip hover read a rect and ran a hit-test on every pointer move; it now leads with one cached content-column edge that answers the common case in a single comparison. `ConnectionHoverCard.tsx`, `DetailPane.tsx`, `useOptionReorder`, and `useStatusReorder` stopped re-measuring geometry that holds still between scrolls and resizes, and both reorder hooks gained the unmount cleanup they never had, closing a listener leak that outlived every drag started in a pane that then closed. `listDrag.ts` took the Escape abort its sibling already had, and the scroller resolution both editor drags had copied verbatim moved into `autoscroll.ts`. The drag family was otherwise left as it stood: seven surfaces already ride the shared pointer skeleton, three stay hand-rolled by design, and MarkdownPM's list and block drags are close enough to pure CodeMirror logic that the skeleton would absorb about a tenth of each. → [[InteractionPM]] · [[PommoraDND]]
 
 - **Commits:** `e3b001d1`
 - **Diff:** Net +52 | +102 / −50
 
-#### PM-007 || The MarkdownPM Ledger Sweep
+#### PM-007 || Table Geometry And The Marker Rules
 
 **DATE:** 08-06-2026
 
-The fix log's standing MarkdownPM entries were traced to their causes and cleared. Table editing at scale had been jittery because a cell keystroke rebuilt its table's model and the geometry effect keyed on that model's identity re-read a rect for every column and row on each character; the sweep now runs on the table's shape and leaves reflow to the observer, with resting cells memoizing on their text so one cell's typing stops re-rendering the rest. The bullet parser narrowed to `-` and `+`, the two characters carrying render branches, and a blockquote marker gained the line's end as a valid terminator, which makes a bare `>` the quote's own blank line rather than a paragraph splitting the box into three. A follow-on pass carried each fix to its siblings — the marker set to the subfield statistics, the no-op drop guard to the table and both reorder surfaces — and closed two regressions the first batch had introduced. → [[MarkdownPM]]
+`TableView.tsx`'s geometry effect keyed on the table model's identity, so a cell keystroke rebuilt that model and re-read a rect for every column and every row; it keys on the table's shape now and leaves reflow to the observer, with `StaticCell` memoized on its text so one cell's typing stops re-rendering the rest. `LIST_MARKER_RE` narrowed to `-` and `+`, the two characters carrying render branches, which took `*` and `•` out of the drag-and-renumber layers. `blockquotePrefilter` gained the line's end as a valid terminator, so a bare `>` reads as the quote's own blank line rather than a paragraph splitting the box into three. `sidebarDnd`'s drop indicator stopped drawing over slots flagged as no-ops, and `subfieldStats`, `tableDnd`, and both reorder hooks took the same marker set and drop guard their siblings had. → [[MarkdownPM]]
 
 - **Commits:** `c2f40989^..7445c4e7`
 - **Diff:** Net +52 | +90 / −38
@@ -88,7 +88,7 @@ The fix log's standing MarkdownPM entries were traced to their causes and cleare
 
 **DATE:** 08-05-2026
 
-Resting on a resolved `[[Connection]]` opens a compact read-only preview of the target page through the shared embed framework, without its banner or inline title. The card anchors to the live link with the pane's beak sliding to keep pointing at it, and holds glance-only interaction — content scrolls, headings fold on click, and the caret never enters. It resizes from its right edge, bottom edge, and corner to a single per-machine remembered size, and a Settings ▸ Pages slider sets how long it lingers after hover-off. Resting table cells raise the same card through the intent delay the editor's own links use. The build consolidated the hover lifecycle along the way: the card became one app-level mount, a click consumes a pending intent, and navigation closes an open card. → [[MarkdownPM]] · [[ConnectionsPM]]
+Resting on a resolved `[[Connection]]` opens a compact read-only preview of the target page through the shared embed framework, without its banner or inline title. The card anchors to the live link with the pane's beak sliding to keep pointing at it, and holds glance-only interaction — content scrolls, headings fold on click, and the caret never enters. It resizes from its right edge, bottom edge, and corner to a single per-machine-remembered size, and the Settings ▸ Pages slider sets how long it lingers after hover-off. Resting table cells raise the same card through the intent delay the editor's own links use. `ConnectionHoverCard` became one app-level mount rather than one per link, a click consumes a pending intent, and navigation closes an open card. → [[MarkdownPM]] · [[ConnectionsPM]]
 
 - **Commits:** `71b423c1^..d6aba1d0`
 - **Diff:** Net +510 | +594 / −84
@@ -152,16 +152,16 @@ Pommora gained a record of what it deletes. Every nexus-trash delete writes a pr
 
 The identifying question inverted: an entity's kind now comes from its folder's sidecar and its id from the key naming that kind — `PageID:`, `TaskID:`, `EventID:`, each holding a bare ULID — so identification became an agreement between a file and the folder that declares it. Admission became one predicate shared by the walk and the adoption pass, answering member, missing, or Unknown; an Unknown file is invisible to the tree, skipped by every nexus-wide write, and left byte-identical on disk. Classification consolidated onto one depth-aware resolver, and registration replaced presence as the agenda authority. The frontmatter key migration renamed 171 files with the app closed and verified a real open at zero dual-key and zero malformed files, with no transition machinery written for it.
 
-**Agenda De-Scaffolding:** The plan's opening phase removed the old Agenda architecture before the identity cutover landed on it, following a stated sequencing rule that the two never interleave. The suffix grammar, the item schemas, the untouched CRUD, and the read-only channel all came out — the shape both kinds carried was EventKit's, imported wholesale by the Swift build and never re-chosen — leaving Tasks and Events to be `.md` under their kind keys with a deliberately open field vocabulary. That phase is a demolition where the identity work is a build, which is why the arc's totals come out negative. → [[ArchitecturePM]] · [[AgendaPM]] · [[PagesPM]]
+**Agenda De-Scaffolding:** The Agenda suffix grammar, the item schemas, the CRUD layer, and the read-only channel came out ahead of the identity cutover, so the new model landed on an empty slate rather than adapting the old shape. What they carried was EventKit's, imported wholesale by the Swift build and never re-chosen; Tasks and Events are `.md` under their kind keys now, with a field vocabulary left open. The removal outweighs the identity work by roughly two lines to one, which is why the totals come out negative. → [[ArchitecturePM]] · [[AgendaPM]] · [[PagesPM]]
 
 - **Commits:** `9b005cb8^..662f8cc5`
 - **Diff:** Net −394 | +763 / −1157
 
-#### PM-015 || The View-Embed Polish Batch
+#### PM-015 || ActionBand And The Per-View Color
 
 **DATE:** 07-30-2026
 
-The view-embed surface took a live-driven polish pass. Pill styling hoisted out of the embed into ActionBand, the shared toolbar-affordance home, and the collapsible title morph consolidated onto Segmented-Controls' single `labelSlot`, so the toolbar view button and both embed switcher modes ride one written-once animation. Views gained a per-view color, worn only as the segment stroke at a tint and picked through the existing ColorPicker from the segment's own right-click menu. The rename field auto-sizes to its typed text, pickers anchor to the right-clicked chip, and every `EditableInput` consumer became a spellcheck-free title field. → [[ViewsPM]] · [[DesignPM]]
+Pill styling hoisted out of the view embed into `ActionBand`, the shared toolbar-affordance home, and the collapsible title morph consolidated onto Segmented-Controls' single `labelSlot`, so the toolbar view button and both embed switcher modes ride one written-once animation. Views gained a per-view color, worn only as the segment stroke at a tint and picked through the existing ColorPicker from the segment's own right-click menu. The rename field auto-sizes to its typed text, pickers anchor to the right-clicked chip, and every `EditableInput` consumer became a spellcheck-free title field. → [[ViewsPM]] · [[DesignPM]]
 
 - **Commits:** `eea34354^..f68d3ba9`
 - **Diff:** Net +189 | +418 / −229
