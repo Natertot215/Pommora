@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { readAppConfig, writeAppConfig, appConfigPath, addRecent } from './appConfig'
+import { readAppConfig, updateAppConfig, appConfigPath, addRecent } from './appConfig'
 
 let dir: string
 beforeEach(() => {
@@ -33,12 +33,12 @@ describe('appConfig', () => {
   })
 
   it('round-trips lastNexusPath through write then read', async () => {
-    await writeAppConfig(dir, { lastNexusPath: '/Users/x/Nexus' })
+    await updateAppConfig(dir, () => ({ lastNexusPath: '/Users/x/Nexus' }))
     expect((await readAppConfig(dir)).lastNexusPath).toBe('/Users/x/Nexus')
   })
 
   it('round-trips recents through write then read', async () => {
-    await writeAppConfig(dir, { recents: ['/a', '/b'] })
+    await updateAppConfig(dir, () => ({ recents: ['/a', '/b'] }))
     expect((await readAppConfig(dir)).recents).toEqual(['/a', '/b'])
   })
 
@@ -48,9 +48,9 @@ describe('appConfig', () => {
   })
 
   it('round-trips a valid trashMode through write then read', async () => {
-    await writeAppConfig(dir, { trashMode: 'system' })
+    await updateAppConfig(dir, () => ({ trashMode: 'system' }))
     expect((await readAppConfig(dir)).trashMode).toBe('system')
-    await writeAppConfig(dir, { trashMode: 'nexus' })
+    await updateAppConfig(dir, () => ({ trashMode: 'nexus' }))
     expect((await readAppConfig(dir)).trashMode).toBe('nexus')
   })
 
@@ -83,5 +83,26 @@ describe('addRecent', () => {
 
   it('is idempotent for the same path (no duplicates, stays at front)', () => {
     expect(addRecent(['a'], 'a')).toEqual(['a'])
+  })
+})
+
+describe('updateAppConfig', () => {
+  it('is the one writer, so two concurrent updates both land', async () => {
+    await updateAppConfig(dir, () => ({ recents: ['/a'] }))
+    await Promise.all([
+      updateAppConfig(dir, (cur) => ({ recents: addRecent(cur.recents ?? [], '/b') })),
+      updateAppConfig(dir, () => ({ lastNexusPath: '/Users/x/Nexus' })),
+    ])
+    const after = await readAppConfig(dir)
+    expect(after.lastNexusPath).toBe('/Users/x/Nexus')
+    expect(after.recents).toEqual(['/b', '/a'])
+  })
+
+  it('carries through a key this version does not model', async () => {
+    writeFileSync(appConfigPath(dir), JSON.stringify({ recents: ['/a'], windowBounds: { w: 1 } }))
+    await updateAppConfig(dir, () => ({ lastNexusPath: '/n' }))
+    const raw = JSON.parse(readFileSync(appConfigPath(dir), 'utf8'))
+    expect(raw.windowBounds).toEqual({ w: 1 })
+    expect(raw.lastNexusPath).toBe('/n')
   })
 })

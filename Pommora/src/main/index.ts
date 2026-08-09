@@ -46,7 +46,7 @@ import {
   type BlockHostRef,
 } from '@shared/blocks'
 import { pathExists } from './io/atomicWrite'
-import { readAppConfig, writeAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
+import { readAppConfig, updateAppConfig, addRecent, DEFAULT_TRASH_MODE } from './appConfig'
 import { sessionRoot, openSession, resolveRestorePath, isExistingDir } from './session'
 import { openSessionDb, closeSessionDb, sessionDb } from './sessionDb'
 import { stampAdopted } from './adopt'
@@ -364,18 +364,15 @@ async function adoptNexusInner(path: string, latchRecord: boolean): Promise<void
   // Best-effort: a config-write failure must not block opening the folder this session,
   // nor leave a half-open "ghost" session the renderer never re-reads.
   try {
-    const userData = app.getPath('userData')
-    const config = await readAppConfig(userData)
     // Persist the RAW user-facing path, not the canonical `root`: a nexus under an iCloud-synced
     // ~/Documents realpaths into the Mobile Documents container, which reads as gibberish in Open
     // Recent AND breaks restore if the user later turns iCloud Desktop & Documents off (the
     // container path disappears; ~/Documents/MyNexus survives). Canonical stays on the in-process
     // locks only; what we save and reveal to the user stays the path they picked.
-    await writeAppConfig(userData, {
-      ...config,
+    await updateAppConfig(app.getPath('userData'), (cur) => ({
       lastNexusPath: path,
-      recents: addRecent(config.recents ?? [], path),
-    })
+      recents: addRecent(cur.recents ?? [], path),
+    }))
     app.addRecentDocument(path)
   } catch (e) {
     console.error('Could not persist recents / last-opened:', e)
