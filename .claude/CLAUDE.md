@@ -56,7 +56,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 
 #### Important Information
 
-- **Swift Origins:** Pommora was first built as a native SwiftUI app on 04-26-2026 — that build was active for around one month and defined the entire initial paradigm; React was initially an alternative contingency but was eventually determined to be the best long-term approach. The Swift build is archived at `// The Studio // Archive // Pommora` — source; its git history lives on the `swift` branch.
+- **Swift Origins:** The repository opens 05-10-2026 on specification alone, with React and Electron named as the initial direction and SwiftUI deferred. SwiftUI was chosen instead on 05-13 and carried the build for a month, defining the entire initial paradigm, before React was returned to as the long-term approach — the first TypeScript lands 06-14 in `823ee654`. The Swift source is archived at `// The Studio // Archive // Pommora`; its commits sit in this repository's own ancestry rather than on a separate branch, so `git log` reaches them directly.
 - **Why This Matters:** The initial rebuild introduced now-obsolete Swift-based code; Swift compatibility is not a constraint — any code that may appear functional but is solely an artifact of its Swift origin must be flagged for removal.
 - **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime: it brings Pommora-style capabilities to Obsidian natively and keeps NexusOS Pommora-compatible, so Nathan's daily vault stays aligned as Pommora matures — at a light weekly cadence, subordinate to the daily Pommora grind.
 - **NexusOS** is both an Obsidian vault *and* a Pommora nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian-functionality fixtures until Pommora is actually completed.
@@ -99,7 +99,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   └── [UI-Copy.md]                 | • The running app never displays build-status or meta text
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
 │   ├── // Resources                     | • Reference of external resources; both in-use and future prospectives.
-│   ├── // references                    | • Standing reference material — Nate's notes
 │   ├── // Planning                      | • Plans and temporary specifications; contents are transient
 │   └── // Sessions                      | • Session transcripts — filled by /handoff retirement or /transcribe
 ├── // Pommora                           | • The app — the codebase proper
