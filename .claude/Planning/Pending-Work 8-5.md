@@ -18,7 +18,7 @@ Three independent scouts surveyed the codebase and its record, each on its own m
 
 #### Give the Shared View Modules a Home Outside `Table/`
 
-Fourteen files with nothing to do with tables import from `Detail/Views/Table/` — Cards pulls seven modules from it, the panes five more — and ten-line pure helpers exported from the top of the 1600-line `TableView.tsx` drag the whole table component's import graph in to answer one call. Moving the genuinely shared pieces (`Cell`, `resolveContext`, `columnStyles`, `columnLabel`, `linkValue`, and kin) up into `Views/` is import-rewriting only; the four unbuilt renderers would otherwise each add another set of reach-ins.
+Fourteen files with nothing to do with tables import from `Detail/Views/Table/` — Cards pulls seven modules from it, the panes five more — and ten-line pure helpers exported from the top of the 1600-line `TableView.tsx` drag the whole table component's import graph into answer one call. Moving the genuinely shared pieces (`Cell`, `resolveContext`, `columnStyles`, `columnLabel`, `linkValue`, and kin) up into `Views/` is import-rewriting only; the four unbuilt renderers would otherwise each add another set of reach-ins.
 
 #### Split the Store Into Domain Slices
 

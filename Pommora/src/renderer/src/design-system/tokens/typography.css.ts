@@ -3,23 +3,20 @@ import { createGlobalTheme, style } from '@vanilla-extract/css'
 /**
  * Typography primitives — the raw type scale and the single source of truth.
  * Edit a value here and it propagates to every composed text style and every
- * component that uses one. Sizes mirror the Figma "Pommora - React" text styles
- * (Inter, letter-spacing 0); weights follow the standard/emphasized/semibold/bold
+ * component that uses one; weights follow the standard/emphasized/semibold/bold
  * ladder by name, not a per-style emphasis.
  */
 export const font = createGlobalTheme(':root', {
   family:
     "'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-  // The four Inter weights, named on a standard → bold ladder. Single source —
-  // edit a number here (or add a step) and it flows to every text style and the
-  // --weight-* CSS vars. Inter is variable (axis 100–900), so any value renders.
+  
   weight: {
     standard: '400',
     emphasized: '500',
     semibold: '600',
     bold: '700',
   },
-  // Size + line height, co-located per style (px), matching the Figma ramp.
+ 
   scale: {
     largeTitle: { size: '26px', line: '32px' },
     title1: { size: '22px', line: '26px' },
@@ -56,11 +53,6 @@ const ramp = (key: ScaleKey): Record<WeightKey, string> => {
   }
 }
 
-/**
- * Composed text styles — apply a whole style by name, e.g. `<span className={text.body.emphasized}>`.
- * Size comes from the style key; weight from the variant, named for the weight it is
- * (standard/emphasized/semibold/bold).
- */
 export const text = {
   largeTitle: ramp('largeTitle'),
   title1: ramp('title1'),
@@ -79,7 +71,7 @@ export const text = {
  * Capped label — ellipsis at rest, scroll-on-hover. The one source for the "truncate a single-line
  * label, reveal the full value by scrolling on hover" behaviour shared by chips and menu / sidebar
  * rows. The WIDTH cap is the consumer's: a `maxWidth` for chips, the flex parent for rows (minWidth:0
- * lets it shrink to the available track). Scrollbar is hidden on both engines.
+ * lets it shrink to the available track). 
  */
 export const truncateHoverScroll = style({
   minWidth: 0,

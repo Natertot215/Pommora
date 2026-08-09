@@ -1,6 +1,6 @@
 ## Write-Path Consolidation — Implementation Plan
 
-> **Status:** written, pending review · Spec: none — grounded in this session's five-lens survey and the verification below · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: none — grounded in this session's five-lens survey and the verification below · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
