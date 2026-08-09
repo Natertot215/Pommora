@@ -1,6 +1,7 @@
 import { mkdir } from 'node:fs/promises'
 import { nexusConfig, nexusDir, NEXUS_CONFIG_FILES } from '../paths'
 import { readJsonObject, readJsonStrict, writeJson } from './atomicWrite'
+import { serializeOnFile } from './fileLock'
 import { isPlainObject } from '@shared/propertyValue'
 import { propertyDefinition, type PropertyDefinition } from '@shared/properties'
 
@@ -75,13 +76,9 @@ async function writeRegistry(
   await writeJson(registryPath(root), registry)
 }
 
-// Every mutation shares one file, so read-modify-writes must not interleave: two overlapping
-// IPC ops that both read the same snapshot would have the later write silently drop the
-// earlier one's change. One module-level chain serializes them (single main process; the
-// session has one root, so a per-root map would be ceremony).
-let chain: Promise<unknown> = Promise.resolve()
-
-/** Serialized read-modify-write. `fn` returns the next registry to persist (or nothing to
+/** Read-modify-write of the registry, under that file's own lock — the same per-path mechanism
+ *  the contexts registry one directory over already takes, rather than a second private chain.
+ *  `fn` returns the next registry to persist (or nothing to
  *  leave disk untouched, e.g. a validation failure) plus the caller's result. The read is
  *  strict: absent seeds an empty registry, unreadable/corrupt throws (landing as the op's
  *  error envelope) so the file is never replaced by what a failed read pretended it held.
@@ -91,7 +88,7 @@ export function mutateRegistry<T>(
   root: string,
   fn: (registry: RegistryFile) => { next?: RegistryFile; result: T },
 ): Promise<T> {
-  const run = chain.then(async () => {
+  return serializeOnFile(registryPath(root), async () => {
     const read = await readJsonStrict(registryPath(root))
     if (!read.ok && read.error.code !== 'not-found') throw new Error(read.error.message)
     const { registry, unparsed } = normalizeRegistry(read.ok ? read.value : {})
@@ -106,6 +103,4 @@ export function mutateRegistry<T>(
     }
     return result
   })
-  chain = run.catch(() => undefined)
-  return run
 }
