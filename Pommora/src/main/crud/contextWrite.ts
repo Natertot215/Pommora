@@ -72,7 +72,7 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
         const sc = await readJsonStrict(join(dir, e.name, SPACE_SIDECAR))
         if (!sc.ok) {
           if (sc.error.code === 'not-found') continue
-          return fail('operation-failed', `Unreadable Space sidecar: ${e.name}`, 'contexts')
+          return fail('operation-failed', `Unreadable Space sidecar: ${e.name}`)
         }
         const rel = `.nexus/contexts/${def.title}/${e.name}`
         // Mirror the walk's id adoption so an id-less sidecar resolves identically here.
@@ -102,7 +102,7 @@ function targetTitles(world: ContextWorld, spaceIds: string[]): Result<string[]>
   const titles: string[] = []
   for (const id of spaceIds) {
     const ref = world.spaceById.get(id)
-    if (!ref) return fail('not-found', 'Unknown Space.', 'contexts')
+    if (!ref) return fail('not-found', 'Unknown Space.')
     titles.push(ref.title)
   }
   return ok(titles)
@@ -117,7 +117,7 @@ function applyTarget(
   titles: string[],
 ): Result<{ root: Raw; key: string }> {
   const def = defById(world, contextId)
-  if (!def) return fail('not-found', 'Unknown Context.', 'contexts')
+  if (!def) return fail('not-found', 'Unknown Context.')
   const { root } = reconcileContextKeys(raw, world.registry, world.spacesByContext)
   const key = contextKey(def.title)
   if (titles.length) root[key] = titles
@@ -152,7 +152,7 @@ export async function setPageContext(
     try {
       existing = await readFile(absFile, 'utf8')
     } catch {
-      return fail('not-found', 'Page not found.', 'page')
+      return fail('not-found', 'Page not found.')
     }
     const raw = splitFrontmatter(existing)
     const applied = applyTarget(world, raw, contextId, titles.value)
@@ -180,7 +180,7 @@ export async function setSpaceContext(
   targetSpaceIds: string[],
 ): Promise<Result<null>> {
   const ref = world.spaceById.get(spaceId)
-  if (!ref) return fail('not-found', 'Unknown Space.', 'contexts')
+  if (!ref) return fail('not-found', 'Unknown Space.')
   const titles = targetTitles(world, targetSpaceIds)
   if (!titles.ok) return titles
   const sidecar = join(ref.dir, SPACE_SIDECAR)
@@ -189,7 +189,7 @@ export async function setSpaceContext(
       const applied = applyTarget(world, raw, contextId, titles.value)
       if (!applied.ok) throw new Error(applied.error.message)
       return { ...applied.value.root, modified_at: nowIso() }
-    }).catch(() => fail('operation-failed', 'Context write failed.', 'contexts'))
+    }).catch(() => fail('operation-failed', 'Context write failed.'))
     return written.ok ? ok(null) : written
   })
 }
@@ -203,7 +203,7 @@ export async function setContextOnPath(
   if (isMarkdownFile(abs)) return setPageContext(abs, world, contextId, spaceIds)
   const owner = [...world.spaceById.values()].find((ref) => ref.dir === abs)
   if (owner) return setSpaceContext(world, owner.id, contextId, spaceIds)
-  return fail('invalid-path', 'Not a context-taggable entity.', 'contexts')
+  return fail('invalid-path', 'Not a context-taggable entity.')
 }
 
 /** Append a new Context to the registry (ULID id, no singular) + mkdir its folder. Title
@@ -245,7 +245,7 @@ export async function createSpace(
   const reg = await readRegistryStrict(root)
   if (!reg.ok) return reg
   const def = reg.value.contexts.find((c) => c.id === contextId)
-  if (!def) return fail('not-found', 'Unknown Context.', 'contexts')
+  if (!def) return fail('not-found', 'Unknown Context.')
   const parent = join(contextsDir(root), def.title)
   await mkdir(parent, { recursive: true })
   const created = await createFolderEntity(parent, 'space', name)
@@ -274,11 +274,11 @@ export async function setSpaceColor(
   color: string | undefined,
 ): Promise<Result<null>> {
   if (color !== undefined && !(SOLID_COLORS as readonly string[]).includes(color))
-    return fail('invalid-name', `"${color}" is not a chip solid.`, 'contexts')
+    return fail('invalid-name', `"${color}" is not a chip solid.`)
   const world = await loadContextWorld(root)
   if (!world.ok) return world
   const ref = world.value.spaceById.get(spaceId)
-  if (!ref) return fail('not-found', 'Unknown Space.', 'contexts')
+  if (!ref) return fail('not-found', 'Unknown Space.')
   const sidecar = join(ref.dir, SPACE_SIDECAR)
   const written = await serializeOnFile(sidecar, () =>
     rmwJsonStrict(sidecar, (cur) => {

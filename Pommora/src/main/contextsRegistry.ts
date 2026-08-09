@@ -18,7 +18,7 @@ function parseRegistry(raw: Record<string, unknown>): Result<ContextsRegistry> {
   const parsed = contextsRegistry.safeParse(raw)
   return parsed.success
     ? ok(parsed.data)
-    : fail('operation-failed', 'Invalid contexts registry.', 'contexts')
+    : fail('operation-failed', 'Invalid contexts registry.')
 }
 
 /** Read the registry, seeding a nexus that has none from the labels and writing it. */
@@ -64,7 +64,7 @@ export async function mutateRegistryFile(
       // Overlay onto the raw object so registry-level foreign fields survive even a
       // mutator that rebuilds `{ contexts }` from scratch.
       return { ...raw, ...(fn(parsed.value) as unknown as Record<string, unknown>) }
-    }).catch(() => fail('operation-failed', 'Invalid contexts registry.', 'contexts'))
+    }).catch(() => fail('operation-failed', 'Invalid contexts registry.'))
     if (!written.ok) return written
     return parseRegistry(written.value)
   })

@@ -19,9 +19,6 @@ import { optionValues, type PropertyDefinition } from './properties'
  *  unknown keys on a file object are preserved (the decoder passes the object through). */
 export interface FileRef {
   path: string
-  original_name?: string
-  added_at?: string
-  mime_type?: string
 }
 
 export type PropertyValue =

@@ -19,35 +19,3 @@ export interface EntityRecord {
   state: ExistState
 }
 
-export interface BaselineDiff {
-  added: EntityRecord[]
-  removed: EntityRecord[]
-  changed: { before: EntityRecord; after: EntityRecord }[]
-}
-
-export function isEmptyDiff(d: BaselineDiff): boolean {
-  return d.added.length === 0 && d.removed.length === 0 && d.changed.length === 0
-}
-
-const SCALAR_FIELDS = ['kind', 'title', 'path', 'state'] as const
-
-/** Union-of-keys diff: absence on either side is first-class, and only the scalar fields
- *  participate — a wider entry shape never silently joins the comparison. */
-export function diffBaselines(
-  prev: Record<string, EntityRecord>,
-  next: Record<string, EntityRecord>,
-): BaselineDiff {
-  const diff: BaselineDiff = { added: [], removed: [], changed: [] }
-  for (const id of new Set([...Object.keys(prev), ...Object.keys(next)])) {
-    const before = prev[id]
-    const after = next[id]
-    if (before === undefined) {
-      diff.added.push(after)
-    } else if (after === undefined) {
-      diff.removed.push(before)
-    } else if (SCALAR_FIELDS.some((f) => before[f] !== after[f])) {
-      diff.changed.push({ before, after })
-    }
-  }
-  return diff
-}

@@ -14,12 +14,10 @@ export type ErrorCode =
   | 'no-nexus'
   | 'busy'
 
-/** A structured, serializable error. `scope` names the entity/kind domain (free-form: an
- *  entity name like "page" or a SidecarKind), used for message context only. */
+/** A structured, serializable error, the same shape internally and on the wire. */
 export interface PommoraError {
   code: ErrorCode
   message: string
-  scope?: string
 }
 
 export type Result<T, E = PommoraError> = { ok: true; value: T } | { ok: false; error: E }
@@ -34,7 +32,7 @@ export function ok<T>(value: T): Result<T, never> {
   return { ok: true, value }
 }
 
-/** Terse failure constructor. Omits `scope` when absent so the on-wire shape stays minimal. */
-export function fail(code: ErrorCode, message: string, scope?: string): Result<never> {
-  return { ok: false, error: scope === undefined ? { code, message } : { code, message, scope } }
+/** Terse failure constructor. */
+export function fail(code: ErrorCode, message: string): Result<never> {
+  return { ok: false, error: { code, message } }
 }
