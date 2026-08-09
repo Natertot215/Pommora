@@ -160,18 +160,6 @@ function setOrDrop(
   return next
 }
 
-/** Strict read-modify-write of one config file, locked on the file itself — the block-doc writers
- *  share homepage.json, and two unlocked read-merge-writes lose whole keys. When the file is a
- *  folder sidecar the key must come from `sidecarPath`: that is the same key `withSidecarLock`
- *  takes, and a second spelling of the path would queue these writes behind nothing. */
-function patchConfig(
-  cfgPath: string,
-  patch: (cur: Record<string, unknown>) => Record<string, unknown>,
-  seed?: () => Record<string, unknown>,
-): Promise<Result<Record<string, unknown>>> {
-  return serializeOnFile(cfgPath, () => rmwJsonStrict(cfgPath, patch, seed))
-}
-
 /**
  * Create with a base name, disambiguating on collision: base, "base 2", "base 3", … The
  * "New …" UX — a fresh entity should always appear, never silently fail on a name clash.
@@ -458,11 +446,11 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (!rel) return fault('Unsupported image data.')
         // Set the field first; only THEN delete a replaced file, so a failed write never
         // leaves `banner` pointing at a deleted file (mirrors the cover/photo ordering).
-        const written = await patchConfig(cfgPath, (cur) => setOrDrop(cur, 'banner', rel), seed)
+        const written = await rmwJsonStrict(cfgPath, (cur) => setOrDrop(cur, 'banner', rel), seed)
         if (!written.ok) return written
         if (prev && prev !== rel) await rm(join(root, prev), { force: true }).catch(() => {})
       } else {
-        const written = await patchConfig(
+        const written = await rmwJsonStrict(
           cfgPath,
           (cur) => setOrDrop(cur, 'banner', undefined),
           seed,
@@ -491,7 +479,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         if (typeof id !== 'string') return fault('That item has no id.')
         fallback = { id }
       }
-      const written = await patchConfig(
+      const written = await rmwJsonStrict(
         cfgPath,
         (cur) => setOrDrop(cur, 'heading_icon_hidden', req.hidden),
         () => fallback,
@@ -540,7 +528,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       const cfgPath = sidecarPath(resolved.value, req.kind)
       // One strict read: the id gate rides inside the mutator (the throw lands as the op's
       // fault), and a vanished sidecar fails not-found rather than being reseeded.
-      const written = await patchConfig(cfgPath, (cur) => {
+      const written = await rmwJsonStrict(cfgPath, (cur) => {
         if (typeof cur.id !== 'string') throw new Error('That item has no id.')
         return setOrDrop(cur, 'icon', req.icon)
       })

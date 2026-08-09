@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { serializeOnFile, rewritePageSerialized } from './fileLock'
-import { atomicWriteFile } from './atomicWrite'
+import { serializeOnFile } from './fileLock'
+import { rewritePageSerialized, atomicWriteFile } from './atomicWrite'
 
 const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 

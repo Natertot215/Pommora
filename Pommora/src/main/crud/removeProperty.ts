@@ -6,14 +6,13 @@
 // options (per-value reconciliation); the global Delete purges these caches.
 
 import { contentId } from '@shared/identity'
-import { rewritePageSerialized } from '../io/fileLock'
 import { stripPageMember } from './pageValue'
-import { readSidecar, withSidecarLock } from '../sidecarIO'
+import { readSidecar } from '../sidecarIO'
 import { propertyValueStands } from './standing'
 import { pageCollectionSidecar } from '@shared/schemas'
 import { listMarkdownFiles } from '../io/walk'
 import { sidecarPath } from '../paths'
-import { readTextOrNull, rmwJsonStrict } from '../io/atomicWrite'
+import { rewritePageSerialized, readTextOrNull, rmwJsonStrict } from '../io/atomicWrite'
 import { readFrontmatterFields, mergeFrontmatter, splitEnvelope } from '../io/pageFile'
 import { readRegistry } from '../io/propertiesRegistry'
 import { encodeValue, isPlainObject, propertyKey } from '@shared/propertyValue'
@@ -63,14 +62,12 @@ async function removeInner(
   // revert a concurrent icon/banner/view write — THEN strip each page under its file lock.
   // Cache-before-strip keeps the values safely persisted before any page loses them, so a
   // failure mid-strip is recoverable, never lossy.
-  const written = await withSidecarLock(collectionFolder, 'collection', () =>
-    rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
-      patchCacheBlock(
-        { ...cur, properties: ids.filter((id) => id !== propertyId) },
-        propertyId,
-        // No value, no key — a block with nothing in it is the same violation as an empty map.
-        Object.keys(values).length ? { values } : undefined,
-      ),
+  const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
+    patchCacheBlock(
+      { ...cur, properties: ids.filter((id) => id !== propertyId) },
+      propertyId,
+      // No value, no key — a block with nothing in it is the same violation as an empty map.
+      Object.keys(values).length ? { values } : undefined,
     ),
   )
   if (!written.ok) return written
@@ -148,16 +145,13 @@ export async function restoreCachedValues(
           ),
     )
   })
-  // The page walk above deliberately runs unlocked, so the cache clear takes the sidecar's lock
-  // for itself rather than inheriting one — it is a read-merge-write of a file five other
-  // surfaces also rewrite whole.
-  const written = await withSidecarLock(collectionFolder, 'collection', () =>
-    rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
-      patchCacheBlock(
-        cur,
-        propertyId,
-        Object.keys(survivors).length ? { ...block, values: survivors } : undefined,
-      ),
+  // The page walk above deliberately runs unlocked; the cache clear takes the sidecar's own key,
+  // which the primitive derives from the path it writes.
+  const written = await rmwJsonStrict(sidecarPath(collectionFolder, 'collection'), (cur) =>
+    patchCacheBlock(
+      cur,
+      propertyId,
+      Object.keys(survivors).length ? { ...block, values: survivors } : undefined,
     ),
   )
   if (!written.ok) return written

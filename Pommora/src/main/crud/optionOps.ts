@@ -4,10 +4,10 @@
 // flow as Result, never thrown.
 
 import { mutateRegistry, readRegistry } from '../io/propertiesRegistry'
+import { rewritePageSerialized } from '../io/atomicWrite'
 import { validateOptionValues } from '../properties/schema'
 import { allCollectionFolders } from './assignment'
 import { serializeSchemaOp } from './schemaChain'
-import { rewritePageSerialized } from '../io/fileLock'
 import { listMarkdownFiles } from '../io/walk'
 import { sweepAdmits } from './util'
 import { replacePageValue, stripPageValue } from './pageValue'
