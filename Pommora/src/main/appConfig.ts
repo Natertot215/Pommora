@@ -46,12 +46,12 @@ export async function readAppConfig(userDataDir: string): Promise<AppConfig> {
 
 /** Read-modify-write the config under its own lock — the one writer, so the adopt path and the
  *  menu's recents self-heal cannot each rebuild the file from a snapshot taken before the other
- *  landed. `mutate` receives the RAW object rather than the projection above, so a key this
- *  version doesn't model rides through instead of being dropped on every write.
+ *  landed. What `mutate` returns is overlaid onto the raw object, so a key this version doesn't
+ *  model rides through instead of being dropped on every write. `current` is that same raw object
+ *  under an `AppConfig` label, NOT the validated projection `readAppConfig` returns.
  *
- *  An unreadable file fails the write rather than replacing it, which is the strict reader's
- *  whole point and a change from the previous overwrite-on-corrupt behaviour. The read side
- *  stays lenient, so a damaged config still degrades to empty defaults for launch. */
+ *  An unreadable file fails the write rather than replacing it. The read side stays lenient, so a
+ *  damaged config still degrades to empty defaults for launch. */
 export async function updateAppConfig(
   userDataDir: string,
   mutate: (current: AppConfig) => AppConfig,

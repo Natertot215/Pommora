@@ -77,13 +77,11 @@ async function writeRegistry(
   await writeJson(registryPath(root), registry)
 }
 
-/** Read-modify-write of the registry, under that file's own lock — the same per-path mechanism
- *  the contexts registry one directory over already takes, rather than a second private chain.
- *  `fn` returns the next registry to persist (or nothing to
- *  leave disk untouched, e.g. a validation failure) plus the caller's result. The read is
- *  strict: absent seeds an empty registry, unreadable/corrupt throws (landing as the op's
- *  error envelope) so the file is never replaced by what a failed read pretended it held.
- *  Entries that don't parse as defs ride through the write untouched, by id — `fn` never
+/** Read-modify-write of the registry, under that file's own lock. `fn` returns the next registry
+ *  to persist (or nothing to leave disk untouched, e.g. a validation failure) plus the caller's
+ *  result. The read is strict: absent seeds an empty registry, unreadable/corrupt throws (landing
+ *  as the op's error envelope) so the file is never replaced by what a failed read pretended it
+ *  held. Entries that don't parse as defs ride through the write untouched, by id — `fn` never
  *  sees them, so it can never drop them. */
 export function mutateRegistry<T>(
   root: string,

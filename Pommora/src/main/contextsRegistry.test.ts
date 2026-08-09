@@ -81,6 +81,28 @@ describe('mutateRegistryFile', () => {
     const r = await mutateRegistryFile(root, (reg) => reg)
     expect(r.ok).toBe(false)
   })
+
+  // The file is read-modify-written whole, under its own per-path lock, so neither of two
+  // overlapping mutations may drop the other's change.
+  it('concurrent mutations both land', async () => {
+    await ensureContextsRegistry(root)
+    await Promise.all([
+      mutateRegistryFile(root, (cur) => ({
+        ...cur,
+        contexts: [...cur.contexts, { id: 'ctx_x', title: 'X', singular: 'X' }],
+      })),
+      mutateRegistryFile(root, (cur) => ({
+        ...cur,
+        contexts: [...cur.contexts, { id: 'ctx_y', title: 'Y', singular: 'Y' }],
+      })),
+    ])
+    const after = await readRegistry(root, DEFAULT_LABELS)
+    expect(after.ok).toBe(true)
+    if (!after.ok) return
+    const titles = after.value.contexts.map((c) => c.title)
+    expect(titles).toContain('X')
+    expect(titles).toContain('Y')
+  })
 })
 
 describe('strict JSON IO', () => {

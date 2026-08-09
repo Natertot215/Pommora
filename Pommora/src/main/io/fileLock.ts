@@ -1,22 +1,17 @@
-// The per-file write lock. Every read-modify-write on disk runs under it — pages, container and
-// Space sidecars, settings, navigation — so overlapping RMWs on one file serialize instead of
-// racing: a stale snapshot losing to a fresh write, or a cascade dropping a value a concurrent
-// edit just set.
+// The per-file write lock. Every read-modify-write on disk runs under it, so overlapping RMWs on
+// one file serialize instead of racing: a stale snapshot losing to a fresh write, or a cascade
+// dropping a value a concurrent edit just set.
 //
-// It imports only `AsyncLocalStorage`, deliberately: the writers depend on the lock and never the
-// reverse.
+// The writers depend on the lock and never the reverse — nothing here may import them.
 //
 // The key is the literal string handed in, and nothing checks that two callers touching one file
 // hand over the same one. A file with more than one writer therefore builds its key in a single
 // place — `sidecarPath` for folder sidecars — because two spellings of one path are two locks,
 // and neither waits for the other.
 //
-// The chain is NOT reentrant: taking a key already held would queue behind a slot that is waiting
-// on the queued work, which never resolves and leaves that file wedged for the life of the
-// process. Since `rmwJsonStrict` and `rewritePageSerialized` take their own key, a caller reaching
-// for one from inside a lock on the same path is an ordinary mistake to make, so it is refused
-// rather than left to hang. The refusal happens before the chain is touched, so the file it names
-// stays usable.
+// The chain is NOT reentrant: re-taking a held key would queue behind a slot that is itself
+// awaiting the queued work, wedging that file for the life of the process. It is refused instead,
+// and refused BEFORE the chain is read, so the file the refusal names stays usable.
 
 import { AsyncLocalStorage } from 'node:async_hooks'
 

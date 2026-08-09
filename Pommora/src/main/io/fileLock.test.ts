@@ -9,9 +9,11 @@ const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
 
 let dir: string
 let file: string
+let other: string
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), 'pom-lock-'))
   file = join(dir, 'f.txt')
+  other = join(dir, 'other.txt')
   await writeFile(file, 'base')
 })
 afterEach(async () => {
@@ -38,7 +40,7 @@ describe('serializeOnFile', () => {
       await delay(20)
       order.push('slow')
     })
-    const fast = serializeOnFile(join(dir, 'other.txt'), async () => {
+    const fast = serializeOnFile(other, async () => {
       order.push('fast')
     })
     await Promise.all([slow, fast])
@@ -92,9 +94,6 @@ describe('rewritePageSerialized', () => {
   })
 })
 
-// The fold gave two primitives their own key, which makes re-taking a held key an ordinary
-// mistake rather than an exotic one. It must refuse, and — the half that matters — refusing must
-// leave the file usable, since a wedged chain never recovers.
 describe('re-entrancy', () => {
   it('refuses a second take of a key already held, instead of hanging', async () => {
     await expect(
@@ -103,7 +102,6 @@ describe('re-entrancy', () => {
   })
 
   it('refuses however deeply the re-take is nested', async () => {
-    const other = join(dir, 'other.txt')
     await expect(
       serializeOnFile(file, () =>
         serializeOnFile(other, () => serializeOnFile(file, async () => 'inner')),
@@ -117,7 +115,6 @@ describe('re-entrancy', () => {
   })
 
   it('still allows nesting DIFFERENT keys, which is not the deadlock', async () => {
-    const other = join(dir, 'other.txt')
     await expect(
       serializeOnFile(file, () => serializeOnFile(other, async () => 'inner')),
     ).resolves.toBe('inner')
