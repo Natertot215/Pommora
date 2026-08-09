@@ -9,22 +9,19 @@ import {
   type SubfieldConfig,
 } from '@shared/types'
 import { readJsonObject, rmwJsonStrict } from './io/atomicWrite'
-import { serializeOnFile } from './io/fileLock'
 import { nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
 /** Serialized read-modify-write of settings.json — the one primitive every settings writer funnels
  *  through, so concurrent writes to different keys can't clobber each other. A missing file
  *  starts empty; an unreadable one fails the write (the throw lands as the operation's error
  *  envelope) rather than replacing the user's settings. */
-export function updateSettings(
+export async function updateSettings(
   root: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
 ): Promise<void> {
   const path = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
-  return serializeOnFile(path, async () => {
-    const written = await rmwJsonStrict(path, mutate, () => ({}))
-    if (!written.ok) throw new Error(written.error.message)
-  })
+  const written = await rmwJsonStrict(path, mutate, () => ({}))
+  if (!written.ok) throw new Error(written.error.message)
 }
 
 /** The nexus's default window zoom from `personalization.defaultViewScale` — the factor the window

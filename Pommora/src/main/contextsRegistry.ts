@@ -7,7 +7,6 @@ import { contextsRegistry, seededRegistry, type ContextsRegistry } from '@shared
 import { fail, ok, type Result } from '@shared/result'
 import type { NexusLabels } from '@shared/types'
 import { readJsonStrict, rmwJsonStrict, writeJson } from './io/atomicWrite'
-import { serializeOnFile } from './io/fileLock'
 import { newId } from './ids'
 import { readNexusLabels } from './readNexus'
 import { contextsRegistryFile } from './paths'
@@ -55,17 +54,14 @@ export async function mutateRegistryFile(
   root: string,
   fn: (current: ContextsRegistry) => ContextsRegistry,
 ): Promise<Result<ContextsRegistry>> {
-  const file = contextsRegistryFile(root)
-  return serializeOnFile(file, async () => {
-    const written = await rmwJsonStrict(file, (raw) => {
-      const parsed = parseRegistry(raw)
-      // An invalid shape throws inside the RMW so nothing is written; caught below.
-      if (!parsed.ok) throw new Error(parsed.error.message)
-      // Overlay onto the raw object so registry-level foreign fields survive even a
-      // mutator that rebuilds `{ contexts }` from scratch.
-      return { ...raw, ...(fn(parsed.value) as unknown as Record<string, unknown>) }
-    }).catch(() => fail('operation-failed', 'Invalid contexts registry.'))
-    if (!written.ok) return written
-    return parseRegistry(written.value)
-  })
+  const written = await rmwJsonStrict(contextsRegistryFile(root), (raw) => {
+    const parsed = parseRegistry(raw)
+    // An invalid shape throws inside the RMW so nothing is written; caught below.
+    if (!parsed.ok) throw new Error(parsed.error.message)
+    // Overlay onto the raw object so registry-level foreign fields survive even a
+    // mutator that rebuilds `{ contexts }` from scratch.
+    return { ...raw, ...(fn(parsed.value) as unknown as Record<string, unknown>) }
+  }).catch(() => fail('operation-failed', 'Invalid contexts registry.'))
+  if (!written.ok) return written
+  return parseRegistry(written.value)
 }
