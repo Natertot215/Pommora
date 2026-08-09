@@ -41,7 +41,6 @@ The survey's three keepers are Next-Feature Candidates in ContextPM — the tras
 - `updatePageProperty` in `crud/page.ts` carries a call-under-the-lock precondition and the reason it cannot take one itself. Read it before touching either call site.
 - The races are pinned in `crud/writePathRace.test.ts`, beside the older `crud/cascadeRace.test.ts`.
 - The plan and its Log — deviations, rulings, and the open finding — are at `Planning/Write-Path Consolidation — Implementation Plan.md`.
-- Implementation history is `// History`; this session is [[PM-004]] and [[PM-005]].
 - The caret nobody sees: `Carets.css` hides every native caret app-wide; `nativeCaret.ts` repaints it. A missing caret is that file's, never the field's.
 
 #### Working Notes
@@ -51,7 +50,6 @@ The survey's three keepers are Next-Feature Candidates in ContextPM — the tras
 - **`serializeOnFile` refuses a re-entrant take rather than hanging.** It holds the keys of the call in flight and rejects a second take of one, before the chain is touched — so the refusal cannot wedge the file it names. Nesting different keys stays legal. A primitive that takes its own key (`rmwJsonStrict`, `rewritePageSerialized`) therefore cannot be called from inside a lock on the same path.
 - **A doc's description of a mechanism is a hypothesis.** A retired handoff's account of why three menus stayed native was wrong about three-quarters of `propertyMenu`, and a review agent's claim that five sidecar sites need an async decision inside their lock was wrong about all five.
 - **Three `tabBar.css` knobs do nothing, and one of them says it does.** `--tab-icon`, `--tab-x` and `--tab-plus` sit under the `KNOBS` header while `TabBar.tsx` passes 14, 11 and 13 as literals past them. Left deliberately — the question is what they were meant to drive.
-- **`ViewPane`'s disabled More menu may be redundant rather than pending** — a view row already carries a working context menu with the same actions. A product call, not a build.
 
 #### Handoff Guidelines
 

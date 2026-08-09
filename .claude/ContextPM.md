@@ -108,19 +108,16 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff.
 
 - **What heals an interrupted cascade?** A property rename commits the registry and then sweeps the new key across every page. Nothing replays if the process dies mid-sweep, so the registry says one name while some pages still carry the other, and those values go invisible — a wrapped key with no registry match resolves to nothing. They are hidden rather than lost, and renaming the property back brings every one of them home. A Context rename answers the same hazard with a journal, but the two are not alike: a Context rename moves a folder, where a property rename is a small registry write, and its sweep is already idempotent. So the thinner answer may be knowing only that a sweep is owed — or something wider and better, an open-time check for any wrapped key whose name the registry doesn't hold, which would catch this and every other way a key is orphaned, hand-editing included. 
 
-- **The NavPane toolbar dropdown** is a blank placeholder — what a compact nav dropdown holds versus the fuller NavWindow is an open call before building into it.
-
 #### Debt & Ride-Alongs
 
 - NOR filters are hand-authoring only — the mode lives on disk and in the evaluator; the pane offers All and Any, and a hand-authored NOR decodes as `locked`.
-- Three affordances whose features haven't arrived are `disabled` rather than wired to a no-op — the Space pane's actions ellipsis, the ViewPane's More menu, and the Page Preview's own Settings button. The ViewPane's More is the one worth a product call rather than a build: a view row already carries a working context menu with the same actions, so the footer button may be redundant instead of pending.
+- Three affordances whose features haven't arrived are `disabled` rather than wired to a no-op — the Space pane's actions ellipsis, the ViewPane's More menu, and the Page Preview's own Settings button.
 - The flattened-mode bundle is half-built: `flat` grouping and Hide Location are live for Cards, and the grouping pane offers "None" only under Cards. The pipeline itself is view-type-agnostic about `flat` and a table would render its one-band result, so what is genuinely Cards-only is the structural-flatten path that drops the location trail. The table half plus a separate Flatten control is what remains, and the Hide Location switch currently renders for every non-table view type while only Cards reads it. → [[ViewsPM]].
 - Perf debt: no row virtualization yet (every row mounts, which bites at thousands), and an external value edit doesn't live-refresh an open table. The one-view-mounted multi-tab design deliberately dodges needing table virtualization.
 - iCloud-sync readiness (future) — `serializeOnFile` can't coordinate with the iCloud daemon under LWW, `.nexus/nexus.db` needs sync-exclusion, and the walk has to skip `.icloud` placeholders.
 - Mobile iOS companion — parked, spec at `.claude/Mobile/MobileSpec.md`, no build commitment.
 - Two prospects parked from the property-syntax arc: an inline field-error surface, and what a duplicate property name should do.
 - `SessionState.error` and `pageError` hold strings while the wire carries `PommoraError` whole — widening them is near-zero churn whenever a surface wants to branch on `code`.
-- The right-click menus are native across most of the app, and each converts opportunistically as its file is next touched rather than as its own task. Only three items across `optionMenu` and `propertyMenu` run a confirm — the property editor's Delete, and an option's Remove and Clear — and `blocks:confirmRemove` already shows an in-app menu keeping a native confirm behind its own channel; the rest are native for the gravity a system menu carries. `viewButtonMenu`'s Style submenu is a two-option toggle, so the house rule makes it a switch rather than a pane drill. `iconFavoriteMenu` stays native, since its host is itself a `PickerMenu`.
 - `pageEditor` reaches the editor by CSS selector, as does `ConnectionHoverCard`; the registered-handle pattern that would replace it is already established in `sidebarDnd`, `paneDnd`, and `useOptionReorder`.
 - `revealPageOffset` sleeps on a duration to wait out a fold animation, while `folding.ts` owns the real completion signal — its transition end drops the entry from the fold field — that the traveller could await instead.
 - The `Creator` shape is stated three times — the named type in `shared/mutate.ts`, and inline in `shared/bridge.ts` (the `create-menu` channel) and `store.ts` (`createFromMenu`). Retiring the two restatements against the named type is small and contained.
@@ -137,6 +134,8 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff.
 
 - **The kind key is a deliberate second identity source — do not consolidate it away.** The file's kind key and its folder's sidecar declare the same thing on purpose: their *disagreement is the detection signal* that makes a mislocated file recognisable at all. A checksum, not the two-writers defect — the one place that lesson does not apply.
 - **The full-weight inert affordances are adjudicated keep — never re-flag them.** The unimplemented view tiles render at full weight and swallow the click, and the group-band "+" for structural Set bands carries an `aria-label` with no handler. Both read as live controls and do nothing on purpose; they wait on their features, not on a dimming pass.
+- The `ViewPane` "more" button is an intentional stub that hasn't had its true purpose decided yet, don't flag it as dead code.
+- **The NavPane's toolbar dropdown is the same shape** — a blank surface held at a fixed ceiling while what it holds is decided. Not dead, and not waiting on a build.
 
 ### Lessons
 
@@ -168,4 +167,5 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff.
 - [ ] The Set-Card drag flash (drop snaps back, then jumps on reload) — the optimistic moveSet order patch is in; wants one live drag before this line drops. 
 - [ ] Clicking the settings button on the sidebar ribbon doesn't close it once it's been opened. 
 - [ ] MarkdownPM drag-handle context menu shows 'Embed Page' when it shouldn't; a 'List Type' switcher would be the natural replacement. 
+- [ ] The sidebars' drag mechanics are still glitchy; address this alongside the other gesture issues when appropriate. 
  
