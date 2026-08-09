@@ -91,3 +91,40 @@ describe('rewritePageSerialized', () => {
     expect(await rewritePageSerialized(join(dir, 'ghost.txt'), () => 'x')).toBe(false)
   })
 })
+
+// The fold gave two primitives their own key, which makes re-taking a held key an ordinary
+// mistake rather than an exotic one. It must refuse, and — the half that matters — refusing must
+// leave the file usable, since a wedged chain never recovers.
+describe('re-entrancy', () => {
+  it('refuses a second take of a key already held, instead of hanging', async () => {
+    await expect(
+      serializeOnFile(file, () => serializeOnFile(file, async () => 'inner')),
+    ).rejects.toThrow(/Re-entrant file lock/)
+  })
+
+  it('refuses however deeply the re-take is nested', async () => {
+    const other = join(dir, 'other.txt')
+    await expect(
+      serializeOnFile(file, () =>
+        serializeOnFile(other, () => serializeOnFile(file, async () => 'inner')),
+      ),
+    ).rejects.toThrow(/Re-entrant file lock/)
+  })
+
+  it('leaves the chain usable — a refusal must not wedge the file it names', async () => {
+    await serializeOnFile(file, () => serializeOnFile(file, async () => 'inner')).catch(() => null)
+    await expect(serializeOnFile(file, async () => 'after')).resolves.toBe('after')
+  })
+
+  it('still allows nesting DIFFERENT keys, which is not the deadlock', async () => {
+    const other = join(dir, 'other.txt')
+    await expect(
+      serializeOnFile(file, () => serializeOnFile(other, async () => 'inner')),
+    ).resolves.toBe('inner')
+  })
+
+  it('a key is released when its slot settles — sequential takes are fine', async () => {
+    await serializeOnFile(file, async () => 'first')
+    await expect(serializeOnFile(file, async () => 'second')).resolves.toBe('second')
+  })
+})

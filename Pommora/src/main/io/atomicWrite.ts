@@ -64,9 +64,9 @@ export async function readJsonStrict(absPath: string): Promise<Result<Record<str
  *  other read failure (an evicted iCloud placeholder, a corrupt file) is a `fail` and NO write
  *  happens — never a fallback-to-empty clobber.
  *
- *  The lock is not reentrant, so this must not be called from inside a `serializeOnFile` on the
- *  same path — that hangs rather than failing. A caller needing a span wider than the write, or
- *  a schema-validated read, holds its own lock over `readSidecar`/`writeSidecar` instead. */
+ *  The lock is not reentrant, so calling this from inside a `serializeOnFile` on the same path is
+ *  refused rather than hung — see `io/fileLock.ts`. A caller needing a span wider than the write,
+ *  or a schema-validated read, holds its own lock over `readSidecar`/`writeSidecar` instead. */
 export function rmwJsonStrict(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown>,
