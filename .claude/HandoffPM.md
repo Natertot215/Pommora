@@ -8,55 +8,46 @@
 **Dates:** 08-08-2026
 **Model:** Opus 5 (1M context)
 
-The session opened on documentation and ended on the write path, and the hinge between them was a question that dissolved when it was actually read. The first ask was to reconcile the Handoff against Context and prune Current Focus to next-task terms. That went cleanly: the retrospective paragraphs came out because Recent Work already held them, the Handoff's standing content routed to its real homes — the decision writeup and the `/simplify` findings to Context, two dev-process traps to `Build-Gotchas`, three durable lessons to Context's Lessons — and both its Pending Focus and Working Notes emptied and were deleted rather than left as hollow headers. One Working Note claiming the Studio's own skills don't resolve through the Skill tool was simply false this session and went with them.
+The session opened on documentation and closed on a ratified refactor, and the turn between them was a claim of mine that did not survive being checked. The first asks were a reconciliation of this document against Context and an explanation of the native-menu decision; the reconciliation was clean, and the decision dissolved on reading — `BlockHandleMenu` already ships the in-app-menu-with-native-confirm pattern the "choice" proposed, and only three of the eight items across `optionMenu` and `propertyMenu` run a confirm at all. The whole area collapsed to one line in Debt.
 
-The second ask was to explain the native-menu decision, and the honest answer turned out to be that there wasn't one. Relaying the retired Handoff's framing without checking it was the session's first mistake: read against the code, the "two ways to keep the confirm guarantee" were not a fork — `BlockHandleMenu` already ships an in-app menu whose Remove calls `blocks:confirmRemove`, so the recommended route was the existing house pattern and Nathan's own prior call. The blocker was also far narrower than stated. Only three items across `optionMenu` and `propertyMenu` run a confirm at all; everything else, including the page value row's Clear and Remove that the previous session had made native "for their confirm," resolves with no dialog. `viewButtonMenu`'s submenu is a two-option toggle the house rule already answers with a switch. The whole area collapsed to one line in Debt.
+A five-lens survey then produced a ranked read of what to build next, each agent carrying a different definition of "important". The correctness lens found a container sidecar whose writers were spread across three lock keys with several holding none, a page relocate that held no lock while every other write to that page did, and no single-instance guard at all. Those landed as [[PM-004]]: one key per file, the relocate under its source path, a move that stops reporting failure after it has succeeded, and a single-instance lock — with regression tests confirmed red against the unfixed tree first, the ghost page reproducing on demand.
 
-The third ask was for a grounded recommendation on what to build next, independent of what either document claimed, produced by five agents each carrying a different definition of "important" and converged into a ranking. That worked well — the lenses agreed on the trash browser from three directions, and each found things the backlog had never named. The correctness lens was the one that mattered: a container's sidecar had writers spread across three lock keys with several holding none, a page relocate held no lock while every other write to that page did, and there was no single-instance guard at all. Every load-bearing claim was opened and verified before ranking, and one ContextPM entry turned out stale — the "four disabled affordances" are three; the ViewSettings icon picker does not exist.
+**The reachability razor then cut my own headline.** I had led the next proposal on `.nexus/state.json` as a live data-loss bug. Checking the trigger I had named — two sidebar drags in a row — showed it cannot occur: a drop is hundreds of milliseconds of physical motion against a single-digit-millisecond write, and each drop dispatches exactly one op. The same razor cut the rest of that list. What survived was the consolidation itself, justified on cohesion, and the plan records that so no later session re-argues it as a defect.
 
-The write-path work then ran in three commits. The first converged every container-sidecar writer onto one key built in the path module, put the page relocate under its source path's lock, moved `updatePageBody`'s existence check inside its own lock so the guarantee stops depending on a caller, made a move's trailing order write best-effort, and added the single-instance lock. Regression tests were confirmed against the unfixed tree before being kept — three of five went red and the ghost page reproduced exactly, the folder listing both the renamed file and the resurrected one.
+A dead-code floor landed first so the refactor started clean: `PommoraError.scope` had thirty-three producers and zero readers, `scanConnections` aggregated multiplicity for a link graph never built, and the drift row was written and read by nothing but its own tests. Removing `scope`'s parameter before its arguments let the compiler name every site rather than a regex guess at them, and three open-pass tests that asserted real behaviour *through* drift kept their claims on their baseline halves.
 
-The closeout found the first pass incomplete against its own claim. `restoreCachedValues` writes the sidecar at its tail and had no lock, so "every writer takes the key" was not yet true; `sidecarIO` was still hand-building the sidecar path directly beneath the helper added to stop that; and three comments described a world that no longer existed, one of them mine. The third commit closed the last unlocked page write: `restoreProperty` was calling `updatePageProperty` bare. That function deliberately takes no lock of its own — its callers need a span wider than the write, because a rename sweep passing the page between the definition read and the write strands the value under a key the sweep has moved past — so the lock stayed at the caller and the precondition is now stated on the function, since a future reader comparing it to `updatePageBody` would otherwise "fix" it into a deadlock.
+**The consolidation shipped as [[PM-005]].** `rmwJsonStrict` takes its own lock now, so a JSON read-modify-write cannot reach disk unlocked and the key derives from the path being written. All seven hand-assembled wrappers came off in one commit — the chain is not reentrant and every one held the same key its inner call passed — and `patchConfig` went with them. The fold would have made the atomic writer and the lock mutually dependent, so `rewritePageSerialized` moved beside the writers it uses and `io/fileLock.ts` now imports nothing. The property registry's private chain retired onto the shared mechanism, and the app config's two read-then-overwrite pairs became one owner.
 
-**Verified:** typecheck clean on both projects, `biome lint` clean over 726 files with zero warnings, 2,246 tests across 198 files, `build` green — re-run after every removal, not once at the start. Both remaining races are pinned by tests proven red against the unfixed code. **Assumed:** nothing user-visible changed, so none of it wants hand verification; the single-instance lock is a main-process change and will not be live in a running dev session until it restarts.
+**Verified:** typecheck clean on both projects, `biome lint` clean over 725 files with zero warnings, 2,246 tests across 197 files, build green — re-run after every removal. The claim was adjudicated by a neutral verifier before the attack ran, and it corrected three assertions: an arm count that described the plan rather than the code, a "behaviour is unchanged" that had forgotten its own accepted trade, and a Made False table that had executed five of seven. The attack then returned two findings against thirteen killed. **Nothing here is user-visible, so none of it wants hand verification** — the single-instance lock from [[PM-004]] is main-process and needs a dev restart to be live.
 
 #### Next Session
 
-- **Brainstorm what heals an interrupted cascade** — stated in full as an Open Question in ContextPM. Open it with the brainstorm, not with code: the fork is whether a property rename wants a journal of its own or whether an open-time orphaned-key check answers it and more besides.
-- **Push.** 109 commits sit unpushed on `main`. Everything gating them is now closed.
+- **Rule on the one open finding.** The non-reentrancy rule the fold depends on has a docstring and no enforcement: calling `rmwJsonStrict` or `rewritePageSerialized` from inside a lock on the same path hangs rather than rejecting, and the hung slot poisons that file's chain for the life of the process. Nothing produces it today — enumeration is clean and an instrumented run of the main-process suite recorded zero reentrant acquisitions — but the next sidecar read-modify-write is written in exactly the shape that trips it. Roughly six lines converts a wedge into a rejection. Stated in full in the plan's Open Against Later Tasks; it is a call rather than a task because it adds lines to an arc ratified as removal-only.
+- **Push.** 125 commits sit unpushed on `main`.
 
 #### Pending Focus
 
-The survey that opened this session produced a ranked read of what to build next, and the three that outlive it are now Next-Feature Candidates in ContextPM: the trash browser, the main pane's Inspector, and the inert unresolved `[[Link]]`. Any of them is a legitimate pick over the cascade question if that brainstorm stalls — the trash browser is the one three separate lenses ranked highest.
+The survey's three keepers are Next-Feature Candidates in ContextPM — the trash browser, the main pane's empty Inspector, and the inert unresolved `[[Link]]`. The trash browser is the one three separate lenses ranked highest. The rename-durability question — what heals an interrupted cascade — remains an Open Question there and wants a brainstorm rather than a build.
 
 #### Feedback
 
-- *"I have ADHD so I want a clear reccomendation, independent from what the Handoff or ContextPM claims, about what's actually appropriate to do next."*
-- *"Grounded in what's real: Open the actual files, docs, and call sites — don't recall them. A claim about a file, type, or behavior you haven't opened is a hypothesis, not a fact. Don't be satisfied with a description of a mechanism or feature you haven't actually seen yourself — descriptions of how something works aren't a guarantee that it works the way it's described; explore the chain and ground yourself in truth independently."*
-- *"Please explain if theres actually a decision to make here."*
-- *"Find the simplest fix to these issues."*
-- *"Explain this to non-technical Nathan."*
-
 #### Session Pointers
 
-- The write-path law and its two keys: `io/fileLock.ts`'s header states why a key is built in one place, `paths.ts`'s `sidecarPath` builds the sidecar one, and `sidecarIO.ts`'s `withSidecarLock` is what every sidecar read-merge-write takes.
-- `updatePageProperty` in `crud/page.ts` carries a call-under-the-lock precondition in its docstring, and the reason it cannot take one itself. Read that before touching either of its two call sites.
+- The write-path law: `io/fileLock.ts` is the chain and imports nothing; `io/atomicWrite.ts` holds the two primitives that take it, `rmwJsonStrict` and `rewritePageSerialized`; `paths.ts`'s `sidecarPath` and `sidecarIO.ts`'s `withSidecarLock` are the sidecar family's key.
+- `updatePageProperty` in `crud/page.ts` carries a call-under-the-lock precondition and the reason it cannot take one itself. Read it before touching either call site.
 - The races are pinned in `crud/writePathRace.test.ts`, beside the older `crud/cascadeRace.test.ts`.
-- The single-instance lock and its `second-instance` handler sit immediately above the `app.whenReady()` chain in `main/index.ts`.
-- Implementation history is `// History` (`PM-History-Index.md` + numbered entries) under `//The Studio//.claude//references//History-Format.md`; the write-path arc is `PM-004`. The pre-08-07 record is archived in that index.
-- The PageMenu record: `Planning/PageMenu — Decision Log.md`, with A-1 the only item still `[open]`.
-- The properties leaf: `Components/Detail/PagePropertiesPane.tsx` and `pageProperties.css.ts`; `PAGE_PROPERTIES_MAX_WIDTH` is the pane's growth ceiling and the one knob in it.
+- The plan and its Log — deviations, rulings, and the open finding — are at `Planning/Write-Path Consolidation — Implementation Plan.md`.
+- Implementation history is `// History`; this session is [[PM-004]] and [[PM-005]].
 - The caret nobody sees: `Carets.css` hides every native caret app-wide; `nativeCaret.ts` repaints it. A missing caret is that file's, never the field's.
 
 #### Working Notes
 
-- **The lock takes a raw string and nothing can assert two callers agree on it.** That is the actual cause of the class fixed this session, and it is still live for every non-sidecar file with more than one writer. A branded key type only path builders can mint would make it impossible rather than fixed once.
-- **`serializeSchemaOp` is one global chain, not per-file.** Schema ops serialize against each other and against nothing else, which is exactly why property assignment needed its own sidecar lock despite already looking serialized.
-- **`setGovernedRootKeys` is an unlocked read-modify-write.** Both its callers now hold the page lock, so it is safe today, but the primitive itself offers no protection to a third.
-- **A regression test that passes before the fix proves nothing.** Every test added this session was confirmed red against the unfixed tree — stash the source, keep the untracked test, run, restore. It caught that the new value-write test had teeth and showed exactly which write disappears.
-- **Consolidation that stops one layer short of its own module is a repeat shape.** `sidecarPath` was added and then not used inside the file that defines sidecar reads and writes.
-- **Three `tabBar.css` knobs do nothing, and one of them says it does.** `--tab-icon`, `--tab-x` and `--tab-plus` sit under the `KNOBS — the whole bar tunes here` header while `TabBar.tsx` passes 14, 11 and 13 as literals past them; `--tab-icon`'s own comment concedes the TSX "mirrors it." Tuning them moves nothing. Left in place deliberately — the question to answer is what they were meant to drive, and whether the TSX should read them or they should go.
-- **`ViewPane`'s disabled More menu may be redundant rather than pending** — a view row already carries a working context menu with the same actions. That one wants a product call, not a build.
+- **A regression test that passes before the fix proves nothing.** Every test added across both arcs was confirmed red against the unfixed tree — stash the source, keep the untracked test, run, restore. It caught that the ghost page reproduces exactly, and that an unlocked registry silently drops the first of two concurrent writes.
+- **Stage explicit paths, never a directory.** A `git add Pommora/src` swept an uncommitted comment strip into an unrelated commit and took a `(Nathan's call)` marker off `RenamableLabel` with it. The attack found it; the rule was already in the record.
+- **`serializeOnFile` is not reentrant and hangs rather than rejecting.** A nested acquisition on one key wedges that file for the process's life, silently. The docstring says so; nothing enforces it.
+- **A doc's description of a mechanism is a hypothesis.** The retired handoff's account of why three menus stayed native was wrong about three-quarters of `propertyMenu`, and a review agent's claim that five sidecar sites need an async decision inside their lock was wrong about all five.
+- **Three `tabBar.css` knobs do nothing, and one of them says it does.** `--tab-icon`, `--tab-x` and `--tab-plus` sit under the `KNOBS` header while `TabBar.tsx` passes 14, 11 and 13 as literals past them. Left deliberately — the question is what they were meant to drive.
+- **`ViewPane`'s disabled More menu may be redundant rather than pending** — a view row already carries a working context menu with the same actions. A product call, not a build.
 
 #### Handoff Guidelines
 
@@ -607,4 +598,745 @@ Archived to `Session - 08-06 > 08-07.md` (1,771 lines). Writing the fresh docume
 - READ: [.claude/HandoffPM.md]
 - WRITE: [.claude/HandoffPM.md]
 - DISPATCH: transcription-agent — Transcribe this session
+
+- RETURN: rendered the transcript in at 534 lines (Handoff went 75 -> 609 total); flagged that two of the five survey agents sit on a sibling branch Claude Code produces by splitting one multi-tool-call turn across sequential JSONL lines, caught by timestamp and the assistant's own "Five agents back" line, so all five DISPATCH/RETURN pairs rendered rather than the three a strict walk would keep; dropped the isMeta skill-body injections, TodoWrite/ToolSearch calls, and system/attachment noise; the transcript ends on this dispatch's own line with no RETURN, and the sections above the fence confirmed byte-identical.
+
+Transcript in (534 lines). Now the Context gate — it fired, and three of this session's findings are standing rather than session-local.
+
+- BASH: check ContextPM's Next-Feature Candidates, Open Questions, and trash debt line -> add the three survey keepers and the cascade question by script
+- EDIT: [.claude/HandoffPM.md]
+- BASH: dup-check facts across both docs -> tombstone and transcript-fence-balance check -> confirm the transcript's start line and working tree
+- BASH: stage and commit as `fe6b098a docs(handoff): the record turns over, and the survey's keepers reach Context`
+
+**`updatePageProperty` — done, `277655c8`.** I made the span call myself rather than asking twice: only one option survives scrutiny. `mutate.ts`'s wider lock exists so the definition resolves in the same slot as the write — a rename sweep passing the page between those two strands the value under a key the sweep already moved past — and shrinking it would trade one race for another. So the lock went to `restoreProperty`, the one caller holding none, and the precondition is now stated on the function with its reason, because a future reader comparing it to `updatePageBody` would otherwise "fix" it into a deadlock.
+
+The new test was proven red first: with `updatePageBody`'s lock removed, the body write is exactly what vanishes.
+
+**Gates:** typecheck clean · lint clean over 726 files, zero warnings · **2,246 tests / 198 files**.
+
+#### Handoff Receipt
+
+**Document:** `.claude/HandoffPM.md` · **Session:** `5d28593d` · **Shape:** retired-and-replaced
+
+`a41db668` owned the document, so it retired properly — its transcript archived whole to `.claude/Sessions/Session - 08-06 > 08-07.md` (1,771 lines), the sections above it confirmed byte-identical before the new document was written. This session's transcript rendered in at 534 lines.
+
+The transcription agent flagged something worth knowing: a naive parent-chain walk only finds three of the five survey agents, because Claude Code splits one multi-tool-call turn across sibling JSONL lines. It caught the other two by timestamp and rendered all five. Worth remembering the next time a transcript looks thinner than the session felt.
+
+**Gate call: yes — Context moved,** in four sections. Current Focus and Recent Work were already rewritten during the session; this pass added what the survey produced that outlives it. Three findings became **Next-Feature Candidates** — the trash browser, the main pane's empty Inspector, and the inert unresolved `[[Link]]` — because leaving them in a session document would have thrown away the most useful thing the five lenses produced. The rename-durability fork entered **Open Questions** framed as *what heals an interrupted cascade*, not *add a second journal*; the sweep is already idempotent, so the journal may be the expensive answer to a cheap question. And the Debt line about the trash stopped restating the candidate.
+
+No fact sits in both documents twice — the Handoff points, Context states. No tombstones. Tree clean.
+
+**Where it stands:** six commits this session, **109 unpushed on `main`**, and nothing left gating them. The write path has no unlocked read-modify-write left in it — every sidecar writer takes one key, every page writer takes the page's, and two processes can't open one Nexus to make a mockery of either.
+
+Next session opens on a brainstorm, not a build. That's the right shape for it — the interesting part of that problem is which answer, not whether.
+
+[NATHAN]
+
+Gate confirmed. Update the Context.md using /handoff. I've added just slightly new tweaks to the skill itself you should fold in here.
+
+Then, create a new history entry about this work.
+
+[CLAUDE]
+
+Reading the skill from disk to find your tweaks — I have the version that was injected earlier, so I can diff against it.
+
+- BASH: check the handoff skill's file on disk and its mtime
+- READ: [.claude/skills/handoff/SKILL.md]
+
+Diffed against the injected version — three material tweaks. Folding them in.
+
+- BASH: check the Feedback quotes and Guidelines section in HandoffPM.md -> check PM-004 for a commits block
+- BASH: fold the three skill tweaks into HandoffPM.md by script
+
+Skill tweaks folded. Checking PM-004 against the History format before I touch it — it's missing the commits block PM-003 carries.
+
+- BASH: read History-Format.md's Step 1
+
+The format has an §Extending Entries section — that's directly on point for whether this is a new entry or an extension.
+
+- BASH: read History-Format.md's Summary, change-block, and Commits guidance
+
+Format settles it: *"The entry belonging to the session you're in stays live... every entry before it is closed."* PM-004 **is** this session's entry — so it gets extended, not duplicated. Doing Step 2 properly, which it never had.
+
+- BASH: recompute the range diff `fea330d2^..277655c8` with comment and test lines held out -> rebuild PM-004's change block with provenance by script
+- READ: [.claude/History/PM-004.md]
+- BASH: rewrite sixteen present-tense passages to past tense by script
+
+Now Step 4 routing and an anti-pattern pass — the format bans present-tense mechanism prose and I wrote plenty of it.
+
+- BASH: sweep for absolutes and double negatives -> check the Fix Log for anything this arc resolved -> check the index description
+
+Index description still carries the count I dropped everywhere else. Fixing, then confirming Context landed.
+
+- EDIT: [.claude/History/PM-History-Index.md]
+- BASH: confirm Context's gate changes landed — Current Focus, One Lock Per File, Next-Feature Candidates, Open Questions, the four new Lessons, and the stale claim gone
+- BASH: stage and commit as `86560423 docs(history): PM-004 gains its provenance, and the handoff follows the skill's tweaks`
+
+Done — `86560423`. Tree clean, 111 unpushed on `main`.
+
+#### The Skill Tweaks
+
+Diffed the file on disk against the version injected earlier. Three material changes, all folded in:
+
+- **Feedback carries the quote alone.** The old template said *"then one line on how to apply it"* — that clause is gone, so I stripped my five application lines. Your phrasing stands on its own, which is the point.
+- **Guidelines line 1** now reads *"multi-compact sessions may advance ideas or reconcile information while preserving the handoff's cohesion standards"* instead of the transcript-is-the-memory framing.
+- **The section is `#### Handoff Guidelines`**, and the template's Continuity clause went in. I kept the "Parallel sessions" line beside it — it isn't in the current template, so by the skill's own last guideline it's user-added and preserved rather than replaced.
+
+#### The History Entry — It Already Existed, So I Extended It
+
+I didn't create a new one, and I want to be direct about why rather than quietly doing something else. `History-Format.md` §Extending Entries:
+
+> *"The entry belonging to the session you're in stays live and has its date extended if needed; every entry before it is closed."*
+
+**PM-004 is this session's entry.** All three write-path commits are the only implementation this session produced — the other three commits are documentation. A PM-005 would have put one arc in two homes, which is the exact defect the project names.
+
+What it *was* missing was real, though, and Step 2 caught it:
+
+- **No commits block.** The format calls the commits *"the block's provenance — they resolve the entry against the live repository."* PM-004 had a file list with no way to anchor it. Recorded newest-first now.
+- **The arithmetic was hand-waved.** I'd been carrying numbers forward from earlier passes. Recomputed off `fea330d2^..277655c8` per Step 2, comment-only and test lines held out: **+162 / −130** across 13 counted files, with `fileLock.ts` marked comments-only and the rename recorded.
+- **Sixteen passages were present-tense mechanism prose** — the format's first listed anti-pattern, because *"an agent skimming months later can't separate what's still true from what merely happened."* "The relocate now runs under…" became "The relocate was placed under…". Swept clean of absolutes and double negatives too.
+- The index description dropped the writer count that had already come out of the entry itself.
+
+#### Context Gate — Confirmed Landed
+
+Re-read to verify rather than assume: Current Focus rewritten, **One Lock Per File** in Recent Work, four new Lessons, the three survey keepers in Next-Feature Candidates, the cascade fork in Open Questions, and the stale "four disabled affordances" claim gone.
+
+Fix Log needed nothing — all four entries are UI items this arc never touched, so no routing was owed.
+
+**Where you stand:** the write path has no unlocked read-modify-write left in it, the record says so with provenance, and next session opens on a brainstorm rather than a build. The only thing left is `git push`, which is yours to call.
+
+[NATHAN]
+
+Explain in plain simple English with examples, and assuming I have a general understanding of Pommora's feature-set without codebase technical understanding, exactly what that "where I stand" actually means.
+
+[CLAUDE]
+
+#### First: How Pommora Actually Saves Anything
+
+There's no such thing as "change one line in a file." Every save is three steps: **read the whole file, change your bit in memory, write the whole file back.**
+
+Think of a whiteboard you can't edit in place. To change one line you photograph the board, edit the photo, wipe the board, and rewrite it from your photo.
+
+Now two people do that at once. You photograph. I photograph. You add a line and rewrite the board. I add my line to *my* photo — which never had your line — and rewrite. **Your line is gone.** No error. The board just doesn't have it.
+
+A **lock** is the "one person at the board at a time" rule. Pommora had one. The problem was where it wasn't being used.
+
+#### What "The Write Path" Is
+
+Every route by which Pommora changes something on disk. Not just editing a page — *everything*: saving a view, dragging a page into a Collection, renaming a Set, assigning a property, changing a banner, restoring from the trash.
+
+#### The Thing That Was Broken
+
+Every Collection has a hidden settings file sitting next to its pages. It holds **everything about that Collection that isn't a page** — its property schema, all its saved views, its banner, its icon, and the order its pages sit in.
+
+That one file gets rewritten by about ten different things you can do in the app. And they weren't waiting for each other.
+
+**Scenario 1 — dragging while saving a view.** You drag a page to reorder it inside a Collection, and at that moment a view save lands (you'd tweaked a filter a second earlier). Both rewrite that settings file. One overwrites the other. Either your page order snaps back, or your filter change vanishes. No error either way — you'd assume you fat-fingered the drag.
+
+**Scenario 2 — renaming a page you were just typing in.** A page's filename *is* its title, so renaming physically moves the file. Meanwhile the editor saves 0.4 seconds after you stop typing. Type a paragraph, immediately rename the page — and the save, still aiming at the old filename, **recreates a file there.** You end up with two pages: the renamed one holding your *older* text, and a duplicate under the old title holding your *newest* text. The app doesn't show you the duplicate right away, so you'd find it days later and have no idea which is real.
+
+**Scenario 3 — two copies of the app.** All of this waiting-your-turn only worked *inside one running copy*. Two copies open on the same Nexus and none of it applied to anything. This already happened to you — your own notes from the last session recorded **three copies running at once** after a stray process cleanup.
+
+#### What "No Unlocked Read-Modify-Write Left" Means
+
+Every one of those routes now takes a numbered ticket before it touches a file, and every route touching the *same* file takes a ticket from the *same* machine. That last part was the actual bug — some were pulling tickets from three different machines and two weren't pulling one at all, so "wait your turn" meant nothing.
+
+Concretely:
+- Drag a page while a view saves → **both land.**
+- Rename mid-typing → **one page, your newest text, no duplicate.**
+- Restore a property from the trash while editing that page → **neither clobbers the other.**
+- Launch a second copy → **it exits and raises the window you already have.**
+
+#### What This Does *Not* Do
+
+**Nothing looks different.** No new features, nothing faster, no visible change at all. You will never see this working — you'd only ever have seen it failing, and only by accident, weeks later.
+
+**It's not the same as the trash.** The trash protects things you deliberately delete. This protects against work quietly not being saved in the first place, which has no recovery because nothing knows it happened.
+
+**One gap stays open, deliberately.** Renaming a *property* rewrites that property's key across every page that uses it. If the app dies partway through, the app thinks the property is called "Priority" while some pages still say "Urgency" — and those values **go invisible**. Not lost: the text is sitting right there in the file, and renaming the property back to "Urgency" makes every one of them reappear. That's next session, and it's a design question first — the cheap fix might be a general "find any property values whose name nobody recognizes" check, which would also catch values orphaned by hand-editing in Obsidian.
+
+#### The Practical Bit
+
+The three problems above are fixed and committed, with tests that were **proven to fail before the fix** — including one that reproduces the duplicate page on demand. Nothing needs clicking to verify.
+
+Two things to actually do: **restart your dev app** (the single-copy guard is main-process code and won't be live until you do), and **push** — 111 commits are sitting local, and everything that was blocking them is closed.
+
+[NATHAN]
+
+Please trace the chain here across these writes, send explore agents to map out all the consumers and relevant bits; scope what may not be directly related but could also benefit from this consolidated fix.
+
+What I'm hoping for is a fixture that would consolidate logic while improving codebase health and overall cohesion; removing more individual mechanisms or logic than adding; while also scoping for any shared fixtures that can be re-used here to achieve this goal.
+
+If any other writing mechanisms may have a similar problem, and hoisting or removing their failures are in-scope, let me know briefly. If the agents find any dead code in their search whereas removal would be beneficial -- to this focus or not -- let me know simply and have it as a pre-requisite for the plan to ground off of so gate-green confirmation can come first.
+
+[CLAUDE]
+
+Five agents, read-only, on distinct slices. Briefing them to report what should stay *apart* as well as what merges — that's where the last survey earned the most.
+
+- DISPATCH: general-purpose — Map every write primitive and lock
+- DISPATCH: general-purpose — Non-sidecar writers same-problem check
+- DISPATCH: general-purpose — Existing fixtures to reuse
+- DISPATCH: Explore — Dead code sweep — main/shared/preload
+- DISPATCH: Explore — Dead code sweep — renderer
+
+Big returns. Verifying the load-bearing claims myself before any of this becomes a plan — starting with the one that would break things if wrong.
+
+- BASH: check whether `state.json`'s writers are locked -> the deadlock-check sites where `withSidecarLock` wraps `rmwJsonStrict` on the same key -> `PommoraError.scope`'s readers
+- BASH: check `scanConnections`'s production callers -> `remintSidecar`'s lock -> every `rmwJsonStrict` call site, wrapped or bare
+
+Verifying the opportunity claims now.
+
+- BASH: check `PommoraError.scope`'s every mention and reader count -> the count of `fail()` calls passing a third argument
+- BASH: check `pommora.json`'s writers -> `mutateRegistry`'s private chain
+
+Five agents back, verifying every load-bearing claim myself before any of it becomes a plan.
+
+- RETURN: (write primitive map) inventoried every disk-write site in `src/main` by primitive, target, shape, and lock — found `rmwJsonStrict` takes no lock while its sibling `rewritePageSerialized` does, named `.nexus/state.json`'s two writers as the reachable gap, and flagged `mutateRegistry` as a fourth, undocumented serialization mechanism.
+- RETURN: (non-sidecar writers) checked every other config target for the same defect — settings, state.json, navigation, contexts, properties, homepage, Space sidecars, trash, nexus.db — and found `.nexus/state.json` the one real duplicate of the fixed defect, everything else safe by one funnel or a structural reason.
+- RETURN: (existing fixtures) mapped the three serialization primitives as one general case and two specializations, named `withSidecarLock`'s real value as forcing the key through `sidecarPath` rather than the locking itself, and flagged `mutateRegistry`'s private module-level chain as a fourth, duplicate mechanism guarding a shape `serializeOnFile` already covers.
+- RETURN: (dead code — main/shared/preload) ranked-by-lines removal list headed by `scanConnections` (~64 lines, needs its ReDoS guard re-pointed first) and `PommoraError.scope` (33 producers, zero readers, 27 in `crud/`), plus the drift row, `spaceDir`, `spaceSidecar`, `blockHostDir`'s unread param, and two schema fields.
+- RETURN: (dead code — renderer) retracted its two strongest early leads after checking `createElement` and main-process action strings; confirmed 108 `KNOB`/`Nathan's call` markers across 28 files as deliberately unconsumed, and led its removal list with 14 dead bridge CSS vars in `theme-vars.css.ts`.
+
+All verified against the code. Everything below I opened myself.
+
+## The Headline: The Bug I Just Fixed Is Still Live, One File Over
+
+`.nexus/state.json` holds your **top-level Collection order** and **every Context's Space order**. Two writers, `setStateOrder` and `setSpaceOrder` — and [reorder.ts](Pommora/src/main/crud/reorder.ts) contains **zero** `serializeOnFile` calls. Both do a bare read-merge-write.
+
+Drag a Space in one Context, then drag another before the first settles — the second write is built on a snapshot taken before the first landed, and one Context's ordering silently reverts. The sidebar keeps showing what you dragged, so you find out later and don't connect it to the drag. This is the identical defect, on a more ordinary gesture than the one that motivated the fix.
+
+## The Fixture — Fold The Lock Into `rmwJsonStrict`
+
+`rmwJsonStrict` is the JSON twin of `rewritePageSerialized` **minus the lock**, and that asymmetry is the whole leak. `rewritePageSerialized` owns lock + read + write, so a page RMW physically cannot skip it. Its JSON sibling documents the lock as *"the caller's job."* Nine call sites; seven remember, two don't.
+
+One change to [atomicWrite.ts:65](Pommora/src/main/io/atomicWrite.ts#L65): wrap the body in `serializeOnFile(absPath, …)`. The key is **derived from the file being written**, so a second spelling stops being expressible.
+
+| What happens | Lines |
+|---|---|
+| 7 outer `serializeOnFile(…)` wrappers deleted | ≈ −14 |
+| `patchConfig` disappears entirely ([mutate.ts:167-173](Pommora/src/main/mutate.ts#L167)) | −7 |
+| `mutateRegistry`'s private chain → `serializeOnFile` (kills a 4th parallel mechanism) | −6 |
+| The fold itself | +2 |
+| **`state.json` fixed** | **+0** |
+
+**Net ≈ −25 code lines, and the live bug closes with no new code.**
+
+**The trap, verified:** `serializeOnFile` isn't reentrant. [removeProperty.ts:66](Pommora/src/main/crud/removeProperty.ts#L66) and [:154](Pommora/src/main/crud/removeProperty.ts#L154) take `withSidecarLock` *and then* `rmwJsonStrict` on the same key string. Those two outer wraps must come off in the same commit or they deadlock. I checked all nine sites — only those two.
+
+**Reuses, doesn't invent:** built on `serializeOnFile`, mirrors `rewritePageSerialized`'s existing shape, and matches `withSidecarLock`'s thesis — *derive the key, never pass it*. It reads as that helper's older sibling.
+
+**Declining the branded-token variant.** Making `writeSidecar` uncallable without the lock would close the three remaining bare sidecar writers at the type level, but it's **+18 lines** and threads an argument through nine call sites. You asked for removal over addition; this fails that test. Flagging it as available, not recommending it.
+
+**Two more that remove lines:** `sweepGovernedRoots`'s header claims five callers and has **two** — `optionOps`, `removeProperty`, and `restoreScrub` each hand-roll the same enumerate→lock→admit→decide→write loop it was built to own. And `renameFolderEntity`/`moveFolderEntity` are near-identical bodies; the page side already collapsed that pair into `relocatePage` and the folder side never got it.
+
+## Other Writers With The Same Problem
+
+| Target | Verdict | Trigger |
+|---|---|---|
+| **`.nexus/state.json`** | **Real, worst** | Two sidebar drags in a row |
+| **`pommora.json`** | **Real, widest window** | Menu prunes a dead recent (stats an unplugged drive) while you open another nexus → your new nexus never becomes `lastNexusPath` |
+| `remintSidecar` | Real, narrow | Open pass only; writes sidecars bare and hand-builds the path |
+| `.nexus/nexus.json` | Real, first-run only | Four callers incl. the thumbnail path |
+| context-rename journal | Real, narrow | Two simultaneous renames |
+
+**Verified safe — don't re-flag:** settings, navigation, properties, homepage, contexts (mutations), `.trash` bundles, `nexus.db`, assets, thumbnails, and all seven Space-sidecar writers. Several are safe for *structural* reasons worth knowing: `mintBundle`'s non-recursive `mkdir` **is** its mutex, assets mint a fresh filename per write, and every `nexus.db` read-merge-write is synchronous end to end — which is true today and would silently stop being true the moment one grows an `await`.
+
+## Prerequisite: Dead Code, Gates Green First
+
+As you asked — this lands and goes green *before* the consolidation, so the refactor starts from a clean floor.
+
+| # | What | Lines | Effort |
+|---|---|---|---|
+| 1 | **`PommoraError.scope`** — field, param, and **34 arguments**. Zero readers anywhere. 27 of those sites are in `crud/`, so it thins every `fail` the refactor touches | ~36 | mechanical |
+| 2 | `scanConnections` + `ScannedConnection` + its test | ~64 | care — re-point the ReDoS assertions at `mentionsTitle` first |
+| 3 | `spaceDir` + the test asserting it | ~9 | mechanical |
+| 4 | `spaceSidecar` schema — never used in production | ~4 | swap 4 test sites to `baseSidecar` |
+| 5 | `readDrift` | ~4 | mechanical |
+| 6 | `blockHostDir`'s `_host` param — never read, both callers pass identically | ~3 | mechanical |
+| 7 | `SavedView.show_banner`, `FileRef.added_at`/`mime_type` | ~5 | mechanical |
+
+**Renderer** (separate, not blocking): `setSubfieldOrder` is dead and strands `subfieldOrder` entirely — which makes `Subfield.tsx`'s `order[kind] ??` a permanent no-op. `setNavOverride` has no producer and **a test pins a toggle that exists in no pane or menu**. `Switch.disabled` is passed by none of 17 call sites, orphaning a design-system dimming style that can never render.
+
+## Four Things I Need You On
+
+1. **The restore surface (~500 lines) has no renderer entry point** — no bridge channel lists bundles, so the renderer can't obtain a `bundlePath`. You ranked the trash browser as a Next-Feature Candidate, so I'm reading this as **parked, like `schema:changeType`** — but unlike that one it carries no marker, so every future sweep re-flags it. Confirm and I'll annotate it.
+2. **The drift row is write-only.** `writeDrift` persists it, nothing reads it. Do you inspect it in `nexus.db` by hand? If not, ~35 lines plus a 68-line test come out.
+3. **`tabBar.css` has three knobs that do nothing** — `--tab-icon`, `--tab-x`, `--tab-plus` sit under your `KNOBS — the whole bar tunes here` header while `TabBar.tsx` hardcodes 14/11/13 past them. A knob that doesn't move anything is worse than no knob. Delete them, or make the TSX read them?
+4. **`--separator-line` is read and never defined** (`showcase.css:638`) — almost certainly a typo for `--separator-border`, which the same file uses correctly ten times. Rename, not delete.
+
+Say go and I'll run the prerequisite to green, then the fixture.
+
+[NATHAN]
+
+1. Confirmed, annotate.
+2. No, I don't inspect nexus.db myself.
+3. Leave it for now but flag "what does this actually do" in Handoff
+4. Delete entirely lmao
+
+The headline may not adhere to the reachability razor, think about it -- how can that ACTUALLY happen? and if it can, would fixing it be a net-logic-increase or reduction/hoist?
+
+[CLAUDE]
+
+You're right and I over-claimed. Let me actually test the trigger I asserted rather than defend it.
+
+- BASH: check whether `handleMutate` is serialized at all -> who fires `reorderTop`/`reorderSpaces` in the renderer
+- BASH: check whether any one op writes `state.json` twice -> whether `mutate` is awaited or fire-and-forget at the drop sites
+- BASH: check when `refreshMenu` fires -> `pruneRecents`'s cost -> `menu.ts`'s renderer-driven items
+
+Checked the actual timings. **You're right — my headline doesn't survive the razor.**
+
+- BASH: check every mention of `--separator-line` -> the restore op and `listBundles`'s annotation targets
+- EDIT: [Pommora/src/renderer/src/design-system/showcase/showcase.css] -> [Pommora/src/shared/mutate.ts] -> [Pommora/src/main/provenance.ts]
+- BASH: run typecheck, lint, and the full test suite
+- EDIT: [.claude/HandoffPM.md]
+- BASH: stage and commit as `8f9267e2 docs(code): the parked restore surface says so, and a typo'd token takes the real one`
+
+All four done, `8f9267e2`. Gates green. Now the thing you actually caught.
+
+## You're Right — The Headline Fails The Razor
+
+I checked instead of defending it, and my trigger doesn't exist.
+
+**"Two sidebar drags in a row"** — a drop is *hundreds of milliseconds* of physical motion: pointerup, new pointerdown, move past threshold, move to target, pointerup. `setStateOrder` is a stat, a small JSON read, a merge, and a temp-file rename — **single-digit milliseconds.** You cannot physically produce two drops inside one round-trip.
+
+I checked whether anything else produces it:
+
+- **One drop fires exactly one op.** [sidebarDnd.tsx:505](Pommora/src/renderer/src/Sidebar/sidebarDnd.tsx#L505) returns `reorderTop` *or* `reorderSpaces`, never both.
+- **Only two writers exist**, both from that one drop handler. No cascade, no restore, no open-time pass touches `state.json`.
+- `mutate` genuinely isn't serialized — `handleMutate` runs per-invoke — so two overlapping calls *would* interleave. Nothing in the UI dispatches two.
+
+**Nobody produces the state.** The only way to reach it is two `mutate` calls in one tick, which means a programmatic driver — a test harness, not a user and not a plausible agent mistake in the product.
+
+**And the same razor cuts the rest of my list.** `pommora.json` needs two nexus opens overlapping a hanging stat on an unplugged volume. `remintSidecar` and the adoption stamps only run in the open pass. `nexus.json` is first-run only. The rename journal needs two simultaneous renames — same physical-gesture argument as the drags. **None of them is a reachable race.** I presented a bug list; it isn't one.
+
+## But The Fixture Survives, For A Different Reason
+
+Your own razor entry draws the line: *"the razor adjudicates **guards against states** — an unreached **code path** is dead weight it says nothing about."*
+
+**Nothing here is a guard being added.** Folding the lock into `rmwJsonStrict` *removes*:
+
+| | Lines |
+|---|---|
+| 7 hand-assembled `serializeOnFile(…, () => rmwJsonStrict(…))` wrappers | −14 |
+| `patchConfig` deleted outright | −7 |
+| `mutateRegistry`'s private module-level chain → `serializeOnFile` | −6 |
+| The fold | +2 |
+
+**Net ≈ −25, and four serialization mechanisms become three.** `state.json` gets covered because it stops being *possible* not to cover it — the key derives from the file being written. That's a consequence, not a justification.
+
+**So: net reduction and hoist, unambiguously.** Nine call sites each answering "did you remember the lock?" collapses into one primitive that can't be asked the question. That's the "removing more mechanisms than adding" you asked for, and it stands entirely on cohesion — which is what you asked it to stand on.
+
+**What I'd cut from my own proposal:** the branded-token variant (+18 lines, guards nothing reachable) and the `pommora.json` rework, unless `updateAppConfig` pays for itself by collapsing the two read-then-write pairs — which it does, marginally. I'd stop calling any of it a bug fix.
+
+The two consolidations that still earn their place on pure line count are the ones I nearly buried: **`sweepGovernedRoots` has two callers where its header claims five**, and three sites hand-roll the same enumerate→lock→admit→decide→write loop it exists to own. And `renameFolderEntity`/`moveFolderEntity` are the near-identical pair the page side already collapsed into `relocatePage`.
+
+**Corrected framing:** this is a cohesion pass that removes ~25 lines and one whole mechanism, not a race fix. Want me to run the dead-code prerequisite to green first, as scoped?
+
+[NATHAN]
+
+Yes, then write the plan.
+
+[CLAUDE]
+
+Running the prerequisite. Starting with `scope` — the compiler will name every call site once the parameter is gone.
+
+- BASH: run typecheck to enumerate the 33 `PommoraError.scope` call sites via TS2554
+
+33 sites named. Getting them exactly rather than pattern-matching blind.
+
+- BASH: strip the third argument off each `fail(...)` call by script -> re-run typecheck
+- BASH: sample the rewrites to confirm they read right -> confirm no `scope` remains -> run lint and the full test suite
+
+`scope` gone, gates green. Now `scanConnections` — reading its test before deleting, since it holds the ReDoS guard for a pattern that's still live.
+
+- BASH: read `scanConnections` and its test
+- BASH: check `mentionsTitle`'s existing coverage, `ScannedConnection`'s consumers, and `pageLinkPattern`'s consumers
+- WRITE: [Pommora/src/main/connections/scan.test.ts]
+- BASH: run the new test file alone -> check `rewrite.test.ts`'s `scanConnections` usage
+- BASH: drop `scanConnections` from `rewrite.test.ts` and `scan.ts`, and `ScannedConnection` from `shared/connections.ts`, by script
+- BASH: read `rewrite.test.ts`'s remaining `scanConnections` reference
+- EDIT: [Pommora/src/main/connections/rewrite.test.ts]
+- BASH: run typecheck and the connections test suite
+
+Now the drift concept, the three small removals, and the two field drops.
+
+- BASH: grep the drift surface -> read `record.ts`'s open-pass write and `shared/record.ts`
+- BASH: drop `readDrift`/`writeDrift`/`diffBaselines`/`isEmptyDiff` by script -> run typecheck
+- BASH: check what else `shared/record.test.ts` covers -> check `record.test.ts`'s drift blocks
+- BASH: read the drift-touching test bodies in full
+
+These tests are more entangled than the sweep implied — three assert real behaviour *through* drift. Checking each keeps its claim on the baseline half.
+
+- BASH: check `shared/record.test.ts`'s full scope and line count
+- BASH: delete `shared/record.test.ts` and rewrite `record.ts`'s four drift-touching tests onto their baseline half, by script
+- BASH: drop `spaceDir`, `blockHostDir`'s unread param, `spaceSidecar`, `show_banner`, and the `FileRef` metadata fields by script -> run typecheck
+- BASH: read `contextsRegistry.test.ts` and `folderEntity.test.ts`'s `spaceDir`/`spaceSidecar` usage
+- BASH: confirm `baseSidecar` exists -> drop `spaceDir` from `contextsRegistry.test.ts` and swap `spaceSidecar` for `baseSidecar` in `folderEntity.test.ts` by script -> run typecheck
+- BASH: run typecheck, lint, the full suite, and build
+- BASH: check the lint warning's cause
+
+`diffable` existed only to feed the diff. Removing it too.
+
+- BASH: read `record.ts`'s `diffable` helper
+- BASH: drop `diffable` and its docstring by script -> run typecheck, lint, and the full suite
+- BASH: check the lint warning's cause again
+
+My search string had the lint's *suggested* name, not the real one. Fixing.
+
+- READ: [Pommora/src/main/record.ts]
+- EDIT: [Pommora/src/main/record.ts]
+- BASH: run typecheck, lint, the full suite, and build
+- BASH: measure the code-only delta -> stage and commit as `56b139d4 refactor(main): the dead-code floor before the write-path consolidation`
+
+Floor is green and committed as `56b139d4` — **−79 code lines net**. Now the plan.
+
+- SKILL: [writing-plans-v2]
+
+Prerequisite is done. Resolving the environment by looking, and pinning the derivation counts now so the plan carries real numbers.
+
+- BASH: check the plan directory -> pin the derivation counts — `rmwJsonStrict`, `serializeOnFile`, and `withSidecarLock` call sites in `src/main`
+
+9 callers, 7 wrapped, 2 bare — matches. But the agent said only two would deadlock; **all seven lock the same key.** Checking whether any outer wrap spans more than the RMW, because that changes the task.
+
+- BASH: re-derive the counts against the plan's numbers -> check whether any caller sits inside a lock on the same path
+
+All seven would deadlock, not two — and I checked each span: every outer wrap is a pass-through around the RMW plus pure computation, so removing them all loses nothing. Writing the plan.
+
+- BASH: read each of the four wrap spans (`contextsRegistry.ts`, `settings.ts`, `crud/contextWrite.ts` x2) whole
+- WRITE: [.claude/Planning/Write-Path Consolidation — Implementation Plan.md]
+- BASH: stage and commit as `967c19b1 docs(planning): the write-path consolidation plan — written, pending review`
+
+Now the review round — the one step the process never skips.
+
+- DISPATCH: build-breaking-agent — Attack the consolidation plan
+- RETURN: six findings on the unratified plan, none breaking the fold itself — F1: Task 2's deadlock check was a dead grep (`mutateRegistry\(` matches no production caller, since every real one passes a generic type argument) and its call-site count was off by one; F2: the Goal claimed a universal the Acceptance couldn't test, since `adopt.ts` and `remint.ts` carry unlocked sidecar writes the plan never touches; four smaller findings alongside. The deadlock analysis itself survived every attempt to break it.
+
+Strong review. Verifying each finding against the code before folding any of it.
+
+- BASH: check F1's grep against production callers, and the corrected pattern
+- BASH: check F2's `adopt.ts`/`remint.ts` unlocked writes -> `readAppConfig`'s leniency
+
+All six confirmed. Checking the reviewer's one Unknown before I fold, since it's the hazard window's proof.
+
+- BASH: check whether tests reach each `patchConfig` arm — `setBanner`, `setHeadingIconHidden`, `setIcon`
+- BASH: count each op's coverage in `mutate.test.ts` -> which kinds they exercise
+
+The Unknown is real and worse than reported: **`setIcon` and `setHeadingIconHidden` have zero tests** — two of four arms unexercised, so the suite can't prove the window shut. Folding all of it.
+
+- BASH: fold F2's fix into the plan by script
+- BASH: fold F3's fix into the plan by script
+- BASH: fold Task 1's structural-close addition into the plan by script
+
+One stale "three arms" left. Fixing, then committing the reviewed plan.
+
+- BASH: consistency sweep on the plan for stale numbers
+- EDIT: [.claude/Planning/Write-Path Consolidation — Implementation Plan.md]
+- BASH: stage and commit as `c21b903d docs(planning): review round one folds into the consolidation plan`
+- BASH: check the new `.claude/rules/` directory and the renderer diffs Nathan's own pass touched
+
+Both done. **The plan is written, reviewed, and waiting on you** — no implementation code exists.
+
+#### The Prerequisite Floor — `56b139d4`, Green
+
+**−79 code lines net.** `2,239 tests / 197 files`, typecheck clean, lint clean over 725 files with zero warnings, build green.
+
+The biggest item was `PommoraError.scope`: **33 producers, zero readers**, 27 of them in `crud/` — exactly where the refactor lands. I removed the parameter *first* so the compiler enumerated every call site rather than trusting a regex.
+
+Two things needed care rather than deletion. `scanConnections`' test file held the ReDoS and length-cap guards for `pageLinkPattern`, which has **five other consumers** — so the file survives, re-pointed at the live `mentionsTitle`. And three open-pass tests asserted real behaviour *through* the drift row (a closed-window rename, a dropped duplicate, an unreadable transition); each keeps its claim on its baseline half, so removing drift lost no coverage of anything that still exists.
+
+#### The Plan — `.claude/Planning/Write-Path Consolidation — Implementation Plan.md`
+
+Three phases behind one fold. The attack round found six defects and I verified every one against the code before folding it. Two were serious:
+
+**Task 2's deadlock check was a grep that matched nothing.** Every production caller spells `mutateRegistry<Result<…>>(`, so `mutateRegistry\(` finds one test file. An implementer would have run it, seen one hit, concluded "no caller is inside a lock," and proceeded. The count was nine; it's ten.
+
+**The Goal claimed a universal the Acceptance couldn't test.** `adopt.ts:100` and `remint.ts:136` are unlocked sidecar read-modify-writes that survive this plan — neither calls `rmwJsonStrict`, so the criterion would have gone green with the Goal false, and Task 3 would then have written that false law into `ArchitecturePM`.
+
+**And the reviewer's one Unknown turned out worse than it flagged it.** The plan named the test suite as proof the hazard window shut. `setIcon` and `setHeadingIconHidden` have **zero tests** — two of `patchConfig`'s four arms — so a missed wrapper there would hang only in the running app. The proof is now a structural read of every caller, and Task 1 adds the two missing arms.
+
+**The thing worth your attention before ratifying** is what this forecloses. A self-locking primitive can't be called from inside a lock on its own path, and its mutator is synchronous — so any JSON write needing an *async decision inside the lock* can never use it. Five sites already have that shape. The fold doesn't unify JSON writing; it establishes a law over one of two families and leaves the sidecar family — most writers, busiest file — under caller-held locks. That's the real price, and it's now stated in the Goal rather than discoverable later.
+
+#### One Thing To Confirm
+
+Your working tree picked up changes that aren't mine while I worked — four renderer files (comment removals in `tint.ts`, `typography.css.ts`, plus `PageEmbed.tsx` and `selection.ts`), two deleted Planning docs, and a new `.claude/rules/User-Terms-PM.md`. I staged only my own files, so nothing got swept in. **Parallel session, or you?** I've left them all alone.
+
+Ratify and I'll start Task 1.
+
+[NATHAN]
+
+Yeah that's me. Commit them, it's just comment pruning on my end. Ratified, summarize the plan briefly.
+
+[CLAUDE]
+
+Verifying they're comment-only before I commit them under that label.
+
+- BASH: check the diff on `Pommora/src` for any non-comment line -> read the new `.claude/rules/User-Terms-PM.md` -> check the Planning-folder diff stat
+
+Confirmed comment-only — zero code lines changed.
+
+- BASH: flip the plan's Status to ratified by script -> stage and commit as `ffcd7c29 chore: Nathan's comment pruning, the planning folder settles, and the plan is ratified`
+
+Ratified and committed as `ffcd7c29`. Your four files were comment-only — zero code lines changed — so I committed them under that description honestly.
+
+#### The Plan, Briefly
+
+**What it does.** Right now, changing a JSON settings file safely takes two steps: take the lock, then do the read-merge-write. The lock half is the caller's job, and seven places assemble it by hand while two forget. The fix moves the lock *inside* the read-merge-write, so there's no longer a step anyone can skip.
+
+**Three phases, in order:**
+
+| | What | Effect |
+|---|---|---|
+| **1** | Fold the lock into `rmwJsonStrict`; strip all seven wrappers; delete `patchConfig` | The fixture. `state.json` gets covered without being edited |
+| **2** | Retire the property registry's private serialization chain onto the shared one | Four mechanisms become three |
+| **3** | One owner for the app config's two read-then-overwrite pairs; the record catches up | Matches the `updateSettings` shape already in use |
+
+**Net ≈ −25 code lines.** Nothing is added to defend anything — every task removes or relocates. That's the whole justification: cohesion, not a bug. You were right to cut the bug framing, and the plan says so explicitly so no future session re-argues it.
+
+**Three things the plan is strict about, each from something that nearly went wrong:**
+
+- **Task 1 is atomic.** The lock isn't reentrant, so folding it in while *any* wrapper survives deadlocks the tree. All seven come off in one commit, no intermediate commit allowed.
+- **The suite can't prove that window shut.** `setIcon` and `setHeadingIconHidden` have no tests, so two of four arms would hang silently. The proof is a structural read first; Task 1 then adds the missing tests.
+- **The Goal is deliberately narrow.** Two unlocked sidecar writes (`adopt.ts`, `remint.ts`) survive this work. They're named as debt rather than papered over, so the docs don't end up claiming a law that isn't true.
+
+**What it costs you, stated up front:** a self-locking primitive can't be used by any write needing an async decision while holding the lock — and five sidecar sites already work that way. So this establishes one law over one of two families, permanently. That's in the plan as an accepted trade, not a discovery waiting to happen.
+
+Say the word and I'll run Task 1.
+
+[NATHAN]
+
+What would this actually cost me in terms I may want to do in the future.
+
+[CLAUDE]
+
+Good question, and answering it honestly means checking whether that foreclosure is as wide as the reviewer said. Let me look rather than repeat it.
+
+- BASH: check whether the five "async-decision" sites actually await inside their lock — `views.ts`, `containerConfig.ts`, `folderEntity.ts`
+- BASH: check `assignment.ts` and `deleteProperty.ts` inside their locks
+
+I relayed that foreclosure without checking it, and checking it shows it's wrong. **Zero of the seven sidecar sites does an async decision inside its lock** — every one is read → *sync* decision → write.
+
+- EDIT: [.claude/Planning/Write-Path Consolidation — Implementation Plan.md]
+
+Corrected in `1f034d1a`. Here's the honest answer.
+
+#### Almost Nothing You'd Want To Build Is Blocked
+
+I checked every future-shaped feature against the constraint:
+
+| Thing you might want | Blocked? |
+|---|---|
+| Trash browser restoring a page into a Collection | No |
+| The type-change surface (parked `schema:changeType`) | No |
+| Bulk multi-select — move ten pages at once | No |
+| Cross-location card reordering | No |
+| Duplicating a Collection | No |
+
+All of them touch container sidecars, and sidecars keep the flexible path. Nothing loses a capability.
+
+#### What It Actually Costs: Uneven Protection On The Busy File
+
+After the fold there are still **two ways to write JSON safely**, and they're not equally safe:
+
+- **The primitive** (`rmwJsonStrict`) — impossible to get wrong. The lock comes free.
+- **The sidecar path** (`withSidecarLock` + `writeSidecar`) — flexible, typed, and **still lets you write with no lock at all** if you forget.
+
+The container sidecar is the file with the most writers in the whole nexus. So the half that keeps the footgun is the half you'll touch most. That's not theoretical: `adopt.ts` and `remint.ts` both have bare unlocked sidecar writes today, and that's exactly how they happened.
+
+**Concretely:** every future sidecar feature inherits *"remember the lock"* rather than being handed it. If someone reads the docs saying "the JSON primitive owns its key" and concludes JSON writes are safe now, they'll write the third bare one.
+
+#### And One Correction Worth Your Attention
+
+I told you last message that "five sidecar sites already need an async decision inside the lock." **That was the reviewer's claim and I passed it on without opening the files.** Reading all seven: every single one is an awaited read, a *synchronous* decision, an awaited write. Nothing in the codebase needs the shape the primitive can't serve.
+
+What actually keeps sidecars on their own path is duller — `readSidecar` runs zod validation and hands back a typed object, where the primitive hands back a bare record and validates nothing. Migrating would trade schema validation for lock automation. That's a worse trade, so they stay, but it's a typing reason and not an architectural wall.
+
+**The one thing genuinely reserved to the flexible path** is a write that must hold its lock across an async lookup — *"drop this select option only if no page still uses it"* needs a page walk between the read and the write. Nothing does that yet. When something does, the second path is where it goes, which is a reason it survives rather than a cost.
+
+#### If The Unevenness Ever Bothers You
+
+The branded lock token (~+18 lines) makes `writeSidecar` uncallable without a key — it closes the other half at the type level. I declined it because you asked for removal over addition, and it's the right call today. **The trigger to revisit is a third bare sidecar writer appearing.** That's in Sequenced After.
+
+Ready for Task 1 whenever.
+
+[NATHAN]
+
+Begin. Execute closeout on completion, then write the history entry, then the handoff.
+
+[CLAUDE]
+
+Beginning Task 1. Per the plan: re-derive first, and a divergence rewrites the task rather than being absorbed.
+
+- BASH: re-derive `rmwJsonStrict`/`withSidecarLock`/`patchConfig` counts against the plan's 10/10/4 -> check the base commit and the primitive as it stands
+
+Derivations match (10 / 10). The patchConfig count includes its declaration — 4 call sites, as planned. Reading all seven spans.
+
+- BASH: read `patchConfig`'s four call sites -> the `removeProperty` and `patchConfig` wrap spans
+
+All seven confirmed same-key, none spanning a second disk touch. One thing the plan didn't foresee, though — checking before I edit.
+
+- BASH: check whether folding the lock into `atomicWrite.ts` would cycle against `fileLock.ts`'s own import of it -> `rewritePageSerialized`'s importers
+
+`fileLock.ts` imports `atomicWriteFile`, so the fold would make the dependency circular — the plan missed this. The clean fix moves `rewritePageSerialized` to `atomicWrite.ts`, leaving the lock with zero imports.
+
+- READ: [Pommora/src/main/io/fileLock.ts]
+- BASH: move `rewritePageSerialized` into `atomicWrite.ts` and strip `fileLock.ts` to the pure lock, by script
+- EDIT: [Pommora/src/main/io/atomicWrite.ts]
+- BASH: re-point the six `rewritePageSerialized` importers by script -> check for remaining import references
+
+My regex stripped the old imports without adding the new ones. Letting the compiler enumerate the breaks.
+
+- BASH: run typecheck to enumerate the breaks
+- BASH: re-point each import onto its correct module by script -> re-run typecheck
+- BASH: read `fileLock.test.ts`'s duplicate-import lines
+- EDIT: [Pommora/src/main/io/fileLock.test.ts]
+- BASH: run typecheck
+
+Typecheck clean. **The tree would deadlock right now** — the fold is in and the wrappers are still on. Stripping all seven before anything is committed.
+
+- BASH: read `contextsRegistry.ts` and `settings.ts`'s wrap spans
+- EDIT: [Pommora/src/main/contextsRegistry.ts] -> [Pommora/src/main/settings.ts]
+
+Two down. Now the `contextWrite` pair and the two `removeProperty` sites.
+
+- BASH: strip `contextWrite.ts`'s two wraps and `removeProperty.ts`'s two wraps by script
+
+Six of seven. Now the last — deleting `patchConfig` and pointing its four arms directly.
+
+- BASH: read `mutate.ts`'s three `patchConfig` call regions
+- BASH: delete `patchConfig` and rewire its four arms to call the primitive directly, by script
+
+All seven off. Structural check confirms no `rmwJsonStrict` sits inside a same-key lock — window closed. Running the suite.
+
+- BASH: run the full test suite — hits a shell `timeout` unavailability, re-run without it -> 2,239 green
+
+No hang, 2,239 green. Now the two arms the suite can't currently see — reading the setBanner tests for the house shape.
+
+- BASH: read `mutate.test.ts`'s `setBanner` describe block and its trailing lines
+- BASH: append the `setIcon`/`setHeadingIconHidden` test cases -> run them alone
+- BASH: run typecheck, lint, and the full suite
+- BASH: check the lint warning's cause
+
+Three imports the strip orphaned — exactly what should be left over.
+
+- BASH: drop the three orphaned imports by script -> run typecheck, lint, the full suite, and build -> confirm `reorder.ts` untouched
+
+All four gates green, and `reorder.ts` is untouched — its coverage was inherited exactly as designed. Committing Task 1.
+
+- BASH: stage and commit as `c421b686 refactor(io): the JSON read-modify-write takes its own lock`
+
+Gate 1 — dispatching the simplifier and reviewer against the phase range.
+
+- DISPATCH: code-simplifier — Simplify the Task 1 diff
+- RETURN: all three gates green, net roughly −9 code lines. Real find: unwrapping `patchConfig` left `setBanner`'s set and clear arms near-identical, so they collapsed to one write behind a nullable `rel`, verified behaviour-preserving on two facts (`setOrDrop` treats `null`/`undefined` identically; the guard reduces exactly to the old clear arm). Also trimmed `fileLock.ts`'s header of a writer count the commit made false, inlined a now-single-use const in `contextWrite.ts`, cut a comment stated three times in `removeProperty.ts`, and restored import order in four files that Biome's disabled `organizeImports` wouldn't have caught.
+
+Verifying the simplifier's one behaviour-preserving claim myself — collapsing two write arms into one is exactly where I don't take an agent's word.
+
+- BASH: diff `mutate.ts`'s setBanner collapse against HEAD
+
+Equivalence verified: `setOrDrop` treats `null` and `undefined` identically, and `prev && prev !== null` reduces exactly to `prev`. Now its flagged item — the tests outlived their subject's move.
+
+- BASH: check `fileLock.test.ts`'s and `atomicWrite.test.ts`'s describe blocks
+- BASH: move the `rewritePageSerialized` test block into `atomicWrite.test.ts` by script -> run typecheck
+
+The move needs fixtures duplicated across two files — that's a test reorganization, not part of this task. Reverting it and routing it to Sequenced After.
+
+- BASH: revert the test-file move -> run typecheck, lint, the full suite, and build
+- BASH: stage and commit as `9ac7a0ef refactor(io): the simplification pass over the fold`
+
+Gate 1's correctness review, against the phase range.
+
+- DISPATCH: feature-dev:code-reviewer — Gate 1 correctness review
+- RETURN: clean across all five review points, no high-confidence correctness issues. Enumerated every `rmwJsonStrict`/`serializeOnFile`/`withSidecarLock` caller and found no reentrancy; independently confirmed `assignment.ts`'s `assignInner` → `restoreCachedValues` path is sequential, not nested; verified the `setBanner` arm collapse behaviour-identical across all five scenarios.
+
+Gate 1 clean — the reviewer independently confirmed the `assignInner` → `restoreCachedValues` path is sequential, not nested, which was my own live concern. Task 2.
+
+- BASH: re-derive Task 2's `mutateRegistry`/`serializeOnFile` counts against the plan's 11 -> check whether any caller sits inside a lock on the registry path
+
+Derivation confirms 10 call sites (the 17 includes comments and imports), none inside a lock on the registry path. Making the swap.
+
+- BASH: fold `serializeOnFile` into `mutateRegistry` and drop its private chain, by script -> check the file's import block
+- BASH: add the `serializeOnFile` import by script -> run typecheck, lint, and the full suite
+
+Now the crossing test the plan requires — proving both registries reach the same answer under concurrency.
+
+- BASH: read `propertiesRegistry.test.ts`'s existing shape
+- BASH: append the two-registries crossing test — hits a failing assertion on the contexts-registry half
+- BASH: check the failing test's error -> read `readRegistry`'s real return shape
+- EDIT: [Pommora/src/main/io/propertiesRegistry.test.ts]
+- BASH: run the file alone
+
+Proving the crossing test has teeth — removing the new lock and confirming it goes red.
+
+- BASH: back up `propertiesRegistry.ts`, strip the lock by script, confirm the crossing test goes red, restore the backup
+
+Teeth confirmed — without the lock, `prop_a` is silently dropped. Committing Task 2.
+
+- BASH: run typecheck, lint, and the full suite -> stage and commit — fails on a signature mismatch
+
+Gate caught it — the commit didn't run. Fixing the signature.
+
+- BASH: check `ensureContextsRegistry`'s real signature
+- BASH: drop the extra argument by script -> run typecheck, lint, and the full suite
+- BASH: stage and commit as `db30b820 refactor(properties): the registry joins the one per-file lock`
+
+Task 3 — the app config's two read-then-overwrite pairs.
+
+- BASH: read `appConfig.ts`, `index.ts`'s adopt call, and `menu.ts`'s recents self-heal
+- BASH: replace `writeAppConfig` with `updateAppConfig`, merging onto the raw object, by script -> re-point `index.ts`'s call site
+- BASH: check `appConfig.test.ts`'s `writeAppConfig` usage
+- BASH: convert the test file's calls and append the two new `updateAppConfig` tests, by script -> run typecheck — hits a signature mismatch on arrow bodies and the file's sync fs helpers
+- BASH: fix the arrow-body parens and switch to the file's existing sync fs helpers, by script -> run typecheck and the file's tests alone
+
+Now `ArchitecturePM`'s Write serialization section, which the plan schedules to ride this commit.
+
+- EDIT: [.claude/Features/ArchitecturePM.md]
+- BASH: run typecheck, lint, the full suite, and build -> closing sweep for `patchConfig` against a live `rmwJsonStrict` control
+
+All gates green, closing sweep clean against a live control. Committing Task 3.
+
+- BASH: stage and commit as `d849cbd9 refactor(config): one owner for the app config, and the record follows`
+
+All three tasks landed. Updating the plan's Log, then the closeout chain.
+
+- BASH: measure the code-only delta across the whole plan range -> tick the plan's Progress tree with commit hashes, by script
+- DISPATCH: general-purpose — Neutral verify the delivery claim
+- RETURN: ran all four gates green against the committed tree. Requirements 1, 2, and 4 true as claimed. Requirement 3 overstated — `patchConfig`'s four arms became three direct call sites, not four, because the setBanner set/clear arms merged; behaviour-preserving but the claim describes the plan's text rather than the shipped code. Two stale docstrings (`withSidecarLock`, `writeRegistry`) still described the retired mechanisms — the Made False table had executed five of seven, not seven.
+
+Three findings, all fair. The FALSE one is real — my own Made False table ran 5-of-7. Fixing both stale docstrings.
+
+- BASH: read `propertiesRegistry.ts`'s two stale docstrings
+- BASH: rewrite both docstrings by script -> confirm neither stale line survives, run lint and the full suite
+- BASH: stage and commit as `7e10d8be docs(io): the last two Made False rows, caught by the claim verifier`
+
+Claim corrected and re-landed. Now the attack — a separate dispatch, after the clean yes.
+
+- DISPATCH: build-breaking-agent — Attack the landed consolidation
+- RETURN: two findings. First — the fold's non-reentrancy hazard has zero enforcement: calling the primitive from inside an existing lock on the same path hangs rather than rejects, and the hung slot poisons that file's chain for the process's life; reproduced on all three shapes. Nothing produces it today, but five files still use the sidecar RMW idiom that trips it, and `removeProperty` carried exactly that shape until this arc removed it. Second — `7e10d8be`'s directory-level `git add` stripped a `(Nathan's call)` decision marker from an unrelated file, `RenamableLabel.tsx`.
+
+Two findings. The second is mine and it violates a standing rule — checking it first.
+
+- BASH: check whether `7e10d8be` touched `RenamableLabel.tsx` -> when the `(Nathan's call)` marker left it
+
+Confirmed — my `git add Pommora/src` was directory-level and swept a marker strip into an unrelated commit. Restoring it.
+
+- BASH: check `7e10d8be`'s actual diff on `RenamableLabel.tsx`
+- EDIT: [Pommora/src/renderer/src/Components/RenamableLabel.tsx]
+- BASH: sweep the whole range for any other stripped marker -> check markers still present overall
+- BASH: recheck the marker census post-restore -> run typecheck, lint, and the full suite -> stage and commit as `25fdf61b fix(rename): the caret decision marker comes back`
+
+Marker restored, 40 files still carry theirs, gates green. Recording the attack's surviving finding rather than acting on it unilaterally.
+
+- BASH: close the plan out — status to delivered, the reentrancy finding into Open Against Later Tasks, the Closeout section filled in, by script -> stage and commit as `2378c0d4 docs(planning): the write-path plan closes out`
+
+Now the History entry — PM-005, per the format's Step 2 arithmetic.
+
+- BASH: compute the range diff `1f034d1a..HEAD` file-by-file, comment and test lines held out
+- WRITE: [.claude/History/PM-005.md]
+- BASH: add PM-005 to the History Index by script -> add its Recent Work entry to ContextPM.md by script -> stage and commit as `33696c1e docs(history): PM-005 records the write primitive taking its own lock`
+
+Now the handoff. Same session ID, so this continues the document rather than retiring it.
+
+- BASH: check the Handoff's recorded Session ID against the running session -> commits ahead of origin and this session's own commit count
+- BASH: rewrite the Handoff's Session Summary body, preserving the transcript fence, by script
+- DISPATCH: transcription-agent — Continue the session transcript
 `````
