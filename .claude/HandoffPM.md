@@ -22,13 +22,25 @@ A dead-code floor landed first so the refactor started clean: `PommoraError.scop
 
 #### Next Session
 
-- **Push.** 125 commits sit unpushed on `main`.
+- **A documentation session, on its own.** Not a ride-along on feature work — the docs have drifted far enough to be worth a dedicated pass, and the specific job is to make the version record usable rather than guessed at. Read across the documents for contradictions and framing that no longer matches what shipped, then rebuild `VersioningPM` and `PommoraPRD` around what is actually true.
+- **`VersioningPM` wants a format before it wants content.** It has no specification for what a version entry states or where its boundaries fall, which is why everything since 0.5.0 sits as an unsorted stretch rather than a record — checkpoints are currently inferred rather than declared. Give it an explicit shape, then categorise the whole post-0.5.0 stretch into it: what shipped, under which version, and where each boundary actually lands. The material exists — five History entries, ContextPM's Recent Work, and 129 commits of provenance — so this is sorting and framing rather than reconstruction.
+- **Then reconsider what the upcoming versions are for.** With the shipped record straight, the forward half of `VersioningPM` can be re-derived from where the app actually stands instead of from where it was expected to be when the plan was written.
+- **Push.** 130 commits sit unpushed on `main`; nothing gates them.
 
 #### Pending Focus
 
-The survey's three keepers are Next-Feature Candidates in ContextPM — the trash browser, the main pane's empty Inspector, and the inert unresolved `[[Link]]`. The trash browser is the one three separate lenses ranked highest. The rename-durability question — what heals an interrupted cascade — remains an Open Question there and wants a brainstorm rather than a build.
+The survey's three keepers are Next-Feature Candidates in ContextPM — the trash browser, the main pane's empty Inspector, and the inert unresolved `[[Link]]`. The trash browser is the one three separate lenses ranked highest. The rename-durability question — what heals an interrupted cascade — remains an Open Question there and wants a brainstorm rather than a build. Any of these is a legitimate pick after the documentation session, and none of them blocks it.
 
 #### Feedback
+
+- *"Nathan doesn't like the longer than necessary responses, and the final response in this session is a good example of what to-the-point looks like, even though it's still quite verbose."*
+- *"I have ADHD so I want a clear reccomendation, independent from what the Handoff or ContextPM claims, about what's actually appropriate to do next."*
+- *"Grounded in what's real: Open the actual files, docs, and call sites — don't recall them. A claim about a file, type, or behavior you haven't opened is a hypothesis, not a fact. Don't be satisfied with a description of a mechanism or feature you haven't actually seen yourself — descriptions of how something works aren't a guarantee that it works the way it's described; explore the chain and ground yourself in truth independently."*
+- *"The headline may not adhere to the reachability razor, think about it — how can that ACTUALLY happen? and if it can, would fixing it be a net-logic-increase or reduction/hoist?"*
+- *"what would this actually cost me in terms i may want to do in the future."*
+- *"Please explain if theres actually a decision to make here."*
+- *"Find the simplest fix to these issues."*
+- *"Explain this to non-technical Nathan."*
 
 #### Session Pointers
 
