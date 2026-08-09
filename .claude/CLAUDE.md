@@ -97,7 +97,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [Design-Sources.md]          | • What the design system already owns, and never to duplicate it
 │   │   ├── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
 │   │   └── [UI-Copy.md]                 | • The running app never displays build-status or meta text
-│   ├── // History                       | • Incremental implementation history.
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
 │   ├── // Resources                     | • Reference of external resources; both in-use and future prospectives.
 │   ├── // references                    | • Standing reference material — Nate's notes

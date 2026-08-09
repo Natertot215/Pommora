@@ -8,7 +8,7 @@ Pommora's path to v1.0.0. The React + Electron build rebuilt the Swift paradigm 
 
 ### Completed
 
-The rebuild arc to **v0.5.0** — locked decisions and full detail per milestone in `PM-History-Index.md` §04-26-2026 → 08-07-2026.
+The rebuild arc to **v0.5.0** — locked decisions and full detail per milestone in [[HistoryPM]] §04-26-2026 → 08-07-2026.
 
 - Genesis → walking skeleton — one nexus walk over IPC into a Zustand store
 - Headless data layer + the desktop write path

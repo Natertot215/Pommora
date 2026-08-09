@@ -1,11 +1,48 @@
 ### Pommora History Index
-| Date       | Document   | Description                                                                                                                                                                                                                                                                     |
-| ---------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 08-08-2026 | [[PM-005]] | The JSON read-modify-write primitive took the lock its callers had been supplying by hand, retiring seven wrappers, a config helper and the property registry's parallel serialization chain, with the app config's two writers collapsed to one owner.                          |
-| 08-08-2026 | [[PM-004]] | Converged every read-modify-write in the write path onto one lock key per file, covering a container sidecar's many writers and a page relocate that had stranded writes aimed at the path it vacated, and added a single-instance lock over the nexus.                          |
-| 08-08-2026 | [[PM-003]] | Menu surface consolidation and drift-fixtures + comment fixes.                                                                                                                                                                                                                  |
-| 08-07-2026 | [[PM-002]] | MarkdownPM's code pass: fence pairing gained run-length identity and moved to one shared source its four consumers read, and the single-offset code test stopped scanning the whole document.                                                                                   |
-| 08-07-2026 | [[PM-001]] | Full implementation of the page Outline — a toolbar dropdown listing a page's heading tree and traveling to a chosen heading — with the shared disclosure, heading-scan, and scroll-glide primitive. MarkdownPM auto-pair mechanisms corrected and the viewport tokenizer fixed. |
+
+| Date                | ID     | Entry                                    |
+| ------------------- | ------ | ---------------------------------------- |
+| 08-08-2026          | PM-005 | The JSON Write Primitive Takes Its Lock  |
+| 08-08-2026          | PM-004 | One Lock Per File, One Instance Per Nexus |
+| 08-08-2026          | PM-003 | One Dropdown Shell, One Creator Rule     |
+| 08-07-2026 → 08-08  | PM-002 | One Shared Pass Over Fenced Code         |
+| 08-07-2026          | PM-001 | The Page Outline                         |
+
+#### 08-08-2026 — PM-005 — The JSON Write Primitive Takes Its Lock
+
+`rmwJsonStrict` in `main/io/atomicWrite.ts` now wraps its read-merge-write in the per-file chain, keyed on the path it writes; the seven callers that had been supplying that lock by hand came out in the same commit, and the two writers of `.nexus/state.json` that never supplied it became covered. `rewritePageSerialized` moved out of `io/fileLock.ts` to sit beside the writers it composes, which left the lock module importing nothing. The property registry's private promise chain retired onto the shared per-path mechanism its sibling registry already used, and `updateAppConfig` replaced two read-then-overwrite pairs with a single owner that merges onto the raw record, so a key the current version does not model survives a write. `serializeOnFile` gained a refusal for a re-entrant take of a held key, which had been able to wedge a file for the life of the process. The change was made for cohesion; no defect prompted it. → [[ArchitecturePM]] · [[ConfigurationPM]]
+
+- **Commits:** `c421b686^..119278e1`
+- **Diff:** Net −8 | +120 / −128
+
+#### 08-08-2026 — PM-004 — One Lock Per File, One Instance Per Nexus
+
+Every writer of a container sidecar was brought onto one lock key, built in `main/paths.ts` and applied through `withSidecarLock`, replacing three different keys and several call sites that held none — a read-merge-write that had read before a sibling's write landed could revert a view save or a page move with no error on either side. `relocatePage` was placed under the source path's key and `updatePageBody`'s existence check moved inside its own lock, closing a rename race that left a ghost file at the vacated path holding newer content than the renamed one. A move followed by a failed order write now reports success, since the relocation has already committed and order falls back to title. `main/index.ts` gained a single-instance lock: a losing launch exits, and a relaunch raises the window that already exists. → [[ArchitecturePM]] · [[PagesPM]]
+
+- **Commits:** `fea330d2^..277655c8`
+- **Diff:** Net +32 | +162 / −130
+
+#### 08-08-2026 — PM-003 — One Dropdown Shell, One Creator Rule
+
+`MenuDropdown` was added to the design system to hold the open state, outside-dismiss, retract beat, and mounted-pane branch that `ViewDropdown`, `SpaceDropdown`, and `OutlineDropdown` had each carried separately, and `viewDropdown.css.ts` was renamed `toolbarDropdown.css.ts` after serving all three under the name of one. `MenuSurface` stayed state-free, because the toolbar trio shares one dismiss region across two panes and owns that state itself. `containerCreators` in `shared/mutate.ts` became the single rule for what a Collection or a Set offers on creation, correcting a sidebar context menu that gave a Set only New Page and two creator labels written as literals where every other one resolves the per-nexus label. Two constants in the menu layer described a reach they never had and were corrected rather than made true; no values moved. → [[DesignPM]] · [[CollectionsPM]]
+
+- **Commits:** `99559630^..b43d3a45`
+- **Diff:** Net −74 | +78 / −152
+
+#### 08-07-2026 → 08-08 — PM-002 — One Shared Pass Over Fenced Code
+
+A fenced block's marker-run length became part of its identity, so a closer requires a run at least as long as its opener and carries no info word of its own, which lets a longer fence hold shorter ones as literal content. The fence grammar and its pairing pass moved into `shared/markdownCode.ts`, replacing four independent implementations across the detector, the folding scan, the subfield statistics, and the write-side mask — the mask's disagreement had left a `[[Title]]` inside a code sample reachable by a rename cascade. `isInsideCode` stopped delegating to `codeMask` and now scans only the offset's own line for inline spans, while `tokenize` and `tableRegions` moved to the build-once form the module's contract already documented. Measured in the running application against a 941-line body, a keystroke fell from 0.158ms to 0.043ms. → [[MarkdownPM]] · [[ConnectionsPM]]
+
+- **Commits:** `352ba5c5^..dab1c2b5`
+- **Diff:** Net +50 | +140 / −90
+
+#### 08-07-2026 — PM-001 — The Page Outline
+
+A toolbar dropdown was added that lists a Page's headings as a nested tree and travels to a chosen heading, opening any collapsed section on the way and seating the heading where the page's own inline title reads. The heading derivation was extracted from `MarkdownPM/editor/folding.ts` as a shared `scanHeadings`, so the outline and the fold chevrons resolve one fence-aware scan while keeping their different rules about headings with no body. `scrollGlide` joined `design-system/interactions/autoscroll.ts` as the application's first animated scroll, re-reading its destination each frame so CodeMirror's estimated block heights resolve into the motion rather than into a correction at the end. Three shared mechanisms were corrected underneath it: nested disclosure rows gained truncation, the disclosure primitive gained a default-open seam, and the viewport tokenizer now opens its slice at a block boundary rather than inside a fence. → [[PagesPM]] · [[MarkdownPM]]
+
+- **Commits:** `7c87eb28`
+- **Diff:** Net +134 | +170 / −36
+
 
 ### 04-26-2026 → 08-07-2026
 
