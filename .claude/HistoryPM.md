@@ -13,12 +13,19 @@
 | 08-04-2026         | PM-009 | Table Border Append Strips                |
 | 08-04-2026         | PM-010 | Type-Specific Codeblocks                  |
 | 08-03-2026 → 08-04 | PM-011 | Embedded Pages                            |
+| 08-03-2026         | PM-018 | Display Math And List Wrapping            |
 | 08-02-2026         | PM-012 | Hidden Groups                             |
 | 08-01-2026         | PM-013 | The NexusRecord                           |
 | 07-31-2026         | PM-014 | Identity Goes Kind-First                  |
 | 07-30-2026         | PM-015 | ActionBand And The Per-View Color         |
 | 07-30-2026         | PM-016 | The Tree Index                            |
 | 07-30-2026         | PM-017 | The Bridge Map                            |
+| 07-25-2026         | PM-019 | Lint And Accessibility Reach Clean        |
+| 07-27-2026         | PM-020 | The tierN Compatibility Surface Comes Out |
+| 07-27-2026         | PM-021 | The Feature Docs Audited Against The Code |
+| 07-27-2026 → 07-28 | PM-022 | One Owner Per IPC Shape                   |
+| 07-29-2026         | PM-023 | One Source For The Spectrum               |
+| 07-29-2026         | PM-024 | Six Hand-Rolled Borders Take One Token    |
 
 #### PM-005 || The JSON Write Primitive Takes Its Lock
 
@@ -122,6 +129,15 @@ Typing `![[Title]]` on its own line turns it into a live tile of that page — O
 - **Commits:** `3cdaf70a^..c44c0537`
 - **Diff:** Net +1540 | +1729 / −189
 
+#### PM-018 || Display Math And List Wrapping
+
+**DATE:** 08-03-2026
+
+Multi-line `$$…$$` spans holding a blank line had split into two paragraph blocks in `editor/blockModel.ts`. A new `editor/mathRanges.ts` pairs lone `$$` lines the way fences pair and is read by the block resolver, `editor/listDragModel.ts`, and the decoration pass, so a formula drags whole, indented math rides its bullet, and a marker-lookalike line inside math renders as formula source rather than a live drag glyph. `MarkdownPM/Styles.css` and `decorations/intent.ts` inverted the list-wrap frame — the list line suppresses every wrap opportunity and the item's content span carries the one wrapping region — so a long unbroken word fills beside its glyph instead of dropping below it. Duplicate definitions across five stylesheets resolved to `tokens/size.css.ts` and `theme-vars.css.ts`, `Tables/TableView.tsx`'s grip drags moved onto the shared gesture skeleton, and the per-version callout cache folded into `editor/docCache.ts`'s single doc scan. `decorations/intent.ts` re-derives only the lines a caret move affects now, and `editor/decorations.ts` assembles intents by loop rather than by spread, which had put a large outline within reach of the argument limit. → [[MarkdownPM]]
+
+- **Commits:** `1816c81f^..8df9ea6f`
+- **Diff:** Net +292 | +516 / −224
+
 #### PM-012 || Hidden Groups
 
 **DATE:** 08-02-2026
@@ -184,6 +200,60 @@ Every IPC channel had been hand-written at both ends with its types kept in a th
 - **Commits:** `39aeb20f^..063e44fb`
 - **Diff:** Net +195 | +1874 / −1679
 
+
+#### PM-019 || Lint And Accessibility Reach Clean
+
+**DATE:** 07-25-2026
+
+`npm run lint` had never passed — 215 errors and 332 warnings against a gate nothing in the workflow invoked — and it runs clean across every file now, with a change that adds a diagnostic counting as unfinished. Three rules came off with stated reasons: Biome's dependency-array rule is stricter than React's and the omissions here are deliberate, the non-null assertion is an accepted idiom, and the descending-specificity rule fired only where specificity governs anyway. Three findings were the linter reading wrongly, and one of its own auto-fixes broke assignability by rewriting a callback's `void` return to `undefined`. Both tab strips became tablists with roving tabindex, so a strip is one tab stop rather than one per tab, and gallery cards, menu rows, disclosure rows, and click-to-edit fields became real controls over `interactions/activate.ts`, which re-dispatches Enter and Space as a genuine click so no surface carries a second path that can drift from its `onClick`. Grids still carry no keyboard navigation and every drag handle is pointer-only; both sites are suppressed and say so rather than being papered over. → [[Lint-And-Accessibility]]
+
+- **Commits:** `78383686^..c0b40cd2`
+- **Diff:** Net +135 | +445 / −310
+
+#### PM-020 || The tierN Compatibility Surface Comes Out
+
+**DATE:** 07-27-2026
+
+Both nexuses were confirmed on the registry shape — the real one through daily use, the test one migrated and diffed against a pre-migration copy to prove no assignment was dropped — and the backward-compatibility surface came out rather than remaining as dormant weight. The migration and its resumable version handshake, the read-healing inside every context write, the legacy key modeling in the page and agenda schemas, the walk's recognition of the old arrays, and the tier-level helpers all went with it. A nexus left at the old shape can no longer be opened, since the conversion is gone rather than dormant; that cost was taken deliberately over keeping a path that could never again be exercised against real input. New nexuses mint at the current schema version instead of being stamped at the old one and relying on a migration to catch up, and a wrapper whose only outside consumer was the migration collapsed into the shared reconcile it had been forwarding to. A one-time converter rewrote the seeded Contexts' reserved ids to ordinary ULIDs across the registry, every saved view's column and filter references, and the space orders. → [[ContextsPM]]
+
+- **Commits:** `2707533d^..a0315e2b`
+- **Diff:** Net −252 | +112 / −364
+
+#### PM-021 || The Feature Docs Audited Against The Code
+
+**DATE:** 07-27-2026
+
+One agent per feature document opened every claim at the code before it survived, returning 440 confirmed corrections and about a dozen live defects that predated the audit and had been reported by nobody. Filtering looked inert because folder headings kept drawing after their rows were filtered away; comparisons passed rows holding no value; a move and a table property edit did not count as modifying a page; a rename rewrote `[[links]]` inside fenced code samples; a sidebar painted its empty state over the list it was animating away; and two rapid edits could race the index rebuild. The recurring shape was one fact with two sources — a key read by two sites with opposite defaults, a column named differently across layers, a rule the editor applied and the write side did not — so the repairs were subtractive, removing the second source rather than reconciling the two. → [[ArchitecturePM]]
+
+- **Commits:** `daff434d^..e887a242`
+- **Diff:** Net −572 | +1106 / −1678
+
+#### PM-022 || One Owner Per IPC Shape
+
+**DATE:** 07-27-2026 → 07-28
+
+Four repeated shapes across the IPC layer collapsed from eighty-one sources to four owners, with all 102 channels verified byte-identical across the change. The trash began mirroring the nexus folder chain so a delete records where it came from, and two index-rebuild races closed — one where tearing a nexus down did not wait for the rebuild still writing into it, another where a rebuild could delete the file another was writing. `NavWindow`'s search then began switching what is listed rather than how it is drawn, and its field drew one caret at its own text's height. The renderer, the main process, the shared contract, and the stylesheets lost their plan-task tags, their retired Context vocabulary, and every comment that only restated the code beneath it, keeping what a reader could not reconstruct. → [[ArchitecturePM]]
+
+- **Commits:** `5158c124^..83e21c6e`
+- **Diff:** Net −2323 | +2650 / −4973
+
+#### PM-023 || One Source For The Spectrum
+
+**DATE:** 07-29-2026
+
+The solid palette had been written three times: eleven hexes in the colour tokens, and the same ten key names as two byte-identical arrays in the cross-process contract, one named for accents and one for chips. An accent, an option colour, and a Space colour are one vocabulary, so they read one list now — a plain shared constant beside the window background, since the main process cannot read a vanilla-extract token. The `:root` vars build from that constant and the key list derives its members from it, so adding a colour to one and missing it in the other is unexpressible rather than merely unlikely, and error text was the last hardcoded value to take a token. The three-tier entity kinds also left the type system, where three unions still listed them and three sidecar filenames still had names on disk with no reader; `NexusLabels.area`, `.topic`, and `.project` stayed, since those are the label pairs seeding three ordinary registry rows. → [[DesignPM]]
+
+- **Commits:** `e9a3da1e^..6a1209a6`
+- **Diff:** Net −24 | +62 / −86
+
+#### PM-024 || Six Hand-Rolled Borders Take One Token
+
+**DATE:** 07-29-2026
+
+Two HOIST markers in the icon picker became a design-system pass. The outlined-box border six surfaces had hand-rolled is `--border-cell` now, beside `--border-heading`, and the accent-tint active stroke four surfaces restated is `--accent-stroke` — colour only, since the weights genuinely differ per surface. The picker's hand-rolled focus ring moved onto the house `fieldRing` channel, and the virtualizer's cell size single-sourced out of the silent-drift pair it had been spelling twice. → [[DesignPM]]
+
+- **Commits:** `b6270097`
+- **Diff:** Net −3 | +55 / −58
 
 ### 04-26-2026 → 07-29-2026
 

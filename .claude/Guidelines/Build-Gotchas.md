@@ -35,6 +35,12 @@ The chip ×'s label melt sits on a family of Chromium paint-invalidation drops (
 
 Re-running the reveal matrix (rest · left hover · center · right-third entered both ways · hover→leave) with screenshots is mandatory for ANY change touching these files. Also beware when CDP-verifying: synthetic hovers lose to Nathan's physical mouse if it's over the window, and the first interaction after an HMR edit can hit a stale DOM — always re-run a negative before believing it.
 
+### Registered Properties & Derived Transitions
+
+**Never transition a property derived from an interpolating variable.** A registered custom property that is animating already carries every value derived from it, so putting a `transition` on the derived property retargets it every frame — the element chases its target and overshoots instead of moving with the driver. Transition the *variable* and let the derived value follow.
+
+This class bit twice in one day and a settled-state pixel diff cannot see it at all; both instances surfaced through live observation and had to be proven frame-by-frame against the driver's own value. `previewTabStrip.css` carries the warning at the site where the tab squeeze rides `--io`.
+
 ### Glass / Liquid Glass
 
 - **`backdrop-filter` silently no-ops inside an opacity-transitioned ancestor** — the animated ancestor becomes the element's backdrop root, so the filter samples nothing: computed styles look right, nothing blurs, no error (diagnosed live on the chip ×'s rejected frost strip). Keep any backdrop-filter element OUT of faded/animated wrappers — reveal it with its OWN opacity instead.
