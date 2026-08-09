@@ -21,9 +21,9 @@ export async function createFolderEntity(
   name: string,
   extra: Record<string, unknown> = {},
 ): Promise<Result<{ id: string; path: string }>> {
-  if (invalidName(name)) return fail('invalid-name', `"${name}" is not a valid name.`, kind)
+  if (invalidName(name)) return fail('invalid-name', `"${name}" is not a valid name.`)
   const folder = join(parentDir, name)
-  if (await pathExists(folder)) return fail('exists', `"${name}" already exists.`, kind)
+  if (await pathExists(folder)) return fail('exists', `"${name}" already exists.`)
   const id = newId()
   await mkdir(folder, { recursive: true })
   // Suppress the new folder's addDir echo (the sidecar write self-suppresses via atomicWrite, the mkdir
@@ -78,7 +78,7 @@ export function updateFolderSidecar<S extends z.ZodType>(
 ): Promise<Result<z.infer<S>>> {
   return withSidecarLock(absFolder, kind, async () => {
     const current = await readSidecar(absFolder, kind, schema)
-    if (current === null) return fail('not-found', 'Sidecar not found or invalid.', kind)
+    if (current === null) return fail('not-found', 'Sidecar not found or invalid.')
     const next = { ...current, ...patch }
     await writeSidecar(absFolder, kind, next)
     return ok(next)

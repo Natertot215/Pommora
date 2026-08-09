@@ -39,7 +39,7 @@ async function spaceHostDir(root: string, id: string): Promise<string> {
 }
 
 async function hostDir(root: string, host: BlockHostRef): Promise<string> {
-  return host.kind === 'homepage' ? blockHostDir(root, host) : spaceHostDir(root, host.id)
+  return host.kind === 'homepage' ? blockHostDir(root) : spaceHostDir(root, host.id)
 }
 
 export async function blockFilePath(
@@ -223,7 +223,7 @@ export async function writeMarkdownBlock(
 async function listBlockHosts(root: string): Promise<{ host: BlockHostRef; dir: string }[]> {
   const homepage: BlockHostRef = { kind: 'homepage' }
   const hosts: { host: BlockHostRef; dir: string }[] = [
-    { host: homepage, dir: blockHostDir(root, homepage) },
+    { host: homepage, dir: blockHostDir(root) },
   ]
   try {
     const world = await loadContextWorld(root)

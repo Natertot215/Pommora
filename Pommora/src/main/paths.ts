@@ -41,13 +41,8 @@ export function contextsRegistryFile(root: string): string {
   return join(root, CONTEXTS_REGISTRY_REL)
 }
 
-/** The Space tree root — `.nexus/contexts/<Context Title>/<Space Title>/`. */
 export function contextsDir(root: string): string {
   return join(nexusDir(root), 'contexts')
-}
-
-export function spaceDir(root: string, contextTitle: string, spaceTitle: string): string {
-  return join(contextsDir(root), contextTitle, spaceTitle)
 }
 
 /** A Space folder's sidecar filename (membership comes from the parent folder). */
@@ -57,7 +52,7 @@ export const SPACE_SIDECAR = SIDECAR_FILENAME.space
  *  (distinct from the `homepage.json` config file). Real hosts use their own folders. */
 export const HOMEPAGE_HOST_DIRNAME = 'homepage'
 
-export function blockHostDir(root: string, _host: { kind: 'homepage' }): string {
+export function blockHostDir(root: string): string {
   return join(nexusDir(root), HOMEPAGE_HOST_DIRNAME)
 }
 

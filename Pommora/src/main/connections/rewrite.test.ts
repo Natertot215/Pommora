@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections } from './rewrite'
-import { mentionsTitle, scanConnections } from './scan'
+import { mentionsTitle } from './scan'
 import { pageEmbedPattern } from '@shared/connections'
 
 describe('rewriteConnections', () => {
@@ -32,7 +32,7 @@ describe('rewriteConnections', () => {
     // The healed link parses back to the same normalized title (no corruption of the surrounding text).
     const body = rewriteConnections('go to [[Old]] now', 'Old', 'New [v2] final')
     expect(body).toBe('go to [[New [v2] final]] now')
-    expect(scanConnections(body).map((c) => c.normalizedTitle)).toEqual(['new [v2] final'])
+    expect(mentionsTitle(body, 'new [v2] final')).toBe(true)
   })
 
   it('rewrites FROM a title that itself contains brackets', () => {
@@ -88,10 +88,8 @@ describe('the embed sweep', () => {
     )
   })
 
-  it('mentionsTitle reaches embed-only bodies; scanConnections still never counts them', () => {
-    const body = 'no links here\n\n![[Old]]'
-    expect(mentionsTitle(body, 'old')).toBe(true)
-    expect(scanConnections(body)).toEqual([])
+  it('mentionsTitle reaches an embed-only body, so a rename still sweeps it', () => {
+    expect(mentionsTitle('no links here\n\n![[Old]]', 'old')).toBe(true)
   })
 })
 
