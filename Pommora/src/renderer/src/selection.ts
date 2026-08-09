@@ -17,10 +17,10 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
   switch (selection.kind) {
     case 'none':
     case 'homepage':
-      // Homepage is a singleton (always present) — never reconciled away.
+      // Homepage is a singleton (always present).
       return selection
     case 'context':
-      // A Context group is a disclosure, not a destination — its Spaces are what open. A stored
+      // A Context group is a disclosure — its Spaces are what open. A stored
       // group ref reconciles dead so no layer holds a ref nothing can render.
       return { kind: 'none' }
     case 'space':
