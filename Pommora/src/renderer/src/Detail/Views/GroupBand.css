@@ -70,9 +70,9 @@
   opacity: var(--state-ghost);
 }
 .group-band-head.band-nest-target {
-  background: var(--selected);
+  background: var(--state-selected);
   border-radius: 6px;
-  outline: 4px solid var(--selected);
+  outline: 4px solid var(--state-selected);
 }
 /* The band's inline rename input — the sidebar row's recipe on the head's own type scale. */
 .band-title-input {

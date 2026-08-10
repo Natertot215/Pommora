@@ -111,7 +111,7 @@ export const itemEmphasized = style([text.body.emphasized])
  *  every "shown, can't act" state wears (a lock's frozen rows, an unlanded affordance). */
 export const rowDisabled = style({
   selectors: {
-    '&&': { opacity: 0.4, pointerEvents: 'none' },
+    '&&': { opacity: 'var(--state-disabled)', pointerEvents: 'none' },
   },
 })
 
@@ -287,6 +287,25 @@ export const bottomBar = style({ marginTop: 'auto' })
 // reads a step quieter than a body row, an ancillary action; its symbol sits a step under the TopBar
 // chevron. One source; the Style row + MenuBottomRow route here.
 export const footingLabel = style([text.callout.emphasized, { color: c.label.secondary }])
+/** A pinned-footer text action — footing tone over the accessory hover pill. */
+export const footerAction = style([
+  footingLabel,
+  {
+    border: 'none',
+    background: 'none',
+    padding: '2px 4px',
+    borderRadius: '5px',
+    cursor: 'default',
+    selectors: { '&:hover': { background: c.state.hover } },
+  },
+])
+/** The footing lock action — a left-pinned labeled toggle (lock icon + label), a step-quieter
+ *  icon than its label. No pressed/selected state — it never mutes on lock. */
+export const footerLockAction = style([
+  footerAction,
+  { display: 'inline-flex', alignItems: 'center', gap: '5px' },
+])
+export const lockIcon = style({ selectors: { '&&': { color: c.label.tertiary } } })
 export const footingSymbol = style({
   display: 'inline-flex',
   selectors: { '&&&': { color: c.label.secondary } },

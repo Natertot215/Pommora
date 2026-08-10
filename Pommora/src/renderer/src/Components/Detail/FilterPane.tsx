@@ -45,7 +45,7 @@ import { cx } from '../../design-system/cx'
 import { useSaveView } from '../../Embeds/ViewEmbedScope'
 import { useSession } from '../../store'
 import { PickerControl, type PickerChoice } from './PickerControl'
-import { iconOption } from './pickerControl.css'
+import { iconOption } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import { optionsOf } from './GroupingPane'
 import {
   type Connector,
