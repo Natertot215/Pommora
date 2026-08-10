@@ -13,9 +13,7 @@ Pages are Markdown documents that live inside **Page Collections** — folder-ba
 ### Why
 
 - **Obsidian** gives UI-level customization and a transparent local-first file model, but its Markdown core can't express columns, side-by-side callouts, or in-line filtered views without heavy plugins.
-
 - **Notion's** in-line database views — filtered, sorted, and regrouped per page without altering the source — are its defining feature, and Obsidian's file-as-document model can't match it natively.
-
 - Obsidian shines until you need real task management or cross-page coordination. Notion shines until you hit an interface decision you can't change.
 
 Pommora's bet: a Markdown-canonical foundation with a fast property and query engine, and a clean separation between content (Pages), structure (Page Collections + Sets), and interface (Contexts) — delivering Notion's most-loved features without giving up Obsidian's open and local-first nature.
@@ -78,8 +76,7 @@ Pommora is an Electron desktop app — a React + TypeScript renderer over a Node
 
 The main process is the sole filesystem owner; the renderer never touches Node. One shared bridge map declares every IPC channel once — both sides derive from it, and IPC never throws across the boundary: data channels return one structured result envelope. Full architecture → `Features/ArchitecturePM.md`.
 
-#### Two load-bearing constraints
-
+#### Load-Bearing Constraints
 
 1. **Cloud-sync-ready and cross-nexus queryable.** Collections aren't isolated silos — property definitions live nexus-wide, so one shared property id means the same thing in every Collection that assigns it and a single query matches across all of them; any Page or Context can query, link, or embed any Collection's contents regardless of where it sits on disk. The on-disk model maps cleanly onto a cloud database, so sync arrives later as an additive translation rather than a rewrite. A Nexus placed in iCloud Drive, Dropbox, or any synced folder already gets device-to-device sync for free.
 
@@ -110,7 +107,7 @@ Each Collection decides where its Pages open — the main detail pane, or the fl
 
 #### Page Collections and Sets
 
-A **Page Collection** is the operational container — a top-level folder whose sidecar assigns the nexus-wide properties shared by every Page inside it, plus its saved views, child ordering, and an open-in mode. It has no text editor of its own; it's a pure database surface (table / gallery, with more renderers to come).
+A **Page Collection** is the operational container — a top-level folder whose sidecar assigns the nexus-wide properties shared by every Page inside it, plus its saved views, child ordering, and an open-in mode. It has no text editor of its own; it's a pure database surface (table and cards, with more renderers to come).
 
 A Collection nests **Page Sets** to any depth — schema-less sub-folders that inherit the Collection's whole schema. The first level (a "Set") carries its own views and sorting and is selectable; deeper levels ("Sub-Sets") are plain organizing folders. Nesting is unbounded, with no roll-up — discovery, rendering, and navigation recurse on the real folder tree.
 
@@ -129,9 +126,7 @@ The calendar layer, two peer kinds, each in its own singleton folder that the ne
 - **Tasks** (`.md`, `TaskID`) — reminder-shaped.
 - **Events** (`.md`, `EventID`) — calendar-event-shaped.
 
-Their fields are an open question: the shape both kinds inherited was removed rather than carried forward, and what replaces it is the Agenda work's to decide.
-
-Both carry the same parenthesized Context keys as Pages. A built-in **Status** and the field vocabulary behind it are unbuilt — the shape both kinds inherited was removed rather than carried forward. EventKit sync is opt-in, and being an API-only mapping it constrains nothing about what Pommora stores. Full detail → `Features/AgendaPM.md`.
+Their fields are an open question — what replaces the removed inherited shape is the Agenda work's to decide, the built-in **Status** among it. Both carry the same parenthesized Context keys as Pages. EventKit sync is opt-in, and being an API-only mapping it constrains nothing about what Pommora stores. Full detail → `Features/AgendaPM.md`.
 
 #### Properties
 
@@ -191,7 +186,7 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 
 ---
 
-#### v1 Scope
+### v1 Scope
 
 - **Contexts & Spaces** — free-standing, user-manageable Context groups holding Spaces (the registry seeds Areas / Topics / Projects), each group a sidebar disclosure. No containment, no parents.
 - **Page Collections + Sets + Pages** — schema-bearing Collections, schema-less recursive Sets, and Markdown Pages. UI labels renameable. Each Collection chooses preview-window vs. main-pane opening.
@@ -210,14 +205,12 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 
 ### Prospects
 
-- [x] H1 → H6 Formatting
-- [x] Page Outline Dropdown
-- [ ] Page Alias’ for Connections (Prioritize Obsidian-Compatible Method)
+- [ ] Page Aliases for Connections (Prioritize Obsidian-Compatible Method)
 - [ ] Assigning Contexts To Storages
-- [x] Page-in-Page Embedding
 - [ ] Page Notes / Description
 - [ ] Property Automations
 - [ ] Pinned-Properties
+
 ### Ideas
 
 - [x] [[Pommora – Properties V3 + SQL-V2]]
