@@ -340,7 +340,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-dim);
+  color: var(--label-tertiary);
   cursor: grab;
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease-standard);

@@ -51,7 +51,7 @@
   border: none;
   background: none;
   padding: 0;
-  color: var(--text-dim);
+  color: var(--label-tertiary);
   cursor: default;
 }
 /* Hover-revealed structural-band "+" (inert stub — the create-page routing is deferred); the whole band
