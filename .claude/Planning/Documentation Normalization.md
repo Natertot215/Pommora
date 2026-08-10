@@ -14,6 +14,7 @@ A documentation-only pass normalizing every Feature doc against one written stan
 - **No intra-doc deferrals.** "The full law lives in §Non-Obvious" — a fact is stated once, where it belongs, and nowhere else in the same document.
 - **Status lives in the tail.** Limitations, unbuilt surfaces, verification notes, and workarounds belong in the tail sections, never in the body. "End-to-end tested," "no surface reads it yet," and shipped/unshipped framing are tail material or nothing.
 - **Neutral, tense-clean claims.** No absolutes or double negatives where the plain statement reads the same; no "now," "no longer," "the new default," no session, port, or Swift references. Feature docs are tense-neutral present.
+- **Consequence clauses pass a "do I need this" test.** The "…, so X" tail isn't banned — it's asked to justify itself. Where the consequence is inferable from the behavior, the clause comes off; where it tells the reader something the behavior alone doesn't, it stays.
 - **No over-specification.** Hard counts baked into headings or prose ("Three seams," "Two Laws"), exhaustive edge-case enumerations, and on-disk asides repeating another doc's ownership all manufacture drift. **Exception:** the token atlas — `DesignSystemPM.md` and every `**SOURCE:**`-tagged table states literals on purpose, and `node scripts/check-atlas.mjs` stays green through every commit of this pass.
 - **One owner per fact.** A claim two docs both state gets one owner and one pointer; the Ownership Map below assigns them.
 
@@ -161,6 +162,10 @@ Scoped now, executed after Chapter 1 — the ownership map and trued pointers fe
 4. **ToC blocks** — written last, once each doc's headings are final.
 5. **Chapter 2** — Versioning, then the PRD.
 6. **Deployment** — the ratified charter fills Studio-Documentation.md's empty §Features section (Call 7).
+
+### Ratification
+
+Ratified 08-10 with the recommendations standing as written — the tail trio is Known Issues / Pending / Prospects, the Non-Obvious annexes route their hard-won traps to `Guidelines/Editor-Internals.md`, StructurePM takes the full shrink, PagePreview's token section stays as trimmed prose, and a closing subagent pass hunts residual mechanism narration before the pass closes.
 
 ### Calls
 
