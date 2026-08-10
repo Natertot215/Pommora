@@ -562,12 +562,12 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
   - [x] Task 13 — The region scan calls its original · `4587ed55`
   - [x] Task 14 — The constants come home · `4587ed55` (the suppress deletions landed with Task 11)
   - [x] Gate 5 — gates green per commit; census sweeps run at Gate 6
-- [ ] **Phase 6** — The adoption gaps
-  - [ ] Task 15 — Edge auto-scroll for the trapped drags · `<commit>`
-  - [ ] Task 16 — The silent drags announce · `<commit>`
-  - [ ] Task 17 — Band and grouping spring-open · `<commit>`
-  - [ ] Task 18 — Sidebar spring-open · `<commit>`
-  - [ ] Gate 6
+- [x] **Phase 6** — The adoption gaps
+  - [x] Task 15 — Edge auto-scroll for the trapped drags · `fe365604`
+  - [x] Task 16 — The silent drags announce · `fe365604`
+  - [x] Task 17 — Band and grouping spring-open · `fe365604`
+  - [x] Task 18 — Sidebar spring-open · `fe365604`
+  - [x] Gate 6 — simplification `23c121e2` · docs `3e5509bc` · census run, two prediction corrections below
 
 ### Rulings
 
@@ -602,3 +602,7 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 - **Tier-5 product candidates** — subfield reorder (fully plumbed, no UI), tab⇄pin cross-zone, Cards band drag, outline section drag, recents→pins refusal review.
 
 ### Closeout
+
+**Census (08-10, all against controls):** `< ACTIVATION` → exactly the 3 predicted files (`engine.tsx`, `listDrag.ts`, `blockDrag.ts`). `snapshotDirty` → 0. `useDragSnapshot` → 9 files — the prediction said 8; the correct enumeration is helper + test + seven adopters, an off-by-one in the prediction, not a missing adoption. `band-drag-ghost` → 3 files — the predicted 2 plus `sidebarDnd.test.tsx`, whose ghost probe legitimately queries the class; allowlisted. `table-drop-line` → 10 files (8 + the sidebar + its test). `usePointerGesture` control → 12, never zero. The hand-rolled-lifecycle census returns exactly the documented-deliberate set: the two engines, SurfacePM's sensor, the window chrome, the scrub controls, `listDrag`/`blockDrag`, and the CalendarPicker.
+
+**Delivery Claim.** The ratified scope shipped whole: all eleven Requirements trace to landed tasks (R1/R2 → `a14eea47` + the leak tests; R3 → `7100bd2c`/`0af0b7db`/`52ca8c94`/`c1403087`; R4 → Phase 1 + `d9f5908f`; R5 → `c1403087` + the Gate-3 fold in `600ea9de`; R6 → `7fa0ee51`/`0fc563fb`/`7100bd2c`; R7 → `600ea9de`/`4587ed55`; R8/R9/R10 → `fe365604`; R11 → `3e5509bc` + the falsifying commits). The acceptance criterion holds in its testable half — mid-drag scroll re-aim and Escape abort are pinned by red-first tests on every migrated surface, the mode-switch leak by the listener-identity test, the census by the sweeps above; the running-app half is the walkthrough handed to Nathan. No new dependency. No mechanism duplicated: one skeleton, one snapshot helper, one ghost, one line chrome, one scan, one offset, one guard core. Nothing left with nothing to vary: the deleted lifecycles, listeners, and inline chrome have no residue the census can see. No work added to a high-frequency path — the changes *removed* per-move geometry work (`group.tsx` caches, the sidebar's sibling filter is snapshot state, the grouping callers memoized). Gates green at every commit; the full suite is 2,275 tests, lint zero including six pre-existing warnings retired.
