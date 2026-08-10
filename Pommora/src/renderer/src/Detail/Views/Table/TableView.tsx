@@ -1469,6 +1469,8 @@ function ColumnHeader({
   onDragStart,
   onResize,
   onResizeStart,
+  onResizeAbort,
+  onResizeEnd,
   onResizeCommit,
   onContextMenu,
 }: {
