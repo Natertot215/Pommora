@@ -128,6 +128,22 @@ describe('sidebar drag — Esc abort', () => {
     expect(removed).toBe(added)
   })
 
+  it('a scroll with the pointer held still re-aims, so a release without moving resolves fresh', async () => {
+    await startDrag() // pointer at y=40 — after p2 against the original geometry
+    // The rows scroll down: p2's fresh span sits below the pointer, so the fresh slot is BEFORE
+    // p2 — a no-op for p1 — while the stale rects would still commit the after-p2 reorder.
+    const p2 = host.querySelector('[data-row="p2"]')
+    if (p2) stubRect(p2, { top: 72, bottom: 96 })
+    await act(async () => {
+      const content = row('p1').parentElement as HTMLElement
+      content.dispatchEvent(new Event('scroll', { bubbles: false }))
+    })
+    await act(async () => {
+      firePointer(row('p1'), 'pointerup')
+    })
+    expect(commitSpy).not.toHaveBeenCalled()
+  })
+
   // Identity, not counts — the historical leak removed a DIFFERENT function than it added, which
   // a count-based assertion passes on. A completed drag first, so the drag's closures no longer
   // come from the mount render the unmount cleanup captured.

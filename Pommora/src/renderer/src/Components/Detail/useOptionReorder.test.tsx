@@ -88,6 +88,17 @@ describe('option reorder gesture', () => {
     expect(reorderSpy).toHaveBeenCalledExactlyOnceWith('a', 2)
   })
 
+  it('Escape aborts an active drag and the release commits nothing', async () => {
+    await drag('a', 12, 40)
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    await act(async () => {
+      firePointer(window, 'pointerup')
+    })
+    expect(reorderSpy).not.toHaveBeenCalled()
+  })
+
   // Identity, not counts — the historical leak removed a DIFFERENT scroll listener than it added.
   // A completed drag first, so the drag's closures no longer come from the mount render.
   it('an unmount mid-drag removes the exact window listeners it added', async () => {
