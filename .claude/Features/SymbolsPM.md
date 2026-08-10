@@ -1,5 +1,17 @@
 ## SymbolsPM
 
+```
+SymbolsPM
+├── The Registry
+│   ├── View Settings Panes
+│   ├── Property Types
+│   └── View Types
+├── Additional Assignments
+├── The Picker
+├── Pending
+└── Known Issues
+```
+
 Pommora's standard semantic icons — the canonical glyph for each pane, property type, and recurring concept. The curated registry behind `design-system/symbols` is the primary source and the app's own vocabulary. A caller with no assigned glyph renders `DashIcon`, the dashed-square placeholder, until a symbol is chosen; an id that resolves in neither source falls back to `square-dashed`.
 
 ### The Registry

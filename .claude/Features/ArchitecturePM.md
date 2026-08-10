@@ -1,5 +1,26 @@
 ## Architecture
 
+```
+Architecture
+├── Principles
+├── The Nexus Layout
+│   ├── Classification
+│   ├── The Agenda Singletons
+│   ├── The Trash
+│   └── Folder Exclusion
+├── The Read + State Layer
+├── The IPC Bridge
+├── The Device-Local Database
+├── The Atomic-Write Contract
+├── The File Watcher
+├── Adoption
+├── Migration
+├── What the Data Layer Leaves to the OS
+├── Reference
+├── Known Issues
+└── Pending
+```
+
 The data layer — the on-disk Nexus, the read and state layer, the device-local database, the atomic-write contract, the adopter, and the external-edit watcher. The PRD carries the high-altitude storage model.
 
 ### Principles

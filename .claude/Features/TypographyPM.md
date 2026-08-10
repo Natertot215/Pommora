@@ -1,5 +1,13 @@
 ## Typography
 
+```
+Typography
+├── The Ramp
+├── Where Each Style Goes
+├── In Code
+└── Pending
+```
+
 Pommora's type system. The token file is the source of truth for what ships, and this doc names the styles and where they go; the Figma "Pommora - React" library is the visual reference the ramp was drawn from. Family is **Inter**, loaded as a variable font, so any weight on its axis draws.
 
 **Variant = weight.** Every style exposes the same weights by name — **Standard · Emphasized · Semibold · Bold** — and a variant name is the weight it renders. `text.<style>.<variant>` composes the two: size and line height from the style, weight from the variant.

@@ -1,5 +1,11 @@
 ## Agenda
 
+```
+Agenda
+├── Registration
+└── Pending
+```
+
 The operational layer's calendar-anchored side: two peer entity kinds, **Tasks** (reminder-shaped) and **Events** (calendar-shaped), each a `.md` carrying its kind's id key. Each kind lives in its own singleton folder at the nexus root, discovered by a config sidecar and never by folder name — the folders stay renameable, and a folder carrying an agenda config is not a Collection (→ [[ArchitecturePM]]).
 
 Agenda currently carries no on-disk format, no CRUD, and no read surface — the item format, field vocabulary, ordering, and surfaces are the Agenda rethink's to answer (→ §Pending). What holds regardless of the form it takes:

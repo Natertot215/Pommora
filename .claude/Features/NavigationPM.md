@@ -1,5 +1,17 @@
 ## Navigation
 
+```
+Navigation
+├── The Navigation Layer
+├── NavWindow
+├── Toolbar Tabs
+├── Back and Forward
+├── NavView
+├── Breadcrumb
+├── Pending
+└── Prospects
+```
+
 How you get from where you are to where you want to be — a **toolbar tab bar** holding the open working set, each tab with its own history and a footer breadcrumb for local moves, over a shared **Navigation layer** for the cross-tree jumps (recent, pinned, searched, favorited) the sidebar tree alone can't serve.
 
 The main pane shows the **active tab's** entity; selecting one anywhere drives that tab, replacing its content on an unpinned tab and spawning a new one off a pinned tab. A per-tab history records each selection, and the footer breadcrumb shows the active tab's location.

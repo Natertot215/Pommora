@@ -1,5 +1,20 @@
 ## CardView
 
+```
+CardView
+├── Card Anatomy & Sizing
+├── Card Image
+├── Layouts
+├── Properties on Cards
+├── Grouping, Location & Sorting
+├── Set Cards
+├── Card Drag & Menus
+├── Surfaces & Insets
+├── Card Tokens
+├── Pending
+└── Prospects
+```
+
 The Cards renderer draws a [[CollectionsPM|Collection's]] (or a depth-1 Set's) Pages as a resizable card grid, over the same pure pipeline that feeds the [[TableViewPM|Table]] — columns → filter → group → sort. A Collection or Set switches to it from the ViewSettings type grid, and it draws the same inside a [[SurfacePM|view embed]], at the embed's zoom.
 
 ### Card Anatomy & Sizing

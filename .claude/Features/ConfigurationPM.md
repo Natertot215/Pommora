@@ -1,5 +1,16 @@
 ## Configuration
 
+```
+Configuration
+├── Personalization
+├── Commands
+├── Write Discipline
+├── Labels
+├── App Configuration (Per-Device)
+├── The Settings Window
+└── Pending
+```
+
 How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nexus/settings.json` — **personalization**, **labels**, the profile (image + subtitle), and the Subfield's own `subfield` key (→ [[SubfieldPM]]) — that travels with the Nexus and syncs, and a per-device **app config** that stays on the machine. A third scope — per-machine chrome such as folds, the active view, and the tab and preview sets — is never synced and lives in the Nexus's device-local database (→ [[ArchitecturePM]]).
 
 ### Personalization

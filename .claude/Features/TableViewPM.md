@@ -1,5 +1,20 @@
 ## TableView
 
+```
+TableView
+├── The Shared Grid
+├── Overflow & Scroll
+├── Full-Bleed Heading
+├── The Views Gutter
+├── Groupings
+├── Columns
+├── Rows & Cells
+├── Density
+├── The Table Sheet
+├── Prospects
+└── Known Issues
+```
+
 One of the built renderers behind the modeled view types (→ [[ViewsPM]]) — a Collection's or Set's Pages drawn as rows on a single CSS grid. It's presentation only: the pipeline hands it resolved groups and per-cell values, and TableView owns the layout, the column ergonomics, and the row and group chrome.
 
 ### The Shared Grid

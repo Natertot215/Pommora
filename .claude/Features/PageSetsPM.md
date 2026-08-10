@@ -1,5 +1,14 @@
 ## Page Sets
 
+```
+Page Sets
+├── The Sidecar
+├── The Depth-1 View Rule
+├── Selection + Navigation
+├── Moves + CRUD
+└── Pending
+```
+
 The recursive sub-container on the Pages side. A Page Set is a folder inside a Collection that nests to any depth — one type, two roles by depth:
 
 - **Set** (depth-1, a direct child of the Collection) — carries its own views and is selectable in the sidebar.
