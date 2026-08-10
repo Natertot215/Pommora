@@ -2,7 +2,7 @@
 
 The operational layer's schema-bearing tier. A Page Collection is a folder at the Nexus root whose sidecar assigns the nexus-wide properties every Page inside it shares — at any nesting depth — plus its saved views, child ordering, and open-in mode. It has no text editor of its own — a pure database surface.
 
-| Entity              | Role                                                              | On disk                                           |
+| Entity              | Role                                                              | On-Disk |
 | ------------------- | ----------------------------------------------------------------- | ------------------------------------------------- |
 | **Page Collection** | Assigns the properties every Page inside shares                   | Folder + `_pagecollection.json` at the Nexus root |
 | **Page Set**        | Organizing sub-folder at any depth; inherits the schema, adds none | Folder + `_pageset.json` → `PageSetsPM.md`          |
