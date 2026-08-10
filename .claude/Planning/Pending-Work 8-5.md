@@ -60,7 +60,7 @@ There is no "new row" at the bottom of a table and no "new card" in a grid — t
 
 #### Images and Attachments That Actually Render
 
-A pasted screenshot or a math formula still shows as raw text; both are explicitly parked. For a notes app this is table stakes, and cheaper than it sounds — the embedded-page tile already established the exact pattern a picture would use. Paired with paste-and-drop handling, a whole category of "I'll just do this in Obsidian instead" disappears.
+A pasted screenshot or a math formula still appears as raw text; both are explicitly marked as such. For a notes app, this is table stakes, and cheaper than it sounds — the embedded-page tile already established the exact pattern a picture would use. Paired with paste-and-drop handling, a whole category of "I'll just do this in Obsidian instead" disappears.
 
 #### A Trash You Can Browse and Restore From
 
@@ -88,9 +88,7 @@ The restore op is a live arm in `main/mutate.ts`; what's missing is one line —
 
 The pipe form parses, resolves, and survives every rename cascade — but nothing draws it, so it shows as the styled title followed by a plain-text `|alias` tail. The live vault already contains these, so they read as visibly malformed links today. Hiding the tail and showing the alias when the caret is outside follows the exact bracket-reveal pattern connections already use; the authoring gesture can come later.
 
-#### Finish Flattened Mode for Tables
-
-Cards can turn grouping off and hide the location subtitle; tables can do neither — the Grouping pane gates "None" behind the cards type and the pipeline never flattens for a table. The Figma already shows both toggles and the table's footing is waiting to take them. Closes a story the feature half-told, and a plain ungrouped table is what many collections actually want.
+**Finish Flattened Mode for Tables:** Cards can turn grouping off and hide the location subtitle; tables can do neither — the Grouping pane gates "None" behind the cards type and the pipeline never flattens for a table. The Figma already shows both toggles, and the table's footing is waiting to take them. Closes a story the feature half-told, and a plain ungrouped table is what many collections actually want.
 
 #### Prefix-Aware Headings and Tables Inside Callouts
 
