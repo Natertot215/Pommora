@@ -130,12 +130,11 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff.
 - Four surfaces still hand-roll the skeleton `gesture.ts` owns — `sidebarDnd`, the data-view column drag, and `useOptionReorder`/`useStatusReorder`. The last two share the lifecycle and nothing else: one reorders a flat list, the other moves between groups including empty ones, so a merge would fight a real difference — migrating removes the half they actually share. The skeleton wants hardening before any of them land on it: it sets `active` before calling `onActivate`, so a throwing activation leaves the listeners attached and the release commits a drop on a gesture that never finished activating; and `detach` runs `teardown` before clearing the module-level lock, so a throwing teardown strands it with the listeners already gone. Unobserved, reachable, and worse with each surface migrated on. Mind that the existing listener tests count adds against removes, where the sidebar's leak is same-count-wrong-identity — they pass on the bug. Migrate each onto `usePointerGesture()` opportunistically as its file is next touched. `SurfacePM/pointerDrag`, `engine.tsx`, and `group.tsx` stay hand-rolled by design: each adds something the skeleton lacks (rAF coalescing, a lost-capture abort, a deliberate no-capture policy), and those hoist into the skeleton only if a second surface ever wants them.
 - MarkdownPM's `listDrag`/`blockDrag` are the one migration worth declining: both are roughly nine-tenths CodeMirror domain logic, so the skeleton would absorb about a tenth of each file, and both are click-or-drag surfaces the skeleton can't yet serve — it has no way to say "released without activating," so a cancelled press would toggle a checkbox or fold a heading. The unblocking piece is an `onTap(e)` on the spec, fired on release-before-activation and silent on Escape or cancel; it is a handful of additive lines and should land with the migration that consumes it, not before.
 
-### Hard Rules
+### Working Notes
 
-- **The kind key is a deliberate second identity source — do not consolidate it away.** The file's kind key and its folder's sidecar declare the same thing on purpose: their *disagreement is the detection signal* that makes a mislocated file recognisable at all. A checksum, not the two-writers defect — the one place that lesson does not apply.
-- **The full-weight inert affordances are adjudicated keep — never re-flag them.** The unimplemented view tiles render at full weight and swallow the click, and the group-band "+" for structural Set bands carries an `aria-label` with no handler. Both read as live controls and do nothing on purpose; they wait on their features, not on a dimming pass.
-- The `ViewPane` "more" button is an intentional stub that hasn't had its true purpose decided yet, don't flag it as dead code.
-- **The NavPane's toolbar dropdown is the same shape** — a blank surface held at a fixed ceiling while what it holds is decided. Not dead, and not waiting on a build.
+- **The kind key is a second identity source by design.** A file's kind key and its folder's sidecar declare the same thing on purpose, since their disagreement is what makes a mislocated file recognisable — a checksum rather than the two-writers defect.
+- **The inert affordances render at full weight while their features are built.** The unimplemented view tiles swallow their click, and the group-band "+" on structural Set bands carries an `aria-label` with no handler; both read as live controls and wait on the work behind them.
+- **The `ViewPane` "more" button and the NavPane's toolbar dropdown are the same shape** — a stub and a blank surface at a fixed ceiling, each holding its place while what it opens is decided.
 
 ### Lessons
 
@@ -167,5 +166,5 @@ Architectural cleanups with no user-visible payoff and permanent editing payoff.
 - [ ] The Set-Card drag flash (drop snaps back, then jumps on reload) — the optimistic moveSet order patch is in; wants one live drag before this line drops. 
 - [ ] Clicking the settings button on the sidebar ribbon doesn't close it once it's been opened. 
 - [ ] MarkdownPM drag-handle context menu shows 'Embed Page' when it shouldn't; a 'List Type' switcher would be the natural replacement. 
-- [ ] The sidebar's drop resolver carries four defects the insertion-line fix left standing: the dragged row's own vacated band resolves to the row above it, so a band two rows tall shows nothing; a pointer above the first row clamps onto it; a Context group holding a single Space shows no line at all; and a collapsed container can't be dropped into, because the sidebar registers with neither end of the spring-open service that tables and cards both use.
+
  
