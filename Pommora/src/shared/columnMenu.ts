@@ -10,7 +10,7 @@ import type { ColumnAlign } from './views'
 
 /** The table-view column-header right-click menu: hide the column, set its text alignment,
  *  or set a per-view display style. The renderer applies the resolved action, or no-ops on null
- *  (dismissed). Mirrors calloutMenu's shape. */
+ *  (dismissed). */
 export type ColumnMenuAction =
   | 'column:hide'
   | 'column:toggle-icons'

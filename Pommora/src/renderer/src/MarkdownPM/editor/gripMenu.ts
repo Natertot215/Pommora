@@ -20,6 +20,13 @@ import { embedExclusions } from './embedWidget'
 export const GRIP_MENU_LINES = ['md-block-handle', 'md-callout-first', 'md-bq-first']
 const GRIP_SELECTOR = GRIP_MENU_LINES.map((c) => `.cm-line.${c}`).join(', ')
 
+/** The grip-bearing line a press landed on, or null anywhere else — the gutter strip only, so a press
+ *  on the line's own text is never a grip press. */
+function gripLineAt(e: MouseEvent): HTMLElement | null {
+  const line = (e.target as HTMLElement).closest?.(GRIP_SELECTOR) as HTMLElement | null
+  return line && e.clientX < line.getBoundingClientRect().left ? line : null
+}
+
 /** The Collections → Sets → Pages pick tree, minus everything `embeddable` rules out; a container with
  *  nothing pickable beneath it drops out entirely. */
 export function embedPickTree(tree: NexusTree, exclude: ReadonlySet<string>): PickNode[] {
@@ -65,10 +72,18 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
 }
 
 export const gripMenu = EditorView.domEventHandlers({
+  // A grip acts on its block, never on the caret. The drag gestures already suppress the browser's
+  // caret placement on a left-press; a right-press needs the same, since preventing the contextmenu
+  // that follows comes far too late to stop the seat.
+  mousedown(e) {
+    if (e.button !== 2 || !gripLineAt(e)) return false
+    e.preventDefault()
+    return true
+  },
   contextmenu(e, view) {
     if (view.state.readOnly) return false // a resting tile's inner grips offer nothing actionable
-    const line = (e.target as HTMLElement).closest?.(GRIP_SELECTOR) as HTMLElement | null
-    if (!line || e.clientX >= line.getBoundingClientRect().left) return false
+    const line = gripLineAt(e)
+    if (!line) return false
     const doc = docString(view.state.doc)
     const block = blockAt(doc, view.posAtDOM(line))
     if (!block) return false
@@ -101,7 +116,6 @@ export const gripMenu = EditorView.domEventHandlers({
           break
         }
       }
-      view.focus()
     })
     return true
   },
