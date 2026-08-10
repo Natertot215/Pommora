@@ -62,7 +62,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
 import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import { numberDivisor } from '../PropertyEditing/formatValue'
-import { ACTIVATION } from '@renderer/design-system/interactions/shared'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
 import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from './linkValue'
@@ -186,6 +186,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // (--col-drag-x), so a drag frame never re-renders the unmemoized row/cell tree. Transient —
   // set on grab + slot flips, cleared on drop; column indices into the resolved `columns`.
   const [colDrag, setColDrag] = useState<{ from: number; to: number; id: string } | null>(null)
+  const beginGesture = usePointerGesture()
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   // The page a title:icon menu targeted (captured before the menu await — the row is out of scope by
   // the time the picker commits). The cell element anchors the picker's beak.
@@ -1087,20 +1088,19 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const groupIndent = (depth: number): string => `calc(var(--row-indent) * ${depth})`
 
   // Column smooth-shift: grab a header → the whole column (header + every body cell + divider)
-  // slides with the cursor, neighbours shifting by the dragged column's width to open the gap, the track
-  // order committing on drop. Pointer-captured to the header; move/up on window (the header re-renders
-  // mid-drag, so a node-bound listener would drop). `zoom` divides the screen delta back into the grid's
-  // pre-zoom track space. The target slot is edge-based: whichever column's span the dragged column's
-  // centre sits over, with a sticky hysteresis zone around the current slot. Edge-based (not closest-
-  // centre) so a far column can't shift while the dragged one is still mid-traverse over a wide neighbour.
-  // gridLeft is read live so the edges stay correct under a horizontal scroll.
+  // slides with the cursor, neighbours shifting by the dragged column's width to open the gap, the
+  // track order committing on drop. The shared gesture skeleton drives it (the header re-renders
+  // mid-drag, so a node-bound listener would drop). `zoom` divides the screen delta back into the
+  // grid's pre-zoom track space. The target slot is edge-based: whichever column's span the dragged
+  // column's centre sits over, with a sticky hysteresis zone around the current slot. Edge-based
+  // (not closest-centre) so a far column can't shift while the dragged one is still mid-traverse
+  // over a wide neighbour. A horizontal scroll re-bases the edges and re-resolves the slot.
   const startColumnDrag = (e: React.PointerEvent, from: number): void => {
     if (e.button !== 0) return // left-button drags; a right-press falls through to the column menu
     e.preventDefault()
     const header = e.currentTarget as HTMLElement
     const grid = header.closest('.table-grid') as HTMLElement | null
     if (!grid) return
-    header.setPointerCapture(e.pointerId)
     const hr = header.getBoundingClientRect()
     // The CSS density factor (screen px per pre-zoom track px) — the RESOLVED `zoom`, which compounds the
     // base density token (--zoom) with the per-block Scale (--block-zoom on a SurfacePM tile). Read the
@@ -1109,7 +1109,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const zoom = Number.parseFloat(getComputedStyle(grid).getPropertyValue('zoom')) || 1
     const startCenter = hr.left + hr.width / 2 // the dragged column's centre, screen px; it tracks the cursor 1:1
     const startX = e.clientX
-    const startY = e.clientY
     // Geometry snapshot: widths can't change mid-drag, so the cumulative offsets are computed once
     // at grab — a per-move getBoundingClientRect + width loop is a forced layout in the drag hot
     // path. Only a scroll can shift the grid's origin; the capture listener re-reads it then.
@@ -1121,16 +1120,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       lefts[i] = acc
       acc += widths[i]
     }
-    const onScroll = (): void => {
-      gridLeft = grid.getBoundingClientRect().left
-    }
-    // null until the pointer travels ACTIVATION px — a sub-threshold press is a click, not a drag, so the
-    // highlight band never flashes and a jittery click can't reorder.
+    // null until activation — a sub-threshold press is a click, not a drag, so the highlight band
+    // never flashes and a jittery click can't reorder.
     const dragId = columns[from].id
     let current: { from: number; to: number; id: string } | null = null
-    const onMove = (ev: PointerEvent): void => {
-      if (!current && Math.hypot(ev.clientX - startX, ev.clientY - startY) < ACTIVATION) return
-      const projected = startCenter + (ev.clientX - startX)
+    let lastX = e.clientX
+    const resolve = (): void => {
+      const projected = startCenter + (lastX - startX)
       const cur = current?.to ?? from
       // Edge-based slot: which column's span the dragged column's centre is actually over. Hold the
       // current slot until the centre leaves its span by COL_SHIFT_HYSTERESIS (a sticky zone — no flicker
@@ -1153,44 +1149,42 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       }
       // The cursor-follow is a grid-level var (one style write; the .col-dragging cells consume
       // it) — React state updates only on activation + slot flips, never per move.
-      grid.style.setProperty('--col-drag-x', `${(ev.clientX - startX) / zoom}px`)
+      grid.style.setProperty('--col-drag-x', `${(lastX - startX) / zoom}px`)
       if (!current || current.to !== to) {
         current = { from, to, id: dragId }
         setColDrag(current)
       }
     }
-    // A committed release reorders (move + clear batch into one render — reorderColumn is React state —
-    // so the settle is a single frame, no snap-back flash); a no-op release (own slot / un-armed click)
-    // and a pointercancel (OS/gesture abort — the escape hatch) just clear without reordering.
-    const finish = (ev: PointerEvent, commit: boolean): void => {
-      // Cleanup FIRST + unconditionally: detach the window listeners and clear the drag before anything
-      // that can throw, so a lost-capture release or a mid-drag `columns` remount can't strand the gesture
-      // (leaked listener + stuck band). The release is guarded, and the indices are bounds-checked against
-      // a `columns` that may have shrunk under a watcher update since grab time.
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onCancel)
-      window.removeEventListener('scroll', onScroll, true)
-      grid.style.removeProperty('--col-drag-x')
-      try {
-        header.releasePointerCapture(ev.pointerId)
-      } catch {
-        // capture already released
-      }
-      if (current) {
-        const { from: f, to: t } = current
-        if (commit && t !== f && f < columns.length && t < columns.length) {
-          reorderColumn(columns[f].id, columns[t].id)
+    // A committed release reorders (move + clear batch into one render — reorderColumn is React
+    // state — so the settle is a single frame, no snap-back flash); a no-op release and an abort
+    // just clear without reordering. The commit is id-based end to end, so a stale slot resolves
+    // to a no-op inside reorderColumn rather than needing an index guard here.
+    beginGesture({
+      el: header,
+      event: e,
+      onActivate: () => undefined,
+      onDragMove: (ev) => {
+        lastX = ev.clientX
+        resolve()
+      },
+      onWindowScroll: (ev) => {
+        if (ev.target instanceof Node && !ev.target.contains(grid)) return
+        gridLeft = grid.getBoundingClientRect().left
+        resolve()
+      },
+      onDrop: () => {
+        if (current && current.to !== current.from) {
+          reorderColumn(columns[current.from].id, columns[current.to].id)
         }
-        setColDrag(null)
-      }
-    }
-    const onUp = (ev: PointerEvent): void => finish(ev, true)
-    const onCancel = (ev: PointerEvent): void => finish(ev, false)
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onCancel)
-    window.addEventListener('scroll', onScroll, { capture: true, passive: true })
+        if (current) setColDrag(null)
+      },
+      onAbort: () => {
+        if (current) setColDrag(null)
+      },
+      teardown: () => {
+        grid.style.removeProperty('--col-drag-x')
+      },
+    })
   }
   // The gap-shift translateX for a header during the current drag — the same formula the body cells
   // use (gapShift over the memoized dragShift). The SUBJECT's cursor-follow is not here — it rides
