@@ -113,7 +113,8 @@ Phases 2–3 are **refactor** and carry a baseline invariant: the full test suit
 | `ContextPM.md` | "`useOptionReorder`/`useStatusReorder` … near-duplicates of each other that a merge would collapse" | They share the lifecycle, not the drop model — one is flat, one crosses groups. Task 7 removes the shared half and states why the rest stays apart | 7 |
 | `ContextPM.md` Fix Log | "The Set-Card drag flash (drop snaps back, then jumps on reload)" | Tasks 1–4 remove the snap-back class | 4 |
 | `ContextPM.md` Fix Log | "The sidebars' drag mechanics are still glitchy" | Tasks 1–4 | 4 |
-| `ArchitecturePM.md` | Whatever it states about when an entity acquires its identity | Identity now arrives on write, not only at open | 1 |
+| `ArchitecturePM.md` | "Opening a folder as a Nexus stamps every un-adopted entity with a real ULID" | Identity now also arrives on write, not only at open | 1 |
+| `ArchitecturePM.md` | "no key at all (adoptable, **stamped at open**)" — reads as a definition, so a grep for "adopt" skims past it | Same | 1 |
 | `PommoraDND.md` | Its account of which surfaces consume the shared skeleton | Tasks 6–8 move four surfaces onto it | 8 |
 
 **Dead Vocabulary** *(the closing sweep)*
@@ -138,9 +139,11 @@ Opened by **Task 1**, closed by **Task 4**. While open, Pommora stamps identity 
 **Why:** `createPage` writes a page's full modelled key set, which includes its identity key; `updatePageBody` and `relocatePage` govern `modified_at` alone. Both call the same merge primitive, so the difference is which key set the caller hands it — not a capability gap. The consequence is that Pommora can rewrite a page's frontmatter and leave it with no identity, which is how a page it wrote to today still can't hold a position in an order array. Closing this makes every later task's identity assumption true, and it is the prerequisite Task 2 needs before `persistable` can be deleted.
 
 **Files:**
-- Modify: `Pommora/src/main/crud/page.ts` — the write family (`updatePageBody`, `relocatePage`, and the value writer's governed set).
-- Read first, may modify: `Pommora/src/main/io/pageFile.ts` — `mergeFrontmatter`, to decide whether the mint belongs at the caller or inside the primitive.
+- Modify: `Pommora/src/main/io/pageFile.ts` — `writePageFile`. **The mint belongs here and never in `mergeFrontmatter`.** `writePageFile` has exactly two callers and already reads the file; `mergeFrontmatter` has thirteen, including `crud/governedSweep.ts`, whose nexus-wide enumeration deliberately reaches files the read walk refuses. A mint inside the shared merge would stamp identity into files Pommora does not surface.
+- Modify: `Pommora/src/main/crud/page.ts` — only if the callers need to pass anything new.
 - Test: `Pommora/src/main/crud/page.test.ts` (or a sibling if the house pattern differs — check before creating).
+
+**The governed key set is computed per write, never widened unconditionally.** `mergeFrontmatter` throws when a document isn't mergeable and the governed set holds anything but `modified_at`, so adding the identity key unconditionally turns every body save on a broken-frontmatter page into a refusal. The key set has to be derived inside `writePageFile` from the file's own content — the id key joins the set only when `admitContentFile(fm, 'page').state === 'missing'` *and* the frontmatter is writable. That gate also makes it structurally impossible to stamp a second identity key onto a Task or Event file: a page-kind admission on a `TaskID` file returns `contradicting`, not `missing`.
 
 **Interfaces**
 - Produces: page writes leave `PAGE_ID_KEY` present on any page whose frontmatter admits one.
@@ -168,9 +171,15 @@ Opened by **Task 1**, closed by **Task 4**. While open, Pommora stamps identity 
 **Why:** Task 1 covers pages Pommora has written to. It does not cover an entity the user has never edited but wants to drag, nor a container folder with no sidecar. `persistable()` exists to strip those entries out before a write; its own rationale — a placeholder "re-stamps to a fresh ULID, breaking continuity" — is correct, and is exactly why the answer is to guarantee identity upstream rather than to persist the placeholder. Once nothing identity-less can reach the writer, the filter has nothing to do and comes out. A placeholder is a stable hash of the nexus-relative path, so the translation from old id to newly-minted id is exact rather than heuristic.
 
 **Files:**
-- Modify: `Pommora/src/main/adopt.ts` — export a scoped stamper for one folder's direct children, built from the existing module-private `stampPage`/`stampFolder`. `ensureFolderId` is the established precedent for this shape; extend that family rather than adding a parallel one.
+- Modify: `Pommora/src/main/adopt.ts` — export a scoped stamper covering **the container itself and its direct children**, built from the existing module-private `stampPage`/`stampFolder` plus a new Space arm. `ensureFolderId` is the established precedent for this shape; extend that family rather than adding a parallel one.
 - Modify: `Pommora/src/main/crud/reorder.ts` — `setStateOrder`, `setSpaceOrder`, `setChildOrder` call the stamper and translate; **delete `persistable`**.
 - Test: `Pommora/src/main/crud/reorder.test.ts` (exists).
+
+**Three corrections this task's first draft got wrong, each verified against the code:**
+
+1. **Translate to the entity's *persisted* id, minting only when it has none.** `stampPage` and `stampFolder` both return false for an entity that is already a member, so a translation built on "what did I just mint" has no arm for an entity stamped by a previous drag but still reading as a placeholder in the renderer's not-yet-refreshed tree. That drops the entry — re-creating the exact silent strip this task deletes. The stamper returns `Map<placeholderId, currentId>` covering every placeholder it resolves, mint-or-read.
+2. **Stamp the container, not only its children.** `setChildOrder` writes into the container's own sidecar, so stamping the children alone leaves a sidecar-less folder with nowhere to write — which is the state Task 3 then converts into a user-visible refusal. `ensureFolderId` at `main/adopt.ts` already resolves depth and kind correctly and no-ops on the nexus root; call it at the head.
+3. **Spaces are a fourth placeholder population and need their own arm.** `readNexus.ts` synthesises a placeholder for a `_space.json` carrying no usable id, `setSpaceOrder` filters through `persistable`, and `stampFolder`'s kind domain is `collection | set` — nothing in `adopt.ts` touches a space sidecar at all. `stampAdopted` cannot heal it either, since it skips dot-prefixed directories and every Space lives under `.nexus/`. Deleting the filter from three writers while only two have a stamper would carry this plan's own bug to a fourth surface.
 
 **Derivation**
 - `rg -F "persistable" Pommora/src` → **5** at planning time (4 in `main/crud/reorder.ts`, 1 prose hit in `renderer/src/Detail/Views/Table/viewMerge.ts`). After this task: **1**.
@@ -233,7 +242,9 @@ Opened by **Task 1**, closed by **Task 4**. While open, Pommora stamps identity 
 
 **Failure half:** an order naming an id the container doesn't hold → ignored, the rest still order. A container holding both pages and sets with one order array → confirm which collection the array addresses; a page order must not reorder folders. An empty order → tree returned unchanged, not emptied.
 
-**Must agree:** the optimistic patch and `resolveOrder` in `main/order.ts` must produce the same sequence from the same order array — including the tail rule, where an unlisted entity sorts by title after the listed ones. If the patch appends unlisted entities in a different order than the read path does, the row moves twice on every drop. One test crosses both.
+**Must agree:** the optimistic patch and `resolveOrder` in `main/order.ts` must produce the same sequence from the same order array — including the tail rule for entities the array doesn't name. **They diverge today, and the divergence is invisible to the obvious test.** `resolveOrder` title-sorts the unlisted tail; `treeMove.ts`'s `byOrder` gives every unlisted entity the same sort key, so a stable sort leaves them in their current relative order. With one unlisted entity the two agree and a parity test passes vacuously — the divergence needs **two or more**. Fix the comparator in `byOrder` rather than the read path, and write the crossing test with at least two unlisted entities.
+
+**Adjacent gap, same arm:** a drop-at-position into a *different* folder has the same symptom. `relocateNodeInTree` appends the node to the destination's end and no order patch follows, so the row jumps once when the walk lands. Requirement 3 names same-parent only, but `moveSet`'s arm already handles both cases — collapsing the two arms fixes the cross-parent case for free. Do that if their shapes converge; note it and leave it if they don't.
 
 **Steps:**
 - [ ] Read `treeMove.ts`'s `reorderChildrenInTree` and `byOrder`, and `main/order.ts`'s `resolveOrder`.
@@ -261,7 +272,9 @@ Opened by **Task 1**, closed by **Task 4**. While open, Pommora stamps identity 
 
 **Requirement:** 4
 
-**Why:** `gesture.ts` holds one module-level `live` gesture and refuses a begin while it is set. `live` is cleared only inside `detach`, which is skipped if `onActivate` or `onDragMove` throws — so a single exception in any consumer's callback refuses **every drag in the application** until the renderer reloads. Those callbacks do real work: rect loops, scroller resolution, snapshot measurement. Seven surfaces are exposed today and Tasks 6–8 add four more, so this is hardened before the migration rather than after it.
+**Why:** `gesture.ts` holds one module-level `live` gesture and refuses a begin while it is set. `live` is cleared only inside `detach`, which is skipped if `onActivate` or `onDragMove` throws — so a single exception in any consumer's callback would refuse **every drag in the application** until the renderer reloads. Those callbacks do real work: rect loops, scroller resolution, snapshot measurement. Seven surfaces are exposed today and Tasks 6–8 add four more, so this is hardened before the migration rather than after it.
+
+**This is hardening against an unobserved class, not a reproduced bug.** The mechanism is traced and real — the callbacks sit outside any `try`, and `live` nulls only after `teardown`, so a throwing teardown wedges it too — but nothing was found that actually throws. The change is a `try/finally` around three lines, which is proportionate either way. Do not describe it in the commit as a fix for an observed failure. One cheap confirmation before implementing: in the running app's console, throw from a consumer's `onDragMove`, then try to drag anything else.
 
 **Files:**
 - Modify: `Pommora/src/renderer/src/design-system/interactions/gesture.ts` — the `move` handler's calls into `spec.onActivate` and `spec.onDragMove`.
@@ -285,8 +298,9 @@ Opened by **Task 1**, closed by **Task 4**. While open, Pommora stamps identity 
 
 **Files:**
 - Modify: `Pommora/src/renderer/src/Sidebar/sidebarDnd.tsx` — replace the lifecycle with `usePointerGesture`; move the scroll listener and autoscroll start into `onActivate`, their teardown into `teardown`. `computeTarget` and the commit derivation stay untouched in this task.
-- Modify: `Pommora/src/renderer/src/Sidebar/Sidebar.tsx` — scope each layer's DnD index to its own section, so the cross-fade stops building two full-tree indexes.
 - Read first: `Pommora/src/renderer/src/Components/Detail/paneDnd.tsx` — the precedent.
+
+*The per-layer index rescope moved out to Task 6b. It changes what the drop resolves against, which contradicts this task's own baseline invariant and would make any regression un-attributable — the same reason `computeTarget` is deferred to Task 9.*
 - Test: `Pommora/src/renderer/src/Sidebar/sidebarDnd.test.tsx` (exists).
 
 **Interfaces**
@@ -308,6 +322,27 @@ Opened by **Task 1**, closed by **Task 4**. While open, Pommora stamps identity 
 - [ ] Scope the per-layer index in `Sidebar.tsx`.
 - [ ] Full gate; confirm the pass count moved only by the new test.
 - [ ] Commit: `refactor(sidebar): the drag consumes the shared gesture skeleton`
+
+#### Task 6b: Each sidebar layer indexes its own section
+
+**Requirement:** 5
+
+**Why:** `SidebarDnd` mounts twice — once for contexts, once for collections — and each builds a full-tree index even though each renders one half. During the mode cross-fade both are mounted, so two full indexes exist for the length of the transition. Split from Task 6 because it changes what `buildIndex` puts in `byId`, which is what every drop resolves against; bundled into a lifecycle migration it would make a behavioural regression impossible to attribute.
+
+**Files:** `Pommora/src/renderer/src/Sidebar/Sidebar.tsx` · `Pommora/src/renderer/src/Sidebar/sidebarDndModel.ts` (`buildIndex`) · test at `Sidebar/sidebarDndModel.test.ts` (exists)
+
+**Failure half:** a drop whose target lives in the other layer's half of the tree → must refuse rather than resolve against a missing entry. Confirm which cross-layer drops are reachable before narrowing the index; a Space and a Collection are never siblings, but a scoped index that drops a needed parent breaks the depth derivation.
+
+**Negative control:** a test asserting the contexts layer's index holds no collection entries must go red against the current full-tree build.
+
+**Baseline invariant:** drop behaviour unchanged. The suite's pass count moves only by the new test.
+
+**Steps:**
+- [ ] Read `buildIndex` and both mount sites.
+- [ ] Write the failing test for the scoped index; run — expect red.
+- [ ] Scope the build per layer; re-run.
+- [ ] Full gate; drag in both sidebar modes in the running app.
+- [ ] Commit: `perf(sidebar): each layer indexes its own section`
 
 #### Task 7: The option and status reorder hooks consume the skeleton
 
@@ -593,6 +628,7 @@ Opened by **Task 1**, closed by **Task 4**. While open, Pommora stamps identity 
 - [ ] **Phase 2** — Harden the skeleton, then migrate onto it
   - [ ] Task 5 — A gesture whose callback throws tears itself down
   - [ ] Task 6 — The sidebar consumes the shared gesture skeleton
+  - [ ] Task 6b — Each sidebar layer indexes its own section
   - [ ] Task 7 — The option and status reorder hooks consume the skeleton
   - [ ] Task 8 — The table's column drag consumes the skeleton
   - [ ] Gate 2
@@ -616,6 +652,15 @@ Opened by **Task 1**, closed by **Task 4**. While open, Pommora stamps identity 
 ### Open Against Later Tasks
 
 - **Task 8** carries an unverified finding: the column drag's commit-path bounds check may be dead code that permits stale column ids where the visual path guards correctly. Verify before acting; record the outcome either way.
+- **Task 9's signature forecloses what Sequenced After claims it enables.** A Y-only `slotAtY` shared by six callers makes adding a horizontal/depth term *harder*, not easier — the signature and six crossings all move. Either widen it now with an optional `x` five callers ignore, or correct the Sequenced After entry to say Task 9 does not help. Decide when Task 9 opens; do not leave both claims standing.
+- **Task 13's ghost-offset fold does not fit the sidebar.** The plan proposes absorbing the constant offset into `DragGhost` so callers pass raw pointer coordinates, but the sidebar's offset is a per-drag measured grab point, not the shared constant. Fold the five that share the constant; leave the sidebar's measured offset at its call site.
+- **Task 6b's index narrowing needs its reachable cross-layer drops enumerated** before the scope is cut. A scoped index that drops a parent the depth derivation needs is a silent wrong-depth bug, not a crash.
+
+### Pending Rulings *(these gate the tasks that carry them)*
+
+- **Task 2 — stamping scope on a reorder.** The order array is the full sibling group, so one drag in a folder of twenty id-less pages writes twenty files the user never touched. That contradicts this plan's own Shapes disclosure ("no existing file is touched until the user edits or moves it"). Either restate the disclosure honestly or scope the stamp to the dragged entity alone — which reopens the question of what happens to its unstamped siblings in the same array. **Nathan's call, before Task 2 opens.**
+- **Task 3 — what the renderer does when a move lands and its order does not.** Requirement 2 says an order write persists everything or fails and says so, but nothing defines the user-visible behaviour for the partial case. That is an interaction decision under the project's *Ask before designing* rule. **Nathan's call, before Task 3 opens** — or drop the partial-success field and keep Task 3 to the `setChildOrder` refusal alone.
+- **Phase order.** Written correctness-first. The user leaned drag-first. The attack review found no coupling between the phases in either direction and backed correctness-first on the verification argument: Task 9's acceptance is "the drop lands where the line promised," which cannot be judged against a layer that silently discards entries. **Nathan's call before Phase 1 opens.**
 
 ### Deviations
 
