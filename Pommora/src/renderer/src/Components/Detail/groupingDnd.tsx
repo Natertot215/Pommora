@@ -2,8 +2,8 @@
 // wiring and the insertion line live here. paneDnd doesn't fit: its two-region assigned/all
 // vocabulary has no parent/nest concept, and the hierarchy list needs reparent drops.
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { suppressNextClick } from '@renderer/design-system/interactions/shared'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import type { Band, BandIndex, BandSlot } from '../../Detail/Views/Table/bandDndModel'
 import { bandSlot, buildBandIndex, canNest } from '../../Detail/Views/Table/bandDndModel'
 
@@ -35,9 +35,6 @@ export function useGroupingListDrag({
 } {
   const container = useRef<HTMLDivElement | null>(null)
   const els = useRef(new Map<string, HTMLElement>())
-  const index = useRef<BandIndex | null>(null)
-  const boxTop = useRef(0)
-  const endY = useRef(0)
   const beginGesture = usePointerGesture()
   const live = useRef<BandSlot | null>(null)
   const cfg = useRef({ bands, nestable, onDrop })
@@ -47,33 +44,35 @@ export function useGroupingListDrag({
   const [nestTarget, setNestTarget] = useState<string | null>(null)
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null)
 
-  // The lists live in a scroll-capped region, so frozen rects go stale mid-drag; an invalidating
-  // event re-resolves from the last pointer point, so even a release without another move commits
-  // against current geometry. `bands` must be identity-stable across the hook's own per-move
-  // re-renders — a caller building it inline would turn every move into a full re-measure.
-  const snapshotDirty = useRef(false)
+  // The lists live in a scroll-capped region, so frozen rects go stale mid-drag. `bands` must be
+  // identity-stable across the hook's own per-move re-renders — a caller building it inline would
+  // turn every move into a full re-measure.
+  type Snapshot = { index: BandIndex; boxTop: number; endY: number }
   const lastPoint = useRef({ x: 0, y: 0 })
+  const snap = useDragSnapshot(takeSnapshot)
   useEffect(() => {
-    snapshotDirty.current = true
+    snap.markDirty()
   }, [bands])
 
-  const takeSnapshot = (): void => {
+  function takeSnapshot(): Snapshot {
     const measured = cfg.current.bands.flatMap((b) => {
       const el = els.current.get(b.id)
       if (!el) return []
       const r = el.getBoundingClientRect()
       return [{ id: b.id, top: r.top, bottom: r.bottom, mid: r.top + r.height / 2 }]
     })
-    index.current = buildBandIndex(cfg.current.bands, measured)
+    const index = buildBandIndex(cfg.current.bands, measured)
     const box = container.current?.getBoundingClientRect()
-    boxTop.current = box?.top ?? 0
-    endY.current = measured.at(-1)?.bottom ?? box?.bottom ?? 0
-    snapshotDirty.current = false
+    return {
+      index,
+      boxTop: box?.top ?? 0,
+      endY: measured.at(-1)?.bottom ?? box?.bottom ?? 0,
+    }
   }
 
   const reset = (): void => {
     live.current = null
-    index.current = null
+    snap.reset()
     setDraggingId(null)
     setLine(null)
     setNestTarget(null)
@@ -92,17 +91,16 @@ export function useGroupingListDrag({
       onPointerDown: (e) => {
         const anchor = els.current.get(id) ?? (e.currentTarget as HTMLElement)
         const resolveAt = (y: number): void => {
-          if (snapshotDirty.current) takeSnapshot()
-          const idx = index.current
-          if (!idx) return
-          let slot = bandSlot(idx, y, id, endY.current)
+          const s = snap.get()
+          if (!s) return
+          let slot = bandSlot(s.index, y, id, s.endY)
           // A non-nestable list (the flat Custom chips / flat sub-grouped sets) demotes a nest
           // slot to an after-slot at the same line; an illegal nest dies.
           if (slot?.nestInto) {
             if (!cfg.current.nestable || !canNest(id, slot.nestInto, cfg.current.bands)) slot = null
           }
           live.current = slot
-          setLine(slot && !slot.nestInto ? { y: slot.lineY - boxTop.current } : null)
+          setLine(slot && !slot.nestInto ? { y: slot.lineY - s.boxTop } : null)
           setNestTarget(slot?.nestInto ?? null)
         }
         beginGesture({
@@ -111,13 +109,13 @@ export function useGroupingListDrag({
           capture: false,
           onActivate: (ev) => {
             lastPoint.current = { x: ev.clientX, y: ev.clientY }
-            takeSnapshot()
+            snap.markDirty()
             setDraggingId(id)
             return true
           },
-          onWindowScroll: (ev) => {
-            if (!scrollMoved(ev, container.current)) return
-            snapshotDirty.current = true
+          scrollTarget: () => container.current,
+          onWindowScroll: () => {
+            snap.markDirty()
             resolveAt(lastPoint.current.y)
           },
           onDragMove: (ev) => {
@@ -126,10 +124,9 @@ export function useGroupingListDrag({
             resolveAt(ev.clientY)
           },
           onDrop: () => {
-            if (snapshotDirty.current) resolveAt(lastPoint.current.y)
+            if (snap.isDirty()) resolveAt(lastPoint.current.y)
             const slot = live.current
             if (slot) {
-              suppressNextClick() // the release must not also fire the row's disclosure toggle
               cfg.current.onDrop(id, {
                 kind: slot.nestInto
                   ? 'reparent'
