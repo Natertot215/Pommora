@@ -160,9 +160,9 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 **Negative control:** slot-resolution test with a simulated scroll delta — red against today's code.
 
 **Steps:**
-- [ ] Write the failing test; run — expect red.
-- [ ] Implement; full gate.
-- [ ] Commit: `fix(markdown): the table drag survives an editor scroll`
+- [x] Write the failing test; run — expect red. *(Red confirmed: the stale origin resolved the row's own slot and the drop never fired.)*
+- [x] Implement; full gate. *(typecheck 0 · lint 0 · 2,255 tests. Test landed as `dragOrigin.test.tsx` beside `widget.test.ts` — the widget file is decoration-level, and the drag needs the component harness.)*
+- [x] Commit: `fix(markdown): the table drag survives an editor scroll`
 
 #### Task 3: The table row drag dirties on a rows change
 
@@ -540,7 +540,7 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 
 - [ ] **Phase 1** — The stale-slot fixes · base `ba2a35ff`
   - [x] Task 1 — The grouping pane's snapshot invalidates · `<commit>`
-  - [ ] Task 2 — The GFM table drag re-bases its origin · `<commit>`
+  - [x] Task 2 — The GFM table drag re-bases its origin · `<commit>`
   - [ ] Task 3 — The table row drag dirties on a rows change · `<commit>`
   - [ ] Gate 1
 - [ ] **Phase 2** — The skeleton hardens
