@@ -175,9 +175,9 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 - Test: `Pommora/src/renderer/src/Detail/Views/Table/tableDnd.test.tsx` (exists).
 
 **Steps:**
-- [ ] Write the failing test (rows prop swaps mid-drag → next resolve re-measures); expect red.
-- [ ] Implement; full gate.
-- [ ] Commit: `fix(table): a mid-drag rows change re-measures the snapshot`
+- [x] Write the failing test (rows prop swaps mid-drag → next resolve re-measures); expect red. *(Red confirmed: the frozen snapshot held the dead row and the drop went silent.)*
+- [x] Implement; full gate. *(typecheck 0 · lint 0 · 2,256 tests. Rode along: `onActivate` now clears the dirty flag its own `measure` just satisfied, so the first move stops paying a redundant re-measure.)*
+- [x] Commit: `fix(table): a mid-drag rows change re-measures the snapshot`
 
 #### Gate 1 — no stale slot
 - [ ] Gate commands green, exit codes read directly.
@@ -541,7 +541,7 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 - [ ] **Phase 1** — The stale-slot fixes · base `ba2a35ff`
   - [x] Task 1 — The grouping pane's snapshot invalidates · `<commit>`
   - [x] Task 2 — The GFM table drag re-bases its origin · `<commit>`
-  - [ ] Task 3 — The table row drag dirties on a rows change · `<commit>`
+  - [x] Task 3 — The table row drag dirties on a rows change · `<commit>`
   - [ ] Gate 1
 - [ ] **Phase 2** — The skeleton hardens
   - [ ] Task 4 — Throwing callbacks and foreign pointers · `<commit>`
