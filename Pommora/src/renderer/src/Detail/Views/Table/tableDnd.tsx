@@ -14,6 +14,7 @@ import {
 } from '@renderer/design-system/interactions/dragDisclose'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
+import { announce } from '@renderer/design-system/interactions/a11y'
 import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 
@@ -238,6 +239,7 @@ export function TableRowDnd({
       onActivate: (ev) => {
         dragId.current = id
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
+        announce('Picked up row.')
         // Auto-scroll the vertical scroller. findScroller('y') is load-bearing: it SKIPS the x-only
         // '.table-view' to reach '.detail-scroll'. No onScrolled — the window scroll hook below
         // already re-resolves off the module's scrollBy.
@@ -264,7 +266,10 @@ export function TableRowDnd({
       onDrop: () => {
         if (snap.isDirty()) resolveSlot(lastPoint.current.y)
         const slot = live.current
-        if (slot && !slot.noop) slot.commit()
+        if (slot && !slot.noop) {
+          slot.commit()
+          announce('Moved row.')
+        }
         reset()
       },
       onAbort: reset,

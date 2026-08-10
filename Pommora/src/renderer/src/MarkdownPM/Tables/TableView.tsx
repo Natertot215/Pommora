@@ -3,6 +3,7 @@
 import './widget.css'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { resolveScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import { Icon } from '@renderer/design-system/symbols'
 import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
 import type { Align, TableModel } from './model'
@@ -207,6 +208,7 @@ export function TableView({
     reOrigin()
     const startRel = (axis === 'col' ? e.clientX : e.clientY) - origin
     let last = { x: e.clientX, y: e.clientY }
+    let stopScroll: (() => void) | null = null
     let current: Drag = { axis, from: index, to: index, delta: 0 }
     const resolve = (): void => {
       const rel = (axis === 'col' ? last.x : last.y) - origin
@@ -220,6 +222,14 @@ export function TableView({
       event: e,
       onActivate: () => {
         setDrag(current)
+        // A tall or wide table scrolls inside the editor — the edge loop reaches slots past the
+        // fold, axis-matched, and the window scroll hook re-bases off its scrollBy.
+        stopScroll = startAutoScroll({
+          getPoint: () => last,
+          scroller: resolveScroller(wrap, axis === 'col' ? 'x' : 'y'),
+          dragEl: wrap,
+          axis: axis === 'col' ? 'x' : 'y',
+        })
         return undefined
       },
       scrollTarget: () => wrap,
@@ -237,6 +247,10 @@ export function TableView({
         else remeasure.current = true
       },
       onAbort: () => setDrag(null),
+      teardown: () => {
+        stopScroll?.()
+        stopScroll = null
+      },
     })
   }
 

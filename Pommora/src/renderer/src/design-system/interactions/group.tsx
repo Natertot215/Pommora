@@ -12,6 +12,7 @@ import {
 import { createPortal } from 'react-dom'
 import { stack } from '../tokens/stack'
 import { useFeel } from './feel'
+import { announce } from './a11y'
 import { findScroller, startAutoScroll } from './autoscroll'
 import { beginDragDisclose, endDragDisclose } from './dragDisclose'
 import {
@@ -392,6 +393,7 @@ export function DragGroup({
       }
       frozen.current.set(d.zone, rects)
       d.active = true
+      announce('Picked up card.')
       d.rect = rect
       d.srcIdx = srcIdx
       // Row pitch = the smallest positive vertical step to another item (row-to-row in a grid; item-
@@ -514,6 +516,7 @@ export function DragGroup({
     setDropTarget({ x: tgt.x - rect.left, y: tgt.y - rect.top }) // fly the overlay to the landing slot
     arm(() => {
       onCommitRef.current(d.id, dropZone, toIndex)
+      announce('Moved card.')
       reset()
     })
   }

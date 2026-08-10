@@ -13,6 +13,11 @@ import { text } from '@renderer/design-system/tokens'
 import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
+import { announce } from '@renderer/design-system/interactions/a11y'
+import {
+  beginDragDisclose,
+  endDragDisclose,
+} from '@renderer/design-system/interactions/dragDisclose'
 import {
   DROP_LINE_INSET,
   EDITABLE_TARGETS,
@@ -144,13 +149,14 @@ export function BandDnd({
     if (!el) return
     // The shared gesture: window listeners drive it (the glyph is small, the first move usually
     // leaves it); capture defers to activation so a sub-threshold press stays inert.
-    beginGesture({
+    const started = beginGesture({
       el,
       event: e,
       onActivate: (ev) => {
         dragId.current = id
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         ghostLabel.current = labelForRef.current(id)
+        announce(`Picked up ${ghostLabel.current}.`)
         // Auto-scroll the vertical scroller. findScroller('y') skips the x-only '.table-view' to
         // reach '.detail-scroll'; onScrolled re-resolves a held-still drag as the bands scroll.
         const sc = findScroller(el, 'y')
@@ -190,15 +196,25 @@ export function BandDnd({
               targetParentId: slot.impliedParentId,
               beforeId: slot.beforeId,
             })
+          announce(`Moved ${ghostLabel.current}.`)
         }
         reset()
       },
       onAbort: reset,
       teardown: () => {
+        endDragDisclose()
         stopScroll.current?.()
         stopScroll.current = null
       },
     })
+    // Collapsed sibling bands are already registered by GroupBand — the bracket is the missing
+    // half, so a band drag springs them open the way a row drag always has.
+    if (started) {
+      beginDragDisclose(() => {
+        snap.markDirty()
+        resolveSlot()
+      })
+    }
   }
 
   const value = useMemo<Value>(
