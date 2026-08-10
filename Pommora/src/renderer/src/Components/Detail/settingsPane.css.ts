@@ -312,10 +312,10 @@ export const groupAdd = style([
   },
 ])
 
+/** Layout only — the drop line's positioning context comes from the shared `drop-line-host`. */
 export const optionList = style({
   display: 'flex',
   flexDirection: 'column',
-  position: 'relative', // the drag drop-line positions against this
   gap: `${OPTION.gapBetweenChips}px`,
   paddingTop: `${OPTION.gapAroundLabel}px`,
   vars: { '--chip-pad-x': `${OPTION.chipPadX}px` },

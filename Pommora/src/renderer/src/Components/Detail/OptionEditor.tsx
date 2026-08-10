@@ -15,6 +15,7 @@ import { Chip, chipShapeForType } from '../Chip'
 import { EditableInput } from '../EditableInput'
 import { ColorPicker } from './ColorPicker'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
+import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from './settingsPane.css'
 
@@ -79,7 +80,7 @@ export function OptionEditor({
           <Icon name="plus" size={s.ICON.optionsAdd} />
         </button>
       </div>
-      <div className={s.optionList} ref={reorder.containerRef}>
+      <div className={cx('drop-line-host', s.optionList)} ref={reorder.containerRef}>
         <DragGhost
           x={reorder.ghost?.x ?? null}
           y={reorder.ghost?.y ?? null}
@@ -157,15 +158,7 @@ export function OptionEditor({
             </span>
           </div>
         ) : null}
-        {reorder.lineTop !== null ? (
-          <div
-            className="drop-line"
-            aria-hidden
-            style={{ top: reorder.lineTop }}
-          >
-            <span className="drop-dot" />
-          </div>
-        ) : null}
+        {reorder.lineTop !== null ? <DropLine style={{ top: reorder.lineTop }} /> : null}
       </div>
     </div>
   )
