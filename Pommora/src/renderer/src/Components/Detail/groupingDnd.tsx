@@ -74,7 +74,6 @@ export function useGroupingListDrag({
   const reset = (): void => {
     live.current = null
     index.current = null
-    snapshotDirty.current = false
     setDraggingId(null)
     setLine(null)
     setNestTarget(null)
