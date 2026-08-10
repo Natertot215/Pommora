@@ -1167,8 +1167,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         }
       }
       // The cursor-follow is a grid-level var (one style write; the .col-dragging cells consume
-      // it) — React state updates only on activation + slot flips, never per move.
-      grid.style.setProperty('--col-drag-x', `${(lastX - startX) / zoom}px`)
+      // it) — React state updates only on activation + slot flips, never per move. Anchored to the
+      // column's FLOWED centre, which scrolls with the grid, so an auto-scroll can't slide the
+      // lifted column off the pointer.
+      grid.style.setProperty(
+        '--col-drag-x',
+        `${(projected - (gridLeft + lefts[from] + widths[from] / 2)) / zoom}px`,
+      )
       if (!current || current.to !== to) {
         current = { from, to, id: dragId }
         setColDrag(current)

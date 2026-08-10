@@ -210,6 +210,8 @@ export function BandDnd({
       beginDragDisclose(() => {
         snap.markDirty()
         resolveSlot()
+        // The reveal is still animating — stay dirty so the drop re-measures at its own moment.
+        snap.markDirty()
       })
     }
   }

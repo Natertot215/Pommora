@@ -283,6 +283,8 @@ export function TableRowDnd({
       beginDragDisclose(() => {
         snap.markDirty()
         resolveSlot(lastPoint.current.y)
+        // The reveal is still animating — stay dirty so the drop re-measures at its own moment.
+        snap.markDirty()
       })
     }
   }
