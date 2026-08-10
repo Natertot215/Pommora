@@ -24,13 +24,11 @@ The parser matches on the title alone, so `[[Title|alias]]` resolves to the same
 
 ### Resolution
 
-A scanned title lands in one of three states:
+A scanned title, matched through one shared normalization, lands in one of three states:
 
 - **Resolved** — one Page holds the title; the link is styled and navigable, its target's ULID in memory.
 - **Ambiguous** — several Pages hold it, so no target can be picked; the link is muted and inert until one side is renamed.
 - **Phantom** — no Page holds it; the link stays literal bracketed text, going live on the editor's next update once a single match exists.
-
-One shared normalization matches titles everywhere.
 
 ### The Rename Cascade
 

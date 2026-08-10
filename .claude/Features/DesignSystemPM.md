@@ -1,5 +1,28 @@
 ## Design System
 
+```
+Design System
+├── Design Philosophy
+├── Tooling
+├── The Token Atlas
+│   ├── Primitives
+│   ├── Surfaces
+│   ├── Labels
+│   ├── States
+│   ├── Fills
+│   ├── Tints
+│   ├── Separators
+│   ├── Shadows
+│   ├── Spectrum
+│   ├── Geometry
+│   └── Materials
+├── Component Chrome
+├── Showcase
+├── Where the Rest Lives
+├── Known Issues
+└── Pending
+```
+
 The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values and the visual reference for components. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them. Typography has its own spec in [[TypographyPM]]; motion lives in [[InteractionPM]].
 
 This document is the sanctioned exception to the "docs name; code holds exacts" rule: its tables state literal values so what exists is legible without opening the token files. Every table carries a **SOURCE** line naming the file it must agree with — a value changes in code first, and the table follows in the same commit. Before authoring any new style or mechanism, this atlas is the first read; what a surface needs usually already exists here.
@@ -59,7 +82,7 @@ The text ladder — system-white at descending presence. Primary is the raw prim
 
 #### States
 
-The interaction states — two grey washes, one black veil, and two opacity dims. Hover and selected are fills painted behind content; muted is painted over it; ghost and disabled are consumed as `opacity:` on the element itself.
+The interaction states — two grey washes, one black veil, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; drag, ghost, and disabled are consumed as `opacity:` on the element itself. Those three hold their own bare numbers rather than tint-ladder steps, since they are never mixed into a colour, and they read as one ramp: the more a stand-in carries the original's presence, the less the original fades.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
@@ -68,8 +91,9 @@ The interaction states — two grey washes, one black veil, and two opacity dims
 | Hover | `state.hover` · `--state-hover` | system-grey @ 2.5% |
 | Selected | `state.selected` · `--state-selected` | system-grey @ 5% |
 | Muted | `state.muted` · `--state-muted` | system-black @ 10% |
-| Ghost | `--state-ghost` | `var(--tint-primary)` |
-| Disabled | `--state-disabled` | base @ 40% |
+| Drag | `--state-drag` | base @ 85% — a card whose lifted clone floats alongside it |
+| Ghost | `--state-ghost` | base @ 65% — a reordering source with nothing standing in |
+| Disabled | `--state-disabled` | base @ 50% — a present but inert control |
 
 #### Fills
 
@@ -101,13 +125,12 @@ The one opacity ladder any base color is mixed at — `tintAt(base, step)` is `c
 
 #### Separators
 
-Hairlines and the composed border shorthands built on them, plus the banner's legibility scrim. `separator.line` and `separator.border` share one value — `line` is the TS-side spelling, `border` the bridged one.
+Hairlines and the composed border shorthands built on them, plus the banner's legibility scrim.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
 | Title | Token | Value |
 | --- | --- | --- |
-| Separator Line | `separator.line` | system-grey @ 25% |
 | Separator Border | `separator.border` · `--separator-border` | system-grey @ 25% |
 | Separator Segment | `separator.segment` · `--separator-segment` | system-grey @ 20% |
 | Heading Seam | `--border-heading` | `1.75px solid var(--separator-border)` |
@@ -156,7 +179,7 @@ The ten selectable solids plus the neutral chip default — authored once in `@s
 
 The glyph ladder, the per-size control bundles, and the bare layout constants JS math consumes as numbers. The disclosure step is the one literal every hierarchy derives its per-level inset from.
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/size.css.ts`
+**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/size.css.ts` · `tokens/theme-vars.css.ts`
 
 | Title | Token | Value |
 | --- | --- | --- |
@@ -168,6 +191,7 @@ The glyph ladder, the per-size control bundles, and the bare layout constants JS
 | Fold Gutter | `FOLD_GUTTER` · `--fold-gutter-base` | `20px` |
 | Drop-Line Inset | `DROP_LINE_INSET` · `--drop-line-inset` | `2px` |
 | Tile Minimum | `TILE_MIN_PX` | `64px` |
+| Pill Radius | `--radius-full` | `999px` — larger than any box that wears it, so both ends resolve to semicircles |
 
 The drag chrome's other two dimensions live beside the inset in the bridge: `--drop-line-thickness` (`2px`) and `--drop-dot-size` (`7px`), with `--drag-line` pointing at the accent. The list-outline rail (`--list-outline-*`: `2px` · segment tone · `999px` · `3px`) is the shared nested-run rail consumed by MarkdownPM's outliner and the grouping hierarchy.
 

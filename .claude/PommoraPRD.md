@@ -42,7 +42,7 @@ User-defined, **free-standing** Context groups holding Spaces — the registry s
 
 #### Operational layer
 
-| Entity              | Role                                                                                                                      | Default UI label  |
+| Entity              | Role                                                                                                                      | Default UI Label  |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | **Page Collection** | Schema-bearing top container for Pages                                                                                    | "Collection"      |
 | **Page Set**        | Recursive sub-folder inside a Collection (any depth); inherits the schema. Depth-1 carries its own views; deeper is plain | "Set" / "Sub-Set" |
@@ -76,7 +76,7 @@ Pommora is an Electron desktop app — a React + TypeScript renderer over a Node
 
 The main process is the sole filesystem owner; the renderer never touches Node. One shared bridge map declares every IPC channel once — both sides derive from it, and IPC never throws across the boundary: data channels return one structured result envelope. Full architecture → `Features/ArchitecturePM.md`.
 
-#### Load-Bearing Constraints
+#### Core Constraints
 
 1. **Cloud-sync-ready and cross-nexus queryable.** Collections aren't isolated silos — property definitions live nexus-wide, so one shared property id means the same thing in every Collection that assigns it and a single query matches across all of them; any Page or Context can query, link, or embed any Collection's contents regardless of where it sits on disk. The on-disk model maps cleanly onto a cloud database, so sync arrives later as an additive translation rather than a rewrite. A Nexus placed in iCloud Drive, Dropbox, or any synced folder already gets device-to-device sync for free.
 
@@ -86,7 +86,7 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 **Files are canonical.** Everything a user creates lives as a plain file in a folder they pick, and that folder is the whole product — it can sit in any synced location and travels intact. Pages, Tasks and Events are Markdown with YAML frontmatter; Contexts and all configuration are JSON. Databases are used sparingly, but aren't prohibited as a means of carrying information; they're reserved as operational-only, and an information-bearing role isn't out of the question. **The line runs at assignment.** A property *definition* — its name, type, options and formats — may move into the database, and the file format is what makes that safe: because a Page's frontmatter names its own properties, losing the registry costs presentation config rather than the ability to read a value. An *assignment* (which properties a Collection carries) stays on that Collection's sidecar, and a *value* stays in its Page's frontmatter, so a Nexus's structure and its content both remain readable from the files alone.
 
-**Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_space.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar — folder names stay freely renameable, and no file extension ever carries a kind. The content file inside must AGREE with the folder that declares it, storing its id under the key naming that kind; one whose key contradicts its folder is Unknown — invisible, untouched, never stamped over. App-internal config and the device-local database live under a hidden `.nexus/` folder that travels with the Nexus.
+**Kind comes from the folder's sidecar, not the file.** Each container folder carries a small config sidecar that declares what it is and what schema its contents share — `_pagecollection.json`, `_pageset.json`, `_space.json`, `_taskconfig.json` / `_eventconfig.json`. A folder *is* a Page Collection because it holds the Page Collection sidecar — folder names stay freely renameable, and no file extension ever carries a kind. The content file inside must agree with the folder that declares it, storing its id under the key naming that kind; one whose key contradicts its folder is Unknown — invisible, untouched, never stamped over. App-internal config and the device-local database live under a hidden `.nexus/` folder that travels with the Nexus.
 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault leaves notes byte-identical until the user edits them.
 
@@ -115,9 +115,9 @@ Moving a Page **across Collections** never strips — its values ride along, the
 
 #### Contexts & Spaces
 
-`.nexus/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, chip-solid color, banner, its block doc, and its own relation keys). There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
+`.nexus/contexts.json` owns Context identity — id, title, singular, icon, array order as display order — and each Space is a folder at `.nexus/contexts/<Context>/<Space>/` gated by its `_space.json` sidecar (id, chip-solid color, banner, and its own relation keys); its block document is a device-local row (→ Features/SurfacePM.md). There is no `parents` field and no containment. The folder name is the title; renaming in the UI runs the journaled title cascade across every member file.
 
-A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's parenthesized key, and the Space reads back every entity that tags it through a reverse index query — Spaces carry no schema and store no inbound list. Space-to-Space links ride the same parenthesized keys in a Space's own sidecar. Full detail → `Features/ContextsPM.md`.
+A Context link is a **dual surface**: an operational entity tags a Space by holding its title under the Context's parenthesized key, and the reverse direction — every entity tagging a Space — resolves through a query rather than a stored inbound list; Spaces carry no schema. Space-to-Space links ride the same parenthesized keys in a Space's own sidecar. Full detail → `Features/ContextsPM.md`.
 
 #### Agenda (Tasks + Events)
 
@@ -160,7 +160,7 @@ Every entity reorders by drag-and-drop, and Pages reparent across the tree. Crea
 
 #### App Shell + Property Surfaces
 
-A three-pane shell: sidebar / main / inspector, both side panes drag-resizable with persisted widths. The inspector is reserved for the **Claude chat** (a frontend to a local CLI, not an API integration); its own design pass is pending. Properties do *not* live there — they live with the content, in a panel attached to the Page. Inspector → `Features/SubfieldPM.md`.
+A three-pane shell: sidebar / main / inspector, both side panes drag-resizable with persisted widths. The inspector is reserved for the **Claude chat** (a frontend to a local CLI, not an API integration); its own design pass is pending. Properties do *not* live there — they live with the content, in a panel attached to the Page.
 
 Every entity opens under a consistent header. Containers can set an optional **banner** image that bleeds edge-to-edge under the side panes; when set, the title overlays its bottom-leading corner, and the banner and title lock in place while the body scrolls.
 

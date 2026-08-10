@@ -17,7 +17,7 @@ A Page is one Markdown file inside a [[CollectionsPM|Collection]] — the operat
 
 ### On-Disk Shape
 
-Frontmatter carries `PageID` — the key naming the kind, holding a bare ULID — an optional `icon`, `created_at` / `modified_at`, and `cover` — a Nexus-relative page-banner path — plus the wrapped keys: `(Context)` keys naming Spaces, and one `<Property>` key per value the page holds. The wrap separates a property from a modeled root field, which is why `cover` is not a property and never appears in a properties surface. Property values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write; the writer re-serializes only the modeled keys.
+Frontmatter carries `PageID` — the key naming the kind, holding a bare ULID — an optional `icon`, `created_at` / `modified_at`, and `cover` — a Nexus-relative page-banner path — plus the wrapped keys: `(Context)` keys naming Spaces, and one `<Property>` key per value the page holds. The wrap separates a property from a modeled root field; `cover` is a root field and never appears in a properties surface. Property values conform to the owning Collection's schema. Foreign frontmatter keys — and YAML comments — are preserved by value on every write; the writer re-serializes only the modeled keys.
 
 `modified_at` answers to a property value change, a text change, a location change, and a rename. A schema-level edit is not one of them — renaming a property rewrites the key on every page holding it without moving a stamp, since a derived rewrite is not a user modification, and the `[[link]]` rename cascade runs under the same rule.
 
@@ -53,7 +53,7 @@ Opening a folder adopts it: every `.md` carrying no kind key is stamped with a f
 
 ### Prospects
 
-- **Page Property Panel** — a property panel on the entity itself, Pages and Agenda items alike; the values are on disk, the surface isn't built.
+- **Page Property Panel** — a property panel on the entity itself, Pages and Agenda items alike. The Page Preview's front-matter inspector is the one shipped value surface (→ [[PropertiesPM]]); the in-content panel isn't built.
 - **Sub-Pages** — a nested Page hierarchy beyond the current flat Page-in-container model.
 - **Independent UI titles** — a display title distinct from the filename, so a rename needn't move the file.
 - **Ad-hoc properties** — Page-local frontmatter fields outside the Collection schema.

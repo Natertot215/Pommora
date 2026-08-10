@@ -16,7 +16,7 @@ Since the baseline: Cards as the second renderer with its interaction hardening 
 
 ### UPCOMING VERSIONS
 
-The near-term structural queue — the IPC channel map, the store split, and the Pages-in-DB storage-model session — rides `ContextPM.md`'s Pending Focuses rather than a version number; feature clusters resume below once those land. One prerequisite spans several clusters: Linked-From, backlinks, ContextView, and full-text search all need a content index, and none exists — its replacement gets written alongside the query layer that reads it, updating a row at a time, with the database, driver seam, and version handshake already in place for it.
+The near-term structural queue — the store split and the Pages-in-DB storage-model session — rides `ContextPM.md`'s Pending Focuses rather than a version number; feature clusters resume below once those land. One prerequisite spans several clusters: Linked-From, backlinks, ContextView, and full-text search all need a content index, and none exists — its replacement gets written alongside the query layer that reads it, updating a row at a time, with the database, driver seam, and version handshake already in place for it.
 
 ### v0.6.0 — The View Renderers
 

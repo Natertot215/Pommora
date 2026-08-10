@@ -27,14 +27,14 @@ Properties
 └── Known Issues
 ```
 
-Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and populated on the members of every Collection that assigns it — the registry declares each property's type and per-type config, a Collection's assignment list names which registry properties its Pages validate and show, and member entities store the values. The same type catalog applies to Pages, Tasks, and Events; Agenda keeps its own definitions on its config sidecars. The on-disk file is canonical.
+Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and populated on the members of every Collection that assigns it — the registry declares each property's type and per-type config, a Collection's assignment list names which registry properties its Pages validate and show, and member entities store the values. The same type catalog applies to Pages, Tasks, and Events; Agenda's kinds are modeled to keep their own definitions on their config sidecars, though a seeded config carries identity only until the Agenda rethink builds that schema (→ [[AgendaPM]]). The on-disk file is canonical.
 
 | Scope | Definitions |
 | --- | --- |
 | Nexus-wide registry | `.nexus/properties.json` → `propId → definition` |
 | Page Collection | `<Collection>/_pagecollection.json` → `properties[]` (assigned registry ids) |
-| Task | `<Tasks>/_taskconfig.json` → `property_definitions[]` (own defs — separate from the registry) |
-| Event | `<Events>/_eventconfig.json` → `property_definitions[]` (own defs — separate from the registry) |
+| Task | `<Tasks>/_taskconfig.json` → `property_definitions[]` (own defs — separate from the registry; unbuilt) |
+| Event | `<Events>/_eventconfig.json` → `property_definitions[]` (own defs — separate from the registry; unbuilt) |
 
 A Page's values are wrapped title keys at its frontmatter root; a Task's or Event's are the same wrapped keys at its JSON root, resolved against that kind's own `property_definitions`. Page Sets carry no schema of their own and inherit the Collection's. A definition — options included — is one shared object everywhere it's assigned; genuinely divergent needs get a separate property.
 
@@ -170,11 +170,11 @@ At every write, a created property's `name` is non-empty and its `id` is unique 
 
 Filter, sort, and group run renderer-side over the frontmatter the walk already carries; the registry file is the single source, mirrored nowhere.
 
-**The sigil governs; the registry registers.** A wrapped key is Pommora's — sweepable, and distinguishable from foreign frontmatter (which is also what lets Sapphire hide it). A key registers as a live value only when its name matches a definition, so resolution runs definition-first: the schema supplies the key, and the frontmatter is read at it. Context keys resolve at walk assembly; property values load when a container opens, each container building one id→definition index. Full data layer → [[ArchitecturePM]].
+**The sigil governs; the registry registers.** A wrapped key is Pommora's — sweepable, and distinguishable from foreign frontmatter. A key registers as a live value only when its name matches a definition, so resolution runs definition-first: the schema supplies the key, and the frontmatter is read at it. Context keys resolve at walk assembly; property values load when a container opens, each container building one id→definition index. Full data layer → [[ArchitecturePM]].
 
 ### Chip Tokens
 
-The chip is the property value's rendered form, so its design vocabulary lives here. One tint recipe drives every color — the picked base solid at fixed tint steps (a heavier fill, a lighter stroke, a near-white text wash carrying a faint tint of the base) — and it composes with any shape; no custom colors, no lightening. Tables follow the atlas convention ([[DesignSystemPM]] §charter).
+The chip is the property value's rendered form, so its design vocabulary lives here. One tint recipe drives every color — the picked base solid at fixed tint steps (a heavier fill, a lighter stroke, a near-white text wash carrying a faint tint of the base) — and it composes with any shape; no custom colors, no lightening. Tables follow the atlas convention ([[DesignSystemPM]]).
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/chip.css.ts` · `tokens/tint.ts` · `tokens/colorMap.ts`
 

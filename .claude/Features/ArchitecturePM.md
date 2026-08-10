@@ -88,7 +88,7 @@ A deleted entity moves to `.trash/` under the folder chain it came from, as a bu
 
 #### Folder Exclusion
 
-`excluded_folders` on `settings.json` takes anchored nexus-relative paths the read walk, the adoption pass, and the watcher ignore at any depth — never adopted, shown, indexed, or auto-tagged. The title cascades are the exception: they rewrite every `.md` under the root, keeping an excluded folder's `[[link]]`s and Context keys correct.
+`excluded_folders` on `settings.json` takes anchored nexus-relative paths the read walk, the adoption pass, and the watcher ignore at any depth — never adopted, shown, indexed, or auto-tagged. The rename cascades are the exception: they rewrite every `.md` under the root, keeping an excluded folder's `[[link]]`s and Context keys correct.
 
 ### The Read + State Layer
 
@@ -96,7 +96,7 @@ The read side is one eager, read-only walk in main (`readNexus`) producing a pre
 
 The single walk stays cheap through an mtime-gated parse cache that reuses decoded sidecars and frontmatter for unchanged files, self-write suppression that keeps the watcher from re-walking the app's own mutations, and a structural-sharing stabilize pass that collapses an unchanged subtree back to its previous object identity so a refetch re-renders only what moved.
 
-Renderer lookups over the tree derive from `treeIndex` — one record per entity (kind, id, title, resolved icon, path, breadcrumbs), cached against the tree object itself. The record list keeps duplicate ids so title resolution can still answer "ambiguous," while the keyed projections collapse last-wins; the reconcile, resolve, search, connections, and thumbnail tables all derive from the same records. The reserved `context` selection kind reconciles dead by declaration — a Context group is a disclosure rather than a destination.
+Renderer lookups over the tree derive from `treeIndex` — one record per entity (kind, id, title, resolved icon, path, breadcrumbs), cached against the tree object itself. The record list keeps duplicate ids so title resolution can still answer "ambiguous," while the keyed projections collapse last-wins; the reconcile, resolve, search, connections, and thumbnail tables all derive from the same records. The reserved `context` selection kind always reconciles to nothing — a Context group is a disclosure rather than a destination, so no stored selection may resolve to one.
 
 The write path never runs inside a read, and every write is followed by one refetch.
 
@@ -110,9 +110,9 @@ Each handler declares its boundary policy beside its body. Enveloped channels �
 
 `<nexus>/.nexus/nexus.db` travels with the Nexus, keeping a moved or renamed one intact without re-pathing, and holds one table of substance — `local_state`, keyed by `(scope, key)`. DDL is canonical in `src/main/db/schema.ts`; `node:sqlite` sits behind `driver.ts` as the swappable seam.
 
-**What lives here** is per-machine chrome — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, the recents stream, and every block host's document. None of it is authored content, and two machines interleaving any of it has no correct answer.
+**What lives here** is per-machine chrome — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, the recents stream, and every block host's document (→ [[SurfacePM]]). None of it is authored content, and two machines interleaving any of it has no correct answer.
 
-**What doesn't:** pinned and favorites live in `navigation.json` — deliberate, rarely written, and the one part of Navigation worth following a user across machines — as ordered arrays of bare `{kind, id}` refs written as a serialized patch. A markdown tile's body stays a file; it is prose and lives in the connections graph. Everything canonical — the registry, Contexts, settings, schemas, and each host's sidecar — stays a file, where a Nexus's meaning survives without Pommora.
+**What doesn't:** pinned and favorites live in `navigation.json` — rarely written, and the one part of Navigation worth following a user across machines — as ordered arrays of bare `{kind, id}` refs written as a serialized patch. A markdown tile's body stays a file; it is prose and lives in the connections graph. Everything canonical — the registry, Contexts, settings, schemas, and each host's sidecar — stays a file, where a Nexus's meaning survives without Pommora.
 
 A Pommora-governed frontmatter key is recognized by its wrap alone — `(Context)` for the organization layer, `<Property>` for the attribute layer — partitioning the keyspace with no reserved-name blocklist while every foreign key and comment survives a rewrite. Recognizing a key is not resolving one; a key registers as a live value only on a registry match (→ [[PropertiesPM]]).
 
@@ -174,3 +174,4 @@ The database side is covered above — a version mismatch deletes the file and s
 
 - **Trash restore surface** — the restore action is IPC-reachable; no surface browses the trash or invokes it (→ [[NexusRecordPM]]).
 - **Folder-exclusion editing UI** — `excluded_folders` is hand-edited; its Settings surface is deferred.
+- **The content index** — Linked-From, backlinks, ContextView, and full-text search all need a content index, and none exists. Its replacement gets written alongside the query layer that reads it, updating a row at a time; the database, the driver seam, and the version handshake are already in place for it.

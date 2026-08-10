@@ -59,7 +59,7 @@ One app-wide primitive drives every drag's edge-scroll: a singleton rAF loop eac
 
 The loop reads the last pointer point every frame, so holding still at an edge keeps scrolling; it ramps by edge proximity and advances the scroller in pixels-per-second scaled by the frame delta, with sub-pixel accumulation, so the speed is identical at any refresh rate. Two feel behaviors ride on top: **distance-based acceleration** eases a scroll run in from a non-zero floor and climbs toward a ceiling with the distance it has covered, resetting when the pointer leaves the edge band, and **direction-intent** withholds a direction until the pointer has left that edge band once, so grabbing an item already pinned at an edge doesn't rocket the container. The tunables are tokens read off the drag element once at drag start and cached; a surface overrides any of them by setting the var on itself or an ancestor (→ [[InteractionPM]] §Autoscroll Tuning).
 
-A termination backstop stops the loop — each surface still aborts its own gesture — so a focus-steal can't strand it running, and a single frame's delta is clamped so an rAF stall can't teleport the scroll. The sort engines, every insertion-line surface, the table's columns along the x axis, and the GFM table inside the editor all feed this one loop.
+A termination backstop stops the loop — each surface still aborts its own gesture — so a focus-steal can't strand it running, and a single frame's delta is clamped so an rAF stall can't teleport the scroll.
 
 ### Constraints & Accessibility
 
