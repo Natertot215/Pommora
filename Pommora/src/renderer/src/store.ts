@@ -246,6 +246,7 @@ interface SessionState {
   settingsOpen: boolean
   openSettings: () => void
   closeSettings: () => void
+  toggleSettings: () => void
 
   preview: PreviewState | null
   previewsFile: PreviewsFile
@@ -1100,6 +1101,7 @@ export const useSession = create<SessionState>((set, get) => {
     settingsOpen: false,
     openSettings: () => set({ settingsOpen: true }),
     closeSettings: () => set({ settingsOpen: false }),
+    toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
     preview: null,
     previewsFile: EMPTY_PREVIEWS,
     previewTarget: null,

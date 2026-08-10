@@ -58,6 +58,27 @@ describe('Ribbon', () => {
     expect(setPersonalizationSpy).not.toHaveBeenCalled()
   })
 
+  it('the window icons toggle — the icon that summoned a window dismisses it', () => {
+    const toggleNavSpy = vi.fn()
+    const toggleSettingsSpy = vi.fn()
+    act(() =>
+      useSession.setState({
+        toggleNav: toggleNavSpy as never,
+        toggleSettings: toggleSettingsSpy as never,
+      }),
+    )
+    const click = (label: string): void => {
+      const b = buttons().find((x) => x.getAttribute('aria-label') === label)!
+      act(() => b.click())
+    }
+    click('navigation')
+    click('navigation')
+    click('settings')
+    click('settings')
+    expect(toggleNavSpy).toHaveBeenCalledTimes(2)
+    expect(toggleSettingsSpy).toHaveBeenCalledTimes(2)
+  })
+
   it('reflects the active mode via aria-selected, with no highlight class', () => {
     const collections = buttons().find((b) => b.getAttribute('aria-label') === 'collections')!
     expect(collections.getAttribute('aria-selected')).toBe('true')
