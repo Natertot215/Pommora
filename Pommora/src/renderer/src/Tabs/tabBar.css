@@ -72,7 +72,7 @@
   color: var(--label-control);
 }
 .tab-pinned.is-dragging {
-  opacity: var(--drag-muted);
+  opacity: var(--state-ghost);
 }
 
 /* ---- segment divider between the zones ---- */

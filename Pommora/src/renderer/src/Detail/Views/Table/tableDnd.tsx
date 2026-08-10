@@ -19,7 +19,7 @@ import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 
 // Table row drag — the sidebar drop-line gesture: an accent insertion LINE marks the exact slot,
-// the picked-up row mutes in place (--drag-muted), and NO row displaces. Where you drop disambiguates:
+// the picked-up row mutes in place (--state-ghost), and NO row displaces. Where you drop disambiguates:
 // a slot inside the dragged row's own group reorders it (viewOrders); a slot in another group
 // reassigns the grouped property (setProperty). The commits live in TableView and are passed in — this
 // file owns only the gesture + hit-testing + the line. The cursor ghost is omitted.
@@ -292,17 +292,17 @@ export function TableRowDnd({
 
   return (
     <Ctx.Provider value={value}>
-      <div ref={content} className="table-dnd">
+      <div ref={content} className="drop-line-host">
         {children}
         {/* A noop slot draws nothing: the line promises a move, and the release commits only where the
             slot differs from the row's own position. */}
         {drag.slot && !drag.slot.noop && (
           <div
-            className="table-drop-line"
+            className="drop-line"
             aria-hidden
-            style={{ top: drag.slot.lineY, left: drag.slot.left, width: drag.slot.width }}
+            style={{ top: drag.slot.lineY, left: drag.slot.left, width: drag.slot.width, right: 'auto' }}
           >
-            <span className="table-drop-dot" />
+            <span className="drop-dot" />
           </div>
         )}
       </div>

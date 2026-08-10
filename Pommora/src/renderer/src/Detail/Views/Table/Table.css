@@ -207,31 +207,10 @@
   background: var(--selected);
 }
 .data-row.row-dragging {
-  opacity: var(--drag-muted);
+  opacity: var(--state-ghost);
 }
 
-/* Drop-line drag: the DnD wrapper (.table-dnd) is the line's positioning context — the accent line
-   + dot mark the exact slot while the picked-up row mutes in place; nothing displaces. */
-.table-dnd {
-  position: relative;
-}
-.table-drop-line {
-  position: absolute;
-  height: var(--drop-line-thickness);
-  border-radius: var(--drop-line-thickness);
-  background: var(--drag-line);
-  pointer-events: none;
-  z-index: var(--z-overlay);
-}
-.table-drop-dot {
-  position: absolute;
-  left: calc(var(--drop-dot-size) / -2);
-  top: calc((var(--drop-line-thickness) - var(--drop-dot-size)) / 2);
-  width: var(--drop-dot-size);
-  height: var(--drop-dot-size);
-  border-radius: 50%;
-  background: var(--drag-line);
-}
+/* Drop-line drag chrome (line, dot, host) is the design system's — dropChrome.css. */
 
 /* Hide Borders toggle — drops the body grid lines for a clean, line-free table: the row dividers (rows'
    top) and the vertical column hairlines (each cell's right edge). The heading row keeps its borders (the
@@ -393,42 +372,7 @@
   left: 0;
   display: inline-flex;
 }
-/* The glyph is the drag surface; the picked-up band mutes in place and the shared drop line marks the
-   slot (BandDnd's .band-dnd wrapper is its positioning context). A nestable Set band tints on
-   middle-zone hover instead of showing a line. */
-.band-dnd {
-  position: relative;
-}
-.group-band-head.band-dragging {
-  opacity: var(--drag-muted);
-}
-.group-band-head.band-nest-target {
-  background: var(--selected);
-  border-radius: 6px;
-  outline: 4px solid var(--selected);
-}
-/* The band's inline rename input — the sidebar row's recipe on the head's own type scale. */
-.band-title-input {
-  min-width: 120px;
-  font: inherit;
-  color: var(--text);
-  background: var(--input-field);
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  padding: 0 4px;
-}
-.band-drag-ghost {
-  position: fixed;
-  padding: 4px 12px;
-  border-radius: 8px;
-  color: var(--label-primary);
-  background: color-mix(in srgb, var(--bg-window) 78%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  box-shadow: 0 14px 34px #00000073;
-  pointer-events: none;
-  z-index: var(--z-floating);
-}
+/* Band drag states live with the band — GroupBand.css (Cards renders the same bands). */
 /* The chevron floats into the views gutter, one --gutter left of the head content (which starts flush
    on the grid — groupIndent has no cell-padding-x base), landing in the grip lane. */
 .table-view .group-band-twisty {

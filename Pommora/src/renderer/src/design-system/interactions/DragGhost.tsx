@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 import { cx } from '@renderer/design-system/cx'
+import { GHOST_FROST, frostStyle } from '@renderer/design-system/materials/glass-pane'
 import { text } from '@renderer/design-system/tokens/typography.css'
 
 /** Portaled to body so it paints ABOVE any pane frost — without it, a drag's only visual is the
@@ -18,8 +19,8 @@ export function DragGhost({
   return createPortal(
     <div
       aria-hidden
-      className={cx('band-drag-ghost', text.body.standard)}
-      style={{ top: y, left: x }}
+      className={cx('drag-ghost', text.body.standard)}
+      style={{ ...frostStyle(GHOST_FROST), top: y, left: x }}
     >
       {label}
     </div>,

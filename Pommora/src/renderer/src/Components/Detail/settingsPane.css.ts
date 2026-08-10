@@ -245,10 +245,9 @@ export const eyeInert = style([
 // § DRAG CHROME — the two-region drag's box, highlight, and source dim
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** The pane drag's positioning context (drop line) — fills the slot so the elastic spacer
- *  has the floor's slack to absorb. */
+/** Layout only — fills the slot so the elastic spacer has the floor's slack to absorb; the
+ *  drop line's positioning context comes from the shared `drop-line-host`. */
 export const paneDnd = style({
-  position: 'relative',
   display: 'flex',
   flexDirection: 'column',
   flex: '1 1 auto',

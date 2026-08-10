@@ -63,3 +63,24 @@
 .group-band-row:hover .group-band-add {
   opacity: 1;
 }
+
+/* Drag states — the glyph is the drag surface; the picked-up band mutes in place and the shared
+   drop line marks the slot. A nestable Set band tints on middle-zone hover instead of a line. */
+.group-band-head.band-dragging {
+  opacity: var(--state-ghost);
+}
+.group-band-head.band-nest-target {
+  background: var(--selected);
+  border-radius: 6px;
+  outline: 4px solid var(--selected);
+}
+/* The band's inline rename input — the sidebar row's recipe on the head's own type scale. */
+.band-title-input {
+  min-width: 120px;
+  font: inherit;
+  color: var(--text);
+  background: var(--input-field);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0 4px;
+}

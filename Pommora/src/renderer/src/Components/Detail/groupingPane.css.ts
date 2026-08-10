@@ -41,16 +41,12 @@ export const middle = style({
   overflowY: 'auto',
 })
 
-/** The list insertion line — the global drag primitives (--drag-line / --drop-line-thickness). */
-export const dropLine = style({
-  position: 'absolute',
-  left: '8px',
-  right: '8px',
-  height: 'var(--drop-line-thickness)',
-  borderRadius: 'var(--drop-line-thickness)',
-  background: 'var(--drag-line)',
-  pointerEvents: 'none',
-})
+/** The pane's own gutter for the shared `drop-line` — wider than the token default so the
+ *  line clears the hierarchy rail. */
+export const dropLineInset = style({ left: '8px', right: '8px' })
+
+/** The picked-up row's in-place fade. */
+export const ghosted = style({ opacity: 'var(--state-ghost)' })
 
 /** A preview group heading (the muted footing tone) with its chips beneath. */
 export const previewHeading = style([

@@ -11,12 +11,8 @@ import {
 import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import {
-  DROP_LINE_INSET,
-  EDITABLE_TARGETS,
-  GHOST_OFFSET,
-} from '@renderer/design-system/interactions/shared'
-import { DragGhost } from './DragGhost'
+import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
+import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
@@ -229,15 +225,15 @@ export function PaneDnd({
 
   return (
     <Ctx.Provider value={value}>
-      <div ref={box} className={s.paneDnd}>
+      <div ref={box} className={cx('drop-line-host', s.paneDnd)}>
         {children}
         {drag.slot && drag.slot.lineY != null && (
           <div
-            className="table-drop-line"
+            className="drop-line"
             aria-hidden
-            style={{ top: drag.lineTop, left: DROP_LINE_INSET, right: DROP_LINE_INSET }}
+            style={{ top: drag.lineTop }}
           >
-            <span className="table-drop-dot" />
+            <span className="drop-dot" />
           </div>
         )}
       </div>

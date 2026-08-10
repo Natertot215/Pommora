@@ -52,7 +52,6 @@
     --bg-window
   ); /* opaque backing so the dragged column glides as one solid band, not see-through */
   --col-shift-ease: var(--duration-fast) var(--ease-standard); /* neighbour columns slide to open the gap on this curve */
-  --drag-muted: var(--state-ghost);
 
   /* — Empty state — */
   --empty-pad-y: 24px; /* vertical padding of the "No pages here" / "Loading…" placeholder */
