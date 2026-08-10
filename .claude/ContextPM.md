@@ -2,11 +2,11 @@
 
 ### Current Focus
 
-**Sidebar + DND Consolidation & Bug Fixes.** <FILL ON HANDOFF>
+**Sidebar + DND Consolidation & Bug Fixes.** The scoping half is closed: every flagged drag note was verified against the code, four survey lenses swept the layer and surfaced defects nobody had flagged — the grouping pane's wrong-target commit the worst of them — and the whole of it is ratified into `Planning/Drag Layer — Implementation Plan.md`: eighteen tasks in six phases, staleness fixes first, reviewed through a citation pass and a build-breaking attack with every finding folded, the click-suppression ruling settled skeleton-side. No code has moved. What's open is execution, and the plan's Gate 6 + Closeout checklist defines done — the handoff carries that list as this focus's Completion Criteria.
 
 ### Immediate Work
 
-- The gesture skeleton wants hardening before any surface migrates onto it. `usePointerGesture()` sets `active` before calling `onActivate`, so a throwing activation leaves the listeners attached, and the release commits a drop on a gesture that never finished; and `detach` runs `teardown` before clearing the module-level lock, so a throwing teardown strands it with the listeners already gone. Both are reachable, and each surface migrated on makes them worse. The existing listener tests count adds against removes where the sidebar's leak is same-count-wrong-identity, so they pass on the bug.
+- Execute the drag layer plan, in order, opening at Phase 1 (the three stale-slot fixes). The plan is this focus's sole task list; its Implementation Log holds the rulings and the open notes, and closing it out includes the breaker + simplifier passes, the History entry, the doc reconciliation, and routing Tier-5 and the deferred items into this document before the plan retires from Planning.
 
 ### Pending Focuses
 
@@ -30,6 +30,11 @@
 - [ ] **In-view page creation.** Sparse across every surface and the item that would be felt daily; wants a brainstorm loop rather than a patch.
 - [ ] **Cross-location card reordering** in views — scoped and mechanical.
 - [ ] **Canvas** — the spec sits at `Planning/6-26 - Canvas Spec.md`, unbuilt.
+- [ ] **Subfield reorder.** The store action and persistence are fully built (`setSubfieldOrder` has zero callers) — the entire feature is a missing drag UI, a three-item horizontal `SortableZone` in the Ribbon's shape. The readiest feature in the app.
+- [ ] **Tab ⇄ pin by drag.** The tab strip and the pinned zone are two independent SortableZones; pinning is context-menu-only. The board engine's cross-zone shape serves it, with one commit decision — pins key on `res.key`, tabs on `tab.id`.
+- [ ] **Cards group-band drag.** The table's bands reorder and reparent; Cards renders the same `GroupBand` with no `dragHandle`. The band engine is view-agnostic and the prop seam exists.
+- [ ] **Outline section drag.** The Outline dropdown is click-to-reveal only while the editor already drags whole sections by heading grip — dragging a heading *in the outline* to move its section is a write-coupling design call on ready mechanisms.
+- [ ] **Recents → pins by drag** is a commented deliberate refusal in `NavList` (`canReassign={false}`); revisit only if wanted — the mechanism is one flag plus a commit.
 
 #### II. Open Questions
 
@@ -75,25 +80,25 @@
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined.
 - [ ] The "File" property icon gets clipped by its vertical row padding on the PropertiesPane.
 - [ ] The link-rename field shows a leading empty space — the shared field recipe's horizontal padding surviving the TextPicker input override, with the pane gutter adding to it. A visual inset rather than a stored character (deprioritized).
-- [ ] Extending a line on MarkdownPM directly above a codeblock jumps into the codeblock rather than creating a new line. Tables answer the same hazard with a boundary guard on Enter; fences have no counterpart in that chain.
-- [ ] The Set-Card drag flash — the drop snaps back, then jumps on reload/
+- [ ] Extending a line on MarkdownPM directly above a codeblock jumps into the codeblock rather than creating a new line. Tables answer the same hazard with a boundary guard on Enter; fences have no counterpart in that chain. Nathan is unsure whether this has been fixed already; reconcile when appropriate.
+- [ ] The Set-Card drag flash — the drop snaps back, then jumps on reload.
 - [ ] Clicking the settings button on the sidebar ribbon doesn't close it once it's been opened.
 - [ ] MarkdownPM's drag-handle context menu shows 'Embed Page' when it shouldn't; a 'List Type' switcher would be the natural replacement.
 
 ### Recent Work
 
-#### PM-089 || The Write Path Converges On One Lock
+#### PM-089 || The Write Path Converges On One Lock 
 **DATE:** 08-08-2026
 
 Every writer of a container sidecar came onto one lock key built in `main/paths.ts`, replacing three different keys and several call sites that held none — a read-merge-write that had read before a sibling's write landed could revert a view save or a page move with no error. A relocate now runs under the source path's own key, closing a rename race that left a ghost file at the vacated path holding newer content than the renamed one. The JSON read-modify-write primitive took the same treatment, and the seven callers that had supplied that lock by hand came out in the same commit. All of it is process state, so the app now holds a single-instance lock and a relaunch raises the window that already exists.
 
-#### PM-088 || Dropdown Shell & Menu Consolidation
+#### PM-088 || Dropdown Shell & Menu Consolidation 
 **DATE:** 08-08-2026
 
 `MenuDropdown` took the open state, outside-dismiss, retract beat, and mounted-pane branch that the three toolbar dropdowns had each carried separately, and the stylesheet named for one of them was renamed for all three. `containerCreators` became the single rule for what a Collection or a Set offers on creation, correcting a sidebar menu that gave a Set only New Page and two creator labels written as literals. Two constants describing a reach the menu layer never had were corrected rather than made true.
 
 #### PM-087 || One Shared Pass Over Fenced Code
-**DATE:** 08-07-2026 → 08-08
+**DATE:** 08-08-2026
 
 A fenced block's marker-run length became part of its identity, so a closer requires a run at least as long as its opener and a longer fence holds shorter ones as literal content. The fence grammar moved into one shared module read by the detector, the folding scan, the subfield statistics, and the write-side mask — the mask's disagreement had left a `[[Title]]` inside a code sample reachable by a rename cascade. On a 941-line body a keystroke now costs roughly a quarter of what it did, the saving scaling with document length.
 
@@ -102,8 +107,8 @@ A fenced block's marker-run length became part of its identity, so a closer requ
 
 A page carries its own table of contents: a toolbar dropdown listing its headings as a nested tree and traveling to whichever one is chosen, opening any collapsed section on the way. The derivation shares the editor's heading scan rather than adding a second one. Three shared mechanisms were corrected underneath it, each latent until a consumer with no row icons and arbitrarily long labels arrived — nested rows never truncated, the default-open state had no seam, and the auto-pair gate read only behind the caret. The interaction layer gained its first animated scroll, a distance-proportional glide that re-reads its destination each frame.
 
-#### PM-085 || The PageMenu And The In-App Picker
-**DATE:** 08-06-2026 → 08-07
+#### PM-085 || The PageMenu & Picker Consolidation
+**DATE:** 08-07-2026
 
 A Page's Settings dropdown had rendered nothing; it now opens on the Page's identity and drills into a Properties leaf listing the Contexts and property values that Page holds. The leaf is an arrangement rather than a new mechanism, since every value is entered through the same primitives the table, cards, and preview inspector compose. The in-app picker became the default for a row's context menu on two grounds: it costs no round-trip through the file-owning process, and it cannot collide with the editor menu that process pops over any editable target. Two defects surfaced underneath — a missing caret on the inline title, and a hairline down every drilled pane's leading edge.
 
@@ -112,5 +117,5 @@ A Page's Settings dropdown had rendered nothing; it now opens on the Page's iden
 - Restate rather than amend. A fixed item is deleted, and a changed fact is rewritten as currently true; a `(resolved)` tag leaves a false line standing.
 - Recent Work holds five entries under their History headings, and a sixth drops the oldest rather than accumulating.
 - Sections that aren't described in `Context-Format.md` shouldn't be removed — they're intentional and will resolve themselves when appropriate. 
-- Nathan also writes into Pending Focuses, Important Information, Working Notes, and Known Issues directly; leave what's clearly written by him and consider his own writing style as something to lean towards rather than fight against. 
+- Nathan also writes into §Pending Focuses, §Important Information, and §Known Issues directly; leave what's clearly written by him and consider his own writing style as something to lean towards rather than fight against. 
 - A section with nothing to say stays empty.
