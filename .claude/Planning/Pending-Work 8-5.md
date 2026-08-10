@@ -12,17 +12,13 @@ Three independent scouts surveyed the codebase and its record, each on its own m
 
 `shared/bridge.ts` declares every channel's arguments precisely, but dozens of handler signatures in `index.ts` re-declare their parameters as `unknown` and re-derive the types by hand — and the hand-rolled ladders silently substitute defaults rather than refusing (`view-button-menu` turns any unrecognized value into `'icon'`; `property:setNumberFormat` quietly drops fields it doesn't recognize). Narrowing these back to the declared types, keeping real validation only where a payload is genuinely open, restores a guarantee the codebase currently believes it has but doesn't.
 
-#### Finish the "One Walk" That `governedSweep` Started
+**Finish the "One Walk" That `governedSweep` Started:** `crud/governedSweep.ts` declares itself the single walk every governed-key sweep shares — and has exactly two callers. Option renames, property removal and restore, and the restore scrub still roll their own walk-and-rewrite loops. Not cosmetic: the shared sweep gates on `changedKeys` before writing, which is exactly the guard missing from the option cascade — a no-op option rename still rewrites and re-dates every page holding the option. 
 
-`crud/governedSweep.ts` declares itself the single walk every governed-key sweep shares — and has exactly two callers. Option renames, property removal and restore, and the restore scrub still roll their own walk-and-rewrite loops. Not cosmetic: the shared sweep gates on `changedKeys` before writing, which is exactly the guard missing from the option cascade — a no-op option rename still rewrites and re-dates every page holding the option. Migrating the remaining callers fixes that defect at its source and closes the drift the module was written to prevent.
-
-#### Give the Shared View Modules a Home Outside `Table/`
-
-Fourteen files with nothing to do with tables import from `Detail/Views/Table/` — Cards pulls seven modules from it, the panes five more — and ten-line pure helpers exported from the top of the 1600-line `TableView.tsx` drag the whole table component's import graph into answer one call. Moving the genuinely shared pieces (`Cell`, `resolveContext`, `columnStyles`, `columnLabel`, `linkValue`, and kin) up into `Views/` is import-rewriting only; the four unbuilt renderers would otherwise each add another set of reach-ins.
+**Give the Shared View Modules a Home Outside Table/:** Fourteen files with nothing to do with tables import from `Detail/Views/Table/` — Cards pulls seven modules from it, the panes five more — and ten-line pure helpers exported from the top of the 1600-line `TableView.tsx` drag the whole table component's import graph into answer one call. Moving the genuinely shared pieces (`Cell`, `resolveContext`, `columnStyles`, `columnLabel`, `linkValue`, and kin) up into `Views/` is import-rewriting only; the four unbuilt renderers would otherwise each add another set of reach-ins.
 
 #### Split the Store Into Domain Slices
 
-`store.ts` is one interface with over a hundred members and one giant object literal covering tree loading, selection, tabs, history, previews, and the rest. The hard part is already done — the pure models live in their own tested modules — so what remains is wiring: composing four or five slice files into the same single store keeps every cross-domain read working exactly as it does now, and makes the file safely editable again.
+`store.ts` is a single interface with over a hundred members and a giant object literal that covers tree loading, selection, tabs, history, previews, and the rest. The hard part is already done — the pure models live in their own tested modules — so what remains is wiring: composing four or five slice files into the same single store keeps every cross-domain read working exactly as it does now, and makes the file safely editable again.
 
 #### Move `mutate.ts`'s Identity-and-Appearance Arms Into a Crud Module
 
@@ -66,9 +62,6 @@ A pasted screenshot or a math formula still appears as raw text; both are explic
 
 Every deletion already writes a complete recoverable bundle, and restore is fully built and tested — none of it reachable from the running app, because the listing function has no bridge channel. The cheapest meaningful win on the board, buying something disproportionate: you cannot commit your real notes to an app you don't trust to undo a delete.
 
-#### The Four Dead View Types
-
-List, Gallery, Calendar, and Timeline are registered names whose picker tiles click and do nothing. List and Gallery are close to free — the pipeline behind them is shared and already live — and would make the view picker stop lying. Calendar is really Agenda's twin: build it when there are dated things worth putting on it.
 
 #### Quick Capture From Outside the Window
 
@@ -94,9 +87,6 @@ The pipe form parses, resolves, and survives every rename cascade — but nothin
 
 A heading inside a callout renders but gets no fold chevron — the fold scanner never strips the `>` prefix — and a table inside a callout doesn't render at all. The fix pattern already exists in the same codebase (the prefix-aware list parser strips, parses, and shifts offsets back), so this is applying a solved technique to two more constructs.
 
-#### Give the Four Dead Buttons Their First Contents
-
-Four affordances render at full weight and are hard-disabled: the ViewPane's More ellipsis, the Space pane's actions ellipsis, the Page Preview's Settings button, and the ViewSettings icon picker. Each has an obvious first payload the app already supports — duplicate/rename/delete for a view, the icon registry for the picker. Even one or two remove the "this app is unfinished" feeling they produce every time they're noticed.
 
 #### Let the Filter Pane Author NOR
 
