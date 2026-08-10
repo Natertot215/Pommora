@@ -52,7 +52,7 @@ beforeEach(async () => {
       </TableRowDnd>,
     )
   })
-  const content = host.querySelector('.table-dnd')
+  const content = host.querySelector('.drop-line-host')
   if (content) stubRect(content, { top: 0, bottom: 72 })
   for (const [i, r] of ROWS.entries()) {
     const el = host.querySelector(`[data-row="${r.id}"]`)
@@ -78,11 +78,11 @@ const startDrag = async (): Promise<void> => {
 describe('table row drag — Esc abort', () => {
   it('drops the insertion line and commits nothing on Escape', async () => {
     await startDrag()
-    expect(host.querySelector('.table-drop-line')).not.toBeNull()
+    expect(host.querySelector('.drop-line')).not.toBeNull()
     await act(async () => {
       pressEscape()
     })
-    expect(host.querySelector('.table-drop-line')).toBeNull()
+    expect(host.querySelector('.drop-line')).toBeNull()
     await act(async () => {
       firePointer(window, 'pointerup')
     })

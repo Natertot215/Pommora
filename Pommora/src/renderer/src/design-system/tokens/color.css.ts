@@ -88,9 +88,13 @@ export const inputFieldVar = 'var(--input-field)'
 globalStyle(':root', {
   vars: {
     '--shadow-standard': '0 8px 25px #00000040',
+    // The lift shadow — one source for every dragged-overlay treatment (the engine's
+    // .ix-overlay, SurfacePM's lifted tile, the drag ghost).
+    '--shadow-lift': '0 12px 30px #00000066',
   },
 })
 export const shadowStandardVar = 'var(--shadow-standard)'
+export const shadowLiftVar = 'var(--shadow-lift)'
 
 // One token object: primitives under `color.system`, everything else alongside.
 export const vars = {

@@ -57,7 +57,7 @@ beforeEach(async () => {
       </BandDnd>,
     )
   })
-  const box = host.querySelector('.band-dnd')
+  const box = host.querySelector('.drop-line-host')
   if (box) stubRect(box, { top: 0, bottom: 72 })
   for (const [i, id] of ['A', 'A1', 'B'].entries()) {
     const el = host.querySelector(`[data-band="${id}"]`)
@@ -70,7 +70,7 @@ afterEach(() => {
 })
 
 const glyph = (id: string): HTMLElement => host.querySelector(`[data-glyph="${id}"]`) as HTMLElement
-const line = (): Element | null => host.querySelector('.table-drop-line')
+const line = (): Element | null => host.querySelector('.drop-line')
 
 const drag = async (id: string, toY: number): Promise<void> => {
   await act(async () => {

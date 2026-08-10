@@ -1,0 +1,39 @@
+/* The shared drop chrome — the insertion line, its leading dot, and the floating drag ghost
+   every drop-line surface renders. Geometry a surface genuinely owns (a depth-indented left,
+   a column-scoped width) rides inline on top of these defaults. */
+
+/* The line's positioning context — the wrapper a surface marks so `top` resolves against it. */
+.drop-line-host {
+  position: relative;
+}
+
+.drop-line {
+  position: absolute;
+  left: var(--drop-line-inset);
+  right: var(--drop-line-inset);
+  height: var(--drop-line-thickness);
+  border-radius: var(--drop-line-thickness);
+  background: var(--drag-line);
+  pointer-events: none;
+  z-index: var(--z-overlay);
+}
+
+.drop-dot {
+  position: absolute;
+  left: calc(var(--drop-dot-size) / -2);
+  top: calc((var(--drop-line-thickness) - var(--drop-dot-size)) / 2);
+  width: var(--drop-dot-size);
+  height: var(--drop-dot-size);
+  border-radius: 50%;
+  background: var(--drag-line);
+}
+
+/* The frost half of the ghost (fill, blur, lift shadow) comes from GHOST_FROST via DragGhost. */
+.drag-ghost {
+  position: fixed;
+  padding: 4px 12px;
+  border-radius: 8px;
+  color: var(--label-primary);
+  pointer-events: none;
+  z-index: var(--z-floating);
+}
