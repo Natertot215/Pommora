@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { DEFAULT_VIEW_ID, isCompact, type SavedView, type ViewType } from '@shared/views'
@@ -57,6 +57,12 @@ const scrubCardScale = (v: number, viewId: string): void => {
   for (const el of document.querySelectorAll<HTMLElement>(`.cards-view[data-view-id="${viewId}"]`))
     el.style.setProperty('--card-scale', String(v))
 }
+// The pane closing mid-scrub unmounts the Slider before any cancel handler can fire — dropping the
+// inline var falls the cards back to their persisted scale.
+const clearCardScale = (viewId: string): void => {
+  for (const el of document.querySelectorAll<HTMLElement>(`.cards-view[data-view-id="${viewId}"]`))
+    el.style.removeProperty('--card-scale')
+}
 
 // ── KNOB — ViewSettings' own height ceiling (its own, not the shared MENU_MAX_HEIGHT): the full door
 // stacks the tallest content (title + grid + four leaf rows + the pinned footing), so it earns more
@@ -101,6 +107,7 @@ export function ViewSettings({
   onBack: () => void
   onClose: () => void
 }): React.JSX.Element {
+  useEffect(() => () => clearCardScale(view.id), [view.id])
   const load = useSession((s) => s.load)
   const tree = useSession((s) => s.tree)
   const [leaf, setLeaf] = useState<Leaf | null>(null)

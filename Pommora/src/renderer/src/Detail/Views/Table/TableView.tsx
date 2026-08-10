@@ -513,8 +513,29 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     setWidthOverride((prev) => ({ ...prev, [id]: clamped }))
     return clamped
   }
-  const commitResize = (id: string, width: number): void => {
+  // The pre-drag override is captured at resize start so an abort restores it EXACTLY — an entry
+  // absent before the drag is deleted, never written back as an explicit width that a later persist
+  // would carry to disk.
+  const resizeBaseline = useRef<{ id: string; value: number | undefined } | null>(null)
+  const startResize = (id: string): void => {
+    resizeBaseline.current = { id, value: widthOverride[id] }
+    setResizing(true)
+  }
+  const abortResize = (): void => {
+    const b = resizeBaseline.current
+    if (!b) return
+    setWidthOverride((prev) => {
+      const next = { ...prev }
+      if (b.value === undefined) delete next[b.id]
+      else next[b.id] = b.value
+      return next
+    })
+  }
+  const endResize = (): void => {
+    resizeBaseline.current = null
     setResizing(false)
+  }
+  const commitResize = (id: string, width: number): void => {
     persistView({
       column_widths: {
         ...liveView.column_widths,
@@ -1410,7 +1431,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
                   dragging={colDrag?.from === i}
                   onDragStart={(e) => startColumnDrag(e, i)}
                   onResize={resizeColumn}
-                  onResizeStart={() => setResizing(true)}
+                  onResizeStart={startResize}
+                  onResizeAbort={abortResize}
+                  onResizeEnd={endResize}
                   onResizeCommit={commitResize}
                   onContextMenu={(e) => void openHeaderMenu(c.id, c.kind === 'title', e)}
                 />
@@ -1458,10 +1481,15 @@ function ColumnHeader({
   dragging: boolean
   onDragStart: (e: React.PointerEvent) => void
   onResize: (id: string, width: number) => number
-  onResizeStart: () => void
+  onResizeStart: (id: string) => void
+  onResizeAbort: () => void
+  onResizeEnd: () => void
   onResizeCommit: (id: string, width: number) => void
   onContextMenu?: (e: React.MouseEvent) => void
 }): React.JSX.Element {
+  const beginGesture = usePointerGesture()
+  // On the skeleton like its GFM sibling: zero threshold (a resize responds to the first pixel),
+  // cancel reverts instead of committing, and a zero-move click ends through teardown alone.
   const startResize = (e: React.PointerEvent<HTMLSpanElement>): void => {
     e.preventDefault()
     e.stopPropagation() // a resize never bubbles up to start a column reorder
@@ -1470,20 +1498,21 @@ function ColumnHeader({
     const zoom = (cell && cell.getBoundingClientRect().width / width) || 1
     const startX = e.clientX
     let last = width
-    grip.setPointerCapture(e.pointerId)
-    onResizeStart()
-    const move = (ev: PointerEvent): void => {
-      last = onResize(id, width + (ev.clientX - startX) / zoom)
-    }
-    const end = (): void => {
-      grip.removeEventListener('pointermove', move)
-      grip.removeEventListener('pointerup', end)
-      grip.removeEventListener('pointercancel', end)
-      onResizeCommit(id, last)
-    }
-    grip.addEventListener('pointermove', move)
-    grip.addEventListener('pointerup', end)
-    grip.addEventListener('pointercancel', end)
+    beginGesture({
+      el: grip,
+      event: e,
+      activation: 0,
+      onActivate: () => {
+        onResizeStart(id)
+        return true
+      },
+      onDragMove: (ev) => {
+        last = onResize(id, width + (ev.clientX - startX) / zoom)
+      },
+      onDrop: () => onResizeCommit(id, last),
+      onAbort: onResizeAbort,
+      teardown: onResizeEnd,
+    })
   }
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
