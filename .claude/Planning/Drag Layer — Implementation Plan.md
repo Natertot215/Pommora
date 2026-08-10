@@ -180,11 +180,11 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 - [x] Commit: `fix(table): a mid-drag rows change re-measures the snapshot`
 
 #### Gate 1 — no stale slot
-- [ ] Gate commands green, exit codes read directly.
-- [ ] `code-simplifier` + `/code-review` against `<base>..HEAD`, scoped to the three files.
-- [ ] Every concern fixed or ruled on in the Log.
-- [ ] Grouping pane and a GFM table dragged in the running app across a mid-drag scroll.
-- [ ] Progress hashes filled in.
+- [x] Gate commands green, exit codes read directly.
+- [x] `code-simplifier` + `/code-review` against `<base>..HEAD`, scoped to the three files. *(Simplifier: −3 lines, two sound edits, `f782067b`. Review: 8 finders, 10 verified findings — see the Log's Gate 1 record.)*
+- [x] Every concern fixed or ruled on in the Log. *(Fix pass `d9f5908f`: resolve-fresh-before-commit on all three surfaces, caller memoizations, target guards, wrap-space GFM drag, `useDisclosureSet` identity; all no-move regressions red-first.)*
+- [x] Grouping pane and a GFM table dragged in the running app across a mid-drag scroll. *(Deferred to the closing walkthrough per the standing no-mid-plan-CDP rule; recorded in the Log.)*
+- [x] Progress hashes filled in.
 
 ---
 
@@ -197,7 +197,7 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 **Why:** Four flaws, all in `gesture.ts`, all cheap, all scaling with every consumer Tasks 5–9 add. (a) `g.active = true` precedes `spec.onActivate(ev)` — a throwing activation leaves the listeners armed and the eventual release calls `onDrop` on a gesture whose snapshot never got taken. (b) `detach` runs `g.spec.teardown?.()` before `live = null` — a throwing teardown removes the listeners then strands the lock, refusing every drag until reload. (c) The handlers never check `pointerId` — a second touch point's move/up steers or ends the primary drag; the sidebar's hand-roll guards this today and must not lose it in migration. (d) A press whose `pointerup` never reaches the window — release while the app is unfocused after ⌘-Tab, exactly the case `group.tsx`'s own comment documents — leaves `live` set with only Escape to clear it, and a *pending* press has no capture to retarget the release. `group.tsx` guards this twice (a window-blur cancel and a `buttons === 0` check in move); the skeleton gets the same two, so migration turns five per-surface wedge risks into zero rather than one global one. (a)–(c) are hardening against a traced-but-unobserved class: do not describe them in the commit as fixes for observed breakage.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/design-system/interactions/gesture.ts` — wrap the `onActivate`/`onDragMove` calls in a catch that runs `detach` + `onAbort` and reports via `console.error` — **no rethrow** (a window-listener throw reaches no React boundary and only pollutes the suite as an unhandled error); `try/finally` in `detach` so `live` always clears; record the begin event's `pointerId` and ignore mismatched move/up/cancel; a per-gesture window `blur` listener routed to cancel, and `if (ev.buttons === 0) → cancel` at the top of `move`, both mirroring `group.tsx`.
+- Modify: `Pommora/src/renderer/src/design-system/interactions/gesture.ts` — wrap the `onActivate`/`onDragMove` calls in a catch that runs `detach` + `onAbort` and reports via `console.error` — **no rethrow** (a window-listener throw reaches no React boundary and only pollutes the suite as an unhandled error); `try/finally` in `detach` so `live` always clears; record the begin event's `pointerId` and ignore mismatched move/up/cancel; a per-gesture window `blur` listener routed to cancel, and `if (ev.buttons === 0) → cancel` at the top of `move`, both mirroring `group.tsx`. **Also (Gate 1's review, three finders converged): an optional `onWindowScroll(e)` on the spec, bound capture-phase for the active gesture's lifetime like the other listeners — and convert the two Phase-1 hand-wired scroll pairs (`groupingDnd`, the GFM table) onto it as the ride-along.** The `buttons` guard obliges the test harness: `firePointer` must default `buttons: 1` on move events or every drag test dies on the new guard.
 - Test: `Pommora/src/renderer/src/design-system/interactions/gesture.test.ts` — create. Not on the `engine.test.ts` pattern (that file is pure math in the node env): this one needs a `// @vitest-environment jsdom` docblock, synthesized `PointerEvent`s, `setPointerCapture` stubs — and because `live` is module state with no reset seam, **`vi.resetModules()` + a dynamic import per test**, or the throwing-teardown test strands the lock for every test after it and the reds lie.
 
 **Interfaces**
@@ -371,7 +371,7 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 
 **Requirement:** 7
 
-**Why:** Six files spell the same measure-once pattern — a dirty ref, a `markDirty`, a lazy `if (dirty || !snap) retake` — identically. One `useDragSnapshot` owns it; adopters keep their own `take` functions (the geometry genuinely differs) and lose the ritual. `groupingDnd`'s Task-1 hand copy folds onto it here.
+**Why:** Six files spell the same measure-once pattern — a dirty ref, a `markDirty`, a lazy `if (dirty || !snap) retake` — identically. One `useDragSnapshot` owns it; adopters keep their own `take` functions (the geometry genuinely differs) and lose the ritual. `groupingDnd`'s Task-1 hand copy folds onto it here. **Gate 1 hardened the invariant the helper must carry whole:** an invalidating event re-resolves from the last pointer point and the drop consults the flag before reading its slot — "resolve fresh before commit," never dirty-only — and a fresh take always clears the flag inside the take. Two Gate-1 contracts ride with it: adopters' list props are identity-stable (the callers were memoized for exactly this), and the scroll listeners carry the target guard. The test-harness duplication consolidates here too: the ResizeObserver stub family, the row-rect stub loops, and the Tables mount prelude each have near-verbatim copies the review counted.
 
 **Files:**
 - Create: `Pommora/src/renderer/src/design-system/interactions/snapshot.ts` — `useDragSnapshot<T>(take: () => T | null)` returning `{ get, markDirty, reset }`; `get` re-takes when dirty or empty and never caches null as valid.
@@ -538,11 +538,11 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 
 ### Progress
 
-- [ ] **Phase 1** — The stale-slot fixes · base `ba2a35ff`
-  - [x] Task 1 — The grouping pane's snapshot invalidates · `<commit>`
-  - [x] Task 2 — The GFM table drag re-bases its origin · `<commit>`
-  - [x] Task 3 — The table row drag dirties on a rows change · `<commit>`
-  - [ ] Gate 1
+- [x] **Phase 1** — The stale-slot fixes · base `ba2a35ff`
+  - [x] Task 1 — The grouping pane's snapshot invalidates · `b61f22a9`
+  - [x] Task 2 — The GFM table drag re-bases its origin · `9cab6c04`
+  - [x] Task 3 — The table row drag dirties on a rows change · `b0db18fb`
+  - [x] Gate 1 — simplification `f782067b` · review fix pass `d9f5908f`
 - [ ] **Phase 2** — The skeleton hardens
   - [ ] Task 4 — Throwing callbacks and foreign pointers · `<commit>`
   - [ ] Gate 2
@@ -582,7 +582,13 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 
 ### Deviations
 
+- **Gate 1's review (08-10, 8 finders, 10 verified findings) showed Phase 1's fixes landed one guarantee short.** All three shipped dirty-only invalidation: an invalidating event marked the snapshot stale but nothing re-resolved, so a release with no further pointermove still committed the pre-change slot — the class survived on exactly the path the red tests never drove. Fixed in `d9f5908f`: every surface re-resolves from `lastPoint` on the invalidating event and the drop consults the flag before reading its slot. The review also caught the Task-1 `[bands]` effect defeating its own cache (both GroupingPane callers built `bands` inline while the hook's per-move state re-renders them — every move re-measured), fixed by memoizing the callers and stabilizing `useDisclosureSet`'s return identity; the GFM drag moved wholly into wrap space (origin re-base now corrects slot and preview delta together) and reads geometry through a ref; both new scroll listeners gained the sibling's target guard.
+- **Ruled at Gate 1:** signature-keyed dirty effects declined — the cause was inline allocation at the callers, fixed at the source, and the identity contract is the sibling family's; hoist-the-helper-now declined as deliberately sequenced (the spec-level `onWindowScroll` folded into Task 4, the flag ritual stays Task 11's); the suite-wide ResizeObserver-stub hoist (≈18 files) recorded for Task 11's harness consolidation, out of a bug-fix phase's range. Gate 1's live-drag pass deferred to the closing walkthrough per the standing no-mid-plan-CDP rule.
+
 ### Lessons
+
+- **A dirty flag without a re-resolve is half an invalidation.** "The next move re-measures" quietly assumes a next move exists; release, and the drop reads whatever the last move computed. The invariant is *resolve fresh before commit* — and its test is the one that scrolls or pushes and then releases *without moving*.
+- **An identity-keyed effect is a contract with every caller.** `useEffect([list])` invalidating a cache is only as good as the caller's memoization — and a hook whose own setState re-renders its caller will feed itself fresh identities every move unless the caller's list is stable. Check the call sites the moment a dep like that is written.
 
 ### Sequenced After
 
