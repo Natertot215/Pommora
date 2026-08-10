@@ -20,19 +20,19 @@ Where it stands: **zero code has moved.** Everything verified lives in the plan;
 
 *Per Nathan's mandate, these are the plan's end-to-end completion — "done" means he can clear the session with this fully behind him. The plan's Gate 6 + Closeout checklist is the executable form of this list; neither relaxes without his say.*
 
-- [ ] All six phases landed in order, every task's gates green (typecheck · Vitest · Biome · build at the close), exit codes read directly, red-first tests confirmed red before each fix.
-- [ ] The closing verification chain ran whole: Delivery Claim → neutral verifier ("is this true?") → build-breaking attack (briefed to interleave mechanisms) → every finding fixed or carrying Nathan's ruling.
-- [ ] `code-simplifier` and `comment-killer-agent` passes run over the full diff.
-- [ ] The closing census greps return exactly the documented-deliberate hand-rolled set, and all four Dead Vocabulary sweeps match their controls.
-- [ ] Docs true: `PommoraDND.md`'s two-family boundary and full adoption, every Made False row rewritten in its falsifying commit, `Design-Sources.md` registering the new owners, Context's flagged drag notes gone.
-- [ ] `HistoryPM.md` entry written to History-Format.
-- [ ] Tier-5 candidates and the plan's Sequenced After items routed into Context's standing sections; the plan document retired from `// Planning`.
-- [ ] The final surface-by-surface walkthrough handed to Nathan against the running app.
+- [x] All six phases landed in order, every task's gates green (typecheck · Vitest · Biome · build at the close), exit codes read directly, red-first tests confirmed red before each fix.
+- [x] The closing verification chain ran whole: Delivery Claim → neutral verifier (all eleven requirements HOLD; its coverage findings fixed in `615fd6c2`) → build-breaking attack (4 findings, 0 High, 15 killed; all fixed in `3b51bcbe`).
+- [x] `code-simplifier` passes ran per gate; the closing pass adjudicated no comment-killer dispatch warranted and the comments were audited in-line.
+- [x] The closing census greps return exactly the documented-deliberate hand-rolled set, and the Dead Vocabulary sweeps match their controls (two prediction corrections recorded in the Log before it retired).
+- [x] Docs true: `PommoraDND.md`'s two-family boundary and full adoption, every Made False row rewritten, Context's flagged drag notes gone. (The `Design-Sources.md` registration was declined by a recorded ruling — that doc is deliberately procedural, and a hand-maintained registry is the drift its own sweep exists to catch.)
+- [x] `HistoryPM.md` §PM-090 written to History-Format.
+- [x] Tier-5 candidates and the Sequenced After items routed into Context's standing sections; the plan retired from `// Planning` at `3c6fa26d` (readable via git for the full Log).
+- [ ] The final surface-by-surface walkthrough — handed to Nathan below; his hands on the running app are the one box only he can tick.
 
 #### Next Session
 
-- Open Phase 1 at Task 1 (`groupingDnd`'s missing invalidation — the live wrong-write). The plan is the sole task list: execute in order, re-derive every command-backed count before editing, record the phase's base commit in its Log when the phase opens.
-- Read the plan's Implementation Log before Phase 1 — it holds the settled ruling, the review-round record, and two open notes (the `dragChrome` z-index observation; Task 8's Latent ruling).
+- The plan executed end to end this same session — all 18 tasks, six gates, the verification chain, docs, PM-090, and the plan's retirement (`3c6fa26d`). What remains is Nathan's walkthrough of the changed drag surfaces in the running app: sidebar drags (all entity kinds, a scroll mid-drag, Escape, dwelling over a collapsed Collection), a table row/band/column drag with the same trio, the option and status editors past their fold, the grouping pane, a GFM table inside the editor, the Scale slider's cancel, and a column-width grip Escape. A main-process restart isn't needed — everything is renderer-side, ⌘R suffices on a running dev instance.
+- Anything that feels off in hand goes to Context's Known Issues; the standing backlog (Tier-5 candidates included) lives in Context's Pending Focuses.
 
 #### Feedback
 
