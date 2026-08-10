@@ -27,7 +27,7 @@ The ribbon collapses and expands with the sidebar, and toggles on its own inside
 The content column renders one mode at a time. A ribbon switch plays the **overtake sweep** — the incoming mode slides in rightward from the ribbon edge over the sitting content. The ribbon tab names the mode, so the column carries no heading:
 
 - **Collections** — the top-level Collections. A Collection discloses its Sets and its loose Pages, recursively; a depth-1 Set is selectable and opens its scoped view, a Sub-Set is expand-only here, and Pages are leaf rows (→ [[CollectionsPM]], [[PageSetsPM]]).
-- **Contexts** — every registry Context as a disclosure of its draggable Space rows, in registry order; group headers drag to reorder the registry itself. A Context header is a pure expand/collapse toggle — a Context has no destination view, Spaces do (→ [[ContextsPM]]).
+- **Contexts** — every registry Context as a disclosure of its draggable Space rows, in registry order (→ [[ContextsPM]]).
 - **Agenda** — the ribbon's third mode, holding its place with an empty state (→ [[AgendaPM]]). The slot is form-independent: whatever Agenda becomes surfaces here.
 
 ### Creation
@@ -53,5 +53,5 @@ The inline rename field is the menu system's flush `titleInput` — dimensionall
 ### Pending
 
 - **User Sections** — unbuilt. The surface wants an **"Add Heading"** entry in the Collections create menu plus rename and drag-a-Collection-into-a-section, with the sections themselves in the database beside the rest of the sidebar's arrangement.
-- **Space-Create Label** — the create item reads a stored singular, which only the seeded Contexts carry, so those offer New Area / New Topic / New Project and every other Context offers flat **New Space**. Because the singular is stored rather than derived, renaming a seeded Context leaves its old label behind; the ruled behavior keys off the title instead, so the label follows a rename. Per-Context custom singulars are prospective.
+- **Space-Create Label** — the create item's stored singular leaves a renamed seeded Context wearing its old label; the ruled behavior keys off the title instead (→ [[ContextsPM]] §Pending).
 - **Always-On Ribbon** — a ribbon that survives the sidebar collapsing, toggled independently rather than folding away with it.

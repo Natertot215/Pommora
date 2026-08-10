@@ -29,7 +29,7 @@ Each container's sidecar holds an ordered `views[]`. A saved view records its `i
 
 The **active view is tracked per-machine** in `nexus.db`, kept out of the synced sidecar. The per-container **ViewDropdown** (a toolbar button left of the trio, its glyph the active view's icon) opens the **ViewPane** to switch it; view CRUD — create (title-only "Untitled"), rename, duplicate, delete, reorder — persists to the sidecar. Two per-container presentation settings ride the sidecar and sync: `view_button` (the button's Show/Hide Title) and `view_style` (Dropdown / Toolbar). A container never presents an empty `views[]` — an app-created container is seeded with its default view on disk, and an empty view-bearing container mints its default on first entry.
 
-A view write saves the whole view and refetches; a caller already showing the change through its own live override skips the refetch.
+A view write saves the whole view and refetches.
 
 ### The Pipeline
 

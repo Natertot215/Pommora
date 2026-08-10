@@ -32,7 +32,7 @@ The single source is `design-system/tokens/motion.ts`, surfaced as CSS vars thro
 - **Easings:** `standard` (the everyday ease) · `inOut` (a symmetric fade) · `out` (emphatic moves, also the drag "out" curve). All three publish as `--ease-*` vars.
 - **Bloom curve** — the open and close curve for both dropdown motions, which share one set of keyframes. It's the one special-cased named curve, living in `animations.css.ts` rather than the everyday token set.
 
-**z-index** is formalized as three separate ladders in `tokens/stack.ts` — the shell frame, in-context lifts, and the top layer of fixed and portalled surfaces — published as named `--z-*` steps; a step ranks only within its own ladder. **Shadow** is the two-token family every frost surface ends its stack in (→ [[DesignSystemPM]]).
+**z-index** rides the named stacking ladders, and **shadow** the two-token family every frost surface ends its stack in — both live with the geometry and shadow tokens (→ [[DesignSystemPM]]).
 
 ### Named Animations
 
@@ -91,7 +91,7 @@ Every in-app window mounts the shared `PreviewPane` surface and opens and closes
 
 ### Timing Sources
 
-Motion timing has one canonical home — the duration scale and easings in the motion tokens, read through their `--duration-*` / `--ease-*` vars; the shared dropdown keyframes and the Bloom curve live in the animations layer and take their durations from those same tokens. The tables state the literal values under the atlas convention ([[DesignSystemPM]] §charter).
+Motion timing has one canonical home — the duration scale and easings in the motion tokens, read through their `--duration-*` / `--ease-*` vars; the shared dropdown keyframes and the Bloom curve live in the animations layer and take their durations from those same tokens. The tables state the literal values under the atlas convention ([[DesignSystemPM]]).
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/motion.ts` · `Pommora/src/renderer/src/design-system/animations.css.ts`
 
