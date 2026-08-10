@@ -17,6 +17,7 @@ import {
 } from '@renderer/design-system/interactions/dragDisclose'
 import { EDITABLE_TARGETS } from '@renderer/design-system/interactions/shared'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
+import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { FolderPlacement } from '@shared/types'
@@ -369,17 +370,13 @@ export function SidebarDnd({
         {/* A noop target draws nothing: the line promises a move, and the drop commits only when the
             slot differs from where the row already sits. */}
         {drag.target && !drag.target.noop && (
-          <div
-            className="drop-line"
-            aria-hidden
+          <DropLine
             style={{
               top: drag.target.lineY,
               left: BASE_INDENT + drag.target.depth * STEP_INDENT,
               right: LINE_INSET_RIGHT,
             }}
-          >
-            <span className="drop-dot" />
-          </div>
+          />
         )}
       </div>
       <DragGhost

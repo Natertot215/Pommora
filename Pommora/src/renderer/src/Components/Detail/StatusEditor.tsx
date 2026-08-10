@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
+import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { Icon } from '@renderer/design-system/symbols'
 import { chipPill, chipColor } from '@renderer/design-system/tokens'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
@@ -115,7 +116,10 @@ export function StatusEditor({
               <Icon name="plus" size={s.ICON.optionsAdd} />
             </button>
           </div>
-          <div className={s.optionList} ref={(el) => reorder.registerGroup(g.id, el)}>
+          <div
+            className={cx('drop-line-host', s.optionList)}
+            ref={(el) => reorder.registerGroup(g.id, el)}
+          >
             {g.options.map((o) => {
               const isColoring = coloring === o.value
               return (
@@ -184,15 +188,7 @@ export function StatusEditor({
                 </span>
               </div>
             ) : null}
-            {reorder.drop?.groupId === g.id ? (
-              <div
-                className="drop-line"
-                aria-hidden
-                style={{ top: reorder.drop.top }}
-              >
-                <span className="drop-dot" />
-              </div>
-            ) : null}
+            {reorder.drop?.groupId === g.id ? <DropLine style={{ top: reorder.drop.top }} /> : null}
           </div>
         </div>
       ))}
