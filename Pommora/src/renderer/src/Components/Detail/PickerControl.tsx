@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu, PickerOption } from '../../design-system/components/PickerMenu'
+import { iconOption } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import * as s from './pickerControl.css'
 
 export type PickerChoice<T extends string> = {
@@ -68,7 +69,7 @@ export function PickerControl<T extends string>({
             }}
           >
             {o.icon ? (
-              <span className={s.iconOption}>
+              <span className={iconOption}>
                 <Icon name={o.icon} size={13} />
                 {o.label}
               </span>

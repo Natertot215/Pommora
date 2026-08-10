@@ -17,7 +17,12 @@ import {
   MenuScrollFrame,
   MenuSeparator,
 } from '@renderer/design-system/components/menu'
-import { rowDisabled } from '@renderer/design-system/components/menu/menu.css'
+import {
+  footerAction,
+  footerLockAction,
+  lockIcon,
+  rowDisabled,
+} from '@renderer/design-system/components/menu/menu.css'
 import { PaneSlider } from '@renderer/Components/Detail/PaneSlider'
 import { cx } from '@renderer/design-system/cx'
 import { ZOOM_STEPS, zoomStep } from './blockZoom'
@@ -68,7 +73,7 @@ function DrillLevel({
                   <button
                     key={`${n.label}-${String(i)}`}
                     type="button"
-                    className={s.footerAction}
+                    className={footerAction}
                     onClick={n.pick === undefined ? undefined : () => resolve(n.pick)}
                   >
                     {n.label}
@@ -209,20 +214,20 @@ export function BlockHandleMenu({
               leading={
                 containerLocked ? (
                   <span
-                    className={`${s.footerLockAction} ${rowDisabled}`}
+                    className={`${footerLockAction} ${rowDisabled}`}
                     title="Locked by the board"
                   >
-                    <Icon name="lock" size={GLYPH} className={s.lockIcon} />
+                    <Icon name="lock" size={GLYPH} className={lockIcon} />
                     Locked
                   </span>
                 ) : (
                   <button
                     type="button"
-                    className={s.footerLockAction}
+                    className={footerLockAction}
                     aria-label={locked ? 'Unlock tile' : 'Lock tile'}
                     onClick={() => onToggleLock()}
                   >
-                    <Icon name="lock" size={GLYPH} className={s.lockIcon} />
+                    <Icon name="lock" size={GLYPH} className={lockIcon} />
                     {locked ? 'Unlock' : 'Lock'}
                   </button>
                 )

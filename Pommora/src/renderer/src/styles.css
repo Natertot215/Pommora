@@ -6,8 +6,6 @@
   --row-h: 28px;
   --text: #ffffffe6;
   --text-dim: #ffffff80;
-  --hover: var(--state-hover); /* Figma States/hover */
-  --selected: var(--state-selected); /* Figma States/selected */
   --main-bg: var(
     --bg-window
   ); /* the background.window token via the theme-vars bridge — single source (@shared/theme) */
@@ -230,14 +228,14 @@ textarea,
   font: inherit;
   font-weight: var(--weight-emphasized);
   color: var(--text);
-  background: var(--selected);
+  background: var(--state-selected);
   cursor: default;
 }
 
 .open-btn:hover {
-  background: var(--hover);
+  background: var(--state-hover);
 }
 
 .open-btn:active {
-  background: var(--selected);
+  background: var(--state-selected);
 }
