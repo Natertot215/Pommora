@@ -1,9 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
-import { DragGhost } from './DragGhost'
+import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { Icon } from '@renderer/design-system/symbols'
 import { chipPill, chipColor } from '@renderer/design-system/tokens'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
-import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
 import {
   addStatusOption,
   recolorStatusOption,
@@ -187,11 +186,11 @@ export function StatusEditor({
             ) : null}
             {reorder.drop?.groupId === g.id ? (
               <div
-                className="table-drop-line"
+                className="drop-line"
                 aria-hidden
-                style={{ top: reorder.drop.top, left: DROP_LINE_INSET, right: DROP_LINE_INSET }}
+                style={{ top: reorder.drop.top }}
               >
-                <span className="table-drop-dot" />
+                <span className="drop-dot" />
               </div>
             ) : null}
           </div>

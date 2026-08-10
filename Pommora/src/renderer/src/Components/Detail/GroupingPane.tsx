@@ -27,7 +27,7 @@ import {
 } from '../../design-system/components/menu/menu.css'
 import { Reveal } from '../../design-system/components/Reveal'
 import { registerDiscloseTarget } from '../../design-system/interactions/dragDisclose'
-import { DragGhost } from './DragGhost'
+import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { EyeToggle } from './EyeToggle'
 import { Switch } from '../../design-system/components/Switches/Switch'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
@@ -526,7 +526,7 @@ export function CustomList({
   if (!def) return null
   const type = def.type === 'status' ? 'status' : 'select'
   return (
-    <div ref={dnd.containerRef} style={{ position: 'relative' }}>
+    <div ref={dnd.containerRef} className="drop-line-host">
       <div className={gp.previewHeading}>Options</div>
       {ordered.flatMap((v) => {
         const o = byValue.get(v)
@@ -536,15 +536,14 @@ export function CustomList({
             key={v}
             ref={dnd.rowRef(v)}
             {...dnd.rowHandle(v)}
-            className={cx(gp.chipRow, hiddenSet?.has(v) && hiddenRow)}
-            style={dnd.draggingId === v ? { opacity: 0.4 } : undefined}
+            className={cx(gp.chipRow, hiddenSet?.has(v) && hiddenRow, dnd.draggingId === v && gp.ghosted)}
           >
             <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShapeForType(type)} />
             {rowEye(o.label, v, { hiddenSet, onToggleHidden })}
           </div>,
         ]
       })}
-      {dnd.line && <div className={gp.dropLine} style={{ top: dnd.line.y }} />}
+      {dnd.line && <div className={cx('drop-line', gp.dropLineInset)} style={{ top: dnd.line.y }} />}
       <DragGhost
         x={dnd.ghost?.x ?? null}
         y={dnd.ghost?.y ?? null}
@@ -582,14 +581,13 @@ function SpringableRow({
   }, [collapsed])
   return (
     <div
-      className={className}
+      className={cx(className, dimmed && gp.ghosted)}
       ref={(node) => {
         el.current = node
         refCb(node)
       }}
       data-disclose={collapsed ? '' : undefined}
       {...handle}
-      style={dimmed ? { opacity: 0.4 } : undefined}
     >
       {children}
     </div>
@@ -764,8 +762,8 @@ function LocationHierarchy({
           gp.chipRow,
           gp.subChip,
           hiddenSet?.has(subHiddenKey(o.value)) && hiddenRow,
+          dnd.draggingId === id && gp.ghosted,
         )}
-        style={dnd.draggingId === id ? { opacity: 0.4 } : undefined}
       >
         <Chip color={chipColorFor(o.color)} label={o.label} shape={chipShapeForType(subType)} />
         {rowEye(o.label, subHiddenKey(o.value), { hiddenSet, onToggleHidden })}
@@ -836,9 +834,9 @@ function LocationHierarchy({
     return bySet(source.sets ?? [])
   }
   return (
-    <div ref={dnd.containerRef} style={{ position: 'relative' }}>
+    <div ref={dnd.containerRef} className="drop-line-host">
       {(source.sets ?? []).map(renderSet)}
-      {dnd.line && <div className={gp.dropLine} style={{ top: dnd.line.y }} />}
+      {dnd.line && <div className={cx('drop-line', gp.dropLineInset)} style={{ top: dnd.line.y }} />}
       <DragGhost x={dnd.ghost?.x ?? null} y={dnd.ghost?.y ?? null} label={ghostLabel()} />
     </div>
   )

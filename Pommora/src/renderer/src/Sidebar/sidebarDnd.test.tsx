@@ -70,7 +70,7 @@ const row = (id: string): HTMLElement => host.querySelector(`[data-row="${id}"]`
 // The drag ghost is the shared DragGhost chip — the a11y announce live region also carries the
 // title text, so a bare body-text probe would false-positive.
 const ghost = (): boolean =>
-  [...document.body.querySelectorAll<HTMLElement>('.band-drag-ghost')].some(
+  [...document.body.querySelectorAll<HTMLElement>('.drag-ghost')].some(
     (el) => el.textContent === 'P1',
   )
 
@@ -311,7 +311,7 @@ describe('sidebar drag — the line marks where the drop lands', () => {
   } as unknown as NexusTree
 
   const line = (): HTMLElement | undefined =>
-    host.querySelector<HTMLElement>('.table-drop-line') ?? undefined
+    host.querySelector<HTMLElement>('.drop-line') ?? undefined
 
   it("draws at the target's first page, not under the header the pointer is over", async () => {
     // Folders first, so D's first page sits BELOW its Set — the header's bottom edge and the

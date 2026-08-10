@@ -43,7 +43,7 @@
   background: var(--state-hover);
 }
 .nav-item.is-dragging {
-  opacity: var(--drag-muted);
+  opacity: var(--state-ghost);
 }
 .nav-item-main {
   flex: 1;

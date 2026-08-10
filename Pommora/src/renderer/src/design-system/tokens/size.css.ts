@@ -67,6 +67,10 @@ export const DISCLOSURE_INDENT = 14
  *  override with the same base scaled by `--mdpm-scale`). */
 export const FOLD_GUTTER = 20
 
+/** Px an insertion line is pulled in from its surface's edges — the third dimension of the
+ *  drop-line primitive (`--drop-line-thickness` / `--drop-dot-size` carry the other two). */
+export const DROP_LINE_INSET = 2
+
 /** The floor a resizable tile is never dragged below, on either axis — SurfacePM's blocks and
  *  MarkdownPM's embedded page tiles agree on one minimum, so a tile bottoms out the same wherever
  *  it can be grabbed. */

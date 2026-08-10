@@ -2,7 +2,7 @@ import { globalStyle } from '@vanilla-extract/css'
 import { DEFAULT_ACCENT } from '@shared/types'
 import { vars as colorVars } from './color.css'
 import { font } from './typography.css'
-import { DISCLOSURE_INDENT, FOLD_GUTTER, size } from './size.css'
+import { DISCLOSURE_INDENT, DROP_LINE_INSET, FOLD_GUTTER, size } from './size.css'
 import { TINT_STEPS } from './tint'
 import { duration, easing } from './motion'
 import { stack } from './stack'
@@ -64,6 +64,7 @@ globalStyle(':root', {
     '--drag-line': 'var(--accent)',
     '--drop-line-thickness': '2px',
     '--drop-dot-size': '7px',
+    '--drop-line-inset': `${DROP_LINE_INSET}px`,
     // List outline (the nested-run rail) — THE shared rail primitive: MarkdownPM's outliner guides
     // and the Grouping pane's hierarchy rail consume these knobs; each surface owns only its
     // positioning math.

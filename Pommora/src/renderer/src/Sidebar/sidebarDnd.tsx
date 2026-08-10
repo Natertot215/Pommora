@@ -16,7 +16,7 @@ import {
   endDragDisclose,
 } from '@renderer/design-system/interactions/dragDisclose'
 import { EDITABLE_TARGETS } from '@renderer/design-system/interactions/shared'
-import { DragGhost } from '../Components/Detail/DragGhost'
+import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { FolderPlacement } from '@shared/types'
@@ -364,13 +364,13 @@ export function SidebarDnd({
 
   return (
     <Ctx.Provider value={value}>
-      <div ref={contentRef} style={{ position: 'relative' }}>
+      <div ref={contentRef} className="drop-line-host">
         {children}
         {/* A noop target draws nothing: the line promises a move, and the drop commits only when the
             slot differs from where the row already sits. */}
         {drag.target && !drag.target.noop && (
           <div
-            className="table-drop-line"
+            className="drop-line"
             aria-hidden
             style={{
               top: drag.target.lineY,
@@ -378,7 +378,7 @@ export function SidebarDnd({
               right: LINE_INSET_RIGHT,
             }}
           >
-            <span className="table-drop-dot" />
+            <span className="drop-dot" />
           </div>
         )}
       </div>

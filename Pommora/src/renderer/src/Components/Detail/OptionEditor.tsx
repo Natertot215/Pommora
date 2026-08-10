@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { chipLabel, chipColor } from '@renderer/design-system/tokens'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
-import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
 import {
   addOption,
   recolorOption,
@@ -15,7 +14,7 @@ import { cx } from '@renderer/design-system/cx'
 import { Chip, chipShapeForType } from '../Chip'
 import { EditableInput } from '../EditableInput'
 import { ColorPicker } from './ColorPicker'
-import { DragGhost } from './DragGhost'
+import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from './settingsPane.css'
 
@@ -160,11 +159,11 @@ export function OptionEditor({
         ) : null}
         {reorder.lineTop !== null ? (
           <div
-            className="table-drop-line"
+            className="drop-line"
             aria-hidden
-            style={{ top: reorder.lineTop, left: DROP_LINE_INSET, right: DROP_LINE_INSET }}
+            style={{ top: reorder.lineTop }}
           >
-            <span className="table-drop-dot" />
+            <span className="drop-dot" />
           </div>
         ) : null}
       </div>

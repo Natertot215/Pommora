@@ -48,11 +48,12 @@ export class Overlay {
     if (!this.line) {
       const l = document.createElement('div')
       l.setAttribute('aria-hidden', 'true')
-      l.style.cssText =
-        'position:fixed;height:var(--drop-line-thickness);border-radius:var(--drop-line-thickness);background:var(--drag-line);pointer-events:none;z-index:var(--z-floating)'
+      l.className = 'drop-line'
+      // Viewport-fixed with explicit left/width per frame — the class's absolute + edge insets
+      // don't apply to a body-level overlay.
+      l.style.cssText = 'position:fixed;right:auto;z-index:var(--z-floating)'
       const dot = document.createElement('span')
-      dot.style.cssText =
-        'position:absolute;left:calc(var(--drop-dot-size) / -2);top:calc((var(--drop-line-thickness) - var(--drop-dot-size)) / 2);width:var(--drop-dot-size);height:var(--drop-dot-size);border-radius:50%;background:var(--drag-line)'
+      dot.className = 'drop-dot'
       l.appendChild(dot)
       document.body.appendChild(l)
       this.line = l

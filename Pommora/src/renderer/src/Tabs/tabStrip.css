@@ -56,7 +56,7 @@
   color: var(--label-control);
 }
 .tab.is-dragging {
-  opacity: var(--drag-muted);
+  opacity: var(--state-ghost);
 }
 /* The inter-tab segment — a SIBLING pill (not a ::before) rendered before every tab but the first, so
    the tab's overflow:hidden can't clip it as the tab collapses to 0. It RIDES the tab's own motion:

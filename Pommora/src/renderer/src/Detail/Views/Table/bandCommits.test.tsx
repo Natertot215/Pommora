@@ -193,7 +193,7 @@ const mountTable = async (source: CollectionNode): Promise<void> => {
 
 /** Stack the visible band headers at 24px each and give the dnd box a rect. */
 function stubBandRects(): void {
-  const box = host.querySelector('.band-dnd')
+  const box = host.querySelector('.drop-line-host')
   if (box) stubRect(box, { top: 0, bottom: 400 })
   const headers = host.querySelectorAll('.group-band-head')
   for (const [i, el] of [...headers].entries()) stubRect(el, { top: i * 24, bottom: i * 24 + 24 })
@@ -424,9 +424,9 @@ describe('sub-group row drop (the set × bucket matrix)', () => {
       async () => SUB_VALUES
   })
 
-  /** Rects: table-dnd box + each data-row stacked at 24px from y=100 (pA1, pA2, pB in DOM order). */
+  /** Rects: drop-line-host box + each data-row stacked at 24px from y=100 (pA1, pA2, pB in DOM order). */
   const stubRowRects = (): void => {
-    const box = host.querySelector('.table-dnd')
+    const box = host.querySelector('.drop-line-host')
     if (box) stubRect(box, { top: 0, bottom: 400 })
     const rows = host.querySelectorAll('.data-row')
     for (const [i, el] of [...rows].entries())
