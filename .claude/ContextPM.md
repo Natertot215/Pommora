@@ -69,11 +69,7 @@
 - [ ] `useDismiss` coordinates with picker portals via per-event DOM queries; a shared open-picker counter removes the handshake.
 - [ ] The preview window's two halves share a path-keyed detail cache but neither dedupes an in-flight fetch, so navigating with the inspector already open still calls `openPage` twice.
 - [ ] `group.tsx` rebuilds geometry on every pointermove — `rowsOf` runs inside the hit-test and `cellAt` allocates beside it, both deriving from values invariant mid-drag. Caching against the rects array's identity retires both.
-- [ ] `sidebarDnd`'s collection/context branch re-filters the sibling set per pointermove; snapshot it at activation.
 - [ ] View format, grouping, and banner saves still trigger a full vault walk, as does `submitPropertyRename`; both want an optimistic targeted patch.
-- [ ] The sidebar's contexts↔collections cross-fade renders two full trees for the transition's length, each building its own DnD index.
-- [ ] Four surfaces still hand-roll what `gesture.ts` owns — `sidebarDnd`, the data-view column drag, and `useOptionReorder`/`useStatusReorder`. Migrate each onto `usePointerGesture()` as its file is next touched, once the skeleton is hardened. `SurfacePM/pointerDrag`, `engine.tsx`, and `group.tsx` stay hand-rolled by design, each adding something the skeleton lacks.
-- [ ] MarkdownPM's `listDrag`/`blockDrag` are the one migration worth declining: both are nine-tenths CodeMirror domain logic, and both are click-or-drag surfaces the skeleton can't serve until it can report a release before activation. That `onTap(e)` is a handful of additive lines and lands with the migration that consumes it.
 
 ### Known Issues
 
