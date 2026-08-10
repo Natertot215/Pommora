@@ -115,7 +115,7 @@
 
 **What left:** "Embed Page ▸" came off the grip entirely — the page's own right-click menu already carried Insert ▸ Page, running the same insertion — so the arm was deleted rather than relocated, and the pick tree now crosses the boundary only for the tile that re-aims through it. The insert helpers moved out to their own module beside the menu action that is now their only caller. The codeblock's language switch follows as one case on the context, one on the action, and a writer beside the list's.
 
-- **Diff:** Net +34 | +256 / −222 (code only; +573 / −392 with tests and comments)
+- **Diff:** Net +42 | +264 / −222 (code only; +611 / −393 with tests and comments)
 
 #### PM-091 || CSS Token Organization
 **DATE:** 08-10-2026
