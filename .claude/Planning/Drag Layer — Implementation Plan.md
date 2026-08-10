@@ -1,0 +1,575 @@
+## Drag Layer — Implementation Plan
+
+> **Status:** written, pending review · Spec: none as file — the tier scope ratified in-session (08-09), recorded whole in Goal + Requirements · Execute tasks in order.
+> Citations name files and symbols; re-derive before editing.
+
+**Goal**
+
+Every drag in Pommora runs on one hardened gesture lifecycle, every mid-drag scroll re-aims correctly, every drag inside a scroller can reach past its fold, and the drag layer's chrome, snapshot discipline, and constants each have exactly one owner. At the end, a census grep enumerates the hand-rolled lifecycles that remain and every one of them is a documented deliberate — a fresh reader finds architecture, not archaeology.
+
+The shape is **adoption plus deletion**: the shared toolkit (`gesture.ts`, `autoscroll.ts`, `a11y.ts`, `dragDisclose.ts`, `DragGhost`, the `table-drop-line` chrome) already exists and is good; nearly every task retires a private re-derivation onto it. Two small modules are created (`snapshot.ts`, and nothing else — the region-scan hoist lands inside an existing model file). The one boundary this plan *defines* rather than erases: the layer has **two lifecycle families**. Window-listener **drags** (threshold-gated, Escape-abortable, teardown-owning) belong on the skeleton; element-capture **scrub controls** (pane-edge resizes, the slider, the photo pan — immediate response on press, self-cleaning under pointer capture with `pointercancel`/`lostpointercapture` handled) are a deliberate second family and stay element-bound. The alternative — one skeleton swallowing both families via an immediate-activation mode — was weighed and rejected: only the Slider would use it, and its actual defect is a three-line missing-cancel fix (YAGNI; the reachability razor cuts the capability, not the fix).
+
+Alternatives weighed at scoping: the retired plan's shared slot resolver (`slotAtY`) is deliberately **not** built — its own attack review showed the Y-only signature foreclosing the sidebar's horizontal-aim prospect, and the per-surface slot math is genuine domain geometry (tree depth, sticky spans, 2-D rows). The only scan merge made is the one verbatim copy (`hiddenPaneModel`). Identity stamping and order persistence (the reorder snap-back) are a separate ruled-out arc and no task here touches them.
+
+**Requirements**
+
+1. A gesture whose callback throws tears itself down: no half-activated drop can commit, and a throwing teardown cannot wedge the module-level gesture lock.
+2. A drag surface unmounting mid-drag leaves no listener behind — remove-by-stored-identity, never remove-by-closure-identity.
+3. The four window-listener drag lifecycles that hand-roll the skeleton — `sidebarDnd`, `useOptionReorder`, `useStatusReorder`, the data-table column drag — consume `usePointerGesture`, plus the column-width grip resize (whose sibling precedent is already on the skeleton).
+4. A mid-drag scroll can never aim a drop at a stale slot: `groupingDnd` and the GFM table drag gain invalidation; `tableDnd` gains the props-change invalidation its siblings carry.
+5. A cancelled scrub control reverts: the Slider's `pointercancel` restores the pre-drag value; the grip resize's cancel reverts the width instead of committing it.
+6. No invariant-derived geometry is rebuilt per pointer event: `group.tsx` caches its row model and slot math against the frozen rects' identity; the sidebar snapshots its sibling set at measure time; the sidebar's two layers share one tree-keyed index.
+7. One owner each for: the measure-once snapshot pattern, the floating ghost, the insertion-line chrome, the two-region scan, the ghost cursor offset, and the editable-target guard's core selector.
+8. Every drag inside a scrollable region edge-scrolls: option reorder, status reorder, the grouping pane, the data-table column drag (x-axis), and the GFM table drag.
+9. Every product insertion-line drag announces pickup and drop, and the single-zone engine's pointer path announces the way its keyboard path already does.
+10. Spring-open works wherever a collapsed container is a drop target: the band drag, the grouping hierarchy, and the sidebar tree.
+11. The documentation is true at close: `PommoraDND.md` states the two-family boundary and full adoption; `ContextPM.md`'s flagged drag notes are gone.
+
+**Acceptance — the whole thing working**
+
+On the running app against a scratch nexus: a drag on each migrated surface survives a mid-drag wheel scroll with the line tracking the moved rows and Escape aborting cleanly; switching sidebar modes mid-drag strands nothing (proven by the listener-identity test, red against today's code); a Select property with more options than its pane shows edge-scrolls to an off-screen slot and commits there; dwelling a dragged page over a collapsed Collection springs it open; and the closing census returns exactly the documented-deliberate hand-rolled set with the full suite green and lint at zero.
+
+**Forced By**
+
+- `gesture.ts` holds one module-level `live`, sets `g.active = true` *before* calling `onActivate`, and `detach` runs `teardown` before `live = null` → a throwing activation leaves listeners armed and the release commits a never-set-up drop; a throwing teardown wedges every future drag. Hardening precedes migration because exposure scales with consumers.
+- The leak class is one shape in three files: `markSnapshotDirty`/`markDirty` is re-created per render, added from the drag-render's closure, removed by the unmount effect's mount-render closure — same count, wrong identity. The four pointer listeners are immune (removed via the stored handlers ref). A skeleton consumer cannot express this bug: add and remove live in one spec object.
+- `Sidebar.tsx` mounts `SidebarDnd` twice (contexts and collections layers) and the mode cross-fade holds both mounted → unmount-during-drag is reachable, and each instance builds a full-tree `buildIndex` while rendering one half.
+- `groupingDnd.tsx` contains zero event listeners and its lists live inside `gp.middle` (`MIDDLE_MAX_HEIGHT` KNOB, `overflowY: auto`) → a mid-drag wheel makes `bandSlot` resolve a wrong `beforeId`/`nestInto` — a wrong-target *commit*. Fixed first, standalone, because it is the one live wrong-write in the plan.
+- `startPointerDrag` (SurfacePM) and the window-chrome/scrub controls handle `pointercancel` and `lostpointercapture` themselves and are element-capture by design → they are a family, not debt; the plan documents the boundary instead of migrating them.
+- The Slider's press must change the value before any movement and its release-without-move must commit → it structurally cannot ride a first-move-activated skeleton; its defect is only the missing cancel path.
+- `MarkdownPM/Tables/TableView.tsx` already runs both its reorder and its boundary resize on the skeleton → the Detail grip resize migrates to match its sibling, not onto a new pattern.
+- `group.tsx`'s scroll path replaces each zone's frozen rects array wholesale → caching `rowsOf`/`cellAt` keyed on the array's identity invalidates for free, no second writer.
+- Keyboard drag stops at the single-zone engine (documented policy) → announce-only for the insertion-line surfaces; `ensureInstructions` stays engine-only.
+
+**Inherited Reasoning**
+
+- The retired 08-09 plan's Phase 1 (identity, `persistable`, order writes, `movePage` optimistic patch) was ruled a separate concern in `d6406a54`'s commit message. Do not resurrect any of it here; the reorder snap-back will still be visible after this plan lands and that is expected.
+- The retired plan's Task 6b (per-layer index narrowing) is rejected: a scoped index that drops a parent silently breaks the depth derivation. The shared-memo shape (one `buildIndex` for both layers) achieves the perf win with no behavior surface.
+- `listDrag`/`blockDrag` and `CalendarPicker`'s range drag stay off the skeleton — all three are click-or-drag surfaces blocked on an `onTap` callback fired on sub-threshold release. `onTap` lands with the migration that consumes it, not before.
+- `useOptionReorder` and `useStatusReorder` are *not* merged with each other: one is flat, one partitions every Y into exactly one group including empty ones. They share the lifecycle, never the drop model.
+- The five stay-hand-rolled gesture owners are documented deliberates: `engine.tsx` (two input sources on one drag record), `group.tsx` (blur abort, no-capture policy, settle-commit machinery), `SurfacePM/sensors/pointerDrag.ts` (rAF coalescing, lost-capture abort), the window chrome (`SidePane`, `FloatingWindow`, `TabBar`), and the scrub controls (`App.tsx` edge resizes, `Slider`, `PhotoCropModal`).
+- `feel.tsx`'s adopt-or-delete decision stays sequenced after, as before.
+
+**Grounding** *(re-open these; don't cite them)*
+
+- `design-system/interactions/gesture.ts` — the skeleton whole; the two hardening flaws; the absent pointer-id filter.
+- `Sidebar/sidebarDnd.tsx` + `sidebarDndModel.ts` — the largest hand-roll; `computeTarget`'s kind dispatch; the per-move sibling filter; the inline ghost and line literals.
+- `Components/Detail/paneDnd.tsx` — the migration precedent: scroll listener and autoscroll in `onActivate`, symmetric `teardown`, `swallowActiveEscape`.
+- `Components/Detail/useOptionReorder.ts` / `useStatusReorder.ts` — the two smaller hand-rolls; the verbatim capture-phase Escape; the shared leak shape.
+- `Detail/Views/Table/TableView.tsx` — `startColumnDrag` (hand-rolled, no Escape, no unmount abort, capture before threshold) and the width-grip resize (element listeners; cancel commits).
+- `Detail/Views/Table/tableDnd.tsx` / `bandDnd.tsx` — skeleton consumers; `bandDnd`'s inline ghost; `tableDnd`'s missing props-dirty effect; the `beginDragDisclose` bracket precedent.
+- `Components/Detail/groupingDnd.tsx` — the no-invalidation surface; measures once in `onActivate`.
+- `MarkdownPM/Tables/TableView.tsx` — `startDrag`/`startResize` on the skeleton; the frozen `origin`.
+- `design-system/interactions/{autoscroll,a11y,dragDisclose,shared}.ts`, `Components/Detail/DragGhost.tsx`, `Detail/Views/Table/Table.css` (`.table-drop-line`, `.band-drag-ghost`), `design-system/tokens/theme-vars.css.ts` (`--drag-line`, `--drop-line-thickness`, `--drop-dot-size`) — the services and chrome being adopted.
+- `Detail/Views/GroupBand.tsx` — the disclose registrar pattern (`rowRef` + `toggleRef` + `data-disclose`).
+- `Components/Detail/paneDndModel.ts` / `hiddenPaneModel.ts` — the verbatim scan pair.
+- `design-system/interactions/group.tsx` — `rowsOf`, `cellAt`, `indexAt`, `trackAt`, `itemState`; the wholesale rects replacement in `onScroll`.
+- `.claude/Guidelines/Design-Sources.md` · `.claude/Features/PommoraDND.md`.
+
+**Environment**
+
+| Slot | Resolved as |
+| --- | --- |
+| Plan directory | `.claude/Planning/` — house convention `<Topic> — Implementation Plan.md` |
+| Spec input | None as file. The in-session tier ratification (08-09), four read-only survey reports, and every load-bearing claim re-verified firsthand against the code. |
+| Explorer agent | `Explore` / `general-purpose` (four already dispatched, read-only) |
+| Research agent | Not needed — no external research in scope |
+| Code reviewer | `/code-review` at phase gates |
+| Attack reviewer | `build-breaking-agent` (designated in StudioMD) |
+| Neutral verifier | `general-purpose`, handed the Delivery Claim, the Requirements, and the commit range only |
+| Simplification pass | `code-simplifier`, then `comment-killer-agent` (designated in StudioMD) |
+| Gate commands | From `Pommora/package.json`, run in `Pommora/`: `npm run typecheck` · `npm run test` · `npm run lint` · `npm run build` at the final gate only |
+| Rules directory | `.claude/Guidelines/` |
+
+**Shapes:** fix · refactor · additive · user-visible. No data migration, no live-user-file writes — every task is renderer-only, so there is **no hazard window** and no scratch-nexus restriction beyond ordinary dev habit.
+
+**Global Constraints (every task inherits these)**
+
+- Gates run from `Pommora/`, exit codes read directly, **never through a pipe**.
+- Refactor tasks carry the baseline invariant: the suite's pass count and the lint count move only by that task's own new tests.
+- Formatting is Biome's PostToolUse hook — never hand-align, never run Biome manually; an `Edit` failing on whitespace means the file reformatted, so re-read and retry.
+- Tokens from `design-system/tokens` only; comments minimum and why-only; `KNOB` markers and `(Nathan's call)` annotations are functional and survive every edit.
+- Stage explicit file paths only; never a directory-level `git add`; one tree-touching writer at a time.
+- Out of scope everywhere: `engine.tsx` and `group.tsx` gesture lifecycles (Task 10 touches geometry caching only) · `SurfacePM/sensors/pointerDrag.ts` · `MarkdownPM/editor/listDrag.ts`, `blockDrag.ts`, and `CalendarPicker`'s grid drag · `SidePane.tsx`, `FloatingWindow.tsx`, `TabBar.tsx` · `App.tsx`'s edge resizes and `PhotoCropModal` · keyboard-drag additions · identity/order persistence · every Tier-5 product candidate (tab⇄pin, cards band drag, subfield reorder, outline drag, recents→pins).
+
+**Made False** *(each rewrite lands in the commit that falsifies it)*
+
+| Doc | The specific claim | What makes it false | Task |
+| --- | --- | --- | --- |
+| `PommoraDND.md` | "Adoption is partial — several surfaces still hand-roll the same skeleton" | Tasks 5–9 complete adoption; the two-family boundary replaces the sentence | 9 |
+| `PommoraDND.md` | "Not every drag is wired to it: the table's column reorder, the GFM-table drag, and the grouping pane are outstanding" | Task 15 wires all three (plus option/status) | 15 |
+| `ContextPM.md` | The `group.tsx` per-move rebuild note (line 126) | Task 10 | 10 |
+| `ContextPM.md` | The `sidebarDnd` per-move re-filter note (line 127) | Task 5 | 5 |
+| `ContextPM.md` | The cross-fade double-index note (line 129) | Task 6 | 6 |
+| `ContextPM.md` | The four-surfaces + skeleton-hardening note (line 130) | Tasks 4–9; the deliberate-set sentence moves to `PommoraDND.md` | 9 |
+| `ContextPM.md` | The `listDrag`/`blockDrag` decline note (line 131) | Rewritten into `PommoraDND.md` as the standing boundary (still true, wrong home) | 9 |
+
+**Dead Vocabulary** *(the closing sweep)*
+
+- `rg -F "< ACTIVATION" -l Pommora/src/renderer/src` → expect **3** files: `engine.tsx`, `listDrag.ts`, `blockDrag.ts`. At planning time: **7** (adds `sidebarDnd.tsx`, `useOptionReorder.ts`, `useStatusReorder.ts`, `Detail/Views/Table/TableView.tsx`).
+- `rg -F "snapshotDirty" -l Pommora/src/renderer/src` → expect **1** (the new `snapshot.ts`). At planning time: **6**.
+- `rg -F "band-drag-ghost" -l Pommora/src/renderer/src` → expect **2** (`DragGhost.tsx`, `Table.css`). At planning time: **4**.
+- Control: `rg -F "usePointerGesture" -l Pommora/src/renderer/src` → **10** at planning time; more at close, never zero. Zero means the sweep never ran.
+
+---
+
+### Phase 1 — The stale-slot fixes (standalone; nothing depends on them and they depend on nothing)
+
+#### Task 1: The grouping pane's snapshot invalidates
+
+**Requirement:** 4
+
+**Why:** `groupingDnd.tsx` builds its whole `BandIndex` plus `boxTop`/`endY` inside `onActivate` (lines 75–84) and never re-measures — the only drop-line surface with no invalidation path at all. Its lists render inside a 280px scroll-capped region, so a mid-drag wheel leaves every rect viewport-stale and `bandSlot` resolves the wrong slot: a wrong-target commit, not a cosmetic drift. Every sibling already answers this with a capture-phase scroll listener and a lazy re-measure; this task gives it the same answer in its current hand shape (Task 11 later moves it onto the shared helper with everyone else).
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/Components/Detail/groupingDnd.tsx` — hoist the measure block from `onActivate` into a `takeSnapshot`; add a dirty flag; add the scroll listener in `onActivate` and a `teardown` removing it (the spec currently has no `teardown`); re-measure lazily at the top of `onDragMove`.
+- Test: `Pommora/src/renderer/src/Components/Detail/groupingDnd.test.tsx` — create; `GroupingPane.test.tsx` is the sibling pattern.
+
+**Failure half:** a scroll before activation → nothing to dirty, nothing thrown. The container ref not yet attached when re-measuring → the resolve declines for that move, never caches a null snapshot as valid. Rows unmounting mid-drag (a band deleted by another surface) → the re-measure simply measures fewer rows.
+
+**Negative control:** the test — scroll fired mid-drag, next move resolves against fresh rects — must go red against today's code. Confirm red before implementing.
+
+**Steps:**
+- [ ] Read `groupingDnd.tsx` and `bandDnd.tsx`'s listener/teardown pair whole.
+- [ ] Write the failing test; run — expect red.
+- [ ] Implement; re-run — expect green; full gate.
+- [ ] Commit: `fix(grouping): a mid-drag scroll re-aims the drop`
+
+#### Task 2: The GFM table drag re-bases its origin on scroll
+
+**Requirement:** 4
+
+**Why:** `MarkdownPM/Tables/TableView.tsx`'s `startDrag` freezes `origin` from `wrap.getBoundingClientRect()` at press; `geom` is wrap-relative and scroll-immune, but `pos - origin` is computed from live viewport coordinates, so any editor scroll mid-drag offsets the resolved slot by the scroll delta. Its two CM siblings and the Detail column drag all re-read their origin on scroll.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/TableView.tsx` — a capture-phase scroll listener (added in `onActivate`, removed in `teardown`) that re-reads `origin`; never a per-move rect read.
+- Test: `Pommora/src/renderer/src/MarkdownPM/Tables/widget.test.ts` is the sibling home — add there or beside it.
+
+**Failure half:** the wrap unmounting mid-drag (embed tile closed) → the skeleton's unmount abort already tears down; the listener must ride `teardown` so it goes with it.
+
+**Negative control:** slot-resolution test with a simulated scroll delta — red against today's code.
+
+**Steps:**
+- [ ] Write the failing test; run — expect red.
+- [ ] Implement; full gate.
+- [ ] Commit: `fix(markdown): the table drag survives an editor scroll`
+
+#### Task 3: The table row drag dirties on a rows change
+
+**Requirement:** 4
+
+**Why:** `paneDnd`, `bandDnd`, and `sidebarDnd` each carry a `useEffect` marking the snapshot dirty when their row-set prop changes; `tableDnd.tsx` has no effect at all, so a mid-drag watcher push leaves the frozen `MeasuredRow[]` describing rows that no longer exist until the next scroll. One three-line effect, mirroring `paneDnd`'s.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/Detail/Views/Table/tableDnd.tsx`
+- Test: `Pommora/src/renderer/src/Detail/Views/Table/tableDnd.test.tsx` (exists).
+
+**Steps:**
+- [ ] Write the failing test (rows prop swaps mid-drag → next resolve re-measures); expect red.
+- [ ] Implement; full gate.
+- [ ] Commit: `fix(table): a mid-drag rows change re-measures the snapshot`
+
+#### Gate 1 — no stale slot
+- [ ] Gate commands green, exit codes read directly.
+- [ ] `code-simplifier` + `/code-review` against `<base>..HEAD`, scoped to the three files.
+- [ ] Every concern fixed or ruled on in the Log.
+- [ ] Grouping pane and a GFM table dragged in the running app across a mid-drag scroll.
+- [ ] Progress hashes filled in.
+
+---
+
+### Phase 2 — The skeleton hardens (before its consumer count grows)
+
+#### Task 4: A gesture whose callback throws tears itself down, and a foreign pointer can't steer it
+
+**Requirement:** 1
+
+**Why:** Three flaws, all in `gesture.ts`, all cheap, all scaling with every consumer Tasks 5–9 add. (a) `g.active = true` precedes `spec.onActivate(ev)` — a throwing activation leaves the listeners armed and the eventual release calls `onDrop` on a gesture whose snapshot never got taken. (b) `detach` runs `g.spec.teardown?.()` before `live = null` — a throwing teardown removes the listeners then strands the lock, refusing every drag until reload. (c) The handlers never check `pointerId` — a second touch point's move/up steers or ends the primary drag; the sidebar's hand-roll guards this today and must not lose it in migration. This is hardening against a traced-but-unobserved class: do not describe it in the commit as a fix for observed breakage.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/design-system/interactions/gesture.ts` — wrap the `onActivate`/`onDragMove` calls (catch → `detach` + `onAbort` + rethrow); `try/finally` in `detach` so `live` always clears; record the begin event's `pointerId` and ignore mismatched move/up/cancel.
+- Test: `Pommora/src/renderer/src/design-system/interactions/gesture.test.ts` — create; `engine.test.ts` is the sibling pattern.
+
+**Interfaces**
+- Produces: no signature change. `PointerGestureSpec` is untouched.
+- Assumed by: Tasks 5, 7, 8, 9 (every migration relies on the hardened teardown ordering).
+
+**Failure half:** a throw in `onActivate` → teardown runs, `onAbort` fires, `live` is null, the next begin succeeds, and the release commits nothing. A throw in `onDragMove` after activation → same. A throw inside `teardown` itself → `live` still clears. A mismatched-pointer `up` → the gesture continues; the matching pointer's `up` still drops.
+
+**Negative control:** each test goes red with its guard removed, and the throwing-activation test also asserts `onAbort` fired and `onDrop` did not — a test checking only the second gesture passes if the error is swallowed silently.
+
+**Steps:**
+- [ ] Read `gesture.ts` whole; write the failing tests (throwing activate · throwing move · throwing teardown · foreign-pointer up); run — expect red.
+- [ ] Implement the three guards, nothing else — no change to activation semantics, capture timing, or the refusal rule.
+- [ ] Full gate. Commit: `fix(interactions): the gesture skeleton survives a throwing callback`
+
+#### Gate 2 — the skeleton holds
+- [ ] Gate commands green; new tests red-first confirmed in the task.
+- [ ] `code-simplifier` + `/code-review` against `<base>..HEAD`.
+- [ ] Progress hashes filled in.
+
+---
+
+### Phase 3 — The migrations (each deletes a lifecycle copy; drop behavior is unchanged by construction)
+
+#### Task 5: The sidebar consumes the skeleton
+
+**Requirement:** 2, 3, 6
+
+**Why:** `sidebarDnd.tsx` re-implements the entire lifecycle — pending→active, the window trio, Escape, deferred capture, pointer-id guard, unmount detach — and carries the leak the skeleton cannot express: the capture-phase scroll listener is added from the drag-render's closure and removed by the mount-render's, so a mode-switch unmount mid-drag strands it. `paneDnd.tsx` is the working precedent. Riding along in the same file: the collections/contexts branch's `measured.filter` runs per pointermove over inputs frozen at snapshot time — compute the sibling subset once, beside the snapshot, in `takeSnapshot`.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/Sidebar/sidebarDnd.tsx` — `begin`/`onMovePtr`/`onUp`/`onCancel`/`onKey`/`detach`/the unmount effect collapse into one `usePointerGesture` spec; the scroll listener and autoscroll start move into `onActivate`, their removal into `teardown`; the editable-target `closest` guard stays at the caller before `beginGesture`. `computeTarget` and every commit derivation stay untouched except the sibling-set precompute.
+- Test: `Pommora/src/renderer/src/Sidebar/sidebarDnd.test.tsx` (exists) — note its listener assertions count adds against removes, which passes on the identity bug; the new leak test must assert the *same function reference* is removed, or assert post-unmount that a scroll no longer dirties.
+
+**Failure half:** a tree push mid-drag → the index effect dirties the snapshot, as today. A drop whose commit rejects → the skeleton's teardown-before-`onDrop` ordering resets regardless. An unmount mid-drag → the skeleton's stored spec tears down; the hook's abort covers it.
+
+**Negative control:** the unmount-mid-drag leak test goes red against today's code — confirm before migrating, not after.
+
+**Survivors:** `computeTarget`'s five indicator conventions, the depth-indented line, the grab-point ghost anchoring (`x - grabX`, deliberately not the shared cursor offset). The drop-resolver rewrite stays out of scope entirely.
+
+**Baseline invariant:** pass count and lint count move only by the new tests. Drop behavior unchanged.
+
+**Steps:**
+- [ ] Read `sidebarDnd.tsx` and `paneDnd.tsx` whole.
+- [ ] Write the failing leak test; run — expect red.
+- [ ] Migrate the lifecycle; move the sibling filter into `takeSnapshot`; re-run — expect green.
+- [ ] Full gate; drag every sidebar entity kind in the running app.
+- [ ] Commit: `refactor(sidebar): the drag consumes the shared gesture skeleton`
+
+#### Task 6: The sidebar's layers share one index
+
+**Requirement:** 6
+
+**Why:** Both `SidebarDnd` mounts receive the full tree and each builds its own full-tree `buildIndex` while rendering one half; during the mode cross-fade both exist at once. Hoisting the `useMemo(() => buildIndex(tree), [tree])` into `Sidebar.tsx` and passing the index as a prop gives both layers (and the exit overlay's remount) one shared build per tree change. Chosen over per-layer narrowing deliberately — a narrowed index that drops a parent breaks the depth derivation silently (Inherited Reasoning).
+
+**Files:** `Pommora/src/renderer/src/Sidebar/Sidebar.tsx` · `Sidebar/sidebarDnd.tsx` (prop) · test at `Sidebar/sidebarDnd.test.tsx`.
+
+**Baseline invariant:** drop behavior unchanged; pass count moves only by any new test.
+
+**Steps:**
+- [ ] Hoist the memo; thread the prop; full gate.
+- [ ] Switch sidebar modes mid-session in the running app; drag in both.
+- [ ] Commit: `perf(sidebar): one tree index serves both layers`
+
+#### Task 7: The option and status reorder hooks consume the skeleton
+
+**Requirement:** 2, 3
+
+**Why:** Both hooks re-implement the same lifecycle, including a six-line capture-phase Escape that is exactly `swallowActiveEscape` (both live in dropdown-hosted panes — the case the flag was built for), and both carry the sidebar's same `markDirty` unmount leak. The two drop models stay apart: flat list versus every-Y-owns-one-group.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/Components/Detail/useOptionReorder.ts` · `useStatusReorder.ts` — lifecycle onto `usePointerGesture` with `swallowActiveEscape: true`; scroll listener into `onActivate`/`teardown`; editable-target guard stays at the caller.
+- Test: create `useOptionReorder.test.ts` with the leak test (red-first against today's code); `useStatusReorder` shares the shape.
+
+**Survivors:** `useStatusReorder`'s group partition, untouched. The two hooks stay two hooks.
+
+**Baseline invariant:** pass count and lint count move only by the new tests.
+
+**Steps:**
+- [ ] Write the failing leak test against `useOptionReorder`; expect red.
+- [ ] Migrate both hooks; full gate after each; reorder options and statuses in the running app.
+- [ ] Commit: `refactor(properties): the reorder hooks consume the shared gesture skeleton`
+
+#### Task 8: The column drag consumes the skeleton
+
+**Requirement:** 3
+
+**Why:** `startColumnDrag` hand-rolls the trio with three real gaps the skeleton closes structurally: no Escape abort at all (the only in-scope drag without one), capture taken before the activation threshold (a sub-threshold press has already captured, retargeting its click), and no unmount teardown — a table unmounting mid-drag leaves the window listeners armed until the next release anywhere, which can then commit a stale reorder through the dead closure. One agent-reported finding to verify in-task: the commit path's bounds check (`f < columns.length && t < columns.length`) may be unable to fail because both indices derive from the same frozen array — verify against a mid-drag `columns` reshape; if confirmed dead, guard by id the way the visual path does, with a test that goes red without it.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — the `startColumnDrag` block only; the `--col-drag-x` var write, the sticky-zone slot math, and the `zoom` handling stay exactly as they are. The `onScroll` `gridLeft` re-read moves into the spec's `onActivate`/`teardown` pair.
+- Read first: `Pommora/src/renderer/src/MarkdownPM/Tables/TableView.tsx` — `startDrag`, the working precedent.
+- Test: `Pommora/src/renderer/src/Detail/Views/Table/columnReorder.test.ts` (exists).
+
+**Failure half:** a watcher reshaping columns mid-drag → the commit must refuse stale ids rather than reorder by position. A drop with no armed slot (sub-threshold) → no commit, click preserved.
+
+**Survivors:** `COL_SHIFT_HYSTERESIS` and the span-containment rule — a deliberate, commented rejection of closest-centre for unequal widths.
+
+**Baseline invariant:** pass count and lint count move only by new tests.
+
+**Steps:**
+- [ ] Verify the bounds-check claim against the code; record the finding either way in the Log.
+- [ ] Migrate; add the stale-id guard + red-first test if the finding holds.
+- [ ] Full gate; drag columns in the running app, including Escape mid-drag.
+- [ ] Commit: `refactor(table): the column drag consumes the shared gesture skeleton`
+
+#### Task 9: The grip resize joins its sibling, the Slider learns to cancel, and the boundary is written down
+
+**Requirement:** 3, 5, 11
+
+**Why:** The width-grip resize binds move/up/cancel on the grip element itself and routes `pointercancel` into the same `end` as `pointerup`, so an OS cancel commits the in-progress width and a grip re-render mid-resize can strand the gesture — while its exact sibling (the GFM boundary resize) already runs on the skeleton. The Slider has no `pointercancel`/`lostpointercapture` path at all: a cancel leaves `draft` set and the control stuck in drag state. The Slider stays element-capture (its press must move the value before any travel — the scrub family), so its fix is the two missing handlers reverting the draft. This task also lands the docs' two-family boundary sentence, because this is the commit that makes it true.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — the grip-resize block onto `beginGesture` with `activation: 0`; `onDrop` commits, `onAbort` reverts the preview widths.
+- Modify: `Pommora/src/renderer/src/design-system/components/Slider/Slider.tsx` — `onPointerCancel`/`onLostPointerCapture` clear `draft` without committing.
+- Modify: `.claude/Features/PommoraDND.md` — the adoption sentence and the two-family boundary (drags on the skeleton; scrub controls element-capture and self-cleaning, membership enumerated); fold `ContextPM.md` line 131's decline in as the standing `onTap` boundary. Prune `ContextPM.md` lines 126/127/129/130 pieces already falsified by Tasks 5–8 if not yet pruned in those commits.
+- Test: `columnWidths.test.ts` (exists) for the grip; a small Slider test beside the component if the house pattern allows.
+
+**Failure half:** cancel with zero movement → no width write, no draft commit, no visual residue. `lostpointercapture` firing after a normal `pointerup` → already-finished guard, no double handling.
+
+**Negative control:** the cancel-reverts tests go red against today's code — the grip's cancel currently commits, the Slider's currently sticks.
+
+**Steps:**
+- [ ] Write the two failing cancel tests; expect red.
+- [ ] Migrate the grip; add the Slider handlers; re-run — expect green.
+- [ ] Rewrite the two docs in this commit; full gate.
+- [ ] Commit: `fix(interactions): a cancelled resize reverts, and the lifecycle boundary is documented`
+
+#### Gate 3 — one lifecycle
+- [ ] Gate commands green; baseline invariant held across Tasks 5–9.
+- [ ] Dead-vocabulary partial check: `rg -F "< ACTIVATION" -l` now returns 3 files.
+- [ ] `code-simplifier` + `/code-review` against `<base>..HEAD`.
+- [ ] Every concern fixed or ruled on.
+- [ ] Sidebar (all entity kinds, both modes, Escape, mid-drag scroll), options, statuses, columns, and the grip seen in the running app.
+- [ ] `PommoraDND.md` and `ContextPM.md` rewrites landed in their falsifying commits.
+- [ ] Progress hashes filled in.
+
+---
+
+### Phase 4 — The card engine stops rebuilding per move
+
+#### Task 10: `group.tsx` caches its row model and slot math against the frozen rects
+
+**Requirement:** 6
+
+**Why:** `rowsOf` (map, filter, sort, row-bucket) runs inside `indexAt` on every pointermove, and `cellAt` (a Set, a sorted lefts array, a stride walk) runs per card per drag re-render through `itemState` — both derive only from the frozen rects array, the skip index, and the zone width, all invariant between scrolls. The scroll path already replaces each zone's rects array wholesale, so a cache keyed on the array's identity invalidates for free with no second writer. This is the house hard rule about per-event O(N) work, applied to its own engine.
+
+**Files:** `Pommora/src/renderer/src/design-system/interactions/group.tsx` — a per-zone cache (rects-array identity + skip → rows; rects-array identity → the `cellAt` column model), consulted by `indexAt` and `itemState`/`targetXY`. Test additions in a new `group.test.tsx` only if a pure seam falls out naturally; otherwise the baseline invariant and the running app carry it.
+
+**Survivors:** the gesture lifecycle, the settle-commit machinery, the pad/bounds logic — untouched.
+
+**Baseline invariant:** card drag behavior unchanged; pass count and lint count unmoved.
+
+**Steps:**
+- [ ] Read the hit-test and `itemState` paths whole; implement the identity-keyed caches.
+- [ ] Full gate; drag cards across bands in the running app, including a mid-drag scroll.
+- [ ] Commit: `perf(interactions): the zone's row model computes once per snapshot, not per move`
+
+#### Gate 4 — behavior unmoved
+- [ ] Gate commands green; baseline invariant held.
+- [ ] `code-simplifier` + `/code-review` against `<base>..HEAD`.
+- [ ] Progress hashes filled in.
+
+---
+
+### Phase 5 — One owner each
+
+#### Task 11: One snapshot helper
+
+**Requirement:** 7
+
+**Why:** Six files spell the same measure-once pattern — a dirty ref, a `markDirty`, a lazy `if (dirty || !snap) retake` — identically. One `useDragSnapshot` owns it; adopters keep their own `take` functions (the geometry genuinely differs) and lose the ritual. `groupingDnd`'s Task-1 hand copy folds onto it here.
+
+**Files:**
+- Create: `Pommora/src/renderer/src/design-system/interactions/snapshot.ts` — `useDragSnapshot<T>(take: () => T | null)` returning `{ get, markDirty, reset }`; `get` re-takes when dirty or empty and never caches null as valid.
+- Modify: the six holders from the Derivation.
+- Create: `snapshot.test.ts` beside it.
+
+**Derivation**
+- `rg -F "snapshotDirty" -l Pommora/src/renderer/src` → **6** at planning time (`sidebarDnd`, `paneDnd`, `useOptionReorder`, `useStatusReorder`, `bandDnd`, `tableDnd`) plus `groupingDnd`'s Task-1 addition. After: **1** (the helper).
+- Control: `rg -F "useRef" -l Pommora/src/renderer/src` → dozens; zero means the search never ran.
+
+**Failure half:** `take` returning null (ref not attached) → `get` returns null, the caller declines the resolve, and the next `get` retries.
+
+**Baseline invariant:** pass count and lint count move only by `snapshot.test.ts`.
+
+**Steps:**
+- [ ] Re-derive the count; write `snapshot.test.ts` first; expect red (module not found).
+- [ ] Implement; adopt per file, full gate after each.
+- [ ] Commit: `refactor(interactions): one snapshot helper`
+
+#### Task 12: The chrome comes from its owners
+
+**Requirement:** 7
+
+**Why:** The floating ghost has one component and three copies — `paneDnd` and `bandDnd` inline the identical portal/class/style (a literal drop-in swap), and `sidebarDnd` hand-freezes the entire `.band-drag-ghost` rule into inline literals, including the token arithmetic (`-3`/`-2.5` are the CSS `calc()` results by hand) and `var(--accent)` where `--drag-line` is the token — so re-theming the drag line silently skips the sidebar. Strictly appearance-preserving: today the literals equal the class's computed values, so the swap changes no pixels.
+
+**Files:**
+- Modify: `Components/Detail/paneDnd.tsx` · `Detail/Views/Table/bandDnd.tsx` — inline ghosts onto `DragGhost`.
+- Modify: `Sidebar/sidebarDnd.tsx` — ghost onto `DragGhost` (its grab-offset `x` passes straight through); the line onto the `table-drop-line`/`table-drop-dot` classes with the depth-indent `left` and right inset staying inline as positioning.
+- Modify: `Components/Detail/groupingPane.css.ts` — drop the `, 2px` token fallbacks only.
+- Read first: `Components/Detail/DragGhost.tsx` · `Detail/Views/Table/Table.css` · `design-system/tokens/theme-vars.css.ts`.
+
+**Derivation**
+- `rg -F "band-drag-ghost" -l Pommora/src/renderer/src` → **4** at planning time. After: **2** (component + stylesheet).
+
+**Survivors:** `groupingPane`'s 8px insets and dotless line (its own menu-gutter geometry — adding the dot would be a visual change, not a consolidation); `dragChrome.ts`'s `--z-floating` (the editor's own stacking context — note it, don't "fix" it); the sidebar's grab-point anchoring.
+
+**Baseline invariant:** no visual change. Screenshot the sidebar mid-drag before and after; compare.
+
+**Steps:**
+- [ ] Before-screenshot the sidebar drag.
+- [ ] Swap the two inline copies; then the sidebar's ghost and line; full gate.
+- [ ] After-screenshot; compare; commit: `refactor(interactions): the drag chrome comes from its owners`
+
+#### Task 13: The duplicated region scan calls its original
+
+**Requirement:** 7
+
+**Why:** `hiddenPaneModel.ts`'s scan is a verbatim copy of `paneDndModel.ts`'s — the `within` helper and the five-line midpoint loop are byte-identical, with two mechanical substitutions of the region variable. The *policies* genuinely differ and stay apart; the scan does not.
+
+**Files:** `Components/Detail/paneDndModel.ts` (export the scan) · `hiddenPaneModel.ts` (consume it) · both test files exist.
+
+**Baseline invariant:** pass count unmoved.
+
+**Steps:**
+- [ ] Hoist; consume; full gate. Commit: `refactor(properties): the hidden pane stops re-deriving its neighbour's scan`
+
+#### Task 14: The scattered constants come home, and the click rule is one rule
+
+**Requirement:** 7
+
+**Why:** The ghost cursor offset (`+12`/`+8`) is spelled at five call sites; the editable-target guard has four spellings whose *core* ('input, textarea, contenteditable') is shared while the button-blocking differences are real per-surface decisions; and `suppressNextClick` has four arming rules — two surfaces (sidebar, paneDnd) currently let an activated drag that lands home fire its click, which on a sidebar row is a navigation. **Gated on the pending ruling** recorded in the Log: the recommended rule is *any activated drag suppresses the click* — five-plus pixels of travel is never a click — applied uniformly.
+
+**Files:** `design-system/interactions/shared.ts` (a `GHOST_OFFSET` and an `EDITABLE_TARGETS` core selector) · the five ghost sites · the guard call sites (each composing `+ ', button'` where it deliberately blocks buttons) · the arming sites per the ruling.
+
+**Survivors:** `group.tsx`'s slop-raising variant of the guard (different mechanism — it raises the threshold rather than refusing); `TabBar`'s own 3px travel rule (window chrome, out of scope).
+
+**Steps:**
+- [ ] Confirm the ruling in the Log before touching arming.
+- [ ] Hoist the two constants; apply the arming rule; full gate.
+- [ ] Commit: `refactor(interactions): the drag constants come home`
+
+#### Gate 5 — one owner each
+- [ ] Gate commands green; both derivations re-run against their controls.
+- [ ] `code-simplifier` + `/code-review` against `<base>..HEAD`.
+- [ ] Sidebar chrome compared against its before-shot; every concern fixed or ruled on.
+- [ ] Progress hashes filled in.
+
+---
+
+### Phase 6 — The adoption gaps close (additive, user-visible)
+
+#### Task 15: Five trapped drags gain edge auto-scroll
+
+**Requirement:** 8
+
+**Why:** Option reorder, status reorder, and the grouping pane drag inside height-capped scrollers (the menu frame; the 280px `gp.middle`); the column drag drags inside an x-scrolling table shell; the GFM table drag lives in CodeMirror's scrollDOM. None drives a scroll, so a slot past the fold is unreachable. The service lacks nothing: `startAutoScroll` takes an axis and `findScroller`/`resolveScroller` resolve the container. The column drag needs a `lastPoint` ref and an `onScrolled` re-resolve (its current scroll handler only re-reads `gridLeft`).
+
+**Files:** `Components/Detail/useOptionReorder.ts` · `useStatusReorder.ts` (resolve from a group element) · `groupingDnd.tsx` · `Detail/Views/Table/TableView.tsx` (column drag, `axis: 'x'`) · `MarkdownPM/Tables/TableView.tsx` (`resolveScroller(scrollDOM, 'y')` shape, as `listDrag` does).
+
+**Failure half:** a surface whose scroller can't resolve → no loop starts, the drag still works within the viewport; never a crash, never a frozen-looking drag.
+
+**User-visible sweep:** holding still at an edge keeps scrolling (the loop, not the pointer, owns it); Escape mid-scroll aborts both drag and loop; the loop's stopper rides `teardown` on every surface.
+
+**Steps:**
+- [ ] Adopt per surface, full gate after each; drive each below its fold in the running app.
+- [ ] Commit: `feat(interactions): the trapped drags gain edge auto-scroll`
+
+#### Task 16: The silent drags announce
+
+**Requirement:** 9
+
+**Why:** `announce` has exactly two callers — the sidebar and the engine's keyboard paths. Everything else is silent, including the engine's own pointer drags. A one-line `announce` at activation and at commit, reusing the sidebar's phrasing, brings the product surfaces to the standard one of them already ships.
+
+**Files:** `paneDnd.tsx` · `groupingDnd.tsx` · `useOptionReorder.ts` · `useStatusReorder.ts` · `tableDnd.tsx` · `bandDnd.tsx` · the column drag block · `group.tsx` (board) · `engine.tsx` (pointer lift/drop mirroring the keyboard wording).
+
+**Survivors:** `ensureInstructions` stays engine-only (it describes keyboard affordances only the engine has). The MarkdownPM drags and SurfacePM stay silent for now — editor and dashboard announcement phrasing wants its own pass; recorded in Sequenced After.
+
+**Steps:**
+- [ ] Adopt per surface; full gate. Commit: `feat(a11y): every product drag announces its pickup and drop`
+
+#### Task 17: The band and grouping drags spring collapsed targets open
+
+**Requirement:** 10
+
+**Why:** The service is engine-agnostic and both halves mostly exist: `GroupBand` already registers collapsed table bands — the very headers a band drag hovers — so `bandDnd` needs only the `beginDragDisclose(markDirty)`/`endDragDisclose` bracket its sibling `tableDnd` already wears. The grouping hierarchy's collapsed `DisclosureRow`s need the registrar half too (the `GroupBand` `rowRef`/`toggleRef`/`data-disclose` pattern) plus the bracket.
+
+**Files:** `Detail/Views/Table/bandDnd.tsx` (bracket) · `Components/Detail/groupingDnd.tsx` (bracket) · `GroupingPane.tsx`'s hierarchy rows (register while collapsed).
+
+**Failure half:** a band expanding mid-drag → the disclose remeasure dirties the snapshot, so the next resolve is against the new layout. Dragging a band over its own collapsed self → the cycle guard still refuses the drop; disclose may open it, which is the table row drag's existing behavior.
+
+**Steps:**
+- [ ] Bracket both; register the grouping rows; full gate; dwell-test both in the running app.
+- [ ] Commit: `feat(interactions): band and grouping drags spring collapsed targets open`
+
+#### Task 18: The sidebar springs collapsed containers open
+
+**Requirement:** 10
+
+**Why:** The sidebar tree is the surface where spring-loading matters most — dragging a page over a collapsed Collection currently dead-ends — and it participates on neither end. The bracket rides the Task-5 spec (`beginDragDisclose` with a remeasure that dirties the snapshot); the registration side is new surface: the sidebar's disclosure header registers while collapsed, mirroring `GroupBand`'s effect, expanding through its existing `setAndSave(true)` — which persists, exactly as the table's disclose toggle does, so the container stays open after the drop.
+
+**Files:** `Sidebar/sidebarDnd.tsx` (bracket in `onActivate`/`teardown`) · `Sidebar/Sidebar.tsx` — the disclosure header component: `rowRef` + `toggleRef` + `data-disclose` while collapsed, `registerDiscloseTarget` effect per `GroupBand.tsx`.
+
+**Failure half:** a container expanding mid-drag → the snapshot dirties via the disclose remeasure, or the drop resolves against moved rows. A registered header unmounting (tree push) → the effect's unregister runs; the service drops it.
+
+**Negative control:** the dwell-expands test goes red with the registration removed.
+
+**User-visible sweep:** the sprung-open container stays open after the drop and after an abort; dwell respects the service's one `DWELL_MS`; no spring fires on a sub-threshold press (the bracket only exists while a gesture is active).
+
+**Steps:**
+- [ ] Register; bracket; red-first test; full gate.
+- [ ] Drive in the running app: page over collapsed Collection, Set over collapsed Set, abort after a spring.
+- [ ] Commit: `feat(sidebar): a collapsed container springs open on drag-over`
+
+#### Gate 6 — the gaps are closed
+- [ ] Gate commands green including `npm run build`.
+- [ ] Every Phase-6 surface driven in the running app.
+- [ ] `code-simplifier` + `/code-review` against `<base>..HEAD`; `comment-killer-agent` over the full plan diff.
+- [ ] Every concern fixed or ruled on.
+- [ ] Closing sweeps: all three Dead Vocabulary derivations against their control.
+- [ ] Docs current: `PommoraDND.md` (two families, adoption, autoscroll, announce), `ContextPM.md` flagged notes gone, `HistoryPM.md` entry written to History-Format.
+- [ ] Delivery Claim written → neutral verifier ("is this true?") → `build-breaking-agent` attack (briefed to interleave: drag × watcher push, drag × mode switch, drag × Escape-in-dropdown, drag × spring-open × scroll) → findings fixed or ruled.
+- [ ] Final walkthrough handed to Nathan: what to try, surface by surface.
+- [ ] Progress hashes filled in.
+
+---
+
+## Implementation Log
+
+### Progress
+
+- [ ] **Phase 1** — The stale-slot fixes · base `<commit>`
+  - [ ] Task 1 — The grouping pane's snapshot invalidates · `<commit>`
+  - [ ] Task 2 — The GFM table drag re-bases its origin · `<commit>`
+  - [ ] Task 3 — The table row drag dirties on a rows change · `<commit>`
+  - [ ] Gate 1
+- [ ] **Phase 2** — The skeleton hardens
+  - [ ] Task 4 — Throwing callbacks and foreign pointers · `<commit>`
+  - [ ] Gate 2
+- [ ] **Phase 3** — The migrations
+  - [ ] Task 5 — The sidebar consumes the skeleton · `<commit>`
+  - [ ] Task 6 — The sidebar's layers share one index · `<commit>`
+  - [ ] Task 7 — The option and status hooks consume the skeleton · `<commit>`
+  - [ ] Task 8 — The column drag consumes the skeleton · `<commit>`
+  - [ ] Task 9 — The grip joins its sibling; the Slider cancels; the boundary is documented · `<commit>`
+  - [ ] Gate 3
+- [ ] **Phase 4** — The card engine
+  - [ ] Task 10 — `group.tsx` caches against the frozen rects · `<commit>`
+  - [ ] Gate 4
+- [ ] **Phase 5** — One owner each
+  - [ ] Task 11 — One snapshot helper · `<commit>`
+  - [ ] Task 12 — The chrome comes from its owners · `<commit>`
+  - [ ] Task 13 — The region scan calls its original · `<commit>`
+  - [ ] Task 14 — The constants come home · `<commit>`
+  - [ ] Gate 5
+- [ ] **Phase 6** — The adoption gaps
+  - [ ] Task 15 — Edge auto-scroll for the trapped drags · `<commit>`
+  - [ ] Task 16 — The silent drags announce · `<commit>`
+  - [ ] Task 17 — Band and grouping spring-open · `<commit>`
+  - [ ] Task 18 — Sidebar spring-open · `<commit>`
+  - [ ] Gate 6
+
+### Rulings
+
+- **Pending — Task 14's click rule.** Recommended: any activated drag suppresses the following click, uniformly — today the sidebar and paneDnd let a drag that returns home fire its click, which on a sidebar row is a navigation. Awaiting Nathan's call; Task 14's arming half is gated on it, everything else proceeds.
+
+### Open Against Later Tasks
+
+- **Task 8** carries the unverified bounds-check finding (agent-reported): verify before acting, record either way.
+- **Task 12**'s `dragChrome.ts` z-index divergence (`--z-floating` vs the class's `--z-overlay`) is noted, not fixed — confirm it's the editor's stacking context before ever "aligning" it.
+
+### Deviations
+
+### Lessons
+
+### Sequenced After
+
+- **`onTap` on the gesture spec** — the additive callback that unblocks `listDrag`/`blockDrag` and `CalendarPicker`; lands with the migration that consumes it.
+- **MarkdownPM and SurfacePM announcements** — want editor/dashboard-appropriate phrasing, their own pass.
+- **`feel.tsx` adopt-or-delete** — unchanged from the prior record.
+- **The identity/order-persistence arc** — the reorder snap-back, deliberately not this plan.
+- **Tier-5 product candidates** — subfield reorder (fully plumbed, no UI), tab⇄pin cross-zone, Cards band drag, outline section drag, recents→pins refusal review.
+
+### Closeout
