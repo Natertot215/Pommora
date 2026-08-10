@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
 
 // The flat cousin of the two-region paneDnd. The drop calls onReorder(value, toIndex) where
 // toIndex is in the without-the-dragged coordinate space (matching optionModel.reorderOption).
@@ -80,17 +80,21 @@ export function useOptionReorder(
     return { index, top }
   }
 
+  // The slot in the without-the-dragged space plus whether it actually moves — the ONE reading the
+  // line and the release both take, so the line never promises a move the drop then declines.
+  const destination = (value: string, index: number): { to: number; moves: boolean } => {
+    const from = orderRef.current.indexOf(value)
+    const to = index > from ? index - 1 : index
+    return { to, moves: from >= 0 && to !== from }
+  }
+
   const resolveAt = (clientY: number): void => {
     const d = dragged.current
     if (!d) return
     if (snapshotDirty.current || !snapshot.current) snapshot.current = takeSnapshot()
     const { index, top } = locate(clientY)
     d.index = index
-    // The line mirrors the release's own condition — a slot resolving to the option's current position
-    // draws nothing rather than promising a move the drop then declines.
-    const from = orderRef.current.indexOf(d.value)
-    const to = index > from ? index - 1 : index
-    setLineTop(from >= 0 && to !== from ? top : null)
+    setLineTop(destination(d.value, index).moves ? top : null)
   }
 
   const clear = (): void => {
@@ -122,12 +126,7 @@ export function useOptionReorder(
         resolveAt(ev.clientY)
       },
       onWindowScroll: (ev) => {
-        if (
-          ev.target instanceof Element &&
-          container.current &&
-          !ev.target.contains(container.current)
-        )
-          return
+        if (!scrollMoved(ev, container.current)) return
         snapshotDirty.current = true
         resolveAt(lastPoint.current.y)
       },
@@ -135,9 +134,8 @@ export function useOptionReorder(
         if (snapshotDirty.current) resolveAt(lastPoint.current.y)
         const d = dragged.current
         if (d) {
-          const from = orderRef.current.indexOf(d.value)
-          const to = d.index > from ? d.index - 1 : d.index
-          if (from >= 0 && to !== from) onReorderRef.current(d.value, to)
+          const { to, moves } = destination(d.value, d.index)
+          if (moves) onReorderRef.current(d.value, to)
         }
         clear()
       },

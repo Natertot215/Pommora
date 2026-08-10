@@ -43,6 +43,13 @@ export function Slider({
     const t = Math.max(0, Math.min(1, (clientX - r.left) / r.width))
     return Number((Math.round((min + t * (max - min)) / step) * step).toFixed(decimals))
   }
+  // A cancelled scrub reverts: the per-tick onInput has already driven the consumer, so the
+  // committed value is reasserted through the same channel before the draft clears.
+  const revertScrub = (): void => {
+    if (draft === null) return
+    onInput?.(clamp(value))
+    setDraft(null)
+  }
   return (
     <>
       <div
@@ -70,18 +77,8 @@ export function Slider({
           if (draft !== null && draft !== value) onCommit(draft)
           setDraft(null)
         }}
-        // A cancelled scrub reverts: the per-tick onInput has already driven the consumer, so the
-        // committed value is reasserted through the same channel before the draft clears.
-        onPointerCancel={() => {
-          if (draft === null) return
-          onInput?.(clamp(value))
-          setDraft(null)
-        }}
-        onLostPointerCapture={() => {
-          if (draft === null) return
-          onInput?.(clamp(value))
-          setDraft(null)
-        }}
+        onPointerCancel={revertScrub}
+        onLostPointerCapture={revertScrub}
         onKeyDown={(e) => {
           if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
           e.preventDefault()

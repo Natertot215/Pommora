@@ -102,7 +102,6 @@ export function TableRowDnd({
   const snapshotDirty = useRef(false)
   // A rows change re-resolves immediately — a push followed by a release with no further move
   // must still commit against the live rows. resolveSlot no-ops while no drag is armed.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the invalidating input alone
   useEffect(() => {
     snapshotDirty.current = true
     resolveSlot(lastPoint.current.y)

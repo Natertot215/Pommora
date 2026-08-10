@@ -62,7 +62,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
 import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import { numberDivisor } from '../PropertyEditing/formatValue'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
 import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from './linkValue'
@@ -1189,7 +1189,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         resolve()
       },
       onWindowScroll: (ev) => {
-        if (ev.target instanceof Node && !ev.target.contains(grid)) return
+        if (!scrollMoved(ev, grid)) return
         gridLeft = grid.getBoundingClientRect().left
         resolve()
       },
