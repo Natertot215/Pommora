@@ -49,7 +49,7 @@ export const divider = style({
   // The stable CSS var (theme-vars), not the vanilla-extract object ref — the var name never rehashes, so
   // an HMR token-hash shift can't leave the divider colourless (the toolbar-segment regression).
   background: 'var(--separator-segment)',
-  borderRadius: '999px',
+  borderRadius: 'var(--radius-full)',
 })
 
 // The label's collapsible slot — an inline grid track that morphs 1fr → 0fr so the title slides in/out

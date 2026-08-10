@@ -1,28 +1,5 @@
 ## Design System
 
-```
-Design System
-├── Design Philosophy
-├── Tooling
-├── The Token Atlas
-│   ├── Primitives
-│   ├── Surfaces
-│   ├── Labels
-│   ├── States
-│   ├── Fills
-│   ├── Tints
-│   ├── Separators
-│   ├── Shadows
-│   ├── Spectrum
-│   ├── Geometry
-│   └── Materials
-├── Component Chrome
-├── Showcase
-├── Where the Rest Lives
-├── Known Issues
-└── Pending
-```
-
 The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values and the visual reference for components. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them. Typography has its own spec in [[TypographyPM]]; motion lives in [[InteractionPM]].
 
 This document is the sanctioned exception to the "docs name; code holds exacts" rule: its tables state literal values so what exists is legible without opening the token files. Every table carries a **SOURCE** line naming the file it must agree with — a value changes in code first, and the table follows in the same commit. Before authoring any new style or mechanism, this atlas is the first read; what a surface needs usually already exists here.
@@ -52,7 +29,7 @@ The three raw system tones every derived grey, white, and black is an opacity of
 | System White | `system.white` · `--system-white` | `#E8E8E8` |
 | System Grey | `system.grey` · `--system-grey` | `#71717A` |
 | System Black | `system.black` · `--system-black` | `#010101` |
-| Window Background | `background.window` · `--bg-window` | `#1A1A1C` (from `@shared/theme` `WINDOW_BG`) |
+| Window Background | `background.window` · `--bg-window` | `#1A1A1C`  |
 
 #### Surfaces
 
@@ -65,7 +42,7 @@ The opaque content planes layered on the window substrate — addressed by role,
 | Surface Primary | `surface.primary` · `--surface-primary` | `#202022` |
 | Surface Secondary | `surface.secondary` · `--surface-secondary` | `#2A2A2E` |
 | Surface Tertiary | `surface.tertiary` · `--surface-tertiary` | `#3A3A3E` |
-| Interaction Field | `inputFieldVar` · `--input-field` | → `fill.quaternary` (system-grey @ 6%) |
+| Interaction Field | `inputFieldVar` · `--input-field` | `fill.quaternary`  |
 
 #### Labels
 
@@ -75,14 +52,14 @@ The text ladder — system-white at descending presence. Primary is the raw prim
 
 | Title | Token | Value |
 | --- | --- | --- |
-| Label Primary | `label.primary` · `--label-primary` | system-white, no mix (`#E8E8E8`) |
+| Label Primary | `label.primary` · `--label-primary` | system-white @ 100% |
 | Label Control | `label.control` · `--label-control` | system-white @ 80% |
 | Label Secondary | `label.secondary` · `--label-secondary` | system-white @ 65% |
 | Label Tertiary | `label.tertiary` · `--label-tertiary` | system-white @ 35% |
 
 #### States
 
-The interaction states — two grey washes, one black veil, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; ghost, disabled, and drag are consumed as `opacity:` on the element itself. Ghost and drag both fade a drag source; which applies turns on whether anything stands in for it — drag is the gentler dim a card wears while its own lifted clone floats alongside, ghost the deeper one for a source with no clone.
+The interaction states — two grey washes, one black veil, and two opacity dims. Hover and selected are fills painted behind content; muted is painted over it; ghost and disabled are consumed as `opacity:` on the element itself.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
@@ -91,9 +68,8 @@ The interaction states — two grey washes, one black veil, and three opacity di
 | Hover | `state.hover` · `--state-hover` | system-grey @ 2.5% |
 | Selected | `state.selected` · `--state-selected` | system-grey @ 5% |
 | Muted | `state.muted` · `--state-muted` | system-black @ 10% |
-| Ghost | `--state-ghost` | → `var(--tint-primary)`  |
-| Disabled | `--state-disabled` | base @ 50% |
-| Drag | `--state-drag` | base @ 85% |
+| Ghost | `--state-ghost` | `var(--tint-primary)` |
+| Disabled | `--state-disabled` | base @ 40% |
 
 #### Fills
 
@@ -117,26 +93,26 @@ The one opacity ladder any base color is mixed at — `tintAt(base, step)` is `c
 
 | Title | Token | Value |
 | --- | --- | --- |
+| Tint Solid | `TINT_STEPS.solid` · `--tint-solid` | 100% |
 | Tint Primary | `TINT_STEPS.primary` · `--tint-primary` | 60% |
 | Tint Secondary | `TINT_STEPS.secondary` · `--tint-secondary` | 40% |
 | Tint Tertiary | `TINT_STEPS.tertiary` · `--tint-tertiary` | 20% |
 | Tint Quaternary | `TINT_STEPS.quaternary` · `--tint-quaternary` | 15% |
-| Tint Solid | `TINT_STEPS.solid` · `--tint-solid` | 100% |
 
 #### Separators
 
-Hairlines and the composed border shorthands built on them, the banner's legibility scrim, and the pill radius every capsule wears.
+Hairlines and the composed border shorthands built on them, plus the banner's legibility scrim. `separator.line` and `separator.border` share one value — `line` is the TS-side spelling, `border` the bridged one.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
 | Title | Token | Value |
 | --- | --- | --- |
+| Separator Line | `separator.line` | system-grey @ 25% |
 | Separator Border | `separator.border` · `--separator-border` | system-grey @ 25% |
 | Separator Segment | `separator.segment` · `--separator-segment` | system-grey @ 20% |
 | Heading Seam | `--border-heading` | `1.75px solid var(--separator-border)` |
 | Box Seam | `--border-cell` | `1.5px solid var(--separator-border)` |
 | Banner Scrim | `--banner-shadow` | `#0000008C` |
-| Pill Radius | `--radius-full` | `999px` — larger than any box that wears it, so both ends round |
 
 #### Shadows
 
@@ -161,19 +137,19 @@ The ten selectable solids plus the neutral chip default — authored once in `@s
 | Orange | `SPECTRUM.orange` · `--solid-orange` | `#FF9F0A` |
 | Yellow | `SPECTRUM.yellow` · `--solid-yellow` | `#FFD60A` |
 | Green | `SPECTRUM.green` · `--solid-green` | `#32D74B` |
-| Cobalt | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3` (displays as "Cobalt") |
+| Cobalt | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3`  |
 | Cyan | `SPECTRUM.cyan` · `--solid-cyan` | `#41959F` |
 | Blue | `SPECTRUM.blue` · `--solid-blue` | `#0A84FF` |
 | Purple | `SPECTRUM.purple` · `--solid-purple` | `#BF5AF2` |
 | Lavender | `SPECTRUM.lavender` · `--solid-lavender` | `#A78BCC` |
 | Grey | `SPECTRUM.grey` · `--solid-grey` | `#8E8E93` |
-| Chip Default | `GREY_DEFAULT` | `#48484A` (TS-only; not bridged) |
-| Default Accent | `DEFAULT_ACCENT` | `'lavender'` |
-| Accent | `--accent` | runtime — seeded lavender, rewritten by `applyAccent` |
+| Default | `GREY_DEFAULT` | `#48484A` |
+| Default Accent | `DEFAULT_ACCENT` | `lavender` |
+| Accent | `--accent` | `applyAccent` |
 | Accent Fill | `--accent-fill` | accent @ 15% |
 | Accent Stroke | `--accent-stroke` / `--accent-stroke-hot` | accent @ 40% / accent @ 60% |
-| Link / Connection | `--link` / `--connection` | → `var(--system-accent)` / → `var(--accent)` |
-| Error | `--error` | → `SPECTRUM.red` |
+| Link / Connection | `--link` / `--connection` | `var(--system-accent)` / → `var(--accent)` |
+| Error | `--error` |  `SPECTRUM.red` |
 | Code | `--code` | red @ 85% |
 
 #### Geometry
@@ -188,10 +164,10 @@ The glyph ladder, the per-size control bundles, and the bare layout constants JS
 | Button Small | `size.control['button-small']` | h `24px` · segment `20px` · padX `4px` · radius `8px` · icon SM |
 | Button Medium | `size.control['button-medium']` | h `28px` · segment `24px` · padX `5px` · radius `10px` · icon MD |
 | Button Large | `size.control['button-large']` | h `32px` · segment `28px` · padX `8px` · radius `12px` · icon MD |
-| Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent` | `14` |
-| Fold Gutter | `FOLD_GUTTER` · `--fold-gutter-base` | `20` |
-| Drop-Line Inset | `DROP_LINE_INSET` · `--drop-line-inset` | `2` |
-| Tile Minimum | `TILE_MIN_PX` | `64` |
+| Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent` | `14px` |
+| Fold Gutter | `FOLD_GUTTER` · `--fold-gutter-base` | `20px` |
+| Drop-Line Inset | `DROP_LINE_INSET` · `--drop-line-inset` | `2px` |
+| Tile Minimum | `TILE_MIN_PX` | `64px` |
 
 The drag chrome's other two dimensions live beside the inset in the bridge: `--drop-line-thickness` (`2px`) and `--drop-dot-size` (`7px`), with `--drag-line` pointing at the accent. The list-outline rail (`--list-outline-*`: `2px` · segment tone · `999px` · `3px`) is the shared nested-run rail consumed by MarkdownPM's outliner and the grouping hierarchy.
 
@@ -214,7 +190,6 @@ Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a di
 | Fill | `.fill` | unset (transparent) | `--bg-window` @ 78% |
 | Shadow | `.shadow` | standard | lift |
 
-The static `frostMaterial` (`glass-material.ts`) is the same recipe at brightness `95%` with the pane edge set. The liquid shader's tuning is `CONTROL_OPTICS` (`glass-controls.tsx`) — depth `0.3`, curvature `0.45`, dispersion `0.25`, frost `3.5`, specular `0.7`, sheen `0.3` at width `12`, map `256` — with `SEGMENT_OPTICS` spreading it at zero depth and brightness.
 
 ### Component Chrome
 
@@ -243,7 +218,7 @@ The atlas continues in the specs that own each family: the editor's token pocket
 
 ### Pending
 
-- **Spacing and radius** — no formalized scale; corners and spacing stay ad-hoc literals until they're lifted from Figma (the repeated `999px` pill radius is the first concrete candidate).
+- **Spacing and radius** — `--radius-full` is the scale's first member, minted from the pill radius nine surfaces had been spelling by hand. The rest of the corners and the spacing steps stay ad-hoc literals until they're lifted from Figma.
 - **Light/dark theming** — a future seam; the system is dark-only.
 - **Accent editing UI** — deferred; the control surface is the config file.
 - **The inactive state token** — the empty-state text tone between secondary and tertiary; its interim consumers read tertiary, each marked `Awaiting proper inactive state token`.

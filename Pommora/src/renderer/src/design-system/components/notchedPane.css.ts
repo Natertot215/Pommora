@@ -1,4 +1,5 @@
 import { style } from '@vanilla-extract/css'
+import { shadowStandardVar } from '../tokens/color.css'
 
 export const pop = style({ position: 'relative', width: 'fit-content' })
 
@@ -10,5 +11,5 @@ export const frame = style({
   overflow: 'visible',
   pointerEvents: 'none',
   zIndex: 1,
-  filter: 'drop-shadow(0 4px 14px #00000059)',
+  filter: `drop-shadow(${shadowStandardVar})`,
 })

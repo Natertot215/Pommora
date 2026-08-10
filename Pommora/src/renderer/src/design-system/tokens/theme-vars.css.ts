@@ -46,23 +46,27 @@ globalStyle(':root', {
     // picker's favorites strip). One global source so the outline weight is uniform app-wide; consume
     // as a full border shorthand: `border: var(--border-cell)`.
     '--border-cell': '1.5px solid var(--separator-border)',
+    // The pill radius — larger than any box that wears it, so both ends resolve to semicircles
+    // whatever the height. One name for every capsule: tabs, carets, progress bars, segmented
+    // controls, the outliner rail.
+    '--radius-full': '999px',
     // Over-image legibility scrim for a title/search/icon sitting on a banner cover — one source for the
     // banner title, the NavView search, and the editor's banner overlay (text-shadow / drop-shadow).
     '--banner-shadow': '#0000008c',
-    // Interaction states (Figma "States") — a system-grey wash, hover lighter than selected.
+    // Interaction states — a system-grey wash, hover lighter than selected.
     '--state-hover': colorVars.color.state.hover,
     '--state-selected': colorVars.color.state.selected,
     '--state-muted': colorVars.color.state.muted, // black de-emphasis veil (dimming)
     // Ghost — the de-emphasis applied to a thing being reordered (table rows, editor blocks/list items):
-    // a fade to the same tint MarkdownPM's drag-source uses. An opacity,
-    // not a colour — consumed via `opacity: var(--state-ghost)`.
+    // a fade to the same tint MarkdownPM's drag-source uses. 
     '--state-ghost': 'var(--tint-primary)',
     // A structurally-present but inert control's dim. An opacity, like --state-ghost.
-    '--state-disabled': '0.4',
+    '--state-disabled': '0.5',
+    // The dim a card wears while its own lifted clone floats alongside it — deliberately gentler
+    // than --state-ghost, which fades a source that has no clone to stand in for it.
+    '--state-drag': '0.85',
     // Drag insertion line — the drop-target marker (accent line + leading dot) shared by every drop-line
-    // DnD surface: table rows/bands AND the settings-pane property reorder. Global so a pane portaled out
-    // of the table scope still resolves it; the color points at the accent, the two dims are the line's
-    // own primitive (no design-system token).
+    // DnD surface: table rows/bands AND the settings-pane property reorder. 
     '--drag-line': 'var(--accent)',
     '--drop-line-thickness': '2px',
     '--drop-dot-size': '7px',
@@ -72,7 +76,7 @@ globalStyle(':root', {
     // positioning math.
     '--list-outline-width': '2px',
     '--list-outline-color': 'var(--separator-segment)',
-    '--list-outline-radius': '999px',
+    '--list-outline-radius': 'var(--radius-full)',
     '--list-outline-gap': '3px',
     // Accent: a pointer, never a baked color. The static seed is the default
     // spectrum solid (DEFAULT_ACCENT); applyAccent overrides --accent at runtime
@@ -124,8 +128,8 @@ globalStyle(':root', {
     '--fold-chevron-mask': `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E")`,
     // The same chevron a stroke step lighter — the codeblock language chrome's bracket.
     '--code-chevron-mask': `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E")`,
-    // Spectrum solids as literal vars, so plain CSS routes to the same palette (the code token
-    // colors mix these toward system-white for their pastels).
+    // Spectrum solids as literal vars, so plain CSS routes to the same palette (the code tokens
+    // mix these toward system-white at a tint-scale share for their pastels).
     '--solid-red': colorVars.color.solid.red,
     '--solid-orange': colorVars.color.solid.orange,
     '--solid-yellow': colorVars.color.solid.yellow,

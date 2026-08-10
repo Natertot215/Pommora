@@ -1,17 +1,19 @@
 ## CSS Duplication Report
 
-Findings from the token reconnaissance (08-10-2026) that are **fixes, not documentation** — each verified against source before listing. The atlas documents what exists; this report holds what shouldn't. Work through it after the DesignSystemPM change lands; strike entries as they close.
+Findings from the token reconnaissance (08-10-2026) that are **fixes, not documentation** — each verified against source before listing. The atlas documents what exists; this report holds what shouldn't.
+
+The consolidation pass closed the entries struck below ([[HistoryPM]] §PM-094). What remains is what was ruled a keep, what a later arc owns, and the handful of repeated literals still waiting on a spacing scale to belong to.
 
 ### I. Live Defects
 
-- [ ] **`--card-min`'s NavView KNOB has never worked.** `Tabs/navView.css:13` sets `--card-min: 220px` on `.nav-view` (KNOB-marked), but `NavWindow/navGallery.css:5` declares `180px` on `.nav-gallery` — a *nearer ancestor* of the grid — so proximity wins and the full-window gallery has always rendered at 180px. Both sides are KNOB-marked, so the fix is Nathan's call: if 220px is the intent, the navView declaration must target `.nav-view .nav-gallery`; if 180px looks right (it's what has always rendered), the navView knob and its comment come out.
+- [x] **`--card-min`'s NavView KNOB has never worked.** Ruled at 180px — what the gallery has always rendered. The navView declaration and its comment came out with the card-family consolidation; nothing moved visually.
 - [ ] **`--menu-dropdown-max` is consumed with no fallback** (`Toolbar/outlineDropdown.css.ts:15`). It's JS-measured (`MenuDropdown.tsx:64`); a measurement failure yields an invalid `max-width` and an uncapped pane. The source comment already flags it. One fallback closes it.
 
 ### II. One Value, Two Names
 
 - [ ] **The house hairline is declared twice:** `--tile-border: 1.25px` (`design-system/tile-chassis.css:8`) and `--table-border-width: 1.25px` (`table-tokens.css:25`). One `--hairline-width` token (or one of the two names) should own it.
 - [ ] **`--scroll-fade` and `--edge-fade` are parallel knobs for one concept** — eight declaration sites set both to the same value. `--scroll-fade` feeds the hover-scroll text mask (`typography.css.ts`, `chip.css.ts`); `--edge-fade` feeds the eclipse mask. Merge candidate: one knob both mechanisms read.
-- [ ] **The two card families** (`NavWindow/navGallery.css` scope `.nav-gallery` vs `Detail/Views/Cards/CardsView.css` scope `.cards-view`) redeclare the same four tokens (`--card-min`, `--card-gap-h/-v`, `--cover-zoom`, `--thumb-share`) at near-identical values. The strongest merge candidate found: one shared card-token family, per-view overrides only where values genuinely differ.
+- [x] **The two card families** merged into `design-system/card-tokens.css` — the floor (as `--card-min-base`), both gaps, the thumb share, and the cover zoom now have one owner. The gallery keeps only its deeper cover zoom; Cards keeps only its Scale multiplication and its own band heights.
 - [ ] **`--subline-h: 24px` is stated three times** — `Detail/Detail.css:9` (`.detail-pane`), `PagePreview/previewWindow.css:8` (`.pgpreview`, with a comment naming the duplication), and the fallback inside `previewPane.css:26`. Any future window that isn't `.pgpreview` silently rides the hard-coded fallback.
 
 ### III. Repeated Literals Doing Token Work
@@ -21,18 +23,18 @@ Findings from the token reconnaissance (08-10-2026) that are **fixes, not docume
 - [ ] **`28px` page-title size** — `MarkdownPM/Styles.css:113` and `Embeds/embeds.css:191` (`calc(28px * var(--mdpm-scale))`); with `.detail-title`'s `24px` default and Banner's `20px`, the `--detail-title-size` set has four hand-held values and no scale.
 - [ ] **`90px` header-zone fallback stated three times** — `MarkdownPM/Styles.css:80,101,108`, plus the raw `90px` bottom pad at `:80`.
 - [ ] **`-3px` resize-zone straddle spelled twelve times** in `SurfacePM/surfacepm.css:216–267` (with its `12px`/`8px`/`14px` edge boxes). Genuinely one knob.
-- [ ] **`999px` pill radius, nine sites** — approximates a `--radius-pill` that doesn't exist. (Spacing/radius scale is a named Pending in the design doc; this is its first concrete member.)
-- [ ] **`opacity: 0.85` dim across both card families** (`CardsView.css:66,102`, `navGallery.css:43`) — one drag-dim tone, three sites. Deliberately gentler than `--state-ghost` (a lifted clone floats alongside), so it wants its own name, not a remap.
-- [ ] **`opacity: 0.5` disabled/ghost tone, four sites** (`Subfield/subfield.css:62`, `settingsPane.css.ts:124`, `photoCropModal.css.ts:86`, `viewEmbed.css.ts:116`) — three are semantically `--state-disabled` (0.4) candidates; adopting them is a small visible dim change, so per-site confirmation.
+- [x] **`999px` pill radius, nine sites** — `--radius-full` minted and adopted; the token is the only literal left. The first concrete member of the radius scale.
+- [x] **`opacity: 0.85` dim across both card families** — `--state-drag` minted and adopted at all three sites, named for the case `--state-ghost` doesn't cover: a source whose lifted clone floats alongside it.
+- [x] **`opacity: 0.5` disabled/ghost tone** — `--state-disabled` rebased from `0.4` to `0.5` and adopted at the three genuine sites. `viewEmbed.css.ts:116` stays a literal: it's a keyframe's start opacity, motion rather than state.
 - [ ] **`opacity: 0.55` inert-row dim** (`Navigation/navList.css:99`) — the same "inactive" gap the empty-state text sits in; resolves together with the awaited inactive state token.
-- [ ] **`notchedPane.css.ts:13`** — `drop-shadow(0 4px 14px #00000059)`, the only raw hex left outside token files. Deliberately tighter than `--shadow-standard` for the beak's scale (prior adjudication); either adopt as a named small-scale shadow or record the keep in the atlas.
-- [ ] **Raw mix percentages outside the tint scale** — `MarkdownPM/Styles.css:301` (`var(--code) 10%`), `photoCropModal.css.ts:15,27` (`45%`, `55%`).
+- [x] **`notchedPane.css.ts:13`** — adopted `--shadow-standard` through `drop-shadow()`; the prior "deliberately tighter" adjudication was overridden on the grounds that nothing recorded why. The beak's shadow is now larger and lighter — revert to a named small-scale shadow if the notch reads worse for it.
+- [x] **Raw mix percentages outside the tint scale** — all three normalized to their nearest step: the code fill `10%` → tint-quaternary, the crop scrim `45%` → tint-secondary, its panel shadow `55%` → tint-primary.
 
 ### IV. Inert or Dead Declarations
 
-- [ ] `--chips-gap` on `pageProperties.css.ts:48` is inert — its only consumer is scoped inside `.table-view`; the chip renderer never reads it.
-- [ ] `--edge-fade`/`--scroll-fade` on `.nav-item-title` are live for `NavList.tsx:175` but inert for the plain span at `NavList.tsx:259`.
-- [ ] **Zero-consumer bridge vars** (complete-vocabulary keeps unless ruled otherwise): `--system-grey`, `--tint-solid`, `--fill-primary`, `--weight-standard`, `--text-subline-size`, `--ease-out`, `--icon-xs/md/lg/xl`, `--solid-red/blue/lavender/grey`. `easing.out` is dead end-to-end (its only reference is its own bridge). The top type-ramp steps (`largeTitle`, `title1`, `title2`) have no product consumers.
+- **`--chips-gap`** on `pageProperties.css.ts:48` — adjudicated a keep as it stands.
+- [x] `--edge-fade`/`--scroll-fade` on `.nav-item-title` were live for `NavList.tsx:175` and inert for the plain span at `:259` — the inert search row now renders both its title and its kind through `OverflowScroll`, so the knobs it declares apply to the whole component.
+- **Zero-consumer bridge vars** — ruled a keep: the bridge publishes a complete vocabulary, and a name absent because nothing has needed it yet is not the same as a name that is wrong. Covers `--system-grey`, `--tint-solid`, `--fill-primary`, `--weight-standard`, `--text-subline-size`, `--ease-out`, `--icon-xs/md/lg/xl`, `--solid-red/blue/lavender/grey`, `easing.out`, and the top type-ramp steps.
 - [ ] `--chip-max` and `--chip-capsule-pad-x` exist only as their fallbacks — no surface overrides either.
 - [ ] **Correction recorded:** `--switch-zoom` was reported dead by the sweep and is **not** — `CardsView.css:255` consumes it. It stays.
 
@@ -41,15 +43,15 @@ Findings from the token reconnaissance (08-10-2026) that are **fixes, not docume
 - **`--io`/`--io-l` firewall:** `.ppane` re-declares both to `0` to block inheriting the shell's inspector progress. Load-bearing — deleting the reset couples every floating window to the main inspector.
 - **`--gutter` is remapped mid-tree** — `.shell` sets it to the content gutter (24px); `.table-view` remaps it to the fold gutter. The one var whose meaning changes by depth; full-bleed table surfaces must read `--content-gutter`.
 - **`textPicker.css.ts:52`'s `--edge-fade` rides `boxed={!hasTrailing}`** — flipping `boxed` or reusing `suffixInput` without a trailing node silently disarms the knob.
-- **The autoscroll knobs score zero on any `var()` grep** — JS reads them via `getComputedStyle`. A naive dead-token audit would kill six live knobs.
+- [x] **The autoscroll knobs scored zero on any `var()` grep** — closed rather than documented. Each default had been spelled twice, in the stylesheet and again as the reader's fallback; both now come from one map beside the loop, which the `:root` declaration is generated from. The knobs are still `getComputedStyle`-read by design, but they now exist in exactly one place to find.
 
 ### VI. Comment-vs-Value Corrections (ride the doc commit)
 
-- [ ] `color.css.ts` header + `:60`: "states are system-grey" — `state.muted` is system-**black**.
-- [ ] `color.css.ts` header: "labels are system-white at an opacity" — `label.primary` is the raw primitive, no opacity.
-- [ ] `separator.line` and `separator.border` are byte-identical with no distinguishing comment; only `border` is bridged, only `line` is used from TS.
-- [ ] `size.css.ts`: the control ladder isn't monotonic (`dividerHeight` 14→18→14) and medium/large share one icon size — both contradict the "proportional/follows automatically" comments.
-- [ ] `glass-pane.tsx:4`: "pane-tuned params" overstates a single 5-point brightness delta vs `frostMaterial`.
-- [ ] `theme-vars.css.ts:127`: "code tokens mix toward system-white" — `--code` mixes toward transparent.
-- [ ] `--state-ghost` is a `%` string (shared with the tint ladder) while `--state-disabled` is unitless `0.4` — same semantic kind, two value types; a `calc()` consumer gets different arithmetic.
-- [ ] **`tokens/README.md` describes a file layout that doesn't exist** (six named files, none real; two weights claimed where four ship). Rewrite or retire with the doc change.
+- [x] `color.css.ts` header + `:60`: corrected — the states are grey washes *but for* the muted veil, which darkens from system-black.
+- **`color.css.ts` header: "labels are system-white at an opacity"** — ruled accurate and kept; the label ramp is the primitive at its opacity steps.
+- [x] `separator.line` deleted; its six TS consumers rewired to `separator.border`, which is also the bridged one. The remaining pair carries a comment distinguishing `border` from `segment`.
+- [x] `size.css.ts`: the header now says what the bundles are — drawn values where heights and radii climb with the step while the divider and glyph don't, medium carrying the tallest divider and sharing its icon step with large.
+- [x] `glass-pane.tsx:4`: restated as the material's own recipe made parametric, PANE_FROST being that recipe at a slightly deeper dim.
+- [x] `theme-vars.css.ts:127`: now reads that the code tokens mix the solids toward system-white **at a tint-scale share** — the share is what the tint ladder supplies, which is what the old wording lost.
+- [ ] `--state-ghost` is a `%` string (shared with the tint ladder) while `--state-disabled` and `--state-drag` are unitless — same semantic kind, two value types; a `calc()` consumer gets different arithmetic. Untouched: the opacity family now has three members, so it wants one ruling rather than a third spelling.
+- [x] **`tokens/README.md`** retired — the atlas in `DesignSystemPM.md` is where the token vocabulary actually lives.

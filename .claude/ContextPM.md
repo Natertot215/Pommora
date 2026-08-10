@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**The Token Atlas — closed.** The design system's full vocabulary is grounded in SOURCE-tagged tables across the feature specs, anchored by the renamed `DesignSystemPM.md` and verified by `scripts/check-atlas.mjs` ([[HistoryPM]] §PM-093), following PM-091's chrome-and-tokens reorganization in the same session. The reconnaissance's fix material waits in `Planning/CSS Duplication Report.md` — a ready-made cleanup session. The next session opens on a fresh pick: that report, the identity/order-persistence arc, or the subfield reorder.
+**The token arc — closed.** The design system's full vocabulary is grounded in SOURCE-tagged tables across the feature specs, anchored by `DesignSystemPM.md` and verified by `scripts/check-atlas.mjs` ([[HistoryPM]] §PM-093), and the fix list that reconnaissance produced has been worked through (§PM-094): three tokens minted where literals had been, the card families merged, the auto-scroll defaults and `separator.line` down to one writer each, and the drifted comments restated. What remains in `Planning/CSS Duplication Report.md` is adjudicated keeps and the literals waiting on a spacing scale. The next session opens on a fresh pick — the identity/order-persistence arc and the subfield reorder are the two nearest doors.
 
 ### Immediate Work
 
@@ -85,10 +85,15 @@
 
 ### Recent Work
 
+#### PM-094 || The Duplication Report Closes
+**DATE:** 08-10-2026
+
+The reconnaissance's fix list worked through. Three tokens replaced literals — `--radius-full` over nine hand-spelled pill radii, opening the radius scale; `--state-drag` for the dim a card wears while its lifted clone floats; `--state-disabled` rebased so its four sites adopt it unchanged. The two card families merged into one shared geometry, which forced a knob whose value had never reached the screen and settled it at what had always rendered. The auto-scroll defaults, written twice and free to drift, came onto one map the `:root` block generates from; `separator.line` died into the bridged name it duplicated. The notch's raw shadow, the mixes outside the tint ladder, and the comments that had drifted from their values were all restated against the code.
+
 #### PM-093 || The Token Atlas
 **DATE:** 08-10-2026
 
-The design docs now state token literals under SOURCE-tagged tables — the one sanctioned exception to docs-name-exacts, chartered in `DesignSystemPM.md` (renamed from DesignPM) and enforced by `scripts/check-atlas.mjs`. Families landed with their owners: the editor's scoped pockets in MarkdownPM, the type ramp in TypographyPM, motion + caret/edge-fade/autoscroll in InteractionPM, chips in PropertiesPM, cards in CardViewPM, the table sheet in TableViewPM, the `--ppane-*` contract described in PagePreviewPM. Design-Sources retired into the atlas charter and Build-Gotchas; the false tokens README was rewritten; the recon's fix list routed to `Planning/CSS Duplication Report.md`.
+The design docs now state token literals under SOURCE-tagged tables — the one sanctioned exception to docs-name-exacts, chartered in `DesignSystemPM.md` (renamed from DesignPM) and enforced by `scripts/check-atlas.mjs`. Families landed with their owners: the editor's scoped pockets in MarkdownPM, the type ramp in TypographyPM, motion + caret/edge-fade/autoscroll in InteractionPM, chips in PropertiesPM, cards in CardViewPM, the table sheet in TableViewPM, the `--ppane-*` contract described in PagePreviewPM. Design-Sources retired into the atlas charter and Build-Gotchas; the recon's fix list routed to `Planning/CSS Duplication Report.md`.
 
 #### PM-092 || One Grip Menu, And The List's Type
 **DATE:** 08-10-2026

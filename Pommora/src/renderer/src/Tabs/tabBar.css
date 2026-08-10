@@ -83,7 +83,7 @@
   height: var(--tab-divider-h);
   margin: 0 4px;
   background: var(--separator-segment);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 /* ---- unpinned strip: overflow-scroll + the shared edge-fade (edge-fade-x carries the mask) ---- */

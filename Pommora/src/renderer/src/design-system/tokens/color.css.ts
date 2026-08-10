@@ -2,9 +2,10 @@ import { createGlobalTheme, globalStyle } from '@vanilla-extract/css'
 import { GREY_DEFAULT, SPECTRUM, WINDOW_BG } from '@shared/theme'
 
 // Primitives — the base system palette. Grey/white/black are the single source for
-// every derived tone: labels are system-white at an opacity, and fills / states /
-// separators are system-grey at an opacity. The spectrum solids and the opaque
-// surfaces are their own values (not derived from a primitive).
+// every derived tone: labels are system-white at an opacity, fills and separators are
+// system-grey at one, and the states are grey washes but for the muted veil, which
+// darkens from system-black. The spectrum solids and the opaque surfaces are their own
+// values (not derived from a primitive).
 const primitive = createGlobalTheme(':root', {
   color: {
     system: {
@@ -57,16 +58,16 @@ const derived = createGlobalTheme(':root', {
       quaternary: greyA('6%'),
       quinary: greyA('4%'),
     },
-    // Interaction states — system-grey. `muted` is a  de-emphasis veil for dimming a surface a step darker.
-
+    // Interaction states — system-grey washes, but for `muted`: a de-emphasis veil that dims a
+    // surface a step DARKER, so it derives from system-black rather than the grey the others share.
     state: {
       hover: greyA('2.5%'),
       selected: greyA('5%'),
       muted: blackA('10%'),
     },
-    // Hairlines  — system-grey.
+    // Hairlines — system-grey. `border` is the one hairline tone; `segment` is the lighter step the
+    // outliner rails and segment dividers wear.
     separator: {
-      line: greyA('25%'),
       border: greyA('25%'),
       segment: greyA('20%'),
     },
