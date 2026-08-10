@@ -293,13 +293,13 @@ export function Zone({
     window.setTimeout(finish, feelRef.current.duration + SETTLE_FALLBACK)
   }
 
-  // Decide-then-animate, shared by pointer drop and keyboard drop. `kbd` carries the announce +
-  // focus-restore context when the drop came from the keyboard.
+  // Decide-then-animate, shared by pointer drop and keyboard drop. `kbdEl` is the element to
+  // restore focus to — non-null only when the drop came from the keyboard.
   const resolveDrop = (
     over: number,
     activeIdx: number,
     activeId2: string,
-    kbd: { label: string; n: number; el: HTMLElement | null } | null,
+    kbdEl: HTMLElement | null,
   ): void => {
     const overId = idsRef.current[over]
     const apply = (ok: boolean): void =>
@@ -307,12 +307,13 @@ export function Zone({
         if (ok) cbRef.current.onReorder?.(activeId2, overId)
         notifyRef.current.onDragEnd?.({ activeId: activeId2, overId: ok ? overId : null })
         // The words are for every drop; the focus restore is the keyboard's alone.
+        const label = labelOf(activeId2)
         announce(
           ok
-            ? `Dropped ${labelOf(activeId2)} at position ${over + 1}.`
-            : `${labelOf(activeId2)} returned to its original position.`,
+            ? `Dropped ${label} at position ${over + 1}.`
+            : `${label} returned to its original position.`,
         )
-        if (kbd) requestAnimationFrame(() => kbd.el?.focus())
+        if (kbdEl) requestAnimationFrame(() => kbdEl.focus())
       })
     if (over === activeIdx) {
       apply(false) // dropped on its own slot — animate home, no reorder
@@ -392,7 +393,7 @@ export function Zone({
       // Space/Enter/Tab all drop (dnd-kit parity) — Tab must commit, not tab focus away mid-drag.
       e.preventDefault()
       detach()
-      resolveDrop(d.over, d.activeIdx, d.id, { label: labelOf(d.id), n: d.rects.length, el: d.el })
+      resolveDrop(d.over, d.activeIdx, d.id, d.el)
     } else if (e.key === 'Escape') {
       e.preventDefault()
       detach()

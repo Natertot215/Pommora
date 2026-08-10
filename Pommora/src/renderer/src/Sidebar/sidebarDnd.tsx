@@ -357,7 +357,7 @@ export function SidebarDnd({
 
   const value = useMemo<Value>(() => ({ draggingId: drag.id, registerRow, begin }), [drag.id])
 
-  const draggedLabel = drag.id ? base(index.byId.get(drag.id)?.path ?? '') : ''
+  const draggedLabel = drag.id ? labelOf(drag.id) : ''
 
   return (
     <Ctx.Provider value={value}>

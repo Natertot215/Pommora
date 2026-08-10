@@ -581,7 +581,6 @@ function SpringableRow({
     return registerDiscloseTarget(el.current, () => expandRef.current())
   }, [collapsed])
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
     <div
       className={className}
       ref={(node) => {
