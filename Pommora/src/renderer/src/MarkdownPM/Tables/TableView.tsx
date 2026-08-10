@@ -215,19 +215,18 @@ export function TableView({
       current = { axis, from: index, to, delta: rel - startRel }
       setDrag(current)
     }
-    // Only a scroll that moves the wrap re-bases — an unrelated scroller costs nothing.
-    const onScrollEv = (ev: Event): void => {
-      if (ev.target instanceof Node && !ev.target.contains(wrap)) return
-      reOrigin()
-      resolve()
-    }
     beginGesture({
       el: e.currentTarget,
       event: e,
       onActivate: () => {
-        window.addEventListener('scroll', onScrollEv, { capture: true, passive: true })
         setDrag(current)
         return undefined
+      },
+      // Only a scroll that moves the wrap re-bases — an unrelated scroller costs nothing.
+      onWindowScroll: (ev) => {
+        if (ev.target instanceof Node && !ev.target.contains(wrap)) return
+        reOrigin()
+        resolve()
       },
       onDragMove: (ev) => {
         last = { x: ev.clientX, y: ev.clientY }
@@ -239,9 +238,6 @@ export function TableView({
         else remeasure.current = true
       },
       onAbort: () => setDrag(null),
-      teardown: () => {
-        window.removeEventListener('scroll', onScrollEv, { capture: true })
-      },
     })
   }
 
