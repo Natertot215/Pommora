@@ -57,12 +57,9 @@ export function Slider({
     return Number((Math.round((min + t * (max - min)) / step) * step).toFixed(decimals))
   }
   // A cancelled scrub reverts: the per-tick onInput has already driven the consumer, so the
-  // committed value is reasserted through the same channel before the draft clears.
-  const revertScrub = (): void => {
-    if (draft === null) return
-    onInput?.(clamp(value))
-    setDraft(null)
-  }
+  // committed value is reasserted through the same channel before the draft clears. The ref is
+  // the guard — synchronous where the draft state waits on a render flush.
+  const revertScrub = (): void => revertRef.current()
   return (
     <>
       <div
@@ -76,17 +73,20 @@ export function Slider({
         tabIndex={0}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
+          scrubbing.current = true
           const next = valueAt(e.clientX)
           setDraft(next)
           onInput?.(next)
         }}
         onPointerMove={(e) => {
-          if (draft === null) return
+          if (!scrubbing.current) return
           const next = valueAt(e.clientX)
           setDraft(next)
           onInput?.(next)
         }}
         onPointerUp={() => {
+          if (!scrubbing.current) return
+          scrubbing.current = false
           if (draft !== null && draft !== value) onCommit(draft)
           setDraft(null)
         }}
