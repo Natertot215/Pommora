@@ -126,6 +126,25 @@ describe('sidebar drag — Esc abort', () => {
     expect(added).toBeGreaterThan(0)
     expect(removed).toBe(added)
   })
+
+  // Identity, not counts — the historical leak removed a DIFFERENT function than it added, which
+  // a count-based assertion passes on. A completed drag first, so the drag's closures no longer
+  // come from the mount render the unmount cleanup captured.
+  it('an unmount mid-drag removes the exact window listeners it added', async () => {
+    await startDrag()
+    await act(async () => {
+      firePointer(row('p1'), 'pointerup')
+    })
+    const adds = vi.spyOn(window, 'addEventListener')
+    const removes = vi.spyOn(window, 'removeEventListener')
+    await startDrag()
+    await act(async () => root.unmount())
+    const addedFns = adds.mock.calls.map(([type, fn]) => ({ type, fn }))
+    const removedFns = removes.mock.calls.map(([, fn]) => fn)
+    for (const { type, fn } of addedFns) {
+      expect(removedFns, `leaked '${type}' listener`).toContain(fn)
+    }
+  })
 })
 
 // Geometry is stubbed; the seam decision is the truth.
