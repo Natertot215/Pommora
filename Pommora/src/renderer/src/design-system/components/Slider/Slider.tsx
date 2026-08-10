@@ -70,6 +70,18 @@ export function Slider({
           if (draft !== null && draft !== value) onCommit(draft)
           setDraft(null)
         }}
+        // A cancelled scrub reverts: the per-tick onInput has already driven the consumer, so the
+        // committed value is reasserted through the same channel before the draft clears.
+        onPointerCancel={() => {
+          if (draft === null) return
+          onInput?.(clamp(value))
+          setDraft(null)
+        }}
+        onLostPointerCapture={() => {
+          if (draft === null) return
+          onInput?.(clamp(value))
+          setDraft(null)
+        }}
         onKeyDown={(e) => {
           if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
           e.preventDefault()
