@@ -1,6 +1,6 @@
 ## Drag Layer — Implementation Plan
 
-> **Status:** written, review round 1 folded (citation pass + build-breaking attack, 08-09) — pending approval · Spec: none as file — the tier scope ratified in-session (08-09), recorded whole in Goal + Requirements · Execute tasks in order.
+> **Status:** ratified 08-09 (review round 1 folded: citation pass + build-breaking attack) — awaiting execution; no phase opened · Spec: none as file — the tier scope ratified in-session (08-09), recorded whole in Goal + Requirements · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -433,7 +433,7 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 
 **Requirement:** 7
 
-**Why:** The ghost cursor offset (`+12`/`+8`) is spelled at five call sites; the editable-target guard has four spellings whose *core* ('input, textarea, contenteditable') is shared while the button-blocking differences are real per-surface decisions; and `suppressNextClick` has four arming rules — two surfaces (sidebar, paneDnd) currently let an activated drag that lands home fire its click, which on a sidebar row is a navigation. **Gated on the pending ruling** recorded in the Log: the recommended rule is *any activated drag suppresses the click* — five-plus pixels of travel is never a click — applied uniformly.
+**Why:** The ghost cursor offset (`+12`/`+8`) is spelled at five call sites; the editable-target guard has four spellings whose *core* ('input, textarea, contenteditable') is shared while the button-blocking differences are real per-surface decisions; and `suppressNextClick` has four arming rules — two surfaces (sidebar, paneDnd) currently let an activated drag that lands home fire its click, which on a sidebar row is a navigation. **Ruled (see Log): the skeleton owns the arming** — `gesture.ts`'s `up` handler calls `suppressNextClick()` on every activated release, before `onDrop`; every skeleton consumer's own call and its arming conditional delete. `engine.tsx` and `group.tsx` keep their hand-rolled calls (they are not skeleton consumers); a sub-threshold tap keeps its click (never activated); Escape/cancel produce no click at all.
 
 **Files:** `design-system/interactions/shared.ts` (a `GHOST_OFFSET` and an `EDITABLE_TARGETS` core selector) · the five ghost sites · the guard call sites (each composing `+ ', button'` where it deliberately blocks buttons) · the arming sites per the ruling · `.claude/Guidelines/Design-Sources.md` (register both constants) and `.claude/Features/PommoraDND.md` (the `shared.ts` contents sentence gains the two).
 
@@ -526,7 +526,7 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 - [ ] Every concern from every gate fixed, or carrying an explicit Nathan ruling in the Log — zero deferred-by-silence items.
 - [ ] Closing sweeps: all four Dead Vocabulary derivations against their controls, counts recorded in the Log.
 - [ ] Docs true: `PommoraDND.md` (two families, full adoption, autoscroll, announce), every Made False row rewritten in its named commit, the three "false today, repaired" claims re-read and confirmed, `Design-Sources.md` registering the new owners, `ContextPM.md`'s flagged drag notes (the sidebar re-filter, cross-fade index, four-surfaces, `group.tsx` rebuild, and `listDrag` decline items) gone.
-- [ ] **The standing records own everything this plan leaves open:** the Tier-5 candidates (subfield reorder · tab⇄pin cross-zone · Cards band drag · outline section drag · recents→pins review) and this plan's Sequenced After items (`onTap` · MarkdownPM/SurfacePM announcements · `feel.tsx` · the identity/order arc) are routed into `ContextPM.md`'s Pending Focuses / Next-Feature Candidates / Debt sections — nothing owed lives only in this document.
+- [ ] **The standing records own everything this plan leaves open.** The Tier-5 candidates (subfield reorder · tab⇄pin cross-zone · Cards band drag · outline section drag · recents→pins review) were routed into `ContextPM.md`'s Next-Feature Candidates at ratification — confirm they still stand; then route this plan's Sequenced After items (`onTap` · MarkdownPM/SurfacePM announcements · `feel.tsx` · the identity/order arc) the same way. Nothing owed lives only in this document.
 - [ ] `HistoryPM.md` entry written to History-Format.
 - [ ] Delivery Claim written → **neutral verifier** ("is this true?", handed the Requirements + commit range) → **`build-breaking-agent` attack** (briefed to interleave: drag × watcher push, drag × mode switch, drag × Escape-in-dropdown, drag × spring-open × scroll) — two dispatches, never one — findings fixed or ruled.
 - [ ] Final walkthrough handed to Nathan: what to try, surface by surface.
@@ -571,7 +571,7 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 
 ### Rulings
 
-- **Pending — Task 14's click rule.** Recommended: any activated drag suppresses the following click, uniformly — today the sidebar and paneDnd let a drag that returns home fire its click, which on a sidebar row is a navigation. Awaiting Nathan's call; Task 14's arming half is gated on it, everything else proceeds.
+- **Resolved (08-09, Nathan) — the click rule is skeleton-owned.** The one fact that matters is that the press *activated*; `gesture.ts` knows it, so the skeleton arms `suppressNextClick()` on every activated release (before `onDrop`, so a throwing commit is still suppressed) and every per-surface call and arming conditional deletes. Origin-tracking was considered and rejected — the post-drag click only lands on the origin under capture, and a second mechanism beside `suppressNextClick` is two owners for one fact. Precedent: `SurfacePM/sensors/pointerDrag.ts` already suppresses on any armed commit. Task 14's arming half is unblocked.
 - **Review round 1 (08-09), folded before approval.** Citation pass: 19/20 confirmed; the `usePointerGesture` derivation corrected 10→8. Build-breaking attack: 11 findings, all folded — autoscroll's missing re-resolve half (→ Task 15), the blur/`buttons` lock backstop (→ Task 4), the `activation: 0` teardown-only click and the grip flag/revert (→ Task 9), the Slider's downstream reassert (→ Task 9), the `zoneWidth` cache-key term (→ Task 10, Forced By corrected), the test-harness reset seam and the no-rethrow shape (→ Task 4), the dead bounds check resolved (→ Task 8), the pending-press Escape change (→ Task 7, accepted), the engine announce/focus split (→ Task 16), the instrument corrections (→ Made False + Dead Vocabulary), the Task-1 test surface rule (→ Task 1). Goal widened to cover Requirements 5/6/9/10. Rejected: none.
 
 ### Open Against Later Tasks
