@@ -2,11 +2,11 @@
 
 ### Current Focus
 
-**Sidebar + DND Consolidation & Bug Fixes.** The scoping half is closed: every flagged drag note was verified against the code, four survey lenses swept the layer and surfaced defects nobody had flagged — the grouping pane's wrong-target commit the worst of them — and the whole of it is ratified into `Planning/Drag Layer — Implementation Plan.md`: eighteen tasks in six phases, staleness fixes first, reviewed through a citation pass and a build-breaking attack with every finding folded, the click-suppression ruling settled skeleton-side. No code has moved. What's open is execution, and the plan's Gate 6 + Closeout checklist defines done — the handoff carries that list as this focus's Completion Criteria.
+**Sidebar + DND Consolidation & Bug Fixes.** The drag layer plan executed end to end — all eighteen tasks across six phases, every gate's review folded, gates green throughout ([[HistoryPM]] §PM-090). The layer now runs on one hardened gesture skeleton with the stale-slot class closed by the resolve-fresh-before-commit invariant, one snapshot helper, shared chrome, and the adoption gaps — auto-scroll, announcements, spring-open — filled. What remains of the focus is Nathan's hands-on walkthrough of the changed surfaces; the wrap-up in the handoff names what to try.
 
 ### Immediate Work
 
-- Execute the drag layer plan, in order, opening at Phase 1 (the three stale-slot fixes). The plan is this focus's sole task list; its Implementation Log holds the rulings and the open notes, and closing it out includes the breaker + simplifier passes, the History entry, the doc reconciliation, and routing Tier-5 and the deferred items into this document before the plan retires from Planning.
+- Drive the changed drag surfaces in the running app (the handoff's walkthrough lists them) and file anything that feels off — the closing verification chain was green, but geometry truth lives in a real mouse.
 
 ### Pending Focuses
 
@@ -30,7 +30,8 @@
 - [ ] **In-view page creation.** Sparse across every surface and the item that would be felt daily; wants a brainstorm loop rather than a patch.
 - [ ] **Cross-location card reordering** in views — scoped and mechanical.
 - [ ] **Canvas** — the spec sits at `Planning/6-26 - Canvas Spec.md`, unbuilt.
-- [ ] **Subfield reorder.** The store action and persistence are fully built (`setSubfieldOrder` has zero callers) — the entire feature is a missing drag UI, a three-item horizontal `SortableZone` in the Ribbon's shape. The readiest feature in the app.
+- [ ] **View QuickFilter:** Single-property filter toggles using the recently added ActionBand component.
+- [ ] **Subfield reorder.** The store action and persistence are fully built (`setSubfieldOrder` has zero callers) — the entire feature is a missing drag UI, a three-item horizontal `SortableZone` in the Ribbon's shape. 
 - [ ] **Tab ⇄ pin by drag.** The tab strip and the pinned zone are two independent SortableZones; pinning is context-menu-only. The board engine's cross-zone shape serves it, with one commit decision — pins key on `res.key`, tabs on `tab.id`.
 - [ ] **Cards group-band drag.** The table's bands reorder and reparent; Cards renders the same `GroupBand` with no `dragHandle`. The band engine is view-agnostic and the prop seam exists.
 - [ ] **Outline section drag.** The Outline dropdown is click-to-reveal only while the editor already drags whole sections by heading grip — dragging a heading *in the outline* to move its section is a write-coupling design call on ready mechanisms.
@@ -57,6 +58,11 @@
 
 #### II. Debt & Ride-Alongs
 
+- [ ] The gesture spec wants an `onTap(e)` fired on a release-before-activation — the additive piece that unblocks migrating MarkdownPM's `listDrag`/`blockDrag` and the CalendarPicker's range drag; it lands with the migration that consumes it.
+- [ ] Two more spec folds the drag work exposed, each a four-site bracket today: an `onDisclose` hook owning the `beginDragDisclose`/`endDragDisclose` pair the way `onWindowScroll` owns its listener, and an autoscroll resolve-and-start helper that skips cleanly when no scroller resolves.
+- [ ] MarkdownPM's drags and SurfacePM stay announcement-silent — editor and dashboard phrasing wants its own pass.
+- [ ] A mid-drag column hide/show or watcher view-push is silently reverted by a column drop's persist (`reorderColumn` reads grab-time state) — reachable only by mutating columns while holding a drag; a ref-read at commit fixes it if it's ever felt.
+- [ ] `feel.tsx`'s animation context is provided nowhere outside the showcase, so both engines always read the default while SurfacePM delivers the same value as a prop — wrap the shell in a provider or delete the context; a product call.
 - [ ] NOR filters are hand-authored only — the mode lives on disk and in the evaluator while the pane offers All and Any.
 - [ ] The flattened-mode bundle is half-built: `flat` grouping and Hide Location are live for Cards only. The pipeline is view-type-agnostic, so what remains is the table half plus a separate Flatten control.
 - [ ] Perf debt: no row virtualization, and an external value edit doesn't live-refresh an open table.
@@ -68,7 +74,6 @@
 - [ ] The `Creator` shape is stated three times — the named type in `shared/mutate.ts`, and inline in `shared/bridge.ts` and `store.ts`.
 - [ ] `useDismiss` coordinates with picker portals via per-event DOM queries; a shared open-picker counter removes the handshake.
 - [ ] The preview window's two halves share a path-keyed detail cache but neither dedupes an in-flight fetch, so navigating with the inspector already open still calls `openPage` twice.
-- [ ] `group.tsx` rebuilds geometry on every pointermove — `rowsOf` runs inside the hit-test and `cellAt` allocates beside it, both deriving from values invariant mid-drag. Caching against the rects array's identity retires both.
 - [ ] View format, grouping, and banner saves still trigger a full vault walk, as does `submitPropertyRename`; both want an optimistic targeted patch.
 
 ### Known Issues
@@ -82,6 +87,11 @@
 - [ ] MarkdownPM's drag-handle context menu shows 'Embed Page' when it shouldn't; a 'List Type' switcher would be the natural replacement.
 
 ### Recent Work
+
+#### PM-090 || The Drag Layer Converges On One Skeleton
+**DATE:** 08-09-2026 → 08-10
+
+The four lifecycles still hand-rolling `gesture.ts`'s skeleton became its consumers, the skeleton hardened against throwing callbacks, foreign pointers, and lost releases, and the stale-slot class closed layer-wide under one invariant: an invalidating event re-resolves from the last pointer point and a drop never commits against geometry that moved. One snapshot helper owns the measure-once ritual, the ghost and drop-line chrome collapsed onto their shared owners, the card engine stopped rebuilding geometry per pointer move, and the adoption gaps filled — edge auto-scroll on every scroll-trapped drag, pickup/drop announcements drag-wide, spring-open on the band drag, the grouping hierarchy, and the sidebar tree. The record now names two deliberate lifecycle families: window-listener drags on the skeleton, element-capture scrub controls self-cleaning by design.
 
 #### PM-089 || The Write Path Converges On One Lock 
 **DATE:** 08-08-2026
@@ -102,11 +112,6 @@ A fenced block's marker-run length became part of its identity, so a closer requ
 **DATE:** 08-08-2026
 
 A page carries its own table of contents: a toolbar dropdown listing its headings as a nested tree and traveling to whichever one is chosen, opening any collapsed section on the way. The derivation shares the editor's heading scan rather than adding a second one. Three shared mechanisms were corrected underneath it, each latent until a consumer with no row icons and arbitrarily long labels arrived — nested rows never truncated, the default-open state had no seam, and the auto-pair gate read only behind the caret. The interaction layer gained its first animated scroll, a distance-proportional glide that re-reads its destination each frame.
-
-#### PM-085 || The PageMenu & Picker Consolidation
-**DATE:** 08-07-2026
-
-A Page's Settings dropdown had rendered nothing; it now opens on the Page's identity and drills into a Properties leaf listing the Contexts and property values that Page holds. The leaf is an arrangement rather than a new mechanism, since every value is entered through the same primitives the table, cards, and preview inspector compose. The in-app picker became the default for a row's context menu on two grounds: it costs no round-trip through the file-owning process, and it cannot collide with the editor menu that process pops over any editable target. Two defects surfaced underneath — a missing caret on the inline title, and a hairline down every drilled pane's leading edge.
 
 ### Guidelines
 

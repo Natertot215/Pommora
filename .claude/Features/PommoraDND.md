@@ -58,7 +58,7 @@ The **Interaction Lab**, served through the showcase, exercises every surface �
 
 `@dnd-kit/*` is gone from the tree — no dependency, no import. PommoraDND is **not** a 1:1 port: it deliberately drops generality we don't need — the framework-agnostic core, the sensor and collision-strategy registries, the modifier pipeline, SSR guards, continuous re-measuring — and adds what dnd-kit lacks: pointer capture, hysteresis, no mid-drag array churn, a frame-accurate commit.
 
-`shared.ts` holds only what every surface genuinely shares — the drag types, the tuning constants, the click suppressor, the box helpers. The two engines' drag-state and commit machinery stay separate: they model genuinely different interactions, so only the primitives are hoisted.
+`shared.ts` holds only what every surface genuinely shares — the drag types, the tuning constants, the click suppressor, the box helpers, the ghost cursor offset, and the editable-target core no drag may start from. The two engines' drag-state and commit machinery stay separate: they model genuinely different interactions, so only the primitives are hoisted.
 
 ### Constraints & Accessibility
 
@@ -66,7 +66,9 @@ Each is an inline option or an automatic behavior, exercised in the Lab:
 
 - **Constraints & modifiers** — `axis` lock, `bounds` clamp, a `modifiers` escape hatch, `swap` mode (exchange active and over), and **async drop rejection**, where the item holds lifted in the `pending` state until the verdict resolves. The Constraints Lab surface toggles each.
 
-- **Keyboard + screen-reader** — Space/Enter lifts, arrow keys move on a geometric next-slot getter covering list, row, and grid, Space/Enter/Tab drops, Esc cancels; an assertive ARIA live region announces pick-up, move, drop, and cancel with position, and focus is restored to the item on drop. Items are focusable; the handle role is `button` by default, settable to `null` so table rows keep `<tr>` semantics.
+- **Screen-reader announcements are drag-wide:** an assertive ARIA live region announces every product drag's pick-up and drop — pointer or keyboard, engine or insertion-line — through the one `announce` primitive.
+
+- **Keyboard** — Space/Enter lifts, arrow keys move on a geometric next-slot getter covering list, row, and grid, Space/Enter/Tab drops, Esc cancels; focus is restored to the item on drop, and the keyboard path adds position detail to its announcements. Items are focusable; the handle role is `button` by default, settable to `null` so table rows keep `<tr>` semantics.
 
 Keyboard access stops at the single-zone engine. The cross-list board — and with it the cards grid — plus every insertion-line surface are pointer-only: Esc aborts a live drag, but nothing lifts from the keyboard.
 
@@ -78,7 +80,7 @@ The loop reads the last pointer point every frame — so holding still at an edg
 
 The module **owns a termination backstop** that stops the *loop only* — each surface still aborts its own gesture — so a focus-steal can't strand a running loop, and a single frame's delta is clamped so an rAF stall can't teleport the scroll.
 
-Every drag that edge-scrolls feeds this one loop, and no surface re-implements it. Not every drag is wired to it: the table's column reorder, the GFM-table drag, and the grouping pane are outstanding.
+Every drag inside a scrollable region feeds this one loop, and no surface re-implements it — the sort engines and every insertion-line surface, the table's columns along the x axis, and the GFM table axis-matched inside the editor.
 
 ### Mobile-Readiness (Prospective)
 
