@@ -57,9 +57,13 @@ export function useGroupingListDrag({
   type Snapshot = { index: BandIndex; boxTop: number; endY: number }
   const lastPoint = useRef({ x: 0, y: 0 })
   const stopScroll = useRef<(() => void) | null>(null)
+  // The live gesture's resolver, reachable from the bands effect — a mid-drag push re-aims the
+  // line the way the siblings do, not just the eventual drop.
+  const resolveRef = useRef<(() => void) | null>(null)
   const snap = useDragSnapshot(takeSnapshot)
   useEffect(() => {
     snap.markDirty()
+    resolveRef.current?.()
   }, [bands])
 
   function takeSnapshot(): Snapshot {
@@ -80,6 +84,7 @@ export function useGroupingListDrag({
 
   const reset = (): void => {
     live.current = null
+    resolveRef.current = null
     snap.reset()
     setDraggingId(null)
     setLine(null)
@@ -115,9 +120,12 @@ export function useGroupingListDrag({
           el: anchor,
           event: e,
           capture: false,
+          // An active drag's Escape must cancel the DRAG, not dismiss the hosting settings panel.
+          swallowActiveEscape: true,
           onActivate: (ev) => {
             lastPoint.current = { x: ev.clientX, y: ev.clientY }
             snap.markDirty()
+            resolveRef.current = () => resolveAt(lastPoint.current.y)
             setDraggingId(id)
             // The pane's order region is scroll-capped — the edge loop reaches past its fold.
             const sc = findScroller(container.current, 'y')
@@ -170,6 +178,8 @@ export function useGroupingListDrag({
           beginDragDisclose(() => {
             snap.markDirty()
             resolveAt(lastPoint.current.y)
+            // The reveal is still animating — stay dirty so the drop re-measures at its own moment.
+            snap.markDirty()
           })
         }
       },

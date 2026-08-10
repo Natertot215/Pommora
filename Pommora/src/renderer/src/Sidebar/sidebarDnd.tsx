@@ -351,6 +351,9 @@ export function SidebarDnd({
       beginDragDisclose(() => {
         snap.markDirty()
         resolveSlot()
+        // The reveal is still animating — stay dirty so the drop (and every later move)
+        // re-measures at its own moment instead of trusting this mid-animation pass.
+        snap.markDirty()
       })
     }
   }
