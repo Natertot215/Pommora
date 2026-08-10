@@ -43,10 +43,10 @@ On "Go," the plan then executed end to end in the same session: twenty-eight com
 
 #### Session Pointers
 
-- The plan: `Planning/Drag Layer — Implementation Plan.md` — Goal through Closeout; its Implementation Log is the execution record and the first read.
+- The plan (retired at `3c6fa26d`): `git show "839ea405:.claude/Planning/Drag Layer — Implementation Plan.md"` — Goal through Closeout; its Implementation Log is the execution record.
 - The retired 18-task predecessor (the identity arc, the rejected slot resolver, the weighed alternatives): `git show "9b346a0e:.claude/Planning/Drag Layer — Implementation Plan.md"` — its reasoning is inherited into the new plan's Inherited Reasoning, so the git copy is reference rather than required reading.
-- `design-system/interactions/gesture.ts` — the skeleton, 144 lines; Task 4 reads it whole.
-- `Components/Detail/paneDnd.tsx` — the migration precedent every Phase-3 task copies: scroll listener and autoscroll in `onActivate`, symmetric `teardown`, `swallowActiveEscape`.
+- `design-system/interactions/gesture.ts` — the skeleton every window-listener drag consumes.
+- `Components/Detail/paneDnd.tsx` — the migration precedent: scroll listener and autoscroll in `onActivate`, symmetric `teardown`, `swallowActiveEscape`.
 - The four survey reports live only in this session's transcript below — their durable findings are folded into the plan, but the full adoption matrix is there if a task wants more detail than its Why carries.
 
 #### Working Notes
