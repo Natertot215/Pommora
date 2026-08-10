@@ -133,7 +133,7 @@
 
 .data-cell {
   padding: var(--cell-padding-y) var(--cell-padding-x);
-  color: var(--text);
+  color: var(--label-primary);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -275,7 +275,7 @@
   margin-right: var(--cell-icon-gap);
 }
 .cell-title-text {
-  color: var(--text);
+  color: var(--label-primary);
 }
 /* Plain-text scroll box (dates, numbers, links) — same mechanism, block-bounded to the cell. */
 .cell-text-scroll {

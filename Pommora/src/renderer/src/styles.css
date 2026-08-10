@@ -4,7 +4,6 @@
 
 :root {
   --row-h: 28px;
-  --text: #ffffffe6;
   --text-dim: #ffffff80;
   --main-bg: var(
     --bg-window
@@ -37,7 +36,7 @@ body {
     BlinkMacSystemFont,
     "SF Pro Text",
     sans-serif;
-  color: var(--text);
+  color: var(--label-primary);
   background: var(--main-bg);
   -webkit-font-smoothing: antialiased;
   /* App chrome isn't text-selectable (native feel) — rows, headers, labels don't highlight
@@ -227,7 +226,7 @@ textarea,
   padding: 5px 14px;
   font: inherit;
   font-weight: var(--weight-emphasized);
-  color: var(--text);
+  color: var(--label-primary);
   background: var(--state-selected);
   cursor: default;
 }
