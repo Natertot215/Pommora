@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
+import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
 import type { Band, BandIndex, BandSlot } from '../../Detail/Views/Table/bandDndModel'
 import { bandSlot, buildBandIndex, canNest } from '../../Detail/Views/Table/bandDndModel'
 
@@ -120,7 +121,7 @@ export function useGroupingListDrag({
           },
           onDragMove: (ev) => {
             lastPoint.current = { x: ev.clientX, y: ev.clientY }
-            setGhost({ x: ev.clientX + 12, y: ev.clientY + 8 })
+            setGhost({ x: ev.clientX + GHOST_OFFSET.x, y: ev.clientY + GHOST_OFFSET.y })
             resolveAt(ev.clientY)
           },
           onDrop: () => {

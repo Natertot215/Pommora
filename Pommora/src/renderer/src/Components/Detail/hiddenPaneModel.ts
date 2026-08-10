@@ -7,7 +7,14 @@ import {
   RESERVED_PROPERTY_ID,
 } from '@shared/properties'
 import type { SavedView } from '@shared/views'
-import { nexusReorderIndex, type PaneRow, type PaneSlot, type Region } from './paneDndModel'
+import {
+  nexusReorderIndex,
+  regionScan,
+  withinRegion,
+  type PaneRow,
+  type PaneSlot,
+  type Region,
+} from './paneDndModel'
 
 type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
 
@@ -93,17 +100,12 @@ export function hiddenPaneSlot(
 ): PaneSlot | null {
   const dragged = byId.get(draggedId)
   if (!dragged) return null
-  const within = (r: Region): boolean => pointerY >= r.top && pointerY <= r.bottom
-  if (within(regions.all) && !within(regions.assigned)) {
+  if (withinRegion(regions.all, pointerY) && !withinRegion(regions.assigned, pointerY)) {
     if (dragged.group !== 'assigned' || draggedId === RESERVED_PROPERTY_ID.title) return null
     return { drop: { kind: 'unassign', propId: draggedId }, lineY: null, highlightAll: true }
   }
-  if (!within(regions.assigned)) return null
-  const groupRows = rows.filter((r) => byId.get(r.id)?.group === 'assigned' && r.id !== draggedId)
-  let i = 0
-  while (i < groupRows.length && pointerY >= groupRows[i].mid) i++
-  const last = groupRows[groupRows.length - 1]
-  const lineY = i < groupRows.length ? groupRows[i].top : last ? last.bottom : regions.assigned.top
+  if (!withinRegion(regions.assigned, pointerY)) return null
+  const { i, lineY } = regionScan(rows, byId, 'assigned', draggedId, pointerY, regions.assigned.top)
   return {
     drop: {
       kind: dragged.group === 'assigned' ? 'reorder-assigned' : 'assign',

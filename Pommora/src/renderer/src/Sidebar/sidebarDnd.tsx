@@ -8,12 +8,11 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { createPortal } from 'react-dom'
-import { text } from '@renderer/design-system/tokens'
 import { DISCLOSURE_INDENT } from '@renderer/design-system/tokens/size.css'
-import { stack } from '@renderer/design-system/tokens/stack'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
+import { EDITABLE_TARGETS } from '@renderer/design-system/interactions/shared'
+import { DragGhost } from '../Components/Detail/DragGhost'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { FolderPlacement } from '@shared/types'
@@ -293,7 +292,7 @@ export function SidebarDnd({
   const begin = (id: string, e: ReactPointerEvent): void => {
     // The cheap refusals come before the layout read — a right-press or a busy gesture costs no rect.
     if (e.button !== 0 || !e.isPrimary) return
-    if ((e.target as HTMLElement).closest?.('input, textarea, [contenteditable="true"]')) return
+    if ((e.target as HTMLElement).closest?.(EDITABLE_TARGETS)) return
     const el = rows.current.get(id)
     if (!el) return
     const grabX = e.clientX - el.getBoundingClientRect().left
@@ -355,57 +354,23 @@ export function SidebarDnd({
             slot differs from where the row already sits. */}
         {drag.target && !drag.target.noop && (
           <div
+            className="table-drop-line"
             aria-hidden
             style={{
-              position: 'absolute',
               top: drag.target.lineY,
               left: BASE_INDENT + drag.target.depth * STEP_INDENT,
               right: LINE_INSET_RIGHT,
-              height: 2,
-              borderRadius: 2,
-              background: 'var(--accent)',
-              pointerEvents: 'none',
-              zIndex: stack.local.overlay,
             }}
           >
-            <span
-              style={{
-                position: 'absolute',
-                left: -3,
-                top: -2.5,
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: 'var(--accent)',
-              }}
-            />
+            <span className="table-drop-dot" />
           </div>
         )}
       </div>
-      {drag.id &&
-        createPortal(
-          <div
-            aria-hidden
-            className={text.body.standard}
-            style={{
-              position: 'fixed',
-              top: drag.ghostY,
-              left: drag.ghostX,
-              padding: '4px 12px',
-              borderRadius: 8,
-              color: 'var(--label-primary)',
-              background: 'color-mix(in srgb, var(--bg-window) 78%, transparent)',
-              backdropFilter: 'blur(6px)',
-              WebkitBackdropFilter: 'blur(6px)',
-              boxShadow: '0 14px 34px #00000073',
-              pointerEvents: 'none',
-              zIndex: stack.top.floating,
-            }}
-          >
-            {draggedLabel}
-          </div>,
-          document.body,
-        )}
+      <DragGhost
+        x={drag.id ? drag.ghostX : null}
+        y={drag.id ? drag.ghostY : null}
+        label={draggedLabel}
+      />
     </Ctx.Provider>
   )
 }

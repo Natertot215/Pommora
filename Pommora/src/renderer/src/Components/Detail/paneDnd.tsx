@@ -13,7 +13,12 @@ import { text } from '@renderer/design-system/tokens'
 import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
+import {
+  DROP_LINE_INSET,
+  EDITABLE_TARGETS,
+  GHOST_OFFSET,
+} from '@renderer/design-system/interactions/shared'
+import { DragGhost } from './DragGhost'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type PaneDrop, type PaneRow, type PaneSlot, type Region, paneSlot } from './paneDndModel'
@@ -147,8 +152,8 @@ export function PaneDnd({
     live.current = liveSlot
     setDrag({
       id,
-      ghostX: lastPoint.current.x + 12,
-      ghostY: clientY + 8,
+      ghostX: lastPoint.current.x + GHOST_OFFSET.x,
+      ghostY: clientY + GHOST_OFFSET.y,
       slot: liveSlot,
       lineTop: liveSlot?.lineY != null ? liveSlot.lineY - s.boxTop : 0,
     })
@@ -156,7 +161,7 @@ export function PaneDnd({
 
   const begin = (id: string, e: ReactPointerEvent): void => {
     // `button` beyond the band guard: a row's +, the twisty, and rename inputs never arm a drag.
-    if ((e.target as HTMLElement).closest?.('button, input, textarea, [contenteditable="true"]'))
+    if ((e.target as HTMLElement).closest?.(`button, ${EDITABLE_TARGETS}`))
       return
     const el = els.current.get(id)
     if (!el) return
@@ -230,17 +235,11 @@ export function PaneDnd({
           </div>
         )}
       </div>
-      {drag.id &&
-        createPortal(
-          <div
-            aria-hidden
-            className={cx('band-drag-ghost', text.body.standard)}
-            style={{ top: drag.ghostY, left: drag.ghostX }}
-          >
-            {ghostLabel.current}
-          </div>,
-          document.body,
-        )}
+      <DragGhost
+        x={drag.id ? drag.ghostX : null}
+        y={drag.id ? drag.ghostY : null}
+        label={ghostLabel.current}
+      />
     </Ctx.Provider>
   )
 }
