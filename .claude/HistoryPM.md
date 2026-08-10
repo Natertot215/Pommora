@@ -2,6 +2,7 @@
 
 | Date               | ID     | Entry                                                |
 | ------------------ | ------ | ---------------------------------------------------- |
+| 08-10-2026         | PM-095 | Documentation Normalization                          |
 | 08-10-2026         | PM-094 | One Owner Per Repeated Value                         |
 | 08-10-2026         | PM-093 | The Token Atlas                                      |
 | 08-10-2026         | PM-092 | One Grip Menu, And The List's Type                   |
@@ -96,6 +97,14 @@
 | 06-15-2026         | PM-003 | The Design System Is Founded                         |
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer                              |
 | 06-14-2026         | PM-001 | Genesis — The Walking Skeleton                       |
+
+#### PM-095 || Documentation Normalization
+**DATE:** 08-10-2026
+
+Every Feature doc, Versioning, and the PRD rewrote to one documentation standard, ratified in `Planning/Documentation Normalization.md` from Nathan's own exemplar edits: product-documentation register with the mechanism narration and insistent vocabulary removed, status routed to a canonical Known Issues → Pending → Prospects tail, tight lists, preamble-free Title-Case tables, and a codemap table of contents opening every spec. The pass also ruled where facts live — schema and move semantics in CollectionsPM, the trash record in NexusRecordPM, view-generic rules in ViewsPM, the caret in InteractionPM, the footer's facts in SubfieldPM, the knobs in ConfigurationPM — with every duplicate reduced to a pointer at its non-owner. MarkdownPM's Non-Obvious annex relocated to `Guidelines/Editor-Internals.md`, Versioning took its Studio FORMAT, and a closing two-agent residue review folded the dangling references and register stragglers, capturing PM-094's freshly minted tokens into the atlas along the way.
+
+- **Commits:** `8c291b83..20f3dfcd`
+- **Diff:** Net +94 | +1176 / −1082 (documentation; actionable 0)
 
 #### PM-094 || One Owner Per Repeated Value
 **DATE:** 08-10-2026

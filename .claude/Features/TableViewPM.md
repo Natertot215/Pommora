@@ -11,8 +11,8 @@ TableView
 ├── Rows & Cells
 ├── Density
 ├── The Table Sheet
-├── Prospects
-└── Known Issues
+├── Known Issues
+└── Prospects
 ```
 
 One of the built renderers behind the modeled view types (→ [[ViewsPM]]) — a Collection's or Set's Pages drawn as rows on a single CSS grid. It's presentation only: the pipeline hands it resolved groups and per-cell values, and TableView owns the layout, the column ergonomics, and the row and group chrome.
@@ -97,10 +97,9 @@ The table's design vocabulary is a whole-file token sheet scoped to `.table-view
 | Empty Pad | `--empty-pad-y` | `24px` |
 | Right Inset | `--table-right-inset` | → content gutter; `0px` once overflowing (declared in `Table.css`) |
 
-### Prospects
-
-- **The group-header "+"** — the creation surface behind the affordance is the open piece. A property bucket can't infer a create location, so a bucket-header "+" would have to create in a chosen location with the bucket's value pre-filled.
-
 ### Known Issues
 
 - **Row grips scroll with their row on horizontal scroll.** The disclosure headers and chevrons stay pinned, but the hover-only drag grips ride their row's cell off to the left. Freezing them cleanly means freezing the whole title column, which is an open decision.
+### Prospects
+
+- **The group-header "+"** — the creation surface behind the affordance is the open piece. A property bucket can't infer a create location, so a bucket-header "+" would have to create in a chosen location with the bucket's value pre-filled.
