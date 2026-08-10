@@ -20,6 +20,7 @@ import {
 } from '@renderer/design-system/interactions/shared'
 import { DragGhost } from './DragGhost'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { announce } from '@renderer/design-system/interactions/a11y'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type PaneDrop, type PaneRow, type PaneSlot, type Region, paneSlot } from './paneDndModel'
 import * as s from './settingsPane.css'
@@ -175,6 +176,7 @@ export function PaneDnd({
         draggedId.current = id
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         ghostLabel.current = labelForRef.current(id)
+        announce(`Picked up ${ghostLabel.current}.`)
         scroller.current = findScroller(box.current, 'y')
         if (scroller.current) {
           stopScroll.current = startAutoScroll({
@@ -199,7 +201,10 @@ export function PaneDnd({
       onDrop: () => {
         if (snap.isDirty()) resolveSlot(id, lastPoint.current.y)
         const liveSlot = live.current
-        if (liveSlot) onDropRef.current(liveSlot.drop)
+        if (liveSlot) {
+          onDropRef.current(liveSlot.drop)
+          announce(`Moved ${ghostLabel.current}.`)
+        }
         reset()
       },
       onAbort: reset,

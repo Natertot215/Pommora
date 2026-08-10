@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
@@ -26,6 +26,7 @@ import {
   footingSymbol,
 } from '../../design-system/components/menu/menu.css'
 import { Reveal } from '../../design-system/components/Reveal'
+import { registerDiscloseTarget } from '../../design-system/interactions/dragDisclose'
 import { DragGhost } from './DragGhost'
 import { EyeToggle } from './EyeToggle'
 import { Switch } from '../../design-system/components/Switches/Switch'
@@ -553,6 +554,49 @@ export function CustomList({
   )
 }
 
+/** A hierarchy row that registers as a spring-open target while collapsed — a drag dwelling
+ *  over it expands it, the disclose remeasure re-aiming the live drag. */
+function SpringableRow({
+  collapsed,
+  onExpand,
+  className,
+  refCb,
+  handle,
+  dimmed,
+  children,
+}: {
+  collapsed: boolean
+  onExpand: () => void
+  className: string
+  refCb: (el: HTMLElement | null) => void
+  handle: { onPointerDown: (e: React.PointerEvent) => void }
+  dimmed: boolean
+  children: React.ReactNode
+}): React.JSX.Element {
+  const el = useRef<HTMLDivElement | null>(null)
+  const expandRef = useRef(onExpand)
+  expandRef.current = onExpand
+  useEffect(() => {
+    if (!collapsed || !el.current) return
+    return registerDiscloseTarget(el.current, () => expandRef.current())
+  }, [collapsed])
+  return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
+    <div
+      className={className}
+      ref={(node) => {
+        el.current = node
+        refCb(node)
+      }}
+      data-disclose={collapsed ? '' : undefined}
+      {...handle}
+      style={dimmed ? { opacity: 0.4 } : undefined}
+    >
+      {children}
+    </div>
+  )
+}
+
 /** Drags mirror the table band rules: sibling reorder writes view order in Custom / the
  *  filesystem in Location; a cross-nesting drop is always an fs reparent. */
 function LocationHierarchy({
@@ -754,14 +798,16 @@ function LocationHierarchy({
           )
         }
         wrap={(row) => (
-          <div
+          <SpringableRow
+            collapsed={disclosable && !expanded.has(s.id)}
+            onExpand={() => expanded.toggle(s.id)}
             className={gp.rowHoverScope}
-            ref={dnd.rowRef(s.id)}
-            {...dnd.rowHandle(s.id)}
-            style={dnd.draggingId === s.id ? { opacity: 0.4 } : undefined}
+            refCb={dnd.rowRef(s.id)}
+            handle={dnd.rowHandle(s.id)}
+            dimmed={dnd.draggingId === s.id}
           >
             {row}
-          </div>
+          </SpringableRow>
         )}
       >
         {disclosable ? body : undefined}
