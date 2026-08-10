@@ -4,7 +4,6 @@
 
 :root {
   --row-h: 28px;
-  --text-dim: #ffffff80;
   --main-bg: var(
     --bg-window
   ); /* the background.window token via the theme-vars bridge — single source (@shared/theme) */
@@ -199,7 +198,7 @@ textarea,
 .state {
   padding: 48px 16px;
   text-align: center;
-  color: var(--text-dim);
+  color: var(--label-tertiary); /* Awaiting proper inactive state token. */
 }
 
 .state-error {
@@ -210,7 +209,7 @@ textarea,
   display: block;
   margin-top: 6px;
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--label-tertiary); /* Awaiting proper inactive state token. */
 }
 
 /* Interim empty-state CTA — matches the app's white-alpha chrome; replace with the design-system

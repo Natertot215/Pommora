@@ -23,7 +23,7 @@
 }
 
 .table-empty {
-  color: var(--text-dim);
+  color: var(--label-tertiary); /* Awaiting proper inactive state token. */
   padding: var(--empty-pad-y) 0;
 }
 
