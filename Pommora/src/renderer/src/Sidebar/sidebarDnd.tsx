@@ -197,9 +197,13 @@ export function SidebarDnd({
       }
       const beforeId = entry.pageIds.find((id) => id !== g.id) ?? null
       const order = nextOrder(entry.pageIds, g.id, beforeId)
+      // Derived from the slot the drop resolves to, never from the row under the pointer — with
+      // folders first, a container's first page sits below its entire Sets block. Same rule the
+      // Set branch below already follows.
+      const firstRow = beforeId ? measured.find((m) => m.id === beforeId) : undefined
       return {
         depth: entry.depth + 1,
-        lineY: over.bottom - contentTop,
+        lineY: (firstRow ? firstRow.top : over.bottom) - contentTop,
         commit: { op: 'movePage', path: dragged.path, newParentPath: entry.path, order },
         noop: over.id === dragged.parentId && sameOrder(order, entry.pageIds),
       }

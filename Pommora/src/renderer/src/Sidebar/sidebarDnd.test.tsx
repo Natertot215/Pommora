@@ -245,3 +245,76 @@ describe('sidebar drag — page↔Set seam', () => {
     })
   })
 })
+
+// The indicator promises a position; the drop has to land there. Rects are stubbed, so what's
+// under test is which measured row the line is derived FROM, not the pixel.
+describe('sidebar drag — the line marks where the drop lands', () => {
+  const hostTree = {
+    collections: [
+      {
+        kind: 'collection',
+        id: 'c1',
+        title: 'C',
+        path: 'C',
+        sets: [],
+        pages: [{ kind: 'page', id: 'p1', title: 'P1', path: 'C/P1.md' }],
+      },
+      {
+        kind: 'collection',
+        id: 'c2',
+        title: 'D',
+        path: 'D',
+        sets: [{ kind: 'set', id: 's2', title: 'S2', path: 'D/S2', pages: [], sets: [] }],
+        pages: [
+          { kind: 'page', id: 'q1', title: 'Q1', path: 'D/Q1.md' },
+          { kind: 'page', id: 'q2', title: 'Q2', path: 'D/Q2.md' },
+        ],
+      },
+    ],
+    contexts: [],
+  } as unknown as NexusTree
+
+  const line = (): HTMLElement | undefined =>
+    [...host.querySelectorAll<HTMLElement>('div[aria-hidden="true"]')].find(
+      (el) => el.style.position === 'absolute',
+    )
+
+  it("draws at the target's first page, not under the header the pointer is over", async () => {
+    // Folders first, so D's first page sits BELOW its Set — the header's bottom edge and the
+    // slot the drop resolves to are three rows apart.
+    await act(async () => {
+      root.render(
+        <SidebarDnd tree={hostTree} onCommit={commitSpy} setPlacement="top">
+          <Row id="p1" />
+          <Row id="c2" />
+          <Row id="s2" />
+          <Row id="q1" />
+          <Row id="q2" />
+        </SidebarDnd>,
+      )
+    })
+    const rects: Record<string, { top: number; bottom: number }> = {
+      p1: { top: 0, bottom: 24 },
+      c2: { top: 24, bottom: 48 },
+      s2: { top: 48, bottom: 72 },
+      q1: { top: 72, bottom: 96 },
+      q2: { top: 96, bottom: 120 },
+    }
+    for (const [id, rect] of Object.entries(rects)) {
+      const el = host.querySelector(`[data-row="${id}"]`)
+      if (el) stubRect(el, rect)
+    }
+    await act(async () => firePointer(row('p1'), 'pointerdown', { x: 4, y: 12 }))
+    await act(async () => firePointer(row('p1'), 'pointermove', { x: 4, y: 36 })) // over D's header
+
+    expect(line()?.style.top).toBe('72px') // q1.top — where the page actually lands
+
+    await act(async () => firePointer(row('p1'), 'pointerup'))
+    expect(commitSpy).toHaveBeenCalledExactlyOnceWith({
+      op: 'movePage',
+      path: 'C/P1.md',
+      newParentPath: 'D',
+      order: ['p1', 'q1', 'q2'],
+    })
+  })
+})
