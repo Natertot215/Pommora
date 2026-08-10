@@ -187,6 +187,29 @@ describe('every other grip', () => {
     expect(view.state.doc.toString()).toBe(doc)
   })
 
+  it('the right-press is defaulted away, so the browser never seats the caret on the grip', async () => {
+    const view = await mount('intro\n\n- alpha\n\nafter')
+    const line = [...view.dom.querySelectorAll('.cm-line')].find((l) =>
+      (l.textContent ?? '').includes('alpha'),
+    )!
+    const e = new MouseEvent('mousedown', {
+      bubbles: true,
+      cancelable: true,
+      button: 2,
+      clientX: -1,
+    })
+    line.dispatchEvent(e)
+    expect(e.defaultPrevented).toBe(true)
+  })
+
+  it('acting on a grip takes no focus for the editor', async () => {
+    const view = await mount('intro\n\n- alpha\n\nafter')
+    nextPick = { action: 'listKind', kind: 'ordered' }
+    await gripMenu(view, 'alpha')
+    expect(view.state.doc.toString()).toBe('intro\n\n1. alpha\n\nafter')
+    expect(view.hasFocus).toBe(false)
+  })
+
   it('a read-only editor pops no grip menu at all', async () => {
     const view = await mountEditor({
       initialBody: 'some prose',
