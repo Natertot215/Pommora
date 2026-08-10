@@ -52,7 +52,6 @@ The footer carries a breadcrumb of the active tab's container path, plus a dimme
 
 - **NavPane** — the toolbar Navigation button's dropdown, a blank placeholder on the shared beak-glass menu surface at a fixed height. Its content is undecided.
 - **Open design** — the NavWindow's Figma gallery form. Whether the rail as built is the intended rail or a stand-in has no ruling; nor does whether the shipped hover pin marker settles the row marker. List rows carry no current-item treatment; gallery cards do.
-- **The gallery card tokens** — NavWindow's gallery declares a parallel scoped set of CardView's token names, tracked as the standing merge candidate (→ [[CardViewPM]]).
 - **Agenda is unsearchable** — Tasks and Events are absent from the tree the index builds from, and no selection kind opens one. Both wait on Agenda joining the walk; the persistence layer admits their refs, and the inert-row rendering exists.
 - **Body and full-text search** waits on a SQLite FTS layer that doesn't exist.
 
