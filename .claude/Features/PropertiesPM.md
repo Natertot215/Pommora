@@ -23,8 +23,8 @@ Properties
 │   ├── II. Shapes
 │   ├── II. The Recipe & Variants
 │   └── II. Knobs
-├── Pending
-└── Known Issues
+├── Known Issues
+└── Pending
 ```
 
 Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and populated on the members of every Collection that assigns it — the registry declares each property's type and per-type config, a Collection's assignment list names which registry properties its Pages validate and show, and member entities store the values. The same type catalog applies to Pages, Tasks, and Events; Agenda's kinds are modeled to keep their own definitions on their config sidecars, though a seeded config carries identity only until the Agenda rethink builds that schema (→ [[AgendaPM]]). The on-disk file is canonical.
@@ -211,6 +211,10 @@ The chip is the property value's rendered form, so its design vocabulary lives h
 
 The remove-× melt (the hover-revealed remove zone, the crisp and blurred label twins, the mask ramps) is chip machinery in the same file; its guards — static masks, opacity-only transitions, a pointer-inert label — protect against a Chromium repaint defect and stay as written.
 
+### Known Issues
+
+- **A checkbox's "Accent" reads neutral in the pane under a `system` accent.** The cell box and switch tint the true accent through `var(--accent)`; the editor's color chip resolves through a palette key, and `system` (follow-the-OS) has no palette key, falling back to the neutral default chip. Only the settings chip shows the mismatch.
+- **A stray bare-string Multi-Select value reads as Select.** The read-side coercion covering shape-vs-column mismatches handles the single-string kinds (URL / Select / Date) only, so a Multi-Select value stored as a lone string stays classified as Select and drops out of grouping and filtering. Unreachable while nothing writes that shape; it goes live when the Lossy Change-Type Strip performs a Select→Multi-Select change — fix it there as a value migration (bare string → single-element array).
 ### Pending
 
 - **Page Property Panel** — the surface for setting property values on a Page in the main pane, and on a Task or Event anywhere. The Page Preview's front-matter inspector covers a Page inside the preview only; the main pane renders no property rows, and Agenda items have no value surface at all.
@@ -221,8 +225,3 @@ The remove-× melt (the hover-revealed remove zone, the crisp and blurred label 
 - **Larger Color Picker** — option colors store an open solid-palette key (resolved through `chipColorFor` with a legacy read-map for old Notion values), so the ColorPicker's grid can grow into a much larger selector over the shared color tokens with no schema churn.
 - **Calendar Picker refinements** — range values (a datetime value is a single ISO on disk, so the value picker disables the shared picker's range mode), keyboard stepping on the time segments, an in-app control for the `time_format` setting, and test coverage.
 - **Per-View Link Styling** — a URL property's look is entirely property-level. Letting a view override it is a prospect; the `column_styles` seam already carries per-view looks for the other types.
-
-### Known Issues
-
-- **A checkbox's "Accent" reads neutral in the pane under a `system` accent.** The cell box and switch tint the true accent through `var(--accent)`; the editor's color chip resolves through a palette key, and `system` (follow-the-OS) has no palette key, falling back to the neutral default chip. Only the settings chip shows the mismatch.
-- **A stray bare-string Multi-Select value reads as Select.** The read-side coercion covering shape-vs-column mismatches handles the single-string kinds (URL / Select / Date) only, so a Multi-Select value stored as a lone string stays classified as Select and drops out of grouping and filtering. Unreachable while nothing writes that shape; it goes live when the Lossy Change-Type Strip performs a Select→Multi-Select change — fix it there as a value migration (bare string → single-element array).

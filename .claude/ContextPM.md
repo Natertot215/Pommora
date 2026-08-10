@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**The token arc — closed.** The design system's full vocabulary is grounded in SOURCE-tagged tables across the feature specs, anchored by `DesignSystemPM.md` and verified by `scripts/check-atlas.mjs` ([[HistoryPM]] §PM-093), and the fix list that reconnaissance produced has been worked through (§PM-094): three tokens minted where literals had been, the card families merged, the auto-scroll defaults and `separator.line` down to one writer each, and the drifted comments restated. What remains in `Planning/CSS Duplication Report.md` is adjudicated keeps and the literals waiting on a spacing scale. The next session opens on a fresh pick — the identity/order-persistence arc and the subfield reorder are the two nearest doors.
+**Documentation normalization — closed.** Every Feature doc, Versioning, and the PRD read to one standard ([[HistoryPM]] §PM-095): product-documentation register, one owner per fact with pointers everywhere else, tails running Known Issues → Pending → Prospects, and a codemap table of contents opening each spec. The atlas stayed checker-verified through the pass, with PM-094's minted tokens captured. The next session opens on a fresh pick — §Pending Focuses holds the standing options, with the identity/order-persistence arc and the subfield reorder the two nearest doors.
 
 ### Immediate Work
 
@@ -85,6 +85,11 @@
 
 ### Recent Work
 
+#### PM-095 || Documentation Normalization
+**DATE:** 08-10-2026
+
+Every Feature doc, Versioning, and the PRD rewrote to one documentation standard — product register, one owner per fact with pointers elsewhere, canonical tails, and codemap tables of contents — ratified in `Planning/Documentation Normalization.md` and closed by a two-agent residue review. MarkdownPM's Non-Obvious traps now live in `Guidelines/Editor-Internals.md`, and the atlas stayed checker-green throughout.
+
 #### PM-094 || One Owner Per Repeated Value
 **DATE:** 08-10-2026
 
@@ -104,21 +109,6 @@ Every block grip's right-click resolves through one kind-keyed menu: Delete on a
 **DATE:** 08-10-2026
 
 The shared drag chrome — insertion line, dot, host, and ghost — moved into `design-system/interactions` under honest names, the ghost's glass became the `GHOST_FROST` materials recipe, and `--shadow-lift`, `--drop-line-inset`, and `--state-disabled` joined the tokens. The `--drag-muted` alias died and its out-of-scope consumers (tab strip, pins, nav rows) got their silently-missing drag fade back. Footer chrome, `iconOption`, and the NavPane anchor each moved to their one owner; the banner/title and nav-list spreads were adjudicated as the theming contract working and kept.
-
-#### PM-090 || The Drag Layer Converges On One Skeleton
-**DATE:** 08-09-2026 → 08-10
-
-The four lifecycles still hand-rolling `gesture.ts`'s skeleton became its consumers, the skeleton hardened against throwing callbacks, foreign pointers, and lost releases, and the stale-slot class closed layer-wide under one invariant: an invalidating event re-resolves from the last pointer point and a drop never commits against geometry that moved. One snapshot helper owns the measure-once ritual, the ghost and drop-line chrome collapsed onto their shared owners, the card engine stopped rebuilding geometry per pointer move, and the adoption gaps filled — edge auto-scroll on every scroll-trapped drag, pickup/drop announcements drag-wide, spring-open on the band drag, the grouping hierarchy, and the sidebar tree. The record now names two deliberate lifecycle families: window-listener drags on the skeleton, element-capture scrub controls self-cleaning by design.
-
-#### PM-089 || The Write Path Converges On One Lock 
-**DATE:** 08-08-2026
-
-Every writer of a container sidecar came onto one lock key built in `main/paths.ts`, replacing three different keys and several call sites that held none — a read-merge-write that had read before a sibling's write landed could revert a view save or a page move with no error. A relocate now runs under the source path's own key, closing a rename race that left a ghost file at the vacated path holding newer content than the renamed one. The JSON read-modify-write primitive took the same treatment, and the seven callers that had supplied that lock by hand came out in the same commit. All of it is process state, so the app now holds a single-instance lock and a relaunch raises the window that already exists.
-
-#### PM-088 || Dropdown Shell & Menu Consolidation 
-**DATE:** 08-08-2026
-
-`MenuDropdown` took the open state, outside-dismiss, retract beat, and mounted-pane branch that the three toolbar dropdowns had each carried separately, and the stylesheet named for one of them was renamed for all three. `containerCreators` became the single rule for what a Collection or a Set offers on creation, correcting a sidebar menu that gave a Set only New Page and two creator labels written as literals. Two constants describing a reach the menu layer never had were corrected rather than made true.
 
 ### Guidelines
 

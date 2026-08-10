@@ -8,8 +8,8 @@ SymbolsPM
 │   └── View Types
 ├── Additional Assignments
 ├── The Picker
-├── Pending
-└── Known Issues
+├── Known Issues
+└── Pending
 ```
 
 Pommora's standard semantic icons — the canonical glyph for each pane, property type, and recurring concept. The curated registry behind `design-system/symbols` is the primary source and the app's own vocabulary. A caller with no assigned glyph renders `DashIcon`, the dashed-square placeholder, until a symbol is chosen; an id that resolves in neither source falls back to `square-dashed`.
@@ -68,10 +68,9 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 
 The curated registry above is the app's own semantic vocabulary — the fixed glyphs the UI reaches for by name. The **Icon Picker** the user opens to assign an entity's icon is a separate, wider surface exposing the entire Lucide set, kebab-keyed and searchable. Favorites persist with the nexus's personalization. A picked id is stored as its bare Lucide kebab id, the same convention the curated keys follow, and resolution reads the curated registry first, then the full set.
 
-### Pending
-
-- **`link-2`** — registered and reserved as the Connections glyph; the `[[Title]]` connections surface doesn't render it.
-
 ### Known Issues
 
 - **Two curated keys shadow real Lucide ids.** `table` and `lock` name Pommora's own glyphs in the registry and are also the ids of different Lucide glyphs the picker offers from the full set. Registry-first resolution renders Pommora's glyph instead of the one the picker cell showed. The resolution is open.
+### Pending
+
+- **`link-2`** — registered and reserved as the Connections glyph; the `[[Title]]` connections surface doesn't render it.
