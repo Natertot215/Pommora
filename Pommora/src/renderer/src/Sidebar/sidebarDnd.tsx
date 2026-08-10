@@ -15,10 +15,9 @@ import { stack } from '@renderer/design-system/tokens/stack'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
-import type { FolderPlacement, NexusTree } from '@shared/types'
+import type { FolderPlacement } from '@shared/types'
 import type { MutateRequest } from '@shared/mutate'
 import {
-  buildIndex,
   nextOrder,
   setContainerOf,
   isSelfOrDescendant,
@@ -52,19 +51,19 @@ type Value = {
 const Ctx = createContext<Value | null>(null)
 
 export function SidebarDnd({
-  tree,
+  index,
   onCommit,
   setPlacement = 'top',
   subSetPlacement = 'top',
   children,
 }: {
-  tree: NexusTree
+  /** The tree-keyed drag index — built once by the host, shared across every mounted layer. */
+  index: Index
   onCommit: (commit: MutateRequest) => void
   setPlacement?: FolderPlacement
   subSetPlacement?: FolderPlacement
   children: ReactNode
 }): React.JSX.Element {
-  const index = useMemo(() => buildIndex(tree), [tree])
   const indexRef = useRef(index)
   indexRef.current = index
   // Ref'd so the frozen-snapshot resolver reads current placement, not a captured prop.
