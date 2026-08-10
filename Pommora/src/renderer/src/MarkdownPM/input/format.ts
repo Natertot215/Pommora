@@ -5,9 +5,11 @@ import {
   isBlockquoteLine,
   isCalloutHead,
   parseListMarker,
+  parseListMarkerPrefixed,
   stripQuotePrefix,
   type ListMarker,
 } from '../detect'
+import type { ListKind } from '@shared/gripMenu'
 import { lineStartAt, lineEndAt } from './index'
 import { emptyTable } from '../Tables/model'
 import { serialize } from '../Tables/codec'
@@ -134,7 +136,27 @@ function toggleConnection(doc: string, from: number, to: number): FormatEdit {
 }
 
 const HEADING_PREFIX = /^(\s{0,3})#{1,6}[ \t]+/
-const LIST_PREFIXES: Record<ListFormat, string> = { bullet: '- ', ordered: '1. ', task: '- [ ] ' }
+
+/** One list marker's source text, trailing space included — the single spelling of what each kind looks
+ *  like on disk, read by the per-line toggle and the whole-block switch alike. */
+export function listMarkerText(kind: ListKind, n = 1): string {
+  switch (kind) {
+    case 'ordered':
+      return `${n}. `
+    case 'checkbox':
+      return '- [ ] '
+    case 'arrow':
+      return '→ '
+    case 'bullet':
+      return '- '
+  }
+}
+
+const LIST_PREFIXES: Record<ListFormat, string> = {
+  bullet: listMarkerText('bullet'),
+  ordered: listMarkerText('ordered'),
+  task: listMarkerText('checkbox'),
+}
 
 /** Split a line into its quote/callout chrome and the inner body the block transforms operate on. For a
  *  callout HEAD the chrome includes the hidden `[!type] ` tag, so a transform can never expose or demote it.
@@ -177,6 +199,51 @@ export function setList(doc: string, pos: number, fmt: ListFormat): FormatEdit {
     changes: [{ from: ls + prefix.length, to: le, insert: next }],
     selection: ls + prefix.length + next.length,
   }
+}
+
+/** Every marker-bearing line in `[from, to]`, paired with its start offset — a wrapped item's
+ *  continuation lines carry no marker and drop out. Read prefixed, matching the resolver that decided
+ *  these lines were one list, so a quoted item's marker is found behind its `>` rather than missed. */
+function listMarkerLines(
+  doc: string,
+  from: number,
+  to: number,
+): { start: number; marker: ListMarker }[] {
+  const out: { start: number; marker: ListMarker }[] = []
+  for (let p = from; p <= to; p = lineEndAt(doc, p) + 1) {
+    const marker = parseListMarkerPrefixed(doc.slice(p, lineEndAt(doc, p)))
+    if (marker) out.push({ start: p, marker })
+  }
+  return out
+}
+
+/** The one kind every marker in `[from, to]` carries, or null where they disagree — the Type menu's
+ *  checked state, and null is a block that reads as no single type. */
+export function listKindOf(doc: string, from: number, to: number): ListKind | null {
+  let kind: ListKind | null = null
+  for (const { marker } of listMarkerLines(doc, from, to)) {
+    if (kind !== null && kind !== marker.kind) return null
+    kind = marker.kind
+  }
+  return kind
+}
+
+/** Rewrite every list marker in `[from, to]` to `kind`, leaving continuation lines untouched. Ordered
+ *  runs count per indent level, so a nested run restarts while its parent keeps counting. A marker that
+ *  already reads as it should yields no edit — re-picking the current kind changes nothing, and picking
+ *  Numbered over a broken sequence repairs it. */
+export function setListKind(doc: string, from: number, to: number, kind: ListKind): FormatEdit {
+  const counters: number[] = []
+  const changes: FormatEdit['changes'] = []
+  for (const { start, marker } of listMarkerLines(doc, from, to)) {
+    counters.length = marker.level + 1
+    counters[marker.level] = (counters[marker.level] ?? 0) + 1
+    const end = start + marker.contentStart
+    const next =
+      doc.slice(start, start + marker.markerStart) + listMarkerText(kind, counters[marker.level])
+    if (doc.slice(start, end) !== next) changes.push({ from: start, to: end, insert: next })
+  }
+  return { changes }
 }
 
 export function setBlock(doc: string, pos: number, fmt: BlockFormat): FormatEdit {

@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { toggleInline, setHeading, setList, setBlock, type FormatEdit } from './format'
+import {
+  toggleInline,
+  setHeading,
+  setList,
+  setListKind,
+  listKindOf,
+  setBlock,
+  type FormatEdit,
+} from './format'
 
 function apply(doc: string, edit: FormatEdit): string {
   let out = doc
@@ -48,6 +56,58 @@ describe('setList', () => {
   })
   it('switches ordered → task', () => {
     expect(apply('1. item', setList('1. item', 3, 'task'))).toBe('- [ ] item')
+  })
+})
+
+describe('listKindOf', () => {
+  const kindOf = (doc: string): ReturnType<typeof listKindOf> => listKindOf(doc, 0, doc.length)
+
+  it('reads the kind a whole block agrees on, through every level', () => {
+    expect(kindOf('- a\n\t- b')).toBe('bullet')
+    expect(kindOf('1. a\n2. b')).toBe('ordered')
+    expect(kindOf('- [x] a\n- [ ] b')).toBe('checkbox')
+    expect(kindOf('→ a\n→ b')).toBe('arrow')
+  })
+
+  it('is null where the markers disagree, and where there are none', () => {
+    expect(kindOf('- a\n1. b')).toBeNull()
+    expect(kindOf('just prose')).toBeNull()
+  })
+
+  it('a continuation line is not a disagreement', () => {
+    expect(kindOf('- a\n  wrapped\n- b')).toBe('bullet')
+  })
+})
+
+describe('setListKind', () => {
+  const set = (doc: string, kind: Parameters<typeof setListKind>[3]): string =>
+    apply(doc, setListKind(doc, 0, doc.length, kind))
+
+  it('rewrites every marker in the block', () => {
+    expect(set('- a\n- b', 'ordered')).toBe('1. a\n2. b')
+    expect(set('1. a\n2. b', 'checkbox')).toBe('- [ ] a\n- [ ] b')
+    expect(set('- [ ] a\n- [x] b', 'arrow')).toBe('→ a\n→ b')
+    expect(set('→ a\n→ b', 'bullet')).toBe('- a\n- b')
+  })
+
+  it('numbers per indent level, so a nested run restarts and its parent keeps counting', () => {
+    expect(set('- a\n\t- x\n\t- y\n- b', 'ordered')).toBe('1. a\n\t1. x\n\t2. y\n2. b')
+  })
+
+  it('leaves wrapped continuation lines alone', () => {
+    expect(set('- a\n  wrapped body\n- b', 'ordered')).toBe('1. a\n  wrapped body\n2. b')
+  })
+
+  it('finds a quoted marker behind its prefix rather than missing it', () => {
+    expect(set('> - a\n> - b', 'checkbox')).toBe('> - [ ] a\n> - [ ] b')
+  })
+
+  it('emits nothing when the markers already read as they should', () => {
+    expect(setListKind('- a\n- b', 0, 7, 'bullet').changes).toEqual([])
+  })
+
+  it('repairs a broken ordered sequence', () => {
+    expect(set('1. a\n1. b\n1. c', 'ordered')).toBe('1. a\n2. b\n3. c')
   })
 })
 
