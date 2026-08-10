@@ -1,5 +1,15 @@
 ## Page Collections
 
+```
+Page Collections
+├── Sidecar + Schema
+├── Collection Settings
+├── Open-In Mode
+├── Move Semantics
+├── On-Disk Layout
+└── CRUD
+```
+
 The operational layer's schema-bearing tier. A Page Collection is a folder at the Nexus root whose sidecar assigns the nexus-wide properties every Page inside it shares — at any nesting depth — plus its saved views, child ordering, and open-in mode. It has no text editor of its own — a pure database surface.
 
 | Entity              | Role                                                               | On-Disk                                           |

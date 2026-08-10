@@ -1,5 +1,17 @@
 ## Connections
 
+```
+Connections
+├── Syntax + Scope
+├── Resolution
+├── The Rename Cascade
+├── Rendering
+├── Autocomplete
+├── The Resolver
+├── Known Issues
+└── Prospects
+```
+
 A **Connection** is an inline `[[Title]]` link in a Markdown body pointing to another Page — the sole connection syntax. The text is canonical and Obsidian-readable, with no frontmatter mirror, and resolution is computed at read time. `[[…]]` appears only in a body, never as a frontmatter key sigil, so the wikilink form carries one meaning in Markdown. Only a Page's body and a markdown block tile author connections, and Pages are the only targets — Spaces come through Context links, and Tasks and Events are never targets.
 
 ### Syntax + Scope

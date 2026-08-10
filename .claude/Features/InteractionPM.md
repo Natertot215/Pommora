@@ -1,5 +1,27 @@
 ## Interaction & Motion
 
+```
+Interaction & Motion
+├── Motion Tokens
+├── Named Animations
+│   ├── Bloom
+│   ├── Dropdown
+│   └── Header Scroll-Park
+├── The `--io` Progress
+├── Reveal
+├── Pane Slide + Resize
+├── Switch
+├── Drag Motion
+├── Scroll Glide
+├── Floating Windows
+├── Timing Sources
+├── The Caret
+├── Edge Fade
+├── Autoscroll Tuning
+├── Principles
+└── Pending
+```
+
 The single home for the animation system: the motion token vocabulary, the named animation aliases, the shell's one-progress driver, and the expand/collapse primitive. Drag-specific motion — the reorder feel, the insertion line, auto-scroll behavior — lives in [[PommoraDND]]. Motion is Pommora-native, inspired by Apple, adopted only where it deepens the minimalism.
 
 ### Motion Tokens

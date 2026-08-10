@@ -1,5 +1,16 @@
 ## Sidebar
 
+```
+Sidebar
+├── Ribbon
+├── Content Modes
+├── Creation
+├── Drag and Drop
+├── Selection
+├── Row Labels
+└── Pending
+```
+
 Pommora's leading navigation pane in the three-pane shell: a **ribbon** of icons pinned to the left edge, and a **content column** whose contents switch with the ribbon. The ribbon sits outside the scrolling content behind a vertical rule. The column renders the pre-ordered `NexusTree` rather than a raw filesystem view, and disclosure state persists per entity, device-local. There is no header row; the Nexus's name and rename affordance live in the Homepage view.
 
 ### Ribbon

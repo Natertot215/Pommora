@@ -1,5 +1,18 @@
 ## Pages
 
+```
+Pages
+├── On-Disk Shape
+├── Title + Membership
+├── Opening Behavior
+├── Outline
+├── Editor UI State
+├── Read + Write
+├── Adoption
+├── Pending
+└── Prospects
+```
+
 A Page is one Markdown file inside a [[CollectionsPM|Collection]] — the operational entity that holds free prose. A Page is a single `.md`: YAML frontmatter for identity and property values, then a Markdown body. Membership is by location — a file inside a Collection, or one of its Sets at any depth, is a Page in that Collection and conforms to that Collection's property schema; there's no container field. The body is portable Markdown, edited in [[MarkdownPM]], and can hold inline `[[Title]]` Connections (→ [[ConnectionsPM]]).
 
 ### On-Disk Shape

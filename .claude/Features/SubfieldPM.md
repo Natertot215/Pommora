@@ -1,5 +1,14 @@
 ## Subfield
 
+```
+Subfield
+├── What It Shows
+├── Scoped Mounts
+├── Look
+├── Persistence
+└── Pending
+```
+
 The bottom bar of every content view — a breadcrumb on the left, per-view items on the right. The structure is the seam for the configuration and custom items planned on it (→ §Pending).
 
 ### What It Shows

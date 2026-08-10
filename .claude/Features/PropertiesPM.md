@@ -1,5 +1,32 @@
 ## Properties
 
+```
+Properties
+├── The Type Catalog
+├── Identity & Name
+├── Value Shapes
+├── Property Types
+│   ├── II. Status
+│   ├── II. Checkbox
+│   ├── II. Number
+│   ├── II. Date & Time
+│   ├── II. Select & Multi-Select
+│   ├── II. Links & URL
+│   └── II. Context Links
+├── Auto-Managed Properties
+├── Where Properties Live
+│   └── The Properties Pane
+├── Schema Mutations
+├── Validation
+├── The Index
+├── Chip Tokens
+│   ├── II. Shapes
+│   ├── II. The Recipe & Variants
+│   └── II. Knobs
+├── Pending
+└── Known Issues
+```
+
 Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and populated on the members of every Collection that assigns it — the registry declares each property's type and per-type config, a Collection's assignment list names which registry properties its Pages validate and show, and member entities store the values. The same type catalog applies to Pages, Tasks, and Events; Agenda keeps its own definitions on its config sidecars. The on-disk file is canonical.
 
 | Scope | Definitions |

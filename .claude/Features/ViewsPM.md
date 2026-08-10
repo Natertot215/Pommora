@@ -1,5 +1,26 @@
 ## Views
 
+```
+Views
+├── The Saved-View Model
+├── The Pipeline
+│   ├── II. Filter
+│   ├── II. Group
+│   ├── II. Sort
+│   └── II. Columns
+├── Renderers
+├── Surfaces
+│   ├── II. The ViewPane
+│   ├── II. ViewSettings
+│   ├── II. The SettingsPane
+│   ├── II. The Grouping Pane
+│   ├── II. The Sorting Pane
+│   ├── II. The Filtering Pane
+│   └── II. The Visibility Pane
+├── Pending
+└── Prospects
+```
+
 A view is a saved presentation of a [[CollectionsPM|Collection's]] (or a depth-1 Set's) Pages. It never modifies its source — filtering, grouping, and sorting are presentation only. A container carries an ordered list of saved views, and one pure pipeline drives every renderer. Six view types are modeled — **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — in an extensible registry.
 
 ### The Saved-View Model

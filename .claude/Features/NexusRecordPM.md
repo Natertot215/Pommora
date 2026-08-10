@@ -1,5 +1,19 @@
 ## NexusRecord
 
+```
+NexusRecord
+├── Provenance
+│   ├── The Bundle
+│   ├── Write-Ahead
+│   ├── The Sweep
+│   └── Resolution & Restore
+├── Baseline
+│   ├── The Open Walk & the Diff
+│   └── The Re-Mint
+├── Known Issues
+└── Pending
+```
+
 Pommora answers *where is this now*; the record closes *where was this then*, through two mechanisms:
 
 - **Provenance** — where a departed entity belonged and what it carried. A JSON inside the artifact's own deletion bundle in `.trash`, written by the delete before it destroys anything, read by restore, spent with the bundle.

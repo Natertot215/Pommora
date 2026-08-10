@@ -2,6 +2,14 @@
 
 > **Unbuilt — a design, not a record.** Everything below describes the intended shape.
 
+```
+Quick Capture
+├── The Courier Model
+├── Capture Flow
+├── Web Capture Routes
+└── Pending
+```
+
 A lightweight surface for adding **Pages, Tasks, and Events** from outside the main window, in the Things 3 / Drafts idiom — another entry point onto the existing data layer rather than a parallel one, using the same create operations and property surfaces the main app uses. Capture is title-and-properties first, not a body editor; prose continues in the main window.
 
 ### The Courier Model

@@ -1,5 +1,18 @@
 ## Page Preview
 
+```
+Page Preview
+├── The Window
+├── The Tab Model
+├── Persistence & Warmth
+├── Routing In
+├── The Hover Card
+├── The NavWindow Flavor
+├── The Inspector
+├── The Token Contract
+└── Pending
+```
+
 The floating page window — a movable, resizable, fully-editable glass window that opens Pages without touching the main pane's selection, tabs, history, or recents. It is a semi-multi-tabbed mini-app: wiki-links clicked inside it open as tabs beside the origin instead of navigating away, and the whole tab set persists per origin across sessions. One preview exists at a time; a new summon overtakes the window in place.
 
 ### The Window

@@ -1,5 +1,27 @@
 ## MarkdownPM
 
+```
+MarkdownPM
+├── Architecture
+├── Dynamic Syntax
+├── Constructs
+├── Tables
+├── Page Embeds
+├── Block Drag & The Grip Menu
+├── Typing Transforms
+├── Context Menu + Shortcuts
+├── Module Shape
+├── Design System
+│   ├── II. Scale
+│   ├── II. Header, Banner & Title
+│   ├── II. Lists & Outliner
+│   ├── II. Quotes, Callouts & Code
+│   ├── II. Syntax Colors
+│   └── II. Embeds & Autocomplete
+├── Known Issues
+└── Pending
+```
+
 Pommora's in-house Markdown editor for Pages: a dynamic-syntax editor on a web-native (CodeMirror 6) substrate. Portable CommonMark/GFM stays canonical on disk; everything the editor draws is presentation.
 
 ### Architecture

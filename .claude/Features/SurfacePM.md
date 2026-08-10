@@ -1,5 +1,16 @@
 ## SurfacePM
 
+```
+SurfacePM
+├── The Block Document
+├── Tile Types
+├── The Embed Framework
+├── Surface Interaction
+├── Storage + Host Rules
+├── Pending
+└── Prospects
+```
+
 Pommora's composable dashboard layer: any **BlockHost** — an entity that owns a block document — renders a mosaic of draggable, resizable tiles holding real content. It's **host-agnostic**: the document load keys on host *identity* rather than kind. The layout engine beneath is **SurfacePM**, [[PommoraDND]]'s sibling.
 
 ### The Block Document

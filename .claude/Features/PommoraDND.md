@@ -1,5 +1,17 @@
 ## PommoraDND
 
+```
+PommoraDND
+├── The Seam
+├── Core Principles
+├── Displacement
+├── Insertion Line
+├── Autoscroll
+├── Constraints & Accessibility
+├── Known Issues
+└── Pending
+```
+
 Pommora's in-house drag-and-drop engine, owning the interaction layer the way MarkdownPM owns the editor layer. It replaces `@dnd-kit/*` outright — no dependency, no import — dropping the generality Pommora doesn't need (the framework-agnostic core, the sensor and collision-strategy registries, the modifier pipeline, SSR guards, continuous re-measuring) and adding pointer capture, hysteresis, and a frame-accurate commit. It lives behind a thin seam, scoped to a known reality: Chromium-only, React-only, a known set of surfaces.
 
 ### The Seam

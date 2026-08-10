@@ -1,5 +1,28 @@
 ## Design System
 
+```
+Design System
+├── Design Philosophy
+├── Tooling
+├── The Token Atlas
+│   ├── Primitives
+│   ├── Surfaces
+│   ├── Labels
+│   ├── States
+│   ├── Fills
+│   ├── Tints
+│   ├── Separators
+│   ├── Shadows
+│   ├── Spectrum
+│   ├── Geometry
+│   └── Materials
+├── Component Chrome
+├── Showcase
+├── Where the Rest Lives
+├── Known Issues
+└── Pending
+```
+
 The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values and the visual reference for components. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them. Typography has its own spec in [[TypographyPM]]; motion lives in [[InteractionPM]].
 
 This document is the sanctioned exception to the "docs name; code holds exacts" rule: its tables state literal values so what exists is legible without opening the token files. Every table carries a **SOURCE** line naming the file it must agree with — a value changes in code first, and the table follows in the same commit. Before authoring any new style or mechanism, this atlas is the first read; what a surface needs usually already exists here.
@@ -59,7 +82,7 @@ The text ladder — system-white at descending presence. Primary is the raw prim
 
 #### States
 
-The interaction states — two grey washes, one black veil, and two opacity dims. Hover and selected are fills painted behind content; muted is painted over it; ghost and disabled are consumed as `opacity:` on the element itself.
+The interaction states — two grey washes, one black veil, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; ghost, disabled, and drag are consumed as `opacity:` on the element itself. Ghost and drag both fade a drag source; which applies turns on whether anything stands in for it — drag is the gentler dim a card wears while its own lifted clone floats alongside, ghost the deeper one for a source with no clone.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
@@ -67,9 +90,10 @@ The interaction states — two grey washes, one black veil, and two opacity dims
 | --- | --- | --- |
 | Hover | `state.hover` · `--state-hover` | system-grey @ 2.5% |
 | Selected | `state.selected` · `--state-selected` | system-grey @ 5% |
-| Muted | `state.muted` · `--state-muted` | system-black @ 10% (a veil, never a text color) |
-| Ghost | `--state-ghost` | → `var(--tint-primary)` = 60%, an opacity — the reorder/drag-source fade |
-| Disabled | `--state-disabled` | `0.4`, an opacity — the present-but-inert dim |
+| Muted | `state.muted` · `--state-muted` | system-black @ 10% |
+| Ghost | `--state-ghost` | → `var(--tint-primary)`  |
+| Disabled | `--state-disabled` | base @ 50% |
+| Drag | `--state-drag` | base @ 85% |
 
 #### Fills
 
@@ -97,22 +121,22 @@ The one opacity ladder any base color is mixed at — `tintAt(base, step)` is `c
 | Tint Secondary | `TINT_STEPS.secondary` · `--tint-secondary` | 40% |
 | Tint Tertiary | `TINT_STEPS.tertiary` · `--tint-tertiary` | 20% |
 | Tint Quaternary | `TINT_STEPS.quaternary` · `--tint-quaternary` | 15% |
-| Tint Solid | `TINT_STEPS.solid` · `--tint-solid` | 100% (passes the base through) |
+| Tint Solid | `TINT_STEPS.solid` · `--tint-solid` | 100% |
 
 #### Separators
 
-Hairlines and the composed border shorthands built on them, plus the banner's legibility scrim. `separator.line` and `separator.border` share one value — `line` is the TS-side spelling, `border` the bridged one.
+Hairlines and the composed border shorthands built on them, the banner's legibility scrim, and the pill radius every capsule wears.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
 | Title | Token | Value |
 | --- | --- | --- |
-| Separator Line | `separator.line` | system-grey @ 25% |
 | Separator Border | `separator.border` · `--separator-border` | system-grey @ 25% |
 | Separator Segment | `separator.segment` · `--separator-segment` | system-grey @ 20% |
 | Heading Seam | `--border-heading` | `1.75px solid var(--separator-border)` |
 | Box Seam | `--border-cell` | `1.5px solid var(--separator-border)` |
 | Banner Scrim | `--banner-shadow` | `#0000008C` |
+| Pill Radius | `--radius-full` | `999px` — larger than any box that wears it, so both ends round |
 
 #### Shadows
 
@@ -150,7 +174,7 @@ The ten selectable solids plus the neutral chip default — authored once in `@s
 | Accent Stroke | `--accent-stroke` / `--accent-stroke-hot` | accent @ 40% / accent @ 60% |
 | Link / Connection | `--link` / `--connection` | → `var(--system-accent)` / → `var(--accent)` |
 | Error | `--error` | → `SPECTRUM.red` |
-| Code | `--code` | red @ 85% toward transparent |
+| Code | `--code` | red @ 85% |
 
 #### Geometry
 
@@ -183,11 +207,11 @@ Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a di
 | --- | --- | --- | --- |
 | Blur | `.blur` | `6` | `6` |
 | Brightness | `.brightness` | `90` | `100` |
-| Border Alpha | `.borderAlpha` | `0.12` | `0` (no border emitted) |
+| Border Alpha | `.borderAlpha` | `0.12` | `0`  |
 | Top Specular | `.topSpecular` | `0.35` | `0` |
 | Inner Ring | `.innerRing` | `0.08` | `0` |
 | Lower Rim / Depth / Rim Blur | `.lowerRim` / `.depth` / `.rimBlur` | `0.08` / `12` / `18` | `0` / `0` / `0` |
-| Fill | `.fill` | unset (transparent) | `0.78` of `--bg-window` |
+| Fill | `.fill` | unset (transparent) | `--bg-window` @ 78% |
 | Shadow | `.shadow` | standard | lift |
 
 The static `frostMaterial` (`glass-material.ts`) is the same recipe at brightness `95%` with the pane edge set. The liquid shader's tuning is `CONTROL_OPTICS` (`glass-controls.tsx`) — depth `0.3`, curvature `0.45`, dispersion `0.25`, frost `3.5`, specular `0.7`, sheen `0.3` at width `12`, map `256` — with `SEGMENT_OPTICS` spreading it at zero depth and brightness.

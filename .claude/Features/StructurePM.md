@@ -1,5 +1,14 @@
 ## Structure
 
+```
+Structure
+├── The Organization Layer
+├── The Operational Layer
+├── Singletons
+├── Identity & Linking
+└── Pending
+```
+
 Pommora is organized as **two layers** with PARA-aligned naming. The organization layer (Contexts) holds categorical anchors; the operational layer (Pages + Agenda) holds the data, relating to the organization layer through parenthesized Context keys at its frontmatter or JSON root. A **Nexus** is the root — one folder holding everything.
 
 | PARA Term   | Pommora Term               | Layer        |
