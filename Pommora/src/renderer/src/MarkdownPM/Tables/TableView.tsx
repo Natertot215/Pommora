@@ -192,16 +192,16 @@ export function TableView({
     e.preventDefault()
     const wrap = wrapRef.current
     if (!wrap) return
-    const box = wrap.getBoundingClientRect()
-    let origin = axis === 'col' ? box.left : box.top
-    const start = axis === 'col' ? e.clientX : e.clientY
-    let current: Drag = { axis, from: index, to: index, delta: 0 }
     // `geom` is wrap-relative and scroll-immune; the pointer is viewport-relative — an editor
     // scroll mid-drag moves the wrap's box, so the origin re-reads or the slot drifts by the delta.
+    let origin = 0
     const reOrigin = (): void => {
       const b = wrap.getBoundingClientRect()
       origin = axis === 'col' ? b.left : b.top
     }
+    reOrigin()
+    const start = axis === 'col' ? e.clientX : e.clientY
+    let current: Drag = { axis, from: index, to: index, delta: 0 }
     beginGesture({
       el: e.currentTarget,
       event: e,
