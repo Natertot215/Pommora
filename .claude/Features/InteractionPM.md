@@ -118,9 +118,9 @@ The overflow-fade mechanism: three registered properties plus the four fade clas
 
 ### Autoscroll Tuning
 
-The edge-proximity loop's knobs — declared at `:root`, overridable on any ancestor, read once at drag start via `getComputedStyle`. The loop itself is [[PommoraDND]]'s.
+The edge-proximity loop's knobs — declared at `:root`, overridable on any ancestor, read once at drag start via `getComputedStyle`. Because nothing consumes them through `var()`, each default is stated once as a map beside the loop, feeding both the `:root` declaration and the loop's own fallback; a token audit that finds no consumer is reading the mechanism correctly. The loop itself is [[PommoraDND]]'s.
 
-**SOURCE:** `Pommora/src/renderer/src/design-system/interactions/autoscroll.css`
+**SOURCE:** `Pommora/src/renderer/src/design-system/interactions/autoscroll.ts`
 
 | Title | Token | Value |
 | --- | --- | --- |
