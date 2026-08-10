@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Icon } from '../../symbols'
 import { cx } from '../../cx'
 import { Reveal } from '../Reveal'
@@ -13,15 +13,19 @@ export function useDisclosureSet(defaultOpen = false): {
   toggle: (id: string) => void
 } {
   const [flipped, setFlipped] = useState<ReadonlySet<string>>(new Set())
-  return {
-    has: (id) => flipped.has(id) !== defaultOpen,
-    toggle: (id) =>
-      setFlipped((prev) => {
-        const next = new Set(prev)
-        if (!next.delete(id)) next.add(id)
-        return next
-      }),
-  }
+  // Identity-stable until the state actually flips, so consumers can key derivations on it.
+  return useMemo(
+    () => ({
+      has: (id: string) => flipped.has(id) !== defaultOpen,
+      toggle: (id: string) =>
+        setFlipped((prev) => {
+          const next = new Set(prev)
+          if (!next.delete(id)) next.add(id)
+          return next
+        }),
+    }),
+    [flipped, defaultOpen],
+  )
 }
 
 /** A leaf's stand-in for the chevron ('spacer') keeps glyphs in one column; 'none' renders nothing. */
