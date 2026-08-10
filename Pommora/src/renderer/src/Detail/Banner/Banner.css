@@ -23,7 +23,7 @@
 .banner-empty-title {
   font-size: 20px;
   font-weight: var(--weight-semibold);
-  color: var(--text);
+  color: var(--label-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -71,13 +71,13 @@
   pointer-events: auto;
 }
 .banner-title .detail-title-icon {
-  color: var(--text);
+  color: var(--label-primary);
   filter: drop-shadow(0 1px 4px var(--banner-shadow));
 }
 .banner-title .detail-title-text,
 .banner-title .detail-title-input {
   font-weight: var(--weight-semibold);
-  color: var(--text);
+  color: var(--label-primary);
 }
 /* The homepage identity icon leads its title (photo or glyph), sized to the title glyph. It and the
    title re-enable pointer hits (the overlay is otherwise inert) so their right-click reaches the
@@ -91,7 +91,7 @@
   border-radius: 5px;
   object-fit: cover;
   overflow: hidden;
-  color: var(--text);
+  color: var(--label-primary);
   filter: drop-shadow(0 1px 4px var(--banner-shadow));
   /* Hide/show slides the icon in/out on the slide token (--duration-base) — max-width collapses the
      space, the translate carries it, and the negative margin swallows the banner-title gap. */
@@ -153,7 +153,7 @@
 .banner-empty-title .detail-title-text,
 .banner-empty-title .detail-title-input {
   font-weight: var(--weight-semibold);
-  color: var(--text);
+  color: var(--label-primary);
 }
 
 /* The hover-revealed Add-Banner button. The strip is a

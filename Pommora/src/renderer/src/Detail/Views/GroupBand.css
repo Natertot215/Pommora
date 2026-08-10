@@ -26,7 +26,7 @@
   align-items: center;
   gap: var(--cell-icon-gap, 6px);
   min-width: 0;
-  color: var(--text);
+  color: var(--label-primary);
 }
 .group-band-glyph {
   display: inline-flex;
@@ -78,7 +78,7 @@
 .band-title-input {
   min-width: 120px;
   font: inherit;
-  color: var(--text);
+  color: var(--label-primary);
   background: var(--input-field);
   border: 1px solid var(--accent);
   border-radius: 4px;
