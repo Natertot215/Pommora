@@ -2,7 +2,7 @@
 
 | Date               | ID     | Entry                                                |
 | ------------------ | ------ | ---------------------------------------------------- |
-| 08-10-2026         | PM-094 | The Duplication Report Closes                        |
+| 08-10-2026         | PM-094 | One Owner Per Repeated Value                         |
 | 08-10-2026         | PM-093 | The Token Atlas                                      |
 | 08-10-2026         | PM-092 | One Grip Menu, And The List's Type                   |
 | 08-10-2026         | PM-091 | CSS Token Organization                               |
@@ -97,20 +97,15 @@
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer                              |
 | 06-14-2026         | PM-001 | Genesis — The Walking Skeleton                       |
 
-#### PM-094 || The Duplication Report Closes
+#### PM-094 || One Owner Per Repeated Value
 **DATE:** 08-10-2026
 
-**The opacity states became a family.** `--state-ghost` had been a pointer at the tint ladder — the share the colour system mixes with — so retuning how strongly a chip fill read silently moved the drag fade across sixteen surfaces, on nothing more than a coincidence at one step. All three dims now hold their own bare numbers and read as one ramp, the fade deepening as less of the original's presence is carried by whatever stands in for it: a card with its clone floating alongside, a row being reordered with nothing in its place, a control present but inert.
+`--radius-full` took the pill radius nine surfaces had been spelling as a literal, and is the radius scale's first member. The opacity dims became bare numbers of their own: `--state-ghost` had aliased `--tint-primary`, the share `tintAt` mixes colours at, so a change to chip-fill strength moved the drag fade on sixteen surfaces; it now holds `0.65` beside `--state-drag` at `0.85` and `--state-disabled` at `0.5`, the three reading as one ramp. `--state-drag` was minted for the dim both card families wrote raw, which `--state-ghost` does not cover — a source whose lifted clone floats alongside it. `design-system/card-tokens.css` took the floor, gaps, thumb share, and cover zoom that `.nav-gallery` and `.cards-view` had each declared, leaving each scope only what differs, and that resolved `--card-min`: `.nav-view` had set a larger floor on an ancestor of the grid while `.nav-gallery` set a smaller one nearer it, so the ancestor's value had never rendered and its declaration came out.
 
-**Three tokens where there had been literals.** `--radius-full` took the pill radius nine surfaces were spelling by hand — carets, tab chrome, the editor, progress bars, segmented controls, and the outliner rail — and became the radius scale's first member, so the scale is now something that exists rather than something deferred. `--state-drag` named the gentler dim the two card families were both writing raw, the one `--state-ghost` doesn't cover: a source whose lifted clone floats alongside it, rather than one with nothing standing in. `--state-disabled` moved to `0.5` so the sites already reading that value could adopt it unchanged, and picked up its third and fourth consumers. A keyframe's start opacity was left as the literal it is — motion rather than state, and a state token there would have been a category error.
+`AUTOSCROLL_KNOBS` replaced the six auto-scroll defaults that `autoscroll.css` and `readParams` had each spelled, with the `:root` block now generated from the map the loop reads its fallbacks from. `separator.line` was byte-identical to `separator.border`, unbridged, and read only from TypeScript; its six consumers moved to `separator.border` and it was deleted. `notchedPane.css.ts` gave up a hand-rolled drop-shadow hex for `--shadow-standard`, and the mix percentages in `MarkdownPM/Styles.css` and `photoCropModal.css.ts` moved onto `TINT_STEPS`. The comments in `color.css.ts`, `size.css.ts`, `glass-pane.tsx`, and `theme-vars.css.ts` were restated against their values, and `tokens/README.md`, which described six files that had never shipped, was deleted.
 
-**The card grid gained an owner.** The gallery and the Cards renderer had been declaring the same floor, gaps, thumb share, and cover zoom in two scopes at near-identical values; those moved into one shared family, and each view kept only what genuinely differs — the gallery's deeper cover zoom, Cards' Scale multiplication and its own band heights. That forced a knob whose value had never reached the screen: NavView declared a larger card floor on an ancestor while the gallery declared a smaller one nearer the grid, so proximity had always won. Ruled at what had always rendered, and the dead knob came out with its comment.
-
-**Two writers, one default.** The auto-scroll knobs had been documented as a hazard to leave alone, on the grounds that JS reads them through `getComputedStyle` and no `var()` grep finds them. The real defect underneath was that every one of the six defaults was written twice — once in the stylesheet, once as the reader's fallback — so they could drift silently. Both now come from one map beside the loop, and the `:root` declaration is generated from it. `separator.line` died the same way: byte-identical to `separator.border`, unbridged, and used only from TypeScript, so its six consumers moved to the one name that was already the bridged one.
-
-**What the comments were claiming.** The notch's shadow gave up its hand-rolled hex for the standard drop shadow, the raw mix percentages sitting outside the tint ladder came onto their nearest steps, and the descriptions that had drifted from their values were restated: that the states are grey washes but for the veil that darkens from black, that the control ladder is drawn rather than derived, that the pane frost is the material's own recipe made tunable, and that the code tokens take their pastel share from the tint scale. A tokens README describing six files that never existed was retired to the atlas that does.
-
-- **Diff:** Net +13 | +80 / −67 (code only; +143 / −112 with comments)
+- **Commits:** `61a39fd5^..3ceeea42`
+- **Diff:** Net +13 | +81 / −68
 
 #### PM-093 || The Token Atlas
 **DATE:** 08-10-2026
