@@ -193,13 +193,20 @@ export function TableView({
     const wrap = wrapRef.current
     if (!wrap) return
     const box = wrap.getBoundingClientRect()
-    const origin = axis === 'col' ? box.left : box.top
+    let origin = axis === 'col' ? box.left : box.top
     const start = axis === 'col' ? e.clientX : e.clientY
     let current: Drag = { axis, from: index, to: index, delta: 0 }
+    // `geom` is wrap-relative and scroll-immune; the pointer is viewport-relative — an editor
+    // scroll mid-drag moves the wrap's box, so the origin re-reads or the slot drifts by the delta.
+    const reOrigin = (): void => {
+      const b = wrap.getBoundingClientRect()
+      origin = axis === 'col' ? b.left : b.top
+    }
     beginGesture({
       el: e.currentTarget,
       event: e,
       onActivate: () => {
+        window.addEventListener('scroll', reOrigin, { capture: true, passive: true })
         setDrag(current)
         return undefined
       },
@@ -216,6 +223,9 @@ export function TableView({
         else remeasure.current = true
       },
       onAbort: () => setDrag(null),
+      teardown: () => {
+        window.removeEventListener('scroll', reOrigin, { capture: true })
+      },
     })
   }
 
