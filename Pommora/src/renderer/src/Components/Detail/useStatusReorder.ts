@@ -1,6 +1,7 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
+import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
 
 // The multi-region cousin of useOptionReorder. A drag can reorder within a group OR cross into
 // another group (including an empty one); on drop it calls onMove(value, toGroupId, toIndex) —
@@ -139,7 +140,7 @@ export function useStatusReorder(
   }
 
   const onRowPointerDown = (value: string, e: ReactPointerEvent): void => {
-    if ((e.target as HTMLElement).closest?.('button, input, [contenteditable="true"]')) return
+    if ((e.target as HTMLElement).closest?.(`button, ${EDITABLE_TARGETS}`)) return
     const el = rows.current.get(value) ?? (e.currentTarget as HTMLElement)
     beginGesture({
       el,
@@ -154,7 +155,7 @@ export function useStatusReorder(
       },
       onDragMove: (ev) => {
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
-        setGhost({ x: ev.clientX + 12, y: ev.clientY + 8 })
+        setGhost({ x: ev.clientX + GHOST_OFFSET.x, y: ev.clientY + GHOST_OFFSET.y })
         resolveAt(ev.clientY)
       },
       scrollTarget: () => container.current,

@@ -46,8 +46,8 @@ export const dropLine = style({
   position: 'absolute',
   left: '8px',
   right: '8px',
-  height: 'var(--drop-line-thickness, 2px)',
-  borderRadius: 'var(--drop-line-thickness, 2px)',
+  height: 'var(--drop-line-thickness)',
+  borderRadius: 'var(--drop-line-thickness)',
   background: 'var(--drag-line)',
   pointerEvents: 'none',
 })

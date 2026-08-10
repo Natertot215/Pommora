@@ -34,6 +34,29 @@ export function nexusReorderIndex(
   return last !== undefined ? full.indexOf(last) + 1 : full.length
 }
 
+/** True when the pointer sits inside the region's field. */
+export const withinRegion = (r: Region, pointerY: number): boolean =>
+  pointerY >= r.top && pointerY <= r.bottom
+
+/** The midpoint scan both pane models share: the insertion index among one group's rows (the
+ *  dragged row excluded) and the line's Y — the next row's top, the last row's bottom, or the
+ *  region's own top when the group is empty. */
+export function regionScan(
+  rows: MeasuredRow[],
+  byId: Map<string, PaneRow>,
+  group: PaneRow['group'],
+  draggedId: string,
+  pointerY: number,
+  emptyTop: number,
+): { i: number; lineY: number } {
+  const groupRows = rows.filter((r) => byId.get(r.id)?.group === group && r.id !== draggedId)
+  let i = 0
+  while (i < groupRows.length && pointerY >= groupRows[i].mid) i++
+  const last = groupRows[groupRows.length - 1]
+  const lineY = i < groupRows.length ? groupRows[i].top : last ? last.bottom : emptyTop
+  return { i, lineY }
+}
+
 export function paneSlot(
   rows: MeasuredRow[],
   byId: Map<string, PaneRow>,
@@ -43,19 +66,18 @@ export function paneSlot(
 ): PaneSlot | null {
   const dragged = byId.get(draggedId)
   if (!dragged) return null
-  const within = (r: Region): boolean => pointerY >= r.top && pointerY <= r.bottom
-  const region = within(regions.assigned) ? 'assigned' : within(regions.all) ? 'all' : null
+  const region = withinRegion(regions.assigned, pointerY)
+    ? 'assigned'
+    : withinRegion(regions.all, pointerY)
+      ? 'all'
+      : null
   if (region === null) return null // outside both — release is a no-op
 
   if (region === 'all' && dragged.group === 'assigned') {
     return { drop: { kind: 'unassign', propId: draggedId }, lineY: null, highlightAll: true }
   }
 
-  const groupRows = rows.filter((r) => byId.get(r.id)?.group === region && r.id !== draggedId)
-  let i = 0
-  while (i < groupRows.length && pointerY >= groupRows[i].mid) i++
-  const last = groupRows[groupRows.length - 1]
-  const lineY = i < groupRows.length ? groupRows[i].top : last ? last.bottom : regions[region].top
+  const { i, lineY } = regionScan(rows, byId, region, draggedId, pointerY, regions[region].top)
   const drop: PaneDrop =
     region === 'assigned'
       ? dragged.group === 'assigned'

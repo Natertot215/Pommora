@@ -13,7 +13,12 @@ import { text } from '@renderer/design-system/tokens'
 import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
+import {
+  DROP_LINE_INSET,
+  EDITABLE_TARGETS,
+  GHOST_OFFSET,
+} from '@renderer/design-system/interactions/shared'
+import { DragGhost } from '../../../Components/Detail/DragGhost'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type Band, type BandIndex, type BandSlot, bandSlot, buildBandIndex } from './bandDndModel'
@@ -126,15 +131,15 @@ export function BandDnd({
     live.current = slot
     setDrag({
       id,
-      ghostX: lastPoint.current.x + 12,
-      ghostY: lastPoint.current.y + 8,
+      ghostX: lastPoint.current.x + GHOST_OFFSET.x,
+      ghostY: lastPoint.current.y + GHOST_OFFSET.y,
       slot,
       lineTop: slot ? slot.lineY - s.boxTop : 0,
     })
   }
 
   const begin = (id: string, e: ReactPointerEvent): void => {
-    if ((e.target as HTMLElement).closest?.('input, textarea, [contenteditable="true"]')) return
+    if ((e.target as HTMLElement).closest?.(EDITABLE_TARGETS)) return
     const el = els.current.get(id)
     if (!el) return
     // The shared gesture: window listeners drive it (the glyph is small, the first move usually
@@ -215,17 +220,11 @@ export function BandDnd({
           </div>
         )}
       </div>
-      {drag.id &&
-        createPortal(
-          <div
-            aria-hidden
-            className={cx('band-drag-ghost', text.body.standard)}
-            style={{ top: drag.ghostY, left: drag.ghostX }}
-          >
-            {ghostLabel.current}
-          </div>,
-          document.body,
-        )}
+      <DragGhost
+        x={drag.id ? drag.ghostX : null}
+        y={drag.id ? drag.ghostY : null}
+        label={ghostLabel.current}
+      />
     </Ctx.Provider>
   )
 }
