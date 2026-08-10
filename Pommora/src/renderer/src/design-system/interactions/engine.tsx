@@ -221,6 +221,7 @@ export function Zone({
       setOverIndex(activeIdx)
       setDropState('dragging')
       notifyRef.current.onDragStart?.({ activeId: d.id })
+      announce(`Picked up ${labelOf(d.id)}.`)
       // The activation commit strips React's managed transform — re-assert it on the next frame so
       // the item can't paint at origin before the imperative follow takes over.
       requestAnimationFrame(() => {
@@ -305,14 +306,13 @@ export function Zone({
       settle(ok ? over : activeIdx, () => {
         if (ok) cbRef.current.onReorder?.(activeId2, overId)
         notifyRef.current.onDragEnd?.({ activeId: activeId2, overId: ok ? overId : null })
-        if (kbd) {
-          announce(
-            ok
-              ? `Dropped ${kbd.label} at position ${over + 1} of ${kbd.n}.`
-              : `${kbd.label} returned to its original position.`,
-          )
-          requestAnimationFrame(() => kbd.el?.focus())
-        }
+        // The words are for every drop; the focus restore is the keyboard's alone.
+        announce(
+          ok
+            ? `Dropped ${labelOf(activeId2)} at position ${over + 1}.`
+            : `${labelOf(activeId2)} returned to its original position.`,
+        )
+        if (kbd) requestAnimationFrame(() => kbd.el?.focus())
       })
     if (over === activeIdx) {
       apply(false) // dropped on its own slot — animate home, no reorder

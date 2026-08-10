@@ -2,6 +2,8 @@ import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
+import { announce } from '@renderer/design-system/interactions/a11y'
+import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 
 // The multi-region cousin of useOptionReorder. A drag can reorder within a group OR cross into
 // another group (including an empty one); on drop it calls onMove(value, toGroupId, toIndex) —
@@ -38,6 +40,7 @@ export function useStatusReorder(
   // Set at activation (a tap never sets it) — the dragged value and its live target slot.
   const dragged = useRef<{ value: string; toGroupId: string; toIndex: number } | null>(null)
   const lastPoint = useRef({ x: 0, y: 0 })
+  const stopScroll = useRef<(() => void) | null>(null)
   const [dragging, setDragging] = useState<string | null>(null)
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null)
   const [drop, setDrop] = useState<{ groupId: string; top: number } | null>(null)
@@ -151,6 +154,18 @@ export function useStatusReorder(
         dragged.current = { value, toGroupId: '', toIndex: 0 }
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         setDragging(value)
+        // The groups live in a height-capped menu frame — the edge loop reaches past its fold,
+        // and the window scroll hook re-aims off the loop's own scrollBy.
+        const sc = findScroller(container.current, 'y')
+        if (sc) {
+          stopScroll.current = startAutoScroll({
+            getPoint: () => lastPoint.current,
+            scroller: sc,
+            dragEl: container.current,
+            axis: 'y',
+          })
+        }
+        announce(`Picked up ${value}.`)
         return true
       },
       onDragMove: (ev) => {
@@ -168,11 +183,18 @@ export function useStatusReorder(
         const d = dragged.current
         if (d) {
           const { to, moves } = destination(d.value, d.toGroupId, d.toIndex)
-          if (moves) onMoveRef.current(d.value, d.toGroupId, to)
+          if (moves) {
+            onMoveRef.current(d.value, d.toGroupId, to)
+            announce(`Moved ${d.value}.`)
+          }
         }
         clear()
       },
       onAbort: clear,
+      teardown: () => {
+        stopScroll.current?.()
+        stopScroll.current = null
+      },
     })
   }
 

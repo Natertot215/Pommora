@@ -2,6 +2,8 @@ import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
+import { announce } from '@renderer/design-system/interactions/a11y'
+import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 
 // The flat cousin of the two-region paneDnd. The drop calls onReorder(value, toIndex) where
 // toIndex is in the without-the-dragged coordinate space (matching optionModel.reorderOption).
@@ -28,6 +30,7 @@ export function useOptionReorder(
   // Set at activation (a tap never sets it) — the dragged value and its live target slot.
   const dragged = useRef<{ value: string; index: number } | null>(null)
   const lastPoint = useRef({ x: 0, y: 0 })
+  const stopScroll = useRef<(() => void) | null>(null)
   const [dragging, setDragging] = useState<string | null>(null)
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null)
   const [lineTop, setLineTop] = useState<number | null>(null)
@@ -116,6 +119,18 @@ export function useOptionReorder(
         dragged.current = { value, index: 0 }
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         setDragging(value)
+        // The options list lives in a height-capped menu frame — the edge loop reaches past its
+        // fold, and the window scroll hook re-aims off the loop's own scrollBy.
+        const sc = findScroller(container.current, 'y')
+        if (sc) {
+          stopScroll.current = startAutoScroll({
+            getPoint: () => lastPoint.current,
+            scroller: sc,
+            dragEl: container.current,
+            axis: 'y',
+          })
+        }
+        announce(`Picked up ${value}.`)
         return true
       },
       onDragMove: (ev) => {
@@ -133,11 +148,18 @@ export function useOptionReorder(
         const d = dragged.current
         if (d) {
           const { to, moves } = destination(d.value, d.index)
-          if (moves) onReorderRef.current(d.value, to)
+          if (moves) {
+            onReorderRef.current(d.value, to)
+            announce(`Moved ${d.value}.`)
+          }
         }
         clear()
       },
       onAbort: clear,
+      teardown: () => {
+        stopScroll.current?.()
+        stopScroll.current = null
+      },
     })
   }
 

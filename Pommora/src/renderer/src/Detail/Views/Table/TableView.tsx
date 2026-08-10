@@ -63,6 +63,8 @@ import { PickerMenu } from '@renderer/design-system/components/PickerMenu/Picker
 import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import { numberDivisor } from '../PropertyEditing/formatValue'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { announce } from '@renderer/design-system/interactions/a11y'
+import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
 import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from './linkValue'
@@ -1140,6 +1142,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const dragId = columns[from].id
     let current: { from: number; to: number; id: string } | null = null
     let lastX = e.clientX
+    let lastY = e.clientY
+    let stopScroll: (() => void) | null = null
     const resolve = (): void => {
       const projected = startCenter + (lastX - startX)
       const cur = current?.to ?? from
@@ -1196,10 +1200,23 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
           lefts[i] = acc
           acc += widths[i]
         }
+        // A wide table h-scrolls by construction — the edge loop reaches columns past the shell's
+        // fold, and the window scroll hook re-bases + re-resolves off its scrollBy.
+        const sc = findScroller(grid, 'x')
+        if (sc) {
+          stopScroll = startAutoScroll({
+            getPoint: () => ({ x: lastX, y: lastY }),
+            scroller: sc,
+            dragEl: grid,
+            axis: 'x',
+          })
+        }
+        announce('Picked up column.')
         return true
       },
       onDragMove: (ev) => {
         lastX = ev.clientX
+        lastY = ev.clientY
         resolve()
       },
       scrollTarget: () => grid,
@@ -1210,9 +1227,12 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       onDrop: () => {
         if (current && current.to !== current.from) {
           reorderColumn(columns[current.from].id, columns[current.to].id)
+          announce('Moved column.')
         }
       },
       teardown: () => {
+        stopScroll?.()
+        stopScroll = null
         grid.style.removeProperty('--col-drag-x')
         setColDrag(null)
       },

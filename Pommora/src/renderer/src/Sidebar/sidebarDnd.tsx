@@ -11,6 +11,10 @@ import {
 import { DISCLOSURE_INDENT } from '@renderer/design-system/tokens/size.css'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
+import {
+  beginDragDisclose,
+  endDragDisclose,
+} from '@renderer/design-system/interactions/dragDisclose'
 import { EDITABLE_TARGETS } from '@renderer/design-system/interactions/shared'
 import { DragGhost } from '../Components/Detail/DragGhost'
 import { announce } from '@renderer/design-system/interactions/a11y'
@@ -296,7 +300,7 @@ export function SidebarDnd({
     const el = rows.current.get(id)
     if (!el) return
     const grabX = e.clientX - el.getBoundingClientRect().left
-    beginGesture({
+    const started = beginGesture({
       el,
       event: e,
       onActivate: (ev) => {
@@ -336,10 +340,19 @@ export function SidebarDnd({
       },
       onAbort: reset,
       teardown: () => {
+        endDragDisclose()
         stopScroll.current?.()
         stopScroll.current = null
       },
     })
+    // Collapsed containers register through DragRow — the bracket makes a dwelling drag open them,
+    // and the disclose remeasure re-aims against the rows the spring just moved.
+    if (started) {
+      beginDragDisclose(() => {
+        snap.markDirty()
+        resolveSlot()
+      })
+    }
   }
 
   const value = useMemo<Value>(() => ({ draggingId: drag.id, registerRow, begin }), [drag.id])

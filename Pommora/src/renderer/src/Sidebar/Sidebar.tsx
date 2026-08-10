@@ -19,6 +19,7 @@ import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/
 import { createSpaceLabel } from '@shared/contexts'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
+import { registerDiscloseTarget } from '@renderer/design-system/interactions/dragDisclose'
 import { AgendaMode } from './AgendaMode'
 import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../store'
@@ -128,13 +129,34 @@ function Leaf({
 }
 
 // Its rect feeds the insertion-line hit-testing, so it must wrap ONLY the row itself — never a subtree.
-function DragRow({ id, children }: { id: string; children: React.ReactNode }): React.JSX.Element {
+function DragRow({
+  id,
+  springOpen,
+  children,
+}: {
+  id: string
+  /** A collapsed container registers as a spring-open target — a drag dwelling over it expands it. */
+  springOpen?: { collapsed: boolean; onExpand: () => void }
+  children: React.ReactNode
+}): React.JSX.Element {
   const drag = useSidebarDrag(id)
+  const el = useRef<HTMLDivElement | null>(null)
+  const expandRef = useRef(springOpen?.onExpand)
+  expandRef.current = springOpen?.onExpand
+  const collapsed = springOpen?.collapsed ?? false
+  useEffect(() => {
+    if (!collapsed || !el.current) return
+    return registerDiscloseTarget(el.current, () => expandRef.current?.())
+  }, [collapsed])
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: hover bookkeeping, not an interaction
     <div
-      ref={drag.ref}
+      ref={(node) => {
+        el.current = node
+        drag.ref(node)
+      }}
       className={`tree-item${drag.isDragging ? ' dragging' : ''}`}
+      data-disclose={collapsed ? '' : undefined}
       {...drag.handle}
       onMouseLeave={(e) => {
         const sc = e.currentTarget.querySelector<HTMLElement>('[class*="titleText"]')
@@ -244,7 +266,13 @@ function Disclosure({
   )
   return (
     <>
-      {dragId ? <DragRow id={dragId}>{header}</DragRow> : header}
+      {dragId ? (
+        <DragRow id={dragId} springOpen={{ collapsed: !open, onExpand: () => setAndSave(true) }}>
+          {header}
+        </DragRow>
+      ) : (
+        header
+      )}
       <Reveal open={open} fill>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
         <div

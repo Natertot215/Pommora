@@ -4,7 +4,13 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
+import { GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
+import { announce } from '@renderer/design-system/interactions/a11y'
+import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import {
+  beginDragDisclose,
+  endDragDisclose,
+} from '@renderer/design-system/interactions/dragDisclose'
 import type { Band, BandIndex, BandSlot } from '../../Detail/Views/Table/bandDndModel'
 import { bandSlot, buildBandIndex, canNest } from '../../Detail/Views/Table/bandDndModel'
 
@@ -50,6 +56,7 @@ export function useGroupingListDrag({
   // turn every move into a full re-measure.
   type Snapshot = { index: BandIndex; boxTop: number; endY: number }
   const lastPoint = useRef({ x: 0, y: 0 })
+  const stopScroll = useRef<(() => void) | null>(null)
   const snap = useDragSnapshot(takeSnapshot)
   useEffect(() => {
     snap.markDirty()
@@ -104,7 +111,7 @@ export function useGroupingListDrag({
           setLine(slot && !slot.nestInto ? { y: slot.lineY - s.boxTop } : null)
           setNestTarget(slot?.nestInto ?? null)
         }
-        beginGesture({
+        const started = beginGesture({
           el: anchor,
           event: e,
           capture: false,
@@ -112,6 +119,17 @@ export function useGroupingListDrag({
             lastPoint.current = { x: ev.clientX, y: ev.clientY }
             snap.markDirty()
             setDraggingId(id)
+            // The pane's order region is scroll-capped — the edge loop reaches past its fold.
+            const sc = findScroller(container.current, 'y')
+            if (sc) {
+              stopScroll.current = startAutoScroll({
+                getPoint: () => lastPoint.current,
+                scroller: sc,
+                dragEl: container.current,
+                axis: 'y',
+              })
+            }
+            announce('Picked up group.')
             return true
           },
           scrollTarget: () => container.current,
@@ -137,11 +155,23 @@ export function useGroupingListDrag({
                 targetParentId: slot.nestInto ?? slot.impliedParentId,
                 beforeId: slot.beforeId,
               })
+              announce('Moved group.')
             }
             reset()
           },
           onAbort: reset,
+          teardown: () => {
+            endDragDisclose()
+            stopScroll.current?.()
+            stopScroll.current = null
+          },
         })
+        if (started) {
+          beginDragDisclose(() => {
+            snap.markDirty()
+            resolveAt(lastPoint.current.y)
+          })
+        }
       },
     }),
     draggingId,
