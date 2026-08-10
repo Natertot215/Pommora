@@ -100,11 +100,13 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 | --- | --- | --- | --- |
 | `PommoraDND.md` | "Adoption is partial — several surfaces still hand-roll the same skeleton" | Tasks 5–9 complete adoption; the two-family boundary replaces the sentence | 9 |
 | `PommoraDND.md` | "Not every drag is wired to it: the table's column reorder, the GFM-table drag, and the grouping pane are outstanding" | Task 15 wires all three (plus option/status) | 15 |
-| `ContextPM.md` | The `group.tsx` per-move rebuild note (line 126) | Task 10 | 10 |
-| `ContextPM.md` | The `sidebarDnd` per-move re-filter note (line 127) | Task 5 | 5 |
-| `ContextPM.md` | The cross-fade double-index note (line 129) | Task 6 | 6 |
-| `ContextPM.md` | The four-surfaces + skeleton-hardening note (line 130) | Tasks 4–9; the deliberate-set sentence moves to `PommoraDND.md` | 9 |
-| `ContextPM.md` | The `listDrag`/`blockDrag` decline note (line 131) | Rewritten into `PommoraDND.md` as the standing boundary (still true, wrong home) | 9 |
+| `ContextPM.md` | The `group.tsx` per-move rebuild note | Task 10 | 10 |
+| `ContextPM.md` | The `sidebarDnd` per-move re-filter note | Task 5 | 5 |
+| `ContextPM.md` | The cross-fade double-index note | Task 6 | 6 |
+| `ContextPM.md` | The four-surfaces + skeleton-hardening note | Tasks 4–9; the deliberate-set sentence moves to `PommoraDND.md` | 9 |
+| `ContextPM.md` | The `listDrag`/`blockDrag` decline note | Rewritten into `PommoraDND.md` as the standing boundary (still true, wrong home) | 9 |
+
+*(ContextPM was reformatted 08-09 after this plan was drafted — the drag notes now live as a checkbox list under the current focus. Find them by content, never by line number; tick or remove each in the commit that falsifies it.)*
 | `InteractionPM.md` | "the sidebar uses a bespoke insertion-line treatment (muted row in place + a portal-rendered ghost)" | Task 12 puts the sidebar on the shared chrome | 12 |
 | `PommoraDND.md` | The one-pointer-sensor taxonomy (element-capture engine vs window-listener surfaces) with no slot for the scrub family | Task 9's two-family boundary | 9 |
 | `PommoraDND.md` | The ARIA-announce fact scoped inside the keyboard bullet | Task 16 makes the pointer surfaces announce; the fact moves out of the keyboard scope | 16 |
@@ -313,7 +315,7 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 - Modify: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — the grip-resize block onto `beginGesture` with `activation: 0`; `onDrop` commits, `onAbort` reverts. **The `resizing`/`.col-resizing-active` reset moves out of `commitResize` into the spec's `teardown`** (an `onResizeEnd` seam) — it is the only callback guaranteed on every end, including the zero-move click that today's flow never produces and the migrated flow does. **The abort revert restores the exact pre-drag override state:** an entry absent before the drag is deleted, never written back as an explicit width (a planted entry would ride the next unrelated persist onto disk).
 - Modify: `Pommora/src/renderer/src/design-system/components/Slider/Slider.tsx` — `onPointerCancel`/`onLostPointerCapture`: reassert the committed value through `onInput?.(clamp(value))`, then clear `draft`, committing nothing.
 - Modify: `Pommora/src/renderer/src/Components/Detail/ViewSettings.tsx` — the scrub consumer's unmount cleanup reasserts the persisted scale (the pane closing mid-scrub is the reachable cancel path, and React props can't fire on a detached node).
-- Modify: `.claude/Features/PommoraDND.md` — the adoption sentence and the two-family boundary (drags on the skeleton; scrub controls element-capture and self-cleaning, membership enumerated; the `activation: 0` sentence above); fold `ContextPM.md` line 131's decline in as the standing `onTap` boundary. Prune `ContextPM.md` lines 126/127/129/130 pieces already falsified by Tasks 5–8 if not yet pruned in those commits.
+- Modify: `.claude/Features/PommoraDND.md` — the adoption sentence and the two-family boundary (drags on the skeleton; scrub controls element-capture and self-cleaning, membership enumerated; the `activation: 0` sentence above); fold `ContextPM.md`'s `listDrag`/`blockDrag` decline note in as the standing `onTap` boundary. Prune whatever ContextPM drag notes Tasks 5–8 falsified if their commits didn't already.
 - Test: `columnWidths.test.ts` (exists) for the grip — cancel-reverts AND click-leaves-no-residue (the `resizing` flag clears on a zero-move press); a small Slider test beside the component if the house pattern allows.
 
 **Failure half:** cancel with zero movement → no width write, no draft commit, no visual residue, `resizing` cleared. `lostpointercapture` firing after a normal `pointerup` → already-finished guard, no double handling. An override entry absent pre-drag → still absent post-abort.
@@ -523,7 +525,7 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 - [ ] `code-simplifier` + `/code-review` against `<base>..HEAD`; `comment-killer-agent` over the full plan diff.
 - [ ] Every concern from every gate fixed, or carrying an explicit Nathan ruling in the Log — zero deferred-by-silence items.
 - [ ] Closing sweeps: all four Dead Vocabulary derivations against their controls, counts recorded in the Log.
-- [ ] Docs true: `PommoraDND.md` (two families, full adoption, autoscroll, announce), every Made False row rewritten in its named commit, the three "false today, repaired" claims re-read and confirmed, `Design-Sources.md` registering the new owners, `ContextPM.md`'s flagged drag notes (lines 126/127/129/130/131) gone.
+- [ ] Docs true: `PommoraDND.md` (two families, full adoption, autoscroll, announce), every Made False row rewritten in its named commit, the three "false today, repaired" claims re-read and confirmed, `Design-Sources.md` registering the new owners, `ContextPM.md`'s flagged drag notes (the sidebar re-filter, cross-fade index, four-surfaces, `group.tsx` rebuild, and `listDrag` decline items) gone.
 - [ ] **The standing records own everything this plan leaves open:** the Tier-5 candidates (subfield reorder · tab⇄pin cross-zone · Cards band drag · outline section drag · recents→pins review) and this plan's Sequenced After items (`onTap` · MarkdownPM/SurfacePM announcements · `feel.tsx` · the identity/order arc) are routed into `ContextPM.md`'s Pending Focuses / Next-Feature Candidates / Debt sections — nothing owed lives only in this document.
 - [ ] `HistoryPM.md` entry written to History-Format.
 - [ ] Delivery Claim written → **neutral verifier** ("is this true?", handed the Requirements + commit range) → **`build-breaking-agent` attack** (briefed to interleave: drag × watcher push, drag × mode switch, drag × Escape-in-dropdown, drag × spring-open × scroll) — two dispatches, never one — findings fixed or ruled.
