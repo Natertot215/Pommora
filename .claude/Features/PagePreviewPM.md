@@ -47,9 +47,7 @@ The right-hand pane is a PreviewPane **side slot** in its overlay mode — it ri
 ### Pending
 
 - The engulf's landing when the promoted page's main-pane fetch outlasts the FLIP; the pane can show the prior view for a beat, usually masked by warmth.
-
 - The nav flavor's last-tab close motion is clipped by the strip row's height collapse (cosmetic).
-
 - Whether the NavWindow should adopt the floating preview's tint so the flavor morph carries one background, or the two stay a step apart — no ruling either way.
 
 - Multi-preview (A-B testing two windows) — the geometry store and slice shapes are ready; the singleton rule is product, not architecture.

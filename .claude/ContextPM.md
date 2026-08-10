@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**Sidebar + DND Consolidation & Bug Fixes — closed and hand-confirmed.** The drag layer runs on one hardened gesture skeleton with the stale-slot class shut by the resolve-fresh-before-commit invariant, one snapshot helper, shared chrome, and the adoption gaps filled ([[HistoryPM]] §PM-090); the full verification chain ran clean and Nathan's walkthrough confirmed the surfaces. The next focus is an open pick from Pending Focuses — the identity/order-persistence arc (the reorder snap-back) and the subfield reorder are the two nearest doors.
+**CSS Token Organization — closed.** The drag layer's shared chrome, the stray tokens, and the cross-consumed recipes each sit with their one owner in the design system ([[HistoryPM]] §PM-091), closing the arc that PM-090's skeleton consolidation opened; gates green, closeout run, adjudicated keeps recorded in the entry. The next session opens on a fresh pick from Pending Focuses — the identity/order-persistence arc (the reorder snap-back) and the subfield reorder are the two nearest doors.
 
 ### Immediate Work
 
@@ -28,8 +28,8 @@
 - [ ] **An unresolved `[[Link]]` is inert** — no colour, no click, no way to create the page it names. Writing a forward reference and filling it in later is the loop that makes inline linking worth using. Adjacent to Aliases; both sit on the connection layer.
 - [ ] **In-view page creation.** Sparse across every surface and the item that would be felt daily; wants a brainstorm loop rather than a patch.
 - [ ] **Cross-location card reordering** in views — scoped and mechanical.
+- [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Canvas** — the spec sits at `Planning/6-26 - Canvas Spec.md`, unbuilt.
-- [ ] **View QuickFilter:** Single-property filter toggles using the recently added ActionBand component.
 - [ ] **Subfield reorder.** The store action and persistence are fully built (`setSubfieldOrder` has zero callers) — the entire feature is a missing drag UI, a three-item horizontal `SortableZone` in the Ribbon's shape. 
 - [ ] **Tab ⇄ pin by drag.** The tab strip and the pinned zone are two independent SortableZones; pinning is context-menu-only. The board engine's cross-zone shape serves it, with one commit decision — pins key on `res.key`, tabs on `tab.id`.
 - [ ] **Cards group-band drag.** The table's bands reorder and reparent; Cards renders the same `GroupBand` with no `dragHandle`. The band engine is view-agnostic and the prop seam exists.
@@ -67,6 +67,7 @@
 - [ ] Perf debt: no row virtualization, and an external value edit doesn't live-refresh an open table.
 - [ ] iCloud-sync readiness — `serializeOnFile` can't coordinate with the iCloud daemon under LWW, `nexus.db` needs sync-exclusion, and the walk has to skip `.icloud` placeholders.
 - [ ] Two prospects from the property-syntax arc: an inline field-error surface, and what a duplicate property name should do.
+- [ ] The shell carries a second text ramp — `--text`/`--text-dim` in `styles.css` are pure-white opacities while the label tokens ride the `#E8E8E8` ramp. Collapsing them shifts rendered text color across the shell and the table, so the merge (or the ramp's deliberate keep) is a design ruling on the visible delta.
 - [ ] `SessionState.error` and `pageError` hold strings while the wire carries `PommoraError` whole — widening them is near-zero churn.
 - [ ] `pageEditor` and `ConnectionHoverCard` reach the editor by CSS selector; the registered-handle pattern that replaces it is already established in `sidebarDnd`, `paneDnd`, and `useOptionReorder`.
 - [ ] `revealPageOffset` sleeps on a duration to wait out a fold animation while `folding.ts` owns the real completion signal.
@@ -87,6 +88,11 @@
 
 ### Recent Work
 
+#### PM-091 || CSS Token Organization
+**DATE:** 08-10-2026
+
+The shared drag chrome — insertion line, dot, host, and ghost — moved into `design-system/interactions` under honest names, the ghost's glass became the `GHOST_FROST` materials recipe, and `--shadow-lift`, `--drop-line-inset`, and `--state-disabled` joined the tokens. The `--drag-muted` alias died and its out-of-scope consumers (tab strip, pins, nav rows) got their silently-missing drag fade back. Footer chrome, `iconOption`, and the NavPane anchor each moved to their one owner; the banner/title and nav-list spreads were adjudicated as the theming contract working and kept.
+
 #### PM-090 || The Drag Layer Converges On One Skeleton
 **DATE:** 08-09-2026 → 08-10
 
@@ -106,11 +112,6 @@ Every writer of a container sidecar came onto one lock key built in `main/paths.
 **DATE:** 08-08-2026
 
 A fenced block's marker-run length became part of its identity, so a closer requires a run at least as long as its opener and a longer fence holds shorter ones as literal content. The fence grammar moved into one shared module read by the detector, the folding scan, the subfield statistics, and the write-side mask — the mask's disagreement had left a `[[Title]]` inside a code sample reachable by a rename cascade. On a 941-line body a keystroke now costs roughly a quarter of what it did, the saving scaling with document length.
-
-#### PM-086 || The Page Outline
-**DATE:** 08-08-2026
-
-A page carries its own table of contents: a toolbar dropdown listing its headings as a nested tree and traveling to whichever one is chosen, opening any collapsed section on the way. The derivation shares the editor's heading scan rather than adding a second one. Three shared mechanisms were corrected underneath it, each latent until a consumer with no row icons and arbitrarily long labels arrived — nested rows never truncated, the default-open state had no seam, and the auto-pair gate read only behind the caret. The interaction layer gained its first animated scroll, a distance-proportional glide that re-reads its destination each frame.
 
 ### Guidelines
 
