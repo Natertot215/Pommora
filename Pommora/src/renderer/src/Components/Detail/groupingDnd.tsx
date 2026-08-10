@@ -2,7 +2,7 @@
 // wiring and the insertion line live here. paneDnd doesn't fit: its two-region assigned/all
 // vocabulary has no parent/nest concept, and the hierarchy list needs reparent drops.
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { suppressNextClick } from '@renderer/design-system/interactions/shared'
 import type { Band, BandIndex, BandSlot } from '../../Detail/Views/Table/bandDndModel'
 import { bandSlot, buildBandIndex, canNest } from '../../Detail/Views/Table/bandDndModel'
@@ -115,15 +115,8 @@ export function useGroupingListDrag({
             setDraggingId(id)
             return true
           },
-          // Only a scroll that moves the rows re-aims — an unrelated scroller never costs the
-          // O(rows) re-measure (tableDnd's guard).
           onWindowScroll: (ev) => {
-            if (
-              ev.target instanceof Element &&
-              container.current &&
-              !ev.target.contains(container.current)
-            )
-              return
+            if (!scrollMoved(ev, container.current)) return
             snapshotDirty.current = true
             resolveAt(lastPoint.current.y)
           },

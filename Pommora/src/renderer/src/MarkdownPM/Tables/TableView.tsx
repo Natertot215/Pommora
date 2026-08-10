@@ -2,7 +2,7 @@
 // plain strings with no identity but their position — the index IS the key.
 import './widget.css'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { Icon } from '@renderer/design-system/symbols'
 import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
 import type { Align, TableModel } from './model'
@@ -222,9 +222,8 @@ export function TableView({
         setDrag(current)
         return undefined
       },
-      // Only a scroll that moves the wrap re-bases — an unrelated scroller costs nothing.
       onWindowScroll: (ev) => {
-        if (ev.target instanceof Node && !ev.target.contains(wrap)) return
+        if (!scrollMoved(ev, wrap)) return
         reOrigin()
         resolve()
       },

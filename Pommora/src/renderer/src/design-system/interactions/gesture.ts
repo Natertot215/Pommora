@@ -34,6 +34,12 @@ export type PointerGestureSpec = {
   swallowActiveEscape?: boolean
 }
 
+/** Whether a capture-phase window scroll actually shifted `el` — only an ancestor scroller moves
+ *  it. An unrelated inner scroller (a row's own hover marquee) must never cost a re-measure. */
+export function scrollMoved(ev: Event, el: Element | null | undefined): boolean {
+  return !(ev.target instanceof Element) || !el || ev.target.contains(el)
+}
+
 type LiveGesture = {
   spec: PointerGestureSpec
   active: boolean
