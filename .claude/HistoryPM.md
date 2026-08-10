@@ -2,6 +2,7 @@
 
 | Date               | ID     | Entry                                                |
 | ------------------ | ------ | ---------------------------------------------------- |
+| 08-10-2026         | PM-091 | CSS Token Organization                               |
 | 08-09-2026 → 08-10 | PM-090 | The Drag Layer Converges On One Skeleton             |
 | 08-08-2026         | PM-089 | The Write Path Converges On One Lock                 |
 | 08-08-2026         | PM-088 | Dropdown Shell & Menu Consolidation                  |
@@ -92,6 +93,16 @@
 | 06-15-2026         | PM-003 | The Design System Is Founded                         |
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer                              |
 | 06-14-2026         | PM-001 | Genesis — The Walking Skeleton                       |
+
+#### PM-091 || CSS Token Organization
+**DATE:** 08-10-2026
+
+The drag layer's shared chrome moved into `design-system/interactions` under honest names — `drop-line`, `drop-dot`, `drop-line-host`, and `drag-ghost` replace the `table-*` classes every surface had borrowed from `Table.css` — with `DragGhost` leaving its feature folder, one `DropLine` component replacing six identical renders, and the grouping pane's parallel rule and the editor overlay's `cssText` rebuild collapsing onto the shared classes. The ghost's glass became a materials parameterization, `GHOST_FROST` — filled and edge-free, ending in `--shadow-lift`, itself moved from a component stylesheet's `:root` into the shadow tokens beside the new `--drop-line-inset` and `--state-disabled`. `--drag-muted` died as a scoped re-alias of `--state-ghost` whose out-of-scope consumers — the tab strip, pinned tabs, and nav rows — had resolved it to nothing and shown no drag fade at all; every former consumer reads `--state-ghost` now.
+
+The footing action family rejoined the menu recipes it composes, `iconOption` joined `PickerMenu`, `NavPane` anchors through the Toolbar's own dropdown recipe, the shell's `--hover`/`--selected` double-names collapsed onto the state tokens, and the band drag states moved beside `GroupBand`, ending Cards' hidden dependency on the table stylesheet's global load. The banner/title spread, the nav-list restyles, and the preview pane's `--ppane-*` knobs were kept as they stand — one unscoped owner plus host-scoped overrides driving declared variables is the theming contract working, not misplacement. The shell's `--text`/`--text-dim` pair is a genuinely different text ramp from the label tokens, so its merge waits on a design ruling rather than riding a relocation.
+
+- **Commits:** `a0095299^..f72eea16`
+- **Diff:** Net −20 | +202 / −222
 
 #### PM-090 || The Drag Layer Converges On One Skeleton
 **DATE:** 08-09-2026 → 08-10
