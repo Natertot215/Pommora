@@ -78,13 +78,12 @@ Pommora is an Electron desktop app — a React + TypeScript renderer over a Node
 
 The main process is the sole filesystem owner; the renderer never touches Node. One shared bridge map declares every IPC channel once — both sides derive from it, and IPC never throws across the boundary: data channels return one structured result envelope. Full architecture → `Features/ArchitecturePM.md`.
 
-#### Three load-bearing constraints
+#### Two load-bearing constraints
 
-1. **Portability of functionalities.** The product's value — file formats, domain model, property catalog, connection behavior, design values, UX patterns — survives a stack rebuild. The codebase is replaceable; the documented decisions endure. This React build is itself the proof: the same on-disk model and domain carried over as data plus pure logic.
 
-2. **Cloud-sync-ready and cross-nexus queryable.** Collections aren't isolated silos — property definitions live nexus-wide, so one shared property id means the same thing in every Collection that assigns it and a single query matches across all of them; any Page or Context can query, link, or embed any Collection's contents regardless of where it sits on disk. The on-disk model maps cleanly onto a cloud database, so sync arrives later as an additive translation rather than a rewrite. A Nexus placed in iCloud Drive, Dropbox, or any synced folder already gets device-to-device sync for free.
+1. **Cloud-sync-ready and cross-nexus queryable.** Collections aren't isolated silos — property definitions live nexus-wide, so one shared property id means the same thing in every Collection that assigns it and a single query matches across all of them; any Page or Context can query, link, or embed any Collection's contents regardless of where it sits on disk. The on-disk model maps cleanly onto a cloud database, so sync arrives later as an additive translation rather than a rewrite. A Nexus placed in iCloud Drive, Dropbox, or any synced folder already gets device-to-device sync for free.
 
-3. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read the content, and understand the context of the user's Nexus (Pages, schemas, Contexts, properties) straight from plain files. The bar is convention-aware, not instant to an outsider: a `[[wikilink]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob. The device-local database holds per-machine chrome, and no content.
+2. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read the content, and understand the context of the user's Nexus (Pages, schemas, Contexts, properties) straight from plain files. The bar is convention-aware, not instant to an outsider: a `[[wikilink]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob. The device-local database holds per-machine chrome, and no content.
 
 #### Storage Philosophy
 

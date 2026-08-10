@@ -65,4 +65,4 @@ No new features — polish, performance, and a release pass (signing, notarizati
 
 ### Post-v1
 
-No phase commitments. The catalog lives in `PommoraPRD.md` (the Prospects section) — inline `![[Embed]]` in page bodies (parked in the Swift build on a TextKit limitation the CM6 editor no longer has), sub-pages, independent UI titles, a graph view, sync, mobile, and a plugin system among them.
+No phase commitments. The catalog lives in `PommoraPRD.md` (the Prospects section) — Sub-pages, independent UI titles, a graph view, sync, mobile, and a plugin system among them.

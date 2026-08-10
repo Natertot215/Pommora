@@ -42,8 +42,8 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; never allow two writers or definitions for the same thing; anything that does this and is found must be reported. 
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full rebuild / re-walk when an incremental or cached update works — cache, memoize, snapshot, subscribe narrowly. It's THE lag source.
 - **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they never restate exact code values. Name the token and its treatment ("the red solid at a low opacity"), never the literal `#hex` / `%` / line-for-line code stays in the code itself. The same discipline must be held true equally to code comments.
-- **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves. *Void when Nathan's unreachable:* proceed on the best record of his design wishes and the existing design logic, but disclose every such decision and assumption as you make it.
-- **Tokens must** be pulled from their sources in `design-system`— never hand-roll tokens without explicit direction; dual-option menu toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
+- **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves. Any in-flight decisions must be disclosed as they’re being made.
+- **Tokens must** be pulled from their sources in `design-system`— never hand-roll tokens without explicit direction; dual-option toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
 
 ### Locked Decisions
 
