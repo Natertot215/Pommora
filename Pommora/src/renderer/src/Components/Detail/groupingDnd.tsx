@@ -1,7 +1,7 @@
 // The pure model is SHARED (bandDndModel: slots, nest cycle-guard, order math); only the pointer
 // wiring and the insertion line live here. paneDnd doesn't fit: its two-region assigned/all
 // vocabulary has no parent/nest concept, and the hierarchy list needs reparent drops.
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { suppressNextClick } from '@renderer/design-system/interactions/shared'
 import type { Band, BandIndex, BandSlot } from '../../Detail/Views/Table/bandDndModel'
@@ -47,9 +47,34 @@ export function useGroupingListDrag({
   const [nestTarget, setNestTarget] = useState<string | null>(null)
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null)
 
+  // The lists live in a scroll-capped region, so frozen rects go stale mid-drag; any scroll
+  // dirties the snapshot and the next move re-measures once.
+  const snapshotDirty = useRef(false)
+  useEffect(() => {
+    snapshotDirty.current = true
+  }, [bands])
+  const markSnapshotDirty = (): void => {
+    snapshotDirty.current = true
+  }
+
+  const takeSnapshot = (): void => {
+    const measured = cfg.current.bands.flatMap((b) => {
+      const el = els.current.get(b.id)
+      if (!el) return []
+      const r = el.getBoundingClientRect()
+      return [{ id: b.id, top: r.top, bottom: r.bottom, mid: r.top + r.height / 2 }]
+    })
+    index.current = buildBandIndex(cfg.current.bands, measured)
+    const box = container.current?.getBoundingClientRect()
+    boxTop.current = box?.top ?? 0
+    endY.current = measured.at(-1)?.bottom ?? box?.bottom ?? 0
+    snapshotDirty.current = false
+  }
+
   const reset = (): void => {
     live.current = null
     index.current = null
+    snapshotDirty.current = false
     setDraggingId(null)
     setLine(null)
     setNestTarget(null)
@@ -72,21 +97,14 @@ export function useGroupingListDrag({
           event: e,
           capture: false,
           onActivate: () => {
-            const measured = cfg.current.bands.flatMap((b) => {
-              const el = els.current.get(b.id)
-              if (!el) return []
-              const r = el.getBoundingClientRect()
-              return [{ id: b.id, top: r.top, bottom: r.bottom, mid: r.top + r.height / 2 }]
-            })
-            index.current = buildBandIndex(cfg.current.bands, measured)
-            const box = container.current?.getBoundingClientRect()
-            boxTop.current = box?.top ?? 0
-            endY.current = measured.at(-1)?.bottom ?? box?.bottom ?? 0
+            takeSnapshot()
+            window.addEventListener('scroll', markSnapshotDirty, { capture: true, passive: true })
             setDraggingId(id)
             return true
           },
           onDragMove: (ev) => {
             setGhost({ x: ev.clientX + 12, y: ev.clientY + 8 })
+            if (snapshotDirty.current) takeSnapshot()
             const idx = index.current
             if (!idx) return
             let slot = bandSlot(idx, ev.clientY, id, endY.current)
@@ -117,6 +135,9 @@ export function useGroupingListDrag({
             reset()
           },
           onAbort: reset,
+          teardown: () => {
+            window.removeEventListener('scroll', markSnapshotDirty, { capture: true })
+          },
         })
       },
     }),
