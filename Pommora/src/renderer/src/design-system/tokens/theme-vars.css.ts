@@ -57,14 +57,17 @@ globalStyle(':root', {
     '--state-hover': colorVars.color.state.hover,
     '--state-selected': colorVars.color.state.selected,
     '--state-muted': colorVars.color.state.muted, // black de-emphasis veil (dimming)
-    // Ghost — the de-emphasis applied to a thing being reordered (table rows, editor blocks/list items):
-    // a fade to the same tint MarkdownPM's drag-source uses. 
-    '--state-ghost': 'var(--tint-primary)',
-    // A structurally-present but inert control's dim. An opacity, like --state-ghost.
-    '--state-disabled': '0.5',
-    // The dim a card wears while its own lifted clone floats alongside it — deliberately gentler
-    // than --state-ghost, which fades a source that has no clone to stand in for it.
+    // The opacity states — bare numbers consumed as `opacity:` on the element itself, never mixed
+    // into a colour, which is why they hold their own values rather than borrowing the tint ladder's
+    // steps. They read as one ramp: the more a stand-in carries the original's presence, the less
+    // the original fades.
+    // Drag — a card whose own lifted clone floats alongside it.
     '--state-drag': '0.85',
+    // Ghost — a thing being reordered with nothing standing in for it (table rows, sidebar rows,
+    // editor blocks and list items, the pane property reorder).
+    '--state-ghost': '0.65',
+    // Disabled — a structurally-present but inert control.
+    '--state-disabled': '0.5',
     // Drag insertion line — the drop-target marker (accent line + leading dot) shared by every drop-line
     // DnD surface: table rows/bands AND the settings-pane property reorder. 
     '--drag-line': 'var(--accent)',
