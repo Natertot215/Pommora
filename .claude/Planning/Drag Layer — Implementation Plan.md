@@ -546,22 +546,22 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 - [x] **Phase 2** — The skeleton hardens
   - [x] Task 4 — Throwing callbacks and foreign pointers · see Gate 2
   - [x] Gate 2
-- [ ] **Phase 3** — The migrations
-  - [ ] Task 5 — The sidebar consumes the skeleton · `<commit>`
-  - [ ] Task 6 — The sidebar's layers share one index · `<commit>`
-  - [ ] Task 7 — The option and status hooks consume the skeleton · `<commit>`
-  - [ ] Task 8 — The column drag consumes the skeleton · `<commit>`
-  - [ ] Task 9 — The grip joins its sibling; the Slider cancels; the boundary is documented · `<commit>`
-  - [ ] Gate 3
-- [ ] **Phase 4** — The card engine
-  - [ ] Task 10 — `group.tsx` caches against the frozen rects · `<commit>`
-  - [ ] Gate 4
-- [ ] **Phase 5** — One owner each
-  - [ ] Task 11 — One snapshot helper · `<commit>`
-  - [ ] Task 12 — The chrome comes from its owners · `<commit>`
-  - [ ] Task 13 — The region scan calls its original · `<commit>`
-  - [ ] Task 14 — The constants come home · `<commit>`
-  - [ ] Gate 5
+- [x] **Phase 3** — The migrations
+  - [x] Task 5 — The sidebar consumes the skeleton · `7100bd2c`
+  - [x] Task 6 — The sidebar's layers share one index · `0fc563fb`
+  - [x] Task 7 — The option and status hooks consume the skeleton · `0af0b7db`
+  - [x] Task 8 — The column drag consumes the skeleton · `52ca8c94`
+  - [x] Task 9 — The grip joins its sibling; the Slider cancels; the boundary is documented · `c1403087` + `6c6429cf`
+  - [x] Gate 3 — simplification `69c2596a` · review fold `600ea9de`
+- [x] **Phase 4** — The card engine
+  - [x] Task 10 — `group.tsx` caches against the frozen rects · `7fa0ee51`
+  - [x] Gate 4 — carried by Gate 3's review round (no `group.tsx` finding) + the full gates
+- [x] **Phase 5** — One owner each
+  - [x] Task 11 — One snapshot helper, and the invariant whole · `600ea9de`
+  - [x] Task 12 — The chrome comes from its owners · `4587ed55`
+  - [x] Task 13 — The region scan calls its original · `4587ed55`
+  - [x] Task 14 — The constants come home · `4587ed55` (the suppress deletions landed with Task 11)
+  - [x] Gate 5 — gates green per commit; census sweeps run at Gate 6
 - [ ] **Phase 6** — The adoption gaps
   - [ ] Task 15 — Edge auto-scroll for the trapped drags · `<commit>`
   - [ ] Task 16 — The silent drags announce · `<commit>`
@@ -584,6 +584,9 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 
 - **Gate 1's review (08-10, 8 finders, 10 verified findings) showed Phase 1's fixes landed one guarantee short.** All three shipped dirty-only invalidation: an invalidating event marked the snapshot stale but nothing re-resolved, so a release with no further pointermove still committed the pre-change slot — the class survived on exactly the path the red tests never drove. Fixed in `d9f5908f`: every surface re-resolves from `lastPoint` on the invalidating event and the drop consults the flag before reading its slot. The review also caught the Task-1 `[bands]` effect defeating its own cache (both GroupingPane callers built `bands` inline while the hook's per-move state re-renders them — every move re-measured), fixed by memoizing the callers and stabilizing `useDisclosureSet`'s return identity; the GFM drag moved wholly into wrap space (origin re-base now corrects slot and preview delta together) and reads geometry through a ref; both new scroll listeners gained the sibling's target guard.
 - **Ruled at Gate 1:** signature-keyed dirty effects declined — the cause was inline allocation at the callers, fixed at the source, and the identity contract is the sibling family's; hoist-the-helper-now declined as deliberately sequenced (the spec-level `onWindowScroll` folded into Task 4, the flag ritual stays Task 11's); the suite-wide ResizeObserver-stub hoist (≈18 files) recorded for Task 11's harness consolidation, out of a bug-fix phase's range. Gate 1's live-drag pass deferred to the closing walkthrough per the standing no-mid-plan-CDP rule.
+
+- **Gate 3's review (08-10, simplifier + 4 finders) folded into Tasks 11–14 rather than a separate pass, each finding verified first.** The real bug: Task 9's abort revert was dead on arrival — the skeleton runs `teardown` before `onAbort`, so the baseline cleared before the revert read it; the baseline now clears at whichever end consumes it, and a skeleton-ordering test pins the contract (the cancel-reverts red-first test Task 9 claimed had never actually landed — recorded as the honesty miss it is). Also folded: the column drag's geometry moved from press to activation (the active-only scroll hook had orphaned a pending-phase scroll); the spec grew `scrollTarget` so the skeleton owns the scroll-relevance guard (six per-surface openers deleted, `scrollMoved` un-exported); the Slider's cancel guard became a synchronous ref and its unmount reasserts through its own `onInput` (the settings pane's DOM-query cleanup deleted); the status hook names its real container. Ruled: the Design-Sources "register the owners" idea is declined — that doc is deliberately procedural, and a hand-maintained primitives registry is the drift its own sweep exists to avoid. Known operational note for the closing walkthrough: CDP-driven drags must pass `buttons: 1` (Chrome's `dispatchMouseEvent` defaults to 0 and the skeleton treats it as a lost release) — routed to Build-Gotchas in the docs sweep.
+- **Deviation:** task step-boxes for Phases 3–5 were not ticked per-commit; Progress carries the hashes and this entry stands in for the per-step ticks. The uniform click-suppression ruling reached every skeleton consumer at Task 4, including the two surfaces whose noop-release click-through had been deliberate — sanctioned by the ruling, noted so the behavior change is on the record.
 
 ### Lessons
 
