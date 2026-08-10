@@ -393,7 +393,6 @@ export function DragGroup({
       }
       frozen.current.set(d.zone, rects)
       d.active = true
-      announce('Picked up card.')
       d.rect = rect
       d.srcIdx = srcIdx
       // Row pitch = the smallest positive vertical step to another item (row-to-row in a grid; item-
@@ -420,6 +419,7 @@ export function DragGroup({
           onScrolled: onScrollTracked,
         })
       }
+      announce('Picked up card.')
     }
     d.lastX = e.clientX
     d.lastY = e.clientY
