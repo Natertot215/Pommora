@@ -106,8 +106,10 @@
 
 **The Adoption Gaps:** Five drags inside real scrollers — options, statuses, the grouping pane, table columns along x, and the GFM table axis-matched — gained the edge auto-scroll loop. Every product drag announces its pickup and drop, the engine's pointer path gaining the words its keyboard path already had. Spring-open reached its last three surfaces: the band drag brackets the service whose targets were already registered, and the grouping hierarchy and the sidebar's collapsed containers register their rows so a dwelling drag opens them, the disclose remeasure re-aiming against the rows the spring just moved.
 
-- **Commits:** `b61f22a9^..3b51bcbe`
-- **Diff:** Net +287 | +1059 / −772
+**The Closing Seams:** `dragDisclose` re-aims the engine's geometry every frame until a reveal settles, replacing a once-then-settle pair whose gap let a release commit mid-animation rects, and the GFM table re-bases its wrap origin at activation — the skeleton's scroll hook serves only active gestures, so a pending-phase scroll never reached the press-time origin. Both reorder hooks took the list-change half of the invalidation invariant over caller-memoized order arrays, `useOptionReorder`'s dead-snapshot resolve fails closed instead of aiming at slot 0, and the photo pan joined the scrub family's `lostpointercapture` contract. The layer shed its residue — orphaned params, twin spellings, the engine's thrice-written drag scratch now installed over `blankDrag()` — and the feature docs dropped two claims the code had outgrown.
+
+- **Commits:** `b61f22a9^..8cbf7d23`
+- **Diff:** Net +289 | +1173 / −884
 
 #### PM-089 || The Write Path Converges On One Lock
 **DATE:** 08-08-2026
