@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
@@ -216,6 +216,17 @@ export function NavList({
   const [menu, setMenu] = useState<{ item: ResolvedNav } | null>(null)
   const openMenu = (it: ResolvedNav): void => setMenu({ item: it })
   const pinRows = reorderable ? (pins ?? []) : []
+  // Identity-stable so a parent re-render mid-drag can't false-dirty the drag's row snapshot.
+  const dndRows = useMemo(
+    () =>
+      reorderable
+        ? [
+            ...(pins ?? []).map((p) => ({ id: p.key, groupKey: 'pins' })),
+            ...items.map((r) => ({ id: r.key, groupKey: 'recents' })),
+          ]
+        : [],
+    [reorderable, pins, items],
+  )
   if (items.length === 0 && pinRows.length === 0 && !extras?.length) return null
   const recents = reorderable ? items : []
 
@@ -255,10 +266,7 @@ export function NavList({
     <>
       {reorderable ? (
         <TableRowDnd
-          rows={[
-            ...pinRows.map((p) => ({ id: p.key, groupKey: 'pins' })),
-            ...recents.map((r) => ({ id: r.key, groupKey: 'recents' })),
-          ]}
+          rows={dndRows}
           disabled={false}
           canReorderWithin
           canReassign={false}

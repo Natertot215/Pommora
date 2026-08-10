@@ -47,15 +47,15 @@ export function useGroupingListDrag({
   const [nestTarget, setNestTarget] = useState<string | null>(null)
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null)
 
-  // The lists live in a scroll-capped region, so frozen rects go stale mid-drag; any scroll
-  // dirties the snapshot and the next move re-measures once.
+  // The lists live in a scroll-capped region, so frozen rects go stale mid-drag; an invalidating
+  // event re-resolves from the last pointer point, so even a release without another move commits
+  // against current geometry. `bands` must be identity-stable across the hook's own per-move
+  // re-renders — a caller building it inline would turn every move into a full re-measure.
   const snapshotDirty = useRef(false)
+  const lastPoint = useRef({ x: 0, y: 0 })
   useEffect(() => {
     snapshotDirty.current = true
   }, [bands])
-  const markSnapshotDirty = (): void => {
-    snapshotDirty.current = true
-  }
 
   const takeSnapshot = (): void => {
     const measured = cfg.current.bands.flatMap((b) => {
@@ -91,33 +91,46 @@ export function useGroupingListDrag({
     rowHandle: (id) => ({
       onPointerDown: (e) => {
         const anchor = els.current.get(id) ?? (e.currentTarget as HTMLElement)
+        const resolveAt = (y: number): void => {
+          if (snapshotDirty.current) takeSnapshot()
+          const idx = index.current
+          if (!idx) return
+          let slot = bandSlot(idx, y, id, endY.current)
+          // A non-nestable list (the flat Custom chips / flat sub-grouped sets) demotes a nest
+          // slot to an after-slot at the same line; an illegal nest dies.
+          if (slot?.nestInto) {
+            if (!cfg.current.nestable || !canNest(id, slot.nestInto, cfg.current.bands)) slot = null
+          }
+          live.current = slot
+          setLine(slot && !slot.nestInto ? { y: slot.lineY - boxTop.current } : null)
+          setNestTarget(slot?.nestInto ?? null)
+        }
+        // Only a scroll that moves the rows re-aims — an unrelated scroller never costs the
+        // O(rows) re-measure (tableDnd's guard).
+        const onScrollEv = (ev: Event): void => {
+          if (ev.target instanceof Element && container.current && !ev.target.contains(container.current))
+            return
+          snapshotDirty.current = true
+          resolveAt(lastPoint.current.y)
+        }
         beginGesture({
           el: anchor,
           event: e,
           capture: false,
-          onActivate: () => {
+          onActivate: (ev) => {
+            lastPoint.current = { x: ev.clientX, y: ev.clientY }
             takeSnapshot()
-            window.addEventListener('scroll', markSnapshotDirty, { capture: true, passive: true })
+            window.addEventListener('scroll', onScrollEv, { capture: true, passive: true })
             setDraggingId(id)
             return true
           },
           onDragMove: (ev) => {
+            lastPoint.current = { x: ev.clientX, y: ev.clientY }
             setGhost({ x: ev.clientX + 12, y: ev.clientY + 8 })
-            if (snapshotDirty.current) takeSnapshot()
-            const idx = index.current
-            if (!idx) return
-            let slot = bandSlot(idx, ev.clientY, id, endY.current)
-            // A non-nestable list (the flat Custom chips / flat sub-grouped sets) demotes a nest
-            // slot to an after-slot at the same line; an illegal nest dies.
-            if (slot?.nestInto) {
-              if (!cfg.current.nestable || !canNest(id, slot.nestInto, cfg.current.bands))
-                slot = null
-            }
-            live.current = slot
-            setLine(slot && !slot.nestInto ? { y: slot.lineY - boxTop.current } : null)
-            setNestTarget(slot?.nestInto ?? null)
+            resolveAt(ev.clientY)
           },
           onDrop: () => {
+            if (snapshotDirty.current) resolveAt(lastPoint.current.y)
             const slot = live.current
             if (slot) {
               suppressNextClick() // the release must not also fire the row's disclosure toggle
@@ -135,7 +148,7 @@ export function useGroupingListDrag({
           },
           onAbort: reset,
           teardown: () => {
-            window.removeEventListener('scroll', markSnapshotDirty, { capture: true })
+            window.removeEventListener('scroll', onScrollEv, { capture: true })
           },
         })
       },

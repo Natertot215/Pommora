@@ -116,6 +116,10 @@ export function TableView({
     intent.arm(() => api.hover?.(page, el))
   }
   const [geom, setGeom] = useState<Geom>({ cols: [], rows: [] })
+  // A live gesture reads geometry through this ref — a mid-drag re-measure must reach it, and a
+  // state binding would freeze at the pointerdown render (the cfg-ref discipline).
+  const geomRef = useRef(geom)
+  geomRef.current = geom
   const [drag, setDrag] = useState<Drag | null>(null)
   const [resize, setResize] = useState<Resize | null>(null)
   // `caretCoords` carries a click point to the editor so it lands the caret where you clicked (null → caret at end).
@@ -192,30 +196,42 @@ export function TableView({
     e.preventDefault()
     const wrap = wrapRef.current
     if (!wrap) return
-    // `geom` is wrap-relative and scroll-immune; the pointer is viewport-relative — an editor
-    // scroll mid-drag moves the wrap's box, so the origin re-reads or the slot drifts by the delta.
+    // `geom` is wrap-relative and scroll-immune; the pointer is viewport-relative — so the whole
+    // drag runs in wrap space. Re-basing the origin on scroll then corrects the slot AND the
+    // preview delta together, and a release with no further move still resolves fresh.
     let origin = 0
     const reOrigin = (): void => {
       const b = wrap.getBoundingClientRect()
       origin = axis === 'col' ? b.left : b.top
     }
     reOrigin()
-    const start = axis === 'col' ? e.clientX : e.clientY
+    const startRel = (axis === 'col' ? e.clientX : e.clientY) - origin
+    let last = { x: e.clientX, y: e.clientY }
     let current: Drag = { axis, from: index, to: index, delta: 0 }
+    const resolve = (): void => {
+      const rel = (axis === 'col' ? last.x : last.y) - origin
+      let to = slotAt(axis, geomRef.current, rel)
+      if (axis === 'row') to = Math.max(1, to)
+      current = { axis, from: index, to, delta: rel - startRel }
+      setDrag(current)
+    }
+    // Only a scroll that moves the wrap re-bases — an unrelated scroller costs nothing.
+    const onScrollEv = (ev: Event): void => {
+      if (ev.target instanceof Node && !ev.target.contains(wrap)) return
+      reOrigin()
+      resolve()
+    }
     beginGesture({
       el: e.currentTarget,
       event: e,
       onActivate: () => {
-        window.addEventListener('scroll', reOrigin, { capture: true, passive: true })
+        window.addEventListener('scroll', onScrollEv, { capture: true, passive: true })
         setDrag(current)
         return undefined
       },
       onDragMove: (ev) => {
-        const pos = axis === 'col' ? ev.clientX : ev.clientY
-        let to = slotAt(axis, geom, pos - origin)
-        if (axis === 'row') to = Math.max(1, to)
-        current = { axis, from: index, to, delta: pos - start }
-        setDrag(current)
+        last = { x: ev.clientX, y: ev.clientY }
+        resolve()
       },
       // A real reorder clears drag via the model-change effect; a no-op (same serialization) won't re-render, so clear here.
       onDrop: () => {
@@ -224,7 +240,7 @@ export function TableView({
       },
       onAbort: () => setDrag(null),
       teardown: () => {
-        window.removeEventListener('scroll', reOrigin, { capture: true })
+        window.removeEventListener('scroll', onScrollEv, { capture: true })
       },
     })
   }
