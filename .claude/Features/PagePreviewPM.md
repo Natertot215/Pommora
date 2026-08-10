@@ -44,6 +44,10 @@ The right-hand pane is a PreviewPane **side slot** in its overlay mode — it ri
 
 **The window has a real Subfield footer.** It fills PreviewPane's **footer slot** — the surface owns the bar's collapse, its squeeze away from an open side pane, and the chevron's reveal; the preview supplies the content. The floating window mounts the shared Subfield scoped to its active tab, re-scoping when you switch tabs, so it carries the same location breadcrumb and live counts a full page does. The counts come from a **local** body the window owns, never the app-wide live-body slot, so editing a preview never disturbs the main pane's live count. The footer content aligns to the embed's text column.
 
+### The Window's Token Contract
+
+The window root (`.ppane`) declares its vocabulary as a scoped `--ppane-*` family — the toolbar height, the two side-pane widths, the footer height, and the flow/squeeze calculations that move the trailing controls as a side pane opens. Hosts retune legally by declaring on their own host class layered onto the same root: the NavWindow widens the trailing gap and sets its reveal distances, the floating preview supplies the footer height, and the component itself sets the measured widths inline. Two rules are load-bearing: the window re-declares the `--io`/`--io-l` openness drivers to zero on its own root, deliberately firewalling the shell's inspector progress out of every floating window; and the flow-reveal property is registered non-inheriting (in the shell stylesheet, where `@property` registrations live), so a reveal distance must sit on the element that animates it. Exact values live in `design-system/components/PreviewPane/previewPane.css`.
+
 ### Pending
 
 - The engulf's landing when the promoted page's main-pane fetch outlasts the FLIP; the pane can show the prior view for a beat, usually masked by warmth.

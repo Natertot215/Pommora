@@ -54,6 +54,8 @@ The new-tab page — a full-window Recents **gallery or list** over a search bar
 
 **View mode persists per surface.** NavWindow's List / Gallery choice and NavView's are separate, each stored per-Nexus — flipping one never moves the other, and both survive relaunch.
 
+The gallery cards consume the card token family documented in `CardViewPM.md`; the NavWindow gallery declares a parallel scoped set of the same names, tracked as the standing merge candidate.
+
 #### II. Breadcrumb
 
 The footer carries a breadcrumb of the active tab's container path, plus a dimmed forward **ghost crumb** for the last-visited Page within the open container — a one-click way back into where you were. Full footer → [[SubfieldPM]].

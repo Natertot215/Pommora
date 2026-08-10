@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**CSS Token Organization — closed.** The drag layer's shared chrome, the stray tokens, and the cross-consumed recipes each sit with their one owner in the design system ([[HistoryPM]] §PM-091), closing the arc that PM-090's skeleton consolidation opened; gates green, closeout run, adjudicated keeps recorded in the entry. The next session opens on a fresh pick from Pending Focuses — the identity/order-persistence arc (the reorder snap-back) and the subfield reorder are the two nearest doors.
+**The Token Atlas — closed.** The design system's full vocabulary is grounded in SOURCE-tagged tables across the feature specs, anchored by the renamed `DesignSystemPM.md` and verified by `scripts/check-atlas.mjs` ([[HistoryPM]] §PM-093), following PM-091's chrome-and-tokens reorganization in the same session. The reconnaissance's fix material waits in `Planning/CSS Duplication Report.md` — a ready-made cleanup session. The next session opens on a fresh pick: that report, the identity/order-persistence arc, or the subfield reorder.
 
 ### Immediate Work
 
@@ -84,9 +84,18 @@
 - [ ] Extending a line on MarkdownPM directly above a codeblock jumps into the codeblock rather than creating a new line. Tables answer the same hazard with a boundary guard on Enter; fences have no counterpart in that chain. Nathan is unsure whether this has been fixed already; reconcile when appropriate.
 - [ ] The Set-Card drag flash — the drop snaps back, then jumps on reload.
 - [ ] Clicking the settings button on the sidebar ribbon doesn't close it once it's been opened.
-- [ ] MarkdownPM's drag-handle context menu shows 'Embed Page' when it shouldn't; a 'List Type' switcher would be the natural replacement.
 
 ### Recent Work
+
+#### PM-093 || The Token Atlas
+**DATE:** 08-10-2026
+
+The design docs now state token literals under SOURCE-tagged tables — the one sanctioned exception to docs-name-exacts, chartered in `DesignSystemPM.md` (renamed from DesignPM) and enforced by `scripts/check-atlas.mjs`. Families landed with their owners: the editor's scoped pockets in MarkdownPM, the type ramp in TypographyPM, motion + caret/edge-fade/autoscroll in InteractionPM, chips in PropertiesPM, cards in CardViewPM, the table sheet in TableViewPM, the `--ppane-*` contract described in PagePreviewPM. Design-Sources retired into the atlas charter and Build-Gotchas; the false tokens README was rewritten; the recon's fix list routed to `Planning/CSS Duplication Report.md`.
+
+#### PM-092 || One Grip Menu, And The List's Type
+**DATE:** 08-10-2026
+
+Every block grip's right-click resolves through one kind-keyed menu: Delete on all of them, "Type ▸" on a list, "Page Source ▸" on an embed tile. The callout's separate grip-menu writer — its own handler, channel, and contract — became one arm of that union, and one delete rule now serves every kind, which took the doubled blank line the callout's own delete used to leave. Embed Page left the grip entirely; the page's own menu already carried Insert ▸ Page. A list block switches all four marker kinds at every level of its nesting, ordered runs counting per level, through a writer beside the per-line format toggle — the shape the codeblock's language switch follows.
 
 #### PM-091 || CSS Token Organization
 **DATE:** 08-10-2026
@@ -107,11 +116,6 @@ Every writer of a container sidecar came onto one lock key built in `main/paths.
 **DATE:** 08-08-2026
 
 `MenuDropdown` took the open state, outside-dismiss, retract beat, and mounted-pane branch that the three toolbar dropdowns had each carried separately, and the stylesheet named for one of them was renamed for all three. `containerCreators` became the single rule for what a Collection or a Set offers on creation, correcting a sidebar menu that gave a Set only New Page and two creator labels written as literals. Two constants describing a reach the menu layer never had were corrected rather than made true.
-
-#### PM-087 || One Shared Pass Over Fenced Code
-**DATE:** 08-08-2026
-
-A fenced block's marker-run length became part of its identity, so a closer requires a run at least as long as its opener and a longer fence holds shorter ones as literal content. The fence grammar moved into one shared module read by the detector, the folding scan, the subfield statistics, and the write-side mask — the mask's disagreement had left a `[[Title]]` inside a code sample reachable by a rename cascade. On a 941-line body a keystroke now costs roughly a quarter of what it did, the saving scaling with document length.
 
 ### Guidelines
 

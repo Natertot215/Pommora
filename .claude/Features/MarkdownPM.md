@@ -28,7 +28,7 @@ A construct's Markdown markers are **revealed** (literal editable text) when the
 
 - **Headings** — H1–H6 on the em scale; `#` reveals on caret. The context menu offers Paragraph plus H1–H5. **Foldable** via a chevron in the fold gutter reusing the sidebar's disclosure language (chevron on hover when open, persistent when folded); fold state is per-machine, in `nexus.db`.
 
-- **Lists** — bullet (`-` → `•`), `+`, arrow `→` (typed `->`), ordered, and GFM task checkboxes — all sharing one indent/spacing zone and the full behavior set (continuation, indent, drag). On disk all are portable CommonMark except the arrow line (`→ text`, a Pommora render directive legible anywhere but only rendered as a list inside Pommora). **Drag-to-reorder by the glyph**: grab a list glyph to move the item with its nested sub-block; dropping beside a shallower item re-nests, ordered runs renumber — one source-line transaction, one undo. Pure logic in a unit-tested `editor/listDragModel.ts` under the `editor/listDrag.ts` gesture.
+- **Lists** — bullet (`-` → `•`), `+`, arrow `→` (typed `->`), ordered, and GFM task checkboxes — all sharing one indent/spacing zone and the full behavior set (continuation, indent, drag). On disk all are portable CommonMark except the arrow line (`→ text`, a Pommora render directive legible anywhere but only rendered as a list inside Pommora). **Drag-to-reorder by the glyph**: grab a list glyph to move the item with its nested sub-block; dropping beside a shallower item re-nests, ordered runs renumber — one source-line transaction, one undo. Pure logic in a unit-tested `editor/listDragModel.ts` under the `editor/listDrag.ts` gesture. **Switch the whole block's type** from its grip menu (see Block Drag): every marker in the block is rewritten at every level, continuation lines untouched, and ordered runs count per indent level so a nested run restarts while its parent keeps counting. A marker already reading as it should yields no edit, which is what makes re-picking the current type inert and picking Numbered over a broken sequence a repair. The four kinds are named once, in the grip menu's contract, and both the block switch and the per-line format toggle write their markers through one builder.
 
 - **Outliner rails** — an optional hairline guide down each nested run (personalization `outlinerLines`, → [[ConfigurationPM]]). One rail per **ancestor** level, emitted as a side widget per nested line and drawn **run-based** — square through the middle so segments connect, rounded caps and an end-gap only at each run's first/last line, exactly the blockquote bar's first/last trick. A rail centres on its **ancestor's** glyph (so a nested checkbox under a bullet takes the bullet's centre, not its own) and paints on the neutral segment-separator token. **Scoped to dash-bullets + checkboxes.** Run + type logic in `decorations/intent.ts` (unit-tested), the widget in `editor/decorations.ts`, all knobs in `Styles.css`.
 
@@ -83,13 +83,13 @@ Typing `![[Title]]` on its own line embeds that Page where the line stood — Ob
 
 **Chrome follows the page.** A page with a banner shows it as a band at the tile's top — out of flow with its height reserved, the page's own layout contract at tile scale — with the title as static text and the band's change/remove context menu kept; rename and add-banner stay page-surface affordances. The band parks exactly as the full page's header does — the editor's scroll timeline re-homed at the tile, the same keyframes retargeted to the band's height — so scrolling the embedded content slides the banner away instead of pinning it to the tile's top. A coverless page reveals, on hover, the centered two-tone location breadcrumb (Collection › Set › Page) at the accent border's own timing.
 
-**Creation has four doors.** The `[[` autocomplete extends to `![[` — a local trigger branch, never a widening of the connections pattern — offering only pages the syntax can express and the document can hold (already-embedded pages, the host chain, and bracket-bearing titles are omitted); table cells never see it. Any rail grip's right-click offers **Embed Page ▸**, a native Collections → Sets → Pages tree whose pick lands a fenced embed below that block; the editor context menu's **Insert ▸ Page** instead types the empty `![[]]` pair on a fenced line below the caret's block with the caret between the brackets, where the embed autocomplete opens immediately — an empty embed query browses the whole page index alphabetically, while an empty `[[` link query still shows nothing until a first character. And the syntax is hand-typeable from anywhere, Obsidian included. An embedded tile's own grip carries **Page Source ▸** — the same tree, re-aiming the line in place, reaching stale and unresolved tokens exactly when they need it — plus **Delete Embed**.
+**Creation has three doors.** The `[[` autocomplete extends to `![[` — a local trigger branch, never a widening of the connections pattern — offering only pages the syntax can express and the document can hold (already-embedded pages, the host chain, and bracket-bearing titles are omitted); table cells never see it. The editor context menu's **Insert ▸ Page** types the empty `![[]]` pair on a fenced line below the caret's block with the caret between the brackets, where the embed autocomplete opens immediately — an empty embed query browses the whole page index alphabetically, while an empty `[[` link query still shows nothing until a first character. And the syntax is hand-typeable from anywhere, Obsidian included. An embedded tile's own grip carries **Page Source ▸** — a native Collections → Sets → Pages tree re-aiming the line in place, reaching stale and unresolved tokens exactly when they need it.
 
 **Nothing stays hot.** Tiles live only while their host view does, rehydrate from the warm path-keyed detail slot when scrolled back (write-through-fresh from any host's pending edit, so no refetch and no stale seed), and die with the tab. A tile's own reading state — scroll position, caret, undo history — survives that teardown through a session-scoped warm cache keyed by the full host chain, invalidated whole whenever the page's body changed elsewhere since the capture; it never touches disk, so a fresh session mounts cold. Re-slots that never unmount are healed separately: the browser silently zeroes a detached scroller, so warm editors register a scroll self-check that the host editor runs from its measure phase after any update on a tile-bearing document — the one signal a re-slot can't dodge. The rename cascade sweeps `![[` targets in the same pass as connections — through a parallel pattern, because an embed is never a link-graph edge — and a resolution nudge re-renders tiles and connection styling the moment the tree changes, no caret move needed. Nested embeds render as display-only tiles one level down; deeper interactivity, sub-target forms (`#heading`, `^block`, `|alias`), and prefix-hosted embeds are deferred, degrading to the inert token today.
 
 ### Block Drag
 
-Every block carries a gutter **drag handle** that relocates the whole block to the nearest block boundary — and every grip doubles as that block's menu anchor where one exists (the callout's Delete, the table's structural menu, the embed's create/re-aim/delete tree), one hover-flag seam keeping the generic editor menu out of their way. The rail grip is a content-anchored `::before` revealed only on gutter hover; blocks with their own chrome (the heading chevron, the blockquote's grip widget, the callout's gutter grip, the table's heading-row grip) double it as their drag handle — one shared `createBlockDragGesture`, hit-tested by a gutter x-coordinate (a non-CM-line handle like the table widget calls the same `startBlockDrag` directly). The block to move is resolved by `blockAt`; the drop is one source-line move (`blockMoveChanges`), blank-separated at BOTH new seams so a relocation never fuses adjacent blocks (a glue-adjacent paragraph won't become a lazy list continuation). The fixed accent insertion line snaps list-drag-style to the nearer block's **outer** box edge (the DOM line box, so it lands outside a callout/quote/code border, not inside) and flips at the block's midpoint, with edge auto-scroll, scroll re-measure, and Escape/blur abort. A folded heading **auto-unfolds at drag-start** — a fold can't survive the relocating single-replace edit (CM's `mapPos` collapses interior positions to a span endpoint). Interior drop-slots (dropping INTO a box) are deferred to V2 nesting.
+Every block carries a gutter **drag handle** that relocates the whole block to the nearest block boundary, and doubles as that block's menu anchor. **One grip menu serves every kind**, keyed by what `blockAt` resolves: **Delete** on all of them, with the kind's own arm above it — **Type ▸** on a list, **Page Source ▸** on an embed tile. A block with nothing else to offer pops Delete alone, so the hover flag that keeps the generic editor menu out of the gutter never stands it down over an empty menu; the flag and the menu's hit-test read one list of grip-bearing line classes for exactly that reason. Delete removes the block's lines and their trailing newline, collapsing a doubled blank where the block sat between two — one rule for every kind. **A grip acts on its block, never on the caret** — the right-press is defaulted away exactly as the drag gestures do it for the left, since preventing the context menu that follows comes too late to stop the browser seating a caret, and nothing in the menu's path takes focus for the editor. Tables are the exception that keeps its own menu, since its grips address rows and columns rather than a block. The rail grip is a content-anchored `::before` revealed only on gutter hover; blocks with their own chrome (the heading chevron, the blockquote's grip widget, the callout's gutter grip, the table's heading-row grip) double it as their drag handle — one shared `createBlockDragGesture`, hit-tested by a gutter x-coordinate (a non-CM-line handle like the table widget calls the same `startBlockDrag` directly). The block to move is resolved by `blockAt`; the drop is one source-line move (`blockMoveChanges`), blank-separated at BOTH new seams so a relocation never fuses adjacent blocks (a glue-adjacent paragraph won't become a lazy list continuation). The fixed accent insertion line snaps list-drag-style to the nearer block's **outer** box edge (the DOM line box, so it lands outside a callout/quote/code border, not inside) and flips at the block's midpoint, with edge auto-scroll, scroll re-measure, and Escape/blur abort. A folded heading **auto-unfolds at drag-start** — a fold can't survive the relocating single-replace edit (CM's `mapPos` collapses interior positions to a span endpoint). Interior drop-slots (dropping INTO a box) are deferred to V2 nesting.
 
 ### Typing Transforms (Input-Time Only)
 
@@ -118,6 +118,78 @@ The wikilink resolver is **wired** to `@shared/connections`: resolution, styling
 ### Module Shape
 
 `MarkdownPM/` — one folder per concern: `parser/` · `detect/` · `tokens/` · `decorations/` · `input/` · `connections/` · `Tables/` · `editor/` (CM6 wiring, which also holds the callout and widget code). Appearance is `Styles.css` plus the table widget's own stylesheet; every value in both resolves from the root design-system tokens via the `--var` bridge. The drawn caret and its I-beam cursor are an app-wide identity rather than an editor-local one, so they live in the global caret layer. The pure-logic layer — the per-construct folders, the pure models under `editor/` (block, list-drag, format-state), and the Tables headless core — imports neither React nor CodeMirror and is unit-tested against a dedicated corpus.
+
+### Design System
+
+The editor's entire design vocabulary lives in one stylesheet as scoped custom-property families — there is no separate theme module (`MarkdownPM/tokens/` is the *markdown tokenizer*, not design tokens). The editor doesn't consume the type ramp: everything scales in `em` multiples off its own zoom root. Tables follow the atlas convention (`DesignSystemPM.md` §charter); each family's scope is part of its contract — a value set outside its scope silently does nothing.
+
+**SOURCE:** `Pommora/src/renderer/src/MarkdownPM/Styles.css`
+
+#### II. Scale
+
+The root of everything: one size factor for structure, one derived factor for glyphs. `--block-zoom` is a registered `<number>` so the per-block zoom classes interpolate.
+
+| Title | token | value · scope |
+| --- | --- | --- |
+| Editor Size Factor | `--mdpm-scale` | `1` · `:root` (global so hosts inherit) |
+| Per-Block Zoom | `@property --block-zoom` | `<number>`, inherits, initial `1` |
+| Glyph Scale | `--glyph-scale` | `calc(var(--mdpm-scale) * var(--block-zoom, 1))` · `.mdpm-shell` |
+| Fold Chevron Size | `--fold-chevron-size` | `calc(var(--text-title3-size) * var(--glyph-scale))` · `.mdpm-shell` |
+
+#### II. Header, Banner & Title
+
+| Title | token | value · scope |
+| --- | --- | --- |
+| Page Title Size | `--detail-title-size` | `28px` · `.mdpm-header .detail-title` |
+| Add-Banner Strip | `--add-banner-zone` | `44px` · `.mdpm-header:not(.has-banner)` |
+| Header Park Distance | `--header-zone` | JS-set on `.mdpm-shell`; fallback `90px` |
+
+#### II. Lists & Outliner
+
+List geometry scopes to `.cm-line.md-li`; the outliner rail aliases the shared `--list-outline-*` primitives and adds its caps and x-position.
+
+| Title | token | value |
+| --- | --- | --- |
+| Marker Gap | `--list-gap` | `4px` (on `.cm-editor`) |
+| Indent Step | `--list-indent` | `20px` |
+| Bullet / Number / Task Gutter | `--bullet-zone` / `--number-zone` / `--task-zone` | `16px` / `1.3em` / `1.8em` |
+| Bullet Glyph | `--bullet-size` | `1.25em` |
+| Inner-Gutter Origin | `--li-origin` | `0px`; `16px` in quotes; callout pad in callouts |
+| Computed Column | `--li-col` | `calc((var(--li-level, 0) + 1) * var(--list-indent))` |
+| Rail Width / Color / Gap / Radius | `--outliner-*` | → the `--list-outline-*` tokens |
+| Rail Level | `--rail-level` | JS-set per rail element |
+
+#### II. Quotes, Callouts & Code
+
+| Title | token | value · scope |
+| --- | --- | --- |
+| Quote Bar | `--bar-width` / `--bar-color` / `--bar-radius` | `4px` / → label-tertiary / `2px` · `.md-bq` |
+| Quote Box | `--bg-color` / `--bg-radius` | → fill-tertiary / `6px` |
+| Quote Gap | `--bq-gap` | `6px` |
+| Callout Frame | `--callout-border` / `--callout-bw` / `--callout-radius` | → label-tertiary / `1.5px` / `6px` · `.md-callout` |
+| Callout Padding | `--callout-pad` / `--callout-gap` / `--callout-inner-pad` | `15px` / `6px` / `8px` |
+| Callout Grip | `--grip-x` / `--grip-y` | `-18px` / `4px` |
+| Nested Quote | `--nq-bar` / `--nq-bar-radius` / `--nq-radius` / `--nq-gap` / `--nq-inset` | `3px` / `2px` / `5px` / `9px` / `2px` · `.md-callout.md-bq-in` |
+| Code Block | `--cb-bg` / `--cb-radius` / `--cb-size` / `--cb-gap` / `--cb-pad` | → fill-secondary / `6px` / `0.85em` / `6px` / `10px` · `.md-cb` |
+| Line-Number Zone | `--cb-ln-zone` | `calc(3ch + var(--list-gap))` |
+
+#### II. Syntax Colors
+
+One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--system-white))`, the tint step shared with the chip ladder. Comments skip the recipe and read label-tertiary directly.
+
+| Title | token | value |
+| --- | --- | --- |
+| Pastel Mix Step | `--tok-tint` | → `var(--tint-primary)` (60%) |
+| Keyword / String / Number | `--tok-solid` on `.tok-kw` / `.tok-str` / `.tok-num` | purple / green / orange solids |
+| Property / Function / Type | `.tok-prop` / `.tok-fn` / `.tok-type` | cobalt / yellow / cyan solids |
+
+#### II. Embeds & Autocomplete
+
+| Title | token | value · scope |
+| --- | --- | --- |
+| Editing / Resizing Tile Ring | `--tile-border-color` | → accent-stroke / accent-stroke-hot · `.mdpm-embed-tile` states |
+| Embed Grip Top | `--grip-top` | `28px` · `.mdpm-embed-line` |
+| Autocomplete | `--ac-radius` / `--ac-rows` | `12px` / `4` · `.mdpm-ac` |
 
 ### Non-Obvious
 
@@ -159,4 +231,4 @@ The wikilink resolver is **wired** to `@shared/connections`: resolution, styling
 
 - **Outliner rails on ordered / arrow / `+` lists** — the guide is bullets + checkboxes only; a right-aligned number and the arrow / `+` glyphs need their own glyph-centre and vertical-evenness maths before their rails read straight.
 
-- **Codeblock Style ▸ Language grip menu** — retyping a block's language from its rail grip; today the info word is edited on the fence line directly. Widening the curated language set is one description in the highlight module plus its package.
+- **Codeblock Style ▸ Language grip menu** — retyping a block's language from its rail grip; today the info word is edited on the fence line directly. The list's Type ▸ arm is the pattern it follows: a case on the grip menu's context, a case on its action, and a pure writer beside the one the list switch uses. Widening the curated language set is one description in the highlight module plus its package.

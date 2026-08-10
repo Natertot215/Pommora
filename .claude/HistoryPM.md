@@ -2,6 +2,8 @@
 
 | Date               | ID     | Entry                                                |
 | ------------------ | ------ | ---------------------------------------------------- |
+| 08-10-2026         | PM-093 | The Token Atlas                                      |
+| 08-10-2026         | PM-092 | One Grip Menu, And The List's Type                   |
 | 08-10-2026         | PM-091 | CSS Token Organization                               |
 | 08-09-2026 → 08-10 | PM-090 | The Drag Layer Converges On One Skeleton             |
 | 08-08-2026         | PM-089 | The Write Path Converges On One Lock                 |
@@ -93,6 +95,27 @@
 | 06-15-2026         | PM-003 | The Design System Is Founded                         |
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer                              |
 | 06-14-2026         | PM-001 | Genesis — The Walking Skeleton                       |
+
+#### PM-093 || The Token Atlas
+**DATE:** 08-10-2026
+
+`DesignPM.md` became `DesignSystemPM.md` and took the token atlas: every core family — primitives, surfaces, labels, states, fills, tints, separators, shadows, spectrum, geometry, materials — as SOURCE-tagged tables stating literal values, the one sanctioned exception to the docs-name-exacts rule, chartered in the document and written into the rule itself. The families whose consumers live elsewhere landed in their owners' specs: the editor's scoped pockets in `MarkdownPM.md`, the type ramp's literals in `TypographyPM.md`, motion with the caret, edge-fade, and autoscroll mechanisms in `InteractionPM.md`, chips in `PropertiesPM.md`, the card family in `CardViewPM.md`, the table sheet in `TableViewPM.md`, and the preview window's `--ppane-*` contract described in `PagePreviewPM.md`.
+
+`scripts/check-atlas.mjs` parses every SOURCE-tagged table and verifies its identifiers and literals against the named files, with the theme-vars bridge as an implicit source for `--` handles — twenty tables, green at landing. `Design-Sources.md` retired, its duplication charter absorbed into the atlas's own opening and its parallel-write-agent lessons into `Build-Gotchas.md`; the tokens `README.md` was rewritten around the files that exist, replacing a described layout that never shipped. The reconnaissance's fix material — the duplications, the scope hazards, and a gallery card-width knob that has never taken effect — routed to `Planning/CSS Duplication Report.md` rather than living in the atlas.
+
+- **Commits:** `b3f49b23` and the docs commit beside it
+- **Diff:** Net +74 | +74 / −0
+
+#### PM-092 || One Grip Menu, And The List's Type
+**DATE:** 08-10-2026
+
+**The menu:** Every block grip's right-click now resolves through one kind-keyed menu — Delete on every kind, with that block's own arm above it: "Type ▸" on a list, "Page Source ▸" on an embed tile. The callout had been carrying a second grip-menu writer of its own — a parallel handler, channel, shared contract, and delete rule doing the same work on a different selector — and became one arm of the union instead, taking its files and its channel with it. The single delete rule that replaced both removes a block's lines and their trailing newline and collapses a doubled blank where the block sat between two, which is the blank line the callout's own delete used to leave behind. The blockquote's grip joined the menu it had never had, and the flag that keeps the generic editor menu out of the gutter now reads the same list of grip-bearing line classes the hit-test does, so a grip can never both suppress that menu and offer nothing in its place. Right-pressing a grip also stopped moving the caret and taking focus: the drag gestures had been suppressing the browser's caret placement for the left button alone, leaving a right-press to seat it, and the menu then pulled focus onto that seat besides.
+
+**The list's type:** A list block switches between Numbered, Bulleted, Checklist, and Arrowed from its grip. Every marker in the block is rewritten at every level of its nesting, wrapped continuation lines untouched and a quoted marker found behind its prefix; ordered runs count per indent level, so a nested run restarts while its parent keeps counting. A marker that already reads as it should yields no edit at all, which is both what makes re-picking the current type inert and what makes picking Numbered over a broken sequence a repair. The four kinds are named once in the menu's contract and the marker parser reads that name, and the block switch and the per-line format toggle write their markers through one builder rather than two tables.
+
+**What left:** "Embed Page ▸" came off the grip entirely — the page's own right-click menu already carried Insert ▸ Page, running the same insertion — so the arm was deleted rather than relocated, and the pick tree now crosses the boundary only for the tile that re-aims through it. The insert helpers moved out to their own module beside the menu action that is now their only caller. The codeblock's language switch follows as one case on the context, one on the action, and a writer beside the list's.
+
+- **Diff:** Net +34 | +256 / −222 (code only; +573 / −392 with tests and comments)
 
 #### PM-091 || CSS Token Organization
 **DATE:** 08-10-2026

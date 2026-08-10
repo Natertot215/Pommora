@@ -41,7 +41,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; never allow two writers or definitions for the same thing; anything that does this and is found must be reported. 
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full rebuild / re-walk when an incremental or cached update works — cache, memoize, snapshot, subscribe narrowly. It's THE lag source.
-- **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they never restate exact code values. Name the token and its treatment ("the red solid at a low opacity"), never the literal `#hex` / `%` / line-for-line code stays in the code itself. The same discipline must be held true equally to code comments.
+- **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they never restate exact code values. Name the token and its treatment ("the red solid at a low opacity"), never the literal `#hex` / `%` / line-for-line code stays in the code itself. The same discipline must be held true equally to code comments. **The one sanctioned exception is the token atlas** — `DesignSystemPM.md` and the `SOURCE:`-tagged tables it charters across the feature specs state literal values on purpose, and `node scripts/check-atlas.mjs` (from `Pommora/`) verifies them against their sources.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves. Any in-flight decisions must be disclosed as they’re being made.
 - **Tokens must** be pulled from their sources in `design-system`— never hand-roll tokens without explicit direction; dual-option toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
 
@@ -73,7 +73,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   ├── [ConfigurationPM.md]         | • Per-Nexus personalization, labels, and profile
 │   │   ├── [ConnectionsPM.md]           | • Inline title links — the sole connection syntax
 │   │   ├── [ContextsPM.md]              | • The organization layer, its registry, and Context identity
-│   │   ├── [DesignPM.md]                | • The design system — primitives and the semantic aliases on them
+│   │   ├── [DesignSystemPM.md]          | • The design system — the token atlas and the materials on it
 │   │   ├── [InteractionPM.md]           | • The animation system — motion tokens and named aliases
 │   │   ├── [MarkdownPM.md]              | • The in-house Markdown editor on a CodeMirror 6 substrate
 │   │   ├── [NavigationPM.md]            | • Tabs, per-tab history, breadcrumbs, and nav search
@@ -94,7 +94,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   └── [ViewsPM.md]                 | • Saved presentations of a Collection — six modeled types
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
 │   │   ├── [Build-Gotchas.md]           | • Environment and toolchain traps — read before launching the GUI
-│   │   ├── [Design-Sources.md]          | • What the design system already owns, and never to duplicate it
 │   │   ├── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
 │   │   └── [UI-Copy.md]                 | • The running app never displays build-status or meta text
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync

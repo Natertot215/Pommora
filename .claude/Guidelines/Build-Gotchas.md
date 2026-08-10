@@ -56,3 +56,8 @@ This class bit twice in one day and a settled-state pixel diff cannot see it at 
 - **One failed static derivation is the limit for cross-zoom alignment — then measure.** Load the built CSS into headless Chrome over a minimal DOM harness and read `getBoundingClientRect` across a block-zoom sweep, comparing the glyphs users actually see rather than container edges; a drift that *tracks* zoom fingerprints a zoomed-space offset. A live-session screenshot is not evidence while `*.css.ts` changes are in flight, since the stale serve stacks old rules under new.
 - **A `$`-leading token inside shell double quotes is an end-of-line anchor.** Sanity-check any grep gate against a token you know is present before trusting a clean exit — and `\'` doesn't escape inside single quotes either.
 - **A mechanical sweep across test files needs its own verification pass.** Dry-run the pattern and read what it would touch before letting it write: one regex nearly rewrote `[[Beta]]` wikilinks, and another under-matched a multi-line fixture and failed three steps away from its cause.
+
+### Parallel Write Agents
+
+- **Whole-tree git operations are forbidden in an agent's brief.** `git stash`, `git checkout .`, `git clean`, and `git reset` act on everything, including work the agent cannot see — one `stash --include-untracked` swept three other agents' in-flight files mid-write. An agent needing a clean baseline uses a worktree.
+- **Tell each agent the tree is shared and not clean**, or it reports a failing gate as its own problem — or "fixes" a file it doesn't own.

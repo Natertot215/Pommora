@@ -6,17 +6,25 @@ Pommora's type system. The token file is the source of truth for what ships — 
 
 ### The Ramp
 
-| Style                           | Character                                         |
-| ------------------------------- | ------------------------------------------------- |
-| Large Title · Title 1 · Title 2 | display steps — defined, no consumer              |
-| Title 3                         | the smallest display step                         |
-| Headline                        | body-size heading — distinct by weight, not scale |
-| Body                            | the standard content size                         |
-| Callout                         | a step under body — headers and ancillary labels  |
-| Control                         | chips and control chrome                          |
-| Caption                         | the secondary line under a title                  |
-| Footnote                        | small detail                                      |
-| Subline                         | footnote's size on a tighter line box             |
+The table states the literal scale under the atlas convention (`DesignSystemPM.md` §charter): values change in code first, the table follows in the same commit.
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/typography.css.ts`
+
+| Style | token | size / line | Character |
+| --- | --- | --- | --- |
+| Large Title | `text.largeTitle` | `26px` / `32px` | display step — defined, no consumer |
+| Title 1 | `text.title1` | `22px` / `26px` | display step — defined, no consumer |
+| Title 2 | `text.title2` | `17px` / `22px` | display step — defined, no consumer |
+| Title 3 | `text.title3` | `15px` / `20px` | the smallest display step |
+| Headline | `text.headline` | `13px` / `16px` | body-size heading — distinct by weight, not scale |
+| Body | `text.body` | `13px` / `16px` | the standard content size |
+| Callout | `text.callout` | `12px` / `15px` | a step under body — headers and ancillary labels |
+| Control | `text.control` | `12px` / `15px` | chips and control chrome |
+| Caption | `text.caption` | `11px` / `14px` | the secondary line under a title |
+| Footnote | `text.footnote` | `10px` / `13px` | small detail |
+| Subline | `text.subline` | `10px` / `12px` | footnote's size on a tighter line box |
+
+The weight ladder is `font.weight`: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`; tracking is pinned to `0` on every composed style. Family: `'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif`.
 
 The sizes are the macOS AppKit text scale drawn in Inter, with a few edits. **Headline** is pinned to Body's size, so a headline is told apart by weight rather than scale. **Control** and **Subline** are renamed for what they actually drive here — control chrome and the Subfield. And **Body** is the macOS standard content size, which is why it carries the row primitive rather than a smaller step.
 
