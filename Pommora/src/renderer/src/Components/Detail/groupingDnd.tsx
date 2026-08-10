@@ -105,14 +105,6 @@ export function useGroupingListDrag({
           setLine(slot && !slot.nestInto ? { y: slot.lineY - boxTop.current } : null)
           setNestTarget(slot?.nestInto ?? null)
         }
-        // Only a scroll that moves the rows re-aims — an unrelated scroller never costs the
-        // O(rows) re-measure (tableDnd's guard).
-        const onScrollEv = (ev: Event): void => {
-          if (ev.target instanceof Element && container.current && !ev.target.contains(container.current))
-            return
-          snapshotDirty.current = true
-          resolveAt(lastPoint.current.y)
-        }
         beginGesture({
           el: anchor,
           event: e,
@@ -120,9 +112,20 @@ export function useGroupingListDrag({
           onActivate: (ev) => {
             lastPoint.current = { x: ev.clientX, y: ev.clientY }
             takeSnapshot()
-            window.addEventListener('scroll', onScrollEv, { capture: true, passive: true })
             setDraggingId(id)
             return true
+          },
+          // Only a scroll that moves the rows re-aims — an unrelated scroller never costs the
+          // O(rows) re-measure (tableDnd's guard).
+          onWindowScroll: (ev) => {
+            if (
+              ev.target instanceof Element &&
+              container.current &&
+              !ev.target.contains(container.current)
+            )
+              return
+            snapshotDirty.current = true
+            resolveAt(lastPoint.current.y)
           },
           onDragMove: (ev) => {
             lastPoint.current = { x: ev.clientX, y: ev.clientY }
@@ -147,9 +150,6 @@ export function useGroupingListDrag({
             reset()
           },
           onAbort: reset,
-          teardown: () => {
-            window.removeEventListener('scroll', onScrollEv, { capture: true })
-          },
         })
       },
     }),

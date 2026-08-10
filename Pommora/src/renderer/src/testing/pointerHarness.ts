@@ -1,19 +1,23 @@
 // jsdom has no PointerEvent constructor, measures every rect as zero, and lacks pointer capture —
 // these stubs cover exactly those three gaps. Geometry truth stays with the CDP passes, never jsdom.
 
-type PointerOpts = { x?: number; y?: number; button?: number; pointerId?: number }
+type PointerOpts = { x?: number; y?: number; button?: number; buttons?: number; pointerId?: number }
 
 export function firePointer(
   target: EventTarget,
   type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel',
   opts: PointerOpts = {},
 ): void {
+  // A real press holds a button through its moves — a zero-buttons move means the release was
+  // missed, which the gesture skeleton treats as an abort.
+  const held = type === 'pointerdown' || type === 'pointermove'
   const e = new MouseEvent(type, {
     bubbles: true,
     cancelable: true,
     clientX: opts.x ?? 0,
     clientY: opts.y ?? 0,
     button: opts.button ?? 0,
+    buttons: opts.buttons ?? (held ? 1 : 0),
   })
   Object.defineProperty(e, 'pointerId', { value: opts.pointerId ?? 1 })
   Object.defineProperty(e, 'isPrimary', { value: true })

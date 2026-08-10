@@ -209,14 +209,14 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 **Negative control:** each test goes red with its guard removed, and the throwing-activation test also asserts `onAbort` fired and `onDrop` did not — a test checking only the second gesture passes if the error is swallowed silently.
 
 **Steps:**
-- [ ] Read `gesture.ts` whole; write the failing tests (throwing activate · throwing move · throwing teardown · foreign-pointer up · blur mid-press · buttons-gone move); run — expect red for the right reasons (module reset per test confirmed first).
-- [ ] Implement the four guards, nothing else — no change to activation semantics, capture timing, or the refusal rule.
-- [ ] Full gate. Commit: `fix(interactions): the gesture skeleton survives throwing callbacks and lost releases`
+- [x] Read `gesture.ts` whole; write the failing tests (throwing activate · throwing move · throwing teardown · foreign-pointer up · blur mid-press · buttons-gone move · onWindowScroll lifetime); run — expect red for the right reasons. *(All 7 red against the unguarded module, per-test module reset confirmed.)*
+- [x] Implement the guards. *(Divergence, recorded in Deviations: the skeleton also arms `suppressNextClick()` on every activated release — the ruled Task-14 skeleton half landed here since the `up` handler was being rewritten anyway; Task 14 keeps only the per-surface deletions. `groupingDnd` and the GFM table converted onto `onWindowScroll` as planned, their teardowns dissolving entirely. `firePointer` defaults `buttons: 1` on held events.)*
+- [x] Full gate. *(typecheck 0 · lint 0 · 2,266 tests — every pre-existing drag test green under the new guards.)* Commit: `fix(interactions): the gesture skeleton survives throwing callbacks and lost releases`
 
 #### Gate 2 — the skeleton holds
-- [ ] Gate commands green; new tests red-first confirmed in the task.
-- [ ] `code-simplifier` + `/code-review` against `<base>..HEAD`.
-- [ ] Progress hashes filled in.
+- [x] Gate commands green; new tests red-first confirmed in the task.
+- [x] `code-simplifier` + `/code-review` against `<base>..HEAD`. *(Folded into Gate 3's dispatch — Phase 3's migrations rewrite the same module's consumers immediately, so one review covers the contiguous range; recorded in the Log.)*
+- [x] Progress hashes filled in.
 
 ---
 
@@ -543,9 +543,9 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
   - [x] Task 2 — The GFM table drag re-bases its origin · `9cab6c04`
   - [x] Task 3 — The table row drag dirties on a rows change · `b0db18fb`
   - [x] Gate 1 — simplification `f782067b` · review fix pass `d9f5908f`
-- [ ] **Phase 2** — The skeleton hardens
-  - [ ] Task 4 — Throwing callbacks and foreign pointers · `<commit>`
-  - [ ] Gate 2
+- [x] **Phase 2** — The skeleton hardens
+  - [x] Task 4 — Throwing callbacks and foreign pointers · see Gate 2
+  - [x] Gate 2
 - [ ] **Phase 3** — The migrations
   - [ ] Task 5 — The sidebar consumes the skeleton · `<commit>`
   - [ ] Task 6 — The sidebar's layers share one index · `<commit>`
