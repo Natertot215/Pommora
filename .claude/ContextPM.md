@@ -60,7 +60,7 @@
 
 - [ ] The gesture spec wants an `onTap(e)` fired on a release-before-activation — the additive piece that unblocks migrating MarkdownPM's `listDrag`/`blockDrag` and the CalendarPicker's range drag; it lands with the migration that consumes it.
 - [ ] Two more spec folds the drag work exposed, each a four-site bracket today: an `onDisclose` hook owning the `beginDragDisclose`/`endDragDisclose` pair the way `onWindowScroll` owns its listener, and an autoscroll resolve-and-start helper that skips cleanly when no scroller resolves.
-- [ ] MarkdownPM's drags and SurfacePM stay announcement-silent — editor and dashboard phrasing wants its own pass.
+- [ ] MarkdownPM's drags and SurfacePM stay announcement-silent, no surface announces a cancel, and repeated identical pickup text may not re-speak on some screen readers — the a11y phrasing pass owns all three.
 - [ ] A mid-drag column hide/show or watcher view-push is silently reverted by a column drop's persist (`reorderColumn` reads grab-time state) — reachable only by mutating columns while holding a drag; a ref-read at commit fixes it if it's ever felt.
 - [ ] `feel.tsx`'s animation context is provided nowhere outside the showcase, so both engines always read the default while SurfacePM delivers the same value as a prop — wrap the shell in a provider or delete the context; a product call.
 - [ ] NOR filters are hand-authored only — the mode lives on disk and in the evaluator while the pane offers All and Any.
