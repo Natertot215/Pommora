@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
@@ -27,8 +27,9 @@ export function useOptionReorder(
   const onReorderRef = useRef(onReorder)
   onReorderRef.current = onReorder
   const beginGesture = usePointerGesture()
-  // Set at activation (a tap never sets it) — the dragged value and its live target slot.
-  const dragged = useRef<{ value: string; index: number } | null>(null)
+  // Set at activation (a tap never sets it) — the dragged value and its live target slot; a null
+  // index means nothing is aimed yet, and the drop declines rather than guessing.
+  const dragged = useRef<{ value: string; index: number | null } | null>(null)
   const lastPoint = useRef({ x: 0, y: 0 })
   const stopScroll = useRef<(() => void) | null>(null)
   const [dragging, setDragging] = useState<string | null>(null)
@@ -48,6 +49,12 @@ export function useOptionReorder(
   // from the last point, so a release without another move still commits fresh.
   type Snapshot = { rects: Array<{ top: number; bottom: number }>; containerTop: number }
   const snap = useDragSnapshot(takeSnapshot)
+  // `order` must be identity-stable across the hook's own per-move re-renders (the caller memoizes
+  // it), so this fires only on a real list change — a watcher push mid-drag re-aims the line.
+  useEffect(() => {
+    snap.markDirty()
+    if (dragged.current) resolveAt(lastPoint.current.y)
+  }, [order])
   function takeSnapshot(): Snapshot | null {
     const cEl = container.current
     if (!cEl) return null
@@ -64,9 +71,10 @@ export function useOptionReorder(
 
   // The drop index (0…n) the pointer is over, and the drop-line's Y within the container — read off
   // the frozen snapshot, never the live DOM.
-  const locate = (clientY: number): { index: number; top: number } => {
+  const locate = (clientY: number): { index: number; top: number } | null => {
     const rowsSnap = snap.get()
-    if (!rowsSnap) return { index: 0, top: 0 }
+    // Nothing measurable — fail closed so a dead snapshot never aims a commit at slot 0.
+    if (!rowsSnap || rowsSnap.rects.length === 0) return null
     const { rects, containerTop } = rowsSnap
     let index = rects.length
     for (let i = 0; i < rects.length; i++) {
@@ -94,9 +102,14 @@ export function useOptionReorder(
   const resolveAt = (clientY: number): void => {
     const d = dragged.current
     if (!d) return
-    const { index, top } = locate(clientY)
-    d.index = index
-    setLineTop(destination(d.value, index).moves ? top : null)
+    const hit = locate(clientY)
+    if (!hit) {
+      d.index = null
+      setLineTop(null)
+      return
+    }
+    d.index = hit.index
+    setLineTop(destination(d.value, hit.index).moves ? hit.top : null)
   }
 
   const clear = (): void => {
@@ -116,7 +129,7 @@ export function useOptionReorder(
       // An active drag's Escape must cancel the DRAG, not dismiss the hosting dropdown.
       swallowActiveEscape: true,
       onActivate: (ev) => {
-        dragged.current = { value, index: 0 }
+        dragged.current = { value, index: null }
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         setDragging(value)
         // The options list lives in a height-capped menu frame — the edge loop reaches past its
@@ -146,7 +159,7 @@ export function useOptionReorder(
       onDrop: () => {
         if (snap.isDirty()) resolveAt(lastPoint.current.y)
         const d = dragged.current
-        if (d) {
+        if (d && d.index !== null) {
           const { to, moves } = destination(d.value, d.index)
           if (moves) {
             onReorderRef.current(d.value, to)

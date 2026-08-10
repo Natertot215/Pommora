@@ -73,7 +73,6 @@ export function PaneDnd({
     all: null,
   })
   const box = useRef<HTMLDivElement | null>(null)
-  const scroller = useRef<HTMLElement | null>(null)
   const lastPoint = useRef({ x: 0, y: 0 })
   const stopScroll = useRef<(() => void) | null>(null)
   const live = useRef<PaneSlot | null>(null)
@@ -138,7 +137,6 @@ export function PaneDnd({
     live.current = null
     draggedId.current = null
     snap.reset()
-    scroller.current = null
     setDrag(IDLE)
   }
 
@@ -180,11 +178,11 @@ export function PaneDnd({
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         ghostLabel.current = labelForRef.current(id)
         announce(`Picked up ${ghostLabel.current}.`)
-        scroller.current = findScroller(box.current, 'y')
-        if (scroller.current) {
+        const sc = findScroller(box.current, 'y')
+        if (sc) {
           stopScroll.current = startAutoScroll({
             getPoint: () => lastPoint.current,
-            scroller: scroller.current,
+            scroller: sc,
             dragEl: box.current,
             axis: 'y',
             onScrolled: () => resolveSlot(id, lastPoint.current.y),

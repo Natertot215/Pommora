@@ -29,6 +29,48 @@ import {
 
 // The single-zone drag engine — replaces dnd-kit behind the seam for every standalone surface.
 
+// Mutable drag scratch — read inside pointer/rAF/keydown callbacks without stale closures. Every
+// lift installs a WHOLE fresh scratch over `blankDrag()`, so a press and a keyboard lift each state
+// only what they actually know; nothing survives from the gesture before it.
+type DragScratch = {
+  id: string
+  pid: number
+  el: HTMLElement | null
+  startX: number
+  startY: number
+  lastX: number
+  lastY: number
+  active: boolean
+  activeIdx: number
+  rects: Box[]
+  over: number
+  bounds: Box | null
+  scroller: HTMLElement | null
+  scroll0X: number
+  scroll0Y: number
+  handlers: { move: (e: PointerEvent) => void; up: () => void; cancel: () => void } | null
+  kdown: ((e: KeyboardEvent) => void) | null
+}
+const blankDrag = (): DragScratch => ({
+  id: '',
+  pid: -1,
+  el: null,
+  startX: 0,
+  startY: 0,
+  lastX: 0,
+  lastY: 0,
+  active: false,
+  activeIdx: -1,
+  rects: [],
+  over: -1,
+  bounds: null,
+  scroller: null,
+  scroll0X: 0,
+  scroll0Y: 0,
+  handlers: null,
+  kdown: null,
+})
+
 type ZoneValue = {
   ids: string[]
   feel: Feel
@@ -102,30 +144,7 @@ export function Zone({
   const [dropState, setDropState] = useState<DropState>('idle')
   const [keyboard, setKeyboard] = useState(false)
 
-  // Mutable drag scratch — read inside pointer/rAF/keydown callbacks without stale closures.
-  const drag = useRef({
-    id: '',
-    pid: -1,
-    el: null as HTMLElement | null,
-    startX: 0,
-    startY: 0,
-    lastX: 0,
-    lastY: 0,
-    active: false,
-    activeIdx: -1,
-    rects: [] as Box[],
-    over: -1,
-    bounds: null as Box | null,
-    scroller: null as HTMLElement | null,
-    scroll0X: 0,
-    scroll0Y: 0,
-    handlers: null as null | {
-      move: (e: PointerEvent) => void
-      up: () => void
-      cancel: () => void
-    },
-    kdown: null as null | ((e: KeyboardEvent) => void),
-  })
+  const drag = useRef(blankDrag())
 
   // This Zone's auto-scroll stopper (instance-scoped). detach() calls it rather than the global
   // stop, so a sibling Zone's unmount can't halt THIS Zone's live drag.
@@ -149,7 +168,6 @@ export function Zone({
     return out
   }
 
-  // Apply axis lock → bounds clamp → modifiers to the raw pointer delta.
   const constrain = (dx: number, dy: number): { x: number; y: number } => {
     const o = optsRef.current
     const ar = drag.current.rects[drag.current.activeIdx]
@@ -165,7 +183,7 @@ export function Zone({
     return { x, y }
   }
 
-  // Recompute over-slot + delta for a pointer position. Shared by onMove and the auto-scroll loop.
+  // Shared by onMove and the auto-scroll loop.
   const track = (cx: number, cy: number): void => {
     const d = drag.current
     if (!d.active) return
@@ -350,6 +368,7 @@ export function Zone({
     if (!el) return
     const handlers = { move: onMove, up: onUp, cancel: onCancel }
     drag.current = {
+      ...blankDrag(),
       id,
       pid: e.pointerId,
       el,
@@ -357,16 +376,7 @@ export function Zone({
       startY: e.clientY,
       lastX: e.clientX,
       lastY: e.clientY,
-      active: false,
-      activeIdx: -1,
-      rects: [],
-      over: -1,
-      bounds: null,
-      scroller: null,
-      scroll0X: 0,
-      scroll0Y: 0,
       handlers,
-      kdown: null,
     }
     try {
       el.setPointerCapture(e.pointerId)
@@ -416,32 +426,22 @@ export function Zone({
     const measured = measure()
     const activeIdx = idsRef.current.indexOf(id)
     if (!el || !measured || activeIdx === -1) return
-    const kdown = (e: KeyboardEvent): void => onKeyboard(e)
     drag.current = {
+      ...blankDrag(),
       id,
-      pid: -1,
       el,
-      startX: 0,
-      startY: 0,
-      lastX: 0,
-      lastY: 0,
       active: true,
       activeIdx,
       rects: measured,
       over: activeIdx,
-      bounds: null,
-      scroller: null,
-      scroll0X: 0,
-      scroll0Y: 0,
-      handlers: null,
-      kdown,
+      kdown: onKeyboard,
     }
     setActiveId(id)
     setRects(measured)
     setOverIndex(activeIdx)
     setKeyboard(true)
     setDropState('dragging')
-    document.addEventListener('keydown', kdown)
+    document.addEventListener('keydown', onKeyboard)
     notifyRef.current.onDragStart?.({ activeId: id })
     announce(`Picked up ${labelOf(id)}. Item ${activeIdx + 1} of ${measured.length}.`)
   }

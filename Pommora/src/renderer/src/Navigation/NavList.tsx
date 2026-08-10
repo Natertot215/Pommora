@@ -152,7 +152,7 @@ function NavRow({
   it: ResolvedNav
   drag?: RowDrag
   onSelect: (t: NavRef) => void
-  onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
+  onMenu: (it: ResolvedNav) => void
 }): React.JSX.Element {
   return (
     // biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content
@@ -166,7 +166,7 @@ function NavRow({
       onClick={() => onSelect(it.target)}
       onContextMenu={(e) => {
         e.preventDefault()
-        onMenu(it, e)
+        onMenu(it)
       }}
     >
       <NavPinButton it={it} className="nav-item-pin" />
@@ -182,7 +182,7 @@ function NavRow({
 function DraggableRow(props: {
   it: ResolvedNav
   onSelect: (t: NavRef) => void
-  onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
+  onMenu: (it: ResolvedNav) => void
 }): React.JSX.Element {
   const drag = useTableRowDrag(props.it.key)
   return <NavRow {...props} drag={drag} />

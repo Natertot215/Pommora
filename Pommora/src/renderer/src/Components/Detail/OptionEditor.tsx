@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { chipLabel, chipColor } from '@renderer/design-system/tokens'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
@@ -41,9 +41,10 @@ export function OptionEditor({
   const [coloring, setColoring] = useState<string | null>(null)
   // The open row's recolor button — the ColorPicker measures + dismiss-exempts it (only one is open).
   const paletteBtnRef = useRef<HTMLButtonElement>(null)
-  const reorder = useOptionReorder(
-    options.map((o) => o.value),
-    (value, toIndex) => onSetOptions(reorderOption(options, value, toIndex)),
+  // Identity-stable across the hook's own re-renders — its list-change invalidation keys on this.
+  const optionOrder = useMemo(() => options.map((o) => o.value), [options])
+  const reorder = useOptionReorder(optionOrder, (value, toIndex) =>
+    onSetOptions(reorderOption(options, value, toIndex)),
   )
 
   const commitAdd = (raw: string): void => {

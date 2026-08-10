@@ -88,7 +88,7 @@ Motion timing has one canonical home: the duration scale and easings in the moti
 
 Two kinds of timing deliberately stay in code rather than tokens, and neither is a DRY gap. The **drag feel presets** are numeric because the engine interpolates them, not CSS. The **engine's settle timing** is a fallback, not a duration: a drag commit fires on the overlay's `transitionend` and only falls back to a computed deadline if that event never arrives — decide-then-animate, never a blind timer. Auto-scroll's tunables are likewise motion *tuning* (edge band, speed ramp, acceleration bounds), read as root vars off the drag element.
 
-One gap is real. `useExitPresence`'s default exit window is a raw constant picked to cover the slowest close, and it reads no motion token — so retuning a duration silently desyncs every pane's unmount from its own retract, with nothing to catch the drift.
+`useExitPresence`'s default exit window derives from the slow duration token plus a small settle slack, so retuning the token moves every pane's unmount window with it — the slack is the only raw number.
 
 A hardcoded duration in a permanent surface is a bug — it should read a token, or justify a new one. Debounces (autosave, live stats) and zero-delay event cleanups are not motion and never migrate.
 
