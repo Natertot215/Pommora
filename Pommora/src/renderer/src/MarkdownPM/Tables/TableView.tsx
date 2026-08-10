@@ -221,6 +221,9 @@ export function TableView({
       el: e.currentTarget,
       event: e,
       onActivate: () => {
+        // The scroll hook serves only the active gesture — a pending-phase scroll (trackpad
+        // inertia settling under a fresh press) is caught up here, like the Detail sibling.
+        reOrigin()
         setDrag(current)
         // A tall or wide table scrolls inside the editor — the edge loop reaches slots past the
         // fold, axis-matched, and the window scroll hook re-bases off its scrollBy.
