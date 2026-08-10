@@ -16,6 +16,7 @@ import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
+import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 
 // Table row drag — the sidebar drop-line gesture: an accent insertion LINE marks the exact slot,
@@ -297,13 +298,14 @@ export function TableRowDnd({
         {/* A noop slot draws nothing: the line promises a move, and the release commits only where the
             slot differs from the row's own position. */}
         {drag.slot && !drag.slot.noop && (
-          <div
-            className="drop-line"
-            aria-hidden
-            style={{ top: drag.slot.lineY, left: drag.slot.left, width: drag.slot.width, right: 'auto' }}
-          >
-            <span className="drop-dot" />
-          </div>
+          <DropLine
+            style={{
+              top: drag.slot.lineY,
+              left: drag.slot.left,
+              width: drag.slot.width,
+              right: 'auto',
+            }}
+          />
         )}
       </div>
     </Ctx.Provider>

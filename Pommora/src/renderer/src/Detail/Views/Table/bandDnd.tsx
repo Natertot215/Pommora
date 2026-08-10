@@ -17,6 +17,7 @@ import {
 } from '@renderer/design-system/interactions/dragDisclose'
 import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
+import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type Band, type BandIndex, type BandSlot, bandSlot, buildBandIndex } from './bandDndModel'
@@ -221,15 +222,7 @@ export function BandDnd({
     <Ctx.Provider value={value}>
       <div ref={box} className="drop-line-host">
         {children}
-        {drag.slot && !drag.slot.nestInto && (
-          <div
-            className="drop-line"
-            aria-hidden
-            style={{ top: drag.lineTop }}
-          >
-            <span className="drop-dot" />
-          </div>
-        )}
+        {drag.slot && !drag.slot.nestInto && <DropLine style={{ top: drag.lineTop }} />}
       </div>
       <DragGhost
         x={drag.id ? drag.ghostX : null}

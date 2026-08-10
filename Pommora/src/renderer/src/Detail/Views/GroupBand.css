@@ -74,7 +74,7 @@
   border-radius: 6px;
   outline: 4px solid var(--state-selected);
 }
-/* The band's inline rename input — the sidebar row's recipe on the head's own type scale. */
+/* The band's inline rename input — a bordered, filled field on the head's own type scale. */
 .band-title-input {
   min-width: 120px;
   font: inherit;
