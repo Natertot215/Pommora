@@ -12,7 +12,7 @@ import { createPortal } from 'react-dom'
 import { text } from '@renderer/design-system/tokens'
 import { DISCLOSURE_INDENT } from '@renderer/design-system/tokens/size.css'
 import { stack } from '@renderer/design-system/tokens/stack'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { FolderPlacement } from '@shared/types'
@@ -69,12 +69,6 @@ export function SidebarDnd({
   // Ref'd so the frozen-snapshot resolver reads current placement, not a captured prop.
   const placements = useRef({ set: setPlacement, subSet: subSetPlacement })
   placements.current = { set: setPlacement, subSet: subSetPlacement }
-  // A mid-drag tree swap (watcher push) can re-render rows — stale rects must not survive it,
-  // and a release with no further move must still commit against the fresh slot.
-  useEffect(() => {
-    snapshotDirty.current = true
-    resolveSlot()
-  }, [index])
   const onCommitRef = useRef(onCommit)
   onCommitRef.current = onCommit
 
@@ -288,6 +282,15 @@ export function SidebarDnd({
     })
   }
 
+  // A mid-drag tree swap (watcher push) can re-render rows — stale rects must not survive it,
+  // and a release with no further move must still commit against the fresh slot.
+  useEffect(() => {
+    snapshotDirty.current = true
+    resolveSlot()
+  }, [index])
+
+  const labelOf = (rowId: string): string => base(indexRef.current.byId.get(rowId)?.path ?? '')
+
   const begin = (id: string, e: ReactPointerEvent): void => {
     if ((e.target as HTMLElement).closest?.('input, textarea, [contenteditable="true"]')) return
     const el = rows.current.get(id)
@@ -310,32 +313,24 @@ export function SidebarDnd({
             onScrolled: resolveSlot,
           })
         }
-        announce(`Picked up ${base(indexRef.current.byId.get(id)?.path ?? '')}.`)
+        announce(`Picked up ${labelOf(id)}.`)
         return true
       },
       onDragMove: (ev) => {
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         resolveSlot()
       },
-      // Only a scroll that moves the rows themselves shifts the frozen rects — a row's inner
-      // hover-marquee scroll never changes row geometry and must not trigger a re-measure.
       onWindowScroll: (ev) => {
-        if (
-          ev.target instanceof Element &&
-          contentRef.current &&
-          !ev.target.contains(contentRef.current)
-        )
-          return
+        if (!scrollMoved(ev, contentRef.current)) return
         snapshotDirty.current = true
         resolveSlot()
       },
       onDrop: () => {
         if (snapshotDirty.current) resolveSlot()
         const t = live.current
-        const id2 = dragged.current?.id
-        if (t && !t.noop && id2) {
+        if (t && !t.noop) {
           onCommitRef.current(t.commit)
-          announce(`Moved ${base(indexRef.current.byId.get(id2)?.path ?? '')}.`)
+          announce(`Moved ${labelOf(id)}.`)
         }
         reset()
       },

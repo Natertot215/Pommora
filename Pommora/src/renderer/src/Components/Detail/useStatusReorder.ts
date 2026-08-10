@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
 
 // The multi-region cousin of useOptionReorder. A drag can reorder within a group OR cross into
 // another group (including an empty one); on drop it calls onMove(value, toGroupId, toIndex) —
@@ -101,6 +101,22 @@ export function useStatusReorder(
     return { groupId: grp.id, index, top: lineY - grp.containerTop }
   }
 
+  // The slot in the target group's without-the-dragged space plus whether it actually moves — the
+  // ONE reading the line and the release both take, so the line never promises a move the drop then
+  // declines. A same-group drop past the original slot shifts down by one (moveStatusOption inserts
+  // in the WITHOUT space while the snapshot indexes the WITH space); cross-group needs no shift.
+  const destination = (
+    value: string,
+    groupId: string,
+    index: number,
+  ): { to: number; moves: boolean } => {
+    const fromGroup = orderRef.current.find((grp) => grp.values.includes(value))
+    const fromIndex = fromGroup?.values.indexOf(value) ?? -1
+    const sameGroup = fromGroup?.id === groupId
+    const to = sameGroup && index > fromIndex ? index - 1 : index
+    return { to, moves: !(sameGroup && to === fromIndex) }
+  }
+
   const resolveAt = (clientY: number): void => {
     const d = dragged.current
     if (!d) return
@@ -109,13 +125,8 @@ export function useStatusReorder(
     if (!hit) return
     d.toGroupId = hit.groupId
     d.toIndex = hit.index
-    // The line mirrors the release's own condition — a same-group slot resolving to the value's current
-    // position draws nothing rather than promising a move the drop then declines.
-    const fromGroup = orderRef.current.find((grp) => grp.values.includes(d.value))
-    const fromIndex = fromGroup?.values.indexOf(d.value) ?? -1
-    const sameGroup = fromGroup?.id === hit.groupId
-    const toIndex = sameGroup && hit.index > fromIndex ? hit.index - 1 : hit.index
-    setDrop(sameGroup && toIndex === fromIndex ? null : { groupId: hit.groupId, top: hit.top })
+    const { moves } = destination(d.value, hit.groupId, hit.index)
+    setDrop(moves ? { groupId: hit.groupId, top: hit.top } : null)
   }
 
   const clear = (): void => {
@@ -147,8 +158,7 @@ export function useStatusReorder(
         resolveAt(ev.clientY)
       },
       onWindowScroll: (ev) => {
-        const first = groupEls.current.values().next().value ?? null
-        if (ev.target instanceof Element && first && !ev.target.contains(first)) return
+        if (!scrollMoved(ev, groupEls.current.values().next().value)) return
         snapshotDirty.current = true
         resolveAt(lastPoint.current.y)
       },
@@ -156,14 +166,8 @@ export function useStatusReorder(
         if (snapshotDirty.current) resolveAt(lastPoint.current.y)
         const d = dragged.current
         if (d) {
-          const fromGroup = orderRef.current.find((grp) => grp.values.includes(d.value))
-          const fromIndex = fromGroup?.values.indexOf(d.value) ?? -1
-          const sameGroup = fromGroup?.id === d.toGroupId
-          // d.toIndex is in the WITH-dragged snapshot space; moveStatusOption inserts in the WITHOUT
-          // space, so a same-group drop past the original slot shifts down by one. Cross-group needs
-          // no shift.
-          const toIndex = sameGroup && d.toIndex > fromIndex ? d.toIndex - 1 : d.toIndex
-          if (!(sameGroup && toIndex === fromIndex)) onMoveRef.current(d.value, d.toGroupId, toIndex)
+          const { to, moves } = destination(d.value, d.toGroupId, d.toIndex)
+          if (moves) onMoveRef.current(d.value, d.toGroupId, to)
         }
         clear()
       },
