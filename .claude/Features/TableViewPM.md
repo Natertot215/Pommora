@@ -60,6 +60,31 @@ Inline edits follow Enter = confirm · click-out = save · Esc = revert; the num
 
 A single density token scales text, chips, padding, and widths together, compounding with a SurfacePM tile's own Scale so an embedded table scales as one unit. The grid resolves percentage widths zoom-aware, so a full-width grid still fills the pane at any density.
 
+### The Table Sheet
+
+The table's design vocabulary is a whole-file token sheet scoped to `.table-view, .table-empty` — deliberately not `:root`, so nothing leaks. Scope is part of the contract: a value set outside it silently does nothing. Atlas convention per `DesignSystemPM.md` §charter.
+
+**SOURCE:** `Pommora/src/renderer/src/Detail/Views/Table/table-tokens.css` · `Pommora/src/renderer/src/Detail/Views/Table/Table.css`
+
+| Title | token | value |
+| --- | --- | --- |
+| Density | `--zoom` | `1` (the Compact knob's target) |
+| Cell Padding | `--cell-padding-x` / `--cell-padding-y` | `12px` / `6px` |
+| Cell Icon Gap / Chip Run Gap | `--cell-icon-gap` / `--chips-gap` | `6px` / `4px` |
+| Nesting Indent | `--row-indent` | → `var(--disclosure-indent)` |
+| Loose-Row Inset | `--loose-inset` | `8px` |
+| Grip Gutter | `--gutter` | → `var(--fold-gutter)` (the one var remapped mid-tree — table descendants wanting the content gutter read `--content-gutter`) |
+| Hairline | `--table-border-width` / `--table-border` | `1.25px` / composed on `--separator-border` |
+| Active Cell Radius | `--cell-active-radius` | `4px` |
+| Heading | `--heading-fill` / `--heading-text` / `--heading-divider` | → fill-quinary / label-control / border-heading |
+| Heading Segment | `--heading-segment` / `-height` / `-width` | → label-tertiary / `16px` / `1.5px` |
+| Heading Padding | `--heading-padding-y` | `8px` |
+| Band Clearance | `--band-clearance` | → `var(--cell-padding-y)` (the seam law's input) |
+| Resizer Strip | `--resizer-width` | `8px` |
+| Column Drag | `--col-highlight` / `--col-drag-band` / `--col-shift-ease` | → state-selected / bg-window / fast+standard |
+| Empty Pad | `--empty-pad-y` | `24px` |
+| Right Inset | `--table-right-inset` | → content gutter; `0px` once overflowing (declared in `Table.css`) |
+
 ### Non-Obvious
 
 - **The gutter var is shadowed inside the table.** The global content-to-glass gutter is remapped to the narrower fold-gutter grip lane within the table scope, so the grips and chevrons sit in the strip. Full-bleed surfaces therefore can't read the shadowed var for the true content-to-glass distance — they read a dedicated un-shadowed alias. Mixing the two is the classic source of heading misalignment.

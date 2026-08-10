@@ -179,7 +179,7 @@ On launch Pommora restores the last opened Nexus or opens empty — never a laun
 
 #### Design System
 
-A two-tier token system — primitives (one neutral base at opacities, accent, tints, the type ramp) feeding semantic aliases — authored in code and sourced from a Figma library. Colors are authored as hex; the token layer is the single source. Glass uses two materials: a CSS **frost** for Window and Surface, and Apple **"Liquid Glass"** for Controls. Motion is tokenized, with a canonical bloom-and-retract for panes and menus. V1 ships one scheme plus in-app accent customization. Full philosophy → `Features/DesignPM.md`; type → `Features/TypographyPM.md`; motion → `Features/InteractionPM.md`.
+A two-tier token system — primitives (one neutral base at opacities, accent, tints, the type ramp) feeding semantic aliases — authored in code and sourced from a Figma library. Colors are authored as hex; the token layer is the single source. Glass uses two materials: a CSS **frost** for Window and Surface, and Apple **"Liquid Glass"** for Controls. Motion is tokenized, with a canonical bloom-and-retract for panes and menus. V1 ships one scheme plus in-app accent customization. Full philosophy → `Features/DesignSystemPM.md`; type → `Features/TypographyPM.md`; motion → `Features/InteractionPM.md`.
 
 #### MacOS Integration
 
@@ -191,7 +191,7 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 
 ---
 
-### v1 Scope
+#### v1 Scope
 
 - **Contexts & Spaces** — free-standing, user-manageable Context groups holding Spaces (the registry seeds Areas / Topics / Projects), each group a sidebar disclosure. No containment, no parents.
 - **Page Collections + Sets + Pages** — schema-bearing Collections, schema-less recursive Sets, and Markdown Pages. UI labels renameable. Each Collection chooses preview-window vs. main-pane opening.
@@ -207,3 +207,22 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 - One design scheme plus in-app accent customization.
 
 **Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, sync, mobile, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, full Settings editing UI, and more — see **Prospects** below.
+
+### Prospects
+
+- [x] H1 → H6 Formatting
+- [x] Page Outline Dropdown
+- [ ] Page Alias’ for Connections (Prioritize Obsidian-Compatible Method)
+- [ ] Assigning Contexts To Storages
+- [x] Page-in-Page Embedding
+- [ ] Page Notes / Description
+- [ ] Property Automations
+- [ ] Pinned-Properties
+### Ideas
+
+- [x] [[Pommora – Properties V3 + SQL-V2]]
+- [x] MarkdownPM View Embedding
+- [ ] MarkdownPM Checkbox Toggles
+- [ ] MarkdownPM Independent Editor
+- [x] MarkdownPM Code Styling
+- [ ] View Quick-Filter Switching

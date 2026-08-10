@@ -12,7 +12,7 @@ The single source is `design-system/tokens/motion.ts`, surfaced as CSS vars thro
 
 - **Bloom curve** (Pommora-native, Apple-inspired) is the open + close curve for both dropdown motions, which share one set of keyframes. It's the one special-cased named curve, living in `animations.css.ts` rather than the everyday token set.
 
-**z-index** is formalized as three separate ladders in `tokens/stack.ts` — the shell frame, in-context lifts, and the top layer of fixed and portalled surfaces — published as named `--z-*` steps; a step ranks only within its own ladder, never against another's. **Shadow** is one `--shadow-standard` token feeding every frost surface. **Spacing and radius** stay partly ad-hoc pending a Figma lift (see [[DesignPM]]).
+**z-index** is formalized as three separate ladders in `tokens/stack.ts` — the shell frame, in-context lifts, and the top layer of fixed and portalled surfaces — published as named `--z-*` steps; a step ranks only within its own ladder, never against another's. **Shadow** is one `--shadow-standard` token feeding every frost surface. **Spacing and radius** stay partly ad-hoc pending a Figma lift (see [[DesignSystemPM]]).
 
 ### Named Animations
 
@@ -46,7 +46,7 @@ A single registered `@property --io` (`<number>`, 0 = closed → 1 = open, `styl
 
 The **content-inset reflow does not ride the progress.** `--content-inset-right` is a plain, unregistered custom property that flips between two values, and each surface reading it — the detail body, the editor, the subfield, the banner — runs its own padding transition and re-declares its own resize suppression. They land together because they share the base token, not because one variable carries them. Whether the insets should be derived from `--io` or stay independent is open.
 
-**Why the glass voids as a two-layer pill, not a fade:** liquid glass can't be CSS-faded in place (its `backdrop-filter` displacement is a generated SVG-filter id CSS can't interpolate), so `Toolbar/ToolbarTrio` is a fading glass layer behind a solid bare-button layer. Full rationale → [[DesignPM]].
+**Why the glass voids as a two-layer pill, not a fade:** liquid glass can't be CSS-faded in place (its `backdrop-filter` displacement is a generated SVG-filter id CSS can't interpolate), so `Toolbar/ToolbarTrio` is a fading glass layer behind a solid bare-button layer. Full rationale → [[DesignSystemPM]].
 
 ### Reveal — The Expand/Collapse Primitive
 
@@ -84,7 +84,61 @@ Every in-app window mounts the shared `PreviewPane` surface and opens/closes on 
 
 ### Timing Sources
 
-Motion timing has one canonical home: the duration scale and easings in the motion tokens, which every CSS surface reads through its `--duration-*` / `--ease-*` vars. The shared dropdown keyframes and the Bloom curve live in the animations layer and take their durations from those same tokens.
+Motion timing has one canonical home: the duration scale and easings in the motion tokens, which every CSS surface reads through its `--duration-*` / `--ease-*` vars. The shared dropdown keyframes and the Bloom curve live in the animations layer and take their durations from those same tokens. The tables state the literal values under the atlas convention (`DesignSystemPM.md` §charter).
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/motion.ts` · `Pommora/src/renderer/src/design-system/animations.css.ts`
+
+| Title | token | value |
+| --- | --- | --- |
+| Fast | `duration.fast` · `--duration-fast` | `180ms` |
+| Disclosure | `duration.disclosure` · `--disclosure` | `180ms` |
+| Dropdown | `duration.dropdown` · `--duration-dropdown` | `225ms` |
+| Base | `duration.base` · `--duration-base` | `280ms` |
+| Slow | `duration.slow` · `--duration-slow` | `350ms` |
+| Standard Ease | `easing.standard` · `--ease-standard` | `ease` |
+| In-Out Ease | `easing.inOut` · `--ease-in-out` | `ease-in-out` |
+| Out Ease | `easing.out` · `--ease-out` | `cubic-bezier(0.22, 1, 0.36, 1)` — defined, no consumer |
+| Bloom | `BLOOM` (`animations.css.ts`) | `cubic-bezier(0.32, 0.72, 0, 1)` — the one special-cased named curve |
+
+#### II. The Caret
+
+One text-insertion identity for the whole app — the CodeMirror layer bar and the native-field overlay both read the same family. Globally scoped; a caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.
+
+**SOURCE:** `Pommora/src/renderer/src/Carets.css`
+
+| Title | token | value |
+| --- | --- | --- |
+| Bar Thickness | `--caret-width` | `2px` |
+| Fill | `--caret-color` | → `var(--label-primary)` |
+| Blink Cycle | `--caret-gap` | `1.3s` (a blink cycle, deliberately outside the duration scale) |
+| Dip Opacity | `--caret-dim` | `0` |
+| I-Beam Cursor | `--caret-cursor` | inline SVG data-URI, hotspot `7 12` |
+
+#### II. Edge Fade
+
+The overflow-fade mechanism: three registered properties plus the four fade classes. `--edge-fade` is deliberately **non-inheriting** — the knob must sit on the element carrying the fade class, or it silently does nothing (the same silent-initial failure class as any scoped var consumed out of scope).
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/edge-fade.css`
+
+| Title | token | value |
+| --- | --- | --- |
+| Lead / Trail Progress | `@property --edge-a` / `--edge-b` | `<number>`, non-inheriting, initial `0` |
+| Width Knob | `@property --edge-fade` | `syntax "*"`, non-inheriting |
+| House Default | `--edge-fade-default` | `22px` on the fade classes; `16px` on both eclipses |
+| Axis | `--edge-dir` | `to bottom` fallback; `to right` on the x variants |
+
+#### II. Autoscroll Tuning
+
+The edge-proximity loop's knobs — declared at `:root`, overridable on any ancestor, read once at drag start via `getComputedStyle` (never through `var()`, so a naive dead-token grep scores them zero while all six are live).
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/interactions/autoscroll.css`
+
+| Title | token | value |
+| --- | --- | --- |
+| Edge Band | `--autoscroll-edge` | `48px` |
+| Speed | `--autoscroll-speed` | `840px` per second |
+| Proximity Ramp | `--autoscroll-ramp` | `2` |
+| Accel Start / Max / Distance | `--autoscroll-accel-start` / `-max` / `-distance` | `0.5` / `1.5` / `600px` |
 
 Two kinds of timing deliberately stay in code rather than tokens, and neither is a DRY gap. The **drag feel presets** are numeric because the engine interpolates them, not CSS. The **engine's settle timing** is a fallback, not a duration: a drag commit fires on the overlay's `transitionend` and only falls back to a computed deadline if that event never arrives — decide-then-animate, never a blind timer. Auto-scroll's tunables are likewise motion *tuning* (edge band, speed ramp, acceleration bounds), read as root vars off the drag element.
 

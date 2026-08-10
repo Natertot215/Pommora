@@ -142,6 +142,45 @@ Nothing mirrors the registry into a database: filter, sort, and group all run re
 
 **The sigil governs; the registry registers.** A wrapped key is Pommora's — that is what makes it safe to sweep, safe for Sapphire to hide, and distinguishable from foreign frontmatter. It does not make it a property. A key registers as a live value only when its name matches a definition, so resolution runs definition-first: the schema supplies the key, and the frontmatter is read at it. Context keys resolve at walk assembly, being cheap and registry-independent; property values load when a container opens, and each container builds one id→definition index rather than scanning per cell. Full data layer → `ArchitecturePM.md`.
 
+### Chip Tokens
+
+The chip is the property value's rendered form, so its design vocabulary lives here. One tint recipe drives every color — the picked base solid at fixed tint steps (a heavier fill, a lighter stroke, a near-white text wash carrying a faint tint of the base) — and it composes with any shape; no custom colors, no lightening. Tables follow the atlas convention (`DesignSystemPM.md` §charter).
+
+**SOURCE:** `Pommora/src/renderer/src/design-system/tokens/chip.css.ts` · `tokens/tint.ts` · `tokens/colorMap.ts`
+
+#### II. Shapes
+
+| Title | token | value |
+| --- | --- | --- |
+| Base | `chipBase` | zoom `var(--chip-zoom, 0.9)` · gap `4px` · type `text.control.semibold` |
+| Pill | `chipPill` | h `20px` · pad `0 var(--chip-pad-x, 6px)` · radius `10px` · border `2px` |
+| Label | `chipLabel` | h `20px` · same pad · radius `6px` · border `2px` |
+| Context | `chipContext` | h `22px` · `--chip-pad-x: 8px` · neutral fill, color on border and text |
+| Capsule | `chipCapsule` | h `20px` · pad `0 var(--chip-capsule-pad-x, 6px)` · radius `10px` · gap `0` |
+| Box | `chipBox` | `17px × 17px` · radius `5.5px` · border `1.5px` (the checkbox look) |
+
+#### II. The Recipe & Variants
+
+| Title | token | value |
+| --- | --- | --- |
+| Background | `tint(base).background` | base @ tint-primary (60%) |
+| Border | `tint(base).borderColor` | base @ tint-secondary (40%) |
+| Text | `tint(base).color` | base @ 15% mixed toward label-primary |
+| Variants | `chipColor.*` | the ten spectrum solids + `default` (`GREY_DEFAULT`) + `accent` (`--system-accent`) |
+| Palette Accessor | `chipColorFor(color)` | the key when it's a spectrum solid, else `default` |
+
+#### II. Knobs
+
+| Title | token | value |
+| --- | --- | --- |
+| Zoom | `--chip-zoom` | fallback `0.9`; Cards retunes `0.85` |
+| Pad X | `--chip-pad-x` | fallback `6px`; Cards `4px`, the option editor its own |
+| Capsule Pad X | `--chip-capsule-pad-x` | fallback `6px`; never retuned today |
+| Label Cap | `--chip-max` | fallback `80px`; never retuned today |
+| Fill / Accent Channels | `--chip-fill` / `--chip-accent` | set by the variant — base @ 60% / the raw base |
+
+The remove-× melt (the hover-revealed remove zone, the crisp and blurred label twins, the mask ramps) is chip machinery in the same file; its guards are load-bearing (static masks, opacity-only transitions, pointer-inert label) and stay as written.
+
 ### Pending
 
 **Page Property Panel:** The surface for setting property values on a Page in the main pane, and on a Task or Event anywhere — a panel attached to the content. The Page Preview's front-matter inspector covers a Page inside the preview only; the main pane renders no property rows, and Agenda items have no value surface at all.

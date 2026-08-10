@@ -53,6 +53,25 @@ A card's **right-click** opens a native menu: the **Add Property ▸** submenu o
 
 Cards live in the ViewSettings type grid and carry their options in the Layout leaf, with Style and Scale pinned in the footing; the grouping and sorting leaves reuse the shared panes. A view switched to a type inherits the new type's default glyph only when it still wore the old default. Cards ride the block-surface inset regime: in a full-page pane a pane-body rule supplies the surface inset so the view itself never pads, while an embedded cards view runs the tight inter-tile lane directly on its grid — the whole-page inset composes that same lane onto a floating-sidebar clearance a tile has already gotten, so a tile needs only the bare lane rather than sitting flush to the edge. An embedded view also keeps its own tail seam — the last card row sits off the tile's bottom edge on the card rhythm, matching the view's top seam.
 
+### Card Tokens
+
+The card grid's design vocabulary, scoped to `.cards-view`. The NavWindow gallery carries a parallel family under the same names at its own scope (`.nav-gallery`) — the duplication is recorded in the duplication report as the standing merge candidate; this table is the canonical set. Atlas convention per `DesignSystemPM.md` §charter.
+
+**SOURCE:** `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.css`
+
+| Title | token | value |
+| --- | --- | --- |
+| Column Floor | `--card-min` | `calc(180px * var(--card-scale, 1))` |
+| Gaps | `--card-gap-h` / `--card-gap-v` | `10px` / `10px` |
+| Cover Zoom | `--cover-zoom` | `1` |
+| Thumb Share | `--thumb-share` | `65%` |
+| Set-Card Floor | `--set-card-min` | `calc(var(--card-min) * 1.5)` |
+| Thumb Height | `--thumb-h` | `calc(104px * var(--card-scale, 1))` |
+| Body Minimum | `--card-body-min` | `calc(var(--thumb-h) * 0.54)`; compact recomputes from its row stack |
+| Band Clearance | `--band-clearance` | → `var(--card-gap-v)` (the seam law's input) |
+| Compact Rows | `--card-row-h` / `--card-foot-h` | `17px` / composed |
+| Chip Retunes | `--chip-zoom` / `--chip-pad-x` / `--switch-zoom` | `0.85` / `4px` / `0.75` |
+
 ### Pending
 
 - **Heading "+" creation** — the structural-band "+" is a visual stub until the page-creation affordance is designed.
