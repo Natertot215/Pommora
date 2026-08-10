@@ -83,7 +83,7 @@ export function StatusEditor({
     return reorder.dragging
   }
   return (
-    <div className={s.statusGroups}>
+    <div className={s.statusGroups} ref={reorder.containerRef}>
       <DragGhost x={reorder.ghost?.x ?? null} y={reorder.ghost?.y ?? null} label={draggedLabel()} />
       {groups.map((g) => (
         <div key={g.id} className={s.statusGroup}>

@@ -13,7 +13,8 @@ import {
   endDragDisclose,
 } from '@renderer/design-system/interactions/dragDisclose'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { DROP_LINE_INSET, suppressNextClick } from '@renderer/design-system/interactions/shared'
+import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
+import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 
 // Table row drag — the sidebar drop-line gesture: an accent insertion LINE marks the exact slot,
@@ -95,15 +96,14 @@ export function TableRowDnd({
   const content = useRef<HTMLDivElement | null>(null)
   const live = useRef<Slot | null>(null)
   // Cached row geometry for the active drag — never a rect read per pointer move.
-  const snapshot = useRef<{ rows: MeasuredRow[]; boxTop: number; boxLeft: number } | null>(null)
-  const onDragScroll = useRef<((e: Event) => void) | null>(null)
+  type Snapshot = { rows: MeasuredRow[]; boxTop: number; boxLeft: number }
   const lastPoint = useRef({ x: 0, y: 0 })
   const stopScroll = useRef<(() => void) | null>(null)
-  const snapshotDirty = useRef(false)
+  const snap = useDragSnapshot(measure)
   // A rows change re-resolves immediately — a push followed by a release with no further move
   // must still commit against the live rows. resolveSlot no-ops while no drag is armed.
   useEffect(() => {
-    snapshotDirty.current = true
+    snap.markDirty()
     resolveSlot(lastPoint.current.y)
   }, [rows])
   const [drag, setDrag] = useState<DragState>(IDLE)
@@ -117,12 +117,12 @@ export function TableRowDnd({
   }
 
   // Snapshot every row's geometry ONCE — the drop-line DnD never displaces a row, so a live per-move
-  // getBoundingClientRect over every row (a forced reflow × N rows per pointer event) is pure waste. We
-  // re-snapshot only when the scroll position shifts the rects (see the scroll listener in begin). The
-  // dragged row (excludeId) is left out — it's never a drop target.
-  const measure = (excludeId: string): void => {
+  // getBoundingClientRect over every row (a forced reflow × N rows per pointer event) is pure waste.
+  // The dragged row is left out — it's never a drop target.
+  function measure(): Snapshot | null {
     const box = content.current
-    if (!box) return
+    const excludeId = dragId.current
+    if (!box || !excludeId) return null
     const boxRect = box.getBoundingClientRect()
     const rows: MeasuredRow[] = []
     for (const r of rowsRef.current) {
@@ -145,8 +145,7 @@ export function TableRowDnd({
       })
     }
     rows.sort((a, b) => a.top - b.top)
-    snapshot.current = { rows, boxTop: boxRect.top, boxLeft: boxRect.left }
-    snapshotDirty.current = false
+    return { rows, boxTop: boxRect.top, boxLeft: boxRect.left }
   }
 
   // Hit-test the snapshot → the landing slot. The nearest row + which half the cursor is in fixes the
@@ -154,11 +153,11 @@ export function TableRowDnd({
   // either way).
   const computeSlot = (clientY: number): Slot | null => {
     const id = dragId.current
-    const snap = snapshot.current
-    if (!id || !snap) return null
+    const s = snap.get()
+    if (!id || !s) return null
     const activeGroup = rowsRef.current.find((r) => r.id === id)?.groupKey
     if (activeGroup === undefined) return null
-    const measured = snap.rows
+    const measured = s.rows
     if (measured.length === 0) return null
 
     let near = measured[0]
@@ -168,8 +167,8 @@ export function TableRowDnd({
     }
     const above = clientY < near.mid // drop before `near` vs after it
     const targetGroup = near.group
-    const lineY = (above ? near.top : near.bottom) - snap.boxTop
-    const left = near.left - snap.boxLeft + DROP_LINE_INSET
+    const lineY = (above ? near.top : near.bottom) - s.boxTop
+    const left = near.left - s.boxLeft + DROP_LINE_INSET
     const width = near.contentRight - near.left - DROP_LINE_INSET * 2
 
     if (targetGroup === activeGroup) {
@@ -212,16 +211,15 @@ export function TableRowDnd({
   const reset = (): void => {
     dragId.current = null
     live.current = null
+    snap.reset()
     setDrag(IDLE)
   }
 
-  // Hit-test at a Y → the slot + line. Shared by pointer move and the scroll re-resolve (wheel +
-  // auto-scroll). Re-measures lazily, only when a scroll dirtied the snapshot — a pointer move reads
-  // the cache (rows don't displace mid-drag), a scroll re-measures once.
+  // Hit-test at a Y → the slot + line. Shared by pointer move and every re-resolve — a pointer
+  // move reads the cache (rows don't displace mid-drag), an invalidation re-measures once.
   const resolveSlot = (clientY: number): void => {
     const id = dragId.current
     if (!id) return
-    if (snapshotDirty.current) measure(id)
     const slot = computeSlot(clientY)
     live.current = slot
     setDrag({ id, slot })
@@ -237,30 +235,12 @@ export function TableRowDnd({
     const started = beginGesture({
       el,
       event: e,
-      onActivate: () => {
+      onActivate: (ev) => {
         dragId.current = id
-        // Snapshot geometry now that the drag is real — hit-testing reads the cache until an
-        // invalidating event re-measures.
-        measure(id)
-        // A scroll that moves the rows (wheel OR the auto-scroll loop below — its scrollBy fires
-        // this same native event) dirties the snapshot and re-resolves from the last point, so a
-        // held-still drag near an edge keeps tracking. Target-guarded so an unrelated inner scroll
-        // never costs the O(rows) re-measure.
-        const onScroll = (ev: Event): void => {
-          if (
-            ev.target instanceof Element &&
-            content.current &&
-            !ev.target.contains(content.current)
-          )
-            return
-          snapshotDirty.current = true
-          resolveSlot(lastPoint.current.y)
-        }
-        onDragScroll.current = onScroll
-        window.addEventListener('scroll', onScroll, { capture: true, passive: true })
+        lastPoint.current = { x: ev.clientX, y: ev.clientY }
         // Auto-scroll the vertical scroller. findScroller('y') is load-bearing: it SKIPS the x-only
-        // '.table-view' to reach '.detail-scroll'. No onScrolled — the native onScroll above already
-        // re-resolves off the module's scrollBy.
+        // '.table-view' to reach '.detail-scroll'. No onScrolled — the window scroll hook below
+        // already re-resolves off the module's scrollBy.
         const sc = findScroller(el, 'y')
         if (sc) {
           stopScroll.current = startAutoScroll({
@@ -272,17 +252,19 @@ export function TableRowDnd({
         }
         return true
       },
+      scrollTarget: () => content.current,
+      onWindowScroll: () => {
+        snap.markDirty()
+        resolveSlot(lastPoint.current.y)
+      },
       onDragMove: (ev) => {
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         resolveSlot(ev.clientY)
       },
       onDrop: () => {
-        if (snapshotDirty.current) resolveSlot(lastPoint.current.y)
+        if (snap.isDirty()) resolveSlot(lastPoint.current.y)
         const slot = live.current
-        if (slot && !slot.noop) {
-          slot.commit()
-          suppressNextClick()
-        }
+        if (slot && !slot.noop) slot.commit()
         reset()
       },
       onAbort: reset,
@@ -290,16 +272,12 @@ export function TableRowDnd({
         endDragDisclose()
         stopScroll.current?.()
         stopScroll.current = null
-        if (onDragScroll.current) {
-          window.removeEventListener('scroll', onDragScroll.current, { capture: true })
-          onDragScroll.current = null
-        }
-        snapshot.current = null
       },
     })
     if (started) {
       beginDragDisclose(() => {
-        if (dragId.current) measure(dragId.current)
+        snap.markDirty()
+        resolveSlot(lastPoint.current.y)
       })
     }
   }

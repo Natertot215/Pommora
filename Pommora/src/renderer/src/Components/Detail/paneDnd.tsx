@@ -12,7 +12,8 @@ import { createPortal } from 'react-dom'
 import { text } from '@renderer/design-system/tokens'
 import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { DROP_LINE_INSET, suppressNextClick } from '@renderer/design-system/interactions/shared'
+import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
+import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type PaneDrop, type PaneRow, type PaneSlot, type Region, paneSlot } from './paneDndModel'
@@ -76,23 +77,21 @@ export function PaneDnd({
   const beginGesture = usePointerGesture()
 
   // Frozen at activation: row geometry, the row set, and the region rects ride one snapshot;
-  // scroll/content changes dirty it and the next move re-measures.
+  // an invalidating scroll or rows change re-resolves from the last point.
   type Snapshot = {
     rows: MeasuredRow[]
     byId: Map<string, PaneRow>
     regions: { assigned: Region; all: Region }
     boxTop: number
   }
-  const snapshot = useRef<Snapshot | null>(null)
-  const snapshotDirty = useRef(false)
+  const draggedId = useRef<string | null>(null)
+  const snap = useDragSnapshot(takeSnapshot)
   useEffect(() => {
-    snapshotDirty.current = true
+    snap.markDirty()
+    if (draggedId.current) resolveSlot(draggedId.current, lastPoint.current.y)
   }, [rows])
-  const markSnapshotDirty = (): void => {
-    snapshotDirty.current = true
-  }
 
-  const takeSnapshot = (): Snapshot | null => {
+  function takeSnapshot(): Snapshot | null {
     const boxEl = box.current
     const assignedEl = regionEls.current.assigned
     const allEl = regionEls.current.all
@@ -133,29 +132,25 @@ export function PaneDnd({
 
   const reset = (): void => {
     live.current = null
-    snapshot.current = null
-    snapshotDirty.current = false
+    draggedId.current = null
+    snap.reset()
     scroller.current = null
     setDrag(IDLE)
   }
 
-  // Snapshot (lazily, when a scroll dirtied it) then hit-test the pane at a Y. Shared by pointer move
-  // and the auto-scroll re-resolve, so a held-still drag near an edge keeps updating as content scrolls.
+  // Snapshot (lazily, when an invalidation dirtied it) then hit-test the pane at a Y. Shared by
+  // pointer move and every re-resolve, so a held-still drag keeps updating as content moves.
   const resolveSlot = (id: string, clientY: number): void => {
-    if (snapshotDirty.current || !snapshot.current) {
-      snapshot.current = takeSnapshot()
-      snapshotDirty.current = false
-    }
-    const snap = snapshot.current
-    if (!snap) return
-    const liveSlot = slot(snap.rows, snap.byId, snap.regions, clientY, id)
+    const s = snap.get()
+    if (!s) return
+    const liveSlot = slot(s.rows, s.byId, s.regions, clientY, id)
     live.current = liveSlot
     setDrag({
       id,
       ghostX: lastPoint.current.x + 12,
       ghostY: clientY + 8,
       slot: liveSlot,
-      lineTop: liveSlot?.lineY != null ? liveSlot.lineY - snap.boxTop : 0,
+      lineTop: liveSlot?.lineY != null ? liveSlot.lineY - s.boxTop : 0,
     })
   }
 
@@ -171,10 +166,11 @@ export function PaneDnd({
       el,
       event: e,
       swallowActiveEscape: true,
-      onActivate: () => {
+      onActivate: (ev) => {
+        draggedId.current = id
+        lastPoint.current = { x: ev.clientX, y: ev.clientY }
         ghostLabel.current = labelForRef.current(id)
         scroller.current = findScroller(box.current, 'y')
-        window.addEventListener('scroll', markSnapshotDirty, { capture: true, passive: true })
         if (scroller.current) {
           stopScroll.current = startAutoScroll({
             getPoint: () => lastPoint.current,
@@ -186,23 +182,25 @@ export function PaneDnd({
         }
         return true
       },
+      scrollTarget: () => box.current,
+      onWindowScroll: () => {
+        snap.markDirty()
+        resolveSlot(id, lastPoint.current.y)
+      },
       onDragMove: (ev) => {
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         resolveSlot(id, ev.clientY)
       },
       onDrop: () => {
+        if (snap.isDirty()) resolveSlot(id, lastPoint.current.y)
         const liveSlot = live.current
-        if (liveSlot) {
-          onDropRef.current(liveSlot.drop)
-          suppressNextClick() // the release must not also open the row's editor
-        }
+        if (liveSlot) onDropRef.current(liveSlot.drop)
         reset()
       },
       onAbort: reset,
       teardown: () => {
         stopScroll.current?.()
         stopScroll.current = null
-        window.removeEventListener('scroll', markSnapshotDirty, { capture: true })
       },
     })
   }

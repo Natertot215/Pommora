@@ -2,7 +2,7 @@
 // plain strings with no identity but their position — the index IS the key.
 import './widget.css'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { Icon } from '@renderer/design-system/symbols'
 import { closeActiveHoverCard } from '@renderer/Embeds/ConnectionHoverCard'
 import type { Align, TableModel } from './model'
@@ -222,8 +222,8 @@ export function TableView({
         setDrag(current)
         return undefined
       },
-      onWindowScroll: (ev) => {
-        if (!scrollMoved(ev, wrap)) return
+      scrollTarget: () => wrap,
+      onWindowScroll: () => {
         reOrigin()
         resolve()
       },

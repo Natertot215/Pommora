@@ -12,7 +12,8 @@ import { createPortal } from 'react-dom'
 import { text } from '@renderer/design-system/tokens'
 import { cx } from '@renderer/design-system/cx'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
-import { DROP_LINE_INSET, suppressNextClick } from '@renderer/design-system/interactions/shared'
+import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
+import { DROP_LINE_INSET } from '@renderer/design-system/interactions/shared'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { MeasuredRow } from '@renderer/Sidebar/sidebarDndModel'
 import { type Band, type BandIndex, type BandSlot, bandSlot, buildBandIndex } from './bandDndModel'
@@ -78,18 +79,15 @@ export function BandDnd({
   // Frozen at activation: geometry AND the band list ride one snapshot — a mid-drag tree
   // swap re-renders headers, so both go stale together and re-measure together, lazily.
   type Snapshot = { index: BandIndex; boxTop: number; boxBottom: number }
-  const snapshot = useRef<Snapshot | null>(null)
-  const snapshotDirty = useRef(false)
   const lastPoint = useRef({ x: 0, y: 0 })
   const stopScroll = useRef<(() => void) | null>(null)
+  const snap = useDragSnapshot(takeSnapshot)
   useEffect(() => {
-    snapshotDirty.current = true
+    snap.markDirty()
+    resolveSlot()
   }, [bands])
-  const markSnapshotDirty = (): void => {
-    snapshotDirty.current = true
-  }
 
-  const takeSnapshot = (): Snapshot | null => {
+  function takeSnapshot(): Snapshot | null {
     const el = box.current
     if (!el) return null
     const boxRect = el.getBoundingClientRect()
@@ -113,30 +111,25 @@ export function BandDnd({
   const reset = (): void => {
     dragId.current = null
     live.current = null
-    snapshot.current = null
-    snapshotDirty.current = false
+    snap.reset()
     setDrag(IDLE)
   }
 
-  // Re-snapshot lazily (a scroll dirties it) then hit-test the bands at the last point. Shared by
-  // pointer move and the auto-scroll re-resolve, so a held-still drag keeps tracking as bands scroll.
-  const resolveSlot = (): void => {
+  // Re-snapshot lazily (an invalidation dirties it) then hit-test the bands at the last point.
+  // Shared by pointer move and every re-resolve, so a held-still drag keeps tracking.
+  function resolveSlot(): void {
     const id = dragId.current
     if (!id) return
-    if (snapshotDirty.current || !snapshot.current) {
-      snapshot.current = takeSnapshot()
-      snapshotDirty.current = false
-    }
-    const snap = snapshot.current
-    if (!snap) return
-    const slot = bandSlot(snap.index, lastPoint.current.y, id, snap.boxBottom)
+    const s = snap.get()
+    if (!s) return
+    const slot = bandSlot(s.index, lastPoint.current.y, id, s.boxBottom)
     live.current = slot
     setDrag({
       id,
       ghostX: lastPoint.current.x + 12,
       ghostY: lastPoint.current.y + 8,
       slot,
-      lineTop: slot ? slot.lineY - snap.boxTop : 0,
+      lineTop: slot ? slot.lineY - s.boxTop : 0,
     })
   }
 
@@ -149,10 +142,10 @@ export function BandDnd({
     beginGesture({
       el,
       event: e,
-      onActivate: () => {
+      onActivate: (ev) => {
         dragId.current = id
+        lastPoint.current = { x: ev.clientX, y: ev.clientY }
         ghostLabel.current = labelForRef.current(id)
-        window.addEventListener('scroll', markSnapshotDirty, { capture: true, passive: true })
         // Auto-scroll the vertical scroller. findScroller('y') skips the x-only '.table-view' to
         // reach '.detail-scroll'; onScrolled re-resolves a held-still drag as the bands scroll.
         const sc = findScroller(el, 'y')
@@ -171,9 +164,15 @@ export function BandDnd({
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         resolveSlot()
       },
+      scrollTarget: () => box.current,
+      onWindowScroll: () => {
+        snap.markDirty()
+        resolveSlot()
+      },
       onDrop: () => {
+        if (snap.isDirty()) resolveSlot()
         const slot = live.current
-        const dragged = snapshot.current?.index.byId.get(id)
+        const dragged = snap.get()?.index.byId.get(id)
         if (slot && dragged) {
           const drop = onDropRef.current
           if (slot.nestInto)
@@ -186,7 +185,6 @@ export function BandDnd({
               targetParentId: slot.impliedParentId,
               beforeId: slot.beforeId,
             })
-          suppressNextClick() // the drop's release must not also fire the glyph's toggle
         }
         reset()
       },
@@ -194,7 +192,6 @@ export function BandDnd({
       teardown: () => {
         stopScroll.current?.()
         stopScroll.current = null
-        window.removeEventListener('scroll', markSnapshotDirty, { capture: true })
       },
     })
   }

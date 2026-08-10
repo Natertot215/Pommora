@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 import { GlassSegment } from '../../materials'
 import * as s from './slider.css'
@@ -33,6 +33,19 @@ export function Slider({
 }): React.JSX.Element {
   const [draft, setDraft] = useState<number | null>(null)
   const stripRef = useRef<HTMLDivElement>(null)
+  // Synchronous scrub flag — lostpointercapture fires right after a normal pointerup, and the
+  // draft-null guard would only hold as long as React happened to flush first. The unmount
+  // cleanup reasserts the committed value for any consumer whose onInput drives live DOM, so a
+  // host closing mid-scrub can't strand a scrubbed preview.
+  const scrubbing = useRef(false)
+  const revertRef = useRef<() => void>(() => {})
+  revertRef.current = () => {
+    if (!scrubbing.current) return
+    scrubbing.current = false
+    onInput?.(clamp(value))
+    setDraft(null)
+  }
+  useEffect(() => () => revertRef.current(), [])
   const decimals = decimalsOf(step)
   const clamp = (v: number): number => Math.max(min, Math.min(max, v))
   const v = clamp(draft ?? value)

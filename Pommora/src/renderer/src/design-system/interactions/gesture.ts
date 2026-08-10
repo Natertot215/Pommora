@@ -26,8 +26,11 @@ export type PointerGestureSpec = {
    *  stop autoscroll, remove per-drag listeners, and end drag-disclose. */
   teardown?: () => void
   /** Bound capture-phase on window for the ACTIVE gesture only — the invalidation hook for
-   *  scroll-sensitive geometry, removed with the rest of the listener set. */
+   *  scroll-sensitive geometry, removed with the rest of the listener set. When `scrollTarget`
+   *  is given, only a scroll that can move that element's subtree gets through — an unrelated
+   *  scroller costs nothing. */
   onWindowScroll?: (e: Event) => void
+  scrollTarget?: () => Element | null
   /** Bind Escape in the capture phase and swallow it while ACTIVE — for surfaces living inside a
    *  dismissable host (a dropdown) whose own Escape must not fire mid-drag. A sub-threshold press
    *  still leaves Escape to the host. */
@@ -36,7 +39,7 @@ export type PointerGestureSpec = {
 
 /** Whether a capture-phase window scroll actually shifted `el` — only an ancestor scroller moves
  *  it. An unrelated inner scroller (a row's own hover marquee) must never cost a re-measure. */
-export function scrollMoved(ev: Event, el: Element | null | undefined): boolean {
+function scrollMoved(ev: Event, el: Element | null | undefined): boolean {
   return !(ev.target instanceof Element) || !el || ev.target.contains(el)
 }
 
@@ -166,6 +169,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
       blur: () => g.handlers.cancel(),
       scroll: (ev: Event) => {
         if (!g.active || !spec.onWindowScroll) return
+        if (spec.scrollTarget && !scrollMoved(ev, spec.scrollTarget())) return
         try {
           spec.onWindowScroll(ev)
         } catch (err) {

@@ -1,5 +1,6 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 
 // The flat cousin of the two-region paneDnd. The drop calls onReorder(value, toIndex) where
 // toIndex is in the without-the-dragged coordinate space (matching optionModel.reorderOption).
@@ -42,9 +43,8 @@ export function useOptionReorder(
   // on a high-frequency trigger (the paneDnd snapshot pattern). An invalidating scroll re-resolves
   // from the last point, so a release without another move still commits fresh.
   type Snapshot = { rects: Array<{ top: number; bottom: number }>; containerTop: number }
-  const snapshot = useRef<Snapshot | null>(null)
-  const snapshotDirty = useRef(false)
-  const takeSnapshot = (): Snapshot | null => {
+  const snap = useDragSnapshot(takeSnapshot)
+  function takeSnapshot(): Snapshot | null {
     const cEl = container.current
     if (!cEl) return null
     const rects: Snapshot['rects'] = []
@@ -55,16 +55,15 @@ export function useOptionReorder(
         rects.push({ top: r.top, bottom: r.bottom })
       }
     }
-    snapshotDirty.current = false
     return { rects, containerTop: cEl.getBoundingClientRect().top }
   }
 
   // The drop index (0…n) the pointer is over, and the drop-line's Y within the container — read off
   // the frozen snapshot, never the live DOM.
   const locate = (clientY: number): { index: number; top: number } => {
-    const snap = snapshot.current
-    if (!snap) return { index: 0, top: 0 }
-    const { rects, containerTop } = snap
+    const rowsSnap = snap.get()
+    if (!rowsSnap) return { index: 0, top: 0 }
+    const { rects, containerTop } = rowsSnap
     let index = rects.length
     for (let i = 0; i < rects.length; i++) {
       if (clientY < (rects[i].top + rects[i].bottom) / 2) {
@@ -91,7 +90,6 @@ export function useOptionReorder(
   const resolveAt = (clientY: number): void => {
     const d = dragged.current
     if (!d) return
-    if (snapshotDirty.current || !snapshot.current) snapshot.current = takeSnapshot()
     const { index, top } = locate(clientY)
     d.index = index
     setLineTop(destination(d.value, index).moves ? top : null)
@@ -99,8 +97,7 @@ export function useOptionReorder(
 
   const clear = (): void => {
     dragged.current = null
-    snapshot.current = null
-    snapshotDirty.current = false
+    snap.reset()
     setDragging(null)
     setGhost(null)
     setLineTop(null)
@@ -125,13 +122,13 @@ export function useOptionReorder(
         setGhost({ x: ev.clientX + 12, y: ev.clientY + 8 })
         resolveAt(ev.clientY)
       },
-      onWindowScroll: (ev) => {
-        if (!scrollMoved(ev, container.current)) return
-        snapshotDirty.current = true
+      scrollTarget: () => container.current,
+      onWindowScroll: () => {
+        snap.markDirty()
         resolveAt(lastPoint.current.y)
       },
       onDrop: () => {
-        if (snapshotDirty.current) resolveAt(lastPoint.current.y)
+        if (snap.isDirty()) resolveAt(lastPoint.current.y)
         const d = dragged.current
         if (d) {
           const { to, moves } = destination(d.value, d.index)
