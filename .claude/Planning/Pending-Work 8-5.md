@@ -32,10 +32,6 @@ Six of the dispatcher's operations write inline, and they share one shape: decid
 
 Renderer writes must be dropped while the session root swaps — and the `if (adopting()) return BUSY` check covers exactly four channels. Every other write touching synced files (views, container config, the whole schema and property family, `mutate` itself) runs unguarded through a non-modal adopt window. The window is narrow but the failure class is bad — a property edit written into the wrong nexus — and attaching the guard to the entry kind in `ipc.ts` lets a new write channel inherit it instead of remembering it.
 
-#### Retire or Wire `schema:changeType`
-
-Declared, dialed, and fully implemented — and nothing in the renderer calls it. Its only outside references are test mocks, which read as coverage for a path that has never run against a real payload. Either point the properties pane's type picker at it or take the whole path out; leaving it is a standing lie about coverage.
-
 #### Sweep the Small Verified Debts While Their Files Are Open
 
 Three ledger items check out exactly as written and are each a few lines: `useExitPresence` hard-codes an exit window decoupled from the motion tokens (retuning them would make menus flash on close), the preview window fetches the same page twice, and several renderer sites repeat the same `if (!res.ok) showError(...)` line. None is worth a session; all are safe ride-alongs for whatever next touches those files.
