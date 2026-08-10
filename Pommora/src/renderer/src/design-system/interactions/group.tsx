@@ -56,15 +56,13 @@ const GroupCtx = createContext<GroupValue | null>(null)
 // Groups frozen rects into visual ROWS by vertical-span overlap — cards top-align with unequal
 // heights, so a per-card centre/bottom split would flip-flop the insertion index. Each row
 // carries a SHARED band [top, bottom] so the whole row reads as one.
-function rowsOf(
-  rects: Box[],
-  skip: number,
-): Array<{ top: number; bottom: number; items: Array<{ i: number; cx: number }> }> {
+type ZoneRows = Array<{ top: number; bottom: number; items: Array<{ i: number; cx: number }> }>
+function rowsOf(rects: Box[], skip: number): ZoneRows {
   const items = rects
     .map((b, i) => ({ i, top: b.top, bottom: b.top + b.height, cx: b.cx }))
     .filter((it) => it.i !== skip)
     .sort((a, b) => a.top - b.top || a.cx - b.cx)
-  const rows: Array<{ top: number; bottom: number; items: Array<{ i: number; cx: number }> }> = []
+  const rows: ZoneRows = []
   for (const it of items) {
     const row = rows.find((r) => it.top < r.bottom && it.bottom > r.top)
     if (row) {
@@ -75,6 +73,50 @@ function rowsOf(
   }
   for (const r of rows) r.items.sort((a, b) => a.cx - b.cx)
   return rows
+}
+
+// The grid's column model for append slots past the last card. Column stride from the two closest
+// occupied columns, else the card's own width. The grid keeps empty tracks (auto-fill), so the
+// FULL column count comes from container width — not from how many cards are present, or a sparse
+// band wraps an append onto a phantom row below the cards.
+type ColumnModel = { lefts: number[]; stride: number; cols: number }
+function columnModelOf(rects: Box[], containerWidth: number): ColumnModel {
+  const lefts = [...new Set(rects.map((r) => Math.round(r.left)))].sort((a, b) => a - b)
+  const stride = lefts.length >= 2 ? lefts[1] - lefts[0] : (rects[0]?.width ?? 1) + 1
+  const cols = Math.max(lefts.length, containerWidth > 0 ? Math.round(containerWidth / stride) : 1, 1)
+  return { lefts, stride, cols }
+}
+
+// Both derive only from the frozen rects (plus the skip index / zone width), which are invariant
+// between invalidations — and the invalidators REPLACE the rects array, never mutate it in place,
+// so identity is the cache key and dead arrays release with the WeakMap. A future writer that
+// shifts rects in place would silently serve stale rows; replace the array instead.
+const zoneGeometry = new WeakMap<Box[], { rows: Map<number, ZoneRows>; models: Map<number, ColumnModel> }>()
+function geometryOf(rects: Box[]): { rows: Map<number, ZoneRows>; models: Map<number, ColumnModel> } {
+  let g = zoneGeometry.get(rects)
+  if (!g) {
+    g = { rows: new Map(), models: new Map() }
+    zoneGeometry.set(rects, g)
+  }
+  return g
+}
+function rowsOfCached(rects: Box[], skip: number): ZoneRows {
+  const g = geometryOf(rects)
+  let rows = g.rows.get(skip)
+  if (!rows) {
+    rows = rowsOf(rects, skip)
+    g.rows.set(skip, rows)
+  }
+  return rows
+}
+function columnModelCached(rects: Box[], containerWidth: number): ColumnModel {
+  const g = geometryOf(rects)
+  let model = g.models.get(containerWidth)
+  if (!model) {
+    model = columnModelOf(rects, containerWidth)
+    g.models.set(containerWidth, model)
+  }
+  return model
 }
 
 // Viewport position of grid SLOT `slot`: the measured rect for an existing card, else WALKED
@@ -89,16 +131,7 @@ function cellAt(
 ): { x: number; y: number } {
   if (slot < rects.length) return { x: rects[slot].left, y: rects[slot].top }
   if (rects.length === 0) return { x: 0, y: 0 }
-  const lefts = [...new Set(rects.map((r) => Math.round(r.left)))].sort((a, b) => a - b)
-  // Column stride from the two closest occupied columns, else the card's own width. The grid keeps
-  // empty tracks (auto-fill), so the FULL column count comes from container width — not from how
-  // many cards are present, or a sparse band wraps an append onto a phantom row below the cards.
-  const stride = lefts.length >= 2 ? lefts[1] - lefts[0] : (rects[0]?.width ?? 1) + 1
-  const cols = Math.max(
-    lefts.length,
-    containerWidth > 0 ? Math.round(containerWidth / stride) : 1,
-    1,
-  )
+  const { lefts, stride, cols } = columnModelCached(rects, containerWidth)
   const last = rects[rects.length - 1]
   let col = Math.max(0, Math.round((last.left - lefts[0]) / stride))
   let top = last.top
@@ -280,7 +313,7 @@ export function DragGroup({
     // Rows entirely above the pointer count whole; in the pointer's own row, count the cards left
     // of it (x past centre); below all rows, everything counts. One row band per visual row means
     // a vertical wobble never re-buckets a card, so the index holds steady across a row.
-    const rows = rowsOf(rects, skip)
+    const rows = rowsOfCached(rects, skip)
     let idx = 0
     for (const row of rows) {
       if (y >= row.bottom) {
