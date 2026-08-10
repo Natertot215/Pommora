@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The drag's slot math is wrap-relative while the pointer is viewport-relative — this pins the
+// The drag's slot math is wrap-relative while the pointer is viewport-relative — these pin the
 // origin re-base that keeps the two aligned when the editor scrolls mid-drag.
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { createElement, act } from 'react'
@@ -46,6 +46,28 @@ afterEach(async () => {
   roCallbacks.length = 0
 })
 
+async function mount(onReorder: (axis: 'col' | 'row', from: number, to: number) => boolean): Promise<void> {
+  container = document.createElement('div')
+  document.body.appendChild(container)
+  root = createRoot(container)
+  await act(async () => {
+    root.render(
+      createElement(TableView, {
+        model,
+        onCellCommit: () => {},
+        onExit: () => {},
+        onReorder,
+        onResize: () => false,
+        onMenu: () => {},
+        onTableDrag: () => {},
+        onUndo: () => {},
+        onRedo: () => {},
+        onAppend: () => {},
+      }),
+    )
+  })
+}
+
 const stubGeometry = (wrapTop: number): void => {
   const wrap = container.querySelector('.mdpm-tbl-wrap') as HTMLElement
   stubRect(wrap, { top: wrapTop, bottom: wrapTop + 72, left: 0, right: 200 })
@@ -60,56 +82,59 @@ const stubGeometry = (wrapTop: number): void => {
   }
 }
 
+// Grip index 1 is the first data row — index 0 drags the whole table.
+const measureAndGrip = async (): Promise<HTMLElement> => {
+  await act(async () => {
+    for (const cb of roCallbacks) cb([], {} as ResizeObserver)
+  })
+  return container.querySelectorAll('.mdpm-tbl-grip-row')[1] as HTMLElement
+}
+
+// The editor scroll moves the wrap's viewport box; wrap-relative geom holds still.
+const scrollWrapTo = async (wrapTop: number): Promise<void> => {
+  stubGeometry(wrapTop)
+  await act(async () => {
+    container.dispatchEvent(new Event('scroll', { bubbles: false }))
+  })
+}
+
 describe('GFM table drag under an editor scroll', () => {
   it('re-bases its origin, so the slot follows the moved table', async () => {
     const onReorder = vi.fn(() => false)
-    container = document.createElement('div')
-    document.body.appendChild(container)
-    root = createRoot(container)
-    await act(async () => {
-      root.render(
-        createElement(TableView, {
-          model,
-          onCellCommit: () => {},
-          onExit: () => {},
-          onReorder,
-          onResize: () => false,
-          onMenu: () => {},
-          onTableDrag: () => {},
-          onUndo: () => {},
-          onRedo: () => {},
-          onAppend: () => {},
-        }),
-      )
-    })
+    await mount(onReorder)
     stubGeometry(0)
-    await act(async () => {
-      for (const cb of roCallbacks) cb([], {} as ResizeObserver)
-    })
-
-    // Grip j=1 is the first data row (j=0 drags the whole table). Rows end at 24 / 48 / 72.
-    const grip = container.querySelectorAll('.mdpm-tbl-grip-row')[1] as HTMLElement
+    const grip = await measureAndGrip()
     await act(async () => {
       firePointer(grip, 'pointerdown', { x: 210, y: 30 })
     })
     await act(async () => {
       firePointer(window, 'pointermove', { x: 210, y: 36 })
     })
-
-    // The editor scrolls the table up by 24 — the wrap's viewport box moves, wrap-relative geom doesn't.
-    stubGeometry(-24)
-    await act(async () => {
-      container.dispatchEvent(new Event('scroll', { bubbles: false }))
-    })
+    await scrollWrapTo(-24)
     await act(async () => {
       firePointer(window, 'pointermove', { x: 210, y: 36 })
     })
     await act(async () => {
       firePointer(window, 'pointerup')
     })
+    expect(onReorder).toHaveBeenCalledExactlyOnceWith('row', 1, 2)
+  })
 
-    // Re-based, viewport 36 is wrap-relative 60 → the slot below row 2. A stale origin reads 36 →
-    // the row's own slot, a no-op drop that never calls onReorder.
+  it('a scroll with the pointer held still re-resolves, so a release without moving commits fresh', async () => {
+    const onReorder = vi.fn(() => false)
+    await mount(onReorder)
+    stubGeometry(0)
+    const grip = await measureAndGrip()
+    await act(async () => {
+      firePointer(grip, 'pointerdown', { x: 210, y: 30 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 210, y: 36 })
+    })
+    await scrollWrapTo(-24)
+    await act(async () => {
+      firePointer(window, 'pointerup')
+    })
     expect(onReorder).toHaveBeenCalledExactlyOnceWith('row', 1, 2)
   })
 })

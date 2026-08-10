@@ -94,15 +94,18 @@ export function TableRowDnd({
   const els = useRef(new Map<string, HTMLElement>())
   const content = useRef<HTMLDivElement | null>(null)
   const live = useRef<Slot | null>(null)
-  // Cached row geometry for the active drag (measured once at activation, re-measured on a scroll
-  // or a mid-drag rows change).
+  // Cached row geometry for the active drag — never a rect read per pointer move.
   const snapshot = useRef<{ rows: MeasuredRow[]; boxTop: number; boxLeft: number } | null>(null)
   const onDragScroll = useRef<((e: Event) => void) | null>(null)
   const lastPoint = useRef({ x: 0, y: 0 })
   const stopScroll = useRef<(() => void) | null>(null)
   const snapshotDirty = useRef(false)
+  // A rows change re-resolves immediately — a push followed by a release with no further move
+  // must still commit against the live rows. resolveSlot no-ops while no drag is armed.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the invalidating input alone
   useEffect(() => {
     snapshotDirty.current = true
+    resolveSlot(lastPoint.current.y)
   }, [rows])
   const [drag, setDrag] = useState<DragState>(IDLE)
   // Set at ACTIVATION (a tap never sets it) — the id the hit-test + commits run against.
@@ -144,6 +147,7 @@ export function TableRowDnd({
     }
     rows.sort((a, b) => a.top - b.top)
     snapshot.current = { rows, boxTop: boxRect.top, boxLeft: boxRect.left }
+    snapshotDirty.current = false
   }
 
   // Hit-test the snapshot → the landing slot. The nearest row + which half the cursor is in fixes the
@@ -218,10 +222,7 @@ export function TableRowDnd({
   const resolveSlot = (clientY: number): void => {
     const id = dragId.current
     if (!id) return
-    if (snapshotDirty.current) {
-      measure(id)
-      snapshotDirty.current = false
-    }
+    if (snapshotDirty.current) measure(id)
     const slot = computeSlot(clientY)
     live.current = slot
     setDrag({ id, slot })
@@ -239,10 +240,9 @@ export function TableRowDnd({
       event: e,
       onActivate: () => {
         dragId.current = id
-        // Snapshot geometry now that the drag is real; re-snapshot only when a scroll or a rows
-        // change dirties it (rows never displace mid-drag, so hit-testing reads the cache).
+        // Snapshot geometry now that the drag is real — hit-testing reads the cache until an
+        // invalidating event re-measures.
         measure(id)
-        snapshotDirty.current = false
         // A scroll that moves the rows (wheel OR the auto-scroll loop below — its scrollBy fires
         // this same native event) dirties the snapshot and re-resolves from the last point, so a
         // held-still drag near an edge keeps tracking. Target-guarded so an unrelated inner scroll
@@ -278,6 +278,7 @@ export function TableRowDnd({
         resolveSlot(ev.clientY)
       },
       onDrop: () => {
+        if (snapshotDirty.current) resolveSlot(lastPoint.current.y)
         const slot = live.current
         if (slot && !slot.noop) {
           slot.commit()

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PageFrontmatter } from '@shared/schemas'
 import { type PropertyDefinition, statusOptions } from '@shared/properties'
@@ -504,10 +504,19 @@ export function CustomList({
   def: PropertyDefinition | undefined
   onSave: (order: string[]) => void
 } & HideControls): React.JSX.Element | null {
-  const all = optionsOf(def)
-  const ordered = bucketOrder(group, def, new Set(all.map((o) => o.value)))
-  const byValue = new Map(all.map((o) => [o.value, o]))
-  const bands: Band[] = ordered.map((v) => ({ id: v, kind: 'property', depth: 0, parentId: null }))
+  // Identity-stable across the drag's own re-renders — a per-render rebuild would false-dirty the
+  // hook's snapshot on every pointermove.
+  const { ordered, byValue, bands } = useMemo(() => {
+    const all = optionsOf(def)
+    const orderedValues = bucketOrder(group, def, new Set(all.map((o) => o.value)))
+    return {
+      ordered: orderedValues,
+      byValue: new Map(all.map((o) => [o.value, o])),
+      bands: orderedValues.map(
+        (v): Band => ({ id: v, kind: 'property', depth: 0, parentId: null }),
+      ),
+    }
+  }, [group, def])
   const dnd = useGroupingListDrag({
     bands,
     nestable: false,
@@ -565,60 +574,66 @@ function LocationHierarchy({
   const flat = subDef !== undefined
 
   // The property sub-group's disclosed chips — the same value run under every top-level set.
-  const subOptions = optionsOf(subDef)
-  const subByValue = new Map(subOptions.map((o) => [o.value, o]))
-  const subChips = subDef
-    ? bucketOrder(
-        { order_mode: view.sub_group?.order_mode ?? 'configured', order: view.sub_group?.order },
-        subDef,
-        new Set(subOptions.map((o) => o.value)),
-      ).flatMap((v) => {
-        const o = subByValue.get(v)
-        return o ? [o] : []
-      })
-    : []
+  const subChips = useMemo(() => {
+    if (!subDef) return []
+    const subOptions = optionsOf(subDef)
+    const subByValue = new Map(subOptions.map((o) => [o.value, o]))
+    return bucketOrder(
+      { order_mode: view.sub_group?.order_mode ?? 'configured', order: view.sub_group?.order },
+      subDef,
+      new Set(subOptions.map((o) => o.value)),
+    ).flatMap((v) => {
+      const o = subByValue.get(v)
+      return o ? [o] : []
+    })
+  }, [subDef, view.sub_group])
 
-  const allIds: string[] = []
-  const childIds = new Map<string | null, string[]>()
-  const paths = new Map<string, string>()
-  const bands: Band[] = []
-  const chipValueOf = new Map<string, string>()
-  const chipBandId = (setId: string, value: string): string => {
-    const id = `sub:${setId}:${value}`
-    chipValueOf.set(id, value)
-    return id
-  }
-  const index = (
-    sets: SetNode[] | undefined,
-    depth: number,
-    parentId: string | null,
-    visible: boolean,
-  ): void => {
-    childIds.set(
-      parentId,
-      (sets ?? []).map((s) => s.id),
-    )
-    for (const s of sets ?? []) {
-      allIds.push(s.id)
-      paths.set(s.id, s.path)
-      if (visible) {
-        bands.push({ id: s.id, kind: 'set', depth, parentId })
-        // A disclosed chip run registers as property bands so the SAME gesture drags them (the
-        // pane's own drag surface) — the drop resolves back to the value through chipValueOf.
-        if (flat && expanded.has(s.id)) {
-          for (const o of subChips)
-            bands.push({
-              id: chipBandId(s.id, o.value),
-              kind: 'property',
-              depth: depth + 1,
-              parentId: s.id,
-            })
-        }
-      }
-      index(s.sets, depth + 1, s.id, visible && !flat && expanded.has(s.id))
+  // Identity-stable across the drag's own re-renders — a per-render rebuild would false-dirty the
+  // hook's snapshot on every pointermove.
+  const { allIds, childIds, paths, bands, chipValueOf } = useMemo(() => {
+    const allIds: string[] = []
+    const childIds = new Map<string | null, string[]>()
+    const paths = new Map<string, string>()
+    const bands: Band[] = []
+    const chipValueOf = new Map<string, string>()
+    const chipBandId = (setId: string, value: string): string => {
+      const id = `sub:${setId}:${value}`
+      chipValueOf.set(id, value)
+      return id
     }
-  }
-  index(source.sets, 0, null, true)
+    const index = (
+      sets: SetNode[] | undefined,
+      depth: number,
+      parentId: string | null,
+      visible: boolean,
+    ): void => {
+      childIds.set(
+        parentId,
+        (sets ?? []).map((s) => s.id),
+      )
+      for (const s of sets ?? []) {
+        allIds.push(s.id)
+        paths.set(s.id, s.path)
+        if (visible) {
+          bands.push({ id: s.id, kind: 'set', depth, parentId })
+          // A disclosed chip run registers as property bands so the SAME gesture drags them (the
+          // pane's own drag surface) — the drop resolves back to the value through chipValueOf.
+          if (flat && expanded.has(s.id)) {
+            for (const o of subChips)
+              bands.push({
+                id: chipBandId(s.id, o.value),
+                kind: 'property',
+                depth: depth + 1,
+                parentId: s.id,
+              })
+          }
+        }
+        index(s.sets, depth + 1, s.id, visible && !flat && expanded.has(s.id))
+      }
+    }
+    index(source.sets, 0, null, true)
+    return { allIds, childIds, paths, bands, chipValueOf }
+  }, [source.sets, flat, expanded, subChips])
 
   const onDrop = (draggedId: string, drop: GroupingDrop): void => {
     // A chip drag is a GLOBAL sub-order write regardless of drop kind or target set; dragging

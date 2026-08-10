@@ -135,6 +135,34 @@ describe('table row drag — Esc abort', () => {
     expect(reorderSpy).toHaveBeenCalledExactlyOnceWith(['r3', 'r1'], 'g', 'r1')
   })
 
+  it('a rows push with the pointer held still re-resolves, so an immediate drop commits fresh', async () => {
+    await startDrag()
+    const pushed = [
+      { id: 'r1', groupKey: 'g' },
+      { id: 'r3', groupKey: 'g' },
+    ]
+    await act(async () => {
+      root.render(
+        <TableRowDnd
+          rows={pushed}
+          disabled={false}
+          canReorderWithin
+          canReassign={false}
+          reorderTo={reorderSpy}
+          reassign={reassignSpy}
+        >
+          <Row id="r1" />
+          <Row id="r3" />
+        </TableRowDnd>,
+      )
+    })
+    stubRect(row('r3'), { top: 24, bottom: 48 })
+    await act(async () => {
+      firePointer(window, 'pointerup')
+    })
+    expect(reorderSpy).toHaveBeenCalledExactlyOnceWith(['r3', 'r1'], 'g', 'r1')
+  })
+
   it('detaches the keydown listener after the gesture settles', async () => {
     const adds = vi.spyOn(window, 'addEventListener')
     const removes = vi.spyOn(window, 'removeEventListener')

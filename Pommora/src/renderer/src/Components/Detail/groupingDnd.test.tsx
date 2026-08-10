@@ -88,6 +88,28 @@ describe('grouping drag snapshot invalidation', () => {
     expect(lineY()).toBe('38')
   })
 
+  it('a scroll with the pointer held still re-aims, so a release without moving commits fresh', async () => {
+    await act(async () => {
+      firePointer(handle('C'), 'pointerdown', { x: 10, y: 60 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 10, y: 30 })
+    })
+    stubRows(24)
+    await act(async () => {
+      const box = host.querySelector('[data-box]') as HTMLElement
+      box.dispatchEvent(new Event('scroll', { bubbles: false }))
+    })
+    await act(async () => {
+      firePointer(window, 'pointerup')
+    })
+    expect(dropSpy).toHaveBeenCalledExactlyOnceWith('C', {
+      kind: 'reorder',
+      targetParentId: null,
+      beforeId: 'A',
+    })
+  })
+
   it('a drop after the scroll commits against the fresh slot', async () => {
     await act(async () => {
       firePointer(handle('C'), 'pointerdown', { x: 10, y: 60 })
