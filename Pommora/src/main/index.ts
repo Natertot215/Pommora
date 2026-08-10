@@ -105,8 +105,7 @@ import { handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
 import { installAppMenu } from './menu'
 import { popTableMenu } from './tableMenu'
-import { popCalloutMenu } from './calloutMenu'
-import { popEmbedMenu } from './embedMenu'
+import { popGripMenu } from './gripMenu'
 import { popColumnMenu } from './columnMenu'
 import { popCellMenu } from './cellMenu'
 import { popCardMenu } from './cardMenu'
@@ -1490,9 +1489,8 @@ serveBridge(
     // The table grip's right-click menu.
     'table-menu': { kind: 'menu', fn: popTableMenu },
 
-    // The callout grip's right-click menu.
-    'callout-menu': { kind: 'menu', fn: popCalloutMenu },
-    'embed-menu': { kind: 'menu', fn: popEmbedMenu },
+    // Every block grip's right-click menu — Delete, plus that block kind's own arm.
+    'grip-menu': { kind: 'menu', fn: popGripMenu },
 
     // The table-view column header's right-click menu.
     'column-menu': { kind: 'menu', fn: popColumnMenu },

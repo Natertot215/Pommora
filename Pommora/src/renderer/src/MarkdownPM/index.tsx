@@ -14,8 +14,7 @@ import {
   blockquoteDragExtension,
   calloutDragExtension,
 } from './editor/blockDrag'
-import { calloutGripMenu } from './editor/calloutGripMenu'
-import { embedGripMenu } from './editor/embedGripMenu'
+import { GRIP_MENU_LINES, gripMenu } from './editor/gripMenu'
 import {
   type EmbedHeightsApi,
   embedExclusions,
@@ -221,9 +220,7 @@ export function MarkdownEditor({
       // callback flags any grip hover to main so the generic editor menu stands down there.
       blockGripHover((line) =>
         window.nexus?.setGripHot?.(
-          !!line &&
-            (line.classList.contains('md-block-handle') ||
-              line.classList.contains('md-callout-first')),
+          !!line && GRIP_MENU_LINES.some((c) => line.classList.contains(c)),
         ),
       ),
       // Press a block grip → drag the whole block → drop it at the nearest block boundary.
@@ -232,10 +229,9 @@ export function MarkdownEditor({
       calloutDragExtension,
       // The blockquote's widget grip drags the whole quote (same gesture, gated on its first line).
       blockquoteDragExtension,
-      // Right-press the callout grip → native Delete Callout menu (the flag above suppresses the generic one).
-      calloutGripMenu,
-      // Right-press a rail grip → Embed Page ▸; an embed tile's grip → Page Source ▸ + Delete.
-      embedGripMenu,
+      // Right-press any block grip → its native menu: Delete on every kind, Type ▸ on a list, Page
+      // Source ▸ on an embed tile (the flag above suppresses the generic editor menu there).
+      gripMenu,
       // Drawn caret (rounded bar in text, I-beam on empty lines, smooth fade) — native caret hidden in CSS.
       customCaret,
       // The hidden `> [!type] ` callout head is atomic — caret can't enter it, so the tag can't be corrupted.

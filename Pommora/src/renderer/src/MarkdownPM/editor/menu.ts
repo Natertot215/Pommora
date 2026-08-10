@@ -1,6 +1,6 @@
 import type { EditorView } from '@codemirror/view'
 import { EDITOR_ACTION_PREFIX, type FormatState } from '@shared/editorMenu'
-import { embedInsertAtCaret } from './embedGripMenu'
+import { embedInsertAtCaret } from './embedInsert'
 import {
   toggleInline,
   setHeading,
