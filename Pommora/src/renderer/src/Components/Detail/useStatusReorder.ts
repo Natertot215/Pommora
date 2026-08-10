@@ -1,27 +1,12 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { ACTIVATION, suppressNextClick } from '@renderer/design-system/interactions/shared'
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 
 // The multi-region cousin of useOptionReorder. A drag can reorder within a group OR cross into
 // another group (including an empty one); on drop it calls onMove(value, toGroupId, toIndex) —
 // toIndex in the target group's without-the-dragged space, matching optionModel.moveStatusOption.
-// Row geometry is snapshotted at drag-start (no rect-read per move — the hard rule); a mid-drag
-// scroll dirties the snapshot.
+// Row geometry is snapshotted at drag-start (no rect-read per move — the hard rule); an
+// invalidating scroll re-resolves from the last point.
 
-type Handlers = {
-  move: (e: PointerEvent) => void
-  up: () => void
-  cancel: () => void
-  key: (e: KeyboardEvent) => void
-}
-type Gesture = {
-  value: string
-  sx: number
-  sy: number
-  active: boolean
-  toGroupId: string
-  toIndex: number
-  handlers: Handlers
-}
 type SnapRow = { value: string; top: number; bottom: number }
 type SnapGroup = { id: string; top: number; bottom: number; containerTop: number; rows: SnapRow[] }
 
@@ -44,7 +29,10 @@ export function useStatusReorder(
   orderRef.current = order
   const onMoveRef = useRef(onMove)
   onMoveRef.current = onMove
-  const g = useRef<Gesture | null>(null)
+  const beginGesture = usePointerGesture()
+  // Set at activation (a tap never sets it) — the dragged value and its live target slot.
+  const dragged = useRef<{ value: string; toGroupId: string; toIndex: number } | null>(null)
+  const lastPoint = useRef({ x: 0, y: 0 })
   const [dragging, setDragging] = useState<string | null>(null)
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null)
   const [drop, setDrop] = useState<{ groupId: string; top: number } | null>(null)
@@ -60,10 +48,8 @@ export function useStatusReorder(
 
   const snapshot = useRef<SnapGroup[] | null>(null)
   const snapshotDirty = useRef(false)
-  const markDirty = (): void => {
-    snapshotDirty.current = true
-  }
   const takeSnapshot = (): SnapGroup[] => {
+    snapshotDirty.current = false
     return orderRef.current.map((grp) => {
       const container = groupEls.current.get(grp.id)
       const cRect = container?.getBoundingClientRect()
@@ -115,17 +101,25 @@ export function useStatusReorder(
     return { groupId: grp.id, index, top: lineY - grp.containerTop }
   }
 
-  const detach = (): void => {
-    const h = g.current?.handlers
-    if (!h) return
-    window.removeEventListener('pointermove', h.move)
-    window.removeEventListener('pointerup', h.up)
-    window.removeEventListener('pointercancel', h.cancel)
-    window.removeEventListener('keydown', h.key, { capture: true })
-    window.removeEventListener('scroll', markDirty, { capture: true })
+  const resolveAt = (clientY: number): void => {
+    const d = dragged.current
+    if (!d) return
+    if (snapshotDirty.current || !snapshot.current) snapshot.current = takeSnapshot()
+    const hit = locate(clientY)
+    if (!hit) return
+    d.toGroupId = hit.groupId
+    d.toIndex = hit.index
+    // The line mirrors the release's own condition — a same-group slot resolving to the value's current
+    // position draws nothing rather than promising a move the drop then declines.
+    const fromGroup = orderRef.current.find((grp) => grp.values.includes(d.value))
+    const fromIndex = fromGroup?.values.indexOf(d.value) ?? -1
+    const sameGroup = fromGroup?.id === hit.groupId
+    const toIndex = sameGroup && hit.index > fromIndex ? hit.index - 1 : hit.index
+    setDrop(sameGroup && toIndex === fromIndex ? null : { groupId: hit.groupId, top: hit.top })
   }
+
   const clear = (): void => {
-    g.current = null
+    dragged.current = null
     snapshot.current = null
     snapshotDirty.current = false
     setDragging(null)
@@ -133,80 +127,48 @@ export function useStatusReorder(
     setDrop(null)
   }
 
-  const onPtrMove = (e: PointerEvent): void => {
-    const s = g.current
-    if (!s) return
-    if (!s.active) {
-      if (Math.hypot(e.clientX - s.sx, e.clientY - s.sy) < ACTIVATION) return
-      s.active = true
-      setDragging(s.value)
-      window.addEventListener('scroll', markDirty, { capture: true, passive: true })
-    }
-    if (snapshotDirty.current || !snapshot.current) {
-      snapshot.current = takeSnapshot()
-      snapshotDirty.current = false
-    }
-    setGhost({ x: e.clientX + 12, y: e.clientY + 8 })
-    const hit = locate(e.clientY)
-    if (!hit) return
-    s.toGroupId = hit.groupId
-    s.toIndex = hit.index
-    // The line mirrors the release's own condition — a same-group slot resolving to the value's current
-    // position draws nothing rather than promising a move the drop then declines.
-    const fromGroup = orderRef.current.find((grp) => grp.values.includes(s.value))
-    const fromIndex = fromGroup?.values.indexOf(s.value) ?? -1
-    const sameGroup = fromGroup?.id === hit.groupId
-    const toIndex = sameGroup && hit.index > fromIndex ? hit.index - 1 : hit.index
-    setDrop(sameGroup && toIndex === fromIndex ? null : { groupId: hit.groupId, top: hit.top })
-  }
-  const onUp = (): void => {
-    const s = g.current
-    detach()
-    if (s?.active) {
-      const fromGroup = orderRef.current.find((grp) => grp.values.includes(s.value))
-      const fromIndex = fromGroup?.values.indexOf(s.value) ?? -1
-      const sameGroup = fromGroup?.id === s.toGroupId
-      // s.toIndex is in the WITH-dragged snapshot space; moveStatusOption inserts in the WITHOUT space,
-      // so a same-group drop past the original slot shifts down by one. Cross-group needs no shift.
-      const toIndex = sameGroup && s.toIndex > fromIndex ? s.toIndex - 1 : s.toIndex
-      if (!(sameGroup && toIndex === fromIndex)) onMoveRef.current(s.value, s.toGroupId, toIndex)
-      suppressNextClick() // the release must not open the chip's recolor
-    }
-    clear()
-  }
-  const onCancel = (): void => {
-    detach()
-    clear()
-  }
-  const onKey = (e: KeyboardEvent): void => {
-    if (e.key === 'Escape' && g.current?.active) {
-      e.stopImmediatePropagation()
-      e.preventDefault()
-      onCancel()
-    }
-  }
-
-  // The listeners live on the window, so a pane closing mid-drag would otherwise strand all five of
-  // them for the rest of the session.
-  useEffect(() => detach, [])
-
   const onRowPointerDown = (value: string, e: ReactPointerEvent): void => {
-    if (e.button !== 0 || !e.isPrimary || g.current) return
     if ((e.target as HTMLElement).closest?.('button, input, [contenteditable="true"]')) return
-    const handlers: Handlers = { move: onPtrMove, up: onUp, cancel: onCancel, key: onKey }
-    g.current = {
-      value,
-      sx: e.clientX,
-      sy: e.clientY,
-      active: false,
-      toGroupId: '',
-      toIndex: 0,
-      handlers,
-    }
-    window.addEventListener('pointermove', handlers.move)
-    window.addEventListener('pointerup', handlers.up)
-    window.addEventListener('pointercancel', handlers.cancel)
-    window.addEventListener('keydown', handlers.key, { capture: true })
+    const el = rows.current.get(value) ?? (e.currentTarget as HTMLElement)
+    beginGesture({
+      el,
+      event: e,
+      // An active drag's Escape must cancel the DRAG, not dismiss the hosting dropdown.
+      swallowActiveEscape: true,
+      onActivate: (ev) => {
+        dragged.current = { value, toGroupId: '', toIndex: 0 }
+        lastPoint.current = { x: ev.clientX, y: ev.clientY }
+        setDragging(value)
+        return true
+      },
+      onDragMove: (ev) => {
+        lastPoint.current = { x: ev.clientX, y: ev.clientY }
+        setGhost({ x: ev.clientX + 12, y: ev.clientY + 8 })
+        resolveAt(ev.clientY)
+      },
+      onWindowScroll: (ev) => {
+        const first = groupEls.current.values().next().value ?? null
+        if (ev.target instanceof Element && first && !ev.target.contains(first)) return
+        snapshotDirty.current = true
+        resolveAt(lastPoint.current.y)
+      },
+      onDrop: () => {
+        if (snapshotDirty.current) resolveAt(lastPoint.current.y)
+        const d = dragged.current
+        if (d) {
+          const fromGroup = orderRef.current.find((grp) => grp.values.includes(d.value))
+          const fromIndex = fromGroup?.values.indexOf(d.value) ?? -1
+          const sameGroup = fromGroup?.id === d.toGroupId
+          // d.toIndex is in the WITH-dragged snapshot space; moveStatusOption inserts in the WITHOUT
+          // space, so a same-group drop past the original slot shifts down by one. Cross-group needs
+          // no shift.
+          const toIndex = sameGroup && d.toIndex > fromIndex ? d.toIndex - 1 : d.toIndex
+          if (!(sameGroup && toIndex === fromIndex)) onMoveRef.current(d.value, d.toGroupId, toIndex)
+        }
+        clear()
+      },
+      onAbort: clear,
+    })
   }
 
   return { registerGroup, registerRow, onRowPointerDown, dragging, drop, ghost }

@@ -1,23 +1,8 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { ACTIVATION, suppressNextClick } from '@renderer/design-system/interactions/shared'
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 
 // The flat cousin of the two-region paneDnd. The drop calls onReorder(value, toIndex) where
 // toIndex is in the without-the-dragged coordinate space (matching optionModel.reorderOption).
-
-type Handlers = {
-  move: (e: PointerEvent) => void
-  up: () => void
-  cancel: () => void
-  key: (e: KeyboardEvent) => void
-}
-type Gesture = {
-  value: string
-  sx: number
-  sy: number
-  active: boolean
-  index: number
-  handlers: Handlers
-}
 
 export function useOptionReorder(
   order: string[],
@@ -37,7 +22,10 @@ export function useOptionReorder(
   orderRef.current = order
   const onReorderRef = useRef(onReorder)
   onReorderRef.current = onReorder
-  const g = useRef<Gesture | null>(null)
+  const beginGesture = usePointerGesture()
+  // Set at activation (a tap never sets it) — the dragged value and its live target slot.
+  const dragged = useRef<{ value: string; index: number } | null>(null)
+  const lastPoint = useRef({ x: 0, y: 0 })
   const [dragging, setDragging] = useState<string | null>(null)
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null)
   const [lineTop, setLineTop] = useState<number | null>(null)
@@ -51,14 +39,11 @@ export function useOptionReorder(
   }
 
   // Row geometry frozen at drag-start: reading a rect per row on every pointermove is layout-thrash
-  // on a high-frequency trigger (the paneDnd snapshot pattern). A mid-drag scroll dirties it and the
-  // next move re-measures.
+  // on a high-frequency trigger (the paneDnd snapshot pattern). An invalidating scroll re-resolves
+  // from the last point, so a release without another move still commits fresh.
   type Snapshot = { rects: Array<{ top: number; bottom: number }>; containerTop: number }
   const snapshot = useRef<Snapshot | null>(null)
   const snapshotDirty = useRef(false)
-  const markDirty = (): void => {
-    snapshotDirty.current = true
-  }
   const takeSnapshot = (): Snapshot | null => {
     const cEl = container.current
     if (!cEl) return null
@@ -70,6 +55,7 @@ export function useOptionReorder(
         rects.push({ top: r.top, bottom: r.bottom })
       }
     }
+    snapshotDirty.current = false
     return { rects, containerTop: cEl.getBoundingClientRect().top }
   }
 
@@ -94,17 +80,21 @@ export function useOptionReorder(
     return { index, top }
   }
 
-  const detach = (): void => {
-    const h = g.current?.handlers
-    if (!h) return
-    window.removeEventListener('pointermove', h.move)
-    window.removeEventListener('pointerup', h.up)
-    window.removeEventListener('pointercancel', h.cancel)
-    window.removeEventListener('keydown', h.key, { capture: true })
-    window.removeEventListener('scroll', markDirty, { capture: true })
+  const resolveAt = (clientY: number): void => {
+    const d = dragged.current
+    if (!d) return
+    if (snapshotDirty.current || !snapshot.current) snapshot.current = takeSnapshot()
+    const { index, top } = locate(clientY)
+    d.index = index
+    // The line mirrors the release's own condition — a slot resolving to the option's current position
+    // draws nothing rather than promising a move the drop then declines.
+    const from = orderRef.current.indexOf(d.value)
+    const to = index > from ? index - 1 : index
+    setLineTop(from >= 0 && to !== from ? top : null)
   }
+
   const clear = (): void => {
-    g.current = null
+    dragged.current = null
     snapshot.current = null
     snapshotDirty.current = false
     setDragging(null)
@@ -112,65 +102,47 @@ export function useOptionReorder(
     setLineTop(null)
   }
 
-  const onMove = (e: PointerEvent): void => {
-    const s = g.current
-    if (!s) return
-    if (!s.active) {
-      if (Math.hypot(e.clientX - s.sx, e.clientY - s.sy) < ACTIVATION) return
-      s.active = true
-      setDragging(s.value)
-      window.addEventListener('scroll', markDirty, { capture: true, passive: true })
-    }
-    // First move after activation takes the snapshot here (it's null out of clear()); scroll dirties it.
-    if (snapshotDirty.current || !snapshot.current) {
-      snapshot.current = takeSnapshot()
-      snapshotDirty.current = false
-    }
-    setGhost({ x: e.clientX + 12, y: e.clientY + 8 })
-    const { index, top } = locate(e.clientY)
-    s.index = index
-    // The line mirrors the release's own condition — a slot resolving to the option's current position
-    // draws nothing rather than promising a move the drop then declines.
-    const from = orderRef.current.indexOf(s.value)
-    const to = index > from ? index - 1 : index
-    setLineTop(from >= 0 && to !== from ? top : null)
-  }
-  const onUp = (): void => {
-    const s = g.current
-    detach()
-    if (s?.active) {
-      const from = orderRef.current.indexOf(s.value)
-      const to = s.index > from ? s.index - 1 : s.index
-      if (from >= 0 && to !== from) onReorderRef.current(s.value, to)
-      suppressNextClick() // the release must not open the chip's menu / recolor
-    }
-    clear()
-  }
-  const onCancel = (): void => {
-    detach()
-    clear()
-  }
-  const onKey = (e: KeyboardEvent): void => {
-    if (e.key === 'Escape' && g.current?.active) {
-      e.stopImmediatePropagation()
-      e.preventDefault()
-      onCancel()
-    }
-  }
-
-  // The listeners live on the window, so a pane closing mid-drag would otherwise strand all five of
-  // them for the rest of the session.
-  useEffect(() => detach, [])
-
   const onRowPointerDown = (value: string, e: ReactPointerEvent): void => {
-    if (e.button !== 0 || !e.isPrimary || g.current) return
     if ((e.target as HTMLElement).closest?.('button, input, [contenteditable="true"]')) return
-    const handlers: Handlers = { move: onMove, up: onUp, cancel: onCancel, key: onKey }
-    g.current = { value, sx: e.clientX, sy: e.clientY, active: false, index: 0, handlers }
-    window.addEventListener('pointermove', handlers.move)
-    window.addEventListener('pointerup', handlers.up)
-    window.addEventListener('pointercancel', handlers.cancel)
-    window.addEventListener('keydown', handlers.key, { capture: true })
+    const el = rows.current.get(value) ?? (e.currentTarget as HTMLElement)
+    beginGesture({
+      el,
+      event: e,
+      // An active drag's Escape must cancel the DRAG, not dismiss the hosting dropdown.
+      swallowActiveEscape: true,
+      onActivate: (ev) => {
+        dragged.current = { value, index: 0 }
+        lastPoint.current = { x: ev.clientX, y: ev.clientY }
+        setDragging(value)
+        return true
+      },
+      onDragMove: (ev) => {
+        lastPoint.current = { x: ev.clientX, y: ev.clientY }
+        setGhost({ x: ev.clientX + 12, y: ev.clientY + 8 })
+        resolveAt(ev.clientY)
+      },
+      onWindowScroll: (ev) => {
+        if (
+          ev.target instanceof Element &&
+          container.current &&
+          !ev.target.contains(container.current)
+        )
+          return
+        snapshotDirty.current = true
+        resolveAt(lastPoint.current.y)
+      },
+      onDrop: () => {
+        if (snapshotDirty.current) resolveAt(lastPoint.current.y)
+        const d = dragged.current
+        if (d) {
+          const from = orderRef.current.indexOf(d.value)
+          const to = d.index > from ? d.index - 1 : d.index
+          if (from >= 0 && to !== from) onReorderRef.current(d.value, to)
+        }
+        clear()
+      },
+      onAbort: clear,
+    })
   }
 
   return { containerRef, registerRow, onRowPointerDown, dragging, lineTop, ghost }
