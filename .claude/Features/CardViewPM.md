@@ -53,16 +53,17 @@ Cards live in the ViewSettings type grid and carry their options in the Layout l
 
 ### Card Tokens
 
-The card grid's design vocabulary, scoped to `.cards-view` — the canonical set. Atlas convention per [[DesignSystemPM]] §charter.
+The card grid's design vocabulary. The geometry the two card families agreed on — the floor, gaps, thumb share, and cover zoom — lives once in `design-system/card-tokens.css`, shared with the NavWindow / NavView gallery; the Cards renderer's own scope (`.cards-view`) overrides only what genuinely differs. Atlas convention per [[DesignSystemPM]] §charter.
 
-**SOURCE:** `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.css`
+**SOURCE:** `Pommora/src/renderer/src/design-system/card-tokens.css` · `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.css`
 
 | Title | Token | Value |
 | --- | --- | --- |
-| Column Floor | `--card-min` | `calc(180px * var(--card-scale, 1))` |
-| Gaps | `--card-gap-h` / `--card-gap-v` | `10px` / `10px` |
-| Cover Zoom | `--cover-zoom` | `1` |
-| Thumb Share | `--thumb-share` | `65%` |
+| Column Floor | `--card-min-base` | `180px` (shared; the unscaled floor) |
+| Scaled Floor | `--card-min` | `calc(var(--card-min-base) * var(--card-scale, 1))` in `.cards-view` |
+| Gaps | `--card-gap-h` / `--card-gap-v` | `10px` / `10px` (shared) |
+| Cover Zoom | `--cover-zoom` | `1` (shared) |
+| Thumb Share | `--thumb-share` | `65%` (shared) |
 | Set-Card Floor | `--set-card-min` | `calc(var(--card-min) * 1.5)` |
 | Thumb Height | `--thumb-h` | `calc(104px * var(--card-scale, 1))` |
 | Body Minimum | `--card-body-min` | `calc(var(--thumb-h) * 0.54)`; compact recomputes from its row stack |
@@ -73,10 +74,6 @@ The card grid's design vocabulary, scoped to `.cards-view` — the canonical set
 ### Pending
 
 - **Heading "+" creation** — the structural-band "+" is a visual stub until the page-creation affordance is designed.
-
-### Known Issues
-
-- **The NavWindow gallery carries a parallel token family** under the same names at its own scope (`.nav-gallery`) — the standing merge candidate, recorded in the duplication report.
 
 ### Prospects
 
