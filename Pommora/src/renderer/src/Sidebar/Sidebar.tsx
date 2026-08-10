@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon, type IconName, entityIcon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
@@ -18,6 +18,7 @@ import type {
 import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/mutate'
 import { createSpaceLabel } from '@shared/contexts'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
+import { buildIndex } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
 import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../store'
@@ -554,9 +555,13 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     return () => nav.removeEventListener('scroll', onScroll, { capture: true })
   }, [])
 
+  // One index serves both layers — during the mode cross-fade both are mounted, and each building
+  // its own full-tree index would double the work per tree change.
+  const dndIndex = useMemo(() => buildIndex(tree), [tree])
+
   const contextsLayer = (
     <SidebarDnd
-      tree={tree}
+      index={dndIndex}
       onCommit={onCommit}
       setPlacement={setPlacement}
       subSetPlacement={subSetPlacement}
@@ -571,7 +576,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
 
   const collectionsLayer = (
     <SidebarDnd
-      tree={tree}
+      index={dndIndex}
       onCommit={onCommit}
       setPlacement={setPlacement}
       subSetPlacement={subSetPlacement}
