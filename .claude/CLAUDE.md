@@ -94,6 +94,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   │   └── [ViewsPM.md]                 | • Saved presentations of a Collection — six modeled types
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
 │   │   ├── [Build-Gotchas.md]           | • Environment and toolchain traps — read before launching the GUI
+│   │   ├── [Editor-Internals.md]        | • MarkdownPM's internal invariants — read before editing the editor
 │   │   ├── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
 │   │   └── [UI-Copy.md]                 | • The running app never displays build-status or meta text
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
