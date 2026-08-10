@@ -85,7 +85,7 @@
 
 ### Recent Work
 
-#### PM-094 || The Duplication Report Closes
+#### PM-094 || One Owner Per Repeated Value
 **DATE:** 08-10-2026
 
 The reconnaissance's fix list worked through. Three tokens replaced literals — `--radius-full` over nine hand-spelled pill radii, opening the radius scale; `--state-drag` for the dim a card wears while its lifted clone floats; `--state-disabled` rebased so its four sites adopt it unchanged. The two card families merged into one shared geometry, which forced a knob whose value had never reached the screen and settled it at what had always rendered. The auto-scroll defaults, written twice and free to drift, came onto one map the `:root` block generates from; `separator.line` died into the bridged name it duplicated. The notch's raw shadow, the mixes outside the tint ladder, and the comments that had drifted from their values were all restated against the code.
