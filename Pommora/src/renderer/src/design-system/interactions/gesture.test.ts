@@ -141,4 +141,32 @@ describe('gesture skeleton hardening', () => {
     window.dispatchEvent(new Event('scroll'))
     expect(onWindowScroll).toHaveBeenCalledOnce()
   })
+
+  it('scrollTarget gates the hook: an unrelated scroller never reaches it', () => {
+    const onWindowScroll = vi.fn()
+    const target = document.createElement('div')
+    const unrelated = document.createElement('div')
+    document.body.append(target, unrelated)
+    gesture.beginPointerGesture(spec({ onWindowScroll, scrollTarget: () => target }))
+    move(20, 20)
+    unrelated.dispatchEvent(new Event('scroll'))
+    expect(onWindowScroll).not.toHaveBeenCalled()
+    document.body.dispatchEvent(new Event('scroll'))
+    expect(onWindowScroll).toHaveBeenCalledOnce()
+    target.remove()
+    unrelated.remove()
+  })
+
+  it('teardown runs before onAbort on every abort path — per-gesture state consumed by onAbort must not be cleared in teardown', () => {
+    const calls: string[] = []
+    gesture.beginPointerGesture(
+      spec({
+        teardown: () => calls.push('teardown'),
+        onAbort: () => calls.push('abort'),
+      }),
+    )
+    move(20, 20)
+    firePointer(window, 'pointercancel')
+    expect(calls).toEqual(['teardown', 'abort'])
+  })
 })

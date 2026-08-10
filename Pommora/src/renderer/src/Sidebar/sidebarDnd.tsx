@@ -12,7 +12,8 @@ import { createPortal } from 'react-dom'
 import { text } from '@renderer/design-system/tokens'
 import { DISCLOSURE_INDENT } from '@renderer/design-system/tokens/size.css'
 import { stack } from '@renderer/design-system/tokens/stack'
-import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
 import type { FolderPlacement } from '@shared/types'
@@ -87,10 +88,12 @@ export function SidebarDnd({
   // high-frequency trigger. The dragged row's sibling group is snapshot state too — invariant
   // mid-drag, so it's filtered here once rather than per move.
   type Snapshot = { contentTop: number; measured: MeasuredRow[]; siblings: MeasuredRow[] }
-  const snapshot = useRef<Snapshot | null>(null)
-  const snapshotDirty = useRef(false)
   const lastPoint = useRef({ x: 0, y: 0 })
   const stopScroll = useRef<(() => void) | null>(null)
+  const snap = useDragSnapshot(() => {
+    const d = dragged.current
+    return d ? takeSnapshot(d.id) : null
+  })
 
   const takeSnapshot = (excludeId: string): Snapshot | null => {
     const content = contentRef.current
@@ -126,12 +129,9 @@ export function SidebarDnd({
     const idx = indexRef.current
     const draggedEntry = idx.byId.get(d.id)
     if (!draggedEntry) return null
-    if (snapshotDirty.current || !snapshot.current) {
-      snapshot.current = takeSnapshot(d.id)
-      snapshotDirty.current = false
-    }
-    if (!snapshot.current) return null
-    const { contentTop, measured } = snapshot.current
+    const s = snap.get()
+    if (!s) return null
+    const { contentTop, measured } = s
     if (measured.length === 0) return null
     const nearest = (rowsByTop: MeasuredRow[]): MeasuredRow => {
       let over = rowsByTop[0]
@@ -241,7 +241,7 @@ export function SidebarDnd({
       }
     }
 
-    const { siblings } = snapshot.current
+    const { siblings } = s
     if (siblings.length === 0) return null
     const over = nearest(siblings)
     const overEntry = idx.byId.get(over.id)
@@ -262,8 +262,7 @@ export function SidebarDnd({
   const reset = (): void => {
     dragged.current = null
     live.current = null
-    snapshot.current = null
-    snapshotDirty.current = false
+    snap.reset()
     setDrag(IDLE)
   }
 
@@ -285,13 +284,15 @@ export function SidebarDnd({
   // A mid-drag tree swap (watcher push) can re-render rows — stale rects must not survive it,
   // and a release with no further move must still commit against the fresh slot.
   useEffect(() => {
-    snapshotDirty.current = true
+    snap.markDirty()
     resolveSlot()
   }, [index])
 
   const labelOf = (rowId: string): string => base(indexRef.current.byId.get(rowId)?.path ?? '')
 
   const begin = (id: string, e: ReactPointerEvent): void => {
+    // The cheap refusals come before the layout read — a right-press or a busy gesture costs no rect.
+    if (e.button !== 0 || !e.isPrimary) return
     if ((e.target as HTMLElement).closest?.('input, textarea, [contenteditable="true"]')) return
     const el = rows.current.get(id)
     if (!el) return
@@ -320,13 +321,13 @@ export function SidebarDnd({
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
         resolveSlot()
       },
-      onWindowScroll: (ev) => {
-        if (!scrollMoved(ev, contentRef.current)) return
-        snapshotDirty.current = true
+      scrollTarget: () => contentRef.current,
+      onWindowScroll: () => {
+        snap.markDirty()
         resolveSlot()
       },
       onDrop: () => {
-        if (snapshotDirty.current) resolveSlot()
+        if (snap.isDirty()) resolveSlot()
         const t = live.current
         if (t && !t.noop) {
           onCommitRef.current(t.commit)

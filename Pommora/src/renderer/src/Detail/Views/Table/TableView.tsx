@@ -62,7 +62,7 @@ import { Icon } from '@renderer/design-system/symbols'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
 import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import { numberDivisor } from '../PropertyEditing/formatValue'
-import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
 import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from './linkValue'
@@ -521,9 +521,12 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     resizeBaseline.current = { id, value: widthOverride[id] }
     setResizing(true)
   }
+  // The baseline is consumed by the abort and cleared by whichever end fires — never by teardown,
+  // which the skeleton runs BEFORE onAbort.
   const abortResize = (): void => {
     const b = resizeBaseline.current
     if (!b) return
+    resizeBaseline.current = null
     setWidthOverride((prev) => {
       const next = { ...prev }
       if (b.value === undefined) delete next[b.id]
@@ -532,10 +535,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     })
   }
   const endResize = (): void => {
-    resizeBaseline.current = null
     setResizing(false)
   }
   const commitResize = (id: string, width: number): void => {
+    resizeBaseline.current = null
     persistView({
       column_widths: {
         ...liveView.column_widths,
@@ -1122,25 +1125,16 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const header = e.currentTarget as HTMLElement
     const grid = header.closest('.table-grid') as HTMLElement | null
     if (!grid) return
-    const hr = header.getBoundingClientRect()
-    // The CSS density factor (screen px per pre-zoom track px) — the RESOLVED `zoom`, which compounds the
-    // base density token (--zoom) with the per-block Scale (--block-zoom on a SurfacePM tile). Read the
-    // computed property, not the --zoom token alone, so a scaled tile's drag maps 1:1; NOT back-solved from
-    // the header's rendered width ÷ its track width (that ratio bakes in the grid's layout slack).
-    const zoom = Number.parseFloat(getComputedStyle(grid).getPropertyValue('zoom')) || 1
-    const startCenter = hr.left + hr.width / 2 // the dragged column's centre, screen px; it tracks the cursor 1:1
-    const startX = e.clientX
-    // Geometry snapshot: widths can't change mid-drag, so the cumulative offsets are computed once
-    // at grab — a per-move getBoundingClientRect + width loop is a forced layout in the drag hot
-    // path. Only a scroll can shift the grid's origin; the capture listener re-reads it then.
-    let gridLeft = grid.getBoundingClientRect().left
-    const widths = columns.map((c) => colWidth(c.id) * zoom)
-    const lefts: number[] = new Array(columns.length)
-    let acc = 0
-    for (let i = 0; i < columns.length; i++) {
-      lefts[i] = acc
-      acc += widths[i]
-    }
+    // Geometry snapshot lives in the ACTIVATION, not the press — widths can't change mid-drag, so
+    // the cumulative offsets are computed once there (a per-move rect + width loop is a forced
+    // layout in the drag hot path), and a pending-phase scroll (trackpad inertia settling under a
+    // fresh press) can't strand a press-time origin the active-only scroll hook would never fix.
+    let zoom = 1
+    let startCenter = 0
+    let startX = 0
+    let gridLeft = 0
+    let widths: number[] = []
+    let lefts: number[] = []
     // null until activation — a sub-threshold press is a click, not a drag, so the highlight band
     // never flashes and a jittery click can't reorder.
     const dragId = columns[from].id
@@ -1183,13 +1177,33 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     beginGesture({
       el: header,
       event: e,
-      onActivate: () => undefined,
+      onActivate: (ev) => {
+        // The CSS density factor (screen px per pre-zoom track px) — the RESOLVED `zoom`, which
+        // compounds the base density token (--zoom) with the per-block Scale (--block-zoom on a
+        // SurfacePM tile). Read the computed property, not the --zoom token alone, so a scaled
+        // tile's drag maps 1:1; NOT back-solved from the header's rendered width ÷ its track width
+        // (that ratio bakes in the grid's layout slack).
+        zoom = Number.parseFloat(getComputedStyle(grid).getPropertyValue('zoom')) || 1
+        const hr = header.getBoundingClientRect()
+        startCenter = hr.left + hr.width / 2 // the dragged column's centre; it tracks the cursor 1:1
+        startX = ev.clientX
+        lastX = ev.clientX
+        gridLeft = grid.getBoundingClientRect().left
+        widths = columns.map((c) => colWidth(c.id) * zoom)
+        lefts = new Array(columns.length)
+        let acc = 0
+        for (let i = 0; i < columns.length; i++) {
+          lefts[i] = acc
+          acc += widths[i]
+        }
+        return true
+      },
       onDragMove: (ev) => {
         lastX = ev.clientX
         resolve()
       },
-      onWindowScroll: (ev) => {
-        if (!scrollMoved(ev, grid)) return
+      scrollTarget: () => grid,
+      onWindowScroll: () => {
         gridLeft = grid.getBoundingClientRect().left
         resolve()
       },
@@ -1197,13 +1211,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         if (current && current.to !== current.from) {
           reorderColumn(columns[current.from].id, columns[current.to].id)
         }
-        if (current) setColDrag(null)
-      },
-      onAbort: () => {
-        if (current) setColDrag(null)
       },
       teardown: () => {
         grid.style.removeProperty('--col-drag-x')
+        setColDrag(null)
       },
     })
   }
@@ -1490,8 +1501,8 @@ function ColumnHeader({
   onContextMenu?: (e: React.MouseEvent) => void
 }): React.JSX.Element {
   const beginGesture = usePointerGesture()
-  // On the skeleton like its GFM sibling: zero threshold (a resize responds to the first pixel),
-  // cancel reverts instead of committing, and a zero-move click ends through teardown alone.
+  // On the skeleton like its GFM sibling: cancel reverts instead of committing, and a zero-move
+  // click ends through teardown alone.
   const startResize = (e: React.PointerEvent<HTMLSpanElement>): void => {
     e.preventDefault()
     e.stopPropagation() // a resize never bubbles up to start a column reorder

@@ -1,5 +1,6 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { scrollMoved, usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
+import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 
 // The multi-region cousin of useOptionReorder. A drag can reorder within a group OR cross into
 // another group (including an empty one); on drop it calls onMove(value, toGroupId, toIndex) —
@@ -15,6 +16,8 @@ export function useStatusReorder(
   order: { id: string; values: string[] }[],
   onMove: (value: string, toGroupId: string, toIndex: number) => void,
 ): {
+  /** The groups' shared wrapper — the scroll-invalidation target. */
+  containerRef: (el: HTMLDivElement | null) => void
   registerGroup: (groupId: string, el: HTMLElement | null) => void
   registerRow: (value: string, el: HTMLElement | null) => void
   onRowPointerDown: (value: string, e: ReactPointerEvent) => void
@@ -23,6 +26,7 @@ export function useStatusReorder(
   /** The floating drag-chip coords (DragGhost) — null until the gesture activates. */
   ghost: { x: number; y: number } | null
 } {
+  const container = useRef<HTMLElement | null>(null)
   const groupEls = useRef(new Map<string, HTMLElement>())
   const rows = useRef(new Map<string, HTMLElement>())
   const orderRef = useRef(order)
@@ -46,10 +50,8 @@ export function useStatusReorder(
     else rows.current.delete(value)
   }
 
-  const snapshot = useRef<SnapGroup[] | null>(null)
-  const snapshotDirty = useRef(false)
-  const takeSnapshot = (): SnapGroup[] => {
-    snapshotDirty.current = false
+  const snap = useDragSnapshot(takeSnapshot)
+  function takeSnapshot(): SnapGroup[] {
     return orderRef.current.map((grp) => {
       const container = groupEls.current.get(grp.id)
       const cRect = container?.getBoundingClientRect()
@@ -74,17 +76,17 @@ export function useStatusReorder(
   // Groups partition the pointer axis by boundary midpoints, so every clientY (gaps + empty
   // groups included) resolves to exactly one group.
   const locate = (clientY: number): { groupId: string; index: number; top: number } | null => {
-    const snap = snapshot.current
-    if (!snap || snap.length === 0) return null
-    let gi = snap.length - 1
-    for (let i = 0; i < snap.length - 1; i++) {
-      const boundary = (snap[i].bottom + snap[i + 1].top) / 2
+    const groupsSnap = snap.get()
+    if (!groupsSnap || groupsSnap.length === 0) return null
+    let gi = groupsSnap.length - 1
+    for (let i = 0; i < groupsSnap.length - 1; i++) {
+      const boundary = (groupsSnap[i].bottom + groupsSnap[i + 1].top) / 2
       if (clientY < boundary) {
         gi = i
         break
       }
     }
-    const grp = snap[gi]
+    const grp = groupsSnap[gi]
     let index = grp.rows.length
     for (let i = 0; i < grp.rows.length; i++) {
       if (clientY < (grp.rows[i].top + grp.rows[i].bottom) / 2) {
@@ -120,7 +122,6 @@ export function useStatusReorder(
   const resolveAt = (clientY: number): void => {
     const d = dragged.current
     if (!d) return
-    if (snapshotDirty.current || !snapshot.current) snapshot.current = takeSnapshot()
     const hit = locate(clientY)
     if (!hit) return
     d.toGroupId = hit.groupId
@@ -131,8 +132,7 @@ export function useStatusReorder(
 
   const clear = (): void => {
     dragged.current = null
-    snapshot.current = null
-    snapshotDirty.current = false
+    snap.reset()
     setDragging(null)
     setGhost(null)
     setDrop(null)
@@ -157,13 +157,13 @@ export function useStatusReorder(
         setGhost({ x: ev.clientX + 12, y: ev.clientY + 8 })
         resolveAt(ev.clientY)
       },
-      onWindowScroll: (ev) => {
-        if (!scrollMoved(ev, groupEls.current.values().next().value)) return
-        snapshotDirty.current = true
+      scrollTarget: () => container.current,
+      onWindowScroll: () => {
+        snap.markDirty()
         resolveAt(lastPoint.current.y)
       },
       onDrop: () => {
-        if (snapshotDirty.current) resolveAt(lastPoint.current.y)
+        if (snap.isDirty()) resolveAt(lastPoint.current.y)
         const d = dragged.current
         if (d) {
           const { to, moves } = destination(d.value, d.toGroupId, d.toIndex)
@@ -175,5 +175,15 @@ export function useStatusReorder(
     })
   }
 
-  return { registerGroup, registerRow, onRowPointerDown, dragging, drop, ghost }
+  return {
+    containerRef: (el) => {
+      container.current = el
+    },
+    registerGroup,
+    registerRow,
+    onRowPointerDown,
+    dragging,
+    drop,
+    ghost,
+  }
 }
