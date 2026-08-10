@@ -12,6 +12,7 @@ import {
   stubRect,
 } from '@renderer/testing/pointerHarness'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
+import { buildIndex } from './sidebarDndModel'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
@@ -49,7 +50,7 @@ beforeEach(async () => {
   commitSpy = vi.fn()
   await act(async () => {
     root.render(
-      <SidebarDnd tree={tree} onCommit={commitSpy}>
+      <SidebarDnd index={buildIndex(tree)} onCommit={commitSpy}>
         <Row id="p1" />
         <Row id="p2" />
       </SidebarDnd>,
@@ -172,7 +173,7 @@ describe('sidebar drag — page↔Set seam', () => {
   ): Promise<void> => {
     await act(async () => {
       root.render(
-        <SidebarDnd tree={seamTree} onCommit={commitSpy} setPlacement={placement}>
+        <SidebarDnd index={buildIndex(seamTree)} onCommit={commitSpy} setPlacement={placement}>
           <Row id="s1" />
           <Row id="p1" />
           <Row id="p2" />
@@ -245,7 +246,7 @@ describe('sidebar drag — page↔Set seam', () => {
     } as unknown as NexusTree
     await act(async () => {
       root.render(
-        <SidebarDnd tree={crossTree} onCommit={commitSpy}>
+        <SidebarDnd index={buildIndex(crossTree)} onCommit={commitSpy}>
           <Row id="p1" />
           <Row id="s2" />
         </SidebarDnd>,
@@ -303,7 +304,7 @@ describe('sidebar drag — the line marks where the drop lands', () => {
     // slot the drop resolves to are three rows apart.
     await act(async () => {
       root.render(
-        <SidebarDnd tree={hostTree} onCommit={commitSpy} setPlacement="top">
+        <SidebarDnd index={buildIndex(hostTree)} onCommit={commitSpy} setPlacement="top">
           <Row id="p1" />
           <Row id="c2" />
           <Row id="s2" />
