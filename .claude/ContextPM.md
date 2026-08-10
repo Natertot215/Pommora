@@ -2,11 +2,10 @@
 
 ### Current Focus
 
-**Sidebar + DND Consolidation & Bug Fixes.** The drag layer plan executed end to end — all eighteen tasks across six phases, every gate's review folded, gates green throughout ([[HistoryPM]] §PM-090). The layer now runs on one hardened gesture skeleton with the stale-slot class closed by the resolve-fresh-before-commit invariant, one snapshot helper, shared chrome, and the adoption gaps — auto-scroll, announcements, spring-open — filled. What remains of the focus is Nathan's hands-on walkthrough of the changed surfaces; the wrap-up in the handoff names what to try.
+**Sidebar + DND Consolidation & Bug Fixes — closed and hand-confirmed.** The drag layer runs on one hardened gesture skeleton with the stale-slot class shut by the resolve-fresh-before-commit invariant, one snapshot helper, shared chrome, and the adoption gaps filled ([[HistoryPM]] §PM-090); the full verification chain ran clean and Nathan's walkthrough confirmed the surfaces. The next focus is an open pick from Pending Focuses — the identity/order-persistence arc (the reorder snap-back) and the subfield reorder are the two nearest doors.
 
 ### Immediate Work
 
-- Drive the changed drag surfaces in the running app (the handoff's walkthrough lists them) and file anything that feels off — the closing verification chain was green, but geometry truth lives in a real mouse.
 
 ### Pending Focuses
 
