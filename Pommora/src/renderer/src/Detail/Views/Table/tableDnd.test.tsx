@@ -101,6 +101,40 @@ describe('table row drag — Esc abort', () => {
     expect(reorderSpy).toHaveBeenCalledExactlyOnceWith(['r2', 'r1', 'r3'], 'g', 'r1')
   })
 
+  it('a mid-drag rows change re-measures, so the drop commits against the live rows', async () => {
+    await startDrag()
+    // A watcher push removes r2 mid-drag; r3 takes its slot.
+    const pushed = [
+      { id: 'r1', groupKey: 'g' },
+      { id: 'r3', groupKey: 'g' },
+    ]
+    await act(async () => {
+      root.render(
+        <TableRowDnd
+          rows={pushed}
+          disabled={false}
+          canReorderWithin
+          canReassign={false}
+          reorderTo={reorderSpy}
+          reassign={reassignSpy}
+        >
+          <Row id="r1" />
+          <Row id="r3" />
+        </TableRowDnd>,
+      )
+    })
+    stubRect(row('r3'), { top: 24, bottom: 48 })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 4, y: 40 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointerup')
+    })
+    // Fresh rects put 40 below r3's midline → r1 lands after it. A frozen snapshot still holds
+    // the dead r2 and resolves a no-op, so the drop goes silent.
+    expect(reorderSpy).toHaveBeenCalledExactlyOnceWith(['r3', 'r1'], 'g', 'r1')
+  })
+
   it('detaches the keydown listener after the gesture settles', async () => {
     const adds = vi.spyOn(window, 'addEventListener')
     const removes = vi.spyOn(window, 'removeEventListener')

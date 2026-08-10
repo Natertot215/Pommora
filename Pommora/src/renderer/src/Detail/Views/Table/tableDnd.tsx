@@ -1,6 +1,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -93,12 +94,16 @@ export function TableRowDnd({
   const els = useRef(new Map<string, HTMLElement>())
   const content = useRef<HTMLDivElement | null>(null)
   const live = useRef<Slot | null>(null)
-  // Cached row geometry for the active drag (measured once at activation, re-measured only on scroll).
+  // Cached row geometry for the active drag (measured once at activation, re-measured on a scroll
+  // or a mid-drag rows change).
   const snapshot = useRef<{ rows: MeasuredRow[]; boxTop: number; boxLeft: number } | null>(null)
   const onDragScroll = useRef<((e: Event) => void) | null>(null)
   const lastPoint = useRef({ x: 0, y: 0 })
   const stopScroll = useRef<(() => void) | null>(null)
   const snapshotDirty = useRef(false)
+  useEffect(() => {
+    snapshotDirty.current = true
+  }, [rows])
   const [drag, setDrag] = useState<DragState>(IDLE)
   // Set at ACTIVATION (a tap never sets it) — the id the hit-test + commits run against.
   const dragId = useRef<string | null>(null)
@@ -234,9 +239,10 @@ export function TableRowDnd({
       event: e,
       onActivate: () => {
         dragId.current = id
-        // Snapshot geometry now that the drag is real; re-snapshot only on scroll (rows never
-        // displace mid-drag, so hit-testing reads the cache).
+        // Snapshot geometry now that the drag is real; re-snapshot only when a scroll or a rows
+        // change dirties it (rows never displace mid-drag, so hit-testing reads the cache).
         measure(id)
+        snapshotDirty.current = false
         // A scroll that moves the rows (wheel OR the auto-scroll loop below — its scrollBy fires
         // this same native event) dirties the snapshot and re-resolves from the last point, so a
         // held-still drag near an edge keeps tracking. Target-guarded so an unrelated inner scroll
