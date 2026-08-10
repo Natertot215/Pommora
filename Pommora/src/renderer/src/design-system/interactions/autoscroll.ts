@@ -1,6 +1,6 @@
-// One singleton rAF loop scrolls a FIXED container, resolved once at drag start. Tuning lives in
-// autoscroll.css, read off the drag element once per drag. The pure math below is unit-tested;
-// the loop's DOM glue is verified live.
+// One singleton rAF loop scrolls a FIXED container, resolved once at drag start. Tuning is read off
+// the drag element once per drag. The pure math below is unit-tested; the loop's DOM glue is
+// verified live.
 
 export type Axis = 'x' | 'y' | 'xy'
 
@@ -12,6 +12,26 @@ export interface Params {
   accelMax: number // speed multiplier after a sustained scroll (the acceleration ceiling)
   accelDist: number // px of accumulated scroll to climb from start → max
 }
+
+/** The tuning knobs, as the CSS var a surface overrides and the value it falls back to. These are
+ *  read through `getComputedStyle`, never `var()`, so a token audit searching for consumers finds
+ *  none — this map is the one place they exist, feeding both the `:root` declaration
+ *  (autoscroll.css.ts) and the read below, so a default can never be tuned in one and not the other.
+ *  Any surface may override one on itself or an ancestor (`.sidebar { --autoscroll-speed }`). */
+export const AUTOSCROLL_KNOBS = {
+  /** band from a container edge where auto-scroll engages */
+  edge: ['--autoscroll-edge', '48px'],
+  /** px/SECOND at the true edge, at the acceleration floor (frame-rate-independent) */
+  speed: ['--autoscroll-speed', '840px'],
+  /** proximity ramp exponent — 2 = quadratic (gentle entry, fast at the edge) */
+  ramp: ['--autoscroll-ramp', '2'],
+  /** speed multiplier when a scroll run begins — eases in (must be > 0) */
+  accelStart: ['--autoscroll-accel-start', '0.5'],
+  /** speed multiplier after a sustained scroll — the acceleration ceiling */
+  accelMax: ['--autoscroll-accel-max', '1.5'],
+  /** px of accumulated scroll to climb from start → max */
+  accelDist: ['--autoscroll-accel-distance', '600px'],
+} as const satisfies Record<keyof Params, readonly [string, string]>
 
 export interface Intent {
   up: boolean
@@ -138,17 +158,18 @@ const MAX_FRAME_MS = 50
 
 function readParams(el: HTMLElement): Params {
   const s = getComputedStyle(el)
-  const num = (name: string, fallback: number): number => {
+  const read = (key: keyof Params): number => {
+    const [name, fallback] = AUTOSCROLL_KNOBS[key]
     const v = parseFloat(s.getPropertyValue(name))
-    return Number.isFinite(v) ? v : fallback
+    return Number.isFinite(v) ? v : parseFloat(fallback)
   }
   return {
-    edge: num('--autoscroll-edge', 48),
-    speed: num('--autoscroll-speed', 840),
-    ramp: num('--autoscroll-ramp', 2),
-    accelStart: num('--autoscroll-accel-start', 0.5),
-    accelMax: num('--autoscroll-accel-max', 1.5),
-    accelDist: num('--autoscroll-accel-distance', 600),
+    edge: read('edge'),
+    speed: read('speed'),
+    ramp: read('ramp'),
+    accelStart: read('accelStart'),
+    accelMax: read('accelMax'),
+    accelDist: read('accelDist'),
   }
 }
 

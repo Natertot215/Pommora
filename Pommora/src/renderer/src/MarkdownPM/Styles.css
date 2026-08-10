@@ -131,7 +131,7 @@
   height: 0;
   border-bottom: var(--border-heading);
   margin: 0 var(--gutter) 0 var(--content-inset);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 .mdpm-banner {
@@ -298,7 +298,7 @@
 .md-code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--code);
-  background: color-mix(in srgb, var(--code) 10%, transparent);
+  background: color-mix(in srgb, var(--code) var(--tint-quaternary), transparent);
   padding: 0.05em 0.3em;
   border-radius: 4px;
 }
@@ -630,7 +630,7 @@
   height: 1.5px;
   vertical-align: middle;
   background: var(--separator-border);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 /* CM6 GOTCHA: no line margins — they break caret/arrow mapping (only padding is measured). The fill is an

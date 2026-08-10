@@ -92,7 +92,7 @@ textarea,
   width: var(--caret-width);
   margin-left: calc(var(--caret-width) / -2);
   background: var(--caret-color);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 .cm-focused > .cm-scroller > .mdpm-caretLayer .mdpm-caret {
   display: block;
@@ -105,7 +105,7 @@ textarea,
   width: var(--caret-width);
   margin-left: calc(var(--caret-width) / -2);
   background: var(--caret-color);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   pointer-events: none;
   z-index: var(--z-caret);
   animation: mdpm-blink var(--caret-gap) ease-in-out infinite;

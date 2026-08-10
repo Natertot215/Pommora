@@ -5,7 +5,7 @@ import { vars } from '../../tokens/color.css'
 export const track = style({
   width: '100%',
   height: '6px',
-  borderRadius: '999px',
+  borderRadius: 'var(--radius-full)',
   background: vars.color.fill.primary,
   overflow: 'hidden',
 })
@@ -13,6 +13,6 @@ export const track = style({
 /** The filled portion — the runtime accent, width-driven. */
 export const fill = style({
   height: '100%',
-  borderRadius: '999px',
+  borderRadius: 'var(--radius-full)',
   background: 'var(--accent)',
 })

@@ -68,7 +68,7 @@
   width: var(--tab-divider-w, 2px);
   height: var(--tab-divider-h, 16px);
   background: var(--separator-segment);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   pointer-events: none;
   transition:
     opacity var(--duration-base) var(--ease-standard) var(--duration-fast),

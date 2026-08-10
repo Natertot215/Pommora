@@ -76,7 +76,7 @@ export const whatCell = style({
 /** The house ring CHANNEL, not a hand-rolled shadow: interactionField already paints
  *  `inset 0 0 0 1px var(--field-ring)`, so a field only sets the colour. Overriding boxShadow
  *  instead would also stomp the channel for any ancestor that sets it. */
-const restRing = { vars: { '--field-ring': c.separator.line } }
+const restRing = { vars: { '--field-ring': c.separator.border } }
 
 /** The shared input-field recipe in its column: flush to the gutters, STANDARD field height
  *  (the interactionField floor), separator-hairline stroke, and the house field's own BODY

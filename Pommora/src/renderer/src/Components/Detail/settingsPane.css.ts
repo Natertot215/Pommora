@@ -82,7 +82,7 @@ export const header = style({
   alignItems: 'center',
   gap: '8px',
   padding: '2px 0 6px 2px',
-  vars: { '--field-ring': c.separator.line },
+  vars: { '--field-ring': c.separator.border },
 })
 
 /** Square icon button — opens the icon picker. Paints the shared OutlineTint channel so a
@@ -121,7 +121,7 @@ export const dashIcon = style({
   height: `${SIZE.dashIcon}px`,
   borderRadius: '3px',
   border: '1px dashed currentColor',
-  opacity: 0.5,
+  opacity: 'var(--state-disabled)',
   flex: '0 0 auto',
 })
 

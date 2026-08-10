@@ -1,10 +1,10 @@
 import { style } from '@vanilla-extract/css'
-import { text, vars } from '@renderer/design-system/tokens'
+import { TINT_STEPS, text, tintAt, vars } from '@renderer/design-system/tokens'
 import { stack } from '@renderer/design-system/tokens/stack'
 
 const c = vars.color
 
-/** Scrim behind the crop dialog (color-mix is the project's opacity mechanism). */
+/** Scrim behind the crop dialog — system-black at a tint-scale step, the project's opacity mechanism. */
 export const backdrop = style({
   position: 'fixed',
   inset: 0,
@@ -12,7 +12,7 @@ export const backdrop = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: `color-mix(in srgb, ${c.system.black} 45%, transparent)`,
+  background: tintAt(c.system.black, TINT_STEPS.secondary),
 })
 
 /** Dialog panel — layout on top of the GlassSurface frost Material (the design-system surface glass). */
@@ -24,7 +24,7 @@ export const panel = style({
   padding: '18px',
   borderRadius: '12px',
   border: `1px solid ${c.separator.border}`,
-  boxShadow: `0 20px 60px color-mix(in srgb, ${c.system.black} 55%, transparent)`,
+  boxShadow: `0 20px 60px ${tintAt(c.system.black, TINT_STEPS.primary)}`,
 })
 
 export const title = style([text.headline.emphasized, { color: c.label.primary }])
@@ -83,6 +83,6 @@ export const buttonPrimary = style([
     ...buttonBase,
     color: c.label.primary,
     background: 'var(--accent)',
-    selectors: { '&:disabled': { opacity: 0.5 } },
+    selectors: { '&:disabled': { opacity: 'var(--state-disabled)' } },
   },
 ])
