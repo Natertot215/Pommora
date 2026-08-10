@@ -177,10 +177,8 @@ const api = {
   titleMenu: ask('nexus:titleMenu'),
   // The table grip's right-click menu.
   tableMenu: ask('table-menu'),
-  // The callout grip's right-click menu.
-  calloutMenu: ask('callout-menu'),
-  // The embed grip's menu — Embed Page ▸ on rail grips, Page Source ▸ + Delete on a tile's.
-  embedMenu: ask('embed-menu'),
+  // A block grip's menu — Delete on every kind, Type ▸ on a list, Page Source ▸ on an embed tile.
+  gripMenu: ask('grip-menu'),
   // The table-view column header's right-click menu.
   columnMenu: ask('column-menu'),
   // A table cell's right-click menu (title meta / per-type Style / Edit).

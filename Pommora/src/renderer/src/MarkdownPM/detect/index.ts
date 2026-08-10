@@ -1,6 +1,9 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { parse } from '../parser'
 import { fenceLang, fenceSpans, lineOffsetsOf, quoteDepthOf } from '@shared/markdownCode'
+import type { ListKind } from '@shared/gripMenu'
+
+export type { ListKind }
 
 export const embedRegex = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/dg
 export const markdownLinkRegex = (): RegExp => /\[([^\]\r\n]+)\]\(([^)\r\n]+)\)/dg
@@ -249,7 +252,7 @@ export function indentLevel(ws: string): number {
  *  `arrow` is the `→ ` list (typed `-> `, auto-converted to the glyph by `dashArrow`); it behaves like a
  *  bullet but its marker IS the on-disk glyph, so it's kept as literal source rather than widget-swapped. */
 export interface ListMarker {
-  kind: 'ordered' | 'bullet' | 'checkbox' | 'arrow'
+  kind: ListKind
   bullet?: string
   digits?: string
   level: number

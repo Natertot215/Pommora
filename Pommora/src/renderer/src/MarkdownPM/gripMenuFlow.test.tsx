@@ -5,13 +5,13 @@ import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
 import { useSession } from '@renderer/store'
-import type { EmbedMenuAction, EmbedMenuContext } from '@shared/embedMenu'
+import type { GripMenuAction, GripMenuContext } from '@shared/gripMenu'
 import type { NexusTree } from '@shared/types'
 
-const calls: EmbedMenuContext[] = []
-let nextPick: EmbedMenuAction | null = null
+const calls: GripMenuContext[] = []
+let nextPick: GripMenuAction | null = null
 stubEditorBridge({
-  embedMenu: async (ctx: EmbedMenuContext) => {
+  gripMenu: async (ctx: GripMenuContext) => {
     calls.push(ctx)
     return nextPick
   },
@@ -53,7 +53,8 @@ const offeredTitles = (): string[] => {
     if (n.title) out.push(n.title)
     for (const ch of n.children ?? []) walk(ch as { title?: string })
   }
-  for (const n of calls[0].tree) walk(n)
+  const ctx = calls[0]
+  if (ctx.kind === 'embed') for (const n of ctx.tree) walk(n)
   return out
 }
 
@@ -74,47 +75,76 @@ async function gripMenu(view: EditorView, lineText: string): Promise<void> {
   })
 }
 
-describe('the embed grip menu, end to end', () => {
-  it('a rail grip offers create mode with the host + embedded pages excluded, and the pick inserts fenced', async () => {
-    const view = await mount('intro prose\n\n![[Alpha]]\n\nbelow')
-    nextPick = { action: 'embed', title: 'Soup' }
-    await gripMenu(view, 'intro prose')
-    expect(calls).toHaveLength(1)
-    expect(calls[0].mode).toBe('create')
-    expect(offeredTitles()).toEqual(['Beta', 'Soup']) // Alpha embedded, EmbedHost is the host
-    expect(view.state.doc.toString()).toBe('intro prose\n\n![[Soup]]\n\n![[Alpha]]\n\nbelow')
+describe("a list grip's Type switch", () => {
+  it('offers the block\'s current kind, and switching rewrites every marker', async () => {
+    const view = await mount('- alpha\n- beta')
+    nextPick = { action: 'listKind', kind: 'ordered' }
+    await gripMenu(view, 'alpha')
+    expect(calls[0]).toEqual({ kind: 'list', current: 'bullet' })
+    expect(view.state.doc.toString()).toBe('1. alpha\n2. beta')
   })
 
-  it("an embed tile's grip offers tile mode, and Page Source re-aims the line", async () => {
+  it('nested runs number independently of their parent', async () => {
+    const view = await mount('- a\n\t- x\n\t- y\n- b')
+    nextPick = { action: 'listKind', kind: 'ordered' }
+    await gripMenu(view, 'a')
+    expect(view.state.doc.toString()).toBe('1. a\n\t1. x\n\t2. y\n2. b')
+  })
+
+  it('Checklist and Arrowed reach every level of the block', async () => {
+    const view = await mount('1. alpha\n\t2. sub\n\nafter')
+    nextPick = { action: 'listKind', kind: 'checkbox' }
+    await gripMenu(view, 'alpha')
+    expect(view.state.doc.toString()).toBe('- [ ] alpha\n\t- [ ] sub\n\nafter')
+    nextPick = { action: 'listKind', kind: 'arrow' }
+    await gripMenu(view, 'alpha')
+    expect(view.state.doc.toString()).toBe('→ alpha\n\t→ sub\n\nafter')
+  })
+
+  it('a wrapped item keeps its continuation line', async () => {
+    const view = await mount('- alpha\n  wrapped body\n- beta')
+    nextPick = { action: 'listKind', kind: 'checkbox' }
+    await gripMenu(view, 'alpha')
+    expect(view.state.doc.toString()).toBe('- [ ] alpha\n  wrapped body\n- [ ] beta')
+  })
+
+  it('a block whose markers disagree reports no current kind', async () => {
+    const view = await mount('- alpha\n1. beta')
+    nextPick = null
+    await gripMenu(view, 'alpha')
+    expect(calls[0]).toEqual({ kind: 'list', current: null })
+  })
+
+  it('Delete takes the whole list', async () => {
+    const view = await mount('intro\n\n- alpha\n- beta\n\nafter')
+    nextPick = { action: 'delete' }
+    await gripMenu(view, 'alpha')
+    expect(view.state.doc.toString()).toBe('intro\n\nafter')
+  })
+})
+
+describe('the embed tile grip', () => {
+  it('offers tile mode, and Page Source re-aims the line', async () => {
     const view = await mount('intro\n\n![[Alpha]]\n\nbelow')
     nextPick = { action: 'source', title: 'Beta' }
     await gripMenu(view, 'tile')
-    expect(calls[0]?.mode).toBe('tile')
+    expect(calls[0]?.kind).toBe('embed')
+    expect(offeredTitles()).toEqual(['Beta', 'Soup']) // Alpha embedded, EmbedHost is the host
     expect(view.state.doc.toString()).toBe('intro\n\n![[Beta]]\n\nbelow')
   })
 
-  it('Delete Embed removes the tile with its extra fencing blank', async () => {
+  it('Delete removes the tile with its extra fencing blank', async () => {
     const view = await mount('intro\n\n![[Alpha]]\n\nbelow')
     nextPick = { action: 'delete' }
     await gripMenu(view, 'tile')
     expect(view.state.doc.toString()).toBe('intro\n\nbelow')
   })
 
-  it('a dismissed menu changes nothing', async () => {
-    const doc = 'intro\n\n![[Alpha]]\n\nbelow'
-    const view = await mount(doc)
-    nextPick = null
-    await gripMenu(view, 'tile')
-    expect(view.state.doc.toString()).toBe(doc)
-  })
-})
-
-describe('the gate folds', () => {
   it('Page Source re-aims an UNRESOLVED embed line — the stale token is exactly what needs re-aiming', async () => {
     const view = await mount('intro\n\n![[Ghost]]\n\nbelow')
     nextPick = { action: 'source', title: 'Beta' }
     await gripMenu(view, 'Ghost')
-    expect(calls[0]?.mode).toBe('tile')
+    expect(calls[0]?.kind).toBe('embed')
     expect(view.state.doc.toString()).toBe('intro\n\n![[Beta]]\n\nbelow')
   })
 
@@ -125,10 +155,36 @@ describe('the gate folds', () => {
         { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
       ]),
     })
-    const view = await mount('intro prose')
+    const view = await mount('intro\n\n![[Alpha]]\n\nbelow')
     nextPick = null
-    await gripMenu(view, 'intro prose')
+    await gripMenu(view, 'tile')
     expect(offeredTitles()).toEqual(['Soup'])
+  })
+})
+
+describe('every other grip', () => {
+  it('a paragraph offers Delete alone', async () => {
+    const view = await mount('intro\n\nmiddle para\n\nafter')
+    nextPick = { action: 'delete' }
+    await gripMenu(view, 'middle para')
+    expect(calls[0]).toEqual({ kind: 'plain' })
+    expect(view.state.doc.toString()).toBe('intro\n\nafter')
+  })
+
+  it('a callout grip deletes the whole box, leaving no doubled blank', async () => {
+    const view = await mount('intro\n\n> [!note] head\n> body\n\nafter')
+    nextPick = { action: 'delete' }
+    await gripMenu(view, 'head')
+    expect(calls[0]).toEqual({ kind: 'plain' })
+    expect(view.state.doc.toString()).toBe('intro\n\nafter')
+  })
+
+  it('a dismissed menu changes nothing', async () => {
+    const doc = 'intro\n\n- alpha\n\nafter'
+    const view = await mount(doc)
+    nextPick = null
+    await gripMenu(view, 'alpha')
+    expect(view.state.doc.toString()).toBe(doc)
   })
 
   it('a read-only editor pops no grip menu at all', async () => {
