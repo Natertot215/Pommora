@@ -146,7 +146,12 @@ export function PaneDnd({
   // pointer move and every re-resolve, so a held-still drag keeps updating as content moves.
   const resolveSlot = (id: string, clientY: number): void => {
     const s = snap.get()
-    if (!s) return
+    if (!s) {
+      // Nothing measurable — a region unmounted mid-drag. A stale slot must not survive to the
+      // drop, so the resolve fails closed.
+      live.current = null
+      return
+    }
     const liveSlot = slot(s.rows, s.byId, s.regions, clientY, id)
     live.current = liveSlot
     setDrag({
