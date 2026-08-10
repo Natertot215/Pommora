@@ -166,7 +166,7 @@ export function TableRowDnd({
       if (clientY >= m.top) near = m
       else break
     }
-    const above = clientY < near.mid // drop before `near` vs after it
+    const above = clientY < near.mid
     const targetGroup = near.group
     const lineY = (above ? near.top : near.bottom) - s.boxTop
     const left = near.left - s.boxLeft + DROP_LINE_INSET
@@ -174,7 +174,6 @@ export function TableRowDnd({
 
     if (targetGroup === activeGroup) {
       if (!cfg.current.canReorderWithin) return null
-      // before `near` (above) or before the row after `near` in the flat order (below).
       const order = rowsRef.current.map((x) => x.id)
       const beforeId = above ? near.id : (order[order.indexOf(near.id) + 1] ?? null)
       const without = order.filter((x) => x !== id)

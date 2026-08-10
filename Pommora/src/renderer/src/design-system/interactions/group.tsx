@@ -183,7 +183,6 @@ export function DragGroup({
   const drag = useRef({
     id: '',
     zone: '',
-    pid: -1,
     el: null as HTMLElement | null,
     rect: null as Box | null,
     startX: 0,
@@ -568,7 +567,6 @@ export function DragGroup({
     drag.current = {
       id,
       zone: zoneId,
-      pid: e.pointerId,
       el,
       rect: null,
       startX: e.clientX,

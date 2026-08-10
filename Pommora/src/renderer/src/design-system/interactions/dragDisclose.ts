@@ -11,7 +11,7 @@ let hovered: HTMLElement | null = null
 let timer: number | null = null
 let lastCheck = 0
 let remeasure: (() => void) | null = null // the active engine re-snapshots its drop geometry
-let remeasureTimer: number | null = null
+let remeasureRaf: number | null = null
 
 function clearHover(): void {
   hovered = null
@@ -21,18 +21,23 @@ function clearHover(): void {
   }
 }
 
-// After a band springs open, mounted rows shift the layout — so the engine's ONE-TIME drag
-// geometry snapshot goes stale. Re-snapshot once on the next frame (instant/reduced-motion open)
-// and once after the disclosure animation settles.
+const SETTLE_MS = 250 // covers the disclosure animation, with slack for its start-of-frame skew
+
+// After a band springs open, mounted rows shift the layout for the length of the disclosure
+// animation — so the engine's drop geometry re-aims every frame until the reveal settles. A
+// discrete once-then-settle pair left a gap: a move between the two ticks re-took the snapshot
+// mid-animation and cleared its dirty flag, so a release inside the gap committed that geometry.
 function scheduleRemeasure(): void {
   if (!remeasure) return
-  requestAnimationFrame(() => {
-    if (drags > 0) remeasure?.()
-  })
-  if (remeasureTimer != null) clearTimeout(remeasureTimer)
-  remeasureTimer = window.setTimeout(() => {
-    if (drags > 0) remeasure?.()
-  }, 250)
+  if (remeasureRaf != null) cancelAnimationFrame(remeasureRaf)
+  const settle = performance.now() + SETTLE_MS
+  const tick = (): void => {
+    remeasureRaf = null
+    if (drags === 0) return
+    remeasure?.()
+    if (performance.now() < settle) remeasureRaf = requestAnimationFrame(tick)
+  }
+  remeasureRaf = requestAnimationFrame(tick)
 }
 
 function onMove(e: PointerEvent): void {
@@ -77,9 +82,9 @@ export function endDragDisclose(): void {
     window.removeEventListener('pointermove', onMove)
     clearHover()
     remeasure = null
-    if (remeasureTimer != null) {
-      clearTimeout(remeasureTimer)
-      remeasureTimer = null
+    if (remeasureRaf != null) {
+      cancelAnimationFrame(remeasureRaf)
+      remeasureRaf = null
     }
   }
 }

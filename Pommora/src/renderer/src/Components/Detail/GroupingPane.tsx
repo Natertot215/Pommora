@@ -596,6 +596,10 @@ function SpringableRow({
   )
 }
 
+/** The band id a disclosed sub-group chip registers under — the registration and the row that
+ *  spreads its handle must mint the same string, or the row drags nothing. */
+const subBandId = (setId: string, value: string): string => `sub:${setId}:${value}`
+
 /** Drags mirror the table band rules: sibling reorder writes view order in Custom / the
  *  filesystem in Location; a cross-nesting drop is always an fs reparent. */
 function LocationHierarchy({
@@ -640,7 +644,7 @@ function LocationHierarchy({
     const bands: Band[] = []
     const chipValueOf = new Map<string, string>()
     const chipBandId = (setId: string, value: string): string => {
-      const id = `sub:${setId}:${value}`
+      const id = subBandId(setId, value)
       chipValueOf.set(id, value)
       return id
     }
@@ -750,7 +754,7 @@ function LocationHierarchy({
   const subType = subDef?.type === 'status' ? 'status' : 'select'
 
   const subChipRow = (setId: string, o: (typeof subChips)[number]): React.JSX.Element => {
-    const id = `sub:${setId}:${o.value}`
+    const id = subBandId(setId, o.value)
     return (
       <div
         key={o.value}

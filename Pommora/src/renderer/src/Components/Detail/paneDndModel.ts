@@ -34,7 +34,6 @@ export function nexusReorderIndex(
   return last !== undefined ? full.indexOf(last) + 1 : full.length
 }
 
-/** True when the pointer sits inside the region's field. */
 export const withinRegion = (r: Region, pointerY: number): boolean =>
   pointerY >= r.top && pointerY <= r.bottom
 

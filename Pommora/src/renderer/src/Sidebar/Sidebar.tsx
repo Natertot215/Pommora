@@ -587,42 +587,33 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   // its own full-tree index would double the work per tree change.
   const dndIndex = useMemo(() => buildIndex(tree), [tree])
 
-  const contextsLayer = (
+  const dndLayer = (section: React.ReactNode): React.JSX.Element => (
     <SidebarDnd
       index={dndIndex}
       onCommit={onCommit}
       setPlacement={setPlacement}
       subSetPlacement={subSetPlacement}
     >
-      <div className="section">
-        {(tree.contexts ?? []).map((g) => (
-          <ContextGroupDisclosure key={g.def.id} group={g} />
-        ))}
-      </div>
+      <div className="section">{section}</div>
     </SidebarDnd>
   )
 
-  const collectionsLayer = (
-    <SidebarDnd
-      index={dndIndex}
-      onCommit={onCommit}
-      setPlacement={setPlacement}
-      subSetPlacement={subSetPlacement}
-    >
-      <div className="section">
-        {(tree.collections ?? []).map((c) => (
-          <CollectionRow
-            key={c.id}
-            col={c}
-            depth={0}
-            selection={selection}
-            onSelectCollection={onSelectCollection}
-            onSelectSet={onSelectSet}
-            onSelectPage={onSelectPage}
-          />
-        ))}
-      </div>
-    </SidebarDnd>
+  const contextsLayer = dndLayer(
+    (tree.contexts ?? []).map((g) => <ContextGroupDisclosure key={g.def.id} group={g} />),
+  )
+
+  const collectionsLayer = dndLayer(
+    (tree.collections ?? []).map((c) => (
+      <CollectionRow
+        key={c.id}
+        col={c}
+        depth={0}
+        selection={selection}
+        onSelectCollection={onSelectCollection}
+        onSelectSet={onSelectSet}
+        onSelectPage={onSelectPage}
+      />
+    )),
   )
 
   // Fires only on the bare layer surface (e.target === e.currentTarget), so a row's own context

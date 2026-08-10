@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { DragGhost } from './DragGhost'
 import { Icon } from '@renderer/design-system/symbols'
 import { chipPill, chipColor } from '@renderer/design-system/tokens'
@@ -22,8 +22,7 @@ import * as s from './settingsPane.css'
 /**
  * Double-click a group heading to rename its label. The id underneath never changes — a calendar
  * bridge maps groups by id, and every stored value references one. Remove/Clear
- * cascade pages. The Style picker lands in a later slice; registry-only edits ride setStatusGroups,
- * the page-touching ops their own IPC.
+ * cascade pages. Registry-only edits ride setStatusGroups, the page-touching ops their own IPC.
  */
 export function StatusEditor({
   groups,
@@ -43,9 +42,13 @@ export function StatusEditor({
   const [renaming, setRenaming] = useState<string | null>(null) // the option value being renamed
   const [coloring, setColoring] = useState<string | null>(null) // the option value being recolored
   const paletteBtnRef = useRef<HTMLButtonElement>(null)
-  const reorder = useStatusReorder(
-    groups.map((g) => ({ id: g.id, values: g.options.map((o) => o.value) })),
-    (value, toGroupId, toIndex) => onSetGroups(moveStatusOption(groups, value, toGroupId, toIndex)),
+  // Identity-stable across the hook's own re-renders — its list-change invalidation keys on this.
+  const statusOrder = useMemo(
+    () => groups.map((g) => ({ id: g.id, values: g.options.map((o) => o.value) })),
+    [groups],
+  )
+  const reorder = useStatusReorder(statusOrder, (value, toGroupId, toIndex) =>
+    onSetGroups(moveStatusOption(groups, value, toGroupId, toIndex)),
   )
 
   const commitAdd = (groupId: string, raw: string): void => {

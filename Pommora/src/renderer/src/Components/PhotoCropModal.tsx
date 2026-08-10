@@ -104,6 +104,7 @@ export function PhotoCropModal({
           onPointerMove={onPointerMove}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
+          onLostPointerCapture={endDrag}
         >
           <img
             ref={imgRef}

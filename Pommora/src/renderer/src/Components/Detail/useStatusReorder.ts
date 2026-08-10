@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
@@ -12,7 +12,7 @@ import { findScroller, startAutoScroll } from '@renderer/design-system/interacti
 // invalidating scroll re-resolves from the last point.
 
 type SnapRow = { value: string; top: number; bottom: number }
-type SnapGroup = { id: string; top: number; bottom: number; containerTop: number; rows: SnapRow[] }
+type SnapGroup = { id: string; top: number; bottom: number; rows: SnapRow[] }
 
 /** Passing `order` keeps the hook's geometry snapshot aligned with what's actually rendered. */
 export function useStatusReorder(
@@ -55,10 +55,15 @@ export function useStatusReorder(
   }
 
   const snap = useDragSnapshot(takeSnapshot)
+  // `order` must be identity-stable across the hook's own per-move re-renders (the caller memoizes
+  // it), so this fires only on a real list change — a watcher push mid-drag re-aims the line.
+  useEffect(() => {
+    snap.markDirty()
+    if (dragged.current) resolveAt(lastPoint.current.y)
+  }, [order])
   function takeSnapshot(): SnapGroup[] {
     return orderRef.current.map((grp) => {
-      const container = groupEls.current.get(grp.id)
-      const cRect = container?.getBoundingClientRect()
+      const cRect = groupEls.current.get(grp.id)?.getBoundingClientRect()
       const rowRects: SnapRow[] = []
       for (const value of grp.values) {
         const el = rows.current.get(value)
@@ -71,7 +76,6 @@ export function useStatusReorder(
         id: grp.id,
         top: cRect?.top ?? 0,
         bottom: cRect?.bottom ?? 0,
-        containerTop: cRect?.top ?? 0,
         rows: rowRects,
       }
     })
@@ -100,11 +104,11 @@ export function useStatusReorder(
     }
     const lineY =
       index >= grp.rows.length
-        ? (grp.rows[grp.rows.length - 1]?.bottom ?? grp.containerTop)
+        ? (grp.rows[grp.rows.length - 1]?.bottom ?? grp.top)
         : index === 0
           ? grp.rows[0].top
           : (grp.rows[index - 1].bottom + grp.rows[index].top) / 2
-    return { groupId: grp.id, index, top: lineY - grp.containerTop }
+    return { groupId: grp.id, index, top: lineY - grp.top }
   }
 
   // The slot in the target group's without-the-dragged space plus whether it actually moves — the
@@ -181,7 +185,7 @@ export function useStatusReorder(
       onDrop: () => {
         if (snap.isDirty()) resolveAt(lastPoint.current.y)
         const d = dragged.current
-        if (d) {
+        if (d && d.toGroupId !== '') {
           const { to, moves } = destination(d.value, d.toGroupId, d.toIndex)
           if (moves) {
             onMoveRef.current(d.value, d.toGroupId, to)

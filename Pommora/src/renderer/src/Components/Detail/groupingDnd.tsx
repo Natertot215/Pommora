@@ -154,12 +154,11 @@ export function useGroupingListDrag({
             if (snap.isDirty()) resolveAt(lastPoint.current.y)
             const slot = live.current
             if (slot) {
+              // The same classification bandDnd runs — the caller never re-derives it.
+              const parentId = cfg.current.bands.find((b) => b.id === id)?.parentId
+              const reorders = !slot.nestInto && slot.impliedParentId === parentId
               cfg.current.onDrop(id, {
-                kind: slot.nestInto
-                  ? 'reparent'
-                  : slot.impliedParentId === cfg.current.bands.find((b) => b.id === id)?.parentId
-                    ? 'reorder'
-                    : 'reparent',
+                kind: reorders ? 'reorder' : 'reparent',
                 targetParentId: slot.nestInto ?? slot.impliedParentId,
                 beforeId: slot.beforeId,
               })

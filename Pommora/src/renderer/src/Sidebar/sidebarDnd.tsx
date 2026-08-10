@@ -252,7 +252,7 @@ export function SidebarDnd({
     const group = siblingGroup(draggedEntry, idx)
     const { beforeId, edge } = slotInGroup(group, over, clientY, d.id)
     const order = nextOrder(group, d.id, beforeId)
-    const commit = reorderCommit(draggedEntry, idx, order)
+    const commit = reorderCommit(draggedEntry, order)
     if (!commit) return null
     return {
       depth: overEntry.depth,
@@ -414,7 +414,7 @@ function siblingGroup(draggedEntry: Entry, idx: Index): string[] {
 }
 
 // Sets reorder/move via the moveSet branch in computeTarget, not here.
-function reorderCommit(draggedEntry: Entry, _idx: Index, order: string[]): MutateRequest | null {
+function reorderCommit(draggedEntry: Entry, order: string[]): MutateRequest | null {
   switch (draggedEntry.kind) {
     case 'collection':
       return { op: 'reorderTop', key: 'collection_order', order }
