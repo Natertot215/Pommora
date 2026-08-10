@@ -81,9 +81,7 @@
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined.
 - [ ] The "File" property icon gets clipped by its vertical row padding on the PropertiesPane.
 - [ ] The link-rename field shows a leading empty space — the shared field recipe's horizontal padding surviving the TextPicker input override, with the pane gutter adding to it. A visual inset rather than a stored character (deprioritized).
-- [ ] Extending a line on MarkdownPM directly above a codeblock jumps into the codeblock rather than creating a new line. Tables answer the same hazard with a boundary guard on Enter; fences have no counterpart in that chain. Nathan is unsure whether this has been fixed already; reconcile when appropriate.
 - [ ] The Set-Card drag flash — the drop snaps back, then jumps on reload.
-- [ ] Clicking the settings button on the sidebar ribbon doesn't close it once it's been opened.
 
 ### Recent Work
 

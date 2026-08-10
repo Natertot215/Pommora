@@ -10,7 +10,7 @@ A **surface launcher** — each icon points at a surface, and surfaces live in d
 
 - **Homepage** — pinned at the top, drawn as the Nexus's identity icon. Selecting it opens the Homepage in the main pane; it does **not** change what the content column shows.
 
-- **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage in that default order, **drag-to-reorder**. **Collections · Contexts · Agenda** switch the content column's mode; **Navigation** summons the NavWindow (→ `NavigationPM.md`) and **Settings** the floating Settings window (→ `ConfigurationPM.md`). The Collections and Contexts tabs draw an entity default, so a personalization override moves them; the rest carry fixed glyphs.
+- **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage in that default order, **drag-to-reorder**. **Collections · Contexts · Agenda** switch the content column's mode; **Navigation** toggles the NavWindow (→ `NavigationPM.md`) and **Settings** the floating Settings window (→ `ConfigurationPM.md`) — the icon that summoned a window dismisses it, the same toggle its keyboard command drives, so the two controls over one window never disagree. The Collections and Contexts tabs draw an entity default, so a personalization override moves them; the rest carry fixed glyphs.
 
 The ribbon collapses and expands *with* the sidebar, and toggles on its own inside the open sidebar: the `toggle-ribbon` command (⌘E by default → `ConfigurationPM.md`) slides the strip off the panel's left edge on the sidebar's collapse motion while the content column reclaims the width. Ribbon visibility is transient window state, like the sidebar's collapse; the active mode and ribbon order persist per-Nexus.
 
