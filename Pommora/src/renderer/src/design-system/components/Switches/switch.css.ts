@@ -81,4 +81,4 @@ export const tickCircle = style([
   },
 ])
 
-export const disabled = style({ opacity: 0.4 })
+export const disabled = style({ opacity: 'var(--state-disabled)' })

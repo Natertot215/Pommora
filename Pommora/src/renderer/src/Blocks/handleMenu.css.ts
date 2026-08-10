@@ -1,7 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../design-system/tokens/color.css'
 import { font, truncateHoverScroll } from '../design-system/tokens/typography.css'
-import { footingLabel } from '../design-system/components/menu/menu.css'
 
 const c = colorVars.color
 
@@ -27,27 +26,6 @@ export const row = style({
 
 /** Header/footer density for this thin menu — the house zoom knob scales the whole bar. */
 export const barScale = style({ zoom: 0.85 })
-
-/** A pinned-footer text action (+ Custom) — footing tone over the accessory hover pill. */
-export const footerAction = style([
-  footingLabel,
-  {
-    border: 'none',
-    background: 'none',
-    padding: '2px 4px',
-    borderRadius: '5px',
-    cursor: 'default',
-    selectors: { '&:hover': { background: colorVars.color.state.hover } },
-  },
-])
-
-/** The footing lock action — a left-pinned labeled toggle (lock icon + "Lock"/"Unlock"), a step-quieter
- *  icon than its label. No pressed/selected state — it never mutes on lock (only the actions above do). */
-export const footerLockAction = style([
-  footerAction,
-  { display: 'inline-flex', alignItems: 'center', gap: '5px' },
-])
-export const lockIcon = style({ selectors: { '&&': { color: c.label.tertiary } } })
 
 /** The page-embed title field — the source page's identity as a bordered "field" reading like an
  *  input but acting as a link: clicking it opens the page full-view. Its border wears the accent tint

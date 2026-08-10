@@ -130,3 +130,13 @@ export const optionSelected = style({
   background: c.state.selected,
   selectors: { '&:hover': { background: c.state.selected } },
 })
+
+/** An icon-bearing option row — leading glyph + label, LEFT-aligned (the option's own centering
+ *  yields to the row layout when a glyph leads). */
+export const iconOption = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  width: '100%',
+  justifyContent: 'flex-start',
+})

@@ -200,11 +200,11 @@
 }
 
 .data-row:hover {
-  background: var(--hover);
+  background: var(--state-hover);
 }
 .data-row.selected,
 .data-row.selected:hover {
-  background: var(--selected);
+  background: var(--state-selected);
 }
 .data-row.row-dragging {
   opacity: var(--state-ghost);

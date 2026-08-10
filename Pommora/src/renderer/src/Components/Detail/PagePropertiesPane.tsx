@@ -30,7 +30,7 @@ import { DatetimeValuePicker } from '../../Detail/Views/PropertyEditing/Datetime
 import { parseEditorValue } from '../../Detail/Views/Cards/cardValueInput'
 import { side } from '../../design-system/components/menu/menu.css'
 import { propertyTypeIconName } from './PropertyTypes'
-import { iconOption } from './pickerControl.css'
+import { iconOption } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import { useSession } from '../../store'
 import * as s from './pageProperties.css'
 

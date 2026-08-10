@@ -27,6 +27,9 @@ export const wrapper = style({
  *  centre via the surface's default centred notch). */
 export const anchor = style(dropdownAnchor('center', stack.local.lifted))
 
+/** The right-edge variant — the NavPane hangs off the toolbar's trailing cluster. */
+export const anchorRight = style(dropdownAnchor('right', stack.local.lifted))
+
 /** The trigger button — one padding for both states; the segment's own gap is zeroed so the collapsing
  *  label slot (segmented.css) is the sole icon↔title spacing, and the icon-only state sits flush. */
 export const button = style({ paddingInline: BUTTON.padX })

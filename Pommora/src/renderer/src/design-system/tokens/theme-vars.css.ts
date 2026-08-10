@@ -57,6 +57,8 @@ globalStyle(':root', {
     // a fade to the same tint MarkdownPM's drag-source uses. An opacity,
     // not a colour — consumed via `opacity: var(--state-ghost)`.
     '--state-ghost': 'var(--tint-primary)',
+    // A structurally-present but inert control's dim. An opacity, like --state-ghost.
+    '--state-disabled': '0.4',
     // Drag insertion line — the drop-target marker (accent line + leading dot) shared by every drop-line
     // DnD surface: table rows/bands AND the settings-pane property reorder. Global so a pane portaled out
     // of the table scope still resolves it; the color points at the accent, the two dims are the line's
