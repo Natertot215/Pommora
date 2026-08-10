@@ -140,10 +140,10 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 **Negative control:** the test — scroll fired mid-drag, next move resolves against fresh rects — must go red against today's code. Confirm red before implementing. **Assert through the hook's public surface (`line` / `nestTarget` after a dispatched scroll + move), never through internal flags** — Task 11 replaces the flag, and a test reaching for it would go vacuously green there.
 
 **Steps:**
-- [ ] Read `groupingDnd.tsx` and `bandDnd.tsx`'s listener/teardown pair whole.
-- [ ] Write the failing test; run — expect red.
-- [ ] Implement; re-run — expect green; full gate.
-- [ ] Commit: `fix(grouping): a mid-drag scroll re-aims the drop`
+- [x] Read `groupingDnd.tsx` and `bandDnd.tsx`'s listener/teardown pair whole.
+- [x] Write the failing test; run — expect red. *(Red confirmed: stale rects resolved `before B` where fresh geometry says `before A`.)*
+- [x] Implement; re-run — expect green; full gate. *(typecheck 0 · lint 0 · 2,254 tests.)*
+- [x] Commit: `fix(grouping): a mid-drag scroll re-aims the drop`
 
 #### Task 2: The GFM table drag re-bases its origin on scroll
 
@@ -538,8 +538,8 @@ On the running app against a scratch nexus: a drag on each migrated surface surv
 
 ### Progress
 
-- [ ] **Phase 1** — The stale-slot fixes · base `<commit>`
-  - [ ] Task 1 — The grouping pane's snapshot invalidates · `<commit>`
+- [ ] **Phase 1** — The stale-slot fixes · base `ba2a35ff`
+  - [x] Task 1 — The grouping pane's snapshot invalidates · `<commit>`
   - [ ] Task 2 — The GFM table drag re-bases its origin · `<commit>`
   - [ ] Task 3 — The table row drag dirties on a rows change · `<commit>`
   - [ ] Gate 1
