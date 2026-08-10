@@ -67,7 +67,7 @@
 - [ ] Perf debt: no row virtualization, and an external value edit doesn't live-refresh an open table.
 - [ ] iCloud-sync readiness — `serializeOnFile` can't coordinate with the iCloud daemon under LWW, `nexus.db` needs sync-exclusion, and the walk has to skip `.icloud` placeholders.
 - [ ] Two prospects from the property-syntax arc: an inline field-error surface, and what a duplicate property name should do.
-- [ ] The shell carries a second text ramp — `--text`/`--text-dim` in `styles.css` are pure-white opacities while the label tokens ride the `#E8E8E8` ramp. Collapsing them shifts rendered text color across the shell and the table, so the merge (or the ramp's deliberate keep) is a design ruling on the visible delta.
+- [ ] `--text-dim` in `styles.css` is a 50% white the label ramp doesn't carry — secondary (65%) reads visibly brighter, tertiary (35%) visibly dimmer. Its nine consumers are empty-state and caption text; the call is which tier they should read, or whether 50% earns a ramp slot.
 - [ ] `SessionState.error` and `pageError` hold strings while the wire carries `PommoraError` whole — widening them is near-zero churn.
 - [ ] `pageEditor` and `ConnectionHoverCard` reach the editor by CSS selector; the registered-handle pattern that replaces it is already established in `sidebarDnd`, `paneDnd`, and `useOptionReorder`.
 - [ ] `revealPageOffset` sleeps on a duration to wait out a fold animation while `folding.ts` owns the real completion signal.
