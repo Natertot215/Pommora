@@ -34,6 +34,12 @@ export type DragItem = {
 
 export const ACTIVATION = 5 // px the pointer must travel before a drag starts (vs. a click)
 export const DROP_LINE_INSET = 2 // px an insertion line is pulled in from its surface's edges
+/** The cursor offset every floating drag chip hangs at (the sidebar's grab-point ghost is the
+ *  deliberate exception). */
+export const GHOST_OFFSET = { x: 12, y: 8 }
+/** The editable-text core no drag may start from — surfaces compose `button` etc. on top where
+ *  they deliberately block more. */
+export const EDITABLE_TARGETS = 'input, textarea, [contenteditable="true"]'
 
 /** Swallow the click that fires right after a committed drag, so the drop doesn't also trigger
  *  the surface's click action. One capture-phase, once-only guard. */

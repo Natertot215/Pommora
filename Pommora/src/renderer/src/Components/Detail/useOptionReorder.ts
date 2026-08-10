@@ -1,6 +1,7 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
+import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
 
 // The flat cousin of the two-region paneDnd. The drop calls onReorder(value, toIndex) where
 // toIndex is in the without-the-dragged coordinate space (matching optionModel.reorderOption).
@@ -104,7 +105,7 @@ export function useOptionReorder(
   }
 
   const onRowPointerDown = (value: string, e: ReactPointerEvent): void => {
-    if ((e.target as HTMLElement).closest?.('button, input, [contenteditable="true"]')) return
+    if ((e.target as HTMLElement).closest?.(`button, ${EDITABLE_TARGETS}`)) return
     const el = rows.current.get(value) ?? (e.currentTarget as HTMLElement)
     beginGesture({
       el,
@@ -119,7 +120,7 @@ export function useOptionReorder(
       },
       onDragMove: (ev) => {
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
-        setGhost({ x: ev.clientX + 12, y: ev.clientY + 8 })
+        setGhost({ x: ev.clientX + GHOST_OFFSET.x, y: ev.clientY + GHOST_OFFSET.y })
         resolveAt(ev.clientY)
       },
       scrollTarget: () => container.current,
