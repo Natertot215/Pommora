@@ -26,7 +26,7 @@ export const morphAnimated = style({ transition: `height ${duration.base} ${easi
 export const head = style({ display: 'flex', alignItems: 'center', padding: '2px 4px 6px' })
 export const headDivider = style({
   height: '1px',
-  background: c.separator.line,
+  background: c.separator.border,
   margin: '0 2px 6px',
 })
 export const titleGroup = style({ flex: 1, display: 'flex', gap: '1px' })
@@ -178,7 +178,7 @@ export const pillRowFirst = style({ borderRadius: '7px 0 0 7px', inset: '1px 0 1
 export const pillRowLast = style({ borderRadius: '0 7px 7px 0', inset: '1px 1px 1px 0' })
 
 /* ── Divider between the calendar and the value/boolean area ── */
-export const divider = style({ height: '1px', background: c.separator.line, margin: '7px 2px 8px' })
+export const divider = style({ height: '1px', background: c.separator.border, margin: '7px 2px 8px' })
 
 /* ── Value fields: separator-stroked inputs, icon + value (or the -- empty). The block keeps
       EQUAL breathing room above and below, mirroring the divider's own bottom margin. ── */
@@ -196,7 +196,7 @@ export const field = style({
   display: 'flex',
   alignItems: 'center',
   gap: '6px',
-  border: `1px solid ${c.separator.line}`,
+  border: `1px solid ${c.separator.border}`,
   borderRadius: '8px',
   padding: '4px 7px',
   background: c.fill.tertiary, // ad-hoc fill on this surface, not the shared token ramp

@@ -1,8 +1,9 @@
 import type { CSSProperties, HTMLAttributes, ReactNode, Ref } from 'react'
 import { shadowLiftVar, shadowStandardVar } from '../tokens/color.css'
 
-/** Same recipe as the static frostMaterial (glass-material.ts) — a dimmed blur with a glassy
- *  edge — but with its own pane-tuned params (PANE_FROST). */
+/** The static frostMaterial's recipe (glass-material.ts) — a dimmed blur with a glassy edge — made
+ *  parametric so a pane can be tuned live. PANE_FROST is that recipe at a slightly deeper dim; every
+ *  other value it carries is the material's own. */
 export interface FrostParams {
   blur: number
   brightness: number

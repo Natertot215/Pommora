@@ -10,7 +10,6 @@
      below; the cards then land on the EXACT homepage block-surface inset, never the gallery's own on top. */
   --navwindow-inset: 0;
   --navwindow-inset-v: 0;
-  --card-min: 220px; /* KNOB — the full-window gallery card floor. */
 }
 
 /* The banner-title slot: a chromeless search input in the title position. The top band is the

@@ -1,13 +1,8 @@
-/* Gallery knobs — Nathan tunes live: --card-min (column width floor, drives how many columns the flow
-   fits), --card-gap-h / --card-gap-v (inter-card spacing). All cards share ONE grid — pinned first,
-   recents flowing straight after them (L→R/T→B), no divider. */
+/* The gallery's card geometry is the shared family (design-system/card-tokens.css); only the deeper
+   cover zoom is the gallery's own. All cards share ONE grid — pinned first, recents flowing straight
+   after them (L→R/T→B), no divider. */
 .nav-gallery {
-  --card-min: 180px; /* KNOB — column-width floor: bigger = fewer, larger cards that grow more before a
-                        new column snaps them back; smaller = more, tighter columns */
-  --card-gap-h: 10px;
-  --card-gap-v: 10px;
-  --cover-zoom: 1.25; /* KNOB — overall zoom of the cover image: 1 = as captured; >1 zooms into the top */
-  --thumb-share: 65%; /* KNOB — the image's share of the card height; the title-area takes the rest */
+  --cover-zoom: 1.25; /* KNOB — the gallery reads its covers zoomed further into the top than Cards does */
   display: flex;
   flex-direction: column;
   gap: var(--card-gap-v);
@@ -40,7 +35,7 @@
   cursor: pointer;
 }
 .nav-gallery-card.is-dragging {
-  opacity: 0.85;
+  opacity: var(--state-drag);
 }
 /* The visual card: bordered frame + the query container for the cqi typography below + the hover-pop
    surface (its `hover-pop` class scales it on hover — see styles.css). Kept off the drag shell so the
@@ -66,7 +61,7 @@
 
 .nav-gallery-thumb {
   position: relative;
-  flex: 0 0 var(--thumb-share, 74%);
+  flex: 0 0 var(--thumb-share);
   min-height: 0;
   overflow: hidden;
   background: var(--fill-tertiary);

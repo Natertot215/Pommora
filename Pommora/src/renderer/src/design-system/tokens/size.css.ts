@@ -7,9 +7,12 @@ import { createGlobalTheme } from '@vanilla-extract/css'
  * - `icon.*` — the five-step glyph ladder. A named step routes here the
  *   way a colour name routes to color.css.ts; `<Icon size="md" />` resolves to it.
  * - `control.button.*` — per-component size aliases (`button-small/medium/large`).
- *   Each is a geometry bundle whose `icon` field *references* the icon ladder, so a
- *   control's glyph follows its size automatically. Large is exact from Figma
- *   (SEGMENTED · SYMBOL, Large/None); Small/Medium are proportional until pulled.
+ *   Each is a geometry bundle whose `icon` field *references* the icon ladder rather
+ *   than restating a dimension. The bundles are drawn values, not a formula: heights
+ *   and radii climb with the step, while the divider height and the glyph do not —
+ *   medium carries the tallest divider and shares its icon step with large. Large is
+ *   exact from Figma (SEGMENTED · SYMBOL, Large/None); Small and Medium are held by
+ *   hand until they're pulled.
  */
 
 // The glyph ladder — its own theme so the control bundles can point at its vars.

@@ -256,8 +256,10 @@ export function NavList({
           className="nav-item nav-item-inert"
           title="This result can't be opened"
         >
-          <span className="nav-item-title">{e.title}</span>
-          <span className={cx('nav-item-path', text.caption.standard)}>{e.kind}</span>
+          <OverflowScroll className="nav-item-title">{e.title}</OverflowScroll>
+          <OverflowScroll className={cx('nav-item-path', text.caption.standard)}>
+            {e.kind}
+          </OverflowScroll>
         </div>
       ))}
     </div>

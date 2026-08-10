@@ -1,0 +1,18 @@
+/* ============================================================================
+   CARD TOKENS — the geometry the two card families agreed on: the NavWindow /
+   NavView gallery and the Collection/Set Cards renderer. One owner for the
+   values that matched; each family overrides only what genuinely differs (the
+   gallery's deeper cover zoom, Cards' Scale factor and its own band heights).
+   Nathan tunes these live.
+   ============================================================================ */
+:root {
+  /* KNOB — the shared column-width floor. Bigger = fewer, larger columns that grow further before a
+     new one snaps them back; smaller = more, tighter columns. `-base` is the unscaled value, so a
+     scaling host (Cards' Scale factor) rebuilds --card-min from it without restating the number. */
+  --card-min-base: 180px;
+  --card-min: var(--card-min-base);
+  --card-gap-h: 10px; /* KNOB — inter-card spacing */
+  --card-gap-v: 10px;
+  --thumb-share: 65%; /* KNOB — the image's share of a card's height; the title area takes the rest */
+  --cover-zoom: 1; /* KNOB — cover image zoom: 1 = as captured, >1 zooms into the top */
+}
