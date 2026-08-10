@@ -67,7 +67,7 @@
 - [ ] Perf debt: no row virtualization, and an external value edit doesn't live-refresh an open table.
 - [ ] iCloud-sync readiness — `serializeOnFile` can't coordinate with the iCloud daemon under LWW, `nexus.db` needs sync-exclusion, and the walk has to skip `.icloud` placeholders.
 - [ ] Two prospects from the property-syntax arc: an inline field-error surface, and what a duplicate property name should do.
-- [ ] `--text-dim` in `styles.css` is a 50% white the label ramp doesn't carry — secondary (65%) reads visibly brighter, tertiary (35%) visibly dimmer. Its nine consumers are empty-state and caption text; the call is which tier they should read, or whether 50% earns a ramp slot.
+- [ ] Mint the inactive state token: the six empty-state text sites read `--label-tertiary` as an interim (each marked `Awaiting proper inactive state token`), and the token that names that state joins the `--state` family when its value is ruled.
 - [ ] `SessionState.error` and `pageError` hold strings while the wire carries `PommoraError` whole — widening them is near-zero churn.
 - [ ] `pageEditor` and `ConnectionHoverCard` reach the editor by CSS selector; the registered-handle pattern that replaces it is already established in `sidebarDnd`, `paneDnd`, and `useOptionReorder`.
 - [ ] `revealPageOffset` sleeps on a duration to wait out a fold animation while `folding.ts` owns the real completion signal.
