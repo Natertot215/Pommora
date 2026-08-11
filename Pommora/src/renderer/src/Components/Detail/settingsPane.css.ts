@@ -121,7 +121,7 @@ export const dashIcon = style({
   height: `${SIZE.dashIcon}px`,
   borderRadius: '3px',
   border: '1px dashed currentColor',
-  opacity: 'var(--state-disabled)',
+  opacity: 'var(--state-inactive)',
   flex: '0 0 auto',
 })
 

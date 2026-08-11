@@ -83,6 +83,6 @@ export const buttonPrimary = style([
     ...buttonBase,
     color: c.label.primary,
     background: 'var(--accent)',
-    selectors: { '&:disabled': { opacity: 'var(--state-disabled)' } },
+    selectors: { '&:disabled': { opacity: 'var(--state-inactive)' } },
   },
 ])
