@@ -24,7 +24,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 9. The Set-Card drag flash falls to its verified cause (A-4).
 10. Every doc and comment this makes false is rewritten in the commit that falsifies it (F-1–F-5).
 
-**Acceptance — the whole thing working:** In a grouped, sorted Cards view where a card was manually dragged earlier, each of the three triggers — band "+", card-menu New Page, ghost click — births a stamped Untitled page whose card appears at its gesture slot immediately and stays there through the confirming reload, with an empty naming field focused over it and the glyph intact; and renaming a Set from a table band with its sidebar row visible opens exactly one field that commits. No single task satisfies this.
+**Acceptance — the whole thing working:** In a grouped Cards view sorted on a **seedable criterion** (or unsorted) where a card was manually dragged earlier, each of the three triggers — band "+", card-menu New Page, ghost click — births a stamped Untitled page whose card appears at its gesture slot immediately and stays there through the confirming reload, with an empty naming field focused over it and the glyph intact; and renaming a Set from a table band with its sidebar row visible opens exactly one field that commits. Under a non-seedable criterion (Title, Modified, ID, text) the newborn lands where the comparator places "Untitled" — the ratified PM-096 behavior, not a defect. No single task satisfies this.
 
 **Forced By**
 
@@ -37,6 +37,9 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - Cards flattens groups with no per-row group map (`CardsView.tsx:603-612`) → the seed logic needs a row→band map built from `groups` before the port.
 - `pageMetaMenuItems`' boolean emits the Above/Below pair (`shared/pageMenu.ts:19-34`) → the single card item needs a new option shape on the one builder, never a second writer.
 - Locked Decision: no global singleton holding shared mutable client state → the ghost anchor is per-view-instance hook state; cross-instance overlap is transient by leave-close (D-11).
+- The manual order is the **lowest-priority tiebreaker** — `pipeline/sort.ts` reaches it only after every resolved criterion ties, and `_title`/`_id`/`_modified_at`/text criteria aren't seedable → order writes can only place a newborn beside its anchor under seedable criteria or none; everywhere else the comparator's placement is the ratified behavior.
+- Native Electron menus can be neither screenshotted nor operated by CDP (`Build-Gotchas.md`) → every gate item touching a native pop drives a DOM substitute or unit-tests the menu model, with the real picks on Nathan's live-confirmation list — PM-096's own resolution.
+- `movePage` already carries `order?: string[]` ("Absent = legacy append") and the store's `moveSet` arm already patches order optimistically, while the `movePage` arm ignores it → the landing-index fix is passing and honoring an existing contract, not designing one.
 
 **Inherited Reasoning** (ruled out in the log; do not retry)
 
@@ -87,7 +90,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 **Dead Vocabulary**
 
 - `renameOpen` in `CardsView.tsx` → expect 0 after Task 8. Legitimate hits: none.
-- Control: `rg -F "TextPicker" Pommora/src/renderer/src` → 14 at planning time (the component survives; only the rename mount dies). Zero here means the sweep never ran.
+- Control: `rg -F "TextPicker" Pommora/src/renderer/src` → 18 at planning time (the component survives; only the rename mount dies). Zero here means the sweep never ran.
 
 ---
 
@@ -105,14 +108,14 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - Test: `Pommora/src/renderer/src/Components/renamableTitle.test.tsx` (create if absent — check for an existing home first).
 
 **Derivation**
-- `rg -Fl "RenamableTitle" Pommora/src/renderer/src` → 4 files at planning time (`Components/RenamableTitle.tsx`, `Sidebar/Sidebar.tsx`, `Detail/Views/GroupBand.tsx`, +1); re-derive and open every consumer before editing — a field-mounter reading `renamingPath` directly (outside `RenamableTitle`) must be enumerated and either fenced or shown to be a non-field consumer (the sidebar's force-open selector is one: reads, never mounts).
-- Control: `rg -F "renamingPath" Pommora/src/renderer/src` → 12 at planning time. Zero means the search never ran.
+- `rg -Fl "RenamableTitle" Pommora/src/renderer/src` → 3 files at planning time (`Components/RenamableTitle.tsx`, `Sidebar/Sidebar.tsx`, `Detail/Views/GroupBand.tsx`) — `RenamableTitle` is the sole field-mounter; the sidebar's two direct `renamingPath` reads (the settle-click capture and the force-open selector) read and never mount.
+- Control: `rg -F "renamingPath" Pommora/src/renderer/src` → 14 at planning time. Zero means the search never ran.
 
 **Interfaces**
-- Produces: `claimRename(path: string, host: RenameHost) => claimed: boolean` + `releaseRename(path, host)`, `RenameHost = 'detail' | 'sidebar'`; `RenamableTitle` gains a `host` prop.
+- Produces: a **subscribed owner slot**, not a query — `renameOwner: RenameHost | null` in the store; `claimRename(path, host)` / `releaseRename(path, host)` register into a ranked claimant list that resolves the owner; `RenamableTitle` gains a `host` prop, subscribes, and mounts the input **iff `renameOwner === host`**. A boolean return cannot fence: effects run in tree order, so an earlier claimant's `true` can't be revoked by a later winner — losers must be *subscribed* to demotion. `RenameHost = 'detail' | 'sidebar'`.
 - Assumed by: Task 8 (Cards mounts with `host: 'detail'`).
 
-**Failure half:** a claim for a path that isn't `renamingPath` → refused, no state; the winner unmounting mid-rename (view switch) → release passes the claim to the surviving candidate on its next render rather than stranding the slot; no candidate at all (renamed entity visible nowhere) → slot stands until cancel/submit, same as today.
+**Failure half:** a claim for a path that isn't `renamingPath` → refused, no state; the winner unmounting mid-rename → **release with no equal-or-higher surviving claimant calls `cancelRename()`** — a rename that lost its surface is abandoned, never teleported (a transfer would focus-steal into the sidebar with the title selected, and a create-origin session would reopen empty, eating typed characters); unmount-without-blur fires neither commit nor cancel on its own, so the release path is the only thing standing between that and a stranded slot.
 
 **Negative control:** the dual-mount test (sidebar row + band field on one path) asserts exactly one input mounts and typing commits; with the fence disabled (claim always true) the same test shows both mounting and zero surviving — assert that inversion once, then delete the disabled-path assertion.
 
@@ -127,33 +130,33 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - [ ] Gates green, exit codes direct.
 - [ ] Derivations re-run against controls; counts matched or the divergence rewrote the plan.
 - [ ] Simplification + review against `<base>..HEAD`; reports cite files inside it; KNOB grep clean.
-- [ ] CDP against the Test nexus: rename a Set from a table band with its sidebar row visible — one field opens, commits, no flicker. (The log's Live Check #2.)
+- [ ] CDP against the Test nexus: enter the rename via `useSession.getState().beginRename(setPath)` through `Runtime.evaluate` (the native menu itself isn't CDP-drivable) with the set's sidebar row visible — one field opens, commits, no flicker. (The log's Live Check #2.)
 - [ ] Progress hashes filled in.
 
 ---
 
 ### Phase 2 — Order Correctness
 
-#### Task 2: Creation refreshes the live manual order; `bandAdd` gains its missing tail
+#### Task 2: Creation settles the live order in its own act
 
 **Requirement:** 7
 
-**Why:** `manualOverride` outranks everything and no create refreshes it — the table flashes a frame of wrong placement (the `[source]` reset self-heals), Cards would hold it forever, and `bandAdd` under a sort never persists any order at all, so its page lands last regardless. E-4's motionless handoff is impossible until creation settles the live order in the act that writes it (A-5, F6).
+**Why:** `manualOverride` outranks `viewOrders` and no create refreshes either live copy — the table flashes a frame of wrong placement (the `[source]` reset self-heals), Cards would hold it forever. E-4's motionless handoff is impossible until creation settles the live order in the act that writes it (A-5). `bandAdd` deliberately gets **no** order tail: the band-add ruling is "born at the pipeline's end of the group," and an id absent from the manual order already ranks last within its band — the ruling's exact placement, delivered by the ranking itself.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — `bandAdd` (add the non-structural `tieOrderWith` tail `newPageAdjacent` already has) and both create completions (refresh `manualOverride` in the same act: structural → the optimistic tree now carries the slot, so null it synchronously with the insert; non-structural → set it to the same `tieOrderWith` list `persistViewOrder` writes).
+- Modify: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — both create completions: non-structural → set `manualOverride` to the same `tieOrderWith` list `persistViewOrder` writes; structural → null `manualOverride` **and clear the local `viewOrders[view.id]` entry** in the same act — nulling alone falls through to the stale `viewOrders` array (`resolveManualOrder` is `manualOverride ?? viewOrder`), where the newborn is absent and ranks last, resurrecting the very bug this task kills.
 - Test: `Pommora/src/renderer/src/Detail/Views/creationOrder.test.ts` (or the sort pipeline's test home — locate first).
 
 **Interfaces**
-- Produces: no new exports — a behavioral contract: *every create that writes an order leaves `manualOverride` consistent with it in the same React act.* Task 7 ports it into Cards.
+- Produces: no new exports — a behavioral contract: *every create that writes an order leaves the live order state (`manualOverride`, local `viewOrders`) consistent with it in the same React act.* Task 7 carries it into the shared creation hook.
 
-**Failure half:** no prior drag (`manualOverride` null) → refresh is a no-op, nothing regresses; a create with no order write (unsorted structural) → untouched; the confirming reload → agrees with the refreshed order (the `[source]` reset now clears an already-consistent value).
+**Failure half:** no prior drag (`manualOverride` null, no `viewOrders` entry) → refresh is a no-op, nothing regresses; a create with no order write (unsorted structural, band-add) → untouched; the confirming reload → agrees with the refreshed state.
 
 **Steps:**
-- [ ] Write the failing test: seed a manual order, run the create's order logic, assert the resolved on-screen order places the new row at its slot in the *first* pass (no flash).
-- [ ] Implement both refresh sites + the `bandAdd` tail; test green.
+- [ ] Write the failing test: seed a manual order and a stale `viewOrders` array, run the create's order logic, assert the resolved on-screen order places the new row at its slot in the *first* pass — both the override path and the fall-through path.
+- [ ] Implement both refresh sites; test green.
 - [ ] Full gates — green.
-- [ ] Commit: `fix(order): creation settles the live manual order in its own act`
+- [ ] Commit: `fix(order): creation settles the live order in its own act`
 
 #### Task 3: Cards' reorder writes its local copy
 
@@ -173,28 +176,29 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 
 **Requirement:** 8
 
-**Why:** Cards' `canRelocate` branch issues `movePage` and discards `toIndex`, so a card dropped across locations lands wherever the reload puts it. The table's structural branch already solves this with `structuralOrderAfterDrop`; Cards adopts it for the destination container (A-4).
+**Why:** The contract already exists and nobody drives it: `movePage` carries `order?: string[]` ("Absent = legacy append"), but Cards' `canRelocate` branch discards `toIndex` and calls it bare, the **table's own `relocateRow` does the identical thing** (the unswept sibling), and the store's `movePage` optimistic arm ignores `req.order` entirely — unlike the `moveSet` arm three lines below, which patches order via `reorderChildrenInTree`. A renderer-only fix would persist the right order while the card still visibly appends until the confirming walk (A-4).
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.tsx` — `onCardDrop`'s relocate branch.
-- Reference: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — `structuralOrderAfterDrop` and its call site.
+- Modify: `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.tsx` — `onCardDrop`'s relocate branch builds the destination's full-membership order with the drop at its index and passes it.
+- Modify: `Pommora/src/renderer/src/store.ts` — the `movePage` optimistic arm honors `req.order` (mirror the `moveSet` arm's `reorderChildrenInTree` composition; `treeMove.ts` already reorders pages or gains the pages-side twin).
+- Modify: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — `relocateRow` passes its order the same way (the sibling sweep).
 
-**Failure half:** a drop into an empty destination → index 0, order array of one; the destination's hidden (filtered-out) members → the order array builds from full membership, never the filtered view (PM-096's law).
+**Failure half:** a drop into an empty destination → order array of one; hidden (filtered-out) members of the destination → the array builds from full membership, never the filtered view (PM-096's law); `order` absent (legacy caller) → append, unchanged.
 
 **Steps:**
-- [ ] Write the failing test at the order-helper level: relocate with a landing index → the destination order names the moved id at that slot.
-- [ ] Implement; test green; full gates green.
-- [ ] Commit: `fix(cards): a cross-location drop keeps its landing index`
+- [ ] Write the failing test at the store-arm level: `movePage` with `order` → the optimistic tree names the moved id at its slot.
+- [ ] Implement all three sites; test green; full gates green.
+- [ ] Commit: `fix(views): a cross-location drop keeps its landing index`
 
 #### Task 5: The Set-Card drag flash — verify the cause, then kill it
 
 **Requirement:** 9
 
-**Why:** The Known Issue ("drop snaps back, then jumps on reload"). The log's verified read: set-cards ride the standalone zone whose `onReorder` discards nothing, so the cause is likelier the missing optimistic set order — sets append in `treeMove` and `reorderSets`'s write round-trips through a full reload with no optimistic patch. The diagnosis is a hypothesis; this task proves it before fixing (A-4).
+**Why:** The Known Issue ("drop snaps back, then jumps on reload"). **No standing hypothesis** — the log's first guess (no optimistic set order) is refuted: the store's `moveSet` arm patches order optimistically via `reorderChildrenInTree`, with a comment naming the exact snap-back it exists to prevent. The cause is undiagnosed; this task diagnoses before fixing, and a design-shaped fix stops for a Ruling (A-4).
 
 **Files:**
-- Read first: `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.tsx` `reorderSets`; `Pommora/src/renderer/src/treeMove.ts` set handling; the `moveSet`/set-order mutation in `Pommora/src/shared/mutate.ts` and its main handler.
-- Modify: whatever the verified cause names — expected: an optimistic set-order patch beside the write.
+- Read first: `Pommora/src/renderer/src/store.ts` — the `moveSet` optimistic arm (does `reorderSets` actually reach it, and with what `order`?); then `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.tsx` `reorderSets`; `Pommora/src/renderer/src/treeMove.ts` `reorderChildrenInTree`; the main handler.
+- Modify: whatever the verified cause names.
 
 **Steps:**
 - [ ] Trace the reorder round-trip; write the cause into the Log (Deviations if it contradicts the hypothesis; a Ruling request if the fix is design-shaped).
@@ -204,7 +208,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 
 #### Gate 2 — order is settled everywhere
 - [ ] Gates green; derivations re-run; simplification + review against `<base>..HEAD`; KNOB grep clean.
-- [ ] CDP matrix in the Test nexus: (drag → New Page Below → row lands adjacent, no flash) · (drag → band "+" under a sort → lands at group end and stays) · (cross-location card drop → lands at index) · (set-card drag → clean).
+- [ ] CDP matrix in the Test nexus (native menus aren't CDP-drivable — DOM substitutes throughout): (drag → the table ghost's click, which runs the same Below path as the menu → row lands adjacent, no flash) · (drag → band "+" under a sort → lands at the group's end, first paint) · (cross-location card drop → lands at index) · (set-card drag → clean). The native picks themselves ride Nathan's live-confirmation list.
 - [ ] Concerns fixed or ruled; Progress hashes filled.
 
 ---
@@ -229,28 +233,30 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - [ ] Implement the option shape; tests green; full gates green.
 - [ ] Commit: `feat(cards): the card menu carries New Page`
 
-#### Task 7: The creation engine lands in Cards — band "+", flow-after create, stamping
+#### Task 7: The creation engine gets one home — and Cards consumes it
 
 **Requirement:** 2, 3
 
-**Why:** The engine is view-agnostic at the store/pipeline layer; what Cards lacks is the view-local wiring the table holds in closures (B-1, A-3). Ports: `patchSeedValues` (against Cards' own `setValueOverride`/`applyValueAtRoot` seam), `createPageIn` (with Task 2's manual-order contract), `bandAdd` (collapsed-band disclosure + glide), the flow-after create for the menu item, `SEEDABLE_SORT_TYPES` reuse, and the row→band map Cards doesn't have (built from `groups`, since Cards flattens and holds no `rowGroup`). The glide reuses `scrollGlide` against the card element.
+**Why:** The engine is view-agnostic at the store/pipeline layer; what the table holds is ~110 lines of view-local wiring in closures (`patchSeedValues`, `createPageIn`, `containerPagesOf`, `bandAdd`, `newPageAdjacent`, glide). Copying them into CardsView would leave two hand-written definitions of the creation wiring — the exact two-writers defect the Hard Rules require reporting, and Task 12's "no duplicated mechanism" claim would be false the day it's written. So this task mirrors Task 9's shape: **extract the closures into a shared creation hook, refit the table onto it, and wire Cards as its second consumer** — band "+" (collapsed-band disclosure + glide), the flow-after create for the menu item, stamping and Task 2's order contract riding inside the hook once. Cards-specific inputs: its `setValueOverride`/`applyValueAtRoot` value seam, and the row→band map it doesn't have (built from `groups`, since Cards flattens and holds no `rowGroup`).
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.tsx` — the ported closures; `onAdd` passed at the `GroupBand` call site; the menu router arm.
+- Create: `Pommora/src/renderer/src/Detail/Views/useViewCreation.ts` — the hook: seeds (group + seedable sort criteria + filter implications), order writes with Task 2's live-state contract, create-then-name completion, glide targeting.
+- Modify: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — the closures move out; the table consumes the hook (refactor: behavior-preserving, the Phase 2 tests are the baseline).
+- Modify: `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.tsx` — consume the hook; `onAdd` passed at the `GroupBand` call site; the menu router arm; the row→band map.
 - Modify: `Pommora/src/renderer/src/Detail/Views/Cards/cardsBand.ts` — the deferral comment dies with the routing (Made False).
-- Reference: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` closures; `Pommora/src/renderer/src/Detail/Views/pipeline/creationSeeds.ts`.
+- Reference: `Pommora/src/renderer/src/Detail/Views/pipeline/creationSeeds.ts`.
 
 **Interfaces**
-- Produces: `createAfter(row)` (flow-after create) and `bandAdd(setKey)` inside CardsView — Task 10's ghost click consumes `createAfter`.
+- Produces: `useViewCreation({ source, view, schema, effectiveValues, rowBand, structuralOrder, orderState, onCreated }) => { bandAdd(setKey), createAfter(row), createAdjacent(row, where) }` — exact parameter shape is the implementer's, but the hook owns seeds + order + naming completion, and both views call it. Task 10's ghost click consumes `createAfter`.
 
 **Failure half:** band-add on a collapsed band → discloses first, then creates (the table's law); a filter excluding the newborn → creates on disk, card stays hidden, app healthy (the Obsidian behavior); an empty group → band-add still creates at slot 0; a menu create on a card whose group is non-stampable (date bucket) → no group seed, order still honored.
 
 **Steps:**
-- [ ] Build the row→band map from `groups`; port the closures against it.
-- [ ] Failing test at the seed layer where one fits (group-stamp derivation for a cards-shaped map); engine-level creation tests already cover seeds+order — verify they run.
-- [ ] Arm `onAdd`; wire the menu arm to `createAfter`.
+- [ ] Extract the hook; refit the table; full gates green with Phase 2's tests as the unchanged baseline.
+- [ ] Build Cards' row→band map from `groups`; wire Cards through the hook; arm `onAdd`; route the menu arm to `createAfter`.
+- [ ] Failing test at the seed layer for the cards-shaped map; engine-level creation tests already cover seeds+order — verify they run.
 - [ ] Full gates green.
-- [ ] Commit: `feat(cards): creation lives in the view — the band + creates, and New Page lands flow-after`
+- [ ] Commit: `feat(views): creation wiring has one home — and Cards' band + creates`
 
 #### Task 8: The empty naming field over a card — and one rename surface
 
@@ -274,7 +280,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 
 #### Gate 3 — creation feels like the table's
 - [ ] Gates green; derivations re-run; simplification + review against `<base>..HEAD`; KNOB grep clean.
-- [ ] CDP in the Test nexus: band "+" (grouped, collapsed, filtered-derivable, filtered-excluded) · menu New Page under a sort (seeds + adjacency) · empty field: born-empty-focused, Esc→Untitled, collision→"Name 2", glyph never vanishes.
+- [ ] CDP in the Test nexus: band "+" (grouped, collapsed, filtered-derivable, filtered-excluded) · empty field: born-empty-focused, Esc→Untitled, collision→"Name 2", glyph never vanishes. The card-menu create's seeds + adjacency can't be driven here (native menu, and no DOM substitute exists until the ghost lands) — that check moves to Gate 4, driven through the ghost's `createAfter` path; the menu model itself is Task 6's unit test.
 - [ ] Concerns fixed or ruled; Progress hashes filled.
 
 ---
@@ -293,16 +299,16 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - Test: `Pommora/src/renderer/src/Detail/Views/useGhostAnchor.test.ts` — timer semantics with fake timers: dwell arms, leave-grace closes, re-enter reverses, suppress stands down, pointerdown stands down synchronously, anchor-loss clears state (the D-10 regression: `closing` never strands).
 
 **Interfaces**
-- Produces: `useGhostAnchor({ dwellMs, graceMs, suppressed }) => { anchor, closing, onHover(id, entering), onGhostEnter/Leave, take(), suppress: { wrap<T>(fn): Promise<T>, hold(): () => void }, clearFor(id) }`.
+- Produces: `useGhostAnchor({ dwellMs, graceMs, suppressed }) => { anchor, closing, onHover(id, entering), onGhostEnter/Leave, take(), closed(), suppress: { wrap<T>(fn): Promise<T>, hold(): () => void }, clearFor(id) }`. `closed()` is the exit-finished call — the table's `Reveal.onCollapsed` and Cards' FLIP-release both drive it; without it a closing ghost never unmounts. `suppressed` is **mirrored into a ref and re-read at the dwell timer's fire time** — a closure over the option value is stale, reintroducing the shipped mid-dwell bug the table's `editingRef` comment records fixing.
 - Assumed by: Task 10 (Cards), the refitted TableView.
 
 **Negative control:** the D-10 regression test goes red against the pre-extraction semantics (stranded `closing` → re-hover opens with no dwell) — assert the old behavior fails under the new hook once, then keep only the green assertion.
 
 **Steps:**
-- [ ] Write the hook tests first (fake timers) — expect module-not-found.
+- [ ] Write the hook tests first (fake timers; the house `createRoot` + `act` idiom, no testing-library) — dwell arms · leave-grace closes · re-enter reverses · **a suppressor arriving mid-dwell cancels the pending open** · pointerdown stands down · anchor-loss clears state · `closed()` unmounts. Expect module-not-found.
 - [ ] Implement the hook; tests green.
-- [ ] Refit TableView; delete the inline machinery; full gates green.
-- [ ] CDP: table ghost unchanged — dwell-appear, leave-collapse, reverse mid-exit, menu stand-down.
+- [ ] Refit TableView; delete the inline machinery; full gates green. Honesty note: no ghost tests predate this task — the hook tests plus the CDP pass *are* the baseline net, so drive the CDP items before calling the refit behavior-preserving.
+- [ ] CDP: table ghost unchanged — dwell-appear, leave-collapse, reverse mid-exit; the native-menu stand-down is unit-tested at the hook level (CDP can't pop native menus) and rides Nathan's live list.
 - [ ] Commit: `refactor(views): the hover ghost mechanism has one home`
 
 #### Task 10: The ghost card — chrome, FLIP displacement, motionless handoff
@@ -316,19 +322,20 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - Modify: `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.css` — `.ghost-card` chrome (all values KNOB), the wrapper class (no stylesheet `transform` transition — the FLIP owns its inline transition).
 - Reference: `Pommora/src/renderer/src/design-system/interactions/engine.tsx` feel-token source; `tokens/motion`.
 
-**Failure half:** anchor is the group's last card → ghost wraps to the next row; bands below join the FLIP set (E-3) · the view scrolled mid-dwell → dwell timers survive scroll, FLIP measures fresh rects at open · a re-emit dropping the anchor mid-open → `clearFor` (Task 9) · compact (banner-none) views → glyph placement KNOB, no thumb assumptions.
+**Failure half:** anchor is the group's last card → ghost wraps to the next row; bands below join the FLIP set (E-3) · the view scrolled mid-dwell → dwell timers survive scroll, FLIP measures fresh rects at open · a re-emit dropping the anchor mid-open → `clearFor` (Task 9) · compact (banner-none) views → glyph placement KNOB, no thumb assumptions · a non-seedable sort active → the newborn lands where the comparator puts it (ratified PM-096 behavior; the motionless-handoff screenshot is gated on a seedable sort or none).
 
 **Steps:**
-- [ ] Build `GhostCard` + wrapper + FLIP helper; wire the hook with Cards' KNOB pair (`GHOST_DWELL_MS` shared value, Cards-specific grace covering the gap crossing — D-7).
+- [ ] Build `GhostCard` + wrapper + FLIP helper; wire the hook with Cards' KNOB pair (`GHOST_DWELL_MS` shared value, Cards-specific grace covering the gap crossing — D-7). **FLIP deltas are measured in client px and applied inside the zoomed subtree** — `.cards-view` carries a live CSS `zoom`, so divide by the `effectiveZoom` CardsView already computes for its drag overlay.
 - [ ] Suppress wiring: route the card-level native pops (card menu, value cell menu, banner menu) through the hook's handle via `cardApi` or a CardsView context — no four-layer drilling.
 - [ ] Full gates green.
-- [ ] CDP: dwell → ghost appears flow-after with displacement; leave → collapses back; click → creates, field opens, **no second shove** (screenshot pair proves the slot); menus stand the ghost down; drag arming kills it.
-- [ ] The stationary-pointer live check (log's Live Check #1): rest the pointer, watch for re-anchor thrash during collapse — record the observation in the Log.
+- [ ] CDP: dwell → ghost appears flow-after with displacement; leave → collapses back; click → creates, field opens, **no second shove** (screenshot pair proves the slot, under a seedable sort or none); drag arming kills it. Native-menu stand-down is hook-tested; the pops themselves ride Nathan's live list.
+- [ ] The stationary-pointer live check (log's Live Check #1): rest the pointer, watch for re-anchor thrash during collapse — record the observation in the Log. While there, check whether the drag engine's own displacement drifts under a non-1 view scale (`toBox` measures client px with no zoom compensation) — if it does, that's an inherited Known Issue to record, not this arc's fix.
 - [ ] Commit: `feat(cards): the ghost card — dwell extends a bordered slot, and neighbors make room`
 
 #### Gate 4 — the ghost is Cards' own
 - [ ] Gates green; simplification + review against `<base>..HEAD`; KNOB grep clean (dwell/grace/border/dim/glyph all marked).
-- [ ] CDP matrix above green; the two feel items recorded as Nathan's pendings: the ghost CSS visual pass (D-6) and the dwell-appear-click feel under a real mouse.
+- [ ] CDP matrix above green, plus Gate 3's deferred check: `createAfter` under a seedable sort → seeds + adjacency proven at first paint.
+- [ ] The pendings recorded as Nathan's: the ghost CSS visual pass (D-6), the dwell-appear-click feel under a real mouse, and every native-menu pick (card New Page, grip/title pair, set-band Rename).
 - [ ] Concerns fixed or ruled; Progress hashes filled.
 
 ---
@@ -375,13 +382,13 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - [ ] **Phase 1** — The Rename Fence · base ``
   - [ ] Task 1 — Owner-fence the rename slot · ``
 - [ ] **Phase 2** — Order Correctness
-  - [ ] Task 2 — Creation refreshes the live order; bandAdd tail · ``
+  - [ ] Task 2 — Creation settles the live order in its own act · ``
   - [ ] Task 3 — Cards' local viewOrders write · ``
   - [ ] Task 4 — Cross-location landing index · ``
   - [ ] Task 5 — Set-Card flash: verify then fix · ``
 - [ ] **Phase 3** — Cards Creation Surfaces
   - [ ] Task 6 — One "New Page" on the card menu · ``
-  - [ ] Task 7 — Band "+" + flow-after create + stamping · ``
+  - [ ] Task 7 — The creation hook: one home, Cards consumes · ``
   - [ ] Task 8 — The empty naming field; one rename surface · ``
 - [ ] **Phase 4** — The Ghost
   - [ ] Task 9 — Extract the mechanism; table refits · ``
