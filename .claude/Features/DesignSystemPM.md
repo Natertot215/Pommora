@@ -128,13 +128,13 @@ Hairlines and the composed border shorthands built on them, plus the banner's le
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
-| Title | Token | Value |
-| --- | --- | --- |
-| Separator Border | `separator.border` · `--separator-border` | system-grey @ 25% |
-| Separator Segment | `separator.segment` · `--separator-segment` | system-grey @ 20% |
-| Heading Seam | `--border-heading` | `1.75px solid var(--separator-border)` |
-| Box Seam | `--border-cell` | `1.5px solid var(--separator-border)` |
-| Banner Scrim | `--banner-shadow` | `#0000008C` |
+| Title             | Token                                       | Value                                  |
+| ----------------- | ------------------------------------------- | -------------------------------------- |
+| Separator Border  | `separator.border` · `--separator-border`   | system-grey @ 25%                      |
+| Separator Segment | `separator.segment` · `--separator-segment` | system-grey @ 20%                      |
+| Heading Seam      | `--border-heading`                          | `1.75px solid var(--separator-border)` |
+| Box Seam          | `--border-cell`                             | `1.5px solid var(--separator-border)`  |
+| Banner Scrim      | `--banner-shadow`                           | `#0000008C`                            |
 
 #### Shadows
 
@@ -153,26 +153,26 @@ The ten selectable solids plus the neutral chip default — authored once in `@s
 
 **SOURCE:** `Pommora/src/shared/theme.ts` · `tokens/theme-vars.css.ts`
 
-| Title | Token | Value |
-| --- | --- | --- |
-| Red | `SPECTRUM.red` · `--solid-red` | `#FF453A` |
-| Orange | `SPECTRUM.orange` · `--solid-orange` | `#FF9F0A` |
-| Yellow | `SPECTRUM.yellow` · `--solid-yellow` | `#FFD60A` |
-| Green | `SPECTRUM.green` · `--solid-green` | `#32D74B` |
-| Cobalt | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3`  |
-| Cyan | `SPECTRUM.cyan` · `--solid-cyan` | `#41959F` |
-| Blue | `SPECTRUM.blue` · `--solid-blue` | `#0A84FF` |
-| Purple | `SPECTRUM.purple` · `--solid-purple` | `#BF5AF2` |
-| Lavender | `SPECTRUM.lavender` · `--solid-lavender` | `#A78BCC` |
-| Grey | `SPECTRUM.grey` · `--solid-grey` | `#8E8E93` |
-| Default | `GREY_DEFAULT` | `#48484A` |
-| Default Accent | `DEFAULT_ACCENT` | `lavender` |
-| Accent | `--accent` | `applyAccent` |
-| Accent Fill | `--accent-fill` | accent @ 15% |
-| Accent Stroke | `--accent-stroke` / `--accent-stroke-hot` | accent @ 40% / accent @ 60% |
-| Link / Connection | `--link` / `--connection` | `var(--system-accent)` / → `var(--accent)` |
-| Error | `--error` |  `SPECTRUM.red` |
-| Code | `--code` | red @ 85% |
+| Title             | Token                                       | Value                                      |
+| ----------------- | ------------------------------------------- | ------------------------------------------ |
+| Red               | `SPECTRUM.red` · `--solid-red`              | `#FF453A`                                  |
+| Orange            | `SPECTRUM.orange` · `--solid-orange`        | `#FF9F0A`                                  |
+| Yellow            | `SPECTRUM.yellow` · `--solid-yellow`        | `#FFD60A`                                  |
+| Green             | `SPECTRUM.green` · `--solid-green`          | `#32D74B`                                  |
+| Cobalt            | `SPECTRUM.lightBlue` · `--solid-light-blue` | `#7EC8E3`                                  |
+| Cyan              | `SPECTRUM.cyan` · `--solid-cyan`            | `#41959F`                                  |
+| Blue              | `SPECTRUM.blue` · `--solid-blue`            | `#0A84FF`                                  |
+| Purple            | `SPECTRUM.purple` · `--solid-purple`        | `#BF5AF2`                                  |
+| Lavender          | `SPECTRUM.lavender` · `--solid-lavender`    | `#A78BCC`                                  |
+| Grey              | `SPECTRUM.grey` · `--solid-grey`            | `#8E8E93`                                  |
+| Default           | `GREY_DEFAULT`                              | `#48484A`                                  |
+| Default Accent    | `DEFAULT_ACCENT`                            | `lavender`                                 |
+| Accent            | `--accent`                                  | `applyAccent`                              |
+| Accent Fill       | `--accent-fill`                             | accent @ 15%                               |
+| Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
+| Link / Connection | `--link` / `--connection`                   | `var(--system-accent)` / → `var(--accent)` |
+| Error             | `--error`                                   | `SPECTRUM.red`                             |
+| Code              | `--code`                                    | red @ 85%                                  |
 
 #### Geometry
 
@@ -180,17 +180,17 @@ The glyph ladder, the per-size control bundles, and the bare layout constants JS
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/size.css.ts` · `tokens/theme-vars.css.ts`
 
-| Title | Token | Value |
-| --- | --- | --- |
-| Icon XS / SM / MD / LG / XL | `size.icon.*` · `--icon-xs`…`--icon-xl` | `12px` · `14px` · `16px` · `18px` · `20px` |
-| Button Small | `size.control['button-small']` | h `24px` · segment `20px` · padX `4px` · radius `8px` · icon SM |
-| Button Medium | `size.control['button-medium']` | h `28px` · segment `24px` · padX `5px` · radius `10px` · icon MD |
-| Button Large | `size.control['button-large']` | h `32px` · segment `28px` · padX `8px` · radius `12px` · icon MD |
-| Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent` | `14px` |
-| Fold Gutter | `FOLD_GUTTER` · `--fold-gutter-base` | `20px` |
-| Drop-Line Inset | `DROP_LINE_INSET` · `--drop-line-inset` | `2px` |
-| Tile Minimum | `TILE_MIN_PX` | `64px` |
-| Pill Radius | `--radius-full` | `999px` — larger than any box that wears it, so both ends resolve to semicircles |
+| Title                       | Token                                       | Value                                                                            |
+| --------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------- |
+| Icon XS / SM / MD / LG / XL | `size.icon.*` · `--icon-xs`…`--icon-xl`     | `12px` · `14px` · `16px` · `18px` · `20px`                                       |
+| Button Small                | `size.control['button-small']`              | h `24px` · segment `20px` · padX `4px` · radius `8px` · icon SM                  |
+| Button Medium               | `size.control['button-medium']`             | h `28px` · segment `24px` · padX `5px` · radius `10px` · icon MD                 |
+| Button Large                | `size.control['button-large']`              | h `32px` · segment `28px` · padX `8px` · radius `12px` · icon MD                 |
+| Disclosure Indent           | `DISCLOSURE_INDENT` · `--disclosure-indent` | `14px`                                                                           |
+| Fold Gutter                 | `FOLD_GUTTER` · `--fold-gutter-base`        | `20px`                                                                           |
+| Drop-Line Inset             | `DROP_LINE_INSET` · `--drop-line-inset`     | `2px`                                                                            |
+| Tile Minimum                | `TILE_MIN_PX`                               | `64px`                                                                           |
+| Pill Radius                 | `--radius-full`                             | `999px` — larger than any box that wears it, so both ends resolve to semicircles |
 
 The drag chrome's other two dimensions live beside the inset in the bridge: `--drop-line-thickness` (`2px`) and `--drop-dot-size` (`7px`), with `--drag-line` pointing at the accent. The list-outline rail (`--list-outline-*`: `2px` · segment tone · `999px` · `3px`) is the shared nested-run rail consumed by MarkdownPM's outliner and the grouping hierarchy.
 

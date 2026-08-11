@@ -2,6 +2,7 @@
 
 | Date | ID | Entry |
 | ------------------ | ------------ | ---------------------------------------------- |
+| 08-11-2026 | PM-096 | Creation Lives In The View |
 | 08-10-2026 | PM-095 | Documentation Normalization |
 | 08-10-2026 | PM-094 | One Owner Per Repeated Value |
 | 08-10-2026 | PM-093 | The Token Atlas |
@@ -97,6 +98,18 @@
 | 06-15-2026 | PM-003 | The Design System Is Founded |
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer |
 | 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
+
+#### PM-096 || Creation Lives In The View
+**DATE:** 08-11-2026
+
+**The Act:** Every creation surface runs one act — the page exists on disk as Untitled the moment the gesture fires, and its title opens as an uncommitted rename whose field is empty. `createPage` carries seed values and a full-membership `page_order` slot in one write (a `NEW_PAGE_SLOT` sentinel main substitutes with the minted id), and a just-created page's first naming counts as part of the creation: it auto-disambiguates like a create, skips the nexus-wide link cascade a linkless page can't need, and the reply reports the landed name so every consumer patches from what actually stuck. The optimistic tree insert splices the row at its slot, so a positional create never flashes at the container's bottom.
+
+**The Table:** The structural band "+" creates in its Set at the pipeline's own end of the group, disclosing a collapsed band first and gliding to the new row. The row grip gained its own right-click menu on MarkdownPM's grip interaction model — Open Preview · Open New Tab — Rename · Change Icon — New Page Above · New Page Below — Delete — and stays rendered when a multi-key sort retires the drag, since it owns the menu. Above/Below inherits the anchor's group value and its single-value sort-criteria values so the comparator ties it beside its anchor, with the `viewOrders` tiebreaker (now round-tripped into the renderer's local copy) breaking the tie at the gesture slot; a filter's cleanly-implied values stamp too, and a page a non-derivable rule excludes creates and stays filtered out. Dwelling on a row extends the ghost "New Page" row beneath it on the shared disclosure Reveal — the one motion rows enter by — its standard label at the inactive dim; clicking it runs the Below path.
+
+**Everywhere Else:** Sidebar page rows carry the same New Page pair, computed renderer-side against the full sibling order; every create path — the container menus and the subfield "+" included — now opens the empty naming field over the already-real page. `--state-inactive` joined the opacity ramp at its own bare number and `--state-disabled` died into it, its consumers adopting the one still-here-but-not-active dim; the six empty-state sites shed their interim markers. The in-drop label renames landed everywhere as ruled — **Open New Tab** and **Open Preview**, the "in" dropped across menus, tests, comments, and docs.
+
+- **Commits:** `03df8fda..c1563ea5`
+- **Diff:** Net +531 | +614 / −83 (tests +246 / −4 ride alongside)
 
 #### PM-095 || Documentation Normalization
 **DATE:** 08-10-2026
