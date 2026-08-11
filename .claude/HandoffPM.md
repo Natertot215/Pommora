@@ -24,14 +24,14 @@ Verification ran three layers deep: gates (207 files / 2,319 tests), a final bui
 
 #### Next Session
 
-- Walk Nathan through live confirmation: the two native menu picks (grip + sidebar), the empty field on the sidebar/subfield creates, the ghost row's dwell-appear-click feel under a real mouse, and the band-add glide.
+- Nathan's live confirmation: the two native menu picks (grip + sidebar), the empty field on the sidebar/subfield creates, the ghost row's dwell-appear-click feel under a real mouse, and the band-add glide. Then, find something new.
 
 #### Feedback
 
 - "You didnt actually ask me the other questions you said you did." — narrated questions aren't asked questions; put them to Nathan explicitly.
 - "You've likely over-complicated it, applied guards, and all things based on an unaligned idea of what 'ghost' meant." — when Nathan's framing sounds like a state machine, ask what the word means before modeling; reframe the artifact around what he's actually asking rather than patching it.
 - "This plan must take care of absolutely everything and only leave live confirmation as pending... we do the laundry, pick up socks that may be dropped, AND make sure the dryer is cleaned of any lint or trace that anything ever happened." — the run's completion standard, verbatim intent: zero residue, zero deferred scraps.
-- "state-disabled is supposed to be literally just base color at 55% opacity. Idk what's so confusing about that." — Nathan's token rulings are literal and minimal; when one lands, implement the plainest reading (a bare opacity number over standard chrome) before reaching for a derivation, and ask on the first sign of divergence rather than the third.
+- "state-disabled is supposed to be literally just base color at 55% opacity. Idk what's so confusing about that." — Nathan's token rulings are literal and minimal; when one lands, implement the plainest reading — his direction almost always points to existing reusable design practices.
 
 #### Session Pointers
 
@@ -51,7 +51,7 @@ Verification ran three layers deep: gates (207 files / 2,319 tests), a final bui
 - §Current Focus and §Next Session restate to current truth on every run; multi-compact sessions may advance ideas or reconcile information while preserving the document's cohesion.
 - Resolve = delete + route — a handled item leaves the document for its real home (Context, History, Features) with no tombstone left behind.
 - Standing content lives in ContextPM.md — the durable backlog, rules, and fix log; this document carries only the session.
-- Handoff must not accumulate bloat: if something has been resolved, route it to Context's § Recent Work; if what you're writing doesn't need to be preserved, don't preserve it.
+- Handoff must not accumulate bloat: if something has been resolved, route it to Contexts’ § Recent Work; if what you're writing doesn't need to be preserved, don't preserve it.
 - Continuity: when you're given the /handoff, the document is yours, and it's your job to pass it along as standing context for future agents; preserve what the next session needs to know, remove what it doesn't.
 - Parallel sessions: the latest /handoff owns the document, and every session's transcript survives through retirement into // Sessions.
 - If additional guidelines appear here that aren't in the handoffs template, it means they've been user-added and should be preserved.
