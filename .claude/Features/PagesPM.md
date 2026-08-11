@@ -22,17 +22,17 @@ Frontmatter carries `PageID` — the key naming the kind, holding a bare ULID �
 
 ### Title + Membership
 
-The filename minus `.md` is the title — there's no `title` field, and a rename is a file rename. Within a folder, names must be unique: a colliding create auto-disambiguates with a numeric suffix, and a colliding rename is rejected. Titles aren't unique Nexus-wide — two Pages in different folders can share one, and a `[[Title]]` to a shared title resolves as ambiguous (→ [[ConnectionsPM]]). Membership is purely positional: moving the file between Collections or Sets changes its membership, with no field to update (→ [[CollectionsPM]] §Move Semantics).
+The filename minus `.md` is the title — there's no `title` field, and a rename is a file rename. Within a folder, names must be unique: a colliding create auto-disambiguates with a numeric suffix, and a colliding rename is rejected. Titles aren't unique Nexus-wide — two Pages in different folders can share one, and a `[[Title]]` to a shared title resolves as ambiguous connections. Membership is purely positional: moving the file between Collections or Sets changes its membership, with no additional field to update.
 
 ### Opening Behavior
 
-Clicking a Page opens it in the active tab, replacing that tab's selection, and the editor auto-saves on a debounce. A Collection can route its Pages to the floating Page Preview window instead via `open_in`; ⌘-click always bypasses to a full page in a new tab (→ [[CollectionsPM]], [[PagePreviewPM]]).
+Clicking a Page opens it in the active tab, replacing that tab's selection, and the editor auto-saves on a debounce. A Collection can route its Pages to the floating Page Preview window instead via `open_in`; ⌘-click always bypasses to a full page in a new tab.
 
 ### Outline
 
-A page's own table of contents, in the toolbar. Present only while the detail pane holds a Page, it takes the Views button's slot rather than adding one — a selection is either a container or a Page. Rows carry each heading's own text at the emphasized weight with its markers stripped, nested by heading level and opened fully. Levels may skip freely, so a heading attaches to the nearest shallower one above it. A heading with nothing beneath it still appears, keeping consecutive headings both visible even though the fold machinery has nothing to fold there.
+A page's own table of contents, in the toolbar. Present only while the detail pane holds a Page; it takes the Views button's slot rather than adding one — a selection is either a container or a Page. Rows carry each heading's own text at the emphasized weight with its markers stripped, nested by heading level and opened fully. Levels may skip freely, so a heading attaches to the nearest shallower one above it. A heading with nothing beneath it still appears, keeping consecutive headings both visible even though the fold machinery has nothing to fold there.
 
-The chevron collapses a group in the dropdown alone and leaves the page untouched, and neither gesture dismisses the pane, so a long document can be worked through without reopening the list. The row travels to its heading — a scroll glide rather than a cut (→ [[InteractionPM]]) — never editing the document and never moving the caret, opening any collapsed section hiding the target and waiting for that reveal to land before scrolling. A heading arrives at the band the page header occupies, the same height its own inline title reads at. Long headings truncate in the row and scroll on hover; the pane widens with its content only until its edge would leave the window.
+The chevron collapses a group in the dropdown only and leaves the page untouched; neither gesture dismisses the pane, so a long document can be worked through without reopening the list. The row travels to its heading — a scroll glide rather than a cut — never editing the document and never moving the caret, opening any collapsed section hiding the target and waiting for that reveal to land before scrolling. A heading arrives at the band the page header occupies, the same height as its own inline title. Long headings truncate in the row and scroll on hover; the pane widens with its content only until its edge would leave the window.
 
 ### Editor UI State
 
@@ -48,7 +48,7 @@ Opening a folder adopts it: every `.md` carrying no kind key is stamped with a f
 
 ### Pending
 
-- **Columns directive** — the multi-column section directive; specified, not built. Callouts already render in the editor (→ [[MarkdownPM]]).
+- **Columns directive** — the multi-column section directive; specified, not built. Callouts already render in the editor.
 
 ### Prospects
 

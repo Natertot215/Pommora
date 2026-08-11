@@ -56,7 +56,7 @@ A construct's markers are **revealed** (literal editable text) when the caret is
 - **Thematic break** (`---`) — caret-aware full-width rule; never a setext interpretation.
 - **Connections** (`[[Title]]`) — title-only, styled colored inline text, three states (resolved / phantom / ambiguous) riding the live `@shared/connections` layer; resolution, styling, click-routing, and the rename cascade belong to the connection layer (→ [[ConnectionsPM]]). Resting on a resolved connection raises the hover preview card (→ [[PagePreviewPM]]). The `[[` autocomplete — a glass popup at the caret, prefix-matched, keyboard-driven — is shared by the page editor and table cells.
 - **External links** (`[text](url)`) — title-only at rest, validity decided by the static check the opener uses (`@shared/links`). Valid titles carry the link color, underline, and navigation; invalid ones dim with brackets shown.
-- **The caret** — a drawn caret with a smooth symmetric fade and a custom I-beam cursor, an app-wide identity owned by the motion system (→ [[InteractionPM]]).
+- **The caret** — a drawn caret with a smooth symmetric fade and a custom I-beam cursor, an app-wide identity owned by the motion system. 
 
 ### Tables
 

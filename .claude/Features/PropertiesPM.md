@@ -26,7 +26,7 @@ Properties
 └── Pending
 ```
 
-Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and populated on the members of every Collection that assigns it — the registry declares each property's type and per-type config, a Collection's assignment list names which registry properties its Pages validate and show, and member entities store the values. The same type catalog applies to Pages, Tasks, and Events; Agenda's kinds are modeled to keep their own definitions on their config sidecars, though a seeded config carries identity only until the Agenda rethink builds that schema (→ [[AgendaPM]]). The on-disk file is canonical.
+Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and populated on the members of every Collection that assigns it — the registry declares each property's type and per-type config, a Collection's assignment list names which registry properties its Pages validate and show, and member entities store the values. The same type catalog applies to Pages, Tasks, and Events; Agenda's kinds are modeled to keep their own definitions on their config sidecars, though a seeded config carries identity only until the Agenda rethink builds that schema.
 
 | Scope | Definitions |
 | --- | --- |
@@ -52,8 +52,6 @@ A Page's values are wrapped title keys at its frontmatter root; a Task's or Even
 | **Last Edited Time** | *(derived from `modified_at`)* | Virtual — never persisted. |
 | **File / Attachment** | `[{ "path", "original_name", "added_at", "mime_type" }, ...]` | Array; files copy into the Nexus. |
 
-There's no free-form text type — the filename is the title, and text-shaped values use creatable Select options. The context type isn't offered in the type picker, and a stored context or user-relation definition is dropped on read (→ [[ConnectionsPM]]).
-
 ### Identity & Name
 
 Every property carries two independent identifiers:
@@ -67,18 +65,14 @@ Reserved property ids (`_id`, `_title`, `_created_at`, `_modified_at`, `_locatio
 
 A value is decoded against the type its definition declares — the key names the property, so the definition is in hand before the value is read, and nothing is inferred from a value's shape. Values are bare and natively typed: a number is a number, a checkbox a boolean, a date a timestamp, each legible to any YAML tool.
 
-**No value, no key.** Setting a property to null, or to any empty value, clears its key from the member file — a member without a value never carries a placeholder, and the rule reaches the Remove-cache the same way. Checkbox false and number zero are real values and stay.
-
-**An unmatched wrapped key persists inert.** A key naming no registry entry is preserved by value and read by nothing.
+- **No value, no key.** Setting a property to null, or to any empty value, clears its key from the member file — a member without a value never carries a placeholder, and the rule reaches the Remove-cache the same way. Checkbox false and number zero are real values and stay.
+- **An unmatched wrapped key persists inert.** A key naming no registry entry is preserved by value and read by nothing.
 
 ### Property Types
-
-Each type's behavior, look, and editor pane:
 
 #### II. Status
 
 A workflow property whose values sort into status **groups**. The group model is open — each group is a stable `id` with a user-editable label, a color, and its own options — seeded with three calendar-phase defaults:
-
 | Group         | Default Label | Default Color |
 | ------------- | ------------- | ------------- |
 | `upcoming`    | Open          | grey          |
@@ -97,7 +91,7 @@ A boolean with two per-view looks and one property-wide color. The **look** (`co
 
 A bare number on disk with a **property-wide** format and a **per-view** look. The format — a family (Number, Percent, Currency), a currency code, thousands separators, decimal places, and a Fraction toggle rendering "N out of Value" — is set once and applies everywhere. Percent stores the literal value and appends the sign, keeping the file legible.
 
-The **look** is per-view — **Number** (formatted text) or **Bar**, a progress bar filling against a muted track. The editor exposes the format as one section whose conditional rows reveal on disclosure, with the Style row appearing only when the config makes a bar meaningful.
+The **look** is per-view — **Number** (formatted text) or **Bar**, a progress bar filling against a muted track. The editor exposes the format as a single section whose conditional rows are revealed on disclosure, with the Style row appearing only when the config makes a bar meaningful.
 
 #### II. Date & Time
 
@@ -126,13 +120,13 @@ Context links are the only relation-type connection. They store as **parenthesiz
   - Pommora
 ```
 
-In a Task, an Event, or a `_space.json` the same key rides the JSON root, quoted there because JSON quotes every key. They're never schema definitions — each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it, and every entry carries an ordinary minted ULID. Cross-layer behavior → [[ContextsPM]].
+In a Task, an Event, or a `_space.json` the same key rides the JSON root, quoted there because JSON quotes every key. They're never schema definitions — each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it, and every entry carries an ordinary minted ULID. 
 
 ### Auto-Managed Properties
 
 Every Page, Task, and Event carries its kind's id key (`PageID` / `TaskID` / `EventID`, holding a ULID assigned at creation), `created_at`, and `modified_at` — maintained by Pommora, not user-creatable. It surfaces as **Last Edited Time**, whose column shows the stored `modified_at` stamp; sorting and filtering fall back to `created_at` for a never-modified page.
 
-**A schema edit is not a page edit.** Renaming a property definition, changing its type, or reordering an assignment leaves every member page's `modified_at` untouched. Only a property's value changing counts, alongside a text edit, a move, and a rename (→ [[PagesPM]]).
+**A schema edit is not a page edit.** Renaming a property definition, changing its type, or reordering an assignment leaves every member page's `modified_at` untouched. Only a property's value changing counts, alongside a text edit, a move, and a rename.
 
 ### Where Properties Live
 
@@ -140,24 +134,23 @@ Three layers hold the system: a **definition** (the nexus-wide registry, `.nexus
 
 **Display formats aren't definition config.** The per-type look and date/time formats persist per-view in the SavedView's `column_styles` — how a value renders is the view's call. The exception is Number's format, which is property-wide like the checkbox color and link config; only its look (Number/Bar) is per-view.
 
-The first surface for setting values is the table's cells (the gesture matrix → [[TableViewPM]]); on a Page, the entity-level surfaces are the Page Preview's front-matter inspector (→ [[PagePreviewPM]]) and the Properties leaf of a Page's own Settings dropdown.
+The first surface for setting values is the table's cells; on a Page, the entity-level surfaces are the Page Preview's front-matter inspector, and the Properties leaf of a Page's own Settings dropdown.
 
 #### The Properties Pane
 
-The pane in the toolbar's Settings dropdown is the full assign surface for a Collection — assigned properties on top (chevron → the per-property editor), and an **All Properties** disclosure pinned to the pane's bottom that rises open to list every unassigned registry definition in the nexus order, each promotable via its `+` or by dragging into the assigned group at a slot. Dragging within a group reorders it (assigned = the Collection's order; All Properties = the nexus order); dragging an assigned row out Removes it. Creating (the `+` in the pane's pinned bottom row) mints into the registry — appending to the nexus order, seeding per-type options — and assigns here. Renames, type changes, and option edits change the global definition for every assigner. The global **Delete lives only inside a property's own editor pane**, behind its ⋮ menu and a native confirm.
+The pane in the toolbar's Settings dropdown is the full assign surface for a Collection — assigned properties on top (chevron → the per-property editor), and an **All Properties** disclosure pinned to the pane's bottom that rises open to list every unassigned registry definition in the nexus order, each promotable via its `+` or by dragging into the assigned group at a slot. Dragging within a group reorders it (assigned = the Collection's order; All Properties = the nexus order); dragging an assigned row out removes it. Creating (the `+` in the pane's pinned bottom row) mints into the registry — appending to the nexus order, seeding per-type options — and assigns here. Renames, type changes, and option edits change the global definition for every assigner. The global **Delete lives only inside a property's own editor pane**, behind its ⋮ menu and a native confirm.
 
 ### Schema Mutations
-
-| Mutation                   | Effect on Existing Values                                                                                                                                                                                                                                                                                                              |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Create a property          | Mints a nexus-wide definition (appending its id to the nexus order) and assigns it to the creating Collection; appears empty on every member — no member writes until a value is set.                                                                                                                                                  |
-| Assign a property          | Adds this Collection's reference to an existing definition — idempotent, no name check — then restores any Remove-cache: each cached value that still conforms to the definition's current type and options writes back to the page that held it. What can't restore — a non-conforming value, a vanished page — stays cached, and the block clears only when nothing remains. |
-| Remove a property          | Caches each member's value (with which pages held it) on the Collection's own sidecar and unassigns, then strips the value from every member page — cache-before-strip, recoverable rather than lossy mid-strip. Re-assigning restores what was cached; the definition and other Collections are untouched. |
-| Rename a property          | Commits the registry, then sweeps every page holding the old key in one pass. The sweep never re-dates a page. Collections are untouched — the assignment list and the remove-cache are id-keyed and rename-immune. |
-| Reorder properties         | Per-Collection assignment order (sidecar-only); the All Properties group reorders the nexus-wide display order instead (registry-file-only).                                                                                                                                                                                           |
-| Change a property's type   | A global definition edit — a value whose shape no longer matches stops rendering but stays in frontmatter.                                                                                                                                                                                                                             |
+| Mutation | Effect on Existing Values |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create a property | Mints a nexus-wide definition (appending its id to the nexus order) and assigns it to the creating Collection; appears empty on every member — no member writes until a value is set. |
+| Assign a property | Adds this Collection's reference to an existing definition — idempotent, no name check — then restores any Remove-cache: each cached value that still conforms to the definition's current type and options writes back to the page that held it. What can't restore — a non-conforming value, a vanished page — stays cached, and the block clears only when nothing remains. |
+| Remove a property | Caches each member's value (with which pages held it) on the Collection's own sidecar and unassigns, then strips the value from every member page — cache-before-strip, recoverable rather than lossy mid-strip. Re-assigning restores what was cached; the definition and other Collections are untouched. |
+| Rename a property | Commits the registry, then sweeps every page holding the old key in one pass. The sweep never re-dates a page. Collections are untouched — the assignment list and the remove-cache are id-keyed and rename-immune. |
+| Reorder properties | Per-Collection assignment order (sidecar-only); the All Properties group reorders the nexus-wide display order instead (registry-file-only). |
+| Change a property's type | A global definition edit — a value whose shape no longer matches stops rendering but stays in frontmatter. |
 | Delete a property (global) | A record — the definition, the Collections that assigned it, and every value keyed by page id — lands in `.trash` as an artifact-less bundle before anything is destroyed, then the value is stripped across every collection's pages and assignment lists, every Remove-cache block for it is purged, and the definition leaves the registry. **Restorable:** the definition re-enters, its Collections get it back, and each value returns if it still validates → [[NexusRecordPM]]. |
-| Edit options               | Global — adding, reordering, and recoloring are registry-only; renaming an option rewrites its stored label on every assigning page, and removing or clearing one strips that value from those pages.                                                                                                                                                                                                   |
+| Edit options | Global — adding, reordering, and recoloring are registry-only; renaming an option rewrites its stored label on every assigning page, and removing or clearing one strips that value from those pages. |
 
 Neither Remove nor the global delete is cross-file atomic — each is a per-file fan-out whose safety net is written first (the sidecar cache for Remove, the `.trash` pair for delete), re-running cleanly after a partial run. Registry mutations serialize through one write chain. Remove is the daily path; the global delete is the rare destructive one.
 
@@ -167,18 +160,15 @@ At every write, a created property's `name` is non-empty and its `id` is unique 
 
 ### The Index
 
-Filter, sort, and group run renderer-side over the frontmatter the walk already carries; the registry file is the single source, mirrored nowhere.
-
-**The sigil governs; the registry registers.** A wrapped key is Pommora's — sweepable, and distinguishable from foreign frontmatter. A key registers as a live value only when its name matches a definition, so resolution runs definition-first: the schema supplies the key, and the frontmatter is read at it. Context keys resolve at walk assembly; property values load when a container opens, each container building one id→definition index. Full data layer → [[ArchitecturePM]].
+**The sigil governs; the registry registers.** A wrapped key is Pommora's — sweepable, and distinguishable from foreign frontmatter. A key registers as a live value only when its name matches a definition, so resolution runs definition-first: the schema supplies the key, and the frontmatter is read at it. Context keys resolve at walk assembly; property values load when a container opens, each container building one id→definition index. 
 
 ### Chip Tokens
 
-The chip is the property value's rendered form, so its design vocabulary lives here. One tint recipe drives every color — the picked base solid at fixed tint steps (a heavier fill, a lighter stroke, a near-white text wash carrying a faint tint of the base) — and it composes with any shape; no custom colors, no lightening. Tables follow the atlas convention ([[DesignSystemPM]]).
+The chip is the property value's rendered form, so its design vocabulary lives here. One tint recipe drives every color — the picked base solid at fixed tint steps (a heavier fill, a lighter stroke, a near-white text wash carrying a faint tint of the base) — and it composes with any shape; no custom colors, no lightening. 
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/chip.css.ts` · `tokens/tint.ts` · `tokens/colorMap.ts`
 
 #### II. Shapes
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Base | `chipBase` | zoom `var(--chip-zoom, 0.9)` · gap `4px` · type `text.control.semibold` |
@@ -189,7 +179,6 @@ The chip is the property value's rendered form, so its design vocabulary lives h
 | Box | `chipBox` | `17px × 17px` · radius `5.5px` · border `1.5px` (the checkbox look) |
 
 #### II. The Recipe & Variants
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Background | `tint(base).background` | base @ tint-primary (60%) |
@@ -199,7 +188,6 @@ The chip is the property value's rendered form, so its design vocabulary lives h
 | Palette Accessor | `chipColorFor(color)` | the key when it's a spectrum solid, else `default` |
 
 #### II. Knobs
-
 | Title | Token | Value |
 | --- | --- | --- |
 | Zoom | `--chip-zoom` | fallback `0.9`; Cards retunes `0.85` |

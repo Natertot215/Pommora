@@ -22,7 +22,7 @@ Design System
 └── Pending
 ```
 
-The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values and the visual reference for components. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them. Typography has its own spec in [[TypographyPM]]; motion lives in [[InteractionPM]].
+The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values and the visual reference for components. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them.
 
 This document is the sanctioned exception to the "docs name; code holds exacts" rule: its tables state literal values so what exists is legible without opening the token files. Every table carries a **SOURCE** line naming the file it must agree with — a value changes in code first, and the table follows in the same commit. Before authoring any new style or mechanism, this atlas is the first read; what a surface needs usually already exists here.
 
@@ -223,9 +223,8 @@ The reusable pieces mirror the Figma library and consume semantic tokens only; a
 - **The drag grip** — the six-dot glyph is one masked asset (`--grip-glyph`).
 - **The ActionBand** (`Detail/ActionBand.css`) is the shared home for toolbar-row affordances any surface mounts — ViewSegments first, plus the hover-revealed settings button; a segment's collapsible title rides Segmented-Controls' `labelSlot`.
 - **The dropdown shell** splits in two — `MenuSurface` is the pane (notched glass, open and retract beats, state-free); `MenuDropdown` is the shell around a trigger (open state, outside-dismiss, anchored surface, optional growth bound). Surface-specific geometry stays with the surface that means it.
-- **The drop chrome** — the insertion line, dot, host, and `DragGhost` live in `design-system/interactions` (`dropChrome.css`, `DropLine.tsx`, `DragGhost.tsx`); full spec in [[PommoraDND]].
-- **The capped label** — ellipsis at rest, scroll-on-hover with a mask fade at the leading edge — is the app-wide overflow treatment for constrained text, defined with the type tokens (→ [[TypographyPM]]).
-
+- **The drop chrome** — the insertion line, dot, host, and `DragGhost` live in `design-system/interactions` (`dropChrome.css`, `DropLine.tsx`, `DragGhost.tsx`).
+- **The capped label** — ellipsis at rest, scroll-on-hover with a mask fade at the leading edge — is the app-wide overflow treatment for constrained text, defined with the type tokens.
 ### Showcase
 
 A data-driven design-system site (`npm run showcase`) with a live accent picker, built statically and deployed at https://pommora-design-system.vercel.app.

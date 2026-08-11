@@ -73,7 +73,7 @@ Every sidecar's field shape is canonical in `src/shared/schemas.ts`.
 
 #### Classification
 
-A root folder carrying a Pages sidecar is a Page Collection regardless of its folder name — folders rename freely in Finder. The per-kind sidecar filenames (`_pagecollection.json` / `_taskconfig.json` / `_eventconfig.json`) discriminate kind at the root; below it, position alone decides — every non-excluded subfolder of a Collection or Set is itself a Set, at any depth, carrying its own saved views wherever it sits (→ [[PageSetsPM]]). Page Collections and the Tasks and Events singletons live as siblings at the nexus root, with no wrapper folder above them. `.nexus/` and `.trash/` are hidden from the sidebar and from non-Pommora tools by convention, matching `.obsidian/`.
+A root folder carrying a Pages sidecar is a Page Collection regardless of its folder name — folders rename freely in Finder. The per-kind sidecar filenames (`_pagecollection.json` / `_taskconfig.json` / `_eventconfig.json`) discriminate kind at the root; below it, position alone decides — every non-excluded subfolder of a Collection or Set is itself a Set, at any depth, carrying its own saved views wherever it sits. Page Collections and the Tasks and Events singletons live as siblings at the nexus root, with no wrapper folder above them. `.nexus/` and `.trash/` are hidden from the sidebar and from non-Pommora tools by convention, matching `.obsidian/`.
 
 #### The Agenda Singletons
 
@@ -83,7 +83,7 @@ A copy is the case the record can't settle alone. Every ordinary duplication —
 
 #### The Trash
 
-A deleted entity moves to `.trash/` under the folder chain it came from, as a bundle holding the artifact and a record of what departed. Nothing in the trash is pruned. The record and restore model are [[NexusRecordPM]]'s.
+A deleted entity moves to `.trash/` under the folder chain it came from, as a bundle holding the artifact and a record of what departed. Nothing in the trash is pruned. The record and restore model are the NexusRecords.
 
 #### Folder Exclusion
 
@@ -109,11 +109,11 @@ Each handler declares its boundary policy beside its body. Enveloped channels �
 
 `<nexus>/.nexus/nexus.db` travels with the Nexus, keeping a moved or renamed one intact without re-pathing, and holds one table of substance — `local_state`, keyed by `(scope, key)`. DDL is canonical in `src/main/db/schema.ts`; `node:sqlite` sits behind `driver.ts` as the swappable seam.
 
-**What lives here** is per-machine chrome — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, the recents stream, and every block host's document (→ [[SurfacePM]]). None of it is authored content, and two machines interleaving any of it has no correct answer.
+**What lives here** is per-machine chrome — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, the recents stream, and every block host's document; none of it is authored content, and two machines interleaving any of it has no correct answer.
 
 **What doesn't:** pinned and favorites live in `navigation.json` — rarely written, and the one part of Navigation worth following a user across machines — as ordered arrays of bare `{kind, id}` refs written as a serialized patch. A markdown tile's body stays a file; it is prose and lives in the connections graph. Everything canonical — the registry, Contexts, settings, schemas, and each host's sidecar — stays a file, where a Nexus's meaning survives without Pommora.
 
-A Pommora-governed frontmatter key is recognized by its wrap alone — `(Context)` for the organization layer, `<Property>` for the attribute layer — partitioning the keyspace with no reserved-name blocklist while every foreign key and comment survives a rewrite. Recognizing a key is not resolving one; a key registers as a live value only on a registry match (→ [[PropertiesPM]]).
+A Pommora-governed frontmatter key is recognized by its wrap alone — `(Context)` for the organization layer, `<Property>` for the attribute layer — partitioning the keyspace with no reserved-name blocklist while every foreign key and comment survives a rewrite. Recognizing a key is not resolving one; a key registers as a live value only on a registry match. 
 
 Every database action is one statement — a change is a single-row upsert, and an emptied value deletes its key. Navigation intent is the one operational write going to disk, and it keeps the before-quit gate deferring exit until the write settles.
 
@@ -123,9 +123,9 @@ Every database action is one statement — a change is a single-row upsert, and 
 
 Every file write goes through an atomic path — temp-file plus rename, leaving either the whole old file or the whole new file after a crash:
 
-- **YAML + Markdown write** — Pages. The body follows the closing fence directly, with no separator blank line. Only modeled keys are re-serialized; every foreign frontmatter key and comment survives by value. Mechanics → [[PagesPM]] §Read + Write.
+- **YAML + Markdown write** — Pages. The body follows the closing fence directly, with no separator blank line. Only modeled keys are re-serialized; every foreign frontmatter key and comment survives by value. 
 - **JSON write** — sidecars, Contexts, Settings, Homepage.
-- **Schema transaction** — multi-file commits that succeed or fail as a unit, such as a Collection-scoped property delete or a lossy type change: stage every payload to a temp sibling, rename each over its target, and roll the filesystem back on any failure. The nexus-wide property delete runs per-file over a `.trash` snapshot instead (→ [[PropertiesPM]] §Schema Mutations).
+- **Schema transaction** — multi-file commits that succeed or fail as a unit, such as a Collection-scoped property delete or a lossy type change: stage every payload to a temp sibling, rename each over its target, and roll the filesystem back on any failure. The nexus-wide property delete runs per-file over a `.trash` snapshot instead 
 
 Atomicity keeps a file from tearing; serialization keeps an update from being lost. Every read-modify-write runs under a lock keyed on the file it rewrites and reads fresh inside that lock, queueing two writers to one file. The JSON primitive takes the lock itself, deriving the key from the path it writes; a write needing a wider span — most often a schema-validated read — holds the lock at the caller over the read/write pair. A page's path key is shared by its body write, its property writes, and the relocate a rename or move performs; a container's sidecar key is taken by every writer of that file.
 
@@ -137,11 +137,11 @@ The locks are process state, and the app holds a single-instance lock — a rela
 
 Out-of-band changes — Obsidian, vim, Finder, cloud sync — reach the sidebar without a restart through a recursive watch on the Nexus root. The database and its WAL siblings, `.trash`, dotfile cruft, block-host tile bodies, and the user's `excluded_folders` are ignored at intake; `.nexus/` itself stays watched, since Contexts, settings, and ordering live there.
 
-Every in-app write records itself and the watcher skips recorded paths, holding a mutation to one walk — the store's confirming reload. Between writes, authority is recency: the newest on-disk state wins. Surviving events debounce to a settle, then main re-derives the tree with a verification walk — every directory enumerated, every file statted, with reads and parses running only for entries whose mtime or size moved. The fresh tree pushes whole over IPC, where structural sharing collapses echoes to zero re-renders. Identity survives an external rename because the id rides in the file itself.
+Every in-app write records itself, and the watcher skips recorded paths, holding a mutation to one walk — the store's confirming reload. Between writes, authority is recency: the newest on-disk state wins. Surviving events debounce to a settle, then main re-derives the tree with a verification walk — every directory enumerated, every file statted, with reads and parses running only for entries whose mtime or size moved. The fresh tree pushes whole over IPC, where structural sharing collapses echoes to zero re-renders. Identity survives an external rename because the id rides in the file itself.
 
 ### Adoption
 
-Opening a folder as a Nexus stamps every un-adopted entity with a real ULID — a raw folder gets its sidecar, an externally-authored page gets its kind's id key, and nothing stamped depends on a sibling having been stamped first. Root folders holding content become Page Collections and everything nested becomes a Set; excluded and hidden folders, empty sidecar-less folders, and anything the resolver can't place are left alone, and an unrecognized sidecar stays inert beside the one Pommora writes. A registered agenda singleton stamps its own direct `.md` members under the agenda kind and never recurses. The pass is silent, best-effort, idempotent, and safe to re-run on partial state. Per-shape detail → [[CollectionsPM]].
+Opening a folder as a Nexus stamps every un-adopted entity with a real ULID — a raw folder gets its sidecar, an externally-authored page gets its kind's id key, and nothing stamped depends on a sibling having been stamped first. Root folders holding content become Page Collections and everything nested becomes a Set; excluded and hidden folders, empty sidecar-less folders, and anything the resolver can't place are left alone, and an unrecognized sidecar stays inert beside the one Pommora writes. A registered agenda singleton stamps its own direct `.md` members under the agenda kind and never recurses. The pass is silent, best-effort, idempotent, and safe to re-run on partial state. 
 
 **A move is refused unless its destination holds pages.** Every page and Set move passes one main-side check admitting only a Collection or a Set — not the nexus root, not an agenda singleton, not a folder the resolver can't place.
 
@@ -167,10 +167,10 @@ The database side is covered above — a version mismatch deletes the file and s
 
 ### Known Issues
 
-- **A locked or mid-sync database file runs the session without persisted state.** Only a healthy open reporting the wrong schema version earns the delete-and-restart; a file that fails to open at all stays put until a later launch reads it.
+- **A locked or mid-sync database file runs the session without persisted state.** Only a healthy, open report of the wrong schema version earns the delete-and-restart; a file that fails to open at all stays put until a later launch reads it.
 
 ### Pending
 
-- **Trash restore surface** — the restore action is IPC-reachable; no surface browses the trash or invokes it (→ [[NexusRecordPM]]).
+- **Trash restore surface** — the restore action is IPC-reachable; no surface browses the trash or invokes it.
 - **Folder-exclusion editing UI** — `excluded_folders` is hand-edited; its Settings surface is deferred.
 - **The content index** — Linked-From, backlinks, ContextView, and full-text search all need a content index, and none exists. Its replacement gets written alongside the query layer that reads it, updating a row at a time; the database, the driver seam, and the version handshake are already in place for it.
