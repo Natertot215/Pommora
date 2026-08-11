@@ -1450,7 +1450,8 @@ export const useSession = create<SessionState>((set, get) => {
             break
           }
           case 'rename':
-            patched = renameNodeInTree(cur, req.path, req.newName)
+            // The landed name, never the ask — a from-create rename may have disambiguated.
+            patched = renameNodeInTree(cur, req.path, res.value.renamed?.name ?? req.newName)
             // The cascade rewrites bodies NEXUS-WIDE — every warm copy is suspect, and the
             // tab-keyed editorState has no path fence (its key survives the rename): a warm
             // restore would revive the pre-cascade body and the next keystroke would write it
