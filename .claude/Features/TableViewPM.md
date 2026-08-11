@@ -8,10 +8,10 @@ TableView
 ├── Groupings
 ├── Columns
 ├── Rows & Cells
+├── Creation
 ├── Density
 ├── The Table Sheet
-├── Known Issues
-└── Prospects
+└── Known Issues
 ```
 
 One of the built renderers behind the modeled view types (→ [[ViewsPM]]) — a Collection's or Set's Pages drawn as rows on a single CSS grid. It's presentation only: the pipeline hands it resolved groups and per-cell values, and TableView owns the layout, the column ergonomics, and the row and group chrome.
@@ -38,7 +38,7 @@ A strip carved from the content inset, left of the grid, where the row drag grip
 
 Structural and property groups render as full-width disclosure bands. A header's chevron and folder glyph read as one cluster in the gutter, so the header itself is indented by nesting alone and the chevron lands in the grip lane. A headered group's members nest one indent step inside the header; a Set-within-a-Set steps in again, recursively. Under sub-grouping, each top-level set stays a band, its sub-sets flatten, and the descendant pages re-bucket by the property inside it — the bucket bands collapse per-set through composite set-and-bucket keys, and their headers sit at data-row rhythm rather than section height. Select and Status bucket headings wear their chips; date buckets wear the property icon over a label following the column's applied date format.
 
-Ungrouped and loose rows sit at the loose-inset, tucked a touch left of the column inset so they land near the Title column; no-value rows under property grouping get the identical treatment — a header-less flattened tail rather than a "None" band (→ [[ViewsPM]]). Collapse rides a Reveal on the shared disclosure motion, and collapsed rows leave the DOM. Band seams follow the shared seam law, cards alike: a section lead is twice the head-to-row clearance, state-free, so nothing above a band moves on toggle; a collapsed heading sheds only the clearance under it, and a band that opens a disclosure leads by a single shoulder — the head's clearance supplies the other. The hover "+" renders on structural set headers only, the affordance alone.
+Ungrouped and loose rows sit at the loose-inset, tucked a touch left of the column inset so they land near the Title column; no-value rows under property grouping get the identical treatment — a header-less flattened tail rather than a "None" band (→ [[ViewsPM]]). Collapse rides a Reveal on the shared disclosure motion, and collapsed rows leave the DOM. Band seams follow the shared seam law, cards alike: a section lead is twice the head-to-row clearance, state-free, so nothing above a band moves on toggle; a collapsed heading sheds only the clearance under it, and a band that opens a disclosure leads by a single shoulder — the head's clearance supplies the other. The hover "+" renders on structural set headers only, creating in that Set.
 
 **Band drag** — a group header drags by its glyph; the chevron and the hover "+" isolate on pointerdown and never arm it. It rides the same insertion-line gesture as row drag, over a frozen snapshot of both the geometry and the band list, which a mid-drag tree swap dirties together.
 
@@ -61,11 +61,21 @@ A data cell's content is type-aware — a page icon, title text, chips, or a lin
 
 **Every cell owns its click** — the shared gesture matrix, portable to every other renderer. The title cell is the only navigate; status, select, and multi open the shared value dropdown, where multi toggles and stays open; a checkbox-look status cell cycles its group, writing each group's first-in-order option and skipping empty groups; a checkbox toggles; a Number-look number enters the inline editor, while a Bar-look one opens the text-value dropdown with a right-pinned out-of hint; a link opens externally through the sanctioned link IPC; each file chip opens its own file through the root-validated file IPC.
 
-**Right-click always opens a menu.** The title gets the shared page-meta block; style-bearing types get their column's Style radios, with file adding Edit; a link carries no Style, since its look is per-property — Edit alone when empty, Edit · Rename · Clear once filled; picker-based cells add Clear.
+**Right-click always opens a menu.** The title gets the shared page-meta block; style-bearing types get their column's Style radios, with file adding Edit; a link carries no Style, since its look is per-property — Edit alone when empty, Edit · Rename · Clear once filled; picker-based cells add Clear. The gutter grip carries its own menu — Open Preview · Open New Tab — Rename · Change Icon — New Page Above · New Page Below — Delete — and its right-press is defaulted away like the drag's left, so the menu never seats a caret or arms the reorder.
 
 **Chip-look values carry a hover ×**, the shared chip-level remove: hovering the chip's right third reveals an × at the right edge in the chip's text color while the label's tail blurs into the fill beneath it — a progressive text blur touching only the text. Clicking removes that chip's value — one option off a multi, one Space off a context value, the whole value off a single — without opening the picker or arming the row drag. Removable-chip labels are pointer-inert, guarding a Chromium repaint bug ([[Build-Gotchas]]); non-removable chips keep the label hover-scroll. Capsule and checkbox looks carry no ×; their Clear lives in the menu. Both × and Clear obey the no-empties rule (→ [[PropertiesPM]]) — the cleared property's key leaves the frontmatter entirely.
 
 Inline edits follow Enter = confirm · click-out = save · Esc = revert; the number input filters invalid keystrokes at the source, and an empty commit clears the value. The row background is a no-op, and every cell still arms the row drag past the activation threshold, so cell gestures own the sub-threshold press-release. The editing surfaces live view-agnostic in `PropertyEditing/`, shared with every renderer that edits a value.
+
+### Creation
+
+Creating a page never leaves the table. Every trigger runs one act: the page is created in its container immediately — Untitled on disk, stamped with the values its birth context implies — and its title cell opens as an ordinary uncommitted rename whose field is empty. Confirming names the page; leaving any other way keeps Untitled, and a colliding name lands with the create rule's numeric suffix.
+
+- **Band-add** — the structural header's "+" creates in that Set at the pipeline's own end of the group, disclosing a collapsed band first and gliding the view to the new row.
+- **New Page Above / Below** — the grip menu's pair creates beside its anchor: the new page inherits the anchor's group value and its values on the active sort criteria that carry one — Select, Status, Checkbox, Number, and Date — and the order write lands it at the gesture slot. Under any other criterion (Title, Modified, text, links, files, multi-value properties) the row lands where the sort places it.
+- **The ghost row** — dwelling on a row extends a ghost "New Page" row beneath it on the shared disclosure motion, its standard label worn at the disabled dim; clicking it runs the Below path. It never appears while a naming session is open.
+
+A view's filter stamps the values its rules cleanly imply — a single positive Is on a user property under All-matching. Metadata is never changed to satisfy a filter, so a page a non-derivable rule excludes creates and stays filtered out.
 
 ### Density
 
@@ -99,6 +109,3 @@ The table's design vocabulary is a whole-file token sheet scoped to `.table-view
 ### Known Issues
 
 - **Row grips scroll with their row on horizontal scroll.** The disclosure headers and chevrons stay pinned, but the hover-only drag grips ride their row's cell off to the left. Freezing them cleanly means freezing the whole title column, which is an open decision.
-### Prospects
-
-- **The group-header "+"** — the creation surface behind the affordance is the open piece. A property bucket can't infer a create location, so a bucket-header "+" would have to create in a chosen location with the bucket's value pre-filled.

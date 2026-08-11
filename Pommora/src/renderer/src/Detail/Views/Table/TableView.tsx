@@ -1086,6 +1086,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     dwell: null,
     grace: null,
   })
+  const editingRef = useRef(editing)
+  editingRef.current = editing
   useEffect(
     () => () => {
       for (const t of Object.values(ghostTimers.current)) if (t !== null) window.clearTimeout(t)
@@ -1407,8 +1409,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       return { ...prev, [pageId]: patched as PageFrontmatter }
     })
   }
-  // The one create every trigger writes: Untitled, carrying whatever seeds and order the gesture
-  // resolved. `then` is the trigger's own follow-up on the minted id.
   const createPageIn = (
     parentPath: string,
     seeds: Record<string, PropertyValue>,
@@ -1463,7 +1463,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     return walk(source) ?? []
   }
-  // The band "+": create in that Set, at the pipeline's own end of the group, autoscrolled.
   const bandAdd = (setKey: string): void => {
     const setPath = setPaths.get(setKey)
     if (!setPath) return
@@ -1542,16 +1541,25 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     ghostTimers.current[key] = null
   }
   const onRowHover = (row: ViewRow, entering: boolean): void => {
-    // Every hover transition cancels what's pending, then arms at most one timer.
     clearGhostTimer('dwell')
     clearGhostTimer('grace')
     if (entering) {
       if (editing || ghostAt === row.id) return
-      ghostTimers.current.dwell = window.setTimeout(() => setGhostAt(row.id), GHOST_DWELL_MS)
+      // Re-checked at fire time — a cell editor opened mid-dwell must not leave a ghost armed
+      // to snap in the instant it closes.
+      ghostTimers.current.dwell = window.setTimeout(() => {
+        if (!editingRef.current) setGhostAt(row.id)
+      }, GHOST_DWELL_MS)
     } else if (ghostAt !== null)
       ghostTimers.current.grace = window.setTimeout(() => setGhostAt(null), GHOST_GRACE_MS)
   }
   hoverRef.current = onRowHover
+  // Leaving the ghost gets the same grace the row's leave gets — the pointer returning to the
+  // anchor cancels it, so hesitating between the two never kills the ghost outright.
+  const onGhostLeave = (): void => {
+    clearGhostTimer('grace')
+    ghostTimers.current.grace = window.setTimeout(() => setGhostAt(null), GHOST_GRACE_MS)
+  }
   const ghostCreate = (): void => {
     const anchor = ghostAt ? rowById.get(ghostAt) : undefined
     setGhostAt(null)
@@ -1606,7 +1614,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
               key={`ghost-${row.id}`}
               padLeft={memberIndent(itemDepth)}
               onEnter={() => clearGhostTimer('grace')}
-              onLeave={() => setGhostAt(null)}
+              onLeave={onGhostLeave}
               onCreate={ghostCreate}
             />,
           )
@@ -1966,27 +1974,27 @@ const DataRow = memo(function DataRow({
               if (!isDragging) api.click(row, c, e)
             }}
           >
-            {!dragDisabled && (
-              // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control
-              <span
-                className="row-grip"
-                {...handle}
-                // A right-press is defaulted away exactly as the drag gestures default the left —
-                // preventing only the context menu comes too late to stop a seated caret.
-                onPointerDown={(e) => {
-                  if (e.button === 2) {
-                    e.preventDefault()
-                    return
-                  }
-                  handle.onPointerDown?.(e)
-                }}
-                onContextMenu={(e) => api.grip(row, e)}
-                onClick={(e) => e.stopPropagation()}
-                title="Drag to reorder"
-              >
-                <Icon name="grip-vertical" size={14} />
-              </span>
-            )}
+            {/* The grip renders even with reorder retired (a multi-key sort) — it still owns the
+                row's menu, whose New Page pair must stay reachable in every mode. */}
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control */}
+            <span
+              className="row-grip"
+              {...(dragDisabled ? {} : handle)}
+              // A right-press is defaulted away exactly as the drag gestures default the left —
+              // preventing only the context menu comes too late to stop a seated caret.
+              onPointerDown={(e) => {
+                if (e.button === 2) {
+                  e.preventDefault()
+                  return
+                }
+                if (!dragDisabled) handle.onPointerDown?.(e)
+              }}
+              onContextMenu={(e) => api.grip(row, e)}
+              onClick={(e) => e.stopPropagation()}
+              title={dragDisabled ? undefined : 'Drag to reorder'}
+            >
+              <Icon name="grip-vertical" size={14} />
+            </span>
             {content}
           </div>
         ) : (

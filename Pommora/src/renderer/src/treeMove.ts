@@ -2,7 +2,7 @@
 // canon a beat later. A request that can't be resolved here returns null → the caller skips
 // optimism and waits for the reload.
 
-import type { MutateRequest, StateOrderKey } from '@shared/mutate'
+import { NEW_PAGE_SLOT, type MutateRequest, type StateOrderKey } from '@shared/mutate'
 import { titleFromPath } from '@shared/connections'
 import type {
   CollectionNode,
@@ -74,18 +74,19 @@ function insert(
   containers: (CollectionNode | SetNode)[],
   parentPath: string,
   node: PageNode | SetNode,
+  pageAt?: number,
 ): { containers: (CollectionNode | SetNode)[]; done: boolean } {
   let done = false
   const next = containers.map((c) => {
     if (done) return c
     if (c.path === parentPath) {
       done = true
-      return node.kind === 'page'
-        ? { ...c, pages: [...c.pages, node] }
-        : { ...c, sets: [...(c.sets ?? []), node] }
+      if (node.kind !== 'page') return { ...c, sets: [...(c.sets ?? []), node] }
+      const at = pageAt !== undefined && pageAt >= 0 ? Math.min(pageAt, c.pages.length) : c.pages.length
+      return { ...c, pages: [...c.pages.slice(0, at), node, ...c.pages.slice(at)] }
     }
     if (c.sets?.length) {
-      const r = insert(c.sets, parentPath, node)
+      const r = insert(c.sets, parentPath, node, pageAt)
       if (r.done) {
         done = true
         return { ...c, sets: r.containers as SetNode[] }
@@ -174,7 +175,11 @@ export function insertCreatedInTree(
             sets: [],
             pages: [],
           }
-    const placed = insert(tree.collections, req.parentPath, node)
+    // A positional create's row must appear AT its slot — the order array already names it, and
+    // an appended row would flash at the container's bottom until the confirming walk lands.
+    const pageAt =
+      req.op === 'createPage' && req.order ? req.order.indexOf(NEW_PAGE_SLOT) : undefined
+    const placed = insert(tree.collections, req.parentPath, node, pageAt)
     if (!placed.done) return null
     return { ...tree, collections: placed.containers as CollectionNode[] }
   }

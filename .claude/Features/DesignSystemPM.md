@@ -46,12 +46,12 @@ The three raw system tones every derived grey, white, and black is an opacity of
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `Pommora/src/shared/theme.ts`
 
-| Title | Token | Value |
-| --- | --- | --- |
-| System White | `system.white` · `--system-white` | `#E8E8E8` |
-| System Grey | `system.grey` · `--system-grey` | `#71717A` |
-| System Black | `system.black` · `--system-black` | `#010101` |
-| Window Background | `background.window` · `--bg-window` | `#1A1A1C`  |
+| Title             | Token                               | Value     |
+| ----------------- | ----------------------------------- | --------- |
+| System White      | `system.white` · `--system-white`   | `#E8E8E8` |
+| System Grey       | `system.grey` · `--system-grey`     | `#71717A` |
+| System Black      | `system.black` · `--system-black`   | `#010101` |
+| Window Background | `background.window` · `--bg-window` | `#1A1A1C` |
 
 #### Surfaces
 
@@ -59,12 +59,12 @@ The opaque content planes layered on the window substrate — addressed by role,
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
 
-| Title | Token | Value |
-| --- | --- | --- |
-| Surface Primary | `surface.primary` · `--surface-primary` | `#202022` |
-| Surface Secondary | `surface.secondary` · `--surface-secondary` | `#2A2A2E` |
-| Surface Tertiary | `surface.tertiary` · `--surface-tertiary` | `#3A3A3E` |
-| Interaction Field | `inputFieldVar` · `--input-field` | `fill.quaternary`  |
+| Title             | Token                                       | Value             |
+| ----------------- | ------------------------------------------- | ----------------- |
+| Surface Primary   | `surface.primary` · `--surface-primary`     | `#202022`         |
+| Surface Secondary | `surface.secondary` · `--surface-secondary` | `#2A2A2E`         |
+| Surface Tertiary  | `surface.tertiary` · `--surface-tertiary`   | `#3A3A3E`         |
+| Interaction Field | `inputFieldVar` · `--input-field`           | `fill.quaternary` |
 
 #### Labels
 
@@ -81,19 +81,19 @@ The text ladder — system-white at descending presence. Primary is the raw prim
 
 #### States
 
-The interaction states — two grey washes, one black veil, one white text tone, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; inactive is worn by text itself — empty-state copy and the hover ghost row; drag, ghost, and disabled are consumed as `opacity:` on the element itself. Those three hold their own bare numbers rather than tint-ladder steps, since they are never mixed into a colour, and they read as one ramp: the more a stand-in carries the original's presence, the less the original fades.
+The interaction states — two grey washes, one black veil, and four opacity dims. Hover and selected are fills painted behind content; muted is painted over it; drag, ghost, inactive, and disabled are consumed as `opacity:` on the element itself. Those four hold their own bare numbers rather than tint-ladder steps, since they are never mixed into a colour, and they read as one ramp: the more a stand-in carries the original's presence, the less the original fades — inactive is the empty-state text dim, worn over the standard label.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
-| Title | Token | Value |
-| --- | --- | --- |
-| Hover | `state.hover` · `--state-hover` | system-grey @ 2.5% |
-| Selected | `state.selected` · `--state-selected` | system-grey @ 5% |
-| Muted | `state.muted` · `--state-muted` | system-black @ 10% |
-| Inactive | `state.inactive` · `--state-inactive` | system-white @ 55% — inactive-state text |
-| Drag | `--state-drag` | base @ 85% — a card whose lifted clone floats alongside it |
-| Ghost | `--state-ghost` | base @ 65% — a reordering source with nothing standing in |
-| Disabled | `--state-disabled` | base @ 50% — a present but inert control |
+| Title    | Token                                 | Value              |
+| -------- | ------------------------------------- | ------------------ |
+| Hover    | `state.hover` · `--state-hover`       | system-grey @ 2.5% |
+| Selected | `state.selected` · `--state-selected` | system-grey @ 5%   |
+| Muted    | `state.muted` · `--state-muted`       | system-black @ 10% |
+| Drag     | `--state-drag`                        | base @ 85%         |
+| Ghost    | `--state-ghost`                       | base @ 65%         |
+| Inactive | `--state-inactive`                    | base @ 55%         |
+| Disabled | `--state-disabled`                    | base @ 50%         |
 
 #### Fills
 
@@ -101,13 +101,13 @@ The five-step system-grey overlay ramp for cards, chips, and fields sitting on a
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
 
-| Title | Token | Value |
-| --- | --- | --- |
-| Fill Primary | `fill.primary` · `--fill-primary` | system-grey @ 20% |
-| Fill Secondary | `fill.secondary` · `--fill-secondary` | system-grey @ 15% |
-| Fill Tertiary | `fill.tertiary` · `--fill-tertiary` | system-grey @ 10% |
-| Fill Quaternary | `fill.quaternary` · `--fill-quaternary` | system-grey @ 6% |
-| Fill Quinary | `fill.quinary` · `--fill-quinary` | system-grey @ 4% |
+| Title           | Token                                   | Value             |
+| --------------- | --------------------------------------- | ----------------- |
+| Fill Primary    | `fill.primary` · `--fill-primary`       | system-grey @ 20% |
+| Fill Secondary  | `fill.secondary` · `--fill-secondary`   | system-grey @ 15% |
+| Fill Tertiary   | `fill.tertiary` · `--fill-tertiary`     | system-grey @ 10% |
+| Fill Quaternary | `fill.quaternary` · `--fill-quaternary` | system-grey @ 6%  |
+| Fill Quinary    | `fill.quinary` · `--fill-quinary`       | system-grey @ 4%  |
 
 #### Tints
 
@@ -115,13 +115,13 @@ The one opacity ladder any base color is mixed at — `tintAt(base, step)` is `c
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/tint.ts`
 
-| Title | Token | Value |
-| --- | --- | --- |
-| Tint Solid | `TINT_STEPS.solid` · `--tint-solid` | 100% |
-| Tint Primary | `TINT_STEPS.primary` · `--tint-primary` | 60% |
-| Tint Secondary | `TINT_STEPS.secondary` · `--tint-secondary` | 40% |
-| Tint Tertiary | `TINT_STEPS.tertiary` · `--tint-tertiary` | 20% |
-| Tint Quaternary | `TINT_STEPS.quaternary` · `--tint-quaternary` | 15% |
+| Title           | Token                                         | Value |
+| --------------- | --------------------------------------------- | ----- |
+| Tint Solid      | `TINT_STEPS.solid` · `--tint-solid`           | 100%  |
+| Tint Primary    | `TINT_STEPS.primary` · `--tint-primary`       | 60%   |
+| Tint Secondary  | `TINT_STEPS.secondary` · `--tint-secondary`   | 40%   |
+| Tint Tertiary   | `TINT_STEPS.tertiary` · `--tint-tertiary`     | 20%   |
+| Tint Quaternary | `TINT_STEPS.quaternary` · `--tint-quaternary` | 15%   |
 
 #### Separators
 

@@ -87,7 +87,7 @@ The card grid's design vocabulary. The geometry the two card families agreed on 
 
 ### Pending
 
-- **Heading "+" creation** — the structural-band "+" is a visual stub until the page-creation affordance is designed.
+- **Heading "+" creation** — the creation engine ships with the table (→ [[TableViewPM]]); the Cards band's "+" stays a visual stub until the card chrome adopts it.
 
 ### Prospects
 
