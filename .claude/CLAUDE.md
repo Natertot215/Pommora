@@ -47,7 +47,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 
 ### Locked Decisions
 
-**Never** assume locked decisions are above questioning — never implement otherwise unless you explicitly state the conflicting state, find the evidence to support the change, and Nathan gives an explicit sign-off.
+**Nothing is set-in-stone but *reasonable* legibility.** Agent-legibility of a user's Nexus is the one inviolable construct. Every other decision — model, structure, vocabulary, interaction — is open to challenge and rework whenever an idea earns it; Pommora is Nathan's first project, and precedent is context, not constraint. Locked Decisions keep their sign-off protocol; everything else needs only a good argument.
 
 - **CommonJS main/preload** (package is NOT `type: module`) — Electron's `require('electron')` fails on ESM named imports; CJS also lets the preload stay sandboxed. **`sandbox: true` + `contextIsolation: true` + `nodeIntegration: false`.**
 - **Single-window now, multi-window-ready seams** — data is main-owned + Query/store-cached per renderer; the live-refresh bus is a swappable transport; windows identified by serializable refs. No global singleton holding shared mutable client state.
@@ -56,7 +56,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 
 #### Important Information
 
-- **Swift Origins:** The repository opens 05-10-2026 on specification alone, with React and Electron named as the initial direction and SwiftUI deferred. SwiftUI was chosen instead on 05-13 and carried the build for a month, defining the entire initial paradigm, before React was returned to as the long-term approach — the first TypeScript lands 06-14 in `823ee654`. The Swift source is archived at `// The Studio // Archive // Pommora`; its commits sit in this repository's own ancestry rather than on a separate branch, so `git log` reaches them directly.
+- **Swift Origins:** The repository opened 05-10-2026 on specification alone, with React and Electron named as the initial direction and SwiftUI deferred. SwiftUI was chosen instead on 05-13 and carried the build for a month, defining the entire initial paradigm, before React was returned to as the long-term approach — the first TypeScript lands 06-14 in `823ee654`. The Swift source is archived at `// The Studio // Archive // Pommora`; its commits sit in this repository's own ancestry rather than on a separate branch, so `git log` reaches them directly.
 - **Why This Matters:** The initial rebuild introduced now-obsolete Swift-based code; Swift compatibility is not a constraint — any code that may appear functional but is solely an artifact of its Swift origin must be flagged for removal.
 - **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime: it brings Pommora-style capabilities to Obsidian natively and keeps NexusOS Pommora-compatible, so Nathan's daily vault stays aligned as Pommora matures — at a light weekly cadence, subordinate to the daily Pommora grind.
 - **NexusOS** is both an Obsidian vault *and* a Pommora nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian-functionality fixtures until Pommora is actually completed.

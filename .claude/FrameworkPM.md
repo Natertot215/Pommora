@@ -1,12 +1,10 @@
-## Pommora — Versioning
+## Pommora Project Framework
 
-Pommora's path to v1.0.0. Scope is the **core 7** — data · properties · connections · markdown · navigation · table · cards — plus the deferred frontier. Numbers are soft; order and grouping firm up as each cluster lands.
-
-`major.minor.patch` semver. **Minor (`v0.X.0`)** is a completed feature cluster; **patch (`v0.X.y`)** is a touch-up or additive extension on a shipped feature; **major (`vX.0.0`)** is reserved for `v1.0.0` (stabilization) and onward. The upcoming line is version-targeted, never date-bound.
+>Pommora's`major.minor.patch` framework. **Minor** is a completed feature cluster; **patches** are touch-up or additive extensions on shipped features; **majors** are reserved for `v1.0.0` (stabilization) and onward. 
 
 ### EXISTING IMPLEMENTATIONS
 
-#### v0.5.0 — The Rebuild Baseline
+#### Version 0.0.0 → 0.5.0 // React Rebuild
 
 The React + Electron build rebuilt the Swift paradigm from the ground up, reached parity, then passed it. The arc ran from a walking skeleton — one nexus walk over IPC into a Zustand store — through the headless data layer and desktop write path, the glass and drag design system, the MarkdownPM editor, the chrome and inspector, tables and Properties V2, the view-settings suite, SurfacePM's block surfaces, auto-scroll and the navigation surface, the multi-tab nexus, and page previews. The unified Subfield and scan-promote closed the rebuild at v0.5.0. Locked decisions and full detail per milestone live in [[HistoryPM]].
 
@@ -40,9 +38,23 @@ No new features — polish, performance, and a release pass (signing, notarizati
 
 #### Post-v1
 
-No phase commitments. The catalog lives in `PommoraPRD.md`'s Prospects — Sub-pages, independent UI titles, a graph view, sync, mobile, and a plugin system among them.
+No phase commitments — Sub-pages, independent UI titles, a graph view, sync, mobile, and a plugin system among them. The catalog is Prospects below.
 
-### Guidelines
+---
 
-**§EXISTING IMPLEMENTATIONS:** Old → New.
-**§UPCOMING VERSIONS:** Most immediate → long-term.
+### Prospects
+
+- [ ] Page Aliases for Connections (Prioritize Obsidian-Compatible Method)
+- [ ] Assigning Contexts To Storages
+- [ ] Page Notes / Description
+- [ ] Property Automations
+- [ ] Pinned-Properties
+
+### Ideas
+
+- [x] [[Pommora – Properties V3 + SQL-V2]]
+- [x] MarkdownPM View Embedding
+- [ ] MarkdownPM Checkbox Toggles
+- [ ] MarkdownPM Independent Editor
+- [x] MarkdownPM Code Styling
+- [ ] View Quick-Filter Switching

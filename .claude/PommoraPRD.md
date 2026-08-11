@@ -201,21 +201,4 @@ The current build is ad-hoc-signed. A distributable release adds electron-builde
 - Inline editing of embedded views.
 - One design scheme plus in-app accent customization.
 
-**Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, sync, mobile, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, full Settings editing UI, and more — see **Prospects** below.
-
-### Prospects
-
-- [ ] Page Aliases for Connections (Prioritize Obsidian-Compatible Method)
-- [ ] Assigning Contexts To Storages
-- [ ] Page Notes / Description
-- [ ] Property Automations
-- [ ] Pinned-Properties
-
-### Ideas
-
-- [x] [[Pommora – Properties V3 + SQL-V2]]
-- [x] MarkdownPM View Embedding
-- [ ] MarkdownPM Checkbox Toggles
-- [ ] MarkdownPM Independent Editor
-- [x] MarkdownPM Code Styling
-- [ ] View Quick-Filter Switching
+**Out (post-v1):** additional view types beyond the v1 set, synced page-body blocks, sync, mobile, plugins, ad-hoc properties, multi-Collection pages, independent UI titles, in-line view embeds in Pages, chip-style connections, full Settings editing UI, and more — the catalog is [[FrameworkPM]] §Prospects.

@@ -2,11 +2,11 @@
 
 ### Current Focus
 
-**Creation affordances — built, awaiting Nathan's live confirmation.** In-view page creation shipped across the table and the sidebar ([[HistoryPM]] §PM-096): the band "+", the grip menu's New Page Above/Below, the sidebar pair, the hover ghost row, and one creation feel everywhere — the page exists as Untitled the moment the gesture fires and its title opens empty. What remains is the live pass: the native menu picks, the ghost's disclosure beat under a real mouse, and the empty field on the sidebar surfaces.
+**Cards creation adoption — the brainstorm is open.** The Cards view adopts the creation engine PM-096 proved on the table — the band "+", the New Page menu pair, empty-field naming, and a hover ghost card whose chrome and motion are the view's own. The table's live pass resolved into the committed ghost-exit polish: the ghost now collapses out on the motion it entered by, and the title-cell menu carries the New Page pair.
 
 ### Immediate Work
 
-- [ ] None 
+- [ ] **Display-alias** — `[[Title|alias]]` rendering its authored text in place of the title — opens as the next arc the moment Cards creation meets its completion criteria.
 
 ### Pending Focuses
 
@@ -23,7 +23,7 @@
 
 #### II. Next-Feature Candidates
 
-- [ ] **Aliases**, the PageMenu's last unbuilt leaf. Its vocabulary collides with the `[[Title|alias]]` prospect — the display text authored in the linking page's body — and the two sit at opposite ends of a single link, so one of them has to be renamed before the leaf can be specified.
+- [ ] **Page aliases** — frontmatter `Aliases:` as resolution keys, the PageMenu's last unbuilt leaf. Parked whole: resolution needs nexus-wide frontmatter the walk doesn't carry (content-index-adjacent), and the leaf's name collides with the display-alias vocabulary, so the naming settles before it's specified. The display half is sequenced in §Immediate Work.
 - [ ] **The trash browser.** The deletion record's restore path ships and is tested end to end; what's missing is enumeration, since `listBundles` has no bridge entry and no non-test caller. A UI build plus one channel on a finished engine.
 - [ ] **The main pane's Inspector.** Its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty. The Page Preview's frontmatter inspector is a portable body already doing that job for another host.
 - [ ] **An unresolved `[[Link]]` is inert** — no colour, no click, no way to create the page it names. Writing a forward reference and filling it in later is the loop that makes inline linking worth using. Adjacent to Aliases; both sit on the connection layer.
@@ -83,6 +83,8 @@
 - [ ] The Set-Card drag flash — the drop snaps back, then jumps on reload.
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
 - [ ] The PageOutline's list-indent is noticeably different from other disclosure spacings (Sidebar, GroupPane, Tables), and likely needs a second pass to confirm whether it was actually consolidated around the shared primitive. 
+- [ ] Clicking inline, right next to the connection syntax, navigates to the linked page instead of placing your caret on the edge of the syntax, making renaming or adjusting the link itself quite difficult. 
+- [ ] TableView ghosted-row's apply at the row's start rather than the title-cell; tables where the title isn't the first-in-order have their 'New Page' appear at the first-in-order cell rather than the title; fix this post-CardView work.
 
 ### Recent Work
 
@@ -94,12 +96,12 @@ In-TableView page creation shipped whole: `createPage` carries seeds and a full-
 #### PM-095 || Documentation Normalization
 **DATE:** 08-10-2026
 
-Every Feature doc, Versioning, and the PRD were rewritten according to one documentation standard — product register, one owner per fact with pointers elsewhere, canonical tails, and codemap tables of contents — ratified in `Planning/Documentation Normalization.md` and closed by a two-agent residue review. MarkdownPM's Non-Obvious traps now live in `Guidelines/Editor-Internals.md`, and the atlas stayed checker-green throughout.
+Every Feature doc, Framework, and the PRD were rewritten according to one documentation standard — product register, one owner per fact with pointers elsewhere, canonical tails, and codemap tables of contents — ratified in `Planning/Documentation Normalization.md` and closed by a two-agent residue review. MarkdownPM's Non-Obvious traps now live in `Guidelines/Editor-Internals.md`, and the atlas stayed checker-green throughout.
 
 #### PM-094 || One Owner Per Repeated Value
 **DATE:** 08-10-2026
 
-The reconnaissance's fix list worked through. Three tokens replaced literals — `--radius-full` over nine hand-spelled pill radii, opening the radius scale; `--state-drag` for the dim a card wears while its lifted clone floats; `--state-disabled` rebased so its four sites adopt it unchanged. The two card families merged into one shared geometry, which forced a knob whose value had never reached the screen and settled it at what had always rendered. The auto-scroll defaults, written twice and free to drift, came onto one map the `:root` block generates from; `separator.line` died into the bridged name it duplicated. The notch's raw shadow, the mixes outside the tint ladder, and the comments that had drifted from their values were all restated against the code.
+The reconnaissance's fix list worked through. Three tokens replaced literals — `--radius-full` over nine hand-spelled pill radii, opening the radius scale; `--state-drag` for the dim a card wears while its lifted clone floats; `--state-disabled` rebased so its four sites adopt it unchanged. The two card families merged into one shared geometry, which forced a knob whose value had never reached the screen to settle at what had always rendered. The auto-scroll defaults, written twice and free to drift, came onto one map the`:root` block generates from; `separator.line` died into the bridged name it duplicated. The notch's raw shadow, the mixes outside the tint ladder, and the comments that had drifted from their values were all restated against the code.
 
 #### PM-093 || The Token Atlas
 **DATE:** 08-10-2026
