@@ -18,11 +18,14 @@ export function Reveal({
   open,
   fill = false,
   duration = motionDuration.disclosure,
+  onCollapsed,
   children,
 }: {
   open: boolean
   fill?: boolean
   duration?: string
+  /** Fires once a close's collapse lands — for owners that unmount the Reveal itself after the exit. */
+  onCollapsed?: () => void
   children: ReactNode
 }): React.JSX.Element {
   const [mounted, setMounted] = useState(open)
@@ -58,7 +61,10 @@ export function Reveal({
         if (e.target !== e.currentTarget) return
         if (e.propertyName !== 'grid-template-rows') return
         if (open) setSettled(true)
-        else setMounted(false)
+        else {
+          setMounted(false)
+          onCollapsed?.()
+        }
       }}
     >
       {/* The seam law (GroupBand.css) addresses this wrapper as `[data-reveal] > *` — its depth is
