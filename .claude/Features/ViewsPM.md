@@ -7,7 +7,6 @@ Views
 │   ├── II. Group
 │   ├── II. Sort
 │   └── II. Columns
-├── Renderers
 ├── Surfaces
 │   ├── II. The ViewPane
 │   ├── II. ViewSettings
@@ -27,8 +26,6 @@ A view is a saved presentation of a [[CollectionsPM|Collection's]] (or a depth-1
 Each container's sidecar holds an ordered `views[]`. A saved view records its `id` (a ULID), `name`, `icon`, an optional `color` (an open chip-palette key validated through the chip map at render, worn as the view's segment stroke at a tint — absent = the neutral hairline), and its renderer `type`. Its column layout carries `property_order`, `hidden_properties`, per-column widths, alignments, and `column_styles` — the per-type look plus the date, weekday, and time format choices, which live per-view here rather than on the definition. Its query config carries the `sort` (a multi-key list), the `filter` (a nested group), the `group` config with the view-level band-order keys, and the display options — card scale, collapsed-band state, and the cards toggles.
 
 The **active view is tracked per-machine** in `nexus.db`, kept out of the synced sidecar. The per-container **ViewDropdown** (a toolbar button left of the trio, its glyph the active view's icon) opens the **ViewPane** to switch it; view CRUD — create (title-only "Untitled"), rename, duplicate, delete, reorder — persists to the sidecar. Two per-container presentation settings ride the sidecar and sync: `view_button` (the button's Show/Hide Title) and `view_style` (Dropdown / Toolbar). A container never presents an empty `views[]` — an app-created container is seeded with its default view on disk, and an empty view-bearing container mints its default on first entry.
-
-
 
 ### The Pipeline
 

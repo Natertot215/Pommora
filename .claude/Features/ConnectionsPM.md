@@ -6,7 +6,6 @@ Connections
 ├── The Rename Cascade
 ├── Rendering
 ├── Autocomplete
-├── The Resolver
 ├── Known Issues
 └── Prospects
 ```
@@ -33,8 +32,6 @@ A scanned title, matched through one shared normalization, lands in one of three
 
 Identity is the title and the body carries no id, so a rename **cascades** — renaming a target rewrites every body holding its old title. An alias rides through: a rename changes which Page a connection points at, never the words the author chose to show for it. Page bodies come from a walk of the nexus's markdown, and a file the tree won't admit is passed over, so a rename never rewrites a body Pommora would refuse to render. Markdown-block bodies sit inside `.nexus`, out of that walk's reach, and a second best-effort pass heals them afterward.
 
-Every file is rewritten under the same lock a live edit takes, frontmatter untouched — a derived link edit isn't a user modification (→ [[PagesPM]]).
-
 ### Rendering
 
 A resolved connection is inline text in the connection color — never a chip — brackets hidden until the caret enters it. Click opens it, routed by the `connectionsOpenInPreview` personalization knob (→ [[ConfigurationPM]]); ⌘-click opens a new tab; hover raises the preview hover card (→ [[PagePreviewPM]]); right-click pops a native menu whose one action is **Open Preview**. Ambiguous links keep the bracket treatment in their muted tone; phantom text renders raw and inert.
@@ -42,10 +39,6 @@ A resolved connection is inline text in the connection color — never a chip �
 ### Autocomplete
 
 Typing inside `[[ ]]` filters Pages nexus-wide by title prefix; an empty query lists nothing. The panel anchors below the caret, flipping above only to avoid overflowing the viewport. Arrows move the selection, Return commits the form being typed — a bare `[[Title]]`, or `![[Title]]` when the panel fired on the embed syntax, where the pool also drops already-embedded pages, the host chain, and titles the embed grammar can't express. Escape closes, each key falling through to the editor's own binding while the panel is closed. One state machine drives the page editor, block tiles, and markdown table cells alike; the embed form fires only in page-body editors.
-
-### The Resolver
-
-An in-memory map from normalized title to the Page IDs holding it resolves every link and drives the cascade, rebuilt whenever the page tree reloads. Nothing persists the edges. Full data layer → [[ArchitecturePM]].
 
 ### Known Issues
 

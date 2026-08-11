@@ -29,7 +29,7 @@ A selected depth-1 Set opens its own scoped view and carries its path for rename
 
 ### Moves + CRUD
 
-Within one Collection, moving a Page or a whole Set at any depth is a pure filesystem move; cross-Collection moves and the landing rules are [[CollectionsPM]]'s. Page Sets run through the same generic folder-entity CRUD as Collections and Spaces — a move reparents the whole subtree, a delete sends the folder with its Sub-Sets and Pages to the configured delete target, and reorder persists the parent's orders on each drag.
+Within one Collection, moving a Page or a whole Set at any depth is a pure filesystem move. Page Sets run through the same generic folder-entity CRUD as Collections and Spaces — a move reparents the whole subtree, a delete sends the folder with its Sub-Sets and Pages to the configured delete target, and reorder persists the parent's orders on each drag.
 
 ### Pending
 

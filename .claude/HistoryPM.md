@@ -1,110 +1,110 @@
 ### Pommora History Index
 
-| Date | ID | Entry |
-| ------------------ | ------------ | ---------------------------------------------- |
-| 08-11-2026 | PM-096 | Creation Lives In The View |
-| 08-10-2026 | PM-095 | Documentation Normalization |
-| 08-10-2026 | PM-094 | One Owner Per Repeated Value |
-| 08-10-2026 | PM-093 | The Token Atlas |
-| 08-10-2026 | PM-092 | One Grip Menu, And The List's Type |
-| 08-10-2026 | PM-091 | CSS Token Organization |
-| 08-09-2026 → 08-10 | PM-090 | The Drag Layer Converges On One Skeleton |
-| 08-08-2026 | PM-089 | The Write Path Converges On One Lock |
-| 08-08-2026 | PM-088 | Dropdown Shell & Menu Consolidation |
-| 08-07-2026 → 08-08 | PM-087 | One Shared Pass Over Fenced Code |
-| 08-08-2026 | PM-086 | The Page Outline |
-| 08-06-2026 → 08-07 | PM-085 | The PageMenu And The In-App Picker |
-| 08-06-2026 | PM-084 | Pointer Handler Logic Unification |
-| 08-06-2026 | PM-083 | Table Geometry And The Marker Rules |
-| 08-05-2026 | PM-082 | The Connection Hover Card |
-| 08-04-2026 → 08-05 | PM-081 | Four Consolidations Off The Debt Ledger |
-| 08-04-2026 | PM-080 | Table Border Append Strips |
-| 08-04-2026 | PM-079 | Type-Specific Codeblocks |
-| 08-03-2026 → 08-04 | PM-078 | Embedded Pages |
-| 08-03-2026 | PM-077 | Display Math And List Wrapping |
-| 08-02-2026 | PM-076 | Hidden Groups |
-| 08-01-2026 | PM-075 | The NexusRecord |
-| 07-31-2026 | PM-074 | Identity Goes Kind-First |
-| 07-30-2026 | PM-073 | Band Clearance Moves Into The Shared Chrome |
-| 07-30-2026 | PM-072 | ActionBand And The Per-View Color |
-| 07-30-2026 | PM-071 | The Tree Index |
-| 07-30-2026 | PM-070 | The Bridge Map |
-| 07-30-2026 | PM-069 | One Fence Scan For The Editor Chrome |
-| 07-29-2026 → 07-30 | PM-068 | The Swift Layer Out, Navigation On One Contract |
-| 07-29-2026 | PM-067 | Sidecar Writes Take One Strict Primitive |
-| 07-28-2026 → 07-29 | PM-066 | Property Values Take Name-Keyed Frontmatter |
-| 07-29-2026 | PM-065 | One Source For The Spectrum |
-| 07-28-2026 | PM-064 | Operational State Leaves The Filesystem |
-| 07-27-2026 → 07-28 | PM-063 | One Owner Per IPC Shape |
-| 07-27-2026 | PM-062 | The Feature Docs Corrected Against The Code |
-| 07-27-2026 | PM-061 | The tierN Compatibility Surface Comes Out |
-| 07-26-2026 → 07-27 | PM-060 | The FilterPane Returns |
-| 07-25-2026 | PM-059 | Lint And Accessibility Reach Clean |
-| 07-25-2026 | PM-058 | The Settings Window And Four Dangling References |
-| 07-25-2026 | PM-057 | PreviewPane Absorbs Both Floating Windows |
-| 07-22-2026 → 07-23 | PM-056 | Contexts And Spaces Replace The Three Tiers |
-| 07-20-2026 → 07-21 | PM-055 | One Vault Walk Per Structural Mutation |
-| 07-18-2026 → 07-20 | PM-054 | Cards — The First v0.6.0 Renderer |
-| 07-17-2026 | PM-053 | Subfield And Scan-Promote Share One Surface |
-| 07-17-2026 | PM-052 | MenuBottomRow Owns Its Divider |
-| 07-16-2026 → 07-17 | PM-051 | Page Previews — The Floating Tabbed Window |
-| 07-16-2026 | PM-050 | Biome Settles And The Repo Converges |
-| 07-15-2026 → 07-16 | PM-049 | Multi-Tab Nexus — Warm Toolbar Tabs |
-| 07-15-2026 | PM-048 | Pins, Thumbnails, And The Nav Gallery |
-| 07-14-2026 | PM-047 | The Navigation Surface |
-| 07-13-2026 → 07-14 | PM-046 | Every Drag's Edge-Scroll Onto One Loop |
-| 07-13-2026 | PM-045 | Table Hide Borders And The Date Clear |
-| 07-10-2026 → 07-13 | PM-044 | SurfacePM — The Block Surface |
-| 07-09-2026 → 07-10 | PM-043 | The Filter Engine Ships, The Pane Is Pulled |
-| 07-09-2026 | PM-042 | The Table Sorting Pane |
-| 07-08-2026 → 07-09 | PM-041 | The Sidebar Ribbon And Its Modes |
-| 07-09-2026 | PM-040 | The Table Grouping Pane |
-| 07-08-2026 | PM-039 | The Icon Picker Over The Full Lucide Set |
-| 07-06-2026 → 07-07 | PM-038 | The Per-Type Property Editors |
-| 07-06-2026 | PM-037 | Multi-View Scaffolding And The Type Glyphs |
-| 07-05-2026 → 07-06 | PM-036 | The Watcher Walk Goes mtime-Gated |
-| 07-05-2026 | PM-035 | The Swift Build Is Archived |
+| Date               | ID     | Entry                                                |
+| ------------------ | ------ | ---------------------------------------------------- |
+| 08-11-2026         | PM-096 | TableView Creation Affordance                        |
+| 08-10-2026         | PM-095 | Documentation Normalization                          |
+| 08-10-2026         | PM-094 | One Owner Per Repeated Value                         |
+| 08-10-2026         | PM-093 | The Token Atlas                                      |
+| 08-10-2026         | PM-092 | One Grip Menu, And The List's Type                   |
+| 08-10-2026         | PM-091 | CSS Token Organization                               |
+| 08-09-2026 → 08-10 | PM-090 | The Drag Layer Converges On One Skeleton             |
+| 08-08-2026         | PM-089 | The Write Path Converges On One Lock                 |
+| 08-08-2026         | PM-088 | Dropdown Shell & Menu Consolidation                  |
+| 08-07-2026 → 08-08 | PM-087 | One Shared Pass Over Fenced Code                     |
+| 08-08-2026         | PM-086 | The Page Outline                                     |
+| 08-06-2026 → 08-07 | PM-085 | The PageMenu And The In-App Picker                   |
+| 08-06-2026         | PM-084 | Pointer Handler Logic Unification                    |
+| 08-06-2026         | PM-083 | Table Geometry And The Marker Rules                  |
+| 08-05-2026         | PM-082 | The Connection Hover Card                            |
+| 08-04-2026 → 08-05 | PM-081 | Four Consolidations Off The Debt Ledger              |
+| 08-04-2026         | PM-080 | Table Border Append Strips                           |
+| 08-04-2026         | PM-079 | Type-Specific Codeblocks                             |
+| 08-03-2026 → 08-04 | PM-078 | Embedded Pages                                       |
+| 08-03-2026         | PM-077 | Display Math And List Wrapping                       |
+| 08-02-2026         | PM-076 | Hidden Groups                                        |
+| 08-01-2026         | PM-075 | The NexusRecord                                      |
+| 07-31-2026         | PM-074 | Identity Goes Kind-First                             |
+| 07-30-2026         | PM-073 | Band Clearance Moves Into The Shared Chrome          |
+| 07-30-2026         | PM-072 | ActionBand And The Per-View Color                    |
+| 07-30-2026         | PM-071 | The Tree Index                                       |
+| 07-30-2026         | PM-070 | The Bridge Map                                       |
+| 07-30-2026         | PM-069 | One Fence Scan For The Editor Chrome                 |
+| 07-29-2026 → 07-30 | PM-068 | The Swift Layer Out, Navigation On One Contract      |
+| 07-29-2026         | PM-067 | Sidecar Writes Take One Strict Primitive             |
+| 07-28-2026 → 07-29 | PM-066 | Property Values Take Name-Keyed Frontmatter          |
+| 07-29-2026         | PM-065 | One Source For The Spectrum                          |
+| 07-28-2026         | PM-064 | Operational State Leaves The Filesystem              |
+| 07-27-2026 → 07-28 | PM-063 | One Owner Per IPC Shape                              |
+| 07-27-2026         | PM-062 | The Feature Docs Corrected Against The Code          |
+| 07-27-2026         | PM-061 | The tierN Compatibility Surface Comes Out            |
+| 07-26-2026 → 07-27 | PM-060 | The FilterPane Returns                               |
+| 07-25-2026         | PM-059 | Lint And Accessibility Reach Clean                   |
+| 07-25-2026         | PM-058 | The Settings Window And Four Dangling References     |
+| 07-25-2026         | PM-057 | PreviewPane Absorbs Both Floating Windows            |
+| 07-22-2026 → 07-23 | PM-056 | Contexts And Spaces Replace The Three Tiers          |
+| 07-20-2026 → 07-21 | PM-055 | One Vault Walk Per Structural Mutation               |
+| 07-18-2026 → 07-20 | PM-054 | Cards — The First v0.6.0 Renderer                    |
+| 07-17-2026         | PM-053 | Subfield And Scan-Promote Share One Surface          |
+| 07-17-2026         | PM-052 | MenuBottomRow Owns Its Divider                       |
+| 07-16-2026 → 07-17 | PM-051 | Page Previews — The Floating Tabbed Window           |
+| 07-16-2026         | PM-050 | Biome Settles And The Repo Converges                 |
+| 07-15-2026 → 07-16 | PM-049 | Multi-Tab Nexus — Warm Toolbar Tabs                  |
+| 07-15-2026         | PM-048 | Pins, Thumbnails, And The Nav Gallery                |
+| 07-14-2026         | PM-047 | The Navigation Surface                               |
+| 07-13-2026 → 07-14 | PM-046 | Every Drag's Edge-Scroll Onto One Loop               |
+| 07-13-2026         | PM-045 | Table Hide Borders And The Date Clear                |
+| 07-10-2026 → 07-13 | PM-044 | SurfacePM — The Block Surface                        |
+| 07-09-2026 → 07-10 | PM-043 | The Filter Engine Ships, The Pane Is Pulled          |
+| 07-09-2026         | PM-042 | The Table Sorting Pane                               |
+| 07-08-2026 → 07-09 | PM-041 | The Sidebar Ribbon And Its Modes                     |
+| 07-09-2026         | PM-040 | The Table Grouping Pane                              |
+| 07-08-2026         | PM-039 | The Icon Picker Over The Full Lucide Set             |
+| 07-06-2026 → 07-07 | PM-038 | The Per-Type Property Editors                        |
+| 07-06-2026         | PM-037 | Multi-View Scaffolding And The Type Glyphs           |
+| 07-05-2026 → 07-06 | PM-036 | The Watcher Walk Goes mtime-Gated                    |
+| 07-05-2026         | PM-035 | The Swift Build Is Archived                          |
 | 07-04-2026 → 07-05 | PM-034 | The Link Property, Personalization, And The Outliner |
-| 07-04-2026 | PM-033 | Mobile Future-Proofing For A Capacitor Port |
-| 07-04-2026 | PM-032 | One Lock For Every Page Write |
-| 07-03-2026 | PM-031 | The Property Option Editors |
-| 07-03-2026 | PM-030 | The Visibility Pane |
-| 07-02-2026 | PM-029 | The Live Showcase And Chip Shape Primitives |
-| 07-02-2026 | PM-028 | PommoraIcons — The Tabler Migration And Its Revert |
-| 07-02-2026 | PM-027 | The ViewPane Properties Flow |
-| 07-02-2026 | PM-026 | The CalendarPicker |
-| 07-02-2026 | PM-025 | Banner Icons And The Notched Pane |
-| 07-02-2026 | PM-024 | The Chip Hover-× Melt |
-| 07-02-2026 | PM-023 | The Hot Paths And The Inspector Teardown |
-| 07-02-2026 | PM-022 | Group Bands Become Draggable |
-| 07-01-2026 | PM-021 | Tables Interactive — Cells, Styles, And Overflow |
-| 07-01-2026 | PM-020 | MarkdownPM Hardened Across Every Module |
-| 07-01-2026 | PM-019 | Property Definitions Go Nexus-Wide |
-| 06-30-2026 → 07-01 | PM-018 | The Table Grid Rewrite And The Sidebar Rows |
-| 06-29-2026 → 06-30 | PM-017 | The Table Renderer Arrives |
-| 06-27-2026 → 06-29 | PM-016 | The View Settings Dropdown Shell |
-| 06-27-2026 → 06-29 | PM-015 | MarkdownPM Block Drag |
-| 06-27-2026 → 06-28 | PM-014 | The SavedView Engine |
-| 06-27-2026 | PM-013 | Callouts |
-| 06-26-2026 | PM-012 | The Drawn Caret, List Drag, And Back/Forward |
-| 06-25-2026 → 06-26 | PM-011 | Window Chrome — Toolbar, Inspector, Subfield |
-| 06-24-2026 → 06-25 | PM-010 | The Two-Tier Collapse Reaches React |
-| 06-22-2026 → 06-23 | PM-009 | GFM Tables Inside The Editor |
-| 06-20-2026 → 06-22 | PM-008 | MarkdownPM — The Dynamic-Syntax Editor |
-| 06-19-2026 | PM-007 | Sidebar Drag Adopted, And The First Container Views |
-| 06-18-2026 | PM-006 | PommoraDND, The Showcase, And The Primitive Layer |
-| 06-17-2026 | PM-005 | CSS Frost, Window Chrome, And The Live Watcher |
-| 06-16-2026 | PM-004 | One Repo, One Main |
-| 06-15-2026 | PM-003 | The Design System Is Founded |
-| 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer |
-| 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
+| 07-04-2026         | PM-033 | Mobile Future-Proofing For A Capacitor Port          |
+| 07-04-2026         | PM-032 | One Lock For Every Page Write                        |
+| 07-03-2026         | PM-031 | The Property Option Editors                          |
+| 07-03-2026         | PM-030 | The Visibility Pane                                  |
+| 07-02-2026         | PM-029 | The Live Showcase And Chip Shape Primitives          |
+| 07-02-2026         | PM-028 | PommoraIcons — The Tabler Migration And Its Revert   |
+| 07-02-2026         | PM-027 | The ViewPane Properties Flow                         |
+| 07-02-2026         | PM-026 | The CalendarPicker                                   |
+| 07-02-2026         | PM-025 | Banner Icons And The Notched Pane                    |
+| 07-02-2026         | PM-024 | The Chip Hover-× Melt                                |
+| 07-02-2026         | PM-023 | The Hot Paths And The Inspector Teardown             |
+| 07-02-2026         | PM-022 | Group Bands Become Draggable                         |
+| 07-01-2026         | PM-021 | Tables Interactive — Cells, Styles, And Overflow     |
+| 07-01-2026         | PM-020 | MarkdownPM Hardened Across Every Module              |
+| 07-01-2026         | PM-019 | Property Definitions Go Nexus-Wide                   |
+| 06-30-2026 → 07-01 | PM-018 | The Table Grid Rewrite And The Sidebar Rows          |
+| 06-29-2026 → 06-30 | PM-017 | The Table Renderer Arrives                           |
+| 06-27-2026 → 06-29 | PM-016 | The View Settings Dropdown Shell                     |
+| 06-27-2026 → 06-29 | PM-015 | MarkdownPM Block Drag                                |
+| 06-27-2026 → 06-28 | PM-014 | The SavedView Engine                                 |
+| 06-27-2026         | PM-013 | Callouts                                             |
+| 06-26-2026         | PM-012 | The Drawn Caret, List Drag, And Back/Forward         |
+| 06-25-2026 → 06-26 | PM-011 | Window Chrome — Toolbar, Inspector, Subfield         |
+| 06-24-2026 → 06-25 | PM-010 | The Two-Tier Collapse Reaches React                  |
+| 06-22-2026 → 06-23 | PM-009 | GFM Tables Inside The Editor                         |
+| 06-20-2026 → 06-22 | PM-008 | MarkdownPM — The Dynamic-Syntax Editor               |
+| 06-19-2026         | PM-007 | Sidebar Drag Adopted, And The First Container Views  |
+| 06-18-2026         | PM-006 | PommoraDND, The Showcase, And The Primitive Layer    |
+| 06-17-2026         | PM-005 | CSS Frost, Window Chrome, And The Live Watcher       |
+| 06-16-2026         | PM-004 | One Repo, One Main                                   |
+| 06-15-2026         | PM-003 | The Design System Is Founded                         |
+| 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer                              |
+| 06-14-2026         | PM-001 | Genesis — The Walking Skeleton                       |
 
-#### PM-096 || Creation Lives In The View
+#### PM-096 || TableView Creation Affordance
 **DATE:** 08-11-2026
 
 **The Act:** Every creation surface runs one act — the page exists on disk as Untitled the moment the gesture fires, and its title opens as an uncommitted rename whose field is empty. `createPage` carries seed values and a full-membership `page_order` slot in one write (a `NEW_PAGE_SLOT` sentinel main substitutes with the minted id), and a just-created page's first naming counts as part of the creation: it auto-disambiguates like a create, skips the nexus-wide link cascade a linkless page can't need, and the reply reports the landed name so every consumer patches from what actually stuck. The optimistic tree insert splices the row at its slot, so a positional create never flashes at the container's bottom.
 
-**The Table:** The structural band "+" creates in its Set at the pipeline's own end of the group, disclosing a collapsed band first and gliding to the new row. The row grip gained its own right-click menu on MarkdownPM's grip interaction model — Open Preview · Open New Tab — Rename · Change Icon — New Page Above · New Page Below — Delete — and stays rendered when a multi-key sort retires the drag, since it owns the menu. Above/Below inherits the anchor's group value and its single-value sort-criteria values so the comparator ties it beside its anchor, with the `viewOrders` tiebreaker (now round-tripped into the renderer's local copy) breaking the tie at the gesture slot; a filter's cleanly-implied values stamp too, and a page a non-derivable rule excludes creates and stays filtered out. Dwelling on a row extends the ghost "New Page" row beneath it on the shared disclosure Reveal — the one motion rows enter by — its standard label at the inactive dim; clicking it runs the Below path.
+**The Table:** The structural band "+" creates in its Set at the pipeline's own end of the group, disclosing a collapsed band first and gliding to the new row. The row grip gained its own right-click menu on MarkdownPM's grip interaction model — Open Preview · Open New Tab — Rename · Change Icon — New Page Above · New Page Below — Delete — and stays rendered when a multi-key sort retires the drag, since it owns the menu. Above/Below inherits the anchor's group value and its single-value sort-criteria values so the comparator ties it beside its anchor, with the `viewOrders` tiebreake at the gesture slot; a filter's cleanly-implied values stamp too, and a page a non-derivable rule excludes creates and stays filtered out. Dwelling on a row extends the ghost "New Page" row beneath it on the shared disclosure Reveal — the one motion rows enter by — its standard label at the inactive dim; clicking it runs the Below path.
 
 **Everywhere Else:** Sidebar page rows carry the same New Page pair, computed renderer-side against the full sibling order; every create path — the container menus and the subfield "+" included — now opens the empty naming field over the already-real page. `--state-inactive` joined the opacity ramp at its own bare number and `--state-disabled` died into it, its consumers adopting the one still-here-but-not-active dim; the six empty-state sites shed their interim markers. The in-drop label renames landed everywhere as ruled — **Open New Tab** and **Open Preview**, the "in" dropped across menus, tests, comments, and docs.
 

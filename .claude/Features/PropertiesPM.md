@@ -28,29 +28,29 @@ Properties
 
 Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and populated on the members of every Collection that assigns it — the registry declares each property's type and per-type config, a Collection's assignment list names which registry properties its Pages validate and show, and member entities store the values. The same type catalog applies to Pages, Tasks, and Events; Agenda's kinds are modeled to keep their own definitions on their config sidecars, though a seeded config carries identity only until the Agenda rethink builds that schema.
 
-| Scope | Definitions |
-| --- | --- |
-| Nexus-wide registry | `.nexus/properties.json` → `propId → definition` |
-| Page Collection | `<Collection>/_pagecollection.json` → `properties[]` (assigned registry ids) |
-| Task | `<Tasks>/_taskconfig.json` → `property_definitions[]` (own defs — separate from the registry; unbuilt) |
-| Event | `<Events>/_eventconfig.json` → `property_definitions[]` (own defs — separate from the registry; unbuilt) |
+| Scope               | Definitions                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------------- |
+| Nexus-wide registry | `.nexus/properties.json` → `propId → definition`                                                         |
+| Page Collection     | `<Collection>/_pagecollection.json` → `properties[]` (assigned registry ids)                             |
+| Task                | `<Tasks>/_taskconfig.json` → `property_definitions[]` (own defs — separate from the registry; unbuilt)   |
+| Event               | `<Events>/_eventconfig.json` → `property_definitions[]` (own defs — separate from the registry; unbuilt) |
 
 A Page's values are wrapped title keys at its frontmatter root; a Task's or Event's are the same wrapped keys at its JSON root, resolved against that kind's own `property_definitions`. Page Sets carry no schema of their own and inherit the Collection's. A definition — options included — is one shared object everywhere it's assigned; genuinely divergent needs get a separate property.
 
 ### The Type Catalog
 
-| Type | On-Disk Value | Notes |
-| --------------------- | ----------------------------------------------------------------------- | ----------------------------------------------- |
-| **Number** | `<Count>: 42` | Bare number. |
-| **Checkbox** | `<Done>: true` | Bare boolean. |
-| **Date** | `"2026-06-15"` (date-only, UTC) or `"2026-06-15T14:30:00Z"` (with time) | A bare date-only value folds into Date on read. |
-| **Select** | `<Stage>: Active` | Bare string; one colored chip. |
-| **Multi-select** | `<Tags>:` over a block sequence | Bare array; tag-style multi-pick. |
-| **Status** | `<Status>: Complete` | Bare label — the option's own value; grouped by workflow phase. |
-| **URL** | `<Link>: https://…` | A string with a scheme. |
-| **Context** | `(Context):` at the root, over a block sequence of bare Space titles | One column per registry Context, synthesized at runtime — never a schema definition. |
-| **Last Edited Time** | *(derived from `modified_at`)* | Virtual — never persisted. |
-| **File / Attachment** | `[{ "path", "original_name", "added_at", "mime_type" }, ...]` | Array; files copy into the Nexus. |
+| Type                  | On-Disk Value                                                           | Notes                                                                                |
+| --------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Number**            | `<Count>: 42`                                                           | Bare number.                                                                         |
+| **Checkbox**          | `<Done>: true`                                                          | Bare boolean.                                                                        |
+| **Date**              | `"2026-06-15"` (date-only, UTC) or `"2026-06-15T14:30:00Z"` (with time) | A bare date-only value folds into Date on read.                                      |
+| **Select**            | `<Stage>: Active`                                                       | Bare string; one colored chip.                                                       |
+| **Multi-select**      | `<Tags>:` over a block sequence                                         | Bare array; tag-style multi-pick.                                                    |
+| **Status**            | `<Status>: Complete`                                                    | Bare label — the option's own value; grouped by workflow phase.                      |
+| **URL**               | `<Link>: https://…`                                                     | A string with a scheme.                                                              |
+| **Context**           | `(Context):` at the root, over a block sequence of bare Space titles    | One column per registry Context, synthesized at runtime — never a schema definition. |
+| **Last Edited Time**  | *(derived from `modified_at`)*                                          | Virtual — never persisted.                                                           |
+| **File / Attachment** | `[{ "path", "original_name", "added_at", "mime_type" }, ...]`           | Array; files copy into the Nexus.                                                    |
 
 ### Identity & Name
 
