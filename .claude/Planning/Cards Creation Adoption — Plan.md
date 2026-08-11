@@ -1,6 +1,7 @@
 ## Cards Creation Adoption — Implementation Plan
 
-> **Status:** written, pending review · Spec: `.claude/Planning/Cards Creation Adoption — Decision Log.md` · Execute tasks in order.
+> **Status:** ratified — in execution (Nathan's go, 08-11-2026) · Spec: `.claude/Planning/Cards Creation Adoption — Decision Log.md` · Execute tasks in order.
+> Rider: a sidebar row-hover-add sub-scope is being scoped in parallel; it joins as an addendum phase on its own review, shipping alongside.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
