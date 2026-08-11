@@ -1,5 +1,4 @@
 ## Pages
-
 ```
 Pages
 ├── On-Disk Shape

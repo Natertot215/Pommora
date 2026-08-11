@@ -1,5 +1,4 @@
 ## Sidebar
-
 ```
 Sidebar
 ├── Ribbon

@@ -1,5 +1,4 @@
 ## Design System
-
 ```
 Design System
 ├── Design Philosophy
