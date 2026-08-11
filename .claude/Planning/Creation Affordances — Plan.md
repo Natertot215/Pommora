@@ -9,7 +9,7 @@ In-view page creation, TableView first. One act everywhere: on click the page ex
 
 The approach was ratified through the decision log's two adversarial rounds; the alternatives weighed (a draft-row state machine, ghost-first creation, suppressing menu items under sorts) are recorded in its Considered & Rejected. This plan deliberately does not build: CardView creation chrome, the property-bucket "+", or any dedicated creation button (Prospects / Out of Scope).
 
-**Acceptance criterion (end-to-end):** In a running dev instance, each trigger — band "+", grip-menu Above/Below, sidebar-menu Above/Below — produces a page that is on disk as markdown, stamped with its birth context, placed at the gesture position (or the pipeline's honest position where the log says so), with the title field open, empty, caret drawn; typing "X" then Enter renames the file on disk to X with zero full-nexus cascade walks; Esc or click-off untouched leaves "Untitled". No single task's green proves this — it is verified whole via CDP in Phase 5.
+**Acceptance criterion (end-to-end):** In a running dev instance, each trigger — band "+", grip-menu Above/Below, sidebar-menu Above/Below — produces a page that is on disk as markdown, stamped with its birth context, placed at the gesture position (or the pipeline's honest position where the log says so), with the title field open, empty, caret drawn; typing "X" then Enter renames the file on disk to X with zero full-nexus cascade walks; Esc or click-off untouched leaves "Untitled". No single task's green proves this — Task 5.0 owns verifying it whole.
 
 ### Grounding
 
@@ -36,7 +36,7 @@ All claims below were verified against code during the brainstorm's two attack r
 
 **Work shapes:** Additive (new behavior → failing test first) · Fix-adjacent (the `viewOrders` local-state gap repairs an existing staleness — sibling sweep: the drag path consumes the same fix) · User-visible (interaction sweep ran in the log; inverses and reachability are decided there).
 
-**Blast radius:** `TableViewPM` (grip menu, band-add, in-birth rename, ghost row) · `ViewsPM` (Pending §Group-band creation resolves) · `SidebarPM` (menu pair) · `NavigationPM`/`PagePreviewPM`/`ConnectionsPM` (label prose) · `PagesPM` (creation entry points, if enumerated) · ContextPM's debt line for the inactive token and its Pending Focuses creation item · the two label-pinning tests.
+**Blast radius:** `TableViewPM` (grip menu, band-add, in-birth rename, ghost row) · `ViewsPM` (Pending §Group-band creation restates) · `CardViewPM` (Pending §Heading "+" creation — its premise dies) · `SidebarPM` (menu pair) · `NavigationPM`/`PagePreviewPM`/`ConnectionsPM` (label prose) · `PagesPM` ("a colliding rename is rejected" carves the create-origin exception) · `DesignSystemPM` (the state table's Inactive row) · ContextPM's debt line for the inactive token and its Pending Focuses creation item · the two label-pinning tests and the one test name.
 
 ### Global Constraints
 
@@ -44,7 +44,7 @@ All claims below were verified against code during the brainstorm's two attack r
 - Biome's hook formats on write — an Edit failing on whitespace means re-read and retry; never hand-align.
 - Comments minimal, why-only; `KNOB` markers are functional and survive every pass.
 - Explicit-path staging on every commit. Never `git add -A`.
-- CDP verification creates throwaway pages only, and deletes them — including their `.trash` record entries — before the phase closes. Kill every dev/test instance when done.
+- **CDP sandbox:** at launch, confirm which nexus the dev instance opened (read the window's root via CDP); all CDP work happens inside one run-created throwaway Collection regardless — never against Nathan's real containers. Teardown: delete the Collection through the app (one bundle, its own sidecar dies with it), then remove exactly that bundle's directory under `<root>/.trash/` — a path-guarded removal that first reads the bundle's `_record.json` and confirms it names the throwaway Collection; nothing else in `.trash` is ever touched. `nexus.db` rows keyed to the dead ids are device-local cache, invisible in the vault, and stay. Kill every dev/test instance when done.
 - Overnight protocol: no user questions mid-run. Ambiguity resolves against the decision log; a genuine gap takes the smallest log-consistent choice, recorded in Deviations and surfaced in the final report. Blockers that survive that (a broken toolchain, a red gate no fix clears) stop the run with state committed and the report written to where it stopped.
 
 ### Phase 1 — The Creation Engine (shared + main)
@@ -65,6 +65,7 @@ All claims below were verified against code during the brainstorm's two attack r
 1. Add `fromCreate?: true` to the rename op; the reply gains the landed `{path, name}` (today's arm returns `ok({})`).
 2. Under `fromCreate`: disambiguate the target the way `createDisambiguated` does, skip `renameCascade` + `rewriteBlockConnections` entirely.
 3. All consumers — the optimistic tree patch, any cascade, the caller — use the landed name from the reply, never the requested one.
+   (`createDisambiguated`'s loop logic transfers, but its `attempt` signature returns `{id, path}` while `renamePage` returns `{path}` — implement the suffix loop in the rename arm rather than widening the shared helper.)
 4. Tests: `fromCreate` collision lands disambiguated; **negative control:** an ordinary rename still cascades (test goes red with the skip applied unconditionally); the reply's landed name is what the tree shows.
 *Must agree:* the disambiguated name main lands and the row title the renderer displays — one test crosses the IPC boundary.
 
@@ -77,13 +78,13 @@ All claims below were verified against code during the brainstorm's two attack r
 *Files:* `GroupBand.tsx` (add `onAdd` prop; button gains `onClick`), `TableGroupBand.tsx` (supply the handler from `setPath`), `TableView.tsx` (the create handler + editor open + scroll), `reassign.ts` untouched (structural bands stamp location, not a value; filter implications ride 2.4's derivation).
 *Steps:*
 1. `onAdd` on `GroupBand`, wired only where the table passes it — Cards stays byte-identical (E-1).
-2. Handler: if the band is collapsed, `toggleCollapse` first (B-4). Create via the widened op: `parentPath = setPath`, seeds = filter implications (Task 2.4's helper), order = the container's full membership with the new page last in that group.
+2. Handler: if the band is collapsed, `toggleCollapse` first (B-4). Create via the widened op: `parentPath = setPath`, seeds = filter implications (Task 2.4's helper), order = **the create's parent container's** full membership (the Set at `setPath` — the same resolution the drag writers reach via `setPaths`; a Collection-wide array sent to a Set's sidecar would alphabetize the Set permanently) with the new page last in that group.
 3. On `onCreated`: patch `valueOverride` with the seeds (B-6), open the title editor in create mode (empty initial — Task 2.5), `scrollGlide` to the row's resolved position via the thunk destination (never an assumed bottom).
-4. Test: the handler's order array is built from the container's full membership — **negative control:** under an active filter, the array still contains the hidden rows' ids (red if built from visible rows).
+4. Tests: the order array equals the parent container's own children (red if a Collection-wide array reaches a Set) — and the **negative control:** under an active filter, the array still contains the hidden rows' ids (red if built from visible rows).
 
 **Task 2.2 — The grip menu.**
 *Why:* The row's creation and meta actions live on the grip (D-1), on MarkdownPM's right-click-vs-drag model; today a grip right-click falls through to whatever cell hosts it.
-*Files:* `shared/pageMenu.ts` (parameterize `pageMetaMenuItems` with an explicit item set per consumer — D-4), a grip-menu model beside it, `main/` menu module on the `gripMenu.ts` pattern + its `bridge.ts` channel, `TableView.tsx` (grip `onContextMenu` + right-press defaulted away per [[Editor-Internals]] + action routing).
+*Files:* `shared/pageMenu.ts` (parameterize `pageMetaMenuItems` with an explicit item set per consumer — D-4), a new `shared/rowGripMenu.ts` model + `main/rowGripMenu.ts` + its own `row-grip-menu` bridge channel, `TableView.tsx` (grip `onContextMenu` + right-press defaulted away per [[Editor-Internals]] + action routing). The existing `gripMenu.ts`/`grip-menu` channel is MarkdownPM's block-grip menu — a shape precedent only, never widened with a row arm.
 *Steps:*
 1. Menu order exactly: Open Preview · Open New Tab — Rename · Change Icon — New Page Above · New Page Below — Delete. One definition composed from the meta block; title-cell and card menus keep their current item sets (their routers gain nothing inert).
 2. Route every action: Open Preview opens the page-preview window for the row's page; Rename opens the title editor (ordinary mode); the New Page pair calls Task 2.3; Delete follows the existing delete path.
@@ -108,7 +109,7 @@ All claims below were verified against code during the brainstorm's two attack r
 *Files:* `TableView.tsx` (editing state gains the create-session bit — A-5's one bit; `editorInitial` becomes `""` under it; `commitEditorText` passes `fromCreate`), `PropertyEditor.tsx` (no changes expected — verify the guards hold for `initial=""`).
 *Steps:* type→Enter commits via `fromCreate` rename; empty commit / Esc / click-off leaves Untitled (the existing `trimmed &&` gate already does this — verify, don't rebuild); typing exactly "Untitled" is a no-op by the existing `!== row.title` gate.
 
-**Phase gate:** simplifier → gates → **CDP verification** (throwaway container: each trigger end-to-end per the acceptance criterion; the two absorbed checks — the watcher echo under the open field, the pre-focus keystroke gap; screenshots read, not sent; residue deleted including trash records) → commit.
+**Phase gate:** simplifier → gates → **CDP verification** (in the throwaway Collection: the **table triggers built so far** — band "+" and grip-menu Above/Below — end-to-end, plus the two absorbed checks: the watcher echo under the open field, the pre-focus keystroke gap; screenshots read, not sent). The sidebar trigger belongs to Phase 3 and the whole-criterion pass to Task 5.0 — this gate must not wait on either. → commit.
 
 ### Phase 3 — Sidebar, Uniform Field, Labels
 
@@ -119,13 +120,13 @@ All claims below were verified against code during the brainstorm's two attack r
 
 **Task 3.2 — The empty field everywhere.**
 *Why:* C-4 — one creation feel; the prefilled select-all converts.
-*Files:* `shared/bridge.ts` (`begin-rename` push widens to carry the style), `main/contextMenu.ts` (its create push sends create style), `renderer App.tsx` (subscription), `store.ts` (`beginRename` carries it), `RenamableLabel.tsx`/`EditableInput.tsx` (empty-initial variant: `defaultValue=""`, commit guard unchanged — empty → cancel → stays Untitled), `Detail/Subfield/subfieldItems.tsx` (its `beginRename` call adopts the style).
-*Steps:* convert both existing paths; the sidebar's first-commit rename also rides `fromCreate` (A-4 applies on every surface). Test: untouched click-off on a sidebar create leaves Untitled.
+*Files:* `shared/bridge.ts` (`begin-rename` push widens to carry the style), `main/contextMenu.ts` (its create push sends create style), `renderer App.tsx` (subscription), `store.ts` (`beginRename` carries it), `Components/RenamableTitle.tsx` (the only path from `renamingPath` to the sidebar field — it must thread the style through), `RenamableLabel.tsx`/`EditableInput.tsx`, `Detail/Subfield/subfieldItems.tsx` (its `beginRename` call adopts the style).
+*Steps:* the empty-initial style is a separate initial-text notion threading all three layers `value` currently serves — the resting render, `EditableInput`'s `defaultValue`, and the commit guard (which still compares against the real title, so empty → cancel → stays Untitled). Convert both existing paths; the sidebar's first-commit rename also rides `fromCreate` (A-4 applies on every surface). Test **on the sidebar surface itself** — a create there opens empty and an untouched click-off leaves Untitled — so an optional prop silently unpassed by `RenamableTitle` goes red instead of green.
 
 **Task 3.3 — The label renames.**
 *Why:* D-3 — a completion condition: the in-drop lands everywhere.
-*Derivation:* `grep -rn "Open in New Tab" Pommora/src .claude/Features` and the same for `"Open in Preview"` — at planning time: 3 live sites + 2 tests (+1 test description) for the first; 3 live sites + 3 doc-prose files for the second. Control token: `"Open in Preview"` must hit `main/connMenu.ts` before the sweep and nothing after it.
-*Steps:* rename every live site, update both pinning tests and the test description, sweep the doc prose (NavigationPM · PagePreviewPM · ConnectionsPM). Re-run the greps — zero hits on the old strings, with the control confirming the greps ran.
+*Derivation:* `grep -rn "Open in New Tab" Pommora/src .claude/Features` and the same for `"Open in Preview"` — at ratification: **16 hits / 13 files** for the first (3 live labels · 2 test assertions + 1 test name · ~9 comments/JSDoc · NavigationPM), **13 hits / 10 files** for the second (3 live labels — `contextMenu`, `navRowMenu`, `connMenu` · comments in `preload`, `main/index`, `shared/types`, `shared/navRowMenu`, `MarkdownPM/editor/connections` · ConnectionsPM + PagePreviewPM). Comments and JSDoc are **in scope** — a comment citing a dead label is lint. Control token: `"Open in Preview"` must hit `main/connMenu.ts` before the sweep and nothing after it.
+*Steps:* rename every hit — labels, tests, the test name, comments, doc prose. Re-run both greps — zero hits on the old strings, the control confirming the greps ran.
 
 **Phase gate:** simplifier → gates → commit.
 
@@ -134,7 +135,7 @@ All claims below were verified against code during the brainstorm's two attack r
 **Task 4.1 — Mint `--state-inactive`.**
 *Why:* The ghost row's state is the token six sites already await (Final Phase entry + ContextPM debt).
 *Files:* the `--state` family's token source in `design-system/tokens`, the six sites marked `Awaiting proper inactive state token` (Derivation: grep that marker — count 6 at planning time; the marker comments come out with the conversion).
-*Steps:* mint with a sensible interim value marked `KNOB` (Nathan tunes; a knob is not pending work), convert the six sites, delete the markers. Atlas: if the token enters a SOURCE-tagged table, `node scripts/check-atlas.mjs` must pass.
+*Steps:* the token is a **theme-aware color** — it joins `color.css.ts`'s `state` contract with both theme values and bridges through `theme-vars`, exactly as `--state-hover/selected/muted` do; never a bare literal copied from the opacity trio beside them. Mint with a sensible interim value marked `KNOB` (Nathan tunes; a knob is not pending work), convert the six sites, delete the markers. The state family's SOURCE-tagged table in [[DesignSystemPM]] **must gain the Inactive row** — the checker verifies table→code only, so a missing row is invisible to every gate; add it deliberately and run `node scripts/check-atlas.mjs` green.
 
 **Task 4.2 — The hover-dwell ghost row.**
 *Why:* The fenced final phase — pure chrome until click (the log's Final Phase entry): dwell on a table row extends a ghost-styled "New Page" row below it at `--state-inactive`; click runs the exact Below-path create (2.3). Core is proven by this point via the Phase 2/3 gates and CDP runs — that is what "after the core proves" means in an overnight run.
@@ -145,13 +146,14 @@ All claims below were verified against code during the brainstorm's two attack r
 
 ### Phase 5 — Docs, Purge, Closeout
 
-**Task 5.1 — Reconcile every blast-radius doc.** TableViewPM (grip menu replaces bubble-to-cell on the grip; band-add real; the in-birth rename; the ghost row; Known Issues/Prospects entries that resolved), ViewsPM (Pending §Group-band creation resolves), SidebarPM, PagesPM, the three label-prose docs. Surgical repairs per the documentation standard; atlas checker green.
+**Task 5.0 — The acceptance pass.** The end-to-end criterion, whole, via CDP in the throwaway Collection: all three triggers, the ghost row, the empty field on every converted surface, the zero-cascade first commit (count the walks). This is the criterion's owning task; nothing else stands in for it. Teardown per the CDP-sandbox clause.
+**Task 5.1 — Reconcile every blast-radius doc.** TableViewPM (grip menu replaces bubble-to-cell on the grip; band-add real; the in-birth rename; the ghost row; Known Issues/Prospects entries that resolved), ViewsPM (Pending §Group-band creation restates — the built half resolves, the property-bucket rationale survives as the Prospect), CardViewPM (Pending §Heading "+" creation restates as a scope deferral pointing at the Prospect — its "until the affordance is designed" premise dies with this run), SidebarPM, PagesPM (the exact sentence "a colliding rename is rejected" carves the create-origin exception), the three label-prose docs. Surgical repairs per the documentation standard; atlas checker green.
 **Task 5.2 — The record.** HistoryPM PM-096: the arc in one entry, explicitly noting the vocab change (the "in" dropped from Open New Tab / Open Preview) per Nathan's instruction. ContextPM: the creation Pending-Focus item and the inactive-token debt line come out; Recent Work gains the entry; anything this arc made stale leaves.
 **Task 5.3 — Purge + final review.** comment-killer on the arc diff; the full purge checklist (no dead branches, no orphaned values, no scaffolding, no instrumentation — confirmed by search); then the **build-breaking-agent** against the whole arc (its brief: the decision log + this plan + the commit range). Its findings are verified firsthand and **fixed** — DONE_WITH_CONCERNS means fix; a finding genuinely wrong is recorded with its rejection reason. Gates re-run green after every fix.
 **Task 5.4 — The final report** (in chat, the run's last act):
 - **What Changed** — plain language, by surface: what Nathan will see and where.
 - **Along the Way** — every Deviation, surprise, adjacent fix (the viewOrders staleness repair included), and judgment call the overnight protocol made, with its reasoning.
-- **Immediate Work** — what genuinely remains. The accepted answer is: nothing but Nathan's live confirmation.
+- **Immediate Work** — what genuinely remains. The accepted answer is: nothing but Nathan's live confirmation — which explicitly includes the one thing CDP can't prove: a real pointer's dwell-then-click landing on the ghost row rather than the row beneath it.
 - **Final LOC** — code-only (comments and blanks excluded), net and per-area, plus the commit range.
 - **Verification evidence** — the gate summary lines and what the CDP passes proved.
 
