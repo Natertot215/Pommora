@@ -59,7 +59,7 @@ button.subfield-crumb:hover {
   color: var(--label-secondary);
 }
 .subfield-crumb.ghost {
-  opacity: var(--state-disabled);
+  opacity: var(--state-inactive);
 }
 button.subfield-crumb.ghost:hover {
   opacity: 1;

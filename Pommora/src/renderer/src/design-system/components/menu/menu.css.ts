@@ -111,7 +111,7 @@ export const itemEmphasized = style([text.body.emphasized])
  *  every "shown, can't act" state wears (a lock's frozen rows, an unlanded affordance). */
 export const rowDisabled = style({
   selectors: {
-    '&&': { opacity: 'var(--state-disabled)', pointerEvents: 'none' },
+    '&&': { opacity: 'var(--state-inactive)', pointerEvents: 'none' },
   },
 })
 

@@ -66,11 +66,9 @@ globalStyle(':root', {
     // Ghost — a thing being reordered with nothing standing in for it (table rows, sidebar rows,
     // editor blocks and list items, the pane property reorder).
     '--state-ghost': '0.65',
-    // Inactive — text standing in for content that isn't there yet: empty-state copy, worn as
-    // `opacity:` over the standard label.
+    // Inactive — the one still-here-but-not-active dim: empty-state copy, disabled controls,
+    // the ghost "New Page" row. Worn as `opacity:` over the element's standard chrome.
     '--state-inactive': '0.55', // KNOB
-    // Disabled — a structurally-present but inert control.
-    '--state-disabled': '0.5',
     // Drag insertion line — the drop-target marker (accent line + leading dot) shared by every drop-line
     // DnD surface: table rows/bands AND the settings-pane property reorder. 
     '--drag-line': 'var(--accent)',
