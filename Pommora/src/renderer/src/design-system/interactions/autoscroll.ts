@@ -2,6 +2,8 @@
 // the drag element once per drag. The pure math below is unit-tested; the loop's DOM glue is
 // verified live.
 
+import { duration } from '../tokens/motion'
+
 export type Axis = 'x' | 'y' | 'xy'
 
 export interface Params {
@@ -233,6 +235,13 @@ export interface GlideParams {
   minMs: number
   /** Ceiling, so crossing a long document never becomes a wait. */
   maxMs: number
+}
+
+/** The house tuning for programmatic seeks — one recipe for every surface that glides to a target. */
+export const SEEK_GLIDE: GlideParams = {
+  speed: 3,
+  minMs: Number.parseInt(duration.fast, 10),
+  maxMs: Number.parseInt(duration.slow, 10),
 }
 
 /** How long a glide over `distance` px runs. Proportional to the distance so near and far jumps travel

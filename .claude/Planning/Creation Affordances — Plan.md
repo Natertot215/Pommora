@@ -165,6 +165,12 @@ All claims below were verified against code during the brainstorm's two attack r
 
 ### Log
 
-- **Progress:** (per phase: base commit · task ticks · phase commit)
-- **Deviations:** (what departed from the written task, and why)
-- **Open Against Later Tasks:** (review findings aimed at unbuilt tasks)
+- **Progress:**
+  - Phase 1 — base `c5af2245` · 1.1 ✓ 1.2 ✓ · committed `03df8fda` (gates 204/2305 green).
+  - Phase 2 — 2.1–2.5 ✓ · simplifier folded four cleanups · gates 207/2318 green · CDP pass in the throwaway Collection (Test nexus): born-empty-focused field with drawn caret, keystroke-gap and watcher-echo checks clean, Enter renames on disk, click-off → Untitled, Esc discards typed text → auto-disambiguated Untitled 2, `page_order` carries the full membership.
+- **Deviations:**
+  - Native menus cannot be driven by CDP, so the grip menu's pick is verified by a model unit test (`rowGripMenu.test.ts` pins order, labels, separators) plus the routing mirroring `openCellMenu`; the physical right-click → pick joins Nathan's live confirmation.
+  - The CDP sandbox runs against the designated Test nexus (`~/Test`, already in recents) rather than a throwaway inside live NexusOS — strictly safer; `pommora.json`'s `lastNexusPath` is restored at teardown. Nathan's live dev instance held the single-instance lock and predated the Phase 1 main-process changes (a renderer/main skew), so it was recycled; a fresh dev instance stays running at run end.
+  - The write-echo question answered itself: main's own creates are echo-suppressed, so no second walk fires — and a raw-bridge create (no store involvement) doesn't refresh the renderer at all, which is why creation flows through `store.mutate`.
+  - Task 2.1's parent-container control is enforced by construction (`containerPagesOf` walks to the exact path) and expressed at the pure layer (`creationOrder.test.ts`); no component-level test harness exists to host it higher.
+- **Open Against Later Tasks:** (none)

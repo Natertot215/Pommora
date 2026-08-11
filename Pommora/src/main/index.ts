@@ -108,6 +108,7 @@ import { popTableMenu } from './tableMenu'
 import { popGripMenu } from './gripMenu'
 import { popColumnMenu } from './columnMenu'
 import { popCellMenu } from './cellMenu'
+import { popRowGripMenu } from './rowGripMenu'
 import { popCardMenu } from './cardMenu'
 import { popConnMenu } from './connMenu'
 import { popTabMenu } from './tabMenu'
@@ -1497,6 +1498,9 @@ serveBridge(
 
     // A table cell's right-click menu (title meta / per-type Style / Edit).
     'cell-menu': { kind: 'menu', fn: popCellMenu },
+
+    // A table row grip's right-click menu (page meta + New Page Above/Below).
+    'row-grip-menu': { kind: 'menu', fn: popRowGripMenu },
 
     // A card's right-click menu (page meta + Add Property ▸).
     'card-menu': { kind: 'menu', fn: popCardMenu },

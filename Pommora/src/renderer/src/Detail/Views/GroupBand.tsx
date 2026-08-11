@@ -165,6 +165,7 @@ export function GroupBand({
   collapsed,
   onToggle,
   showAdd = false,
+  onAdd,
   headless = false,
   fill = false,
   indent,
@@ -178,6 +179,8 @@ export function GroupBand({
   collapsed: boolean
   onToggle: () => void
   showAdd?: boolean
+  /** The "+"'s creation handler; absent leaves it the bare affordance it renders as today. */
+  onAdd?: () => void
   headless?: boolean
   fill?: boolean
   indent?: string
@@ -260,6 +263,7 @@ export function GroupBand({
                 className="group-band-add"
                 tabIndex={-1}
                 onPointerDown={(e) => e.stopPropagation()}
+                onClick={onAdd}
                 aria-label="New page in group"
               >
                 <Icon name="plus" size={13} />

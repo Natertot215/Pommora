@@ -1,14 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { duration } from '@renderer/design-system/tokens/motion'
-import { type GlideParams, scrollGlide } from '@renderer/design-system/interactions/autoscroll'
+import { SEEK_GLIDE, scrollGlide } from '@renderer/design-system/interactions/autoscroll'
 import { expandFoldsAt } from '@renderer/MarkdownPM/editor/folding'
-
-// ── KNOBS — how the page travels to a heading ──
-const GLIDE: GlideParams = {
-  speed: 3, // px per ms
-  minMs: Number.parseInt(duration.fast, 10),
-  maxMs: Number.parseInt(duration.slow, 10),
-}
 
 // Fallback inset, used only where the page header hasn't published its height yet.
 const REVEAL_MARGIN = 12
@@ -52,7 +45,7 @@ export function revealPageOffset(pos: number): void {
       scroller.scrollTop +
       (view.documentTop + view.lineBlockAt(target).top - scroller.getBoundingClientRect().top) -
       headerZone(view)
-    scrollGlide(scroller, seat, GLIDE)
+    scrollGlide(scroller, seat, SEEK_GLIDE)
   }
   // A folded section has no height, so travelling before it opens measures the collapsed document and
   // stops short of the heading.
