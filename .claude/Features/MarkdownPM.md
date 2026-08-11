@@ -109,7 +109,7 @@ Right-click pops the OS-native menu, built in the main process off the `context-
 
 ### Design System
 
-The editor's entire design vocabulary lives in one stylesheet as scoped custom-property families — there is no separate theme module (`MarkdownPM/tokens/` is the *markdown tokenizer*, not design tokens). The editor doesn't consume the type ramp: everything scales in `em` multiples off its own zoom root. Tables follow the atlas convention ([[DesignSystemPM]]); each family's scope is part of its contract — a value set outside its scope does nothing.
+The editor's entire design vocabulary lives in one stylesheet as scoped custom-property families — there is no separate theme module (`MarkdownPM/tokens/` is the *markdown tokenizer*, not design tokens). The editor doesn't consume the type ramp: everything scales in `em` multiples off its own zoom root. 
 
 **SOURCE:** `Pommora/src/renderer/src/MarkdownPM/Styles.css`
 
