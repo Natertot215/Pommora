@@ -57,6 +57,7 @@ globalStyle(':root', {
     '--state-hover': colorVars.color.state.hover,
     '--state-selected': colorVars.color.state.selected,
     '--state-muted': colorVars.color.state.muted, // black de-emphasis veil (dimming)
+    '--state-inactive': colorVars.color.state.inactive, // inactive-state text (empty states, the ghost row)
     // The opacity states — bare numbers consumed as `opacity:` on the element itself, never mixed
     // into a colour, which is why they hold their own values rather than borrowing the tint ladder's
     // steps. They read as one ramp: the more a stand-in carries the original's presence, the less
