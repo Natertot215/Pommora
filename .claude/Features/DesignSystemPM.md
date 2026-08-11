@@ -81,7 +81,7 @@ The text ladder — system-white at descending presence. Primary is the raw prim
 
 #### States
 
-The interaction states — two grey washes, one black veil, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; drag, ghost, and disabled are consumed as `opacity:` on the element itself. Those three hold their own bare numbers rather than tint-ladder steps, since they are never mixed into a colour, and they read as one ramp: the more a stand-in carries the original's presence, the less the original fades.
+The interaction states — two grey washes, one black veil, one white text tone, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; inactive is worn by text itself — empty-state copy and the hover ghost row; drag, ghost, and disabled are consumed as `opacity:` on the element itself. Those three hold their own bare numbers rather than tint-ladder steps, since they are never mixed into a colour, and they read as one ramp: the more a stand-in carries the original's presence, the less the original fades.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
@@ -90,6 +90,7 @@ The interaction states — two grey washes, one black veil, and three opacity di
 | Hover | `state.hover` · `--state-hover` | system-grey @ 2.5% |
 | Selected | `state.selected` · `--state-selected` | system-grey @ 5% |
 | Muted | `state.muted` · `--state-muted` | system-black @ 10% |
+| Inactive | `state.inactive` · `--state-inactive` | system-white @ 55% — inactive-state text |
 | Drag | `--state-drag` | base @ 85% — a card whose lifted clone floats alongside it |
 | Ghost | `--state-ghost` | base @ 65% — a reordering source with nothing standing in |
 | Disabled | `--state-disabled` | base @ 50% — a present but inert control |
