@@ -1,5 +1,4 @@
 ## SymbolsPM
-
 ```
 SymbolsPM
 ├── The Registry

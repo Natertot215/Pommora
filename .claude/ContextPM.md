@@ -46,7 +46,7 @@
 
 - **The kind key is a second identity source by design.** A file's kind key and its folder's sidecar declare the same thing on purpose, since their disagreement is what makes a mislocated file recognisable — a checksum rather than the two-writers defect.
 - **The inert affordances render at full weight while their features are built.** The unimplemented view tiles swallow their click and the group-band "+" on structural Set bands carries an `aria-label` with no handler; both read as live controls and wait on the work behind them.
-- **The `ViewPane` "more" button and the NavPane's toolbar dropdown are the same shape** — a stub and a blank surface at a fixed ceiling, each holding its place while what it opens is decided.
+- **The `ViewPane` "more" button and the NavPane's toolbar dropdown are stubs** — a stub and a blank surface at a fixed ceiling, each holding its place while what it opens is decided.
 - **The reachability razor cuts guards, never structure.** Before defending against a state, name who produces it — nobody means no guard. The recurring failure is over-applying it: an unreached code path is dead weight the razor says nothing about.
 - **A whole-surface drag handle steals its own children's clicks.** The drag engine captures the pointer on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags.
 - **A caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.** The browser's own caret is hidden app-wide and the drawn replacement is positioned by JS, so a working I-beam cursor beside a missing caret points at the overlay rather than at focus.

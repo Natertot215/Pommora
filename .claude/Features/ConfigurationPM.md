@@ -1,5 +1,4 @@
 ## Configuration
-
 ```
 Configuration
 ├── Personalization

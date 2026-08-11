@@ -1,5 +1,4 @@
 ## CardView
-
 ```
 CardView
 ├── Card Anatomy & Sizing

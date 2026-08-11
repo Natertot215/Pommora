@@ -1,5 +1,4 @@
 ## Structure
-
 ```
 Structure
 ├── The Organization Layer

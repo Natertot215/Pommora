@@ -1,5 +1,4 @@
 ## Connections
-
 ```
 Connections
 ├── Syntax + Scope

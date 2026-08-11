@@ -1,5 +1,4 @@
 ## Properties
-
 ```
 Properties
 ├── The Type Catalog
@@ -40,18 +39,18 @@ A Page's values are wrapped title keys at its frontmatter root; a Task's or Even
 
 ### The Type Catalog
 
-| Type                  | On-Disk Value                                                           | Notes                                           |
+| Type | On-Disk Value | Notes |
 | --------------------- | ----------------------------------------------------------------------- | ----------------------------------------------- |
-| **Number**            | `<Count>: 42`                                                           | Bare number.                                    |
-| **Checkbox**          | `<Done>: true`                                                          | Bare boolean.                                   |
-| **Date**              | `"2026-06-15"` (date-only, UTC) or `"2026-06-15T14:30:00Z"` (with time) | A bare date-only value folds into Date on read. |
-| **Select**            | `<Stage>: Active`                                                       | Bare string; one colored chip.                  |
-| **Multi-select**      | `<Tags>:` over a block sequence                                         | Bare array; tag-style multi-pick.               |
-| **Status**            | `<Status>: Complete`                                                    | Bare label — the option's own value; grouped by workflow phase. |
-| **URL**               | `<Link>: https://…`                                                     | A string with a scheme.                         |
-| **Context**           | `(Context):` at the root, over a block sequence of bare Space titles   | One column per registry Context, synthesized at runtime — never a schema definition. |
-| **Last Edited Time**  | *(derived from `modified_at`)*                                          | Virtual — never persisted.                      |
-| **File / Attachment** | `[{ "path", "original_name", "added_at", "mime_type" }, ...]`           | Array; files copy into the Nexus.               |
+| **Number** | `<Count>: 42` | Bare number. |
+| **Checkbox** | `<Done>: true` | Bare boolean. |
+| **Date** | `"2026-06-15"` (date-only, UTC) or `"2026-06-15T14:30:00Z"` (with time) | A bare date-only value folds into Date on read. |
+| **Select** | `<Stage>: Active` | Bare string; one colored chip. |
+| **Multi-select** | `<Tags>:` over a block sequence | Bare array; tag-style multi-pick. |
+| **Status** | `<Status>: Complete` | Bare label — the option's own value; grouped by workflow phase. |
+| **URL** | `<Link>: https://…` | A string with a scheme. |
+| **Context** | `(Context):` at the root, over a block sequence of bare Space titles | One column per registry Context, synthesized at runtime — never a schema definition. |
+| **Last Edited Time** | *(derived from `modified_at`)* | Virtual — never persisted. |
+| **File / Attachment** | `[{ "path", "original_name", "added_at", "mime_type" }, ...]` | Array; files copy into the Nexus. |
 
 There's no free-form text type — the filename is the title, and text-shaped values use creatable Select options. The context type isn't offered in the type picker, and a stored context or user-relation definition is dropped on read (→ [[ConnectionsPM]]).
 
