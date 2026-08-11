@@ -165,6 +165,16 @@
 .property-editor-ghost {
   opacity: var(--state-ghost);
 }
+/* A title rename — the page glyph holds its seat while the editor takes only the text's slot. */
+.cell-rename {
+  display: flex;
+  align-items: center;
+  gap: var(--cell-icon-gap);
+}
+.cell-rename > .property-editor {
+  flex: 1;
+  min-width: 0;
+}
 /* A single-column table (everything hidden but Title) reads as a plain list — no trailing line to bound. */
 .data-cell:not(:last-child) {
   border-right: var(--table-border);
