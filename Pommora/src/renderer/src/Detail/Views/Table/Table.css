@@ -171,6 +171,10 @@
   align-items: center;
   gap: var(--cell-icon-gap);
 }
+/* The glyph keeps the resting title's dim, not the cell's text color. */
+.cell-rename > svg {
+  color: var(--label-secondary);
+}
 .cell-rename > .property-editor {
   flex: 1;
   min-width: 0;

@@ -112,7 +112,7 @@ export function cellMenuModel(ctx: CellMenuContext): CellMenuModel {
 function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
   switch (ctx.kind) {
     case 'title':
-      return { items: pageMetaMenuItems(ctx.alreadyOpen) }
+      return { items: pageMetaMenuItems(ctx.alreadyOpen, { newPages: true }) }
     case 'style-only':
       return {
         items: ctx.clearable ? [{ label: 'Clear', action: 'cell:clear' }] : [],
