@@ -7,11 +7,20 @@ import type { Result } from './result'
 import type { PropertyValue } from './propertyValue'
 import { subSetLabel, type NexusLabels } from './types'
 
-/** The mutate channel's reply — `created` appears only on the create ops. */
-export type MutateReply = Result<{ created?: { id: string; path: string } }>
+/** The mutate channel's reply — `created` appears only on the create ops; `renamed` only on
+ *  page renames, carrying what actually landed (a from-create rename may disambiguate away
+ *  from the requested name, and every consumer patches from the landed name, never the ask). */
+export type MutateReply = Result<{
+  created?: { id: string; path: string }
+  renamed?: { path: string; name: string }
+}>
 
 /** The base name a "New …" action gives a fresh entity (main disambiguates collisions). */
 export const DEFAULT_NEW_NAME = 'Untitled'
+
+/** Placeholder in a createPage `order` array for the id main is about to mint — the renderer
+ *  computes the full sibling order before the id exists, so this slot marks where it lands. */
+export const NEW_PAGE_SLOT = '$new-page'
 
 /** Entity kinds a mutation can target — every NodeKind except the code-keyed `saved`,
  *  plus `context` (a registry group — folder + registry entry, not a NodeKind). */
@@ -34,11 +43,27 @@ export type ChildOrderKey = 'collection_order' | 'set_order'
 
 /** A renderer→main write request. `parentPath: ''` targets the nexus root (new vault). */
 export type MutateRequest =
-  | { op: 'createPage'; parentPath: string; name: string }
+  // `seeds`: property values stamped in the same write the page is born in (dead ids drop).
+  // `order`: the parent's full page-id order carrying one NEW_PAGE_SLOT for the minted id.
+  | {
+      op: 'createPage'
+      parentPath: string
+      name: string
+      seeds?: Record<string, PropertyValue>
+      order?: string[]
+    }
   | { op: 'createContainer'; parentPath: string; kind: MutableContainerKind; name: string }
   // Spaces and Contexts rename through their own ops: membership is keyed by TITLE, so their
   // renames are cascades, and a path-addressed folder rename would strip every tag silently.
-  | { op: 'rename'; path: string; kind: Exclude<MutableKind, 'space' | 'context'>; newName: string }
+  // `fromCreate` marks a just-created page's first commit: it disambiguates like a create
+  // instead of rejecting a collision, and skips the link cascade a linkless page can't need.
+  | {
+      op: 'rename'
+      path: string
+      kind: Exclude<MutableKind, 'space' | 'context'>
+      newName: string
+      fromCreate?: true
+    }
   | { op: 'delete'; path: string; kind: MutableKind }
   // Spend a deletion bundle: resolve against the CURRENT tree and put the artifact back — into
   // its parent's renamed home if it moved. `bundlePath` is nexus-relative, from the listing.

@@ -1,6 +1,6 @@
 ## Creation Affordances — Plan
 
-**Status:** written, pending review
+**Status:** ratified — in execution (Nathan's go, 08-11-2026)
 **Spec:** `Planning/Creation Affordances — Decision Log.md` — the ratified decision log; every task's semantics trace to its entries (cited as A-1…E-3). The log is the tiebreaker for anything this plan under-specifies.
 
 ### Goal

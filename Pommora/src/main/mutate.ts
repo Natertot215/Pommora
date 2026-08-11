@@ -62,7 +62,9 @@ import { updateSettings } from './settings'
 import { newId } from './ids'
 import { mintDefaultView, VIEW_ID_PREFIX } from '@shared/views'
 import { ok, fail, errText, type Result } from '@shared/result'
-import type { MutateReply, MutateRequest } from '@shared/mutate'
+import { NEW_PAGE_SLOT, type MutateReply, type MutateRequest } from '@shared/mutate'
+import type { PropertyDefinition } from '@shared/properties'
+import type { PropertyValue } from '@shared/propertyValue'
 import { NO_NEXUS } from './ipc'
 import type { TrashMode } from './appConfig'
 import { readRegistry } from './io/propertiesRegistry'
@@ -163,12 +165,13 @@ function setOrDrop(
 /**
  * Create with a base name, disambiguating on collision: base, "base 2", "base 3", … The
  * "New …" UX — a fresh entity should always appear, never silently fail on a name clash.
- * Only creates disambiguate; rename stays strict (renaming onto an existing name is an error).
+ * Creation disambiguates (including a just-created page's first commit, which is part of the
+ * creation); an ordinary rename stays strict — renaming onto an existing name is an error.
  */
-async function createDisambiguated(
+async function createDisambiguated<T>(
   baseName: string,
-  attempt: (name: string) => Promise<Result<{ id: string; path: string }>>,
-): Promise<Result<{ id: string; path: string }>> {
+  attempt: (name: string) => Promise<Result<T>>,
+): Promise<Result<T>> {
   let last = await attempt(baseName)
   for (let n = 2; n <= 50 && !last.ok && last.error.code === 'exists'; n++) {
     last = await attempt(`${baseName} ${n}`)
@@ -195,8 +198,25 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       // is the existing dir resolveUnderRoot validates. relJoin keeps '' for the rel path.
       const parent = await resolveUnderRoot(root, req.parentPath || '.')
       if (!parent.ok) return parent
-      const r = await createDisambiguated(req.name, (name) => createPage(parent.value, name))
+      // Seed definitions resolve here, never renderer-side; a seed naming a dead property drops.
+      let values: { def: PropertyDefinition; value: PropertyValue }[] | undefined
+      if (req.seeds) {
+        const defs = (await readRegistry(root)).defs
+        values = Object.entries(req.seeds).flatMap(([id, value]) => {
+          const def = defs[id]
+          return def ? [{ def, value }] : []
+        })
+      }
+      const r = await createDisambiguated(req.name, (name) =>
+        createPage(parent.value, name, { values }),
+      )
       if (!r.ok) return r
+      if (req.order)
+        await setChildOrder(
+          parent.value,
+          'page_order',
+          req.order.map((x) => (x === NEW_PAGE_SLOT ? r.value.id : x)),
+        )
       return ok({
         created: { id: r.value.id, path: relJoin(req.parentPath, basename(r.value.path)) },
       })
@@ -226,6 +246,20 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
       if (await isReserved(root, abs)) return fault('That item can’t be renamed.')
       if (req.kind === 'page') {
         const oldTitle = basenameNoMd(basename(abs))
+        const relParent = req.path.split('/').slice(0, -1).join('/')
+        const renamedReply = (landedPath: string): MutateReply => {
+          const file = basename(landedPath)
+          return ok({ renamed: { path: relJoin(relParent, file), name: basenameNoMd(file) } })
+        }
+        if (req.fromCreate) {
+          // A just-created page's first commit is part of the creation: it disambiguates the
+          // way every create does instead of rejecting, and skips the link cascade outright —
+          // a page this new has no inbound links, and a cascade keyed on the literal
+          // "Untitled" could rewrite unrelated [[Untitled]] links.
+          const r = await createDisambiguated(req.newName, (name) => renamePage(abs, name))
+          if (!r.ok) return r
+          return renamedReply(r.value.path)
+        }
         const r = await renamePage(abs, req.newName)
         if (!r.ok) return r
         // renameCascade rewrites inbound [[links]] nexus-wide.
@@ -245,7 +279,7 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
         try {
           await rewriteBlockConnections(root, oldTitle, req.newName)
         } catch {}
-        return ok({})
+        return renamedReply(r.value.path)
       }
       // No link cascade — [[links]] target pages, and a container's title is referenced nowhere else.
       const r = await renameFolderEntity(abs, req.newName)

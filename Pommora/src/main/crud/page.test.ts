@@ -67,6 +67,21 @@ describe('createPage', () => {
     expect((await createPage(typeDir, 'a/b')).ok).toBe(false)
     expect((await createPage(typeDir, 'Note.md')).ok).toBe(false) // would yield Note.md.md
   })
+
+  it('stamps resolved values in the birth write; blank values write no key', async () => {
+    const r = await createPage(typeDir, 'Born Stamped', {
+      values: [
+        { def: defOf('prop_status'), value: { kind: 'select', value: 'doing' } },
+        { def: defOf('prop_empty'), value: { kind: 'select', value: '' } },
+      ],
+    })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const fm = splitFrontmatter(await readFile(r.value.path, 'utf8'))
+    expect(fm[wrapKey('property', 'status')]).toBe('doing')
+    expect(wrapKey('property', 'empty') in fm).toBe(false)
+    expect(isUlid(fm[PAGE_ID_KEY] as string)).toBe(true)
+  })
 })
 
 describe('renamePage', () => {
