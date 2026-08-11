@@ -10,7 +10,7 @@ Configuration
 └── Pending
 ```
 
-How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nexus/settings.json` — **personalization**, **labels**, the profile (image + subtitle), and the Subfield's own `subfield` key (→ [[SubfieldPM]]) — that travels with the Nexus and syncs, and a per-device **app config** that stays on the machine. A third scope — per-machine chrome such as folds, the active view, and the tab and preview sets — is never synced and lives in the Nexus's device-local database (→ [[ArchitecturePM]]).
+How a Nexus and the app get personalized. Two scopes: a per-Nexus layer in `.nexus/settings.json` — **personalization**, **labels**, the profile (image + subtitle), and the Subfield's own `subfield` key — that travels with the Nexus and syncs, and a per-device **app config** that stays on the machine. A third scope — per-machine chrome such as folds, the active view, and the tab and preview sets — is never synced and lives in the Nexus's device-local database. 
 
 ### Personalization
 
@@ -35,8 +35,8 @@ Nexus-wide interface config, stored as the `personalization` object in `.nexus/s
 
 Keyboard shortcuts are data, not code: the `commands` object in `.nexus/settings.json` maps command ids to shortcut specs, and every future rebindable shortcut registers as a row in this map. Defaults live in code and are overlaid with the on-disk block on read — a malformed or absent entry falls back to its built-in binding rather than losing the shortcut. Specs are `+`-joined modifier chains ending in a key, matched exactly so overlapping bindings can't double-fire. Rebinding is hand-edited.
 
-- **toggle-ribbon** — slides the sidebar's ribbon strip away and back (→ [[SidebarPM]]).
-- **toggle-nav** — summons the Navigation window (→ [[NavigationPM]]).
+- **toggle-ribbon** — slides the sidebar's ribbon strip away and back.
+- **toggle-nav** — summons the Navigation window.
 
 ### Write Discipline
 
@@ -48,13 +48,13 @@ Every entity kind carries a **renameable display label** in `settings.json` — 
 
 ### App Configuration (Per-Device)
 
-Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target (in-Nexus trash vs the system trash). It is never part of a Nexus and never syncs. The Navigation layer's own recents are a different stream — visited entities inside one Nexus, held in that Nexus's database (→ [[NavigationPM]]).
+Cross-session, machine-local state in `pommora.json` under the app's userData directory: the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the delete target (in-Nexus trash vs the system trash). It is never part of a Nexus and never syncs. The Navigation layer's own recents are a separate stream — visited entities within one Nexus, stored in that Nexus's database. 
 
 ### The Settings Window
 
-A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface (→ [[PagePreviewPM]]) — inheriting its glass shell, geometry, and dismissal contract, and opening smaller than a content window through that surface's bounds override. A category rail runs the window's full height as an in-flow side pane; the rail is the roster new panels register in.
+A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal contract, and opening smaller than a content window through that surface's bounds override. A category rail runs the window's full height as an in-flow side pane; the rail is the roster new panels register in.
 
-Its rows are per-Nexus knobs — boolean switches plus the hover-preview linger's slider — written through the shared personalization setter, applying live. A knob resting at its default stores no key (a default-ON switch stores only its OFF state, the slider's None stores nothing), so an untouched nexus keeps a clean settings file.
+Its rows are per-Nexus knobs — boolean switches plus the hover-preview linger's slider — written through the shared personalization setter and applied live. A knob resting at its default stores no key (a default-ON switch stores only its OFF state, the slider's None stores nothing), so an untouched nexus keeps a clean settings file.
 
 ### Pending
 

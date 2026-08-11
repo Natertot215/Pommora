@@ -114,4 +114,4 @@ Drags carry the shared drag language. A drop into the shown zone is positional �
 
 ### Prospects
 
-- **In-line view embeds in Pages** — a saved view embedded as a live widget inside a Page body. Block-host surfaces get view embeds — Linked + Custom view tiles (→ [[SurfacePM]]); a Page body embeds pages, never views (→ [[MarkdownPM]]).
+- [ ] In-line View Embeddings

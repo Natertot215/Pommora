@@ -14,7 +14,7 @@ The pipeline Nathan set: plan → simplify (done) → review (build-breaker atta
 
 #### Completion Criteria
 
-- [ ] The plan survives its breaker review (findings folded or rejected with reasons) and Nathan ratifies it with an explicit go.
+- [ ] The plan survives its breaker review (findings folded or rejected with reasons), and Nathan ratifies it with an explicit go.
 - [ ] Every phase lands: implement → code-simplifier on the phase diff → typecheck/lint/test green by summary line → CDP verification where the phase names it → explicit-path commit.
 - [ ] Every decision-log entry is implemented, or its deviation is recorded in the plan's Log and surfaced in the report.
 - [ ] The blast radius is fully reconciled — Feature docs trued, atlas green, PM-096 written (noting the dropped "in" per Nathan), ContextPM's resolved lines removed.
@@ -30,8 +30,8 @@ The pipeline Nathan set: plan → simplify (done) → review (build-breaker atta
 #### Feedback
 
 - "You didnt actually ask me the other questions you said you did." — narrated questions aren't asked questions; put them to Nathan explicitly.
-- "You've likely over-complicated it, applied guards, and all things based on an un-alligned idea of what 'ghost' ment." — when Nathan's framing sounds like a state machine, ask what the word means before modeling; reframe the artifact around what he's actually asking rather than patching it.
-- "This plan must take care of absilutely everyhting and only leave live confirmation as pending... we do the laundry, pick up socks that may be dropped, AND make sure the dryer is cleaned of any lint or trace that anything ever happened." — the run's completion standard, verbatim intent: zero residue, zero deferred scraps.
+- "You've likely over-complicated it, applied guards, and all things based on an unaligned idea of what 'ghost' meant." — when Nathan's framing sounds like a state machine, ask what the word means before modeling; reframe the artifact around what he's actually asking rather than patching it.
+- "This plan must take care of absolutely everything and only leave live confirmation as pending... we do the laundry, pick up socks that may be dropped, AND make sure the dryer is cleaned of any lint or trace that anything ever happened." — the run's completion standard, verbatim intent: zero residue, zero deferred scraps.
 
 #### Session Pointers
 

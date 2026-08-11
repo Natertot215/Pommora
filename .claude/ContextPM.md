@@ -6,6 +6,7 @@
 
 ### Immediate Work
 
+- [ ] None 
 
 ### Pending Focuses
 
@@ -29,10 +30,11 @@
 - [ ] **In-view page creation.** Sparse across every surface and the item that would be felt daily; wants a brainstorm loop rather than a patch.
 - [ ] **Cross-location card reordering** in views — scoped and mechanical.
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
+- [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Canvas** — the spec sits at `Planning/6-26 - Canvas Spec.md`, unbuilt.
 - [ ] **Subfield reorder.** The store action and persistence are fully built (`setSubfieldOrder` has zero callers) — the entire feature is a missing drag UI, a three-item horizontal `SortableZone` in the Ribbon's shape. 
 - [ ] **Tab ⇄ pin by drag.** The tab strip and the pinned zone are two independent SortableZones; pinning is context-menu-only. The board engine's cross-zone shape serves it, with one commit decision — pins key on `res.key`, tabs on `tab.id`.
-- [ ] **Cards group-band drag.** The table's bands reorder and reparent; Cards renders the same `GroupBand` with no `dragHandle`. The band engine is view-agnostic and the prop seam exists.
+- [ ] **Cards group-band drag.** The table's bands reorder and reparent; Cards renders the same `GroupBand` with no `dragHandle`. The band engine is view-agnostic, and the prop seam exists.
 - [ ] **Outline section drag.** The Outline dropdown is click-to-reveal only while the editor already drags whole sections by heading grip — dragging a heading *in the outline* to move its section is a write-coupling design call on ready mechanisms.
 - [ ] **Recents → pins by drag** is a commented deliberate refusal in `NavList` (`canReassign={false}`); revisit only if wanted — the mechanism is one flag plus a commit.
 
@@ -44,7 +46,7 @@
 
 ### Important Information
 
-- **The kind key is a second identity source by design.** A file's kind key and its folder's sidecar declare the same thing on purpose, since their disagreement is what makes a mislocated file recognisable — a checksum rather than the two-writers defect.
+- **The kind key is a second identity source by design.** A file's kind key and its folder's sidecar declare the same thing on purpose, since their disagreement is what makes a mislocated file recognizable — a checksum rather than the two-writers defect.
 - **The inert affordances render at full weight while their features are built.** The unimplemented view tiles swallow their click and the group-band "+" on structural Set bands carries an `aria-label` with no handler; both read as live controls and wait on the work behind them.
 - **The `ViewPane` "more" button and the NavPane's toolbar dropdown are stubs** — a stub and a blank surface at a fixed ceiling, each holding its place while what it opens is decided.
 - **The reachability razor cuts guards, never structure.** Before defending against a state, name who produces it — nobody means no guard. The recurring failure is over-applying it: an unreached code path is dead weight the razor says nothing about.
@@ -59,9 +61,8 @@
 
 - [ ] The gesture spec wants an `onTap(e)` fired on a release-before-activation — the additive piece that unblocks migrating MarkdownPM's `listDrag`/`blockDrag` and the CalendarPicker's range drag; it lands with the migration that consumes it.
 - [ ] Two more spec folds the drag work exposed, each a four-site bracket today: an `onDisclose` hook owning the `beginDragDisclose`/`endDragDisclose` pair the way `onWindowScroll` owns its listener, and an autoscroll resolve-and-start helper that skips cleanly when no scroller resolves.
-- [ ] MarkdownPM's drags and SurfacePM stay announcement-silent, no surface announces a cancel, and repeated identical pickup text may not re-speak on some screen readers — the a11y phrasing pass owns all three.
 - [ ] A mid-drag column hide/show or watcher view-push is silently reverted by a column drop's persist (`reorderColumn` reads grab-time state) — reachable only by mutating columns while holding a drag; a ref-read at commit fixes it if it's ever felt.
-- [ ] `feel.tsx`'s animation context is provided nowhere outside the showcase, so both engines always read the default while SurfacePM delivers the same value as a prop — wrap the shell in a provider or delete the context; a product call.
+- [ ] `feel.tsx`'s animation context is not provided anywhere outside the showcase, so both engines always read the default, while SurfacePM delivers the same value as a prop — wrap the shell in a provider or delete the context; a product call.
 - [ ] NOR filters are hand-authored only — the mode lives on disk and in the evaluator while the pane offers All and Any.
 - [ ] The flattened-mode bundle is half-built: `flat` grouping and Hide Location are live for Cards only. The pipeline is view-type-agnostic, so what remains is the table half plus a separate Flatten control.
 - [ ] Perf debt: no row virtualization, and an external value edit doesn't live-refresh an open table.
@@ -82,13 +83,15 @@
 - [ ] The "File" property icon gets clipped by its vertical row padding on the PropertiesPane.
 - [ ] The link-rename field shows a leading empty space — the shared field recipe's horizontal padding surviving the TextPicker input override, with the pane gutter adding to it. A visual inset rather than a stored character (deprioritized).
 - [ ] The Set-Card drag flash — the drop snaps back, then jumps on reload.
+- [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
+- [ ] The PageOutline's list-indent is noticeably different from other disclosure spacings (Sidebar, GroupPane, Tables), and likely needs a second pass to confirm whether it was actually consolidated around the shared primitive. 
 
 ### Recent Work
 
 #### PM-095 || Documentation Normalization
 **DATE:** 08-10-2026
 
-Every Feature doc, Versioning, and the PRD rewrote to one documentation standard — product register, one owner per fact with pointers elsewhere, canonical tails, and codemap tables of contents — ratified in `Planning/Documentation Normalization.md` and closed by a two-agent residue review. MarkdownPM's Non-Obvious traps now live in `Guidelines/Editor-Internals.md`, and the atlas stayed checker-green throughout.
+Every Feature doc, Versioning, and the PRD were rewritten according to one documentation standard — product register, one owner per fact with pointers elsewhere, canonical tails, and codemap tables of contents — ratified in `Planning/Documentation Normalization.md` and closed by a two-agent residue review. MarkdownPM's Non-Obvious traps now live in `Guidelines/Editor-Internals.md`, and the atlas stayed checker-green throughout.
 
 #### PM-094 || One Owner Per Repeated Value
 **DATE:** 08-10-2026
