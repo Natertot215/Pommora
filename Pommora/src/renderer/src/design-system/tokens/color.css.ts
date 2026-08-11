@@ -60,13 +60,10 @@ const derived = createGlobalTheme(':root', {
     },
     // Interaction states — system-grey washes, but for `muted`: a de-emphasis veil that dims a
     // surface a step DARKER, so it derives from system-black rather than the grey the others share.
-    // `inactive` is the one worn by TEXT — empty-state copy and the ghost "New Page" row — so it
-    // derives from system-white like the label ramp it sits beside.
     state: {
       hover: greyA('2.5%'),
       selected: greyA('5%'),
       muted: blackA('10%'),
-      inactive: whiteA('55%'), // KNOB
     },
     // Hairlines — system-grey. `border` is the one hairline tone; `segment` is the lighter step the
     // outliner rails and segment dividers wear.

@@ -198,7 +198,8 @@ textarea,
 .state {
   padding: 48px 16px;
   text-align: center;
-  color: var(--state-inactive);
+  color: var(--label-primary);
+  opacity: var(--state-inactive);
 }
 
 .state-error {
@@ -209,7 +210,8 @@ textarea,
   display: block;
   margin-top: 6px;
   font-size: 11px;
-  color: var(--state-inactive);
+  color: var(--label-primary);
+  opacity: var(--state-inactive);
 }
 
 /* Interim empty-state CTA — matches the app's white-alpha chrome; replace with the design-system

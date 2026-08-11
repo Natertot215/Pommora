@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { CollectionNode, NexusTree } from '@shared/types'
 import { DEFAULT_LABELS } from '@shared/types'
+import { NEW_PAGE_SLOT } from '@shared/mutate'
 import {
   insertCreatedInTree,
   patchContextGroupsInTree,
@@ -115,6 +116,15 @@ describe('insertCreatedInTree', () => {
     const page = t?.collections[0].sets[0].pages.at(-1)
     expect(page?.title).toBe('C')
     expect(page?.path).toBe('Notes/Sub/C.md')
+  })
+
+  it('a positional create appears AT its slot, not appended — the row must not flash at the bottom', () => {
+    const t = insertCreatedInTree(
+      tree(),
+      { op: 'createPage', parentPath: 'Notes/Sub', name: 'New', order: [NEW_PAGE_SLOT, 'p2'] },
+      { id: 'x5', path: 'Notes/Sub/C.md' },
+    )
+    expect(t?.collections[0].sets[0].pages.map((p) => p.id)).toEqual(['x5', 'p2'])
   })
 
   it('skips optimism for a nested collection (never mislabels it as a set)', () => {

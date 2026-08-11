@@ -23,17 +23,19 @@
 }
 
 .table-empty {
-  color: var(--state-inactive);
+  color: var(--label-primary);
+  opacity: var(--state-inactive);
   padding: var(--empty-pad-y) 0;
 }
 
 /* The hover ghost row — pure chrome until its click creates. A .data-row, so borders, density,
- * and the divider rhythm follow the table's own state with no rules of their own. */
+ * and the divider rhythm follow the table's own state with no rules of their own; its label is the
+ * row's standard one, worn at the disabled dim. */
 .ghost-row {
   cursor: pointer;
 }
 .ghost-row .data-cell {
-  color: var(--state-inactive);
+  opacity: var(--state-disabled);
 }
 
 /* The grid container: a vertical stack of full-width bands. Each band that shows columns is itself a

@@ -127,7 +127,6 @@ describe('handleMutate — create', () => {
       page_order?: string[]
     }
     expect(sidecar.page_order).toEqual([r.value.created?.id, A_ID, B_ID])
-    // The read path applies it: Ordered resolves first, ahead of Alpha and Beta.
     const tree = await readNexus(root)
     const daily = tree.collections
       .flatMap((c) => c.sets)
