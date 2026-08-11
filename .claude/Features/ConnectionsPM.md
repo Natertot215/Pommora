@@ -37,7 +37,7 @@ Every file is rewritten under the same lock a live edit takes, frontmatter untou
 
 ### Rendering
 
-A resolved connection is inline text in the connection color — never a chip — brackets hidden until the caret enters it. Click opens it, routed by the `connectionsOpenInPreview` personalization knob (→ [[ConfigurationPM]]); ⌘-click opens a new tab; hover raises the preview hover card (→ [[PagePreviewPM]]); right-click pops a native menu whose one action is **Open in Preview**. Ambiguous links keep the bracket treatment in their muted tone; phantom text renders raw and inert.
+A resolved connection is inline text in the connection color — never a chip — brackets hidden until the caret enters it. Click opens it, routed by the `connectionsOpenInPreview` personalization knob (→ [[ConfigurationPM]]); ⌘-click opens a new tab; hover raises the preview hover card (→ [[PagePreviewPM]]); right-click pops a native menu whose one action is **Open Preview**. Ambiguous links keep the bracket treatment in their muted tone; phantom text renders raw and inert.
 
 ### Autocomplete
 
