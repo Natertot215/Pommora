@@ -55,7 +55,8 @@ export async function showContextMenu(
     if (res.ok) {
       onChanged()
       // A create lands in its rename field — same contract as the renderer's own create menus.
-      if (res.value.created) push(win, 'begin-rename', res.value.created.path)
+      if (res.value.created)
+        push(win, 'begin-rename', { path: res.value.created.path, create: true })
     } else
       await dialog.showMessageBox(win, {
         type: 'error',
@@ -66,17 +67,17 @@ export async function showContextMenu(
 
   const items: MenuItemConstructorOptions[] = []
 
-  // Open in New Tab — the action runs renderer-side (only the renderer knows the tab set); an
+  // Open New Tab — the action runs renderer-side (only the renderer knows the tab set); an
   // already-open entity reads "Open" and the push-back focuses its tab.
   if (target.id) {
     items.push({
-      label: target.alreadyOpen ? 'Open' : 'Open in New Tab',
+      label: target.alreadyOpen ? 'Open' : 'Open New Tab',
       click: () => push(win, 'open-in-new-tab', target),
     })
-    // Open in Preview (page-only) — like Open in New Tab, the action runs renderer-side.
+    // Open Preview (page-only) — like Open New Tab, the action runs renderer-side.
     if (target.kind === 'page') {
       items.push({
-        label: 'Open in Preview',
+        label: 'Open Preview',
         click: () => push(win, 'open-in-preview', target),
       })
     }
@@ -91,8 +92,25 @@ export async function showContextMenu(
   // the renderer to put the matching row into edit mode; the commit goes through mutate.
   items.push({
     label: 'Rename',
-    click: () => push(win, 'begin-rename', target.path),
+    click: () => push(win, 'begin-rename', { path: target.path }),
   })
+
+  // New Page Above / Below — the position is computed renderer-side, where the sibling order
+  // lives; a partial page_order write would alphabetize the untouched siblings.
+  if (target.kind === 'page') {
+    items.push(
+      { type: 'separator' },
+      {
+        label: 'New Page Above',
+        click: () => push(win, 'new-page-adjacent', { path: target.path, where: 'above' }),
+      },
+      {
+        label: 'New Page Below',
+        click: () => push(win, 'new-page-adjacent', { path: target.path, where: 'below' }),
+      },
+      { type: 'separator' },
+    )
+  }
 
   items.push({
     label: 'Delete',

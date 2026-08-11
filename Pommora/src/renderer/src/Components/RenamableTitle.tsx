@@ -18,12 +18,14 @@ export function RenamableTitle({
   boxed?: boolean
 }): React.JSX.Element {
   const renamingPath = useSession((s) => s.renamingPath)
+  const renamingCreate = useSession((s) => s.renamingCreate)
   const cancelRename = useSession((s) => s.cancelRename)
   const submitRename = useSession((s) => s.submitRename)
   return (
     <RenamableLabel
       renames="row"
       editing={renamingPath === path}
+      emptyInitial={renamingPath === path && renamingCreate}
       value={title}
       className={className}
       boxed={boxed}

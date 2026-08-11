@@ -3,6 +3,7 @@ import { blockHostKey, type BlockHostRef } from '@shared/blocks'
 import {
   EMPTY_PREVIEWS,
   DEFAULT_COMMANDS,
+  type CollectionNode,
   type NavigationState,
   type NavRef,
   type NavViewMode,
@@ -17,6 +18,7 @@ import {
   type Tab,
 } from '@shared/types'
 import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/mutate'
+import { orderWithSlot } from './Detail/Views/creationOrder'
 import { errText, fail, type Result } from '@shared/result'
 import { reconcileSelection, reconcileWith } from './selection'
 import { navKeysOf, reconcileIndexOf } from './treeIndex'
@@ -130,18 +132,25 @@ export interface TrailEntry {
   title: string
 }
 
-function findContainerPath(tree: NexusTree, id: string): string | null {
-  const cols = [...(tree.collections ?? [])]
-  const inSets = (sets: SetNode[] | undefined): string | null => {
+/** Page paths are POSIX, so a page's container is its path minus the last segment. */
+const parentPathOf = (path: string): string => path.split('/').slice(0, -1).join('/')
+
+/** Depth-first over collections and their nested sets — callers name the container they want by
+ *  whichever key they hold (id from a selection, path from a page's parent). */
+function findContainer(
+  tree: NexusTree,
+  match: (node: CollectionNode | SetNode) => boolean,
+): CollectionNode | SetNode | null {
+  const inSets = (sets: SetNode[] | undefined): SetNode | null => {
     for (const s of sets ?? []) {
-      if (s.id === id) return s.path
+      if (match(s)) return s
       const deep = inSets(s.sets)
       if (deep) return deep
     }
     return null
   }
-  for (const c of cols) {
-    if (c.id === id) return c.path
+  for (const c of tree.collections ?? []) {
+    if (match(c)) return c
     const hit = inSets(c.sets)
     if (hit) return hit
   }
@@ -267,9 +276,14 @@ interface SessionState {
   createFromMenu: (items: { label: string; req: MutateRequest }[]) => Promise<void>
 
   renamingPath: string | null
-  beginRename: (path: string) => void
+  /** The open rename is a just-created entity's naming session — the field opens empty and a
+   *  page's first commit rides the create (disambiguating, cascade-free). */
+  renamingCreate: boolean
+  beginRename: (path: string, create?: boolean) => void
   cancelRename: () => void
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
+  /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives. */
+  newPageAdjacent: (path: string, where: 'above' | 'below') => Promise<void>
 
   renamingProperty: { collectionPath: string; propertyId: string } | null
   /** Set when a property rename lands. A mounted view's values snapshot is fetched once per
@@ -1359,12 +1373,10 @@ export const useSession = create<SessionState>((set, get) => {
     newPage: async () => {
       const { tree, selection } = get()
       if (!tree) return
-      // Page paths are POSIX, so the parent is the path minus its last segment.
       let parentPath: string | null = null
       if (selection.kind === 'collection' || selection.kind === 'set')
-        parentPath = findContainerPath(tree, selection.id)
-      else if (selection.kind === 'page')
-        parentPath = selection.path.split('/').slice(0, -1).join('/')
+        parentPath = findContainer(tree, (n) => n.id === selection.id)?.path ?? null
+      else if (selection.kind === 'page') parentPath = parentPathOf(selection.path)
       if (parentPath === null) {
         parentPath = (tree.collections ?? [])[0]?.path ?? null
       }
@@ -1377,14 +1389,34 @@ export const useSession = create<SessionState>((set, get) => {
 
     createFromMenu: async (items) => {
       const req = await window.nexus.popCreateMenu(items)
-      if (req) await get().mutate(req, (created) => get().beginRename(created.path))
+      if (req) await get().mutate(req, (created) => get().beginRename(created.path, true))
     },
 
     renamingPath: null,
-    beginRename: (path) => set({ renamingPath: path }),
-    cancelRename: () => set({ renamingPath: null }),
+    renamingCreate: false,
+    beginRename: (path, create) => set({ renamingPath: path, renamingCreate: create === true }),
+    cancelRename: () => set({ renamingPath: null, renamingCreate: false }),
+    newPageAdjacent: async (path, where) => {
+      const tree = get().tree
+      if (!tree) return
+      const parentPath = parentPathOf(path)
+      const container = findContainer(tree, (n) => n.path === parentPath)
+      if (!container) return
+      const anchor = container.pages.find((p) => p.path === path)
+      if (!anchor) return
+      const order = orderWithSlot(
+        container.pages.map((p) => p.id),
+        anchor.id,
+        where,
+      )
+      await get().mutate(
+        { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME, order },
+        (created) => get().beginRename(created.path, true),
+      )
+    },
     submitRename: async (path, kind, newName) => {
-      set({ renamingPath: null })
+      const fromCreate = get().renamingCreate && kind === 'page'
+      set({ renamingPath: null, renamingCreate: false })
       // Registry entities rename by id through their journaled cascade ops — a bare folder
       // rename would strand every member file's title key.
       if (kind === 'space' || kind === 'context') {
@@ -1398,7 +1430,13 @@ export const useSession = create<SessionState>((set, get) => {
           ? get().mutate({ op: 'renameContext', contextId: group.def.id, newName })
           : false
       }
-      return get().mutate({ op: 'rename', path, kind, newName })
+      return get().mutate({
+        op: 'rename',
+        path,
+        kind,
+        newName,
+        ...(fromCreate ? { fromCreate: true as const } : {}),
+      })
     },
 
     renamingProperty: null,

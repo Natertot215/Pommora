@@ -1521,7 +1521,7 @@ serveBridge(
       },
     },
 
-    // A wikilink's right-click menu (Open in Preview).
+    // A wikilink's right-click menu (Open Preview).
     'conn-menu': { kind: 'menu', fn: popConnMenu },
 
     'property-menu': { kind: 'menu', fn: popPropertyMenu },

@@ -6,7 +6,7 @@ describe('rowGripMenuModel', () => {
     const items = rowGripMenuModel({}).items
     expect(items.map((i) => [i.label, i.action])).toEqual([
       ['Open Preview', 'title:preview'],
-      ['Open in New Tab', 'title:newtab'],
+      ['Open New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
       ['Change Icon', 'title:icon'],
       ['New Page Above', 'title:newabove'],

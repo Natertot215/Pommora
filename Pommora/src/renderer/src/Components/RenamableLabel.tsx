@@ -8,6 +8,7 @@ import { EditableInput } from './EditableInput'
 export function RenamableLabel({
   renames,
   editing,
+  emptyInitial,
   value,
   className,
   autoSize,
@@ -18,6 +19,9 @@ export function RenamableLabel({
 }: {
   renames: 'title' | 'row'
   editing: boolean
+  /** A creation's naming session: the field opens genuinely empty while the entity's real title
+   *  (Untitled) stays the commit guard's baseline — leaving without a name changes nothing. */
+  emptyInitial?: boolean
   value: string
   className: string
   autoSize?: boolean
@@ -31,6 +35,7 @@ export function RenamableLabel({
   return (
     <EditableInput
       value={value}
+      initialText={emptyInitial ? '' : undefined}
       className={className}
       autoSize={autoSize}
       boxed={boxed}

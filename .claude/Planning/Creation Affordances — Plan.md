@@ -173,4 +173,9 @@ All claims below were verified against code during the brainstorm's two attack r
   - The CDP sandbox runs against the designated Test nexus (`~/Test`, already in recents) rather than a throwaway inside live NexusOS — strictly safer; `pommora.json`'s `lastNexusPath` is restored at teardown. Nathan's live dev instance held the single-instance lock and predated the Phase 1 main-process changes (a renderer/main skew), so it was recycled; a fresh dev instance stays running at run end.
   - The write-echo question answered itself: main's own creates are echo-suppressed, so no second walk fires — and a raw-bridge create (no store involvement) doesn't refresh the renderer at all, which is why creation flows through `store.mutate`.
   - Task 2.1's parent-container control is enforced by construction (`containerPagesOf` walks to the exact path) and expressed at the pure layer (`creationOrder.test.ts`); no component-level test harness exists to host it higher.
+  - Phase 3 — 3.1–3.3 ✓ · simplifier consolidated the container walk and the parent-path derivation · gates 207/2318 green · both label greps read zero with the control satisfied (16 + 13 hits renamed, comments and docs included).
+- **Deviations (Phase 3):**
+  - The sidebar's physical menu pick and the empty field on the sidebar/subfield surfaces are native-menu-gated (CDP can't drive OS menus); the mechanics are the same store flag → `EditableInput` chain the table proved, typecheck holds the threading (the style prop rides `begin-rename`'s payload, not an optional component prop alone), and the physical pick joins live confirmation.
+  - `creationOrder` moved from `Table/` to `Views/` when the store became its second consumer — one owner, no Table-scoped pretense.
+  - Nathan's live doc edits landed mid-run; committed separately as `ecce6020` before the phase commit.
 - **Open Against Later Tasks:** (none)

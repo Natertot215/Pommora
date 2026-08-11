@@ -72,7 +72,7 @@ import {
 } from '@renderer/design-system/interactions/autoscroll'
 import { DEFAULT_NEW_NAME } from '@shared/mutate'
 import { filterSeeds } from '../pipeline/creationSeeds'
-import { orderWithSlot, tieOrderWith } from './creationOrder'
+import { orderWithSlot, tieOrderWith } from '../creationOrder'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
 import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from './linkValue'

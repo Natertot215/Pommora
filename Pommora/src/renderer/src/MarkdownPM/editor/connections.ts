@@ -83,7 +83,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       else api.open(page)
       return true
     },
-    // Right-click on a resolved connection hands off to the host's menu hook (Open in Preview et al).
+    // Right-click on a resolved connection hands off to the host's menu hook (Open Preview et al).
     contextmenu(event, view) {
       intent.cancel()
       const api = getApi()
