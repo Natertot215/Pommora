@@ -98,11 +98,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--label-tertiary); /* Awaiting proper inactive state token. */
+  color: var(--state-inactive);
 }
 
 .detail-placeholder {
-  color: var(--label-tertiary); /* Awaiting proper inactive state token. */
+  color: var(--state-inactive);
 }
 
 .detail-error {
@@ -113,5 +113,5 @@
   display: block;
   margin-top: 6px;
   font-size: 11px;
-  color: var(--label-tertiary); /* Awaiting proper inactive state token. */
+  color: var(--state-inactive);
 }

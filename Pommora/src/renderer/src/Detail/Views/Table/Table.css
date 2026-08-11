@@ -23,8 +23,17 @@
 }
 
 .table-empty {
-  color: var(--label-tertiary); /* Awaiting proper inactive state token. */
+  color: var(--state-inactive);
   padding: var(--empty-pad-y) 0;
+}
+
+/* The hover ghost row — pure chrome until its click creates. A .data-row, so borders, density,
+ * and the divider rhythm follow the table's own state with no rules of their own. */
+.ghost-row {
+  cursor: pointer;
+}
+.ghost-row .data-cell {
+  color: var(--state-inactive);
 }
 
 /* The grid container: a vertical stack of full-width bands. Each band that shows columns is itself a

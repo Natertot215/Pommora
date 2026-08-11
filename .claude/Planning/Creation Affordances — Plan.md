@@ -178,4 +178,7 @@ All claims below were verified against code during the brainstorm's two attack r
   - The sidebar's physical menu pick and the empty field on the sidebar/subfield surfaces are native-menu-gated (CDP can't drive OS menus); the mechanics are the same store flag → `EditableInput` chain the table proved, typecheck holds the threading (the style prop rides `begin-rename`'s payload, not an optional component prop alone), and the physical pick joins live confirmation.
   - `creationOrder` moved from `Table/` to `Views/` when the store became its second consumer — one owner, no Table-scoped pretense.
   - Nathan's live doc edits landed mid-run; committed separately as `ecce6020` before the phase commit.
+  - Phase 4 — 4.1–4.2 ✓ · `--state-inactive` minted at system-white @ 55% (Nathan's live ruling; the atlas gained its Inactive row, checker green over 21 tables) · six waiting sites converted, markers deleted · the ghost row proven via CDP: dwell → ghost at the token color → click → empty field born below the anchor → named page lands in the adjacent order slot. The ghost enters on the shared disclosure Reveal (no dedicated row-appear motion exists; the disclosure is the one primitive rows enter by) — per Nathan's mid-run instruction, noted for the report.
+- **Deviations (Phase 4):**
+  - Round 3's "both theme values" reading of the token was wrong — the design system is single-theme; `state.inactive` is one `color-mix` value like its siblings, worn as text color per Nathan ("label-primary base, 55").
 - **Open Against Later Tasks:** (none)
