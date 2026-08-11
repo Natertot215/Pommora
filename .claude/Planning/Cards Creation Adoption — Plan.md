@@ -45,7 +45,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 
 - Phantom-slot inside the drag engine — couples creation chrome into a drag lifecycle; rejected.
 - `DragGroup onDragStart` for the stand-down — still leaves the ghost in the grid at rect-freeze; the pointerdown stand-down replaced it.
-- Caller-declared rename ownership — unimplementable at the surface-blind call sites; owner-resolution replaced it.
+- *Pure* caller-declared rename ownership — main's payload and the chrome-level creates carry no surface, so declaration alone can't fence; the design is hybrid — declared where the caller knows (the two context-menu sites), rank-resolved everywhere else.
 - Fade-only ghost (no displacement) — dropped direction; fallback only if FLIP reads janky in Nathan's visual pass.
 - View Transition API — outside the motion-token law.
 - Above/Below pair on cards — grid ambiguity; single flow-after item.
@@ -79,11 +79,11 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 
 | Doc | The specific claim | What makes it false | Task |
 | --- | --- | --- | --- |
-| `CardViewPM.md:90` | "the Cards band's '+' stays a visual stub until the card chrome adopts it" | Task 7 arms it | 12 |
-| `CardViewPM.md:94` | "Cross-band card drag" listed as unbuilt prospect | already ships; stale today | 12 |
-| `TableViewPM.md` ghost paragraph | describes the machinery as the table's own | Task 9 extracts it shared | 12 |
-| `ViewsPM.md` creation entry | creation is table-only | Tasks 6–8 | 12 |
-| `ContextPM.md` (Important Information) | Cards "+" renders inert "until the card chrome adopts the creation engine" | Task 7 | 13 |
+| `CardViewPM.md:90` | "the Cards band's '+' stays a visual stub until the card chrome adopts it" | Task 7 arms it | 11 |
+| `CardViewPM.md:94` | "Cross-band card drag" listed as unbuilt prospect | already ships; stale today | 11 |
+| `TableViewPM.md` ghost paragraph | describes the machinery as the table's own | Task 9 extracts it shared | 11 |
+| `ViewsPM.md` creation entry | creation is table-only | Tasks 6–8 | 11 |
+| `ContextPM.md` (Important Information) | Cards "+" renders inert "until the card chrome adopts the creation engine" | Task 7 | 11 |
 | `cardsBand.ts:3-5` comment | "create-page routing … deferred" | Task 7 | 7 |
 | `CardsView.tsx` TextPicker mount comment | "Persistent mounts riding `open`…" (rename half) | Task 8 retires the mount | 8 |
 
@@ -115,7 +115,8 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - Produces: a **subscribed owner slot**, not a query — `renameOwner: RenameHost | null` in the store; `claimRename(path, host)` / `releaseRename(path, host)` register into a ranked claimant list that resolves the owner; `RenamableTitle` gains a `host` prop, subscribes, and mounts the input **iff `renameOwner === host`**. A boolean return cannot fence: effects run in tree order, so an earlier claimant's `true` can't be revoked by a later winner — losers must be *subscribed* to demotion. `RenameHost = 'detail' | 'sidebar'`.
 - Assumed by: Task 8 (Cards mounts with `host: 'detail'`).
 
-**Failure half:** a claim for a path that isn't `renamingPath` → refused, no state; the winner unmounting mid-rename → **release with no equal-or-higher surviving claimant calls `cancelRename()`** — a rename that lost its surface is abandoned, never teleported (a transfer would focus-steal into the sidebar with the title selected, and a create-origin session would reopen empty, eating typed characters); unmount-without-blur fires neither commit nor cancel on its own, so the release path is the only thing standing between that and a stranded slot.
+**Failure half:** a claim for a path that isn't `renamingPath` → refused, no state; the winner unmounting mid-rename → release **defers its verdict a microtask**, then — only if the path is still `renamingPath` and no claimant survives — calls `cancelRename()`. The deferral is load-bearing: an *immediate* cancel-on-release fires inside React StrictMode's simulated remount (the app's root is `<React.StrictMode>`, so every dev mount runs setup → cleanup → setup in one act) and kills every rename on first try — while a bare-`createRoot` unit test stays green over the dead feature. After the microtask, a genuinely surfaceless rename is abandoned, never teleported (a transfer would focus-steal into the sidebar with the title selected, and a create-origin session would reopen empty). Test both: the StrictMode double-mount survives; a real unmount cancels.
+- **Origin hint:** the two context-menu callers are *not* surface-blind — `Sidebar.tsx` and `TableGroupBand.tsx` each know exactly which surface they are; only main's payload drops it. `ContextTarget` gains `host?: RenameHost`, the callers declare it, main echoes it through the `begin-rename` push, and the store prefers a declared host over rank — so a sidebar-origin rename opens in the *sidebar*, not the outranking table band. Rank remains the resolver for the genuinely blind callers (`createFromMenu`, `newPageAdjacent`, main's create push), where the field belongs wherever the row renders.
 
 **Negative control:** the dual-mount test (sidebar row + band field on one path) asserts exactly one input mounts and typing commits; with the fence disabled (claim always true) the same test shows both mounting and zero surviving — assert that inversion once, then delete the disabled-path assertion.
 
@@ -130,7 +131,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - [ ] Gates green, exit codes direct.
 - [ ] Derivations re-run against controls; counts matched or the divergence rewrote the plan.
 - [ ] Simplification + review against `<base>..HEAD`; reports cite files inside it; KNOB grep clean.
-- [ ] CDP against the Test nexus: enter the rename via `useSession.getState().beginRename(setPath)` through `Runtime.evaluate` (the native menu itself isn't CDP-drivable) with the set's sidebar row visible — one field opens, commits, no flicker. (The log's Live Check #2.)
+- [ ] CDP against the Test nexus: enter the rename via `window.__pommora.getState().beginRename(setPath)` through `Runtime.evaluate` (the dev-only drive seam; the native menu itself isn't CDP-drivable) with the set's sidebar row visible — one field opens, commits, no flicker. Also probe the unknown: with a field open, right-click a *different* row — the first field must not survive the transition. (The log's Live Check #2.)
 - [ ] Progress hashes filled in.
 
 ---
@@ -144,7 +145,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 **Why:** `manualOverride` outranks `viewOrders` and no create refreshes either live copy — the table flashes a frame of wrong placement (the `[source]` reset self-heals), Cards would hold it forever. E-4's motionless handoff is impossible until creation settles the live order in the act that writes it (A-5). `bandAdd` deliberately gets **no** order tail: the band-add ruling is "born at the pipeline's end of the group," and an id absent from the manual order already ranks last within its band — the ruling's exact placement, delivered by the ranking itself.
 
 **Files:**
-- Modify: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — both create completions: non-structural → set `manualOverride` to the same `tieOrderWith` list `persistViewOrder` writes; structural → null `manualOverride` **and clear the local `viewOrders[view.id]` entry** in the same act — nulling alone falls through to the stale `viewOrders` array (`resolveManualOrder` is `manualOverride ?? viewOrder`), where the newborn is absent and ranks last, resurrecting the very bug this task kills.
+- Modify: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — both create completions **splice, never clear**: `tieOrderWith` places the newborn into the live arrays (`manualOverride`, the local `viewOrders[view.id]`) in the same act. Clearing was the first design and it destroys order the user owns — in structural + location-grouped state the manual array is the *sole* comparator, so a clear reshuffles the whole view while the surviving wire copy brings the discarded order back on next open. The structural/non-structural split decides only which *canonical* channel the disk write targets.
 - Test: `Pommora/src/renderer/src/Detail/Views/creationOrder.test.ts` (or the sort pipeline's test home — locate first).
 
 **Interfaces**
@@ -180,10 +181,11 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 
 **Files:**
 - Modify: `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.tsx` — `onCardDrop`'s relocate branch builds the destination's full-membership order with the drop at its index and passes it.
-- Modify: `Pommora/src/renderer/src/store.ts` — the `movePage` optimistic arm honors `req.order` (mirror the `moveSet` arm's `reorderChildrenInTree` composition; `treeMove.ts` already reorders pages or gains the pages-side twin).
+- Modify: `Pommora/src/renderer/src/treeMove.ts` — **`reorderPagesInTree(tree, parentPath, order)` is a new ~8-line helper**: no pages-side reorder exists (`reorderChildrenInTree` orders `sets`/collections only, and fed page ids it returns a *non-null, unreordered* tree — a silent no-op an executor would ship). Build it over the existing private `byOrder` + `updateNodeInTree`.
+- Modify: `Pommora/src/renderer/src/store.ts` — the `movePage` optimistic arm composes `relocateNodeInTree` + `reorderPagesInTree` (the `moveSet` arm's shape, with the pages helper).
 - Modify: `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx` — `relocateRow` passes its order the same way (the sibling sweep).
 
-**Failure half:** a drop into an empty destination → order array of one; hidden (filtered-out) members of the destination → the array builds from full membership, never the filtered view (PM-096's law); `order` absent (legacy caller) → append, unchanged.
+**Failure half:** a drop into an empty destination → order array of one; hidden (filtered-out) members of the destination → the array builds from full membership, never the filtered view — in Cards, before Task 7's hook exists, that source is `flattenContainer(source, effectiveValues).rows` filtered to the destination path (the shape `TableView`'s `allIds` uses), **never** the filtered `groups`; `order` absent (legacy caller) → main falls back to *title* order (not append — the contract comment's word, the handler's truth), unchanged.
 
 **Steps:**
 - [ ] Write the failing test at the store-arm level: `movePage` with `order` → the optimistic tree names the moved id at its slot.
@@ -226,7 +228,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - Modify: `Pommora/src/shared/cardMenu.ts` — pass `'single'`; `Pommora/src/renderer/src/Detail/Views/Cards/CardsView.tsx` — route the action to the flow-after create (wired fully in Task 7).
 - Test: `Pommora/src/shared/cellMenu.test.ts` siblings — extend the existing menu-model tests.
 
-**Must agree:** the grip menu, title-cell menu, and sidebar menu still emit the exact pair (existing tests assert the labels); the card menu emits exactly one "New Page". One builder produces all four — assert the four shapes in one test file.
+**Must agree:** the grip and title-cell menus still emit the exact pair (existing tests assert the labels); the card menu emits exactly one "New Page". One builder produces those three — assert the three shapes in one test file. The **sidebar's pair is a fourth, separate writer**: `main/contextMenu.ts` hand-builds the same two labels in the main process — a found duplicate the Hard Rules require reporting. Reported here; folding main onto the shared labels goes to Sequenced After (main can import from `shared/`), not this task.
 
 **Steps:**
 - [ ] Failing tests: card model shows one "New Page"; pair surfaces unchanged.
@@ -247,12 +249,12 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - Reference: `Pommora/src/renderer/src/Detail/Views/pipeline/creationSeeds.ts`.
 
 **Interfaces**
-- Produces: `useViewCreation({ source, view, schema, effectiveValues, rowBand, structuralOrder, orderState, onCreated }) => { bandAdd(setKey), createAfter(row), createAdjacent(row, where) }` — exact parameter shape is the implementer's, but the hook owns seeds + order + naming completion, and both views call it. Task 10's ghost click consumes `createAfter`.
+- Produces: `useViewCreation({ source, view, schema, effectiveValues, rowBand, structuralOrder, orderState, onCreated }) => { bandAdd(setKey), createAfter(row), createAdjacent(row, where) }` — exact parameter shape is the implementer's, but the hook owns seeds + order + naming completion, and both views call it. **Cards passes `structuralOrder: false`, always** — the table's predicate selects its page_order-vs-viewOrders drag channel, but Cards' live order is only ever `viewOrders` (it has no page_order writer), and the table-computed predicate reads *true* for an unsorted Cards view, which would route creates onto a channel Cards never reads and land every newborn last. Task 10's ghost click consumes `createAfter`.
 
 **Failure half:** band-add on a collapsed band → discloses first, then creates (the table's law); a filter excluding the newborn → creates on disk, card stays hidden, app healthy (the Obsidian behavior); an empty group → band-add still creates at slot 0; a menu create on a card whose group is non-stampable (date bucket) → no group seed, order still honored.
 
 **Steps:**
-- [ ] Extract the hook; refit the table; full gates green with Phase 2's tests as the unchanged baseline.
+- [ ] Extract the hook; refit the table; full gates green with Phase 2's tests as the unchanged baseline. Honesty note: the group-value + sort-criteria seed assembly is inline and untested today — the extraction is its first test seam, and Gate 4's deferred `createAfter` check is its running-app net.
 - [ ] Build Cards' row→band map from `groups`; wire Cards through the hook; arm `onAdd`; route the menu arm to `createAfter`.
 - [ ] Failing test at the seed layer for the cards-shaped map; engine-level creation tests already cover seeds+order — verify they run.
 - [ ] Full gates green.
@@ -360,7 +362,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 **Requirement:** all
 
 **Steps:**
-- [ ] Purge sweep: scratch files, instrumentation, dead branches; Dead Vocabulary sweep (`renameOpen` → 0) against its control (`TextPicker` → ~14).
+- [ ] Purge sweep: scratch files, instrumentation, dead branches; Dead Vocabulary sweep (`renameOpen` → 0) against its control (`TextPicker` → 18).
 - [ ] Write the Delivery Claim (requirements → landed tasks, acceptance observed, no new dependency, no duplicated mechanism, no high-frequency work added).
 - [ ] Dispatch the neutral verifier — claim vs the decision log + full commit range. Fix and re-claim on any no.
 - [ ] Then dispatch the build-breaking-agent against the shipped range. Findings fixed, not filed (DONE_WITH_CONCERNS means fix).
@@ -405,5 +407,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - The set-card ghost — blocked on the container creation contract (positional order, un-gated naming law, a set-card rename entry point); the hook's anchor-not-row shape keeps it slot-in.
 - The display-alias arc — the locked next focus, opening on this plan's completion criteria.
 - Cards group-band drag — the `dragHandle` seam exists; a reorder arc, not creation.
+- Main's hand-built New Page pair (`main/contextMenu.ts`) folding onto the shared `pageMenu` labels — the found fourth writer Task 6 reports; `shared/` is importable from main.
+- The drag engine's possible zoom drift (`toBox` measures client px, no compensation) — checked as an observation in Task 10; if inherited, it's a Known Issue entry, not this arc's fix.
 
 ### Closeout
