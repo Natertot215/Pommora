@@ -8,58 +8,48 @@
 **Dates:** 08-09-2026 → 08-10
 **Model:** Fable 5 (1M context)
 
-**Two arcs, both closed:** the **Sidebar + DND Consolidation** (PM-090 — planned, executed, verified, and hand-confirmed), then the **CSS Token Organization** that its closing review surfaced (PM-091 — the drag chrome, stray tokens, and cross-consumed recipes relocated to their owners, closed through /closeout).
+**Documentation Normalization — closed (PM-095).** After the session's earlier arcs (PM-090 drag consolidation, PM-091 CSS token organization, PM-093 the token atlas — all recorded), Nathan scoped a purely-documentation pass: normalize every Feature doc to one standard, then carry it into Versioning and the PRD. The standard was derived from his own uncommitted exemplar edits (SymbolsPM, SurfacePM, MarkdownPM, PommoraDND) rather than invented — tables absorb their annotations, lists run tight, mechanism narration and the insistent register delete rather than reword, status lives in the tails — and he refined it live: prose colons and isolated sentences go, "so, X" clauses pass a "do I need this" test, and the `II.` heading prefix is conditional, sanctioned under a parent that describes the scope it enumerates.
 
-The session opened on the drag notes flagged in Context and verified every one against the code firsthand: all accurate, one understated (`cellAt` runs per card per pointermove, not once per move). The story they tell is one story — the app has one shared gesture skeleton (`gesture.ts`, 144 lines) with two cheap hardening flaws, and four surfaces still hand-roll that lifecycle; the hand-rolls are where the bugs live, including a same-count-wrong-identity scroll-listener leak in three of them. Four read-only survey agents then swept the layer (lifecycle census, DRY audit, service-adoption matrix, missing-capability sweep) and surfaced bugs nobody had flagged — the worst being `groupingDnd`, which never invalidates its geometry inside a 280px scroller, so a mid-drag wheel commits the drop to the wrong target. Nathan ratified Tiers 1–4 (stale-slot bugs, skeleton hardening, migrations, DRY, adoption gaps) as scope, with Tier 5's product candidates routed to Context rather than built.
+Five inventory agents swept all 26 Feature docs against the charter; the findings became `Planning/Documentation Normalization.md` — the ratified standard, a per-file inventory, and a cross-doc ownership map. Execution ran receivers-before-donors in five cluster batches so no fact ever had zero owners, with `check-atlas.mjs` green at every commit and every commit pathspec-scoped around the live parallel session (which landed PM-092 and PM-094 mid-pass). A script derived each doc's codemap table of contents from its real headings; Chapter 2 rewrote Versioning to its Studio FORMAT and trued the PRD; and Nathan's mid-flight capture request folded PM-094's fallout into the atlas (`--radius-full`, `--state-drag`, the card-token merge, `separator.line`'s death).
 
-The plan landed at `Planning/Drag Layer — Implementation Plan.md`: eighteen tasks in six phases, sequenced staleness-fixes-first, written to writing-plans-v2 after reading every cited file whole. It survived review round 1 — a citation pass (19/20 claims confirmed; one derivation count corrected) and a build-breaking attack (11 findings, every one verified and folded; the headline was my own autoscroll task adopting the service without the precedent's re-resolve half, which would have reintroduced the wrong-target class the plan exists to kill). The click-suppression ruling settled skeleton-side: `gesture.ts` arms `suppressNextClick()` on every activated release and the per-surface conditionals delete — Nathan's confirmed call, recorded in the plan's Log.
-
-On "Go," the plan then executed end to end in the same session: twenty-eight commits, all six phases, every gate's review folded, and the closing chain — Delivery Claim, neutral verification (all eleven requirements holding), and a build-breaking attack (four seam findings, zero High, all fixed) — run clean. PM-090 holds the record with its provenance (`b61f22a9^..8cbf7d23`), the plan retired from Planning at `3c6fa26d` (git holds its full Log), and Nathan's hands-on walkthrough confirmed the surfaces on 08-10. A final Opus-agent zero-debt review then closed four remaining seam holes — the disclose remeasure re-aims per frame, the GFM table re-bases its origin at activation, both reorder hooks fail closed with list-change invalidation, the photo pan joined the `lostpointercapture` contract — at `8cbf7d23`.
-
-The review's census also exposed the chrome misplacement that became the second arc: **CSS Token Organization** (08-10, `a0095299^..f72eea16`, PM-091). The drop line, dot, host, and `DragGhost` moved into `design-system/interactions` under honest names, the ghost's glass became the `GHOST_FROST` materials recipe, `--shadow-lift`/`--drop-line-inset`/`--state-disabled` joined the tokens, and the dead `--drag-muted` alias's removal restored the drag fade that tabs, pins, and nav rows had silently lost. Footer chrome, `iconOption`, and the NavPane anchor each moved to their one owner; the banner/title and nav-list spreads were adjudicated keeps (host-scoped overrides over one owner — the theming contract working). /closeout ran whole: simplify (a shared `DropLine` component replaced six identical renders), verify (typecheck 0 · 2,280/2,280 · lint 0 · build 0), purge, insights, and the record filed. Everything stands committed through `4a8f80eb`; the tree holds only Nathan's own doc edits.
+Two closing reviewers hunted residue and dangling references over the finished tree; their ~70 findings were verified firsthand and roughly two-thirds folded — every broken pointer, the orphaned terms, the surviving register — with over-flags (philosophy copy, architecture-defining statements) deliberately kept. The tail order normalized to Known Issues → Pending → Prospects on Nathan's "yes, fix it," PM-095 is filed with the Context updated, and everything stands committed through `e45cd082`. Documentation diff: Net +94 | +1,176 / −1,082, actionable zero.
 
 #### Completion Criteria
 
-*Per Nathan's mandate, these are the plan's end-to-end completion — "done" means he can clear the session with this fully behind him. The plan's Gate 6 + Closeout checklist is the executable form of this list; neither relaxes without his say.*
-
-- [x] All six phases landed in order, every task's gates green (typecheck · Vitest · Biome · build at the close), exit codes read directly, red-first tests confirmed red before each fix.
-- [x] The closing verification chain ran whole: Delivery Claim → neutral verifier (all eleven requirements HOLD; its coverage findings fixed in `615fd6c2`) → build-breaking attack (4 findings, 0 High, 15 killed; all fixed in `3b51bcbe`).
-- [x] `code-simplifier` passes ran per gate; the closing pass adjudicated no comment-killer dispatch warranted and the comments were audited in-line.
-- [x] The closing census greps return exactly the documented-deliberate hand-rolled set, and the Dead Vocabulary sweeps match their controls (two prediction corrections recorded in the Log before it retired).
-- [x] Docs true: `PommoraDND.md`'s two-family boundary and full adoption, every Made False row rewritten, Context's flagged drag notes gone. (The `Design-Sources.md` registration was declined by a recorded ruling — that doc is deliberately procedural, and a hand-maintained registry is the drift its own sweep exists to catch.)
-- [x] `HistoryPM.md` §PM-090 written to History-Format.
-- [x] Tier-5 candidates and the Sequenced After items routed into Context's standing sections; the plan retired from `// Planning` at `3c6fa26d` (readable via git for the full Log).
-- [x] The final surface-by-surface walkthrough — driven by Nathan against the running app and confirmed (08-10).
-- [x] The closing zero-debt review: every agent finding verified firsthand, all four real ones fixed (`8cbf7d23`), censuses green with controls, KNOB markers intact.
-- [x] CSS Token Organization: every misplaced class, token, and recipe moved or ruled a keep with the reasoning recorded; gates green; PM-091 filed with its range and actionable diff. **Every criterion of both arcs is met; the session's work is finished.**
+- [x] The standard ratified in `Planning/Documentation Normalization.md`, with Nathan's charter amendments ("so" test, conditional `II.`) folded.
+- [x] All 26 Feature docs conform — register, ownership moves, tails, ToCs — committed in five cluster batches, atlas checker green at each.
+- [x] MarkdownPM's Non-Obvious traps relocated to `Guidelines/Editor-Internals.md`, on the CLAUDE.md map.
+- [x] Chapter 2: Versioning in its Studio FORMAT; the PRD trued (stale renderer claim, Space block-doc contradiction, completed Prospects out).
+- [x] The residue review dispatched, verified firsthand, and folded; PM-094's tokens captured into the atlas.
+- [x] Tail order canonical (Known Issues → Pending → Prospects) across every doc and ToC.
+- [x] PM-095 written to History-Format; Context's focus and Recent Work restated. **Every criterion met; the session's work is finished.**
 
 #### Next Session
 
-- Both arcs are closed — the next session opens on a fresh pick from Context's Pending Focuses. The ranked candidates from this session's project assessment: **subfield reorder** (readiest single-session build; `setSubfieldOrder` has zero callers), the **identity/order-persistence arc** (the reorder snap-back Nathan feels daily; absorbs the Set-Card flash Known Issue; the retired 08-09 plan's Phase 1, recoverable via `git show 9b346a0e`, maps it), the **Known-Issues sweep + drag ride-alongs** (one session, clears ~9 Context lines), the **content index + query consumer** (the multi-session strategic unlock), or the **store split** (the session before whichever store-heavy feature comes next).
-- One design ruling waits in Context's debt: `--text-dim` (a 50% white between the ramp's 65% and 35% tiers) — its `--text` sibling already collapsed onto `--label-primary`, an imperceptible composite.
+- The next session opens on a **fresh pick** from Context §Pending Focuses — the standing options are current there, with the **identity/order-persistence arc** and the **subfield reorder** named as the two nearest doors. Open with a fresh read of the options rather than this session's ranking.
+- One deferred call: deploying the ratified charter into Studio-Documentation.md's empty §Features section as the Studio-wide standard — held until the standard has survived some living-with.
 
 #### Feedback
 
-- "Laundry done, all folded, all in their correct spaces... AND the washing machine cleaned. No debt, nothing that would leave what's currently there now evidence in the future."
-- "I should be able to have your final 'done' mean that I can clear this session and start something different with this behind us and fully resolved. That's the requirement — post-plan verification, findings applied, docs updated if required, history entry resolved."
-- "If a handoff is required, it must explicitly cite the end-to-end completion as the Completion Criteria."
-- "Reconsider the scope of the docs claims against what you actually find."
-- "But also take the time to consider tier 3. This goes back to the same 'leave nothing that can be done now for later'. This should be a proper 'CSS Token Organization' titled PM-091 entry that HANDLES it rather than just doing the trash but leaving what fell out of the bag on the floor."
+- "My main frustration is that these docs state what isn't obvious… when it could just be removed entirely." (the ratifying frustration — the mechanism-narration class deletes, never rewords)
+- "'So' isn't BANNED, it's just 'do I need this'."
+- "II. is acceptable if it's a sub-scope; something like Property Types would allow II. under the general properties description heading — it's conditional and where it makes sense."
+- "Please execute this plan with a subagent pass to catch any weird or 'why tf would anyone need to read that' stuff."
+- "Please look back at the recent changes within the CSS, radius, etc… and capture."
 
 #### Session Pointers
 
-- The plan (retired at `3c6fa26d`): `git show "839ea405:.claude/Planning/Drag Layer — Implementation Plan.md"` — Goal through Closeout; its Implementation Log is the execution record.
-- The retired 18-task predecessor (the identity arc, the rejected slot resolver, the weighed alternatives): `git show "9b346a0e:.claude/Planning/Drag Layer — Implementation Plan.md"` — its reasoning is inherited into the new plan's Inherited Reasoning, so the git copy is reference rather than required reading.
-- `design-system/interactions/gesture.ts` — the skeleton every window-listener drag consumes.
-- `Components/Detail/paneDnd.tsx` — the migration precedent: scroll listener and autoscroll in `onActivate`, symmetric `teardown`, `swallowActiveEscape`.
-- `design-system/interactions/dropChrome.css` + `DropLine.tsx` + `DragGhost.tsx` — the shared drop chrome; `GHOST_FROST` sits in `materials/glass-pane.tsx`.
-- The four survey reports live only in this session's transcript below — their durable findings are folded into the plan, but the full adoption matrix is there if a task wants more detail than its Why carries.
+- `Planning/Documentation Normalization.md` — the ratified standard, per-file inventory, and ownership map; kept as the charter's home until it deploys Studio-wide.
+- `Guidelines/Editor-Internals.md` — MarkdownPM's internal invariants, relocated from the dissolved Non-Obvious annex.
+- `node scripts/check-atlas.mjs` (from `Pommora/`) — the gate every doc commit runs; 20 tables green.
+- [[HistoryPM]] §PM-095 — the record; commits `8c291b83..20f3dfcd`.
+- The canonical doc shape: `## Name` → codemap ToC → lede → `###` sections (`#### II.` only under a describing parent) → Known Issues → Pending → Prospects.
 
 #### Working Notes
 
-- The existing `sidebarDnd` listener tests count adds against removes and therefore pass on the identity leak — every new leak test must assert the removed *function reference* or post-unmount behavior, never counts.
-- A scoped CSS variable consumed outside its scope fails **silently** to the property's initial value — no error, no fallback. That's how three drags shipped with no source fade (`--drag-muted`); a Guidelines line is a candidate if the class recurs.
-- Nathan commits documentation in parallel while a session runs — two of his commits landed mid-turn here. Explicit-path staging is not optional.
+- `check-atlas.mjs` skips bare numeric literals under 8, so a value change like `--state-disabled` 0.4 → 0.5 passes silently — truing those means reading the code commits, not trusting the green.
+- A parallel session ran the whole pass (PM-092, PM-094, and Nathan's own edits); bare `git commit` takes the whole shared index, so every commit here used `git commit -- <paths>`. An outside editor save can also overwrite a script-inserted block — DesignSystemPM's ToC vanished that way once and was re-added.
+- The ToC blocks are script-derived from real headings; on any restructure, regenerate rather than hand-edit (the generator pattern lives in this session's transcript).
 
 #### Handoff Guidelines
 
@@ -630,7 +620,633 @@ Filing PM-091, sweeping Context, committing, then the handoff:
 - BASH: Commit the docs with PM-091
 - READ: [.claude/HandoffPM.md]
 - EDIT: [.claude/HandoffPM.md]
+- RETURN: Confirmed the pre-compaction transcript split cleanly — the drag-layer arc (scoping, the four-agent survey, the plan, its review rounds, and the full six-phase execution) now lives whole in the new `Session - 08-09 > 08-10.md`, and the live Handoff fence was trimmed to match, both verified line for line.
+- BASH: Spot-check the split landed -> Final handoff commit with explicit paths
+
+[CLAUDE]
+
+**Receipt:**
+
+- **Document:** [HandoffPM.md](.claude/HandoffPM.md) · Session `d2aff109` · **continued** (same ID through two compactions)
+- **Focus:** two arcs, both closed with every criterion met — the drag-layer consolidation (PM-090, hand-confirmed) and CSS Token Organization (PM-091, closed through /closeout). The criteria list now carries eleven ticks and zero open boxes.
+- **Sweep:** removed the stale mid-session-reformat working note and the plan-era pointer phrasings; the pre-compaction transcript retired whole to `Sessions/Session - 08-09 > 08-10.md` (747 lines, tag counts verified 19/19 across the split) — the handoff's fence now opens at the compaction and carries the DND verification + CSS arc, per your instruction.
+- **Gate:** Context changed — §Current Focus (CSS arc closed, next session picks fresh), §Recent Work (PM-091 in, PM-086 out), §Debt (the `--text-dim` bullet narrowed to the one real decision). HistoryPM holds PM-091 at `a0095299^..3560fdf4`, Net −21.
+- **Your mid-turn asks, both done:** `--text` resolved NOW — it collapsed onto `--label-primary` because their composites were already indistinguishable (committed `3560fdf4`, gates green). `--text-dim` could not be resolved honestly: it's a 50% white and your ramp's tiers are 65% and 35%, so any mapping visibly shifts nine empty-state surfaces — the bullet now states exactly that choice and nothing else.
+- **Commits this close:** `f72eea16` (DropLine) · `4a8f80eb` (PM-091 docs) · `3560fdf4` (--text) · `f2e2745e` (handoff + archive). Tree holds only your three doc edits, unstaged as always.
+
+Next session opens clean on a fresh pick — subfield reorder if you want a fast win, the identity arc if you want the snap-back dead. Nothing from these two arcs follows you there except one `--text-dim` decision that takes thirty seconds and a pair of eyes.
+
+[NATHAN]
+
+Commit the docs and explain what text-dim is and the “what” behind current consumers; and where it lives and reaches
+
+- BASH: Commit Nathan's docs; read every text-dim consumer's context -> Identify the selector each dim consumer belongs to
+
+[CLAUDE]
+
+Your docs are committed at `eb9c7b63`. Here's `--text-dim`, fully mapped:
+
+#### What It Is
+
+A single declaration in [styles.css:7](Pommora/src/renderer/src/styles.css#L7) — pure white at 50% opacity. It's shell-era vocabulary: the open/loading/empty states were styled before the label ramp existed, and this was their hand-picked "quiet text" tone. Its sibling `--text` turned out to be a pixel-identical twin of `--label-primary` and died this session; `--text-dim` survived because it genuinely isn't in the ramp — your label tiers are **65%** (secondary) and **35%** (tertiary), and 50% sits square in the gap. On the window background that's a real visible difference in both directions: secondary reads noticeably brighter, tertiary noticeably fainter.
+
+#### Where It Lives and Reaches
+
+Declared once in the shell's `:root`, so it *reaches* everywhere — but its actual consumers are only plain CSS files: the shell, the sidebar, the Detail pane, and the table layer. Nothing in the design system or any `.css.ts` recipe touches it. It's a parallel vocabulary that never crossed into the token system.
+
+#### The Nine Consumers — Two Families
+
+**Empty/loading text (6 sites)** — all "nothing here yet" copy:
+- `.state` + `.state-detail` (styles.css) — the sidebar Surface's open/loading/error message and its small sub-caption, shown before a nexus is ready
+- `.detail-empty`, `.detail-placeholder`, `.detail-detail` (Detail.css) — the main pane's centered no-selection state and its caption
+- `.table-empty` (Table.css) — the "No pages here / Loading…" line inside a table view
+
+**Resting structural chrome (3 sites)** — quiet glyphs and headers:
+- `.group-band-twisty` / `.group-band-add` (GroupBand.css) — the group band's disclosure chevron and its hover-revealed "+"
+- The table-scoped twisty override (Table.css)
+- `.section-header` (Sidebar.css) — the sidebar's section headings
+
+#### The Actual Decision
+
+The two families arguably want *different* tiers, which is why this wasn't mechanically resolvable: empty-state text is classic secondary-label material (65% would make it slightly more readable), while resting glyphs and section headers lean tertiary (35%, quieter chrome). The three honest options: **split it** — states → `--label-secondary`, chrome → `--label-tertiary`, delete the variable (my lean: it dissolves the orphan into your existing vocabulary, at the cost of two visible-but-small shifts in opposite directions); **promote it** — mint a 50% tier into the ramp and keep all nine as-is (zero visual change, but the ramp gains a tier only these nine justify); or **map all nine to one tier** and eat one uniform shift. Whichever you pick, it's a ten-minute change — the bullet exists purely because the *look* is yours to call.
+
+[NATHAN]
+
+1. section-header should actually be label-tertiary regardless; fix that now.
+2. group-band-twisty / group-band-add should be tertiary too
+
+—
+
+--text-dim's existing consumers after this should just be --state-(current “inactive”) of label-primary.
+
+Idk what our current equivalent of “inactive” is for --state, please tell me what exists before presenting options. Do the first changes first regardless
+
+- BASH: Section header and band glyphs to label-tertiary
+
+[CLAUDE]
+
+Chrome family converted — only the six text sites still read `--text-dim`. Now the vocabulary answer:
+
+- BASH: Read the full state-token vocabulary and tint values -> Lint and commit the tertiary conversions
+
+Done and committed at `89dd0120` — the sidebar section headers, both band glyphs, and the table's twisty override all read `--label-tertiary` now.
+
+#### What `--state` Actually Holds Today
+
+| Token | Kind | Value | Meaning |
+|---|---|---|---|
+| `--state-hover` | fill color | grey wash, lighter | the hover background |
+| `--state-selected` | fill color | grey wash, heavier | the selected background |
+| `--state-muted` | veil color | black at low alpha | a de-emphasis veil painted *over* content |
+| `--state-ghost` | opacity | `--tint-primary` = **0.6** | the drag-source's in-place fade |
+| `--state-disabled` | opacity | **0.4** | a present-but-inert control's dim |
+
+**There is no "inactive" today** — that's the honest answer. The two opacity states both mean something else: ghost is "this is being dragged right now," disabled is "this control can't act." An empty-state *message* is neither; using either would be semantic borrowing, which is how `--drag-muted` happened.
+
+Two facts that shape the options before you pick:
+
+- **The math:** `--label-primary` is ~91% white. At ghost's 0.6 it lands at ~55% effective — very close to `--text-dim`'s current 50%, a barely-visible brighten. At disabled's 0.4 it lands at ~36% — essentially `--label-tertiary`, much dimmer than today.
+- **The mechanism matters:** `opacity:` on the element can't be the tool here, because `.state-detail` sits *inside* `.state` — nested opacities compound (0.6 × 0.6 ≈ 0.36 on the caption). The dim has to live in the color itself: `color-mix(in srgb, var(--label-primary) N%, transparent)`, exactly how the tint ramp already dims things.
+
+**The options, now that the vocabulary is known:**
+
+1. **Mint `--state-inactive`** — a color-level dim of `--label-primary` via color-mix, sitting in the state family beside ghost and disabled, consumed by the six empty-state sites, `--text-dim` deleted. This is your stated instinct and it's clean; the only knob is the percentage: **55%** reproduces today's look almost exactly, **60%** aligns it with the tint-primary step ghost already uses (a touch brighter).
+2. **Skip the new token, use `--label-secondary`** (65%) — no new vocabulary, but visibly brighter than today across all six sites.
+
+I'd take option 1 at 60% — it gives "inactive" a real name, and tying it to the same step as ghost means the system has one "primary de-emphasis" amount instead of two near-identical ones. Say the word and the percentage, and `--text-dim` dies in the same commit.
+
+[NATHAN]
+
+I think --state-muted is the best option here; existing consumers just become label-primary at state-muted.
+
+- BASH: Find state-muted's actual consumers
+
+[CLAUDE]
+
+Hold on — this one I have to push back on with the numbers, because `--state-muted` isn't what its name suggests here.
+
+**What `--state-muted` actually is:** `black at 10%` — a *surface veil*. Its three consumers all paint it as a `background` over content (the Cards dim, the nav gallery dim, SidePane's scrim). It has never been a text treatment, and its 10% is calibrated for "barely shade a whole surface," not "dim a label."
+
+**What "label-primary at state-muted" computes to:** label-primary is ~91% white; washing it with 10% black lands at **~82% effective white**. Today those six sites sit at **50%**. So this mapping doesn't mute the empty states — it *brightens them dramatically*, to brighter than `--label-secondary` (65%), nearly indistinguishable from normal body text. "No pages here" would read at almost full strength.
+
+That's the opposite direction of everything you've said about these sites, which is why I'm stopping instead of shipping it. The name fits your intent; the value doesn't.
+
+Two ways to reconcile, your call:
+
+1. **You actually want them that bright** — then I apply it as written (`color-mix` of state-muted into label-primary, no compounding issues) and the empty states visibly step up to ~82%. Legitimate if your intent is "empty states shouldn't whisper."
+2. **You want "muted" as a concept at roughly today's quietness** — then the state family is missing its text-dim member, and the right move is the one from before wearing the name you just picked: mint the token (as `--state-inactive`, or even name it into the label ramp), defined as label-primary mixed to ~55–60%, six consumers, `--text-dim` deleted. Same shape as your ruling, honest value.
+
+Which is it — the 82% you'd literally get, or the quiet tone with a proper name?
+
+[NATHAN]
+
+keep today's locations at label-tertiary HOWEVER add the verbatim comment.
+
+// Awaiting proper inactive state token.
+
+Then, I think this is a perfect opportunity to actually violate the HARD RULE of the documentation. These values haven't changed in a while and should be able to start being able to cite code so that Nathan and Claude can have a clear idea of what Variables exist.
+
+I want you to scope out a complete reconnaissance that would rewrite DesignPM, while also potentially retiring the guidelines. This document would rename DesignPM into DesignSystemPM.
+
+What I'd want is a complete "Guide" to Pommora's design system that includes tokens and variables not limited to but must include an H4 header with a brief description, followed by either a codemap or a table that explains the title/variable, the token, or the raw hex in such case it has one.
+
+So a section would be
+
+#### Surfaces
+
+Window
+Surface Primary | sf-primary | 202022
+Surface Secondary | sf-secondary | 2A2A2E
+Surface Tertiary | sf-tertiary | 3A3A3E
+
+#### Primitives
+
+White | system-white | HEX
+Grey | system-grey | 71717A
+Black | system-black |101010 
+
+#### Labels
+
+Label Primary | label-primary | system-white(100)
+Label Secondary | label-secondary | system-white(60%)
+....
+
+
+This way we can have a complete reconnecence of what exists where, while potentially catching stragglers, and making the documentation more usefull.. Look for stuff like
+
+states, fills, solids, tints, seperators, ect...
+
+Additionally, as an idea, if maintaining a mirror-map-like system where changing the doc itself would change the actual color so that I can change it directly from the markdown, that would be cool too. But I think this grounding is long overdo.
+
+- BASH: Six sites to label-tertiary with the marker comment; alias deleted
+- EDIT: [.claude/ContextPM.md]
+- BASH: Lint and commit the text-dim retirement
+
+[CLAUDE]
+
+`--text-dim` is dead — six sites read `--label-tertiary` with the verbatim marker, alias deleted, committed at `63887574`, and the Context bullet now tracks only the mint.
+
+#### The DesignSystemPM Reconnaissance — Scope
+
+**What it becomes:** `DesignPM.md` renames to `DesignSystemPM.md` and gains a complete token atlas — the existing narrative (materials, menu surfaces, primitives-and-aliases philosophy) stays as prose, and beneath it every family gets your H4 + table treatment: `Title | token | value`, raw hex where one exists, derivation notation where the value is derived (`system-white @ 65%`), and the CSS-var bridge name where one is emitted.
+
+**The families the recon sweeps** (each one source-verified, not recalled):
+
+- **Primitives** — `system-white/grey/black`, `WINDOW_BG`, the spectrum solids (from `color.css.ts` + `@shared/theme`)
+- **Surfaces** — window/primary/secondary/tertiary fills
+- **Labels** — the four tiers + `control`
+- **States** — hover, selected, muted, ghost, disabled, and the awaited inactive slot marked as such
+- **Fills, Separators, Tints** — the grey-alpha ramp, hairlines, `TINT_STEPS`
+- **Shadows** — standard + lift
+- **Chips** — the chip color/pill system (`chip.css.ts`, `colorMap.ts`)
+- **Type ramp** — the typography aliases and what each composes
+- **Motion** — durations, easings, the named beats (`motion.ts`)
+- **Stack** — the z-order ladder (`stack.ts`)
+- **Geometry** — `size.css.ts` (icons, controls, `DISCLOSURE_INDENT`, `DROP_LINE_INSET`), the drag-chrome dimensions
+- **The bridge map** — every `--var` `theme-vars.css.ts` emits, and who it aliases
+- **Scoped knobs** — the deliberate non-globals, each with its scope named: `table-tokens.css`, the autoscroll `:root` block, `Carets.css`, `--mdpm-scale`, the frost params
+
+**The straggler hunt rides along:** the same sweep greps for raw hexes and hand-rolled values *outside* the token files — exactly how `--text-dim` and `--drag-muted` got caught. Anything found gets a table row flagged as a straggler or a fix, not silence.
+
+**The rule violation, done properly:** "Docs name; code holds exacts" stays the law everywhere else — so the new doc opens with a one-line charter naming itself the sanctioned exception, and the CLAUDE.md hard-rule line gains the exception clause. Without that, every future audit re-flags the doc as a violation and someone helpful "fixes" it.
+
+**Design-Sources.md:** its don't-duplicate rule folds into the new doc's charter (the atlas *is* the "what already exists" answer, better than prose ever was); the guideline file retires. That's my recommendation — recon confirms nothing else lives there first.
+
+**Drift control — and your mirror-map idea, honestly assessed:** exact values in docs buy drift, so the doc ships with a small checker script (`scripts/` beside the showcase tooling) that parses the tables and diffs them against the token sources — run on demand or as a gate, it turns "the doc lies" from a silent state into a red exit code. Full **write-back** (edit the markdown hex, the token changes) is genuinely buildable on top of the same parser, but only leaf values are unambiguous — editing a *derived* row like `label-secondary | system-white @ 65%` has no single write-back target. So: checker first; one-way doc→code write-back for raw-hex rows as a follow-up once the table format has proven stable. Not built until you say so.
+
+**Shape and cost:** one session. Two Explore agents sweep (token sources + straggler grep), I write the doc from their verified inventory, references reconcile (the CLAUDE.md codebase-map row, every `[[DesignPM]]` cite), checker script last, PM-092 records it. Say go and the sweep dispatches.
+
+[NATHAN]
+
+also include places like MarkdownPM so we can gather tokens there too, it has its own tokens and design that should be considered since they're tokens too.
+
+[CLAUDE]
+
+MarkdownPM's in — and it generalizes: the atlas gains a **Feature Tokens** tier for every per-feature token pocket (`--mdpm-*` and the editor's scale/zoom properties, the outline-rail knobs, SurfacePM's tile vars, the `--ppane-*` contract, `table-tokens.css`, the nav-list knobs, the caret family). Those are tokens with a deliberate scope, and the doc records each family *with* its scope — that's exactly the class the `--drag-muted` bug lived in. Dispatching the read-only recon now; the write starts when the inventories are back:
+
+- DISPATCH: Explore — Inventory design-system core tokens -> Explore — Inventory feature token pockets and stragglers
+
+Noted — every table gets a **SOURCE:** `filepath` line under its H4, which also makes the checker script's job trivial: each table declares exactly which file it must agree with, so verification is per-table rather than a fuzzy global diff.
+
+Both recon agents are out on Opus — one walking the design-system core (every family in `tokens/`, materials, the theme-vars bridge, `@shared/theme`), one sweeping the feature pockets (MarkdownPM's editor tokens and scale properties, Carets, table-tokens, SurfacePM, `--ppane-*`, nav knobs, the shell's `:root`) plus the straggler and scope-hazard hunts with named greps. Your "agreed" also locks in the Design-Sources retirement and the checker script, so the write plan when they return is: `DesignSystemPM.md` (rename + charter + atlas), the CLAUDE.md hard-rule exception clause, Design-Sources folded and retired, references reconciled, checker in `scripts/`, PM-092. I'll start the moment the inventories land.
+
+- RETURN: Returned the design-system core token inventory — every primitive, surface, label, state, fill, tint, shadow, chip, type-ramp, motion, stack, and geometry value read directly from its source file, with each value's literal and origin cited.
+
+The core inventory is in — and it's exactly the grounding you wanted. Headlines while the pockets agent finishes:
+
+- **Complete families captured with literals:** primitives, surfaces, labels, states, fills, separators, tints, the ten spectrum solids, shadows, the full chip system (shapes, melt machinery, twelve color variants, five knobs), the 11-step type ramp × four weights, motion, the three z ladders, geometry bundles, both glass systems (frost params *and* the liquid-glass shader tuning), and the entire theme-vars bridge map — every `--var` with what it aliases.
+- **The doc-drift case makes itself:** `tokens/README.md` describes a file layout that *doesn't exist* — it names six files (`primitives.css.ts`, `space.css.ts`, `radius.css.ts`…) of which none are real. The atlas replaces it.
+- **Ten comment-vs-value contradictions** logged — e.g. "states are system-grey" sitting directly above a system-*black* value, and the frost comment claiming "pane-tuned params" over what is actually a single 5-point brightness delta.
+- **A dead-and-unbridged census:** several bridges have zero consumers (`--system-grey`, `--tint-solid`, four of five icon-ladder vars, four spectrum vars), `easing.out` is dead end-to-end, and the top type-ramp steps have no product consumers. My lean, per your pre-scaffolding rule: the atlas *marks* live vs. unconsumed rather than pruning — a ramp is a vocabulary, and partial bridging was the inconsistency, not the completeness. Your call rides the review.
+- One subtle trap the atlas will document: the autoscroll knobs score zero on any `var()` grep because JS reads them via `getComputedStyle` — a naive dead-token audit would kill six live knobs.
+
+Once the feature-pocket agent reports (MarkdownPM's editor tokens, Carets, table-tokens, SurfacePM, the scope-hazard hunt), I write `DesignSystemPM.md` with per-table **SOURCE:** lines, retire Design-Sources and the false README, amend the CLAUDE.md hard-rule exception, and wire the checker script.
+
+- RETURN: Returned the token inventory for values living outside `design-system/tokens` — coverage greps across the renderer with hit counts, plus the feature-pocket token families and straggler hunt results.
+
+Both inventories are in — including one live bug the hazard hunt caught (`--card-min`'s KNOB has *never worked*: the gallery's own 180px declaration sits closer in the tree than navView's 220px knob). Verifying that firsthand, then building the doc:
+
+- BASH: Verify the card-min shadowing and switch-zoom orphan
+
+[NATHAN]
+
+My recommendation is DesignSystemPM follows
+
+Primitives
+Spectrum
+Labels
+States
+Fills
+Tints
+Separators
+Shadows
+Spectrum
+Geometry
+Materials
+
+MarkdownPM.md gets
+
+#### Design System
+
+Typography has its stuff properly documented too, 
+Motion goes to Interaction.md alongside carets, edge-fade, and autoscroll
+
+Chips go to PropertiesPM.md
+Cards go to CardView (not navigation; Navigation.Md just states that it uses those)
+
+PagePreview.md contains the description rather than verbatim, 
+TableView gets its proper documentation.
+
+Stack stays excluded, so does shell, small pockets, etc...
+
+Switches, Toggles, Chevrons, etc.. get described in DesignSystem.md rather than fully recited.
+
+[CLAUDE]
+
+Routing locked — the atlas distributes to where each family's consumers actually live, DesignSystemPM keeps the core vocabulary, and the bridge names fold into each table as a column instead of a standalone section. Executing:
+
+- BASH: Rename DesignPM to DesignSystemPM
+- WRITE: [.claude/Features/DesignSystemPM.md]
+- BASH: Heading structure of the seven satellite docs
+- READ: [.claude/Features/TypographyPM.md]
+- EDIT: [.claude/Features/TypographyPM.md]
+- BASH: Read InteractionPM Timing Sources for placement
+- EDIT: [.claude/Features/InteractionPM.md] -> [.claude/Features/MarkdownPM.md] -> [.claude/Features/PropertiesPM.md] -> [.claude/Features/CardViewPM.md]
+- BASH: Read NavView and NavWindow sections for placement
+- EDIT: [.claude/Features/NavigationPM.md] -> [.claude/Features/PagePreviewPM.md] -> [.claude/Features/TableViewPM.md]
+- BASH: Locate all citations needing repoints -> Repoint DesignPM citations
+- EDIT: [.claude/CLAUDE.md]
+- BASH: Read Build-Gotchas structure -> Fold the unique lessons into Build-Gotchas; retire Design-Sources -> Read the false README before rewriting
+- WRITE: [Pommora/src/renderer/src/design-system/tokens/README.md]
+- BASH: Check what the README rewrite dropped
+- EDIT: [Pommora/src/renderer/src/design-system/tokens/README.md]
+
+Now the checker. Writing it, then running it against the real tables — it has to go green on what I just wrote:
+
+- WRITE: [Pommora/scripts/check-atlas.mjs]
+- BASH: Run the atlas checker against the new tables
+- EDIT: [Pommora/scripts/check-atlas.mjs]
+- BASH: Patch SOURCE lines; re-run checker
+
+**20 tables, all green.** The checker verifies the entire distributed atlas. Closing the arc — Context, PM-092, gates, commit:
+
+- EDIT: [.claude/ContextPM.md]
+- BASH: Check Recent Work current shape -> Check HistoryPM numbering and the parallel entry -> Fix the Current Focus entry reference -> Check the focus line's current reference text
+- EDIT: [.claude/ContextPM.md] -> [.claude/HistoryPM.md]
+- BASH: Gates plus the atlas checker -> Commit the code side; count script lines -> Assess the shared-index sweep damage
+- EDIT: [.claude/HistoryPM.md]
+- BASH: Pathspec-commit only the atlas docs -> Add report to index, pathspec-commit the atlas docs
+
+The atlas is landed. Full accounting, including the collision:
+
+#### What Shipped
+
+- **[DesignSystemPM.md](.claude/Features/DesignSystemPM.md)** (renamed from DesignPM) — the charter naming itself the sanctioned docs-hold-exacts exception, the narrative carried over, and the core atlas: Primitives, Surfaces, Labels, States, Fills, Tints, Separators, Shadows, Spectrum, Geometry, Materials — every row `Title | token · --var | value`, every table under a **SOURCE:** line. Component chrome (switches, chevrons, grips, ActionBand, the dropdown shell) is described, not recited, per your cut.
+- **Satellites:** MarkdownPM gained its Design System section (the editor's eleven scoped families — scale, lists, rail, quotes, callouts, code, syntax colors, embeds), TypographyPM's ramp now states its literals, InteractionPM holds motion + caret + edge-fade + autoscroll, PropertiesPM holds chips, CardViewPM the card family (NavigationPM states it consumes them), TableViewPM the table sheet, PagePreviewPM describes the `--ppane-*` contract in prose.
+- **The checker:** [check-atlas.mjs](Pommora/scripts/check-atlas.mjs) parses every SOURCE-tagged table across the Features docs and verifies identifiers and literals against the named files, with the theme-vars bridge as implicit source for `--` handles. **20 tables checked — all agree with source.** It caught ten real discrepancies in my own first draft before going green, which is the proof it works.
+- **Plumbing:** the CLAUDE.md hard rule carries the exception clause naming the checker; Design-Sources retired (charter folded into the atlas opening, the parallel-write-agent lessons into Build-Gotchas); the tokens README no longer describes six files that don't exist; PM-093 filed; the fix material lives in [CSS Duplication Report.md](.claude/Planning/CSS%20Duplication%20Report.md) as your next cleanup session.
+
+#### The Collision, Plainly
+
+Your parallel session had its grip-menu work *staged* in the shared index, and my `b3f49b23` commit swept that staged snapshot in — `git add <paths>` + bare `git commit` commits the whole index, which explicit staging alone doesn't protect against. So `b3f49b23` is mislabeled: titled tooling, it also carries a mid-flight grip-menu snapshot, and I could not gate that snapshot independently — the other session's own gates own it. The docs commit after it (`0a4a19d1`) used the actually-safe form — `git commit -- <paths>` — which ignores the index entirely; that's the tool I'll use for every commit near a live session from now on. Their three still-evolving code files remain untouched in the tree for them. If you want `b3f49b23` split into clean halves once the grip session finishes, pause both sessions and I'll redo it surgically — it's local-only, so it's cheap while unpushed. Also: the atlas took **PM-093** because the parallel session had already claimed PM-092, and its finished doc entries rode my docs commit under the bundling rule.
+
+**Gates at my last clean checkpoint:** lint 0 (734 files) · typecheck 0 · atlas 20/20. The one thing this arc leaves open is by design: the duplication report's checkboxes, waiting as their own session.
+
+[NATHAN]
+
+Please professionalize the MarkdownPM document; right now it's VERY bloated, and I feel as if it could simply be re-formatted so that it's more product documentation rather than an exact explanation of mechanisms. Duplication, unclear ownership in headings etc....
+
+- READ: [.claude/Features/MarkdownPM.md]
+- WRITE: [.claude/Features/MarkdownPM.md]
+- BASH: Diff stats and pathspec-commit the rewrite
+
+[CLAUDE]
+
+Done — committed at `879f15d5` (pathspec commit, parallel-session-safe), net −30 lines with zero facts lost. What changed structurally:
+
+**Heading ownership fixed.** Hover Previews and Page Embeds were filed as `#### II.` subsections *under Tables* — they're editor features, not table features. Both are now their own `###` sections. Block Drag absorbed the grip menu under one honest title, since the grip *is* the drag handle's second job.
+
+**One owner per fact.** The worst duplications collapsed:
+- The fence-identity law was stated in full twice (the Code bullet and Non-Obvious) — the bullet now states the behavior in one sentence and defers the law to Non-Obvious, which owns it.
+- Connection/link wiring was explained three times (Constructs, Host Services, Non-Obvious) — Constructs owns it now; Host Services just points there; the redundant Non-Obvious entry merged away.
+- The caret was described in Constructs *and* Module Shape — Constructs owns it.
+- The embed guards were narrated across three paragraphs plus a Non-Obvious entry — the grammar paragraph owns the product behavior, Non-Obvious owns the one-claim-set trap.
+- The grip right-press mechanism moved out of the body into Non-Obvious where implementation traps live.
+
+**Tone shift.** Mechanism narration became product statements — e.g. the Lists bullet dropped "which is what makes re-picking the current type inert and picking Numbered over a broken sequence a repair"-style reasoning chains and now states what the feature does. Everything genuinely load-bearing (the CRLF fence trap, `ignoreEvent`, the UTF-16 rule, the wrap-span warning) survived intact in Non-Obvious — those are the hard-won traps the docs exist to keep, so professionalizing meant *relocating* them, never cutting them.
+
+The atlas section, Known Issues, and Deferred are untouched, and the checker still reads its tables (SOURCE line preserved). One note: the doc's fresh grip-menu content from the parallel session was condensed with the same discipline but every fact kept — if that session is still extending MarkdownPM.md, it'll want to pull before its next doc edit.
+
+[NATHAN]
+
+/compact
+
+
+|| COMPACTION ||
+
+[NATHAN]
+
+I want you to take this session with the scope that this is PURELY a documentation pass. What I want is to normalize the documentation standards across these docs. For example, from recent commit of docs, I've been making some edits which give guidance to the type of information these docs should and should not contain, the language they should and shouldn't use, and the type of appropriate structure.
+
+Please inventory the Feature docs in a way that can be edited per-file to actually follow the structure that each needs.
+
+This is a multi-phase effort that must ground in HOW these docs should be written, then finding the actual sources. It shouldn't just regurgitate findings, what can be inferred or found in the codebases verbatim code or comments, and read as professional documentation with the Known Issues and Deferred being the appropriate place for pending-work or unprofessional detail.
+
+These insights gained from the Codebase and Docs should also feed a Chapter 2 of this session which would focus on Versioning, and PommoraPRD itself.
+
+--
+
+My main frustration is that these docs state what isn't obvious as in describes something like "The hover flag that keeps the generic editor menu out of the gutter reads the same grip-bearing line-class list as the menu's hit-test, so the two can't disagree."
+
+When it could just be removed entirely. That's one example.
+
+Please scope these out while also considering the following preferences.
+
+---
+
+- **Avoid Absolutes:** Avoid writing unnecessary absolutes or double negatives such as “this is true, never that” when “this is true” can be interpreted the same way — don’t assert claims as locked; claims should be written neutrally.
+- **Audience:** Write documentation as appropriate for official product documentation for a company. 
+- **Replace** incorrect information — don’t add amendments, supersedes, or additional notes to fix framing; either remove it entirely or correctly restate it if it genuinely remains relevant. 
+- **Silence** also *isn't* inherently contradictory — simply removing an untrue statement is often more appropriate than attempting to reframe it as true; omitting genuinely unimportant or trivial details is usually more sustainable in the long-run than recording absolutely everything. 
+- **Neutrality:** Avoid emphasizing failure-prevention framing when something's purpose can be described neutrally or through value-creation instead; explain what something does in a way where its purpose is self-evident.
+- **Professionalism:** Write through encyclopedic-neutral and grammatically correct conventions; full terms, connective phrasing, natural advancement of ideas, and documentation-appropriate structure. Avoid agent-hand language such as fragmentation, fact-stacking, single-clause statements, and re-emphasizing established points — documentation *shouldn't* read like you're trying to convince anyone of its claims.
+- **Tense:** Consider the time-specific implications of what you're writing — session-specific or historical documentation should avoid variable claims and use past-tense framing, while tense-neutral or forward-tense documentation should remain just that.
+- **Specificity:** Feature and status-agnostic documentation should describe current state neutrally and assertively; however, it’s important to avoid over-specification, exhaustive enumeration, or similar highly subject-to-change details with real risk of becoming outdated or inaccurate given a project’s natural tendency to change and evolve. This isn’t an excuse to be lazy or vague; it’s a reminder that over-detailing often manufactures more opportunity for contradictions if things change.
+
+---
+ADDITIONAL DETAILS
+
+- not every heading needs a sub-heading; for example a sentence that describes the table below doesn't need to be added below a heading when the table is self-evident.
+- the II. Prefix isn't required at all, instead, I'd like to experiment with having each doc contain a table of contents in codemap format, without the hashtags; that's an experimental choice; it would come below the first heading of the document, no pre-amble, just structure.
+
+Normalizing formatting standards needs to be scoped here too.. what gets spaced lists versus what doesn't, Table headings need to be Capitalized etc...
+
+[CLAUDE]
+
+Scoping it properly — this needs grounding in what you've actually been correcting before anything gets inventoried. First move: pull your recent doc edits out of git (they're the live evidence of the standard you want), read the WIP Studio-Documentation.md, then fan out readers over the Feature docs against that charter.
+
+- BASH: Show working tree and recent doc commits -> Diff Nathan's edits to three Feature docs -> Diff Nathan's edits to MarkdownPM and PommoraDND
+- READ: [~/The Studio/References/Studio-Documentation.md]
+- BASH: Check HistoryPM diff size, find References dir, size the Feature docs -> Locate the standards reference files
+- READ: [~/The Studio/.claude/references/Studio-Documentation.md] -> [~/The Studio/.claude/references/Codemap-Format.md]
+- DISPATCH: Explore — Inventory editor-cluster docs -> Explore — Inventory data-layer docs -> Explore — Inventory design/view docs -> Explore — Inventory content-model docs -> Explore — Inventory shell/surface docs
+- BASH: List root docs and size Versioning + PRD
+- READ: [.claude/VersioningPM.md] -> [.claude/PommoraPRD.md]
+
+The PRD and Versioning are read and their Chapter 2 problems are already visible (Versioning ignores its own FORMAT from Studio-Documentation.md — wrong opening heading, a `### II. Upcoming` prefix, arc-bullets instead of per-version entries, British spellings; the PRD repeats "the shape both kinds inherited was removed rather than carried forward" twice in one section, carries checked-off Prospects residue, and neither doc has the §Guidelines footer its FORMAT calls for). Holding those for the scoping doc.
+
+The five inventory agents are still reading the 26 Feature docs — synthesis starts when they report back.
+
+[NATHAN]
+
+I'd also want to scope out the removal of isolated sentences, and in-sentence colons unless absolutely necessary.
+
+[CLAUDE]
+
+Folding both in — they're the same disease as the rest. Two charter additions:
+
+- **Isolated sentences** — a paragraph that is one sentence standing alone is fact-stacking's smallest unit; it either joins the paragraph it belongs to or wasn't worth recording.
+- **In-sentence colons** — the "claim: elaboration" construction ("Robustness is render-inert rather than strip: an entry this build doesn't recognize…") gets restructured into natural sentences. Sanctioned colons stay: `**Label:**` bolded labels, `**SOURCE:**` tags, and table cells.
+
+The agents are already out without these two rules, but both are pattern-detectable, so I'll quantify them myself and fold the counts into the per-file inventory rather than re-briefing:
+
+- BASH: Count prose colons and isolated single-sentence paragraphs per Feature doc
+
+The counts validate the exemplar cleanly — SymbolsPM, the doc you just hand-edited, sits at 1 prose colon and 0 isolated sentences, while the untouched docs run 15–20 colons each. The heavy offenders on both measures: ArchitecturePM (20 colons / 8 isolated), NexusRecordPM (19/5), MarkdownPM (19/3), ViewsPM (17/3), PropertiesPM (14/7), InteractionPM (15/4). These numbers ride into each file's inventory entry.
+
+Still waiting on the five inventory agents — synthesis into the Planning doc starts when they land.
+
+[NATHAN]
+
+II. Is acceptable if it's a sub-scope; so something like Property Types would allow II. under the general properties description heading that describes the overall architecture. So it's conditional and where it makes sense
+
+[CLAUDE]
+
+Noted — the rule softens from "retired everywhere" to conditional: `II.` stays where the heading is a genuine enumerated sub-scope — a parent heading carries the general architecture and its `II.` children are ordered facets of it (PropertiesPM's general description heading over a `II. Property Types` section is the sanctioned shape). It goes where it's rote numbering that scopes nothing — a prefix on a section whose parent isn't describing anything the number subdivides.
+
+The agents were briefed with the stricter version, so during synthesis I'll re-adjudicate every `II.` they flag against this conditional rule rather than folding their removals blindly — each one gets a keep/drop verdict in the per-file inventory instead of a blanket cut.
+
+- RETURN: Returned the editor-cluster documentation inventory — per-file restructure verdicts and full heading maps for MarkdownPM, InteractionPM, and PommoraDND weighed against the new standard.
+
+Editor cluster is back — PommoraDND graded worst per-line (§The Seam and §Relationship to dnd-kit are nearly all internal-API narration and migration history, with no Deferred section to receive its stranded pending-work), MarkdownPM carries the biggest absolute cut volume concentrated in §Non-Obvious, and three ownership seams (caret, drag chrome, autoscroll) are each stated twice across the cluster. Holding synthesis until the other four report.
+
+- RETURN: Returned the data-layer documentation inventory — verdicts and findings for ArchitecturePM, PropertiesPM, and NexusRecordPM.
+
+Data-layer cluster is in — PropertiesPM graded the cluster's worst (18 `II.` prefixes, two content-free bucket headings at title level, thirteen "colour" spellings against its own "color" usage, and a 500-word paragraph swallowing a UI spec), ArchitecturePM has no Pending/Known Issues section at all and hides one in a body blockquote, and the trash/restore story is told two-to-three times across the cluster with no single owner. Notably, both NexusRecordPM and ArchitecturePM contain near-verbatim instances of your canonical deletion example — the "one predicate answers, so two routes can't disagree" construction.
+
+Three clusters still out.
+
+- RETURN: Returned the content-model documentation inventory — StructurePM's heading map and restructure verdict, plus the rest of its cluster.
+
+Content-model cluster is in, and it's the ownership map I needed: CollectionsPM emerges as the natural owner of the shared operational model (schema inheritance, move semantics, container CRUD) that Structure, PageSets, and Pages each restate with drift; ContextsPM owns the membership grammar; ArchitecturePM owns the kind-law and the absent content index that three docs currently mourn separately. StructurePM shrinks to what only it can say — the PARA mapping and pointers. The cluster also surfaced the `### Features` / `### Architecture` wrapper-heading pattern (content-free buckets that exist only to host `II.` subsections) as a structural question for the charter, which I'll adjudicate against your conditional-II. ruling per file.
+
+Two clusters remain — design/view and shell/surface.
+
+- RETURN: Returned the design/view cluster's documentation inventory across six files, calibrated against Nathan's own in-progress SymbolsPM edit as the exemplar.
+
+Design/view cluster is in — SymbolsPM and TypographyPM sit at or near target (your SymbolsPM diff is doing exactly the work the charter names), while ViewsPM is the cluster's rewrite case: title heading at the wrong level, a contentless `### Features` wrapper, five `II.` prefixes, and the densest mechanism-narration paragraph in the set. TableViewPM's `### Non-Obvious` annex gets a dissolution verdict — nearly everything in it is the rule-2 class, with one product-visible fact re-homing to Groupings. Three facts are told in three docs each (the group-band "+" stub, the seam law, sort-retiring drag), each needing a single owner.
+
+One cluster left — shell/surface — then synthesis.
+
+- RETURN: Returned the shell/surface cluster's documentation inventory across seven files, including SidebarPM's heading map and restructure verdict.
+
+All five clusters are in. Before synthesis, verifying two load-bearing claims firsthand — the heading-level pattern the agents flagged, and whether check-atlas.mjs survives the table-header capitalization the charter demands:
+
+- BASH: Verify opening heading levels and wrapper/Non-Obvious patterns -> Check whether check-atlas keys on table header text
+- WRITE: [.claude/Planning/Documentation Normalization.md]
+
+The scoping is done — [Documentation Normalization.md](.claude/Planning/Documentation Normalization.md) holds the full standard, a per-file inventory of all 26 Feature docs, the cross-doc ownership map, Chapter 2's scope, and seven calls. Uncommitted, awaiting your review. The short version:
+
+**The standard came from your own hands, not invention.** Your uncommitted edits to SymbolsPM, SurfacePM, MarkdownPM, and PommoraDND are a consistent ruleset: tables stand without preamble and absorb their trailing annotations as cells, lists run tight, mechanism narration and the insistent register ("deliberately," "load-bearing," "is what lets," "so the two can't disagree") get deleted rather than rewritten, and status text lives in the tail sections. The numbers validate it — SymbolsPM sits at 1 prose colon and 0 isolated sentences after your pass; untouched docs run 15–20 colons each.
+
+**The inventory's shape:** 4 rewrites (PropertiesPM, ViewsPM, ContextsPM, PommoraDND), 15 restructures, 7 light-touch. The systemic findings: 8 docs open at `###` instead of `##`, 11 carry a content-free `### Features` wrapper, ~62 `II.` headings need keep/drop adjudication under your conditional rule, and both your canonical deletion example's siblings are everywhere — NexusRecordPM and ArchitecturePM each contain near-verbatim instances of the "one predicate answers, so two routes can't disagree" construction. The biggest structural win is the ownership map: schema/move semantics consolidate under CollectionsPM, the trash record under NexusRecordPM, view-generic rules under ViewsPM, and the footer/ghost-crumb facts under SubfieldPM — about sixteen facts currently told two or three times each get one owner and pointers.
+
+**Chapter 2 is scoped, not started:** Versioning rewrites to its own Studio FORMAT (it currently ignores it — arc-bullets instead of per-version entries, a `### II. Upcoming` prefix, no §Guidelines footer), and the PRD gets the same charter plus truth-verification — its Collections section still claims "table / gallery" renderers, which predates Cards.
+
+**The calls that need you** (full list in the doc): the canonical tail-section name (I propose Known Issues / Pending / Prospects, but you named "Deferred" — pick one); what happens to the two §Non-Obvious annexes' genuinely hard-won traps (I propose a Guidelines file for the real ones, deletion for the rest); sign-off on StructurePM's aggressive shrink to a PARA-map-and-pointers hub; and one conflict worth flagging — the inventory wants PagePreview's token section gone entirely, but your PM-093 routing said it "contains the description rather than verbatim," so my recommendation is your ruling stands and it just gets trimmed.
+
+Execution order once ratified: mechanical sweep first (one commit per cluster, atlas checker green each time, everything pathspec-committed while the parallel session holds the tree), then the structural work orders, ToC blocks last since they depend on final headings, then Chapter 2.
+
+[NATHAN]
+
+give me an example of how you'd explain what connections are as its intro paragraph so I can make sure we're on the same page here.
+
+[CLAUDE]
+
+Here's how ConnectionsPM would open under the standard:
+
+> Connections are Pommora's links between Pages. A `[[Title]]` written into a Page's body renders as colored inline text and navigates to the Page holding that title — the link lives in the prose itself rather than as a property or a chip, and the bracketed title is all that reaches the disk, so a connection reads the same in any Markdown editor. Titles resolve as pages render — a connection whose title matches one Page is live, one matching several is ambiguous, and one matching none sits as plain bracketed text until a matching Page exists. Renaming a Page rewrites every connection that references it, so links follow their targets.
+
+What it's doing, deliberately: every sentence is a product behavior a user or agent can observe — what a connection is, where it lives, what it looks like on disk, how it resolves, what a rename does. What it's *not* doing is the current register's work — no "the sole connection syntax," no "never as Notion-style chips," no "resolution runs on an in-memory title map built from the page tree," no "the cascade IS the rename." The three states arrive woven into a sentence instead of announced as "a scanned title lands in one of three states:" with a hard count and a colon. The Obsidian claim survives as "reads the same in any Markdown editor" — the compatibility is stated as what it gives you, not as a brand comparison.
+
+One judgment call embedded there worth confirming: I kept "ambiguous" and the resolution behavior in the intro because it's the feature's defining product semantics, not mechanism — the deeper detail (autocomplete, cascade atomicity, phantom styling) stays in the body sections. If you'd rather the intro stop at identity and disk-shape and let resolution be a body section's opening, that's the same standard with a tighter first paragraph.
+
+[NATHAN]
+
+I think you're overdoing the "so, "
+Those aren't required, please execute this plan with a subagent pass to catch any weird or "why tf would anyone need to read that" stuff, but otherwise I'll confirm this is good.
+
+[CLAUDE]
+
+Confirmed — and the "so," habit goes into the charter as its own rule: state the behavior; a consequence clause has to earn its place, not arrive as a reflex. Executing now: I do the edits myself cluster by cluster (receivers before donors so no fact ever has zero owners mid-pass), atlas checker green per batch, everything pathspec-committed around the parallel session, then a fresh-eyes subagent pass hunts residue before I close.
+
+- EDIT: [.claude/Planning/Documentation Normalization.md]
+
+Softening the rule to match — it's a judgment test, not a ban:
+
+- EDIT: [.claude/Planning/Documentation Normalization.md]
+- BASH: Commit the ratified plan via pathspec -> Check recent commits and remaining working-tree state
+- READ: [.claude/Features/ArchitecturePM.md] -> [.claude/Features/NexusRecordPM.md] -> [.claude/Features/PropertiesPM.md] -> [.claude/Features/StructurePM.md]
+- WRITE: [.claude/Features/ArchitecturePM.md]
+
+ArchitecturePM lands at ~166 lines from 198. Now NexusRecordPM:
+
+- WRITE: [.claude/Features/NexusRecordPM.md] -> [.claude/Features/PropertiesPM.md]
+
+Batch 1 written. Gating with the atlas checker, then committing:
+
+- BASH: Run the token atlas checker -> Commit batch 1 via pathspec
+
+Batch 1 committed at −58 net, checker green. Batch 2 — reading the design/view cluster:
+
+- READ: [.claude/Features/DesignSystemPM.md] -> [.claude/Features/ViewsPM.md] -> [.claude/Features/TableViewPM.md] -> [.claude/Features/CardViewPM.md] -> [.claude/Features/TypographyPM.md] -> [.claude/Features/SymbolsPM.md]
+- WRITE: [.claude/Features/DesignSystemPM.md] -> [.claude/Features/ViewsPM.md] -> [.claude/Features/TableViewPM.md] -> [.claude/Features/CardViewPM.md] -> [.claude/Features/TypographyPM.md] -> [.claude/Features/SymbolsPM.md]
+- BASH: Gate with atlas checker, commit batch 2
+- READ: [.claude/Features/ConfigurationPM.md] -> [.claude/Features/SubfieldPM.md] -> [.claude/Features/PagePreviewPM.md] -> [.claude/Features/NavigationPM.md] -> [.claude/Features/SidebarPM.md] -> [.claude/Features/SurfacePM.md] -> [.claude/Features/QuickCapturePM.md] -> [.claude/Features/MarkdownPM.md]
+
+All of batch 3's material is loaded. Writing the seven shell-cluster rewrites:
+
+- WRITE: [.claude/Features/ConfigurationPM.md] -> [.claude/Features/SubfieldPM.md] -> [.claude/Features/PagePreviewPM.md] -> [.claude/Features/NavigationPM.md] -> [.claude/Features/SidebarPM.md] -> [.claude/Features/QuickCapturePM.md]
+- EDIT: [.claude/Features/SurfacePM.md]
+- BASH: Gate and commit batch 3
+
+Batch 3 committed at −41 net. Batch 4 — reading InteractionPM (MarkdownPM and PommoraDND are already in context):
+
+- READ: [.claude/Features/InteractionPM.md]
+
+All batch-4 material is loaded. Writing the Editor-Internals guideline (receiving the Non-Obvious traps), then the three rewrites:
+
+- WRITE: [.claude/Guidelines/Editor-Internals.md] -> [.claude/Features/MarkdownPM.md] -> [.claude/Features/InteractionPM.md] -> [.claude/Features/PommoraDND.md]
+- BASH: Gate and commit batch 4 -> Inspect current --card-min value and recent changes -> Locate --card-min-base declaration and check the other atlas rows -> Read card-tokens.css and check nav gallery's tokens -> True every Card Tokens row against the two sources -> Read the full token declarations in both files
+- EDIT: [.claude/Features/CardViewPM.md] -> [.claude/Features/NavigationPM.md]
+- BASH: Re-gate and commit batch 4 with truth fixes -> Find the autoscroll tokens' new home -> Verify token names and values in autoscroll.ts -> Confirm the remaining tunable names and values
+- EDIT: [.claude/Features/InteractionPM.md]
+- READ: [.claude/Features/InteractionPM.md]
+- BASH: Gate then commit the autoscroll SOURCE fix
+- READ: [.claude/Features/ContextsPM.md] -> [.claude/Features/CollectionsPM.md] -> [.claude/Features/PagesPM.md] -> [.claude/Features/PageSetsPM.md]
+
+All five in hand — plus ConnectionsPM belongs to this batch. Reading it while writing the first rewrites:
+
+- READ: [.claude/Features/ConnectionsPM.md]
+
+Writing the six content-model rewrites:
+
+- WRITE: [.claude/Features/StructurePM.md] -> [.claude/Features/ContextsPM.md] -> [.claude/Features/CollectionsPM.md] -> [.claude/Features/PagesPM.md] -> [.claude/Features/PageSetsPM.md] -> [.claude/Features/AgendaPM.md] -> [.claude/Features/ConnectionsPM.md]
+- BASH: Gate and commit batch 5
+- WRITE: [/private/tmp/claude-501/-Users-nathantaichman-The-Studio-Projects-Project-Pommora/d2aff109-72c2-4191-89cd-dc2721762020/scratchpad/toc.mjs]
+- BASH: Insert ToC blocks into all Feature docs and inspect one -> Inspect PropertiesPM's nested ToC and gate -> Commit the ToC pass
+- WRITE: [.claude/VersioningPM.md]
+- EDIT: [.claude/PommoraPRD.md] -> [.claude/CLAUDE.md]
+- BASH: Commit Chapter 2 plus the map row
+- DISPATCH: Explore — Residue review, first half -> Explore — Residue review, second half
+
+Both residue reviewers are out over the finished tree. Everything through Chapter 2 is committed — five cluster commits, the ToC pass, Versioning in its Studio FORMAT, the PRD trued (including the stale "table / gallery" renderer claim), and Editor-Internals.md on the CLAUDE.md map. When the reviewers report back I verify their findings firsthand, fold what's real, run the final gates, and deliver the closing report.
+
+- RETURN: Returned the first half of the post-rewrite residue review — dead-weight passages flagged across the docs, led by the InteractionPM autoscroll-tuning clause.
+
+First residue report is in — the big catches: DesignSystemPM lost its ToC (my script inserted it, but an outside save appears to have overwritten it), the `§charter` pointer dangles in five docs since the charter paragraph carries no heading, SurfacePM still points at the renamed `§II. Embeddings`, and NexusRecordPM references PropertiesPM's Remove cache with no antecedent. Several "residue" flags I'll adjudicate rather than fold blindly — a few hit things deliberately kept (the dnd-kit scope framing, philosophy copy). Verifying everything firsthand once the second reviewer lands.
+
+- RETURN: Returned the second half of the residue review — justification and argument-chain clauses still embedded in the prose, led by PagesPM's derivation clauses.
+
+Both reviewers are in. Now the verify-and-fold pass — first, quick firsthand checks on the claims that decide the fixes:
+
+- BASH: Verify lavender cell, charter refs, lock key, and ContextPM queue items -> Survey recent code commits, working tree, and any new radius tokens -> Inspect PM-094's scope and new token declarations -> Confirm current token values before truing the tables
+- WRITE: [/private/tmp/claude-501/-Users-nathantaichman-The-Studio-Projects-Project-Pommora/d2aff109-72c2-4191-89cd-dc2721762020/scratchpad/fold.py]
+- BASH: Apply the fold + capture edits with per-edit verification -> Check the current state of the three failed targets -> Verify which DesignSystemPM edits landed -> Add the Pill Radius atlas row and gate
+
+Checker green. Committing the fold-and-capture pass:
+
+- BASH: Commit the residue fold and report totals -> Compute the pass's documentation diff
+
+The pass is complete and committed — all 26 Feature docs, both root docs, a new guideline, and your mid-flight capture request, across nine commits (every one pathspec-scoped around the parallel session, atlas checker green at every gate).
+
+**What shipped:**
+
+- **Every Feature doc rewritten to the ratified standard**, cluster by cluster: data → design/view → shell → editor → content-model. The mechanism-narration class is gone (your canonical example and its ~40 siblings), the insistent register is gone, status text lives in Known Issues / Pending / Prospects, lists are tight, tables stand without preambles and wear Title-Case headers, and the ownership map landed — schema and move semantics consolidated into CollectionsPM, the trash record into NexusRecordPM, view-generic rules into ViewsPM, the caret into InteractionPM, footer facts into SubfieldPM, with pointers everywhere else.
+- **The ToC experiment** — every doc opens on a codemap-format tree of its own headings, script-derived so none drift. DesignSystemPM's got overwritten once by an outside save and was re-added.
+- **Editor-Internals.md** is a new Guidelines file holding MarkdownPM's hard-won traps (CRLF fences, UTF-16 offsets, `ignoreEvent`, the embed claim's single owner), on the CLAUDE.md map. The Non-Obvious annexes dissolved into it.
+- **Chapter 2** — Versioning now follows its Studio FORMAT (per-version entries, §Guidelines footer, the retired IPC-map queue item dropped); the PRD trued (the stale "table / gallery" renderer claim, the Space-sidecar block-doc contradiction, the double-stated Agenda line, completed Prospects removed — your Ideas block untouched).
+- **Your capture request** — PM-094's fallout is in the atlas: `--radius-full` gets its Geometry row, `separator.line`'s row died with the token, the card-token merge is recorded in CardViewPM with both SOURCE files, and the autoscroll table follows its tokens to `autoscroll.ts`. The parallel session had already captured the new States rows itself; I kept theirs.
+
+**The residue pass:** two reviewers returned ~70 findings; I folded roughly two-thirds after verification — every dangling reference (the `§charter` pointer in five docs, `§II. Embeddings`, the index pointers now backed by a real ArchitecturePM Pending entry), the orphaned terms (`partial`, "preview origins", the Remove cache), and the surviving register. I deliberately **kept** what they over-flagged: the Design Philosophy copy, the dnd-kit scope framing, architecture-defining statements in the architecture doc, and the parallel session's fresh autoscroll preamble.
+
+**Numbers:** Documentation-only — Net +94 | +1,176 / −1,082 across 30 files. The prose shrank ~250 lines while the ToC blocks added ~360; Actionable (code) diff is zero.
+
+**Two calls left open for you:** the tail-section order isn't uniform across docs (each ToC agrees with its own body, so nothing's broken — say the word and I'll normalize to one order), and Versioning's `EXISTING IMPLEMENTATIONS` caps stayed because its Studio FORMAT prescribes them — flag it if you want the FORMAT itself softened. A History entry for this arc (PM-095, with PM-094 being the parallel session's) is drafted in my head and one word away from landing.
+
+[NATHAN]
+
+go ahead and finish out the open call with a yes, fix it while we're here.
+Then write the History entry as one paragraph that it was just documentation normalization + recording what goes where in the docs.
+
+Write the /session-handoff 
+Next session picks up with context.md's options and a fresh list of focusses
+
+[CLAUDE]
+
+Three closers: the tail-order normalization, the PM-095 record, and the handoff. Starting with the state I need:
+
+- BASH: Survey History, Handoff ownership, and Planning contents -> Reorder tail sections to Known Issues → Pending → Prospects
+
+Now the record and Context. Reading both:
+
+- READ: [.claude/ContextPM.md] -> [.claude/HistoryPM.md]
+- BASH: Check --state-ghost's current value vs the atlas row
+
+Ghost row already trued by the parallel session. Writing PM-095 and updating Context:
+
+- BASH: Write PM-095, update Context, commit with the tail-order fixes -> Commit PM-095 and the tail-order fixes
+- READ: [.claude/HandoffPM.md]
+
+Rewriting the handoff's session half to current truth, preserving the transcript and guidelines:
+
+- BASH: Rewrite the handoff's session sections
+
+I dropped the Handoff Guidelines section in the splice — restoring it:
+
+- BASH: Restore the Handoff Guidelines section
+
+Now the transcript continuation — dispatching the transcription-agent:
+
 - DISPATCH: transcription-agent — Continue handoff transcript
+
+All three closers are in motion or done:
+
+- **The tail order** is normalized — Known Issues → Pending → Prospects across PropertiesPM, SymbolsPM, and TableViewPM (the three deviants), ToCs matched, committed.
+- **PM-095** is filed — index row plus the one-paragraph entry you asked for: the normalization itself and the ownership rulings of what lives where, with commits `8c291b83..20f3dfcd` and the documentation diff (Net +94 | +1,176 / −1,082, actionable zero). ContextPM's Current Focus now reads the arc as closed and points the next session at §Pending Focuses for its fresh pick, with Recent Work trimmed back to five entries under PM-095.
+- **The handoff** is rewritten to current truth — this session's account, all completion criteria ticked, §Next Session pointing at a fresh read of Context's options, your five feedback quotes verbatim, and working notes on the two traps worth carrying (the checker's sub-8 numeric blind spot, and the pathspec discipline a live parallel session demands). The transcription-agent is appending the transcript now; when it lands I make the final commit (which also carries the CSS Duplication Report deletion sitting in the tree — not mine, riding along per convention) and hand you the receipt.
+
+One capture note from the record-writing: the parallel session had already trued the `--state-ghost` row itself (`0.65`, part of PM-094's ramp), so the atlas is fully caught up on all four token changes.
 `````
 
-<!-- transcribe-anchor: 1935915a-7a46-4dc5-8bf9-1f152b7fa46d -->
+<!-- transcribe-anchor: b7318fd9-2ec3-469e-a620-30bb01b13137 -->
