@@ -45,6 +45,7 @@ import {
 } from './bandDndModel'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { Cell } from './Cell'
+import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { PropertyTypeIcon } from '@renderer/Components/Detail/PropertyTypes'
 import { TableGroupBand } from './TableGroupBand'
 import { Reveal } from '@renderer/design-system/components/Reveal'
@@ -827,7 +828,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (editing?.mode !== 'editor' || editing.rowId !== row.id || editing.colId !== col.id)
       return null
     const t = declaredType(col.id, schema)
-    return (
+    const editor = (
       <PropertyEditor
         initial={editorInitial(row, col)}
         numeric={t === 'number'}
@@ -838,6 +839,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         onCommit={(raw) => commitEditorText(row, col, raw)}
         onCancel={() => setEditing(null)}
       />
+    )
+    // A title rename keeps the page glyph seated beside the field — the icon isn't part of the text.
+    if (col.kind !== 'title' || liveView.hide_page_icons) return editor
+    return (
+      <span className="cell-rename">
+        <EntityIcon kind="page" icon={row.icon} size={14} />
+        {editor}
+      </span>
     )
   }
 
@@ -979,7 +988,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       const { tabs, pinned } = useSession.getState()
       ctx.alreadyOpen = isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path })
     }
-    const action = await window.nexus.cellMenu(ctx)
+    const action = await withGhostSuppressed(() => window.nexus.cellMenu(ctx))
     if (!action) return
     if (action === 'title:newtab')
       void useSession
@@ -1088,6 +1097,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   })
   const editingRef = useRef(editing)
   editingRef.current = editing
+  // A native menu owns the pointer while it's up — no hover is real until it resolves.
+  const menuOpenRef = useRef(false)
   useEffect(
     () => () => {
       for (const t of Object.values(ghostTimers.current)) if (t !== null) window.clearTimeout(t)
@@ -1511,9 +1522,11 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     e.stopPropagation()
     const cellEl = (e.currentTarget as HTMLElement).closest<HTMLElement>('.data-cell')
     const { tabs, pinned } = useSession.getState()
-    const action = await window.nexus.rowGripMenu({
-      alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path }),
-    })
+    const action = await withGhostSuppressed(() =>
+      window.nexus.rowGripMenu({
+        alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path }),
+      }),
+    )
     if (!action) return
     if (action === 'title:preview')
       useSession.getState().openPreview({ id: row.id, path: row.path })
@@ -1540,15 +1553,27 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (t !== null) window.clearTimeout(t)
     ghostTimers.current[key] = null
   }
+  // Wraps a native-menu pop: the ghost stands down and stays unarmed while the menu holds the pointer.
+  const withGhostSuppressed = async <T,>(menu: () => Promise<T>): Promise<T> => {
+    clearGhostTimer('dwell')
+    clearGhostTimer('grace')
+    setGhostAt(null)
+    menuOpenRef.current = true
+    try {
+      return await menu()
+    } finally {
+      menuOpenRef.current = false
+    }
+  }
   const onRowHover = (row: ViewRow, entering: boolean): void => {
     clearGhostTimer('dwell')
     clearGhostTimer('grace')
     if (entering) {
-      if (editing || ghostAt === row.id) return
-      // Re-checked at fire time — a cell editor opened mid-dwell must not leave a ghost armed
-      // to snap in the instant it closes.
+      if (editing || menuOpenRef.current || ghostAt === row.id) return
+      // Re-checked at fire time — a cell editor or native menu opened mid-dwell must not leave a
+      // ghost armed to snap in the instant it closes.
       ghostTimers.current.dwell = window.setTimeout(() => {
-        if (!editingRef.current) setGhostAt(row.id)
+        if (!editingRef.current && !menuOpenRef.current) setGhostAt(row.id)
       }, GHOST_DWELL_MS)
     } else if (ghostAt !== null)
       ghostTimers.current.grace = window.setTimeout(() => setGhostAt(null), GHOST_GRACE_MS)
@@ -1613,6 +1638,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
             <GhostRow
               key={`ghost-${row.id}`}
               padLeft={memberIndent(itemDepth)}
+              columns={columns}
+              hideIcon={liveView.hide_page_icons ?? false}
               onEnter={() => clearGhostTimer('grace')}
               onLeave={onGhostLeave}
               onCreate={ghostCreate}
@@ -1833,11 +1860,15 @@ type RowCellApi = {
  *  Reveal (the same 0fr↔1fr motion group collapse rides), opening on its first painted frame. */
 function GhostRow({
   padLeft,
+  columns,
+  hideIcon,
   onEnter,
   onLeave,
   onCreate,
 }: {
   padLeft: string | undefined
+  columns: ResolvedColumn[]
+  hideIcon: boolean
   onEnter: () => void
   onLeave: () => void
   onCreate: () => void
@@ -1856,9 +1887,19 @@ function GhostRow({
         onPointerLeave={onLeave}
         onClick={onCreate}
       >
-        <div className="data-cell cell-lead" style={{ paddingLeft: padLeft, gridColumn: '1 / -1' }}>
-          New Page
-        </div>
+        {columns.map((c, i) =>
+          i === 0 ? (
+            <div key={c.id} className="data-cell cell-lead" style={{ paddingLeft: padLeft }}>
+              <span className="cell-title">
+                {hideIcon ? null : <EntityIcon kind="page" size={14} />}
+                <span className="cell-title-text">New Page</span>
+              </span>
+            </div>
+          ) : (
+            <div key={c.id} className="data-cell" />
+          ),
+        )}
+        <div className="cell-filler" aria-hidden="true" />
       </div>
     </Reveal>
   )
