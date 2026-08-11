@@ -198,7 +198,7 @@ textarea,
 .state {
   padding: 48px 16px;
   text-align: center;
-  color: var(--label-tertiary); /* Awaiting proper inactive state token. */
+  color: var(--state-inactive);
 }
 
 .state-error {
@@ -209,7 +209,7 @@ textarea,
   display: block;
   margin-top: 6px;
   font-size: 11px;
-  color: var(--label-tertiary); /* Awaiting proper inactive state token. */
+  color: var(--state-inactive);
 }
 
 /* Interim empty-state CTA — matches the app's white-alpha chrome; replace with the design-system

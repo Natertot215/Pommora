@@ -47,6 +47,7 @@ import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { Cell } from './Cell'
 import { PropertyTypeIcon } from '@renderer/Components/Detail/PropertyTypes'
 import { TableGroupBand } from './TableGroupBand'
+import { Reveal } from '@renderer/design-system/components/Reveal'
 import { resolveBandHead } from '../GroupBand'
 import { columnLabel } from './columnLabel'
 import { clampWidth, widthFor } from './columnWidths'
@@ -81,6 +82,12 @@ import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from 
 // flips (the sticky zone around the current slot). Larger = more deliberate / harder to leave a slot;
 // smaller = snappier. Bump this one number to taste.
 const COL_SHIFT_HYSTERESIS = 25
+
+// ── TUNABLE ── the hover ghost row: how long the pointer dwells on a row before the ghost
+// "New Page" row extends below it, and the grace window that keeps the ghost alive while the
+// pointer travels from the row into it.
+const GHOST_DWELL_MS = 900 // KNOB
+const GHOST_GRACE_MS = 140 // KNOB
 
 /** The datetime cell's picker shell: PickerMenu portals off the cell (escaping the table's overflow
  *  clip) and self-dismisses via its own backdrop. The calendar's [data-calmenu] sub-menus portal
@@ -1068,9 +1075,23 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // so memoized rows never re-render for handler churn (and never call a stale state writer).
   const cellApiRef = useRef({ openCellMenu, onCellClick, cellEditor, removeCellValue })
   cellApiRef.current = { openCellMenu, onCellClick, cellEditor, removeCellValue }
-  // The grip menu handler rides its own ref: it's defined below with the creation handlers, after
-  // the writers it routes to.
+  // The grip-menu and hover handlers ride their own refs: they're defined below with the
+  // creation handlers, after the writers they route to.
   const gripMenuRef = useRef<(row: ViewRow, e: React.MouseEvent) => Promise<void>>(null)
+  const hoverRef = useRef<(row: ViewRow, entering: boolean) => void>(null)
+  // The hover ghost row's anchor + its dwell/grace timers (see the handlers below, with the
+  // other creation writers). Hooks live here, above the loading/empty returns.
+  const [ghostAt, setGhostAt] = useState<string | null>(null)
+  const ghostTimers = useRef<{ dwell: number | null; grace: number | null }>({
+    dwell: null,
+    grace: null,
+  })
+  useEffect(
+    () => () => {
+      for (const t of Object.values(ghostTimers.current)) if (t !== null) window.clearTimeout(t)
+    },
+    [],
+  )
   const cellApi = useMemo<RowCellApi>(
     () => ({
       menu: (row, col, e) => void cellApiRef.current.openCellMenu(row, col, e),
@@ -1078,6 +1099,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       overlay: (row, col) => cellApiRef.current.cellEditor(row, col),
       remove: (row, col, next) => cellApiRef.current.removeCellValue(row, col, next),
       grip: (row, e) => void gripMenuRef.current?.(row, e),
+      hover: (row, entering) => hoverRef.current?.(row, entering),
     }),
     [],
   )
@@ -1511,6 +1533,30 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
   }
   gripMenuRef.current = openRowGripMenu
+  // The hover ghost row — pure chrome: pixels only, no page until the click, which runs the same
+  // immediate-create act as New Page Below. Dwell arms it, the grace window keeps it reachable on
+  // the travel down into it, and any rename session suppresses it outright.
+  const clearGhostTimer = (key: 'dwell' | 'grace'): void => {
+    const t = ghostTimers.current[key]
+    if (t !== null) window.clearTimeout(t)
+    ghostTimers.current[key] = null
+  }
+  const onRowHover = (row: ViewRow, entering: boolean): void => {
+    // Every hover transition cancels what's pending, then arms at most one timer.
+    clearGhostTimer('dwell')
+    clearGhostTimer('grace')
+    if (entering) {
+      if (editing || ghostAt === row.id) return
+      ghostTimers.current.dwell = window.setTimeout(() => setGhostAt(row.id), GHOST_DWELL_MS)
+    } else if (ghostAt !== null)
+      ghostTimers.current.grace = window.setTimeout(() => setGhostAt(null), GHOST_GRACE_MS)
+  }
+  hoverRef.current = onRowHover
+  const ghostCreate = (): void => {
+    const anchor = ghostAt ? rowById.get(ghostAt) : undefined
+    setGhostAt(null)
+    if (anchor) newPageAdjacent(anchor, 'below')
+  }
 
   // A row drops its top divider (.row-lead) only when no VISIBLE data row sits directly above it — the
   // divider is a between-rows line. Headered groups: their first row follows the header, so it's always
@@ -1531,10 +1577,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     // ungrouped root keeps the normal indent (its rows land under the Title column).
     const memberIndent = g.kind === 'ungrouped' ? indent : groupIndent
     const members: React.JSX.Element[] = [
-      ...g.items.map((row, i) => {
+      ...g.items.flatMap((row, i) => {
         const lead = i === 0 && (g.kind !== 'ungrouped' || !renderedAnyRow)
         if (itemsVisible) renderedAnyRow = true
-        return (
+        const rendered = [
           <DataRow
             key={row.id}
             row={row}
@@ -1552,8 +1598,19 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
             selected={selection.kind === 'page' && selection.id === row.id}
             dragDisabled={dragDisabled}
             lead={lead}
-          />
-        )
+          />,
+        ]
+        if (itemsVisible && ghostAt === row.id && !editing)
+          rendered.push(
+            <GhostRow
+              key={`ghost-${row.id}`}
+              padLeft={memberIndent(itemDepth)}
+              onEnter={() => clearGhostTimer('grace')}
+              onLeave={() => setGhostAt(null)}
+              onCreate={ghostCreate}
+            />,
+          )
+        return rendered
       }),
       ...(g.children ?? []).flatMap((child) => renderRows(child, itemDepth, itemsVisible)),
     ]
@@ -1761,6 +1818,42 @@ type RowCellApi = {
   overlay: (row: ViewRow, col: ResolvedColumn) => React.ReactNode
   remove: (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null) => void
   grip: (row: ViewRow, e: React.MouseEvent) => void
+  hover: (row: ViewRow, entering: boolean) => void
+}
+
+/** The hover ghost row — pure chrome until its click creates. It enters on the shared disclosure
+ *  Reveal (the same 0fr↔1fr motion group collapse rides), opening on its first painted frame. */
+function GhostRow({
+  padLeft,
+  onEnter,
+  onLeave,
+  onCreate,
+}: {
+  padLeft: string | undefined
+  onEnter: () => void
+  onLeave: () => void
+  onCreate: () => void
+}): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  useEffect(() => setOpen(true), [])
+  return (
+    <Reveal open={open}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/useSemanticElements: a hover-born affordance that must wear the row grid's own chrome — a real <button> can't host a .data-row, and keyboard creation lives in the menus */}
+      <div
+        className="data-row ghost-row"
+        role="button"
+        tabIndex={-1}
+        aria-label="New Page"
+        onPointerEnter={onEnter}
+        onPointerLeave={onLeave}
+        onClick={onCreate}
+      >
+        <div className="data-cell cell-lead" style={{ paddingLeft: padLeft, gridColumn: '1 / -1' }}>
+          New Page
+        </div>
+      </div>
+    </Reveal>
+  )
 }
 
 type DragShift = { from: number; to: number; width: number }
@@ -1825,6 +1918,8 @@ const DataRow = memo(function DataRow({
         isDragging && 'row-dragging',
         lead && 'row-lead',
       )}
+      onPointerEnter={() => api.hover(row, true)}
+      onPointerLeave={() => api.hover(row, false)}
       // The whole row is a drag surface, not just the gutter grip — grabbing ANY cell arms the reorder, so a
       // horizontal scroll that pushes the grip out of reach can't block it. A press-release (no move past
       // ACTIVATION) is each CELL's gesture (only the title navigates; the row background is a no-op);
