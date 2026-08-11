@@ -73,7 +73,7 @@ Creating a page never leaves the table. Every trigger runs one act: the page is 
 
 - **Band-add** — the structural header's "+" creates in that Set at the pipeline's own end of the group, disclosing a collapsed band first and gliding the view to the new row.
 - **New Page Above / Below** — the grip menu's pair creates beside its anchor: the new page inherits the anchor's group value and its values on the active sort criteria that carry one — Select, Status, Checkbox, Number, and Date — and the order write lands it at the gesture slot. Under any other criterion (Title, Modified, text, links, files, multi-value properties) the row lands where the sort places it.
-- **The ghost row** — dwelling on a row extends a ghost "New Page" row beneath it on the shared disclosure motion, its standard label worn at the disabled dim; clicking it runs the Below path. It never appears while a naming session is open.
+- **The ghost row** — dwelling on a row extends a ghost "New Page" row beneath it on the shared disclosure motion, its standard label worn at the inactive dim; clicking it runs the Below path. It never appears while a naming session is open.
 
 A view's filter stamps the values its rules cleanly imply — a single positive Is on a user property under All-matching. Metadata is never changed to satisfy a filter, so a page a non-derivable rule excludes creates and stays filtered out.
 

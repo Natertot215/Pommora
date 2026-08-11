@@ -81,7 +81,7 @@ The text ladder — system-white at descending presence. Primary is the raw prim
 
 #### States
 
-The interaction states — two grey washes, one black veil, and four opacity dims. Hover and selected are fills painted behind content; muted is painted over it; drag, ghost, inactive, and disabled are consumed as `opacity:` on the element itself. Those four hold their own bare numbers rather than tint-ladder steps, since they are never mixed into a colour, and they read as one ramp: the more a stand-in carries the original's presence, the less the original fades — inactive is the empty-state text dim, worn over the standard label.
+The interaction states — two grey washes, one black veil, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; drag, ghost, and inactive are consumed as `opacity:` on the element itself. Those three hold their own bare numbers rather than tint-ladder steps, since they are never mixed into a colour, and they read as one ramp: the more a stand-in carries the original's presence, the less the original fades — inactive is the still-here-but-not-active dim: empty-state copy, disabled controls, the ghost row.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
@@ -93,7 +93,6 @@ The interaction states — two grey washes, one black veil, and four opacity dim
 | Drag     | `--state-drag`                        | base @ 85%         |
 | Ghost    | `--state-ghost`                       | base @ 65%         |
 | Inactive | `--state-inactive`                    | base @ 55%         |
-| Disabled | `--state-disabled`                    | base @ 50%         |
 
 #### Fills
 
@@ -219,7 +218,7 @@ Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a di
 
 The reusable pieces mirror the Figma library and consume semantic tokens only; a component's own behavior lives in its spec.
 
-- **Switches and toggles** — the Switch wears the checkbox look at control scale with one disabled dim (`--state-disabled`); dual-option toggles are always switches or the toggleable double-chevron, never dropdown pickers.
+- **Switches and toggles** — the Switch wears the checkbox look at control scale with one disabled dim (`--state-inactive`); dual-option toggles are always switches or the toggleable double-chevron, never dropdown pickers.
 - **Chevrons and twisties** — disclosure glyphs ride the fold-chevron mask tokens (`--fold-chevron-mask`, `--code-chevron-mask` — inline SVG masks bridged from theme-vars) at the tertiary label tone, stepping by the disclosure indent.
 - **The drag grip** — the six-dot glyph is one masked asset (`--grip-glyph`).
 - **The ActionBand** (`Detail/ActionBand.css`) is the shared home for toolbar-row affordances any surface mounts — ViewSegments first, plus the hover-revealed settings button; a segment's collapsible title rides Segmented-Controls' `labelSlot`.
