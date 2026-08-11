@@ -1,16 +1,34 @@
 // The page context-menu meta block (Open · Rename · Change Icon · Delete) — shared by the table
-// cell's title menu (cellMenu) and the card's right-click menu (cardMenu) so the page-meta actions
-// stay single-sourced. An already-open page reads "Open" (focus its tab) rather than "Open in New Tab".
+// cell's title menu (cellMenu), the card's right-click menu (cardMenu), and the row grip's menu
+// (rowGripMenu) so the page-meta actions stay single-sourced. An already-open page reads "Open"
+// (focus its tab) rather than "Open in New Tab". Each consumer names its item set explicitly —
+// the extras render only where they're requested, so no menu carries an action its router
+// doesn't serve.
 
-export type PageMetaAction = 'title:newtab' | 'title:rename' | 'title:icon' | 'title:delete'
+export type PageMetaAction =
+  | 'title:preview'
+  | 'title:newtab'
+  | 'title:rename'
+  | 'title:icon'
+  | 'title:newabove'
+  | 'title:newbelow'
+  | 'title:delete'
 
 export function pageMetaMenuItems(
   alreadyOpen?: boolean,
+  opts: { preview?: boolean; newPages?: boolean } = {},
 ): Array<{ label: string; action: PageMetaAction; separatorBefore?: boolean }> {
   return [
+    ...(opts.preview ? [{ label: 'Open Preview', action: 'title:preview' as const }] : []),
     { label: alreadyOpen ? 'Open' : 'Open in New Tab', action: 'title:newtab' },
     { label: 'Rename', action: 'title:rename', separatorBefore: true },
     { label: 'Change Icon', action: 'title:icon' },
+    ...(opts.newPages
+      ? [
+          { label: 'New Page Above', action: 'title:newabove' as const, separatorBefore: true },
+          { label: 'New Page Below', action: 'title:newbelow' as const },
+        ]
+      : []),
     { label: 'Delete', action: 'title:delete', separatorBefore: true },
   ]
 }

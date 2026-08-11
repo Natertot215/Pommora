@@ -64,7 +64,15 @@ import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import { numberDivisor } from '../PropertyEditing/formatValue'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { announce } from '@renderer/design-system/interactions/a11y'
-import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import {
+  findScroller,
+  SEEK_GLIDE,
+  scrollGlide,
+  startAutoScroll,
+} from '@renderer/design-system/interactions/autoscroll'
+import { DEFAULT_NEW_NAME } from '@shared/mutate'
+import { filterSeeds } from '../pipeline/creationSeeds'
+import { orderWithSlot, tieOrderWith } from './creationOrder'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
 import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from './linkValue'
@@ -94,6 +102,11 @@ function DatetimeCellPicker({
     </PickerMenu>
   )
 }
+
+// Sort criteria whose value a new page can inherit from its anchor — single-value user properties.
+// Title and Modified aren't property ids and multi-value types don't copy; under those the row
+// simply lands where the sort puts it.
+const SEEDABLE_SORT_TYPES = new Set(['status', 'select', 'checkbox', 'number', 'datetime'])
 
 /** A Collection uses its own schema; a Set inherits its ancestor Collection's (schema lives only on
  *  the Collection). [] when the owning Collection can't be found. */
@@ -213,6 +226,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     // Bumped on each rename OPEN so the popover's key changes — a reopened cell mounts a fresh
     // TextPicker + field instead of reviving the prior session's measured position and stale input.
     nonce?: number
+    // A just-created page's naming session: the field opens EMPTY (the page is literally
+    // "Untitled" on disk) and its commit rides the create — disambiguating, cascade-free.
+    fromCreate?: true
   } | null>(null)
   // The picker/datetime is ONE table-level self-managed pane — it owns its Bloom-out off `open`, so the
   // cell only tracks WHICH cell is editing + captures its element for placement. lastPicker holds the
@@ -740,7 +756,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
   }
   const editorInitial = (row: ViewRow, col: ResolvedColumn): string => {
-    if (col.kind === 'title') return row.title
+    if (col.kind === 'title') return editing?.fromCreate ? '' : row.title
     const v = resolveFieldValue(row, col.id, schema)
     if (v.kind === 'number') return String(v.value)
     if (v.kind === 'url') return parseLink(v.value).url
@@ -751,11 +767,18 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // url validates + normalizes, file edits the FIRST ref's path (multi-file editing is the picker
   // Prospect), title renames. Empty input clears the value.
   const commitEditorText = (row: ViewRow, col: ResolvedColumn, raw: string): void => {
+    const fromCreate = editing?.fromCreate
     setEditing(null)
     const trimmed = raw.trim()
     if (col.kind === 'title') {
       if (trimmed && trimmed !== row.title)
-        void mutate({ op: 'rename', path: row.path, kind: 'page', newName: trimmed })
+        void mutate({
+          op: 'rename',
+          path: row.path,
+          kind: 'page',
+          newName: trimmed,
+          ...(fromCreate ? { fromCreate } : {}),
+        })
       return
     }
     const t = declaredType(col.id, schema)
@@ -1045,12 +1068,16 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // so memoized rows never re-render for handler churn (and never call a stale state writer).
   const cellApiRef = useRef({ openCellMenu, onCellClick, cellEditor, removeCellValue })
   cellApiRef.current = { openCellMenu, onCellClick, cellEditor, removeCellValue }
+  // The grip menu handler rides its own ref: it's defined below with the creation handlers, after
+  // the writers it routes to.
+  const gripMenuRef = useRef<(row: ViewRow, e: React.MouseEvent) => Promise<void>>(null)
   const cellApi = useMemo<RowCellApi>(
     () => ({
       menu: (row, col, e) => void cellApiRef.current.openCellMenu(row, col, e),
       click: (row, col, e) => cellApiRef.current.onCellClick(row, col, e),
       overlay: (row, col) => cellApiRef.current.cellEditor(row, col),
       remove: (row, col, next) => cellApiRef.current.removeCellValue(row, col, next),
+      grip: (row, e) => void gripMenuRef.current?.(row, e),
     }),
     [],
   )
@@ -1310,6 +1337,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // filesystem-first table). A sorted / property-grouped view instead writes the per-view manual
   // tiebreaker (viewOrders). setManualOverride gives instant feedback either way: the pipeline reads it
   // as the sort tiebreaker, and it agrees with the page_order the fs reload brings back.
+  // The viewOrders cache has no round-trip (nothing re-reads it mid-session), so every write
+  // lands in the local copy too — else the pipeline keeps ranking off the stale array until the
+  // next container open.
+  const persistViewOrder = (ids: string[]): void => {
+    setViewOrders((m) => ({ ...m, [view.id]: ids }))
+    void window.nexus.viewOrders.set(view.id, ids)
+  }
   const reorderTo = (orderIds: string[], groupKey: string): void => {
     setManualOverride(orderIds)
     if (structuralOrder) {
@@ -1326,8 +1360,157 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       }
       return
     }
-    void window.nexus.viewOrders.set(view.id, orderIds)
+    persistViewOrder(orderIds)
   }
+
+  // ── In-view creation. One act on every trigger: the page exists on disk as Untitled the moment
+  // the gesture fires — seeds and order riding the create — and the title cell opens as an
+  // ordinary uncommitted rename whose field is empty. The pipeline owns placement throughout.
+  const titleColId = columns.find((c) => c.kind === 'title')?.id
+  // A page a filter cleanly implies values for gets them stamped; gesture-context seeds spread
+  // AFTER these, so where they disagree the gesture wins.
+  const impliedSeeds = (): Record<string, PropertyValue> =>
+    filterSeeds(liveView.filter, liveView.filter_enabled !== false, schema)
+  // The created page's seeds reach the pipeline the way a band-drop's reassign does — the value
+  // cache never re-reads mid-session, so a disk-only stamp would resolve blank until next open.
+  const patchSeedValues = (pageId: string, seeds: Record<string, PropertyValue>): void => {
+    const entries = Object.entries(seeds)
+    if (entries.length === 0) return
+    setValueOverride((prev) => {
+      let patched = (values[pageId] ?? { id: pageId }) as Record<string, unknown>
+      for (const [propId, value] of entries) {
+        const def = schema.find((d) => d.id === propId)
+        if (def) patched = applyValueAtRoot(patched, def, value)
+      }
+      return { ...prev, [pageId]: patched as PageFrontmatter }
+    })
+  }
+  // The one create every trigger writes: Untitled, carrying whatever seeds and order the gesture
+  // resolved. `then` is the trigger's own follow-up on the minted id.
+  const createPageIn = (
+    parentPath: string,
+    seeds: Record<string, PropertyValue>,
+    order: string[] | undefined,
+    then: (pageId: string) => void,
+  ): void => {
+    void mutate(
+      {
+        op: 'createPage',
+        parentPath,
+        name: DEFAULT_NEW_NAME,
+        ...(Object.keys(seeds).length ? { seeds } : {}),
+        ...(order ? { order } : {}),
+      },
+      (created) => {
+        patchSeedValues(created.id, seeds)
+        then(created.id)
+      },
+    )
+  }
+  const openCreateRename = (pageId: string): void => {
+    if (titleColId)
+      setEditing({ rowId: pageId, colId: titleColId, mode: 'editor', fromCreate: true })
+  }
+  const glideToRow = (pageId: string): void => {
+    const viewEl = viewRef.current
+    if (!viewEl) return
+    const scroller = findScroller(viewEl, 'y')
+    if (!scroller) return
+    scrollGlide(
+      scroller,
+      // Re-read per frame: the row's seat sharpens as the band it lives in finishes disclosing.
+      () => {
+        const el = viewEl.querySelector<HTMLElement>(`[data-rid="${CSS.escape(pageId)}"]`)
+        if (!el) return scroller.scrollTop
+        const rowTop = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top
+        return scroller.scrollTop + rowTop - (scroller.clientHeight - el.offsetHeight) / 2
+      },
+      SEEK_GLIDE,
+    )
+  }
+  // The full child list of the container a create targets — never the view's visible rows: an
+  // order array built post-filter permanently re-ranks every row the filter was hiding.
+  const containerPagesOf = (path: string): string[] => {
+    const walk = (node: CollectionNode | SetNode): string[] | null => {
+      if (node.path === path) return node.pages.map((p) => p.id)
+      for (const s of node.sets ?? []) {
+        const hit = walk(s)
+        if (hit) return hit
+      }
+      return null
+    }
+    return walk(source) ?? []
+  }
+  // The band "+": create in that Set, at the pipeline's own end of the group, autoscrolled.
+  const bandAdd = (setKey: string): void => {
+    const setPath = setPaths.get(setKey)
+    if (!setPath) return
+    if (collapsed.has(setKey)) toggleCollapse(setKey)
+    const seeds = impliedSeeds()
+    const order = structuralOrder
+      ? orderWithSlot(containerPagesOf(setPath), null, 'last')
+      : undefined
+    createPageIn(setPath, seeds, order, (pageId) => {
+      openCreateRename(pageId)
+      glideToRow(pageId)
+    })
+  }
+  // New Page Above / Below: born beside its anchor — the anchor's group value and sort-criteria
+  // values tie it there, and the order write breaks the tie at the gesture slot.
+  const newPageAdjacent = (row: ViewRow, where: 'above' | 'below'): void => {
+    const parentPath = row.path.slice(0, row.path.lastIndexOf('/'))
+    const seeds = impliedSeeds()
+    const gKey = rowGroup.get(row.id)
+    if (groupPropId && canReassign && gKey !== undefined) {
+      const bucket = subGrouped ? (subTargets.get(gKey)?.bucket ?? null) : gKey
+      const v = groupKeyToValue(bucket ?? UNGROUPED, groupPropType)
+      if (v !== null) seeds[groupPropId] = v
+    }
+    for (const criterion of liveView.sort ?? []) {
+      const t = declaredType(criterion.property_id, schema)
+      if (!t || !SEEDABLE_SORT_TYPES.has(t)) continue
+      const v = resolveFieldValue(row, criterion.property_id, schema)
+      if (v.kind !== 'null' && !isBlankValue(v)) seeds[criterion.property_id] = v
+    }
+    const order = structuralOrder
+      ? orderWithSlot(containerPagesOf(parentPath), row.id, where)
+      : undefined
+    createPageIn(parentPath, seeds, order, (pageId) => {
+      if (!structuralOrder) {
+        const allIds = flattenContainer(source, effectiveValues).rows.map((r) => r.id)
+        persistViewOrder(tieOrderWith(viewOrders[view.id], allIds, pageId, row.id, where))
+      }
+      openCreateRename(pageId)
+    })
+  }
+  // The grip's right-click menu — page meta plus the New Page pair, on the block grips'
+  // right-click-vs-drag interaction model.
+  const openRowGripMenu = async (row: ViewRow, e: React.MouseEvent): Promise<void> => {
+    e.preventDefault()
+    e.stopPropagation()
+    const cellEl = (e.currentTarget as HTMLElement).closest<HTMLElement>('.data-cell')
+    const { tabs, pinned } = useSession.getState()
+    const action = await window.nexus.rowGripMenu({
+      alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path }),
+    })
+    if (!action) return
+    if (action === 'title:preview')
+      useSession.getState().openPreview({ id: row.id, path: row.path })
+    else if (action === 'title:newtab')
+      void useSession
+        .getState()
+        .select({ kind: 'page', id: row.id, path: row.path }, { newTab: true })
+    else if (action === 'title:rename') {
+      if (titleColId) setEditing({ rowId: row.id, colId: titleColId, mode: 'editor' })
+    } else if (action === 'title:icon') {
+      iconCellRef.current = cellEl
+      setIconTarget({ path: row.path, icon: typeof row.icon === 'string' ? row.icon : undefined })
+      setIconPickerOpen(true)
+    } else if (action === 'title:newabove') newPageAdjacent(row, 'above')
+    else if (action === 'title:newbelow') newPageAdjacent(row, 'below')
+    else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
+  }
+  gripMenuRef.current = openRowGripMenu
 
   // A row drops its top divider (.row-lead) only when no VISIBLE data row sits directly above it — the
   // divider is a between-rows line. Headered groups: their first row follows the header, so it's always
@@ -1390,6 +1573,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         setIcons={setIcons}
         source={source}
         setPath={g.kind === 'structural-set' ? setPaths.get(g.key) : undefined}
+        onAdd={
+          g.kind === 'structural-set' && setPaths.has(g.key) ? () => bandAdd(g.key) : undefined
+        }
         // Only a Collection's direct-child Sets open (the sidebar's selectable rule) — deeper sub-Sets
         // are expand-only organizing folders.
         onOpen={
@@ -1574,6 +1760,7 @@ type RowCellApi = {
   click: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
   overlay: (row: ViewRow, col: ResolvedColumn) => React.ReactNode
   remove: (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null) => void
+  grip: (row: ViewRow, e: React.MouseEvent) => void
 }
 
 type DragShift = { from: number; to: number; width: number }
@@ -1631,6 +1818,7 @@ const DataRow = memo(function DataRow({
   return (
     <div
       ref={ref}
+      data-rid={row.id}
       className={cx(
         'data-row',
         selected && 'selected',
@@ -1688,6 +1876,16 @@ const DataRow = memo(function DataRow({
               <span
                 className="row-grip"
                 {...handle}
+                // A right-press is defaulted away exactly as the drag gestures default the left —
+                // preventing only the context menu comes too late to stop a seated caret.
+                onPointerDown={(e) => {
+                  if (e.button === 2) {
+                    e.preventDefault()
+                    return
+                  }
+                  handle.onPointerDown?.(e)
+                }}
+                onContextMenu={(e) => api.grip(row, e)}
                 onClick={(e) => e.stopPropagation()}
                 title="Drag to reorder"
               >

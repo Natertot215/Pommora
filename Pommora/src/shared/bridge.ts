@@ -33,6 +33,7 @@ import type { PageFrontmatter } from './schemas'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import type { GripMenuAction, GripMenuContext } from './gripMenu'
 import type { CellMenuAction, CellMenuContext } from './cellMenu'
+import type { RowGripMenuAction, RowGripMenuContext } from './rowGripMenu'
 import type { CardMenuAction, CardMenuContext } from './cardMenu'
 import type { ConnMenuAction } from './connections'
 import type { TabMenuAction, TabMenuContext } from './tabMenu'
@@ -280,6 +281,7 @@ export interface Asks {
   'grip-menu': { args: [ctx: GripMenuContext]; reply: GripMenuAction | null }
   'column-menu': { args: [ctx: ColumnMenuContext]; reply: ColumnMenuAction | null }
   'cell-menu': { args: [ctx: CellMenuContext]; reply: CellMenuAction | null }
+  'row-grip-menu': { args: [ctx: RowGripMenuContext]; reply: RowGripMenuAction | null }
   'card-menu': { args: [ctx: CardMenuContext]; reply: CardMenuAction | null }
   'tab-menu': { args: [ctx: TabMenuContext]; reply: TabMenuAction | null }
   'nav-row-menu': { args: [ctx: NavRowMenuContext]; reply: NavRowMenuAction | null }

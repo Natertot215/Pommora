@@ -19,6 +19,7 @@ export function TableGroupBand({
   source,
   setPath,
   onOpen,
+  onAdd,
   collapsed,
   onToggle,
   indent,
@@ -35,6 +36,8 @@ export function TableGroupBand({
   setPath?: string
   /** Present only for OPENABLE Sets (a Collection's direct children — sub-Sets are expand-only). */
   onOpen?: () => void
+  /** The band "+"'s creation handler — present on structural Set bands only. */
+  onAdd?: () => void
   collapsed: boolean
   onToggle: () => void
   indent: string
@@ -59,6 +62,7 @@ export function TableGroupBand({
       collapsed={collapsed}
       onToggle={onToggle}
       showAdd={bandShowsAdd(group.kind)}
+      onAdd={onAdd}
       subBand={group.bucket !== undefined}
       indent={indent}
       dragHandle={dragHandle}
