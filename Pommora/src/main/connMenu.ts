@@ -12,7 +12,7 @@ export function popConnMenu(win: BrowserWindow): Promise<ConnMenuAction | null> 
       resolve(a)
     }
     const items: MenuItemConstructorOptions[] = [
-      { label: 'Open in Preview', click: pick('preview') },
+      { label: 'Open Preview', click: pick('preview') },
     ]
     Menu.buildFromTemplate(items).popup({
       window: win,

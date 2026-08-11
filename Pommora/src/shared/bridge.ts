@@ -302,7 +302,10 @@ export interface Tells {
  *  per entry, and main sends through the typed `push` helper. */
 export interface Pushes {
   'menu:action': string
-  'begin-rename': string
+  // `create` marks a just-created entity's naming session — the field opens empty and the
+  // first commit rides the create (disambiguating, cascade-free).
+  'begin-rename': { path: string; create?: boolean }
+  'new-page-adjacent': { path: string; where: 'above' | 'below' }
   'open-in-new-tab': ContextTarget
   'open-in-preview': ContextTarget
   'nav:changed': Omit<NavigationState, 'recents'>

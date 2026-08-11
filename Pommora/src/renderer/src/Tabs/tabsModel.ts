@@ -103,7 +103,7 @@ export function sameTabs(a: Tab[], b: Tab[]): boolean {
   )
 }
 
-/** Drives the stateful "Open" vs "Open in New Tab" menu labels. */
+/** Drives the stateful "Open" vs "Open New Tab" menu labels. */
 export function isOpenInTabs(tabs: Tab[], pinned: NavRef[], target: SelectTarget): boolean {
   const key = navKey(target)
   return (

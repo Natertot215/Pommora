@@ -2,7 +2,7 @@ import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { NavRowMenuAction, NavRowMenuContext } from '@shared/navRowMenu'
 
-// The NavWindow row/card menu: Open · Open in Preview · Pin/Unpin · Favorite/Unfavorite ·
+// The NavWindow row/card menu: Open · Open Preview · Pin/Unpin · Favorite/Unfavorite ·
 // Remove, gated by the row's live state. resolve(null) covers a dismissed menu so the renderer no-ops.
 export function popNavRowMenu(
   win: BrowserWindow,
@@ -17,10 +17,10 @@ export function popNavRowMenu(
     const items: MenuItemConstructorOptions[] = []
     if (ctx.canOpenNewTab)
       items.push({
-        label: ctx.alreadyOpen ? 'Open' : 'Open in New Tab',
+        label: ctx.alreadyOpen ? 'Open' : 'Open New Tab',
         click: pick('open-new-tab'),
       })
-    if (ctx.isPage) items.push({ label: 'Open in Preview', click: pick('open-preview') })
+    if (ctx.isPage) items.push({ label: 'Open Preview', click: pick('open-preview') })
     if (items.length > 0) items.push({ type: 'separator' })
     items.push({
       label: ctx.isPinned ? 'Unpin' : 'Pin',

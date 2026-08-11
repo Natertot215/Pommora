@@ -3,10 +3,10 @@
 // and returns the chosen action (or null on dismiss); the renderer runs it against the row it held.
 
 export interface NavRowMenuContext {
-  /** Open lands a tab — the label reads "Open" when the target is already open, else "Open in New Tab". */
+  /** Open lands a tab — the label reads "Open" when the target is already open, else "Open New Tab". */
   canOpenNewTab: boolean
   alreadyOpen: boolean
-  /** Only pages offer Open in Preview. */
+  /** Only pages offer Open Preview. */
   isPage: boolean
   isPinned: boolean
   isFavorite: boolean

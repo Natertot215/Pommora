@@ -22,7 +22,7 @@ export interface CardMenuContext {
   moveTargets?: MoveTarget[]
   /** The page's current parent path — its own "Move Here" is disabled (moving there is a no-op). */
   currentParentPath?: string
-  /** An open page reads "Open" (focus its tab) rather than "Open in New Tab". */
+  /** An open page reads "Open" (focus its tab) rather than "Open New Tab". */
   alreadyOpen?: boolean
 }
 

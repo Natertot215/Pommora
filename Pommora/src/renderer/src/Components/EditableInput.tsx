@@ -11,6 +11,7 @@ import { autoSizeWrap, autoSizeMirror, autoSizeInput } from './EditableInput.css
  */
 export function EditableInput({
   value,
+  initialText,
   className,
   maxLength,
   autoSize,
@@ -20,6 +21,9 @@ export function EditableInput({
   onCancel,
 }: {
   value: string
+  /** What the field opens holding, when that differs from `value` — a creation's naming session
+   *  opens empty while `value` (the real title) stays the commit comparison. */
+  initialText?: string
   className: string
   maxLength?: number
   autoSize?: boolean
@@ -50,7 +54,7 @@ export function EditableInput({
       // The input is its own inline scroller, so the eclipse fade follows the caret to whichever
       // edge is hiding text — an ellipsis can't; Chromium drops it while a field is focused.
       className={cx(className, !boxed && 'overflow-eclipse', autoSize && autoSizeInput)}
-      defaultValue={value}
+      defaultValue={initialText ?? value}
       size={autoSize ? 1 : undefined}
       // Every consumer is a title field — proper nouns, not prose; squiggles are noise.
       spellCheck={false}
@@ -86,7 +90,7 @@ export function EditableInput({
   return (
     <span className={autoSizeWrap}>
       <span ref={mirror} className={autoSizeMirror} aria-hidden>
-        {value || ' '}
+        {(initialText ?? value) || ' '}
       </span>
       {field}
     </span>

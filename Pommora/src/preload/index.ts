@@ -190,7 +190,7 @@ const api = {
   tabMenu: ask('tab-menu'),
   // A NavWindow row/card's right-click menu (Open · Pin · Favorite · Remove).
   navRowMenu: ask('nav-row-menu'),
-  // A wikilink's right-click menu (Open in Preview).
+  // A wikilink's right-click menu (Open Preview).
   connMenu: ask('conn-menu'),
   // A property's native menu (editor ⋮ / row right-click); Delete confirms in main first.
   propertyMenu: ask('property-menu'),
@@ -204,10 +204,12 @@ const api = {
   onMenuAction: on('menu:action'),
   // Main asks the renderer to start inline-renaming the row at this path (context-menu Rename).
   onBeginRename: on('begin-rename'),
-  // The context-menu "Open in New Tab" push-back — the action runs renderer-side (main can't know
+  // The context-menu New Page Above/Below push-back — the renderer computes the position.
+  onNewPageAdjacent: on('new-page-adjacent'),
+  // The context-menu "Open New Tab" push-back — the action runs renderer-side (main can't know
   // the tab set).
   onOpenInNewTab: on('open-in-new-tab'),
-  // The context-menu "Open in Preview" push-back — same contract as onOpenInNewTab.
+  // The context-menu "Open Preview" push-back — same contract as onOpenInNewTab.
   onOpenInPreview: on('open-in-preview'),
   // The live watcher pushed fresh nav state (external/synced sidecar or pin change) — no tree walk.
   onNavChanged: on('nav:changed'),
