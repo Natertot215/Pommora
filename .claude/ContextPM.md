@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-**Documentation normalization — closed.** Every Feature doc, Versioning, and the PRD read to one standard ([[HistoryPM]] §PM-095): product-documentation register, one owner per fact with pointers everywhere else, tails running Known Issues → Pending → Prospects, and a codemap table of contents opening each spec. The atlas stayed checker-verified through the pass, with PM-094's minted tokens captured. The next session opens on a fresh pick — §Pending Focuses holds the standing options, with the identity/order-persistence arc and the subfield reorder the two nearest doors.
+**Creation affordances — built, awaiting Nathan's live confirmation.** In-view page creation shipped across the table and the sidebar ([[HistoryPM]] §PM-096): the band "+", the grip menu's New Page Above/Below, the sidebar pair, the hover ghost row, and one creation feel everywhere — the page exists as Untitled the moment the gesture fires and its title opens empty. What remains is the live pass: the native menu picks, the ghost's disclosure beat under a real mouse, and the empty field on the sidebar surfaces.
 
 ### Immediate Work
 
@@ -27,7 +27,6 @@
 - [ ] **The trash browser.** The deletion record's restore path ships and is tested end to end; what's missing is enumeration, since `listBundles` has no bridge entry and no non-test caller. A UI build plus one channel on a finished engine.
 - [ ] **The main pane's Inspector.** Its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty. The Page Preview's frontmatter inspector is a portable body already doing that job for another host.
 - [ ] **An unresolved `[[Link]]` is inert** — no colour, no click, no way to create the page it names. Writing a forward reference and filling it in later is the loop that makes inline linking worth using. Adjacent to Aliases; both sit on the connection layer.
-- [ ] **In-view page creation.** Sparse across every surface and the item that would be felt daily; wants a brainstorm loop rather than a patch.
 - [ ] **Cross-location card reordering** in views — scoped and mechanical.
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
@@ -47,7 +46,7 @@
 ### Important Information
 
 - **The kind key is a second identity source by design.** A file's kind key and its folder's sidecar declare the same thing on purpose, since their disagreement is what makes a mislocated file recognizable — a checksum rather than the two-writers defect.
-- **The inert affordances render at full weight while their features are built.** The unimplemented view tiles swallow their click and the group-band "+" on structural Set bands carries an `aria-label` with no handler; both read as live controls and wait on the work behind them.
+- **The inert affordances render at full weight while their features are built.** The unimplemented view tiles swallow their click and read as live controls waiting on the work behind them; the Cards band's "+" does the same until the card chrome adopts the creation engine.
 - **The `ViewPane` "more" button and the NavPane's toolbar dropdown are stubs** — a stub and a blank surface at a fixed ceiling, each holding its place while what it opens is decided.
 - **The reachability razor cuts guards, never structure.** Before defending against a state, name who produces it — nobody means no guard. The recurring failure is over-applying it: an unreached code path is dead weight the razor says nothing about.
 - **A whole-surface drag handle steals its own children's clicks.** The drag engine captures the pointer on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags.
@@ -68,7 +67,6 @@
 - [ ] Perf debt: no row virtualization, and an external value edit doesn't live-refresh an open table.
 - [ ] iCloud-sync readiness — `serializeOnFile` can't coordinate with the iCloud daemon under LWW, `nexus.db` needs sync-exclusion, and the walk has to skip `.icloud` placeholders.
 - [ ] Two prospects from the property-syntax arc: an inline field-error surface, and what a duplicate property name should do.
-- [ ] Mint the inactive state token: the six empty-state text sites read `--label-tertiary` as an interim (each marked `Awaiting proper inactive state token`), and the token that names that state joins the `--state` family when its value is ruled.
 - [ ] `SessionState.error` and `pageError` hold strings while the wire carries `PommoraError` whole — widening them is near-zero churn.
 - [ ] `pageEditor` and `ConnectionHoverCard` reach the editor by CSS selector; the registered-handle pattern that replaces it is already established in `sidebarDnd`, `paneDnd`, and `useOptionReorder`.
 - [ ] `revealPageOffset` sleeps on a duration to wait out a fold animation while `folding.ts` owns the real completion signal.
@@ -87,6 +85,11 @@
 - [ ] The PageOutline's list-indent is noticeably different from other disclosure spacings (Sidebar, GroupPane, Tables), and likely needs a second pass to confirm whether it was actually consolidated around the shared primitive. 
 
 ### Recent Work
+
+#### PM-096 || Creation Lives In The View
+**DATE:** 08-11-2026
+
+In-view page creation shipped whole: `createPage` carries seeds and a full-membership order slot in one write, a just-created page's first naming disambiguates like a create and skips the link cascade, and every trigger — the band "+", the grip menu's New Page Above/Below, the sidebar pair, and the hover ghost row on the shared disclosure motion — opens an empty naming field over a page already real on disk. `--state-inactive` joined the opacity ramp and `--state-disabled` died into it, and the in-drop label renames landed everywhere: Open New Tab · Open Preview.
 
 #### PM-095 || Documentation Normalization
 **DATE:** 08-10-2026
@@ -107,11 +110,6 @@ The design docs now state token literals under SOURCE-tagged tables — the one 
 **DATE:** 08-10-2026
 
 Every block grip's right-click resolves through one kind-keyed menu: Delete on all of them, "Type ▸" on a list, "Page Source ▸" on an embed tile. The callout's separate grip-menu writer — its own handler, channel, and contract — became one arm of that union, and one delete rule now serves every kind, which took the doubled blank line the callout's own delete used to leave. Embed Page left the grip entirely; the page's own menu already carried Insert ▸ Page. A list block switches all four marker kinds at every level of its nesting, ordered runs counting per level, through a writer beside the per-line format toggle — the shape the codeblock's language switch follows.
-
-#### PM-091 || CSS Token Organization
-**DATE:** 08-10-2026
-
-The shared drag chrome — insertion line, dot, host, and ghost — moved into `design-system/interactions` under honest names, the ghost's glass became the `GHOST_FROST` materials recipe, and `--shadow-lift`, `--drop-line-inset`, and `--state-disabled` joined the tokens. The `--drag-muted` alias died and its out-of-scope consumers (tab strip, pins, nav rows) got their silently-missing drag fade back. Footer chrome, `iconOption`, and the NavPane anchor each moved to their one owner; the banner/title and nav-list spreads were adjudicated as the theming contract working and kept.
 
 ### Guidelines
 

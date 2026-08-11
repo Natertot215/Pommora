@@ -8,24 +8,23 @@
 **Dates:** 08-10-2026
 **Model:** Fable 5 (1M context)
 
-**Creation affordances — planned, awaiting the go.** The brainstorm converged through two adversarial rounds into a zero-open decision log, and the plan is written at `Planning/Creation Affordances — Plan.md` — five phases: the creation engine (seeds + order in one `createPage` write, the create-origin rename that disambiguates and skips the cascade), the table surfaces (band-add, grip menu, Above/Below), sidebar + the uniform empty field + the label renames, the hover-dwell ghost row with `--state-inactive` minted, and the docs/purge/closeout phase. The model is deliberately simple: no draft state of any kind — the page exists on click, the pipeline owns placement through seeds and creation-time order writes, and the rename field is an ordinary uncommitted edit that opens empty.
+**Creation affordances — executed and closed ([[HistoryPM]] §PM-096); Nathan's live confirmation is the one pending item.** The overnight run completed all five phases on his go: the creation engine (seeds + a positional order slot in one `createPage` write; the from-create rename that disambiguates, skips the cascade, and reports the landed name), the table surfaces (band-add, the `row-grip-menu` channel, Above/Below), the sidebar pair + the empty naming field on every create path + the all-surface label renames, the ghost row on the disclosure Reveal, and the closeout — docs trued, atlas green, purge clean, PM-096 filed. Two mid-run rulings from Nathan reshaped the tokens: `--state-inactive` is a bare `0.55` in the opacity ramp worn over the standard label, and `--state-disabled` was removed outright with its consumers adopting inactive.
 
-The pipeline Nathan set: plan → simplify (done) → review (build-breaker attacking the plan) → his explicit go → **unattended overnight execution that stops only when fully done**. Review findings get verified firsthand before folding — both earlier rounds proved agents wrong about lines they cited.
+Verification ran three layers deep: gates (207 files / 2,319 tests), a final build-breaker whose five findings were all fixed (the positional optimistic splice chief among them), and Nathan's requested ten-scenario interactive matrix driven live via CDP in the Test-nexus sandbox — groupings, sorts, nesting, filters, collapsed bands, ghost edges — all passing. The sandbox is torn down without residue and a clean dev instance runs on NexusOS.
 
 #### Completion Criteria
 
-- [ ] The plan survives its breaker review (findings folded or rejected with reasons), and Nathan ratifies it with an explicit go.
-- [ ] Every phase lands: implement → code-simplifier on the phase diff → typecheck/lint/test green by summary line → CDP verification where the phase names it → explicit-path commit.
-- [ ] Every decision-log entry is implemented, or its deviation is recorded in the plan's Log and surfaced in the report.
-- [ ] The blast radius is fully reconciled — Feature docs trued, atlas green, PM-096 written (noting the dropped "in" per Nathan), ContextPM's resolved lines removed.
-- [ ] The purge is clean, the final build-breaker's findings are fixed (DONE_WITH_CONCERNS means fix), and the gates are green after the fixes.
-- [ ] Nathan's full in-chat report is delivered: What Changed · Along the Way · Immediate Work · Final LOC (code-only) · verification evidence.
-- [ ] The only pending item anywhere is Nathan's live confirmation — nothing else survives as "later."
+- [x] The plan survives its breaker review (findings folded or rejected with reasons), and Nathan ratifies it with an explicit go.
+- [x] Every phase lands: implement → code-simplifier on the phase diff → typecheck/lint/test green by summary line → CDP verification where the phase names it → explicit-path commit.
+- [x] Every decision-log entry is implemented, or its deviation is recorded in the plan's Log and surfaced in the report.
+- [x] The blast radius is fully reconciled — Feature docs trued, atlas green, PM-096 written (noting the dropped "in" per Nathan), ContextPM's resolved lines removed.
+- [x] The purge is clean, the final build-breaker's findings are fixed (DONE_WITH_CONCERNS means fix), and the gates are green after the fixes.
+- [x] Nathan's full in-chat report is delivered: What Changed · Along the Way · Immediate Work · Final LOC (code-only) · verification evidence.
+- [x] The only pending item anywhere is Nathan's live confirmation — nothing else survives as "later."
 
 #### Next Session
 
-- If execution hasn't started: fold the plan-review findings, present for the go.
-- If execution ran: verify its report against the tree firsthand (never consolidate the run's claims blindly), then walk Nathan through live confirmation.
+- Walk Nathan through live confirmation: the two native menu picks (grip + sidebar), the empty field on the sidebar/subfield creates, the ghost row's dwell-appear-click feel under a real mouse, and the band-add glide.
 
 #### Feedback
 
