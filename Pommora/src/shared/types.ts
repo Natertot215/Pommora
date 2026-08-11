@@ -362,7 +362,7 @@ export interface PreviewsFile {
   navSet: PreviewSetRecord | null
   origins: Record<string, PreviewSetRecord>
   open: { flavor: 'page' | 'nav'; originId: string } | null
-  /** The NavWindow's routing override — "Open in Preview" from its rows opens a tab in THIS
+  /** The NavWindow's routing override — "Open Preview" from its rows opens a tab in THIS
    *  window instead of the floating preview. Absent = on (Nathan's default: the override wins). */
   navOverride?: boolean
 }

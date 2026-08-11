@@ -83,7 +83,7 @@ describe('tabsModel — openTab', () => {
     expect(r.activeTabId).toBe('NEW')
   })
 
-  it('spawns on explicit Open in New Tab, appended right (D-3, D-12)', () => {
+  it('spawns on explicit Open New Tab, appended right (D-3, D-12)', () => {
     const r = openTab([tab('t1', 'a')], 't1', [], pt('b'), { newTab: true }, 'NEW')
     expect(r.tabs.map((t) => t.id)).toEqual(['t1', 'NEW'])
     expect(r.activeTabId).toBe('NEW')

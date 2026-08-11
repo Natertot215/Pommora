@@ -5,7 +5,7 @@ describe('cardMenuModel', () => {
   it('lists the page-meta actions with separators (Open lead, Delete gated)', () => {
     const m = cardMenuModel({ addable: [] })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([
-      ['Open in New Tab', 'title:newtab'],
+      ['Open New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
       ['Change Icon', 'title:icon'],
       ['Delete', 'title:delete'],

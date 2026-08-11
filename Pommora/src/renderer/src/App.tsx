@@ -45,6 +45,7 @@ export function App(): React.JSX.Element {
   const newPage = useSession((s) => s.newPage)
   const openNewTab = useSession((s) => s.openNewTab)
   const beginRename = useSession((s) => s.beginRename)
+  const newPageAdjacent = useSession((s) => s.newPageAdjacent)
   const select = useSession((s) => s.select)
   useNavThumbnails() // capture-on-open detail-pane thumbnails for the gallery
 
@@ -91,8 +92,12 @@ export function App(): React.JSX.Element {
   }, [load])
 
   useEffect(() => {
-    return window.nexus.onBeginRename((path) => beginRename(path))
+    return window.nexus.onBeginRename(({ path, create }) => beginRename(path, create))
   }, [beginRename])
+
+  useEffect(() => {
+    return window.nexus.onNewPageAdjacent(({ path, where }) => void newPageAdjacent(path, where))
+  }, [newPageAdjacent])
 
   // Dedup focuses an already-open tab instead of duplicating.
   useEffect(() => {

@@ -1,7 +1,7 @@
 // The page context-menu meta block (Open · Rename · Change Icon · Delete) — shared by the table
 // cell's title menu (cellMenu), the card's right-click menu (cardMenu), and the row grip's menu
 // (rowGripMenu) so the page-meta actions stay single-sourced. An already-open page reads "Open"
-// (focus its tab) rather than "Open in New Tab". Each consumer names its item set explicitly —
+// (focus its tab) rather than "Open New Tab". Each consumer names its item set explicitly —
 // the extras render only where they're requested, so no menu carries an action its router
 // doesn't serve.
 
@@ -20,7 +20,7 @@ export function pageMetaMenuItems(
 ): Array<{ label: string; action: PageMetaAction; separatorBefore?: boolean }> {
   return [
     ...(opts.preview ? [{ label: 'Open Preview', action: 'title:preview' as const }] : []),
-    { label: alreadyOpen ? 'Open' : 'Open in New Tab', action: 'title:newtab' },
+    { label: alreadyOpen ? 'Open' : 'Open New Tab', action: 'title:newtab' },
     { label: 'Rename', action: 'title:rename', separatorBefore: true },
     { label: 'Change Icon', action: 'title:icon' },
     ...(opts.newPages
