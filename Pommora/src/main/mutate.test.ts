@@ -4,6 +4,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile, readdir, chmod } from 'node:fs
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { handleMutate, type MutateDeps } from './mutate'
+import { NEW_PAGE_SLOT } from '@shared/mutate'
 
 const A_ID = '01KVGMT8BFG350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFG350FZZXAMG1QDRB'
@@ -77,18 +78,116 @@ describe('handleMutate — create', () => {
     expect(second.ok && second.value.created?.path).toBe('Notes/Daily/Untitled 2.md')
     expect(await pathExists(join(root, 'Notes/Daily/Untitled 2.md'))).toBe(true)
   })
+
+  it('createPage seeds stamp in the birth write; a dead-property seed drops; a blank seed writes no key', async () => {
+    await createProperty(root, { id: 'prop_stage', name: 'Stage', type: 'select' })
+    const r = await handleMutate(
+      {
+        op: 'createPage',
+        parentPath: 'Notes/Daily',
+        name: 'Seeded',
+        seeds: {
+          prop_stage: { kind: 'select', value: 'doing' },
+          prop_gone: { kind: 'select', value: 'x' },
+        },
+      },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    const fm = splitFrontmatter(await read('Notes/Daily/Seeded.md'))
+    expect(fm['<Stage>']).toBe('doing')
+    expect(Object.keys(fm).some((k) => k.includes('gone'))).toBe(false)
+
+    const blank = await handleMutate(
+      {
+        op: 'createPage',
+        parentPath: 'Notes/Daily',
+        name: 'Blank Seed',
+        seeds: { prop_stage: { kind: 'select', value: '' } },
+      },
+      nexusDeps,
+    )
+    expect(blank.ok).toBe(true)
+    expect('<Stage>' in splitFrontmatter(await read('Notes/Daily/Blank Seed.md'))).toBe(false)
+  })
+
+  it('createPage order substitutes NEW_PAGE_SLOT with the minted id and persists page_order', async () => {
+    const r = await handleMutate(
+      {
+        op: 'createPage',
+        parentPath: 'Notes/Daily',
+        name: 'Ordered',
+        order: [NEW_PAGE_SLOT, A_ID, B_ID],
+      },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const sidecar = JSON.parse(await read('Notes/Daily/_pageset.json')) as {
+      page_order?: string[]
+    }
+    expect(sidecar.page_order).toEqual([r.value.created?.id, A_ID, B_ID])
+    // The read path applies it: Ordered resolves first, ahead of Alpha and Beta.
+    const tree = await readNexus(root)
+    const daily = tree.collections
+      .flatMap((c) => c.sets)
+      .find((s) => s.path === 'Notes/Daily')
+    expect(daily?.pages.map((p) => p.title).slice(0, 3)).toEqual(['Ordered', 'Alpha', 'Beta'])
+  })
 })
 
 describe('handleMutate — rename', () => {
-  it('page rename renames the file AND cascades inbound [[links]]', async () => {
+  it('page rename renames the file AND cascades inbound [[links]], reporting the landed name', async () => {
     const r = await handleMutate(
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.renamed).toEqual({ path: 'Notes/Daily/Gamma.md', name: 'Gamma' })
     expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(false)
     expect(await read('Notes/Daily/Alpha.md')).toContain('[[Gamma]]')
+  })
+
+  it('a fromCreate rename disambiguates a collision instead of rejecting, and reports what landed', async () => {
+    await handleMutate(
+      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
+      nexusDeps,
+    )
+    const r = await handleMutate(
+      {
+        op: 'rename',
+        path: 'Notes/Daily/Untitled.md',
+        kind: 'page',
+        newName: 'Beta',
+        fromCreate: true,
+      },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.renamed).toEqual({ path: 'Notes/Daily/Beta 2.md', name: 'Beta 2' })
+    expect(await pathExists(join(root, 'Notes/Daily/Beta 2.md'))).toBe(true)
+    expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(true)
+  })
+
+  it('a fromCreate rename skips the link cascade — inbound [[links]] to the old title stay put', async () => {
+    // Alpha links [[Beta]]; a from-create rename of Beta must NOT rewrite it (an ordinary
+    // rename does — the test above goes red if the skip were unconditional).
+    const r = await handleMutate(
+      {
+        op: 'rename',
+        path: 'Notes/Daily/Beta.md',
+        kind: 'page',
+        newName: 'Delta',
+        fromCreate: true,
+      },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await pathExists(join(root, 'Notes/Daily/Delta.md'))).toBe(true)
+    expect(await read('Notes/Daily/Alpha.md')).toContain('[[Beta]]')
   })
 
   it('container rename renames the folder (no cascade)', async () => {

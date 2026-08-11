@@ -22,11 +22,16 @@ const MD = '.md'
 
 /** Create a `.md` page in `parentDir` with a fresh ULID and
  *  created/modified timestamps (no context keys — presence is value-driven). Optional
- *  icon + initial body. */
+ *  icon, initial body, and resolved property values stamped in the same birth write —
+ *  a seeded page is never observable unstamped. Blank values write no key (no-empties). */
 export async function createPage(
   parentDir: string,
   name: string,
-  opts: { icon?: string; body?: string } = {},
+  opts: {
+    icon?: string
+    body?: string
+    values?: { def: PropertyDefinition; value: PropertyValue }[]
+  } = {},
 ): Promise<Result<{ id: string; path: string }>> {
   if (invalidName(name)) return fail('invalid-name', `"${name}" is not a valid name.`)
   const file = join(parentDir, name + MD)
@@ -39,7 +44,14 @@ export async function createPage(
     modified_at: now,
   }
   if (opts.icon) modeled.icon = opts.icon
-  await writePageFile(file, modeled, PAGE_MODELED_KEYS, opts.body ?? '')
+  const keys: string[] = [...PAGE_MODELED_KEYS]
+  for (const { def, value } of opts.values ?? []) {
+    if (isBlankValue(value)) continue
+    const key = propertyKey(def)
+    modeled[key] = encodeValue(value)
+    keys.push(key)
+  }
+  await writePageFile(file, modeled, keys, opts.body ?? '')
   return ok({ id, path: file })
 }
 
