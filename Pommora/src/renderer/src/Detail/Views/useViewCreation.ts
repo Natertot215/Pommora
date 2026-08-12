@@ -19,7 +19,7 @@ import { useSession } from '../../store'
 import { declaredType, resolveFieldValue } from './pipeline/value'
 import { filterSeeds } from './pipeline/creationSeeds'
 import { flattenContainer } from './pipeline/group'
-import { orderWithSlot, tieOrderWith } from './creationOrder'
+import { appendOrderWith, orderWithSlot, tieOrderWith } from './creationOrder'
 import { groupKeyToValue } from './Table/reassign'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties.
@@ -156,7 +156,21 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       ? orderWithSlot(containerPagesOf(setPath), null, 'last')
       : undefined
     createPageIn(setPath, seeds, order, (created) => {
-      c.onCreated(created)
+      // A non-structural view has no page_order write to land the "end of the group" — absent
+      // any live array, the read-side title fallback would rank the newborn mid-band. Settle
+      // the tiebreaker with the newborn ranked last (banding partitions before it ranks).
+      const latest = cfg()
+      if (!latest.structuralOrder || latest.viewOrders[latest.view.id]) {
+        const allIds = flattenContainer(latest.source, latest.effectiveValues).rows.map(
+          (r) => r.id,
+        )
+        const appended = appendOrderWith(latest.viewOrders[latest.view.id], allIds, created.id)
+        latest.setManualOverride((m) =>
+          m ? appendOrderWith(m, allIds, created.id) : m,
+        )
+        latest.persistViewOrder(appended)
+      }
+      latest.onCreated(created)
       glideToRow(created.id)
     })
   }
