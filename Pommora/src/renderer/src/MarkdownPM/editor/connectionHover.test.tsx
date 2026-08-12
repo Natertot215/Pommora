@@ -71,6 +71,25 @@ describe('the hover intent', () => {
     expect(hover).not.toHaveBeenCalled()
   })
 
+  // A native menu takes the pointer and hands it back over the same link, and that re-entry is a
+  // fresh mouseover — cancelling once would let a preview bloom behind the menu just used.
+  it('re-entry over a link that was just acted on does not re-arm', async () => {
+    const { span } = await mountLink()
+    span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    over(span)
+    vi.advanceTimersByTime(1000)
+    expect(hover).not.toHaveBeenCalled()
+  })
+
+  it('leaving the link clears that, so a later dwell works', async () => {
+    const { span } = await mountLink()
+    span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
+    over(span)
+    vi.advanceTimersByTime(1000)
+    expect(hover).toHaveBeenCalledTimes(1)
+  })
+
   it('mouseout cancels; re-entry re-arms fresh', async () => {
     const { span } = await mountLink()
     over(span)
