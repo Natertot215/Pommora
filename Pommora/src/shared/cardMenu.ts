@@ -38,7 +38,7 @@ export interface CardMenuModel {
 /** The pure per-card item model — main maps it to Electron MenuItems. */
 export function cardMenuModel(ctx: CardMenuContext): CardMenuModel {
   return {
-    items: pageMetaMenuItems(ctx.alreadyOpen),
+    items: pageMetaMenuItems(ctx.alreadyOpen, { newPages: 'single' }),
     addProperty:
       ctx.addable.length > 0
         ? ctx.addable.map((d) => ({ label: d.name, action: `add:${d.id}` as const }))
