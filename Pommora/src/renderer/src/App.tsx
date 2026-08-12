@@ -92,7 +92,7 @@ export function App(): React.JSX.Element {
   }, [load])
 
   useEffect(() => {
-    return window.nexus.onBeginRename(({ path, create }) => beginRename(path, create))
+    return window.nexus.onBeginRename(({ path, create, host }) => beginRename(path, create, host))
   }, [beginRename])
 
   useEffect(() => {

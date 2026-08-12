@@ -61,6 +61,7 @@ export function resolveBandHead(
               title={title}
               className="band-title-input"
               boxed
+              host="detail"
             />
           ) : (
             title

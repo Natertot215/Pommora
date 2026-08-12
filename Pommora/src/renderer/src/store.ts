@@ -17,7 +17,12 @@ import {
   type SetNode,
   type Tab,
 } from '@shared/types'
-import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '@shared/mutate'
+import {
+  DEFAULT_NEW_NAME,
+  type MutableKind,
+  type MutateRequest,
+  type RenameHost,
+} from '@shared/mutate'
 import { orderWithSlot } from './Detail/Views/creationOrder'
 import { errText, fail, type Result } from '@shared/result'
 import { reconcileSelection, reconcileWith } from './selection'
@@ -77,6 +82,24 @@ import { applyPersonalization, applyPersonalizationKey } from './design-system/p
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './Detail/Scope'
 import { ensureContainerView } from './Detail/Views/viewMint'
 import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
+
+// The owner fence's resolver: claims for the live path only; a gesture-declared host wins,
+// then rank, then first-come — insertion order breaks ties at every step.
+let nextRenameToken = 1
+const RENAME_RANK: Record<RenameHost, number> = { detail: 2, sidebar: 1 }
+function resolveRenameWinner(
+  claims: { token: number; path: string; host: RenameHost }[],
+  s: { renamingPath: string | null; renamingHost: RenameHost | null },
+): number | null {
+  if (s.renamingPath === null) return null
+  const live = claims.filter((c) => c.path === s.renamingPath)
+  if (live.length === 0) return null
+  const declared = s.renamingHost ? live.find((c) => c.host === s.renamingHost) : undefined
+  if (declared) return declared.token
+  let winner = live[0]
+  for (const c of live) if (RENAME_RANK[c.host] > RENAME_RANK[winner.host]) winner = c
+  return winner.token
+}
 
 const SIDEBAR_MIN = 180
 const SIDEBAR_MAX = 380
@@ -279,7 +302,15 @@ interface SessionState {
   /** The open rename is a just-created entity's naming session — the field opens empty and a
    *  page's first commit rides the create (disambiguating, cascade-free). */
   renamingCreate: boolean
-  beginRename: (path: string, create?: boolean) => void
+  /** The gesture-declared field host, when the caller knew its surface; null resolves by rank. */
+  renamingHost: RenameHost | null
+  /** The owner fence: field hosts claim on mount; one claim wins (declared host first, then
+   *  rank — detail over sidebar — then first-come) and only the winner mounts an input. */
+  renameClaims: { token: number; path: string; host: RenameHost }[]
+  renameWinner: number | null
+  claimRename: (path: string, host: RenameHost) => number | null
+  releaseRename: (token: number) => void
+  beginRename: (path: string, create?: boolean, host?: RenameHost) => void
   cancelRename: () => void
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
   /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives. */
@@ -1394,8 +1425,48 @@ export const useSession = create<SessionState>((set, get) => {
 
     renamingPath: null,
     renamingCreate: false,
-    beginRename: (path, create) => set({ renamingPath: path, renamingCreate: create === true }),
-    cancelRename: () => set({ renamingPath: null, renamingCreate: false }),
+    renamingHost: null,
+    renameClaims: [],
+    renameWinner: null,
+    claimRename: (path, host) => {
+      if (path !== get().renamingPath) return null
+      const token = nextRenameToken++
+      set((s) => {
+        const renameClaims = [...s.renameClaims, { token, path, host }]
+        return { renameClaims, renameWinner: resolveRenameWinner(renameClaims, s) }
+      })
+      return token
+    },
+    releaseRename: (token) => {
+      const before = get()
+      const path = before.renamingPath
+      const released = before.renameClaims.find((c) => c.token === token)
+      const wasWinner = before.renameWinner === token
+      set((s) => {
+        const renameClaims = s.renameClaims.filter((c) => c.token !== token)
+        return { renameClaims, renameWinner: resolveRenameWinner(renameClaims, s) }
+      })
+      // The verdict waits a microtask: StrictMode's simulated remount (and any same-act re-key)
+      // releases and re-claims in one act — an immediate cancel would kill every dev rename.
+      // A rename whose winning surface left is abandoned, never handed to another host — a
+      // transfer would focus-steal, whole-title selected, and a create session would reopen empty.
+      queueMicrotask(() => {
+        const s = get()
+        if (path === null || s.renamingPath !== path) return
+        const survivor = s.renameClaims.find((c) => c.token === s.renameWinner)
+        if (survivor && !(wasWinner && released && survivor.host !== released.host)) return
+        s.cancelRename()
+      })
+    },
+    beginRename: (path, create, host) =>
+      set((s) => ({
+        renamingPath: path,
+        renamingCreate: create === true,
+        renamingHost: host ?? null,
+        renameWinner: resolveRenameWinner(s.renameClaims, { renamingPath: path, renamingHost: host ?? null }),
+      })),
+    cancelRename: () =>
+      set({ renamingPath: null, renamingCreate: false, renamingHost: null, renameWinner: null }),
     newPageAdjacent: async (path, where) => {
       const tree = get().tree
       if (!tree) return
@@ -1416,7 +1487,7 @@ export const useSession = create<SessionState>((set, get) => {
     },
     submitRename: async (path, kind, newName) => {
       const fromCreate = get().renamingCreate && kind === 'page'
-      set({ renamingPath: null, renamingCreate: false })
+      set({ renamingPath: null, renamingCreate: false, renamingHost: null, renameWinner: null })
       // Registry entities rename by id through their journaled cascade ops — a bare folder
       // rename would strand every member file's title key.
       if (kind === 'space' || kind === 'context') {

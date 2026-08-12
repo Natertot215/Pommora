@@ -23,7 +23,7 @@ import type {
   ViewButton,
   ViewStyle,
 } from './types'
-import type { ContextTarget, MutateReply, MutateRequest } from './mutate'
+import type { ContextTarget, MutateReply, MutateRequest, RenameHost } from './mutate'
 import type { Result } from './result'
 import type { FormatState } from './editorMenu'
 import type { SavedView } from './views'
@@ -304,7 +304,7 @@ export interface Pushes {
   'menu:action': string
   // `create` marks a just-created entity's naming session — the field opens empty and the
   // first commit rides the create (disambiguating, cascade-free).
-  'begin-rename': { path: string; create?: boolean }
+  'begin-rename': { path: string; create?: boolean; host?: RenameHost }
   'new-page-adjacent': { path: string; where: 'above' | 'below' }
   'open-in-new-tab': ContextTarget
   'open-in-preview': ContextTarget
