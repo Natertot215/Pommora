@@ -183,6 +183,16 @@
      clip past them without touching the horizontal truncation fade. */
   padding-block: 1px;
 }
+/* The naming session's title row — a plain flex row (never the truncating scroll box, whose clip
+   would hide the field's caret travel); the glyph keeps its seat beside the field. */
+.page-card-title:has(.card-title-input) {
+  display: flex;
+  align-items: center;
+}
+.card-title-input {
+  flex: 1;
+  min-width: 0;
+}
 .page-card-title.is-wrap {
   display: inline;
 }
