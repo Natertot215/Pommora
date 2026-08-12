@@ -67,6 +67,7 @@ import { numberDivisor } from '../PropertyEditing/formatValue'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { useGhostAnchor } from '../useGhostAnchor'
 import { useViewCreation } from '../useViewCreation'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
@@ -1078,17 +1079,23 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // creation handlers, after the writers they route to.
   const gripMenuRef = useRef<(row: ViewRow, e: React.MouseEvent) => Promise<void>>(null)
   const hoverRef = useRef<(row: ViewRow, entering: boolean) => void>(null)
-  // The hover ghost row's anchor + its dwell/grace timers (see the handlers below, with the
-  // other creation writers). Hooks live here, above the loading/empty returns.
-  const [ghost, setGhost] = useState<{ rowId: string; closing: boolean } | null>(null)
-  const ghostTimers = useRef<{ dwell: number | null; grace: number | null }>({
-    dwell: null,
-    grace: null,
-  })
+  // The hover ghost row rides the shared mechanism. Hooks live here, above the loading/empty
+  // returns; a cell editor suppresses the ghost, re-read at the dwell's fire time.
   const editingRef = useRef(editing)
   editingRef.current = editing
-  // A native menu owns the pointer while it's up — no hover is real until it resolves.
-  const menuOpenRef = useRef(false)
+  const ghostApi = useGhostAnchor({
+    dwellMs: GHOST_DWELL_MS,
+    graceMs: GHOST_GRACE_MS,
+    suppressed: () => editingRef.current !== null,
+  })
+  const ghost = ghostApi.ghost
+  const withGhostSuppressed = ghostApi.suppressWrap
+  // The anchor left the pipeline (reload, filter, regroup) — clear ghost STATE, not just its
+  // render: a stranded `closing` would reopen with no dwell on the next hover.
+  const strandedGhostId = ghost !== null && !rowById.has(ghost.anchorId) ? ghost.anchorId : null
+  useEffect(() => {
+    if (strandedGhostId !== null) ghostApi.clear(strandedGhostId)
+  })
   // The shared creation engine. The config getter runs only at gesture time, so it may close
   // over render-scope consts declared below the loading/empty returns.
   const {
@@ -1117,12 +1124,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     viewRootRef: viewRef,
     onCreated: openCreateRename,
   }))
-  useEffect(
-    () => () => {
-      for (const t of Object.values(ghostTimers.current)) if (t !== null) window.clearTimeout(t)
-    },
-    [],
-  )
   const cellApi = useMemo<RowCellApi>(
     () => ({
       menu: (row, col, e) => void cellApiRef.current.openCellMenu(row, col, e),
@@ -1465,64 +1466,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
   }
   gripMenuRef.current = openRowGripMenu
-  // The hover ghost row — pure chrome: pixels only, no page until the click, which runs the same
-  // immediate-create act as New Page Below. Dwell arms it, the grace window paces the close on a
-  // leave, landing IN the ghost keeps it, and any rename session suppresses it outright.
-  const clearGhostTimer = (key: 'dwell' | 'grace'): void => {
-    const t = ghostTimers.current[key]
-    if (t !== null) window.clearTimeout(t)
-    ghostTimers.current[key] = null
-  }
-  // Dismissal exits on the same Reveal collapse the entrance rode — `closing` holds the row mounted
-  // through it, and onCollapsed unmounts. A create skips the exit: the real row takes the seat.
-  const closeGhost = (): void => setGhost((g) => (g ? { ...g, closing: true } : g))
-  // Wraps a native-menu pop: the ghost stands down and stays unarmed while the menu holds the pointer.
-  const withGhostSuppressed = async <T,>(menu: () => Promise<T>): Promise<T> => {
-    clearGhostTimer('dwell')
-    clearGhostTimer('grace')
-    closeGhost()
-    menuOpenRef.current = true
-    try {
-      return await menu()
-    } finally {
-      menuOpenRef.current = false
-    }
-  }
-  const onRowHover = (row: ViewRow, entering: boolean): void => {
-    clearGhostTimer('dwell')
-    clearGhostTimer('grace')
-    if (!entering) {
-      ghostTimers.current.grace = window.setTimeout(closeGhost, GHOST_GRACE_MS)
-      return
-    }
-    if (editing || menuOpenRef.current) return
-    // Returning to the anchor mid-exit reverses the collapse instead of re-dwelling.
-    if (ghost?.rowId === row.id) {
-      if (ghost.closing) setGhost({ rowId: row.id, closing: false })
-      return
-    }
-    // The grace serves the travel INTO the ghost — a ghost anchored elsewhere closes now.
-    closeGhost()
-    // Re-checked at fire time — a cell editor or native menu opened mid-dwell must not leave a
-    // ghost armed to snap in the instant it closes.
-    ghostTimers.current.dwell = window.setTimeout(() => {
-      if (!editingRef.current && !menuOpenRef.current) setGhost({ rowId: row.id, closing: false })
-    }, GHOST_DWELL_MS)
-  }
-  hoverRef.current = onRowHover
-  // Entering the ghost cancels a pending grace and reverses an exit already in flight; leaving
-  // gets the same grace the row's leave gets.
-  const onGhostEnter = (): void => {
-    clearGhostTimer('grace')
-    setGhost((g) => (g?.closing ? { ...g, closing: false } : g))
-  }
-  const onGhostLeave = (): void => {
-    clearGhostTimer('grace')
-    ghostTimers.current.grace = window.setTimeout(closeGhost, GHOST_GRACE_MS)
-  }
+  // The hover ghost row — pure chrome on the shared mechanism (useGhostAnchor): pixels only, no
+  // page until the click, which runs the same immediate-create act as New Page Below. Dismissal
+  // exits on the same Reveal collapse the entrance rode — `closing` holds the row mounted through
+  // it, and onCollapsed unmounts. A create skips the exit: the real row takes the seat.
+  hoverRef.current = (row, entering) => ghostApi.onHover(row.id, entering)
   const ghostCreate = (): void => {
-    const anchor = ghost ? rowById.get(ghost.rowId) : undefined
-    setGhost(null)
+    const anchorId = ghostApi.take()
+    const anchor = anchorId ? rowById.get(anchorId) : undefined
     if (anchor) newPageAdjacent(anchor, 'below')
   }
 
@@ -1568,7 +1519,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
             lead={lead}
           />,
         ]
-        if (itemsVisible && ghost?.rowId === row.id && !editing)
+        if (itemsVisible && ghost?.anchorId === row.id && !editing)
           rendered.push(
             <GhostRow
               key={`ghost-${row.id}`}
@@ -1576,9 +1527,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
               columns={columns}
               hideIcon={liveView.hide_page_icons ?? false}
               closing={ghost.closing}
-              onClosed={() => setGhost((g) => (g?.closing ? null : g))}
-              onEnter={onGhostEnter}
-              onLeave={onGhostLeave}
+              onClosed={ghostApi.closed}
+              onEnter={ghostApi.onGhostEnter}
+              onLeave={ghostApi.onGhostLeave}
               onCreate={ghostCreate}
             />,
           )
@@ -1820,6 +1771,7 @@ function GhostRow({
     <Reveal open={open && !closing} onCollapsed={onClosed}>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/useSemanticElements: a hover-born affordance that must wear the row grid's own chrome — a real <button> can't host a .data-row, and keyboard creation lives in the menus */}
       <div
+        data-ghost-root
         className="data-row ghost-row"
         role="button"
         tabIndex={-1}
