@@ -1,5 +1,5 @@
 import { EditorView, keymap } from '@codemirror/view'
-import { Prec } from '@codemirror/state'
+import { EditorSelection, Prec } from '@codemirror/state'
 import {
   continueListOnEnter,
   continueBlockquoteOnEnter,
@@ -101,6 +101,17 @@ const onShiftTab = (view: EditorView): boolean => {
  *  the user back to typing (table exits, the list-glyph click). */
 export function focusAt(view: EditorView, pos: number): void {
   view.dispatch({ selection: { anchor: pos } })
+  view.focus()
+}
+
+/** Seat the caret inside a span, selecting it when `to` differs. `assoc` is explicit for the bare
+ *  caret: a position on the boundary of a replaced range draws no caret without it, and every span
+ *  worth seating into here abuts hidden marker text. */
+export function focusRange(view: EditorView, from: number, to = from): void {
+  view.dispatch({
+    selection:
+      from === to ? EditorSelection.cursor(from, 1) : EditorSelection.range(from, to),
+  })
   view.focus()
 }
 
