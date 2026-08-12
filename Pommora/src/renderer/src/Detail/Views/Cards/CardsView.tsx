@@ -25,8 +25,10 @@ import {
 import { cx } from '@renderer/design-system/cx'
 import { assetUrl } from '../../../assetUrl'
 import { useSession } from '../../../store'
+import { byOrder } from '../../../treeMove'
 import { findCollectionForSet } from '@renderer/Detail/Scope'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
+import { spliceBeside } from '../creationOrder'
 import { resolveColumns } from '../pipeline/columns'
 import {
   contextOptionsFor as contextOptionsForSpaces,
@@ -284,14 +286,10 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
 
   const banner: CardBanner = view.card_banner ?? 'cover'
   const baseSets = source.sets ?? []
-  const sets = useMemo(() => {
-    if (!setOrderOverride) return baseSets
-    const idx = new Map(setOrderOverride.map((id, i) => [id, i] as const))
-    return [...baseSets].sort(
-      (a, b) =>
-        (idx.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (idx.get(b.id) ?? Number.MAX_SAFE_INTEGER),
-    )
-  }, [baseSets, setOrderOverride])
+  const sets = useMemo(
+    () => (setOrderOverride ? byOrder(baseSets, setOrderOverride) : baseSets),
+    [baseSets, setOrderOverride],
+  )
   const showSetCards = (view.set_cards ?? true) && sets.length > 0
   const hideLocation = view.hide_location ?? false
   // A page card honors the Collection's Open In (like the table's title-click): a page-preview owner
@@ -443,11 +441,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
           .map((r) => r.id)
         const band = groups.find((g) => g.key === toZone)
         const beforeId = band ? (flattenGroups([band])[toIndex]?.id ?? null) : null
-        const at = beforeId === null ? -1 : destIds.indexOf(beforeId)
-        const order =
-          at === -1
-            ? [...destIds, activeId]
-            : [...destIds.slice(0, at), activeId, ...destIds.slice(at)]
+        const order = spliceBeside(destIds, beforeId, activeId, 'above')
         void mutate({ op: 'movePage', path: row.path, newParentPath: destPath, order })
       }
       return

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NEW_PAGE_SLOT } from '@shared/mutate'
-import { orderWithSlot, tieOrderWith } from './creationOrder'
+import { orderWithSlot, spliceBeside, tieOrderWith } from './creationOrder'
 import { makeSorter, resolveManualOrder } from './pipeline/sort'
 import type { ViewRow } from '@shared/types'
 
@@ -25,6 +25,12 @@ describe('orderWithSlot', () => {
 
   it('appends when the anchor is not among the siblings', () => {
     expect(orderWithSlot(['a', 'b'], 'ghost', 'above')).toEqual(['a', 'b', NEW_PAGE_SLOT])
+  })
+})
+
+describe('spliceBeside', () => {
+  it('appends for a null anchor — the drop that landed past the last visible card', () => {
+    expect(spliceBeside(['a', 'b'], null, 'x', 'above')).toEqual(['a', 'b', 'x'])
   })
 })
 
@@ -59,35 +65,26 @@ describe('tieOrderWith', () => {
 // so both live arrays are spliced in the same act the create writes — the first paint already
 // places the row at its slot, under a prior drag and under the stale-array fall-through alike.
 describe('the created row settles into the live order', () => {
+  const ALL = ['p1', 'p2', 'p3', 'pNew']
+  const STALE = ['p3', 'p1', 'p2'] // a live array from before the create — pNew absent
   const rows = (ids: string[]): ViewRow[] =>
     ids.map((id) => ({ id, path: `${id}.md`, title: id }) as unknown as ViewRow)
+  /** The order the pipeline actually paints for a resolved manual array. */
+  const painted = (manual: string[] | undefined): string[] | undefined =>
+    makeSorter(undefined, [], manual)?.(rows(ALL)).map((r) => r.id)
 
   it('a stale manual override spliced via tieOrderWith ranks the newborn at its slot first-pass', () => {
-    const stale = ['p3', 'p1', 'p2']
-    const spliced = tieOrderWith(stale, ['p1', 'p2', 'p3', 'pNew'], 'pNew', 'p1', 'below')
+    const spliced = tieOrderWith(STALE, ALL, 'pNew', 'p1', 'below')
     expect(spliced).toEqual(['p3', 'p1', 'pNew', 'p2'])
-    const manual = resolveManualOrder(true, spliced, stale)
-    const sorter = makeSorter(undefined, [], manual)
-    expect(sorter?.(rows(['p1', 'p2', 'p3', 'pNew'])).map((r) => r.id)).toEqual(spliced)
+    expect(painted(resolveManualOrder(true, spliced, STALE))).toEqual(spliced)
   })
 
   it('unspliced, the same state ranks the newborn last — the defect the settle kills', () => {
-    const stale = ['p3', 'p1', 'p2']
-    const manual = resolveManualOrder(true, stale, undefined)
-    const sorter = makeSorter(undefined, [], manual)
-    expect(sorter?.(rows(['p1', 'p2', 'p3', 'pNew'])).map((r) => r.id)).toEqual([
-      'p3',
-      'p1',
-      'p2',
-      'pNew',
-    ])
+    expect(painted(resolveManualOrder(true, STALE, undefined))).toEqual(['p3', 'p1', 'p2', 'pNew'])
   })
 
   it('the fall-through path: no override, a stale persisted array — the persisted splice serves it', () => {
-    const stale = ['p3', 'p1', 'p2']
-    const spliced = tieOrderWith(stale, ['p1', 'p2', 'p3', 'pNew'], 'pNew', 'p1', 'below')
-    const manual = resolveManualOrder(true, null, spliced)
-    const sorter = makeSorter(undefined, [], manual)
-    expect(sorter?.(rows(['p1', 'p2', 'p3', 'pNew'])).map((r) => r.id)).toEqual(spliced)
+    const spliced = tieOrderWith(STALE, ALL, 'pNew', 'p1', 'below')
+    expect(painted(resolveManualOrder(true, null, spliced))).toEqual(spliced)
   })
 })
