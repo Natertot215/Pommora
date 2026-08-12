@@ -986,8 +986,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       iconCellRef.current = cellEl
       setIconTarget({ path: row.path, icon: typeof row.icon === 'string' ? row.icon : undefined })
       setIconPickerOpen(true)
-    } else if (action === 'title:newabove') newPageAdjacent(row, 'above')
-    else if (action === 'title:newbelow') newPageAdjacent(row, 'below')
+    } else if (action === 'title:newabove') void newPageAdjacent(row, 'above')
+    else if (action === 'title:newbelow') void newPageAdjacent(row, 'below')
     else if (action === 'title:delete')
       void mutate({ op: 'delete', path: row.path, kind: 'page' })
     else if (action === 'title:rename' || action === 'cell:edit')
@@ -1462,8 +1462,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       iconCellRef.current = cellEl
       setIconTarget({ path: row.path, icon: typeof row.icon === 'string' ? row.icon : undefined })
       setIconPickerOpen(true)
-    } else if (action === 'title:newabove') newPageAdjacent(row, 'above')
-    else if (action === 'title:newbelow') newPageAdjacent(row, 'below')
+    } else if (action === 'title:newabove') void newPageAdjacent(row, 'above')
+    else if (action === 'title:newbelow') void newPageAdjacent(row, 'below')
     else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
   }
   gripMenuRef.current = openRowGripMenu
@@ -1475,7 +1475,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const ghostCreate = (): void => {
     const anchorId = ghostApi.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
-    if (anchor) newPageAdjacent(anchor, 'below')
+    if (anchor) void newPageAdjacent(anchor, 'below')
   }
 
   // A row drops its top divider (.row-lead) only when no VISIBLE data row sits directly above it — the

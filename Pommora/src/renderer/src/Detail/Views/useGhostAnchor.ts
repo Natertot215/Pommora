@@ -10,6 +10,10 @@ import { createContext, useEffect, useRef, useState } from 'react'
 // (a flush table ghost tolerates zero, a card ghost across the grid gap can't).
 export const GHOST_DWELL_MS = 1500 // KNOB
 
+// How long a standing ghost survives the pointer resting on another anchor inside its travel
+// zone — the cards crossed en route to a ghost that wrapped onto the next grid row.
+export const GHOST_TRAVEL_HOLD_MS = 1500 // KNOB
+
 /** The suppress handle, published by a view whose surfaces pop native menus from inside
  *  memoized children (Cards) — caller-side wrapping can't reach those pops. Defaults to a
  *  pass-through, so a surface with no ghost host above it pops its menu unwrapped. */
@@ -21,6 +25,11 @@ export interface GhostAnchorOptions {
   /** Re-read at the dwell timer's fire time — a suppressor arriving mid-dwell (a cell editor,
    *  a naming session) must not leave a ghost armed to snap in the instant it closes. */
   suppressed: () => boolean
+  /** With a ghost standing, entering an anchor its zone admits reads as travel TOWARD the
+   *  ghost: it holds instead of closing (the disappear timer constrained to holdMs) and no
+   *  rival dwell arms. Cards pass the ghost's own grid row; views whose ghost sits flush
+   *  against its anchor omit it. */
+  travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
 }
 
 export interface GhostAnchor {
@@ -92,6 +101,12 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       return
     }
     if (optsRef.current.suppressed() || menuOpen.current) return
+    const hold = optsRef.current.travelHold
+    if (hold && ghost && ghost.anchorId !== id && hold.inZone(id)) {
+      setGhost((g) => (g?.closing ? { ...g, closing: false } : g))
+      timers.current.grace = window.setTimeout(closeGhost, hold.holdMs)
+      return
+    }
     setGhost((g) => {
       // Returning to the anchor mid-exit reverses the collapse instead of re-dwelling.
       if (g?.anchorId === id) return g.closing ? { anchorId: id, closing: false } : g

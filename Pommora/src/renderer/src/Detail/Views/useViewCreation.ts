@@ -58,9 +58,11 @@ export interface ViewCreationConfig {
 }
 
 export interface ViewCreation {
-  bandAdd: (setKey: string) => void
-  createAdjacent: (row: ViewRow, where: 'above' | 'below') => void
-  createAfter: (row: ViewRow) => void
+  /** Each create resolves with the write's outcome — a caller holding UI open for the newborn
+   *  (Cards' seat-holding skeleton) releases it on a false. */
+  bandAdd: (setKey: string) => Promise<boolean>
+  createAdjacent: (row: ViewRow, where: 'above' | 'below') => Promise<boolean>
+  createAfter: (row: ViewRow) => Promise<boolean>
   /** The container's full child list — order writes never build from a filtered view. */
   containerPages: (path: string) => string[]
 }
@@ -130,8 +132,8 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     seeds: Record<string, PropertyValue>,
     order: string[] | undefined,
     then: (created: { id: string; path: string }) => void,
-  ): void => {
-    void mutate(
+  ): Promise<boolean> =>
+    mutate(
       {
         op: 'createPage',
         parentPath,
@@ -144,18 +146,17 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
         then(created)
       },
     )
-  }
 
-  const bandAdd = (setKey: string): void => {
+  const bandAdd = (setKey: string): Promise<boolean> => {
     const c = cfg()
     const setPath = c.setPaths.get(setKey)
-    if (!setPath) return
+    if (!setPath) return Promise.resolve(false)
     if (c.collapsed.has(setKey)) c.toggleCollapse(setKey)
     const seeds = impliedSeeds()
     const order = c.structuralOrder
       ? orderWithSlot(containerPagesOf(setPath), null, 'last')
       : undefined
-    createPageIn(setPath, seeds, order, (created) => {
+    return createPageIn(setPath, seeds, order, (created) => {
       // A non-structural view has no page_order write to land the "end of the group" — absent
       // any live array, the read-side title fallback would rank the newborn mid-band. Settle
       // the tiebreaker with the newborn ranked last (banding partitions before it ranks).
@@ -177,7 +178,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
 
   // New Page Above / Below: born beside its anchor — the anchor's group value and sort-criteria
   // values tie it there, and the order write breaks the tie at the gesture slot.
-  const createAdjacent = (row: ViewRow, where: 'above' | 'below'): void => {
+  const createAdjacent = (row: ViewRow, where: 'above' | 'below'): Promise<boolean> => {
     const c = cfg()
     const parentPath = row.path.slice(0, row.path.lastIndexOf('/'))
     const seeds = impliedSeeds()
@@ -195,9 +196,10 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const order = c.structuralOrder
       ? orderWithSlot(containerPagesOf(parentPath), row.id, where)
       : undefined
-    createPageIn(parentPath, seeds, order, (created) => {
-      // Every live order settles in the create's own act — a newborn absent from a stale array
-      // ranks last (the [source] self-heal is a one-frame flash; nothing re-emits viewOrders).
+    return createPageIn(parentPath, seeds, order, (created) => {
+      // Every live order settles in the create's own act — the store runs this callback ahead
+      // of the optimistic tree apply, so the splice and the newborn's mount land in ONE commit
+      // (a newborn left out of a live array would rank last; nothing re-emits viewOrders).
       const latest = cfg()
       const allIds = flattenContainer(latest.source, latest.effectiveValues).rows.map((r) => r.id)
       const splice = (existing: string[] | undefined): string[] =>

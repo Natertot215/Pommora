@@ -47,6 +47,7 @@ import { flattenContainer, groupsStructurally } from '../pipeline/group'
 import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
 import {
   GHOST_DWELL_MS,
+  GHOST_TRAVEL_HOLD_MS,
   GhostSuppress,
   useClearStrandedGhost,
   useGhostAnchor,
@@ -359,11 +360,23 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // The hover ghost card on the shared mechanism — a naming session or an open picker
   // suppresses the dwell, re-read at fire time.
   const pickersOpenRef = useRef(false)
+  // A ghost that wrapped onto the next grid row is reached by crossing that row's other cards —
+  // those row-mates are travel territory, not rival anchors. Geometric: grid row-mates share a
+  // top edge. One rect read per card-enter, never per pointer-move.
+  const ghostRowmate = (enteringId: string): boolean => {
+    const root = rootRef.current
+    const ghostEl = root?.querySelector('.ghost-card')
+    const cardEl = root?.querySelector(`[data-rid="${CSS.escape(enteringId)}"]`)
+    if (!ghostEl || !cardEl) return false
+    const g = ghostEl.getBoundingClientRect()
+    return Math.abs(g.top - cardEl.getBoundingClientRect().top) < g.height / 2
+  }
   const ghostApi = useGhostAnchor({
     dwellMs: GHOST_DWELL_MS,
     graceMs: CARDS_GHOST_GRACE_MS,
     suppressed: () =>
       pickersOpenRef.current || useSession.getState().renamingPath !== null,
+    travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
   })
   // The provider's value must hold identity — a per-render wrap would re-render every card
   // through the context, bypassing the memo bailouts the cardApi ref-idiom exists to protect.
@@ -400,7 +413,12 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     collapsed,
     toggleCollapse,
     viewRootRef: rootRef,
-    onCreated: (created) => beginRename(created.path, true, 'detail'),
+    onCreated: (created) => {
+      // Runs ahead of the optimistic tree apply — the seat release, the order splice, and the
+      // naming state all land in the commit that mounts the newborn.
+      setPendingSeat(null)
+      beginRename(created.path, true, 'detail')
+    },
   }))
   const handlers = {
     commitValue,
@@ -517,10 +535,18 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (ghostApi.ghost?.closing && ghostShown === null) ghostApi.closed()
   }, [ghostShown])
   useClearStrandedGhost(ghostApi, rowBand)
+  // The seat held across the create's round trip — take() empties the hook's ghost, but the
+  // skeleton stays mounted on this id so the grid never closes the gap and reopens it; the
+  // newborn replaces the skeleton in place, in the very commit that mounts it.
+  const [pendingSeat, setPendingSeat] = useState<string | null>(null)
   const ghostCreate = (): void => {
     const anchorId = ghostApi.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
-    if (anchor) createAfter(anchor)
+    if (!anchor) return
+    setPendingSeat(anchor.id)
+    void createAfter(anchor).then((ok) => {
+      if (!ok) setPendingSeat(null)
+    })
   }
 
   // Cross-band card drag → property reassignment. Only a status/select/checkbox property grouping
@@ -750,7 +776,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                       allowInlineRemove={effectiveZoom >= 0.8}
                     />
                   )
-                  if (ghostShown !== row.id) return [card]
+                  if (ghostShown !== row.id && pendingSeat !== row.id) return [card]
                   return [
                     card,
                     <GhostCard
