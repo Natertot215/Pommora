@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-11-2026 → 08-12      | PM-097 | Creation Reaches Every Surface                       |
 | 08-11-2026              | PM-096 | TableView Creation Affordance                        |
 | 08-10-2026              | PM-095 | Documentation Normalization                          |
 | 08-10-2026              | PM-094 | One Owner Per Repeated Value                         |
@@ -99,6 +100,18 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-097 || Creation Reaches Every Surface
+**DATE:** 08-11-2026 → 08-12
+
+**One Home Twice Over:** The creation wiring and the hover-ghost machinery each collapsed into a single hook the table refit onto — `useViewCreation` owns seeds, order writes, and the create-then-name completion for every renderer; `useGhostAnchor` owns dwell, grace, suppression, the mid-exit reversal, and a pointerdown stand-down that clears any ghost before a drag can freeze rects over a grid it still occupies. Cards consumes both: the band "+" creates in its Set, the card menu carries one **New Page** (flow-after — a grid has no above), and the ghost card grows at the next flow slot as the card's own skeleton — the unloaded-cover placeholder, the image-to-text divider, an (icon)(New Page) title row, and the Standard layout's ghosted property labels — its neighbors making room on a FLIP over a dedicated displacement wrapper, measured twice per dwell-gated transition and released on the drag shift's feel. The sidebar joined as the third consumer: dwelling on a page row extends a ghost "New Page" row below it at the sidebar's own longer pacing, and main's context-menu popup now resolves on dismissal so native menus hold every ghost down.
+
+**The Rename Fence:** `renamingPath` was a bare global two surface families mounted fields for, and the collision was already live — renaming a Set from a table band with its sidebar row visible double-mounted the field, the focus fight blur-committed empty, and both fields died. The slot gained an owner fence: hosts claim per path, one winner resolves (the gesture's declared surface first, detail over sidebar next, first-come last), the release defers its verdict a microtask so StrictMode's remount never kills a live session, a rename whose surface leaves is abandoned rather than teleported, and a session no surface ever claims self-heals after a beat — a newborn a filter hides can no longer strand the session, suppress every ghost, and reopen an unprompted empty field later. Cards' naming unified onto the fenced inline field, retiring its rename popover.
+
+**Order Honesty:** Creation now settles every live order in its own act — a newborn absent from a stale manual array ranked last no matter what the disk said (a one-frame flash on the table, permanent on Cards) — and the same law reached the moves: a card dropped across location bands carries the destination's full-membership order with its landing spliced in, the store's `movePage` arm honors it optimistically through the new pages-side reorder, and the set-card drop holds a synchronous order override across the reply gap that used to snap it back. Cards' reorder writes its local `viewOrders` copy, and a non-structural band-add settles its tiebreaker with the newborn ranked last in its band.
+
+- **Commits:** `1fb17f84..edd232ca`
+- **Diff:** Net +692 | +1000 / −308 (tests +395 / −3 ride alongside)
 
 #### PM-096 || TableView Creation Affordance
 **DATE:** 08-11-2026
