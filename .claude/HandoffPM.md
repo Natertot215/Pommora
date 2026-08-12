@@ -45,6 +45,7 @@ Verification ran three layers deep: gates (207 files / 2,319 tests), a final bui
 - The dev process relaunches Electron when `src/main` changes and heavy HMR churn can blank the renderer — for CDP work, restart the dev instance cleanly on the build under test rather than trusting hot-swap, and remember it holds Electron's single-instance lock.
 - Main's own writes are echo-suppressed from the watcher, so a raw `window.nexus.mutate` never refreshes the renderer — creation flows through `store.mutate` for exactly that reason; and `loadValues` runs once per container open, so externally-stamped frontmatter is invisible until nav-away-and-back.
 - The transcribe script's `meta["cwd"]` takes the last raw-file-order entry's cwd rather than the canonical path's, and `ListAgents` has no action-vocabulary line — two known gaps its agents worked around by hand.
+- The CardView ghosted icon + title show with its icon visible regardless of if the "Show Icon" toggle is on or off -- It's an acceptable 'leak' as it looks visually coherent, while *technically* incorrect.
 
 #### Handoff Guidelines
 
