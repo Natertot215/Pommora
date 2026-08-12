@@ -85,6 +85,18 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
       const hit = pos == null ? null : wikiLinkAt(view, pos)
       editingOnPress = hit ? caretInside(view, hit) : false
+      if (editingOnPress || event.button !== 0) return false
+      const api = getApi()
+      // A press that will follow the link must not seat a caret inside it on the way: that activates
+      // the token and reveals its syntax, which stays revealed whenever the link opens somewhere
+      // other than this pane. Pressing a link you're already editing still seats normally.
+      //
+      // `true` is what stops it — CM seats the caret in its own mousedown handling rather than
+      // through the browser default, so preventDefault alone leaves the seat happening.
+      if (api && resolvedPageAt(view, api, event)) {
+        event.preventDefault()
+        return true
+      }
       return false
     },
     mouseover(event, view) {
