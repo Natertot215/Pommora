@@ -48,5 +48,14 @@ export function pageLinkPattern(): RegExp {
 /** Resolution outcome for a scanned title against the nexus link index. */
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
+/** What the wikilink menu needs in order to render itself. The two authoring actions are built into
+ *  the menu rather than filtered after it, so a surface that can't take an edit never offers them. */
+export interface ConnMenuContext {
+  editable: boolean
+}
+
 /** The wikilink native context menu's actions (conn-menu IPC). */
-export type ConnMenuAction = 'preview'
+export type ConnMenuAction = 'preview' | 'rename' | 'editLink'
+
+/** The two that edit the link rather than open it. */
+export type ConnEditAction = Exclude<ConnMenuAction, 'preview'>

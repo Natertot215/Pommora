@@ -35,7 +35,7 @@ import type { GripMenuAction, GripMenuContext } from './gripMenu'
 import type { CellMenuAction, CellMenuContext } from './cellMenu'
 import type { RowGripMenuAction, RowGripMenuContext } from './rowGripMenu'
 import type { CardMenuAction, CardMenuContext } from './cardMenu'
-import type { ConnMenuAction } from './connections'
+import type { ConnMenuAction, ConnMenuContext } from './connections'
 import type { TabMenuAction, TabMenuContext } from './tabMenu'
 import type { NavRowMenuAction, NavRowMenuContext } from './navRowMenu'
 import type { PropertyMenuAction, PropertyMenuContext } from './propertyMenu'
@@ -285,7 +285,7 @@ export interface Asks {
   'card-menu': { args: [ctx: CardMenuContext]; reply: CardMenuAction | null }
   'tab-menu': { args: [ctx: TabMenuContext]; reply: TabMenuAction | null }
   'nav-row-menu': { args: [ctx: NavRowMenuContext]; reply: NavRowMenuAction | null }
-  'conn-menu': { args: []; reply: ConnMenuAction | null }
+  'conn-menu': { args: [ctx: ConnMenuContext]; reply: ConnMenuAction | null }
   'property-menu': { args: [ctx: PropertyMenuContext]; reply: PropertyMenuAction | null }
   'option-menu': { args: [ctx: OptionMenuContext]; reply: OptionMenuAction | null }
 }

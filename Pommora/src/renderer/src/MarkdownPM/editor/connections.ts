@@ -1,6 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { tokenize } from '../tokens'
 import type { ConnectionsApi, ConnPage } from '../connections'
+import { applyLinkAction } from './linkEdit'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -57,20 +58,30 @@ function caretInside(view: EditorView, hit: WikiHit): boolean {
  *  syntax belong to caret placement rather than to the link, measured from the token's range rather
  *  than from what's drawn — a hidden `[[Title|` means an aliased link's visible extent IS its
  *  content, so there'd otherwise be no edge left to click. */
+function connectionAt(
+  view: EditorView,
+  api: ConnectionsApi,
+  event: MouseEvent,
+): { page: ConnPage; hit: WikiHit } | null {
+  const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
+  if (pos == null) return null
+  const hit = wikiLinkAt(view, pos)
+  if (!hit) return null
+  if (pos < hit.content[0] || pos > hit.content[1]) return null
+  const res = api.resolve(hit.title)
+  return res.status === 'resolved' && res.page ? { page: res.page, hit } : null
+}
+
 function resolvedPageAt(
   view: EditorView,
   api: ConnectionsApi,
   event: MouseEvent,
   skipWhenEditing = false,
 ): ConnPage | null {
-  const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
-  if (pos == null) return null
-  const hit = wikiLinkAt(view, pos)
-  if (!hit) return null
-  if (pos < hit.content[0] || pos > hit.content[1]) return null
-  if (skipWhenEditing && caretInside(view, hit)) return null
-  const res = api.resolve(hit.title)
-  return res.status === 'resolved' && res.page ? res.page : null
+  const found = connectionAt(view, api, event)
+  if (!found) return null
+  if (skipWhenEditing && caretInside(view, found.hit)) return null
+  return found.page
 }
 
 export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.domEventHandlers> {
@@ -140,10 +151,17 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       intent.cancel()
       const api = getApi()
       if (!api?.menu) return false
-      const page = resolvedPageAt(view, api, event)
-      if (!page) return false
+      const found = connectionAt(view, api, event)
+      if (!found) return false
       event.preventDefault()
-      api.menu(page)
+      // Editability is read HERE rather than threaded through the host: `readOnly` is live inside
+      // the editor and PreviewWindow flips it at runtime through a Compartment, so a value captured
+      // in a memoized seam goes stale.
+      api.menu(found.page, {
+        range: found.hit.range,
+        editable: !view.state.readOnly,
+        apply: (action, range) => applyLinkAction(view, action, range),
+      })
       return true
     },
   })

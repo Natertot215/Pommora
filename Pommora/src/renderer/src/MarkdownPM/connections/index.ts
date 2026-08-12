@@ -1,4 +1,13 @@
-import { normalizeTitle, type LinkStatus } from '@shared/connections'
+import { normalizeTitle, type ConnEditAction, type LinkStatus } from '@shared/connections'
+
+/** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free
+ *  function, so acting on the result needs a way back into the editor instance that was clicked —
+ *  `apply` is that way, and its absence is what marks a display-only surface. */
+export interface ConnMenuTarget {
+  range: [number, number]
+  editable: boolean
+  apply?: (action: ConnEditAction, range: [number, number]) => void
+}
 
 export interface ConnPage {
   id: string
@@ -20,7 +29,7 @@ export interface PageIndex {
 export interface ConnectionsApi extends PageIndex {
   open: (page: ConnPage) => void
   /** Optional right-click hook — the host pops the native context menu for the link. */
-  menu?: (page: ConnPage) => void
+  menu?: (page: ConnPage, target: ConnMenuTarget) => void
   /** ⌘-click takes the OTHER route from `open` (preview ⇄ new tab); absent = ⌘ ignored. */
   bypass?: (page: ConnPage) => void
   /** Fired after the hover-intent delay on a resolved connection, with the link's live element —

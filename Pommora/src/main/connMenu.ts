@@ -1,10 +1,14 @@
 import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import type { ConnMenuAction } from '@shared/connections'
+import type { ConnMenuAction, ConnMenuContext } from '@shared/connections'
 
 // The wikilink right-click menu — popCellMenu's shape: main pops at the cursor, resolves the chosen
-// action; resolve(null) covers a dismissed menu so the renderer no-ops.
-export function popConnMenu(win: BrowserWindow): Promise<ConnMenuAction | null> {
+// action; resolve(null) covers a dismissed menu so the renderer no-ops. The authoring pair is built
+// only for a surface that can take the edit, rather than shown and refused.
+export function popConnMenu(
+  win: BrowserWindow,
+  ctx: ConnMenuContext,
+): Promise<ConnMenuAction | null> {
   return new Promise<ConnMenuAction | null>((resolve) => {
     let acted = false
     const pick = (a: ConnMenuAction) => (): void => {
@@ -14,6 +18,12 @@ export function popConnMenu(win: BrowserWindow): Promise<ConnMenuAction | null> 
     const items: MenuItemConstructorOptions[] = [
       { label: 'Open Preview', click: pick('preview') },
     ]
+    if (ctx.editable)
+      items.push(
+        { type: 'separator' },
+        { label: 'Rename', click: pick('rename') },
+        { label: 'Edit Link', click: pick('editLink') },
+      )
     Menu.buildFromTemplate(items).popup({
       window: win,
       callback: () => {
