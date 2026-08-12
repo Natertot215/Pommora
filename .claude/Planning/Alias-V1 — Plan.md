@@ -103,6 +103,7 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 | ConfigurationPM | its personalization prose — **no enumerated key list exists**, so this is a prose edit, not a line-targeted one | gains the strip toggle | 12 |
 | ArchitecturePM | its `local_state` paragraph — **no enumerated scope list exists**; DDL is declared canonical in `db/schema.ts` | gains the per-page alias scope, described as *joining* the PageID-keyed scopes, never as the first | 12 |
 | `rewrite.ts` header | its two-pattern description | a third pattern joins the sweep | 12b |
+| ConnectionsPM §Syntax + Scope | its bracket-tolerance paragraph, which records a `]`-ending title as degrading to a phantom | both new forms capture it correctly; brackets become a stated Pommora capability against Obsidian's inability to link them | 12 |
 | `shared/connections.ts` header | "Nothing authors or renders an alias yet" | both now happen | 3 |
 | `cellStatic.tsx:39` | "the editor leaves `\|alias` plain-visible, so match it" | neither does now | 4 |
 
@@ -405,6 +406,25 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 - [ ] Tests: `[]()` rewritten; code-fenced samples untouched; a URL with a colliding last segment untouched; the prefilter/rewriter agreement test.
 - [ ] `npm run test` — expect green.
 - [ ] Commit: `feat(connections): a rename reaches markdown links`
+
+#### Task 12c: One markdown-link grammar, and brackets earn their keep
+
+**Requirement:** 5
+
+**Why:** `markdownLinkRegex` and `MD_LINK` describe the same syntax and disagree about escapes — a two-definitions defect, and the reason `[Notes \[WIP\] final](target)` produces no token at all today. Widening the label group closes both. `[[Title]](link)` is the other grammar disagreement: CommonMark reads it as a link labelled `[Title]`, while Pommora's wikilink-first ordering makes it a wikilink trailed by literal parens.
+
+**Files:** Modify `src/renderer/src/MarkdownPM/detect/index.ts` — `markdownLinkRegex`'s label group; `src/renderer/src/MarkdownPM/tokens/index.ts` — the wikilink/link precedence.
+
+**Failure half:** an unescaped label behaves exactly as today. A trailing backslash at the label's end must not swallow the closing `]`. A wikilink **not** followed immediately by `(` stays a wikilink — `[[Notes]] (see 2024)` is untouched, only the no-space form reclassifies.
+
+**Survivors:** `[[Title]]` alone, `![[ ]]`, and every existing markdown link keep their current tokenization. Only the immediate-parens shape moves.
+
+**Steps:**
+- [ ] Widen the label group to `(?:[^\]\\\r\n]|\\.)+`, mirroring `MD_LINK`. **Regex only** — an escaped label renders with visible backslashes, recorded as accepted, because hiding them is marker-range work in the decoration rather than a pattern change.
+- [ ] **Reclassify `[[Title]](link)` as a post-tokenization rule, not a widened regex.** A label group allowing balanced brackets needs a nested quantifier, which is the exact catastrophic-backtracking shape `pageLinkPattern`'s own comment records as a ReDoS that froze the tokenizer. Instead: when a wikiLink token is immediately followed by `(…)`, emit one `link` token whose label span covers `[Title]`. Cheap, bounded, no new backtracking.
+- [ ] Tests: escaped label tokenizes; trailing backslash doesn't eat the bracket; `[[Notes]](target)` is a link labelled `[Notes]`; `[[Notes]] (2024)` stays a wikilink; a 50,000-character pathological body stays under the existing bound.
+- [ ] `npm run test` + `npm run lint` — expect green.
+- [ ] Commit: `fix(editor): one markdown-link grammar, escapes and all`
 
 #### Task 13: Autocomplete inside `( )`, and ⌘K's caret returns to the title
 
