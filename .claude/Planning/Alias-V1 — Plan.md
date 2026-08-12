@@ -493,10 +493,11 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — The alias renders · base `<commit>`
-  - [ ] Task 2 — Token resolve span + projection · `<commit>`
-  - [ ] Task 3 — Render the alias · `<commit>`
-  - [ ] Task 4 — The other two resolve sites · `<commit>`
+- [x] **Phase 1** — The alias renders · base `bab3bf9f`
+  - [x] Task 2 — Token resolve span + projection · `51196ef9`
+  - [x] Task 3 — Render the alias · `df8145cd`
+  - [x] Task 4 — The other two resolve sites · `caad4287`
+  - [x] Gate 1 — simplification `df535320` · review folds `33874b9b`
 - [ ] **Phase 2** — Authoring gestures
   - [ ] Task 6 — One owner for the hit-test
   - [ ] Task 7 — The menu carries a span
@@ -516,10 +517,14 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 ### Rulings
 - **Duplicate disambiguation cut from the arc** (Nathan). Path qualification, the move gate, the prefix-preserving cascade, the main-side title index, and the journal hardening all leave with it. The design survives in the decision log's §G.
+- **The alias-destroying picker is a Phase 1 blocker, not Task 8 work** (Nathan, on seeing it live). H-13 was sequenced into Phase 2, which left Phase 1 shipping a feature whose first interaction destroyed the alias being edited. Bounding `autocompleteQuery`'s link form to the title span moved forward into Gate 1. **The plan's phase ordering was wrong**, not the task: any phase that makes a construct newly attractive owns the destructive paths into it.
+- **A connection the caret is inside is text, not a link** (Nathan). It no longer navigates on click nor blooms a preview on dwell. One rule covering both halves of the request; the *edge*-click carve-out remains Task 6's.
 
 ### Open Against Later Tasks
 ### Deviations
 - **Task 2 — the projection became a shared helper rather than one more field.** The plan added `resolveRange` to `visibleInlineTokens`'s literal; `shiftToken` in `tokens/index.ts` re-bases the whole token instead, and the projection calls it. `Token`'s owner now owns its re-basing, so the next span field can't be dropped there at all — and the parity test guards the helper rather than this one field. No later task changes shape.
+- **Gate 1 — three fixes pulled forward, landing in `33874b9b`.** (a) `autocompleteQuery`'s link form is bounded to the title span — **Task 8's first two steps are done**, and its remaining alias work is the commit rule and the two gestures. (b) `TableView`'s cell hover resolved by the span's rendered text, which the arc turned into the alias; `cellStatic` now stamps the resolve key on the span and `TableView` reads it. (c) `resolvedPageAt` returns null for a connection the caret is inside — **part of Task 6**, which still owns the edge-click carve-out and its negative control.
+- **A token-level census cannot find a DOM-level reader.** `rg contentRange` ruled Phase 1 complete while `TableView.tsx:114` read the resolve key out of `el.textContent`. The census that finds this class is on the rendered *class name* (`rg md-connection`), which returns exactly two non-test consumers. Any later task that changes what a span displays owes both censuses.
 - **Task 2 — the `contentRange` census refines to one wikiLink toggle, not two.** `format.ts` holds two `contentRange` readers, but `toggleLink` reads `link` tokens whose shape doesn't move; only `toggleConnection` sees a wikiLink. Three further readers exist and are all provably unaffected: `decorations/intent.ts` returns early for `wikiLink`, `formatState.ts` tests connections on `range`, and `format.ts:68`'s `kind` excludes connection by type. The five sites Task 2 and Task 4 edit are unchanged.
 ### Lessons
 ### Sequenced After
