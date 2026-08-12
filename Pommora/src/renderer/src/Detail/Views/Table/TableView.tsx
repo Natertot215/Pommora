@@ -67,7 +67,7 @@ import { numberDivisor } from '../PropertyEditing/formatValue'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
-import { useGhostAnchor } from '../useGhostAnchor'
+import { GHOST_DWELL_MS, useGhostAnchor } from '../useGhostAnchor'
 import { useViewCreation } from '../useViewCreation'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
@@ -78,10 +78,9 @@ import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from 
 // smaller = snappier. Bump this one number to taste.
 const COL_SHIFT_HYSTERESIS = 25
 
-// ── TUNABLE ── the hover ghost row: how long the pointer dwells on a row before the ghost
-// "New Page" row extends below it, and how long a left ghost survives before its collapse starts —
-// 0 closes on leave immediately; landing in the ghost keeps it alive either way.
-const GHOST_DWELL_MS = 1500 // KNOB
+// ── TUNABLE ── how long a left ghost survives before its collapse starts — 0 closes on leave
+// immediately; landing in the ghost keeps it alive either way. The dwell is the shared
+// GHOST_DWELL_MS in useGhostAnchor.
 const GHOST_GRACE_MS = 0 // KNOB
 
 /** The datetime cell's picker shell: PickerMenu portals off the cell (escaping the table's overflow
