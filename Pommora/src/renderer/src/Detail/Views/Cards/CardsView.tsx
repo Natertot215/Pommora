@@ -340,7 +340,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // only ever viewOrders — the table's predicate would route creates onto a page_order channel
   // Cards never reads, landing every newborn last.
   const beginRename = useSession((s) => s.beginRename)
-  const creation = useViewCreation(() => ({
+  const { bandAdd, createAfter } = useViewCreation(() => ({
     source,
     view,
     schema,
@@ -362,7 +362,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     viewRootRef: rootRef,
     onCreated: (created) => beginRename(created.path, true, 'detail'),
   }))
-  const handlersRef = useRef({
+  const handlers = {
     commitValue,
     setColumnStyle,
     contextOptionsFor,
@@ -372,20 +372,10 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     openValuePicker,
     openAddPicker,
     refreshValues,
-    newPageBelow: creation.createAfter,
-  })
-  handlersRef.current = {
-    commitValue,
-    setColumnStyle,
-    contextOptionsFor,
-    openPage,
-    revealProperty,
-    hideProperty,
-    openValuePicker,
-    openAddPicker,
-    refreshValues,
-    newPageBelow: creation.createAfter,
+    newPageBelow: createAfter,
   }
+  const handlersRef = useRef(handlers)
+  handlersRef.current = handlers
   const cardApi = useMemo(
     () => ({
       onCommitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) =>
@@ -622,7 +612,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
               collapsed={isCollapsed}
               onToggle={() => toggleCollapse(g.key)}
               showAdd={bandShowsAdd(g.kind)}
-              onAdd={setPaths.has(g.key) ? () => creation.bandAdd(g.key) : undefined}
+              onAdd={setPaths.has(g.key) ? () => bandAdd(g.key) : undefined}
               headless={flatMode}
               fill
             >
@@ -911,14 +901,21 @@ const CardFace = memo(function CardFace({
     () => (ctx ? shownColumnsFor(row, columns, ctx, isCompact(view)) : []),
     [ctx, columns, row, view],
   )
+  const titleIcon = !(view.hide_page_icons ?? false) && (
+    <Icon name={iconName} className="page-card-title-icon" />
+  )
   const titleBody = (
     <>
-      {!(view.hide_page_icons ?? false) && (
-        <Icon name={iconName} className="page-card-title-icon" />
-      )}
+      {titleIcon}
       <span className="page-card-title-text">{row.title}</span>
     </>
   )
+  const titleRow =
+    (view.wrap_titles ?? false) ? (
+      <span className={cx('page-card-title is-wrap', cardTitleType)}>{titleBody}</span>
+    ) : (
+      <OverflowScroll className={cx('page-card-title', cardTitleType)}>{titleBody}</OverflowScroll>
+    )
   // While this card is the naming target the whole title row swaps for the fenced field —
   // outside the OverflowScroll clip, the glyph staying put, pointerdown stopped against the
   // whole-surface drag handle.
@@ -927,9 +924,7 @@ const CardFace = memo(function CardFace({
       className={cx('page-card-title', cardTitleType)}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      {!(view.hide_page_icons ?? false) && (
-        <Icon name={iconName} className="page-card-title-icon" />
-      )}
+      {titleIcon}
       <RenamableTitle
         path={row.path}
         kind="page"
@@ -968,14 +963,7 @@ const CardFace = memo(function CardFace({
             : undefined
         }
       >
-        {namingRow ||
-          ((view.wrap_titles ?? false) ? (
-            <span className={cx('page-card-title is-wrap', cardTitleType)}>{titleBody}</span>
-          ) : (
-            <OverflowScroll className={cx('page-card-title', cardTitleType)}>
-              {titleBody}
-            </OverflowScroll>
-          ))}
+        {namingRow || titleRow}
         {shown.length > 0 && (
           <CardProperties
             row={row}
@@ -1083,8 +1071,7 @@ const PageCard = memo(function PageCard({
     })
     if (!action) return
     if (action === 'title:newtab') onOpen(row, true)
-    else if (action === 'title:rename')
-      useSession.getState().beginRename(row.path, false, 'detail')
+    else if (action === 'title:rename') useSession.getState().beginRename(row.path, false, 'detail')
     else if (action === 'title:icon') setIconOpen(true)
     else if (action === 'title:newbelow') onNewBelow(row)
     else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })

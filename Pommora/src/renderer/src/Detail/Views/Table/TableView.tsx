@@ -1091,7 +1091,11 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const menuOpenRef = useRef(false)
   // The shared creation engine. The config getter runs only at gesture time, so it may close
   // over render-scope consts declared below the loading/empty returns.
-  const creation = useViewCreation(() => ({
+  const {
+    bandAdd,
+    createAdjacent: newPageAdjacent,
+    containerPages,
+  } = useViewCreation(() => ({
     source,
     view: liveView,
     schema,
@@ -1113,7 +1117,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     viewRootRef: viewRef,
     onCreated: openCreateRename,
   }))
-  const { bandAdd, createAdjacent: newPageAdjacent } = creation
   useEffect(
     () => () => {
       for (const t of Object.values(ghostTimers.current)) if (t !== null) window.clearTimeout(t)
@@ -1382,7 +1385,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     // The band drop carries no index — the moved row joins the destination's end, but the order
     // still writes whole: absent, main's fallback re-ranks the destination by title. A stale
     // viewOrders entry (a formerly sorted config) would otherwise paint the row's old rank.
-    const order = [...creation.containerPages(destPath), pageId]
+    const order = [...containerPages(destPath), pageId]
     const spliceLive = (existing: string[]): string[] => [
       ...existing.filter((id) => id !== pageId),
       pageId,
