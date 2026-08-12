@@ -9,7 +9,7 @@ A connection's visible words become the author's to choose. After this, `[[Title
 
 The shape follows one principle the spec returned to at every fork: **what a link means lives on-page, in syntax any tool can read.** Aliases are display-only rather than resolution keys, and the database holds only an autocomplete accelerator whose loss costs a suggestion and never a link.
 
-**Duplicate-title disambiguation is deliberately not here.** Path qualification, the move-cascade gate, and the journal hardening were all specced, adversarially reviewed, and then cut by Nathan: this arc is about aliases, and duplicate titles are a separate feature that happened to surface while designing one. The design survives whole in the decision log's §G for whoever builds it. Its removal takes the main-side title index and the cascade's new triggers with it, so the rename cascade's known non-atomicity stays a pre-existing issue rather than one this arc multiplies.
+**Duplicate-title disambiguation is deliberately not here** — specced, twice reviewed, then cut: this arc is about aliases, and duplicate titles are a separate feature that surfaced while designing one. Its design survives in the decision log's §G, and its removal takes the main-side title index, the cascade's new triggers, and the journal hardening with it.
 
 Bounded by: no alternate resolution keys, no path qualification, no reverse link index, no alias-management surface, and no new dependency. Markdown block tiles inherit the new forms through the shared cascade primitive.
 
@@ -40,9 +40,7 @@ Author a connection by picking a page from autocomplete, give it an alias throug
 
 **Inherited Reasoning** *(ruled out — do not retry)*
 
-- **Path qualification and duplicate disambiguation** — cut by Nathan after full design and two review rounds. Not a rejection of the design; a rejection of its being in *this* arc.
-- **The journal hardening** — its justification was path qualification's new cascade triggers, which no longer exist.
-- **Raising the 255 bracket cap** — needed only because a whole path would sit inside the brackets. Title and alias are each independently capped, so the bound stands.
+- **Path qualification and duplicate disambiguation** — cut after full design and two review rounds. Not a rejection of the design; a rejection of its being in *this* arc. **The journal hardening** and **raising the 255 bracket cap** leave with it: the first existed to absorb the cascade triggers paths would have added, the second only because a whole path would sit inside the brackets. Title and alias are independently capped, so the bound stands.
 - **Frontmatter `Aliases:` as resolution keys** — retired; the on-page alias plus the DB memory supersede it.
 - **Alias-as-tiebreaker for duplicates** — makes resolution device-dependent.
 - **A "Default Internal Link" syntax preference** — arbitrates nothing once both forms resolve.
@@ -92,10 +90,7 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 | Doc | The specific claim | What makes it false | Task |
 | --- | --- | --- | --- |
 | PommoraPRD.md:151 | "just the bracketed title, **no embedded id or alias**" | an alias is authored and displayed | 12 |
-| PommoraPRD.md:151 | "the **sole connection syntax**" | `[]()` resolves internally | 12 |
-| PommoraPRD.md:198 | "`[[Page]]` inline links, the sole connection syntax" | same | 12 |
-| ConnectionsPM:13 | "an inline `[[Title]]` link … — the sole connection syntax" | same | 12 |
-| CLAUDE.md:75 | codebase map: "Inline title links — the sole connection syntax" | same | 12 |
+| **"the sole connection syntax"** — PommoraPRD:151 · PommoraPRD:198 · ConnectionsPM:13 · CLAUDE.md:75 | one claim, four documents; all four are rewritten together | `[]()` resolves internally | 12 |
 | ConnectionsPM:17 | "the piped tail renders as plain text beside the styled title" | the alias becomes the display text | 12 |
 | ConnectionsPM:19 | "one sweep rewrites `[[` and `![[` together" *(§Syntax + Scope, **not** §The Rename Cascade)* | a third pattern joins the sweep | 12 |
 | ConnectionsPM:37 | "right-click pops a native menu whose one action is **Open Preview**" | two actions join it | 12 |
@@ -354,11 +349,11 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 **Files:** Modify `src/renderer/src/MarkdownPM/editor/links.ts`, `decorations.ts`, `Tables/cellStatic.tsx` (**the second markdown-link renderer, which classifies with `isValidLink` today**), `src/renderer/src/MarkdownPM/index.tsx` (`externalLinkClicks()` takes no arguments and must now receive the connections getter), `src/shared/links.ts`.
 
-**Failure half:** target resolving as a page → internal, connection colour. Not resolving but valid as a URL → external, `.md-link`. Neither → the **existing** `.md-link-invalid` treatment unchanged: dimmed text, no pointer cursor, target still hidden at rest. Nothing dumps raw syntax into the line. **A decode that throws falls back to the raw string** — `decodeURIComponent` raises `URIError` on a bare `%` (`[Q3](Revenue 50% plan)`), and CodeMirror deactivates a crashed ViewPlugin for good, losing rendering for the session.
+**Failure half:** resolves as a page → internal, connection colour. Doesn't, but is a valid URL → external, `.md-link`. Neither → the **existing** `.md-link-invalid` treatment unchanged, so nothing dumps raw syntax into the line. **A decode that throws falls back to the raw string** — `decodeURIComponent` raises `URIError` on a bare `%` (`[Q3](Revenue 50% plan)`), and CodeMirror deactivates a crashed ViewPlugin for good, losing rendering for the session.
 
-**Must agree:** the markdown form and the wikilink form resolve the same target to the same page, and the editor and `cellStatic` classify it identically. One test crosses both pairs. One branch decides among the three outcomes — never two predicates that could disagree.
+**Must agree:** the markdown form and the wikilink form resolve the same target to the same page, and the editor and `cellStatic` classify it identically. One test crosses both pairs.
 
-**Survivors:** `.md-link`, `.md-link-invalid`, `.md-link-url` unchanged and un-renamed; the `link` token kind stays single. Internal versus external is a resolution branch, never a second grammar.
+**Survivors:** `.md-link`, `.md-link-invalid`, `.md-link-url` unchanged and un-renamed; the `link` token kind stays single. Internal versus external is one resolution branch, never a second grammar and never two predicates that could disagree.
 
 **Steps:**
 - [ ] Write the encode/decode pair — no codec exists; follow the `assetUrl` precedent of **`encodeURI`, not `encodeURIComponent`**, so `/` survives. Wrap every decode in a try/catch returning the raw string.
