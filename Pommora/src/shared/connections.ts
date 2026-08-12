@@ -3,10 +3,9 @@
 // read time: normalized body-title → the unique page holding that title → its id; the id
 // never touches disk. `![[ ]]` and `{{ }}` are not connections. Obsidian/GitHub-compatible.
 //
-// `[[Title|alias]]` parses: the TITLE alone resolves, and the alias is carried through every
-// rewrite rather than dropped. Nothing authors or renders an alias yet — a title is what a
-// connection means — but no code may destroy one, so the syntax stays intact for the pass
-// that gives it a display treatment.
+// `[[Title|alias]]` gives a connection its own words: the alias is what the reader sees, the
+// TITLE alone resolves, and the alias is carried through every rewrite rather than dropped.
+// Display and resolution are separate spans everywhere downstream, so no code may destroy one.
 //
 // This module is shared (renderer-importable: autocomplete + inline styling later) — no
 // fs, no React. normalizeTitle is the SINGLE normalization the scanner, the phantom key,
