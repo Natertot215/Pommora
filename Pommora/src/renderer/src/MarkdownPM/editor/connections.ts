@@ -31,7 +31,9 @@ function wikiLinkAt(view: EditorView, pos: number): { title: string } | null {
   const tk = tokenize(line.text).find(
     (t) => t.kind === 'wikiLink' && rel >= t.range[0] && rel <= t.range[1],
   )
-  return tk ? { title: line.text.slice(tk.contentRange[0], tk.contentRange[1]) } : null
+  if (!tk) return null
+  const [rs, re] = tk.resolveRange ?? tk.contentRange
+  return { title: line.text.slice(rs, re) }
 }
 
 /** The resolved connection page under the pointer, or null — the shared hit-test for every handler. */

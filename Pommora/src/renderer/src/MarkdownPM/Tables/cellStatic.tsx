@@ -27,19 +27,16 @@ export function renderCellContent(
     if (s > pos) out.push(text.slice(pos, s))
     const content = text.slice(tk.contentRange[0], tk.contentRange[1])
     if (tk.kind === 'wikiLink') {
-      const status = conn?.resolve(content).status
+      const [rs, re] = tk.resolveRange ?? tk.contentRange
+      const status = conn?.resolve(text.slice(rs, re)).status
       // Phantom (or no index) → raw `[[…]]` inert, exactly as the editor leaves it.
       if (!status || status === 'phantom') out.push(text.slice(s, e))
-      else {
+      else
         out.push(
           <span key={key++} className={`md-connection-${status}`}>
             {content}
           </span>,
         )
-        // A piped `[[Title|alias]]` styles only the Title; the editor leaves `|alias` plain-visible, so match it.
-        const aliasTail = text.slice(tk.contentRange[1], e - 2)
-        if (aliasTail) out.push(aliasTail)
-      }
     } else if (tk.kind === 'link') {
       const url = text.slice(tk.contentRange[1] + 2, e - 1)
       out.push(
