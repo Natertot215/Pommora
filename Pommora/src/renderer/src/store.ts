@@ -98,6 +98,9 @@ interface RenameFence {
 // The owner fence's resolver: claims for the live path only; a gesture-declared host wins,
 // then rank, then first-come — insertion order breaks ties at every step.
 let nextRenameToken = 1
+// The unclaimed-session sweep's beat — long enough for a create's row to arrive and claim.
+const RENAME_CLAIM_BEAT_MS = 2000
+let renameOrphanTimer: number | undefined
 const RENAME_RANK: Record<RenameHost, number> = { detail: 2, sidebar: 1 }
 const RENAME_CLEARED = {
   renamingPath: null,
@@ -1473,7 +1476,7 @@ export const useSession = create<SessionState>((set, get) => {
         if (!survivor || (wasWinner && survivor.host !== released.host)) s.cancelRename()
       })
     },
-    beginRename: (path, create, host) =>
+    beginRename: (path, create, host) => {
       set((s) => {
         const fence: RenameFence = { renamingPath: path, renamingHost: host ?? null }
         return {
@@ -1481,7 +1484,19 @@ export const useSession = create<SessionState>((set, get) => {
           renamingCreate: create === true,
           renameWinner: resolveRenameWinner(s.renameClaims, fence),
         }
-      }),
+      })
+      // The fence self-heals when no surface ever claims — a newborn a filter hides, or a
+      // navigate-away mid-create, would otherwise strand the session: every ghost suppressed
+      // for the rest of it, and an unprompted empty field opening when the row later mounts.
+      // The beat covers the legitimate window where main pushes a create's begin-rename before
+      // its row exists to claim.
+      window.clearTimeout(renameOrphanTimer)
+      renameOrphanTimer = window.setTimeout(() => {
+        const s = get()
+        if (s.renamingPath === path && !s.renameClaims.some((c) => c.path === path))
+          s.cancelRename()
+      }, RENAME_CLAIM_BEAT_MS)
+    },
     cancelRename: () => set(RENAME_CLEARED),
     newPageAdjacent: async (path, where, host) => {
       const tree = get().tree

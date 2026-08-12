@@ -3,7 +3,7 @@
 // host first, rank second (detail > sidebar), first-claim within a rank. A release with no
 // surviving claimant abandons the rename — after a microtask, so StrictMode's simulated
 // remount (and any same-act re-key) never kills a live session.
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import React, { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { RenamableTitle } from './RenamableTitle'
@@ -113,6 +113,37 @@ describe('the rename owner fence', () => {
     await act(async () => root.render(<Fields />))
     await act(async () => useSession.getState().beginRename(PATH, true))
     expect(inputs()[0].value).toBe('')
+  })
+
+  it('an unclaimed session self-heals after the claim beat — no field ever mounted', async () => {
+    // A newborn a filter hides (or a navigate-away mid-create) would otherwise strand the
+    // session: ghosts suppressed all session, and an unprompted empty field opening later.
+    vi.useFakeTimers()
+    try {
+      await act(async () => root.render(<span />))
+      await act(async () => useSession.getState().beginRename('Ghost/Page.md', true))
+      expect(useSession.getState().renamingPath).toBe('Ghost/Page.md')
+      await act(async () => {
+        vi.advanceTimersByTime(2100)
+      })
+      expect(useSession.getState().renamingPath).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('a claim inside the beat keeps the session alive', async () => {
+    vi.useFakeTimers()
+    try {
+      await act(async () => root.render(<Fields detail={false} />))
+      await act(async () => useSession.getState().beginRename(PATH))
+      await act(async () => {
+        vi.advanceTimersByTime(2100)
+      })
+      expect(useSession.getState().renamingPath).toBe(PATH)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("an old field's release never kills a successor session whose row hasn't mounted", async () => {
