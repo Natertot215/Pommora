@@ -8,6 +8,7 @@ CardView
 ├── Grouping, Location & Sorting
 ├── Set Cards
 ├── Card Drag & Menus
+├── Creating in the Grid
 ├── Surfaces & Insets
 ├── Card Tokens
 ├── Pending
@@ -45,7 +46,7 @@ Adding a value comes from the **two-stage add-picker**, whose list is everything
 
 ### Grouping, Location & Sorting
 
-Cards never indent: structural grouping renders a flat disclosure band per top-level Set, its whole subtree's pages gathered into that one band. A property group replaces the location bands with bucket bands. Ungrouped and root pages band under the container's own heading rather than a header-less tail. Band chrome is a persisted collapse plus a hover **"+"** on structural bands only — the affordance alone. No sub-grouping and no heading columns apply. Band seams follow the shared seam law, state-free: every band wears the band-to-card gap on both sides, sitting off its neighbors — and off the Set-cards row — by twice that gap, expanded or collapsed, in every layout alike; a collapsed heading sheds only its heading-to-cards clearance, folding on the disclosure beat in step with its cards.
+Cards never indent: structural grouping renders a flat disclosure band per top-level Set, its whole subtree's pages gathered into that one band. A property group replaces the location bands with bucket bands. Ungrouped and root pages band under the container's own heading rather than a header-less tail. Band chrome is a persisted collapse plus a **"+"** on structural bands only, creating in that Set (→ §Creating in the Grid). No sub-grouping and no heading columns apply. Band seams follow the shared seam law, state-free: every band wears the band-to-card gap on both sides, sitting off its neighbors — and off the Set-cards row — by twice that gap, expanded or collapsed, in every layout alike; a collapsed heading sheds only its heading-to-cards clearance, folding on the disclosure beat in step with its cards.
 
 **Flattening** is **Group By: None** — the `flat` grouping, rendered as one headerless list. **Sort By: Location** orders at the resolve level, with its Order picker offering Location (filesystem order, drag off) or Custom (the view's manual order, drag on) — the full semantics are the pipeline's (→ [[ViewsPM]] §II. The Sorting Pane). The flat, filesystem-ordered list is Group By: None over Sort By: Location, and it shows each card's full location footing.
 
@@ -57,9 +58,15 @@ A **Set Cards** switch adds a leading row of larger cards, one per Set (or per d
 
 ### Card Drag & Menus
 
-Cards reorder within their band by displacement (the nav gallery's drag), writing the per-machine manual order the pipeline reads as its lowest-priority sort tiebreaker. Two effective sort criteria retire that reorder, as does Sort By: Location on its computed Location order (→ [[ViewsPM]]).
+Cards reorder within their band by displacement (the nav gallery's drag), writing the per-machine manual order the pipeline reads as its lowest-priority sort tiebreaker. Two effective sort criteria retire that reorder, as does Sort By: Location on its computed Location order (→ [[ViewsPM]]). A card dropped **across location bands** moves the page into that band's Set carrying its landing slot — the destination's full-membership order writes with the drop spliced before the card it landed on, and the live orders splice in the same act so the landing paints immediately.
 
-A card's **right-click** opens a native menu: the **Add Property ▸** submenu over the page-meta block — Open · **Move To ▸** the Collection/Set tree · Rename · Change Icon · Delete. Rename mounts the shared text picker, Change Icon the icon picker. A value's own right-click menu takes precedence over the card menu.
+A card's **right-click** opens a native menu: the **Add Property ▸** submenu over the page-meta block — Open · **Move To ▸** the Collection/Set tree · Rename · Change Icon · **New Page** · Delete. New Page creates flow-after (a grid has no above); Rename opens the same inline naming field creation uses, in the title's own seat. Change Icon mounts the icon picker. A value's own right-click menu takes precedence over the card menu, and every card-level native menu stands the hover ghost down until it closes.
+
+### Creating in the Grid
+
+Creating a page never leaves the grid, on the table's own creation act (→ [[TableViewPM]]): the page is created immediately — Untitled on disk, stamped with what its birth context implies — and the card's title swaps for an inline naming field, empty with the glyph staying put, outside the title's scroll clip. Confirming names the page (a colliding name lands with the create rule's numeric suffix); leaving any other way keeps Untitled. The band "+" creates at its Set's end — the tiebreaker order settles with the newborn ranked last in its band — and the menu's New Page inherits its anchor's group value and seedable sort values, landing beside it.
+
+**The ghost card** — dwelling on a card grows a ghost card at the next flow slot: an empty bordered slot at the group's card size (its border heavier than a card's own so it reads), the page-icon placeholder centered, the whole slot at the inactive dim. Neighbors make room on the cards' own move motion — the displacement measured before the ghost enters or leaves and released on the drag shift's feel — and clicking it creates flow-after, the real card taking the ghost's seat with the naming field open. Any pointer press outside the ghost stands it down before a drag can measure; naming sessions, open pickers, and native menus suppress it. The dwell is the ghost mechanism's shared value; the grace is Cards' own, long enough to cross the grid gap.
 
 ### Surfaces & Insets
 
@@ -87,11 +94,9 @@ The card grid's design vocabulary. The geometry the two card families agreed on 
 
 ### Pending
 
-- **Heading "+" creation** — the creation engine ships with the table (→ [[TableViewPM]]); the Cards band's "+" stays a visual stub until the card chrome adopts it.
-
 ### Prospects
 
-- **Cross-band card drag** — a card dropped into another location or property band as a real move or property write; settling that drop's design is the next focus here.
+- **The set-card ghost** — dwelling on a Set Card growing a ghost that creates a Set; waits on the container creation contract (positional order, the create-origin naming law, a set-card rename entry).
 - **Set-Card view previews** — a Set Card opening a preview of the Set's view; v1 navigates.
 - **File-property covers** — any File property declaring itself the card's image; the Card Banner mode set is extensible for a fourth "Property" mode.
 - **Fit Image / Reposition** — contain-vs-fill and hover-reposition on covers; v1 is fill-crop.
