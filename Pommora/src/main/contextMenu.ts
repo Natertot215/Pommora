@@ -56,7 +56,7 @@ export async function showContextMenu(
       onChanged()
       // A create lands in its rename field — same contract as the renderer's own create menus.
       if (res.value.created)
-        push(win, 'begin-rename', { path: res.value.created.path, create: true })
+        push(win, 'begin-rename', { path: res.value.created.path, create: true, host: target.host })
     } else
       await dialog.showMessageBox(win, {
         type: 'error',
