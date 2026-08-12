@@ -1453,7 +1453,7 @@ export const useSession = create<SessionState>((set, get) => {
       return token
     },
     releaseRename: (token) => {
-      const { renamingPath: path, renameClaims, renameWinner } = get()
+      const { renameClaims, renameWinner } = get()
       const released = renameClaims.find((c) => c.token === token)
       const wasWinner = renameWinner === token
       set((s) => {
@@ -1464,12 +1464,13 @@ export const useSession = create<SessionState>((set, get) => {
       // releases and re-claims in one act — an immediate cancel would kill every dev rename.
       // A rename whose winning surface left is abandoned, never handed to another host — a
       // transfer would focus-steal, whole-title selected, and a create session would reopen empty.
+      // The verdict judges the RELEASED claim's own path: the live session may already belong to
+      // a successor (main pushes a create's begin-rename before its row exists to claim).
       queueMicrotask(() => {
         const s = get()
-        if (path === null || s.renamingPath !== path) return
+        if (released === undefined || s.renamingPath !== released.path) return
         const survivor = s.renameClaims.find((c) => c.token === s.renameWinner)
-        const handedOff = wasWinner && released !== undefined && survivor?.host !== released.host
-        if (!survivor || handedOff) s.cancelRename()
+        if (!survivor || (wasWinner && survivor.host !== released.host)) s.cancelRename()
       })
     },
     beginRename: (path, create, host) =>
