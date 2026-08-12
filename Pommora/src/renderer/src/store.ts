@@ -32,6 +32,7 @@ import {
   patchContextGroupsInTree,
   patchNodeInTree,
   relocateNodeInTree,
+  reorderPagesInTree,
   removeNodeInTree,
   renameNodeInTree,
   reorderChildrenInTree,
@@ -1562,9 +1563,13 @@ export const useSession = create<SessionState>((set, get) => {
       let patched: NexusTree | null = null
       if (cur) {
         switch (req.op) {
-          case 'movePage':
-            patched = relocateNodeInTree(cur, req.path, req.newParentPath)
+          case 'movePage': {
+            const moved = relocateNodeInTree(cur, req.path, req.newParentPath)
+            patched = req.order
+              ? (reorderPagesInTree(moved ?? cur, req.newParentPath, req.order) ?? moved)
+              : moved
             break
+          }
           case 'moveSet': {
             // A same-parent moveSet is a pure reorder — relocate no-ops, so the order patch is
             // what keeps the drop from snapping back until the confirm walk lands.
