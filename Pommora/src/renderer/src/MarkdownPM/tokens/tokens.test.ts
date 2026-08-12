@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { tokenize, activeTokenIndices, type Token } from './index'
+import { tokenize, activeTokenIndices, shiftToken, type Token } from './index'
 
 const byKind = (tokens: Token[], kind: string): Token[] => tokens.filter((t) => t.kind === kind)
 const slice = (text: string, r: [number, number]): string => text.slice(r[0], r[1])
@@ -63,6 +63,47 @@ describe('inline regex tokens + overlap rules', () => {
     const t = '[t](http://u)'
     const l = byKind(tokenize(t), 'link')[0]
     expect(slice(t, l.contentRange)).toBe('t')
+  })
+})
+
+describe('an aliased wikilink separates what it shows from what it resolves', () => {
+  it('[[Title|Alias]] shows the alias and keeps the title as its key', () => {
+    const t = '[[Q3 Plan|the plan]]'
+    const w = byKind(tokenize(t), 'wikiLink')[0]
+    expect(slice(t, w.contentRange)).toBe('the plan')
+    expect(slice(t, w.resolveRange as [number, number])).toBe('Q3 Plan')
+    expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[Q3 Plan|', ']]'])
+  })
+
+  it('a bare [[Title]] has no resolve span — contentRange is the key', () => {
+    const t = '[[Page]]'
+    const w = byKind(tokenize(t), 'wikiLink')[0]
+    expect(w.resolveRange).toBeUndefined()
+    expect(slice(t, w.contentRange)).toBe('Page')
+    expect(w.markerRanges.map((m) => slice(t, m))).toEqual(['[[', ']]'])
+  })
+
+  it('an empty alias [[Title|]] reads as no alias at all', () => {
+    const t = '[[Page|]]'
+    const w = byKind(tokenize(t), 'wikiLink')[0]
+    expect(w.resolveRange).toBeUndefined()
+    expect(slice(t, w.contentRange)).toBe('Page')
+  })
+
+  // The viewport projection rebuilds every token into a fresh literal, where a new span field is
+  // dropped with no type error and the editor silently resolves aliases. Field-set parity is what
+  // goes red for that, now and for whatever field is added next.
+  it('shifting a token carries every field the raw one has, offset alike', () => {
+    const raw = byKind(tokenize('[[Q3 Plan|the plan]]'), 'wikiLink')[0]
+    const moved = shiftToken(raw, 10)
+    expect(Object.keys(moved).sort()).toEqual(Object.keys(raw).sort())
+    expect(moved.range).toEqual([raw.range[0] + 10, raw.range[1] + 10])
+    expect(moved.contentRange).toEqual([raw.contentRange[0] + 10, raw.contentRange[1] + 10])
+    expect(moved.resolveRange).toEqual([
+      (raw.resolveRange as [number, number])[0] + 10,
+      (raw.resolveRange as [number, number])[1] + 10,
+    ])
+    expect(moved.markerRanges).toEqual(raw.markerRanges.map(([s, e]) => [s + 10, e + 10]))
   })
 })
 

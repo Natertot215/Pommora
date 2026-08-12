@@ -28,7 +28,23 @@ export interface Token {
   /** Full span incl. markers, `[start, end)`. */
   range: [number, number]
   contentRange: [number, number]
+  /** Where the token resolves from, when that differs from what it displays. Absent means
+   *  `contentRange` is both. */
+  resolveRange?: [number, number]
   markerRanges: [number, number][]
+}
+
+/** Re-base a token onto absolute document offsets. Every span is listed rather than spread, so a
+ *  field added to `Token` and forgotten here fails the parity test instead of rendering wrongly. */
+export function shiftToken(tk: Token, by: number): Token {
+  const move = ([s, e]: [number, number]): [number, number] => [s + by, e + by]
+  return {
+    kind: tk.kind,
+    range: move(tk.range),
+    contentRange: move(tk.contentRange),
+    ...(tk.resolveRange ? { resolveRange: move(tk.resolveRange) } : {}),
+    markerRanges: tk.markerRanges.map(move),
+  }
 }
 
 type Span = [number, number]
@@ -122,14 +138,18 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
     const fs = m.index
     const fe = fs + m[0].length
     if (inCode(fs)) continue
-    const contentStart = fs + 2
-    const contentEnd = contentStart + (m[1]?.length ?? 0)
+    const titleStart = fs + 2
+    const titleEnd = titleStart + (m[1]?.length ?? 0)
+    // An alias pulls the two meanings apart — the words shown and the key resolved. The leading
+    // marker then swallows `[[Title|`, since all of it is syntax the reader shouldn't see.
+    const aliased = (m[2]?.length ?? 0) > 0
     tokens.push({
       kind: 'wikiLink',
       range: [fs, fe],
-      contentRange: [contentStart, contentEnd],
+      contentRange: aliased ? [titleEnd + 1, fe - 2] : [titleStart, titleEnd],
+      ...(aliased ? { resolveRange: [titleStart, titleEnd] as [number, number] } : {}),
       markerRanges: [
-        [fs, fs + 2],
+        [fs, aliased ? titleEnd + 1 : titleStart],
         [fe - 2, fe],
       ],
     })
