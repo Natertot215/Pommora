@@ -116,9 +116,11 @@ describe('activeTokenIndices', () => {
     expect(activeTokenIndices(tokens, 0, 0).has(idx)).toBe(false)
   })
 
-  it('caret at a wikilink end is NOT active (closing ]] passed)', () => {
+  // A connection reveals at its end like every other inline construct. Authoring doesn't suffer for
+  // it because committing one steps the caret past a trailing space rather than onto the closer.
+  it('caret at a wikilink end is active, as it is for bold', () => {
     const tokens = tokenize('[[P]]') // wikilink [0,5]
     const idx = tokens.findIndex((tk) => tk.kind === 'wikiLink')
-    expect(activeTokenIndices(tokens, 5, 5).has(idx)).toBe(false)
+    expect(activeTokenIndices(tokens, 5, 5).has(idx)).toBe(true)
   })
 })

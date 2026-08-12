@@ -75,9 +75,14 @@ export function useConnectionAutocomplete(
     const view = viewRef.current
     if (!view || !ac) return
     const { insert, caret } = connectionInsert(page.title, ac.from, ac.form)
+    // A caret resting on a connection's closer keeps its token active, so the link just picked would
+    // sit there as raw syntax. Step one past it instead, adding the space when there isn't one to
+    // step over. Embeds own their whole line and never land the caret beside a closer.
+    const spaced = ac.form === 'link'
+    const pad = spaced && view.state.doc.sliceString(ac.to, ac.to + 1) !== ' ' ? ' ' : ''
     view.dispatch({
-      changes: { from: ac.from, to: ac.to, insert },
-      selection: { anchor: caret },
+      changes: { from: ac.from, to: ac.to, insert: insert + pad },
+      selection: { anchor: caret + (spaced ? 1 : 0) },
       userEvent: 'input',
     })
     setAc(null)
