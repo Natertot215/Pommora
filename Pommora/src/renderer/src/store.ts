@@ -83,18 +83,31 @@ import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './De
 import { ensureContainerView } from './Detail/Views/viewMint'
 import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
 
+interface RenameClaim {
+  token: number
+  path: string
+  host: RenameHost
+}
+/** The path being renamed and the host the gesture declared, if it knew one. */
+interface RenameFence {
+  renamingPath: string | null
+  renamingHost: RenameHost | null
+}
+
 // The owner fence's resolver: claims for the live path only; a gesture-declared host wins,
 // then rank, then first-come — insertion order breaks ties at every step.
 let nextRenameToken = 1
 const RENAME_RANK: Record<RenameHost, number> = { detail: 2, sidebar: 1 }
-function resolveRenameWinner(
-  claims: { token: number; path: string; host: RenameHost }[],
-  s: { renamingPath: string | null; renamingHost: RenameHost | null },
-): number | null {
-  if (s.renamingPath === null) return null
-  const live = claims.filter((c) => c.path === s.renamingPath)
+const RENAME_CLEARED = {
+  renamingPath: null,
+  renamingCreate: false,
+  renamingHost: null,
+  renameWinner: null,
+} satisfies Partial<SessionState>
+function resolveRenameWinner(claims: RenameClaim[], fence: RenameFence): number | null {
+  const live = claims.filter((c) => c.path === fence.renamingPath)
   if (live.length === 0) return null
-  const declared = s.renamingHost ? live.find((c) => c.host === s.renamingHost) : undefined
+  const declared = live.find((c) => c.host === fence.renamingHost)
   if (declared) return declared.token
   let winner = live[0]
   for (const c of live) if (RENAME_RANK[c.host] > RENAME_RANK[winner.host]) winner = c
@@ -306,7 +319,7 @@ interface SessionState {
   renamingHost: RenameHost | null
   /** The owner fence: field hosts claim on mount; one claim wins (declared host first, then
    *  rank — detail over sidebar — then first-come) and only the winner mounts an input. */
-  renameClaims: { token: number; path: string; host: RenameHost }[]
+  renameClaims: RenameClaim[]
   renameWinner: number | null
   claimRename: (path: string, host: RenameHost) => number | null
   releaseRename: (token: number) => void
@@ -1438,13 +1451,12 @@ export const useSession = create<SessionState>((set, get) => {
       return token
     },
     releaseRename: (token) => {
-      const before = get()
-      const path = before.renamingPath
-      const released = before.renameClaims.find((c) => c.token === token)
-      const wasWinner = before.renameWinner === token
+      const { renamingPath: path, renameClaims, renameWinner } = get()
+      const released = renameClaims.find((c) => c.token === token)
+      const wasWinner = renameWinner === token
       set((s) => {
-        const renameClaims = s.renameClaims.filter((c) => c.token !== token)
-        return { renameClaims, renameWinner: resolveRenameWinner(renameClaims, s) }
+        const claims = s.renameClaims.filter((c) => c.token !== token)
+        return { renameClaims: claims, renameWinner: resolveRenameWinner(claims, s) }
       })
       // The verdict waits a microtask: StrictMode's simulated remount (and any same-act re-key)
       // releases and re-claims in one act — an immediate cancel would kill every dev rename.
@@ -1454,19 +1466,20 @@ export const useSession = create<SessionState>((set, get) => {
         const s = get()
         if (path === null || s.renamingPath !== path) return
         const survivor = s.renameClaims.find((c) => c.token === s.renameWinner)
-        if (survivor && !(wasWinner && released && survivor.host !== released.host)) return
-        s.cancelRename()
+        const handedOff = wasWinner && released !== undefined && survivor?.host !== released.host
+        if (!survivor || handedOff) s.cancelRename()
       })
     },
     beginRename: (path, create, host) =>
-      set((s) => ({
-        renamingPath: path,
-        renamingCreate: create === true,
-        renamingHost: host ?? null,
-        renameWinner: resolveRenameWinner(s.renameClaims, { renamingPath: path, renamingHost: host ?? null }),
-      })),
-    cancelRename: () =>
-      set({ renamingPath: null, renamingCreate: false, renamingHost: null, renameWinner: null }),
+      set((s) => {
+        const fence: RenameFence = { renamingPath: path, renamingHost: host ?? null }
+        return {
+          ...fence,
+          renamingCreate: create === true,
+          renameWinner: resolveRenameWinner(s.renameClaims, fence),
+        }
+      }),
+    cancelRename: () => set(RENAME_CLEARED),
     newPageAdjacent: async (path, where) => {
       const tree = get().tree
       if (!tree) return
@@ -1487,7 +1500,7 @@ export const useSession = create<SessionState>((set, get) => {
     },
     submitRename: async (path, kind, newName) => {
       const fromCreate = get().renamingCreate && kind === 'page'
-      set({ renamingPath: null, renamingCreate: false, renamingHost: null, renameWinner: null })
+      set(RENAME_CLEARED)
       // Registry entities rename by id through their journaled cascade ops — a bare folder
       // rename would strand every member file's title key.
       if (kind === 'space' || kind === 'context') {
