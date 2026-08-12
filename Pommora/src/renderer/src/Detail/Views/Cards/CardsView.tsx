@@ -176,6 +176,10 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // table's law.
   const [viewOrders, setViewOrders] = useState<Record<string, string[]>>({})
   const [manualOverride, setManualOverride] = useState<string[] | null>(null)
+  // The set-cards row's twin of manualOverride — a confirmed tree carries the canonical
+  // set_order, so a fresh `source` identity drops it.
+  const [setOrderOverride, setSetOrderOverride] = useState<string[] | null>(null)
+  useEffect(() => setSetOrderOverride(null), [source])
   useEffect(() => {
     let cancelled = false
     setManualOverride(null)
@@ -220,7 +224,11 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       overId,
     )
     const moved = sets.find((s) => s.id === activeId)
-    if (moved) void mutate({ op: 'moveSet', path: moved.path, newParentPath: source.path, order })
+    if (!moved) return
+    // Synchronous — the zone's shift transforms release on this very render, and the tree patch
+    // waits on the IPC reply; without the override the row snaps back for the gap between them.
+    setSetOrderOverride(order)
+    void mutate({ op: 'moveSet', path: moved.path, newParentPath: source.path, order })
   }
 
   const setNames = useMemo(() => buildSetNames(source), [source])
@@ -275,7 +283,15 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   }
 
   const banner: CardBanner = view.card_banner ?? 'cover'
-  const sets = source.sets ?? []
+  const baseSets = source.sets ?? []
+  const sets = useMemo(() => {
+    if (!setOrderOverride) return baseSets
+    const idx = new Map(setOrderOverride.map((id, i) => [id, i] as const))
+    return [...baseSets].sort(
+      (a, b) =>
+        (idx.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (idx.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+    )
+  }, [baseSets, setOrderOverride])
   const showSetCards = (view.set_cards ?? true) && sets.length > 0
   const hideLocation = view.hide_location ?? false
   // A page card honors the Collection's Open In (like the table's title-click): a page-preview owner
