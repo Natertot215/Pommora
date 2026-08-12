@@ -586,7 +586,12 @@ describe('band header — the sidebar interaction model', () => {
     await act(async () => {
       headerOf('B').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
-    expect(contextMenuSpy).toHaveBeenCalledWith({ kind: 'set', path: 'Col/B', title: 'B' })
+    expect(contextMenuSpy).toHaveBeenCalledWith({
+      kind: 'set',
+      path: 'Col/B',
+      title: 'B',
+      host: 'detail',
+    })
   })
 
   it('the store rename flow renders the inline input in the band and commits a rename mutate', async () => {

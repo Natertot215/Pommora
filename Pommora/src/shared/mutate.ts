@@ -122,6 +122,9 @@ export type MutateRequest =
   | { op: 'reorderSpaces'; contextId: string; ids: string[] }
 
 /** What the renderer hands main to pop a native context menu for one sidebar entity. */
+/** Which renderer surface hosts a rename field — the owner fence's vocabulary. */
+export type RenameHost = 'detail' | 'sidebar'
+
 export interface ContextTarget {
   kind: MutableKind
   /** Nexus-relative POSIX path (PathNode.path). */
@@ -132,6 +135,9 @@ export interface ContextTarget {
   id?: string
   /** Whether the entity is already open in a tab — flips the item label to "Open" (focus). */
   alreadyOpen?: boolean
+  /** The surface that popped the menu — echoed into `begin-rename` so the field opens where
+   *  the gesture happened; absent, the fence resolves by rank. */
+  host?: RenameHost
 }
 
 /** A "New …" offer: what it reads as, and the write it performs. */
