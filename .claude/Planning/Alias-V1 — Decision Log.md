@@ -75,6 +75,10 @@ Both approaches below answer the same gap: when several pages share a title, [[C
 - **D-3:** [confirmed] The parens hold the **page title** — `[Foo](My Page)`. Human-legible, already the shape the cascade rewrites, and correct as a relative link outside Pommora. A PageID target was weighed and rejected: rename-proof, but it turns every link into an opaque string in a file meant to be readable.
 - **D-5:** [confirmed] Page autocomplete **fires inside `( )`**, so an internal markdown link is authored by picking rather than by typing a title by hand. `autocompleteQuery` gains a third form beside `link` and `embed`.
 
+- **D-6:** [confirmed] **A broken markdown link keeps the external-link convention** — dimmed display text, no pointer cursor, and the target still hidden at rest. This is not a new treatment: `.md-link-invalid` already states the rule in its own comment ("URL stays hidden at rest so it doesn't pollute the line"), so an unresolved *internal* target simply falls through to it rather than being special-cased. Nothing dumps raw syntax into the line.
+- **D-7:** [confirmed] **The two forms share one grammar, not two.** `[text](target)` is a single token kind with a single parser; internal versus external is a *resolution branch*, never a second syntax or a second tokenizer. The separation to hold is therefore in the branch's cleanliness — one place decides which of three outcomes a target has, and the three appearances follow from it.
+- **D-8:** [assumed] **An internal markdown link wears the connection colour**, matching `[[ ]]`, because the two forms mean the same thing and appearance should follow meaning rather than syntax. External-valid keeps `.md-link`, broken keeps `.md-link-invalid`. Needs Nathan's yes — it is user-visible.
+
 #### E — Markdown-Link Authoring
 
 - **E-1:** [confirmed] Committing a markdown link lands the caret **inside the `[title]` slot**, not past the syntax — the opposite of the connection form, which exits because a connection's title *is* its target and isn't free text. This holds for **external links too**, so naming a link never requires re-entering it.

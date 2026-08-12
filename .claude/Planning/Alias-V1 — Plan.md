@@ -76,12 +76,17 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 **Shapes:** additive · fix · refactor · user-visible
 
+**Known gaps Phase 0 must close** *(named here so they can't be discovered mid-execution)*
+- **Main holds no title index.** Task 14's duplicate-title gate needs a cheap "how many pages hold this title?" in the file-owning process, and `src/main` has nothing that answers it — the renderer's `buildPageIndex` is the only such structure. Either main gains one, the gate moves, or the move cascade loses its cheap escape.
+- ~~**Whether a caret can sit inside a hidden marker region.**~~ **Answered by the sweep — it can.** `hideMarker` is a bare `Decoration.replace({})` and is never registered in `EditorView.atomicRanges`; and even declared-atomic ranges "don't block a programmatic dispatch, only CM's own default cursor-motion/deletion" (`calloutAtomic.ts`). A large hidden span is also already proven in production — the whole `](url)` tail is one hide of arbitrary length. Two things the caret work still owns: **set `assoc` explicitly** or the drawn caret may not render (`caret.ts` documents `RectangleMarker.forRange` returning nothing for a seat facing a replaced range), and note that arrow-walking never traverses the grown marker invisibly because `activeTokenIndices` is edge-inclusive — entering the token's range reveals it.
+
 **Global Constraints (every task inherits these)**
 
 - Gates, run from `Pommora/`, exit codes read **directly** — never through a pipe: `npm run typecheck` · `npm run test` · `npm run lint`.
 - Biome owns formatting via a PostToolUse hook. Never hand-align, never run Biome. An Edit failing on whitespace means it reformatted — re-read and retry.
 - Main owns the filesystem; the renderer never touches Node. Every IPC channel is declared once in `shared/bridge.ts` and returns the `Result` envelope.
 - One normalization for connection matching. Never a second resolver, a second index, or a second writer.
+- **Reuse before invention, checked rather than assumed.** Before writing *any* new helper, predicate, encoder, cache, or state shape, search for an existing one — Pommora is mature and the mechanism usually exists. Task 0's explorer reports are the standing reference; a task that authors something the reports name as existing is a defect, not a style preference. Where a task's step says "add X", read it as "add X only if the sweep found nothing that does or nearly does X."
 - Comments explain why, never what. Never restate a value a declaration holds. `KNOB` and `(Nathan's call)` markers survive untouched.
 - Stage explicit paths — never `git add -A` or a directory add.
 - Out of scope everywhere: alternate resolution keys, a reverse link index, an alias-management pane, heading/block anchors, `rewriteBlockConnections` gaining new patterns, and any new dependency.
@@ -113,6 +118,30 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 - Control: `rg -F "pageLinkPattern" src` → 8 at planning time. Zero here means the sweep never ran.
 
 **Hazard Window:** Task 2 changes `Token`'s shape while three consumers still read the old field. Until Task 4 lands, an aliased link resolves incorrectly in at least one renderer — no interactive verification of connections is meaningful inside that window, and the running-thing pass for Phase 1 defers to Gate 1.
+
+---
+
+### Phase 0 — Ground every addition in what already exists
+
+#### Task 0: Consume the reuse sweep before any code is written
+
+**Requirement:** 1–6
+
+**Why:** Pommora has existed long enough that most of what this plan calls "new" probably isn't. Hand-rolled parallels to existing mechanisms are the project's most repeated avoidable defect, and the cost of finding one *after* it ships is a second writer nobody notices. This task exists so every later task starts from an inventory rather than an assumption.
+
+**Files:** Modify this plan — each task's steps, rewritten against what the sweep found.
+
+**Steps:**
+- [ ] Read both explorer reports in full: the main-side sweep (encoding · path segments · journal reusability · title-uniqueness in main · the cascade's enumeration) and the renderer-side sweep (per-page store slices · hover-destructive controls · caret placement · marker hiding and whether a caret can sit inside a hidden region · autocomplete modes · every existing string-to-page resolver).
+- [ ] For every "add", "create", or "write" step in Tasks 1–16, name the existing mechanism it reuses, or record that the sweep found none. Rewrite the step to cite the mechanism.
+- [ ] **Close the two known gaps the sweep was aimed at.** Main holds no title index, so Task 14's duplicate-title gate has no cheap source — record what the sweep found and rewrite Task 14 against it. And confirm whether a caret can be placed *inside* a hidden marker region, since Tasks 3, 8, and 13 all depend on it; if it can't, those tasks need the reveal to precede the placement.
+- [ ] Record every substitution in Deviations, so the reasoning survives.
+- [ ] Commit: `docs(pommora): Alias-V1 grounds its additions in what already exists`
+
+#### Gate 0 — nothing is invented that already exists
+- [ ] Both explorer reports read; every authoring step in the plan cites a reuse or a recorded absence.
+- [ ] Task 14 rewritten against a real main-side mechanism, or its gap escalated.
+- [ ] The hidden-region caret question answered against the code, not assumed.
 
 ---
 
@@ -199,6 +228,8 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 **Files:** Modify `src/renderer/src/MarkdownPM/connections/index.ts` — `buildPageIndex`'s `resolve`.
 
+**Survivors:** `treeIndex.ts`'s standing rule — "a new lookup belongs here as another projection, never as its own walk." The tiebreak extends the existing `pageIndexOf` projection; it does not add a walk or a rival resolver. The sweep confirms there are no rogue string-to-page resolvers anywhere in the renderer, and that must stay true.
+
 **Interfaces**
 - Consumes: `ConnPage.path` — nexus-relative, POSIX, including `.md`.
 - Assumed by: Task 14 (the move gate reads the same holder count).
@@ -208,6 +239,7 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Must agree:** `mentionsTitle` (Task 15's prefilter) and this resolver must agree on which links name a given page; one test crosses both.
 
 **Steps:**
+- [ ] **Reuse, don't author:** `titleFromPath` (`shared/connections.ts`) already does basename-plus-`.md`-strip and is importable from main; `normalizeSeg` (`main/exclusion.ts`) is NFC + case-fold per segment, which is exactly the per-segment comparison this needs. Path split/parent/join exist as **four private duplicates** (`mutate.ts`, `store.ts`, `treeMove.ts`, `BlockSurface.tsx`) — consolidate onto one exported helper rather than adding a fifth.
 - [ ] Split the raw link on `/`; the last segment is the title, trimmed per segment.
 - [ ] Look the title up in the existing `byTitle` map — unchanged.
 - [ ] One holder → resolved, prefix ignored. Several → keep those whose `path` ends with the written suffix (segment-wise, `.md` stripped, normalized); exactly one survivor → resolved, else `ambiguous`.
@@ -290,6 +322,7 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Steps:**
 - [ ] Bound `autocompleteQuery`'s link form to the title span — today it spans the whole `[[…]]`, so Return inside an alias replaces the entire link with the bare form.
 - [ ] Add a regression test for exactly that: caret in an alias, Return, alias survives.
+- [ ] **The caret helper is genuinely absent** — `focusAt(view, pos)` in `editor/input.ts` is the only shared placement, and "seat the caret inside this token's Nth span" exists nowhere (the nearest precedent is the embed insert's `anchor: caret - ']]'.length`). Build one helper beside `focusAt` rather than inlining a fourth bespoke dispatch, and **set `assoc` explicitly** — a seat facing a replaced range renders no caret otherwise.
 - [ ] Implement Rename's two cases and Edit Link's caret-at-title-end.
 - [ ] Implement the strip, reading the personalization toggle, defaulting to on.
 - [ ] Refuse `]` inside an alias, the way `invalidName` refuses `|` in a title.
@@ -338,6 +371,8 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Failure half:** a write failing leaves the slice unchanged rather than optimistically showing an alias that didn't persist.
 
 **Steps:**
+- [ ] **Copy the editor's per-page pattern, don't invent one.** `folds`, `embedHeights`, and `tableHeadingColumns` all use one shape: a `{ load, save }` seam minted in `PageView.tsx`, stashed in a ref so the mount-once extension array reads live, loaded with `Promise.allSettled` (never `all`), and persisted by an `updateListener` **gated on its own StateEffect** — which is exactly why a keystroke dispatches nothing and no debounce is needed. Mirror that gating rather than writing on doc change.
+- [ ] Add the scope to `remint.ts`'s `COPY_SCOPES` beside `folds`/`headingCols`/`embedHeights`, or a duplicated page silently loses its memory.
 - [ ] Add the slice, seeded on nexus load, updated on every write and every ×.
 - [ ] Write the alias on authoring — on commit, not per keystroke.
 - [ ] Add `Remove Title on Link Change` to the `pages` toggles with `defaultOn`.
@@ -359,8 +394,9 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Negative control:** with the inert-until-hover guard disabled, a test asserting a stray click does not forget goes red; with it enabled, a test asserting a hovered × *does* forget stays green.
 
 **Steps:**
-- [ ] Add the alias mode to the existing `AcState` — a mode, not a second panel.
-- [ ] Render suggestions with the hover-revealed ×; the primary action stays insert.
+- [ ] Add the alias mode to the existing `AcState` — a mode, not a second panel. `form` is already the only discriminant and the hook passes it through untouched, so the state machine is nearly free; the real work is that `autocompleteQuery`'s third parameter is a `allowEmbeds: boolean` needing generalization, and branch order matters.
+- [ ] **`ChipRemoveButton` is reusable as-is** — it is already used outside chips with a custom skin (`FilterPane`'s location segment), taking `className`/`label`/`size`. Its inert-until-revealed contract reads opacity off computed style, so the skin must apply masks statically from mount, flip **only** opacity, key the reveal on a real `:hover` sibling chain, and keep the surrounding label pointer-inert. That CSS carries a LOAD-BEARING banner; computed styles lie for this bug class, so verify with live hovers only.
+- [ ] Widen the panel row deliberately: `AutocompletePanel` is typed to `ConnPage[]` end to end with a hardcoded page icon and a prefix-only highlight. Mirror `MenuItem`'s existing `trailing` slot for the ×; do not build a second panel.
 - [ ] Wire the × to the slice's delete.
 - [ ] Add both halves of the negative control.
 - [ ] `npm run test` + `npm run lint` — expect green.
@@ -383,15 +419,19 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 **Files:** Modify `src/renderer/src/MarkdownPM/editor/links.ts`, `decorations.ts` (the `link` block's valid test), and `src/shared/links.ts` (an encode/decode pair beside `escapeAlias`).
 
-**Failure half:** target resolving as a page → internal. Not resolving and valid as a URL → external. Neither → the existing broken-link treatment. Anchors and file references fall through to unresolved, as they render today.
+**Failure half:** target resolving as a page → internal. Not resolving and valid as a URL → external. Neither → the **existing** `.md-link-invalid` treatment, unchanged: dimmed display text, no pointer cursor, target still hidden at rest. Anchors and file references land here, as they render today. Nothing dumps raw syntax into the line.
 
-**Must agree:** the markdown form and the wikilink form must resolve the same target to the same page; one test crosses both.
+**Must agree:** the markdown form and the wikilink form must resolve the same target to the same page; one test crosses both. One branch decides among the three outcomes — never two predicates that could disagree about whether a target is internal.
+
+**Survivors:** `.md-link`, `.md-link-invalid`, and `.md-link-url` are unchanged and un-renamed. Three outcomes reuse two existing classes plus the connection colour; no new link styling is authored. The `link` token kind stays single — internal versus external is a resolution branch, never a second grammar or tokenizer.
 
 **Steps:**
-- [ ] Add percent encode/decode beside `escapeAlias`; decode before resolution, encode on write.
+- [ ] Re-read the explorer reports before writing: use whatever encoding, path-segment, and page-resolution helpers already exist rather than authoring parallels.
+- [ ] Add percent encode/decode — the sweep confirms **no codec exists**, only `encodeURI` at `assetUrl.ts` and two `decodeURIComponent` at the protocol boundaries. Follow that precedent: **`encodeURI`, not `encodeURIComponent`**, so `/` survives a path target. Note `unescapeAlias` is asymmetric with `escapeAlias` (it unescapes any `\x`) — don't widen it into this.
+- [ ] Write one resolver returning a three-way outcome — internal page · external URL · broken — so no two predicates can disagree.
 - [ ] Try page resolution first (extension stripped, path tiebreak from Task 5), then the external gate.
-- [ ] Route an internal hit to navigation instead of `openExternal`.
-- [ ] Tests: `Notes`, `Work/Notes`, `Work/Notes.md`, `My%20Page`, `Node.js`, a real URL, an anchor.
+- [ ] Route an internal hit to navigation instead of `openExternal`; give it the connection colour (D-8).
+- [ ] Tests: `Notes`, `Work/Notes`, `Work/Notes.md`, `My%20Page`, `Node.js`, a real URL, an anchor — and one asserting a broken internal target renders dimmed with its target hidden, identically to a broken external one.
 - [ ] `npm run test` + `npm run lint` — expect green.
 - [ ] Commit: `feat(connections): a markdown link can name a page`
 
@@ -456,6 +496,9 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Steps:**
 - [ ] Match on the span's last segment and replace only that, preserving any prefix; `![[ ]]` takes the identical treatment.
 - [ ] Add the `[]()` pattern to both the prefilter and the rewriter, percent-encoding preserved.
+- [ ] **Free win while here:** `mentionsTitle` is a full parse with no cheap gate in front of it, and the cascade reads every `.md` in the nexus without touching `walkCache`. Add a `body.includes` substring gate before the parse — it costs nothing on the common miss path, which is nearly every file.
+- [ ] **Don't reach for `sweepGovernedRoots`** — it is frontmatter-key-shaped and this cascade is body-shaped; it is the wrong reuse despite looking like the right one.
+- [ ] Call `recordWrite` on both sides of any rename this touches, or the watcher re-walks the whole nexus.
 - [ ] Update `rewrite.ts`'s header comment — the alias-rides-through line is no longer the whole story.
 - [ ] Tests: prefix preserved; last-segment match; `[]()` rewritten; code-fenced samples untouched; the prefilter/rewriter agreement test.
 - [ ] `npm run test` — expect green.
@@ -474,8 +517,9 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Negative control:** with the journal disabled, a test simulating a mid-cascade failure leaves a stale body and goes red; with it enabled the replay heals it and the test passes.
 
 **Steps:**
-- [ ] Read `contextJournal.ts` and `contextCascade.ts`'s replay before writing anything.
-- [ ] Write the page journal on the same shape; commit the record before the cascade, clear after.
+- [ ] Read `contextJournal.ts` and `contextCascade.ts`'s `replayPendingRename` before writing anything. The journal *record* is Context-shaped in three ways — `contextId` is required and its absence rejects the record, `spaceId`'s presence is the only discriminant, and one fixed filename holds one record, so a page journal would clobber a pending Context one. Widen with a real `kind` discriminant or key the file per kind.
+- [ ] **The replay's rules are the actual asset, not its code** — copy them deliberately: re-verify the exact old→new mapping still holds or discard; **discard rather than hijack when the freed old title has been re-minted by another entity**; stay idempotent; keep the journal alive while any file remains unread so an unreadable file means retry-later rather than silent loss.
+- [ ] Write the page journal; commit the record before the cascade, clear after.
 - [ ] Call the replay at startup beside `replayPendingRename`, before anything reads.
 - [ ] Add both halves of the negative control.
 - [ ] `npm run test` + `npm run typecheck` — expect green.
@@ -531,6 +575,8 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 ## Implementation Log
 
 ### Progress
+- [ ] **Phase 0** — Grounding · base `<commit>`
+  - [ ] Task 0 — Consume the reuse sweep · `<commit>`
 - [ ] **Phase 1** — Resolution · base `<commit>`
   - [ ] Task 1 — Raise the bracket cap · `<commit>`
   - [ ] Task 2 — Token resolve span · `<commit>`
