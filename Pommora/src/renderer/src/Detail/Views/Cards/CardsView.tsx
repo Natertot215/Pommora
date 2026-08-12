@@ -401,6 +401,9 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       full.push(...without.slice(0, at), activeId, ...without.slice(at))
     }
     setManualOverride(full)
+    // The wire write lands in the local copy too — nothing re-reads viewOrders mid-session, so
+    // a stale local array outlives the override that masks it (TableView.persistViewOrder's law).
+    setViewOrders((m) => ({ ...m, [view.id]: full }))
     void window.nexus.viewOrders.set(view.id, full)
   }
   const onCardDrop = (activeId: string, toZone: string, toIndex: number): void => {
@@ -412,11 +415,25 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     if (canRelocate) {
       // A cross-band drop under location grouping moves the page into that band's Set (root → the
-      // container). movePage; the tree reload reflects it (no optimistic value patch — a move isn't a value).
+      // container). The order carries the landing: the destination's FULL membership (hidden rows
+      // keep their rank) with the drop spliced before the visible card it landed on.
       const row = rowById.get(activeId)
       const destPath = toZone === UNGROUPED ? source.path : setPaths.get(toZone)
-      if (row && destPath && destPath !== row.path.slice(0, row.path.lastIndexOf('/')))
-        void mutate({ op: 'movePage', path: row.path, newParentPath: destPath })
+      if (row && destPath && destPath !== row.path.slice(0, row.path.lastIndexOf('/'))) {
+        const destIds = flattenContainer(source, effectiveValues)
+          .rows.filter(
+            (r) => r.path.slice(0, r.path.lastIndexOf('/')) === destPath && r.id !== activeId,
+          )
+          .map((r) => r.id)
+        const band = groups.find((g) => g.key === toZone)
+        const beforeId = band ? (flattenGroups([band])[toIndex]?.id ?? null) : null
+        const at = beforeId === null ? -1 : destIds.indexOf(beforeId)
+        const order =
+          at === -1
+            ? [...destIds, activeId]
+            : [...destIds.slice(0, at), activeId, ...destIds.slice(at)]
+        void mutate({ op: 'movePage', path: row.path, newParentPath: destPath, order })
+      }
       return
     }
     if (!canReassign || !groupPropId) return
