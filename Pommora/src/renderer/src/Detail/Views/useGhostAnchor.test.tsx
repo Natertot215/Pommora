@@ -1,0 +1,165 @@
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { type GhostAnchor, useGhostAnchor } from './useGhostAnchor'
+;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+const DWELL = 1000
+const GRACE = 100
+
+let api: GhostAnchor
+let suppressed = false
+
+function Probe(): React.JSX.Element {
+  api = useGhostAnchor({ dwellMs: DWELL, graceMs: GRACE, suppressed: () => suppressed })
+  return api.ghost ? <div data-ghost-root data-closing={api.ghost.closing} /> : <span />
+}
+
+let host: HTMLDivElement
+let root: Root
+
+beforeEach(async () => {
+  vi.useFakeTimers()
+  suppressed = false
+  host = document.createElement('div')
+  document.body.appendChild(host)
+  root = createRoot(host)
+  await act(async () => root.render(<Probe />))
+})
+
+afterEach(async () => {
+  await act(async () => root.unmount())
+  host.remove()
+  vi.useRealTimers()
+})
+
+const tick = async (ms: number): Promise<void> => {
+  await act(async () => {
+    vi.advanceTimersByTime(ms)
+  })
+}
+
+describe('useGhostAnchor', () => {
+  it('dwell arms the ghost on the hovered anchor', async () => {
+    await act(async () => api.onHover('a', true))
+    expect(api.ghost).toBeNull()
+    await tick(DWELL)
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
+  })
+
+  it('a leave closes on the grace beat; entering the ghost keeps it', async () => {
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL)
+    await act(async () => api.onHover('a', false))
+    await act(async () => api.onGhostEnter())
+    await tick(GRACE * 2)
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
+    await act(async () => api.onGhostLeave())
+    await tick(GRACE)
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: true })
+    await act(async () => api.closed())
+    expect(api.ghost).toBeNull()
+  })
+
+  it('returning to the anchor mid-exit reverses the collapse without a new dwell', async () => {
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL)
+    await act(async () => api.onHover('a', false))
+    await tick(GRACE)
+    expect(api.ghost?.closing).toBe(true)
+    await act(async () => api.onHover('a', true))
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
+  })
+
+  it('a suppressor arriving mid-dwell cancels the pending open', async () => {
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL / 2)
+    suppressed = true
+    await tick(DWELL)
+    expect(api.ghost).toBeNull()
+  })
+
+  it('a menu pop stands the ghost down and holds new dwells until it resolves', async () => {
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL)
+    let release: () => void = () => {}
+    const menu = new Promise<void>((r) => {
+      release = r
+    })
+    let settled = false
+    await act(async () => {
+      void api.suppressWrap(() => menu).then(() => {
+        settled = true
+      })
+    })
+    expect(api.ghost?.closing).toBe(true)
+    await act(async () => api.onHover('b', true))
+    await tick(DWELL)
+    expect(api.ghost?.anchorId).not.toBe('b')
+    await act(async () => {
+      release()
+      await menu
+    })
+    expect(settled).toBe(true)
+  })
+
+  it('a pointerdown outside the ghost clears it synchronously, no exit', async () => {
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL)
+    await act(async () => {
+      document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    })
+    expect(api.ghost).toBeNull()
+  })
+
+  it("a pointerdown inside the ghost's root survives — its click is the create", async () => {
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL)
+    const ghostEl = host.querySelector('[data-ghost-root]') as HTMLElement
+    await act(async () => {
+      ghostEl.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    })
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
+  })
+
+  it('anchor loss clears state, not just render — no dwell-free reopen', async () => {
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL)
+    await act(async () => api.onHover('a', false))
+    await tick(GRACE)
+    expect(api.ghost?.closing).toBe(true)
+    // The pipeline dropped the anchor mid-close; the consumer clears by id.
+    await act(async () => api.clear('a'))
+    expect(api.ghost).toBeNull()
+    // Re-hovering must re-dwell — the stranded-closing skip-dwell regression.
+    await act(async () => api.onHover('a', true))
+    expect(api.ghost).toBeNull()
+    await tick(DWELL)
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
+  })
+
+  it('take() claims the anchor and unmounts in one act', async () => {
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL)
+    let taken: string | null = null
+    await act(async () => {
+      taken = api.take()
+    })
+    expect(taken).toBe('a')
+    expect(api.ghost).toBeNull()
+    await act(async () => {
+      expect(api.take()).toBeNull()
+    })
+  })
+
+  it('hovering a different row closes the standing ghost and dwells fresh', async () => {
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL)
+    await act(async () => api.onHover('b', true))
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: true })
+    await act(async () => api.closed())
+    await tick(DWELL)
+    expect(api.ghost).toEqual({ anchorId: 'b', closing: false })
+  })
+})
