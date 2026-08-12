@@ -24,6 +24,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 8. Cross-location card drops honor their landing index (A-4).
 9. The Set-Card drag flash falls to its verified cause (A-4).
 10. Every doc and comment this makes false is rewritten in the commit that falsifies it (F-1–F-5).
+11. *(Addendum, Nathan's instruction at execution start)* Dwelling on a sidebar page row extends a ghost "New Page" row beneath it; clicking creates below with the empty naming field opening in the sidebar (Phase 4b).
 
 **Acceptance — the whole thing working:** In a grouped Cards view sorted on a **seedable criterion** (or unsorted) where a card was manually dragged earlier, each of the three triggers — band "+", card-menu New Page, ghost click — births a stamped Untitled page whose card appears at its gesture slot immediately and stays there through the confirming reload, with an empty naming field focused over it and the glyph intact; and renaming a Set from a table band with its sidebar row visible opens exactly one field that commits. Under a non-seedable criterion (Title, Modified, ID, text) the newborn lands where the comparator places "Untitled" — the ratified PM-096 behavior, not a defect. No single task satisfies this.
 
@@ -343,6 +344,51 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 
 ---
 
+### Phase 4b (Addendum) — The Sidebar Ghost
+
+*Folded from the parallel scoping run on Nathan's instruction ("ships alongside"). The sidebar is the smallest ghost consumer: same `Reveal` primitive, one-dimensional row flow, no FLIP, no zoom, and the create path — `store.newPageAdjacent` — is already the sidebar's own function with a positional optimistic insert (`insertCreatedInTree` honors the slot on first paint; Task 2's live-order problem does not exist here — the sidebar has no sort, filter, or manual order).*
+
+#### Task 13: The sidebar ghost — a GhostLeaf on the shared mechanism
+
+**Requirement:** 11
+
+**Why:** Dwelling on a sidebar page row extends a ghost "New Page" row beneath it on the ghost's own `Reveal` (the sidebar has no per-row motion to conflict with; the table's GhostRow mounts its own Reveal the same way); clicking runs `newPageAdjacent(anchorPath, 'below', 'sidebar')` — the naming field opens in the sidebar via the fence's declared host. Sidebar-specific law: **pointerdown outside the ghost hard-clears synchronously (unmount, no exit animation)** — every sidebar row is a drag source and the drag engine snapshots every row rect *once* at activation with no invalidation hook for a collapsing ghost, so an animated exit corrupts the whole drag's geometry. Collections mode only (the other ribbon modes have no page rows), and a mode switch `clearFor`s the ghost — the cross-fade unmounts without a transition, which would strand a `closing` state.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/Sidebar/Sidebar.tsx` — `GhostLeaf` (~40 lines echoing `Leaf`: a `MenuItem className="row"` at the anchor's depth, `twistySpacer` lead, the default page glyph as `row-icon`, literal "New Page" at `--state-inactive`, its own `Reveal`, `onPointerEnter/Leave`, click; **not** wrapped in `DragRow` — no drag registration, no disclose hook); a ghost context provider whose value is identity-stable (handlers via refs, the anchor id in its own narrow subscription — a per-dwell provider-value rebuild would reconcile every mounted row, the exact "never on every X" violation); `PageRow` wiring + memoization.
+- Modify: `Pommora/src/renderer/src/Sidebar/Sidebar.css` — the ghost row treatment, all values KNOB.
+- Anchor resolution rides the existing `dndIndex` (`byId` carries path/depth/parent) — which is also the anchor-liveness check, free.
+- KNOBs: the sidebar gets **its own dwell** (default meaningfully longer than the table's — the sidebar is a transit surface the pointer crosses constantly, not a surface being edited) and its own grace; both `KNOB` for Nathan.
+
+**Failure half:** a tree re-emit dropping the anchor → the `dndIndex` miss clears the ghost (state, not just render); a mode switch mid-ghost → `clearFor`; the `'bottom'` set-placement wrinkle (pages render above the Sets block, so a last-page ghost sits above the folders) → accepted and recorded — Nathan adjusts if it reads wrong; no scroll-into-view when the ghost opens at the scroller's bottom edge → inherited from the force-open-on-rename path, noted, not fixed here.
+
+**Steps:**
+- [ ] Build `GhostLeaf` + provider + `PageRow` memoization; wire the shared hook with the sidebar KNOB pair and the hard-clear pointerdown law.
+- [ ] Full gates green.
+- [ ] Commit: `feat(sidebar): the ghost row reaches the sidebar — dwell extends New Page below`
+
+#### Task 14: The sidebar's menus stand the ghost down
+
+**Requirement:** 11
+
+**Why:** The table's suppress works because its menu channels resolve on dismissal; the sidebar's `context-menu` channel resolves **at pop** (`showContextMenu` ends in a bare `.popup()`), so `suppress.wrap()` would release the instant the menu opens and the ghost could grow behind a native menu. Fix at the source: the popup gains Electron's dismissal `callback`, making the channel resolve on close — safe, since every existing caller is fire-and-forget `void`. Then the sidebar's menu sites route through the hook's suppress handle via the provider (the pop sites are module-level functions, so the handle arrives by context, never by wrapping call sites).
+
+**Files:**
+- Modify: `Pommora/src/main/contextMenu.ts` — `showContextMenu`'s popup resolves on dismissal.
+- Modify: `Pommora/src/renderer/src/Sidebar/Sidebar.tsx` — the three menu sites (`showContextFor`, the Context-group body create, the mode-body create menus) hold suppression through the provider.
+
+**Steps:**
+- [ ] Add the dismissal callback; route the three sites; hook-level suppression test covers the semantics.
+- [ ] Full gates green.
+- [ ] Commit: `fix(sidebar): native menus hold the ghost down until they close`
+
+#### Gate 4b — the sidebar ghost stands
+- [ ] Gates green; simplifier + review against the phase range; KNOB grep clean.
+- [ ] The consolidated CDP pass (see Rulings) covers: sidebar dwell → ghost below the anchor at its depth; click → create lands at slot with the empty field *in the sidebar*; pointerdown hard-clear; mode-switch clear.
+- [ ] Nathan's live-feel items recorded: the transit-surface dwell feel (the honest kill-signal — if the sidebar "sprouts rows while reaching for a drag," the KNOB lengthens or the affordance dies), and the two-dwell coexistence with drag-disclose (500ms vs the ghost's).
+
+---
+
 ### Phase 5 — Reconciliation & Closeout
 
 #### Task 11: The docs true up
@@ -383,7 +429,7 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 
 ### Progress
 - [ ] **Phase 1** — The Rename Fence · base `1fb17f84`
-  - [x] Task 1 — Owner-fence the rename slot · *(hash at gate)*
+  - [x] Task 1 — Owner-fence the rename slot · `a32d886b` + simplifier `d701a54c` + host-through `60884995`
 - [ ] **Phase 2** — Order Correctness
   - [ ] Task 2 — Creation settles the live order in its own act · ``
   - [ ] Task 3 — Cards' local viewOrders write · ``
@@ -396,14 +442,22 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - [ ] **Phase 4** — The Ghost
   - [ ] Task 9 — Extract the mechanism; table refits · ``
   - [ ] Task 10 — The ghost card + FLIP · ``
+- [ ] **Phase 4b** — The Sidebar Ghost (Addendum)
+  - [ ] Task 13 — GhostLeaf on the shared mechanism · ``
+  - [ ] Task 14 — Sidebar menus stand the ghost down · ``
 - [ ] **Phase 5** — Reconciliation & Closeout
   - [ ] Task 11 — Docs true up · ``
   - [ ] Task 12 — Closeout · ``
 
 ### Rulings
+- **CDP passes batch into one consolidated acceptance run at the end of Phase 4b** (one dev-instance launch covering every gate's named CDP items plus the acceptance criterion), applying Nathan's standing defer-UIX-verification-to-plan-end preference; per-phase gates still run gates/simplifier/review at their own points. The running instance from PM-096's close is left untouched until then.
+
 ### Open Against Later Tasks
 ### Deviations
+- **Task 1 divergence — `newPageAdjacent` needed the fence's host** (found by the sidebar scoping run): the shipped New Page Above/Below began its rename host-blind, so a sidebar-origin create whose page is also visible in an open table view would open its field in the detail pane. The `new-page-adjacent` push now echoes `ContextTarget.host` through to `beginRename` (`60884995`). The plan hadn't named this consumer; the fence's Derivation only swept field-*mounters*, not `beginRename` *callers* — the lesson rides below.
 ### Lessons
+- A fence over a shared slot must sweep the slot's *writers*, not only its readers: the Derivation enumerated field-mounters and missed the `beginRename` caller that decides where the field opens. Enumerate both ends of a slot when fencing it.
+
 ### Sequenced After
 - The set-card ghost — blocked on the container creation contract (positional order, un-gated naming law, a set-card rename entry point); the hook's anchor-not-row shape keeps it slot-in.
 - The display-alias arc — the locked next focus, opening on this plan's completion criteria.
