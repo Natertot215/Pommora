@@ -8,6 +8,8 @@ import {
   type ConnectionForm,
 } from './autocomplete'
 import { docString } from './editor/docCache'
+import { pageLinkPattern } from '@shared/connections'
+import { useSession } from '../store'
 
 export interface AcState {
   query: string
@@ -55,6 +57,7 @@ export function useConnectionAutocomplete(
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
   const [acIndex, setAcIndex] = useState(0)
+  const dropAlias = useSession((s) => s.personalization.removeTitleOnLinkChange !== false)
   // Every caret move rebuilds `ac`, so the scan keys on the query alone — `candidatesFor` is an
   // inline closure at both call sites and would defeat the memo as a dependency.
   const candidatesForRef = useRef(candidatesFor)
@@ -74,7 +77,12 @@ export function useConnectionAutocomplete(
   const commit = (page: ConnPage): void => {
     const view = viewRef.current
     if (!view || !ac) return
-    const { insert, caret } = connectionInsert(page.title, ac.from, ac.form)
+    // Retargeting replaces the WHOLE token, so an alias the link was wearing is destroyed here
+    // unless it's deliberately re-emitted. Dropping it is the default — the old words describe the
+    // old page — and the setting is what makes that a preference rather than a law.
+    const worn = pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.[2]
+    const kept = dropAlias ? undefined : worn || undefined
+    const { insert, caret } = connectionInsert(page.title, ac.from, ac.form, kept)
     // A caret resting on a connection's closer keeps its token active, so the link just picked would
     // sit there as raw syntax. Step one past it instead, adding the space when there isn't one to
     // step over. Embeds own their whole line and never land the caret beside a closer.

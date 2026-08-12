@@ -112,6 +112,7 @@ export function readPersonalization(raw: unknown): Personalization {
     outlinerLines: bool(p.outlinerLines),
     codeblockLineCount: bool(p.codeblockLineCount),
     navCloseOnSelect: bool(p.navCloseOnSelect),
+    removeTitleOnLinkChange: bool(p.removeTitleOnLinkChange),
     defaultIcons: Object.keys(defaultIcons).length ? defaultIcons : undefined,
     favoriteIcons: favoriteIcons.length ? favoriteIcons : undefined,
     setPlacement: placement(p.setPlacement),
