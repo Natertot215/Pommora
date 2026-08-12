@@ -91,6 +91,10 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
   // Was the caret in this link BEFORE the press moved it? CM seats the caret on mousedown, so the
   // click handler can no longer tell "I was editing this" from "I just clicked it" on its own.
   let editingOnPress = false
+  // A link that has just been acted on stops arming until the pointer leaves it. Cancelling once
+  // isn't enough: a native menu takes the pointer away and hands it back over the same link, and
+  // that re-entry is a fresh mouseover that would bloom a preview behind the menu you just used.
+  let handled = false
   return EditorView.domEventHandlers({
     mousedown(event, view) {
       const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
@@ -117,7 +121,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       // Cheap class gate FIRST (the every-mouseover hard rule): only a resolved connection's
       // decoration span warrants the layout read + line tokenize below.
       const el = (event.target as HTMLElement).closest?.('.md-connection-resolved')
-      if (!el) return false
+      if (!el || handled) return false
       // A dwell reads the live caret safely — unlike a click, hovering never moves it.
       const page = resolvedPageAt(view, api, event, true)
       if (!page) return false
@@ -126,6 +130,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
     },
     mouseout() {
       intent.cancel()
+      handled = false
       return false
     },
     // Navigate on a plain single-click. Handled on `click`, not `mousedown`, and skipped when the
@@ -134,6 +139,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       // A click consumes the link — an intent armed during the dwell must not bloom over
       // whatever the click opened.
       intent.cancel()
+      handled = true
       if (event.button !== 0 || event.detail !== 1 || !view.state.selection.main.empty) return false
       if (editingOnPress) return false // already inside it when you pressed — you're editing, not following
       const api = getApi()
@@ -149,6 +155,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
     // Right-click on a resolved connection hands off to the host's menu hook (Open Preview et al).
     contextmenu(event, view) {
       intent.cancel()
+      handled = true
       const api = getApi()
       if (!api?.menu) return false
       const found = connectionAt(view, api, event)
