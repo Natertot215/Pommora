@@ -67,10 +67,6 @@ Every deletion already writes a complete recoverable bundle, and restore is full
 
 A small global-shortcut capture panel — title plus a few properties, straight into the existing write path — is the difference between an app you visit and an app you reach for. Fully specced with no code written; the Page-only version can come first, while capturing tasks waits on Agenda.
 
-#### Canvas — Later, Not Now
-
-A complete spec for an embeddable drawing surface exists, and it should stay unbuilt for now: nothing depends on it, nothing is blocked by it, and it doesn't move the needle on replacing a daily notes-and-tasks system. Kept warm as the reward after the index, Agenda, and migration work.
-
 ### Tweaks & Completions
 
 #### A Trash Surface So Deleting Stops Being Permanent
