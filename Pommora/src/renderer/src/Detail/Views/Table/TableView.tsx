@@ -1366,7 +1366,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const path = rowPath.get(pageId)
     const destPath = destGroupKey === UNGROUPED ? source.path : setPaths.get(destGroupKey)
     if (!path || !destPath || destPath === path.slice(0, path.lastIndexOf('/'))) return
-    void mutate({ op: 'movePage', path, newParentPath: destPath })
+    // The band drop carries no index — the moved row joins the destination's end, but the order
+    // still writes whole: absent, main's fallback re-ranks the destination by title.
+    const order = [...containerPagesOf(destPath), pageId]
+    void mutate({ op: 'movePage', path, newParentPath: destPath, order })
   }
   // Within-group reorder commit — tableDnd hands the new flat order + the reordered group's key. An
   // unsorted structural/flat view is ordered by the canonical on-disk page_order, so it writes that

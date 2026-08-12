@@ -365,3 +365,17 @@ export function reorderChildrenInTree(
       : node,
   )
 }
+
+/** Reorder a container's pages to `order` — the pages-side twin of reorderChildrenInTree,
+ *  composed after relocateNodeInTree so a moved page lands at its slot, not appended. */
+export function reorderPagesInTree(
+  tree: NexusTree,
+  parentPath: string,
+  order: string[],
+): NexusTree | null {
+  return updateNodeInTree(tree, parentPath, (node) =>
+    node.kind === 'collection' || node.kind === 'set'
+      ? { ...node, pages: byOrder(node.pages, order) }
+      : node,
+  )
+}

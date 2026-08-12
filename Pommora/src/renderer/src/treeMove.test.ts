@@ -10,6 +10,7 @@ import {
   removeNodeInTree,
   renameNodeInTree,
   reorderChildrenInTree,
+  reorderPagesInTree,
   reorderTopInTree,
 } from './treeMove'
 
@@ -332,6 +333,22 @@ describe('reorder transforms', () => {
   it('reorderChildren with an empty parent reorders top collections', () => {
     const t = reorderChildrenInTree(tree(), '', ['c2', 'c1'])
     expect(t?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
+  })
+
+  it('a moved page composed through reorderPages lands at its slot, not appended', () => {
+    const base = tree()
+    base.collections[1].pages.push({ kind: 'page', id: 'p9', title: 'Z', path: 'Work/Z.md' })
+    // Relocate alone appends (the pre-order behavior a bare movePage still shows)…
+    const moved = relocateNodeInTree(base, 'Notes/A.md', 'Work')
+    expect(moved?.collections[1].pages.map((p) => p.id)).toEqual(['p9', 'p1'])
+    // …the order write places it.
+    const t = reorderPagesInTree(moved ?? base, 'Work', ['p1', 'p9'])
+    expect(t?.collections[1].pages.map((p) => p.id)).toEqual(['p1', 'p9'])
+  })
+
+  it('reorderPages ranks ids absent from the order last, stable', () => {
+    const t = reorderPagesInTree(tree(), 'Notes/Sub', ['p2'])
+    expect(t?.collections[0].sets[0].pages.map((p) => p.id)).toEqual(['p2'])
   })
 })
 
