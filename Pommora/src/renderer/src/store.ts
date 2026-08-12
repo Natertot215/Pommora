@@ -1657,8 +1657,13 @@ export const useSession = create<SessionState>((set, get) => {
       if (cur && res.value.created && onCreated) {
         const optimistic = insertCreatedInTree(cur, req, res.value.created)
         if (optimistic) {
+          // The callback's sync body runs BEFORE the tree applies, so its state — order
+          // splices, naming state, a held ghost seat — lands in the SAME commit that mounts
+          // the newborn. Applied first, the newborn paints one frame unseated (ranked last,
+          // no naming field) and then teleports into place.
+          const settled = onCreated(res.value.created)
           await get().applyTree(optimistic)
-          await onCreated(res.value.created)
+          await settled
           createdShown = true
         }
       }
