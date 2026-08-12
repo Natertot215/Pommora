@@ -342,7 +342,12 @@ export function ViewSettings({
       ) : view.type === 'table' ? (
         <LayoutToggles source={source} view={view} />
       ) : (
-        <CardsOptions source={source} view={view} />
+        // The joint between the grid and the options is this composition's — CardsOptions
+        // renders bare so the Layout leaf can sit it flush under the pane header's divider.
+        <>
+          <MenuSeparator flush />
+          <CardsOptions source={source} view={view} />
+        </>
       )}
     </MenuScrollFrame>
   )

@@ -19,7 +19,7 @@ import { useSession } from '../../store'
 import { declaredType, resolveFieldValue } from './pipeline/value'
 import { filterSeeds } from './pipeline/creationSeeds'
 import { flattenContainer } from './pipeline/group'
-import { appendOrderWith, orderWithSlot, tieOrderWith } from './creationOrder'
+import { orderWithSlot, tieOrderWith } from './creationOrder'
 import { groupKeyToValue } from './Table/reassign'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties.
@@ -35,8 +35,8 @@ export interface ViewCreationConfig {
   values: Record<string, PageFrontmatter>
   setValueOverride: React.Dispatch<React.SetStateAction<Record<string, PageFrontmatter> | null>>
   effectiveValues: Record<string, PageFrontmatter>
-  /** Whether creates write the canonical page_order channel — always false in Cards, whose
-   *  live order is only ever viewOrders. */
+  /** Whether creates write the canonical page_order channel — the table's law, stated by both
+   *  renderers: no property grouping and no sort, where the pipeline paints tree order. */
   structuralOrder: boolean
   viewOrders: Record<string, string[]>
   persistViewOrder: (ids: string[]) => void
@@ -127,6 +127,24 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       SEEK_GLIDE,
     )
   }
+  // Every live order settles in the create's own act — the store runs the caller's onCreated
+  // ahead of the optimistic tree apply, so the splice and the newborn's mount land in ONE commit
+  // (a newborn left out of a live array would rank last; nothing re-emits viewOrders). A null
+  // anchor ranks it last: the band-add's "end of the group", since banding partitions before the
+  // manual order ranks.
+  const settleOrders = (
+    latest: ViewCreationConfig,
+    createdId: string,
+    anchorId: string | null,
+    where: 'above' | 'below',
+  ): void => {
+    const allIds = flattenContainer(latest.source, latest.effectiveValues).rows.map((r) => r.id)
+    const splice = (existing: string[] | undefined): string[] =>
+      tieOrderWith(existing, allIds, createdId, anchorId, where)
+    latest.setManualOverride((m) => (m ? splice(m) : m))
+    if (!latest.structuralOrder || latest.viewOrders[latest.view.id])
+      latest.persistViewOrder(splice(latest.viewOrders[latest.view.id]))
+  }
   const createPageIn = (
     parentPath: string,
     seeds: Record<string, PropertyValue>,
@@ -153,26 +171,21 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     if (!setPath) return Promise.resolve(false)
     if (c.collapsed.has(setKey)) c.toggleCollapse(setKey)
     const seeds = impliedSeeds()
+    const gestureViewId = c.view.id
     const order = c.structuralOrder
       ? orderWithSlot(containerPagesOf(setPath), null, 'last')
       : undefined
     return createPageIn(setPath, seeds, order, (created) => {
       // A non-structural view has no page_order write to land the "end of the group" — absent
-      // any live array, the read-side title fallback would rank the newborn mid-band. Settle
-      // the tiebreaker with the newborn ranked last (banding partitions before it ranks).
+      // any live array, the read-side title fallback would rank the newborn mid-band. A view
+      // switch across the round trip forfeits the settle: an order write keyed to the stranger
+      // view would mint a manual order it never gestured.
       const latest = cfg()
-      if (!latest.structuralOrder || latest.viewOrders[latest.view.id]) {
-        const allIds = flattenContainer(latest.source, latest.effectiveValues).rows.map(
-          (r) => r.id,
-        )
-        const appended = appendOrderWith(latest.viewOrders[latest.view.id], allIds, created.id)
-        latest.setManualOverride((m) =>
-          m ? appendOrderWith(m, allIds, created.id) : m,
-        )
-        latest.persistViewOrder(appended)
-      }
       latest.onCreated(created)
-      glideToRow(created.id)
+      if (latest.view.id === gestureViewId) settleOrders(latest, created.id, null, 'below')
+      // A frame later — this callback runs ahead of the optimistic tree apply (the one-commit
+      // law), so the row reaches the DOM only when that commit paints.
+      requestAnimationFrame(() => glideToRow(created.id))
     })
   }
 
@@ -182,6 +195,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const c = cfg()
     const parentPath = row.path.slice(0, row.path.lastIndexOf('/'))
     const seeds = impliedSeeds()
+    const gestureViewId = c.view.id
     const gKey = c.rowBand.get(row.id)
     if (c.groupPropId && c.canReassign && gKey !== undefined) {
       const v = groupKeyToValue(c.bandBucket(gKey) ?? UNGROUPED, c.groupPropType)
@@ -197,17 +211,11 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       ? orderWithSlot(containerPagesOf(parentPath), row.id, where)
       : undefined
     return createPageIn(parentPath, seeds, order, (created) => {
-      // Every live order settles in the create's own act — the store runs this callback ahead
-      // of the optimistic tree apply, so the splice and the newborn's mount land in ONE commit
-      // (a newborn left out of a live array would rank last; nothing re-emits viewOrders).
+      // A view switch across the round trip forfeits the settle — an order write keyed to the
+      // stranger view would mint a manual order it never gestured.
       const latest = cfg()
-      const allIds = flattenContainer(latest.source, latest.effectiveValues).rows.map((r) => r.id)
-      const splice = (existing: string[] | undefined): string[] =>
-        tieOrderWith(existing, allIds, created.id, row.id, where)
-      latest.setManualOverride((m) => (m ? splice(m) : m))
-      if (!latest.structuralOrder || latest.viewOrders[latest.view.id])
-        latest.persistViewOrder(splice(latest.viewOrders[latest.view.id]))
       latest.onCreated(created)
+      if (latest.view.id === gestureViewId) settleOrders(latest, created.id, row.id, where)
     })
   }
 

@@ -66,7 +66,7 @@ function AddMenuItem(): React.JSX.Element | null {
   const parentPath =
     selection.kind === 'set' ? selection.path : (findCollection(tree, selection.id)?.path ?? '')
   const creators = containerCreators(selection.kind, parentPath, labels ?? DEFAULT_LABELS)
-  const onAdd = (): void => void useSession.getState().createFromMenu(creators)
+  const onAdd = (): void => void useSession.getState().createFromMenu(creators, 'detail')
   return (
     <button
       type="button"

@@ -24,7 +24,9 @@ export function RenamableTitle({
 }): React.JSX.Element {
   const target = useSession((s) => s.renamingPath === path)
   const renamingCreate = useSession((s) => s.renamingCreate)
-  const winner = useSession((s) => s.renameWinner)
+  // Guarded through the target check so claim/release churn only ever re-renders the one
+  // path's fields — never every mounted title in the app.
+  const winner = useSession((s) => (s.renamingPath === path ? s.renameWinner : null))
   const cancelRename = useSession((s) => s.cancelRename)
   const submitRename = useSession((s) => s.submitRename)
   const [token, setToken] = useState<number | null>(null)
