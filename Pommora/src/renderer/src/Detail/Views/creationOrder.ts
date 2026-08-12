@@ -32,9 +32,6 @@ export function orderWithSlot(
   return spliceBeside(ids, anchorId, NEW_PAGE_SLOT, where)
 }
 
-/** The full `viewOrders` tiebreaker array with `newId` placed beside its anchor. Reproduces the
- *  current ranking exactly — the existing array first, then every id absent from it in source
- *  order (absent rows rank last, stable) — so no row moves but the one being placed. */
 /** The current ranking reproduced exactly — the existing array first, then every id absent from
  *  it in source order (absent rows rank last, stable), the placed id excluded throughout. */
 function mergedRanking(
@@ -50,22 +47,15 @@ function mergedRanking(
   ]
 }
 
+/** The full `viewOrders` tiebreaker array with `newId` placed beside its anchor (appended when
+ *  the anchor is null or absent), rebuilt over the container's full membership so no row moves
+ *  but the one being placed. */
 export function tieOrderWith(
   existing: string[] | undefined,
   allIds: string[],
   newId: string,
-  anchorId: string,
+  anchorId: string | null,
   where: 'above' | 'below',
 ): string[] {
   return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where)
-}
-
-/** The full tiebreaker array with `newId` ranked last — a band-add's "end of the group", since
- *  banding partitions before the manual order ranks. */
-export function appendOrderWith(
-  existing: string[] | undefined,
-  allIds: string[],
-  newId: string,
-): string[] {
-  return [...mergedRanking(existing, allIds, newId), newId]
 }

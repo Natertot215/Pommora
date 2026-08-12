@@ -313,7 +313,7 @@ interface SessionState {
 
   reloadPage: () => Promise<void>
   newPage: () => Promise<void>
-  createFromMenu: (items: { label: string; req: MutateRequest }[]) => Promise<void>
+  createFromMenu: (items: { label: string; req: MutateRequest }[], host?: RenameHost) => Promise<void>
 
   renamingPath: string | null
   /** The open rename is a just-created entity's naming session — the field opens empty and a
@@ -1436,9 +1436,9 @@ export const useSession = create<SessionState>((set, get) => {
       )
     },
 
-    createFromMenu: async (items) => {
+    createFromMenu: async (items, host) => {
       const req = await window.nexus.popCreateMenu(items)
-      if (req) await get().mutate(req, (created) => get().beginRename(created.path, true))
+      if (req) await get().mutate(req, (created) => get().beginRename(created.path, true, host))
     },
 
     renamingPath: null,
@@ -1459,21 +1459,25 @@ export const useSession = create<SessionState>((set, get) => {
       const { renameClaims, renameWinner } = get()
       const released = renameClaims.find((c) => c.token === token)
       const wasWinner = renameWinner === token
+      // Claims minted before this release are standing twins; only one minted AFTER it can be
+      // the released field itself remounting.
+      const rebirthFence = nextRenameToken
       set((s) => {
         const claims = s.renameClaims.filter((c) => c.token !== token)
         return { renameClaims: claims, renameWinner: resolveRenameWinner(claims, s) }
       })
       // The verdict waits a microtask: StrictMode's simulated remount (and any same-act re-key)
       // releases and re-claims in one act — an immediate cancel would kill every dev rename.
-      // A rename whose winning surface left is abandoned, never handed to another host — a
-      // transfer would focus-steal, whole-title selected, and a create session would reopen empty.
-      // The verdict judges the RELEASED claim's own path: the live session may already belong to
-      // a successor (main pushes a create's begin-rename before its row exists to claim).
+      // A rename whose winning surface left is abandoned, never handed to a standing claimant
+      // (same host or not — the same path fielded twice, say a view plus its embed): a transfer
+      // would focus-steal, whole-title selected, and a create session would reopen empty. The
+      // verdict judges the RELEASED claim's own path: the live session may already belong to a
+      // successor (main pushes a create's begin-rename before its row exists to claim).
       queueMicrotask(() => {
         const s = get()
         if (released === undefined || s.renamingPath !== released.path) return
         const survivor = s.renameClaims.find((c) => c.token === s.renameWinner)
-        if (!survivor || (wasWinner && survivor.host !== released.host)) s.cancelRename()
+        if (!survivor || (wasWinner && survivor.token < rebirthFence)) s.cancelRename()
       })
     },
     beginRename: (path, create, host) => {

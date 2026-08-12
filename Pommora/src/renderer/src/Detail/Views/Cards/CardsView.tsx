@@ -37,7 +37,7 @@ import { useSession } from '../../../store'
 import { byOrder } from '../../../treeMove'
 import { findCollectionForSet } from '@renderer/Detail/Scope'
 import { useSaveView } from '@renderer/Embeds/ViewEmbedScope'
-import { spliceBeside } from '../creationOrder'
+import { spliceBeside, tieOrderWith } from '../creationOrder'
 import { resolveColumns } from '../pipeline/columns'
 import {
   contextOptionsFor as contextOptionsForSpaces,
@@ -253,12 +253,12 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (!moved) return
     // Synchronous — the zone's shift transforms release on this very render, and the tree patch
     // waits on the IPC reply; without the override the row snaps back for the gap between them.
-    // A failed write clears it: no tree re-mint would, and the row would paint an order that
-    // never landed.
+    // A failed write clears only ITS OWN order — a stale failure must not wipe a newer drag's
+    // optimistic paint.
     setSetOrderOverride(order)
     void mutate({ op: 'moveSet', path: moved.path, newParentPath: source.path, order }).then(
       (ok) => {
-        if (!ok) setSetOrderOverride(null)
+        if (!ok) setSetOrderOverride((cur) => (cur === order ? null : cur))
       },
     )
   }
@@ -358,8 +358,13 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     void window.nexus.loadValues(source.path).then((v) => setValues(v))
   }
   // The hover ghost card on the shared mechanism — a naming session or an open picker
-  // suppresses the dwell, re-read at fire time.
+  // (the grid-level pair and any card's icon picker alike) suppresses the dwell, re-read at
+  // fire time.
   const pickersOpenRef = useRef(false)
+  const iconPickersOpen = useRef(0)
+  const holdForIconPicker = (open: boolean): void => {
+    iconPickersOpen.current += open ? 1 : -1
+  }
   // A ghost that wrapped onto the next grid row is reached by crossing that row's other cards —
   // those row-mates are travel territory, not rival anchors. Geometric: grid row-mates share a
   // top edge. One rect read per card-enter, never per pointer-move.
@@ -375,23 +380,15 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     dwellMs: GHOST_DWELL_MS,
     graceMs: CARDS_GHOST_GRACE_MS,
     suppressed: () =>
-      pickersOpenRef.current || useSession.getState().renamingPath !== null,
+      pickersOpenRef.current ||
+      iconPickersOpen.current > 0 ||
+      useSession.getState().renamingPath !== null,
     travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
   })
-  // The provider's value must hold identity — a per-render wrap would re-render every card
-  // through the context, bypassing the memo bailouts the cardApi ref-idiom exists to protect.
-  const ghostApiRef = useRef(ghostApi)
-  ghostApiRef.current = ghostApi
-  const stableSuppress = useMemo(
-    () =>
-      <T,>(menu: () => Promise<T>): Promise<T> =>
-        ghostApiRef.current.suppressWrap(menu),
-    [],
-  )
   // The shared creation engine. The config getter runs only at gesture time, so it may close
-  // over consts declared further down. `structuralOrder: false` always: Cards' live order is
-  // only ever viewOrders — the table's predicate would route creates onto a page_order channel
-  // Cards never reads, landing every newborn last.
+  // over consts declared further down. Structural is the table's law: with no property
+  // grouping and no sort the pipeline paints tree order, so a create must write its
+  // page_order slot — viewOrders is only ever the grouped/sorted tiebreaker.
   const beginRename = useSession((s) => s.beginRename)
   const { bandAdd, createAfter } = useViewCreation(() => ({
     source,
@@ -400,7 +397,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     values,
     setValueOverride,
     effectiveValues,
-    structuralOrder: false,
+    structuralOrder: groupPropId === undefined && sortKeys === 0,
     viewOrders,
     persistViewOrder,
     setManualOverride,
@@ -431,7 +428,6 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     openAddPicker,
     refreshValues,
     newPageBelow: createAfter,
-    ghostHover: ghostApi.onHover,
   }
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
@@ -449,7 +445,9 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       onOpenAddPicker: (req: AddPickerRequest) => handlersRef.current.openAddPicker(req),
       onRefreshValues: () => handlersRef.current.refreshValues(),
       onNewBelow: (row: ViewRow) => handlersRef.current.newPageBelow(row),
-      onHover: (id: string, entering: boolean) => handlersRef.current.ghostHover(id, entering),
+      // Identity-stable straight off the hook — no ref detour needed.
+      onHover: ghostApi.onHover,
+      onIconPicker: holdForIconPicker,
     }),
     [],
   )
@@ -472,17 +470,18 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
   const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
   pickersOpenRef.current = valuePicker !== null || addPicker !== null
-  const rowById = useMemo(() => {
-    const m = new Map<string, ViewRow>()
-    for (const r of flattenGroups(groups)) m.set(r.id, r)
-    return m
-  }, [groups])
-  // row id → band key, the creation engine's group-seed source (Cards flattens its groups, so
-  // no per-row group index exists elsewhere).
-  const rowBand = useMemo(() => {
-    const m = new Map<string, string>()
-    for (const g of groups) for (const r of flattenGroups([g])) m.set(r.id, g.key)
-    return m
+  // One walk fills both: row id → row, and row id → TOP band key (the creation engine's
+  // group-seed source — Cards flattens its groups, so no per-row group index exists elsewhere).
+  // Per top-level group, so a sub-grouped descendant still reports the band it lives under.
+  const { rowById, rowBand } = useMemo(() => {
+    const byId = new Map<string, ViewRow>()
+    const band = new Map<string, string>()
+    for (const g of groups)
+      for (const r of flattenGroups([g])) {
+        byId.set(r.id, r)
+        band.set(r.id, g.key)
+      }
+    return { rowById: byId, rowBand: band }
   }, [groups])
 
   // ── The ghost card's entry/exit displacement: neighbors make room on the cards' own move
@@ -597,24 +596,27 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       const row = rowById.get(activeId)
       const destPath = toZone === UNGROUPED ? source.path : setPaths.get(toZone)
       if (row && destPath && destPath !== row.path.slice(0, row.path.lastIndexOf('/'))) {
-        const destIds = flattenContainer(source, effectiveValues)
-          .rows.filter(
-            (r) => r.path.slice(0, r.path.lastIndexOf('/')) === destPath && r.id !== activeId,
-          )
-          .map((r) => r.id)
-        const band = groups.find((g) => g.key === toZone)
-        const beforeId = band ? (flattenGroups([band])[toIndex]?.id ?? null) : null
-        const order = spliceBeside(destIds, beforeId, activeId, 'above')
+        // A row page_order can actually rank against: a direct child of the destination that
+        // isn't the card being moved.
+        const isDestSibling = (r: ViewRow): boolean =>
+          r.path.slice(0, r.path.lastIndexOf('/')) === destPath && r.id !== activeId
+        const all = flattenContainer(source, effectiveValues).rows
+        const destIds = all.filter(isDestSibling).map((r) => r.id)
+        const bandRows = flattenGroups(groups.filter((g) => g.key === toZone))
+        // The visual landing row — any card in the band, rolled-up descendants included.
+        const beforeId = bandRows[toIndex]?.id ?? null
+        // A rolled-up descendant as the landing degrades to append on the canonical channel —
+        // walk forward to the first true sibling so the write lands as close to the drop slot
+        // as page_order can express.
+        const sibBefore = bandRows.slice(toIndex).find(isDestSibling)?.id ?? null
+        const order = spliceBeside(destIds, sibBefore, activeId, 'above')
         // The live arrays hold the moved card's OLD rank as the sole comparator on a grouped
         // view, and nothing re-emits them on a tree push — splice them in the drop's own act
-        // (the creation settle's law) or the landing never paints.
-        const spliceLive = (existing: string[]): string[] =>
-          spliceBeside(
-            existing.filter((id) => id !== activeId),
-            beforeId,
-            activeId,
-            'above',
-          )
+        // (the creation settle's law), rebuilt over full membership so a landing row a stale
+        // array never listed still anchors the slot instead of degrading to append.
+        const allIds = all.map((r) => r.id)
+        const spliceLive = (existing: string[] | undefined): string[] =>
+          tieOrderWith(existing, allIds, activeId, beforeId, 'above')
         setManualOverride((m) => (m ? spliceLive(m) : m))
         if (viewOrders[view.id]) persistViewOrder(spliceLive(viewOrders[view.id]))
         void mutate({ op: 'movePage', path: row.path, newParentPath: destPath, order })
@@ -645,7 +647,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   return (
     // The suppress handle travels by context — the memoized cards pop native menus themselves,
     // where caller-side wrapping can't reach.
-    <GhostSuppress.Provider value={stableSuppress}>
+    <GhostSuppress.Provider value={ghostApi.suppressWrap}>
     <div
       ref={rootRef}
       className={cx('cards-view', banner === 'none' && 'is-compact')}
@@ -773,6 +775,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                       onRefreshValues={cardApi.onRefreshValues}
                       onNewBelow={cardApi.onNewBelow}
                       onHover={cardApi.onHover}
+                      onIconPicker={cardApi.onIconPicker}
                       allowInlineRemove={effectiveZoom >= 0.8}
                     />
                   )
@@ -916,12 +919,13 @@ function SetCard({ set, drag }: { set: SetNode; drag?: DragItem }): React.JSX.El
   const src = set.banner ? assetUrl(set.banner) : undefined
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const iconName = entityIcon('set', set.icon, defaultIcons)
+  const holdGhost = useContext(GhostSuppress)
   // Right-click the set's image band → the native banner menu (Add when unset, Change/Remove when
   // set), the same setBanner flow the page cards use — kind 'set', reloading the tree on the write.
   const onThumbContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
-    const action = await window.nexus.bannerMenu(set.banner ? {} : { add: true })
+    const action = await holdGhost(() => window.nexus.bannerMenu(set.banner ? {} : { add: true }))
     if (!action) return
     const dataUrl = action === 'remove' ? null : await window.nexus.pickImage()
     if (action === 'remove' || dataUrl) {
@@ -981,6 +985,7 @@ interface PageCardProps {
   onRefreshValues: () => void
   onNewBelow: (row: ViewRow) => void
   onHover: (id: string, entering: boolean) => void
+  onIconPicker: (open: boolean) => void
   draggable: boolean
   /** False when the embed zoom shrinks chips too far — drops multi-select's inline ×. */
   allowInlineRemove: boolean
@@ -1225,6 +1230,7 @@ const PageCard = memo(function PageCard({
   onRefreshValues,
   onNewBelow,
   onHover,
+  onIconPicker,
   draggable,
   allowInlineRemove,
 }: PageCardProps): React.JSX.Element {
@@ -1260,11 +1266,20 @@ const PageCard = memo(function PageCard({
   )
   const mutate = useSession((s) => s.mutate)
   // The card is the live naming target — creation and menu Rename both open the fenced inline
-  // field (cards were the odd surface out; the popover rename retired with it).
-  const naming = useSession((s) => s.renamingPath === row.path)
+  // field (cards were the odd surface out; the popover rename retired with it). A session the
+  // gesture declared for the sidebar stays the sidebar's: the card keeps its title row and its
+  // click-to-open rather than swapping in a field the fence will never award it.
+  const naming = useSession((s) => s.renamingPath === row.path && s.renamingHost !== 'sidebar')
   // The view's ghost stands down while any of this card's native menus own the pointer.
   const holdGhost = useContext(GhostSuppress)
   const [iconOpen, setIconOpen] = useState(false)
+  // The icon picker holds the dwell for its whole life (the menus above only cover their own
+  // pop) — effect-paired so an unmount with the picker open can never leak the hold.
+  useEffect(() => {
+    if (!iconOpen) return
+    onIconPicker(true)
+    return () => onIconPicker(false)
+  }, [iconOpen, onIconPicker])
   // The card's native right-click menu handles page meta + an Add Property ▸ submenu — the add
   // path for cards with no in-body add surface. A value right-click is caught by CardValue's own
   // menu (it stops propagation), so this handles the empty/title/thumb.

@@ -18,19 +18,24 @@ export function Reveal({
   open,
   fill = false,
   duration = motionDuration.disclosure,
+  enterOnMount = false,
   onCollapsed,
   children,
 }: {
   open: boolean
   fill?: boolean
   duration?: string
+  /** Animate the first paint too — an open-on-mount Reveal normally starts settled; a
+   *  hover-born surface (a ghost row) wants its entrance on the same beat as its collapse.
+   *  Read once at mount. */
+  enterOnMount?: boolean
   /** Fires once a close's collapse lands — for owners that unmount the Reveal itself after the exit. */
   onCollapsed?: () => void
   children: ReactNode
 }): React.JSX.Element {
   const [mounted, setMounted] = useState(open)
-  const [expanded, setExpanded] = useState(open)
-  const [settled, setSettled] = useState(open)
+  const [expanded, setExpanded] = useState(open && !enterOnMount)
+  const [settled, setSettled] = useState(open && !enterOnMount)
 
   useLayoutEffect(() => {
     if (open) {

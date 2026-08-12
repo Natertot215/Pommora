@@ -160,4 +160,99 @@ describe('useGhostAnchor', () => {
     await tick(DWELL)
     expect(api.ghost).toEqual({ anchorId: 'b', closing: false })
   })
+
+  it('take() kills every armed timer — a crossed row\'s dwell never fires post-create', async () => {
+    await dwellOpen('a')
+    // Crossing row b toward the ghost arms b's dwell; the ghost click takes before it fires.
+    await act(async () => api.onHover('b', true))
+    await act(async () => {
+      expect(api.take()).toBe('a')
+    })
+    await tick(DWELL * 2)
+    expect(api.ghost).toBeNull()
+  })
+
+  it('a closing ghost whose exit never reports self-heals on the watchdog beat', async () => {
+    await dwellOpen('a')
+    await act(async () => api.onHover('a', false))
+    await tick(GRACE)
+    expect(api.ghost?.closing).toBe(true)
+    // No closed() arrives — the consumer's exit motion unmounted behind a gate.
+    await tick(1000)
+    expect(api.ghost).toBeNull()
+    await act(async () => api.onHover('a', true))
+    expect(api.ghost).toBeNull()
+    await tick(DWELL)
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
+  })
+
+  it('overlapping menu pops keep dwells held until the LAST one resolves', async () => {
+    const releases: Array<() => void> = []
+    const pop = (): Promise<void> =>
+      new Promise<void>((r) => {
+        releases.push(r)
+      })
+    await act(async () => {
+      void api.suppressWrap(pop)
+      void api.suppressWrap(pop)
+    })
+    await act(async () => {
+      releases[0]()
+      await Promise.resolve()
+    })
+    await act(async () => api.onHover('b', true))
+    await tick(DWELL)
+    expect(api.ghost).toBeNull()
+    await act(async () => {
+      releases[1]()
+      await Promise.resolve()
+    })
+    await act(async () => api.onHover('b', true))
+    await tick(DWELL)
+    expect(api.ghost).toEqual({ anchorId: 'b', closing: false })
+  })
+})
+
+describe('useGhostAnchor travel hold', () => {
+  let inZone = new Set<string>()
+
+  function HoldProbe(): React.JSX.Element {
+    api = useGhostAnchor({
+      dwellMs: DWELL,
+      graceMs: GRACE,
+      suppressed: () => suppressed,
+      travelHold: { inZone: (id) => inZone.has(id), holdMs: 500 },
+    })
+    return api.ghost ? <div data-ghost-root data-closing={api.ghost.closing} /> : <span />
+  }
+
+  beforeEach(async () => {
+    inZone = new Set()
+    await act(async () => root.render(<HoldProbe />))
+  })
+
+  it('entering a zone anchor holds the ghost instead of closing it', async () => {
+    inZone.add('b')
+    await dwellOpen('a')
+    await act(async () => api.onHover('b', true))
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
+  })
+
+  it('the hold expiring closes the ghost and arms the rested anchor\'s own dwell', async () => {
+    inZone.add('b')
+    await dwellOpen('a')
+    await act(async () => api.onHover('b', true))
+    await tick(500)
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: true })
+    await act(async () => api.closed())
+    await tick(DWELL)
+    // No re-enter happened — the pointer never moved — yet b earns its ghost by resting.
+    expect(api.ghost).toEqual({ anchorId: 'b', closing: false })
+  })
+
+  it('an out-of-zone anchor still closes the ghost immediately', async () => {
+    await dwellOpen('a')
+    await act(async () => api.onHover('b', true))
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: true })
+  })
 })
