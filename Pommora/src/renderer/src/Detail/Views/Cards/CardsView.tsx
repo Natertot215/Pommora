@@ -365,6 +365,16 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     suppressed: () =>
       pickersOpenRef.current || useSession.getState().renamingPath !== null,
   })
+  // The provider's value must hold identity — a per-render wrap would re-render every card
+  // through the context, bypassing the memo bailouts the cardApi ref-idiom exists to protect.
+  const ghostApiRef = useRef(ghostApi)
+  ghostApiRef.current = ghostApi
+  const stableSuppress = useMemo(
+    () =>
+      <T,>(menu: () => Promise<T>): Promise<T> =>
+        ghostApiRef.current.suppressWrap(menu),
+    [],
+  )
   // The shared creation engine. The config getter runs only at gesture time, so it may close
   // over consts declared further down. `structuralOrder: false` always: Cards' live order is
   // only ever viewOrders — the table's predicate would route creates onto a page_order channel
@@ -505,10 +515,13 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   }, [ghostShown])
   useClearStrandedGhost(ghostApi, rowBand)
   const ghostCreate = (): void => {
-    creatingRef.current = true
     const anchorId = ghostApi.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
-    if (anchor) createAfter(anchor)
+    if (!anchor) return
+    // The real card takes the ghost's seat frames later — the exit FLIP skips for this
+    // transition only, set after the guard so a dead anchor can't strand the flag.
+    creatingRef.current = true
+    createAfter(anchor)
   }
 
   // Cross-band card drag → property reassignment. Only a status/select/checkbox property grouping
@@ -607,7 +620,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   return (
     // The suppress handle travels by context — the memoized cards pop native menus themselves,
     // where caller-side wrapping can't reach.
-    <GhostSuppress.Provider value={ghostApi.suppressWrap}>
+    <GhostSuppress.Provider value={stableSuppress}>
     <div
       ref={rootRef}
       className={cx('cards-view', banner === 'none' && 'is-compact')}
