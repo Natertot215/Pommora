@@ -52,6 +52,7 @@
 - **A lock key is a fact, and two spellings of one file are two locks.** Any file more than one surface rewrites whole needs its key built in the path module rather than assembled per call site, the read has to sit inside the lock beside the write, and a relocate holds the lock of the path it is leaving.
 - **A parse given a fragment answers about the fragment.** The editor tokenizes a slice, so anything whose meaning depends on the lines above it — fence parity, list indentation — comes out wrong unless the slice opens somewhere unambiguous.
 - **Two rules any future in-app window must respect**, both learned on PreviewPane: openness drivers stay declared per-window, and a FLIP measures from the surface root via a real ref rather than by walking `parentElement`.
+- **A connection alone hides its syntax from a caret resting just past its closer**, where every other inline construct would reveal. That single exception is what lets a link render the moment autocomplete commits, since the commit leaves the caret exactly there; its cost is that clicking the edge just after a link places a caret with no visible reveal. Deleting the `tk.kind === 'wikiLink'` early return in `activeTokenIndices` (`MarkdownPM/tokens/index.ts`) trades one behaviour for the other, and the token test pinning it names the rule.
 
 #### II. Debt & Ride-Alongs
 
