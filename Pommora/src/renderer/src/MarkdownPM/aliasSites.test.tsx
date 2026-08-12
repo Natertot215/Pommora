@@ -64,6 +64,16 @@ describe('every site resolves an aliased connection by the same span', () => {
     expect(opened).toHaveBeenCalledWith('p1')
   })
 
+  // The cell renderer draws contentRange and skips to the token's end, so the two renderers agree
+  // only while the marker spans tile everything outside it. A degenerate `[[Title|]]` is where that
+  // tiling breaks if the trailing marker is pinned to two characters.
+  it('an empty alias reads identically at both renderers', async () => {
+    const view = await mountEditor({ initialBody: '[[Alpha|]]', connections: conn })
+    expect(view.dom.textContent).toBe('Alpha')
+    const host = await renderCell('[[Alpha|]]')
+    expect(host.textContent).toBe('Alpha')
+  })
+
   it('a bare connection reads identically at both renderers', async () => {
     const view = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
     expect(view.dom.textContent).toBe('Alpha')
