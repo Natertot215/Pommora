@@ -25,10 +25,16 @@ export function hoverIntent(): { arm: (fire: () => void) => void; cancel: () => 
   }
 }
 
-function wikiLinkAt(
-  view: EditorView,
-  pos: number,
-): { title: string; from: number; to: number } | null {
+export interface WikiHit {
+  title: string
+  /** The whole token, markers included. */
+  range: [number, number]
+  /** What the token displays — the alias when it has one. */
+  content: [number, number]
+}
+
+/** The wikiLink token at `pos`, resolved or not, in absolute document offsets. */
+export function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
   const line = view.state.doc.lineAt(pos)
   const rel = pos - line.from
   const tk = tokenize(line.text).find(
@@ -36,19 +42,23 @@ function wikiLinkAt(
   )
   if (!tk) return null
   const [rs, re] = tk.resolveRange ?? tk.contentRange
-  return { title: line.text.slice(rs, re), from: line.from + tk.range[0], to: line.from + tk.range[1] }
+  const abs = ([s, e]: [number, number]): [number, number] => [line.from + s, line.from + e]
+  return { title: line.text.slice(rs, re), range: abs(tk.range), content: abs(tk.contentRange) }
 }
 
-/** The resolved connection page under the pointer, or null — the shared hit-test for every handler.
- *  A connection the caret is already inside resolves to null: it's open for editing, and its own
- *  syntax is revealed, so neither a click nor a dwell should carry you away from what you're typing. */
+/** The resolved connection page a pointer gesture should act on, or null. Two carve-outs, both so a
+ *  connection stays ordinary editable text: one the caret already sits inside is being edited, and
+ *  the positions beside the syntax belong to caret placement rather than to the link. The edge is
+ *  measured from the token's range rather than from what's drawn — a hidden `[[Title|` means an
+ *  aliased link's visible extent IS its content, so there'd otherwise be no edge left to click. */
 function resolvedPageAt(view: EditorView, api: ConnectionsApi, event: MouseEvent): ConnPage | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
   const hit = wikiLinkAt(view, pos)
   if (!hit) return null
+  if (pos < hit.content[0] || pos > hit.content[1]) return null
   const head = view.state.selection.main.head
-  if (view.hasFocus && head >= hit.from && head <= hit.to) return null
+  if (view.hasFocus && head >= hit.range[0] && head <= hit.range[1]) return null
   const res = api.resolve(hit.title)
   return res.status === 'resolved' && res.page ? res.page : null
 }

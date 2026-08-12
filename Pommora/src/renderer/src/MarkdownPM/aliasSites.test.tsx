@@ -58,7 +58,8 @@ describe('every site resolves an aliased connection by the same span', () => {
   it('clicking it opens the page the title names, not the one the alias does', async () => {
     opened.mockClear()
     const view = await mountEditor({ initialBody: DOC, connections: conn })
-    vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
+    // Inside the displayed alias `Beta` at [8,12] — the title span is hidden syntax, not a click target.
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(10)
     const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
     span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
     expect(opened).toHaveBeenCalledWith('p1')
@@ -76,10 +77,12 @@ describe('every site resolves an aliased connection by the same span', () => {
   it('a link the caret is already inside does not navigate on click', async () => {
     opened.mockClear()
     const view = await mountEditor({ initialBody: DOC, connections: conn })
-    vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
+    // Both the click point and the caret sit inside the displayed alias, so only the caret rule can
+    // suppress this — a point on the edge would pass for the wrong reason.
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(10)
     await act(async () => {
       view.focus()
-      view.dispatch({ selection: { anchor: 4 } })
+      view.dispatch({ selection: { anchor: 10 } })
     })
     const span = view.dom.querySelector('.md-bracket, .md-connection-resolved') as HTMLElement
     span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
