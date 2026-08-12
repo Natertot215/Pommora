@@ -48,6 +48,18 @@ export function pageLinkPattern(): RegExp {
 /** Resolution outcome for a scanned title against the nexus link index. */
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
+/** The alias span containing a line-relative offset, or null. Takes a line rather than a document so
+ *  it stays free of any editor's line helpers — the grammar is the only thing it knows. */
+export function aliasSpanAt(line: string, rel: number): [number, number] | null {
+  for (const m of line.matchAll(pageLinkPattern())) {
+    if (m[2] === undefined || m.index == null) continue
+    const start = m.index + 2 + m[1].length + 1
+    const end = m.index + m[0].length - 2
+    if (rel >= start && rel <= end) return [start, end]
+  }
+  return null
+}
+
 /** What the wikilink menu needs in order to render itself. The two authoring actions are built into
  *  the menu rather than filtered after it, so a surface that can't take an edit never offers them. */
 export interface ConnMenuContext {
