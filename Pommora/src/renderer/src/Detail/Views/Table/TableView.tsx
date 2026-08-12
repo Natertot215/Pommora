@@ -1510,10 +1510,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       ? orderWithSlot(containerPagesOf(parentPath), row.id, where)
       : undefined
     createPageIn(parentPath, seeds, order, (pageId) => {
-      if (!structuralOrder) {
-        const allIds = flattenContainer(source, effectiveValues).rows.map((r) => r.id)
-        persistViewOrder(tieOrderWith(viewOrders[view.id], allIds, pageId, row.id, where))
-      }
+      // Every live order settles in the create's own act — a newborn absent from a stale array
+      // ranks last (the [source] self-heal is a one-frame flash; nothing re-emits viewOrders).
+      const allIds = flattenContainer(source, effectiveValues).rows.map((r) => r.id)
+      const splice = (existing: string[] | undefined): string[] =>
+        tieOrderWith(existing, allIds, pageId, row.id, where)
+      setManualOverride((m) => (m ? splice(m) : m))
+      if (!structuralOrder || viewOrders[view.id]) persistViewOrder(splice(viewOrders[view.id]))
       openCreateRename(pageId)
     })
   }
