@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import { useSession } from '@renderer/store'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
 
 class ResizeObserverStub {
@@ -51,5 +52,20 @@ describe('committing a connection leaves the caret off its closer', () => {
     const { doc, head } = await pickFirst('[[Alp]] rest', 4)
     expect(doc).toBe('[[Alpha]] rest')
     expect(head).toBe(10)
+  })
+})
+
+// Retargeting replaces the whole token, so the alias is destroyed here unless deliberately carried.
+describe('retargeting an aliased connection obeys the strip setting', () => {
+  it('drops the alias by default — the old words describe the old page', async () => {
+    useSession.setState({ personalization: {} })
+    const { doc } = await pickFirst('[[Alp|the one]]', 4)
+    expect(doc).toBe('[[Alpha]] ')
+  })
+
+  it('carries the alias across when the setting is off', async () => {
+    useSession.setState({ personalization: { removeTitleOnLinkChange: false } })
+    const { doc } = await pickFirst('[[Alp|the one]]', 4)
+    expect(doc).toBe('[[Alpha|the one]] ')
   })
 })

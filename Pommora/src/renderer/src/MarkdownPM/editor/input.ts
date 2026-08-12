@@ -14,8 +14,11 @@ import {
   shiftEnterEdit,
   indentListOnTab,
   outdentListOnShiftTab,
+  lineStartAt,
+  lineEndAt,
   type Edit,
 } from '../input'
+import { aliasSpanAt } from '@shared/connections'
 import { tableRegions } from '../Tables/regions'
 import { embedTileRanges } from './embedWidget'
 import { docString } from './docCache'
@@ -146,6 +149,13 @@ export const markdownInput = [
     if (view.composing || view.compositionStarted) return false
     if (text.length !== 1 || from !== to) return false // single-char inserts only; paste passes through
     const doc = docString(view.state.doc)
+    // `]` inside an alias would truncate the link the caret is sitting in, so the keystroke simply
+    // doesn't land — the same treatment `|` gets in a title. Escaping was the alternative and puts
+    // backslashes into a file whose readability is the point. Paste doesn't come through here.
+    if (text === ']') {
+      const ls = lineStartAt(doc, from)
+      if (aliasSpanAt(doc.slice(ls, lineEndAt(doc, from)), from - ls)) return true
+    }
     return apply(
       view,
       calloutShorthand(doc, from, from, text) ??

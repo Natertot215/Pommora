@@ -53,12 +53,19 @@ export function autocompleteQuery(
   return null
 }
 
+/** The committed form. An `alias` rides only the link form — `![[ ]]` has no alias syntax, and an
+ *  empty one collapses rather than writing a bare pipe. */
 export function connectionInsert(
   title: string,
   from: number,
   form: ConnectionForm = 'link',
+  alias?: string,
 ): { insert: string; caret: number } {
-  const insert = form === 'embed' ? `![[${title}]]` : `[[${title}]]`
+  if (form === 'embed') {
+    const insert = `![[${title}]]`
+    return { insert, caret: from + insert.length }
+  }
+  const insert = alias ? `[[${title}|${alias}]]` : `[[${title}]]`
   return { insert, caret: from + insert.length }
 }
 

@@ -65,6 +65,12 @@ const TOGGLES: Record<CategoryKey, Toggle[]> = {
       label: 'Show Line Count In Code Blocks',
       hint: "Number a codeblock's lines — display chrome, never editable text.",
     },
+    {
+      key: 'removeTitleOnLinkChange',
+      label: 'Remove Title On Link Change',
+      hint: 'Pointing a connection at another page drops the alias it was wearing.',
+      defaultOn: true,
+    },
   ],
 }
 
