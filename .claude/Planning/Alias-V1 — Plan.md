@@ -180,11 +180,11 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Must agree:** all three sites plus the projection resolve identically. One test crosses the editor decoration, the cell renderer, and the hit-test on the same aliased link.
 
 **Steps:**
-- [ ] `cellStatic`: resolve from the resolve span, render the alias as the styled text, delete the alias-tail append and its now-false comment.
-- [ ] `connections.ts`: slice the resolve span in the hit-test.
-- [ ] Add the cross-site agreement test.
-- [ ] `npm run test` — expect green. **Hazard window closes here.**
-- [ ] Commit: `fix(connections): every reader resolves a connection by its title`
+- [x] `cellStatic`: resolve from the resolve span, render the alias as the styled text, delete the alias-tail append and its now-false comment.
+- [x] `connections.ts`: slice the resolve span in the hit-test.
+- [x] Add the cross-site agreement test — fixture `[[Alpha|Beta]]` with `Beta` duplicated, so the wrong span changes the rendered *status* and drops the click, not merely the target. Proven red with both lines reverted (exit 1, two failures).
+- [x] `npm run test` — expect green. **Hazard window closes here.**
+- [x] Commit: `fix(connections): every reader resolves a connection by its title`
 
 #### Gate 1 — the alias renders and resolves consistently
 - [ ] Gates green, exit codes read directly.
