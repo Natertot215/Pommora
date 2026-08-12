@@ -45,7 +45,12 @@ import {
 } from '../pipeline/contextOptions'
 import { flattenContainer, groupsStructurally } from '../pipeline/group'
 import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
-import { GHOST_DWELL_MS, GhostSuppress, useGhostAnchor } from '../useGhostAnchor'
+import {
+  GHOST_DWELL_MS,
+  GhostSuppress,
+  useClearStrandedGhost,
+  useGhostAnchor,
+} from '../useGhostAnchor'
 import { useFeel } from '@renderer/design-system/interactions/feel'
 import { useViewCreation } from '../useViewCreation'
 import { declaredType } from '../pipeline/value'
@@ -498,13 +503,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     if (ghostApi.ghost?.closing && ghostShown === null) ghostApi.closed()
   }, [ghostShown])
-  // The anchor left the pipeline — clear ghost STATE, not just its render (the stranded-closing
-  // skip-dwell edge).
-  const strandedId =
-    ghostApi.ghost && !rowBand.has(ghostApi.ghost.anchorId) ? ghostApi.ghost.anchorId : null
-  useEffect(() => {
-    if (strandedId !== null) ghostApi.clear(strandedId)
-  })
+  useClearStrandedGhost(ghostApi, rowBand)
   const ghostCreate = (): void => {
     creatingRef.current = true
     const anchorId = ghostApi.take()
@@ -1190,8 +1189,7 @@ const PageCard = memo(function PageCard({
   // field (cards were the odd surface out; the popover rename retired with it).
   const naming = useSession((s) => s.renamingPath === row.path)
   // The view's ghost stands down while any of this card's native menus own the pointer.
-  const suppress = useContext(GhostSuppress)
-  const holdGhost = suppress ?? (<T,>(menu: () => Promise<T>): Promise<T> => menu())
+  const holdGhost = useContext(GhostSuppress)
   const [iconOpen, setIconOpen] = useState(false)
   // The card's native right-click menu handles page meta + an Add Property ▸ submenu — the add
   // path for cards with no in-body add surface. A value right-click is caught by CardValue's own

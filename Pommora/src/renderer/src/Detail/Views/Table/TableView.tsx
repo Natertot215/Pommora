@@ -67,7 +67,7 @@ import { numberDivisor } from '../PropertyEditing/formatValue'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
-import { GHOST_DWELL_MS, useGhostAnchor } from '../useGhostAnchor'
+import { GHOST_DWELL_MS, useClearStrandedGhost, useGhostAnchor } from '../useGhostAnchor'
 import { useViewCreation } from '../useViewCreation'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
@@ -976,7 +976,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       const { tabs, pinned } = useSession.getState()
       ctx.alreadyOpen = isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path })
     }
-    const action = await withGhostSuppressed(() => window.nexus.cellMenu(ctx))
+    const action = await holdGhost(() => window.nexus.cellMenu(ctx))
     if (!action) return
     if (action === 'title:newtab')
       void useSession
@@ -1088,13 +1088,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     suppressed: () => editingRef.current !== null,
   })
   const ghost = ghostApi.ghost
-  const withGhostSuppressed = ghostApi.suppressWrap
-  // The anchor left the pipeline (reload, filter, regroup) — clear ghost STATE, not just its
-  // render: a stranded `closing` would reopen with no dwell on the next hover.
-  const strandedGhostId = ghost !== null && !rowById.has(ghost.anchorId) ? ghost.anchorId : null
-  useEffect(() => {
-    if (strandedGhostId !== null) ghostApi.clear(strandedGhostId)
-  })
+  const holdGhost = ghostApi.suppressWrap
+  useClearStrandedGhost(ghostApi, rowById)
   // The shared creation engine. The config getter runs only at gesture time, so it may close
   // over render-scope consts declared below the loading/empty returns.
   const {
@@ -1442,7 +1437,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     e.stopPropagation()
     const cellEl = (e.currentTarget as HTMLElement).closest<HTMLElement>('.data-cell')
     const { tabs, pinned } = useSession.getState()
-    const action = await withGhostSuppressed(() =>
+    const action = await holdGhost(() =>
       window.nexus.rowGripMenu({
         alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path }),
       }),
