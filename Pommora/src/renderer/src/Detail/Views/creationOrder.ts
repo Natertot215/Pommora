@@ -1,17 +1,19 @@
-// Order arrays for in-view page creation. Every array carries the full membership it governs —
-// a partial write alphabetizes the untouched siblings, and one built from a filtered view
-// permanently re-ranks every row the filter was hiding.
+// Order arrays for the writes that place a row: in-view creation, and a cross-location drop.
+// Every array carries the full membership it governs — a partial write alphabetizes the
+// untouched siblings, and one built from a filtered view permanently re-ranks every row the
+// filter was hiding.
 
 import { NEW_PAGE_SLOT } from '@shared/mutate'
 
-/** `item` placed on the named side of `anchorId`, or appended when the anchor isn't present. */
-function spliceBeside(
+/** `item` placed on the named side of `anchorId`, or appended when there's no anchor (null) or
+ *  the anchor isn't present. */
+export function spliceBeside(
   ids: string[],
-  anchorId: string,
+  anchorId: string | null,
   item: string,
   where: 'above' | 'below',
 ): string[] {
-  const at = ids.indexOf(anchorId)
+  const at = anchorId === null ? -1 : ids.indexOf(anchorId)
   if (at === -1) return [...ids, item]
   const insert = where === 'below' ? at + 1 : at
   return [...ids.slice(0, insert), item, ...ids.slice(insert)]
