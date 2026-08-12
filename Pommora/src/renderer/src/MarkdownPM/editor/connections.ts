@@ -5,7 +5,9 @@ import { applyLinkAction } from './linkEdit'
 
 type GetApi = () => ConnectionsApi | undefined
 
-const CONN_HOVER_INTENT_MS = 450
+/** KNOB — the dwell before a connection's preview blooms. Exported so tests wait on the real value
+ *  rather than restating it: a test that hard-codes the number goes red the moment it's tuned. */
+export const CONN_HOVER_INTENT_MS = 1000
 
 /** One pending hover intent — re-arming replaces it, cancel is idempotent. Shared by the editor's
  *  own handlers and the table's resting-cell trigger, so the delay stays one fact. */
@@ -96,23 +98,24 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
   // that re-entry is a fresh mouseover that would bloom a preview behind the menu you just used.
   let handled = false
   return EditorView.domEventHandlers({
+    // No press on a connection seats a caret in it. `true` is what stops that — CM seats the caret
+    // in its own mousedown handling rather than through the browser default, so preventDefault
+    // alone would leave it happening.
     mousedown(event, view) {
       const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
       const hit = pos == null ? null : wikiLinkAt(view, pos)
       editingOnPress = hit ? caretInside(view, hit) : false
-      if (editingOnPress || event.button !== 0) return false
       const api = getApi()
-      // A press that will follow the link must not seat a caret inside it on the way: that activates
-      // the token and reveals its syntax, which stays revealed whenever the link opens somewhere
-      // other than this pane. Pressing a link you're already editing still seats normally.
-      //
-      // `true` is what stops it — CM seats the caret in its own mousedown handling rather than
-      // through the browser default, so preventDefault alone leaves the seat happening.
-      if (api && resolvedPageAt(view, api, event)) {
-        event.preventDefault()
-        return true
-      }
-      return false
+      if (!api || !connectionAt(view, api, event)) return false
+      // A right press hands the caret to whichever menu action is chosen, and Rename and Edit Link
+      // exist to place it themselves — seating one here would land it somewhere first and make both
+      // of them meaningless. No preventDefault: the contextmenu event still has to fire.
+      if (event.button === 2) return true
+      // A left press is about to follow the link, and the seat would flash its syntax on the way
+      // out. Pressing a link you're already editing still seats normally.
+      if (event.button !== 0 || editingOnPress) return false
+      event.preventDefault()
+      return true
     },
     mouseover(event, view) {
       const api = getApi()
