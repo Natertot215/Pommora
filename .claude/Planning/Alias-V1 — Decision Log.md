@@ -48,7 +48,13 @@
 - **C-2:** [confirmed] The list is **written on authoring**, not derived from a body scan. This is why the remove-× can be a genuine deletion rather than a suppression row, and it needs no nexus-wide scan.
 - **C-3:** [confirmed] The **×** drops that alias from the page's remembered list. Bodies already carrying it are untouched — forgetting a suggestion never edits a document.
 - **C-4:** [confirmed] Resolution is **via title**. There are no alternate resolution keys: a bare `[[Nickname]]` never resolves through the alias memory, and the parked frontmatter `Aliases:` idea is retired by Nathan.
-#### G — Duplicate Disambiguation
+#### G — Duplicate Disambiguation *(cut from Alias-V1)*
+
+> **Scope ruling — Nathan, final.** Duplicate disambiguation **leaves this arc entirely**. Alias-V1 is about aliases; duplicate titles are a different feature that arrived as an answer to a good question and grew into the largest thing in the log. Connections do none of this today, and nothing about the alias work depends on it.
+>
+> What leaves with it: path qualification, the path-keyed tiebreak, the move-cascade gate, the prefix-preserving rewrite, the main-side title index it needed, and the journal hardening — whose entire justification was the three new cascade triggers path qualification would have added. The rename cascade's known non-atomicity returns to being a pre-existing [[ConnectionsPM]] Known Issue rather than something this arc multiplies.
+>
+> The material below is preserved as the settled design for whoever picks the feature up, not as scope.
 
 Both approaches below answer the same gap: when several pages share a title, [[ConnectionsPM]] §Resolution renders the link **ambiguous** — muted and inert until one side is renamed. This is the parked **Duplicate disambiguation** prospect, which anticipated id-scoping.
 
@@ -77,7 +83,7 @@ Both approaches below answer the same gap: when several pages share a title, [[C
 
 - **D-6:** [confirmed] **A broken markdown link keeps the external-link convention** — dimmed display text, no pointer cursor, and the target still hidden at rest. This is not a new treatment: `.md-link-invalid` already states the rule in its own comment ("URL stays hidden at rest so it doesn't pollute the line"), so an unresolved *internal* target simply falls through to it rather than being special-cased. Nothing dumps raw syntax into the line.
 - **D-7:** [confirmed] **The two forms share one grammar, not two.** `[text](target)` is a single token kind with a single parser; internal versus external is a *resolution branch*, never a second syntax or a second tokenizer. The separation to hold is therefore in the branch's cleanliness — one place decides which of three outcomes a target has, and the three appearances follow from it.
-- **D-8:** [assumed] **An internal markdown link wears the connection colour**, matching `[[ ]]`, because the two forms mean the same thing and appearance should follow meaning rather than syntax. External-valid keeps `.md-link`, broken keeps `.md-link-invalid`. Needs Nathan's yes — it is user-visible.
+- **D-8:** [confirmed] **An internal markdown link wears the connection colour**, matching `[[ ]]` — the two forms mean the same thing, so appearance follows meaning rather than syntax. External-valid keeps `.md-link`, broken keeps `.md-link-invalid`. Three outcomes, two existing classes plus the connection colour; no new link styling is authored.
 
 #### E — Markdown-Link Authoring
 
