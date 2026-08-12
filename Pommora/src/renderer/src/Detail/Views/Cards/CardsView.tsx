@@ -1,4 +1,13 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import type {
   CollectionNode,
   NexusLabels,
@@ -36,6 +45,8 @@ import {
 } from '../pipeline/contextOptions'
 import { flattenContainer, groupsStructurally } from '../pipeline/group'
 import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
+import { GHOST_DWELL_MS, GhostSuppress, useGhostAnchor } from '../useGhostAnchor'
+import { useFeel } from '@renderer/design-system/interactions/feel'
 import { useViewCreation } from '../useViewCreation'
 import { declaredType } from '../pipeline/value'
 import { resolveView } from '../pipeline/resolveView'
@@ -79,6 +90,11 @@ const thumbSrc = (nexusId: string, pageId: string, v: number): string =>
   `nexus-asset://nexus/.nexus/assets/${nexusId}/thumbnails/page-${pageId}.jpg?v=${v}`
 
 const cardTitleType = text.body.semibold
+
+// ── TUNABLE ── how long a left ghost card survives before it collapses — unlike the table's
+// flush ghost, the pointer must cross the grid gap to reach it, so zero would kill it mid-travel.
+// The dwell is the shared GHOST_DWELL_MS in useGhostAnchor.
+const CARDS_GHOST_GRACE_MS = 200 // KNOB
 
 /** The Cards renderer — the container's Pages as a resizable card grid over the same pipeline the
  *  table reads. Cards never indent — descendants roll up under their top-level band; ungrouped
@@ -335,6 +351,15 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const refreshValues = (): void => {
     void window.nexus.loadValues(source.path).then((v) => setValues(v))
   }
+  // The hover ghost card on the shared mechanism — a naming session or an open picker
+  // suppresses the dwell, re-read at fire time.
+  const pickersOpenRef = useRef(false)
+  const ghostApi = useGhostAnchor({
+    dwellMs: GHOST_DWELL_MS,
+    graceMs: CARDS_GHOST_GRACE_MS,
+    suppressed: () =>
+      pickersOpenRef.current || useSession.getState().renamingPath !== null,
+  })
   // The shared creation engine. The config getter runs only at gesture time, so it may close
   // over consts declared further down. `structuralOrder: false` always: Cards' live order is
   // only ever viewOrders — the table's predicate would route creates onto a page_order channel
@@ -373,6 +398,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     openAddPicker,
     refreshValues,
     newPageBelow: createAfter,
+    ghostHover: ghostApi.onHover,
   }
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
@@ -390,6 +416,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       onOpenAddPicker: (req: AddPickerRequest) => handlersRef.current.openAddPicker(req),
       onRefreshValues: () => handlersRef.current.refreshValues(),
       onNewBelow: (row: ViewRow) => handlersRef.current.newPageBelow(row),
+      onHover: (id: string, entering: boolean) => handlersRef.current.ghostHover(id, entering),
     }),
     [],
   )
@@ -411,6 +438,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   // re-sort, collapse) can never tear an open picker out mid-flight (CardPickerHost).
   const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
   const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
+  pickersOpenRef.current = valuePicker !== null || addPicker !== null
   const rowById = useMemo(() => {
     const m = new Map<string, ViewRow>()
     for (const r of flattenGroups(groups)) m.set(r.id, r)
@@ -423,6 +451,66 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     for (const g of groups) for (const r of flattenGroups([g])) m.set(r.id, g.key)
     return m
   }, [groups])
+
+  // ── The ghost card's entry/exit displacement: neighbors make room on the cards' own move
+  // feel. Two-phase commit — snapshot the displacement wrappers BEFORE the ghost enters or
+  // leaves the grid, insert/remove it on the next commit, then animate each element from its
+  // old seat (FLIP, deltas in local px — the grid lives under a CSS zoom). The layout read is
+  // dwell-gated, never per-pointer-move; a create skips the exit animation outright, since the
+  // real card takes the ghost's seat frames later.
+  const feel = useFeel()
+  const anyNaming = useSession((s) => s.renamingPath !== null)
+  const flipPrev = useRef<Map<Element, DOMRect> | null>(null)
+  const creatingRef = useRef(false)
+  const ghostLiveId =
+    ghostApi.ghost && !ghostApi.ghost.closing && !anyNaming ? ghostApi.ghost.anchorId : null
+  const [ghostShown, setGhostShown] = useState<string | null>(null)
+  useLayoutEffect(() => {
+    if (ghostLiveId === ghostShown) return
+    const root = rootRef.current
+    if (root && !creatingRef.current) {
+      const m = new Map<Element, DOMRect>()
+      for (const el of root.querySelectorAll('.card-displace, .group-band'))
+        m.set(el, el.getBoundingClientRect())
+      flipPrev.current = m
+    } else flipPrev.current = null
+    creatingRef.current = false
+    setGhostShown(ghostLiveId)
+  }, [ghostLiveId, ghostShown])
+  useLayoutEffect(() => {
+    const prev = flipPrev.current
+    flipPrev.current = null
+    const root = rootRef.current
+    if (prev && root) {
+      const z = effectiveZoom || 1
+      for (const el of root.querySelectorAll('.card-displace, .group-band')) {
+        const before = prev.get(el)
+        if (!before) continue
+        const after = el.getBoundingClientRect()
+        const dx = (before.left - after.left) / z
+        const dy = (before.top - after.top) / z
+        if (dx !== 0 || dy !== 0)
+          el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
+            duration: feel.duration,
+            easing: feel.easing,
+          })
+      }
+    }
+    if (ghostApi.ghost?.closing && ghostShown === null) ghostApi.closed()
+  }, [ghostShown])
+  // The anchor left the pipeline — clear ghost STATE, not just its render (the stranded-closing
+  // skip-dwell edge).
+  const strandedId =
+    ghostApi.ghost && !rowBand.has(ghostApi.ghost.anchorId) ? ghostApi.ghost.anchorId : null
+  useEffect(() => {
+    if (strandedId !== null) ghostApi.clear(strandedId)
+  })
+  const ghostCreate = (): void => {
+    creatingRef.current = true
+    const anchorId = ghostApi.take()
+    const anchor = anchorId ? rowById.get(anchorId) : undefined
+    if (anchor) createAfter(anchor)
+  }
 
   // Cross-band card drag → property reassignment. Only a status/select/checkbox property grouping
   // maps a band key back to a settable value; a cross-band drop there reassigns the property. Under
@@ -518,6 +606,9 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   }, [])
 
   return (
+    // The suppress handle travels by context — the memoized cards pop native menus themselves,
+    // where caller-side wrapping can't reach.
+    <GhostSuppress.Provider value={ghostApi.suppressWrap}>
     <div
       ref={rootRef}
       className={cx('cards-view', banner === 'none' && 'is-compact')}
@@ -622,30 +713,44 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                 items={rows.map((r) => r.id)}
                 className="cards-grid"
               >
-                {rows.map((row) => (
-                  <PageCard
-                    key={row.id}
-                    row={row}
-                    view={view}
-                    banner={banner}
-                    nexusId={nexusId}
-                    columns={columns}
-                    ctx={ctx}
-                    labels={labels}
-                    loc={locByRow.get(row.id)}
-                    draggable={cardDragEnabled}
-                    onCommitValue={cardApi.onCommitValue}
-                    onStyle={cardApi.onStyle}
-                    onOpen={cardApi.onOpen}
-                    onReveal={cardApi.onReveal}
-                    onHide={cardApi.onHide}
-                    onOpenValuePicker={cardApi.onOpenValuePicker}
-                    onOpenAddPicker={cardApi.onOpenAddPicker}
-                    onRefreshValues={cardApi.onRefreshValues}
-                    onNewBelow={cardApi.onNewBelow}
-                    allowInlineRemove={effectiveZoom >= 0.8}
-                  />
-                ))}
+                {rows.flatMap((row) => {
+                  const card = (
+                    <PageCard
+                      key={row.id}
+                      row={row}
+                      view={view}
+                      banner={banner}
+                      nexusId={nexusId}
+                      columns={columns}
+                      ctx={ctx}
+                      labels={labels}
+                      loc={locByRow.get(row.id)}
+                      draggable={cardDragEnabled}
+                      onCommitValue={cardApi.onCommitValue}
+                      onStyle={cardApi.onStyle}
+                      onOpen={cardApi.onOpen}
+                      onReveal={cardApi.onReveal}
+                      onHide={cardApi.onHide}
+                      onOpenValuePicker={cardApi.onOpenValuePicker}
+                      onOpenAddPicker={cardApi.onOpenAddPicker}
+                      onRefreshValues={cardApi.onRefreshValues}
+                      onNewBelow={cardApi.onNewBelow}
+                      onHover={cardApi.onHover}
+                      allowInlineRemove={effectiveZoom >= 0.8}
+                    />
+                  )
+                  if (ghostShown !== row.id) return [card]
+                  return [
+                    card,
+                    <GhostCard
+                      key={`ghost-${row.id}`}
+                      iconName={entityIcon('page', undefined, defaultIcons)}
+                      onEnter={ghostApi.onGhostEnter}
+                      onLeave={ghostApi.onGhostLeave}
+                      onCreate={ghostCreate}
+                    />,
+                  ]
+                })}
               </SortableZone>
             </GroupBand>
           )
@@ -668,6 +773,39 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
           onDismissAdd={() => setAddPicker(null)}
         />
       )}
+    </div>
+    </GhostSuppress.Provider>
+  )
+}
+
+/** The hover ghost card — an empty bordered slot at the group's card size, the page-icon
+ *  placeholder at its center. Pure chrome: no page until the click, which runs the same
+ *  immediate-create act as the card menu's New Page. Never a drag member. */
+function GhostCard({
+  iconName,
+  onEnter,
+  onLeave,
+  onCreate,
+}: {
+  iconName: string
+  onEnter: () => void
+  onLeave: () => void
+  onCreate: () => void
+}): React.JSX.Element {
+  return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a hover-born affordance wearing the grid's own card chrome — keyboard creation lives in the menus
+    <div
+      data-ghost-root
+      className="page-card ghost-card"
+      onPointerEnter={onEnter}
+      onPointerLeave={onLeave}
+      onClick={onCreate}
+    >
+      <div className="ghost-card-body">
+        <span className="page-card-ph">
+          <Icon name={iconName} size={22} />
+        </span>
+      </div>
     </div>
   )
 }
@@ -769,6 +907,7 @@ interface PageCardProps {
   onOpenAddPicker: (req: AddPickerRequest) => void
   onRefreshValues: () => void
   onNewBelow: (row: ViewRow) => void
+  onHover: (id: string, entering: boolean) => void
   draggable: boolean
   /** False when the embed zoom shrinks chips too far — drops multi-select's inline ×. */
   allowInlineRemove: boolean
@@ -1012,6 +1151,7 @@ const PageCard = memo(function PageCard({
   onOpenAddPicker,
   onRefreshValues,
   onNewBelow,
+  onHover,
   draggable,
   allowInlineRemove,
 }: PageCardProps): React.JSX.Element {
@@ -1049,6 +1189,9 @@ const PageCard = memo(function PageCard({
   // The card is the live naming target — creation and menu Rename both open the fenced inline
   // field (cards were the odd surface out; the popover rename retired with it).
   const naming = useSession((s) => s.renamingPath === row.path)
+  // The view's ghost stands down while any of this card's native menus own the pointer.
+  const suppress = useContext(GhostSuppress)
+  const holdGhost = suppress ?? (<T,>(menu: () => Promise<T>): Promise<T> => menu())
   const [iconOpen, setIconOpen] = useState(false)
   // The card's native right-click menu handles page meta + an Add Property ▸ submenu — the add
   // path for cards with no in-body add surface. A value right-click is caught by CardValue's own
@@ -1063,12 +1206,14 @@ const PageCard = memo(function PageCard({
     const menuAddable = orderAddableEntries(addable).map((e) => ({ id: e.id, name: e.name }))
     const currentParentPath = row.path.slice(0, row.path.lastIndexOf('/'))
     const moveTargets = tree ? buildMoveTargets(tree.collections) : []
-    const action = await window.nexus.cardMenu({
-      addable: menuAddable,
-      alreadyOpen,
-      moveTargets,
-      currentParentPath,
-    })
+    const action = await holdGhost(() =>
+      window.nexus.cardMenu({
+        addable: menuAddable,
+        alreadyOpen,
+        moveTargets,
+        currentParentPath,
+      }),
+    )
     if (!action) return
     if (action === 'title:newtab') onOpen(row, true)
     else if (action === 'title:rename') useSession.getState().beginRename(row.path, false, 'detail')
@@ -1097,7 +1242,9 @@ const PageCard = memo(function PageCard({
       e.preventDefault()
       e.stopPropagation()
       const noun = banner === 'cover' ? 'Cover' : 'Banner'
-      const action = await window.nexus.bannerMenu(cover ? { noun } : { noun, add: true })
+      const action = await holdGhost(() =>
+        window.nexus.bannerMenu(cover ? { noun } : { noun, add: true }),
+      )
       if (!action) return
       if (action === 'remove') {
         if (await mutate({ op: 'setBanner', path: row.path, kind: 'page', dataUrl: null }))
@@ -1133,6 +1280,8 @@ const PageCard = memo(function PageCard({
       {...(drag?.handle ?? { role: 'button', tabIndex: 0 })}
       data-rid={row.id}
       className={cx('page-card', drag?.isDragging && 'is-dragging')}
+      onPointerEnter={() => onHover(row.id, true)}
+      onPointerLeave={() => onHover(row.id, false)}
       onClick={(e) => {
         if (drag?.isDragging || naming) return
         // Only the title + banner open the page. A click landing anywhere else — a value's picker that
@@ -1149,6 +1298,10 @@ const PageCard = memo(function PageCard({
       }}
       onContextMenu={onCardContextMenu}
     >
+      {/* The displacement wrapper — the ghost's FLIP rides it: the root's transform belongs to
+          the drag engine, and the body is hover-pop's surface whose stylesheet transitions
+          transform (an inverse transform there would animate — a wrong-direction hop). */}
+      <div className="card-displace">
       <div className="page-card-body hover-pop">
         <CardFace
           row={row}
@@ -1171,6 +1324,7 @@ const PageCard = memo(function PageCard({
           onHide={onHide}
           onOpenValuePicker={onOpenValuePicker}
         />
+      </div>
       </div>
       {/* A persistent mount riding `open` — the Bloom-out plays on dismiss (a conditional mount
           tears the instance out mid-exit). The add-picker lives at the grid-level host, not here. */}

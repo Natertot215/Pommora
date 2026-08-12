@@ -105,6 +105,36 @@
   background: var(--bg-window);
 }
 
+/* The ghost's FLIP rides this wrapper — the root's transform belongs to the drag engine, and
+   the body is hover-pop's surface whose stylesheet transitions transform. */
+.card-displace {
+  height: 100%;
+}
+
+/* The hover ghost card — an empty bordered slot at the group's card size (it stretches to its
+   row like every card), the page-icon placeholder centered, the whole slot at the inactive dim.
+   First-pass treatment: every value below is a KNOB for the visual pass. */
+.ghost-card {
+  cursor: pointer;
+}
+.ghost-card-body {
+  height: 100%;
+  min-height: 44px; /* KNOB */
+  display: grid;
+  place-items: center;
+  border: var(--border-cell);
+  border-width: 2px; /* KNOB — heavier than the standard card border so the ghost reads */
+  border-radius: 10px; /* KNOB */
+  color: var(--label-primary);
+  opacity: var(--state-inactive);
+  animation: ghost-card-in var(--duration-base) var(--ease-standard);
+}
+@keyframes ghost-card-in {
+  from {
+    opacity: 0;
+  }
+}
+
 .page-card-body {
   display: flex;
   flex-direction: column;

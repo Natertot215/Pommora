@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useContext, useRef, useState } from 'react'
 import type { ResolvedColumn, ViewRow } from '@shared/types'
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { isValidLink } from '@shared/links'
@@ -8,6 +8,7 @@ import { parseStyleAction } from '@shared/columnMenu'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens/typography.css'
 import { declaredType, resolveFieldValue } from '../pipeline/value'
+import { GhostSuppress } from '../useGhostAnchor'
 import { Cell } from '../Table/Cell'
 import { parseLink, urlValueFromEdit, urlValueFromRename } from '../Table/linkValue'
 import { parseEditorValue } from './cardValueInput'
@@ -95,6 +96,9 @@ export function CardValue({
     // file: each chip opens its own file (Cell's file branch stops propagation) — no dispatch here.
   }
 
+  // The view's ghost stands down while this value's native menu owns the pointer.
+  const suppress = useContext(GhostSuppress)
+  const holdGhost = suppress ?? (<T,>(menu: () => Promise<T>): Promise<T> => menu())
   // Right-click a value → its native menu (always a menu, never an action), the shared per-kind matrix
   // (Clear · Style · Edit) plus a trailing Remove — cards pass hideable, so any property can be dropped
   // from the view here. stopPropagation keeps it off the card-level menu.
@@ -107,7 +111,7 @@ export function CardValue({
     const barCapable = dt === 'number' && numberDivisor(schemaDef) !== undefined
     const menuCtx = cellMenuContextFor(column, dt, style, !isBlankValue(v), true, barCapable)
     if (!menuCtx) return
-    const action = await window.nexus.cellMenu(menuCtx)
+    const action = await holdGhost(() => window.nexus.cellMenu(menuCtx))
     if (!action) return
     if (action === 'cell:clear') commit(null)
     else if (action === 'cell:hide') onHide(column.id)

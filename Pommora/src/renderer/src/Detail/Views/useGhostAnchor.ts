@@ -4,7 +4,15 @@
 // The effect — what a ghost looks like and how it moves — belongs to each consumer; the hook
 // holds one anchor per consumer, so cross-view overlap is transient by leave-close.
 
-import { useEffect, useRef, useState } from 'react'
+import { createContext, useEffect, useRef, useState } from 'react'
+
+// The dwell before a ghost extends — ONE value across every view's ghost; grace is per-view
+// (a flush table ghost tolerates zero, a card ghost across the grid gap can't).
+export const GHOST_DWELL_MS = 1500 // KNOB
+
+/** The suppress handle, published by a view whose surfaces pop native menus from inside
+ *  memoized children (Cards) — caller-side wrapping can't reach those pops. */
+export const GhostSuppress = createContext<GhostAnchor['suppressWrap'] | null>(null)
 
 export interface GhostAnchorOptions {
   dwellMs: number
