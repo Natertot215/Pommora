@@ -69,7 +69,8 @@ import {
 import type { MoveTarget } from '@shared/cardMenu'
 import { hideShown, unhide } from '@renderer/Components/Detail/hiddenPaneModel'
 import { IconPicker } from '@renderer/Components/IconPicker'
-import { TextPicker } from '@renderer/design-system/components/TextPicker'
+import { RenamableTitle } from '@renderer/Components/RenamableTitle'
+import { titleInput } from '@renderer/design-system/components/menu'
 import { isOpenInTabs } from '../../../Tabs/tabsModel'
 import './CardsView.css'
 
@@ -596,6 +597,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                     iconName={entityIcon('page', r.icon, defaultIcons)}
                     columns={columns}
                     allowInlineRemove={false}
+                    naming={false}
                     onCommitValue={NOOP}
                     onStyle={NOOP}
                     onHide={NOOP}
@@ -874,6 +876,7 @@ const CardFace = memo(function CardFace({
   iconName,
   columns,
   allowInlineRemove,
+  naming,
   onImgError,
   textRef,
   onThumbContextMenu,
@@ -884,6 +887,7 @@ const CardFace = memo(function CardFace({
   onOpenValuePicker,
 }: {
   row: ViewRow
+  naming: boolean
   view: SavedView
   banner: CardBanner
   ctx: ResolveContext | null
@@ -915,6 +919,26 @@ const CardFace = memo(function CardFace({
       <span className="page-card-title-text">{row.title}</span>
     </>
   )
+  // While this card is the naming target the whole title row swaps for the fenced field —
+  // outside the OverflowScroll clip, the glyph staying put, pointerdown stopped against the
+  // whole-surface drag handle.
+  const namingRow = naming && (
+    <span
+      className={cx('page-card-title', cardTitleType)}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      {!(view.hide_page_icons ?? false) && (
+        <Icon name={iconName} className="page-card-title-icon" />
+      )}
+      <RenamableTitle
+        path={row.path}
+        kind="page"
+        title={row.title}
+        className={cx(titleInput, 'card-title-input')}
+        host="detail"
+      />
+    </span>
+  )
   return (
     <>
       {banner !== 'none' && (
@@ -944,13 +968,14 @@ const CardFace = memo(function CardFace({
             : undefined
         }
       >
-        {(view.wrap_titles ?? false) ? (
-          <span className={cx('page-card-title is-wrap', cardTitleType)}>{titleBody}</span>
-        ) : (
-          <OverflowScroll className={cx('page-card-title', cardTitleType)}>
-            {titleBody}
-          </OverflowScroll>
-        )}
+        {namingRow ||
+          ((view.wrap_titles ?? false) ? (
+            <span className={cx('page-card-title is-wrap', cardTitleType)}>{titleBody}</span>
+          ) : (
+            <OverflowScroll className={cx('page-card-title', cardTitleType)}>
+              {titleBody}
+            </OverflowScroll>
+          ))}
         {shown.length > 0 && (
           <CardProperties
             row={row}
@@ -1033,7 +1058,9 @@ const PageCard = memo(function PageCard({
     [isDragging, onOpenAddPicker, row, ctx, labels, view, columns, tree],
   )
   const mutate = useSession((s) => s.mutate)
-  const [renameOpen, setRenameOpen] = useState(false)
+  // The card is the live naming target — creation and menu Rename both open the fenced inline
+  // field (cards were the odd surface out; the popover rename retired with it).
+  const naming = useSession((s) => s.renamingPath === row.path)
   const [iconOpen, setIconOpen] = useState(false)
   // The card's native right-click menu handles page meta + an Add Property ▸ submenu — the add
   // path for cards with no in-body add surface. A value right-click is caught by CardValue's own
@@ -1056,7 +1083,8 @@ const PageCard = memo(function PageCard({
     })
     if (!action) return
     if (action === 'title:newtab') onOpen(row, true)
-    else if (action === 'title:rename') setRenameOpen(true)
+    else if (action === 'title:rename')
+      useSession.getState().beginRename(row.path, false, 'detail')
     else if (action === 'title:icon') setIconOpen(true)
     else if (action === 'title:newbelow') onNewBelow(row)
     else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
@@ -1119,7 +1147,7 @@ const PageCard = memo(function PageCard({
       data-rid={row.id}
       className={cx('page-card', drag?.isDragging && 'is-dragging')}
       onClick={(e) => {
-        if (drag?.isDragging) return
+        if (drag?.isDragging || naming) return
         // Only the title + banner open the page. A click landing anywhere else — a value's picker that
         // just dismissed, the reflowed compact flow, the close-animation window — must not navigate.
         // elementFromPoint reads the real element under the pointer, robust to whatever moved between
@@ -1146,6 +1174,7 @@ const PageCard = memo(function PageCard({
           iconName={iconName}
           columns={columns}
           allowInlineRemove={allowInlineRemove}
+          naming={naming}
           onImgError={onImgError}
           textRef={textRef}
           onThumbContextMenu={onThumbContextMenu}
@@ -1156,20 +1185,8 @@ const PageCard = memo(function PageCard({
           onOpenValuePicker={onOpenValuePicker}
         />
       </div>
-      {/* Persistent mounts riding `open` — the Bloom-out plays on dismiss (conditional mounts tear
-          the instance out mid-exit). The add-picker lives at the grid-level host, not here. */}
-      <TextPicker
-        open={renameOpen}
-        triggerRef={textRef}
-        value={row.title}
-        onCommit={(name) => {
-          setRenameOpen(false)
-          const t = name.trim()
-          if (t && t !== row.title)
-            void mutate({ op: 'rename', path: row.path, kind: 'page', newName: t })
-        }}
-        onDismiss={() => setRenameOpen(false)}
-      />
+      {/* A persistent mount riding `open` — the Bloom-out plays on dismiss (a conditional mount
+          tears the instance out mid-exit). The add-picker lives at the grid-level host, not here. */}
       <IconPicker
         open={iconOpen}
         triggerRef={textRef}
