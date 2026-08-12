@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NEW_PAGE_SLOT } from '@shared/mutate'
-import { orderWithSlot, spliceBeside, tieOrderWith } from './creationOrder'
+import { appendOrderWith, orderWithSlot, spliceBeside, tieOrderWith } from './creationOrder'
 import { makeSorter, resolveManualOrder } from './pipeline/sort'
 import type { ViewRow } from '@shared/types'
 
@@ -31,6 +31,13 @@ describe('orderWithSlot', () => {
 describe('spliceBeside', () => {
   it('appends for a null anchor — the drop that landed past the last visible card', () => {
     expect(spliceBeside(['a', 'b'], null, 'x', 'above')).toEqual(['a', 'b', 'x'])
+  })
+})
+
+describe('appendOrderWith', () => {
+  it("ranks the newborn last while reproducing the current ranking — a band-add's end-of-group", () => {
+    expect(appendOrderWith(['b', 'a'], ['a', 'b', 'c'], 'new')).toEqual(['b', 'a', 'c', 'new'])
+    expect(appendOrderWith(undefined, ['a', 'b'], 'new')).toEqual(['a', 'b', 'new'])
   })
 })
 

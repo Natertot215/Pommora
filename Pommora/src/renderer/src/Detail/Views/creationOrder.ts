@@ -35,6 +35,21 @@ export function orderWithSlot(
 /** The full `viewOrders` tiebreaker array with `newId` placed beside its anchor. Reproduces the
  *  current ranking exactly — the existing array first, then every id absent from it in source
  *  order (absent rows rank last, stable) — so no row moves but the one being placed. */
+/** The current ranking reproduced exactly — the existing array first, then every id absent from
+ *  it in source order (absent rows rank last, stable), the placed id excluded throughout. */
+function mergedRanking(
+  existing: string[] | undefined,
+  allIds: string[],
+  excludeId: string,
+): string[] {
+  const base = existing ?? []
+  const inBase = new Set(base)
+  return [
+    ...base.filter((id) => id !== excludeId),
+    ...allIds.filter((id) => !inBase.has(id) && id !== excludeId),
+  ]
+}
+
 export function tieOrderWith(
   existing: string[] | undefined,
   allIds: string[],
@@ -42,11 +57,15 @@ export function tieOrderWith(
   anchorId: string,
   where: 'above' | 'below',
 ): string[] {
-  const base = existing ?? []
-  const inBase = new Set(base)
-  const full = [
-    ...base.filter((id) => id !== newId),
-    ...allIds.filter((id) => !inBase.has(id) && id !== newId),
-  ]
-  return spliceBeside(full, anchorId, newId, where)
+  return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where)
+}
+
+/** The full tiebreaker array with `newId` ranked last — a band-add's "end of the group", since
+ *  banding partitions before the manual order ranks. */
+export function appendOrderWith(
+  existing: string[] | undefined,
+  allIds: string[],
+  newId: string,
+): string[] {
+  return [...mergedRanking(existing, allIds, newId), newId]
 }
