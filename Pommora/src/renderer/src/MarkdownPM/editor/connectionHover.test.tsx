@@ -29,11 +29,12 @@ const conn: ConnectionsApi = {
   hover,
 }
 
-// jsdom draws no layout, so posAtCoords can't hit-test — pin it to the link's first character.
-// The link starts the doc, so position 0 sits inside the wikiLink token either way.
+// jsdom draws no layout, so posAtCoords can't hit-test — pin it inside the displayed title. It has
+// to be the CONTENT span rather than the token's start: the edges beside the syntax are left to
+// caret placement, so a pin at 0 suppresses the very hover these tests assert.
 async function mountLink(): Promise<{ view: EditorView; span: HTMLElement }> {
   const view = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
-  vi.spyOn(view, 'posAtCoords').mockReturnValue(0)
+  vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
   const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
   expect(span).toBeTruthy()
   return { view, span }
