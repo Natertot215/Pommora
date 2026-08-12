@@ -1,7 +1,6 @@
 ## Design System
 ```
 Design System
-├── Design Philosophy
 ├── Tooling
 ├── The Token Atlas
 │   ├── Primitives
@@ -23,13 +22,6 @@ Design System
 ```
 
 The Pommora design system — the code mirror of the Figma "Pommora - React" library, which is canonical for design values and the visual reference for components. Tokens come in two tiers: raw **primitives**, and the meaningful **semantic** aliases built on them.
-
-This document is the sanctioned exception to the "docs name; code holds exacts" rule: its tables state literal values so what exists is legible without opening the token files. Every table carries a **SOURCE** line naming the file it must agree with — a value changes in code first, and the table follows in the same commit. Before authoring any new style or mechanism, this atlas is the first read; what a surface needs usually already exists here.
-
-### Design Philosophy
-
-Apple's design language, and **macOS Tahoe** in particular, is the north star — near-identical by intent: restraint, depth through material over ornament, quiet precision. Where the web platform opens doors — richer motion, interaction, and layout — they're treated as additive prospects, adopted only when they deepen the Apple-grade minimalism. Simplicity is the constraint, not the compromise.
-
 ### Tooling
 
 - **vanilla-extract** — token files are `*.css.ts`; the theme primitives emit real CSS variables and a typed `vars` object, making a mistyped token a compile error. The plugin is wired into the renderer Vite config.
@@ -55,7 +47,7 @@ The three raw system tones every derived grey, white, and black is an opacity of
 
 #### Surfaces
 
-The opaque content planes layered on the window substrate — addressed by role, and their own literals rather than derivations. Progressively lifted: primary is the base content layer, tertiary the highest.
+The opaque content planes layered on the window substrate — addressed by role, and their own literals rather than derivations. 
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts`
 
@@ -81,7 +73,7 @@ The text ladder — system-white at descending presence. Primary is the raw prim
 
 #### States
 
-The interaction states — two grey washes, one black veil, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; drag, ghost, and inactive are consumed as `opacity:` on the element itself. Those three hold their own bare numbers rather than tint-ladder steps, since they are never mixed into a colour, and they read as one ramp: the more a stand-in carries the original's presence, the less the original fades — inactive is the still-here-but-not-active dim: empty-state copy, disabled controls, the ghost row.
+The interaction states — two grey washes, one black veil, and three opacity dims. Hover and selected are fills painted behind content; muted is painted over it; drag, ghost, and inactive are consumed as `opacity:` on the element itself.
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/color.css.ts` · `tokens/theme-vars.css.ts`
 
@@ -176,7 +168,7 @@ The ten selectable solids plus the neutral chip default — authored once in `@s
 
 #### Geometry
 
-The glyph ladder, the per-size control bundles, and the bare layout constants JS math consumes as numbers. The disclosure step is the one literal every hierarchy derives its per-level inset from.
+The glyph ladder, the per-size control bundles, and the bare layout constants JS math consumes as numbers. 
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/size.css.ts` · `tokens/theme-vars.css.ts`
 
@@ -198,7 +190,7 @@ Stacking is named rather than numbered — separate ladders for the shell frame'
 
 #### Materials
 
-Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a dimmed blur with a glassy edge — parameterized by `FrostParams` and worn by panes, dropdowns, and the drag ghost; zero-valued edge pieces emit nothing. **Liquid** is Apple "Liquid Glass" — a real edge-refraction shader over the live app — worn by the in-use button controls and on-control segments. Layout is always the consumer's.
+Two distinct glass systems. **Frost** is a CSS `backdrop-filter` recipe — a dimmed blur with a glassy edge — parameterized by `FrostParams` and worn by panes, dropdowns, and the drag ghost; zero-valued edge pieces emit nothing. **Liquid** is "Liquid Glass" — a real edge-refraction shader over the live app — worn by the in-use button controls and on-control segments. 
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx` · `materials/glass-material.ts` · `materials/glass-controls.tsx`
 

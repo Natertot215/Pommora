@@ -33,6 +33,10 @@ The content column renders one mode at a time. A ribbon switch plays the **overt
 
 Creation is right-click-first: a mode's empty area pops its native "New" menu — a lone **New Collection** or **New Context** by mode; right-clicking inside a Context group creates a Space there, labeled from that Context's singular. Right-clicking a row pops its own menu instead, offering what that row can contain — a Collection and a Set both take a Page and a nested container, differing only in whether the nested one reads as a Set or a Sub-Set; the subfield's add button offers the same pair, and both name the container from the nexus labels. A page row's menu carries **New Page Above** and **New Page Below**, creating a sibling at that slot in the manual order. The menu picks and the store executes with an **optimistic tree insert** — the new row lands instantly with its naming input focused and empty (the page itself is already Untitled on disk) while the confirming re-walk follows behind.
 
+**The ghost row** — dwelling on a page row extends a ghost "New Page" row beneath it on the row's own chrome at the inactive dim, entering and leaving on the disclosure motion; clicking it creates below, the field opening in the sidebar. It rides the shared hover-ghost mechanism with the sidebar's own pacing — a longer dwell than the views', since the sidebar is a surface the pointer crosses in transit — and any pointer press outside it stands it down before a drag can measure. Native menus hold it down until they close.
+
+**One naming field, ever.** An entity visible on two surfaces — a Set's sidebar row and its table band — resolves its rename to a single field through the store's owner fence: the gesture's surface wins where the menu declared it, the detail surface outranks the sidebar otherwise, and a rename whose surface disappears is abandoned rather than teleported into another one.
+
 A create always lands visible: the new row's inline rename forces its collapsed ancestor disclosures open.
 
 ### Drag and Drop

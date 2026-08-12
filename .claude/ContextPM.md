@@ -26,8 +26,6 @@
 - [ ] **Page aliases** — frontmatter `Aliases:` as resolution keys, the PageMenu's last unbuilt leaf. Parked whole: resolution needs nexus-wide frontmatter the walk doesn't carry (content-index-adjacent), and the leaf's name collides with the display-alias vocabulary, so the naming settles before it's specified. The display half is sequenced in §Immediate Work.
 - [ ] **The trash browser.** The deletion record's restore path ships and is tested end to end; what's missing is enumeration, since `listBundles` has no bridge entry and no non-test caller. A UI build plus one channel on a finished engine.
 - [ ] **The main pane's Inspector.** Its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty. The Page Preview's frontmatter inspector is a portable body already doing that job for another host.
-- [ ] **An unresolved `[[Link]]` is inert** — no colour, no click, no way to create the page it names. Writing a forward reference and filling it in later is the loop that makes inline linking worth using. Adjacent to Aliases; both sit on the connection layer.
-- [ ] **Cross-location card reordering** in views — scoped and mechanical.
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Canvas** — the spec sits at `Planning/6-26 - Canvas Spec.md`, unbuilt.
@@ -46,7 +44,7 @@
 ### Important Information
 
 - **The kind key is a second identity source by design.** A file's kind key and its folder's sidecar declare the same thing on purpose, since their disagreement is what makes a mislocated file recognizable — a checksum rather than the two-writers defect.
-- **The inert affordances render at full weight while their features are built.** The unimplemented view tiles swallow their click and read as live controls waiting on the work behind them; the Cards band's "+" does the same until the card chrome adopts the creation engine.
+- **The inert affordances render at full weight while their features are built.** The unimplemented view tiles swallow their click and read as live controls waiting on the work behind them.
 - **The `ViewPane` "more" button and the NavPane's toolbar dropdown are stubs** — a stub and a blank surface at a fixed ceiling, each holding its place while what it opens is decided.
 - **The reachability razor cuts guards, never structure.** Before defending against a state, name who produces it — nobody means no guard. The recurring failure is over-applying it: an unreached code path is dead weight the razor says nothing about.
 - **A whole-surface drag handle steals its own children's clicks.** The drag engine captures the pointer on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags.
@@ -80,7 +78,6 @@
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined.
 - [ ] The "File" property icon gets clipped by its vertical row padding on the PropertiesPane.
 - [ ] The link-rename field shows a leading empty space — the shared field recipe's horizontal padding surviving the TextPicker input override, with the pane gutter adding to it. A visual inset rather than a stored character (deprioritized).
-- [ ] The Set-Card drag flash — the drop snaps back, then jumps on reload.
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
 - [ ] The PageOutline's list-indent is noticeably different from other disclosure spacings (Sidebar, GroupPane, Tables), and likely needs a second pass to confirm whether it was actually consolidated around the shared primitive. 
 - [ ] Clicking inline, right next to the connection syntax, navigates to the linked page instead of placing your caret on the edge of the syntax, making renaming or adjusting the link itself quite difficult. 
