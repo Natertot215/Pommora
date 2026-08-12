@@ -143,14 +143,18 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
     // An alias pulls the two meanings apart — the words shown and the key resolved. The leading
     // marker then swallows `[[Title|`, since all of it is syntax the reader shouldn't see.
     const aliased = (m[2]?.length ?? 0) > 0
+    const shown: [number, number] = aliased ? [titleEnd + 1, fe - 2] : [titleStart, titleEnd]
     tokens.push({
       kind: 'wikiLink',
       range: [fs, fe],
-      contentRange: aliased ? [titleEnd + 1, fe - 2] : [titleStart, titleEnd],
+      contentRange: shown,
       ...(aliased ? { resolveRange: [titleStart, titleEnd] as [number, number] } : {}),
+      // Everything either side of what's shown, so the markers tile the whole token — a renderer
+      // drawing only the content span and skipping the rest can't then disagree with one hiding
+      // markers. A pipe with nothing after it rides the closer.
       markerRanges: [
-        [fs, aliased ? titleEnd + 1 : titleStart],
-        [fe - 2, fe],
+        [fs, shown[0]],
+        [shown[1], fe],
       ],
     })
   }
