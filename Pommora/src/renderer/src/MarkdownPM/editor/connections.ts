@@ -25,7 +25,10 @@ export function hoverIntent(): { arm: (fire: () => void) => void; cancel: () => 
   }
 }
 
-function wikiLinkAt(view: EditorView, pos: number): { title: string } | null {
+function wikiLinkAt(
+  view: EditorView,
+  pos: number,
+): { title: string; from: number; to: number } | null {
   const line = view.state.doc.lineAt(pos)
   const rel = pos - line.from
   const tk = tokenize(line.text).find(
@@ -33,15 +36,19 @@ function wikiLinkAt(view: EditorView, pos: number): { title: string } | null {
   )
   if (!tk) return null
   const [rs, re] = tk.resolveRange ?? tk.contentRange
-  return { title: line.text.slice(rs, re) }
+  return { title: line.text.slice(rs, re), from: line.from + tk.range[0], to: line.from + tk.range[1] }
 }
 
-/** The resolved connection page under the pointer, or null — the shared hit-test for every handler. */
+/** The resolved connection page under the pointer, or null — the shared hit-test for every handler.
+ *  A connection the caret is already inside resolves to null: it's open for editing, and its own
+ *  syntax is revealed, so neither a click nor a dwell should carry you away from what you're typing. */
 function resolvedPageAt(view: EditorView, api: ConnectionsApi, event: MouseEvent): ConnPage | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
   const hit = wikiLinkAt(view, pos)
   if (!hit) return null
+  const head = view.state.selection.main.head
+  if (view.hasFocus && head >= hit.from && head <= hit.to) return null
   const res = api.resolve(hit.title)
   return res.status === 'resolved' && res.page ? res.page : null
 }

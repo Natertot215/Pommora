@@ -111,7 +111,11 @@ export function TableView({
     intent.cancel()
     const el = (e.target as HTMLElement).closest?.('.md-connection-resolved')
     if (!el?.closest('.mdpm-tbl-cell-static')) return
-    const res = api.resolve(el.textContent ?? '')
+    // The rendered text is the alias when there is one, so the key comes off the span's own
+    // stamp rather than from what it displays.
+    const title = (el as HTMLElement).dataset.connTitle
+    if (!title) return
+    const res = api.resolve(title)
     if (res.status !== 'resolved' || !res.page) return
     const page = res.page
     intent.arm(() => api.hover?.(page, el))
