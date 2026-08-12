@@ -2,15 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { cardMenuModel } from './cardMenu'
 
 describe('cardMenuModel', () => {
-  it('lists the page-meta actions with separators (Open lead, Delete gated)', () => {
+  it('lists the page-meta actions with one New Page — the grid has no above', () => {
     const m = cardMenuModel({ addable: [] })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([
       ['Open New Tab', 'title:newtab'],
       ['Rename', 'title:rename'],
       ['Change Icon', 'title:icon'],
+      ['New Page', 'title:newbelow'],
       ['Delete', 'title:delete'],
     ])
     expect(m.items.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
+    expect(m.items.find((i) => i.action === 'title:newbelow')?.separatorBefore).toBe(true)
     expect(m.items.find((i) => i.action === 'title:delete')?.separatorBefore).toBe(true)
   })
 

@@ -13,5 +13,5 @@ export interface RowGripMenuContext {
 export function rowGripMenuModel(ctx: RowGripMenuContext): {
   items: Array<{ label: string; action: RowGripMenuAction; separatorBefore?: boolean }>
 } {
-  return { items: pageMetaMenuItems(ctx.alreadyOpen, { preview: true, newPages: true }) }
+  return { items: pageMetaMenuItems(ctx.alreadyOpen, { preview: true, newPages: 'pair' }) }
 }
