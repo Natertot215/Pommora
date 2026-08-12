@@ -278,7 +278,9 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
   if (conn) {
     tokens.forEach((tk, i) => {
       if (tk.kind !== 'wikiLink') return
-      const status = conn.resolve(text.slice(tk.contentRange[0], tk.contentRange[1])).status
+      // An aliased link shows one string and resolves another; the mark stays on what's displayed.
+      const key = tk.resolveRange ?? tk.contentRange
+      const status = conn.resolve(text.slice(key[0], key[1])).status
       if (status === 'phantom') return // unresolved → raw `[[Foo]]`, brackets visible + inert
       ranges.push(
         Decoration.mark({ class: `md-connection-${status}` }).range(

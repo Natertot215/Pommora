@@ -160,12 +160,12 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Failure half:** an aliased link that is ambiguous or phantom takes the same treatment its bare form would; a phantom aliased link renders raw in full, matching today's phantom rule.
 
 **Steps:**
-- [ ] Resolve from `tk.resolveRange ?? tk.contentRange`.
-- [ ] Hide the grown leading marker at rest; reveal it with the brackets on caret, as the `link` block reveals `(url)`. A large hidden span is already proven — the whole `](url)` tail is one such hide — and `activeTokenIndices` is edge-inclusive, so entering the token reveals it before any invisible traversal is possible.
-- [ ] Update `shared/connections.ts`'s header — "Nothing authors or renders an alias yet" is false.
-- [ ] Test: an aliased link's rendered text is the alias; the caret inside reveals `[[Title|`.
-- [ ] `npm run test` + `npm run lint` — expect green.
-- [ ] Commit: `feat(connections): an aliased connection reads as its alias`
+- [x] Resolve from `tk.resolveRange ?? tk.contentRange`.
+- [x] Hide the grown leading marker at rest; reveal it with the brackets on caret, as the `link` block reveals `(url)`. The marker loop was already span-agnostic, so Task 2's grown marker flows through it unchanged.
+- [x] Update `shared/connections.ts`'s header — "Nothing authors or renders an alias yet" is false.
+- [x] Test: an aliased link's rendered text is the alias; the caret inside reveals `[[Title|`.
+- [x] `npm run test` + `npm run lint` — expect green.
+- [x] Commit: `feat(connections): an aliased connection reads as its alias`
 
 #### Task 4: Point the other two resolve sites at the resolve span
 
