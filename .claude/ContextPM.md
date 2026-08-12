@@ -2,11 +2,11 @@
 
 ### Current Focus
 
-**Cards creation adoption — the brainstorm is open.** The Cards view adopts the creation engine PM-096 proved on the table — the band "+", the New Page menu pair, empty-field naming, and a hover ghost card whose chrome and motion are the view's own. The table's live pass resolved into the committed ghost-exit polish: the ghost now collapses out on the motion it entered by, and the title-cell menu carries the New Page pair.
+**Cards creation adoption — shipped whole ([[HistoryPM]] §PM-097); Nathan's visual and feel passes are the pending items.** Creation reaches every surface on two shared hooks (the creation wiring, the hover-ghost mechanism), the rename slot is owner-fenced with a live set-band bug dead, the order-settle law covers creates and moves alike, and the ghost card and sidebar ghost ship as KNOB-marked first passes. What remains is Nathan's: the two ghosts' CSS (all values KNOB), the dwell-and-feel under a real mouse — the sidebar's transit-surface dwell is the honest kill-signal check — and the native menu picks.
 
 ### Immediate Work
 
-- [ ] **Display-alias** — `[[Title|alias]]` rendering its authored text in place of the title — opens as the next arc the moment Cards creation meets its completion criteria.
+- [ ] **Display-alias** — `[[Title|alias]]` rendering its authored text in place of the title — is the locked next arc; Cards creation shipped, so it opens on Nathan's visual and feel passes.
 
 ### Pending Focuses
 
@@ -85,6 +85,11 @@
 
 ### Recent Work
 
+#### PM-097 || Creation Reaches Every Surface
+**DATE:** 08-11-2026 → 08-12-2026
+
+Creation reached Cards and the sidebar on two extracted hooks the table refit onto — `useViewCreation` (seeds, order writes, create-then-name) and `useGhostAnchor` (dwell/grace, suppression, the pointerdown stand-down). The ghost card grows flow-after as the card's own skeleton with its neighbors FLIPed aside on the drag shift's feel; the sidebar ghost rides the row chrome at its own longer dwell. The rename slot gained an owner fence (a live set-band double-mount bug died with it, and an unclaimed session self-heals), Cards' naming unified onto the inline field, and the order-settle law now covers creates, cross-location drops, and the set-card reply gap alike.
+
 #### PM-096 || TableView Creation Affordance
 **DATE:** 08-11-2026
 
@@ -104,11 +109,6 @@ The reconnaissance's fix list worked through. Three tokens replaced literals —
 **DATE:** 08-10-2026
 
 The design docs now state token literals under SOURCE-tagged tables — the one sanctioned exception to docs-name-exacts, chartered in `DesignSystemPM.md` (renamed from DesignPM) and enforced by `scripts/check-atlas.mjs`. Families landed with their owners: the editor's scoped pockets in MarkdownPM, the type ramp in TypographyPM, motion + caret/edge-fade/autoscroll in InteractionPM, chips in PropertiesPM, cards in CardViewPM, the table sheet in TableViewPM, the `--ppane-*` contract described in PagePreviewPM. Design-Sources retired into the atlas charter and Build-Gotchas; the recon's fix list routed to `Planning/CSS Duplication Report.md`.
-
-#### PM-092 || One Grip Menu, And The List's Type
-**DATE:** 08-10-2026
-
-Every block grip's right-click resolves through one kind-keyed menu: Delete on all of them, "Type ▸" on a list, "Page Source ▸" on an embed tile. The callout's separate grip-menu writer — its own handler, channel, and contract — became one arm of that union, and one delete rule now serves every kind, which took the doubled blank line the callout's own delete used to leave. Embed Page left the grip entirely; the page's own menu already carried Insert ▸ Page. A list block switches all four marker kinds at every level of its nesting, ordered runs counting per level, through a writer beside the per-line format toggle — the shape the codeblock's language switch follows.
 
 ### Guidelines
 

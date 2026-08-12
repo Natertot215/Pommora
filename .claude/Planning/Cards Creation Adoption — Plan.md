@@ -1,7 +1,7 @@
 ## Cards Creation Adoption — Implementation Plan
 
-> **Status:** ratified — in execution (Nathan's go, 08-11-2026) · Spec: `.claude/Planning/Cards Creation Adoption — Decision Log.md` · Execute tasks in order.
-> Rider: a sidebar row-hover-add sub-scope is being scoped in parallel; it joins as an addendum phase on its own review, shipping alongside.
+> **Status:** executed and closed (08-12-2026) — Nathan's visual/feel passes are the surviving pendings · Spec: `.claude/Planning/Cards Creation Adoption — Decision Log.md`
+> The sidebar sub-scope shipped as Phase 4b.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -470,3 +470,20 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - The drag engine's possible zoom drift (`toBox` measures client px, no compensation) — checked as an observation in Task 10; if inherited, it's a Known Issue entry, not this arc's fix.
 
 ### Closeout
+
+**Delivery Claim** (range `1fb17f84..26ffc98f`, code commits `a32d886b..511fc0b3` + docs) — adjudicated by the neutral verifier: substantively true, with the shavings folded below:
+1. Every numbered requirement (1–11) traces to a landed task; the spec's Core list ships — including one disclosed spec reversal: A-6's "bandAdd keeps no order tail" was reversed by the gate fold (`511fc0b3`) because the title fallback ranked a non-structural newborn mid-band; the shipped tail delivers the ruling's *intent* (last-in-band).
+2. The acceptance criterion held live: the consolidated CDP pass on the Test nexus proved the fence (one field, band-side, sidebar zero), band-add (born in-Set, empty field, glyph, Esc→Untitled), the ghost card cycle (flow-after size-matched slot, create, empty field, collision→"Page A 2"), the table ghost regression (dwell-appear, clean collapse), and the sidebar ghost (dwell, row below, create, field in the sidebar). Drag-borne items (cross-location drop at index, set-card drag, seeds-under-sort first paint) were not CDP-driven — they stand on their unit/arm-level tests and the gate reviews' executed verifications; the drag feel rides Nathan's live list.
+3. No new dependency. The creation wiring and the hover-ghost machinery each have one home (`useViewCreation`, `useGhostAnchor`) with the table refitted onto both; the deliberate residual twins are named — `persistViewOrder` (view-local state glue each view feeds the hook, per the plan's own mandate) and main's hand-built sidebar New-Page pair (reported in Sequenced After, not grown).
+4. Nothing left behind with nothing left to vary: the TextPicker rename mount, the table's inline ghost/creation machinery, and the deferral comments are gone (`renameOpen` sweep → 0 against control 16).
+5. No work added to a high-frequency path: ghost transitions are dwell-gated; the FLIP's layout reads are two per transition; hover handlers are ref-stable; context values identity-stable.
+6. Three shipped defects died in passing — the set-band rename annihilation, the stale-manual-order placement class, and the cross-location drop's discarded landing — plus Requirement 9's set-card drop flash to its verified cause.
+7. Final code-only LOC: **net +655** (+963 / −308), tests +361, across 22 commits.
+
+**Live Check #1 recorded:** across the CDP runs no ghost re-anchored or flickered during a collapse with the pointer at rest — DOM ghost counts moved 1→0 cleanly in every scenario; the real-mouse feel stays on Nathan's list. **The zoom-drift observation was not driven** (the pass ran at default zoom); it stays in Sequenced After as an open check, not a finding. **Teardown honesty:** the created pages and their trash bundles are scrubbed; two empty `.trash` directories and the touched sidecar timestamps remain in the standing Test fixture.
+
+The pendings are Nathan's: the ghost CSS visual passes (card + sidebar KNOBs), the dwell-and-feel under a real mouse (both ghosts and the drag-borne placements), and the native-menu picks.
+
+**The attack pass** (post-verification, separate dispatch) found 3, killed 12: its High — a naming session no surface ever claims stranding `renamingPath`, suppressing every ghost app-wide and reopening an unprompted empty field later — died with the claim-beat self-heal (`edd232ca`, red-first tests); the table's stranded-`editing` twin reconciles against the pipeline the same way; the exit FLIP now keys on the hard-gone signature (retiring the create flag). One Unknown rides Nathan's list: whether Electron's popup callback fires when a window closes with a native menu up (if not, a sidebar ghost could stay disarmed until relaunch — reopen and dwell to check). Nathan's mid-closeout chrome direction shipped in the same commit: the ghost card is the card's own skeleton (placeholder thumb, divider, (icon)(New Page), ghosted property labels).
+
+PM-097 recorded; ContextPM advanced to the display-alias arc; the plan closed at `edd232ca` + records.
