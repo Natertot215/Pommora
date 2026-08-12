@@ -1090,6 +1090,13 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const ghost = ghostApi.ghost
   const holdGhost = ghostApi.suppressWrap
   useClearStrandedGhost(ghostApi, rowById)
+  // An editing target the pipeline no longer emits (a filtered-out newborn's create-rename, a
+  // reload dropping the row) clears — a stranded `editing` would suppress the ghost for the
+  // life of the mount.
+  const strandedEditId = editing !== null && !rowById.has(editing.rowId) ? editing.rowId : null
+  useEffect(() => {
+    if (strandedEditId !== null) setEditing((e) => (e?.rowId === strandedEditId ? null : e))
+  }, [strandedEditId])
   // The shared creation engine. The config getter runs only at gesture time, so it may close
   // over render-scope consts declared below the loading/empty returns.
   const {

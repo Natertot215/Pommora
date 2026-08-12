@@ -476,20 +476,23 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const feel = useFeel()
   const anyNaming = useSession((s) => s.renamingPath !== null)
   const flipPrev = useRef<Map<Element, DOMRect> | null>(null)
-  const creatingRef = useRef(false)
   const ghostLiveId =
     ghostApi.ghost && !ghostApi.ghost.closing && !anyNaming ? ghostApi.ghost.anchorId : null
   const [ghostShown, setGhostShown] = useState<string | null>(null)
   useLayoutEffect(() => {
     if (ghostLiveId === ghostShown) return
     const root = rootRef.current
-    if (root && !creatingRef.current) {
+    // A hard-gone ghost (take() creating, a pointerdown clear ahead of a drag) skips the exit
+    // animation outright — the real card takes the seat, or the drag engine measures a grid
+    // that must already be still. Only a graceful close (the hook still holds `closing`) and
+    // the entry animate.
+    const hardGone = ghostShown !== null && ghostApi.ghost === null
+    if (root && !hardGone) {
       const m = new Map<Element, DOMRect>()
       for (const el of root.querySelectorAll('.card-displace, .group-band'))
         m.set(el, el.getBoundingClientRect())
       flipPrev.current = m
     } else flipPrev.current = null
-    creatingRef.current = false
     setGhostShown(ghostLiveId)
   }, [ghostLiveId, ghostShown])
   useLayoutEffect(() => {
@@ -517,11 +520,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const ghostCreate = (): void => {
     const anchorId = ghostApi.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
-    if (!anchor) return
-    // The real card takes the ghost's seat frames later — the exit FLIP skips for this
-    // transition only, set after the guard so a dead anchor can't strand the flag.
-    creatingRef.current = true
-    createAfter(anchor)
+    if (anchor) createAfter(anchor)
   }
 
   // Cross-band card drag → property reassignment. Only a status/select/checkbox property grouping
@@ -756,6 +755,10 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                     card,
                     <GhostCard
                       key={`ghost-${row.id}`}
+                      banner={banner}
+                      view={view}
+                      columns={columns}
+                      ctx={ctx}
                       iconName={entityIcon('page', undefined, defaultIcons)}
                       onEnter={ghostApi.onGhostEnter}
                       onLeave={ghostApi.onGhostLeave}
@@ -790,20 +793,31 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   )
 }
 
-/** The hover ghost card — an empty bordered slot at the group's card size, the page-icon
- *  placeholder at its center. Pure chrome: no page until the click, which runs the same
- *  immediate-create act as the card menu's New Page. Never a drag member. */
+/** The hover ghost card — the card's own skeleton at the inactive dim: the unloaded-cover
+ *  placeholder in the image band, the card's image-to-text divider, an (icon)(New Page) title
+ *  row, and — in a Standard layout with visible properties — their ghosted label rows. Pure
+ *  chrome: no page until the click, which runs the same immediate-create act as the card
+ *  menu's New Page. Never a drag member. */
 function GhostCard({
+  banner,
+  view,
+  columns,
+  ctx,
   iconName,
   onEnter,
   onLeave,
   onCreate,
 }: {
+  banner: CardBanner
+  view: SavedView
+  columns: ResolvedColumn[]
+  ctx: ResolveContext | null
   iconName: string
   onEnter: () => void
   onLeave: () => void
   onCreate: () => void
 }): React.JSX.Element {
+  const props = isCompact(view) ? [] : columns.filter((c) => c.kind !== 'title')
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a hover-born affordance wearing the grid's own card chrome — keyboard creation lives in the menus
     <div
@@ -813,10 +827,31 @@ function GhostCard({
       onPointerLeave={onLeave}
       onClick={onCreate}
     >
-      <div className="ghost-card-body">
-        <span className="page-card-ph">
-          <Icon name={iconName} size={22} />
-        </span>
+      <div className="page-card-body">
+        {banner !== 'none' && (
+          <div className="page-card-thumb">
+            <span className="page-card-ph">
+              <Icon name={iconName} size={22} />
+            </span>
+          </div>
+        )}
+        <div className="page-card-text">
+          <span className={cx('page-card-title', cardTitleType)}>
+            <Icon name={iconName} className="page-card-title-icon" />
+            <span className="page-card-title-text">New Page</span>
+          </span>
+          {props.length > 0 && ctx && (
+            <div className="card-props">
+              {props.map((c) => (
+                <div key={c.id} className="card-prop-row">
+                  <span className={cx('card-prop-label', text.caption.emphasized)}>
+                    {columnLabel(c.id, ctx.schema, ctx.contexts)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
