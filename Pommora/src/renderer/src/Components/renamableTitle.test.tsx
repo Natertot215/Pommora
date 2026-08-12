@@ -44,7 +44,7 @@ afterEach(async () => {
   useSession.getState().cancelRename()
 })
 
-const inputs = (): HTMLElement[] => Array.from(host.querySelectorAll('input'))
+const inputs = (): HTMLInputElement[] => Array.from(host.querySelectorAll('input'))
 const inputHost = (): string | null =>
   host.querySelector('input')?.closest('[data-host]')?.getAttribute('data-host') ?? null
 
@@ -112,7 +112,6 @@ describe('the rename owner fence', () => {
   it('a create-origin session opens the surviving field empty', async () => {
     await act(async () => root.render(<Fields />))
     await act(async () => useSession.getState().beginRename(PATH, true))
-    const el = inputs()[0] as HTMLInputElement
-    expect(el.value).toBe('')
+    expect(inputs()[0].value).toBe('')
   })
 })

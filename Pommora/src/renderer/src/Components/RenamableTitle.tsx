@@ -30,11 +30,11 @@ export function RenamableTitle({
   const [token, setToken] = useState<number | null>(null)
   useEffect(() => {
     if (!target) return
-    const t = useSession.getState().claimRename(path, host)
-    setToken(t)
+    const claimed = useSession.getState().claimRename(path, host)
+    setToken(claimed)
     return () => {
       setToken(null)
-      if (t !== null) useSession.getState().releaseRename(t)
+      if (claimed !== null) useSession.getState().releaseRename(claimed)
     }
   }, [target, path, host])
   const owns = target && token !== null && winner === token

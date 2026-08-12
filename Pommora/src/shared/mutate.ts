@@ -121,10 +121,10 @@ export type MutateRequest =
   | { op: 'reorderContexts'; ids: string[] }
   | { op: 'reorderSpaces'; contextId: string; ids: string[] }
 
-/** What the renderer hands main to pop a native context menu for one sidebar entity. */
 /** Which renderer surface hosts a rename field — the owner fence's vocabulary. */
 export type RenameHost = 'detail' | 'sidebar'
 
+/** What the renderer hands main to pop a native context menu for one sidebar entity. */
 export interface ContextTarget {
   kind: MutableKind
   /** Nexus-relative POSIX path (PathNode.path). */
