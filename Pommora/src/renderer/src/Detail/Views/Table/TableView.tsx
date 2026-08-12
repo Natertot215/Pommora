@@ -1074,10 +1074,9 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // so memoized rows never re-render for handler churn (and never call a stale state writer).
   const cellApiRef = useRef({ openCellMenu, onCellClick, cellEditor, removeCellValue })
   cellApiRef.current = { openCellMenu, onCellClick, cellEditor, removeCellValue }
-  // The grip-menu and hover handlers ride their own refs: they're defined below with the
-  // creation handlers, after the writers they route to.
+  // The grip menu rides its own ref: it's defined below with the creation handlers, after the
+  // writers it routes to.
   const gripMenuRef = useRef<(row: ViewRow, e: React.MouseEvent) => Promise<void>>(null)
-  const hoverRef = useRef<(row: ViewRow, entering: boolean) => void>(null)
   // The hover ghost row rides the shared mechanism. Hooks live here, above the loading/empty
   // returns; a cell editor suppresses the ghost, re-read at the dwell's fire time.
   const editingRef = useRef(editing)
@@ -1097,8 +1096,24 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   useEffect(() => {
     if (strandedEditId !== null) setEditing((e) => (e?.rowId === strandedEditId ? null : e))
   }, [strandedEditId])
-  // The shared creation engine. The config getter runs only at gesture time, so it may close
-  // over render-scope consts declared below the loading/empty returns.
+  // The viewOrders cache has no round-trip (nothing re-reads it mid-session), so every write
+  // lands in the local copy too — else the pipeline keeps ranking off the stale array until the
+  // next container open.
+  const persistViewOrder = (ids: string[]): void => {
+    setViewOrders((m) => ({ ...m, [view.id]: ids }))
+    void window.nexus.viewOrders.set(view.id, ids)
+  }
+  // In-view creation opens the title cell as an ordinary uncommitted rename whose field is
+  // empty — the table's naming surface is its own cell editor.
+  const titleColId = columns.find((c) => c.kind === 'title')?.id
+  const openCreateRename = (created: { id: string }): void => {
+    if (titleColId)
+      setEditing({ rowId: created.id, colId: titleColId, mode: 'editor', fromCreate: true })
+  }
+  // The shared creation engine. The config getter runs at gesture time AND at the create's
+  // reply — every binding it closes over must initialize above the loading/empty returns, or a
+  // reply landing on an early-returned render (a concurrent actor emptied the view mid-create)
+  // reads a TDZ binding and throws.
   const {
     bandAdd,
     createAdjacent: newPageAdjacent,
@@ -1132,7 +1147,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
       overlay: (row, col) => cellApiRef.current.cellEditor(row, col),
       remove: (row, col, next) => cellApiRef.current.removeCellValue(row, col, next),
       grip: (row, e) => void gripMenuRef.current?.(row, e),
-      hover: (row, entering) => hoverRef.current?.(row, entering),
+      // Identity-stable straight off the hook — no ref detour needed.
+      hover: (row, entering) => ghostApi.onHover(row.id, entering),
     }),
     [],
   )
@@ -1402,13 +1418,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // filesystem-first table). A sorted / property-grouped view instead writes the per-view manual
   // tiebreaker (viewOrders). setManualOverride gives instant feedback either way: the pipeline reads it
   // as the sort tiebreaker, and it agrees with the page_order the fs reload brings back.
-  // The viewOrders cache has no round-trip (nothing re-reads it mid-session), so every write
-  // lands in the local copy too — else the pipeline keeps ranking off the stale array until the
-  // next container open.
-  const persistViewOrder = (ids: string[]): void => {
-    setViewOrders((m) => ({ ...m, [view.id]: ids }))
-    void window.nexus.viewOrders.set(view.id, ids)
-  }
   const reorderTo = (orderIds: string[], groupKey: string): void => {
     setManualOverride(orderIds)
     if (structuralOrder) {
@@ -1428,15 +1437,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     persistViewOrder(orderIds)
   }
 
-  // ── In-view creation — the shared engine (useViewCreation, called with the early hooks): the
-  // page exists on disk as Untitled the moment the gesture fires, and the title cell opens as an
-  // ordinary uncommitted rename whose field is empty. The table's naming surface is its own
-  // cell editor.
-  const titleColId = columns.find((c) => c.kind === 'title')?.id
-  const openCreateRename = (created: { id: string }): void => {
-    if (titleColId)
-      setEditing({ rowId: created.id, colId: titleColId, mode: 'editor', fromCreate: true })
-  }
   // The grip's right-click menu — page meta plus the New Page pair, on the block grips'
   // right-click-vs-drag interaction model.
   const openRowGripMenu = async (row: ViewRow, e: React.MouseEvent): Promise<void> => {
@@ -1471,7 +1471,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   // page until the click, which runs the same immediate-create act as New Page Below. Dismissal
   // exits on the same Reveal collapse the entrance rode — `closing` holds the row mounted through
   // it, and onCollapsed unmounts. A create skips the exit: the real row takes the seat.
-  hoverRef.current = (row, entering) => ghostApi.onHover(row.id, entering)
   const ghostCreate = (): void => {
     const anchorId = ghostApi.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
@@ -1766,10 +1765,8 @@ function GhostRow({
   onLeave: () => void
   onCreate: () => void
 }): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  useEffect(() => setOpen(true), [])
   return (
-    <Reveal open={open && !closing} onCollapsed={onClosed}>
+    <Reveal open={!closing} enterOnMount onCollapsed={onClosed}>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/useSemanticElements: a hover-born affordance that must wear the row grid's own chrome — a real <button> can't host a .data-row, and keyboard creation lives in the menus */}
       <div
         data-ghost-root
@@ -1781,18 +1778,22 @@ function GhostRow({
         onPointerLeave={onLeave}
         onClick={onCreate}
       >
-        {columns.map((c, i) =>
-          i === 0 ? (
-            <div key={c.id} className="data-cell cell-lead" style={{ paddingLeft: padLeft }}>
+        {/* Lead chrome is positional (a real row's grip/indent live in cell 0), but the New Page
+            glyph is the TITLE's — it sits wherever the title column sits in the track order. */}
+        {columns.map((c, i) => (
+          <div
+            key={c.id}
+            className={cx('data-cell', i === 0 && 'cell-lead')}
+            style={i === 0 ? { paddingLeft: padLeft } : undefined}
+          >
+            {c.kind === 'title' && (
               <span className="cell-title">
                 {hideIcon ? null : <EntityIcon kind="page" size={14} />}
                 <span className="cell-title-text">New Page</span>
               </span>
-            </div>
-          ) : (
-            <div key={c.id} className="data-cell" />
-          ),
-        )}
+            )}
+          </div>
+        ))}
         <div className="cell-filler" aria-hidden="true" />
       </div>
     </Reveal>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NEW_PAGE_SLOT } from '@shared/mutate'
-import { appendOrderWith, orderWithSlot, spliceBeside, tieOrderWith } from './creationOrder'
+import { orderWithSlot, spliceBeside, tieOrderWith } from './creationOrder'
 import { makeSorter, resolveManualOrder } from './pipeline/sort'
 import type { ViewRow } from '@shared/types'
 
@@ -34,14 +34,17 @@ describe('spliceBeside', () => {
   })
 })
 
-describe('appendOrderWith', () => {
-  it("ranks the newborn last while reproducing the current ranking — a band-add's end-of-group", () => {
-    expect(appendOrderWith(['b', 'a'], ['a', 'b', 'c'], 'new')).toEqual(['b', 'a', 'c', 'new'])
-    expect(appendOrderWith(undefined, ['a', 'b'], 'new')).toEqual(['a', 'b', 'new'])
-  })
-})
-
 describe('tieOrderWith', () => {
+  it("a null anchor ranks the newborn last while reproducing the ranking — a band-add's end-of-group", () => {
+    expect(tieOrderWith(['b', 'a'], ['a', 'b', 'c'], 'new', null, 'below')).toEqual([
+      'b',
+      'a',
+      'c',
+      'new',
+    ])
+    expect(tieOrderWith(undefined, ['a', 'b'], 'new', null, 'below')).toEqual(['a', 'b', 'new'])
+  })
+
   it('reproduces the current ranking and places the new id beside its anchor', () => {
     // Existing manual order covers some rows; the rest rank last in source order today.
     const out = tieOrderWith(['b', 'a'], ['a', 'b', 'c', 'd'], 'new', 'c', 'below')

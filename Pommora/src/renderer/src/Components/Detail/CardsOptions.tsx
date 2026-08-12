@@ -2,7 +2,7 @@ import type { CollectionNode, SetNode } from '@shared/types'
 import type { CardBanner, SavedView } from '@shared/views'
 import { Icon } from '@renderer/design-system/symbols'
 import { Switch } from '@renderer/design-system/components/Switches/Switch'
-import { MenuItem, MenuSeparator } from '../../design-system/components/menu'
+import { MenuItem } from '../../design-system/components/menu'
 import { flushTrailing } from '../../design-system/components/menu/menu.css'
 import { cx } from '../../design-system/cx'
 import { useSession } from '../../store'
@@ -30,7 +30,6 @@ export function CardsOptions({
 
   return (
     <>
-      <MenuSeparator flush />
       <MenuItem
         className={cx(flushTrailing, toggleRow)}
         leading={<Icon name="image" size={ICON.rootEntry} />}

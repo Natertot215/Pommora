@@ -356,8 +356,7 @@
   margin-right: 6px;
 }
 
-/* The hover ghost row — "New Page" wearing the row's own chrome at the inactive dim.
-   First-pass treatment: KNOBs for the visual pass. */
+/* The hover ghost row — "New Page" wearing the row's own chrome at the inactive dim. */
 .ghost-leaf {
   cursor: pointer;
   opacity: var(--state-inactive);

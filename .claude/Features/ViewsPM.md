@@ -31,6 +31,8 @@ The **active view is tracked per-machine** in `nexus.db`, kept out of the synced
 
 One pure pipeline feeds the renderer — **columns → filter → group → sort** — reading each Page's frontmatter, loaded lazily per container over a batch IPC.
 
+In-view creation is likewise one engine worn per-renderer: a shared creation act (the page exists on disk as Untitled the moment a gesture fires, born with what its context implies, its order settled in the same act) and a shared hover-ghost mechanism (dwell, grace, suppression, travel-hold) that each surface dresses in its own chrome (→ [[TableViewPM]], [[CardViewPM]], [[SidebarPM]]).
+
 #### II. Filter
 
 A recursive group of rules under a match mode, evaluated at every depth: All (AND), Any (OR), and None (NOR — no rule may match). The pane authors All and Any; NOR is hand-authoring only, and a `none` group decodes as locked behind an explicit Reset rather than shown as an All it would silently become on the next edit. The evaluator honors all three. Whether the filter runs at all is a separate axis, `filter_enabled`, so parking a filter costs it neither its rules nor its mode.

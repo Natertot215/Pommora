@@ -146,6 +146,31 @@ describe('the rename owner fence', () => {
     }
   })
 
+  it('a standing twin of the same host never inherits the session', async () => {
+    // The same path fielded twice at one host (a container visible in the main view AND an
+    // embed): the winner unmounting mid-typing must abandon, not hand the other field a
+    // focus-steal with the whole title selected.
+    const Twins = ({ first = true }: { first?: boolean }): React.JSX.Element => (
+      <>
+        {first && (
+          <span data-host="detail">
+            <RenamableTitle path={PATH} kind="page" title="Page" className="t" host="detail" />
+          </span>
+        )}
+        <span data-host="detail">
+          <RenamableTitle path={PATH} kind="page" title="Page" className="t" host="detail" />
+        </span>
+      </>
+    )
+    await act(async () => root.render(<Twins />))
+    await act(async () => useSession.getState().beginRename(PATH))
+    expect(inputs()).toHaveLength(1)
+    await act(async () => root.render(<Twins first={false} />))
+    await flushMicrotasks()
+    expect(useSession.getState().renamingPath).toBeNull()
+    expect(inputs()).toHaveLength(0)
+  })
+
   it("an old field's release never kills a successor session whose row hasn't mounted", async () => {
     // Main pushes begin-rename for a fresh create before the renderer's tree carries the row —
     // the outgoing field's release must judge its OWN claim's path, not the new session's.

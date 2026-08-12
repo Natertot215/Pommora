@@ -354,7 +354,8 @@ const SIDEBAR_GHOST_GRACE_MS = 0 // KNOB
 const NO_GHOST: { anchorId: string | null; closing: boolean } = { anchorId: null, closing: false }
 
 /** The shown ghost anchor + its exit state, by context — the rows sit levels down a recursive
- *  render. The API context is identity-stable, so hover wiring never re-renders rows. */
+ *  render, and each reads the value to know whether IT hosts the ghost (so ghost transitions
+ *  re-render the rows; the API context just keeps the handlers out of that churn). */
 const SidebarGhost = createContext(NO_GHOST)
 const SidebarGhostApi = createContext<{
   onHover: (id: string, entering: boolean) => void
@@ -371,10 +372,8 @@ function GhostLeaf({ depth }: { depth: number }): React.JSX.Element {
   const api = useContext(SidebarGhostApi)
   const closing = useContext(SidebarGhost).closing
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const [open, setOpen] = useState(false)
-  useEffect(() => setOpen(true), [])
   return (
-    <Reveal open={open && !closing} onCollapsed={api?.closed}>
+    <Reveal open={!closing} enterOnMount onCollapsed={api?.closed}>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a hover-born affordance wearing the row's own chrome — keyboard creation lives in the menus */}
       <div
         data-ghost-root
@@ -586,9 +585,10 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
         const label = createSpaceLabel(group.def)
         void useSession
           .getState()
-          .createFromMenu([
-            { label, req: { op: 'createSpace', contextId: group.def.id, name: label } },
-          ])
+          .createFromMenu(
+            [{ label, req: { op: 'createSpace', contextId: group.def.id, name: label } }],
+            'sidebar',
+          )
       }}
     >
       {group.spaces.map((s) => (
@@ -630,20 +630,29 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const newContextMenu = (): void => {
     void useSession
       .getState()
-      .createFromMenu([
-        { label: 'New Context', req: { op: 'createContextGroup', name: 'New Context' } },
-      ])
+      .createFromMenu(
+        [{ label: 'New Context', req: { op: 'createContextGroup', name: 'New Context' } }],
+        'sidebar',
+      )
   }
   const newCollectionMenu = (): void => {
     // Labelled from the registry like every other creator — a nexus that renames Collection
     // renames this too.
     const label = `New ${tree?.labels?.pageCollection.singular ?? 'Collection'}`
-    void useSession.getState().createFromMenu([
-      {
-        label,
-        req: { op: 'createContainer', parentPath: '', kind: 'collection', name: DEFAULT_NEW_NAME },
-      },
-    ])
+    void useSession.getState().createFromMenu(
+      [
+        {
+          label,
+          req: {
+            op: 'createContainer',
+            parentPath: '',
+            kind: 'collection',
+            name: DEFAULT_NEW_NAME,
+          },
+        },
+      ],
+      'sidebar',
+    )
   }
 
   // React doesn't delegate `scroll` (onScroll binds straight to the node) and scroll doesn't
@@ -675,34 +684,27 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     graceMs: SIDEBAR_GHOST_GRACE_MS,
     suppressed: () => useSession.getState().renamingPath !== null,
   })
-  const ghostApiRef = useRef(ghostApi)
-  ghostApiRef.current = ghostApi
   const dndIndexRef = useRef(dndIndex)
   dndIndexRef.current = dndIndex
+  // The hook's handlers are identity-stable, so they pass straight into deps and build the
+  // context value once — only `create` needs a wrapper of its own, to read the live index at
+  // click time.
+  const { onHover, onGhostEnter, onGhostLeave, closed, take, clear: clearGhost } = ghostApi
   useEffect(() => {
-    if (mode !== 'collections') ghostApiRef.current.clear()
-  }, [mode])
+    if (mode !== 'collections') clearGhost()
+  }, [mode, clearGhost])
   useClearStrandedGhost(ghostApi, dndIndex.byId)
-  const sidebarGhostApi = useMemo(
-    () => ({
-      onHover: (id: string, entering: boolean) => ghostApiRef.current.onHover(id, entering),
-      onGhostEnter: () => ghostApiRef.current.onGhostEnter(),
-      onGhostLeave: () => ghostApiRef.current.onGhostLeave(),
-      closed: () => ghostApiRef.current.closed(),
-      create: () => {
-        const anchorId = ghostApiRef.current.take()
-        const entry = anchorId ? dndIndexRef.current.byId.get(anchorId) : undefined
-        if (entry) void useSession.getState().newPageAdjacent(entry.path, 'below', 'sidebar')
-      },
-    }),
-    [],
-  )
-  const stableSuppress = useMemo(
-    () =>
-      <T,>(menu: () => Promise<T>): Promise<T> =>
-        ghostApiRef.current.suppressWrap(menu),
-    [],
-  )
+  const [sidebarGhostApi] = useState(() => ({
+    onHover,
+    onGhostEnter,
+    onGhostLeave,
+    closed,
+    create: (): void => {
+      const anchorId = take()
+      const entry = anchorId ? dndIndexRef.current.byId.get(anchorId) : undefined
+      if (entry) void useSession.getState().newPageAdjacent(entry.path, 'below', 'sidebar')
+    },
+  }))
   const ghostValue = ghostApi.ghost ?? NO_GHOST
 
   const dndLayer = (section: React.ReactNode): React.JSX.Element => (
@@ -774,7 +776,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   return (
     <SidebarGhost.Provider value={ghostValue}>
     <SidebarGhostApi.Provider value={sidebarGhostApi}>
-    <GhostSuppress.Provider value={stableSuppress}>
+    <GhostSuppress.Provider value={ghostApi.suppressWrap}>
     <nav ref={navRef} className="sidebar edge-fade">
       <div className="sidebar-mode-stage">
         {exit && (
