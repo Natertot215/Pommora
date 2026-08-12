@@ -230,8 +230,14 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (!moved) return
     // Synchronous — the zone's shift transforms release on this very render, and the tree patch
     // waits on the IPC reply; without the override the row snaps back for the gap between them.
+    // A failed write clears it: no tree re-mint would, and the row would paint an order that
+    // never landed.
     setSetOrderOverride(order)
-    void mutate({ op: 'moveSet', path: moved.path, newParentPath: source.path, order })
+    void mutate({ op: 'moveSet', path: moved.path, newParentPath: source.path, order }).then(
+      (ok) => {
+        if (!ok) setSetOrderOverride(null)
+      },
+    )
   }
 
   const setNames = useMemo(() => buildSetNames(source), [source])
@@ -483,6 +489,18 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
         const band = groups.find((g) => g.key === toZone)
         const beforeId = band ? (flattenGroups([band])[toIndex]?.id ?? null) : null
         const order = spliceBeside(destIds, beforeId, activeId, 'above')
+        // The live arrays hold the moved card's OLD rank as the sole comparator on a grouped
+        // view, and nothing re-emits them on a tree push — splice them in the drop's own act
+        // (the creation settle's law) or the landing never paints.
+        const spliceLive = (existing: string[]): string[] =>
+          spliceBeside(
+            existing.filter((id) => id !== activeId),
+            beforeId,
+            activeId,
+            'above',
+          )
+        setManualOverride((m) => (m ? spliceLive(m) : m))
+        if (viewOrders[view.id]) persistViewOrder(spliceLive(viewOrders[view.id]))
         void mutate({ op: 'movePage', path: row.path, newParentPath: destPath, order })
       }
       return
