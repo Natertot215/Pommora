@@ -48,13 +48,16 @@
 - **C-2:** [confirmed] The list is **written on authoring**, not derived from a body scan. This is why the remove-× can be a genuine deletion rather than a suppression row, and it needs no nexus-wide scan.
 - **C-3:** [confirmed] The **×** drops that alias from the page's remembered list. Bodies already carrying it are untouched — forgetting a suggestion never edits a document.
 - **C-4:** [confirmed] Resolution is **via title**. There are no alternate resolution keys: a bare `[[Nickname]]` never resolves through the alias memory, and the parked frontmatter `Aliases:` idea is retired by Nathan.
+- **C-5:** [confirmed] The scope is keyed by **PageID**, not title, so the memory survives a rename. `ConnPage.id` is the PageID and `pagesByIdOf` already provides the id→page map.
+- **C-6:** [confirmed] The scope is shaped as **per-page storage** rather than an alias-specific hack, joining `folds`, `headingCols`, and `embedHeights` — which are already PageID-keyed, so this is **not** the first such record and must not be documented as one. It also joins the copy-scope set, or a duplicated page silently loses its memory. *(Supersedes I-5's "first per-page record" wording.)*
+- **C-7:** [confirmed] The autocomplete surface reuses `Chip.tsx`'s hover-revealed remove-× and the existing `AutocompletePanel` anchoring, rather than a new picker.
 #### G — Duplicate Disambiguation *(cut from Alias-V1)*
 
 > **Scope ruling — Nathan, final.** Duplicate disambiguation **leaves this arc entirely**. Alias-V1 is about aliases; duplicate titles are a different feature that arrived as an answer to a good question and grew into the largest thing in the log. Connections do none of this today, and nothing about the alias work depends on it.
 >
-> What leaves with it: path qualification, the path-keyed tiebreak, the move-cascade gate, the prefix-preserving rewrite, the main-side title index it needed, and the journal hardening — whose entire justification was the three new cascade triggers path qualification would have added. The rename cascade's known non-atomicity returns to being a pre-existing [[ConnectionsPM]] Known Issue rather than something this arc multiplies.
+> What leaves with it: path qualification, the path-keyed tiebreak, the move-cascade gate, the prefix-preserving rewrite, the main-side title index it needed, the **1024 bracket cap** (G-10 — needed only because a whole path would sit inside the brackets; title and alias are independently capped, so the bound stands), and the journal hardening — whose entire justification was the three new cascade triggers path qualification would have added. The rename cascade's known non-atomicity returns to being a pre-existing [[ConnectionsPM]] Known Issue rather than something this arc multiplies.
 >
-> The material below is preserved as the settled design for whoever picks the feature up, not as scope.
+> **Everything under this banner is out of scope**, including every `[confirmed]` tag within it — those record a settled *design*, not settled scope. §H's path, move-gate, journal and cap entries (H-1, H-6, H-6a, H-6b, H-7, H-16, H-16a, H-16b) and G-10 all leave with it, and §Core's path-qualification line is struck. The material is preserved for whoever picks the feature up.
 
 Both approaches below answer the same gap: when several pages share a title, [[ConnectionsPM]] §Resolution renders the link **ambiguous** — muted and inert until one side is renamed. This is the parked **Duplicate disambiguation** prospect, which anticipated id-scoping.
 
@@ -67,12 +70,8 @@ Both approaches below answer the same gap: when several pages share a title, [[C
 - **G-10:** [confirmed] **The cap rises to 1024.** At 255 an over-cap link produces no token at all — invisible to rendering, scanning, and the cascade alike rather than degrading to a phantom — and the cap was sized as a filename limit back when the brackets held only a title. A whole path eats it quickly under nesting. The reason for having *a* bound is the ReDoS guard, which is untouched by the number.
 - **G-11:** [confirmed] **Markdown block tiles are out of scope.** Tiles are non-discoverable surfaces, and authoring a link inside one already behaves as intended — resolution is renderer-side, so a tile inherits every new form automatically. What tiles do *not* get is the new cascade coverage: `rewriteBlockConnections` stays title-only, so a `[]()` or path-qualified link inside a tile can go stale where the same link in a page heals. Accepted; the seam already exists, so widening it later is additive.
 *(The alias-as-tiebreaker approach was weighed here and dropped — see §Considered & Rejected.)*
-- **G-7:** [confirmed] Disambiguation lands **inside Alias-V1**. Nathan ruled it in with G-2's cascade cost explicitly on the table: the arc carries path qualification, its path-keyed resolution, and the move/folder-rename cascade alongside the display, authoring, and memory work.
+- **G-7:** [superseded — see the section banner] Disambiguation was briefly ruled *into* Alias-V1 with G-2's cascade cost on the table, then cut from it outright once the review round priced the whole composition. The later ruling stands.
 - **G-8:** [confirmed] The alias tiebreak (G-4) is therefore **not built** — path qualification answers the same gap deterministically, and two mechanisms resolving one ambiguity would be a second writer. It stays recorded as the fallback the arc chose against.
-- **C-5:** [assumed] The scope is keyed by **PageID**, not title, so the memory survives a rename. `ConnPage.id` is the PageID and `pagesByIdOf` already provides the id→page map.
-- **C-6:** [confirmed] The scope is shaped as **per-page storage** rather than an alias-specific hack, joining `folds`, `headingCols`, and `embedHeights` — which are already PageID-keyed, so this is not the first such record and must not be documented as one. It also joins the copy-scope set, or a duplicated page silently loses its memory.
-- **C-7:** [assumed] The autocomplete surface reuses `Chip.tsx`'s hover-revealed remove-× and the existing `AutocompletePanel` anchoring, rather than a new picker.
-
 #### D — Dual Syntax
 
 - **D-1:** [confirmed] `[Title](Link)` already tokenizes as `kind: 'link'` and unconditionally routes to `openExternal`. `isValidLink` is **not** the seam it first appeared to be — it accepts any dotted host, so a bare `Notes.md` passes as a URL (see H-5, which inverts the ordering). The real seam is that page resolution is tried first and the external gate catches what's left.
@@ -124,12 +123,12 @@ Both approaches below answer the same gap: when several pages share a title, [[C
 
 Documentation these decisions make false, to be trued as part of the arc:
 
-- **I-1:** [confirmed] [[ConnectionsPM]] — §Syntax + Scope ("the piped tail renders as plain text beside the styled title") becomes false; §Rendering's "right-click pops a native menu whose one action is **Open Preview**" becomes false; §The Rename Cascade's two-pattern sweep becomes false; §Resolution's ambiguous state gains the path escape; §Prospects loses both **Aliases** and **Duplicate disambiguation**.
+- **I-1:** [confirmed] [[ConnectionsPM]] — §Syntax + Scope loses both "the piped tail renders as plain text beside the styled title" and "one sweep rewrites `[[` and `![[` together"; §Rendering's "right-click pops a native menu whose one action is **Open Preview**" becomes false; §Autocomplete's form list gains a third form and the alias mode; §Prospects loses **Aliases** only — **Duplicate disambiguation stays**, since it is now explicitly sequenced after. §Resolution is untouched: the three states stand unchanged without path qualification.
 - **I-2:** [confirmed] [[ContextPM]] — §Immediate Work's display-alias line resolves; §Next-Feature Candidates' **Page aliases** entry is retired outright, not completed; §Known Issues' caret-placement line resolves with B-5.
 - **I-3:** [confirmed] [[MarkdownPM]] — the autocomplete's form list, the ⌘K link gesture's caret behavior, and the connection menu's actions all change.
 - **I-4:** [confirmed] [[ConfigurationPM]] — gains the "Remove Title on Link Change" personalization key.
-- **I-5:** [confirmed] [[ArchitecturePM]] — nexus.db gains a per-page scope, described as the first per-page record rather than an alias-specific store.
-- **I-6:** [assumed] `shared/connections.ts`'s own header comment states "Nothing authors or renders an alias yet" and `rewrite.ts`'s states an alias "rides through" — both become false and are lint by the project's own comment rule.
+- **I-5:** [confirmed] [[ArchitecturePM]] — nexus.db gains a per-page scope, described as **joining** the existing PageID-keyed scopes. Never as the first per-page record: `folds` already is one (per C-6). ArchitecturePM holds no enumerated scope list, so this is a prose edit at its `local_state` paragraph rather than a line-targeted one.
+- **I-6:** [confirmed] `shared/connections.ts`'s header ("Nothing authors or renders an alias yet"), `cellStatic.tsx`'s alias-tail comment, and `rewrite.ts`'s two-pattern header all become false, and a comment citing dead behavior is lint by the project's own rule.
 
 ### Core (must-have)
 
@@ -138,9 +137,10 @@ Documentation these decisions make false, to be trued as part of the arc:
 - Edit Link strips the alias from the new link and keeps it in the page's remembered list, governed by the Pages-section toggle.
 - Per-page alias memory in nexus.db, written on authoring, offered as autocomplete, forgettable by a hover-revealed ×.
 - `[Title](Page)` resolving internally alongside `[[ ]]`, joining the rename cascade, with page autocomplete inside `( )` and the caret returning to the title slot.
-- Path qualification — `[[Folder/Page|Alias]]` — with path-keyed resolution and the move / folder-rename cascade that keeps it true.
 
 #### Prospects (allowed later, not now)
+
+- **Duplicate-title disambiguation by path** — `[[Folder/Page|Alias]]`, its path-as-tiebreaker resolution, the move-cascade gate, the prefix-preserving rewrite, the main-side title index, and the journal that hardens the triggers it adds. Designed and twice reviewed; §G holds the settled shape. It also needs a path-authoring affordance the picker doesn't have — a disambiguation feature you can only use by hand-typing isn't one.
 
 - **The alias-as-tiebreaker resolution** — using a page's remembered aliases to narrow an ambiguous title, as a pure narrowing that abstains unless exactly one candidate claims the alias. Elegant and free of new syntax, but it makes resolution device-dependent: the same body reads as a working link where the memory exists and a muted ambiguous one where it doesn't. Path qualification answers the same gap deterministically and on-page, and two mechanisms resolving one ambiguity would be a second writer.
 - **A dedicated alias-management pane** — a surface for reviewing and curating a page's remembered aliases wholesale, rather than forgetting them one at a time through the picker's ×. Deferred to V2; the picker's × is the only forget gesture this arc ships. Don't-foreclose: the memory is per-page and PageID-keyed, so a pane reads the same scope without a storage change.

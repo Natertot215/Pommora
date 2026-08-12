@@ -90,7 +90,7 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 | Doc | The specific claim | What makes it false | Task |
 | --- | --- | --- | --- |
 | PommoraPRD.md:151 | "just the bracketed title, **no embedded id or alias**" | an alias is authored and displayed | 12 |
-| **"the sole connection syntax"** — PommoraPRD:151 · PommoraPRD:198 · ConnectionsPM:13 · CLAUDE.md:75 | one claim, four documents; all four are rewritten together | `[]()` resolves internally | 12 |
+| **"the sole connection syntax"** — PommoraPRD:151 · PommoraPRD:198 · ConnectionsPM:13 · CLAUDE.md (codebase-map annotation, ~line 74 — a line number that moves; find it by phrase) | one claim, four documents; all four are rewritten together | `[]()` resolves internally | 12 |
 | ConnectionsPM:17 | "the piped tail renders as plain text beside the styled title" | the alias becomes the display text | 12 |
 | ConnectionsPM:19 | "one sweep rewrites `[[` and `![[` together" *(§Syntax + Scope, **not** §The Rename Cascade)* | a third pattern joins the sweep | 12 |
 | ConnectionsPM:37 | "right-click pops a native menu whose one action is **Open Preview**" | two actions join it | 12 |
@@ -100,8 +100,9 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 | ContextPM:26 | the **Page aliases** entry | retired, not completed | 12 |
 | ContextPM:82 | the caret-placement line | fixed | 12 |
 | MarkdownPM:68 | "Connections in cells — … (**alias-free**, since cell encoding escapes the pipe)" | `cellToDisplay` unescapes the pipe before tokenizing, so aliases render in cells | 12 |
-| ConfigurationPM | the personalization key list | gains the strip toggle | 12 |
-| ArchitecturePM | the nexus.db scope list | gains the per-page alias scope | 12 |
+| ConfigurationPM | its personalization prose — **no enumerated key list exists**, so this is a prose edit, not a line-targeted one | gains the strip toggle | 12 |
+| ArchitecturePM | its `local_state` paragraph — **no enumerated scope list exists**; DDL is declared canonical in `db/schema.ts` | gains the per-page alias scope, described as *joining* the PageID-keyed scopes, never as the first | 12 |
+| `rewrite.ts` header | its two-pattern description | a third pattern joins the sweep | 12b |
 | `shared/connections.ts` header | "Nothing authors or renders an alias yet" | both now happen | 3 |
 | `cellStatic.tsx:39` | "the editor leaves `\|alias` plain-visible, so match it" | neither does now | 4 |
 
@@ -109,7 +110,7 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 - `rg -F "Nothing authors or renders an alias yet" src` → expect 0.
 - `rg -F "plain-visible" src` → expect 0.
-- `rg -F "sole connection syntax" .claude` → expect 0 outside `Sessions/`. Legitimate hits: session transcripts are frozen records.
+- `rg -F "sole connection syntax" .claude` → expect 0 outside `Sessions/` **and `Planning/`**. Legitimate hits: session transcripts are frozen records, and this plan quotes the phrase twice by necessity — a sweep that counts its own instructions can never pass.
 - Control: `rg -F "pageLinkPattern" src` → **14**. Zero here means the sweep never ran.
 
 **Hazard Window:** Task 2 changes `Token`'s shape while three consumers and one projection still read the old field. Until Task 4 lands, an aliased link resolves incorrectly somewhere — no interactive verification of connections is meaningful inside that window, and Phase 1's running-thing pass defers to Gate 1.
@@ -127,10 +128,13 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Files:**
 - Modify `src/renderer/src/MarkdownPM/tokens/index.ts` — the `Token` type and `wikiLinkTokens`.
 - Modify `src/renderer/src/MarkdownPM/editor/decorations.ts` — `visibleInlineTokens`'s object literal.
+- Modify `src/renderer/src/MarkdownPM/input/format.ts` — `toggleConnection`, the **fourth** `contentRange` consumer.
 
 **Interfaces**
 - Produces: `Token.resolveRange?: Span` — present on `wikiLink` with an alias only; absent means `contentRange` is the resolution key.
-- Assumed by: Tasks 3, 4 (the resolve sites) and Task 7 (the menu's span).
+- Assumed by: Tasks 3, 4 (the resolve sites) and Task 8 (both caret placements read the two spans).
+
+**Survivors — the ⌘⇧K unwrap deliberately flips.** `toggleConnection` slices `contentRange` to unwrap a link, so `[[Q3 Plan|the plan]]` unwraps to `Q3 Plan` today and to `the plan` after this. **That is correct and is kept**: removing a link should leave the words that were in the sentence, not rewrite the prose to a title the reader never saw. It is a real behavior change on a bound shortcut (`Mod-Shift-k`) and a native editor-menu item, so it gets its own test rather than flipping untested. The full census of `contentRange` readers is therefore **five**, not three: the decoration, the hit-test, `cellStatic`, and `format.ts`'s two toggles.
 
 **Failure half:** no alias → `resolveRange` absent, `contentRange` unchanged, every existing caller behaves identically. Empty alias (`[[T|]]`) → treated as no alias, so the pipe is never display text. Offset-shifted projection → the field shifts by the same `a` offset as every other span, or it points into the wrong line.
 
@@ -199,7 +203,9 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 **Why:** `wikiLinkAt`/`resolvedPageAt` is shared by mouseover, click, and contextmenu, and two separate needs land on it: navigation must stop swallowing caret placement at a link's edges (ContextPM deferred this bug to this arc by name), and the menu needs a span for any wikiLink, resolved or not. Split across two tasks, whichever lands second silently redefines the region for all three handlers. One task owns it.
 
-**Files:** Modify `src/renderer/src/MarkdownPM/editor/connections.ts` — the hit-test and all three handlers.
+**Files:**
+- Modify `src/renderer/src/MarkdownPM/editor/connections.ts` — the hit-test and all three handlers.
+- Modify `src/renderer/src/MarkdownPM/editor/links.ts` — `externalLinkAt` uses the **identical** inclusive test, and Task 12a makes markdown links navigate too. Fixed here or the arc creates the surface and leaves the twin bug standing on it.
 
 **Failure half:** a click on a link's rendered *text* still navigates. With `[[Title|` hidden, an aliased link's visible extent **is** its content — so the edge region must be computed from the token's range, not from what is visible, or the links Rename targets have no clickable edge at all.
 
@@ -223,6 +229,9 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 - Modify `src/renderer/src/MarkdownPM/connections/index.ts` — `ConnectionsApi.menu`'s signature.
 - Modify `src/renderer/src/MarkdownPM/editor/connections.ts` — the contextmenu handler.
 - Modify `src/renderer/src/Embeds/connectionMenu.ts` — **the shared implementation**; the four hosts only pass its reference.
+
+**Interfaces**
+- `ConnectionsApi.menu` becomes `menu(page, ctx: { range, editable, apply })`. A range alone is insufficient: `showConnectionMenu` is a fire-and-forget free function that handles the resolved action itself, so after the async menu returns, something must dispatch into **the editor instance that was right-clicked** — that is `apply`. `editable` must travel too, because the items are *rendered* inside `showConnectionMenu`; a flag read only at the handler cannot suppress them. NavWindow and BlockSurface pass `editable: false` and no `apply`.
 - Modify `src/shared/connections.ts` — `ConnMenuAction` gains `'rename'` and `'editLink'`; `src/main/connMenu.ts` — the two items.
 
 **Derivation**
@@ -247,11 +256,15 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Files:**
 - Create `src/renderer/src/MarkdownPM/editor/linkEdit.ts` — both caret placements, the strip, the memory write.
 - Create the caret helper beside `focusAt` in `src/renderer/src/MarkdownPM/editor/input.ts` — "seat the caret inside this token's span" exists nowhere, and three bespoke inline dispatches already do variants of it.
-- Modify `src/renderer/src/MarkdownPM/autocomplete.ts` — bound the link-form query to the title span.
+- Modify `src/renderer/src/MarkdownPM/autocomplete.ts` — bound the link-form query to the title span, and give `connectionInsert` an alias branch.
+- Modify `src/renderer/src/MarkdownPM/useConnectionAutocomplete.ts` — **`commit()` is the write that destroys an alias**, and it appears in no other task.
 - Modify `src/renderer/src/MarkdownPM/editor/input.ts` — the `]` refusal.
+
+**The commit rule (decide before writing, not inside it):** `commit()` replaces `ac.from..ac.to` with `connectionInsert(page.title)`, which has no alias branch — so retargeting an aliased link through the picker destroys the alias *regardless of the toggle*, and bounding only `to` would corrupt the link into `[[New]]|Alias]]`. The toggle is otherwise unobservable. **Rule:** `commit()` reads the existing alias from the token it is replacing and re-emits it when the toggle is off, drops it when on. That is the only place B-6 becomes real.
 
 **Interfaces**
 - Produces: the alias-authored signal Task 10's slice writes through. Assumed by: Task 10, Task 11.
+- Consumes: `Token.resolveRange` / `contentRange` from Task 2 — Rename seats in the alias span, Edit Link at the title span's end.
 
 **Failure half:** Rename with no alias inserts `|` and seats the caret after it. Edit Link with no alias is a plain caret placement with nothing to strip. An alias emptied to nothing collapses the pipe. A write failing leaves the slice unchanged rather than showing an alias that didn't persist.
 
@@ -317,7 +330,10 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 **Why:** One component, three purposes — title suggestions, alias suggestions, and the `( )` target are modes of the single existing state machine, never rival panels contending for one caret.
 
-**Files:** Modify `src/renderer/src/MarkdownPM/{useConnectionAutocomplete,autocomplete}.ts`, `AutocompletePanel.tsx`; reuse `ChipRemoveButton`.
+**Files:** Modify `src/renderer/src/MarkdownPM/{useConnectionAutocomplete,autocomplete}.ts`, `AutocompletePanel.tsx`, **both candidate closures** (`MarkdownPM/index.tsx` and `Tables/CellEditor.tsx` — the latter ignores `form` entirely today, which is exactly the table-cell question below), and `connectionInsert`'s alias branch; reuse `ChipRemoveButton`.
+
+**Interfaces**
+- The panel's row model becomes a union — a page row and an alias row. It is `ConnPage[]`-typed end to end today (props, `commit`, `AcCtl.pick`), and an alias suggestion is a string; picking one must insert the alias, not `[[alias]]`.
 
 **Failure half:** a page with no remembered aliases shows no panel rather than an empty one. The × on the last entry closes the panel. The empty-query policy is currently a hardcoded `form === 'link'` test and must learn the third mode.
 
@@ -356,7 +372,9 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Survivors:** `.md-link`, `.md-link-invalid`, `.md-link-url` unchanged and un-renamed; the `link` token kind stays single. Internal versus external is one resolution branch, never a second grammar and never two predicates that could disagree.
 
 **Steps:**
-- [ ] Write the encode/decode pair — no codec exists; follow the `assetUrl` precedent of **`encodeURI`, not `encodeURIComponent`**, so `/` survives. Wrap every decode in a try/catch returning the raw string.
+- [ ] Write the encode/decode pair — no codec exists. Start from the `assetUrl` precedent of **`encodeURI`, not `encodeURIComponent`** so `/` survives, then **escape `(` and `)` as `%28`/`%29` on top of it**: neither built-in encodes parens, and `markdownLinkRegex`'s target group is `[^)\r\n]+`, so a page titled `Atomic Habits (Book)` yields a target truncated at the first `)` plus a stray `)` in the line — a broken link *and* raw syntax, failing both Acceptance and D-6.
+- [ ] **Rule the `]`-bearing title.** `markdownLinkRegex`'s label group is `[^\]\r\n]+`, so `[Notes [WIP] final](…)` produces **zero tokens** — no link, no colour, raw source in the line, and invisible to the cascade. `pageLinkPattern` deliberately tolerates `]` in titles, so this title class is legal and reachable. Escape the label as `\]` per CommonMark, or refuse the markdown form for those titles — state which.
+- [ ] Wrap every decode in a try/catch returning the raw string.
 - [ ] Write one resolver returning the three-way outcome; try page resolution (extension stripped) before the external gate.
 - [ ] Route an internal hit to navigation, wearing the connection colour.
 - [ ] Apply the same classification in `cellStatic` — `isValidLink('My%20Page')` is false, so without this a table cell shows a resolved internal link as broken.
@@ -370,7 +388,7 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 **Why:** `[]()` links now name pages, so a rename must rewrite them or every markdown link breaks the first time its target is renamed.
 
-**Files:** Modify `src/main/connections/{rewrite,scan}.ts`.
+**Files:** Modify `src/main/connections/{rewrite,scan}.ts`. **Consumes Task 12a's shared codec** — the decode runs main-side too, and `rewritePageSerialized` calls `rewrite(content)` unwrapped while `mutate.ts` catches any throw by **reverting the rename**. So one `%`-bearing body turns every page rename in the nexus into a permanent failure whose message names nothing.
 
 **Must agree:** `mentionsTitle` and `rewriteConnections` must agree on which links name a page — a prefilter that misses what the rewriter would change means a body never gets opened. One test crosses both.
 
@@ -380,7 +398,8 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 **Steps:**
 - [ ] Add the `[]()` pattern to both the prefilter and the rewriter, percent-encoding preserved.
-- [ ] **Free win while here:** `mentionsTitle` is a full parse with no cheap gate, and the cascade reads every `.md` without touching `walkCache`. Add a `body.includes` substring gate before the parse.
+- [ ] **Free win while here, and the gate must be on *syntax*, not the title.** `mentionsTitle` is a full parse with no cheap gate, and the cascade reads every `.md` without touching `walkCache`. Add `body.includes('[[') || body.includes('](')` before the parse. **Never gate on the title itself** — `body.toLowerCase().includes(normalizedKey)` passes the entire existing suite while silently breaking the NFC invariant `normalizeTitle` exists for, so an NFD-composed body would stop matching its NFC title and a rename would skip it. Nothing in the suite crosses `mentionsTitle` with NFD.
+- [ ] Add a `%`-bearing-body test — the decode must not throw a rename into a revert.
 - [ ] Do **not** reach for `sweepGovernedRoots` — it is frontmatter-shaped and this cascade is body-shaped.
 - [ ] Update `rewrite.ts`'s header comment.
 - [ ] Tests: `[]()` rewritten; code-fenced samples untouched; a URL with a colliding last segment untouched; the prefilter/rewriter agreement test.
@@ -431,7 +450,8 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Why:** The falsifying commit is the only moment anyone knows what went false. Note the **Made False** table's `[[ ]]`-is-sole-syntax rows span four documents including the PRD, and the sweep row lives in §Syntax + Scope rather than §The Rename Cascade.
 
 **Steps:**
-- [ ] Work the table row by row, at the cited line.
+- [ ] Work the table row by row. Most rows cite a line; three cite a *paragraph* because the document holds no enumerated list to target, and one cites a phrase because its line number moves.
+- [ ] Keep ConnectionsPM's **Duplicate disambiguation** prospect — it is Sequenced After, not shipped. Only **Aliases** retires.
 - [ ] Retire ConnectionsPM's **Aliases** prospect and ContextPM's **Page aliases** entry; resolve ContextPM's Immediate Work and caret-bug lines.
 - [ ] Run the Dead Vocabulary sweep against its control (expect 14).
 - [ ] `node scripts/check-atlas.mjs` from `Pommora/` — expect green.
