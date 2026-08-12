@@ -66,15 +66,8 @@ import { TextPicker } from '@renderer/design-system/components/TextPicker'
 import { numberDivisor } from '../PropertyEditing/formatValue'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { announce } from '@renderer/design-system/interactions/a11y'
-import {
-  findScroller,
-  SEEK_GLIDE,
-  scrollGlide,
-  startAutoScroll,
-} from '@renderer/design-system/interactions/autoscroll'
-import { DEFAULT_NEW_NAME } from '@shared/mutate'
-import { filterSeeds } from '../pipeline/creationSeeds'
-import { orderWithSlot, tieOrderWith } from '../creationOrder'
+import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
+import { useViewCreation } from '../useViewCreation'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
 import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from './linkValue'
@@ -110,11 +103,6 @@ function DatetimeCellPicker({
     </PickerMenu>
   )
 }
-
-// Sort criteria whose value a new page can inherit from its anchor — single-value user properties.
-// Title and Modified aren't property ids and multi-value types don't copy; under those the row
-// simply lands where the sort puts it.
-const SEEDABLE_SORT_TYPES = new Set(['status', 'select', 'checkbox', 'number', 'datetime'])
 
 /** A Collection uses its own schema; a Set inherits its ancestor Collection's (schema lives only on
  *  the Collection). [] when the owning Collection can't be found. */
@@ -1101,6 +1089,31 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   editingRef.current = editing
   // A native menu owns the pointer while it's up — no hover is real until it resolves.
   const menuOpenRef = useRef(false)
+  // The shared creation engine. The config getter runs only at gesture time, so it may close
+  // over render-scope consts declared below the loading/empty returns.
+  const creation = useViewCreation(() => ({
+    source,
+    view: liveView,
+    schema,
+    values,
+    setValueOverride,
+    effectiveValues,
+    structuralOrder,
+    viewOrders,
+    persistViewOrder,
+    setManualOverride,
+    rowBand: rowGroup,
+    bandBucket: (key: string) => (subGrouped ? (subTargets.get(key)?.bucket ?? null) : key),
+    canReassign,
+    groupPropId,
+    groupPropType,
+    setPaths,
+    collapsed,
+    toggleCollapse,
+    viewRootRef: viewRef,
+    onCreated: openCreateRename,
+  }))
+  const { bandAdd, createAdjacent: newPageAdjacent } = creation
   useEffect(
     () => () => {
       for (const t of Object.values(ghostTimers.current)) if (t !== null) window.clearTimeout(t)
@@ -1368,7 +1381,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (!path || !destPath || destPath === path.slice(0, path.lastIndexOf('/'))) return
     // The band drop carries no index — the moved row joins the destination's end, but the order
     // still writes whole: absent, main's fallback re-ranks the destination by title.
-    const order = [...containerPagesOf(destPath), pageId]
+    const order = [...creation.containerPages(destPath), pageId]
     void mutate({ op: 'movePage', path, newParentPath: destPath, order })
   }
   // Within-group reorder commit — tableDnd hands the new flat order + the reordered group's key. An
@@ -1403,125 +1416,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     persistViewOrder(orderIds)
   }
 
-  // ── In-view creation. One act on every trigger: the page exists on disk as Untitled the moment
-  // the gesture fires — seeds and order riding the create — and the title cell opens as an
-  // ordinary uncommitted rename whose field is empty. The pipeline owns placement throughout.
+  // ── In-view creation — the shared engine (useViewCreation, called with the early hooks): the
+  // page exists on disk as Untitled the moment the gesture fires, and the title cell opens as an
+  // ordinary uncommitted rename whose field is empty. The table's naming surface is its own
+  // cell editor.
   const titleColId = columns.find((c) => c.kind === 'title')?.id
-  // A page a filter cleanly implies values for gets them stamped; gesture-context seeds spread
-  // AFTER these, so where they disagree the gesture wins.
-  const impliedSeeds = (): Record<string, PropertyValue> =>
-    filterSeeds(liveView.filter, liveView.filter_enabled !== false, schema)
-  // The created page's seeds reach the pipeline the way a band-drop's reassign does — the value
-  // cache never re-reads mid-session, so a disk-only stamp would resolve blank until next open.
-  const patchSeedValues = (pageId: string, seeds: Record<string, PropertyValue>): void => {
-    const entries = Object.entries(seeds)
-    if (entries.length === 0) return
-    setValueOverride((prev) => {
-      let patched = (values[pageId] ?? { id: pageId }) as Record<string, unknown>
-      for (const [propId, value] of entries) {
-        const def = schema.find((d) => d.id === propId)
-        if (def) patched = applyValueAtRoot(patched, def, value)
-      }
-      return { ...prev, [pageId]: patched as PageFrontmatter }
-    })
-  }
-  const createPageIn = (
-    parentPath: string,
-    seeds: Record<string, PropertyValue>,
-    order: string[] | undefined,
-    then: (pageId: string) => void,
-  ): void => {
-    void mutate(
-      {
-        op: 'createPage',
-        parentPath,
-        name: DEFAULT_NEW_NAME,
-        ...(Object.keys(seeds).length ? { seeds } : {}),
-        ...(order ? { order } : {}),
-      },
-      (created) => {
-        patchSeedValues(created.id, seeds)
-        then(created.id)
-      },
-    )
-  }
-  const openCreateRename = (pageId: string): void => {
+  const openCreateRename = (created: { id: string }): void => {
     if (titleColId)
-      setEditing({ rowId: pageId, colId: titleColId, mode: 'editor', fromCreate: true })
-  }
-  const glideToRow = (pageId: string): void => {
-    const viewEl = viewRef.current
-    if (!viewEl) return
-    const scroller = findScroller(viewEl, 'y')
-    if (!scroller) return
-    scrollGlide(
-      scroller,
-      // Re-read per frame: the row's seat sharpens as the band it lives in finishes disclosing.
-      () => {
-        const el = viewEl.querySelector<HTMLElement>(`[data-rid="${CSS.escape(pageId)}"]`)
-        if (!el) return scroller.scrollTop
-        const rowTop = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top
-        return scroller.scrollTop + rowTop - (scroller.clientHeight - el.offsetHeight) / 2
-      },
-      SEEK_GLIDE,
-    )
-  }
-  // The full child list of the container a create targets — never the view's visible rows: an
-  // order array built post-filter permanently re-ranks every row the filter was hiding.
-  const containerPagesOf = (path: string): string[] => {
-    const walk = (node: CollectionNode | SetNode): string[] | null => {
-      if (node.path === path) return node.pages.map((p) => p.id)
-      for (const s of node.sets ?? []) {
-        const hit = walk(s)
-        if (hit) return hit
-      }
-      return null
-    }
-    return walk(source) ?? []
-  }
-  const bandAdd = (setKey: string): void => {
-    const setPath = setPaths.get(setKey)
-    if (!setPath) return
-    if (collapsed.has(setKey)) toggleCollapse(setKey)
-    const seeds = impliedSeeds()
-    const order = structuralOrder
-      ? orderWithSlot(containerPagesOf(setPath), null, 'last')
-      : undefined
-    createPageIn(setPath, seeds, order, (pageId) => {
-      openCreateRename(pageId)
-      glideToRow(pageId)
-    })
-  }
-  // New Page Above / Below: born beside its anchor — the anchor's group value and sort-criteria
-  // values tie it there, and the order write breaks the tie at the gesture slot.
-  const newPageAdjacent = (row: ViewRow, where: 'above' | 'below'): void => {
-    const parentPath = row.path.slice(0, row.path.lastIndexOf('/'))
-    const seeds = impliedSeeds()
-    const gKey = rowGroup.get(row.id)
-    if (groupPropId && canReassign && gKey !== undefined) {
-      const bucket = subGrouped ? (subTargets.get(gKey)?.bucket ?? null) : gKey
-      const v = groupKeyToValue(bucket ?? UNGROUPED, groupPropType)
-      if (v !== null) seeds[groupPropId] = v
-    }
-    for (const criterion of liveView.sort ?? []) {
-      const t = declaredType(criterion.property_id, schema)
-      if (!t || !SEEDABLE_SORT_TYPES.has(t)) continue
-      const v = resolveFieldValue(row, criterion.property_id, schema)
-      if (v.kind !== 'null' && !isBlankValue(v)) seeds[criterion.property_id] = v
-    }
-    const order = structuralOrder
-      ? orderWithSlot(containerPagesOf(parentPath), row.id, where)
-      : undefined
-    createPageIn(parentPath, seeds, order, (pageId) => {
-      // Every live order settles in the create's own act — a newborn absent from a stale array
-      // ranks last (the [source] self-heal is a one-frame flash; nothing re-emits viewOrders).
-      const allIds = flattenContainer(source, effectiveValues).rows.map((r) => r.id)
-      const splice = (existing: string[] | undefined): string[] =>
-        tieOrderWith(existing, allIds, pageId, row.id, where)
-      setManualOverride((m) => (m ? splice(m) : m))
-      if (!structuralOrder || viewOrders[view.id]) persistViewOrder(splice(viewOrders[view.id]))
-      openCreateRename(pageId)
-    })
+      setEditing({ rowId: created.id, colId: titleColId, mode: 'editor', fromCreate: true })
   }
   // The grip's right-click menu — page meta plus the New Page pair, on the block grips'
   // right-click-vs-drag interaction model.

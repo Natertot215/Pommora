@@ -36,6 +36,7 @@ import {
 } from '../pipeline/contextOptions'
 import { flattenContainer, groupsStructurally } from '../pipeline/group'
 import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
+import { useViewCreation } from '../useViewCreation'
 import { declaredType } from '../pipeline/value'
 import { resolveView } from '../pipeline/resolveView'
 import { useValuesEpoch } from '../useValuesEpoch'
@@ -327,6 +328,33 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const refreshValues = (): void => {
     void window.nexus.loadValues(source.path).then((v) => setValues(v))
   }
+  // The shared creation engine. The config getter runs only at gesture time, so it may close
+  // over consts declared further down. `structuralOrder: false` always: Cards' live order is
+  // only ever viewOrders — the table's predicate would route creates onto a page_order channel
+  // Cards never reads, landing every newborn last.
+  const beginRename = useSession((s) => s.beginRename)
+  const creation = useViewCreation(() => ({
+    source,
+    view,
+    schema,
+    values,
+    setValueOverride,
+    effectiveValues,
+    structuralOrder: false,
+    viewOrders,
+    persistViewOrder,
+    setManualOverride,
+    rowBand,
+    bandBucket: (key: string) => key,
+    canReassign,
+    groupPropId,
+    groupPropType,
+    setPaths,
+    collapsed,
+    toggleCollapse,
+    viewRootRef: rootRef,
+    onCreated: (created) => beginRename(created.path, true, 'detail'),
+  }))
   const handlersRef = useRef({
     commitValue,
     setColumnStyle,
@@ -337,6 +365,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     openValuePicker,
     openAddPicker,
     refreshValues,
+    newPageBelow: creation.createAfter,
   })
   handlersRef.current = {
     commitValue,
@@ -348,6 +377,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     openValuePicker,
     openAddPicker,
     refreshValues,
+    newPageBelow: creation.createAfter,
   }
   const cardApi = useMemo(
     () => ({
@@ -362,6 +392,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       onOpenValuePicker: (req: ValuePickerRequest) => handlersRef.current.openValuePicker(req),
       onOpenAddPicker: (req: AddPickerRequest) => handlersRef.current.openAddPicker(req),
       onRefreshValues: () => handlersRef.current.refreshValues(),
+      onNewBelow: (row: ViewRow) => handlersRef.current.newPageBelow(row),
     }),
     [],
   )
@@ -386,6 +417,13 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const rowById = useMemo(() => {
     const m = new Map<string, ViewRow>()
     for (const r of flattenGroups(groups)) m.set(r.id, r)
+    return m
+  }, [groups])
+  // row id → band key, the creation engine's group-seed source (Cards flattens its groups, so
+  // no per-row group index exists elsewhere).
+  const rowBand = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const g of groups) for (const r of flattenGroups([g])) m.set(r.id, g.key)
     return m
   }, [groups])
 
@@ -415,10 +453,13 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
       full.push(...without.slice(0, at), activeId, ...without.slice(at))
     }
     setManualOverride(full)
-    // The wire write lands in the local copy too — nothing re-reads viewOrders mid-session, so
-    // a stale local array outlives the override that masks it (TableView.persistViewOrder's law).
-    setViewOrders((m) => ({ ...m, [view.id]: full }))
-    void window.nexus.viewOrders.set(view.id, full)
+    persistViewOrder(full)
+  }
+  // The wire write lands in the local copy too — nothing re-reads viewOrders mid-session, so
+  // a stale local array outlives the override that masks it (the table's law, same name).
+  const persistViewOrder = (ids: string[]): void => {
+    setViewOrders((m) => ({ ...m, [view.id]: ids }))
+    void window.nexus.viewOrders.set(view.id, ids)
   }
   const onCardDrop = (activeId: string, toZone: string, toIndex: number): void => {
     const from = groups.find((g) => flattenGroups([g]).some((r) => r.id === activeId))?.key
@@ -561,6 +602,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
               collapsed={isCollapsed}
               onToggle={() => toggleCollapse(g.key)}
               showAdd={bandShowsAdd(g.kind)}
+              onAdd={setPaths.has(g.key) ? () => creation.bandAdd(g.key) : undefined}
               headless={flatMode}
               fill
             >
@@ -590,6 +632,7 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                     onOpenValuePicker={cardApi.onOpenValuePicker}
                     onOpenAddPicker={cardApi.onOpenAddPicker}
                     onRefreshValues={cardApi.onRefreshValues}
+                    onNewBelow={cardApi.onNewBelow}
                     allowInlineRemove={effectiveZoom >= 0.8}
                   />
                 ))}
@@ -715,6 +758,7 @@ interface PageCardProps {
   onOpenValuePicker: (req: ValuePickerRequest) => void
   onOpenAddPicker: (req: AddPickerRequest) => void
   onRefreshValues: () => void
+  onNewBelow: (row: ViewRow) => void
   draggable: boolean
   /** False when the embed zoom shrinks chips too far — drops multi-select's inline ×. */
   allowInlineRemove: boolean
@@ -936,6 +980,7 @@ const PageCard = memo(function PageCard({
   onOpenValuePicker,
   onOpenAddPicker,
   onRefreshValues,
+  onNewBelow,
   draggable,
   allowInlineRemove,
 }: PageCardProps): React.JSX.Element {
@@ -995,6 +1040,7 @@ const PageCard = memo(function PageCard({
     if (action === 'title:newtab') onOpen(row, true)
     else if (action === 'title:rename') setRenameOpen(true)
     else if (action === 'title:icon') setIconOpen(true)
+    else if (action === 'title:newbelow') onNewBelow(row)
     else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
     else if (action.startsWith('move:'))
       void mutate({ op: 'movePage', path: row.path, newParentPath: action.slice(5) })
@@ -1052,6 +1098,7 @@ const PageCard = memo(function PageCard({
       ref={drag?.setNodeRef}
       style={drag?.style}
       {...(drag?.handle ?? { role: 'button', tabIndex: 0 })}
+      data-rid={row.id}
       className={cx('page-card', drag?.isDragging && 'is-dragging')}
       onClick={(e) => {
         if (drag?.isDragging) return
