@@ -33,6 +33,12 @@ describe('toggleInline', () => {
     const doc = 'a [[Page]] b'
     expect(apply(doc, toggleInline(doc, 5, 5, 'connection'))).toBe('a Page b')
   })
+  // Unwrapping leaves the words that were in the sentence. For an aliased link those are the alias,
+  // not the title — removing a link shouldn't rewrite the prose to a name the reader never saw.
+  it('unwrapping an aliased connection leaves the alias behind, not the title', () => {
+    const doc = 'a [[Q3 Plan|the plan]] b'
+    expect(apply(doc, toggleInline(doc, 14, 14, 'connection'))).toBe('a the plan b')
+  })
 })
 
 describe('setHeading', () => {

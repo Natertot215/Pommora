@@ -1,6 +1,6 @@
 ## Alias-V1 — Implementation Plan
 
-> **Status:** written, pending review · Spec: `Planning/Alias-V1 — Decision Log.md` · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: `Planning/Alias-V1 — Decision Log.md` · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -142,12 +142,12 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Must agree:** `tokenize`'s output and `visibleInlineTokens`'s projection must carry identical field sets. One test asserts the projected token for an aliased link has the same `resolveRange` as the raw one, offsets aside — this is the test that would have caught the silent drop.
 
 **Steps:**
-- [ ] Add the optional `resolveRange` to `Token`.
-- [ ] In `wikiLinkTokens`, when group 2 is present and non-empty: `contentRange` = the alias span, `resolveRange` = the title span, and the leading marker grows to cover `[[Title|`.
-- [ ] Add `resolveRange` to `visibleInlineTokens`'s literal, offset by `a` like every sibling span.
-- [ ] Add the projection-parity test **before** the implementation, and watch it fail on the missing field.
-- [ ] `npm run typecheck` + `npm run test` — expect green.
-- [ ] Commit: `feat(editor): a wikiLink token carries its resolution key apart from its display`
+- [x] Add the optional `resolveRange` to `Token`.
+- [x] In `wikiLinkTokens`, when group 2 is present and non-empty: `contentRange` = the alias span, `resolveRange` = the title span, and the leading marker grows to cover `[[Title|`.
+- [x] Carry every span through the projection — `shiftToken` in `tokens/index.ts` owns the re-basing, and `visibleInlineTokens` calls it instead of rebuilding a literal.
+- [x] Add the projection-parity test **before** the implementation, and watch it fail on the missing field.
+- [x] `npm run typecheck` + `npm run test` — expect green.
+- [x] Commit: `feat(editor): a wikiLink token carries its resolution key apart from its display`
 
 #### Task 3: Render the alias in the CodeMirror decoration
 
@@ -519,6 +519,8 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 
 ### Open Against Later Tasks
 ### Deviations
+- **Task 2 — the projection became a shared helper rather than one more field.** The plan added `resolveRange` to `visibleInlineTokens`'s literal; `shiftToken` in `tokens/index.ts` re-bases the whole token instead, and the projection calls it. `Token`'s owner now owns its re-basing, so the next span field can't be dropped there at all — and the parity test guards the helper rather than this one field. No later task changes shape.
+- **Task 2 — the `contentRange` census refines to one wikiLink toggle, not two.** `format.ts` holds two `contentRange` readers, but `toggleLink` reads `link` tokens whose shape doesn't move; only `toggleConnection` sees a wikiLink. Three further readers exist and are all provably unaffected: `decorations/intent.ts` returns early for `wikiLink`, `formatState.ts` tests connections on `range`, and `format.ts:68`'s `kind` excludes connection by type. The five sites Task 2 and Task 4 edit are unchanged.
 ### Lessons
 ### Sequenced After
 - **Duplicate-title disambiguation** — designed, twice reviewed, and deliberately deferred. §G of the decision log holds the settled shape; it needs a path-authoring affordance in the picker, a main-side title index, a path-aware cascade primitive, and the journal that hardens the triggers it adds.
