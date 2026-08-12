@@ -46,19 +46,29 @@ export function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
   return { title: line.text.slice(rs, re), range: abs(tk.range), content: abs(tk.contentRange) }
 }
 
-/** The resolved connection page a pointer gesture should act on, or null. Two carve-outs, both so a
- *  connection stays ordinary editable text: one the caret already sits inside is being edited, and
- *  the positions beside the syntax belong to caret placement rather than to the link. The edge is
- *  measured from the token's range rather than from what's drawn — a hidden `[[Title|` means an
- *  aliased link's visible extent IS its content, so there'd otherwise be no edge left to click. */
-function resolvedPageAt(view: EditorView, api: ConnectionsApi, event: MouseEvent): ConnPage | null {
+/** Whether the caret currently sits inside the token — a link being edited. Read at mousedown for a
+ *  click, since CM seats the caret before `click` fires and it would otherwise always read true. */
+function caretInside(view: EditorView, hit: WikiHit): boolean {
+  const head = view.state.selection.main.head
+  return view.hasFocus && head >= hit.range[0] && head <= hit.range[1]
+}
+
+/** The resolved connection page a pointer gesture should act on, or null. The positions beside the
+ *  syntax belong to caret placement rather than to the link, measured from the token's range rather
+ *  than from what's drawn — a hidden `[[Title|` means an aliased link's visible extent IS its
+ *  content, so there'd otherwise be no edge left to click. */
+function resolvedPageAt(
+  view: EditorView,
+  api: ConnectionsApi,
+  event: MouseEvent,
+  skipWhenEditing = false,
+): ConnPage | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
   const hit = wikiLinkAt(view, pos)
   if (!hit) return null
   if (pos < hit.content[0] || pos > hit.content[1]) return null
-  const head = view.state.selection.main.head
-  if (view.hasFocus && head >= hit.range[0] && head <= hit.range[1]) return null
+  if (skipWhenEditing && caretInside(view, hit)) return null
   const res = api.resolve(hit.title)
   return res.status === 'resolved' && res.page ? res.page : null
 }
@@ -67,7 +77,16 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
   // The pending hover intent — armed on mouseover of a resolved connection, cancelled the
   // moment the pointer leaves it (mouseout fires per CM6 text span; re-entry re-arms fresh).
   const intent = hoverIntent()
+  // Was the caret in this link BEFORE the press moved it? CM seats the caret on mousedown, so the
+  // click handler can no longer tell "I was editing this" from "I just clicked it" on its own.
+  let editingOnPress = false
   return EditorView.domEventHandlers({
+    mousedown(event, view) {
+      const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
+      const hit = pos == null ? null : wikiLinkAt(view, pos)
+      editingOnPress = hit ? caretInside(view, hit) : false
+      return false
+    },
     mouseover(event, view) {
       const api = getApi()
       if (!api?.hover) return false
@@ -76,7 +95,8 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       // decoration span warrants the layout read + line tokenize below.
       const el = (event.target as HTMLElement).closest?.('.md-connection-resolved')
       if (!el) return false
-      const page = resolvedPageAt(view, api, event)
+      // A dwell reads the live caret safely — unlike a click, hovering never moves it.
+      const page = resolvedPageAt(view, api, event, true)
       if (!page) return false
       intent.arm(() => api.hover?.(page, el))
       return false
@@ -92,6 +112,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       // whatever the click opened.
       intent.cancel()
       if (event.button !== 0 || event.detail !== 1 || !view.state.selection.main.empty) return false
+      if (editingOnPress) return false // already inside it when you pressed — you're editing, not following
       const api = getApi()
       if (!api) return false
       const page = resolvedPageAt(view, api, event)
