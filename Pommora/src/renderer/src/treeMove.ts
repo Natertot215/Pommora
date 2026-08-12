@@ -339,8 +339,9 @@ export function patchNodeInTree(
   })
 }
 
-/** Stable order-by-id: listed ids in `order` order, unknown ids after in their current order. */
-function byOrder<T extends { id: string }>(arr: T[], order: string[]): T[] {
+/** Stable order-by-id: listed ids in `order` order, unknown ids after in their current order.
+ *  Exported so an optimistic view-local override ranks by the same law the tree patch applies. */
+export function byOrder<T extends { id: string }>(arr: T[], order: string[]): T[] {
   const pos = new Map(order.map((id, i) => [id, i]))
   return [...arr].sort(
     (a, b) =>
