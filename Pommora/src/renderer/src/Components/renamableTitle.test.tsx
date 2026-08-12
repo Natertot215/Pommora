@@ -114,4 +114,18 @@ describe('the rename owner fence', () => {
     await act(async () => useSession.getState().beginRename(PATH, true))
     expect(inputs()[0].value).toBe('')
   })
+
+  it("an old field's release never kills a successor session whose row hasn't mounted", async () => {
+    // Main pushes begin-rename for a fresh create before the renderer's tree carries the row —
+    // the outgoing field's release must judge its OWN claim's path, not the new session's.
+    await act(async () => root.render(<Fields />))
+    await act(async () => useSession.getState().beginRename(PATH))
+    expect(inputs()).toHaveLength(1)
+    await act(async () => {
+      useSession.getState().beginRename('Other/New.md', true)
+      root.render(<span />)
+    })
+    await flushMicrotasks()
+    expect(useSession.getState().renamingPath).toBe('Other/New.md')
+  })
 })
