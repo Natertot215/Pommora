@@ -16,18 +16,23 @@ export type PageMetaAction =
 
 export function pageMetaMenuItems(
   alreadyOpen?: boolean,
-  opts: { preview?: boolean; newPages?: boolean } = {},
+  // `newPages`: 'pair' offers Above/Below (row surfaces); 'single' offers one "New Page" whose
+  // action is the flow-after (Below) path — a grid has no above.
+  opts: { preview?: boolean; newPages?: 'pair' | 'single' } = {},
 ): Array<{ label: string; action: PageMetaAction; separatorBefore?: boolean }> {
   return [
     ...(opts.preview ? [{ label: 'Open Preview', action: 'title:preview' as const }] : []),
     { label: alreadyOpen ? 'Open' : 'Open New Tab', action: 'title:newtab' },
     { label: 'Rename', action: 'title:rename', separatorBefore: true },
     { label: 'Change Icon', action: 'title:icon' },
-    ...(opts.newPages
+    ...(opts.newPages === 'pair'
       ? [
           { label: 'New Page Above', action: 'title:newabove' as const, separatorBefore: true },
           { label: 'New Page Below', action: 'title:newbelow' as const },
         ]
+      : []),
+    ...(opts.newPages === 'single'
+      ? [{ label: 'New Page', action: 'title:newbelow' as const, separatorBefore: true }]
       : []),
     { label: 'Delete', action: 'title:delete', separatorBefore: true },
   ]
