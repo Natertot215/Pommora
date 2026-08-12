@@ -439,12 +439,12 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
   - [x] Task 6 — One "New Page" on the card menu · `0c0d8f5b`
   - [x] Task 7 — The creation hook: one home, Cards consumes · `3a7f7c56`
   - [x] Task 8 — The empty naming field; one rename surface · `a744563e`
-- [ ] **Phase 4** — The Ghost
-  - [ ] Task 9 — Extract the mechanism; table refits · ``
-  - [ ] Task 10 — The ghost card + FLIP · ``
-- [ ] **Phase 4b** — The Sidebar Ghost (Addendum)
-  - [ ] Task 13 — GhostLeaf on the shared mechanism · ``
-  - [ ] Task 14 — Sidebar menus stand the ghost down · ``
+- [x] **Phase 4** — The Ghost · base `50f7b26a` · simplifier `3d33f8b9` · gate review folded at `511fc0b3` (stable suppress context value; the create flag set after its guard; Cards band-adds settle the tiebreaker so the newborn ranks last-in-band — the read-side title fallback was ranking it mid-band)
+  - [x] Task 9 — Extract the mechanism; table refits (10 hook tests) · `59bddcbb`
+  - [x] Task 10 — The ghost card + FLIP · `baefb115`
+- [x] **Phase 4b** — The Sidebar Ghost (Addendum) · rides Phase 4's gate
+  - [x] Task 13 — GhostLeaf on the shared mechanism · `26a7b585`
+  - [x] Task 14 — Sidebar menus stand the ghost down (main's popup resolves on dismissal) · `26a7b585`
 - [ ] **Phase 5** — Reconciliation & Closeout
   - [ ] Task 11 — Docs true up · ``
   - [ ] Task 12 — Closeout · ``
@@ -456,6 +456,8 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - **Known limit (gate-2 review, wontfix):** a card dropped *before a sub-set's cards* in a flattened structural band appends to the direct-children segment instead — no `page_order` can seat a direct child between sub-set pages under the flatten law; the DnD preview promises a slot the model can't hold. Recorded, not fixed.
 ### Deviations
 - **Task 5's verified cause — timing, not absence.** The optimistic set-order patch exists (the `moveSet` arm), but `store.mutate` awaits the IPC reply before patching, while the drop's zone transforms release synchronously — the row re-renders in the old order for the reply gap (the snap), then corrects (the jump). Fixed with the table's own pattern: a synchronous `setOrderOverride` in CardsView, cleared when a fresh `source` identity carries the canonical order (`24e17cf5`). The plan's first hypothesis (no optimistic patch) was already withdrawn at review; this is the second-layer truth.
+- **Accepted drift (gate 3-4 review):** `createAdjacent`'s completion re-reads the config at IPC-reply time, so a sub-100ms view switch between the create click and the reply would write the splice into the switched-to view's tiebreaker — practically unreachable by mouse; the fresher read is strictly better everywhere else. Recorded, not fixed.
+- **Format note:** `npx biome check` reports pre-existing indentation deviations on the nested JSX providers (Sidebar ×3, CardsView ×1) that the PostToolUse hook didn't reflow; `npm run lint` (the gate) is clean. Left for the standing never-run-Biome-manually rule — flag for Nathan if the files' next real edit doesn't absorb them.
 - **Task 1 divergence — `newPageAdjacent` needed the fence's host** (found by the sidebar scoping run): the shipped New Page Above/Below began its rename host-blind, so a sidebar-origin create whose page is also visible in an open table view would open its field in the detail pane. The `new-page-adjacent` push now echoes `ContextTarget.host` through to `beginRename` (`60884995`). The plan hadn't named this consumer; the fence's Derivation only swept field-*mounters*, not `beginRename` *callers* — the lesson rides below.
 ### Lessons
 - A fence over a shared slot must sweep the slot's *writers*, not only its readers: the Derivation enumerated field-mounters and missed the `beginRename` caller that decides where the field opens. Enumerate both ends of a slot when fencing it.
