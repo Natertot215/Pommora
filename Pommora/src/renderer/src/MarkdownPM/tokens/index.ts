@@ -204,7 +204,6 @@ export function tokenize(text: string): Token[] {
   return tokens
 }
 
-// A caret at a wikilink's `end` does NOT activate it (the closing `]]` was passed).
 export function activeTokenIndices(tokens: Token[], selStart: number, selEnd: number): Set<number> {
   const active = new Set<number>()
   tokens.forEach((tk, i) => {
@@ -214,7 +213,6 @@ export function activeTokenIndices(tokens: Token[], selStart: number, selEnd: nu
       return
     }
     const caret = selStart
-    if (caret === e && tk.kind === 'wikiLink') return
     if (caret >= s && caret <= e) active.add(i)
   })
   return active
