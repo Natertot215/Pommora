@@ -111,21 +111,14 @@
   height: 100%;
 }
 
-/* The hover ghost card — an empty bordered slot at the group's card size (it stretches to its
-   row like every card), the page-icon placeholder centered, the whole slot at the inactive dim.
-   First-pass treatment: every value below is a KNOB for the visual pass. */
+/* The hover ghost card — the card's own skeleton (thumb placeholder, divider, title row,
+   property labels) worn at the inactive dim, its outer border heavier than a card's so the
+   ghost reads. First-pass treatment: the KNOBs below are the visual pass's. */
 .ghost-card {
   cursor: pointer;
 }
-.ghost-card-body {
-  height: 100%;
-  min-height: 44px; /* KNOB */
-  display: grid;
-  place-items: center;
-  border: var(--border-cell);
+.ghost-card .page-card-body {
   border-width: 2px; /* KNOB — heavier than the standard card border so the ghost reads */
-  border-radius: 10px; /* KNOB */
-  color: var(--label-primary);
   opacity: var(--state-inactive);
   animation: ghost-card-in var(--duration-base) var(--ease-standard);
 }
