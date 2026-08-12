@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi, type ConnPage } from '@renderer/MarkdownPM/connections'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
@@ -23,10 +24,17 @@ const conn: ConnectionsApi = {
 }
 
 // `a [[Alpha]] b` — token [2,11], the displayed title [4,9]. jsdom measures nothing, so the click
-// point is pinned through posAtCoords; the offsets are what a real click would resolve to.
-const clickAt = (view: EditorView, pos: number): void => {
+// point is pinned through posAtCoords.
+//
+// The mousedown and the caret seat are not ceremony: CM moves the caret on mousedown, so a bare
+// click() dispatch tests a sequence the app never runs — and a rule reading the live caret passes
+// here while failing on every real click.
+const clickAt = (view: EditorView, pos: number, caretBefore = 0): void => {
+  view.dispatch({ selection: { anchor: caretBefore } })
   vi.spyOn(view, 'posAtCoords').mockReturnValue(pos)
   const target = (view.dom.querySelector('.md-connection-resolved') ?? view.dom) as HTMLElement
+  target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+  view.dispatch({ selection: { anchor: pos } })
   target.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
 }
 
@@ -34,8 +42,17 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
   it('a click on the link text navigates', async () => {
     opened.mockClear()
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
+    await act(async () => view.focus())
     clickAt(view, 6)
     expect(opened).toHaveBeenCalledWith('p1')
+  })
+
+  it('a link the caret was already inside when pressed does not navigate', async () => {
+    opened.mockClear()
+    const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
+    await act(async () => view.focus())
+    clickAt(view, 6, 6)
+    expect(opened).not.toHaveBeenCalled()
   })
 
   it('a click at the leading edge does not navigate', async () => {

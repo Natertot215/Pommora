@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
+import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi, type ConnPage } from '@renderer/MarkdownPM/connections'
 import { renderCellContent } from '@renderer/MarkdownPM/Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
@@ -33,6 +34,22 @@ const conn: ConnectionsApi = {
   open: (p: ConnPage) => opened(p.id),
 }
 
+// The same link with prose either side, so there are offsets OUTSIDE the token — `DOC` alone is the
+// whole document, where even 0 sits inside the link and no "caret elsewhere" case can be posed.
+// Token [2,16]; the displayed alias `Beta` is [10,14].
+const PADDED = `x ${DOC} y`
+
+// CM seats the caret on mousedown, so a rule about "was I already editing this" has to be driven by
+// the real order — press, caret moves, click. A bare click() dispatch tests a sequence never run.
+function pressAndClick(view: EditorView, pos: number, caretBefore: number): void {
+  view.dispatch({ selection: { anchor: caretBefore } })
+  vi.spyOn(view, 'posAtCoords').mockReturnValue(pos)
+  const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
+  span.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+  view.dispatch({ selection: { anchor: pos } })
+  span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+}
+
 async function renderCell(text: string): Promise<HTMLElement> {
   const host = document.createElement('div')
   document.body.appendChild(host)
@@ -57,11 +74,9 @@ describe('every site resolves an aliased connection by the same span', () => {
 
   it('clicking it opens the page the title names, not the one the alias does', async () => {
     opened.mockClear()
-    const view = await mountEditor({ initialBody: DOC, connections: conn })
-    // Inside the displayed alias `Beta` at [8,12] — the title span is hidden syntax, not a click target.
-    vi.spyOn(view, 'posAtCoords').mockReturnValue(10)
-    const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
-    span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    const view = await mountEditor({ initialBody: PADDED, connections: conn })
+    await act(async () => view.focus())
+    pressAndClick(view, 12, 0)
     expect(opened).toHaveBeenCalledWith('p1')
   })
 
@@ -76,16 +91,11 @@ describe('every site resolves an aliased connection by the same span', () => {
 
   it('a link the caret is already inside does not navigate on click', async () => {
     opened.mockClear()
-    const view = await mountEditor({ initialBody: DOC, connections: conn })
-    // Both the click point and the caret sit inside the displayed alias, so only the caret rule can
+    const view = await mountEditor({ initialBody: PADDED, connections: conn })
+    await act(async () => view.focus())
+    // Click point and pre-press caret both inside the displayed alias, so only the caret rule can
     // suppress this — a point on the edge would pass for the wrong reason.
-    vi.spyOn(view, 'posAtCoords').mockReturnValue(10)
-    await act(async () => {
-      view.focus()
-      view.dispatch({ selection: { anchor: 10 } })
-    })
-    const span = view.dom.querySelector('.md-bracket, .md-connection-resolved') as HTMLElement
-    span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    pressAndClick(view, 12, 12)
     expect(opened).not.toHaveBeenCalled()
   })
 
