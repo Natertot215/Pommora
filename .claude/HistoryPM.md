@@ -110,8 +110,10 @@
 
 **Order Honesty:** Creation now settles every live order in its own act — a newborn absent from a stale manual array ranked last no matter what the disk said (a one-frame flash on the table, permanent on Cards) — and the same law reached the moves: a card dropped across location bands carries the destination's full-membership order with its landing spliced in, the store's `movePage` arm honors it optimistically through the new pages-side reorder, and the set-card drop holds a synchronous order override across the reply gap that used to snap it back. Cards' reorder writes its local `viewOrders` copy, and a non-structural band-add settles its tiebreaker with the newborn ranked last in its band.
 
-- **Commits:** `1fb17f84..edd232ca`
-- **Diff:** Net +692 | +1000 / −308 (tests +395 / −3 ride alongside)
+**The Close:** A ten-angle adversarial review swept the arc start-to-end, and its confirmed findings folded in one pass. The create act closed its last seams — the store runs a create's callback ahead of the optimistic tree apply, so order splices, naming state, and Cards' held ghost seat land in the very commit that mounts the newborn (a ghost-click create paints with zero grid motion, the skeleton replaced in place), and flat Cards views route creates onto the `page_order` channel their pipeline actually reads. The fence's verdict went temporal — a claim minted after a release may carry a session (a remount), a standing twin never inherits one — and the one host-less create path learned its gesture's host. The ghost mechanism hardened into its contract: identity-stable handlers ended every consumer's ref-and-memo scaffold, a travel hold keeps a wrapped ghost alive across its own row's cards before the rested card earns its own dwell, `take()` kills every armed timer, an exit watchdog self-heals a closing ghost whose motion never reports, and overlapping menus hold as a count. The table ghost's "New Page" bound to the title cell wherever it sits in the track order, `Reveal` grew the entrance beat both ghost chromes had hand-rolled, and the Layout leaf shed its doubled divider.
+
+- **Commits:** `1fb17f84..57a87f3a`
+- **Diff:** Net +746 | +1107 / −361 (tests +440 / −3 ride alongside)
 
 #### PM-096 || TableView Creation Affordance
 **DATE:** 08-11-2026
