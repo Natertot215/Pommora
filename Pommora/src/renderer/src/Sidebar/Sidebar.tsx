@@ -43,6 +43,7 @@ function showContextFor(node: {
     path: node.path,
     title: node.title,
     alreadyOpen,
+    host: 'sidebar',
   })
 }
 
@@ -73,6 +74,7 @@ function RowTitle({
       kind={kind}
       title={title}
       className={cx(titleInput, 'row-title-input')}
+      host="sidebar"
     />
   )
 }

@@ -122,11 +122,11 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 **Negative control:** the dual-mount test (sidebar row + band field on one path) asserts exactly one input mounts and typing commits; with the fence disabled (claim always true) the same test shows both mounting and zero surviving — assert that inversion once, then delete the disabled-path assertion.
 
 **Steps:**
-- [ ] Write the failing test: two `RenamableTitle`s on one path, distinct hosts — expect one input, focused; typing + blur commits the rename; the loser renders plain text.
-- [ ] Run it — expect failure (both mount today).
-- [ ] Implement the claim slot + fence; re-run — expect pass.
-- [ ] Full gates — green.
-- [ ] Commit: `fix(rename): the slot gains an owner fence — one field ever mounts`
+- [x] Write the failing test: two `RenamableTitle`s on one path, distinct hosts — expect one input, focused; typing + blur commits the rename; the loser renders plain text.
+- [x] Run it — expect failure (both mount today). *(6 of 7 red; the create-origin case reproduced the live annihilation — zero inputs survived.)*
+- [x] Implement the claim slot + fence; re-run — expect pass.
+- [x] Full gates — green (208 files / 2,326 tests; the band-menu payload test updated for the new `host` field in the same commit).
+- [x] Commit: `fix(rename): the slot gains an owner fence — one field ever mounts`
 
 #### Gate 1 — one field, ever
 - [ ] Gates green, exit codes direct.
@@ -382,8 +382,8 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — The Rename Fence · base ``
-  - [ ] Task 1 — Owner-fence the rename slot · ``
+- [ ] **Phase 1** — The Rename Fence · base `1fb17f84`
+  - [x] Task 1 — Owner-fence the rename slot · *(hash at gate)*
 - [ ] **Phase 2** — Order Correctness
   - [ ] Task 2 — Creation settles the live order in its own act · ``
   - [ ] Task 3 — Cards' local viewOrders write · ``

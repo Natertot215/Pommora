@@ -53,6 +53,7 @@ export function TableGroupBand({
           kind: 'set',
           path: setPath,
           title: setNames.get(group.key) ?? group.key,
+          host: 'detail',
         })
       }
     : undefined

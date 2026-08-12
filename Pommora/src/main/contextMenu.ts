@@ -92,7 +92,7 @@ export async function showContextMenu(
   // the renderer to put the matching row into edit mode; the commit goes through mutate.
   items.push({
     label: 'Rename',
-    click: () => push(win, 'begin-rename', { path: target.path }),
+    click: () => push(win, 'begin-rename', { path: target.path, host: target.host }),
   })
 
   // New Page Above / Below — the position is computed renderer-side, where the sibling order
