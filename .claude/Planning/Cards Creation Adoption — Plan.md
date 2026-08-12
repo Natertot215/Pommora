@@ -130,9 +130,9 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - [x] Commit: `fix(rename): the slot gains an owner fence — one field ever mounts`
 
 #### Gate 1 — one field, ever
-- [ ] Gates green, exit codes direct.
-- [ ] Derivations re-run against controls; counts matched or the divergence rewrote the plan.
-- [ ] Simplification + review against `<base>..HEAD`; reports cite files inside it; KNOB grep clean.
+- [x] Gates green, exit codes direct (2,333 tests at gate close).
+- [x] Derivations re-run against controls; counts matched (3 files / 14).
+- [x] Simplification (`d701a54c`) + review dispatched; the review's three findings all folded: main's create push now carries the host (`247412e0`), the release verdict judges the released claim's own path — red-first test reproduced the successor-kill race — and the context-group menu declares its surface.
 - [ ] CDP against the Test nexus: enter the rename via `window.__pommora.getState().beginRename(setPath)` through `Runtime.evaluate` (the dev-only drive seam; the native menu itself isn't CDP-drivable) with the set's sidebar row visible — one field opens, commits, no flicker. Also probe the unknown: with a field open, right-click a *different* row — the first field must not survive the transition. (The log's Live Check #2.)
 - [ ] Progress hashes filled in.
 
@@ -428,17 +428,17 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — The Rename Fence · base `1fb17f84`
-  - [x] Task 1 — Owner-fence the rename slot · `a32d886b` + simplifier `d701a54c` + host-through `60884995`
-- [ ] **Phase 2** — Order Correctness
-  - [ ] Task 2 — Creation settles the live order in its own act · ``
-  - [ ] Task 3 — Cards' local viewOrders write · ``
-  - [ ] Task 4 — Cross-location landing index · ``
-  - [ ] Task 5 — Set-Card flash: verify then fix · ``
-- [ ] **Phase 3** — Cards Creation Surfaces
-  - [ ] Task 6 — One "New Page" on the card menu · ``
-  - [ ] Task 7 — The creation hook: one home, Cards consumes · ``
-  - [ ] Task 8 — The empty naming field; one rename surface · ``
+- [x] **Phase 1** — The Rename Fence · base `1fb17f84` · gate closed at `247412e0` (CDP items ride the consolidated pass, per Rulings)
+  - [x] Task 1 — Owner-fence the rename slot · `a32d886b` + simplifier `d701a54c` + host-through `60884995` + review folds `247412e0`
+- [x] **Phase 2** — Order Correctness · base `e9507b47` · simplifier `084c7b25` · gate review folded at `873a1a6f` (relocates splice the live orders; a failed set move clears its override; sub-set landing limit recorded in Open Against Later Tasks)
+  - [x] Task 2 — Creation settles the live order in its own act · `19698f48`
+  - [x] Task 3 — Cards' local viewOrders write · `3816247f`
+  - [x] Task 4 — Cross-location landing index · `3816247f`
+  - [x] Task 5 — Set-Card flash: verify then fix (cause: reply-gap timing, not a missing patch) · `24e17cf5`
+- [ ] **Phase 3** — Cards Creation Surfaces · base `247412e0`
+  - [x] Task 6 — One "New Page" on the card menu · `0c0d8f5b`
+  - [x] Task 7 — The creation hook: one home, Cards consumes · `3a7f7c56`
+  - [x] Task 8 — The empty naming field; one rename surface · `a744563e`
 - [ ] **Phase 4** — The Ghost
   - [ ] Task 9 — Extract the mechanism; table refits · ``
   - [ ] Task 10 — The ghost card + FLIP · ``
@@ -453,7 +453,9 @@ Not solving: the wider alias system (the locked next arc), flattened-mode's tabl
 - **CDP passes batch into one consolidated acceptance run at the end of Phase 4b** (one dev-instance launch covering every gate's named CDP items plus the acceptance criterion), applying Nathan's standing defer-UIX-verification-to-plan-end preference; per-phase gates still run gates/simplifier/review at their own points. The running instance from PM-096's close is left untouched until then.
 
 ### Open Against Later Tasks
+- **Known limit (gate-2 review, wontfix):** a card dropped *before a sub-set's cards* in a flattened structural band appends to the direct-children segment instead — no `page_order` can seat a direct child between sub-set pages under the flatten law; the DnD preview promises a slot the model can't hold. Recorded, not fixed.
 ### Deviations
+- **Task 5's verified cause — timing, not absence.** The optimistic set-order patch exists (the `moveSet` arm), but `store.mutate` awaits the IPC reply before patching, while the drop's zone transforms release synchronously — the row re-renders in the old order for the reply gap (the snap), then corrects (the jump). Fixed with the table's own pattern: a synchronous `setOrderOverride` in CardsView, cleared when a fresh `source` identity carries the canonical order (`24e17cf5`). The plan's first hypothesis (no optimistic patch) was already withdrawn at review; this is the second-layer truth.
 - **Task 1 divergence — `newPageAdjacent` needed the fence's host** (found by the sidebar scoping run): the shipped New Page Above/Below began its rename host-blind, so a sidebar-origin create whose page is also visible in an open table view would open its field in the detail pane. The `new-page-adjacent` push now echoes `ContextTarget.host` through to `beginRename` (`60884995`). The plan hadn't named this consumer; the fence's Derivation only swept field-*mounters*, not `beginRename` *callers* — the lesson rides below.
 ### Lessons
 - A fence over a shared slot must sweep the slot's *writers*, not only its readers: the Derivation enumerated field-mounters and missed the `beginRename` caller that decides where the field opens. Enumerate both ends of a slot when fencing it.
