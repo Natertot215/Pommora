@@ -3,7 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import { CONN_HOVER_INTENT_MS } from '@renderer/MarkdownPM/editor/connections'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+
+// Derived from the dwell rather than restated: these tests are about arm/cancel ordering, and
+// hard-coded milliseconds turn a tuned knob into a red suite.
+const PAST_DWELL = CONN_HOVER_INTENT_MS + 50
+const MID_DWELL = Math.floor(CONN_HOVER_INTENT_MS / 2)
 
 class ResizeObserverStub {
   observe(): void {}
@@ -48,7 +54,7 @@ describe('the hover intent', () => {
   it('fires after the delay with the link element in hand', async () => {
     const { span } = await mountLink()
     over(span)
-    vi.advanceTimersByTime(500)
+    vi.advanceTimersByTime(PAST_DWELL)
     expect(hover).toHaveBeenCalledTimes(1)
     expect(hover.mock.calls[0][1]).toBe(span)
   })
@@ -56,18 +62,18 @@ describe('the hover intent', () => {
   it('a click inside the window consumes it — nothing fires afterward', async () => {
     const { span } = await mountLink()
     over(span)
-    vi.advanceTimersByTime(300)
+    vi.advanceTimersByTime(MID_DWELL)
     span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
-    vi.advanceTimersByTime(500)
+    vi.advanceTimersByTime(PAST_DWELL)
     expect(hover).not.toHaveBeenCalled()
   })
 
   it('a context-menu inside the window consumes it the same way', async () => {
     const { span } = await mountLink()
     over(span)
-    vi.advanceTimersByTime(300)
+    vi.advanceTimersByTime(MID_DWELL)
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
-    vi.advanceTimersByTime(500)
+    vi.advanceTimersByTime(PAST_DWELL)
     expect(hover).not.toHaveBeenCalled()
   })
 
@@ -77,7 +83,7 @@ describe('the hover intent', () => {
     const { span } = await mountLink()
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     over(span)
-    vi.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(PAST_DWELL)
     expect(hover).not.toHaveBeenCalled()
   })
 
@@ -86,19 +92,19 @@ describe('the hover intent', () => {
     span.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
     over(span)
-    vi.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(PAST_DWELL)
     expect(hover).toHaveBeenCalledTimes(1)
   })
 
   it('mouseout cancels; re-entry re-arms fresh', async () => {
     const { span } = await mountLink()
     over(span)
-    vi.advanceTimersByTime(300)
+    vi.advanceTimersByTime(MID_DWELL)
     span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
-    vi.advanceTimersByTime(500)
+    vi.advanceTimersByTime(PAST_DWELL)
     expect(hover).not.toHaveBeenCalled()
     over(span)
-    vi.advanceTimersByTime(500)
+    vi.advanceTimersByTime(PAST_DWELL)
     expect(hover).toHaveBeenCalledTimes(1)
   })
 })

@@ -57,6 +57,9 @@ export interface Personalization {
   codeblockLineCount?: boolean
   /** Whether selecting an entity from the NavWindow closes it. Absent = closes (default true). */
   navCloseOnSelect?: boolean
+  /** Whether repointing a connection drops the alias it was wearing. Absent = drops (default true) —
+   *  the old words describe the old page. The alias stays in that page's remembered list either way. */
+  removeTitleOnLinkChange?: boolean
   defaultIcons?: Partial<Record<EntityIconKind, string>>
   /** Icons the user favorited in the Icon Picker — bare Lucide ids (kebab), in display/reorder order. */
   favoriteIcons?: string[]
