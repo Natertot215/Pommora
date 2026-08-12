@@ -1,5 +1,9 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { GhostSuppress, useGhostAnchor } from '@renderer/Detail/Views/useGhostAnchor'
+import {
+  GhostSuppress,
+  useClearStrandedGhost,
+  useGhostAnchor,
+} from '@renderer/Detail/Views/useGhostAnchor'
 import { Icon, type IconName, entityIcon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
@@ -332,10 +336,7 @@ function PageRow({
           depth={depth}
           selected={isPageSelected(selection, page.id)}
           onSelect={(e) => onSelectPage(page, e)}
-          onContextMenu={() => {
-            const pop = (): Promise<void> => showContextFor(page)
-            void (holdGhost ? holdGhost(pop) : pop())
-          }}
+          onContextMenu={() => void holdGhost(() => showContextFor(page))}
           rename={{ path: page.path, kind: page.kind }}
         />
       </DragRow>
@@ -350,12 +351,11 @@ function PageRow({
 const SIDEBAR_GHOST_DWELL_MS = 2500 // KNOB
 const SIDEBAR_GHOST_GRACE_MS = 0 // KNOB
 
+const NO_GHOST: { anchorId: string | null; closing: boolean } = { anchorId: null, closing: false }
+
 /** The shown ghost anchor + its exit state, by context — the rows sit levels down a recursive
  *  render. The API context is identity-stable, so hover wiring never re-renders rows. */
-const SidebarGhost = createContext<{ anchorId: string | null; closing: boolean }>({
-  anchorId: null,
-  closing: false,
-})
+const SidebarGhost = createContext(NO_GHOST)
 const SidebarGhostApi = createContext<{
   onHover: (id: string, entering: boolean) => void
   onGhostEnter: () => void
@@ -682,12 +682,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   useEffect(() => {
     if (mode !== 'collections') ghostApiRef.current.clear()
   }, [mode])
-  // The anchor left the tree — clear ghost STATE, not just its render.
-  const strandedId =
-    ghostApi.ghost && !dndIndex.byId.has(ghostApi.ghost.anchorId) ? ghostApi.ghost.anchorId : null
-  useEffect(() => {
-    if (strandedId !== null) ghostApiRef.current.clear(strandedId)
-  })
+  useClearStrandedGhost(ghostApi, dndIndex.byId)
   const sidebarGhostApi = useMemo(
     () => ({
       onHover: (id: string, entering: boolean) => ghostApiRef.current.onHover(id, entering),
@@ -708,13 +703,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
         ghostApiRef.current.suppressWrap(menu),
     [],
   )
-  const ghostValue = useMemo(
-    () => ({
-      anchorId: ghostApi.ghost?.anchorId ?? null,
-      closing: ghostApi.ghost?.closing ?? false,
-    }),
-    [ghostApi.ghost?.anchorId, ghostApi.ghost?.closing],
-  )
+  const ghostValue = ghostApi.ghost ?? NO_GHOST
 
   const dndLayer = (section: React.ReactNode): React.JSX.Element => (
     <SidebarDnd

@@ -97,8 +97,7 @@ export function CardValue({
   }
 
   // The view's ghost stands down while this value's native menu owns the pointer.
-  const suppress = useContext(GhostSuppress)
-  const holdGhost = suppress ?? (<T,>(menu: () => Promise<T>): Promise<T> => menu())
+  const holdGhost = useContext(GhostSuppress)
   // Right-click a value → its native menu (always a menu, never an action), the shared per-kind matrix
   // (Clear · Style · Edit) plus a trailing Remove — cards pass hideable, so any property can be dropped
   // from the view here. stopPropagation keeps it off the card-level menu.
