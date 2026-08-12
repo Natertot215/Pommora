@@ -9,7 +9,7 @@ import {
 } from '@codemirror/view'
 import type { Extension, Range } from '@codemirror/state'
 import { chipBoxGeometry } from '../../design-system/tokens'
-import { tokenize, activeTokenIndices, type Token } from '../tokens'
+import { tokenize, activeTokenIndices, shiftToken, type Token } from '../tokens'
 import { docLineIntentsOf, docScan, docSpanTokens, docString } from './docCache'
 import { claimedEmbeds } from './embedRanges'
 import { resolutionNudge } from './embedWidget'
@@ -179,15 +179,7 @@ function visibleInlineTokens(view: EditorView, text: string, scan: DocScan): Tok
   return docSpanTokens(doc, key, () => {
     const out: Token[] = []
     for (const [a, b] of spans) {
-      for (const tk of tokenize(text.slice(a, b))) {
-        const start = tk.range[0] + a
-        out.push({
-          kind: tk.kind,
-          range: [start, tk.range[1] + a],
-          contentRange: [tk.contentRange[0] + a, tk.contentRange[1] + a],
-          markerRanges: tk.markerRanges.map(([s, e]) => [s + a, e + a] as [number, number]),
-        })
-      }
+      for (const tk of tokenize(text.slice(a, b))) out.push(shiftToken(tk, a))
     }
     return out
   })
