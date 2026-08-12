@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { GhostSuppress, useGhostAnchor } from '@renderer/Detail/Views/useGhostAnchor'
 import { Icon, type IconName, entityIcon } from '@renderer/design-system/symbols'
 import { cx } from '@renderer/design-system/cx'
 import { MenuItem, titleInput } from '@renderer/design-system/components/menu'
@@ -34,10 +35,11 @@ function showContextFor(node: {
   id: string
   path: string
   title: string
-}): void {
+}): Promise<void> {
   const { tabs, pinned } = useSession.getState()
   const alreadyOpen = isOpenInTabs(tabs, pinned, contextTargetToSelect(node))
-  void window.nexus.contextMenu({
+  // Resolves on the menu's dismissal — callers holding the ghost down ride the promise.
+  return window.nexus.contextMenu({
     kind: node.kind,
     id: node.id,
     path: node.path,
@@ -134,11 +136,15 @@ function Leaf({
 function DragRow({
   id,
   springOpen,
+  onPointerEnter,
+  onPointerLeave,
   children,
 }: {
   id: string
   /** A collapsed container registers as a spring-open target — a drag dwelling over it expands it. */
   springOpen?: { collapsed: boolean; onExpand: () => void }
+  onPointerEnter?: () => void
+  onPointerLeave?: () => void
   children: React.ReactNode
 }): React.JSX.Element {
   const drag = useSidebarDrag(id)
@@ -160,6 +166,8 @@ function DragRow({
       className={`tree-item${drag.isDragging ? ' dragging' : ''}`}
       data-disclose={collapsed ? '' : undefined}
       {...drag.handle}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
       onMouseLeave={(e) => {
         const sc = e.currentTarget.querySelector<HTMLElement>('[class*="titleText"]')
         if (sc) slideScrollBack(sc)
@@ -308,18 +316,83 @@ function PageRow({
   onSelectPage: (page: PageNode, e?: React.MouseEvent) => void
 }): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const ghost = useContext(SidebarGhost)
+  const api = useContext(SidebarGhostApi)
+  const holdGhost = useContext(GhostSuppress)
   return (
-    <DragRow id={page.id}>
-      <Leaf
-        icon={entityIcon('page', page.icon, defaultIcons)}
-        title={page.title}
-        depth={depth}
-        selected={isPageSelected(selection, page.id)}
-        onSelect={(e) => onSelectPage(page, e)}
-        onContextMenu={() => showContextFor(page)}
-        rename={{ path: page.path, kind: page.kind }}
-      />
-    </DragRow>
+    <>
+      <DragRow
+        id={page.id}
+        onPointerEnter={api ? () => api.onHover(page.id, true) : undefined}
+        onPointerLeave={api ? () => api.onHover(page.id, false) : undefined}
+      >
+        <Leaf
+          icon={entityIcon('page', page.icon, defaultIcons)}
+          title={page.title}
+          depth={depth}
+          selected={isPageSelected(selection, page.id)}
+          onSelect={(e) => onSelectPage(page, e)}
+          onContextMenu={() => {
+            const pop = (): Promise<void> => showContextFor(page)
+            void (holdGhost ? holdGhost(pop) : pop())
+          }}
+          rename={{ path: page.path, kind: page.kind }}
+        />
+      </DragRow>
+      {ghost.anchorId === page.id && <GhostLeaf depth={depth} />}
+    </>
+  )
+}
+
+// ── TUNABLE ── the sidebar ghost's pacing: the sidebar is a transit surface the pointer crosses
+// constantly, so its dwell runs meaningfully longer than the views'; the ghost sits flush below
+// its anchor row, so the leave can close immediately.
+const SIDEBAR_GHOST_DWELL_MS = 2500 // KNOB
+const SIDEBAR_GHOST_GRACE_MS = 0 // KNOB
+
+/** The shown ghost anchor + its exit state, by context — the rows sit levels down a recursive
+ *  render. The API context is identity-stable, so hover wiring never re-renders rows. */
+const SidebarGhost = createContext<{ anchorId: string | null; closing: boolean }>({
+  anchorId: null,
+  closing: false,
+})
+const SidebarGhostApi = createContext<{
+  onHover: (id: string, entering: boolean) => void
+  onGhostEnter: () => void
+  onGhostLeave: () => void
+  create: () => void
+  closed: () => void
+} | null>(null)
+
+/** The ghost "New Page" row — the anchor row's own chrome at the inactive dim, entering and
+ *  leaving on its own Reveal (the sidebar has no per-row motion to conflict with). Never a drag
+ *  member, never disclose-registered. */
+function GhostLeaf({ depth }: { depth: number }): React.JSX.Element {
+  const api = useContext(SidebarGhostApi)
+  const closing = useContext(SidebarGhost).closing
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const [open, setOpen] = useState(false)
+  useEffect(() => setOpen(true), [])
+  return (
+    <Reveal open={open && !closing} onCollapsed={api?.closed}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a hover-born affordance wearing the row's own chrome — keyboard creation lives in the menus */}
+      <div
+        data-ghost-root
+        className="ghost-leaf"
+        onPointerEnter={api?.onGhostEnter}
+        onPointerLeave={api?.onGhostLeave}
+        onClick={api?.create}
+      >
+        <MenuItem
+          className="row"
+          indent={depth}
+          leading={<span className={twistySpacer} data-twisty-spacer />}
+        >
+          <Icon name={entityIcon('page', undefined, defaultIcons)} size={16} className="row-icon" />
+          New Page
+        </MenuItem>
+      </div>
+    </Reveal>
   )
 }
 
@@ -594,6 +667,55 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   // its own full-tree index would double the work per tree change.
   const dndIndex = useMemo(() => buildIndex(tree), [tree])
 
+  // The hover ghost on the shared mechanism — collections mode only (the other modes have no
+  // page rows, and the cross-fade unmounts without a transition, which would strand a closing
+  // ghost). A naming session suppresses the dwell, re-read at fire time.
+  const ghostApi = useGhostAnchor({
+    dwellMs: SIDEBAR_GHOST_DWELL_MS,
+    graceMs: SIDEBAR_GHOST_GRACE_MS,
+    suppressed: () => useSession.getState().renamingPath !== null,
+  })
+  const ghostApiRef = useRef(ghostApi)
+  ghostApiRef.current = ghostApi
+  const dndIndexRef = useRef(dndIndex)
+  dndIndexRef.current = dndIndex
+  useEffect(() => {
+    if (mode !== 'collections') ghostApiRef.current.clear()
+  }, [mode])
+  // The anchor left the tree — clear ghost STATE, not just its render.
+  const strandedId =
+    ghostApi.ghost && !dndIndex.byId.has(ghostApi.ghost.anchorId) ? ghostApi.ghost.anchorId : null
+  useEffect(() => {
+    if (strandedId !== null) ghostApiRef.current.clear(strandedId)
+  })
+  const sidebarGhostApi = useMemo(
+    () => ({
+      onHover: (id: string, entering: boolean) => ghostApiRef.current.onHover(id, entering),
+      onGhostEnter: () => ghostApiRef.current.onGhostEnter(),
+      onGhostLeave: () => ghostApiRef.current.onGhostLeave(),
+      closed: () => ghostApiRef.current.closed(),
+      create: () => {
+        const anchorId = ghostApiRef.current.take()
+        const entry = anchorId ? dndIndexRef.current.byId.get(anchorId) : undefined
+        if (entry) void useSession.getState().newPageAdjacent(entry.path, 'below', 'sidebar')
+      },
+    }),
+    [],
+  )
+  const stableSuppress = useMemo(
+    () =>
+      <T,>(menu: () => Promise<T>): Promise<T> =>
+        ghostApiRef.current.suppressWrap(menu),
+    [],
+  )
+  const ghostValue = useMemo(
+    () => ({
+      anchorId: ghostApi.ghost?.anchorId ?? null,
+      closing: ghostApi.ghost?.closing ?? false,
+    }),
+    [ghostApi.ghost?.anchorId, ghostApi.ghost?.closing],
+  )
+
   const dndLayer = (section: React.ReactNode): React.JSX.Element => (
     <SidebarDnd
       index={dndIndex}
@@ -661,6 +783,9 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   }, [mode])
 
   return (
+    <SidebarGhost.Provider value={ghostValue}>
+    <SidebarGhostApi.Provider value={sidebarGhostApi}>
+    <GhostSuppress.Provider value={stableSuppress}>
     <nav ref={navRef} className="sidebar edge-fade">
       <div className="sidebar-mode-stage">
         {exit && (
@@ -686,5 +811,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
         </div>
       </div>
     </nav>
+    </GhostSuppress.Provider>
+    </SidebarGhostApi.Provider>
+    </SidebarGhost.Provider>
   )
 }

@@ -143,5 +143,9 @@ export async function showContextMenu(
     },
   })
 
-  Menu.buildFromTemplate(items).popup({ window: win })
+  // Resolve on dismissal, not at pop — a fire-and-forget caller ignores it, but a surface
+  // holding a hover affordance down (the ghost's suppress) needs the close to release it.
+  await new Promise<void>((resolve) => {
+    Menu.buildFromTemplate(items).popup({ window: win, callback: resolve })
+  })
 }
