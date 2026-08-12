@@ -14,6 +14,19 @@ describe('autocompleteQuery', () => {
   it('suppresses image embeds ![[…]]', () => {
     expect(autocompleteQuery('see ![[Pic]] end', 9)).toBeNull()
   })
+  // Accepting a candidate replaces the whole token, so a picker armed from the alias would discard
+  // the alias the caret is sitting in. The title is the only span that may open it.
+  it('does not open the page picker from inside an alias', () => {
+    const doc = 'see [[Q3 Plan|the plan]] end'
+    expect(autocompleteQuery(doc, doc.indexOf('the plan') + 3)).toBeNull()
+    expect(autocompleteQuery(doc, doc.indexOf('|') + 1)).toBeNull()
+  })
+  it('still opens from inside an aliased link’s title', () => {
+    const doc = 'see [[Q3 Plan|the plan]] end'
+    const r = autocompleteQuery(doc, doc.indexOf('Plan') + 2)!
+    expect(r.query).toBe('Q3 Plan')
+    expect(doc.slice(r.from, r.to)).toBe('[[Q3 Plan|the plan]]')
+  })
   it('returns null when the caret is outside any wikilink', () => {
     expect(autocompleteQuery('plain text', 5)).toBeNull()
     expect(autocompleteQuery('[[Pro]] x', 9)).toBeNull() // caret past the closer

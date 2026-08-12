@@ -33,7 +33,9 @@ export function renderCellContent(
       if (!status || status === 'phantom') out.push(text.slice(s, e))
       else
         out.push(
-          <span key={key++} className={`md-connection-${status}`}>
+          // The resolve key rides the span: an aliased link's text is no longer what it resolves,
+          // and a hover handler reaching this from the DOM has no token to ask.
+          <span key={key++} className={`md-connection-${status}`} data-conn-title={text.slice(rs, re)}>
             {content}
           </span>,
         )

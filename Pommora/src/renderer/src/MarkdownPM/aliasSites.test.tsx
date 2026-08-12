@@ -64,6 +64,28 @@ describe('every site resolves an aliased connection by the same span', () => {
     expect(opened).toHaveBeenCalledWith('p1')
   })
 
+  // The table's hover handler reaches a cell connection through the DOM, with no token to ask, so
+  // the resolve key has to travel on the span. Reading its text would resolve the alias instead.
+  it('a cell connection carries its resolve key, not just its text', async () => {
+    const host = await renderCell(DOC)
+    const el = host.querySelector('.md-connection-resolved') as HTMLElement
+    expect(el.textContent).toBe('Beta')
+    expect(el.dataset.connTitle).toBe('Alpha')
+  })
+
+  it('a link the caret is already inside does not navigate on click', async () => {
+    opened.mockClear()
+    const view = await mountEditor({ initialBody: DOC, connections: conn })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 4 } })
+    })
+    const span = view.dom.querySelector('.md-bracket, .md-connection-resolved') as HTMLElement
+    span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    expect(opened).not.toHaveBeenCalled()
+  })
+
   // The cell renderer draws contentRange and skips to the token's end, so the two renderers agree
   // only while the marker spans tile everything outside it. A degenerate `[[Title|]]` is where that
   // tiling breaks if the trailing marker is pinned to two characters.
