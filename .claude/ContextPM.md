@@ -2,11 +2,12 @@
 
 ### Current Focus
 
-**Cards creation adoption — shipped whole ([[HistoryPM]] §PM-097); Nathan's visual and feel passes are the pending items.** Creation reaches every surface on two shared hooks (the creation wiring, the hover-ghost mechanism), the rename slot is owner-fenced with a live set-band bug dead, the order-settle law covers creates and moves alike, and the ghost card and sidebar ghost ship as KNOB-marked first passes. What remains is Nathan's: the two ghosts' CSS (all values KNOB), the dwell-and-feel under a real mouse — the sidebar's transit-surface dwell is the honest kill-signal check — and the native menu picks.
+**Alias-V1 — specified, planned, and twice adversarially reviewed; awaiting ratification, with no implementation code written.** The arc hands a connection's visible words to its author: `[[Title|Alias]]` renders as its alias while resolving on title, Rename and Edit Link author and retarget it, a page remembers the aliases it has worn, and `[Title](Page)` resolves internally beside `[[ ]]`. Duplicate-title disambiguation entered the design, grew through two review rounds into path qualification with its own cascade and journal, and was cut whole — this arc is about aliases, and that design waits intact in its decision log's §G.
 
 ### Immediate Work
 
-- [ ] **Display-alias** — `[[Title|alias]]` rendering its authored text in place of the title — is the locked next arc; Cards creation shipped, so it opens on Nathan's visual and feel passes.
+- [ ] **Alias-V1** — its spec and plan are ratified-pending-go at `Planning/Alias-V1 — {Decision Log,Plan}.md`, 14 tasks across 5 phases. Execution opens on Nathan's word.
+- [ ] **Cards creation's visual and feel passes** — the two ghosts' CSS (every value KNOB-marked), the dwell-and-feel under a real mouse where the sidebar's transit-surface dwell is the honest kill-signal check, and the native menu picks. Shipped whole otherwise ([[HistoryPM]] §PM-097).
 
 ### Pending Focuses
 
@@ -23,7 +24,6 @@
 
 #### II. Next-Feature Candidates
 
-- [ ] **Page aliases** — frontmatter `Aliases:` as resolution keys, the PageMenu's last unbuilt leaf. Parked whole: resolution needs nexus-wide frontmatter the walk doesn't carry (content-index-adjacent), and the leaf's name collides with the display-alias vocabulary, so the naming settles before it's specified. The display half is sequenced in §Immediate Work.
 - [ ] **The trash browser.** The deletion record's restore path ships and is tested end to end; what's missing is enumeration, since `listBundles` has no bridge entry and no non-test caller. A UI build plus one channel on a finished engine.
 - [ ] **The main pane's Inspector.** Its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty. The Page Preview's frontmatter inspector is a portable body already doing that job for another host.
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
