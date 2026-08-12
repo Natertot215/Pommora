@@ -1380,8 +1380,15 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const destPath = destGroupKey === UNGROUPED ? source.path : setPaths.get(destGroupKey)
     if (!path || !destPath || destPath === path.slice(0, path.lastIndexOf('/'))) return
     // The band drop carries no index — the moved row joins the destination's end, but the order
-    // still writes whole: absent, main's fallback re-ranks the destination by title.
+    // still writes whole: absent, main's fallback re-ranks the destination by title. A stale
+    // viewOrders entry (a formerly sorted config) would otherwise paint the row's old rank.
     const order = [...creation.containerPages(destPath), pageId]
+    const spliceLive = (existing: string[]): string[] => [
+      ...existing.filter((id) => id !== pageId),
+      pageId,
+    ]
+    setManualOverride((m) => (m ? spliceLive(m) : m))
+    if (viewOrders[view.id]) persistViewOrder(spliceLive(viewOrders[view.id]))
     void mutate({ op: 'movePage', path, newParentPath: destPath, order })
   }
   // Within-group reorder commit — tableDnd hands the new flat order + the reordered group's key. An
