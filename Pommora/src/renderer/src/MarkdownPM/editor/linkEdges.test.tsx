@@ -47,6 +47,10 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
     expect(opened).toHaveBeenCalledWith('p1')
   })
 
+  // NOT covered here: that a navigating press refuses the caret seat. CM seats the caret from real
+  // coordinates, which jsdom never produces, and `defaultPrevented` reads true at every position
+  // because CM prevents default on its own content — so any assertion about it passes with the
+  // behaviour removed. Live check only.
   it('a link the caret was already inside when pressed does not navigate', async () => {
     opened.mockClear()
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
