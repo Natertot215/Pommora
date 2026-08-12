@@ -213,12 +213,12 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 **Negative control:** with the edge carve-out disabled, a test asserting a trailing-edge click sets a selection goes red; with it enabled, a test asserting a click on the link text still navigates stays green.
 
 **Steps:**
-- [ ] Widen the hit-test once: return the token's status and range for any wikiLink, resolved or not.
-- [ ] Gate *navigation* on the resolved-and-inside-content case; leave the edges to ordinary caret placement.
-- [ ] Add both halves of the negative control.
-- [ ] **Live check before moving on** (the reviewer flagged this as unprovable in code): click the left half of the first letter of a plain `[[Page]]` ten times and confirm it navigates every time — `posAtCoords` may map that point to the token's start rather than its content.
-- [ ] `npm run test` — expect green.
-- [ ] Commit: `fix(connections): a click at a link's edge places the caret`
+- [x] Widen the hit-test once: return the token's status and range for any wikiLink, resolved or not. `wikiLinkAt` is exported and returns `{ title, range, content }` — Task 7 consumes it.
+- [x] Gate *navigation* on the resolved-and-inside-content case; leave the edges to ordinary caret placement. `externalLinkAt` carried the identical inclusive test and takes the same carve-out.
+- [x] Add both halves of the negative control. Proven: with the carve-out removed the two edge tests go red while the two "still navigates" tests stay green; with only the caret-rule line removed, that test alone goes red.
+- [ ] **Live check before moving on** (unprovable in code — jsdom measures nothing): click the left half of the first letter of a plain `[[Page]]` ten times and confirm it navigates every time — `posAtCoords` may map that point to the token's start rather than its content. **Outstanding — Nathan's.**
+- [x] `npm run test` — expect green.
+- [x] Commit: `fix(connections): a click at a link's edge places the caret`
 
 #### Task 7: The menu carries a span, and reads editability at the editor
 
