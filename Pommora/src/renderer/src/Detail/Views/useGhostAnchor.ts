@@ -11,8 +11,9 @@ import { createContext, useEffect, useRef, useState } from 'react'
 export const GHOST_DWELL_MS = 1500 // KNOB
 
 /** The suppress handle, published by a view whose surfaces pop native menus from inside
- *  memoized children (Cards) — caller-side wrapping can't reach those pops. */
-export const GhostSuppress = createContext<GhostAnchor['suppressWrap'] | null>(null)
+ *  memoized children (Cards) — caller-side wrapping can't reach those pops. Defaults to a
+ *  pass-through, so a surface with no ghost host above it pops its menu unwrapped. */
+export const GhostSuppress = createContext<GhostAnchor['suppressWrap']>((menu) => menu())
 
 export interface GhostAnchorOptions {
   dwellMs: number
@@ -134,4 +135,18 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
   }
 
   return { ghost, onHover, onGhostEnter, onGhostLeave, take, closed, clear, suppressWrap }
+}
+
+/** The anchor left the consumer's pipeline (a reload, a filter, a regroup, a tree change) —
+ *  clears ghost STATE, not just its render: a stranded `closing` would reopen with no dwell on
+ *  the next hover. Unconditional by design; the clear is a no-op once the anchor is gone. */
+export function useClearStrandedGhost(
+  api: GhostAnchor,
+  anchors: { has: (anchorId: string) => boolean },
+): void {
+  const stranded =
+    api.ghost !== null && !anchors.has(api.ghost.anchorId) ? api.ghost.anchorId : null
+  useEffect(() => {
+    if (stranded !== null) api.clear(stranded)
+  })
 }
