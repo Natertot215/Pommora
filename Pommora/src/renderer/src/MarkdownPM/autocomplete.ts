@@ -24,7 +24,12 @@ export function autocompleteQuery(
   for (let m = re.exec(line); m; m = re.exec(line)) {
     const open = m.index
     const close = m.index + m[0].length
-    if (rel >= open + 2 && rel <= close - 2)
+    // Only the TITLE opens the page picker. Accepting a candidate replaces the whole token, so a
+    // caret in the alias would arm a list keyed on the title and discard the alias on Enter —
+    // destroying the very text the caret is sitting in. An unaliased link is unaffected: its title
+    // ends exactly where the closer begins.
+    const titleEnd = open + 2 + m[1].length
+    if (rel >= open + 2 && rel <= titleEnd)
       return { query: m[1], from: lineStart + open, to: lineStart + close, form: 'link' }
   }
   // The embed branch is a LOCAL match — the connections pattern excludes `![[` by design (four
