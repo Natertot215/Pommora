@@ -96,7 +96,9 @@ export function App(): React.JSX.Element {
   }, [beginRename])
 
   useEffect(() => {
-    return window.nexus.onNewPageAdjacent(({ path, where }) => void newPageAdjacent(path, where))
+    return window.nexus.onNewPageAdjacent(
+      ({ path, where, host }) => void newPageAdjacent(path, where, host),
+    )
   }, [newPageAdjacent])
 
   // Dedup focuses an already-open tab instead of duplicating.

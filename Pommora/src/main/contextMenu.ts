@@ -102,11 +102,13 @@ export async function showContextMenu(
       { type: 'separator' },
       {
         label: 'New Page Above',
-        click: () => push(win, 'new-page-adjacent', { path: target.path, where: 'above' }),
+        click: () =>
+          push(win, 'new-page-adjacent', { path: target.path, where: 'above', host: target.host }),
       },
       {
         label: 'New Page Below',
-        click: () => push(win, 'new-page-adjacent', { path: target.path, where: 'below' }),
+        click: () =>
+          push(win, 'new-page-adjacent', { path: target.path, where: 'below', host: target.host }),
       },
       { type: 'separator' },
     )

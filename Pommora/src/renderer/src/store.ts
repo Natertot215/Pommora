@@ -326,8 +326,9 @@ interface SessionState {
   beginRename: (path: string, create?: boolean, host?: RenameHost) => void
   cancelRename: () => void
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
-  /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives. */
-  newPageAdjacent: (path: string, where: 'above' | 'below') => Promise<void>
+  /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives.
+   *  `host` carries the gesture's surface into the naming fence. */
+  newPageAdjacent: (path: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
 
   renamingProperty: { collectionPath: string; propertyId: string } | null
   /** Set when a property rename lands. A mounted view's values snapshot is fetched once per
@@ -1480,7 +1481,7 @@ export const useSession = create<SessionState>((set, get) => {
         }
       }),
     cancelRename: () => set(RENAME_CLEARED),
-    newPageAdjacent: async (path, where) => {
+    newPageAdjacent: async (path, where, host) => {
       const tree = get().tree
       if (!tree) return
       const parentPath = parentPathOf(path)
@@ -1495,7 +1496,7 @@ export const useSession = create<SessionState>((set, get) => {
       )
       await get().mutate(
         { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME, order },
-        (created) => get().beginRename(created.path, true),
+        (created) => get().beginRename(created.path, true, host),
       )
     },
     submitRename: async (path, kind, newName) => {
