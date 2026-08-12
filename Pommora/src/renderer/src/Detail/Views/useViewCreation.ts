@@ -33,9 +33,7 @@ export interface ViewCreationConfig {
   view: SavedView
   schema: PropertyDefinition[]
   values: Record<string, PageFrontmatter>
-  setValueOverride: React.Dispatch<
-    React.SetStateAction<Record<string, PageFrontmatter> | null>
-  >
+  setValueOverride: React.Dispatch<React.SetStateAction<Record<string, PageFrontmatter> | null>>
   effectiveValues: Record<string, PageFrontmatter>
   /** Whether creates write the canonical page_order channel — always false in Cards, whose
    *  live order is only ever viewOrders. */
@@ -186,14 +184,14 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     createPageIn(parentPath, seeds, order, (created) => {
       // Every live order settles in the create's own act — a newborn absent from a stale array
       // ranks last (the [source] self-heal is a one-frame flash; nothing re-emits viewOrders).
-      const cc = cfg()
-      const allIds = flattenContainer(cc.source, cc.effectiveValues).rows.map((r) => r.id)
+      const latest = cfg()
+      const allIds = flattenContainer(latest.source, latest.effectiveValues).rows.map((r) => r.id)
       const splice = (existing: string[] | undefined): string[] =>
         tieOrderWith(existing, allIds, created.id, row.id, where)
-      cc.setManualOverride((m) => (m ? splice(m) : m))
-      if (!cc.structuralOrder || cc.viewOrders[cc.view.id])
-        cc.persistViewOrder(splice(cc.viewOrders[cc.view.id]))
-      cc.onCreated(created)
+      latest.setManualOverride((m) => (m ? splice(m) : m))
+      if (!latest.structuralOrder || latest.viewOrders[latest.view.id])
+        latest.persistViewOrder(splice(latest.viewOrders[latest.view.id]))
+      latest.onCreated(created)
     })
   }
 
