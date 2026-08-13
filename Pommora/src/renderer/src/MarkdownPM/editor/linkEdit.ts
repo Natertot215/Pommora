@@ -5,7 +5,7 @@ import { useSession } from '../../store'
 import type { ConnectionsApi } from '../connections'
 import { tokenize } from '../tokens'
 import { focusRange } from './input'
-import { restedOnLink } from './linkRest'
+import { restedOnLink } from './linkGestures'
 
 /** The two authoring gestures, both seating the caret where their names imply. They work off the
  *  token's own spans rather than the rendered text: a displayed alias hides where the title is, so
