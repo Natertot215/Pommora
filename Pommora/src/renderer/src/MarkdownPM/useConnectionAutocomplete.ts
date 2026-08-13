@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { EditorView } from '@codemirror/view'
+import { EditorSelection } from '@codemirror/state'
 import {
   autocompleteQuery,
-  connectionInsert,
+  commitEdit,
   acPanelTop,
   type AcRow,
   type AcQuery,
@@ -81,24 +82,21 @@ export function useConnectionAutocomplete(
   const commit = (row: AcRow): void => {
     const view = viewRef.current
     if (!view || !ac) return
-    // Retargeting replaces the WHOLE token, so an alias the link was wearing is destroyed here
-    // unless it's deliberately re-emitted. Dropping it is the default — the old words describe the
-    // old page — and the setting is what makes that a preference rather than a law. Authoring an
-    // alias already put it in that page's memory, so the words survive being dropped from here.
+    // Retargeting replaces the WHOLE token, so an alias the link was wearing is destroyed unless
+    // it's deliberately re-emitted. Dropping it is the default — the old words describe the old page
+    // — and the setting is what makes that a preference rather than a law. Authoring an alias
+    // already put it in that page's memory, so the words survive being dropped from here.
     const worn =
       ac.form === 'link'
         ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.[2]
         : undefined
-    const kept = dropAlias ? undefined : worn
-    const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, kept)
-    // A caret resting on a connection's closer keeps its token active, so the link just picked would
-    // sit there as raw syntax. Step one past it instead, adding the space when there isn't one to
-    // step over. Embeds own their whole line, and an alias lands inside a link rather than past one.
-    const spaced = ac.form === 'link'
-    const pad = spaced && view.state.doc.sliceString(ac.to, ac.to + 1) !== ' ' ? ' ' : ''
+    const { changes, anchor, head } = commitEdit(ac, row, {
+      keepAlias: dropAlias ? undefined : worn,
+      spaceFollows: view.state.doc.sliceString(ac.to, ac.to + 1) === ' ',
+    })
     view.dispatch({
-      changes: { from: ac.from, to: ac.to, insert: insert + pad },
-      selection: { anchor: caret + (spaced ? 1 : 0) },
+      changes,
+      selection: head === undefined ? { anchor } : EditorSelection.range(anchor, head),
       userEvent: 'input',
     })
     setAc(null)

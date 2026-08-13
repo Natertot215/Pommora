@@ -1,11 +1,13 @@
 import { linkAt, normalizeTitle } from '@shared/connections'
+import { decodeLinkTarget, encodeLinkTarget, isValidLink, targetTitle } from '@shared/links'
 import { lineStartAt, lineEndAt } from './input'
 import type { ConnPage, PageIndex } from './connections'
 import { useSession } from '../store'
 
-/** What the picker is filling in: a `[[Title]]` connection, a `![[Title]]` embed, or the alias half
- *  of one. It decides both what a row means and what accepting one writes. */
-export type ConnectionForm = 'link' | 'embed' | 'alias'
+/** What the picker is filling in: a `[[Title]]` connection, a `![[Title]]` embed, the alias half of
+ *  one, or the `( )` of a markdown link. It decides both what a row means and what accepting one
+ *  writes. */
+export type ConnectionForm = 'link' | 'embed' | 'alias' | 'target'
 
 export interface AutocompleteQuery {
   query: string
@@ -16,6 +18,10 @@ export interface AutocompleteQuery {
   form: ConnectionForm
   /** The title whose remembered aliases are being offered. Alias form only. */
   title?: string
+  /** The label slot beside the target being filled. Target form only — an empty one is filled with
+   *  the page's own title, since a markdown link's display text is free where a connection's is its
+   *  target. */
+  label?: { from: number; to: number }
 }
 
 /** What a candidate source is asked for — the query itself, stripped of where it sits. */
@@ -30,6 +36,21 @@ export interface AcRow {
   /** Whether the row names an entity and should be drawn with its glyph. */
   isPage: boolean
   forget?: () => void
+}
+
+/** The `( )` containing a line-relative offset, with the label slot that belongs to it. */
+function markdownTargetAt(
+  line: string,
+  rel: number,
+): { from: number; to: number; label: [number, number] } | null {
+  for (let i = line.indexOf(']('); i !== -1; i = line.indexOf('](', i + 2)) {
+    const open = i + 2
+    const close = line.indexOf(')', open)
+    if (close === -1 || rel < open || rel > close) continue
+    const bracket = line.lastIndexOf('[', i)
+    return bracket === -1 ? null : { from: open, to: close, label: [bracket + 1, i] }
+  }
+  return null
 }
 
 export function autocompleteQuery(
@@ -60,6 +81,17 @@ export function autocompleteQuery(
         title,
       }
   }
+  // The `( )` branch, also local: an in-progress link has an EMPTY target and the grammar above
+  // requires at least one character, so it can never answer for the shape ⌘K actually writes.
+  const paren = markdownTargetAt(line, rel)
+  if (paren)
+    return {
+      query: decodeLinkTarget(line.slice(paren.from, paren.to)),
+      from: lineStart + paren.from,
+      to: lineStart + paren.to,
+      form: 'target',
+      label: { from: lineStart + paren.label[0], to: lineStart + paren.label[1] },
+    }
   // The embed branch is a LOCAL match — the connections pattern excludes `![[` by design (four
   // consumers depend on that), and `[` doesn't auto-pair after `!`, so an in-progress embed is
   // usually unclosed: the span runs to the closer when one exists, else to the line end.
@@ -106,6 +138,8 @@ function formSyntax(value: string, form: ConnectionForm, alias?: string): string
   switch (form) {
     case 'alias':
       return value
+    case 'target':
+      return encodeLinkTarget(value)
     case 'embed':
       return `![[${value}]]`
     case 'link':
@@ -122,6 +156,52 @@ export function connectionInsert(
 ): { insert: string; caret: number } {
   const insert = formSyntax(value, form, alias)
   return { insert, caret: from + insert.length }
+}
+
+export interface CommitEdit {
+  changes: { from: number; to: number; insert: string }[]
+  /** Where the caret lands; `head` present means the span between them is selected. */
+  anchor: number
+  head?: number
+}
+
+/** The edit accepting `row` makes, as data. Pure so the rules below can be read and tested without
+ *  an editor: what each form writes, and where each form leaves the caret, is the whole behaviour of
+ *  the picker and the part a coordinate-less harness otherwise can't reach.
+ *
+ *  `keepAlias` is the alias a retargeted link should carry over, already decided by the caller's
+ *  setting. `spaceFollows` says whether the character after the span is already a space. */
+export function commitEdit(
+  ac: AutocompleteQuery,
+  row: AcRow,
+  opts: { keepAlias?: string; spaceFollows: boolean } = { spaceFollows: false },
+): CommitEdit {
+  const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
+  if (ac.form === 'target') {
+    // Naming the target finishes only half the link: a markdown link's display text is free, where a
+    // connection's IS its target. An empty label is filled with the page's own title and selected,
+    // so one press leaves you typing what the link should say rather than hunting for the slot. A
+    // label already written — ⌘K over a selection — is the author's, and is left alone.
+    const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
+    return {
+      changes: [
+        ...(fill ? [{ from: fill.from, to: fill.to, insert: row.value }] : []),
+        { from: ac.from, to: ac.to, insert },
+      ],
+      ...(fill
+        ? { anchor: fill.from, head: fill.from + row.value.length }
+        : { anchor: caret + 1 }),
+    }
+  }
+  // A caret resting on a connection's closer keeps its token active, so the link just picked would
+  // sit there as raw syntax. Step one past it instead, adding the space when there isn't one to step
+  // over. Embeds own their whole line, and an alias lands inside a link rather than past one.
+  const spaced = ac.form === 'link'
+  const pad = spaced && !opts.spaceFollows ? ' ' : ''
+  return {
+    changes: [{ from: ac.from, to: ac.to, insert: insert + pad }],
+    anchor: caret + (spaced ? 1 : 0),
+  }
 }
 
 // Panel geometry — shared by the main editor and table cells. AC_ROW_H/AC_PADDING track .mdpm-ac in Styles.css.

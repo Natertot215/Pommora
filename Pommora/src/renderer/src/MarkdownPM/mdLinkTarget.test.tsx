@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { encodeLinkTarget } from '@shared/links'
+import { autocompleteQuery, commitEdit } from './autocomplete'
 import { buildPageIndex, resolveMdTarget, type ConnectionsApi, type ConnPage } from './connections'
 import { renderCellContent } from './Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
@@ -130,3 +131,46 @@ describe('following one', () => {
   })
 })
 
+
+// Naming the target finishes half the link. A markdown link's display text is free — unlike a
+// connection, whose title IS its target — so the press that names the page should leave you typing
+// what the link says, not hunting for the slot.
+//
+// Asserted on the edit rather than by driving the panel: opening it needs coordsAtPos, and jsdom
+// measures nothing, so a panel-driven version of this would only ever test the harness.
+describe('picking a page inside the parens', () => {
+  const row = { value: 'Work Notes', label: 'Work Notes', isPage: true }
+
+  const applied = (doc: string, caret: number): { text: string; selected: string } => {
+    const ac = autocompleteQuery(doc, caret)!
+    expect(ac.form).toBe('target')
+    const edit = commitEdit(ac, row)
+    let text = doc
+    for (const c of [...edit.changes].reverse()) {
+      text = text.slice(0, c.from) + c.insert + text.slice(c.to)
+    }
+    return {
+      text,
+      selected: edit.head === undefined ? '' : text.slice(edit.anchor, edit.head),
+    }
+  }
+
+  it('fills an empty label with the page title and selects it', () => {
+    const doc = 'see []() end'
+    const { text, selected } = applied(doc, doc.indexOf('(') + 1)
+    expect(text).toBe('see [Work Notes](Work%20Notes) end')
+    expect(selected).toBe('Work Notes')
+  })
+
+  it('leaves a written label alone and steps past the link', () => {
+    const doc = 'see [the notes]() end'
+    const ac = autocompleteQuery(doc, doc.indexOf('(') + 1)!
+    const edit = commitEdit(ac, row)
+    expect(edit.changes).toHaveLength(1)
+    expect(edit.head).toBeUndefined()
+    const text = doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
+    expect(text).toBe('see [the notes](Work%20Notes) end')
+    // Past the closing paren, so the next keystroke lands outside the link rather than inside it.
+    expect(edit.anchor).toBe('see [the notes](Work%20Notes)'.length)
+  })
+})
