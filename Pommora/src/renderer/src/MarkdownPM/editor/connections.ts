@@ -77,7 +77,12 @@ function pointerLink(
   if (pos == null) return null
   const hit = wikiLinkAt(view, pos)
   if (!hit) return null
-  if (pos < hit.content[0] || pos > hit.content[1]) return { hit, page: null }
+  // The gesture has to land on the link's own drawn text. Offsets alone aren't enough: posAtCoords
+  // clamps to the nearest RENDERED position, and the closing `]]` is replaced to zero width — so a
+  // click in the empty space past a short alias resolves back onto its last character and follows a
+  // link the pointer was nowhere near.
+  const onText = (event.target as HTMLElement).closest?.('.md-connection-resolved') != null
+  if (!onText || pos < hit.content[0] || pos > hit.content[1]) return { hit, page: null }
   const res = api.resolve(hit.title)
   return { hit, page: res.status === 'resolved' && res.page ? res.page : null }
 }

@@ -29,13 +29,18 @@ const conn: ConnectionsApi = {
 // The mousedown and the caret seat are not ceremony: CM moves the caret on mousedown, so a bare
 // click() dispatch tests a sequence the app never runs — and a rule reading the live caret passes
 // here while failing on every real click.
+// The span is re-queried before each dispatch, never captured: seating the caret activates the
+// token, which changes its class, and CM answers that by REPLACING the element. A held reference is
+// detached by then, and an event dispatched on it never reaches the editor's handlers at all.
+const linkSpan = (view: EditorView): HTMLElement =>
+  (view.dom.querySelector('.md-connection-resolved') ?? view.dom) as HTMLElement
+
 const clickAt = (view: EditorView, pos: number, caretBefore = 0): void => {
   view.dispatch({ selection: { anchor: caretBefore } })
   vi.spyOn(view, 'posAtCoords').mockReturnValue(pos)
-  const target = (view.dom.querySelector('.md-connection-resolved') ?? view.dom) as HTMLElement
-  target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+  linkSpan(view).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
   view.dispatch({ selection: { anchor: pos } })
-  target.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+  linkSpan(view).dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
 }
 
 describe('a connection acts on its text, and leaves its edges to the caret', () => {
@@ -56,6 +61,21 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await act(async () => view.focus())
     clickAt(view, 6, 6)
+    expect(opened).not.toHaveBeenCalled()
+  })
+
+  // The bug a coordinate check alone can't catch: posAtCoords clamps to the nearest RENDERED
+  // position and the closing `]]` is replaced to zero width, so a click in the blank space past a
+  // short alias resolves back onto its last character. Only the event's target knows the pointer
+  // was never on the link — so this dispatches off the span while the offset says otherwise.
+  it('a click in the space past a link does not follow it', async () => {
+    opened.mockClear()
+    const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(9)
+    view.contentDOM.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    view.contentDOM.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
     expect(opened).not.toHaveBeenCalled()
   })
 
