@@ -230,6 +230,13 @@ interface SessionState {
   resolveLinkTitle: (url: string) => void
   activeViews: Record<string, string>
   setActiveView: (containerId: string, viewId: string) => Promise<void>
+  /** The aliases each page has been given, keyed PageID so they survive a rename. Its own slice
+   *  rather than a tree-keyed derivation: authoring one and forgetting one both push no tree, and
+   *  the watcher suppresses the app's own writes, so a tree-keyed cache would go on offering an
+   *  alias that had just been forgotten. */
+  pageAliases: Record<string, string[]>
+  rememberAlias: (pageId: string, alias: string) => void
+  forgetAlias: (pageId: string, alias: string) => void
   /** Every block host's lock, keyed by host. Seeded from the doc the host loads — the one source. */
   hostLocks: Record<string, boolean>
   seedHostLock: (host: BlockHostRef, locked: boolean) => void
@@ -366,6 +373,19 @@ let coldStampSeq = -1
 let systemAccentCache: string | null | undefined
 
 export const useSession = create<SessionState>((set, get) => {
+  // One writer for both alias gestures. The slice mirrors exactly what a reload gives back, so a
+  // page left with nothing loses its key rather than holding an empty list — the same rule the
+  // scope's own write applies on disk.
+  const putAliases = (pageId: string, next: string[]): void => {
+    set((s) => {
+      const map = { ...s.pageAliases }
+      if (next.length) map[pageId] = next
+      else delete map[pageId]
+      return { pageAliases: map }
+    })
+    void window.nexus.aliases.set(pageId, next)
+  }
+
   // Clearing activeTabId marks the tab set never-seeded, so load() re-reads the new nexus's sidecars.
   const resetNexusSession = (): void => {
     pageFetchSeq++
@@ -683,8 +703,8 @@ export const useSession = create<SessionState>((set, get) => {
         switch (res.status) {
           case 'open':
             await get().applyTree(res.tree)
-            // Six independent fetches, one round of latency. The two raw database reads keep
-            // a catch; the envelope channels structurally cannot reject.
+            // Independent fetches, one round of latency. The raw database reads keep a catch and
+            // name what the surface falls back to; the envelope channels structurally cannot reject.
             await Promise.all([
               window.nexus.subfield.get().then((cfg) => {
                 if (cfg) set({ subfieldExpanded: cfg.expanded, subfieldOrder: cfg.order })
@@ -700,6 +720,10 @@ export const useSession = create<SessionState>((set, get) => {
                 .get()
                 .then((views) => set({ activeViews: views }))
                 .catch(() => undefined), // surfaces fall back to the first saved view
+              window.nexus.aliases
+                .get()
+                .then((aliases) => set({ pageAliases: aliases }))
+                .catch(() => undefined), // the picker offers titles only
             ])
             // A mutation refetch must NOT re-read the sidecar here — its debounced write trails
             // the in-memory tab set, so a re-read would roll the tabs backward.
@@ -965,6 +989,25 @@ export const useSession = create<SessionState>((set, get) => {
     setActiveView: async (containerId, viewId) => {
       await window.nexus.activeViews.set(containerId, viewId)
       set((s) => ({ activeViews: { ...s.activeViews, [containerId]: viewId } }))
+    },
+
+    pageAliases: {},
+    rememberAlias: (pageId, alias) => {
+      const words = alias.trim()
+      if (!words) return
+      const worn = get().pageAliases[pageId] ?? []
+      // Most recently given first, and never twice: giving a page an alias it already wears
+      // promotes that one rather than adding a second copy of it.
+      if (worn[0] === words) return
+      putAliases(pageId, [words, ...worn.filter((a) => a !== words)])
+    },
+    forgetAlias: (pageId, alias) => {
+      const worn = get().pageAliases[pageId]
+      if (!worn?.includes(alias)) return
+      putAliases(
+        pageId,
+        worn.filter((a) => a !== alias),
+      )
     },
 
     selection: { kind: 'none' },
