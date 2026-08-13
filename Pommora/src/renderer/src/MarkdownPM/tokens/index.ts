@@ -10,7 +10,7 @@ import {
   blockLatexRegex,
   inlineLatexRegex,
 } from '../detect'
-import { pageLinkPattern } from '@shared/connections'
+import { linkSpans, pageLinkPattern } from '@shared/connections'
 
 export type TokenKind =
   | 'italic'
@@ -134,21 +134,19 @@ function regexTokens(text: string, spec: RegexSpec, inCode: (offset: number) => 
 function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Token[] {
   const tokens: Token[] = []
   for (const m of text.matchAll(pageLinkPattern())) {
-    if (m.index == null) continue
-    const fs = m.index
-    const fe = fs + m[0].length
-    if (inCode(fs)) continue
-    const titleStart = fs + 2
-    const titleEnd = titleStart + (m[1]?.length ?? 0)
+    const s = linkSpans(m)
+    if (!s || inCode(s.full[0])) continue
+    const [fs, fe] = s.full
     // An alias pulls the two meanings apart — the words shown and the key resolved. The leading
-    // marker then swallows `[[Title|`, since all of it is syntax the reader shouldn't see.
-    const aliased = (m[2]?.length ?? 0) > 0
-    const shown: [number, number] = aliased ? [titleEnd + 1, fe - 2] : [titleStart, titleEnd]
+    // marker then swallows `[[Title|`, since all of it is syntax the reader shouldn't see. An
+    // opened-but-empty one shows nothing, so it stays a plain link until something is written in it.
+    const alias = s.alias && s.alias[1] > s.alias[0] ? s.alias : null
+    const shown = alias ?? s.title
     tokens.push({
       kind: 'wikiLink',
       range: [fs, fe],
       contentRange: shown,
-      ...(aliased ? { resolveRange: [titleStart, titleEnd] as [number, number] } : {}),
+      ...(alias ? { resolveRange: s.title } : {}),
       // Everything either side of what's shown, so the markers tile the whole token — a renderer
       // drawing only the content span and skipping the rest can't then disagree with one hiding
       // markers. A pipe with nothing after it rides the closer.

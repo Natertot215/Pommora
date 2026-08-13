@@ -1,4 +1,4 @@
-import { pageLinkPattern } from '@shared/connections'
+import { linkSpans, pageLinkPattern } from '@shared/connections'
 import { lineStartAt, lineEndAt } from './input'
 
 /** `[[Title]]` connection vs `![[Title]]` embed — decides the committed form. */
@@ -22,15 +22,13 @@ export function autocompleteQuery(
   const rel = caret - lineStart
   const re = pageLinkPattern()
   for (let m = re.exec(line); m; m = re.exec(line)) {
-    const open = m.index
-    const close = m.index + m[0].length
+    const s = linkSpans(m)
     // Only the TITLE opens the page picker. Accepting a candidate replaces the whole token, so a
     // caret in the alias would arm a list keyed on the title and discard the alias on Enter —
     // destroying the very text the caret is sitting in. An unaliased link is unaffected: its title
     // ends exactly where the closer begins.
-    const titleEnd = open + 2 + m[1].length
-    if (rel >= open + 2 && rel <= titleEnd)
-      return { query: m[1], from: lineStart + open, to: lineStart + close, form: 'link' }
+    if (s && rel >= s.title[0] && rel <= s.title[1])
+      return { query: m[1], from: lineStart + s.full[0], to: lineStart + s.full[1], form: 'link' }
   }
   // The embed branch is a LOCAL match — the connections pattern excludes `![[` by design (four
   // consumers depend on that), and `[` doesn't auto-pair after `!`, so an in-progress embed is
