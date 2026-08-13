@@ -11,7 +11,7 @@ import {
 import { docString } from './editor/docCache'
 import { normalizeTitle, pageLinkPattern } from '@shared/connections'
 import { useSession } from '../store'
-import { restedOnLink } from './editor/linkGestures'
+import { aliasInvite, invitedAlias, restedOnLink } from './editor/linkGestures'
 
 export interface AcState extends AutocompleteQuery {
   left: number
@@ -56,6 +56,7 @@ export function useConnectionAutocomplete(
   const [ac, setAc] = useState<AcState | null>(null)
   const [acIndex, setAcIndex] = useState(0)
   const dropAlias = useSession((s) => s.personalization.removeTitleOnLinkChange !== false)
+  const offerAliases = useSession((s) => s.personalization.aliasPickerOnCommit !== false)
   // The alias form's rows come out of this, and forgetting one has to take its row with it — so the
   // scan depends on the memory rather than only on what's been typed.
   const pageAliases = useSession((s) => s.pageAliases)
@@ -90,13 +91,20 @@ export function useConnectionAutocomplete(
       ac.form === 'link'
         ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.[2]
         : undefined
-    const { changes, anchor } = commitEdit(ac, row, { keepAlias: dropAlias ? undefined : worn })
+    // Only a page the picker itself offered can open an alias slot, and only when that page has
+    // names worth offering — an empty pipe with nothing behind it is a slot the user has to close.
+    const openAlias =
+      ac.form === 'link' && offerAliases && (pageAliases[row.pageId ?? '']?.length ?? 0) > 0
+    const { changes, anchor, opensAlias } = commitEdit(ac, row, {
+      keepAlias: dropAlias ? undefined : worn,
+      openAlias,
+    })
     view.dispatch({
       changes,
       selection: { anchor },
-      // The link is finished and the caret rests on its closer, which is the one position that
-      // leaves it rendered — but only because this gesture put it there.
-      effects: restedOnLink.of(anchor),
+      // A finished link rests rendered on its closer, but only because this gesture put the caret
+      // there. A link left open at its alias isn't finished, and says so by asking for the picker.
+      effects: opensAlias ? invitedAlias.of(anchor) : restedOnLink.of(anchor),
       userEvent: 'input',
     })
     setAc(null)
@@ -140,8 +148,12 @@ export function detectConnectionQuery(
     // docString hits the per-doc-version cache — a raw toString() re-joins the whole rope on
     // every keystroke/caret-move for a read that only touches the caret's line.
     const q = autocompleteQuery(docString(view.state.doc), sel.head, allowEmbeds)
-    const c = q && view.coordsAtPos(sel.head)
-    if (q && c)
+    // An alias with nothing typed in it offers everything its page has worn — but only where the
+    // slot was just handed over. Opening one yourself, or emptying one, is not an invitation.
+    const uninvited =
+      q?.form === 'alias' && q.query === '' && view.state.field(aliasInvite, false) !== sel.head
+    const c = q && !uninvited && view.coordsAtPos(sel.head)
+    if (q && !uninvited && c)
       next = {
         ...q,
         left: Math.round(c.left),

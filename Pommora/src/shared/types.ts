@@ -60,6 +60,12 @@ export interface Personalization {
   /** Whether repointing a connection drops the alias it was wearing. Absent = drops (default true) —
    *  the old words describe the old page. The alias stays in that page's remembered list either way. */
   removeTitleOnLinkChange?: boolean
+  /** Whether accepting a page from the picker opens its alias slot when that page already has names
+   *  worth offering. Absent = opens (default true).
+   *
+   *  This is intentionally invisible because the language used to describe the toggle on the settings
+   *  surface hasn't been decided yet — do this sooner rather than later. */
+  aliasPickerOnCommit?: boolean
   defaultIcons?: Partial<Record<EntityIconKind, string>>
   /** Icons the user favorited in the Icon Picker — bare Lucide ids (kebab), in display/reorder order. */
   favoriteIcons?: string[]
