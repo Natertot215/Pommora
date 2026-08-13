@@ -217,6 +217,7 @@ class TableWidget extends WidgetType {
         model={this.model}
         headingColumn={this.headingColumn}
         onCellCommit={commit}
+        onSettled={() => view.dispatch({ effects: refreshTableEffect.of(this.tableIndex) })}
         onExit={exit}
         onReorder={reorder}
         onResize={resize}
@@ -308,6 +309,35 @@ function editAffectsTables(deco: DecorationSet, tr: Transaction): boolean {
   return delimiterNearby
 }
 
+/** Fired when a table's cell editor demotes: the static cells now have to draw what was typed, and
+ *  this is the first moment they do. Kept off the edit itself so typing costs no block re-measure. */
+export const refreshTableEffect = StateEffect.define<number>()
+
+/** Swap one table's widget for one built from the current doc, leaving every other table alone. */
+function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): DecorationSet {
+  const region = tableRegions(docString(state.doc))[index]
+  if (!region) return deco
+  const text = state.doc.sliceString(region.from, region.to)
+  let next = deco
+  for (const cur = next.iter(); cur.value; cur.next()) {
+    const w = cur.value.spec.widget
+    if (!(w instanceof TableWidget) || w.tableIndex !== index || w.text === text) continue
+    next = next.update({
+      filterFrom: cur.from,
+      filterTo: cur.to,
+      filter: () => false,
+      add: [
+        Decoration.replace({
+          widget: new TableWidget(text, modelFromRegion(region), index, w.headingColumn),
+          block: true,
+        }).range(cur.from, cur.to),
+      ],
+    })
+    break
+  }
+  return next
+}
+
 const widgetField = StateField.define<DecorationSet>({
   create: buildWidgetDecorations,
   update: (deco, tr) => {
@@ -345,35 +375,24 @@ const widgetField = StateField.define<DecorationSet>({
     if (toggled) return next
     // Mount-time load applies the whole saved set at once → one full rebuild (fires once per page, not per toggle).
     if (tr.effects.some((e) => e.is(setHeadingColsEffect))) return buildWidgetDecorations(tr.state)
-    // A cell commit edits one table's source. Map the widgets forward (keeps the focused cell editor
-    // mounted), then rebuild THAT table's widget from the new doc so its model reflects the edit. Remapping
-    // alone reuses the old widget instance, which CM keeps without re-rendering — leaving the static cells
-    // (most visibly the just-edited cell once it demotes on navigation) drawing pre-edit text.
-    if (tr.annotation(tableSelfEdit)) {
-      let next = deco.map(tr.changes)
-      const regions = tableRegions(docString(tr.state.doc))
-      for (const cur = next.iter(); cur.value; cur.next()) {
-        const w = cur.value.spec.widget
-        if (!(w instanceof TableWidget)) continue
-        const region = regions[w.tableIndex]
-        if (!region) continue
-        const text = tr.state.doc.sliceString(region.from, region.to)
-        if (text === w.text) continue
-        next = next.update({
-          filterFrom: cur.from,
-          filterTo: cur.to,
-          filter: () => false,
-          add: [
-            Decoration.replace({
-              widget: new TableWidget(text, modelFromRegion(region), w.tableIndex, w.headingColumn),
-              block: true,
-            }).range(cur.from, cur.to),
-          ],
-        })
-        break
-      }
-      return next
+    // A cell commit edits one table's source. Map the widgets forward and STOP: the cell being typed
+    // in is a live editor that already holds its own text, and the static cells around it are
+    // unchanged. Rebuilding the widget here would replace a block decoration on every keystroke,
+    // which CodeMirror answers by re-measuring the block — against React content that hasn't
+    // rendered yet, so the height lands wrong and the page visibly jumps.
+    //
+    // The rebuild the static cells DO need is deferred to `refreshTableEffect`, which the view fires
+    // when the cell demotes. That is the first moment a static cell has to draw the edited text.
+    if (tr.annotation(tableSelfEdit)) return deco.map(tr.changes)
+    let refreshed = false
+    for (const eff of tr.effects) {
+      if (!eff.is(refreshTableEffect)) continue
+      next = rebuiltTable(next, tr.state, eff.value)
+      refreshed = true
     }
+    // Returned before the doc-change fallback below: a refresh carries no changes of its own, and
+    // that fallback would hand back the pre-refresh set.
+    if (refreshed) return next
     if (!tr.docChanged) return deco
     return editAffectsTables(deco, tr) ? buildWidgetDecorations(tr.state) : deco.map(tr.changes)
   },
