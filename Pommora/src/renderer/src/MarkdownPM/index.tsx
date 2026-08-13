@@ -30,7 +30,7 @@ import { registerScrollHeal } from '../Embeds/tileWarm'
 import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
 import { connectionClicks } from './editor/connections'
-import { externalLinkClicks } from './editor/links'
+import { markdownLinkClicks } from './editor/links'
 import { aliasOnLeave } from './editor/linkEdit'
 import { markdownFolding, applySavedFolds, type FoldsApi } from './editor/folding'
 import { applyEditorAction, type EditorMenuApi } from './editor/menu'
@@ -241,7 +241,7 @@ export function MarkdownEditor({
       // Reject any delete that would erode a callout body line's `>` prefix in place (drop it out of the box).
       calloutGuard,
       connectionClicks(() => connectionsRef.current),
-      externalLinkClicks(),
+      markdownLinkClicks(() => connectionsRef.current),
       aliasOnLeave(() => connectionsRef.current),
       // Close the connection panel when focus leaves the editor (sidebar click, Cmd-Tab) — the cell
       // editor has the same handler; without it the glass panel floats over unrelated UI.
