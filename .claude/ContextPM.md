@@ -79,8 +79,8 @@
 - [ ] The link-rename field shows a leading empty space — the shared field recipe's horizontal padding surviving the TextPicker input override, with the pane gutter adding to it. A visual inset rather than a stored character (deprioritized).
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
 - [ ] The PageOutline's list-indent is noticeably different from other disclosure spacings (Sidebar, GroupPane, Tables), and likely needs a second pass to confirm whether it was actually consolidated around the shared primitive; reconcile with the heading-drag idea from the pane itself when this is focused on.
-- [ ] Clicking inline next to connection syntax navigates to the linked page instead of placing your caret at the edge of the syntax, making it quite difficult to rename or adjust the link itself — this should likely be fixed when alias and link management becomes a current focus to consolidate this issue's fixture into the feature itself rather than a fix based on current-state mechanics that intertwine with that features blast radius. 
-- [ ] The CardView banner-type toggle should likely be within the SettingPane rather than the LayoutPane; makes more sense to just group the two toggles together while; non-blocking.
+- [ ] The CardView banner-type toggle should likely be within the SettingPane rather than the LayoutPane; it makes more sense to group the two toggles together, though non-blocking.
+- [ ] There's no right-click 'Add/Change Icon' option for SurfacePM embedded views' inline titles.
 
 ### Recent Work
 
