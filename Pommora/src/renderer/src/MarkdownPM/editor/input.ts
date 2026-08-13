@@ -119,6 +119,20 @@ export function focusRange(view: EditorView, from: number, to = from): void {
   view.focus()
 }
 
+/** Seat the caret at whichever end of `range` the pointer was nearer, for a press that clamped into
+ *  a token it never visually touched. A hidden marker is zero width, so `posAtCoords` maps the space
+ *  beside such a token onto offsets inside it; without this the caret lands mid-word somewhere the
+ *  pointer never was. Reports whether it acted, so the handler knows to claim the press. */
+export function seatAtNearerEdge(
+  view: EditorView,
+  pos: number,
+  [from, to]: [number, number],
+): boolean {
+  if (pos <= from || pos >= to) return false
+  focusAt(view, pos - from < to - pos ? from : to)
+  return true
+}
+
 // Shift+Enter exits a construct (plain newline) — except inside a callout, where it stays in the box. If the
 // caret sits inside an unclosed pair, it closes that first so the break never lands inside the pair.
 const onShiftEnter = (view: EditorView): boolean => {
