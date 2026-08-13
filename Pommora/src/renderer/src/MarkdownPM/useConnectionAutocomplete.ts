@@ -11,7 +11,7 @@ import {
 import { docString } from './editor/docCache'
 import { normalizeTitle, pageLinkPattern } from '@shared/connections'
 import { useSession } from '../store'
-import { restedOnLink } from './editor/linkRest'
+import { restedOnLink } from './editor/linkGestures'
 
 export interface AcState extends AutocompleteQuery {
   left: number

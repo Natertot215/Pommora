@@ -187,16 +187,27 @@ describe('picking a page inside the parens', () => {
 // A connection being typed should read as a link from its first character rather than as prose that
 // happens to turn blue once a title matches.
 describe('a connection takes its colour as it is typed', () => {
-  it('an unresolved connection under the caret wears the connection colour', async () => {
+  it('an unresolved connection being typed wears the connection colour', async () => {
+    const view = await mountEditor({ initialBody: 'see [[Wo]] end', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ changes: { from: 8, insert: 'r' }, selection: { anchor: 9 } })
+    })
+    expect(view.dom.querySelector('.md-connection-typing')?.textContent).toBe('Wor')
+  })
+
+  // Clicking into a link that names no page is inspecting an unresolved link, and it should look
+  // unresolved. Only writing one earns the colour.
+  it('but merely clicking into one leaves it raw', async () => {
     const view = await mountEditor({ initialBody: 'see [[Wor]] end', connections: conn })
     await act(async () => {
       view.focus()
       view.dispatch({ selection: { anchor: 8 } })
     })
-    expect(view.dom.querySelector('.md-connection-typing')?.textContent).toBe('Wor')
+    expect(view.dom.querySelector('.md-connection-typing')).toBeNull()
   })
 
-  it('but at rest it is plain text again, exactly as before', async () => {
+  it('and at rest it is plain text, exactly as before', async () => {
     const view = await mountEditor({ initialBody: 'see [[Wor]] end', connections: conn })
     await act(async () => {
       view.focus()
@@ -206,10 +217,10 @@ describe('a connection takes its colour as it is typed', () => {
   })
 
   it('and one that does resolve is resolved, not typing', async () => {
-    const view = await mountEditor({ initialBody: 'see [[Work Notes]] end', connections: conn })
+    const view = await mountEditor({ initialBody: 'see [[Work Note]] end', connections: conn })
     await act(async () => {
       view.focus()
-      view.dispatch({ selection: { anchor: 8 } })
+      view.dispatch({ changes: { from: 15, insert: 's' }, selection: { anchor: 16 } })
     })
     expect(view.dom.querySelector('.md-connection-typing')).toBeNull()
     expect(view.dom.querySelector('.md-connection-resolved')).not.toBeNull()

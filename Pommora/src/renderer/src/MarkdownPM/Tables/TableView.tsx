@@ -13,7 +13,7 @@ import { StaticCell } from './cellStatic'
 import { cellToDisplay } from './codec'
 import { clamp } from './operations'
 import { nextCell, type NavDir } from './navigate'
-import type { ConnectionsApi } from '../connections'
+import type { ConnectionsApi, ConnPage } from '../connections'
 import { hoverIntent } from '../editor/connections'
 
 function alignClass(align: Align): string {
@@ -120,6 +120,40 @@ export function TableView({
     const page = res.page
     intent.arm(() => api.hover?.(page, el))
   }
+  // The page a resting cell's connection leads to, or null. The rendered text is the alias when
+  // there is one, so the key comes off the span's own stamp rather than from what it displays.
+  const linkPageAt = (target: EventTarget | null): ConnPage | null => {
+    const api = connections?.()
+    const el = (target as HTMLElement | null)?.closest?.('.md-connection-resolved')
+    if (!api || !el?.closest('.mdpm-tbl-cell-static')) return null
+    const title = (el as HTMLElement).dataset.connTitle
+    const res = title ? api.resolve(title) : null
+    return res?.status === 'resolved' && res.page ? res.page : null
+  }
+
+  // A resting cell's connection navigates, as it does in the body. The static cell has no editor to
+  // claim the press, so the wrap claims it — and it claims it on MOUSEDOWN, because that is when the
+  // cell swaps itself into an editor. Claiming the click instead arrives after the swap, which is
+  // the "clicking a link drops you into its syntax" symptom.
+  const onLinkDown = (e: React.MouseEvent): void => {
+    if (e.button !== 0 || !linkPageAt(e.target)) return
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  // Opening waits for the click, so a drag that starts on a link selects rather than navigating.
+  const onLinkClick = (e: React.MouseEvent): void => {
+    if (e.button !== 0 || e.detail !== 1) return
+    const page = linkPageAt(e.target)
+    const api = connections?.()
+    if (!page || !api) return
+    e.preventDefault()
+    e.stopPropagation()
+    intent.cancel()
+    if (e.metaKey && api.bypass) api.bypass(page)
+    else api.open(page)
+  }
+
   const [geom, setGeom] = useState<Geom>({ cols: [], rows: [] })
   // A live gesture reads geometry through this ref — a mid-drag re-measure must reach it, and a
   // state binding would freeze at the pointerdown render (the cfg-ref discipline).
@@ -184,7 +218,12 @@ export function TableView({
     if (!active) return
     const onDown = (e: PointerEvent): void => {
       const wrap = wrapRef.current
-      if (wrap && !wrap.contains(e.target as Node)) setActive(null)
+      if (!wrap || wrap.contains(e.target as Node)) return
+      // The autocomplete panel is a body-level portal, so it is "outside" by DOM and inside by
+      // intent. Demoting the cell on a pointerdown there tears the editor down before the press
+      // that picked a suggestion can reach it, and the typed characters are left dangling.
+      if ((e.target as HTMLElement).closest?.('.mdpm-ac')) return
+      setActive(null)
     }
     document.addEventListener('pointerdown', onDown, true)
     return () => document.removeEventListener('pointerdown', onDown, true)
@@ -376,6 +415,8 @@ export function TableView({
       ref={wrapRef}
       onMouseOver={onLinkOver}
       onMouseOut={intent.cancel}
+      onMouseDownCapture={onLinkDown}
+      onClickCapture={onLinkClick}
     >
       <table className="mdpm-tbl" ref={tableRef}>
         <colgroup>
