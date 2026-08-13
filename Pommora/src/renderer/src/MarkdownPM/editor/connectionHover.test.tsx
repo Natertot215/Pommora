@@ -111,14 +111,16 @@ describe('the hover intent', () => {
 
 describe('read-only autocomplete gate', () => {
   const coords = { left: 10, right: 10, top: 10, bottom: 20 }
+  // A PARTIAL title, deliberately: a complete one suggests only itself, and the picker stands down
+  // rather than offer a no-op — which would make this pass for the wrong reason.
   it('a caret seated inside a link opens the picker only when the editor can edit', async () => {
-    const editable = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
+    const editable = await mountEditor({ initialBody: '[[Alph]]', connections: conn })
     vi.spyOn(editable, 'coordsAtPos').mockReturnValue(coords)
     await act(async () => editable.dispatch({ selection: { anchor: 3 } }))
     expect(document.querySelector('.mdpm-ac')).toBeTruthy()
     await cleanupEditor()
 
-    const locked = await mountEditor({ initialBody: '[[Alpha]]', connections: conn, readOnly: true })
+    const locked = await mountEditor({ initialBody: '[[Alph]]', connections: conn, readOnly: true })
     vi.spyOn(locked, 'coordsAtPos').mockReturnValue(coords)
     await act(async () => locked.dispatch({ selection: { anchor: 3 } }))
     expect(document.querySelector('.mdpm-ac')).toBeNull()

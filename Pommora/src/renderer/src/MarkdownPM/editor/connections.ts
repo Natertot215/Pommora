@@ -28,7 +28,7 @@ export function hoverIntent(): { arm: (fire: () => void) => void; cancel: () => 
   }
 }
 
-export interface WikiHit {
+interface WikiHit {
   title: string
   /** The whole token, markers included. */
   range: [number, number]
@@ -39,7 +39,7 @@ export interface WikiHit {
 }
 
 /** The wikiLink token at `pos`, resolved or not, in absolute document offsets. */
-export function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
+function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
   const line = view.state.doc.lineAt(pos)
   const rel = pos - line.from
   const tk = tokenize(line.text).find(
@@ -123,6 +123,12 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       // A right press hands the caret to whichever menu action is chosen, and Rename and Edit Link
       // exist to place it themselves — seating one here would land it somewhere first and make both
       // of them meaningless. No preventDefault: the contextmenu event still has to fire.
+      //
+      // LOAD-BEARING for the menu itself: `contextmenu` reads the live caret to decide it's inside
+      // the syntax and should stand down. Let this fall through and CM seats a caret in the link on
+      // every right-press, so that read is always true and the menu never appears anywhere. No test
+      // covers the coupling — jsdom seats no caret from synthetic coordinates, so one would pass
+      // either way.
       if (event.button === 2) return true
       // A left press is about to follow the link, and the seat would flash its syntax on the way
       // out. Pressing a link you're already editing still seats normally.
@@ -179,6 +185,9 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       if (!api?.menu) return false
       const found = pointerLink(view, api, event)
       if (!found?.page) return false
+      // Inside its syntax you're editing prose, and prose has its own menu — spelling, autocorrect,
+      // substitutions. Claiming the event there would replace all of it with two link actions.
+      if (caretInside(view, found.hit)) return false
       event.preventDefault()
       // Editability is read HERE rather than threaded through the host: `readOnly` is live inside
       // the editor and PreviewWindow flips it at runtime through a Compartment, so a value captured
