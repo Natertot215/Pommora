@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@shared/connections'
 import { aliasRows } from './autocomplete'
 import { AutocompletePanel } from './AutocompletePanel'
 import { buildPageIndex } from './connections'
@@ -111,5 +112,31 @@ describe('the forget × is inert until it is revealed', () => {
     btn.style.opacity = '1'
     await act(async () => btn.click())
     expect(forget).toHaveBeenCalled()
+  })
+})
+
+// One containment test behind all four callers, so they can't drift into disagreeing about which
+// link the caret is in.
+describe('linkAt is the one answer to which link holds an offset', () => {
+  const line = 'see [[Q3 Plan|the plan]] and [[Other]] end'
+
+  it('finds the link an offset sits in, at either bracket edge', () => {
+    expect(linkAt(line, 4)?.full).toEqual([4, 24])
+    expect(linkAt(line, 24)?.full).toEqual([4, 24])
+    expect(linkAt(line, 30)?.full).toEqual([29, 38])
+    expect(linkAt(line, 26)).toBeNull()
+  })
+
+  // The caret being somewhere in a link is not the caret being in its alias — the whole reason the
+  // blur path needed the same guard the update listener already had.
+  it('the alias span demands the caret be in the alias itself', () => {
+    expect(aliasSpanAt(line, 6)).toBeNull() // inside the title
+    expect(aliasSpanAt(line, 16)).toEqual([14, 22]) // inside the alias
+  })
+
+  it('an opened-but-empty alias reports its pipe and nothing else does', () => {
+    expect(emptyAliasPipeAt('a [[Alpha|]] b', 10)).toBe(9)
+    expect(emptyAliasPipeAt('a [[Alpha|x]] b', 10)).toBeNull()
+    expect(emptyAliasPipeAt('a [[Alpha]] b', 5)).toBeNull()
   })
 })

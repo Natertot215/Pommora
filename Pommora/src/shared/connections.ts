@@ -74,25 +74,29 @@ export function linkSpans(m: RegExpMatchArray): LinkSpans | null {
   }
 }
 
-/** The alias span containing a line-relative offset, or null. Takes a line rather than a document so
- *  it stays free of any editor's line helpers — the grammar is the only thing it knows. */
-export function aliasSpanAt(line: string, rel: number): [number, number] | null {
+/** The link containing a line-relative offset, or null. Takes a line rather than a document so it
+ *  stays free of any editor's line helpers — the grammar is the only thing it knows. Everything that
+ *  asks "which link is the caret in" comes through here, so the containment test is written once. */
+export function linkAt(line: string, rel: number): LinkSpans | null {
   for (const m of line.matchAll(pageLinkPattern())) {
-    const alias = linkSpans(m)?.alias
-    if (alias && rel >= alias[0] && rel <= alias[1]) return alias
+    const s = linkSpans(m)
+    if (s && rel >= s.full[0] && rel <= s.full[1]) return s
   }
   return null
+}
+
+/** The alias span containing `rel`, or null — the caret has to be in the alias itself, not merely
+ *  somewhere in the link wearing it. */
+export function aliasSpanAt(line: string, rel: number): [number, number] | null {
+  const alias = linkAt(line, rel)?.alias
+  return alias && rel >= alias[0] && rel <= alias[1] ? alias : null
 }
 
 /** The offset of a bare `|` in a `[[Title|]]` containing `rel`, or null — an alias that was opened
  *  and never written. */
 export function emptyAliasPipeAt(line: string, rel: number): number | null {
-  for (const m of line.matchAll(pageLinkPattern())) {
-    const s = linkSpans(m)
-    if (!s?.alias || s.alias[0] !== s.alias[1]) continue
-    if (rel >= s.full[0] && rel <= s.full[1]) return s.title[1]
-  }
-  return null
+  const s = linkAt(line, rel)
+  return s?.alias && s.alias[0] === s.alias[1] ? s.title[1] : null
 }
 
 /** What the wikilink menu needs in order to render itself. The two authoring actions are built into
