@@ -130,7 +130,7 @@ export function CalendarPicker({
   const lastTimeMenu = useRef(timeMenu)
   if (timeMenu) lastTimeMenu.current = timeMenu
   // Double-click a segment → caret editing in place (select-all drives replace-on-type, but the
-  // selection paints transparent — highlighting disabled per Nathan).
+  // selection paints transparent — highlighting disabled by rule).
   const [segEdit, setSegEdit] = useState<{
     which: 'start' | 'end'
     part: 'h' | 'm'
@@ -680,7 +680,7 @@ export function CalendarPicker({
         </div>
         <div className={s.divider} />
         <div className={s.fields}>
-          {/* Grid logic (Nathan's spec): equal halves everywhere — a range is
+          {/* Grid logic (specified): equal halves everywhere — a range is
             [Date][Date] with times on their own [Time][Time] row; single date+time is [Date][Time].
             Equal sizing buys the AM/PM segment its room. Range fields take the picker-only
             condensed form (year rejoins only across years); single-date stays verbatim. */}
