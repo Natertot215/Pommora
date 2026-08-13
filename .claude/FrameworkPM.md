@@ -40,6 +40,8 @@ No new features — polish, performance, and a release pass (signing, notarizati
 
 No phase commitments — Sub-pages, independent UI titles, a graph view, sync, mobile, and a plugin system among them. The catalog is Prospects below.
 
+
+
 ---
 
 ### Prospects

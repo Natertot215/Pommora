@@ -7,7 +7,6 @@
 ### Immediate Work
 
 - [ ] **Alias-V1** — its spec and plan are ratified-pending-go at `Planning/Alias-V1 — {Decision Log,Plan}.md`, 14 tasks across 5 phases. Execution opens on Nathan's word.
-- [ ] **Cards creation's visual and feel passes** — the two ghosts' CSS (every value KNOB-marked), the dwell-and-feel under a real mouse where the sidebar's transit-surface dwell is the honest kill-signal check, and the native menu picks. Shipped whole otherwise ([[HistoryPM]] §PM-097).
 
 ### Pending Focuses
 
