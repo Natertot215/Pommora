@@ -72,7 +72,7 @@ function pointerLink(
   view: EditorView,
   api: ConnectionsApi,
   event: MouseEvent,
-): { hit: WikiHit; page: ConnPage | null } | null {
+): { hit: WikiHit; page: ConnPage | null; pos: number } | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
   const hit = wikiLinkAt(view, pos)
@@ -82,9 +82,9 @@ function pointerLink(
   // click in the empty space past a short alias resolves back onto its last character and follows a
   // link the pointer was nowhere near.
   const onText = (event.target as HTMLElement).closest?.('.md-connection-resolved') != null
-  if (!onText || pos < hit.content[0] || pos > hit.content[1]) return { hit, page: null }
+  if (!onText || pos < hit.content[0] || pos > hit.content[1]) return { hit, page: null, pos }
   const res = api.resolve(hit.title)
-  return { hit, page: res.status === 'resolved' && res.page ? res.page : null }
+  return { hit, page: res.status === 'resolved' && res.page ? res.page : null, pos }
 }
 
 export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.domEventHandlers> {
@@ -106,6 +106,19 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       const api = getApi()
       const found = api ? pointerLink(view, api, event) : null
       editingOnPress = found ? caretInside(view, found.hit) : false
+      // A press that missed the link's text but clamped INSIDE it belongs outside — the same
+      // zero-width closer that made the coordinate land here would otherwise drop the caret in the
+      // middle of an alias the pointer never touched. Seat it at the nearer bracket edge. Only at
+      // rest: once the link is open for editing its syntax is real text, and clicking it is aiming.
+      if (found && !found.page && !editingOnPress) {
+        const [from, to] = found.hit.range
+        if (found.pos > from && found.pos < to) {
+          view.dispatch({ selection: { anchor: found.pos - from < to - found.pos ? from : to } })
+          view.focus()
+          event.preventDefault()
+          return true
+        }
+      }
       if (!found?.page) return false
       // A right press hands the caret to whichever menu action is chosen, and Rename and Edit Link
       // exist to place it themselves — seating one here would land it somewhere first and make both
