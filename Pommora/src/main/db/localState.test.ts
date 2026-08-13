@@ -27,6 +27,12 @@ describe('keyed scopes', () => {
     expect(readScope('viewOrder')).toEqual({})
   })
 
+  it('a page’s remembered aliases round-trip and are forgotten one at a time', () => {
+    writeKey('aliases', 'page-1', ['the notes', 'my draft'])
+    writeKey('aliases', 'page-1', ['my draft'])
+    expect(readScope<string[]>('aliases')).toEqual({ 'page-1': ['my draft'] })
+  })
+
   it('null clears the key rather than storing an empty container', () => {
     writeKey('activeView', 'c1', 'v1')
     writeKey('activeView', 'c2', 'v2')

@@ -171,6 +171,7 @@ describe('the re-mint writes', () => {
     await writeFile(join(root, 'Library', 'Notes copy.md'), originalBytes)
     writeKey('folds', PAGE, ['intro'])
     writeKey('headingCols', PAGE, [0])
+    writeKey('aliases', PAGE, ['the notes'])
     writePreviewsState({
       navSet: null,
       origins: { [PAGE]: { tabs: [{ target: { kind: 'page', id: PAGE } }], activeIndex: 0 } },
@@ -194,6 +195,7 @@ describe('the re-mint writes', () => {
     expect(readKey('folds', PAGE)).toEqual(['intro'])
     expect(readKey('folds', fresh)).toEqual(['intro'])
     expect(readKey('headingCols', fresh)).toEqual([0])
+    expect(readKey('aliases', fresh)).toEqual(['the notes'])
     const previews = readPreviewsState()
     expect(previews.origins[PAGE]).toBeDefined()
     expect(previews.origins[fresh]).toBeDefined()
