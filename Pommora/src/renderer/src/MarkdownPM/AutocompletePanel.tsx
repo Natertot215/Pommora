@@ -64,7 +64,13 @@ export function AutocompletePanel({
           key={row.value}
           className={`mdpm-ac-row${i === v.index ? ' mdpm-ac-selected' : ''}`}
           onMouseDown={(e) => {
+            // preventDefault regardless: the press must not move focus out of the editor, or the
+            // caret leaves the alias and the panel closes before a click can land anywhere.
             e.preventDefault()
+            // The × sits inside the row and guards itself on POINTERDOWN — a different event from
+            // this one, which its stopPropagation therefore never reaches. Without this the press
+            // meant to forget a suggestion accepts it instead, and the gesture has no working path.
+            if ((e.target as HTMLElement).closest?.('.mdpm-ac-forget')) return
             onPick(row)
           }}
         >
