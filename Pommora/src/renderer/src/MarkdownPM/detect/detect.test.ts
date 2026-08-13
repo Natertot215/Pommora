@@ -323,6 +323,15 @@ describe('a wikilink followed immediately by parens is a link', () => {
     expect(doc.slice(link!.contentRange[0], link!.contentRange[1])).toBe('Notes \\[WIP\\] final')
   })
 
+  // Code claims its span before anything else, and reclassifying extends a token over new ground.
+  it('does not reclassify across a code span', () => {
+    const tokens = tokenize('see [[Notes]](`x`) end')
+    expect(tokens.some((t) => t.kind === 'wikiLink')).toBe(true)
+    const link = tokens.find((t) => t.kind === 'link')
+    const code = tokens.find((t) => t.kind === 'inlineCode')!
+    expect(link && link.range[0] < code.range[1] && code.range[0] < link.range[1]).toBeFalsy()
+  })
+
   // The cap on that group is what keeps the alternation from backtracking quadratically.
   it('a pathological bracket run completes rather than hanging', () => {
     expect(() => tokenize('['.repeat(50000))).not.toThrow()

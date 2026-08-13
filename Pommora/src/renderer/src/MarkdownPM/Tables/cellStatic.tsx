@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { tokenize } from '../tokens'
+import { linkTarget, tokenize } from '../tokens'
 import { CONTENT_CLASS } from '../decorations/intent'
 import { resolveMdTarget, type ConnectionsApi } from '../connections'
 
@@ -39,7 +39,7 @@ export function renderCellContent(
           </span>,
         )
     } else if (tk.kind === 'link') {
-      const url = text.slice(tk.contentRange[1] + 2, e - 1)
+      const url = linkTarget(text, tk)
       // A target naming a page wears the connection's colour here as it does in the editor. Without
       // the shared resolver a cell would call an encoded internal target broken — `isValidLink` is
       // false for `Work%20Notes` — and colour the same link two different ways on two surfaces.
