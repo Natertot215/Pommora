@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections } from './rewrite'
 import { mentionsTitle } from './scan'
-import { pageEmbedPattern } from '@shared/connections'
+import { normalizeTitle, pageEmbedPattern } from '@shared/connections'
 
 describe('rewriteConnections', () => {
   it('rewrites a normalized-matching link to the new title', () => {
@@ -110,6 +110,68 @@ describe('one title grammar across the layers', () => {
         expect(lone).toBe(t)
         expect(viaPattern).toEqual([t])
       }
+    }
+  })
+})
+
+// A `[]()` names a page now, so a rename that skipped it would break every markdown link the first
+// time its target was renamed.
+describe('the markdown-link sweep', () => {
+  it('rewrites a target that names the renamed page, keeping the label', () => {
+    expect(rewriteConnections('see [the notes](Old%20Title) end', 'Old Title', 'New Title')).toBe(
+      'see [the notes](New%20Title) end',
+    )
+  })
+
+  it('re-encodes a new title that needs it', () => {
+    expect(rewriteConnections('[x](Old)', 'Old', 'Atomic Habits (Book)')).toBe(
+      '[x](Atomic%20Habits%20%28Book%29)',
+    )
+  })
+
+  // The rewriter matches whole targets, never path segments.
+  it('leaves a URL alone even when its last segment collides', () => {
+    const body = 'see [site](https://example.com/Old%20Title) end'
+    expect(rewriteConnections(body, 'Old Title', 'New Title')).toBe(body)
+  })
+
+  it('a link inside code stays a sample', () => {
+    const body = '```\n[x](Old)\n```\n'
+    expect(rewriteConnections(body, 'Old', 'New')).toBe(body)
+  })
+
+  // rewritePageSerialized calls this unwrapped and mutate.ts turns any throw into a REVERTED rename,
+  // so one `%`-bearing body would make every rename in the nexus fail permanently.
+  it('a %-bearing body does not throw the rename into a revert', () => {
+    const body = 'see [x](Revenue 50% plan) and [[Old]] end'
+    expect(() => rewriteConnections(body, 'Old', 'New')).not.toThrow()
+    expect(rewriteConnections(body, 'Old', 'New')).toContain('[[New]]')
+  })
+
+  it('all three syntaxes move in one sweep', () => {
+    expect(rewriteConnections('[[Old]] ![[Old]] [x](Old)', 'Old', 'New')).toBe(
+      '[[New]] ![[New]] [x](New)',
+    )
+  })
+})
+
+// A prefilter that misses what the rewriter would change means the body is never opened, and the
+// link rots silently. These two must never disagree about what counts as naming a page.
+describe('the prefilter agrees with the rewriter', () => {
+  const bodies = [
+    'see [the notes](Old%20Title) end',
+    '[[Old Title]]',
+    '![[Old Title]]',
+    'see [site](https://example.com/Old%20Title) end',
+    '```\n[x](Old Title)\n```\n',
+    'nothing here at all',
+    'see [x](Revenue 50% plan) end',
+  ]
+
+  it('says yes exactly when a rewrite would change the body', () => {
+    for (const body of bodies) {
+      const changed = rewriteConnections(body, 'Old Title', 'New Title') !== body
+      expect([body, mentionsTitle(body, normalizeTitle('Old Title'))]).toEqual([body, changed])
     }
   })
 })

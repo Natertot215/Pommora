@@ -9,6 +9,22 @@
  *  sequences (`\]`, `\\`) so a user title containing `]` survives — see escape/unescapeAlias. */
 export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
 
+/** The `[label](target)` markdown-link grammar, fresh per call so no caller shares `lastIndex`.
+ *  Lives here rather than beside the editor's other matchers because the rename cascade parses the
+ *  same syntax main-side — one grammar, or a link the renderer draws is one the rewriter can't find.
+ *
+ *  The label reads escapes (`\]`, `\\`) exactly as `MD_LINK` does, so a page titled `Notes [WIP]`
+ *  can be named in this form at all; unescaped, its `]` ends the label early and the whole link
+ *  tokenizes as nothing. The target group ends at the first `)`, which is why a target carrying one
+ *  must arrive percent-encoded.
+ *
+ *  Both groups are length-capped, and the label's cap is load-bearing rather than cosmetic: reading
+ *  escapes makes it an alternation under a quantifier, which on a long run of unclosed `[` backtracks
+ *  quadratically at every start position — the same ReDoS `pageLinkPattern` caps itself against, and
+ *  it freezes the cascade and the live tokenizer alike on one pathological body. */
+export const markdownLinkRegex = (): RegExp =>
+  /\[((?:[^\]\\\r\n]|\\.){1,255})\]\(([^)\r\n]{1,2048})\)/dg
+
 /** Escape a user-typed alias for the `[alias](url)` form: `\` and `]` (the only chars that can break
  *  the shape) become `\\` and `\]`, standard-markdown style. Inverse of unescapeAlias. */
 export function escapeAlias(alias: string): string {
