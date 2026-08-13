@@ -313,29 +313,36 @@ function editAffectsTables(deco: DecorationSet, tr: Transaction): boolean {
  *  this is the first moment they do. Kept off the edit itself so typing costs no block re-measure. */
 export const refreshTableEffect = StateEffect.define<number>()
 
-/** Swap one table's widget for one built from the current doc, leaving every other table alone. */
+/** Swap one table's widget in place over the block it already spans, leaving every other table's
+ *  alone. `make` sees the widget being replaced; returning null leaves it standing. */
+function swapTableWidget(
+  deco: DecorationSet,
+  index: number,
+  make: (current: TableWidget) => TableWidget | null,
+): DecorationSet {
+  for (const cur = deco.iter(); cur.value; cur.next()) {
+    const w = cur.value.spec.widget
+    if (!(w instanceof TableWidget) || w.tableIndex !== index) continue
+    const widget = make(w)
+    if (!widget) break
+    return deco.update({
+      filterFrom: cur.from,
+      filterTo: cur.to,
+      filter: () => false,
+      add: [Decoration.replace({ widget, block: true }).range(cur.from, cur.to)],
+    })
+  }
+  return deco
+}
+
+/** One table's widget rebuilt from the current doc — the model the static cells draw from. */
 function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): DecorationSet {
   const region = tableRegions(docString(state.doc))[index]
   if (!region) return deco
   const text = state.doc.sliceString(region.from, region.to)
-  let next = deco
-  for (const cur = next.iter(); cur.value; cur.next()) {
-    const w = cur.value.spec.widget
-    if (!(w instanceof TableWidget) || w.tableIndex !== index || w.text === text) continue
-    next = next.update({
-      filterFrom: cur.from,
-      filterTo: cur.to,
-      filter: () => false,
-      add: [
-        Decoration.replace({
-          widget: new TableWidget(text, modelFromRegion(region), index, w.headingColumn),
-          block: true,
-        }).range(cur.from, cur.to),
-      ],
-    })
-    break
-  }
-  return next
+  return swapTableWidget(deco, index, (w) =>
+    w.text === text ? null : new TableWidget(text, modelFromRegion(region), index, w.headingColumn),
+  )
 }
 
 const widgetField = StateField.define<DecorationSet>({
@@ -344,35 +351,21 @@ const widgetField = StateField.define<DecorationSet>({
     // Heading-column toggle: doc unchanged, so swap ONLY the toggled table's widget in place — but re-derive
     // text/model from the current doc, never off the old widget. Cell self-edits remap without rebuilding, so
     // a captured snapshot is stale after any edit; reusing it would render, then commit, pre-edit content.
-    let next = deco
+    let toggledSet = deco
     let toggled = false
     for (const eff of tr.effects) {
       if (!eff.is(toggleHeadingColEffect)) continue
       toggled = true
       const idx = eff.value
       const on = tr.state.field(headingColField).has(idx)
-      for (const cur = next.iter(); cur.value; cur.next()) {
-        const w = cur.value.spec.widget
-        if (w instanceof TableWidget && w.tableIndex === idx) {
-          const region = tableRegions(docString(tr.state.doc))[idx]
-          const text = region ? tr.state.doc.sliceString(region.from, region.to) : w.text
-          const model = region ? modelFromRegion(region) : w.model
-          next = next.update({
-            filterFrom: cur.from,
-            filterTo: cur.to,
-            filter: () => false,
-            add: [
-              Decoration.replace({
-                widget: new TableWidget(text, model, idx, on),
-                block: true,
-              }).range(cur.from, cur.to),
-            ],
-          })
-          break
-        }
-      }
+      toggledSet = swapTableWidget(toggledSet, idx, (w) => {
+        const region = tableRegions(docString(tr.state.doc))[idx]
+        const text = region ? tr.state.doc.sliceString(region.from, region.to) : w.text
+        const model = region ? modelFromRegion(region) : w.model
+        return new TableWidget(text, model, idx, on)
+      })
     }
-    if (toggled) return next
+    if (toggled) return toggledSet
     // Mount-time load applies the whole saved set at once → one full rebuild (fires once per page, not per toggle).
     if (tr.effects.some((e) => e.is(setHeadingColsEffect))) return buildWidgetDecorations(tr.state)
     // A cell commit edits one table's source. Map the widgets forward and STOP: the cell being typed
@@ -384,15 +377,16 @@ const widgetField = StateField.define<DecorationSet>({
     // The rebuild the static cells DO need is deferred to `refreshTableEffect`, which the view fires
     // when the cell demotes. That is the first moment a static cell has to draw the edited text.
     if (tr.annotation(tableSelfEdit)) return deco.map(tr.changes)
+    let refreshedSet = deco
     let refreshed = false
     for (const eff of tr.effects) {
       if (!eff.is(refreshTableEffect)) continue
-      next = rebuiltTable(next, tr.state, eff.value)
+      refreshedSet = rebuiltTable(refreshedSet, tr.state, eff.value)
       refreshed = true
     }
     // Returned before the doc-change fallback below: a refresh carries no changes of its own, and
     // that fallback would hand back the pre-refresh set.
-    if (refreshed) return next
+    if (refreshed) return refreshedSet
     if (!tr.docChanged) return deco
     return editAffectsTables(deco, tr) ? buildWidgetDecorations(tr.state) : deco.map(tr.changes)
   },
