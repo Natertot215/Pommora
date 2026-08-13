@@ -78,7 +78,10 @@ describe('the forget × is inert until it is revealed', () => {
   // ChipRemoveButton gates its own click on computed opacity, so the reveal is what makes the ×
   // clickable at all. Opacity is set directly here rather than by hovering: jsdom applies no
   // stylesheet, and the point being pinned is the gate, not the CSS that drives it.
+  const onPick = vi.fn()
+
   const mountRow = async (forget: () => void): Promise<HTMLButtonElement> => {
+    onPick.mockReset()
     host = document.createElement('div')
     document.body.appendChild(host)
     root = createRoot(host)
@@ -91,27 +94,53 @@ describe('the forget × is inert until it is revealed', () => {
           left={0}
           top={0}
           query=""
-          onPick={() => {}}
+          onPick={onPick}
         />,
       )
     })
     return document.querySelector('.mdpm-ac-forget') as HTMLButtonElement
   }
 
-  it('a click on a hidden × forgets nothing', async () => {
+  /** The real sequence a pointer produces. Calling `click()` alone skips the mousedown, which is the
+   *  event the row picks on — and skipping it is what let a completely unreachable × look tested. */
+  const press = async (el: HTMLElement): Promise<void> => {
+    await act(async () => {
+      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    })
+  }
+
+  it('a press on a hidden × forgets nothing', async () => {
     const forget = vi.fn()
     const btn = await mountRow(forget)
     btn.style.opacity = '0'
-    await act(async () => btn.click())
+    await press(btn)
     expect(forget).not.toHaveBeenCalled()
   })
 
-  it('a click on a revealed × forgets', async () => {
+  it('a press on a revealed × forgets', async () => {
     const forget = vi.fn()
     const btn = await mountRow(forget)
     btn.style.opacity = '1'
-    await act(async () => btn.click())
+    await press(btn)
     expect(forget).toHaveBeenCalled()
+  })
+
+  // The × is inside the row, and the row accepts a suggestion on mousedown. Pressing the × must not
+  // reach that handler, or the one gesture that forgets a suggestion writes it into the document.
+  it('pressing the × never accepts the row it sits in', async () => {
+    const forget = vi.fn()
+    const btn = await mountRow(forget)
+    btn.style.opacity = '1'
+    await press(btn)
+    expect(onPick).not.toHaveBeenCalled()
+    expect(forget).toHaveBeenCalled()
+  })
+
+  it('but pressing the row itself still accepts it', async () => {
+    const btn = await mountRow(vi.fn())
+    await press(btn.closest('.mdpm-ac-row') as HTMLElement)
+    expect(onPick).toHaveBeenCalled()
   })
 })
 

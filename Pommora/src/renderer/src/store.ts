@@ -414,6 +414,11 @@ export const useSession = create<SessionState>((set, get) => {
       subfieldOrder: {},
       navWindowMode: 'list',
       navViewMode: 'list',
+      // The per-nexus maps keyed by ids the next nexus doesn't share. The adopt path reaches here
+      // without a following load(), so anything left behind is written back under foreign keys.
+      pageAliases: {},
+      activeViews: {},
+      linkTitles: {},
     })
     clearWarm()
     clearPreviewWarm()
