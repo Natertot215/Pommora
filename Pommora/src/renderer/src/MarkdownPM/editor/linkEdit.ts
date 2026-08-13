@@ -1,6 +1,14 @@
 import { EditorView } from '@codemirror/view'
 import type { EditorState, Extension } from '@codemirror/state'
-import { aliasSpanAt, emptyAliasPipeAt, type ConnEditAction } from '@shared/connections'
+import {
+  aliasSpanAt,
+  emptyAliasPipeAt,
+  linkSpans,
+  pageLinkPattern,
+  type ConnEditAction,
+} from '@shared/connections'
+import { useSession } from '../../store'
+import type { ConnectionsApi } from '../connections'
 import { tokenize } from '../tokens'
 import { focusRange } from './input'
 
@@ -75,6 +83,27 @@ function emptyPipeNear(state: EditorState, at: number): number | null {
   return pipe === null ? null : line.from + pipe
 }
 
+/** Put a written alias into its target page's memory, so it can be offered back the next time that
+ *  page is linked. Authoring is the only moment the memory is written: a body scan can't honour a
+ *  real forget, and there is no other point at which the words are known to be finished. */
+function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at: number): void {
+  if (!api) return
+  const pos = Math.min(Math.max(at, 0), view.state.doc.length)
+  const line = view.state.doc.lineAt(pos)
+  const rel = pos - line.from
+  for (const m of line.text.matchAll(pageLinkPattern())) {
+    const s = linkSpans(m)
+    if (!s?.alias || rel < s.full[0] || rel > s.full[1]) continue
+    const alias = line.text.slice(s.alias[0], s.alias[1])
+    if (!alias.trim()) return
+    const res = api.resolve(line.text.slice(s.title[0], s.title[1]))
+    // Only a page that exists can be said to have worn the words. A phantom or an ambiguous title
+    // names no single page, and the memory is keyed by PageID.
+    if (res.status === 'resolved' && res.page) useSession.getState().rememberAlias(res.page.id, alias)
+    return
+  }
+}
+
 /** Remove the pipe, having first confirmed it's still the character sitting there. The check is what
  *  makes the call safe to make late: an offset computed one turn and spent the next would otherwise
  *  delete whatever had drifted into it. */
@@ -83,23 +112,44 @@ function collapseAt(view: EditorView, at: number): void {
   view.dispatch({ changes: { from: at, to: at + 1 } })
 }
 
-/** An alias opened and then left empty takes its pipe with it, matching the nexus-wide rule that an
- *  emptied value drops its key rather than persisting an empty container.
- *
- *  It collapses on LEAVING the token, never the moment the alias empties: clearing an alias to
- *  retype it would otherwise pull the pipe out from under the caret mid-edit.
+/** Which alias the caret is in, as that alias's absolute start — the identity both gestures below
+ *  compare against to tell editing an alias from having finished with it. */
+function aliasStartNear(state: EditorState, at: number): number | null {
+  const pos = Math.min(Math.max(at, 0), state.doc.length)
+  const line = state.doc.lineAt(pos)
+  const span = aliasSpanAt(line.text, pos - line.from)
+  return span ? line.from + span[0] : null
+}
+
+/** Everything that happens when the caret leaves an alias: an empty one takes its pipe with it,
+ *  matching the nexus-wide rule that an emptied value drops its key rather than persisting an empty
+ *  container, and a written one is remembered against the page it names. */
+function leaveAlias(
+  view: EditorView,
+  api: ConnectionsApi | undefined,
+  at: number,
+  defer: boolean,
+): void {
+  const pipe = emptyPipeNear(view.state, at)
+  if (pipe === null) rememberAliasNear(view, api, at)
+  else if (defer) setTimeout(() => collapseAt(view, pipe), 0)
+  else collapseAt(view, pipe)
+}
+
+/** Both gestures fire on LEAVING the alias, never the moment it changes: clearing one to retype it
+ *  would otherwise pull the pipe out from under the caret, and every keystroke would be remembered
+ *  as its own name for the page.
  *
  *  Leaving by losing focus is handled on the `blur` event rather than through the update listener,
  *  and that split is the point. A blur handler runs outside the update cycle, so it can dispatch
  *  straight away; the listener can't, and has to defer to a macrotask that the editor's own teardown
  *  can outrun — which is exactly what blurring often precedes, since clicking another page both
- *  blurs this editor and unmounts it. Deferred, the pipe would reach disk. */
-export function collapseEmptyAlias(): Extension {
+ *  blurs this editor and unmounts it. Deferred, an abandoned pipe would reach disk. */
+export function aliasOnLeave(getApi: () => ConnectionsApi | undefined): Extension {
   return [
     EditorView.domEventHandlers({
       blur(_event, view) {
-        const at = emptyPipeNear(view.state, view.state.selection.main.head)
-        if (at !== null) collapseAt(view, at)
+        leaveAlias(view, getApi(), view.state.selection.main.head, false)
         return false
       },
     }),
@@ -107,10 +157,11 @@ export function collapseEmptyAlias(): Extension {
       if (!u.selectionSet) return
       // Read against the NEW document at the OLD caret, mapped forward. Reading the old offset
       // against the new text is what makes typing into a fresh alias look like leaving one.
-      const at = emptyPipeNear(u.state, u.changes.mapPos(u.startState.selection.main.head))
-      if (at === null) return
-      if (u.view.hasFocus && emptyPipeNear(u.state, u.state.selection.main.head) === at) return
-      setTimeout(() => collapseAt(u.view, at), 0)
+      const was = u.changes.mapPos(u.startState.selection.main.head)
+      const left = aliasStartNear(u.state, was)
+      if (left === null) return
+      if (u.view.hasFocus && aliasStartNear(u.state, u.state.selection.main.head) === left) return
+      leaveAlias(u.view, getApi(), was, true)
     }),
   ]
 }

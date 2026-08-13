@@ -4,17 +4,18 @@ import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { NotchedPane } from '@renderer/design-system/components/NotchedPane'
 import { dropdownOpen, dropdownClose } from '@renderer/design-system/animations.css'
 import { useExitPresence } from '@renderer/design-system/useExitPresence'
-import type { ConnPage } from './connections'
+import { ChipRemoveButton } from '@renderer/Components/Chip'
+import type { AcRow } from './autocomplete'
 
 interface Props {
   /** Whether the autocomplete is active; false plays the retract before unmounting. */
   open: boolean
-  candidates: ConnPage[]
+  candidates: AcRow[]
   index: number
   left: number
   top: number
   query: string
-  onPick: (page: ConnPage) => void
+  onPick: (row: AcRow) => void
 }
 
 export function AutocompletePanel({
@@ -57,21 +58,28 @@ export function AutocompletePanel({
         } as React.CSSProperties
       }
     >
-      {v.candidates.map((p, i) => (
+      {v.candidates.map((row, i) => (
         // biome-ignore lint/a11y/noStaticElementInteractions: a pointer shortcut for a panel the editor keymap already drives — arrows move the selection, Enter picks
         <div
-          key={p.id}
+          key={row.value}
           className={`mdpm-ac-row${i === v.index ? ' mdpm-ac-selected' : ''}`}
           onMouseDown={(e) => {
             e.preventDefault()
-            onPick(p)
+            onPick(row)
           }}
         >
-          <EntityIcon kind="page" size={14} className="mdpm-ac-icon" />
+          {row.isPage && <EntityIcon kind="page" size={14} className="mdpm-ac-icon" />}
           <span className="mdpm-ac-title">
-            <span className="mdpm-ac-match">{p.title.slice(0, matchLen)}</span>
-            {p.title.slice(matchLen)}
+            <span className="mdpm-ac-match">{row.label.slice(0, matchLen)}</span>
+            {row.label.slice(matchLen)}
           </span>
+          {row.forget && (
+            <ChipRemoveButton
+              className="mdpm-ac-forget"
+              label={`Forget ${row.label}`}
+              onRemove={row.forget}
+            />
+          )}
         </div>
       ))}
     </NotchedPane>,
