@@ -512,7 +512,7 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 - [x] **Phase 4** — Dual syntax · base `ce13cece`
   - [x] Task 12a — Markdown links resolve internally · `0324d8b6`
   - [x] Task 12b — The cascade reaches them · `433b83ff`
-  - [x] Task 12c — One markdown-link grammar · `dd6d8985` (the label widening rode 12b)
+  - [x] Task 12c — One markdown-link grammar · `dd6d8985`, reversed in part at Gate 4
   - [x] Task 13 — `( )` autocomplete and the ⌘K caret · `aa0df620`
   - [x] Gate 4 — simplification + the code-span fix `6639cc2f` · review folds `PENDING`
 - [ ] **Phase 5** — Closeout
@@ -556,6 +556,7 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 - **Task 13 — the picker's commit became data.** Opening the panel needs `coordsAtPos`, and jsdom measures nothing, so a panel-driven test of the caret rules would only ever have tested the harness. `commitEdit` returns the changes and the selection instead, which made every form's caret rule assertable and left the hook thinner than it started.
 - **Gate 4 — the prefilter and the rewriter were still two expressions of one rule.** A whole describe block existed to assert they agree, which is the tell: `targetNamesTitle` is now the single definition both call. `linkTarget` did the same for three surfaces that each derived a link's target from a different span.
 - **Gate 4 — reclassifying a wikilink escaped the code filter.** Every token family is filtered against code spans, and the wikilink itself was — but extending its span over the parens is new ground that nothing checked, so `[[Notes]](`x`)` emitted overlapping tokens. Found by the simplification pass, which correctly flagged it as behaviour rather than folding it.
+- **Gate 4 — Task 12c's reclassification was built, reviewed, and taken back out.** Reading `[[Title]](target)` as a markdown link labelled `[Title]` is what CommonMark says, and it cost three defects: the shape it creates is one the cascade's grammar cannot match, so renaming its target rots the link silently; it could emit a token overlapping another wikilink; and it turned a connection into a broken link the moment `(` auto-paired after it. The objection was raised before building — Obsidian, which is the tool this arc exists to interoperate with, renders the shape the way Pommora already did — and the review is what earned it. **Rebuilding it would take a fourth cascade pattern; whether that is worth having is Nathan's call.** Task 12c's other half, the escaped label group, stands and is independently tested.
 - **Task 2 — the `contentRange` census refines to one wikiLink toggle, not two.** `format.ts` holds two `contentRange` readers, but `toggleLink` reads `link` tokens whose shape doesn't move; only `toggleConnection` sees a wikiLink. Three further readers exist and are all provably unaffected: `decorations/intent.ts` returns early for `wikiLink`, `formatState.ts` tests connections on `range`, and `format.ts:68`'s `kind` excludes connection by type. The five sites Task 2 and Task 4 edit are unchanged.
 ### Lessons
 ### Sequenced After
