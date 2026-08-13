@@ -182,6 +182,7 @@ One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--s
 ### Known Issues
 
 - **An unreproduced renderer crash on a programmatic scroll toward a table inside an embed tile** — the window goes black with no crash log, and the same jump replays cleanly. Unreproduced since; no mechanism established.
+- **Codeblock syntax cannot be rendered when on the first line of a callout** — an accepted limitation to handle later. The fence grammar admits only whitespace and `>` levels before its marker run, so a fence authored on the head line sits behind the `[!type]` tag and reads as prose.
 
 ### Pending
 
