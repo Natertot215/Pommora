@@ -2,6 +2,7 @@ import { EditorView } from '@codemirror/view'
 import { linkTarget, tokenize } from '../tokens'
 import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connections'
 import { seatAtNearerEdge } from './input'
+import { hoverIntent } from './connections'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -59,7 +60,33 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
   // `click` runs, so reading it live can never tell "I was editing this" from "I just clicked it" —
   // it reads true for every press and no link opens at all.
   let editingOnPress = false
+  // A markdown link naming a page is drawn as a connection and behaves as one, so it raises the same
+  // hover preview. The connection handler can't do it: its hit-test reads wikiLink tokens, and this
+  // is a `link`. Without this the same link previews in a table cell and not in the body.
+  const intent = hoverIntent()
   return EditorView.domEventHandlers({
+    mouseover(event, view) {
+      const api = getApi()
+      intent.cancel()
+      if (!api?.hover) return false
+      // Cheap class gate FIRST (the every-mouseover hard rule) — only a drawn internal link warrants
+      // the layout read and the tokenize below.
+      const el = (event.target as HTMLElement).closest?.('.md-connection-resolved')
+      if (!el) return false
+      const hit = linkUnder(view, getApi, event)
+      if (!hit?.onText || hit.target.kind !== 'page') return false
+      const head = view.state.selection.main.head
+      // A link the caret is already inside is open for editing, and no dwell should carry you away
+      // from what you're typing.
+      if (view.hasFocus && head >= hit.range[0] && head <= hit.range[1]) return false
+      const page = hit.target.page
+      intent.arm(() => api.hover?.(page, el))
+      return false
+    },
+    mouseout() {
+      intent.cancel()
+      return false
+    },
     mousedown(event, view) {
       const hit = linkUnder(view, getApi, event)
       const head = view.state.selection.main.head
@@ -83,6 +110,7 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
       const hit = linkUnder(view, getApi, event)
       if (!hit?.onText) return false
       event.preventDefault()
+      intent.cancel()
       // A target that names a page navigates there. Opening is host-owned either way — main's
       // shell.openExternal through the bridge, or the connections host's own router.
       if (hit.target.kind === 'page') getApi()?.open(hit.target.page)

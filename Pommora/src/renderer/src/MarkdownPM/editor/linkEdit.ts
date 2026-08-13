@@ -15,6 +15,10 @@ export function applyLinkAction(
   action: ConnEditAction,
   range: [number, number],
 ): void {
+  // The span was captured before a native menu opened, and a native menu can be held open for as
+  // long as the user likes. `lineAt` throws past the document's end rather than clamping, and the
+  // throw would land unhandled inside the menu's promise.
+  if (range[0] > view.state.doc.length) return
   const line = view.state.doc.lineAt(range[0])
   const tk = tokenize(line.text).find(
     (t) => t.kind === 'wikiLink' && line.from + t.range[0] === range[0],

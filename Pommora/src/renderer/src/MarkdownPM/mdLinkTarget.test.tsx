@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { encodeLinkTarget } from '@shared/links'
 import { autocompleteQuery, commitEdit } from './autocomplete'
 import { activeTokenIndices, tokenize } from './tokens'
+import { CONN_HOVER_INTENT_MS } from './editor/connections'
 import { buildPageIndex, resolveMdTarget, type ConnectionsApi, type ConnPage } from './connections'
 import { renderCellContent } from './Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
@@ -212,5 +213,45 @@ describe('a connection takes its colour as it is typed', () => {
     })
     expect(view.dom.querySelector('.md-connection-typing')).toBeNull()
     expect(view.dom.querySelector('.md-connection-resolved')).not.toBeNull()
+  })
+})
+
+// A markdown link naming a page is drawn as a connection, so it owes the same hover preview. A table
+// cell already raised one for it; the body did not, because the connection handler's hit-test reads
+// wikiLink tokens and this is a `link`.
+describe('an internal markdown link previews like a connection', () => {
+  it('arms the hover on the drawn link', async () => {
+    const hover = vi.fn()
+    const view = await mountEditor({
+      initialBody: `see [the notes](${encodeLinkTarget('Work Notes')}) end`,
+      connections: { ...conn, hover },
+    })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
+    const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
+    span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, CONN_HOVER_INTENT_MS + 20))
+    })
+    expect(hover).toHaveBeenCalled()
+  })
+
+  it('and lets it go when the pointer leaves before the dwell', async () => {
+    const hover = vi.fn()
+    const view = await mountEditor({
+      initialBody: `see [the notes](${encodeLinkTarget('Work Notes')}) end`,
+      connections: { ...conn, hover },
+    })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
+    const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
+    span.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+    span.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, CONN_HOVER_INTENT_MS + 20))
+    })
+    expect(hover).not.toHaveBeenCalled()
   })
 })
