@@ -79,7 +79,7 @@ A root folder carrying a Pages sidecar is a Page Collection regardless of its fo
 
 A Tasks or Events singleton is the folder whose config sidecar id matches the registration `nexus.json` holds — folder names are renameable defaults, a Page Collection named "Tasks" is still a Collection, and no name is reserved. Registration is written once, at nexus creation, and never backfilled: seeding runs only when a nexus is first opened without an identity file, and reopening a nexus never recreates folders its owner deleted. A hand-made agenda config carries an id the record doesn't name and stays inert.
 
-A copy is the case the record can't settle alone. Every ordinary duplication — a Finder duplicate, a restored backup, a sync-conflict copy — reproduces the registered id, and two root folders answering to one record register nobody; deleting the stray config restores the nexus completely. A copy below the root is inert on depth alone and stays where its owner filed it. A registered singleton genuinely dragged away from the root is carried home on the next open; when the root still holds one, a nested claimant is treated as a copy and left in place.
+A copy is the case the record can't settle alone. Every ordinary duplication — a Finder duplicate, a restored backup, a sync-conflict copy — reproduces the registered ID, and two root folders answering to one record register nobody; deleting the stray config restores the nexus completely. A copy below the root is inert on depth alone and stays where its owner filed it. A registered singleton genuinely dragged away from the root is carried home on the next open; when the root still holds one, a nested claimant is treated as a copy and left in place.
 
 #### The Trash
 
