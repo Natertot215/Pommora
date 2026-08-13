@@ -159,6 +159,30 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
   return tokens
 }
 
+/** `[[Title]](target)` is a markdown link whose label is `[Title]`, not a connection trailed by
+ *  literal parens — CommonMark reads the outer brackets as the label, and a link is what the author
+ *  of that line meant. Returns the link it should have been, or null to leave the wikilink alone.
+ *
+ *  Applied after tokenizing rather than by widening the label group: a group admitting balanced
+ *  brackets needs a nested quantifier, which is the catastrophic-backtracking shape every pattern
+ *  here is capped against. Only the immediate form moves — `[[Notes]] (2024)` stays a connection. */
+function parenthesisedWikiLink(text: string, wiki: Token): Token | null {
+  const after = wiki.range[1]
+  if (text[after] !== '(') return null
+  const close = text.indexOf(')', after + 1)
+  if (close === -1 || /[\r\n]/.test(text.slice(after, close))) return null
+  const content: [number, number] = [wiki.range[0] + 1, wiki.range[1] - 1]
+  return {
+    kind: 'link',
+    range: [wiki.range[0], close + 1],
+    contentRange: content,
+    markerRanges: [
+      [wiki.range[0], content[0]],
+      [content[1], close + 1],
+    ],
+  }
+}
+
 export function tokenize(text: string): Token[] {
   const ast = parse(text)
   const tokens: Token[] = []
@@ -176,13 +200,24 @@ export function tokenize(text: string): Token[] {
     open: 3,
     close: 2,
   })
-  const wikis = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
-  const links = scan({
-    kind: 'link',
-    re: markdownLinkRegex(),
-    open: 1,
-    close: 1,
-  }).filter(notOverlapping([...embeds, ...wikis, ...code]))
+  const scanned = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
+  const asLink = new Map(
+    scanned.flatMap((w) => {
+      const link = parenthesisedWikiLink(text, w)
+      return link ? [[w, link] as const] : []
+    }),
+  )
+  const wikis = scanned.filter((w) => !asLink.has(w))
+  const parenLinks = [...asLink.values()]
+  const links = [
+    ...parenLinks,
+    ...scan({
+      kind: 'link',
+      re: markdownLinkRegex(),
+      open: 1,
+      close: 1,
+    }).filter(notOverlapping([...embeds, ...wikis, ...parenLinks, ...code])),
+  ]
   const blockTex = scan({
     kind: 'blockLatex',
     re: blockLatexRegex(),
