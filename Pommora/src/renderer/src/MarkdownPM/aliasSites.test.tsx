@@ -41,13 +41,17 @@ const PADDED = `x ${DOC} y`
 
 // CM seats the caret on mousedown, so a rule about "was I already editing this" has to be driven by
 // the real order — press, caret moves, click. A bare click() dispatch tests a sequence never run.
+// Re-queried per dispatch: activating the token changes its class, so CM replaces the element and a
+// held reference is detached — an event on it never reaches the editor.
+const linkSpan = (view: EditorView): HTMLElement =>
+  view.dom.querySelector('.md-connection-resolved') as HTMLElement
+
 function pressAndClick(view: EditorView, pos: number, caretBefore: number): void {
   view.dispatch({ selection: { anchor: caretBefore } })
   vi.spyOn(view, 'posAtCoords').mockReturnValue(pos)
-  const span = view.dom.querySelector('.md-connection-resolved') as HTMLElement
-  span.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+  linkSpan(view).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
   view.dispatch({ selection: { anchor: pos } })
-  span.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+  linkSpan(view).dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
 }
 
 async function renderCell(text: string): Promise<HTMLElement> {
