@@ -13,7 +13,7 @@ import { tokenize, activeTokenIndices, linkTarget, shiftToken, type Token } from
 import { docLineIntentsOf, docScan, docSpanTokens, docString } from './docCache'
 import { claimedEmbeds } from './embedRanges'
 import { resolutionNudge } from './embedWidget'
-import { linkRest } from './linkRest'
+import { linkRest, linkTyping } from './linkGestures'
 import {
   assembleLineIntents,
   type DocScan,
@@ -209,6 +209,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
   const active = focused
     ? activeTokenIndices(tokens, sel.from, sel.to, view.state.field(linkRest, false) ?? null)
     : NO_ACTIVE
+  const typing = focused ? (view.state.field(linkTyping, false) ?? null) : null
   const head = focused ? sel.head : NO_CARET
   const intents = tokenIntents(tokens, active)
   // Loop, never spread — spreading into push throws past V8's argument ceiling on a huge outline,
@@ -292,11 +293,14 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       // Open for editing, its syntax showing: it reads as text, so it points like text.
       const open = active.has(i)
       if (status === 'phantom') {
-        // A connection at rest that names no page stays raw `[[Foo]]` — brackets visible and inert.
+        // A connection that names no page stays raw `[[Foo]]` — brackets visible and inert — and
+        // clicking into one is inspecting an unresolved link, which should look unresolved.
+        //
         // One being TYPED takes the connection colour from its first character instead of reading as
         // plain prose until a title happens to match: the author is writing a link and the text
-        // should say so. It is not resolved, and doesn't claim to be.
-        if (!open) return
+        // should say so. It is not resolved, and doesn't claim to be. Typing is what earns that, not
+        // the caret's position, so the field tracks the gesture.
+        if (!open || typing !== tk.range[0]) return
         ranges.push(
           Decoration.mark({ class: 'md-connection-typing' }).range(
             tk.contentRange[0],
