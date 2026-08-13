@@ -101,6 +101,19 @@ const onShiftTab = (view: EditorView): boolean => {
   return true
 }
 
+/** Whether a keystroke must not land because the caret is inside an alias. `]` would truncate the
+ *  link the caret is sitting in — the same treatment `|` gets in a title. Escaping was the
+ *  alternative and puts backslashes into a file whose readability is the point.
+ *
+ *  Exported because every surface that authors an alias owes the same refusal: the page editor and
+ *  a markdown table cell run different input handlers, and the guard belongs to the alias rather
+ *  than to either of them. Paste doesn't come through an input handler at all. */
+export function refusedInAlias(doc: string, at: number, text: string): boolean {
+  if (text !== ']') return false
+  const ls = lineStartAt(doc, at)
+  return aliasSpanAt(doc.slice(ls, lineEndAt(doc, at)), at - ls) !== null
+}
+
 /** Place the caret at `pos` and give the editor focus — the shared landing for chrome that hands
  *  the user back to typing (table exits, the list-glyph click). */
 export function focusAt(view: EditorView, pos: number): void {
@@ -165,13 +178,7 @@ export const markdownInput = [
     if (view.composing || view.compositionStarted) return false
     if (text.length !== 1 || from !== to) return false // single-char inserts only; paste passes through
     const doc = docString(view.state.doc)
-    // `]` inside an alias would truncate the link the caret is sitting in, so the keystroke simply
-    // doesn't land — the same treatment `|` gets in a title. Escaping was the alternative and puts
-    // backslashes into a file whose readability is the point. Paste doesn't come through here.
-    if (text === ']') {
-      const ls = lineStartAt(doc, from)
-      if (aliasSpanAt(doc.slice(ls, lineEndAt(doc, from)), from - ls)) return true
-    }
+    if (refusedInAlias(doc, from, text)) return true
     return apply(
       view,
       calloutShorthand(doc, from, from, text) ??
