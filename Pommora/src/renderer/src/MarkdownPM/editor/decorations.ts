@@ -282,13 +282,14 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       const [rs, re] = tk.resolveRange ?? tk.contentRange
       const status = conn.resolve(text.slice(rs, re)).status
       if (status === 'phantom') return // unresolved → raw `[[Foo]]`, brackets visible + inert
+      // Open for editing, its syntax showing: it reads as text, so it points like text.
+      const open = active.has(i)
       ranges.push(
-        Decoration.mark({ class: `md-connection-${status}` }).range(
-          tk.contentRange[0],
-          tk.contentRange[1],
-        ),
+        Decoration.mark({
+          class: `md-connection-${status}${open ? ' md-connection-open' : ''}`,
+        }).range(tk.contentRange[0], tk.contentRange[1]),
       )
-      const bracket = active.has(i) ? Decoration.mark({ class: 'md-bracket' }) : hideMarker
+      const bracket = open ? Decoration.mark({ class: 'md-bracket' }) : hideMarker
       for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
     })
   }

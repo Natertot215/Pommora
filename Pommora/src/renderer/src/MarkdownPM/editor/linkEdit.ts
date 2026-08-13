@@ -1,6 +1,6 @@
 import { EditorView } from '@codemirror/view'
 import type { Extension } from '@codemirror/state'
-import { emptyAliasPipeAt, type ConnEditAction } from '@shared/connections'
+import { aliasSpanAt, emptyAliasPipeAt, type ConnEditAction } from '@shared/connections'
 import { tokenize } from '../tokens'
 import { focusRange } from './input'
 
@@ -41,6 +41,30 @@ export function applyLinkAction(
   const pipe = at(afterTitle)
   view.dispatch({ changes: { from: pipe, to: pipe, insert: '|' } })
   focusRange(view, pipe + 1)
+}
+
+/** Enter inside an alias finishes it rather than breaking the line. The picker is bounded to the
+ *  title, so nothing else claims this key there and Enter would otherwise split the link in half.
+ *  The caret lands past a space for the same reason committing a page does — resting on the closer
+ *  keeps the token active, and the link you just named would sit there as raw syntax. */
+export function commitAliasOnEnter(view: EditorView): boolean {
+  const sel = view.state.selection.main
+  if (!sel.empty) return false
+  const line = view.state.doc.lineAt(sel.head)
+  const span = aliasSpanAt(line.text, sel.head - line.from)
+  if (!span) return false
+  const tk = tokenize(line.text).find(
+    (t) => t.kind === 'wikiLink' && span[0] >= t.range[0] && span[1] <= t.range[1],
+  )
+  if (!tk) return false
+  const end = line.from + tk.range[1]
+  const pad = view.state.doc.sliceString(end, end + 1) === ' ' ? '' : ' '
+  view.dispatch({
+    changes: pad ? { from: end, to: end, insert: pad } : undefined,
+    selection: { anchor: end + 1 },
+    userEvent: 'input',
+  })
+  return true
 }
 
 /** An alias opened and then left empty takes its pipe with it, matching the nexus-wide rule that an

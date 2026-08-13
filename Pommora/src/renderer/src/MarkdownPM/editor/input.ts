@@ -19,6 +19,7 @@ import {
   type Edit,
 } from '../input'
 import { aliasSpanAt } from '@shared/connections'
+import { commitAliasOnEnter } from './linkEdit'
 import { tableRegions } from '../Tables/regions'
 import { embedTileRanges } from './embedWidget'
 import { docString } from './docCache'
@@ -132,6 +133,7 @@ const onShiftEnter = (view: EditorView): boolean => {
 export const markdownInput = [
   Prec.high(
     keymap.of([
+      { key: 'Enter', run: commitAliasOnEnter },
       { key: 'Enter', run: onEnter },
       { key: 'Shift-Enter', run: onShiftEnter },
       { key: 'Tab', run: onTab },

@@ -324,6 +324,11 @@
   color: var(--connection);
   cursor: pointer;
 }
+/* A connection the caret is inside is text being edited — it doesn't navigate, so it mustn't
+   advertise that it will. Its syntax is showing at the same time. */
+.md-connection-open {
+  cursor: text;
+}
 .md-connection-ambiguous {
   color: var(--label-tertiary);
 }
