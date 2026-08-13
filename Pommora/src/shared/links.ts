@@ -49,7 +49,16 @@ export function unescapeAlias(alias: string): string {
  *  `Atomic Habits (Book)` would otherwise be written as a target truncated mid-title, followed by a
  *  stray `)` sitting raw in the line. */
 export function encodeLinkTarget(target: string): string {
-  return encodeURI(target).replace(/\(/g, '%28').replace(/\)/g, '%29')
+  try {
+    // Parens and the colon on top of encodeURI: neither is touched by it, the grammar's target ends
+    // at the first `)`, and a raw colon is how a target declares itself a URL — so a page titled
+    // `Meeting: Notes` would encode to something this module's own reader then refuses.
+    return encodeURI(target).replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/:/g, '%3A')
+  } catch {
+    // A lone surrogate makes encodeURI throw, and the rename cascade calls this unwrapped — where a
+    // throw is turned into a reverted rename, not a skipped link. Guarded like its inverse is.
+    return target
+  }
 }
 
 /** The inverse, and it never throws. `decodeURIComponent` raises `URIError` on a lone `%`, which is
@@ -67,9 +76,13 @@ export function decodeLinkTarget(target: string): string {
  *  scheme or a separator is addressing something outside the nexus, and is left to the external gate
  *  — otherwise `https://example.com/Notes` would reach a page called Notes by its last segment. */
 export function targetTitle(rawTarget: string): string | null {
-  const decoded = decodeLinkTarget(rawTarget).trim()
-  if (!decoded || decoded.includes('/') || HAS_SCHEME.test(decoded)) return null
-  return decoded.replace(/\.md$/i, '')
+  const raw = rawTarget.trim()
+  // Read on the RAW target, not the decoded one. A URL is written with its scheme and separators
+  // literal; an encoded page title spells them out, so the encoder's own output can never be
+  // mistaken for an address here.
+  if (!raw || raw.includes('/') || HAS_SCHEME.test(raw)) return null
+  const decoded = decodeLinkTarget(raw).trim()
+  return decoded ? decoded.replace(/\.md$/i, '') : null
 }
 
 /** Whether a target names the page holding this normalized key. The rename cascade's prefilter and

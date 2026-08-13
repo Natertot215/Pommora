@@ -1,5 +1,6 @@
 import { linkAt, normalizeTitle } from '@shared/connections'
-import { decodeLinkTarget, encodeLinkTarget } from '@shared/links'
+import { decodeLinkTarget, encodeLinkTarget, escapeAlias } from '@shared/links'
+import { codeMask } from '@shared/markdownCode'
 import { lineStartAt, lineEndAt } from './input'
 import type { ConnPage, PageIndex } from './connections'
 import { useSession } from '../store'
@@ -61,6 +62,10 @@ export function autocompleteQuery(
   const lineStart = lineStartAt(doc, caret)
   const line = doc.slice(lineStart, lineEndAt(doc, caret))
   const rel = caret - lineStart
+  // A link inside code is a sample, and the picker must not arm on one: it binds Return at the
+  // editor's highest precedence, so an armed panel over a code sample eats the newline and writes a
+  // page title into the sample instead.
+  if (codeMask(line)(rel)) return null
   const s = linkAt(line, rel)
   if (s) {
     const title = line.slice(s.title[0], s.title[1])
@@ -185,11 +190,14 @@ export function commitEdit(
     // stepping past the closer instead.
     const retarget = { from: ac.from, to: ac.to, insert }
     const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
+    // The label is markdown, not plain text: an unescaped `]` ends it early and the whole link
+    // tokenizes as nothing at all. Same escape the URL-property form has always used.
+    const label = escapeAlias(row.value)
     if (!fill) return { changes: [retarget], anchor: caret + 1 }
     return {
-      changes: [{ from: fill.from, to: fill.to, insert: row.value }, retarget],
+      changes: [{ from: fill.from, to: fill.to, insert: label }, retarget],
       anchor: fill.from,
-      head: fill.from + row.value.length,
+      head: fill.from + label.length,
     }
   }
   // A caret resting on a connection's closer keeps its token active, so the link just picked would
