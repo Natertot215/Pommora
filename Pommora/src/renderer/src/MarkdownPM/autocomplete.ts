@@ -1,4 +1,4 @@
-import { linkSpans, normalizeTitle, pageLinkPattern } from '@shared/connections'
+import { linkAt, normalizeTitle } from '@shared/connections'
 import { lineStartAt, lineEndAt } from './input'
 import type { ConnPage, PageIndex } from './connections'
 import { useSession } from '../store'
@@ -40,25 +40,24 @@ export function autocompleteQuery(
   const lineStart = lineStartAt(doc, caret)
   const line = doc.slice(lineStart, lineEndAt(doc, caret))
   const rel = caret - lineStart
-  const re = pageLinkPattern()
-  for (let m = re.exec(line); m; m = re.exec(line)) {
-    const s = linkSpans(m)
+  const s = linkAt(line, rel)
+  if (s) {
+    const title = line.slice(s.title[0], s.title[1])
     // Only the TITLE opens the page picker. Accepting a candidate replaces the whole token, so a
     // caret in the alias would arm a list keyed on the title and discard the alias on Enter —
     // destroying the very text the caret is sitting in. An unaliased link is unaffected: its title
     // ends exactly where the closer begins.
-    if (!s) continue
     if (rel >= s.title[0] && rel <= s.title[1])
-      return { query: m[1], from: lineStart + s.full[0], to: lineStart + s.full[1], form: 'link' }
+      return { query: title, from: lineStart + s.full[0], to: lineStart + s.full[1], form: 'link' }
     // The alias half offers what the page named by the title has been called before, and accepting
     // one replaces the alias alone. The title rides along as the key those suggestions are found by.
     if (s.alias && rel >= s.alias[0] && rel <= s.alias[1])
       return {
-        query: m[2] ?? '',
+        query: line.slice(s.alias[0], s.alias[1]),
         from: lineStart + s.alias[0],
         to: lineStart + s.alias[1],
         form: 'alias',
-        title: m[1],
+        title,
       }
   }
   // The embed branch is a LOCAL match — the connections pattern excludes `![[` by design (four
@@ -100,23 +99,28 @@ export function aliasRows(conn: PageIndex, title: string | undefined, query: str
     .map((a) => ({ value: a, label: a, isPage: false, forget: () => forgetAlias(page.id, a) }))
 }
 
-/** The committed form. A carried `alias` rides only the link form — `![[ ]]` has no alias syntax,
- *  and an empty one collapses rather than writing a bare pipe. The alias form writes its own words
- *  into a link that already exists, so it brings no syntax with it. */
+/** The syntax each form commits. A carried `alias` rides only the link form — `![[ ]]` has no alias
+ *  syntax, and an empty one collapses rather than writing a bare pipe. The alias form writes its own
+ *  words into a link that already exists, so it brings no syntax with it. */
+function formSyntax(value: string, form: ConnectionForm, alias?: string): string {
+  switch (form) {
+    case 'alias':
+      return value
+    case 'embed':
+      return `![[${value}]]`
+    case 'link':
+      return alias ? `[[${value}|${alias}]]` : `[[${value}]]`
+  }
+}
+
+/** The committed text and where it leaves the caret. */
 export function connectionInsert(
   value: string,
   from: number,
   form: ConnectionForm = 'link',
   alias?: string,
 ): { insert: string; caret: number } {
-  const insert =
-    form === 'alias'
-      ? value
-      : form === 'embed'
-        ? `![[${value}]]`
-        : alias
-          ? `[[${value}|${alias}]]`
-          : `[[${value}]]`
+  const insert = formSyntax(value, form, alias)
   return { insert, caret: from + insert.length }
 }
 

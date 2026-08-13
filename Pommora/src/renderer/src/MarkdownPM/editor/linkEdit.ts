@@ -1,12 +1,6 @@
 import { EditorView } from '@codemirror/view'
-import type { EditorState, Extension } from '@codemirror/state'
-import {
-  aliasSpanAt,
-  emptyAliasPipeAt,
-  linkSpans,
-  pageLinkPattern,
-  type ConnEditAction,
-} from '@shared/connections'
+import type { EditorState, Extension, Line } from '@codemirror/state'
+import { aliasSpanAt, emptyAliasPipeAt, linkAt, type ConnEditAction } from '@shared/connections'
 import { useSession } from '../../store'
 import type { ConnectionsApi } from '../connections'
 import { tokenize } from '../tokens'
@@ -75,11 +69,18 @@ export function commitAliasOnEnter(view: EditorView): boolean {
   return true
 }
 
-/** The absolute offset of the bare `|` of an empty alias on the line holding `at`, or null. */
-function emptyPipeNear(state: EditorState, at: number): number | null {
+/** The line holding `at` and the offset into it. Every gesture below reads through this because each
+ *  spends an offset computed a turn earlier, which the document may since have shrunk past. */
+function lineNear(state: EditorState, at: number): { line: Line; rel: number } {
   const pos = Math.min(Math.max(at, 0), state.doc.length)
   const line = state.doc.lineAt(pos)
-  const pipe = emptyAliasPipeAt(line.text, pos - line.from)
+  return { line, rel: pos - line.from }
+}
+
+/** The absolute offset of the bare `|` of an empty alias on the line holding `at`, or null. */
+function emptyPipeNear(state: EditorState, at: number): number | null {
+  const { line, rel } = lineNear(state, at)
+  const pipe = emptyAliasPipeAt(line.text, rel)
   return pipe === null ? null : line.from + pipe
 }
 
@@ -88,20 +89,15 @@ function emptyPipeNear(state: EditorState, at: number): number | null {
  *  real forget, and there is no other point at which the words are known to be finished. */
 function rememberAliasNear(view: EditorView, api: ConnectionsApi | undefined, at: number): void {
   if (!api) return
-  const pos = Math.min(Math.max(at, 0), view.state.doc.length)
-  const line = view.state.doc.lineAt(pos)
-  const rel = pos - line.from
-  for (const m of line.text.matchAll(pageLinkPattern())) {
-    const s = linkSpans(m)
-    if (!s?.alias || rel < s.full[0] || rel > s.full[1]) continue
-    const alias = line.text.slice(s.alias[0], s.alias[1])
-    if (!alias.trim()) return
-    const res = api.resolve(line.text.slice(s.title[0], s.title[1]))
-    // Only a page that exists can be said to have worn the words. A phantom or an ambiguous title
-    // names no single page, and the memory is keyed by PageID.
-    if (res.status === 'resolved' && res.page) useSession.getState().rememberAlias(res.page.id, alias)
-    return
-  }
+  const { line, rel } = lineNear(view.state, at)
+  const s = linkAt(line.text, rel)
+  if (!s?.alias) return
+  const alias = line.text.slice(s.alias[0], s.alias[1])
+  if (!alias.trim()) return
+  const res = api.resolve(line.text.slice(s.title[0], s.title[1]))
+  // Only a page that exists can be said to have worn the words. A phantom or an ambiguous title
+  // names no single page, and the memory is keyed by PageID.
+  if (res.status === 'resolved' && res.page) useSession.getState().rememberAlias(res.page.id, alias)
 }
 
 /** Remove the pipe, having first confirmed it's still the character sitting there. The check is what
@@ -115,9 +111,8 @@ function collapseAt(view: EditorView, at: number): void {
 /** Which alias the caret is in, as that alias's absolute start — the identity both gestures below
  *  compare against to tell editing an alias from having finished with it. */
 function aliasStartNear(state: EditorState, at: number): number | null {
-  const pos = Math.min(Math.max(at, 0), state.doc.length)
-  const line = state.doc.lineAt(pos)
-  const span = aliasSpanAt(line.text, pos - line.from)
+  const { line, rel } = lineNear(state, at)
+  const span = aliasSpanAt(line.text, rel)
   return span ? line.from + span[0] : null
 }
 
@@ -149,7 +144,10 @@ export function aliasOnLeave(getApi: () => ConnectionsApi | undefined): Extensio
   return [
     EditorView.domEventHandlers({
       blur(_event, view) {
-        leaveAlias(view, getApi(), view.state.selection.main.head, false)
+        // The same predicate the listener uses. Without it, blurring anywhere inside a link would
+        // remember an alias nobody just authored — including one that came in with a paste.
+        const at = view.state.selection.main.head
+        if (aliasStartNear(view.state, at) !== null) leaveAlias(view, getApi(), at, false)
         return false
       },
     }),
