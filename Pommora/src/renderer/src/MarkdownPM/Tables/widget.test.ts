@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { type DecorationSet, EditorView } from '@codemirror/view'
-import { buildWidgetDecorations, tableWidgetExtension } from './widget'
+import { buildWidgetDecorations, refreshTableEffect, tableWidgetExtension } from './widget'
 import { cellCommitChange, tableSelfEdit } from './sync'
 import type { TableModel } from './model'
 
@@ -16,6 +16,19 @@ function firstTableWidget(state: EditorState): { text: string; model: TableModel
       const w = it.value.spec.widget as unknown as { text: string; model: TableModel } | null
       if (w && 'model' in w) return w
     }
+  }
+  throw new Error('no table widget in decoration set')
+}
+
+/** The span the first table's block decoration covers, in the live decoration set. */
+function widgetSpan(state: EditorState): [number, number] {
+  for (const provider of state.facet(EditorView.decorations)) {
+    if (typeof provider === 'function') continue
+    let span: [number, number] | null = null
+    ;(provider as DecorationSet).between(0, state.doc.length, (f, t) => {
+      span ??= [f, t]
+    })
+    if (span) return span
   }
   throw new Error('no table widget in decoration set')
 }
@@ -46,7 +59,10 @@ describe('table widget decorations', () => {
     expect(doc.slice(from, to)).toBe('| a | b |\n| --- | --- |\n| 1 | 2 |')
   })
 
-  it('refreshes the widget model on a cell self-edit so static cells repaint live', () => {
+  // A cell self-edit maps the widget forward and rebuilds nothing. The cell being typed in is a live
+  // editor holding its own text; replacing the block decoration here would make CodeMirror re-measure
+  // the block on every keystroke, against React content that hasn't rendered yet — the page jumps.
+  it('leaves the widget alone on a cell self-edit', () => {
     const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'
     const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
     expect(firstTableWidget(start).model.rows[0][0]).toBe('1')
@@ -58,8 +74,35 @@ describe('table widget decorations', () => {
       annotations: tableSelfEdit.of(true),
     }).state
 
-    const w = firstTableWidget(next)
+    expect(firstTableWidget(next).model.rows[0][0]).toBe('1')
+  })
+
+  // …and catches up when the cell demotes, which is the first moment a static cell has to draw it.
+  it('rebuilds it when the cell settles', () => {
+    const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'
+    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
+    const change = cellCommitChange(doc, 0, 1, 0, 'hello')
+    const edited = start.update({
+      changes: change ?? undefined,
+      annotations: tableSelfEdit.of(true),
+    }).state
+
+    const settled = edited.update({ effects: refreshTableEffect.of(0) }).state
+    const w = firstTableWidget(settled)
     expect(w.model.rows[0][0]).toBe('hello')
     expect(w.text).toContain('hello')
+  })
+
+  // Mapping has to carry the block over the edit: a widget left spanning the old range would clip the
+  // table it replaces.
+  it('and the widget still spans the table after an edit that lengthened it', () => {
+    const doc = '| a | b |\n| --- | --- |\n| 1 | 2 |'
+    const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
+    const change = cellCommitChange(doc, 0, 1, 0, 'a much longer cell')
+    const edited = start.update({
+      changes: change ?? undefined,
+      annotations: tableSelfEdit.of(true),
+    }).state
+    expect(edited.doc.sliceString(...widgetSpan(edited))).toBe(edited.doc.toString())
   })
 })
