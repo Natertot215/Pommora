@@ -14,6 +14,8 @@ export function InlineEditHeader({
   onIconClick,
   outline,
   readOnly = false,
+  editing: editingProp,
+  onEditingChange,
 }: {
   value: string
   icon?: string
@@ -24,8 +26,18 @@ export function InlineEditHeader({
   /** A locked view embed sets this — an editable field whose commit can't land is the failure
    *  mode this prevents. */
   readOnly?: boolean
+  /** Uncontrolled by default: clicking the field opens it. A host with its own way in — a menu's
+   *  Rename — drives it instead, so the caret lands in THIS field rather than wherever the
+   *  rename fence would otherwise award it. */
+  editing?: boolean
+  onEditingChange?: (editing: boolean) => void
 }): React.JSX.Element {
-  const [editing, setEditing] = useState(false)
+  const [ownEditing, setOwnEditing] = useState(false)
+  const editing = editingProp ?? ownEditing
+  const setEditing = (next: boolean): void => {
+    setOwnEditing(next)
+    onEditingChange?.(next)
+  }
   return (
     <div
       className={s.header}

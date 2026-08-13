@@ -32,14 +32,14 @@ export function PageMenu(): React.JSX.Element | null {
   const [iconOpen, setIconOpen] = useState(false)
   const [pane, setPane] = useState<'root' | 'properties'>('root')
   const iconRef = useRef<HTMLButtonElement>(null)
-  const beginRename = useSession((st) => st.beginRename)
+  const [renaming, setRenaming] = useState(false)
 
   if (!pageDetail) return null
   const page = pageDetail
 
   const runFooterAction = async (): Promise<void> => {
     const action = await window.nexus.pageActionsMenu({ actions: [...FOOTER_ACTIONS] })
-    if (action === 'title:rename') beginRename(page.path)
+    if (action === 'title:rename') setRenaming(true)
     else if (action === 'title:copylink') await window.nexus.writeClipboard(pageLinkText(page.title))
     else if (action === 'title:reveal') await window.nexus.revealPath(page.path)
     else if (action === 'title:delete')
@@ -51,6 +51,8 @@ export function PageMenu(): React.JSX.Element | null {
   const root = (
     <>
       <InlineEditHeader
+        editing={renaming}
+        onEditingChange={setRenaming}
         value={pageDetail.title}
         icon={entityIcon('page', ownIcon, defaultIcons)}
         iconRef={iconRef}

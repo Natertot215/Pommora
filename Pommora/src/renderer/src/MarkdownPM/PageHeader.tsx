@@ -9,6 +9,10 @@ interface Props {
   path: string
   title: string
   cover?: string
+  /** The page's own glyph. Absent draws no icon at all — the header stays as it was. */
+  icon?: string
+  iconHidden?: boolean
+  onToggleIcon?: () => void
   // biome-ignore lint/suspicious/noConfusingVoidType: the union is deliberate: a caller may hand back nothing or a promise, and `undefined` in place of `void` breaks assignability for the sync handlers.
   onRename: (newName: string) => void | Promise<boolean | void>
   onEditIcon: () => void
@@ -17,11 +21,11 @@ interface Props {
 /**
  * The page editor's header: a full-bleed cover band (the frontmatter `cover` key) with the title
  * overlaid bottom-left, or — with no cover — a hover Add-Banner strip above the title. The title is
- * the shared DetailTitleHeader (right-click → Rename / Edit Icon); the banner has its own
+ * the shared DetailTitleHeader (right-click → Rename / Edit Icon / Show Icon); the banner has its own
  * right-click → Change / Remove. Both menus are native + separate, never overlapping.
  */
 export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
-  { path, title, cover, onRename, onEditIcon },
+  { path, title, cover, icon, iconHidden, onToggleIcon, onRename, onEditIcon },
   ref,
 ) {
   const reloadPage = useSession((s) => s.reloadPage)
@@ -30,9 +34,12 @@ export const PageHeader = forwardRef<HTMLDivElement, Props>(function PageHeader(
   const titleHeader = (
     <DetailTitleHeader
       title={title}
+      icon={icon}
+      iconHidden={iconHidden}
       onRename={onRename}
-      requestMenu={() => window.nexus.titleMenu()}
+      requestMenu={() => window.nexus.titleMenu({ toggleIcon: icon !== undefined, iconHidden })}
       onEditIcon={onEditIcon}
+      onToggleIcon={onToggleIcon}
     />
   )
 

@@ -738,6 +738,18 @@ serveBridge(
         'Table indices must be a non-negative-integer array.',
       ),
     },
+    // Whether a page's heading icon is hidden. The icon itself is on-page in frontmatter; only
+    // whether the header draws it is chrome, so it keys by PageID here like folds and heading
+    // columns rather than writing a display toggle into the user's own file.
+    'headingIcon:get': { kind: 'raw', fn: scopeGet<boolean>('headingIcon') },
+    'headingIcon:set': {
+      kind: 'envelope',
+      fn: scopeSet(
+        'headingIcon',
+        (v: unknown): v is boolean => typeof v === 'boolean',
+        'Hidden must be a boolean.',
+      ),
+    },
     // The aliases a page has been given. The alias itself lives on-page in universal syntax; this
     // is an accelerator for offering one back, so losing it costs a suggestion and never a link.
     'aliases:get': { kind: 'raw', fn: scopeGet<string[]>('aliases') },
