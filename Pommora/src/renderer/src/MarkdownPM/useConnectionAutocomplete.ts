@@ -8,7 +8,7 @@ import {
   type ConnectionForm,
 } from './autocomplete'
 import { docString } from './editor/docCache'
-import { pageLinkPattern } from '@shared/connections'
+import { normalizeTitle, pageLinkPattern } from '@shared/connections'
 import { useSession } from '../store'
 
 export interface AcState {
@@ -66,13 +66,15 @@ export function useConnectionAutocomplete(
   const form = ac?.form ?? 'link'
   // An empty query only browses for embeds — the just-typed opener pops the full list; link's
   // auto-paired `[[]]` stays quiet until a first character.
-  const candidates = useMemo(
-    () =>
-      query === null || (query === '' && form === 'link')
-        ? []
-        : candidatesForRef.current(query, form),
-    [query, form],
-  )
+  const candidates = useMemo(() => {
+    if (query === null || (query === '' && form === 'link')) return []
+    const found = candidatesForRef.current(query, form)
+    // A sole suggestion identical to what's already written has nothing to offer: accepting it is a
+    // no-op edit, and an open panel holds Enter and the arrow keys away from whatever the caret is
+    // actually doing. Lives here so every surface on this state machine inherits it.
+    if (found.length === 1 && normalizeTitle(found[0].title) === normalizeTitle(query)) return []
+    return found
+  }, [query, form])
 
   const commit = (page: ConnPage): void => {
     const view = viewRef.current
