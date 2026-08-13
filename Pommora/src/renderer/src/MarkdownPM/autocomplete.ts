@@ -175,11 +175,11 @@ export interface CommitEdit {
  *  the picker and the part a coordinate-less harness otherwise can't reach.
  *
  *  `keepAlias` is the alias a retargeted link should carry over, already decided by the caller's
- *  setting. `spaceFollows` says whether the character after the span is already a space. */
+ *  setting. */
 export function commitEdit(
   ac: AutocompleteQuery,
   row: AcRow,
-  opts: { keepAlias?: string; spaceFollows: boolean } = { spaceFollows: false },
+  opts: { keepAlias?: string } = {},
 ): CommitEdit {
   const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
   if (ac.form === 'target') {
@@ -200,15 +200,10 @@ export function commitEdit(
       head: fill.from + label.length,
     }
   }
-  // A caret resting on a connection's closer keeps its token active, so the link just picked would
-  // sit there as raw syntax. Step one past it instead, adding the space when there isn't one to step
-  // over. Embeds own their whole line, and an alias lands inside a link rather than past one.
-  const spaced = ac.form === 'link'
-  const pad = spaced && !opts.spaceFollows ? ' ' : ''
-  return {
-    changes: [{ from: ac.from, to: ac.to, insert: insert + pad }],
-    anchor: caret + (spaced ? 1 : 0),
-  }
+  // The caret lands on the closer and the link reads as finished there — that being the one caret
+  // position which leaves a connection rendered (see `activeTokenIndices`). Nothing is written to
+  // move the caret off it, so accepting a suggestion adds the link and not a character more.
+  return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }
 }
 
 // Panel geometry — shared by the main editor and table cells. AC_ROW_H/AC_PADDING track .mdpm-ac in Styles.css.

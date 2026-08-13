@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
+import { Icon } from '@renderer/design-system/symbols'
 import { NotchedPane } from '@renderer/design-system/components/NotchedPane'
 import { dropdownOpen, dropdownClose } from '@renderer/design-system/animations.css'
 import { useExitPresence } from '@renderer/design-system/useExitPresence'
@@ -74,7 +75,11 @@ export function AutocompletePanel({
             onPick(row)
           }}
         >
-          {row.isPage && <EntityIcon kind="page" size={14} className="mdpm-ac-icon" />}
+          {row.isPage ? (
+            <EntityIcon kind="page" size={14} className="mdpm-ac-icon" />
+          ) : (
+            <Icon name="square-split-horizontal" size={14} className="mdpm-ac-icon" />
+          )}
           <span className="mdpm-ac-title">
             <span className="mdpm-ac-match">{row.label.slice(0, matchLen)}</span>
             {row.label.slice(matchLen)}
