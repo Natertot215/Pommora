@@ -79,6 +79,22 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
     expect(opened).not.toHaveBeenCalled()
   })
 
+  // Same clamping, other symptom: the caret would land mid-alias, in text the pointer never
+  // touched. It belongs at the bracket edge nearest where the click actually was.
+  it('a click that clamps into a resting link seats at the nearer bracket edge', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(9)
+    view.contentDOM.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    expect(view.state.selection.main.head).toBe(11)
+
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(4)
+    view.contentDOM.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    expect(view.state.selection.main.head).toBe(2)
+  })
+
   it('a click at the leading edge does not navigate', async () => {
     opened.mockClear()
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
