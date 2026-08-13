@@ -1,6 +1,8 @@
 import { EditorView } from '@codemirror/view'
+import type { LinkStatus } from '@shared/connections'
 import { tokenize } from '../tokens'
 import type { ConnectionsApi, ConnPage } from '../connections'
+import { seatAtNearerEdge } from './input'
 import { applyLinkAction } from './linkEdit'
 
 type GetApi = () => ConnectionsApi | undefined
@@ -63,28 +65,40 @@ function caretInside(view: EditorView, hit: WikiHit): boolean {
   return view.hasFocus && head >= hit.range[0] && head <= hit.range[1]
 }
 
-/** The wikiLink under a pointer gesture, and the page it leads to. `page` is null when the link
- *  doesn't resolve, and when the position belongs to the syntax beside the link rather than to the
- *  link itself: those positions are caret placement. They're measured from the token's range rather
- *  than from what's drawn — a hidden `[[Title|` means an aliased link's visible extent IS its
- *  content, so there'd otherwise be no edge left to click. */
-function pointerLink(
-  view: EditorView,
-  api: ConnectionsApi,
-  event: MouseEvent,
-): { hit: WikiHit; page: ConnPage | null; pos: number } | null {
+interface PointerLink {
+  hit: WikiHit
+  status: LinkStatus
+  /** Whether the gesture landed on the link's own drawn text, rather than clamping in from beside it. */
+  onText: boolean
+  /** The page to follow — only ever set for a gesture that touched a resolved link's text. */
+  page: ConnPage | null
+  pos: number
+}
+
+/** The wikiLink under a pointer gesture, where the gesture landed on it, and the page it leads to.
+ *
+ *  Offsets alone can't answer where the pointer was: `posAtCoords` clamps to the nearest RENDERED
+ *  position, and a hidden marker is replaced to zero width — so a click in the empty space past a
+ *  short alias resolves back onto its last character. The drawn text is asked for directly instead.
+ *  A resolved link and an ambiguous one each carry a class; a phantom carries none, because it is
+ *  drawn as its own raw bracketed text with nothing hidden and nothing to clamp against. */
+function pointerLink(view: EditorView, api: ConnectionsApi, event: MouseEvent): PointerLink | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
   const hit = wikiLinkAt(view, pos)
   if (!hit) return null
-  // The gesture has to land on the link's own drawn text. Offsets alone aren't enough: posAtCoords
-  // clamps to the nearest RENDERED position, and the closing `]]` is replaced to zero width — so a
-  // click in the empty space past a short alias resolves back onto its last character and follows a
-  // link the pointer was nowhere near.
-  const onText = (event.target as HTMLElement).closest?.('.md-connection-resolved') != null
-  if (!onText || pos < hit.content[0] || pos > hit.content[1]) return { hit, page: null, pos }
   const res = api.resolve(hit.title)
-  return { hit, page: res.status === 'resolved' && res.page ? res.page : null, pos }
+  const el = (event.target as HTMLElement).closest?.(
+    '.md-connection-resolved, .md-connection-ambiguous',
+  )
+  const onText = el != null && pos >= hit.content[0] && pos <= hit.content[1]
+  return {
+    hit,
+    status: res.status,
+    onText,
+    page: onText && res.status === 'resolved' && res.page ? res.page : null,
+    pos,
+  }
 }
 
 export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.domEventHandlers> {
@@ -106,33 +120,33 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       const api = getApi()
       const found = api ? pointerLink(view, api, event) : null
       editingOnPress = found ? caretInside(view, found.hit) : false
-      // A press that missed the link's text but clamped INSIDE it belongs outside — the same
-      // zero-width closer that made the coordinate land here would otherwise drop the caret in the
-      // middle of an alias the pointer never touched. Seat it at the nearer bracket edge. Only at
-      // rest: once the link is open for editing its syntax is real text, and clicking it is aiming.
-      if (found && !found.page && !editingOnPress) {
-        const [from, to] = found.hit.range
-        if (found.pos > from && found.pos < to) {
-          view.dispatch({ selection: { anchor: found.pos - from < to - found.pos ? from : to } })
-          view.focus()
-          event.preventDefault()
-          return true
-        }
-      }
-      if (!found?.page) return false
+      if (!found) return false
       // A right press hands the caret to whichever menu action is chosen, and Rename and Edit Link
       // exist to place it themselves — seating one here would land it somewhere first and make both
-      // of them meaningless. No preventDefault: the contextmenu event still has to fire.
+      // of them meaningless. Claiming the press does preventDefault it, which Chromium generates
+      // `contextmenu` independently of, so the menu still opens.
       //
       // LOAD-BEARING for the menu itself: `contextmenu` reads the live caret to decide it's inside
       // the syntax and should stand down. Let this fall through and CM seats a caret in the link on
       // every right-press, so that read is always true and the menu never appears anywhere. No test
       // covers the coupling — jsdom seats no caret from synthetic coordinates, so one would pass
       // either way.
-      if (event.button === 2) return true
-      // A left press is about to follow the link, and the seat would flash its syntax on the way
-      // out. Pressing a link you're already editing still seats normally.
-      if (event.button !== 0 || editingOnPress) return false
+      if (event.button === 2) return found.page != null
+      // Everything below is the plain single left press. Extending a selection, double- and
+      // triple-click, and the other buttons keep CM's own semantics over a link like anywhere else.
+      if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
+      // A press that missed the link's drawn text but clamped INSIDE it belongs outside — the same
+      // zero-width marker that made the coordinate land here would otherwise drop the caret in the
+      // middle of an alias the pointer never touched.
+      //
+      // Only where something is actually hidden. A phantom draws every character of itself, so a
+      // press inside one is aiming at exactly where it landed; and once a link is open for editing
+      // its syntax is real text, which is the same thing.
+      if (!found.onText && found.status !== 'phantom' && !editingOnPress)
+        return seatAtNearerEdge(view, found.pos, found.hit.range)
+      // A press about to follow the link would flash its syntax on the way out. Pressing a link
+      // you're already editing still seats normally.
+      if (!found.page || editingOnPress) return false
       event.preventDefault()
       return true
     },
