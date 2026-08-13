@@ -795,36 +795,19 @@
 .mdpm-editor .cm-content > .cm-line:first-child.md-callout-first::before {
   top: 0;
 }
-/* A code block inside a box keeps its fill, but as an INSET layer (::after) so it sits inside the box gutter
-   instead of bleeding edge-to-edge under the border. The line's own fill is dropped; the mono text insets to
-   the gutter; the inset layer carries the fill + the code-block corner radius. */
+/* A code block inside a box sits inside the box gutter instead of bleeding edge-to-edge under the border:
+   its fill aligns with the gutter (--li-origin) and the mono text pads a further --cb-pad inside that, so it
+   reads like a normal code block nested in the box. The block's own rules carry both measures through
+   --cb-inset, so the fill, the text, and the language chrome all move together. */
 .mdpm-editor .cm-line.md-callout.md-cb,
 .mdpm-editor .cm-line.md-bq.md-cb {
   --cb-gap: 0; /* a code block nested in a box floats off nothing — the box already owns the outer spacing */
-  /* The fill (::after) aligns with the box gutter (--li-origin); the code text sits a further --cb-pad inside
-     it, so it reads like a normal code block (text padded within its fill) nested in the box. */
+  --cb-inset: var(--li-origin);
   --cb-pad: 10px;
-  padding-left: calc(var(--li-origin) + var(--cb-pad));
-  padding-right: calc(var(--li-origin) + var(--cb-pad));
-}
-.mdpm-editor .cm-line.md-callout.md-cb::after,
-.mdpm-editor .cm-line.md-bq.md-cb::after {
-  content: "";
-  position: absolute;
-  inset: 0 var(--li-origin);
-  background: var(--cb-bg);
-  z-index: -1;
-  pointer-events: none;
-}
-.mdpm-editor .cm-line.md-cb-first.md-callout::after,
-.mdpm-editor .cm-line.md-cb-first.md-bq::after {
-  border-top-left-radius: var(--cb-radius);
-  border-top-right-radius: var(--cb-radius);
-}
-.mdpm-editor .cm-line.md-cb-last.md-callout::after,
-.mdpm-editor .cm-line.md-cb-last.md-bq::after {
-  border-bottom-left-radius: var(--cb-radius);
-  border-bottom-right-radius: var(--cb-radius);
+  /* Restated, not inherited: the box's own gutter rule matches these lines just as specifically, so the
+     block's padding has to be declared at the box's weight to win it. */
+  padding-left: calc(var(--cb-inset) + var(--cb-pad));
+  padding-right: calc(var(--cb-inset) + var(--cb-pad));
 }
 
 /* A blockquote nested inside a callout — a real `::after` tint fill (rounds its right corners like the nested code
@@ -878,11 +861,18 @@
 }
 /* When the quote (or a code block) is the callout's LAST element, its last line carries the callout's bottom
    padding (--callout-gap + --callout-inner-pad); pull the fill up by that so it ends inside the closing border
-   instead of hanging past it. (No top twin: the callout's first line is always the atomic head.) */
+   instead of hanging past it. The test is the CALLOUT's last line being code, not the block having closed —
+   a fence still being typed has no closing line and would otherwise spill past the border while you write it.
+   (No top twin: the callout's first line is always the atomic head.) */
 .mdpm-editor .cm-line.md-callout-last.md-bq-in-last::after,
-.mdpm-editor .cm-line.md-callout-last.md-cb-last::after,
+.mdpm-editor .cm-line.md-callout-last.md-cb::after,
 .mdpm-editor .cm-line.md-callout-last.md-bq-in-last .md-bq-in-bar {
   bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
+}
+/* The block's own closing gap would otherwise win over the box's — a code block ending a callout would seat
+   its last line flush against the closing border, with no inner padding at all. */
+.mdpm-editor .cm-line.md-callout-last.md-cb {
+  padding-bottom: calc(var(--callout-gap) + var(--callout-inner-pad));
 }
 
 /* DRAG HANDLE — a grip in the callout's top-left gutter that drags the whole box (shares the block-drag
@@ -908,18 +898,24 @@
 
 /* Fill is an inset ::after (caret-safe — a pseudo, never a margin) so the first/last line can hold an OUTER
    vertical gap above/below the block — the same float the blockquote + callout use.
-   KNOBS: --cb-bg / --cb-radius / --cb-size (font scale) · --cb-gap (outer vertical breathing room) */
+   --cb-inset is how far the fill sits in from the line box (a box nests the block inside its gutter);
+   --cb-pad is the text's padding within that fill. Every horizontal measure the block takes — the fill's
+   edges, the code's own padding, the language chrome — reads them, so a nested block only re-states the two.
+   KNOBS: --cb-bg / --cb-radius / --cb-size (font scale) · --cb-gap (outer vertical breathing room)
+   · --cb-inset / --cb-pad (horizontal placement) */
 .mdpm-editor .cm-line.md-cb {
   --cb-bg: var(--fill-secondary);
   --cb-radius: 6px;
   --cb-size: 0.85em;
   --cb-gap: 6px;
+  --cb-inset: 0px;
+  --cb-pad: 12px;
   position: relative;
   isolation: isolate;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: var(--cb-size);
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: calc(var(--cb-inset) + var(--cb-pad));
+  padding-right: calc(var(--cb-inset) + var(--cb-pad));
   /* Code wraps like an editor, never like prose: every row fills to the edge and breaks between
      any two characters — a long token is never relocated whole to the next row. The line-count
      numbers are what distinguish a fresh line from a wrap. */
@@ -928,7 +924,7 @@
 .mdpm-editor .cm-line.md-cb::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 0 var(--cb-inset);
   background: var(--cb-bg);
   z-index: -1;
   pointer-events: none;
@@ -990,7 +986,9 @@
 .mdpm-editor .md-cb .md-cb-lang {
   --code-bracket-y: 0em;
   position: absolute;
-  right: 12px;
+  /* Rides the block's own inner edge, so a block nested in a box follows its fill in rather than
+     staying pinned to the line box and landing on the box's border. */
+  right: calc(var(--cb-inset) + var(--cb-pad));
   color: var(--code);
   text-transform: uppercase;
   /* The line-count hanging indent inherits — reset it or the chrome slides left by the zone. */
