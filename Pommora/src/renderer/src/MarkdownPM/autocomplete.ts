@@ -165,9 +165,9 @@ export function connectionInsert(
 
 export interface CommitEdit {
   changes: { from: number; to: number; insert: string }[]
-  /** Where the caret lands; `head` present means the span between them is selected. */
+  /** Where the caret lands. Every form leaves it resting rather than selecting: a link renders as
+   *  the text it shows, so selecting that text highlights the whole link. */
   anchor: number
-  head?: number
 }
 
 /** The edit accepting `row` makes, as data. Pure so the rules below can be read and tested without
@@ -184,20 +184,22 @@ export function commitEdit(
   const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
   if (ac.form === 'target') {
     // Naming the target finishes only half the link: a markdown link's display text is free, where a
-    // connection's IS its target. An empty label is filled with the page's own title and selected,
-    // so one press leaves you typing what the link should say rather than hunting for the slot. A
-    // label already written — ⌘K over a selection — is the author's, and is left alone, the caret
-    // stepping past the closer instead.
+    // connection's IS its target. An empty label takes the page's own title so the link has
+    // something to show; a label already written — ⌘K over a selection — is the author's.
+    //
+    // Either way the caret leaves the link rather than selecting inside it. A markdown link renders
+    // as its label alone, so selecting that label highlights everything the link shows, and picking
+    // a page reads as though it had selected the whole thing.
     const retarget = { from: ac.from, to: ac.to, insert }
     const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
     // The label is markdown, not plain text: an unescaped `]` ends it early and the whole link
     // tokenizes as nothing at all. Same escape the URL-property form has always used.
-    const label = escapeAlias(row.value)
-    if (!fill) return { changes: [retarget], anchor: caret + 1 }
+    const label = fill ? escapeAlias(row.value) : ''
     return {
-      changes: [{ from: fill.from, to: fill.to, insert: label }, retarget],
-      anchor: fill.from,
-      head: fill.from + label.length,
+      changes: fill
+        ? [{ from: fill.from, to: fill.to, insert: label }, retarget]
+        : [retarget],
+      anchor: caret + label.length + 1,
     }
   }
   // The caret lands on the closer and the link reads as finished there — that being the one caret

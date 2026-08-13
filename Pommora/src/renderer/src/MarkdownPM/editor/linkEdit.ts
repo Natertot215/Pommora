@@ -1,10 +1,11 @@
 import { EditorView } from '@codemirror/view'
-import type { EditorState, Extension, Line } from '@codemirror/state'
+import { EditorSelection, type EditorState, type Extension, type Line } from '@codemirror/state'
 import { aliasSpanAt, emptyAliasPipeAt, linkAt, type ConnEditAction } from '@shared/connections'
 import { useSession } from '../../store'
 import type { ConnectionsApi } from '../connections'
 import { tokenize } from '../tokens'
 import { focusRange } from './input'
+import { restedOnLink } from './linkRest'
 
 /** The two authoring gestures, both seating the caret where their names imply. They work off the
  *  token's own spans rather than the rendered text: a displayed alias hides where the title is, so
@@ -60,7 +61,12 @@ export function commitAliasOnEnter(view: EditorView): boolean {
     (t) => t.kind === 'wikiLink' && span[0] >= t.range[0] && span[1] <= t.range[1],
   )
   if (!tk) return false
-  focusRange(view, line.from + tk.range[1])
+  const end = line.from + tk.range[1]
+  view.dispatch({
+    selection: EditorSelection.cursor(end, 1),
+    effects: restedOnLink.of(end),
+  })
+  view.focus()
   return true
 }
 

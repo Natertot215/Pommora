@@ -32,6 +32,7 @@ import { calloutGuard } from './editor/calloutGuard'
 import { connectionClicks } from './editor/connections'
 import { markdownLinkClicks } from './editor/links'
 import { aliasOnLeave } from './editor/linkEdit'
+import { linkRest } from './editor/linkRest'
 import { markdownFolding, applySavedFolds, type FoldsApi } from './editor/folding'
 import { applyEditorAction, type EditorMenuApi } from './editor/menu'
 import { formatKeymap } from './editor/formatKeymap'
@@ -243,6 +244,7 @@ export function MarkdownEditor({
       connectionClicks(() => connectionsRef.current),
       markdownLinkClicks(() => connectionsRef.current),
       aliasOnLeave(() => connectionsRef.current),
+      linkRest,
       // Close the connection panel when focus leaves the editor (sidebar click, Cmd-Tab) — the cell
       // editor has the same handler; without it the glass panel floats over unrelated UI.
       EditorView.domEventHandlers({

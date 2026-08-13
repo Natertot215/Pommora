@@ -181,6 +181,7 @@ describe('a label the picker writes is markdown, not plain text', () => {
     )
     expect(written).toBe('see [Notes [WIP\\]](Notes%20%5BWIP%5D) end')
     expect(tokenizeHasLink(written)).toBe(true)
-    expect(written.slice(edit.anchor, edit.head)).toBe('Notes [WIP\\]')
+    // The escape lengthens the label, and the caret still lands past the whole link.
+    expect(written.slice(edit.anchor)).toBe(' end')
   })
 })
