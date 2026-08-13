@@ -19,6 +19,14 @@ const body = (): string =>
     `An embed: ![[Q3 Plan]].`,
     `A markdown link: [the roadmap](${encodeLinkTarget('Q3 Plan')}).`,
     `A website that merely ends the same way: [site](https://example.com/Q3%20Plan).`,
+    '',
+    '| Where | Link |',
+    '| --- | --- |',
+    // A GFM cell escapes `|`, and `|` is the alias delimiter — so a connection given its own words
+    // inside a table reaches the cascade with a backslash sitting where the title ends.
+    `| In a cell | [[Q3 Plan\\|the roadmap]] |`,
+    `| Unaliased | [[Q3 Plan]] |`,
+    '',
     'A sample, not a link:',
     '```',
     '[[Q3 Plan]] and [x](Q3%20Plan)',
@@ -59,6 +67,15 @@ describe('a rename reaches every form a connection takes', () => {
     // Scoped to the live lines: the fenced sample below still holds the old title, on purpose.
     expect(after).not.toContain('A connection: [[Q3 Plan]]')
     expect(after).not.toContain('An embed: ![[Q3 Plan]]')
+  })
+
+  it('reaches a connection authored inside a table cell, escape and all', async () => {
+    await renameCascade(root, 'Q3 Plan', 'Q4 Plan')
+    const after = await read()
+    // The escape is re-emitted exactly as it arrived: writing a bare pipe here would split the row
+    // into an extra column.
+    expect(after).toContain('[[Q4 Plan\\|the roadmap]]')
+    expect(after).not.toContain('Q3 Plan\\|')
   })
 
   it('reads on disk as ordinary percent-encoded Markdown', async () => {

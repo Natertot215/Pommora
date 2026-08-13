@@ -1,5 +1,6 @@
 import { isInsideWikilink } from '../parser'
 import { isInsideCode } from '@shared/markdownCode'
+import { aliasSpanAt } from '@shared/connections'
 import {
   parseListMarker,
   MAX_NESTING_LEVEL,
@@ -307,8 +308,11 @@ export function autoPair(
     return { from: c, to: c, insert: inserted + pair.multi, selection: c + 1 }
   }
   if (inserted === '[') {
-    const atLineStart = c === lineStartAt(doc, c)
-    if (atLineStart || prev === ' ' || prev === '\t' || prev === '\n') {
+    const ls = lineStartAt(doc, c)
+    // Never inside an alias: the pair's `]` is the very character the input guard refuses there, so
+    // pairing on the author's behalf would truncate the link they are in the middle of naming.
+    if (aliasSpanAt(doc.slice(ls, lineEndAt(doc, c)), c - ls)) return null
+    if (c === ls || prev === ' ' || prev === '\t' || prev === '\n') {
       return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
     }
     return null

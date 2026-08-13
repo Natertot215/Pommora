@@ -63,14 +63,27 @@ export interface LinkSpans {
   alias: [number, number] | null
 }
 
+/** The title a wikilink names, with a table cell's pipe-escape removed.
+ *
+ *  A GFM cell escapes `|`, and `|` is the alias delimiter — so a connection given its own words
+ *  inside a table reaches every reader as `[[Title\|alias]]`. That backslash belongs to the cell's
+ *  encoding, not to the title, and the shared name rule refuses `\` in a page name, so a title can
+ *  never legitimately end in one. Stripping it is what keeps the renderer, the picker and the rename
+ *  cascade naming the same page. */
+export const titleOf = (rawTitle: string): string =>
+  rawTitle.endsWith('\\') ? rawTitle.slice(0, -1) : rawTitle
+
 export function linkSpans(m: RegExpMatchArray): LinkSpans | null {
   if (m.index == null) return null
   const full: [number, number] = [m.index, m.index + m[0].length]
-  const title: [number, number] = [m.index + 2, m.index + 2 + m[1].length]
+  const titleEnd = m.index + 2 + m[1].length
+  const aliased = m[2] !== undefined
   return {
     full,
-    title,
-    alias: m[2] === undefined ? null : [title[1] + 1, full[1] - 2],
+    // The escape sits between the title and the pipe, so it leaves the title's span rather than
+    // being shown as part of the name.
+    title: [m.index + 2, aliased && m[1].endsWith('\\') ? titleEnd - 1 : titleEnd],
+    alias: aliased ? [titleEnd + 1, full[1] - 2] : null,
   }
 }
 

@@ -3,7 +3,7 @@
 // cascade still sweeps them so a rename reaches them without giving them a link-graph edge —
 // which is why one predicate answers for both syntaxes. No I/O.
 
-import { normalizeTitle, pageEmbedPattern, pageLinkPattern } from '@shared/connections'
+import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from '@shared/connections'
 import { markdownLinkRegex, targetNamesTitle } from '@shared/links'
 import { codeMask } from '@shared/markdownCode'
 
@@ -19,7 +19,7 @@ export function mentionsTitle(body: string, normalizedKey: string): boolean {
   const inCode = codeMask(body)
   for (const m of body.matchAll(pageLinkPattern())) {
     if (m.index !== undefined && inCode(m.index)) continue
-    const key = normalizeTitle(m[1])
+    const key = normalizeTitle(titleOf(m[1]))
     if (key && key === normalizedKey) return true
   }
   for (const m of body.matchAll(pageEmbedPattern())) {
