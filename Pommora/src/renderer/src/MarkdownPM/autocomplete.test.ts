@@ -221,3 +221,21 @@ describe('what accepting a suggestion finishes', () => {
     expect(edit.opensAlias).toBeUndefined()
   })
 })
+
+// The rule is the shape on the line: a pipe with nothing between it and the closer is an alias
+// waiting to be written, and the picker offers what that page has been called. No gesture tracking
+// behind it — every way of arriving at an empty alias arrives at the same offer.
+describe('an empty alias asks for the picker by its shape alone', () => {
+  it('opens on the bare pipe however the pipe got there', () => {
+    const doc = 'a [[Alpha|]] b'
+    const q = autocompleteQuery(doc, doc.indexOf('|') + 1)!
+    expect(q.form).toBe('alias')
+    expect(q.query).toBe('')
+    expect(q.title).toBe('Alpha')
+  })
+
+  it('and a space between them is a written alias, not an empty one', () => {
+    const doc = 'a [[Alpha| ]] b'
+    expect(autocompleteQuery(doc, doc.indexOf('|') + 1)?.query).toBe(' ')
+  })
+})

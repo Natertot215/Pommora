@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { aliasInvite, invitedAlias, linkRest, linkTyping, restedOnLink } from './linkGestures'
+import { linkRest, linkTyping, restedOnLink } from './linkGestures'
 
 // Finishing a link leaves the caret on its closer and the link rendered. Clicking that same spot is
 // aiming at the syntax and must reveal it — so what the decoration reads is not where the caret is
@@ -67,43 +67,5 @@ describe('a connection is only "being typed" while it is being typed', () => {
     const s = state('[[A]] [[B]] x')
     const next = s.update({ changes: { from: 12, insert: 'y' }, selection: { anchor: 13 } }).state
     expect(next.field(linkTyping)).toBeNull()
-  })
-})
-
-// An empty alias offers everything its page has worn, because that is the one moment with nothing
-// typed to filter by. The offer belongs to having just been HANDED the slot: reaching for Add Title
-// yourself, or emptying an alias, are not that.
-describe('an empty alias slot only invites the picker when it was handed over', () => {
-  const state = (doc: string): EditorState =>
-    EditorState.create({ doc, extensions: [aliasInvite] })
-
-  it('records the slot the commit opened', () => {
-    const s = state('a [[Alpha|]] b').update({ effects: invitedAlias.of(10) }).state
-    expect(s.field(aliasInvite)).toBe(10)
-  })
-
-  it('nothing is invited by default — Add Title opens a slot without one', () => {
-    expect(state('a [[Alpha|]] b').field(aliasInvite)).toBeNull()
-  })
-
-  it('survives while the caret stays in the slot', () => {
-    const invited = state('a [[Alpha|]] b').update({ effects: invitedAlias.of(10) }).state
-    expect(invited.update({ selection: { anchor: 10 } }).state.field(aliasInvite)).toBe(10)
-  })
-
-  it('ends the moment the caret leaves it', () => {
-    const invited = state('a [[Alpha|]] b').update({ effects: invitedAlias.of(10) }).state
-    expect(invited.update({ selection: { anchor: 4 } }).state.field(aliasInvite)).toBeNull()
-  })
-
-  // Typing then backspacing back to empty is not a fresh invitation: you already know what you came
-  // to write, so a panel over the caret is in the way.
-  it('does not come back after typing and deleting to nothing', () => {
-    const invited = state('a [[Alpha|]] b').update({ effects: invitedAlias.of(10) }).state
-    const typed = invited.update({ changes: { from: 10, insert: 'x' }, selection: { anchor: 11 } })
-      .state
-    expect(typed.field(aliasInvite)).toBeNull()
-    const cleared = typed.update({ changes: { from: 10, to: 11 }, selection: { anchor: 10 } }).state
-    expect(cleared.field(aliasInvite)).toBeNull()
   })
 })
