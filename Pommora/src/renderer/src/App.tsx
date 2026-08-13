@@ -45,6 +45,7 @@ export function App(): React.JSX.Element {
   const newPage = useSession((s) => s.newPage)
   const openNewTab = useSession((s) => s.openNewTab)
   const beginRename = useSession((s) => s.beginRename)
+  const beginIcon = useSession((s) => s.beginIcon)
   const newPageAdjacent = useSession((s) => s.newPageAdjacent)
   const select = useSession((s) => s.select)
   useNavThumbnails() // capture-on-open detail-pane thumbnails for the gallery
@@ -94,6 +95,10 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     return window.nexus.onBeginRename(({ path, create, host }) => beginRename(path, create, host))
   }, [beginRename])
+
+  useEffect(() => {
+    return window.nexus.onBeginIcon(({ path }) => beginIcon(path))
+  }, [beginIcon])
 
   useEffect(() => {
     return window.nexus.onNewPageAdjacent(

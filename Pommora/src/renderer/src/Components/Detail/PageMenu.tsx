@@ -3,12 +3,23 @@ import { Server } from 'lucide-react'
 import { entityIcon, Icon } from '@renderer/design-system/symbols'
 import { useSession } from '../../store'
 import { flushTrailing } from '../../design-system/components/menu/menu.css'
-import { MenuItem, MenuSeparator } from '../../design-system/components/menu'
+import { footerLockAction, lockIcon } from '@renderer/design-system/components/menu/menu.css'
+import {
+  MenuBottomRow,
+  MenuItem,
+  MenuScrollFrame,
+  MenuSeparator,
+} from '../../design-system/components/menu'
 import { IconPicker } from '../IconPicker'
 import { InlineEditHeader } from './InlineEditHeader'
 import { PagePropertiesPane } from './PagePropertiesPane'
 import { PaneSlider } from './PaneSlider'
 import { ICON } from './settingsPane.css'
+import { pageLinkText } from '@shared/pageMenu'
+
+/** What the ellipsis offers today — a named slice of the page menu, so these four read and order
+ *  themselves exactly as they do everywhere else a page is right-clicked. */
+const FOOTER_ACTIONS = ['title:rename', 'title:reveal', 'title:copylink', 'title:delete'] as const
 
 /** The Settings dropdown's page scope — the Page's identity, and the leaves that configure it.
  *  Reads `pageDetail`, the same source the editor's header renders from, so the title and glyph
@@ -21,8 +32,19 @@ export function PageMenu(): React.JSX.Element | null {
   const [iconOpen, setIconOpen] = useState(false)
   const [pane, setPane] = useState<'root' | 'properties'>('root')
   const iconRef = useRef<HTMLButtonElement>(null)
+  const beginRename = useSession((st) => st.beginRename)
 
   if (!pageDetail) return null
+  const page = pageDetail
+
+  const runFooterAction = async (): Promise<void> => {
+    const action = await window.nexus.pageActionsMenu({ actions: [...FOOTER_ACTIONS] })
+    if (action === 'title:rename') beginRename(page.path)
+    else if (action === 'title:copylink') await window.nexus.writeClipboard(pageLinkText(page.title))
+    else if (action === 'title:reveal') await window.nexus.revealPath(page.path)
+    else if (action === 'title:delete')
+      await mutate({ op: 'delete', path: page.path, kind: 'page' })
+  }
   const ownIcon =
     typeof pageDetail.frontmatter.icon === 'string' ? pageDetail.frontmatter.icon : undefined
 
@@ -49,13 +71,38 @@ export function PageMenu(): React.JSX.Element | null {
 
   return (
     <>
-      <PaneSlider
-        open={pane !== 'root'}
-        root={root}
-        detail={<PagePropertiesPane onBack={() => setPane('root')} />}
-        minWidth={225}
-        minHeight={245}
-      />
+      <MenuScrollFrame
+        footer={
+          <MenuBottomRow
+            leading={
+              // Parked: a page has no board to lock. Inert rather than a live button wired to a
+              // no-op, which reads as broken instead of pending.
+              <button type="button" aria-label="Lock" className={footerLockAction} disabled>
+                <Icon name="lock" size={12} className={lockIcon} />
+                Lock
+              </button>
+            }
+            trailing={
+              <button
+                type="button"
+                aria-label="More actions"
+                className={footerLockAction}
+                onClick={() => void runFooterAction()}
+              >
+                <Icon name="ellipsis" size={13} />
+              </button>
+            }
+          />
+        }
+      >
+        <PaneSlider
+          open={pane !== 'root'}
+          root={root}
+          detail={<PagePropertiesPane onBack={() => setPane('root')} />}
+          minWidth={225}
+          minHeight={245}
+        />
+      </MenuScrollFrame>
       <IconPicker
         open={iconOpen}
         onClose={() => setIconOpen(false)}

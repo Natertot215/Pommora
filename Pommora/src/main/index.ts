@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  clipboard,
   dialog,
   Menu,
   nativeTheme,
@@ -109,6 +110,7 @@ import { popGripMenu } from './gripMenu'
 import { popColumnMenu } from './columnMenu'
 import { popCellMenu } from './cellMenu'
 import { popRowGripMenu } from './rowGripMenu'
+import { popPageActionsMenu } from './pageActionsMenu'
 import { popCardMenu } from './cardMenu'
 import { popConnMenu } from './connMenu'
 import { popTabMenu } from './tabMenu'
@@ -1508,6 +1510,22 @@ serveBridge(
 
     // A table row grip's right-click menu (page meta + New Page Above/Below).
     'row-grip-menu': { kind: 'menu', fn: popRowGripMenu },
+    'clipboard:write': {
+      kind: 'raw',
+      fn: (text: unknown) => {
+        if (typeof text === 'string') clipboard.writeText(text)
+      },
+    },
+    'path:reveal': {
+      kind: 'raw',
+      fn: async (p: unknown) => {
+        const root = sessionRoot()
+        if (root === null || typeof p !== 'string') return
+        const r = await resolveUnderRoot(root, p)
+        if (r.ok) shell.showItemInFolder(r.value)
+      },
+    },
+    'page-actions-menu': { kind: 'menu', fn: popPageActionsMenu },
 
     // A card's right-click menu (page meta + Add Property ▸).
     'card-menu': { kind: 'menu', fn: popCardMenu },

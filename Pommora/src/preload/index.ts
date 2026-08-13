@@ -187,6 +187,9 @@ const api = {
   cellMenu: ask('cell-menu'),
   // A table row grip's right-click menu (page meta + New Page Above/Below).
   rowGripMenu: ask('row-grip-menu'),
+  writeClipboard: ask('clipboard:write'),
+  revealPath: ask('path:reveal'),
+  pageActionsMenu: ask('page-actions-menu'),
   // A card's right-click menu (page meta + Add Property ▸).
   cardMenu: ask('card-menu'),
   tabMenu: ask('tab-menu'),
@@ -206,6 +209,9 @@ const api = {
   onMenuAction: on('menu:action'),
   // Main asks the renderer to start inline-renaming the row at this path (context-menu Rename).
   onBeginRename: on('begin-rename'),
+  // Main asks the renderer to open the icon picker on the row at this path (context-menu Change
+  // Icon) — the picker anchors to a row only the renderer can find.
+  onBeginIcon: on('begin-icon'),
   // The context-menu New Page Above/Below push-back — the renderer computes the position.
   onNewPageAdjacent: on('new-page-adjacent'),
   // The context-menu "Open New Tab" push-back — the action runs renderer-side (main can't know

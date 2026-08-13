@@ -30,6 +30,7 @@ import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../store'
 import { contextTargetToSelect, isOpenInTabs } from '../Tabs/tabsModel'
 import { RenamableTitle } from '../Components/RenamableTitle'
+import { IconPicker } from '../Components/IconPicker'
 import { twisty, twistyOpen, twistySpacer } from '@renderer/design-system/components/menu/menu.css'
 
 /** Every PathNode carries kind/id/path/title; code-keyed saved rows don't, so they never wire
@@ -323,6 +324,12 @@ function PageRow({
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
+  // Change Icon arrives from the native menu as a path; the row that owns it opens the picker
+  // against its own glyph, so the surface the gesture happened on is the one that answers.
+  const iconPath = useSession((s) => s.iconPath)
+  const endIcon = useSession((s) => s.endIcon)
+  const mutate = useSession((s) => s.mutate)
+  const rowRef = useRef<HTMLDivElement>(null)
   return (
     <>
       <DragRow
@@ -330,16 +337,25 @@ function PageRow({
         onPointerEnter={api ? () => api.onHover(page.id, true) : undefined}
         onPointerLeave={api ? () => api.onHover(page.id, false) : undefined}
       >
-        <Leaf
-          icon={entityIcon('page', page.icon, defaultIcons)}
-          title={page.title}
-          depth={depth}
-          selected={isPageSelected(selection, page.id)}
-          onSelect={(e) => onSelectPage(page, e)}
-          onContextMenu={() => void holdGhost(() => showContextFor(page))}
-          rename={{ path: page.path, kind: page.kind }}
-        />
+        <div ref={rowRef}>
+          <Leaf
+            icon={entityIcon('page', page.icon, defaultIcons)}
+            title={page.title}
+            depth={depth}
+            selected={isPageSelected(selection, page.id)}
+            onSelect={(e) => onSelectPage(page, e)}
+            onContextMenu={() => void holdGhost(() => showContextFor(page))}
+            rename={{ path: page.path, kind: page.kind }}
+          />
+        </div>
       </DragRow>
+      <IconPicker
+        open={iconPath === page.path}
+        onClose={endIcon}
+        triggerRef={rowRef}
+        value={page.icon}
+        onSelect={(icon) => void mutate({ op: 'setIcon', path: page.path, kind: 'page', icon })}
+      />
       {ghost.anchorId === page.id && <GhostLeaf depth={depth} />}
     </>
   )
