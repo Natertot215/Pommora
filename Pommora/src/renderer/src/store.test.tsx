@@ -474,3 +474,55 @@ describe('store — recents reorder + batched close', () => {
     expect(savedRecents()).not.toHaveBeenCalled()
   })
 })
+
+// The memory is a slice rather than a tree-keyed derivation because neither gesture pushes a tree:
+// what these assert is that a write and a forget are visible immediately, with no reload between.
+describe('store — the aliases a page has been given', () => {
+  const aliasWrites = (): ReturnType<typeof vi.fn> =>
+    (window as unknown as { nexus: { aliases: { set: ReturnType<typeof vi.fn> } } }).nexus.aliases
+      .set
+
+  beforeEach(() => {
+    ;(window as unknown as { nexus: Record<string, unknown> }).nexus.aliases = {
+      set: vi.fn(async () => ({ ok: true, value: null })),
+    }
+    useSession.setState({ pageAliases: {} })
+  })
+
+  it('remembers an alias, most recently given first', () => {
+    useSession.getState().rememberAlias('p1', 'the notes')
+    useSession.getState().rememberAlias('p1', 'my draft')
+    expect(useSession.getState().pageAliases.p1).toEqual(['my draft', 'the notes'])
+    expect(aliasWrites()).toHaveBeenLastCalledWith('p1', ['my draft', 'the notes'])
+  })
+
+  it('re-giving an alias promotes it rather than storing it twice', () => {
+    useSession.getState().rememberAlias('p1', 'the notes')
+    useSession.getState().rememberAlias('p1', 'my draft')
+    useSession.getState().rememberAlias('p1', 'the notes')
+    expect(useSession.getState().pageAliases.p1).toEqual(['the notes', 'my draft'])
+  })
+
+  it('forgets one and leaves the rest, without a reload', () => {
+    useSession.getState().rememberAlias('p1', 'the notes')
+    useSession.getState().rememberAlias('p1', 'my draft')
+    useSession.getState().forgetAlias('p1', 'the notes')
+    expect(useSession.getState().pageAliases.p1).toEqual(['my draft'])
+    expect(aliasWrites()).toHaveBeenLastCalledWith('p1', ['my draft'])
+  })
+
+  // A reload reads no row for a page with nothing left, so the slice must not hold an empty list.
+  it('forgetting the last one drops the page’s key entirely', () => {
+    useSession.getState().rememberAlias('p1', 'the notes')
+    useSession.getState().forgetAlias('p1', 'the notes')
+    expect(useSession.getState().pageAliases).not.toHaveProperty('p1')
+    expect(aliasWrites()).toHaveBeenLastCalledWith('p1', [])
+  })
+
+  it('an empty or unknown alias writes nothing at all', () => {
+    useSession.getState().rememberAlias('p1', '   ')
+    useSession.getState().forgetAlias('p1', 'never given')
+    expect(useSession.getState().pageAliases).toEqual({})
+    expect(aliasWrites()).not.toHaveBeenCalled()
+  })
+})
