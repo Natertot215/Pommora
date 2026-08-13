@@ -2,11 +2,11 @@
 
 ### Current Focus
 
-**Alias-V1 — specified, planned, and twice adversarially reviewed; awaiting ratification, with no implementation code written.** The arc hands a connection's visible words to its author: `[[Title|Alias]]` renders as its alias while resolving on title, Rename and Edit Link author and retarget it, a page remembers the aliases it has worn, and `[Title](Page)` resolves internally beside `[[ ]]`. Duplicate-title disambiguation entered the design, grew through two review rounds into path qualification with its own cascade and journal, and was cut whole — this arc is about aliases, and that design waits intact in its decision log's §G.
+**Alias-V1 — Phases 1 through 4 built, gated, and reviewed; Phase 5's acceptance run is what remains.** The arc hands a connection's visible words to its author: `[[Title|Alias]]` renders as its alias while resolving on title, Rename and Edit Link author and retarget it, a page remembers the aliases it has worn and offers them back with a × that forgets one for good, and `[Title](Page)` resolves internally beside `[[ ]]` — cascade, picker and all. Duplicate-title disambiguation entered the design, grew through two review rounds into path qualification with its own cascade and journal, and was cut whole — this arc is about aliases, and that design waits intact in its decision log's §G.
 
 ### Immediate Work
 
-- [ ] **Alias-V1** — its spec and plan are ratified-pending-go at `Planning/Alias-V1 — {Decision Log,Plan}.md`, 14 tasks across 5 phases. Execution opens on Nathan's word.
+- [ ] **Alias-V1's acceptance run.** Every task through Phase 4 is committed with its gates green; what is owed is the end-to-end pass a suite cannot stand in for — authoring an alias, watching it survive a rename, forgetting one, and confirming a `[Title](Page)` link reads as percent-encoded Markdown on disk. The plan's Progress section carries the commit range.
 
 ### Pending Focuses
 

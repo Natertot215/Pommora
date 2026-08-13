@@ -109,7 +109,7 @@ Each handler declares its boundary policy beside its body. Enveloped channels �
 
 `<nexus>/.nexus/nexus.db` travels with the Nexus, keeping a moved or renamed one intact without re-pathing, and holds one table of substance — `local_state`, keyed by `(scope, key)`. DDL is canonical in `src/main/db/schema.ts`; `node:sqlite` sits behind `driver.ts` as the swappable seam.
 
-**What lives here** is per-machine chrome — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the tab set, the preview sets, the recents stream, and every block host's document; none of it is authored content, and two machines interleaving any of it has no correct answer.
+**What lives here** is per-machine chrome — folded headings, the active view per container, manual row order under a sort, table heading columns, the fetched-title cache, the aliases each Page has been given, the tab set, the preview sets, the recents stream, and every block host's document; none of it is authored content, and two machines interleaving any of it has no correct answer. The alias record is the clearest statement of the boundary: the alias itself is written on-page in universal syntax, and what the database keeps is the accelerator that offers it back.
 
 **What doesn't:** pinned and favorites live in `navigation.json` — rarely written, and the one part of Navigation worth following a user across machines — as ordered arrays of bare `{kind, id}` refs written as a serialized patch. A markdown tile's body stays a file; it is prose and lives in the connections graph. Everything canonical — the registry, Contexts, settings, schemas, and each host's sidecar — stays a file, where a Nexus's meaning survives without Pommora.
 
