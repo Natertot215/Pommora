@@ -9,3 +9,4 @@ build/_dots.png
 .vite/
 coverage/
 *.tsbuildinfo
+*.env
