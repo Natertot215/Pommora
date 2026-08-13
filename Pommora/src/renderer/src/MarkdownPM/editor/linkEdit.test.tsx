@@ -108,6 +108,19 @@ describe('an alias opened and abandoned leaves nothing behind', () => {
     expect(view.state.doc.toString()).toBe('a [[Alpha]] b')
   })
 
+  // Clicking another page both blurs this editor and unmounts it in the same task, so a collapse
+  // deferred to a macrotask fires against a destroyed view and silently does nothing — leaving the
+  // bare pipe in the text autosave last saw. The assertion is that no flush is needed.
+  it('collapses on blur without waiting for a timer', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 10 } })
+    })
+    view.contentDOM.dispatchEvent(new FocusEvent('blur'))
+    expect(view.state.doc.toString()).toBe('a [[Alpha]] b')
+  })
+
   it('a written alias is left alone', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
     await act(async () => {

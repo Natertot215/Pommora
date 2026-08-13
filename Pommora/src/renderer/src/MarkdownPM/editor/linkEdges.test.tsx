@@ -118,3 +118,53 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
     }
   })
 })
+
+// The edge seat above exists because a hidden marker is zero width and coordinates beside a link
+// therefore clamp into it. That reasoning covers exactly the links that hide something. These two
+// don't resolve, and the seat has to tell them apart rather than treating "no page" as "no hit".
+describe('a link that leads nowhere still takes the caret where it was pressed', () => {
+  const ambiguous: ConnectionsApi = {
+    ...buildPageIndex([
+      { id: 'b1', title: 'Beta', path: 'Notes/Beta.md' },
+      { id: 'b2', title: 'Beta', path: 'Other/Beta.md' },
+    ]),
+    open: (p: ConnPage) => opened(p.id),
+  }
+
+  // These two assert the seat DIDN'T fire, never where the caret ended up instead: declining leaves
+  // the press to CM, whose own seat needs coordinates jsdom can't produce and lands on the doc end
+  // in every case. Both bracket edges are excluded, since which one is nearer isn't the point.
+  const bracketEdges = [2, 10]
+
+  // A phantom is drawn as its own raw bracketed text — every character has width, so nothing can
+  // clamp in from beside it and the press means exactly where it landed.
+  it('a press inside an unresolved link is left to the editor', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Zeta]] b', connections: conn })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(7)
+    view.contentDOM.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    expect(bracketEdges).not.toContain(view.state.selection.main.head)
+  })
+
+  // An ambiguous link hides its brackets like a resolved one, so it keeps the edge seat — but its
+  // own drawn text has to be recognised as drawn text. `a [[Beta]] b` draws its content over [4,8].
+  it('a press on an ambiguous link’s text is left to the editor', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Beta]] b', connections: ambiguous })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(6)
+    const span = view.dom.querySelector('.md-connection-ambiguous') as HTMLElement
+    span.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    expect(bracketEdges).not.toContain(view.state.selection.main.head)
+  })
+
+  it('but one still seats at the nearer edge when the press clamped in from beside it', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Beta]] b', connections: ambiguous })
+    await act(async () => view.focus())
+    view.dispatch({ selection: { anchor: 0 } })
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(8)
+    view.contentDOM.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    expect(view.state.selection.main.head).toBe(10)
+  })
+})

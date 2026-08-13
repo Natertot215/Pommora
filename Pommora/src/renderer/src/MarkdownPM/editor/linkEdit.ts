@@ -1,5 +1,5 @@
 import { EditorView } from '@codemirror/view'
-import type { Extension } from '@codemirror/state'
+import type { EditorState, Extension } from '@codemirror/state'
 import { aliasSpanAt, emptyAliasPipeAt, type ConnEditAction } from '@shared/connections'
 import { tokenize } from '../tokens'
 import { focusRange } from './input'
@@ -67,28 +67,50 @@ export function commitAliasOnEnter(view: EditorView): boolean {
   return true
 }
 
+/** The absolute offset of the bare `|` of an empty alias on the line holding `at`, or null. */
+function emptyPipeNear(state: EditorState, at: number): number | null {
+  const pos = Math.min(Math.max(at, 0), state.doc.length)
+  const line = state.doc.lineAt(pos)
+  const pipe = emptyAliasPipeAt(line.text, pos - line.from)
+  return pipe === null ? null : line.from + pipe
+}
+
+/** Remove the pipe, having first confirmed it's still the character sitting there. The check is what
+ *  makes the call safe to make late: an offset computed one turn and spent the next would otherwise
+ *  delete whatever had drifted into it. */
+function collapseAt(view: EditorView, at: number): void {
+  if (view.state.doc.sliceString(at, at + 1) !== '|') return
+  view.dispatch({ changes: { from: at, to: at + 1 } })
+}
+
 /** An alias opened and then left empty takes its pipe with it, matching the nexus-wide rule that an
  *  emptied value drops its key rather than persisting an empty container.
  *
  *  It collapses on LEAVING the token, never the moment the alias empties: clearing an alias to
- *  retype it would otherwise pull the pipe out from under the caret mid-edit. Losing focus counts as
- *  leaving. The dispatch is deferred because CM forbids one inside an update listener. */
+ *  retype it would otherwise pull the pipe out from under the caret mid-edit.
+ *
+ *  Leaving by losing focus is handled on the `blur` event rather than through the update listener,
+ *  and that split is the point. A blur handler runs outside the update cycle, so it can dispatch
+ *  straight away; the listener can't, and has to defer to a macrotask that the editor's own teardown
+ *  can outrun — which is exactly what blurring often precedes, since clicking another page both
+ *  blurs this editor and unmounts it. Deferred, the pipe would reach disk. */
 export function collapseEmptyAlias(): Extension {
-  return EditorView.updateListener.of((u) => {
-    if (!u.selectionSet && !u.focusChanged) return
-    const doc = u.state.doc
-    const was = Math.min(u.startState.selection.main.head, doc.length)
-    const line = doc.lineAt(was)
-    const pipe = emptyAliasPipeAt(line.text, was - line.from)
-    if (pipe === null) return
-    const now = u.state.selection.main.head
-    const stillInside =
-      u.view.hasFocus &&
-      now >= line.from &&
-      now <= line.to &&
-      emptyAliasPipeAt(line.text, now - line.from) === pipe
-    if (stillInside) return
-    const at = line.from + pipe
-    setTimeout(() => u.view.dispatch({ changes: { from: at, to: at + 1 } }), 0)
-  })
+  return [
+    EditorView.domEventHandlers({
+      blur(_event, view) {
+        const at = emptyPipeNear(view.state, view.state.selection.main.head)
+        if (at !== null) collapseAt(view, at)
+        return false
+      },
+    }),
+    EditorView.updateListener.of((u) => {
+      if (!u.selectionSet) return
+      // Read against the NEW document at the OLD caret, mapped forward. Reading the old offset
+      // against the new text is what makes typing into a fresh alias look like leaving one.
+      const at = emptyPipeNear(u.state, u.changes.mapPos(u.startState.selection.main.head))
+      if (at === null) return
+      if (u.view.hasFocus && emptyPipeNear(u.state, u.state.selection.main.head) === at) return
+      setTimeout(() => collapseAt(u.view, at), 0)
+    }),
+  ]
 }
