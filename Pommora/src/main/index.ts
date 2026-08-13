@@ -736,6 +736,13 @@ serveBridge(
         'Table indices must be a non-negative-integer array.',
       ),
     },
+    // The aliases a page has been given. The alias itself lives on-page in universal syntax; this
+    // is an accelerator for offering one back, so losing it costs a suggestion and never a link.
+    'aliases:get': { kind: 'raw', fn: scopeGet<string[]>('aliases') },
+    'aliases:set': {
+      kind: 'envelope',
+      fn: scopeSet('aliases', isStringArray, 'Aliases must be a string array.'),
+    },
 
     'views:save': {
       kind: 'envelope',
