@@ -214,18 +214,16 @@ export function TableView({
     measure()
   }, [model, measure])
 
-  // The widget's source is rebuilt when editing STOPS, never per keystroke: a live cell owns its own
-  // text, and replacing the block decoration on every character makes CodeMirror re-measure a block
-  // whose React content hasn't rendered yet. This is the first moment a static cell has to draw it.
-  const wasEditing = useRef(false)
+  // The widget's source is rebuilt when a cell stops being the live one, never per keystroke: a live
+  // cell owns its own text, and replacing the block decoration on every character makes CodeMirror
+  // re-measure a block whose React content hasn't rendered yet. A cell demotes whether the table lost
+  // the caret entirely or handed it to a sibling, and either way this is the first moment its static
+  // form has to draw what was typed — a sibling move that skipped it would redraw the pre-edit text.
+  const wasActive = useRef<{ row: number; col: number } | null>(null)
   useEffect(() => {
-    if (active) {
-      wasEditing.current = true
-      return
-    }
-    if (!wasEditing.current) return
-    wasEditing.current = false
-    onSettled?.()
+    const prev = wasActive.current
+    wasActive.current = active
+    if (prev && (prev.row !== active?.row || prev.col !== active?.col)) onSettled?.()
   }, [active, onSettled])
 
   // One editor at a time: a pointer-down anywhere outside the table demotes the active cell back to
@@ -515,6 +513,7 @@ export function TableView({
         type="button"
         className="mdpm-tbl-add mdpm-tbl-add-col"
         style={{ top: tableTop, height: tableHeight }}
+        data-create
         aria-label="Add Column"
         onMouseDown={swallowCaret}
         onClick={() => onAppend('col')}
@@ -524,6 +523,7 @@ export function TableView({
       <button
         type="button"
         className="mdpm-tbl-add mdpm-tbl-add-row"
+        data-create
         aria-label="Add Row"
         onMouseDown={swallowCaret}
         onClick={() => onAppend('row')}

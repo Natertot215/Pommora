@@ -77,6 +77,17 @@ export function applySavedHeadingCols(view: EditorView, indices: number[]): void
 let TableViewComp: typeof import('./TableView').TableView | undefined
 interface TableDom extends HTMLElement {
   _root?: Root
+  _height?: HeightBox
+  _ro?: ResizeObserver
+}
+
+/** A table's last laid-out height, shared with whichever widget replaces it. CodeMirror rebuilds a
+ *  block's height-map entry whenever an edit lands inside its range and asks the widget what height
+ *  to assume until the next measure — a table that answers "unknown" is assumed to be one line tall,
+ *  so the document's height collapses by the whole table for the frame between the edit and the
+ *  measure, on every keystroke a cell makes. */
+interface HeightBox {
+  px: number
 }
 
 // A chosen table-menu action → a model transform. `index` is the column index (col/align actions) or the
@@ -124,8 +135,13 @@ class TableWidget extends WidgetType {
     readonly model: TableModel,
     readonly tableIndex: number,
     readonly headingColumn: boolean,
+    readonly height: HeightBox = { px: -1 },
   ) {
     super()
+  }
+
+  get estimatedHeight(): number {
+    return this.height.px
   }
 
   eq(other: TableWidget): boolean {
@@ -206,6 +222,16 @@ class TableWidget extends WidgetType {
         if (change) view.dispatch({ changes: change })
       })
     }
+    // The observer reads the box off the DOM rather than closing over one, so the widget that
+    // replaces this one keeps being measured through the same node.
+    dom._height = this.height
+    if (!dom._ro) {
+      dom._ro = new ResizeObserver(([entry]) => {
+        const box = dom._height
+        if (box) box.px = entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height
+      })
+      dom._ro.observe(dom)
+    }
     let root = dom._root
     if (!root) {
       root = createRoot(dom)
@@ -255,8 +281,11 @@ class TableWidget extends WidgetType {
     return true
   }
 
-  destroy(): void {
+  destroy(dom: HTMLElement): void {
     this.destroyed = true
+    // Only a node that is genuinely being dropped reaches here — a widget replaced over a reused DOM
+    // is never destroyed — so the observer measuring it goes with it rather than outliving the table.
+    ;(dom as TableDom)._ro?.disconnect()
     // React forbids unmounting synchronously inside a render/commit; CM may destroy mid-update.
     const root = this.root
     this.root = undefined
@@ -268,17 +297,29 @@ class TableWidget extends WidgetType {
   }
 }
 
-export function buildWidgetDecorations(state: EditorState): DecorationSet {
+/** The height boxes of a decoration set's tables, in document order — a rebuild hands each table
+ *  back the height it was last laid out at, so the block never collapses to its default estimate. */
+function heightBoxes(deco: DecorationSet): HeightBox[] {
+  const boxes: HeightBox[] = []
+  for (const it = deco.iter(); it.value; it.next()) {
+    const w = it.value.spec.widget
+    if (w instanceof TableWidget) boxes.push(w.height)
+  }
+  return boxes
+}
+
+export function buildWidgetDecorations(state: EditorState, prev?: DecorationSet): DecorationSet {
   const doc = state.doc
   // `false` → undefined (not a throw) when the field isn't installed, e.g. in unit tests building a bare state.
   const headingCols = state.field(headingColField, false) ?? new Set<number>()
+  const boxes = prev ? heightBoxes(prev) : []
   const ranges: Range<Decoration>[] = []
   tableRegions(doc.toString()).forEach((region, i) => {
     const text = doc.sliceString(region.from, region.to)
     const model = modelFromRegion(region)
     ranges.push(
       Decoration.replace({
-        widget: new TableWidget(text, model, i, headingCols.has(i)),
+        widget: new TableWidget(text, model, i, headingCols.has(i), boxes[i]),
         block: true,
       }).range(region.from, region.to),
     )
@@ -341,7 +382,9 @@ function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): D
   if (!region) return deco
   const text = state.doc.sliceString(region.from, region.to)
   return swapTableWidget(deco, index, (w) =>
-    w.text === text ? null : new TableWidget(text, modelFromRegion(region), index, w.headingColumn),
+    w.text === text
+      ? null
+      : new TableWidget(text, modelFromRegion(region), index, w.headingColumn, w.height),
   )
 }
 
@@ -362,12 +405,13 @@ const widgetField = StateField.define<DecorationSet>({
         const region = tableRegions(docString(tr.state.doc))[idx]
         const text = region ? tr.state.doc.sliceString(region.from, region.to) : w.text
         const model = region ? modelFromRegion(region) : w.model
-        return new TableWidget(text, model, idx, on)
+        return new TableWidget(text, model, idx, on, w.height)
       })
     }
     if (toggled) return toggledSet
     // Mount-time load applies the whole saved set at once → one full rebuild (fires once per page, not per toggle).
-    if (tr.effects.some((e) => e.is(setHeadingColsEffect))) return buildWidgetDecorations(tr.state)
+    if (tr.effects.some((e) => e.is(setHeadingColsEffect)))
+      return buildWidgetDecorations(tr.state, deco)
     // A cell commit edits one table's source. Map the widgets forward and STOP: the cell being typed
     // in is a live editor that already holds its own text, and the static cells around it are
     // unchanged. Rebuilding the widget here would replace a block decoration on every keystroke,
@@ -388,7 +432,9 @@ const widgetField = StateField.define<DecorationSet>({
     // that fallback would hand back the pre-refresh set.
     if (refreshed) return refreshedSet
     if (!tr.docChanged) return deco
-    return editAffectsTables(deco, tr) ? buildWidgetDecorations(tr.state) : deco.map(tr.changes)
+    return editAffectsTables(deco, tr)
+      ? buildWidgetDecorations(tr.state, deco)
+      : deco.map(tr.changes)
   },
   provide: (f) => EditorView.decorations.from(f),
 })
