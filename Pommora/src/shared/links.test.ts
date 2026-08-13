@@ -111,3 +111,43 @@ describe('targetTitle — what a markdown link names', () => {
     expect(targetTitle('')).toBeNull()
   })
 })
+
+// The encoder and the reader are two halves of one contract: anything the app writes must be
+// something it can read back. These pin the characters where that nearly broke.
+describe('the codec reads back everything it writes', () => {
+  const titles = [
+    'Notes',
+    'Work Notes',
+    'Atomic Habits (Book)',
+    'Meeting: Notes',
+    'Notes [WIP]',
+    'Revenue 50% plan',
+    'Q3 — Plan',
+    'Node.js',
+    'Already%20Encoded',
+    'a#b?c&d+e',
+  ]
+
+  it('round-trips, and every one still names its page', () => {
+    for (const title of titles) {
+      const encoded = encodeLinkTarget(title)
+      expect(decodeLinkTarget(encoded)).toBe(title)
+      expect(targetTitle(encoded)).toBe(title)
+    }
+  })
+
+  // A colon is legal in a page name and is also how a target declares itself an address, so it is
+  // spelled out — otherwise `Meeting: Notes` encodes to something targetTitle refuses, and the app
+  // writes a link it cannot itself follow.
+  it('spells out a colon so a title is never read as a scheme', () => {
+    expect(encodeLinkTarget('Meeting: Notes')).toBe('Meeting%3A%20Notes')
+    expect(targetTitle('Meeting%3A%20Notes')).toBe('Meeting: Notes')
+    expect(targetTitle('https://example.com')).toBeNull()
+  })
+
+  // The cascade calls this unwrapped, where a throw becomes a reverted rename rather than a
+  // skipped link.
+  it('never throws, even on input encodeURI refuses', () => {
+    expect(() => encodeLinkTarget('A\uD800B')).not.toThrow()
+  })
+})

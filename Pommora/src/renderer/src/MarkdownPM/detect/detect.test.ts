@@ -288,33 +288,8 @@ describe('fence run length — a longer fence holds shorter ones', () => {
   })
 })
 
-// CommonMark reads `[[Title]](target)` as a link whose label is `[Title]`. Pommora's wikilink-first
-// ordering would otherwise make it a connection trailed by literal parens.
-describe('a wikilink followed immediately by parens is a link', () => {
-  it('reclassifies, labelling the link with the bracketed text', () => {
-    const tokens = tokenize('see [[Notes]](Target) end')
-    const link = tokens.find((t) => t.kind === 'link')
-    expect(link).toBeDefined()
-    expect('see [[Notes]](Target) end'.slice(link!.contentRange[0], link!.contentRange[1])).toBe(
-      '[Notes]',
-    )
-    expect(tokens.some((t) => t.kind === 'wikiLink')).toBe(false)
-  })
-
-  it('leaves a wikilink that merely precedes parens alone', () => {
-    const tokens = tokenize('see [[Notes]] (2024) end')
-    expect(tokens.some((t) => t.kind === 'wikiLink')).toBe(true)
-    expect(tokens.some((t) => t.kind === 'link')).toBe(false)
-  })
-
-  it('a bare wikilink is untouched', () => {
-    expect(tokenize('see [[Notes]] end').some((t) => t.kind === 'wikiLink')).toBe(true)
-  })
-
-  it('an unclosed paren run leaves it a wikilink', () => {
-    expect(tokenize('see [[Notes]](no closer').some((t) => t.kind === 'wikiLink')).toBe(true)
-  })
-
+// The label group reads escapes, and its cap is what keeps that from backtracking.
+describe('the markdown-link label', () => {
   // The label group reads escapes now, so a title carrying `]` can be named in this form at all.
   it('an escaped label tokenizes rather than producing nothing', () => {
     const doc = 'see [Notes \\[WIP\\] final](Target) end'
@@ -323,13 +298,12 @@ describe('a wikilink followed immediately by parens is a link', () => {
     expect(doc.slice(link!.contentRange[0], link!.contentRange[1])).toBe('Notes \\[WIP\\] final')
   })
 
-  // Code claims its span before anything else, and reclassifying extends a token over new ground.
-  it('does not reclassify across a code span', () => {
-    const tokens = tokenize('see [[Notes]](`x`) end')
+  // Obsidian shows this as a connection followed by literal parens, and a shared vault is the
+  // reason both syntaxes exist at all.
+  it('a wikilink followed by parens stays a connection', () => {
+    const tokens = tokenize('see [[Notes]](Target) end')
     expect(tokens.some((t) => t.kind === 'wikiLink')).toBe(true)
-    const link = tokens.find((t) => t.kind === 'link')
-    const code = tokens.find((t) => t.kind === 'inlineCode')!
-    expect(link && link.range[0] < code.range[1] && code.range[0] < link.range[1]).toBeFalsy()
+    expect(tokens.some((t) => t.kind === 'link')).toBe(false)
   })
 
   // The cap on that group is what keeps the alternation from backtracking quadratically.
