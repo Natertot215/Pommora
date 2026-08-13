@@ -319,6 +319,13 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       )
       const bracket = open ? Decoration.mark({ class: 'md-bracket' }) : hideMarker
       for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
+      // Revealed, an aliased connection shows both of its meanings at once: the words the reader
+      // sees, and the page they lead to. The target takes the same treatment a markdown link's
+      // target takes when revealed, so both syntaxes say "this is where it points" the same way.
+      if (open && tk.resolveRange)
+        ranges.push(
+          Decoration.mark({ class: 'md-link-url' }).range(tk.resolveRange[0], tk.resolveRange[1]),
+        )
     })
   }
   for (const { from, to } of view.visibleRanges) {

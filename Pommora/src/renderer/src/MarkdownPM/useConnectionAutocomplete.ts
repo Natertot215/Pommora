@@ -11,7 +11,7 @@ import {
 import { docString } from './editor/docCache'
 import { normalizeTitle, pageLinkPattern } from '@shared/connections'
 import { useSession } from '../store'
-import { aliasInvite, invitedAlias, restedOnLink } from './editor/linkGestures'
+import { restedOnLink } from './editor/linkGestures'
 
 export interface AcState extends AutocompleteQuery {
   left: number
@@ -104,10 +104,14 @@ export function useConnectionAutocomplete(
       selection: { anchor },
       // A finished link rests rendered on its closer, but only because this gesture put the caret
       // there. A link left open at its alias isn't finished, and says so by asking for the picker.
-      effects: opensAlias ? invitedAlias.of(anchor) : restedOnLink.of(anchor),
+      // A finished link rests rendered on its closer, but only because this gesture put the caret
+      // there. A link left open at its alias isn't finished and claims nothing.
+      ...(opensAlias ? {} : { effects: restedOnLink.of(anchor) }),
       userEvent: 'input',
     })
-    setAc(null)
+    // The panel is NOT cleared here. `detectConnectionQuery` runs on this very dispatch and decides
+    // what the new caret position deserves — closing it afterwards would wipe the alias picker that
+    // an opened slot has just earned.
     view.focus()
   }
 
@@ -148,12 +152,8 @@ export function detectConnectionQuery(
     // docString hits the per-doc-version cache — a raw toString() re-joins the whole rope on
     // every keystroke/caret-move for a read that only touches the caret's line.
     const q = autocompleteQuery(docString(view.state.doc), sel.head, allowEmbeds)
-    // An alias with nothing typed in it offers everything its page has worn — but only where the
-    // slot was just handed over. Opening one yourself, or emptying one, is not an invitation.
-    const uninvited =
-      q?.form === 'alias' && q.query === '' && view.state.field(aliasInvite, false) !== sel.head
-    const c = q && !uninvited && view.coordsAtPos(sel.head)
-    if (q && !uninvited && c)
+    const c = q && view.coordsAtPos(sel.head)
+    if (q && c)
       next = {
         ...q,
         left: Math.round(c.left),

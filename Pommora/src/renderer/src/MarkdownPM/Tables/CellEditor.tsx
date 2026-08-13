@@ -8,7 +8,7 @@ import { markdownDecorations } from '../editor/decorations'
 import { autoPair, autoDelete, type Edit } from '../input'
 import { AC_MAX, aliasRows, pageRow } from '../autocomplete'
 import { aliasOnLeave } from '../editor/linkEdit'
-import { aliasInvite, linkRest, linkTyping } from '../editor/linkGestures'
+import { linkRest, linkTyping } from '../editor/linkGestures'
 import {
   useConnectionAutocomplete,
   detectConnectionQuery,
@@ -99,7 +99,6 @@ export function CellEditor({
           aliasOnLeave(() => connections?.()),
           linkRest,
           linkTyping,
-          aliasInvite,
           customCaret,
           EditorView.lineWrapping,
           // Native spell-check, opted in explicitly: the cell editor sits inside the table widget's
