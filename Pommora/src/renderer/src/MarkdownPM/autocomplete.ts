@@ -34,6 +34,8 @@ export type AcQuery = Pick<AutocompleteQuery, 'query' | 'form' | 'title'>
 export interface AcRow {
   value: string
   label: string
+  /** The page this row names, when it names one — the key its remembered aliases are found by. */
+  pageId?: string
   /** Whether the row names an entity and should be drawn with its glyph. */
   isPage: boolean
   forget?: () => void
@@ -118,7 +120,12 @@ export function autocompleteQuery(
   return null
 }
 
-export const pageRow = (p: ConnPage): AcRow => ({ value: p.title, label: p.title, isPage: true })
+export const pageRow = (p: ConnPage): AcRow => ({
+  value: p.title,
+  label: p.title,
+  isPage: true,
+  pageId: p.id,
+})
 
 /** The aliases the page named by `title` has been given, prefix-filtered by what's typed so far.
  *  Each row carries its own forget, so the panel never learns where the memory lives — and an
@@ -165,6 +172,9 @@ export function connectionInsert(
 
 export interface CommitEdit {
   changes: { from: number; to: number; insert: string }[]
+  /** Whether the caret was left inside a freshly opened alias, which is a link still being written
+   *  rather than one just finished. */
+  opensAlias?: boolean
   /** Where the caret lands. Every form leaves it resting rather than selecting: a link renders as
    *  the text it shows, so selecting that text highlights the whole link. */
   anchor: number
@@ -179,9 +189,22 @@ export interface CommitEdit {
 export function commitEdit(
   ac: AutocompleteQuery,
   row: AcRow,
-  opts: { keepAlias?: string } = {},
+  opts: { keepAlias?: string; openAlias?: boolean } = {},
 ): CommitEdit {
+  // Accepting a page whose names are worth offering opens the alias slot rather than finishing the
+  // link, so the picker can hand those names straight back. Governed by `aliasPickerOnCommit`.
+  if (ac.form === 'link' && opts.openAlias) {
+    const text = `[[${row.value}|]]`
+    return {
+      changes: [{ from: ac.from, to: ac.to, insert: text }],
+      anchor: ac.from + text.length - 2,
+      opensAlias: true,
+    }
+  }
   const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
+  // Accepting an alias finishes the link it belongs to, rather than leaving the caret inside it for
+  // a second gesture that only ever means "yes, I meant that".
+  if (ac.form === 'alias') return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret + 2 }
   if (ac.form === 'target') {
     // Naming the target finishes only half the link: a markdown link's display text is free, where a
     // connection's IS its target. An empty label takes the page's own title so the link has
