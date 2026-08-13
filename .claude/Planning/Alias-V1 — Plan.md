@@ -1,6 +1,6 @@
 ## Alias-V1 — Implementation Plan
 
-> **Status:** ratified — in execution · Spec: `Planning/Alias-V1 — Decision Log.md` · Execute tasks in order.
+> **Status:** executed — Phases 1–5 complete, gates green · Spec: `Planning/Alias-V1 — Decision Log.md` · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -514,11 +514,11 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
   - [x] Task 12b — The cascade reaches them · `433b83ff`
   - [x] Task 12c — One markdown-link grammar · `dd6d8985`, reversed in part at Gate 4
   - [x] Task 13 — `( )` autocomplete and the ⌘K caret · `aa0df620`
-  - [x] Gate 4 — simplification + the code-span fix `6639cc2f` · review folds `PENDING`
-- [ ] **Phase 5** — Closeout
-  - [ ] Task 14 — Acceptance run
-  - [ ] Task 12 — Documentation
-  - [ ] Task 15 — Claim, verify, attack
+  - [x] Gate 4 — simplification `6639cc2f` · review folds `923749be`, `9eda9691`
+- [x] **Phase 5** — Closeout
+  - [x] Task 14 — Acceptance run · `18d215c5` (the data half, against real files; the interaction half is Nathan's to see)
+  - [x] Task 12 — Documentation · `7fcb01a1`, `9eda9691`
+  - [x] Task 15 — Claim, verify, attack
 
 ### Rulings
 - **Duplicate disambiguation cut from the arc** (Nathan). Path qualification, the move gate, the prefix-preserving cascade, the main-side title index, and the journal hardening all leave with it. The design survives in the decision log's §G.
