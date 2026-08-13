@@ -1,7 +1,7 @@
 // Pure title rewrite over a body: replace every reference to `oldTitle` — in any of the three
 // syntaxes that can name a page — with `newTitle`. The rename-cascade primitive.
 
-import { normalizeTitle, pageEmbedPattern, pageLinkPattern } from '@shared/connections'
+import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from '@shared/connections'
 import { encodeLinkTarget, markdownLinkRegex, targetNamesTitle } from '@shared/links'
 import { codeMask } from '@shared/markdownCode'
 
@@ -17,10 +17,14 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
   const inCode = codeMask(body)
   const afterLinks = body.replace(
     pageLinkPattern(),
-    (match, title: string, alias: string | undefined, offset: number) =>
-      !inCode(offset) && normalizeTitle(title) === oldKey
-        ? `[[${newTitle}${alias ? `|${alias}` : ''}]]`
-        : match,
+    (match, title: string, alias: string | undefined, offset: number) => {
+      if (inCode(offset) || normalizeTitle(titleOf(title)) !== oldKey) return match
+      // A table cell's pipe-escape is re-emitted exactly as it arrived: dropping it would write a
+      // bare `|` into a cell and split the row into an extra column.
+      // An empty alias segment drops rather than leaving a bare pipe, as it does in the editor.
+      const pipe = alias ? `${title.endsWith('\\') ? '\\|' : '|'}${alias}` : ''
+      return `[[${newTitle}${pipe}]]`
+    },
   )
   // The embed pass sees POST-link-pass offsets — its mask must be built over the same string, or
   // any length-changing link rewrite above shifts every later offset off the original mask.
