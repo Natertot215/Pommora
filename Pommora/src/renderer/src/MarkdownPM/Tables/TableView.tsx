@@ -69,6 +69,7 @@ export function TableView({
   model,
   headingColumn = false,
   onCellCommit,
+  onSettled,
   onExit,
   onReorder,
   onResize,
@@ -82,6 +83,8 @@ export function TableView({
   model: TableModel
   headingColumn?: boolean
   onCellCommit: (row: number, col: number, text: string) => void
+  /** Fired when the cell editor demotes — the moment the static cells have to draw what was typed. */
+  onSettled?: () => void
   onExit: (dir: 'before' | 'after') => void
   onReorder: (axis: Axis, from: number, to: number) => boolean
   onResize: (boundaryIndex: number, dashDelta: number) => boolean
@@ -210,6 +213,20 @@ export function TableView({
     remeasure.current = false
     measure()
   }, [model, measure])
+
+  // The widget's source is rebuilt when editing STOPS, never per keystroke: a live cell owns its own
+  // text, and replacing the block decoration on every character makes CodeMirror re-measure a block
+  // whose React content hasn't rendered yet. This is the first moment a static cell has to draw it.
+  const wasEditing = useRef(false)
+  useEffect(() => {
+    if (active) {
+      wasEditing.current = true
+      return
+    }
+    if (!wasEditing.current) return
+    wasEditing.current = false
+    onSettled?.()
+  }, [active, onSettled])
 
   // One editor at a time: a pointer-down anywhere outside the table demotes the active cell back to
   // static. Cell↔cell moves go through `navigate`/`onActivate` (which set a new active), so this only
