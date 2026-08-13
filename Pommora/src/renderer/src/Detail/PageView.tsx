@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSession } from '../store'
 import { MarkdownEditor } from '../MarkdownPM'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
@@ -6,6 +6,7 @@ import { pageIndexOf } from '../treeIndex'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
 import { hoverConnection } from '../Embeds/ConnectionHoverCard'
 import { IconPicker } from '../Components/IconPicker'
+import { entityIcon } from '@renderer/design-system/symbols'
 import { navKey } from '../Navigation/navRecents'
 import { captureWarm, readWarm } from '../Tabs/warmCache'
 import { schedulePageSave } from './pageFlush'
@@ -27,7 +28,28 @@ export function PageView(): React.JSX.Element {
   const openInPreview = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
   const setLiveBody = useSession((s) => s.setLiveBody)
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
+  // Whether this page's header draws its glyph. The glyph itself is on-page in frontmatter; only
+  // whether it shows is chrome, so it rides the keyed local store beside folds and heading columns.
+  const [iconHidden, setIconHidden] = useState(false)
+  const pageId = pageDetail?.id
+  useEffect(() => {
+    if (!pageId) return
+    let live = true
+    void window.nexus.headingIcon.get().then((all) => {
+      if (live) setIconHidden(all[pageId] ?? false)
+    })
+    return () => {
+      live = false
+    }
+  }, [pageId])
+  const toggleHeadingIcon = (): void => {
+    if (!pageId) return
+    const next = !iconHidden
+    setIconHidden(next)
+    void window.nexus.headingIcon.set(pageId, next)
+  }
 
   const connections = useMemo<ConnectionsApi | undefined>(() => {
     if (!tree) return undefined
@@ -78,6 +100,15 @@ export function PageView(): React.JSX.Element {
                 ? pageDetail.frontmatter.cover
                 : undefined
             }
+            icon={entityIcon(
+              'page',
+              typeof pageDetail.frontmatter.icon === 'string'
+                ? pageDetail.frontmatter.icon
+                : undefined,
+              defaultIcons,
+            )}
+            iconHidden={iconHidden}
+            onToggleIcon={toggleHeadingIcon}
             onEditIcon={() => setIconPickerOpen(true)}
             onRename={(newName) => submitRename(pageDetail.path, 'page', newName)}
             onChange={(body) => {
