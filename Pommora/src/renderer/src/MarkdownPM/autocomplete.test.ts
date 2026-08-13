@@ -185,3 +185,39 @@ describe('a label the picker writes is markdown, not plain text', () => {
     expect(written.slice(edit.anchor)).toBe(' end')
   })
 })
+
+// Two shapes the commit takes beyond writing the link: accepting an alias finishes the link it
+// belongs to, and accepting a page can leave one open at its alias slot instead.
+describe('what accepting a suggestion finishes', () => {
+  const page = { value: 'Alpha', label: 'Alpha', isPage: true, pageId: 'p1' }
+  const alias = { value: 'the plan', label: 'the plan', isPage: false }
+
+  it('accepting an alias steps past the whole link, not just the alias', () => {
+    const doc = 'a [[Alpha|th]] b'
+    const ac = autocompleteQuery(doc, doc.indexOf('th') + 1)!
+    expect(ac.form).toBe('alias')
+    const edit = commitEdit(ac, alias)
+    const text = doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
+    expect(text).toBe('a [[Alpha|the plan]] b')
+    expect(edit.anchor).toBe('a [[Alpha|the plan]]'.length)
+  })
+
+  it('accepting a page opens its alias slot when asked to', () => {
+    const doc = 'a [[Alph]] b'
+    const ac = autocompleteQuery(doc, doc.indexOf('Alph') + 2)!
+    const edit = commitEdit(ac, page, { openAlias: true })
+    const text = doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
+    expect(text).toBe('a [[Alpha|]] b')
+    expect(edit.opensAlias).toBe(true)
+    expect(edit.anchor).toBe('a [[Alpha|'.length)
+  })
+
+  it('and finishes the link when not', () => {
+    const doc = 'a [[Alph]] b'
+    const ac = autocompleteQuery(doc, doc.indexOf('Alph') + 2)!
+    const edit = commitEdit(ac, page)
+    const text = doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
+    expect(text).toBe('a [[Alpha]] b')
+    expect(edit.opensAlias).toBeUndefined()
+  })
+})
