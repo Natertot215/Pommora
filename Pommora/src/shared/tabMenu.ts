@@ -7,6 +7,8 @@ export interface TabMenuContext {
   pinned: boolean
   /** The NavView tab can't be pinned. */
   isNewTab: boolean
+  /** Whether the tab holds a page — only a page has a preview to open. */
+  isPage?: boolean
 }
 
-export type TabMenuAction = 'pin' | 'unpin' | 'close'
+export type TabMenuAction = 'pin' | 'unpin' | 'close' | 'preview'

@@ -6,7 +6,7 @@ import { duration, text } from '@renderer/design-system/tokens'
 import { SortableZone, useDragItem, type DragItem } from '@renderer/design-system/interactions/drag'
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { suppressNextClick } from '@renderer/design-system/interactions/shared'
-import type { Tab } from '@shared/types'
+import type { Tab, TabTarget } from '@shared/types'
 import { useSession } from '../store'
 import { resolveWith, type ResolvedNav } from '../Navigation/navResolve'
 import { resolveIndexOf } from '../treeIndex'
@@ -73,6 +73,7 @@ function TabBarBody({
   const activateTab = useSession((s) => s.activateTab)
   const openNewTab = useSession((s) => s.openNewTab)
   const closeTab = useSession((s) => s.closeTab)
+  const openPreview = useSession((s) => s.openPreview)
   const pinTab = useSession((s) => s.pinTab)
   const unpinTab = useSession((s) => s.unpinTab)
   const reorderTabs = useSession((s) => s.reorderTabs)
@@ -137,14 +138,20 @@ function TabBarBody({
   }, [activeTabId])
 
   const runTabMenu =
-    (tabId: string, pinned: boolean, isNewTab: boolean) =>
+    (tabId: string, pinned: boolean, target: TabTarget) =>
     async (e: React.MouseEvent): Promise<void> => {
       e.preventDefault()
       e.stopPropagation()
-      const action = await window.nexus.tabMenu({ pinned, isNewTab })
+      const isPage = target.kind === 'page'
+      const action = await window.nexus.tabMenu({
+        pinned,
+        isNewTab: target.kind === 'newtab',
+        isPage,
+      })
       if (action === 'pin') pinTab(tabId)
       else if (action === 'unpin') unpinTab(tabId)
       else if (action === 'close') requestClose(tabId)
+      else if (action === 'preview' && isPage) openPreview({ id: target.id, path: target.path })
     }
 
   // A native CSS app-region can't do this — it never delivers hover, killing the + button's
@@ -201,7 +208,7 @@ function TabBarBody({
                   entry={e}
                   active={e.tab.id === activeTabId}
                   onActivate={() => activateTab(e.tab.id)}
-                  onMenu={runTabMenu(e.tab.id, true, false)}
+                  onMenu={runTabMenu(e.tab.id, true, e.tab.target)}
                 />
               </Fragment>
             ))}
@@ -235,7 +242,7 @@ function TabBarBody({
                   closing={ghost}
                   onActivate={() => activateTab(entry.tab.id)}
                   onClose={() => requestClose(entry.tab.id)}
-                  onMenu={runTabMenu(entry.tab.id, false, entry.tab.target.kind === 'newtab')}
+                  onMenu={runTabMenu(entry.tab.id, false, entry.tab.target)}
                 />
               </Fragment>
             ))}

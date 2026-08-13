@@ -5,6 +5,18 @@
 // the extras render only where they're requested, so no menu carries an action its router
 // doesn't serve.
 
+/** What Copy Link puts on the clipboard: the connection syntax that reaches this page from any
+ *  MarkdownPM surface, so a copied page pastes as a working link rather than as its name. */
+export function pageLinkText(title: string): string {
+  return `[[${title}]]`
+}
+
+/** What Copy Path puts on the clipboard: the page's location read from the nexus root, with the
+ *  extension dropped — the form a person names a page by, not the form the disk stores it under. */
+export function pagePathText(nexusRelativePath: string): string {
+  return nexusRelativePath.replace(/\.md$/i, '')
+}
+
 export type PageMetaAction =
   | 'title:preview'
   | 'title:newtab'
@@ -12,13 +24,23 @@ export type PageMetaAction =
   | 'title:icon'
   | 'title:newabove'
   | 'title:newbelow'
+  | 'title:copylink'
+  | 'title:copypath'
+  | 'title:reveal'
   | 'title:delete'
 
 export function pageMetaMenuItems(
   alreadyOpen?: boolean,
   // `newPages`: 'pair' offers Above/Below (row surfaces); 'single' offers one "New Page" whose
   // action is the flow-after (Below) path — a grid has no above.
-  opts: { preview?: boolean; newPages?: 'pair' | 'single' } = {},
+  // `clipboard` and `reveal` are separate because they cost different things: copying a page's link
+  // or path needs nothing but the page, where revealing it needs the filesystem underneath.
+  opts: {
+    preview?: boolean
+    newPages?: 'pair' | 'single'
+    clipboard?: boolean
+    reveal?: boolean
+  } = {},
 ): Array<{ label: string; action: PageMetaAction; separatorBefore?: boolean }> {
   return [
     ...(opts.preview ? [{ label: 'Open Preview', action: 'title:preview' as const }] : []),
@@ -34,6 +56,37 @@ export function pageMetaMenuItems(
     ...(opts.newPages === 'single'
       ? [{ label: 'New Page', action: 'title:newbelow' as const, separatorBefore: true }]
       : []),
+    ...(opts.clipboard
+      ? [
+          { label: 'Copy Link', action: 'title:copylink' as const, separatorBefore: true },
+          { label: 'Copy Path', action: 'title:copypath' as const },
+        ]
+      : []),
+    ...(opts.reveal
+      ? [
+          {
+            label: 'Reveal Location',
+            action: 'title:reveal' as const,
+            separatorBefore: !opts.clipboard,
+          },
+        ]
+      : []),
     { label: 'Delete', action: 'title:delete', separatorBefore: true },
   ]
+}
+
+/** A narrower menu drawn from the same list — the actions stay in the order the full menu gives
+ *  them, so a surface offering four of them can't come to disagree with one offering ten. A
+ *  separator that would lead the result is dropped, since it separates nothing. */
+export function pageMetaMenuSubset(
+  actions: readonly PageMetaAction[],
+  alreadyOpen?: boolean,
+): Array<{ label: string; action: PageMetaAction; separatorBefore?: boolean }> {
+  const kept = pageMetaMenuItems(alreadyOpen, {
+    preview: true,
+    newPages: 'pair',
+    clipboard: true,
+    reveal: true,
+  }).filter((i) => actions.includes(i.action))
+  return kept.map((item, i) => (i === 0 ? { ...item, separatorBefore: undefined } : item))
 }
