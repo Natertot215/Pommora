@@ -55,7 +55,7 @@ A construct's markers are **revealed** (literal editable text) when the caret is
 - **Callout** — a `> [!callout]` blockquote rendered as a bordered, gutter-width box, typed with the `||` shorthand, coexisting with plain quotes. Detection is per-head, so adjacent or pasted heads never merge, and an invalid tag falls back to a plain quote. Block constructs render inside the box; the hidden head is caret-proof, deletes can't erode a body line's prefix out of the box, and Shift+Enter stays in.
 - **Thematic break** (`---`) — caret-aware full-width rule; never a setext interpretation.
 - **Connections** (`[[Title]]`) — styled colored inline text showing its alias where one is given, three states (resolved / phantom / ambiguous) riding the live `@shared/connections` layer; resolution, styling, click-routing, and the rename cascade belong to the connection layer (→ [[ConnectionsPM]]). Resting on a resolved connection raises the hover preview card (→ [[PagePreviewPM]]). The `[[` autocomplete — a glass popup at the caret, prefix-matched, keyboard-driven — is shared by the page editor and table cells.
-- **External links** (`[text](url)`) — title-only at rest, validity decided by the static check the opener uses (`@shared/links`). Valid titles carry the link color, underline, and navigation; invalid ones dim with brackets shown.
+- **Markdown links** (`[text](target)`) — label-only at rest, the target resolved once for all of the editor, the cell renderer, and the click path. A target naming a Page reads and behaves as a connection; one naming a website carries the link color, underline, and navigation; one naming neither dims with its brackets shown (→ [[ConnectionsPM]]).
 - **The caret** — a drawn caret with a smooth symmetric fade and a custom I-beam cursor, an app-wide identity owned by the motion system. 
 
 ### Tables
@@ -187,6 +187,5 @@ One pastel recipe: `color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--s
 
 - **Image + LaTeX render seams** — both are detected and styled only; no renderer and no injection seam exists, and an image-style `![[file.png]]` target fails page resolution and rests inert.
 - **Fenced-code copy button** · **zoom slider** UI placement · **heading-fold inside a callout** (headings render there, but the fold chevron isn't prefix-aware) · **table inside a callout** (renders as raw text; needs prefix-aware region detection).
-- **Aliased connections** — the pipe segment of `[[Title|alias]]` parses and survives every rewrite, but nothing renders it as display text. The display treatment and the authoring gesture are both unbuilt.
 - **Outliner rails on ordered / arrow / `+` lists** — the guide is bullets + checkboxes only; the other glyphs need their own glyph-center math before their rails read straight.
 - **Codeblock Style ▸ Language grip menu** — retyping a block's language from its grip; the list's Type ▸ arm is the pattern it follows. Widening the curated language set is one description in the highlight module plus its package.
