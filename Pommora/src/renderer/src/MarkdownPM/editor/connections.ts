@@ -34,6 +34,8 @@ export interface WikiHit {
   range: [number, number]
   /** What the token displays — the alias when it has one. */
   content: [number, number]
+  /** Whether it wears an alias. An opened-but-empty one doesn't count — there's nothing to rename. */
+  aliased: boolean
 }
 
 /** The wikiLink token at `pos`, resolved or not, in absolute document offsets. */
@@ -46,7 +48,12 @@ export function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
   if (!tk) return null
   const [rs, re] = tk.resolveRange ?? tk.contentRange
   const abs = ([s, e]: [number, number]): [number, number] => [line.from + s, line.from + e]
-  return { title: line.text.slice(rs, re), range: abs(tk.range), content: abs(tk.contentRange) }
+  return {
+    title: line.text.slice(rs, re),
+    range: abs(tk.range),
+    content: abs(tk.contentRange),
+    aliased: tk.resolveRange !== undefined,
+  }
 }
 
 /** Whether the caret currently sits inside the token — a link being edited. Read at mousedown for a
@@ -56,34 +63,23 @@ function caretInside(view: EditorView, hit: WikiHit): boolean {
   return view.hasFocus && head >= hit.range[0] && head <= hit.range[1]
 }
 
-/** The resolved connection page a pointer gesture should act on, or null. The positions beside the
- *  syntax belong to caret placement rather than to the link, measured from the token's range rather
+/** The wikiLink under a pointer gesture, and the page it leads to. `page` is null when the link
+ *  doesn't resolve, and when the position belongs to the syntax beside the link rather than to the
+ *  link itself: those positions are caret placement. They're measured from the token's range rather
  *  than from what's drawn — a hidden `[[Title|` means an aliased link's visible extent IS its
  *  content, so there'd otherwise be no edge left to click. */
-function connectionAt(
+function pointerLink(
   view: EditorView,
   api: ConnectionsApi,
   event: MouseEvent,
-): { page: ConnPage; hit: WikiHit } | null {
+): { hit: WikiHit; page: ConnPage | null } | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
   const hit = wikiLinkAt(view, pos)
   if (!hit) return null
-  if (pos < hit.content[0] || pos > hit.content[1]) return null
+  if (pos < hit.content[0] || pos > hit.content[1]) return { hit, page: null }
   const res = api.resolve(hit.title)
-  return res.status === 'resolved' && res.page ? { page: res.page, hit } : null
-}
-
-function resolvedPageAt(
-  view: EditorView,
-  api: ConnectionsApi,
-  event: MouseEvent,
-  skipWhenEditing = false,
-): ConnPage | null {
-  const found = connectionAt(view, api, event)
-  if (!found) return null
-  if (skipWhenEditing && caretInside(view, found.hit)) return null
-  return found.page
+  return { hit, page: res.status === 'resolved' && res.page ? res.page : null }
 }
 
 export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.domEventHandlers> {
@@ -96,17 +92,16 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
   // A link that has just been acted on stops arming until the pointer leaves it. Cancelling once
   // isn't enough: a native menu takes the pointer away and hands it back over the same link, and
   // that re-entry is a fresh mouseover that would bloom a preview behind the menu you just used.
-  let handled = false
+  let actedOnLink = false
   return EditorView.domEventHandlers({
     // No press on a connection seats a caret in it. `true` is what stops that — CM seats the caret
     // in its own mousedown handling rather than through the browser default, so preventDefault
     // alone would leave it happening.
     mousedown(event, view) {
-      const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
-      const hit = pos == null ? null : wikiLinkAt(view, pos)
-      editingOnPress = hit ? caretInside(view, hit) : false
       const api = getApi()
-      if (!api || !connectionAt(view, api, event)) return false
+      const found = api ? pointerLink(view, api, event) : null
+      editingOnPress = found ? caretInside(view, found.hit) : false
+      if (!found?.page) return false
       // A right press hands the caret to whichever menu action is chosen, and Rename and Edit Link
       // exist to place it themselves — seating one here would land it somewhere first and make both
       // of them meaningless. No preventDefault: the contextmenu event still has to fire.
@@ -124,16 +119,19 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       // Cheap class gate FIRST (the every-mouseover hard rule): only a resolved connection's
       // decoration span warrants the layout read + line tokenize below.
       const el = (event.target as HTMLElement).closest?.('.md-connection-resolved')
-      if (!el || handled) return false
-      // A dwell reads the live caret safely — unlike a click, hovering never moves it.
-      const page = resolvedPageAt(view, api, event, true)
-      if (!page) return false
+      if (!el || actedOnLink) return false
+      const found = pointerLink(view, api, event)
+      // A dwell reads the live caret safely — unlike a click, hovering never moves it. A link the
+      // caret is already inside is open for editing, and no dwell should carry you away from what
+      // you're typing.
+      if (!found?.page || caretInside(view, found.hit)) return false
+      const page = found.page
       intent.arm(() => api.hover?.(page, el))
       return false
     },
     mouseout() {
       intent.cancel()
-      handled = false
+      actedOnLink = false
       return false
     },
     // Navigate on a plain single-click. Handled on `click`, not `mousedown`, and skipped when the
@@ -142,35 +140,35 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       // A click consumes the link — an intent armed during the dwell must not bloom over
       // whatever the click opened.
       intent.cancel()
-      handled = true
+      actedOnLink = true
       if (event.button !== 0 || event.detail !== 1 || !view.state.selection.main.empty) return false
       if (editingOnPress) return false // already inside it when you pressed — you're editing, not following
       const api = getApi()
       if (!api) return false
-      const page = resolvedPageAt(view, api, event)
-      if (!page) return false
+      const found = pointerLink(view, api, event)
+      if (!found?.page) return false
       event.preventDefault()
       // The one modifier branch: ⌘ takes the host's other route when it offers one.
-      if (event.metaKey && api.bypass) api.bypass(page)
-      else api.open(page)
+      if (event.metaKey && api.bypass) api.bypass(found.page)
+      else api.open(found.page)
       return true
     },
     // Right-click on a resolved connection hands off to the host's menu hook (Open Preview et al).
     contextmenu(event, view) {
       intent.cancel()
-      handled = true
+      actedOnLink = true
       const api = getApi()
       if (!api?.menu) return false
-      const found = connectionAt(view, api, event)
-      if (!found) return false
+      const found = pointerLink(view, api, event)
+      if (!found?.page) return false
       event.preventDefault()
       // Editability is read HERE rather than threaded through the host: `readOnly` is live inside
       // the editor and PreviewWindow flips it at runtime through a Compartment, so a value captured
       // in a memoized seam goes stale.
       api.menu(found.page, {
-        range: found.hit.range,
         editable: !view.state.readOnly,
-        apply: (action, range) => applyLinkAction(view, action, range),
+        hasAlias: found.hit.aliased,
+        apply: (action) => applyLinkAction(view, action, found.hit.range),
       })
       return true
     },

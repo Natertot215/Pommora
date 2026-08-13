@@ -81,7 +81,7 @@ export function useConnectionAutocomplete(
     // unless it's deliberately re-emitted. Dropping it is the default — the old words describe the
     // old page — and the setting is what makes that a preference rather than a law.
     const worn = pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.[2]
-    const kept = dropAlias ? undefined : worn || undefined
+    const kept = dropAlias ? undefined : worn
     const { insert, caret } = connectionInsert(page.title, ac.from, ac.form, kept)
     // A caret resting on a connection's closer keeps its token active, so the link just picked would
     // sit there as raw syntax. Step one past it instead, adding the space when there isn't one to

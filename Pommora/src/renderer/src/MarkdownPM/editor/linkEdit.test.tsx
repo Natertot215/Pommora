@@ -45,7 +45,20 @@ describe('the connection menu knows its span and its surface', () => {
   it('offers the authoring pair on an editable surface', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await rightClick(view, 6)
-    expect(connMenu).toHaveBeenCalledWith({ editable: true })
+    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false })
+  })
+
+  // The item names the act: on a bare link there is no title yet to rename.
+  it('reports an existing alias, so the item can name renaming instead of adding', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
+    await rightClick(view, 12)
+    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: true })
+  })
+
+  it('an opened-but-empty alias still reports none — there is nothing to rename', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
+    await rightClick(view, 6)
+    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false })
   })
 
   // PreviewWindow starts read-only and silently drops doc changes, so Rename there would seat a
@@ -57,7 +70,43 @@ describe('the connection menu knows its span and its surface', () => {
       readOnly: true,
     })
     await rightClick(view, 6)
-    expect(connMenu).toHaveBeenCalledWith({ editable: false })
+    expect(connMenu).toHaveBeenCalledWith({ editable: false, hasAlias: false })
+  })
+})
+
+describe('an alias opened and abandoned leaves nothing behind', () => {
+  it('Add Title reuses a pipe that is already there rather than stacking a second', async () => {
+    connMenu.mockResolvedValue('rename')
+    const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
+    await rightClick(view, 6)
+    expect(view.state.doc.toString()).toBe('a [[Alpha|]] b')
+    expect(view.state.selection.main.head).toBe(10)
+  })
+
+  it('leaving an empty alias collapses its pipe', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 10 } })
+    })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 0 } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('a [[Alpha]] b')
+  })
+
+  it('a written alias is left alone', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 12 } })
+    })
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 0 } })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(view.state.doc.toString()).toBe('a [[Alpha|the one]] b')
   })
 })
 

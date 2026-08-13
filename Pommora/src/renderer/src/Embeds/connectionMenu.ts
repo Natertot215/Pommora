@@ -7,12 +7,12 @@ export function showConnectionMenu(page: ConnPage, target: ConnMenuTarget): void
   // An editable surface with no way back into it can't perform the edit either, so the two
   // authoring items are offered only when both hold.
   const editable = target.editable && target.apply !== undefined
-  void window.nexus.connMenu({ editable }).then((action) => {
+  void window.nexus.connMenu({ editable, hasAlias: target.hasAlias }).then((action) => {
     if (!action) return
     if (action === 'preview') {
       useSession.getState().openPreview({ id: page.id, path: page.path })
       return
     }
-    target.apply?.(action, target.range)
+    target.apply?.(action)
   })
 }
