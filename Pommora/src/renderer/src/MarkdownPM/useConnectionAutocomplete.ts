@@ -1,21 +1,18 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { EditorView } from '@codemirror/view'
-import type { ConnPage } from './connections'
 import {
   autocompleteQuery,
   connectionInsert,
   acPanelTop,
-  type ConnectionForm,
+  type AcRow,
+  type AcQuery,
+  type AutocompleteQuery,
 } from './autocomplete'
 import { docString } from './editor/docCache'
 import { normalizeTitle, pageLinkPattern } from '@shared/connections'
 import { useSession } from '../store'
 
-export interface AcState {
-  query: string
-  from: number
-  to: number
-  form: ConnectionForm
+export interface AcState extends AutocompleteQuery {
   left: number
   caretTop: number
   caretBottom: number
@@ -39,10 +36,10 @@ export const whenAcOpen = (ctl: RefObject<AcCtl>, drive: (c: AcCtl) => void) => 
 export interface ConnectionAutocomplete {
   ac: AcState | null
   setAc: (s: AcState | null) => void
-  candidates: ConnPage[]
+  candidates: AcRow[]
   acIndex: number
   acTop: number
-  commit: (page: ConnPage) => void
+  commit: (row: AcRow) => void
   acCtl: RefObject<AcCtl>
 }
 
@@ -53,41 +50,50 @@ export interface ConnectionAutocomplete {
 // with detectConnectionQuery() in the editor's updateListener.
 export function useConnectionAutocomplete(
   viewRef: RefObject<EditorView | null>,
-  candidatesFor: (query: string, form: ConnectionForm) => ConnPage[],
+  candidatesFor: (q: AcQuery) => AcRow[],
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
   const [acIndex, setAcIndex] = useState(0)
   const dropAlias = useSession((s) => s.personalization.removeTitleOnLinkChange !== false)
+  // The alias form's rows come out of this, and forgetting one has to take its row with it — so the
+  // scan depends on the memory rather than only on what's been typed.
+  const pageAliases = useSession((s) => s.pageAliases)
   // Every caret move rebuilds `ac`, so the scan keys on the query alone — `candidatesFor` is an
   // inline closure at both call sites and would defeat the memo as a dependency.
   const candidatesForRef = useRef(candidatesFor)
   candidatesForRef.current = candidatesFor
   const query = ac?.query ?? null
   const form = ac?.form ?? 'link'
-  // An empty query only browses for embeds — the just-typed opener pops the full list; link's
-  // auto-paired `[[]]` stays quiet until a first character.
+  const title = ac?.title
+  // An empty query browses for embeds and aliases — the just-typed opener pops the full list, and a
+  // bare pipe is the one moment a page's remembered names are worth showing unprompted. Only link
+  // stays quiet, because its pool is every page in the nexus.
   const candidates = useMemo(() => {
     if (query === null || (query === '' && form === 'link')) return []
-    const found = candidatesForRef.current(query, form)
+    const found = candidatesForRef.current({ query, form, title })
     // A sole suggestion identical to what's already written has nothing to offer: accepting it is a
     // no-op edit, and an open panel holds Enter and the arrow keys away from whatever the caret is
     // actually doing. Lives here so every surface on this state machine inherits it.
-    if (found.length === 1 && normalizeTitle(found[0].title) === normalizeTitle(query)) return []
+    if (found.length === 1 && normalizeTitle(found[0].label) === normalizeTitle(query)) return []
     return found
-  }, [query, form])
+  }, [query, form, title, pageAliases])
 
-  const commit = (page: ConnPage): void => {
+  const commit = (row: AcRow): void => {
     const view = viewRef.current
     if (!view || !ac) return
     // Retargeting replaces the WHOLE token, so an alias the link was wearing is destroyed here
     // unless it's deliberately re-emitted. Dropping it is the default — the old words describe the
-    // old page — and the setting is what makes that a preference rather than a law.
-    const worn = pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.[2]
+    // old page — and the setting is what makes that a preference rather than a law. Authoring an
+    // alias already put it in that page's memory, so the words survive being dropped from here.
+    const worn =
+      ac.form === 'link'
+        ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.[2]
+        : undefined
     const kept = dropAlias ? undefined : worn
-    const { insert, caret } = connectionInsert(page.title, ac.from, ac.form, kept)
+    const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, kept)
     // A caret resting on a connection's closer keeps its token active, so the link just picked would
     // sit there as raw syntax. Step one past it instead, adding the space when there isn't one to
-    // step over. Embeds own their whole line and never land the caret beside a closer.
+    // step over. Embeds own their whole line, and an alias lands inside a link rather than past one.
     const spaced = ac.form === 'link'
     const pad = spaced && view.state.doc.sliceString(ac.to, ac.to + 1) !== ' ' ? ' ' : ''
     view.dispatch({
@@ -104,8 +110,8 @@ export function useConnectionAutocomplete(
   acCtl.current = {
     open: ac !== null && candidates.length > 0,
     pick: () => {
-      const p = candidates[acIndex]
-      if (p) commit(p)
+      const r = candidates[acIndex]
+      if (r) commit(r)
     },
     move: (d) => setAcIndex((i) => Math.max(0, Math.min(i + d, candidates.length - 1))),
     close: () => setAc(null),

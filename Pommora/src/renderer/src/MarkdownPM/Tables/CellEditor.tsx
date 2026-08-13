@@ -6,7 +6,7 @@ import { defaultKeymap } from '@codemirror/commands'
 import { customCaret } from '../editor/caret'
 import { markdownDecorations } from '../editor/decorations'
 import { autoPair, autoDelete, type Edit } from '../input'
-import { AC_MAX } from '../autocomplete'
+import { AC_MAX, aliasRows, pageRow } from '../autocomplete'
 import {
   useConnectionAutocomplete,
   detectConnectionQuery,
@@ -75,7 +75,14 @@ export function CellEditor({
 
   const { ac, setAc, candidates, acIndex, acTop, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
-    (query) => connections?.()?.candidates(query, AC_MAX) ?? [],
+    (q) => {
+      const conn = connections?.()
+      if (!conn) return []
+      // A cell renders an alias like any other surface, so it offers the same memory the body does.
+      return q.form === 'alias'
+        ? aliasRows(conn, q.title, q.query)
+        : conn.candidates(q.query, AC_MAX).map(pageRow)
+    },
   )
 
   useEffect(() => {

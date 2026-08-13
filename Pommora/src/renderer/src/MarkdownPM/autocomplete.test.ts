@@ -14,13 +14,32 @@ describe('autocompleteQuery', () => {
   it('suppresses image embeds ![[…]]', () => {
     expect(autocompleteQuery('see ![[Pic]] end', 9)).toBeNull()
   })
-  // Accepting a candidate replaces the whole token, so a picker armed from the alias would discard
-  // the alias the caret is sitting in. The title is the only span that may open it.
-  it('does not open the page picker from inside an alias', () => {
+  // Accepting a PAGE replaces the whole token, so the title is the only span that may open the page
+  // picker. The alias half opens its own form instead, and that one replaces the alias alone —
+  // renaming a link and repointing it are different edits.
+  it('opens the alias form from inside an alias, spanning only the alias', () => {
     const doc = 'see [[Q3 Plan|the plan]] end'
-    expect(autocompleteQuery(doc, doc.indexOf('the plan') + 3)).toBeNull()
-    expect(autocompleteQuery(doc, doc.indexOf('|') + 1)).toBeNull()
+    const r = autocompleteQuery(doc, doc.indexOf('the plan') + 3)!
+    expect(r.form).toBe('alias')
+    expect(r.query).toBe('the plan')
+    expect(r.title).toBe('Q3 Plan')
+    expect(doc.slice(r.from, r.to)).toBe('the plan')
   })
+
+  it('opens it on a bare pipe, where nothing has been written yet', () => {
+    const doc = 'see [[Q3 Plan|]] end'
+    const r = autocompleteQuery(doc, doc.indexOf('|') + 1)!
+    expect(r.form).toBe('alias')
+    expect(r.query).toBe('')
+    expect(r.title).toBe('Q3 Plan')
+    expect(r.from).toBe(r.to)
+  })
+
+  it('a link with no pipe has no alias form at all', () => {
+    const doc = 'see [[Q3 Plan]] end'
+    expect(autocompleteQuery(doc, doc.indexOf('Plan') + 4)?.form).toBe('link')
+  })
+
   it('still opens from inside an aliased link’s title', () => {
     const doc = 'see [[Q3 Plan|the plan]] end'
     const r = autocompleteQuery(doc, doc.indexOf('Plan') + 2)!
@@ -76,6 +95,11 @@ describe('embed autocomplete detection', () => {
 })
 
 describe('connectionInsert forms', () => {
+  // Accepting an alias writes into a link that already exists, so it brings no syntax with it.
+  it('the alias form commits its words alone', () => {
+    expect(connectionInsert('the plan', 5, 'alias')).toEqual({ insert: 'the plan', caret: 13 })
+  })
+
   it('writes the embed form with the caret past the closer', () => {
     expect(connectionInsert('Alpha', 3, 'embed')).toEqual({ insert: '![[Alpha]]', caret: 13 })
   })

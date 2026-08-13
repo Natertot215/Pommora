@@ -31,13 +31,13 @@ import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
 import { connectionClicks } from './editor/connections'
 import { externalLinkClicks } from './editor/links'
-import { collapseEmptyAlias } from './editor/linkEdit'
+import { aliasOnLeave } from './editor/linkEdit'
 import { markdownFolding, applySavedFolds, type FoldsApi } from './editor/folding'
 import { applyEditorAction, type EditorMenuApi } from './editor/menu'
 import { formatKeymap } from './editor/formatKeymap'
 import { readFormatState } from './editor/formatState'
 import type { FormatState } from '@shared/editorMenu'
-import { AC_MAX } from './autocomplete'
+import { AC_MAX, aliasRows, pageRow } from './autocomplete'
 import {
   useConnectionAutocomplete,
   detectConnectionQuery,
@@ -144,16 +144,17 @@ export function MarkdownEditor({
   // (over-fetch one to drop the page's own title) and the inline panel placement (rendered below).
   const { ac, setAc, candidates, acIndex, acTop, commit, acCtl } = useConnectionAutocomplete(
     viewRef,
-    (query, form) => {
+    (q) => {
       const conn = connectionsRef.current
       if (!conn) return []
-      let pool = conn.candidates(query, AC_MAX * 2).filter((p) => p.title !== title)
-      if (form === 'embed') {
+      if (q.form === 'alias') return aliasRows(conn, q.title, q.query)
+      let pool = conn.candidates(q.query, AC_MAX * 2).filter((p) => p.title !== title)
+      if (q.form === 'embed') {
         const state = viewRef.current?.state
         const taken = state ? embedExclusions(state) : new Set<string>()
         pool = pool.filter((p) => embeddable(p.title, taken))
       }
-      return pool.slice(0, AC_MAX)
+      return pool.slice(0, AC_MAX).map(pageRow)
     },
   )
 
@@ -241,7 +242,7 @@ export function MarkdownEditor({
       calloutGuard,
       connectionClicks(() => connectionsRef.current),
       externalLinkClicks(),
-      collapseEmptyAlias(),
+      aliasOnLeave(() => connectionsRef.current),
       // Close the connection panel when focus leaves the editor (sidebar click, Cmd-Tab) — the cell
       // editor has the same handler; without it the glass panel floats over unrelated UI.
       EditorView.domEventHandlers({
