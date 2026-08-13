@@ -932,7 +932,7 @@
   --tok-tint: var(--tint-primary);
 }
 .mdpm-editor .md-cb :is(.tok-kw, .tok-str, .tok-num, .tok-prop, .tok-fn, .tok-type) {
-  color: color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--system-white));
+  color: color-mix(in srgb, var(--tok-solid) var(--tok-tint), var(--label-primary));
 }
 .mdpm-editor .md-cb .tok-kw {
   --tok-solid: var(--solid-purple);
