@@ -105,12 +105,17 @@ export function useConnectionAutocomplete(
     view.focus()
   }
 
+  // Clamped where it's read, not only where it's moved. Forgetting a row shrinks the list without
+  // touching the query, so the stored index can end up past the end — and an open panel holds Enter
+  // away from the editor while picking nothing at all.
+  const selected = Math.min(acIndex, Math.max(candidates.length - 1, 0))
+
   // The editor's keymap (built once at mount) reads the live panel state through this ref.
   const acCtl = useRef<AcCtl>({ open: false, pick: () => {}, move: () => {}, close: () => {} })
   acCtl.current = {
     open: ac !== null && candidates.length > 0,
     pick: () => {
-      const r = candidates[acIndex]
+      const r = candidates[selected]
       if (r) commit(r)
     },
     move: (d) => setAcIndex((i) => Math.max(0, Math.min(i + d, candidates.length - 1))),
@@ -121,7 +126,7 @@ export function useConnectionAutocomplete(
 
   const acTop = ac ? acPanelTop(ac.caretTop, ac.caretBottom, candidates.length) : 0
 
-  return { ac, setAc, candidates, acIndex, acTop, commit, acCtl }
+  return { ac, setAc, candidates, acIndex: selected, acTop, commit, acCtl }
 }
 
 // setAc (a useState setter) is stable, so capturing it once at mount is safe; this is a free
