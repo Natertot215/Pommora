@@ -40,23 +40,3 @@ export const linkTyping = StateField.define<number | null>({
     return s ? line.from + s.full[0] : null
   },
 })
-
-/** Announce that a link was left open at a freshly created alias, inviting the picker. */
-export const invitedAlias = StateEffect.define<number>()
-
-/** Where an alias slot was just opened FOR the author, or null.
- *
- *  An empty alias offers every name its page has worn, because that is the one moment there is
- *  nothing typed to filter by. But the offer belongs to having just been handed the slot — accepting
- *  a page from the picker hands it over. Reaching for **Add Title** yourself, or backspacing an alias
- *  away to nothing, are not that: you already know what you came to write, and a panel over the
- *  caret is in the way. Typing the first character opens it on merit, as it always did. */
-export const aliasInvite = StateField.define<number | null>({
-  create: () => null,
-  update(value, tr) {
-    for (const e of tr.effects) if (e.is(invitedAlias)) return e.value
-    if (!tr.docChanged && !tr.selection) return value
-    // The invitation survives only while the caret is still in the slot it was offered for.
-    return value !== null && tr.newSelection.main.head === tr.changes.mapPos(value) ? value : null
-  },
-})

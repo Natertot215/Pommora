@@ -266,3 +266,40 @@ describe('an internal markdown link previews like a connection', () => {
     expect(hover).not.toHaveBeenCalled()
   })
 })
+
+// An empty alias offers its page's names outright — the rule is the shape on the line, not the
+// gesture that produced it. And a revealed alias shows where it points, marked as such.
+describe('an alias reveals what it hides', () => {
+  it('marks the target with the treatment a revealed link target gets', async () => {
+    const view = await mountEditor({
+      initialBody: 'see [[Work Notes|the plan]] end',
+      connections: conn,
+    })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 20 } })
+    })
+    expect(view.dom.querySelector('.md-link-url')?.textContent).toBe('Work Notes')
+  })
+
+  it('and marks nothing while it is closed', async () => {
+    const view = await mountEditor({
+      initialBody: 'see [[Work Notes|the plan]] end',
+      connections: conn,
+    })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 0 } })
+    })
+    expect(view.dom.querySelector('.md-link-url')).toBeNull()
+  })
+
+  it('a link with no alias has no target to show', async () => {
+    const view = await mountEditor({ initialBody: 'see [[Work Notes]] end', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 10 } })
+    })
+    expect(view.dom.querySelector('.md-link-url')).toBeNull()
+  })
+})
