@@ -110,6 +110,12 @@ describe('the forget × is inert until it is revealed', () => {
     })
   }
 
+  it('an alias row is drawn with its own glyph rather than a page’s', async () => {
+    const btn = await mountRow(vi.fn())
+    const row = btn.closest('.mdpm-ac-row') as HTMLElement
+    expect(row.querySelector('.mdpm-ac-icon')).not.toBeNull()
+  })
+
   it('a press on a hidden × forgets nothing', async () => {
     const forget = vi.fn()
     const btn = await mountRow(forget)

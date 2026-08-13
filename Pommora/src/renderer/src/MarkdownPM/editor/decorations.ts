@@ -286,9 +286,25 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       // An aliased link shows one string and resolves another; the mark stays on what's displayed.
       const [rs, re] = tk.resolveRange ?? tk.contentRange
       const status = conn.resolve(text.slice(rs, re)).status
-      if (status === 'phantom') return // unresolved → raw `[[Foo]]`, brackets visible + inert
       // Open for editing, its syntax showing: it reads as text, so it points like text.
       const open = active.has(i)
+      if (status === 'phantom') {
+        // A connection at rest that names no page stays raw `[[Foo]]` — brackets visible and inert.
+        // One being TYPED takes the connection colour from its first character instead of reading as
+        // plain prose until a title happens to match: the author is writing a link and the text
+        // should say so. It is not resolved, and doesn't claim to be.
+        if (!open) return
+        ranges.push(
+          Decoration.mark({ class: 'md-connection-typing' }).range(
+            tk.contentRange[0],
+            tk.contentRange[1],
+          ),
+        )
+        for (const [ms, me] of tk.markerRanges) {
+          ranges.push(Decoration.mark({ class: 'md-bracket' }).range(ms, me))
+        }
+        return
+      }
       ranges.push(
         Decoration.mark({
           class: `md-connection-${status}${open ? ' md-connection-open' : ''}`,

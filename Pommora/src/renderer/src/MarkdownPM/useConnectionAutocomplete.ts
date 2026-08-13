@@ -92,7 +92,6 @@ export function useConnectionAutocomplete(
         : undefined
     const { changes, anchor, head } = commitEdit(ac, row, {
       keepAlias: dropAlias ? undefined : worn,
-      spaceFollows: view.state.doc.sliceString(ac.to, ac.to + 1) === ' ',
     })
     view.dispatch({
       changes,

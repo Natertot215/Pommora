@@ -332,6 +332,11 @@
 .md-connection-ambiguous {
   color: var(--label-tertiary);
 }
+/* A connection being typed, before any page answers to it. Same colour as a resolved one — the
+   author is writing a link — with none of its behaviour, since there is nothing yet to lead to. */
+.md-connection-typing {
+  color: var(--connection);
+}
 .md-bracket {
   color: var(--label-secondary);
 }

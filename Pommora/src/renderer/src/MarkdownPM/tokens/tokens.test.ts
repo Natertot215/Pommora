@@ -116,11 +116,26 @@ describe('activeTokenIndices', () => {
     expect(activeTokenIndices(tokens, 0, 0).has(idx)).toBe(false)
   })
 
-  // A connection reveals at its end like every other inline construct. Authoring doesn't suffer for
-  // it because committing one steps the caret past a trailing space rather than onto the closer.
-  it('caret at a wikilink end is active, as it is for bold', () => {
+  // The closer is the one caret position that leaves a connection rendered, where bold would reveal.
+  // It is where finishing one puts you, and a finished link should read as finished — no trailing
+  // space is written to move the caret off it.
+  it('caret on a wikilink’s closer leaves it rendered', () => {
     const tokens = tokenize('[[P]]') // wikilink [0,5]
     const idx = tokens.findIndex((tk) => tk.kind === 'wikiLink')
+    expect(activeTokenIndices(tokens, 5, 5).has(idx)).toBe(false)
+  })
+
+  it('but every position inside it still reveals', () => {
+    const tokens = tokenize('[[P]]')
+    const idx = tokens.findIndex((tk) => tk.kind === 'wikiLink')
+    for (const caret of [0, 1, 2, 3, 4]) {
+      expect(activeTokenIndices(tokens, caret, caret).has(idx)).toBe(true)
+    }
+  })
+
+  it('and the exception is the connection’s alone — bold still reveals at its end', () => {
+    const tokens = tokenize('**b**')
+    const idx = tokens.findIndex((tk) => tk.kind === 'bold')
     expect(activeTokenIndices(tokens, 5, 5).has(idx)).toBe(true)
   })
 })

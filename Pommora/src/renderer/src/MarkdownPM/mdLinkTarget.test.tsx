@@ -174,3 +174,35 @@ describe('picking a page inside the parens', () => {
     expect(edit.anchor).toBe('see [the notes](Work%20Notes)'.length)
   })
 })
+
+// A connection being typed should read as a link from its first character rather than as prose that
+// happens to turn blue once a title matches.
+describe('a connection takes its colour as it is typed', () => {
+  it('an unresolved connection under the caret wears the connection colour', async () => {
+    const view = await mountEditor({ initialBody: 'see [[Wor]] end', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 8 } })
+    })
+    expect(view.dom.querySelector('.md-connection-typing')?.textContent).toBe('Wor')
+  })
+
+  it('but at rest it is plain text again, exactly as before', async () => {
+    const view = await mountEditor({ initialBody: 'see [[Wor]] end', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 0 } })
+    })
+    expect(view.dom.querySelector('.md-connection-typing')).toBeNull()
+  })
+
+  it('and one that does resolve is resolved, not typing', async () => {
+    const view = await mountEditor({ initialBody: 'see [[Work Notes]] end', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 8 } })
+    })
+    expect(view.dom.querySelector('.md-connection-typing')).toBeNull()
+    expect(view.dom.querySelector('.md-connection-resolved')).not.toBeNull()
+  })
+})

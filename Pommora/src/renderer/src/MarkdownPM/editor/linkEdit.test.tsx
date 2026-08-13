@@ -6,6 +6,7 @@ import type { ConnMenuAction } from '@shared/connections'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { showConnectionMenu } from '@renderer/Embeds/connectionMenu'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+import { commitAliasOnEnter } from './linkEdit'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -132,6 +133,32 @@ describe('an alias opened and abandoned leaves nothing behind', () => {
       await new Promise((r) => setTimeout(r, 0))
     })
     expect(view.state.doc.toString()).toBe('a [[Alpha|the one]] b')
+  })
+})
+
+// Enter finishes an alias by moving the caret to the closer and nothing else. The closer is the one
+// position that leaves a connection rendered, so no space is written to put distance between them.
+describe('Enter finishes an alias without writing anything', () => {
+  it('rests the caret on the closer and leaves the text alone', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 13 } })
+    })
+    await act(async () => {
+      commitAliasOnEnter(view)
+    })
+    expect(view.state.doc.toString()).toBe('a [[Alpha|the one]] b')
+    expect(view.state.selection.main.head).toBe(19)
+  })
+
+  it('declines outside an alias, so Enter still breaks the line', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 6 } })
+    })
+    expect(commitAliasOnEnter(view)).toBe(false)
   })
 })
 
