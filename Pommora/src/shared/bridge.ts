@@ -76,6 +76,8 @@ export interface Asks {
   }
   'tableHeadingCols:get': { args: []; reply: Record<string, number[]> }
   'tableHeadingCols:set': { args: [pageId: string, indices: number[]]; reply: Result<null> }
+  'aliases:get': { args: []; reply: Record<string, string[]> }
+  'aliases:set': { args: [pageId: string, aliases: string[]]; reply: Result<null> }
 
   // Views + container config
   'views:save': {
