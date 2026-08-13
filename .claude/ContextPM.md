@@ -2,11 +2,12 @@
 
 ### Current Focus
 
-**Alias-V1 — Phases 1 through 4 built, gated, and reviewed; Phase 5's acceptance run is what remains.** The arc hands a connection's visible words to its author: `[[Title|Alias]]` renders as its alias while resolving on title, Rename and Edit Link author and retarget it, a page remembers the aliases it has worn and offers them back with a × that forgets one for good, and `[Title](Page)` resolves internally beside `[[ ]]` — cascade, picker and all. Duplicate-title disambiguation entered the design, grew through two review rounds into path qualification with its own cascade and journal, and was cut whole — this arc is about aliases, and that design waits intact in its decision log's §G.
+**The table-cell scroll fix, and whatever the alias arc left behind.** Page Alias' V1 shipped whole (→ PM-098); what follows it is confirming the deferred table-widget rebuild holds — a cell that demotes must draw what was typed — and clearing any cleanup the arc's own plan left open. After that the focus is new work rather than more of this one.
 
 ### Immediate Work
 
-- [ ] **Alias-V1's acceptance run.** Every task through Phase 4 is committed with its gates green; what is owed is the end-to-end pass a suite cannot stand in for — authoring an alias, watching it survive a rename, forgetting one, and confirming a `[Title](Page)` link reads as percent-encoded Markdown on disk. The plan's Progress section carries the commit range.
+- [ ] **Confirm the table-cell rebuild.** Typing in a cell no longer rebuilds the table's block widget; the rebuild fires when the cell demotes. The deferral is what needs watching — a demoted cell must show what was typed, and the timing is the half a suite cannot observe.
+- [ ] **The alias arc's leftovers.** Whatever the plan left open once the running-thing passes are done: the hover ×, ⌘K landing past a filled label, and the interaction half of the acceptance run.
 
 ### Pending Focuses
 
@@ -75,6 +76,8 @@
 
 ### Known Issues
 
+- [ ] Typing into a table cell — or clearing one — jerks the page's scroll position; a fix deferring the table widget's rebuild to the moment the cell demotes has landed but is not yet confirmed in use.
+
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined.
 - [ ] The "File" property icon gets clipped by its vertical row padding on the PropertiesPane.
 - [ ] The link-rename field shows a leading empty space — the shared field recipe's horizontal padding surviving the TextPicker input override, with the pane gutter adding to it. A visual inset rather than a stored character (deprioritized).
@@ -84,6 +87,10 @@
 - [ ] There's no right-click 'Add/Change Icon' option for SurfacePM embedded views' inline titles.
 
 ### Recent Work
+
+#### PM-098 || Page Alias' V1
+
+A connection's visible words became the author's to choose: `[[Title|Alias]]` renders as its alias while resolving on title, the connection menu authors and repoints one, a page remembers every name it has been given and offers them back with a × that forgets for good, and `[Title](Page)` reaches a page beside the wikilink form — one grammar, one resolver, one rename sweep. A link now says what it is as it is written, wearing a `link-2` glyph in front of its target when revealed. Typing in a table cell also stopped re-measuring the table block on every keystroke.
 
 #### PM-097 || CardView Creation Affordance
 **DATE:** 08-11-2026 → 08-12-2026
