@@ -21,7 +21,8 @@ export function popConnMenu(
     if (ctx.editable)
       items.push(
         { type: 'separator' },
-        { label: 'Rename', click: pick('rename') },
+        // Naming the act rather than the item: on a bare link there is no title yet to rename.
+        { label: ctx.hasAlias ? 'Rename' : 'Add Title', click: pick('rename') },
         { label: 'Edit Link', click: pick('editLink') },
       )
     Menu.buildFromTemplate(items).popup({

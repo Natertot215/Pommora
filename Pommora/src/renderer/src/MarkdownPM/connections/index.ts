@@ -2,11 +2,12 @@ import { normalizeTitle, type ConnEditAction, type LinkStatus } from '@shared/co
 
 /** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free
  *  function, so acting on the result needs a way back into the editor instance that was clicked —
- *  `apply` is that way, and its absence is what marks a display-only surface. */
+ *  `apply` is that way, and its absence is what marks a display-only surface. It closes over the
+ *  span it was built for, so no caller can aim an action at a link the menu wasn't popped on. */
 export interface ConnMenuTarget {
-  range: [number, number]
   editable: boolean
-  apply?: (action: ConnEditAction, range: [number, number]) => void
+  hasAlias: boolean
+  apply?: (action: ConnEditAction) => void
 }
 
 export interface ConnPage {

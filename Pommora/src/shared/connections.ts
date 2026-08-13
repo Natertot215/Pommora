@@ -60,10 +60,22 @@ export function aliasSpanAt(line: string, rel: number): [number, number] | null 
   return null
 }
 
+/** The offset of a bare `|` in a `[[Title|]]` containing `rel`, or null — an alias that was opened
+ *  and never written. `m[2]` is `''` for an empty alias and undefined when there's no pipe at all. */
+export function emptyAliasPipeAt(line: string, rel: number): number | null {
+  for (const m of line.matchAll(pageLinkPattern())) {
+    if (m.index == null || m[2] !== '') continue
+    if (rel >= m.index && rel <= m.index + m[0].length) return m.index + 2 + m[1].length
+  }
+  return null
+}
+
 /** What the wikilink menu needs in order to render itself. The two authoring actions are built into
  *  the menu rather than filtered after it, so a surface that can't take an edit never offers them. */
 export interface ConnMenuContext {
   editable: boolean
+  /** Whether the link already wears an alias — the authoring item names creating one or changing it. */
+  hasAlias: boolean
 }
 
 /** The wikilink native context menu's actions (conn-menu IPC). */
