@@ -270,36 +270,51 @@ describe('an internal markdown link previews like a connection', () => {
 // An empty alias offers its page's names outright — the rule is the shape on the line, not the
 // gesture that produced it. And a revealed alias shows where it points, marked as such.
 describe('an alias reveals what it hides', () => {
-  it('marks the target with the treatment a revealed link target gets', async () => {
-    const view = await mountEditor({
-      initialBody: 'see [[Work Notes|the plan]] end',
-      connections: conn,
-    })
+  const openAt = async (body: string, caret: number) => {
+    const view = await mountEditor({ initialBody: body, connections: conn })
     await act(async () => {
       view.focus()
-      view.dispatch({ selection: { anchor: 20 } })
+      view.dispatch({ selection: { anchor: caret } })
     })
-    expect(view.dom.querySelector('.md-link-url')?.textContent).toBe('Work Notes')
+    return view
+  }
+
+  it('marks the target and introduces it with the link glyph', async () => {
+    const view = await openAt('see [[Work Notes|the plan]] end', 20)
+    expect(view.dom.querySelector('.md-conn-target')?.textContent).toBe('Work Notes')
+    expect(view.dom.querySelector('.md-conn-glyph')).not.toBeNull()
   })
 
-  it('and marks nothing while it is closed', async () => {
-    const view = await mountEditor({
-      initialBody: 'see [[Work Notes|the plan]] end',
-      connections: conn,
-    })
-    await act(async () => {
-      view.focus()
-      view.dispatch({ selection: { anchor: 0 } })
-    })
-    expect(view.dom.querySelector('.md-link-url')).toBeNull()
+  // The glyph is the one part of the opened syntax that says whether the target resolves.
+  it('the glyph reports that the target resolves', async () => {
+    const view = await openAt('see [[Work Notes|the plan]] end', 20)
+    expect(view.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
   })
 
-  it('a link with no alias has no target to show', async () => {
-    const view = await mountEditor({ initialBody: 'see [[Work Notes]] end', connections: conn })
-    await act(async () => {
-      view.focus()
-      view.dispatch({ selection: { anchor: 10 } })
-    })
-    expect(view.dom.querySelector('.md-link-url')).toBeNull()
+  // Following the PIPE, not the resolution: writing an alias for a page that doesn't exist yet is
+  // still writing a link, and shouldn't wait for a title that happens to match.
+  it('and appears for a target that resolves to nothing, unresolved', async () => {
+    const view = await openAt('see [[No Such Page|the plan]] end', 22)
+    expect(view.dom.querySelector('.md-conn-target')?.textContent).toBe('No Such Page')
+    expect(view.dom.querySelector('.md-conn-glyph')).not.toBeNull()
+    expect(view.dom.querySelector('.md-conn-glyph-resolved')).toBeNull()
+  })
+
+  it('and marks nothing while the link is closed', async () => {
+    const view = await openAt('see [[Work Notes|the plan]] end', 0)
+    expect(view.dom.querySelector('.md-conn-target')).toBeNull()
+    expect(view.dom.querySelector('.md-conn-glyph')).toBeNull()
+  })
+
+  it('a link wearing no pipe has no target to show', async () => {
+    const view = await openAt('see [[Work Notes]] end', 10)
+    expect(view.dom.querySelector('.md-conn-target')).toBeNull()
+    expect(view.dom.querySelector('.md-conn-glyph')).toBeNull()
+  })
+
+  it('but a pipe opened and not yet written already shows both', async () => {
+    const view = await openAt('see [[Work Notes|]] end', 17)
+    expect(view.dom.querySelector('.md-conn-target')?.textContent).toBe('Work Notes')
+    expect(view.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
   })
 })

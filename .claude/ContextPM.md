@@ -53,7 +53,6 @@
 - **A lock key is a fact, and two spellings of one file are two locks.** Any file more than one surface rewrites whole needs its key built in the path module rather than assembled per call site, the read has to sit inside the lock beside the write, and a relocate holds the lock of the path it is leaving.
 - **A parse given a fragment answers about the fragment.** The editor tokenizes a slice, so anything whose meaning depends on the lines above it — fence parity, list indentation — comes out wrong unless the slice opens somewhere unambiguous.
 - **Two rules any future in-app window must respect**, both learned on PreviewPane: openness drivers stay declared per-window, and a FLIP measures from the surface root via a real ref rather than by walking `parentElement`.
-- **A connection reveals its syntax at every caret position it contains, its closer included** — the same rule bold, italic, and code follow, with no construct excepted. Authoring stays clean by moving the caret rather than by suppressing the reveal: committing a connection steps it one past a trailing space, adding one only when there is nothing to step over. Reinstating an end-of-token exception means a `kind` test in `activeTokenIndices` (`MarkdownPM/tokens/index.ts`), which the token and commit tests both pin.
 
 #### II. Debt & Ride-Alongs
 
@@ -86,7 +85,7 @@
 
 ### Recent Work
 
-#### PM-097 || Creation Reaches Every Surface
+#### PM-097 || CardView Creation Affordance
 **DATE:** 08-11-2026 → 08-12-2026
 
 Creation reached Cards and the sidebar on two extracted hooks the table refit onto — `useViewCreation` (seeds, order writes, create-then-name) and `useGhostAnchor` (dwell/grace, suppression, the pointerdown stand-down). The ghost card grows flow-after as the card's own skeleton with its neighbors FLIPed aside on the drag shift's feel; the sidebar ghost rides the row chrome at its own longer dwell. The rename slot gained an owner fence (a live set-band double-mount bug died with it, and an unclaimed session self-heals), Cards' naming unified onto the inline field, and the order-settle law now covers creates, cross-location drops, and the set-card reply gap alike. A ten-angle adversarial review closed the arc: a create now lands seated, named, and settled in one commit (the ghost's seat held across the round trip), the fence's verdict went temporal (a standing twin never inherits a session), the ghost mechanism gained a travel hold, an exit watchdog, and identity-stable handlers, flat Cards views route creates onto `page_order`, and the table ghost's "New Page" binds to the title cell.

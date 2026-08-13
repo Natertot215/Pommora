@@ -23,6 +23,27 @@ import {
   type WidgetSpec,
 } from '../decorations/intent'
 import { resolveMdTarget, type ConnectionsApi } from '../connections'
+import type { LinkStatus } from '@shared/connections'
+
+/** The `link-2` glyph a revealed connection wears in front of its target. It reports whether that
+ *  target resolves — the connection colour means a page answers to it — which is the one thing the
+ *  syntax itself can't say. Worn as a mask so the colour comes from the class, not the artwork. */
+class ConnGlyphWidget extends WidgetType {
+  constructor(readonly status: LinkStatus) {
+    super()
+  }
+  eq(other: ConnGlyphWidget): boolean {
+    return other.status === this.status
+  }
+  toDOM(): HTMLElement {
+    const el = document.createElement('span')
+    el.className = `md-conn-glyph md-conn-glyph-${this.status}`
+    return el
+  }
+  ignoreEvent(): boolean {
+    return false
+  }
+}
 
 class HrWidget extends WidgetType {
   eq(): boolean {
@@ -292,6 +313,21 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       const status = conn.resolve(text.slice(rs, re)).status
       // Open for editing, its syntax showing: it reads as text, so it points like text.
       const open = active.has(i)
+      // The target span of a link that wears a pipe. An alias splits the two meanings apart; a pipe
+      // opened and not yet written leaves the title standing as both, and it is still a target.
+      const pipe =
+        tk.resolveRange ?? (text[tk.contentRange[1]] === '|' ? tk.contentRange : undefined)
+      // Revealed, a connection wearing a pipe shows both of its meanings at once: the words the
+      // reader sees, and the page they lead to. The target is marked as a target and introduced by
+      // the link glyph, which is the thing that reports whether it resolves — so this follows the
+      // PIPE rather than waiting on a title that happens to match something. Typing an alias for a
+      // page that doesn't exist yet should still look like writing a link.
+      if (open && pipe) {
+        ranges.push(
+          Decoration.widget({ widget: new ConnGlyphWidget(status), side: 1 }).range(tk.range[0] + 2),
+        )
+        ranges.push(Decoration.mark({ class: 'md-conn-target' }).range(pipe[0], pipe[1]))
+      }
       if (status === 'phantom') {
         // A connection that names no page stays raw `[[Foo]]` — brackets visible and inert — and
         // clicking into one is inspecting an unresolved link, which should look unresolved.
@@ -300,13 +336,14 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
         // plain prose until a title happens to match: the author is writing a link and the text
         // should say so. It is not resolved, and doesn't claim to be. Typing is what earns that, not
         // the caret's position, so the field tracks the gesture.
-        if (!open || typing !== tk.range[0]) return
-        ranges.push(
-          Decoration.mark({ class: 'md-connection-typing' }).range(
-            tk.contentRange[0],
-            tk.contentRange[1],
-          ),
-        )
+        if (!open || (typing !== tk.range[0] && !pipe)) return
+        if (typing === tk.range[0])
+          ranges.push(
+            Decoration.mark({ class: 'md-connection-typing' }).range(
+              tk.contentRange[0],
+              tk.contentRange[1],
+            ),
+          )
         for (const [ms, me] of tk.markerRanges) {
           ranges.push(Decoration.mark({ class: 'md-bracket' }).range(ms, me))
         }
@@ -319,13 +356,6 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       )
       const bracket = open ? Decoration.mark({ class: 'md-bracket' }) : hideMarker
       for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
-      // Revealed, an aliased connection shows both of its meanings at once: the words the reader
-      // sees, and the page they lead to. The target takes the same treatment a markdown link's
-      // target takes when revealed, so both syntaxes say "this is where it points" the same way.
-      if (open && tk.resolveRange)
-        ranges.push(
-          Decoration.mark({ class: 'md-link-url' }).range(tk.resolveRange[0], tk.resolveRange[1]),
-        )
     })
   }
   for (const { from, to } of view.visibleRanges) {
