@@ -509,10 +509,12 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
   - [x] Task 10 — Slice and toggle · `8c7df3bc` (the toggle shipped at Task 8)
   - [x] Task 11 — Alias mode and forget-× · `16ee965e`
   - [x] Gate 3 — simplification + `linkAt` `4f844b6c` · review folds `PENDING`
-- [ ] **Phase 4** — Dual syntax
-  - [ ] Task 12a — Markdown links resolve internally
-  - [ ] Task 12b — The cascade reaches them
-  - [ ] Task 13 — `( )` autocomplete and the ⌘K caret
+- [x] **Phase 4** — Dual syntax · base `ce13cece`
+  - [x] Task 12a — Markdown links resolve internally · `0324d8b6`
+  - [x] Task 12b — The cascade reaches them · `433b83ff`
+  - [x] Task 12c — One markdown-link grammar · `dd6d8985` (the label widening rode 12b)
+  - [x] Task 13 — `( )` autocomplete and the ⌘K caret · `aa0df620`
+  - [x] Gate 4 — simplification + the code-span fix `6639cc2f` · review folds `PENDING`
 - [ ] **Phase 5** — Closeout
   - [ ] Task 14 — Acceptance run
   - [ ] Task 12 — Documentation
@@ -524,6 +526,7 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 - **A connection the caret is inside is text, not a link** (Nathan). It no longer navigates on click nor blooms a preview on dwell. One rule covering both halves of the request; the *edge*-click carve-out remains Task 6's.
 - **A bare pipe opens the alias picker on everything remembered** (Nathan, asked at Task 11). The moment `|` is typed is the only one where nothing has been typed to filter by, and offering the page's names back is the feature. The title form stays quiet on an empty query for the opposite reason: its pool is every page in the nexus.
 - **The alias picker fires inside a table cell** (Nathan, asked at Task 11). Cells render aliases like any other surface and share the state machine, so the mode is inherited rather than gated — the opposite would have meant adding a switch to turn it off, the way embeds are gated.
+- **A `]`-bearing title is escaped, not refused** (executor's call, Task 12a). The plan left the choice open. Escaping is what every other Markdown tool does and what keeps the file portable, and `shared/links.ts` already held `escapeAlias`/`unescapeAlias` for exactly this on URL properties — so the ruling is reuse rather than invention. The cost is recorded and accepted: an escaped label renders its backslashes, since hiding them is marker-range work rather than a grammar change.
 - **The wikilink grammar computes its offsets once** (Nathan, asked at Gate 2). The tokenizer, `autocompleteQuery`, and the alias helpers each derived the same title and alias boundaries from `pageLinkPattern`. `linkSpans` owns that arithmetic and the three read from it. The census is exactly three: `mentionsTitle` and `rewriteConnections` only ever read capture groups, so the main side never held a fourth copy.
 - **`activeTokenIndices`' wikiLink end-exception stays** (Nathan, asked). A caret just past `]]` is the one position that doesn't reveal a connection's syntax, where bold and italic would. Keeping it means a link renders the instant autocomplete commits, since `connectionInsert` leaves the caret exactly there; the price is that a trailing-edge click places a caret with no visible reveal. Measured before asking: every position *inside* the token already reveals.
 
@@ -548,6 +551,11 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 - **Task 11 — the panel row is one shape carrying its own gestures, not a page-or-alias union.** A union would have made the panel switch on what a row *is*. Instead a row is `{ value, label, isPage, forget? }`: `value` is what accepting it writes, and a row that can be forgotten carries the closure that forgets it. The panel never learns what a page is or where the memory lives, and Phase 4's `( )` mode is a third producer rather than a third case.
 - **Gate 3 — the two halves of `aliasOnLeave` didn't agree what "leaving an alias" meant.** The update listener required the caret to have been inside an alias; the blur handler required nothing, so blurring with the caret anywhere in a link remembered that link's alias — including one that arrived by paste and was never authored. Both now read the same predicate. Found by the simplification pass, which flagged it as behaviour rather than folding it.
 - **Gate 3 — `linkAt` joins `linkSpans` one level down.** "Which link contains this offset" was hand-rolled four times, and the alias arc added the fourth. Gate 2 unified the offset arithmetic; this unifies the containment test built on it, which is what the earlier ruling was actually reaching for.
+- **Task 12b — widening the label group is a ReDoS, and the cap is the fix.** The plan treated the widening as a regex one-liner. Reading escapes turns the label into an alternation under a quantifier, which on a long run of unclosed `[` backtracks quadratically at every start position — it turned the existing guard test red immediately. It now carries the same length cap `pageLinkPattern` carries, for the same reason.
+- **Task 12b — the grammar had to move to `shared` before the cascade could use it.** `markdownLinkRegex` lived beside the editor's other matchers, and the rewriter runs main-side. One definition or the renderer draws links the rewriter can't find; `detect/` re-exports it so its own consumers didn't move.
+- **Task 13 — the picker's commit became data.** Opening the panel needs `coordsAtPos`, and jsdom measures nothing, so a panel-driven test of the caret rules would only ever have tested the harness. `commitEdit` returns the changes and the selection instead, which made every form's caret rule assertable and left the hook thinner than it started.
+- **Gate 4 — the prefilter and the rewriter were still two expressions of one rule.** A whole describe block existed to assert they agree, which is the tell: `targetNamesTitle` is now the single definition both call. `linkTarget` did the same for three surfaces that each derived a link's target from a different span.
+- **Gate 4 — reclassifying a wikilink escaped the code filter.** Every token family is filtered against code spans, and the wikilink itself was — but extending its span over the parens is new ground that nothing checked, so `[[Notes]](`x`)` emitted overlapping tokens. Found by the simplification pass, which correctly flagged it as behaviour rather than folding it.
 - **Task 2 — the `contentRange` census refines to one wikiLink toggle, not two.** `format.ts` holds two `contentRange` readers, but `toggleLink` reads `link` tokens whose shape doesn't move; only `toggleConnection` sees a wikiLink. Three further readers exist and are all provably unaffected: `decorations/intent.ts` returns early for `wikiLink`, `formatState.ts` tests connections on `range`, and `format.ts:68`'s `kind` excludes connection by type. The five sites Task 2 and Task 4 edit are unchanged.
 ### Lessons
 ### Sequenced After
