@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { EditorSelection } from '@codemirror/state'
 import {
   autocompleteQuery,
   commitEdit,
@@ -12,6 +11,7 @@ import {
 import { docString } from './editor/docCache'
 import { normalizeTitle, pageLinkPattern } from '@shared/connections'
 import { useSession } from '../store'
+import { restedOnLink } from './editor/linkRest'
 
 export interface AcState extends AutocompleteQuery {
   left: number
@@ -90,12 +90,13 @@ export function useConnectionAutocomplete(
       ac.form === 'link'
         ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.[2]
         : undefined
-    const { changes, anchor, head } = commitEdit(ac, row, {
-      keepAlias: dropAlias ? undefined : worn,
-    })
+    const { changes, anchor } = commitEdit(ac, row, { keepAlias: dropAlias ? undefined : worn })
     view.dispatch({
       changes,
-      selection: head === undefined ? { anchor } : EditorSelection.range(anchor, head),
+      selection: { anchor },
+      // The link is finished and the caret rests on its closer, which is the one position that
+      // leaves it rendered — but only because this gesture put it there.
+      effects: restedOnLink.of(anchor),
       userEvent: 'input',
     })
     setAc(null)

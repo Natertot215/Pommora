@@ -13,6 +13,7 @@ import { tokenize, activeTokenIndices, linkTarget, shiftToken, type Token } from
 import { docLineIntentsOf, docScan, docSpanTokens, docString } from './docCache'
 import { claimedEmbeds } from './embedRanges'
 import { resolutionNudge } from './embedWidget'
+import { linkRest } from './linkRest'
 import {
   assembleLineIntents,
   type DocScan,
@@ -205,7 +206,9 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
           !(tk.kind === 'embed' && claimed.some((e) => tk.range[0] >= e.from && tk.range[1] <= e.to)),
       )
   }
-  const active = focused ? activeTokenIndices(tokens, sel.from, sel.to) : NO_ACTIVE
+  const active = focused
+    ? activeTokenIndices(tokens, sel.from, sel.to, view.state.field(linkRest, false) ?? null)
+    : NO_ACTIVE
   const head = focused ? sel.head : NO_CARET
   const intents = tokenIntents(tokens, active)
   // Loop, never spread — spreading into push throws past V8's argument ceiling on a huge outline,

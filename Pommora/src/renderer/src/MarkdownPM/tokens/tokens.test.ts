@@ -116,13 +116,25 @@ describe('activeTokenIndices', () => {
     expect(activeTokenIndices(tokens, 0, 0).has(idx)).toBe(false)
   })
 
-  // The closer is the one caret position that leaves a connection rendered, where bold would reveal.
-  // It is where finishing one puts you, and a finished link should read as finished — no trailing
-  // space is written to move the caret off it.
-  it('caret on a wikilink’s closer leaves it rendered', () => {
+  // Finishing a link leaves the caret on its closer and the link rendered. Merely CLICKING there is
+  // aiming at the syntax, and reveals it like any other construct — the distinction is the gesture,
+  // which the caller reports, not the offset.
+  it('a caret rested on the closer by finishing leaves it rendered', () => {
     const tokens = tokenize('[[P]]') // wikilink [0,5]
     const idx = tokens.findIndex((tk) => tk.kind === 'wikiLink')
-    expect(activeTokenIndices(tokens, 5, 5).has(idx)).toBe(false)
+    expect(activeTokenIndices(tokens, 5, 5, 5).has(idx)).toBe(false)
+  })
+
+  it('but a caret merely sitting there reveals, as it does for bold', () => {
+    const tokens = tokenize('[[P]]')
+    const idx = tokens.findIndex((tk) => tk.kind === 'wikiLink')
+    expect(activeTokenIndices(tokens, 5, 5).has(idx)).toBe(true)
+  })
+
+  it('and a rest recorded elsewhere does not spill onto this link', () => {
+    const tokens = tokenize('[[P]] [[Q]]')
+    const idx = tokens.findIndex((tk) => tk.kind === 'wikiLink')
+    expect(activeTokenIndices(tokens, 5, 5, 11).has(idx)).toBe(true)
   })
 
   it('but every position inside it still reveals', () => {
@@ -133,9 +145,9 @@ describe('activeTokenIndices', () => {
     }
   })
 
-  it('and the exception is the connection’s alone — bold still reveals at its end', () => {
+  it('and the exception is a link’s alone — bold reveals even when rested on', () => {
     const tokens = tokenize('**b**')
     const idx = tokens.findIndex((tk) => tk.kind === 'bold')
-    expect(activeTokenIndices(tokens, 5, 5).has(idx)).toBe(true)
+    expect(activeTokenIndices(tokens, 5, 5, 5).has(idx)).toBe(true)
   })
 })

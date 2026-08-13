@@ -215,7 +215,15 @@ export function tokenize(text: string): Token[] {
   return tokens
 }
 
-export function activeTokenIndices(tokens: Token[], selStart: number, selEnd: number): Set<number> {
+/** Which tokens reveal their syntax. `restingAt` is where a link was just FINISHED, if anywhere —
+ *  the one caret position that leaves a link rendered, and only because the finishing gesture put
+ *  the caret there. Clicking beside a link reveals it as every other construct does. */
+export function activeTokenIndices(
+  tokens: Token[],
+  selStart: number,
+  selEnd: number,
+  restingAt: number | null = null,
+): Set<number> {
   const active = new Set<number>()
   tokens.forEach((tk, i) => {
     const [s, e] = tk.range
@@ -224,11 +232,10 @@ export function activeTokenIndices(tokens: Token[], selStart: number, selEnd: nu
       return
     }
     const caret = selStart
-    // A caret resting exactly on a connection's closer leaves it rendered, where bold and italic
-    // would reveal their markers. That position is where finishing one puts you — committing a
-    // page, or pressing Enter on an alias — and the link should read as finished there rather than
-    // springing back into raw syntax. Every position INSIDE the token still reveals.
-    if (tk.kind === 'wikiLink' && caret === e) return
+    // A link just finished leaves the caret on its closer and stays rendered there. Nothing about
+    // the position earns that — clicking beside a link is aiming at its syntax and still reveals it
+    // — so the finishing gesture is what says so, and the next thing the user does takes it back.
+    if (caret === e && caret === restingAt && (tk.kind === 'wikiLink' || tk.kind === 'link')) return
     if (caret >= s && caret <= e) active.add(i)
   })
   return active

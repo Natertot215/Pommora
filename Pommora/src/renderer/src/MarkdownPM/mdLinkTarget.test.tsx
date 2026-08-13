@@ -4,6 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { encodeLinkTarget } from '@shared/links'
 import { autocompleteQuery, commitEdit } from './autocomplete'
+import { activeTokenIndices, tokenize } from './tokens'
 import { buildPageIndex, resolveMdTarget, type ConnectionsApi, type ConnPage } from './connections'
 import { renderCellContent } from './Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
@@ -141,7 +142,7 @@ describe('following one', () => {
 describe('picking a page inside the parens', () => {
   const row = { value: 'Work Notes', label: 'Work Notes', isPage: true }
 
-  const applied = (doc: string, caret: number): { text: string; selected: string } => {
+  const applied = (doc: string, caret: number): { text: string; after: string } => {
     const ac = autocompleteQuery(doc, caret)!
     expect(ac.form).toBe('target')
     const edit = commitEdit(ac, row)
@@ -149,29 +150,36 @@ describe('picking a page inside the parens', () => {
     for (const c of [...edit.changes].reverse()) {
       text = text.slice(0, c.from) + c.insert + text.slice(c.to)
     }
-    return {
-      text,
-      selected: edit.head === undefined ? '' : text.slice(edit.anchor, edit.head),
-    }
+    return { text, after: text.slice(edit.anchor) }
   }
 
-  it('fills an empty label with the page title and selects it', () => {
+  // A markdown link renders as its label alone, so selecting that label highlights everything the
+  // link shows — picking a page read as though it had selected the whole thing. It rests past the
+  // closer instead, exactly where finishing a connection leaves you.
+  it('fills an empty label with the page title and rests past the link', () => {
     const doc = 'see []() end'
-    const { text, selected } = applied(doc, doc.indexOf('(') + 1)
+    const { text, after } = applied(doc, doc.indexOf('(') + 1)
     expect(text).toBe('see [Work Notes](Work%20Notes) end')
-    expect(selected).toBe('Work Notes')
+    expect(after).toBe(' end')
   })
 
-  it('leaves a written label alone and steps past the link', () => {
+  it('leaves a written label alone and rests in the same place', () => {
     const doc = 'see [the notes]() end'
-    const ac = autocompleteQuery(doc, doc.indexOf('(') + 1)!
-    const edit = commitEdit(ac, row)
-    expect(edit.changes).toHaveLength(1)
-    expect(edit.head).toBeUndefined()
-    const text = doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
+    const { text, after } = applied(doc, doc.indexOf('(') + 1)
     expect(text).toBe('see [the notes](Work%20Notes) end')
-    // Past the closing paren, so the next keystroke lands outside the link rather than inside it.
-    expect(edit.anchor).toBe('see [the notes](Work%20Notes)'.length)
+    expect(after).toBe(' end')
+  })
+
+  // The caret lands on the closer, and the link rests rendered there BECAUSE the commit put it
+  // there. Clicking the same spot afterwards reveals the target, as clicking beside any link does.
+  it('and the link reads as finished where the commit leaves the caret', () => {
+    const doc = 'see [the notes](Work%20Notes) end'
+    const tokens = tokenize(doc)
+    const idx = tokens.findIndex((t) => t.kind === 'link')
+    const end = tokens[idx].range[1]
+    expect(activeTokenIndices(tokens, end, end, end).has(idx)).toBe(false)
+    expect(activeTokenIndices(tokens, end, end).has(idx)).toBe(true)
+    expect(activeTokenIndices(tokens, end - 1, end - 1, end).has(idx)).toBe(true)
   })
 })
 
