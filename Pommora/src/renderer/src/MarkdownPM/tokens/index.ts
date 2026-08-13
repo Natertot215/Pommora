@@ -168,30 +168,6 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
   return tokens
 }
 
-/** `[[Title]](target)` is a markdown link whose label is `[Title]`, not a connection trailed by
- *  literal parens — CommonMark reads the outer brackets as the label, and a link is what the author
- *  of that line meant. Returns the link it should have been, or null to leave the wikilink alone.
- *
- *  Applied after tokenizing rather than by widening the label group: a group admitting balanced
- *  brackets needs a nested quantifier, which is the catastrophic-backtracking shape every pattern
- *  here is capped against. Only the immediate form moves — `[[Notes]] (2024)` stays a connection. */
-function parenthesisedWikiLink(text: string, wiki: Token): Token | null {
-  const after = wiki.range[1]
-  if (text[after] !== '(') return null
-  const close = text.indexOf(')', after + 1)
-  if (close === -1 || /[\r\n]/.test(text.slice(after, close))) return null
-  const content: [number, number] = [wiki.range[0] + 1, wiki.range[1] - 1]
-  return {
-    kind: 'link',
-    range: [wiki.range[0], close + 1],
-    contentRange: content,
-    markerRanges: [
-      [wiki.range[0], content[0]],
-      [content[1], close + 1],
-    ],
-  }
-}
-
 export function tokenize(text: string): Token[] {
   const ast = parse(text)
   const tokens: Token[] = []
@@ -209,25 +185,17 @@ export function tokenize(text: string): Token[] {
     open: 3,
     close: 2,
   })
-  // Each scanned wikilink is either a connection or the markdown link it should have been.
-  const wikis: Token[] = []
-  const parenLinks: Token[] = []
-  for (const w of wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))) {
-    // The wikilink itself was already cleared of code, but reclassifying extends its span over the
-    // parens — which is new ground, and code claimed first there as it does everywhere else.
-    const asLink = parenthesisedWikiLink(text, w)
-    if (asLink && notOverlapping([...embeds, ...code])(asLink)) parenLinks.push(asLink)
-    else wikis.push(w)
-  }
-  const links = [
-    ...parenLinks,
-    ...scan({
-      kind: 'link',
-      re: markdownLinkRegex(),
-      open: 1,
-      close: 1,
-    }).filter(notOverlapping([...embeds, ...wikis, ...parenLinks, ...code])),
-  ]
+  // `[[Title]](target)` stays a connection trailed by literal parens, which is what Obsidian shows
+  // and therefore what a shared vault means by it. CommonMark would read it as a link labelled
+  // `[Title]`; reading it that way here creates a link the rename cascade's grammar cannot match,
+  // so renaming its target rots it silently.
+  const wikis = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
+  const links = scan({
+    kind: 'link',
+    re: markdownLinkRegex(),
+    open: 1,
+    close: 1,
+  }).filter(notOverlapping([...embeds, ...wikis, ...code]))
   const blockTex = scan({
     kind: 'blockLatex',
     re: blockLatexRegex(),

@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { autocompleteQuery, connectionInsert } from './autocomplete'
+import { autocompleteQuery, commitEdit, connectionInsert } from './autocomplete'
+import { tokenize } from './tokens'
+
+const tokenizeHasLink = (text: string): boolean => tokenize(text).some((t) => t.kind === 'link')
 
 describe('autocompleteQuery', () => {
   it('detects a non-empty query with the caret inside the brackets', () => {
@@ -144,5 +147,40 @@ describe('the ( ) form', () => {
     expect(connectionInsert('Atomic Habits (Book)', 0, 'target').insert).toBe(
       'Atomic%20Habits%20%28Book%29',
     )
+  })
+})
+
+describe('the picker declines a code sample', () => {
+  // It binds Return at the editor's highest precedence, so arming over a sample eats the newline
+  // and writes a page title into the sample instead of leaving it alone.
+  it('a target inside a code span arms nothing', () => {
+    const doc = 'Use `[Notes](Notes)` for links.'
+    expect(autocompleteQuery(doc, doc.indexOf('](') + 2)).toBeNull()
+  })
+
+  it('and neither does a connection inside one', () => {
+    const doc = 'Write `[[Title]]` to link.'
+    expect(autocompleteQuery(doc, doc.indexOf('Title') + 2)).toBeNull()
+  })
+
+  it('but the same shapes outside code still arm', () => {
+    const doc = 'see [x](Notes) end'
+    expect(autocompleteQuery(doc, doc.indexOf('Notes'))?.form).toBe('target')
+  })
+})
+
+describe('a label the picker writes is markdown, not plain text', () => {
+  // Unescaped, a `]` in the title ends the label early and the whole link tokenizes as nothing.
+  it('escapes a bracket-bearing title into the label slot', () => {
+    const doc = 'see []() end'
+    const ac = autocompleteQuery(doc, doc.indexOf('(') + 1)!
+    const edit = commitEdit(ac, { value: 'Notes [WIP]', label: 'Notes [WIP]', isPage: true })
+    const written = edit.changes.reduceRight(
+      (t, c) => t.slice(0, c.from) + c.insert + t.slice(c.to),
+      doc,
+    )
+    expect(written).toBe('see [Notes [WIP\\]](Notes%20%5BWIP%5D) end')
+    expect(tokenizeHasLink(written)).toBe(true)
+    expect(written.slice(edit.anchor, edit.head)).toBe('Notes [WIP\\]')
   })
 })
