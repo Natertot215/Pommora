@@ -3,7 +3,7 @@
 // (handleMutate / a native confirm / Finder), then signals the renderer to refetch on change.
 // Rename is intentionally absent here — it needs an inline rename in the renderer.
 
-import { Menu, dialog, shell } from 'electron'
+import { Menu, clipboard, dialog, shell } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { basename } from 'node:path'
 import { push } from './ipc'
@@ -13,6 +13,7 @@ import { handleMutate, type MutateDeps } from './mutate'
 import { readRegistryStrict } from './contextsRegistry'
 import { createSpaceLabel } from '@shared/contexts'
 import { containerCreators } from '@shared/mutate'
+import { pageLinkText, pageMetaMenuItems, pagePathText, type PageMetaAction } from '@shared/pageMenu'
 import type { ContextTarget, Creator, MutableKind, MutateRequest } from '@shared/mutate'
 import { readNexusLabels } from './readNexus'
 
@@ -67,6 +68,83 @@ export async function showContextMenu(
 
   const items: MenuItemConstructorOptions[] = []
 
+  /** One page action → what it does. Renderer-side work (a tab, a naming field, a picker, a
+   *  sibling's position) travels as a push, because only the renderer holds the tab set and the
+   *  sibling order; the rest lands here. */
+  const runPageAction = async (action: PageMetaAction): Promise<void> => {
+    switch (action) {
+      case 'title:preview':
+        return push(win, 'open-in-preview', target)
+      case 'title:newtab':
+        return push(win, 'open-in-new-tab', target)
+      case 'title:rename':
+        return push(win, 'begin-rename', { path: target.path, host: target.host })
+      case 'title:icon':
+        return push(win, 'begin-icon', { path: target.path, host: target.host })
+      case 'title:newabove':
+        return push(win, 'new-page-adjacent', {
+          path: target.path,
+          where: 'above',
+          host: target.host,
+        })
+      case 'title:newbelow':
+        return push(win, 'new-page-adjacent', {
+          path: target.path,
+          where: 'below',
+          host: target.host,
+        })
+      case 'title:copylink':
+        return clipboard.writeText(pageLinkText(target.title))
+      case 'title:copypath':
+        return clipboard.writeText(pagePathText(target.path))
+      case 'title:reveal':
+        return reveal()
+      case 'title:delete':
+        return confirmDelete()
+    }
+  }
+
+  const confirmDelete = async (): Promise<void> => {
+    const { response } = await dialog.showMessageBox(win, {
+      type: 'warning',
+      buttons: ['Delete', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1,
+      message: `Delete “${target.title}”?`,
+      detail:
+        deps.trashMode === 'system'
+          ? 'It will be moved to the system Trash.'
+          : 'It will be moved to the nexus’s .trash folder (recoverable).',
+    })
+    if (response === 0) await run({ op: 'delete', path: target.path, kind: target.kind })
+  }
+  // target.path is renderer-supplied, so it resolves through the root guard — an unguarded join
+  // would let `..` reveal a file outside the nexus.
+  const reveal = async (): Promise<void> => {
+    const r = await resolveUnderRoot(root, target.path)
+    if (r.ok) shell.showItemInFolder(r.value)
+  }
+
+  // A page's menu is the shared one, whole: `pageMetaMenuItems` is where the page actions and their
+  // order live, so this menu and the ones the table, the cards and the row grips pop can't drift.
+  // Every other kind builds below — containers offer creators and no page meta, which is a different
+  // menu rather than a subset of this one.
+  if (target.kind === 'page') {
+    for (const item of pageMetaMenuItems(target.alreadyOpen, {
+      preview: true,
+      newPages: 'pair',
+      clipboard: true,
+      reveal: true,
+    })) {
+      if (item.separatorBefore) items.push({ type: 'separator' })
+      items.push({ label: item.label, click: () => void runPageAction(item.action) })
+    }
+    await new Promise<void>((resolve) => {
+      Menu.buildFromTemplate(items).popup({ window: win, callback: resolve })
+    })
+    return
+  }
+
   // Open New Tab — the action runs renderer-side (only the renderer knows the tab set); an
   // already-open entity reads "Open" and the push-back focuses its tab.
   if (target.id) {
@@ -74,13 +152,6 @@ export async function showContextMenu(
       label: target.alreadyOpen ? 'Open' : 'Open New Tab',
       click: () => push(win, 'open-in-new-tab', target),
     })
-    // Open Preview (page-only) — like Open New Tab, the action runs renderer-side.
-    if (target.kind === 'page') {
-      items.push({
-        label: 'Open Preview',
-        click: () => push(win, 'open-in-preview', target),
-      })
-    }
     items.push({ type: 'separator' })
   }
 
@@ -95,53 +166,9 @@ export async function showContextMenu(
     click: () => push(win, 'begin-rename', { path: target.path, host: target.host }),
   })
 
-  // New Page Above / Below — the position is computed renderer-side, where the sibling order
-  // lives; a partial page_order write would alphabetize the untouched siblings.
-  if (target.kind === 'page') {
-    items.push(
-      { type: 'separator' },
-      {
-        label: 'New Page Above',
-        click: () =>
-          push(win, 'new-page-adjacent', { path: target.path, where: 'above', host: target.host }),
-      },
-      {
-        label: 'New Page Below',
-        click: () =>
-          push(win, 'new-page-adjacent', { path: target.path, where: 'below', host: target.host }),
-      },
-      { type: 'separator' },
-    )
-  }
-
-  items.push({
-    label: 'Delete',
-    click: async () => {
-      const { response } = await dialog.showMessageBox(win, {
-        type: 'warning',
-        buttons: ['Delete', 'Cancel'],
-        defaultId: 0,
-        cancelId: 1,
-        message: `Delete “${target.title}”?`,
-        detail:
-          deps.trashMode === 'system'
-            ? 'It will be moved to the system Trash.'
-            : 'It will be moved to the nexus’s .trash folder (recoverable).',
-      })
-      if (response === 0) await run({ op: 'delete', path: target.path, kind: target.kind })
-    },
-  })
-
+  items.push({ label: 'Delete', click: () => void confirmDelete() })
   items.push({ type: 'separator' })
-  items.push({
-    label: 'Reveal in Finder',
-    // Validate through resolveUnderRoot — target.path is renderer-supplied, and an
-    // unguarded join(root, path) would let `..` reveal files outside the nexus.
-    click: async () => {
-      const r = await resolveUnderRoot(root, target.path)
-      if (r.ok) shell.showItemInFolder(r.value)
-    },
-  })
+  items.push({ label: 'Reveal in Finder', click: () => void reveal() })
 
   // Resolve on dismissal, not at pop — a fire-and-forget caller ignores it, but a surface
   // holding a hover affordance down (the ghost's suppress) needs the close to release it.

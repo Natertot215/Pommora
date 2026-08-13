@@ -34,6 +34,7 @@ import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import type { GripMenuAction, GripMenuContext } from './gripMenu'
 import type { CellMenuAction, CellMenuContext } from './cellMenu'
 import type { RowGripMenuAction, RowGripMenuContext } from './rowGripMenu'
+import type { PageMetaAction } from './pageMenu'
 import type { CardMenuAction, CardMenuContext } from './cardMenu'
 import type { ConnMenuAction, ConnMenuContext } from './connections'
 import type { TabMenuAction, TabMenuContext } from './tabMenu'
@@ -57,6 +58,10 @@ export interface Asks {
   'nexus:choose': { args: []; reply: Result<boolean> }
   'nexus:openPath': { args: [path: string]; reply: Result<boolean> }
   'nexus:rename': { args: [newName: string]; reply: Result<null> }
+  // Two small services a page action needs from main: the system clipboard, and revealing a
+  // nexus-relative path in the file manager (validated against the root before it resolves).
+  'clipboard:write': { args: [text: string]; reply: undefined }
+  'path:reveal': { args: [nexusRelativePath: string]; reply: undefined }
 
   // Pages
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }
@@ -284,6 +289,10 @@ export interface Asks {
   'column-menu': { args: [ctx: ColumnMenuContext]; reply: ColumnMenuAction | null }
   'cell-menu': { args: [ctx: CellMenuContext]; reply: CellMenuAction | null }
   'row-grip-menu': { args: [ctx: RowGripMenuContext]; reply: RowGripMenuAction | null }
+  'page-actions-menu': {
+    args: [ctx: { actions: PageMetaAction[]; alreadyOpen?: boolean }]
+    reply: PageMetaAction | null
+  }
   'card-menu': { args: [ctx: CardMenuContext]; reply: CardMenuAction | null }
   'tab-menu': { args: [ctx: TabMenuContext]; reply: TabMenuAction | null }
   'nav-row-menu': { args: [ctx: NavRowMenuContext]; reply: NavRowMenuAction | null }
@@ -308,6 +317,9 @@ export interface Pushes {
   // first commit rides the create (disambiguating, cascade-free).
   'begin-rename': { path: string; create?: boolean; host?: RenameHost }
   'new-page-adjacent': { path: string; where: 'above' | 'below'; host?: RenameHost }
+  // Change Icon, like Rename, is a renderer affordance a native menu can only ask for: the picker
+  // anchors to the row the gesture happened on, which only the renderer can find.
+  'begin-icon': { path: string; host?: RenameHost }
   'open-in-new-tab': ContextTarget
   'open-in-preview': ContextTarget
   'nav:changed': Omit<NavigationState, 'recents'>

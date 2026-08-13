@@ -337,6 +337,11 @@ interface SessionState {
   beginRename: (path: string, create?: boolean, host?: RenameHost) => void
   cancelRename: () => void
   submitRename: (path: string, kind: MutableKind, newName: string) => Promise<boolean>
+  /** The page whose icon picker is open, from a menu's Change Icon. One consumer — the sidebar row
+   *  — so it needs no owner fence: the row at this path opens the picker and clears it on dismiss. */
+  iconPath: string | null
+  beginIcon: (path: string) => void
+  endIcon: () => void
   /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives.
    *  `host` carries the gesture's surface into the naming fence. */
   newPageAdjacent: (path: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
@@ -1488,6 +1493,10 @@ export const useSession = create<SessionState>((set, get) => {
       const req = await window.nexus.popCreateMenu(items)
       if (req) await get().mutate(req, (created) => get().beginRename(created.path, true, host))
     },
+
+    iconPath: null,
+    beginIcon: (path) => set({ iconPath: path }),
+    endIcon: () => set({ iconPath: null }),
 
     renamingPath: null,
     renamingCreate: false,
