@@ -48,24 +48,49 @@ export function pageLinkPattern(): RegExp {
 /** Resolution outcome for a scanned title against the nexus link index. */
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
+/** Where the parts of one `pageLinkPattern` match sit, offset into whatever string it matched
+ *  against. The grammar's arithmetic lives here and nowhere else: the editor's tokenizer, the
+ *  autocomplete query, and the alias helpers below all read their boundaries from this, so a change
+ *  to the syntax moves one set of numbers rather than three that have to be kept in agreement. */
+export interface LinkSpans {
+  /** The whole token, brackets included. */
+  full: [number, number]
+  /** The resolution key, always present. */
+  title: [number, number]
+  /** The words shown, excluding the `|` that opens them — which therefore sits at `title[1]`. Null
+   *  when the link wears no pipe, and empty when one was opened and left bare; the three consumers
+   *  each turn on a different one of those two states. */
+  alias: [number, number] | null
+}
+
+export function linkSpans(m: RegExpMatchArray): LinkSpans | null {
+  if (m.index == null) return null
+  const full: [number, number] = [m.index, m.index + m[0].length]
+  const title: [number, number] = [m.index + 2, m.index + 2 + m[1].length]
+  return {
+    full,
+    title,
+    alias: m[2] === undefined ? null : [title[1] + 1, full[1] - 2],
+  }
+}
+
 /** The alias span containing a line-relative offset, or null. Takes a line rather than a document so
  *  it stays free of any editor's line helpers — the grammar is the only thing it knows. */
 export function aliasSpanAt(line: string, rel: number): [number, number] | null {
   for (const m of line.matchAll(pageLinkPattern())) {
-    if (m[2] === undefined || m.index == null) continue
-    const start = m.index + 2 + m[1].length + 1
-    const end = m.index + m[0].length - 2
-    if (rel >= start && rel <= end) return [start, end]
+    const alias = linkSpans(m)?.alias
+    if (alias && rel >= alias[0] && rel <= alias[1]) return alias
   }
   return null
 }
 
 /** The offset of a bare `|` in a `[[Title|]]` containing `rel`, or null — an alias that was opened
- *  and never written. `m[2]` is `''` for an empty alias and undefined when there's no pipe at all. */
+ *  and never written. */
 export function emptyAliasPipeAt(line: string, rel: number): number | null {
   for (const m of line.matchAll(pageLinkPattern())) {
-    if (m.index == null || m[2] !== '') continue
-    if (rel >= m.index && rel <= m.index + m[0].length) return m.index + 2 + m[1].length
+    const s = linkSpans(m)
+    if (!s?.alias || s.alias[0] !== s.alias[1]) continue
+    if (rel >= s.full[0] && rel <= s.full[1]) return s.title[1]
   }
   return null
 }
