@@ -108,3 +108,41 @@ describe('connectionInsert forms', () => {
     expect(connectionInsert('Alpha', 0)).toEqual({ insert: '[[Alpha]]', caret: 9 })
   })
 })
+
+// ⌘K writes `[label]()`, whose target is empty — the grammar requires at least one character there,
+// so this form has to be found by its own scan or the picker never opens where it's needed most.
+describe('the ( ) form', () => {
+  it('opens inside an empty target and reports the label slot', () => {
+    const doc = 'see []() end'
+    const r = autocompleteQuery(doc, doc.indexOf('(') + 1)!
+    expect(r.form).toBe('target')
+    expect(r.query).toBe('')
+    expect(r.from).toBe(r.to)
+    expect(r.label).toEqual({ from: 5, to: 5 })
+  })
+
+  it('reads a target already typed, decoded', () => {
+    const doc = 'see [x](Work%20Notes) end'
+    const r = autocompleteQuery(doc, doc.indexOf('Work'))!
+    expect(r.form).toBe('target')
+    expect(r.query).toBe('Work Notes')
+    expect(doc.slice(r.from, r.to)).toBe('Work%20Notes')
+  })
+
+  it('carries a written label so it can be left alone', () => {
+    const doc = 'see [the notes]() end'
+    const r = autocompleteQuery(doc, doc.indexOf('(') + 1)!
+    expect(doc.slice(r.label!.from, r.label!.to)).toBe('the notes')
+  })
+
+  it('the caret in the label is not the caret in the target', () => {
+    const doc = 'see [x](Notes) end'
+    expect(autocompleteQuery(doc, 5)?.form).not.toBe('target')
+  })
+
+  it('commits its target percent-encoded', () => {
+    expect(connectionInsert('Atomic Habits (Book)', 0, 'target').insert).toBe(
+      'Atomic%20Habits%20%28Book%29',
+    )
+  })
+})
