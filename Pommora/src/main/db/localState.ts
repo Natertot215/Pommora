@@ -13,6 +13,7 @@ export type Scope =
   | 'activeView'
   | 'viewOrder'
   | 'headingCols'
+  | 'headingIcon'
   | 'embedHeights'
   | 'aliases'
   | 'linkTitle'

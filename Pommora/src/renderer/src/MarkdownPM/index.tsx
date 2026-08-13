@@ -67,6 +67,10 @@ interface Props {
   path?: string
   cover?: string
   onEditIcon?: () => void
+  /** The page's glyph and whether its header draws it — chrome, so the host owns the flag. */
+  icon?: string
+  iconHidden?: boolean
+  onToggleIcon?: () => void
   zoom?: number
   connections?: ConnectionsApi
   /** The embed-host chain above this editor — feeds the tile facet (cycle guard + nesting depth). */
@@ -91,6 +95,9 @@ export function MarkdownEditor({
   path,
   cover,
   onEditIcon,
+  icon,
+  iconHidden,
+  onToggleIcon,
   zoom = ZOOM_DEFAULT,
   connections,
   embedAncestors,
@@ -412,6 +419,9 @@ export function MarkdownEditor({
           title={title}
           cover={cover}
           onRename={onRename ?? ((): void => {})}
+          icon={icon}
+          iconHidden={iconHidden}
+          onToggleIcon={onToggleIcon}
           onEditIcon={onEditIcon ?? ((): void => {})}
         />
       )}
