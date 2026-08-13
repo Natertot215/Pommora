@@ -2,11 +2,11 @@
 import { parse } from '../parser'
 import { fenceLang, fenceSpans, lineOffsetsOf, quoteDepthOf } from '@shared/markdownCode'
 import type { ListKind } from '@shared/gripMenu'
+export { markdownLinkRegex } from '@shared/links'
 
 export type { ListKind }
 
 export const embedRegex = (): RegExp => /!\[\[([^\]\r\n]*)\]\]/dg
-export const markdownLinkRegex = (): RegExp => /\[([^\]\r\n]+)\]\(([^)\r\n]+)\)/dg
 export const inlineCodeRegex = (): RegExp => /`([^`\n]+)`/dg
 export const blockLatexRegex = (): RegExp => /(?<!\$)\$\$([\s\S]+?)\$\$/dg
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg
