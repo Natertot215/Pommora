@@ -332,6 +332,28 @@
 .md-connection-ambiguous {
   color: var(--label-tertiary);
 }
+/* The `link-2` glyph in front of a revealed connection's target. It is the one part of the opened
+   syntax that says whether that target actually resolves, which is why it carries the colour rather
+   than the title does: connection colour means a page answers to it, muted means none does yet. */
+.md-conn-glyph {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  margin-right: 0.15em;
+  background-color: var(--label-tertiary);
+  -webkit-mask: var(--conn-link-mask) center / contain no-repeat;
+  mask: var(--conn-link-mask) center / contain no-repeat;
+}
+.md-conn-glyph-resolved {
+  background-color: var(--connection);
+}
+/* The target a revealed alias hides. It reads as the link's destination rather than as prose, and
+   the glyph beside it is what reports whether that destination exists. */
+.md-conn-target {
+  color: var(--label-control);
+}
+
 /* A connection being typed, before any page answers to it. Same colour as a resolved one — the
    author is writing a link — with none of its behaviour, since there is nothing yet to lead to. */
 .md-connection-typing {
