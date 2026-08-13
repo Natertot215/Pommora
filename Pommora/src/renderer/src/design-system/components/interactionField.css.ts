@@ -24,8 +24,8 @@ export const field = style([
   },
 ])
 
-/** The bare <input> variant — identical chrome, no native border/outline, no focus ring (Nathan:
- *  no focus animation). Focus keeps the SEMANTIC ring (`--field-ring` is color, not focus state)
+/** The bare <input> variant — identical chrome, no native border/outline, no focus ring (no
+ *  focus animation, by rule). Focus keeps the SEMANTIC ring (`--field-ring` is color, not focus state)
  *  while still killing the native outline. */
 export const input = style([
   field,

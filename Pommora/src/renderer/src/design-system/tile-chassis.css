@@ -3,7 +3,7 @@
    per-consumer — `transition` is a shorthand, so a shared one would replace a host's own list
    wholesale instead of merging. The border color routes through --tile-border-color so each host's
    own trigger selectors decide WHEN the accent shows (hover, editing, lock states); this file only
-   decides WHAT the border is. Nathan tunes these live. */
+   decides WHAT the border is. These are tuned live. */
 .tile-chassis {
   --tile-border: 1.25px; /* one source — hosts' handle/notch math reads it */
   /* Re-anchored on EVERY chassis: custom properties inherit where border-color wouldn't, so

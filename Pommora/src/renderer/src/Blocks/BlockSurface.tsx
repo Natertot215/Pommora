@@ -75,7 +75,7 @@ function viewPickerItems(
   const collectionItem = (c: CollectionNode): ViewPickerItem => ({
     label: c.title,
     icon: entityIcon('collection', c.icon, defaultIcons),
-    // The collection's own views sit ABOVE its Sets (Nathan's call); + Custom stays the pinned footer.
+    // The collection's own views sit ABOVE its Sets (a deliberate ordering); + Custom stays the pinned footer.
     submenu: [
       ...containerViews(c),
       ...c.sets.map((s) => ({

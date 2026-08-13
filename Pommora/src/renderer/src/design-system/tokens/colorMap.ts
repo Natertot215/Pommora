@@ -13,7 +13,7 @@ export function chipColorFor(color: string | undefined): ChipColorName {
 }
 
 // User-facing display names that DON'T match the palette key. The on-disk key is unchanged — this is
-// display only. `lightBlue` reads as "Cobalt" (Nathan's term); everything else Title-cases its key.
+// display only. `lightBlue` reads as "Cobalt" (the chosen term); everything else Title-cases its key.
 const COLOR_LABELS: Partial<Record<ChipColorName, string>> = { lightBlue: 'Cobalt' }
 
 export function colorLabel(name: ChipColorName): string {

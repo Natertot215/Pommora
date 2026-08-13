@@ -1251,7 +1251,7 @@ serveBridge(
         return id ? ok({ id }) : fail('not-found', 'No such tile.')
       },
     },
-    // Delete keeps the native confirm (Nathan's call) — the in-app menu asks main first.
+    // Delete keeps the native confirm (deliberate) — the in-app menu asks main first.
     'blocks:confirmRemove': {
       kind: 'window',
       fn: async (win: BrowserWindow | null): Promise<boolean> => {
