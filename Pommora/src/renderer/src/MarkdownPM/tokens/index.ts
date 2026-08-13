@@ -34,6 +34,15 @@ export interface Token {
   markerRanges: [number, number][]
 }
 
+/** What a `link` token's `( )` holds, still encoded. Both producers close a link with `](target)`,
+ *  and the three surfaces that resolve one used to re-derive this from a different span each — so a
+ *  target read for colouring could drift from the one read for the click, which is the disagreement
+ *  the shared resolver downstream exists to prevent. */
+export function linkTarget(text: string, tk: Token): string {
+  const [, close] = tk.markerRanges
+  return text.slice(close[0] + 2, close[1] - 1)
+}
+
 /** Re-base a token onto absolute document offsets. Every span is listed rather than spread, so a
  *  field added to `Token` and forgotten here fails the parity test instead of rendering wrongly. */
 export function shiftToken(tk: Token, by: number): Token {
@@ -200,15 +209,16 @@ export function tokenize(text: string): Token[] {
     open: 3,
     close: 2,
   })
-  const scanned = wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))
-  const asLink = new Map(
-    scanned.flatMap((w) => {
-      const link = parenthesisedWikiLink(text, w)
-      return link ? [[w, link] as const] : []
-    }),
-  )
-  const wikis = scanned.filter((w) => !asLink.has(w))
-  const parenLinks = [...asLink.values()]
+  // Each scanned wikilink is either a connection or the markdown link it should have been.
+  const wikis: Token[] = []
+  const parenLinks: Token[] = []
+  for (const w of wikiLinkTokens(text, inCode).filter(notOverlapping([...embeds, ...code]))) {
+    // The wikilink itself was already cleared of code, but reclassifying extends its span over the
+    // parens — which is new ground, and code claimed first there as it does everywhere else.
+    const asLink = parenthesisedWikiLink(text, w)
+    if (asLink && notOverlapping([...embeds, ...code])(asLink)) parenLinks.push(asLink)
+    else wikis.push(w)
+  }
   const links = [
     ...parenLinks,
     ...scan({

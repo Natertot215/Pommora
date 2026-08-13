@@ -9,7 +9,7 @@ import {
 } from '@codemirror/view'
 import type { Extension, Range } from '@codemirror/state'
 import { chipBoxGeometry } from '../../design-system/tokens'
-import { tokenize, activeTokenIndices, shiftToken, type Token } from '../tokens'
+import { tokenize, activeTokenIndices, linkTarget, shiftToken, type Token } from '../tokens'
 import { docLineIntentsOf, docScan, docSpanTokens, docString } from './docCache'
 import { claimedEmbeds } from './embedRanges'
 import { resolutionNudge } from './embedWidget'
@@ -250,7 +250,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
     if (tk.kind !== 'link') return
     const [open, close] = tk.markerRanges // `[`  and  `](url)`
     const bracketEnd = close[0] + 1 // the `]`
-    const target = resolveMdTarget(conn, text.slice(bracketEnd + 1, close[1] - 1))
+    const target = resolveMdTarget(conn, linkTarget(text, tk))
     const valid = target.kind !== 'invalid'
     const isActive = active.has(i)
     ranges.push(
