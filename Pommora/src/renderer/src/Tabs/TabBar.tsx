@@ -55,7 +55,7 @@ export function TabBar(): React.JSX.Element | null {
   )
 
   // Blank ONLY for the pure empty state (a lone NavView, no pins); otherwise the bar shows so the +
-  // stays reachable — even at a single real tab (Nathan's call).
+  // stays reachable — even at a single real tab (deliberate).
   if (pinnedEntries.length === 0 && unpinnedEntries.every((e) => e.tab.target.kind === 'newtab'))
     return null
   return <TabBarBody pinnedEntries={pinnedEntries} unpinnedEntries={unpinnedEntries} />
@@ -246,6 +246,7 @@ function TabBarBody({
       <button
         type="button"
         className="tab-plus"
+        data-create
         aria-label="New Tab"
         title="New Tab"
         onClick={openNewTab}

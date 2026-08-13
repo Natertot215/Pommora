@@ -31,15 +31,19 @@ export function Chip({
   shape = 'pill',
   icon,
   onRemove,
+  className,
 }: {
   color: ChipColorName
   label: string
   shape?: ChipShape
   icon?: ReactNode
   onRemove?: () => void
+  /** Trailing so a caller can wear a state over the chip's own chrome — the ghost dim, for one —
+   *  without a second element between the shape and its label. */
+  className?: string
 }): React.JSX.Element {
   return (
-    <span className={cx(SHAPE[shape], chipColor[color], onRemove && chipRemovable)}>
+    <span className={cx(SHAPE[shape], chipColor[color], onRemove && chipRemovable, className)}>
       {onRemove ? <ChipRemoveButton onRemove={onRemove} /> : null}
       {icon}
       <ChipLabel label={label} removable={!!onRemove} />

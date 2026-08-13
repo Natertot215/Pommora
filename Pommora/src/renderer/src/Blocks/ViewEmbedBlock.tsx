@@ -460,6 +460,7 @@ export function ViewEmbedBlock({
       icon="plus"
       size={12}
       box={20}
+      create
       ariaLabel="New View"
       disabled={locked}
       className={locked ? rowDisabled : undefined}

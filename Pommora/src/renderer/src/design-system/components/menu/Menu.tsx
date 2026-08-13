@@ -163,12 +163,15 @@ export const AccessoryButton = forwardRef<
     box?: number
     onClick: () => void
     className?: string
+    /** Whether pressing this makes something that isn't there yet — a creator takes the finger
+     *  cursor, where the rest of the app's chrome keeps the arrow. */
+    create?: boolean
     /** A feature that hasn't landed — inert and dimmed, never a live button wired to a no-op
      *  (which reads as broken rather than pending). */
     disabled?: boolean
   }
 >(function AccessoryButton(
-  { icon, size, ariaLabel, box, onClick, className, disabled = false },
+  { icon, size, ariaLabel, box, onClick, className, create = false, disabled = false },
   ref,
 ): React.JSX.Element {
   return (
@@ -177,6 +180,7 @@ export const AccessoryButton = forwardRef<
       type="button"
       disabled={disabled}
       className={cx(s.accessoryButton, className)}
+      data-create={create || undefined}
       style={box ? ({ '--accessory-box': `${box}px` } as CSSProperties) : undefined}
       aria-label={ariaLabel}
       onClick={(e) => {

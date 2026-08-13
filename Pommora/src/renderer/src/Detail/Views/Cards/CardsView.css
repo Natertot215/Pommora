@@ -112,14 +112,10 @@
 }
 
 /* The hover ghost card — the card's own skeleton (thumb placeholder, divider, title row,
-   property labels) worn at the inactive dim, its outer border heavier than a card's so the
-   ghost reads. */
-.ghost-card {
-  cursor: pointer;
-}
+   property labels), its outer border heavier than a card's so the ghost reads. The dim rides the
+   body rather than the card, so the heavier outline holds while the skeleton inside it lifts. */
 .ghost-card .page-card-body {
   border-width: 2px; /* KNOB */
-  opacity: var(--state-inactive);
   animation: ghost-card-in var(--duration-base) var(--ease-standard);
 }
 @keyframes ghost-card-in {

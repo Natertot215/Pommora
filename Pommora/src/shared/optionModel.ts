@@ -14,8 +14,17 @@ export function fallbackTitle(type: PropertyType, groupLabel?: string): string {
 
 /** Append a new option whose value and label both equal the title. No color — it renders as the
  *  neutral default (grey-default) until recolored. */
-export function addOption(options: Option[], title: string, groupId?: string): Option[] {
-  return [...options, { value: title, label: title, ...(groupId ? { group_id: groupId } : {}) }]
+export function addOption(
+  options: Option[],
+  title: string,
+  groupId?: string,
+  /** Where the new option lands. Omitted appends — the ghost slot passes the seat it was standing in,
+   *  so an option created off a chip takes that chip's place in the order rather than the list's end. */
+  atIndex?: number,
+): Option[] {
+  const next = { value: title, label: title, ...(groupId ? { group_id: groupId } : {}) }
+  const i = atIndex ?? options.length
+  return [...options.slice(0, i), next, ...options.slice(i)]
 }
 
 // ── Status: the same transforms, applied to one group's options within the StatusGroup[] array ──
@@ -26,12 +35,15 @@ export function addStatusOption(
   groups: StatusGroup[],
   groupId: string,
   title: string,
+  /** Where in the group the new option lands; omitted appends. */
+  atIndex?: number,
 ): StatusGroup[] {
-  return groups.map((g) =>
-    g.id === groupId
-      ? { ...g, options: [...g.options, { value: title, label: title, group_id: g.id }] }
-      : g,
-  )
+  return groups.map((g) => {
+    if (g.id !== groupId) return g
+    const next = { value: title, label: title, group_id: g.id }
+    const i = atIndex ?? g.options.length
+    return { ...g, options: [...g.options.slice(0, i), next, ...g.options.slice(i)] }
+  })
 }
 
 /** Recolor a status option (by value, wherever it lives). undefined clears the key → the chip falls
