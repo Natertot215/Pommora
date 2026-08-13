@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { linkDomain, normalizeLinkUrl, isValidLink, isHttpLink } from './links'
+import {
+  decodeLinkTarget,
+  encodeLinkTarget,
+  linkDomain,
+  normalizeLinkUrl,
+  isValidLink,
+  isHttpLink,
+  targetTitle,
+} from './links'
 
 describe('linkDomain', () => {
   it('returns the bare host', () => {
@@ -56,5 +64,50 @@ describe('isHttpLink (the title-fetch gate — http(s) only)', () => {
   })
   it('rejects garbage the same as isValidLink', () => {
     expect(isHttpLink('not a url')).toBe(false)
+  })
+})
+
+// The `( )` of a markdown link naming a page. Both halves are shared with main, which runs the same
+// decode inside the rename cascade — a throw there reverts the rename rather than skipping a link.
+describe('the page-target codec', () => {
+  it('round-trips a title through the parens', () => {
+    for (const title of ['Notes', 'Work Notes', 'Atomic Habits (Book)', 'Q3 — Plan', '100% Done']) {
+      expect(decodeLinkTarget(encodeLinkTarget(title))).toBe(title)
+    }
+  })
+
+  // The grammar's target group ends at the first `)`, so an unescaped paren truncates the link and
+  // leaves the rest of the title sitting raw in the line.
+  it('escapes parens, which neither built-in encoder touches', () => {
+    expect(encodeLinkTarget('Atomic Habits (Book)')).toBe('Atomic%20Habits%20%28Book%29')
+    expect(encodeLinkTarget('Atomic Habits (Book)')).not.toContain('(')
+  })
+
+  it('a lone % decodes to itself rather than throwing', () => {
+    expect(decodeLinkTarget('Revenue 50% plan')).toBe('Revenue 50% plan')
+    expect(() => decodeLinkTarget('%')).not.toThrow()
+  })
+})
+
+describe('targetTitle — what a markdown link names', () => {
+  it('reads a bare title, with or without its extension', () => {
+    expect(targetTitle('Notes')).toBe('Notes')
+    expect(targetTitle('Notes.md')).toBe('Notes')
+    expect(targetTitle('Work%20Notes')).toBe('Work Notes')
+  })
+
+  // isValidLink accepts any dotted host, so these two would open a browser and make the pages they
+  // name unreachable if resolution didn't run first.
+  it('a dotted title is still a title', () => {
+    expect(targetTitle('Node.js')).toBe('Node.js')
+    expect(targetTitle('Notes.md')).toBe('Notes')
+  })
+
+  // Without this a URL would reach a page by its last path segment.
+  it('anything addressing the outside names no page', () => {
+    expect(targetTitle('https://example.com/Notes')).toBeNull()
+    expect(targetTitle('example.com/Notes')).toBeNull()
+    expect(targetTitle('mailto:a@b.com')).toBeNull()
+    expect(targetTitle('')).toBeNull()
   })
 })

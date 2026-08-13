@@ -21,8 +21,7 @@ import {
   tokenIntents,
   type WidgetSpec,
 } from '../decorations/intent'
-import type { ConnectionsApi } from '../connections'
-import { isValidLink } from '@shared/links'
+import { resolveMdTarget, type ConnectionsApi } from '../connections'
 
 class HrWidget extends WidgetType {
   eq(): boolean {
@@ -243,20 +242,26 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
     else if (it.kind === 'hide') ranges.push(hideMarker.range(it.from, it.to))
     else ranges.push(Decoration.replace({ widget: widgetFor(it.spec) }).range(it.from, it.to))
   }
-  // External links by static URL validity. Title: valid → md-link, invalid → md-link-invalid (dimmed).
-  // Brackets `[ ]`: always shown dimmed for invalid (the broken-link tell), hidden-until-caret for valid.
+  // Markdown links by what their target turns out to name. A target resolving to a page wears the
+  // connection colour and leads there; a valid URL is md-link; neither is md-link-invalid (dimmed).
+  // Brackets `[ ]`: always shown dimmed for invalid (the broken-link tell), hidden-until-caret otherwise.
   // The `(url)` stays hidden at rest either way; on caret it reveals (valid → italic+underline, invalid → dimmed).
   tokens.forEach((tk, i) => {
     if (tk.kind !== 'link') return
     const [open, close] = tk.markerRanges // `[`  and  `](url)`
     const bracketEnd = close[0] + 1 // the `]`
-    const valid = isValidLink(text.slice(bracketEnd + 1, close[1] - 1))
+    const target = resolveMdTarget(conn, text.slice(bracketEnd + 1, close[1] - 1))
+    const valid = target.kind !== 'invalid'
     const isActive = active.has(i)
     ranges.push(
-      Decoration.mark({ class: valid ? 'md-link' : 'md-link-invalid' }).range(
-        tk.contentRange[0],
-        tk.contentRange[1],
-      ),
+      Decoration.mark({
+        class:
+          target.kind === 'page'
+            ? `md-connection-resolved${isActive ? ' md-connection-open' : ''}`
+            : valid
+              ? 'md-link'
+              : 'md-link-invalid',
+      }).range(tk.contentRange[0], tk.contentRange[1]),
     )
     const dim = Decoration.mark({ class: 'md-control' })
     if (!valid || isActive) {
