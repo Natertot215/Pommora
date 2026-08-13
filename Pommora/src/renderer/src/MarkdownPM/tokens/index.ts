@@ -224,6 +224,11 @@ export function activeTokenIndices(tokens: Token[], selStart: number, selEnd: nu
       return
     }
     const caret = selStart
+    // A caret resting exactly on a connection's closer leaves it rendered, where bold and italic
+    // would reveal their markers. That position is where finishing one puts you — committing a
+    // page, or pressing Enter on an alias — and the link should read as finished there rather than
+    // springing back into raw syntax. Every position INSIDE the token still reveals.
+    if (tk.kind === 'wikiLink' && caret === e) return
     if (caret >= s && caret <= e) active.add(i)
   })
   return active

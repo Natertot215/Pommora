@@ -47,8 +47,9 @@ export function applyLinkAction(
 
 /** Enter inside an alias finishes it rather than breaking the line. The picker is bounded to the
  *  title, so nothing else claims this key there and Enter would otherwise split the link in half.
- *  The caret lands past a space for the same reason committing a page does — resting on the closer
- *  keeps the token active, and the link you just named would sit there as raw syntax. */
+ *  The caret lands on the closer and the link reads as finished there — no space is written to put
+ *  distance between them, because the closer is the one caret position that doesn't reveal a
+ *  connection's syntax (see `activeTokenIndices`). */
 export function commitAliasOnEnter(view: EditorView): boolean {
   const sel = view.state.selection.main
   if (!sel.empty) return false
@@ -59,13 +60,7 @@ export function commitAliasOnEnter(view: EditorView): boolean {
     (t) => t.kind === 'wikiLink' && span[0] >= t.range[0] && span[1] <= t.range[1],
   )
   if (!tk) return false
-  const end = line.from + tk.range[1]
-  const pad = view.state.doc.sliceString(end, end + 1) === ' ' ? '' : ' '
-  view.dispatch({
-    changes: pad ? { from: end, to: end, insert: pad } : undefined,
-    selection: { anchor: end + 1 },
-    userEvent: 'input',
-  })
+  focusRange(view, line.from + tk.range[1])
   return true
 }
 

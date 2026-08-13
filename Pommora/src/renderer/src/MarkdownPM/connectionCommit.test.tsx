@@ -39,19 +39,21 @@ async function pickFirst(body: string, caret: number): Promise<{ doc: string; he
   return { doc: view.state.doc.toString(), head: view.state.selection.main.head }
 }
 
-describe('committing a connection leaves the caret off its closer', () => {
+describe('committing a connection leaves it reading as finished', () => {
   // A caret on the closer keeps the token active, which would show the link just picked as raw
   // syntax. The space is what the caret steps over.
-  it('inserts a trailing space and lands past it', async () => {
+  // The closer is the one caret position that leaves a connection rendered, so nothing is written
+  // to move the caret off it — accepting a suggestion adds the link and not a character more.
+  it('writes the link alone and rests the caret on its closer', async () => {
     const { doc, head } = await pickFirst('[[Alp]]', 4)
-    expect(doc).toBe('[[Alpha]] ')
-    expect(head).toBe(10)
+    expect(doc).toBe('[[Alpha]]')
+    expect(head).toBe(9)
   })
 
-  it('steps over an existing space rather than adding a second', async () => {
+  it('leaves the text that follows exactly as it was', async () => {
     const { doc, head } = await pickFirst('[[Alp]] rest', 4)
     expect(doc).toBe('[[Alpha]] rest')
-    expect(head).toBe(10)
+    expect(head).toBe(9)
   })
 })
 
@@ -82,12 +84,12 @@ describe('retargeting an aliased connection obeys the strip setting', () => {
   it('drops the alias by default — the old words describe the old page', async () => {
     useSession.setState({ personalization: {} })
     const { doc } = await pickFirst('[[Alp|the one]]', 4)
-    expect(doc).toBe('[[Alpha]] ')
+    expect(doc).toBe('[[Alpha]]')
   })
 
   it('carries the alias across when the setting is off', async () => {
     useSession.setState({ personalization: { removeTitleOnLinkChange: false } })
     const { doc } = await pickFirst('[[Alp|the one]]', 4)
-    expect(doc).toBe('[[Alpha|the one]] ')
+    expect(doc).toBe('[[Alpha|the one]]')
   })
 })
