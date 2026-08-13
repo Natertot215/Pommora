@@ -55,6 +55,28 @@ describe('committing a connection leaves the caret off its closer', () => {
   })
 })
 
+describe('the picker stands down when it has nothing to add', () => {
+  it('a sole suggestion identical to what is written opens no panel', async () => {
+    const view = await mountEditor({ initialBody: '[[Alpha]]', connections: conn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 4 } })
+    })
+    expect(document.querySelector('.mdpm-ac')).toBeNull()
+  })
+
+  it('but a partial query still opens it', async () => {
+    const view = await mountEditor({ initialBody: '[[Alp]]', connections: conn })
+    vi.spyOn(view, 'coordsAtPos').mockReturnValue(coords)
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 4 } })
+    })
+    expect(document.querySelector('.mdpm-ac')).toBeTruthy()
+  })
+})
+
 // Retargeting replaces the whole token, so the alias is destroyed here unless deliberately carried.
 describe('retargeting an aliased connection obeys the strip setting', () => {
   it('drops the alias by default — the old words describe the old page', async () => {

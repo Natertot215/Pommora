@@ -63,6 +63,18 @@ describe('the connection menu knows its span and its surface', () => {
 
   // PreviewWindow starts read-only and silently drops doc changes, so Rename there would seat a
   // caret and swallow every keystroke.
+  // The native editor menu carries spelling, autocorrect and substitutions. Inside a link's syntax
+  // you're editing prose, so that menu wins rather than being replaced by two link actions.
+  it('stands down inside the syntax, leaving the native menu', async () => {
+    const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 6 } })
+    })
+    await rightClick(view, 6)
+    expect(connMenu).not.toHaveBeenCalled()
+  })
+
   it('withholds it from a read-only surface', async () => {
     const view = await mountEditor({
       initialBody: 'a [[Alpha]] b',

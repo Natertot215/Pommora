@@ -14,7 +14,7 @@ A **Connection** is an inline `[[Title]]` link in a Markdown body pointing to an
 
 ### Syntax + Scope
 
-The parser matches on the title alone, so `[[Title|alias]]` resolves to the same Page while the piped tail renders as plain text beside the styled title. A pipe can't appear in a title — it opens that tail — and the shared name rule rejects it at creation everywhere.
+The parser matches on the title alone, so `[[Title|alias]]` resolves to the same Page while the alias is what the reader sees — the title and its pipe join the hidden marker set, revealed like any other syntax once the caret enters. A pipe can't appear in a title — it opens that tail — and the shared name rule rejects it at creation everywhere.
 
 `![[ ]]` isn't a connection — it's the page-embed syntax (→ [[MarkdownPM]] §Page Embeds), never a link-graph edge — and `{{ }}` renders as written. The rename cascade still reaches it: one sweep rewrites `[[` and `![[` together. Nothing offers a Page its own title and a self-link is dropped, though a hand-typed one navigates normally.
 
@@ -34,7 +34,7 @@ Identity is the title and the body carries no id, so a rename **cascades** — r
 
 ### Rendering
 
-A resolved connection is inline text in the connection color — never a chip — brackets hidden until the caret enters it. Click opens it, routed by the `connectionsOpenInPreview` personalization knob (→ [[ConfigurationPM]]); ⌘-click opens a new tab; hover raises the preview hover card (→ [[PagePreviewPM]]); right-click pops a native menu whose one action is **Open Preview**. Ambiguous links keep the bracket treatment in their muted tone; phantom text renders raw and inert.
+A resolved connection is inline text in the connection color — never a chip — brackets hidden until the caret enters it. Click opens it, routed by the `connectionsOpenInPreview` personalization knob (→ [[ConfigurationPM]]); ⌘-click opens a new tab; hover raises the preview hover card (→ [[PagePreviewPM]]); right-click pops a native menu holding **Open Preview** and, where the surface can take an edit, the two authoring actions — **Add Title** (**Rename** once one exists) and **Edit Link**. Inside a link's own syntax the menu stands down, leaving the native editor menu its spelling and substitution items. Ambiguous links keep the bracket treatment in their muted tone; phantom text renders raw and inert.
 
 ### Autocomplete
 
@@ -47,7 +47,7 @@ Typing inside `[[ ]]` filters Pages nexus-wide by title prefix; an empty query l
 
 ### Prospects
 
-- **Aliases** — the tail of `[[Title|alias]]` parses and survives every rewrite, but nothing renders it as the display text and no surface authors one.
+- **Remembered aliases** — the aliases a Page has worn, offered back while typing a new one and forgettable individually. The on-page syntax and its authoring gestures ship; what waits is the per-Page memory behind them.
 - **Duplicate disambiguation** — id-scoping so a connection to an ambiguous title can pick its target inline.
 - **Backlinks panel** — a surface listing every Page that links to the current one; it rides the reverse lookup a content index would answer, and no index exists (→ [[ArchitecturePM]]).
 - **Wider targets + embeds** — Tasks and Events as targets, heading and block anchors (`#`, `#^`), and transclusion (`![[ ]]`).

@@ -80,7 +80,7 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 1. **Cloud-sync-ready and cross-nexus queryable.** Collections aren't isolated silos — property definitions live nexus-wide, so one shared property id means the same thing in every Collection that assigns it and a single query matches across all of them; any Page or Context can query, link, or embed any Collection's contents regardless of where it sits on disk. The on-disk model maps cleanly onto a cloud database, so sync arrives later as an additive translation rather than a rewrite. A Nexus placed in iCloud Drive, Dropbox, or any synced folder already gets device-to-device sync for free.
 
-2. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read the content, and understand the context of the user's Nexus (Pages, schemas, Contexts, properties) straight from plain files. The bar is convention-aware, not instant to an outsider: a `[[wikilink]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob. The device-local database holds per-machine chrome, and no content.
+2. **Agent-legible files.** External agents — Claude, MCP clients, any tool with filesystem access — read the content, and understand the context of the user's Nexus (Pages, schemas, Contexts, properties) straight from plain files. The bar is convention-aware, not instant to an outsider: a `[[Connection]]` hides a resolver yet reads perfectly to anyone who knows the system. We strongly prefer formats readable without Pommora's running code, and treat relaxing that for a genuine need as a tradeoff to raise — but the firm line holds: no user data is trapped in a binary blob. The device-local database holds per-machine chrome, and no content.
 
 #### Storage Philosophy
 
@@ -91,8 +91,6 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault leaves notes byte-identical until the user edits them.
 
 **The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present — not a hard-locked decision, and open to reconsideration. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from, so the layout itself records where an item lived; no surface browses or restores it yet, which makes putting one back a manual move.
-
-Full on-disk spec → `Features/ArchitecturePM.md`.
 
 #### Pages
 
@@ -160,7 +158,7 @@ Every entity reorders by drag-and-drop, and Pages reparent across the tree. Crea
 
 #### App Shell + Property Surfaces
 
-A three-pane shell: sidebar / main / inspector, both side panes drag-resizable with persisted widths. The inspector is reserved for the **Claude chat** (a frontend to a local CLI, not an API integration); its own design pass is pending. Properties do *not* live there — they live with the content, in a panel attached to the Page.
+A three-pane shell: sidebar / main / inspector, both side panes drag-resizable with persisted widths. The inspector is reserved for future decisions; its own design pass is pending. Properties do *not* live there — they live with the content, in a panel attached to the Page.
 
 Every entity opens under a consistent header. Containers can set an optional **banner** image that bleeds edge-to-edge under the side panes; when set, the title overlays its bottom-leading corner, and the banner and title lock in place while the body scrolls.
 
@@ -170,7 +168,7 @@ The main pane is **multi-tab**: warm, state-preserving toolbar tabs, one view mo
 
 #### First-Launch Experience
 
-On launch Pommora restores the last opened Nexus or opens empty — never a launch modal. The File menu's Open Nexus picks a folder, and a dropped folder opens the same way. Seeding is split by what it costs to be wrong: the Contexts registry seeds on any open that finds none, because a Nexus without one can't mint its first Context; the Tasks and Events folders seed **only** as a folder becomes a Nexus, because re-seeding an established one would recreate folders its owner deleted. Settings and the Homepage config are written into existence by the first write that needs them — a knob flip, a banner — and every read tolerates their absence. Opening a folder that isn't a Nexus runs an idempotent adoption pass that classifies each folder by position and leaves existing notes untouched until edited. No tutorial, no walkthrough wizard.
+On launch Pommora restores the last opened Nexus or opens empty — never a launch modal. The File menu's Open Nexus picks a folder, and a dropped folder opens the same way. Seeding is split by what it costs to be wrong: the Contexts registry seeds on any open that finds none, because a Nexus without one can't mint its first Context; the Tasks and Events folders seed **only** as a folder becomes a Nexus, because re-seeding an established one would recreate folders its owner deleted. Settings and the Homepage config are written into existence by the first write that needs them — a knob flip, a banner — and every read tolerates their absence. Opening a folder that isn't a Nexus runs an idempotent adoption pass that classifies each folder by position and leaves existing notes untouched until edited. 
 
 #### Design System
 

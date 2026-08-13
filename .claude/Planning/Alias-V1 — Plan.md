@@ -498,10 +498,11 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
   - [x] Task 3 — Render the alias · `df8145cd`
   - [x] Task 4 — The other two resolve sites · `caad4287`
   - [x] Gate 1 — simplification `df535320` · review folds `33874b9b`
-- [ ] **Phase 2** — Authoring gestures
-  - [ ] Task 6 — One owner for the hit-test
-  - [ ] Task 7 — The menu carries a span
-  - [ ] Task 8 — Rename and Edit Link
+- [x] **Phase 2** — Authoring gestures · base `19e3bf64`
+  - [x] Task 6 — One owner for the hit-test · `d0b3635f`, `12baba16`, `477f6744`, `d8f3d07f`
+  - [x] Task 7 — The menu carries a span · `8368debb`, `11941b65`
+  - [x] Task 8 — Rename and Edit Link · `8368debb` (gestures), `e067cbb2` (strip, toggle, `]`)
+  - [x] Live-driven, outside the plan · `1c4517ba` (the end-caret flip + commit spacing)
 - [ ] **Phase 3** — Alias memory
   - [ ] Task 9 — Scope and channel
   - [ ] Task 10 — Slice and toggle
@@ -526,6 +527,10 @@ Plan directory `.claude/Planning/` · Spec: the decision log · Explorer: `Explo
 - **Task 2 — the projection became a shared helper rather than one more field.** The plan added `resolveRange` to `visibleInlineTokens`'s literal; `shiftToken` in `tokens/index.ts` re-bases the whole token instead, and the projection calls it. `Token`'s owner now owns its re-basing, so the next span field can't be dropped there at all — and the parity test guards the helper rather than this one field. No later task changes shape.
 - **Gate 1 — three fixes pulled forward, landing in `33874b9b`.** (a) `autocompleteQuery`'s link form is bounded to the title span — **Task 8's first two steps are done**, and its remaining alias work is the commit rule and the two gestures. (b) `TableView`'s cell hover resolved by the span's rendered text, which the arc turned into the alias; `cellStatic` now stamps the resolve key on the span and `TableView` reads it. (c) `resolvedPageAt` returns null for a connection the caret is inside — **part of Task 6**, which still owns the edge-click carve-out and its negative control.
 - **Task 6 — the editing carve-out had to move to `mousedown`, and the test that passed it was driving a sequence the app never runs.** CM seats the caret on mousedown, so a rule reading the live caret in `click` always saw the caret inside whatever was just clicked, and *every* link stopped navigating. A synthetic `click` in jsdom moves no caret, so the suite stayed green through a defect Nathan hit on his first try. The harness now presses, seats the caret, then clicks; re-introducing the live-caret read turns three tests red.
+- **Task 7 absorbed Task 8's caret placements.** A menu seam with no actions behind it is neither observable nor shippable, so `linkEdit.ts` landed with the seam. Task 8 kept the strip, the toggle, and the `]` refusal.
+- **Task 8's toggle UI came forward from Task 10.** Task 8 was to read the personalization key and Task 10 to add its row, which leaves the setting unobservable in between — the exact failure the plan flagged for `commit()`. The key, its coercion, and the Settings → Pages row landed together. Task 10 keeps the store slice.
+- **Three Phase 2 defects were invisible to the suite, all one shape.** The mousedown caret ordering, the caret seat on a navigating press, and the menu's hover re-entry each passed green tests and failed on Nathan's first try. jsdom dispatches no real pointer sequence and CM seats the caret from coordinates it never produces — so the harness now drives press → seat → click explicitly, and what remains genuinely unobservable is commented as such rather than covered by a test that would pass without it.
+- **A test must not restate a knob.** The hover tests hard-coded 450ms; tuning `CONN_HOVER_INTENT_MS` turned three of them red for no behavioural reason. The constant is exported and the waits derive from it.
 - **Task 7 — the `ConnectionsApi` control reads 59, not the planned 53.** Entirely the three test files this arc added, each importing it twice. It is a control, so its job is to prove the search ran; `showConnectionMenu` re-derives at exactly 9 and the four hosts are unchanged.
 - **A token-level census cannot find a DOM-level reader.** `rg contentRange` ruled Phase 1 complete while `TableView.tsx:114` read the resolve key out of `el.textContent`. The census that finds this class is on the rendered *class name* (`rg md-connection`), which returns exactly two non-test consumers. Any later task that changes what a span displays owes both censuses.
 - **Task 2 — the `contentRange` census refines to one wikiLink toggle, not two.** `format.ts` holds two `contentRange` readers, but `toggleLink` reads `link` tokens whose shape doesn't move; only `toggleConnection` sees a wikiLink. Three further readers exist and are all provably unaffected: `decorations/intent.ts` returns early for `wikiLink`, `formatState.ts` tests connections on `range`, and `format.ts:68`'s `kind` excludes connection by type. The five sites Task 2 and Task 4 edit are unchanged.
