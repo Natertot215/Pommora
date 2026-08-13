@@ -2,6 +2,7 @@
 
 | Date | ID | Entry |
 | ------------------- | ---------- | ---------------------------------------------------- |
+| 08-12-2026 | PM-098 | Page Alias' V1 |
 | 08-11-2026 → 08-12 | PM-097 | CardView Creation Affordance |
 | 08-11-2026 | PM-096 | TableView Creation Affordance |
 | 08-10-2026 | PM-095 | Documentation Normalization |
@@ -100,6 +101,18 @@
 | 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer |
 | 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot |
+
+#### PM-098 || Page Alias' V1
+**DATE:** 08-12-2026
+
+A connection's visible words became the author's to choose. `[[Title|Alias]]` renders as its alias while resolving on the title; **Add Title**, **Rename**, and **Edit Link** author and repoint one from the connection menu; a page remembers every name it has been given in `nexus.db` and offers them back with a hover-revealed × that forgets one for good; and `[Title](Page)` reaches a page beside the wikilink form, percent-encoded on disk and swept by the same rename. Also, typing in a table cell stopped re-measuring the whole table block on every keystroke — the rebuild that only the resting cells need now waits until the cell demotes.
+
+**Resolution:** One grammar answers for both syntaxes. `linkSpans` computes the wikilink's offsets and `linkAt` answers which link holds a position, replacing four hand-rolled copies of each; the markdown grammar moved into `shared` so the renderer and the rename cascade read one definition, since a link the renderer draws must be one the rewriter can find. A markdown target resolves through a single resolver behind the click path and both renderers, and page resolution runs before the URL gate — `isValidLink` accepts any dotted host, so `Notes.md` and `Node.js` would otherwise become unreachable. The target codec escapes parens and the colon on top of `encodeURI`, because the grammar's target ends at the first `)` and a raw colon is how a target declares itself an address; its decode never throws, since a lone `%` is ordinary to type and a CodeMirror plugin that throws is dead for the session. The cascade gained the third syntax with a syntax-shaped prefilter, and learned that a GFM cell escapes the pipe that delimits an alias — a connection given its own words inside a table was reaching the rewriter as a title ending in a backslash, matching nothing, and rotting silently at the next rename. The alias memory itself is keyed by PageID, travels to a duplicated page, and its loss costs a suggestion rather than a link.
+
+**Styling:** A connection says what it is as it is written. Typing one takes the connection colour from its first character rather than reading as prose until a title happens to match, and clicking into one that names no page leaves it unresolved — the distinction is the gesture, which the transaction reports, since no offset can carry it. The same rule seats a finished link: accepting a page or pressing Return on an alias leaves the caret on the closer with the link still rendered, where clicking that spot reveals the syntax as every other construct does. Revealed, a link wears a `link-2` glyph in front of its target, traced from Lucide's geometry into a mask token so it takes the colour that reports resolution; the title keeps the connection colour when it is what the reader sees and takes the control colour when an alias stands in its place. A markdown link splits the same way — an external target keeps the URL treatment, an internal one takes the glyph. Table cells render, preview, and navigate a connection as a body does, and the picker they open survives being clicked.
+
+- **Commits:** `bab3bf9f..44b24125`
+- **Diff:** Net +767 | +979 / −212 (tests +2188 / −23 ride alongside)
 
 #### PM-097 || CardView Creation Affordance
 **DATE:** 08-11-2026 → 08-12

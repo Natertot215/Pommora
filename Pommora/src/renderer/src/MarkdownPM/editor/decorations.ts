@@ -45,6 +45,13 @@ class ConnGlyphWidget extends WidgetType {
   }
 }
 
+/** The glyph introducing a revealed target, wherever the syntax puts one. `side: -1` binds it to the
+ *  left of the position, so the caret sits AFTER it — the glyph introduces the target rather than
+ *  interrupting the first keystroke. */
+function connGlyph(status: LinkStatus, at: number): Range<Decoration> {
+  return Decoration.widget({ widget: new ConnGlyphWidget(status), side: -1 }).range(at)
+}
+
 class HrWidget extends WidgetType {
   eq(): boolean {
     return true
@@ -277,15 +284,17 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
     const bracketEnd = close[0] + 1 // the `]`
     const target = resolveMdTarget(conn, linkTarget(text, tk))
     const valid = target.kind !== 'invalid'
+    // What the target turns out to name decides both the words' colour and, once revealed, the
+    // treatment of the target itself — so it is decided once here.
+    const internal = target.kind === 'page'
     const isActive = active.has(i)
     ranges.push(
       Decoration.mark({
-        class:
-          target.kind === 'page'
-            ? `md-connection-resolved${isActive ? ' md-connection-open' : ''}`
-            : valid
-              ? 'md-link'
-              : 'md-link-invalid',
+        class: internal
+          ? `md-connection-resolved${isActive ? ' md-connection-open' : ''}`
+          : valid
+            ? 'md-link'
+            : 'md-link-invalid',
       }).range(tk.contentRange[0], tk.contentRange[1]),
     )
     const dim = Decoration.mark({ class: 'md-control' })
@@ -296,14 +305,18 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       ranges.push(hideMarker.range(open[0], open[1]))
       ranges.push(hideMarker.range(close[0], bracketEnd))
     }
-    if (isActive)
+    if (isActive) {
+      // The revealed target, treated by what it names. A website reads as a URL; a page reads as a
+      // destination and is introduced by the same glyph a connection wears, since it is one.
       ranges.push(
-        Decoration.mark({ class: valid ? 'md-link-url' : 'md-control' }).range(
-          bracketEnd,
-          close[1],
-        ),
+        Decoration.mark({
+          class: internal ? 'md-conn-target' : valid ? 'md-link-url' : 'md-control',
+        }).range(bracketEnd, close[1]),
       ) // (url)
-    else ranges.push(hideMarker.range(bracketEnd, close[1]))
+      if (internal) ranges.push(connGlyph('resolved', bracketEnd + 1))
+    } else {
+      ranges.push(hideMarker.range(bracketEnd, close[1]))
+    }
   })
   if (conn) {
     tokens.forEach((tk, i) => {
@@ -322,11 +335,11 @@ function build(view: EditorView, conn: ConnectionsApi | undefined): DecorationSe
       // the link glyph, which is the thing that reports whether it resolves — so this follows the
       // PIPE rather than waiting on a title that happens to match something. Typing an alias for a
       // page that doesn't exist yet should still look like writing a link.
-      if (open && pipe) {
-        ranges.push(
-          Decoration.widget({ widget: new ConnGlyphWidget(status), side: 1 }).range(tk.range[0] + 2),
-        )
-        ranges.push(Decoration.mark({ class: 'md-conn-target' }).range(pipe[0], pipe[1]))
+      if (open && (pipe || status === 'resolved')) {
+        ranges.push(connGlyph(status, tk.range[0] + 2))
+        // Only where an alias took the title's place does the title stop being what's shown and
+        // become a destination. Standing on its own, it IS the link's words and keeps their colour.
+        if (pipe) ranges.push(Decoration.mark({ class: 'md-conn-target' }).range(pipe[0], pipe[1]))
       }
       if (status === 'phantom') {
         // A connection that names no page stays raw `[[Foo]]` — brackets visible and inert — and
