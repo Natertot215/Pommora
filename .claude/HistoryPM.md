@@ -1,115 +1,115 @@
 #### Pommora History Index
 
-| Date | ID | Entry |
-| ------------------- | ---------- | ---------------------------------------------------- |
-| 08-12-2026 | PM-098 | Page Alias' V1 |
-| 08-11-2026 → 08-12 | PM-097 | CardView Creation Affordance |
-| 08-11-2026 | PM-096 | TableView Creation Affordance |
-| 08-10-2026 | PM-095 | Documentation Normalization |
-| 08-10-2026 | PM-094 | One Owner Per Repeated Value |
-| 08-10-2026 | PM-093 | The Token Atlas |
-| 08-10-2026 | PM-092 | One Grip Menu, And The List's Type |
-| 08-10-2026 | PM-091 | CSS Token Organization |
-| 08-09-2026 → 08-10 | PM-090 | The Drag Layer Converges On One Skeleton |
-| 08-08-2026 | PM-089 | The Write Path Converges On One Lock |
-| 08-08-2026 | PM-088 | Dropdown Shell & Menu Consolidation |
-| 08-07-2026 → 08-08 | PM-087 | One Shared Pass Over Fenced Code |
-| 08-08-2026 | PM-086 | The Page Outline |
-| 08-06-2026 → 08-07 | PM-085 | The PageMenu And The In-App Picker |
-| 08-06-2026 | PM-084 | Pointer Handler Logic Unification |
-| 08-06-2026 | PM-083 | Table Geometry And The Marker Rules |
-| 08-05-2026 | PM-082 | The Connection Hover Card |
-| 08-04-2026 → 08-05 | PM-081 | Four Consolidations Off The Debt Ledger |
-| 08-04-2026 | PM-080 | Table Border Append Strips |
-| 08-04-2026 | PM-079 | Type-Specific Codeblocks |
-| 08-03-2026 → 08-04 | PM-078 | Embedded Pages |
-| 08-03-2026 | PM-077 | Display Math And List Wrapping |
-| 08-02-2026 | PM-076 | Hidden Groups |
-| 08-01-2026 | PM-075 | The NexusRecord |
-| 07-31-2026 | PM-074 | Identity Goes Kind-First |
-| 07-30-2026 | PM-073 | Band Clearance Moves Into The Shared Chrome |
-| 07-30-2026 | PM-072 | ActionBand And The Per-View Color |
-| 07-30-2026 | PM-071 | The Tree Index |
-| 07-30-2026 | PM-070 | The Bridge Map |
-| 07-30-2026 | PM-069 | One Fence Scan For The Editor Chrome |
-| 07-29-2026 → 07-30 | PM-068 | The Swift Layer Out, Navigation On One Contract |
-| 07-29-2026 | PM-067 | Sidecar Writes Take One Strict Primitive |
-| 07-28-2026 → 07-29 | PM-066 | Property Values Take Name-Keyed Frontmatter |
-| 07-29-2026 | PM-065 | One Source For The Spectrum |
-| 07-28-2026 | PM-064 | Operational State Leaves The Filesystem |
-| 07-27-2026 → 07-28 | PM-063 | One Owner Per IPC Shape |
-| 07-27-2026 | PM-062 | The Feature Docs Corrected Against The Code |
-| 07-27-2026 | PM-061 | The tierN Compatibility Surface Comes Out |
-| 07-26-2026 → 07-27 | PM-060 | The FilterPane Finally Returns |
-| 07-25-2026 | PM-059 | Lint And Accessibility Reach Clean |
-| 07-25-2026 | PM-058 | The Settings Window And Four Dangling References |
-| 07-25-2026 | PM-057 | PreviewPane Absorbs Both Floating Windows |
-| 07-22-2026 → 07-23 | PM-056 | Contexts And Spaces Replace The Three Tiers |
-| 07-20-2026 → 07-21 | PM-055 | One Vault Walk Per Structural Mutation |
-| 07-18-2026 → 07-20 | PM-054 | CardView — The First v0.6.0 Renderer |
-| 07-17-2026 | PM-053 | Subfield And Scan-Promote Share One Surface |
-| 07-17-2026 | PM-052 | MenuBottomRow Owns Its Divider |
-| 07-16-2026 → 07-17 | PM-051 | Page Previews — The Floating Tabbed Window |
-| 07-16-2026 | PM-050 | Biome Settles And The Repo Converges |
-| 07-15-2026 → 07-16 | PM-049 | Multi-Tab Nexus — Warm Toolbar Tabs |
-| 07-15-2026 | PM-048 | Pins, Thumbnails, And The NavGallery |
-| 07-14-2026 | PM-047 | The Navigation Surface |
-| 07-13-2026 → 07-14 | PM-046 | Every Drag's Edge-Scroll Onto One Loop |
-| 07-13-2026 | PM-045 | Table Hide Borders And The Date Clear |
-| 07-10-2026 → 07-13 | PM-044 | SurfacePM — The Block Surface |
-| 07-09-2026 → 07-10 | PM-043 | The Filter Engine Ships, The Pane Is Pulled |
-| 07-09-2026 | PM-042 | The Table Sorting Pane |
-| 07-08-2026 → 07-09 | PM-041 | The Sidebar Ribbon And Its Modes |
-| 07-09-2026 | PM-040 | TableView Grouping Pane |
-| 07-08-2026 | PM-039 | The Icon Picker |
-| 07-06-2026 → 07-07 | PM-038 | The Per-Type Property Editors |
-| 07-06-2026 | PM-037 | Multi-View Scaffolding And The Type Glyphs |
-| 07-05-2026 → 07-06 | PM-036 | The Watcher Walk Goes mtime-Gated |
-| 07-05-2026 | PM-035 | The Swift Build Is Archived |
-| 07-04-2026 → 07-05 | PM-034 | The Link Property, Personalization, And The Outliner |
-| 07-04-2026 | PM-033 | Mobile Future-Proofing For A Capacitor Port |
-| 07-04-2026 | PM-032 | One Lock For Every Page Write |
-| 07-03-2026 | PM-031 | The Property Option Editors |
-| 07-03-2026 | PM-030 | The Visibility Pane |
-| 07-02-2026 | PM-029 | The Live Showcase And Chip Shape Primitives |
-| 07-02-2026 | PM-028 | PommoraIcons — The Tabler Migration And Its Revert |
-| 07-02-2026 | PM-027 | The ViewPane Properties Flow |
-| 07-02-2026 | PM-026 | The CalendarPicker |
-| 07-02-2026 | PM-025 | Banner Icons And The Notched Pane |
-| 07-02-2026 | PM-024 | The Chip Hover-× Melt |
-| 07-02-2026 | PM-023 | The Hot Paths And The Inspector Teardown |
-| 07-02-2026 | PM-022 | Group Bands Become Draggable |
-| 07-01-2026 | PM-021 | Tables Interactive — Cells, Styles, And Overflow |
-| 07-01-2026 | PM-020 | MarkdownPM Hardened Across Every Module |
-| 07-01-2026 | PM-019 | Property Definitions Go Nexus-Wide |
-| 06-30-2026 → 07-01 | PM-018 | The Table Grid Rewrite And The Sidebar Rows |
-| 06-29-2026 → 06-30 | PM-017 | The Table Renderer Arrives |
-| 06-27-2026 → 06-29 | PM-016 | The View Settings Dropdown Shell |
-| 06-27-2026 → 06-29 | PM-015 | MarkdownPM Block Drag |
-| 06-27-2026 → 06-28 | PM-014 | The SavedView Engine |
-| 06-27-2026 | PM-013 | Callouts |
-| 06-26-2026 | PM-012 | The Drawn Caret, List Drag, And Back/Forward |
-| 06-25-2026 → 06-26 | PM-011 | Window Chrome — Toolbar, Inspector, Subfield |
-| 06-24-2026 → 06-25 | PM-010 | The Two-Tier Collapse Reaches React |
-| 06-22-2026 → 06-23 | PM-009 | GFM Tables Inside The Editor |
-| 06-20-2026 → 06-22 | PM-008 | MarkdownPM — The Dynamic-Syntax Editor |
-| 06-19-2026 | PM-007 | Sidebar Drag Adopted, And The First Container Views |
-| 06-18-2026 | PM-006 | PommoraDND, The Showcase, And The Primitive Layer |
-| 06-17-2026 | PM-005 | CSS Frost, Window Chrome, And The Live Watcher |
-| 06-16-2026 | PM-004 | One Repo, One Main |
-| 06-15-2026 | PM-003 | The Design System Is Founded |
-| 06-14-2026 → 06-15 | PM-002 | The Headless Data Layer |
-| 06-14-2026 | PM-001 | Genesis — The Walking Skeleton |
-| 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot |
+| Date                    | ID     | Entry                                                |
+| ----------------------- | ------ | ---------------------------------------------------- |
+| 08-12-2026              | PM-098 | Page Alias' V1                                       |
+| 08-11-2026 → 08-12      | PM-097 | CardView Creation Affordance                         |
+| 08-11-2026              | PM-096 | TableView Creation Affordance                        |
+| 08-10-2026              | PM-095 | Documentation Normalization                          |
+| 08-10-2026              | PM-094 | One Owner Per Repeated Value                         |
+| 08-10-2026              | PM-093 | The Token Atlas                                      |
+| 08-10-2026              | PM-092 | One Grip Menu, And The List's Type                   |
+| 08-10-2026              | PM-091 | CSS Token Organization                               |
+| 08-09-2026 → 08-10      | PM-090 | The Drag Layer Converges On One Skeleton             |
+| 08-08-2026              | PM-089 | The Write Path Converges On One Lock                 |
+| 08-08-2026              | PM-088 | Dropdown Shell & Menu Consolidation                  |
+| 08-07-2026 → 08-08      | PM-087 | One Shared Pass Over Fenced Code                     |
+| 08-08-2026              | PM-086 | The Page Outline                                     |
+| 08-06-2026 → 08-07      | PM-085 | The PageMenu And The In-App Picker                   |
+| 08-06-2026              | PM-084 | Pointer Handler Logic Unification                    |
+| 08-06-2026              | PM-083 | Table Geometry And The Marker Rules                  |
+| 08-05-2026              | PM-082 | The Connection Hover Card                            |
+| 08-04-2026 → 08-05      | PM-081 | Four Consolidations Off The Debt Ledger              |
+| 08-04-2026              | PM-080 | Table Border Append Strips                           |
+| 08-04-2026              | PM-079 | Type-Specific Codeblocks                             |
+| 08-03-2026 → 08-04      | PM-078 | Embedded Pages                                       |
+| 08-03-2026              | PM-077 | Display Math And List Wrapping                       |
+| 08-02-2026              | PM-076 | Hidden Groups                                        |
+| 08-01-2026              | PM-075 | The NexusRecord                                      |
+| 07-31-2026              | PM-074 | Identity Goes Kind-First                             |
+| 07-30-2026              | PM-073 | Band Clearance Moves Into The Shared Chrome          |
+| 07-30-2026              | PM-072 | ActionBand And The Per-View Color                    |
+| 07-30-2026              | PM-071 | The Tree Index                                       |
+| 07-30-2026              | PM-070 | The Bridge Map                                       |
+| 07-30-2026              | PM-069 | One Fence Scan For The Editor Chrome                 |
+| 07-29-2026 → 07-30      | PM-068 | The Swift Layer Out, Navigation On One Contract      |
+| 07-29-2026              | PM-067 | Sidecar Writes Take One Strict Primitive             |
+| 07-28-2026 → 07-29      | PM-066 | Property Values Take Name-Keyed Frontmatter          |
+| 07-29-2026              | PM-065 | One Source For The Spectrum                          |
+| 07-28-2026              | PM-064 | Operational State Leaves The Filesystem              |
+| 07-27-2026 → 07-28      | PM-063 | One Owner Per IPC Shape                              |
+| 07-27-2026              | PM-062 | The Feature Docs Corrected Against The Code          |
+| 07-27-2026              | PM-061 | The tierN Compatibility Surface Comes Out            |
+| 07-26-2026 → 07-27      | PM-060 | The FilterPane Finally Returns                       |
+| 07-25-2026              | PM-059 | Lint And Accessibility Reach Clean                   |
+| 07-25-2026              | PM-058 | The Settings Window And Four Dangling References     |
+| 07-25-2026              | PM-057 | PreviewPane Absorbs Both Floating Windows            |
+| 07-22-2026 → 07-23      | PM-056 | Contexts And Spaces Replace The Three Tiers          |
+| 07-20-2026 → 07-21      | PM-055 | One Vault Walk Per Structural Mutation               |
+| 07-18-2026 → 07-20      | PM-054 | CardView — The First v0.6.0 Renderer                 |
+| 07-17-2026              | PM-053 | Subfield And Scan-Promote Share One Surface          |
+| 07-17-2026              | PM-052 | MenuBottomRow Owns Its Divider                       |
+| 07-16-2026 → 07-17      | PM-051 | Page Previews — The Floating Tabbed Window           |
+| 07-16-2026              | PM-050 | Biome Settles And The Repo Converges                 |
+| 07-15-2026 → 07-16      | PM-049 | Multi-Tab Nexus — Warm Toolbar Tabs                  |
+| 07-15-2026              | PM-048 | Pins, Thumbnails, And The NavGallery                 |
+| 07-14-2026              | PM-047 | The Navigation Surface                               |
+| 07-13-2026 → 07-14      | PM-046 | Every Drag's Edge-Scroll Onto One Loop               |
+| 07-13-2026              | PM-045 | Table Hide Borders And The Date Clear                |
+| 07-10-2026 → 07-13      | PM-044 | SurfacePM — The Block Surface                        |
+| 07-09-2026 → 07-10      | PM-043 | The Filter Engine Ships, The Pane Is Pulled          |
+| 07-09-2026              | PM-042 | The Table Sorting Pane                               |
+| 07-08-2026 → 07-09      | PM-041 | The Sidebar Ribbon And Its Modes                     |
+| 07-09-2026              | PM-040 | TableView Grouping Pane                              |
+| 07-08-2026              | PM-039 | The Icon Picker                                      |
+| 07-06-2026 → 07-07      | PM-038 | The Per-Type Property Editors                        |
+| 07-06-2026              | PM-037 | Multi-View Scaffolding And The Type Glyphs           |
+| 07-05-2026 → 07-06      | PM-036 | The Watcher Walk Goes mtime-Gated                    |
+| 07-05-2026              | PM-035 | The Swift Build Is Archived                          |
+| 07-04-2026 → 07-05      | PM-034 | The Link Property, Personalization, And The Outliner |
+| 07-04-2026              | PM-033 | Mobile Future-Proofing For A Capacitor Port          |
+| 07-04-2026              | PM-032 | One Lock For Every Page Write                        |
+| 07-03-2026              | PM-031 | The Property Option Editors                          |
+| 07-03-2026              | PM-030 | The Visibility Pane                                  |
+| 07-02-2026              | PM-029 | The Live Showcase And Chip Shape Primitives          |
+| 07-02-2026              | PM-028 | PommoraIcons — The Tabler Migration And Its Revert   |
+| 07-02-2026              | PM-027 | The ViewPane Properties Flow                         |
+| 07-02-2026              | PM-026 | The CalendarPicker                                   |
+| 07-02-2026              | PM-025 | Banner Icons And The Notched Pane                    |
+| 07-02-2026              | PM-024 | The Chip Hover-× Melt                                |
+| 07-02-2026              | PM-023 | The Hot Paths And The Inspector Teardown             |
+| 07-02-2026              | PM-022 | Group Bands Become Draggable                         |
+| 07-01-2026              | PM-021 | Tables Interactive — Cells, Styles, And Overflow     |
+| 07-01-2026              | PM-020 | MarkdownPM Hardened Across Every Module              |
+| 07-01-2026              | PM-019 | Property Definitions Go Nexus-Wide                   |
+| 06-30-2026 → 07-01      | PM-018 | The Table Grid Rewrite And The Sidebar Rows          |
+| 06-29-2026 → 06-30      | PM-017 | The Table Renderer Arrives                           |
+| 06-27-2026 → 06-29      | PM-016 | The View Settings Dropdown Shell                     |
+| 06-27-2026 → 06-29      | PM-015 | MarkdownPM Block Drag                                |
+| 06-27-2026 → 06-28      | PM-014 | The SavedView Engine                                 |
+| 06-27-2026              | PM-013 | Callouts                                             |
+| 06-26-2026              | PM-012 | The Drawn Caret, List Drag, And Back/Forward         |
+| 06-25-2026 → 06-26      | PM-011 | Window Chrome — Toolbar, Inspector, Subfield         |
+| 06-24-2026 → 06-25      | PM-010 | The Two-Tier Collapse Reaches React                  |
+| 06-22-2026 → 06-23      | PM-009 | GFM Tables Inside The Editor                         |
+| 06-20-2026 → 06-22      | PM-008 | MarkdownPM — The Dynamic-Syntax Editor               |
+| 06-19-2026              | PM-007 | Sidebar Drag Adopted, And The First Container Views  |
+| 06-18-2026              | PM-006 | PommoraDND, The Showcase, And The Primitive Layer    |
+| 06-17-2026              | PM-005 | CSS Frost, Window Chrome, And The Live Watcher       |
+| 06-16-2026              | PM-004 | One Repo, One Main                                   |
+| 06-15-2026              | PM-003 | The Design System Is Founded                         |
+| 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
+| 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
+| 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
 
 #### PM-098 || Page Alias' V1
 **DATE:** 08-12-2026
 
-A connection's visible words became the author's to choose. `[[Title|Alias]]` renders as its alias while resolving on the title; **Add Title**, **Rename**, and **Edit Link** author and repoint one from the connection menu; a page remembers every name it has been given in `nexus.db` and offers them back with a hover-revealed × that forgets one for good; and `[Title](Page)` reaches a page beside the wikilink form, percent-encoded on disk and swept by the same rename. Also, typing in a table cell stopped re-measuring the whole table block on every keystroke — the rebuild that only the resting cells need now waits until the cell demotes.
+A connection's visible words became the author's to choose. `[[Title|Alias]]` renders as its alias while resolving on the title; **Add Title**, **Rename**, and **Edit Link** author and repoint one from the connection menu; a page remembers every name it has been given in `nexus.db` and offers them back with a hover-revealed × that forgets one for good; and `[Title](Page)` reaches a page beside the connection form, percent-encoded on disk and swept by the same rename. Also, typing in a table cell stopped re-measuring the whole table block on every keystroke — the rebuild that only the resting cells need now waits until the cell demotes.
 
-**Resolution:** One grammar answers for both syntaxes. `linkSpans` computes the wikilink's offsets and `linkAt` answers which link holds a position, replacing four hand-rolled copies of each; the markdown grammar moved into `shared` so the renderer and the rename cascade read one definition, since a link the renderer draws must be one the rewriter can find. A markdown target resolves through a single resolver behind the click path and both renderers, and page resolution runs before the URL gate — `isValidLink` accepts any dotted host, so `Notes.md` and `Node.js` would otherwise become unreachable. The target codec escapes parens and the colon on top of `encodeURI`, because the grammar's target ends at the first `)` and a raw colon is how a target declares itself an address; its decode never throws, since a lone `%` is ordinary to type and a CodeMirror plugin that throws is dead for the session. The cascade gained the third syntax with a syntax-shaped prefilter, and learned that a GFM cell escapes the pipe that delimits an alias — a connection given its own words inside a table was reaching the rewriter as a title ending in a backslash, matching nothing, and rotting silently at the next rename. The alias memory itself is keyed by PageID, travels to a duplicated page, and its loss costs a suggestion rather than a link.
+**Resolution:** One grammar answers for both syntaxes. `linkSpans` computes the connection’s offsets and `linkAt` answers which link holds a position, replacing four hand-rolled copies of each; the markdown grammar moved into `shared` so the renderer and the rename cascade read one definition, since a link the renderer draws must be one the rewriter can find. A markdown target resolves through a single resolver behind the click path and both renderers, and page resolution runs before the URL gate — `isValidLink` accepts any dotted host, so `Notes.md` and `Node.js` would otherwise become unreachable. The target codec escapes parens and the colon on top of `encodeURI`, because the grammar's target ends at the first `)` and a raw colon is how a target declares itself an address; its decode never throws, since a lone `%` is ordinary to type and a CodeMirror plugin that throws is dead for the session. The cascade gained the third syntax with a syntax-shaped prefilter, and learned that a GFM cell escapes the pipe that delimits an alias — the alias memory itself is keyed by PageID.
 
-**Styling:** A connection says what it is as it is written. Typing one takes the connection colour from its first character rather than reading as prose until a title happens to match, and clicking into one that names no page leaves it unresolved — the distinction is the gesture, which the transaction reports, since no offset can carry it. The same rule seats a finished link: accepting a page or pressing Return on an alias leaves the caret on the closer with the link still rendered, where clicking that spot reveals the syntax as every other construct does. Revealed, a link wears a `link-2` glyph in front of its target, traced from Lucide's geometry into a mask token so it takes the colour that reports resolution; the title keeps the connection colour when it is what the reader sees and takes the control colour when an alias stands in its place. A markdown link splits the same way — an external target keeps the URL treatment, an internal one takes the glyph. Table cells render, preview, and navigate a connection as a body does, and the picker they open survives being clicked.
+**Styling:** A connection says what it is as it is written. Typing one takes the connection color from its first character rather than reading as prose until a title happens to match, and clicking into one that names no page leaves it unresolved — the distinction is the gesture, which the transaction reports, since no offset can carry it. The same rule seats a finished link: accepting a page or pressing Return on an alias leaves the caret on the closer with the link still rendered, where clicking that spot reveals the syntax as every other construct does. Revealed, a link wears a `link-2` glyph in front of its target, traced from Lucide's geometry into a mask token so it takes the color that reports resolution; the title keeps the connection color when it is what the reader sees and takes the control color when an alias stands in its place. A markdown link splits the same way — an external target keeps the URL treatment, an internal one takes the glyph. 
 
 - **Commits:** `bab3bf9f..44b24125`
 - **Diff:** Net +767 | +979 / −212 (tests +2188 / −23 ride alongside)
@@ -117,7 +117,7 @@ A connection's visible words became the author's to choose. `[[Title|Alias]]` re
 #### PM-097 || CardView Creation Affordance
 **DATE:** 08-11-2026 → 08-12
 
-**One Home Twice Over:** The creation wiring and the hover-ghost machinery each collapsed into a single hook the table refit onto — `useViewCreation` owns seeds, order writes, and the create-then-name completion for every renderer; `useGhostAnchor` owns dwell, grace, suppression, the mid-exit reversal, and a pointerdown stand-down that clears any ghost before a drag can freeze rects over a grid it still occupies. Cards consumes both: the band "+" creates in its Set, the card menu carries one **New Page** action, and the ghost card grows at the next flow slot as the card's own skeleton — the unloaded-cover placeholder, the image-to-text divider, title row, and the Standard layout's ghosted property labels — its neighbors making room over a dedicated displacement wrapper. The sidebar also joined the ghosted "New Page" pattern, extending at its own sidebar-specific pacing, and main's context-menu popup now resolves on dismissal so native menus hold every ghost down.
+**One Home Twice Over:** The creation wiring and the hover-ghost machinery each collapsed into a single hook the table refit onto — `useViewCreation` owns seeds, order writes, and the create-then-name completion for every renderer; `useGhostAnchor` owns dwell, grace, suppression, the mid-exit reversal, and a pointerdown stand-down that clears any ghost before a drag can freeze rects over a grid it still occupies. Cards consume both: the "+" band creates in its Set, the card menu carries one New Page action, and the ghost card grows in the next flow slot as the card's own skeleton, with its neighbors making room via a dedicated displacement wrapper. The sidebar also joined the ghosted "New Page" pattern, extending at its own sidebar-specific pacing, and main's context-menu popup now resolves on dismissal so native menus hold every ghost down.
 
 **The Rename Fence:** `renamingPath` was a bare global two surface families mounted fields for, and the collision was already live — renaming a Set from a table band with its sidebar row visible double-mounted the field, the focus fight blur-committed empty, and both fields died. The slot gained an owner fence: hosts claim per path, one winner resolves (the gesture's declared surface first, detail over sidebar next, first-come last), the release defers its verdict a microtask so StrictMode's remount never kills a live session, a rename whose surface leaves is abandoned rather than teleported, and a session no surface ever claims self-heals after a beat — a newborn a filter hides can no longer strand the session, suppress every ghost, and reopen an unprompted empty field later. Cards' naming also unified onto the fenced inline field, retiring its rename popover.
 
@@ -194,13 +194,13 @@ The footing action family rejoined the menu recipes it composes, `iconOption` jo
 
 **The Skeleton:** `gesture.ts` gained the guards its consumer count required: a throwing callback aborts its own gesture instead of committing a half-activated drop or stranding the module lock, a foreign pointer's events are ignored, and a lost release — a window blur, a zero-buttons move — cancels rather than dragging a phantom press. The spec grew `onWindowScroll` behind a `scrollTarget` relevance guard, so scroll-sensitive geometry rides the gesture's own listener set, and every activated release swallows its own click. `gesture.test.ts` resets the module per test so the singleton lock starts fresh, and the pointer harness releases with no button held by default.
 
-**The Migrations:** The four lifecycles still hand-rolling the skeleton — `sidebarDnd`, both property reorder hooks, and the table's column drag — became `usePointerGesture` consumers, deleting their pending/active machines, window listener trios, capture-phase Escapes, and an unmount cleanup whose remove-by-closure-identity leaked its scroll listener. The column drag gained the Escape abort it never had and measures its geometry at activation, the column-width grip's cancel reverts the exact pre-drag override instead of committing the scrub, and the Slider gained a cancel path with an unmount reassert through its own `onInput`. The element-capture scrub controls — the App resizes, the Slider, the crop modal, the window chrome — were settled as element-bound rather than migrated.
+**The Migrations:** The four lifecycles still hand-rolling the skeleton — `sidebarDnd`, both property reorder hooks, and the table's column drag — became `usePointerGesture` consumers, deleting their pending/active machines, window listener trios, capture-phase Escapes, and an unmount cleanup whose remove-by-closure-identity leaked its scroll listener. The column drag gained the Escape abort it never had and measures its geometry at activation, the column-width grip's cancel reverts the exact pre-drag override instead of committing the scrub, and the Slider gained a cancel path with an unmount reassert through its own `onInput`. 
 
 **One Owner Each:** `useDragSnapshot` in `interactions/snapshot.ts` took the measure-once ritual for all seven insertion-line surfaces, `group.tsx`'s row and column models went behind an identity-keyed cache the wholesale rects replacement invalidates for free, the floating ghost's three inline copies collapsed onto `DragGhost`, the sidebar's hand-frozen line literals moved onto the shared drop-line classes and tokens, the duplicated two-region scan became `regionScan` in `paneDndModel.ts` with both panes' policies untouched, and the ghost offset and the editable-target selector each got one spelling in `interactions/shared.ts`.
 
 **The Adoption Gaps:** Five drags inside real scrollers — options, statuses, the grouping pane, table columns along x, and the GFM table axis-matched — gained the edge auto-scroll loop. Every product drag announces its pickup and drop, the engine's pointer path gaining the words its keyboard path already had. Spring-open reached its last three surfaces: the band drag brackets the service whose targets were already registered, and the grouping hierarchy and the sidebar's collapsed containers register their rows so a dwelling drag opens them, the disclose remeasure re-aiming against the rows the spring just moved.
 
-**The Closing Seams:** `dragDisclose` re-aims the engine's geometry every frame until a reveal settles, replacing a once-then-settle pair whose gap let a release commit mid-animation rects, and the GFM table re-bases its wrap origin at activation — the skeleton's scroll hook serves only active gestures, so a pending-phase scroll never reached the press-time origin. Both reorder hooks took the list-change half of the invalidation invariant over caller-memoized order arrays, `useOptionReorder`'s dead-snapshot resolve fails closed instead of aiming at slot 0, and the photo pan joined the scrub family's `lostpointercapture` contract. The layer shed its residue — orphaned params, twin spellings, the engine's thrice-written drag scratch now installed over `blankDrag()` — and the feature docs dropped two claims the code had outgrown.
+**The Closing Seams:** `dragDisclose` re-aims the engine's geometry every frame until a reveal settles, replacing a once-then-settle pair whose gap let a release commit mid-animation rects, and the GFM table re-bases its wrap origin at activation — the skeleton's scroll hook serves only active gestures, so a pending-phase scroll never reached the press-time origin. Both reorder hooks took the list-change half of the invalidation invariant over caller-memoized order arrays, `useOptionReorder`'s dead-snapshot resolve fails closed instead of aiming at slot 0, and the photo pan joined the scrub family's `lostpointercapture` contract. 
 
 - **Commits:** `b61f22a9^..8cbf7d23`
 - **Diff:** Net +289 | +1173 / −884
@@ -212,7 +212,7 @@ The footing action family rejoined the menu recipes it composes, `iconOption` jo
 
 Every writer of a container sidecar then came onto one lock key, built in `main/paths.ts` and applied through `withSidecarLock`, replacing three different keys and several call sites that held none — a read-merge-write that had read before a sibling's write landed could revert a view save or a page move with no error. `relocatePage` was placed under the source path's key and `updatePageBody`'s existence check moved inside its own lock, closing a rename race that left a ghost file at the vacated path holding newer content than the renamed one. A move followed by a failed order write reports success now, since the relocation has already committed and order falls back to title, and `main/index.ts` gained a single-instance lock so a losing launch exits and a relaunch raises the existing window.
 
-`rmwJsonStrict` in `main/io/atomicWrite.ts` took the same treatment, wrapping its read-merge-write in the per-file chain keyed on the path it writes; the seven callers that had supplied that lock by hand came out in the same commit, and the two writers of `.nexus/state.json` that never supplied it became covered. `rewritePageSerialized` moved out of `io/fileLock.ts` to sit beside the writers it composes, leaving the lock module importing nothing. The property registry's private promise chain retired onto the shared per-path mechanism, `updateAppConfig` replaced two read-then-overwrite pairs with a single owner merging onto the raw record so an unmodeled key survives a write, and `serializeOnFile` gained a refusal for a re-entrant take of a held key, which had been able to wedge a file for the life of the process. The change was made for cohesion; no defect prompted it. Docstrings across `propertiesRegistry.ts`, `appConfig.ts`, and `fileLock.ts` were corrected afterward where they described what the code had stopped doing.
+`rmwJsonStrict` in `main/io/atomicWrite.ts` took the same treatment, wrapping its read-merge-write in the per-file chain keyed on the path it writes; the seven callers that had supplied that lock by hand came out in the same commit, and the two writers of `.nexus/state.json` that never supplied it became covered. `rewritePageSerialized` moved out of `io/fileLock.ts` to sit beside the writers it composes, leaving the lock module importing nothing. The property registry's private promise chain retired onto the shared per-path mechanism, `updateAppConfig` replaced two read-then-overwrite pairs with a single owner merging onto the raw record so an unmodeled key survives a write, and `serializeOnFile` gained a refusal for a re-entrant take of a held key, which had been able to wedge a file for the life of the process. 
 
 - **Commits:** `8f9267e2^..416f3d55`
 - **Diff:** Net −113 | +239 / −352
@@ -220,7 +220,7 @@ Every writer of a container sidecar then came onto one lock key, built in `main/
 #### PM-088 || Dropdown Shell & Menu Consolidation
 **DATE:** 08-08-2026
 
-`MenuDropdown` was added to the design system to hold the open state, outside-dismiss, retract beat, and mounted-pane branch that `ViewDropdown`, `SpaceDropdown`, and `OutlineDropdown` had each carried separately, and `viewDropdown.css.ts` was renamed `toolbarDropdown.css.ts` after serving all three under the name of one. `MenuSurface` stayed state-free, because the toolbar trio shares one dismiss region across two panes and owns that state itself. `containerCreators` in `shared/mutate.ts` became the single rule for what a Collection or a Set offers on creation, correcting a sidebar context menu that gave a Set only New Page and two creator labels written as literals where every other one resolves the per-nexus label. Two constants in the menu layer described a reach they never had and were corrected rather than made true; no values moved.
+`MenuDropdown` was added to the design system to hold the open state, outside-dismiss, retract beat, and mounted-pane branch that `ViewDropdown`, `SpaceDropdown`, and `OutlineDropdown` had each carried separately, and `viewDropdown.css.ts` was renamed `toolbarDropdown.css.ts` after serving all three under the name of one. `MenuSurface` stayed state-free, because the toolbar trio shares one dismiss region across two panes and owns that state itself. `containerCreators` in `shared/mutate.ts` became the single rule for what a Collection or a Set offers on creation, correcting a sidebar context menu that gave a Set only New Page and two creator labels written as literals where every other one resolves the per-nexus label. 
 
 - **Commits:** `99559630^..b43d3a45`
 - **Diff:** Net +37 | +216 / −179
@@ -390,7 +390,7 @@ Every IPC channel had been hand-written at both ends with its types kept in a th
 #### PM-068 || The Swift Layer Out, Navigation On One Contract
 **DATE:** 07-29-2026 → 07-30
 
-The Swift-compatibility layer came out wholesale: the settings seed and its backfills, the decoder date shim, the accent and colour exchange maps, the legacy view vocabulary, every Swift-citing comment, and the on-disk residue across both real nexuses — forty-seven sidecar version stamps, forty view-icon aliases, and nine legacy colour words. Navigation persistence then collapsed onto one contract, where `navigation.json` holds pinned and favorites as ordered arrays of bare `{kind, id}` refs beside the NavView banner pointer, recents stay a device-local row in the same shape, and `isNavRef` with the shared `toNavRef` strip gates every ref crossing either store. Seven IPC channels became a read and a write; stored tabs and previews dropped their paths and are hydrated at restore by the one owner that prunes dead refs, mints paths, and recomputes the history pointer. The pins folder, `navFavorites.json`, and `navview.json` left both disks by hand, with no migration code shipped. An ungated banner pointer feeding a file delete and a patch-writer reading through the lenient reader both closed the same night.
+The Swift-compatibility layer came out wholesale: the settings seed and its backfills, the decoder date shim, the accent and colour exchange maps, the legacy view vocabulary, every Swift-citing comment, and the on-disk residue across both real nexuses — forty-seven sidecar version stamps, forty view-icon aliases, and nine legacy colour words. Navigation persistence then collapsed onto one contract, where `navigation.json` holds pinned and favorites as ordered arrays of bare `{kind, id}` refs beside the NavView banner pointer, recents stay a device-local row in the same shape, and `isNavRef` with the shared `toNavRef` strip gates every ref crossing either store. Seven IPC channels became a read and a write; stored tabs and previews dropped their paths and are hydrated at restore by the one owner that prunes dead refs, mints paths, and recomputes the history pointer. The pins folder, `navFavorites.json`, and `navview.json` left both disks by hand, with no migration code shipped. 
 
 - **Commits:** `fb52b501^..8ad70f03`
 - **Diff:** Net −198 | +904 / −1102
@@ -430,7 +430,7 @@ The database had never run: `better-sqlite3` compiles against Node's ABI while E
 #### PM-063 || One Owner Per IPC Shape
 **DATE:** 07-27-2026 → 07-28
 
-Four repeated shapes across the IPC layer collapsed from eighty-one sources to four owners, with all 102 channels verified byte-identical across the change. The trash began mirroring the nexus folder chain so a delete records where it came from, and two index-rebuild races closed — one where tearing a nexus down did not wait for the rebuild still writing into it, another where a rebuild could delete the file another was writing. `NavWindow`'s search then began switching what is listed rather than how it is drawn, and its field drew one caret at its own text's height. The renderer, the main process, the shared contract, and the stylesheets lost their plan-task tags, their retired Context vocabulary, and every comment that only restated the code beneath it, keeping what a reader could not reconstruct.
+Four repeated shapes across the IPC layer collapsed from eighty-one sources to four owners, with all 102 channels verified byte-identical across the change. The trash began mirroring the nexus folder chain so a delete records where it came from, and two index-rebuild races closed — one where tearing a nexus down did not wait for the rebuild still writing into it, another where a rebuild could delete the file another was writing. `NavWindow`'s search then began switching what is listed rather than how it is drawn, and its field drew one caret at its own text's height. The renderer, the main process, the shared contract, and the stylesheets lost their plan-task tags, their retired Context vocabulary, and every comment that only restated the code beneath .
 
 - **Commits:** `5158c124^..83e21c6e`
 - **Diff:** Net −2323 | +2650 / −4973
@@ -478,7 +478,7 @@ The authoring pane came back rebuilt around the sizing failure that had killed i
 #### PM-057 || PreviewPane Absorbs Both Floating Windows
 **DATE:** 07-25-2026
 
-The Page Preview and the NavWindow had duplicated an entire chassis — the glass shell and its scale in and out, the close ×, the Escape contract, the side-pane geometry and resize strip, the `--io` openness driver, and the trailing-button swallow — with a third copy in `FloatingPane`. The NavWindow declared the preview's vars across namespaces, since the values had to match and nothing shared owned them. `PreviewPane` now owns the shell, geometry, dismissal, a toolbar in band or floating form, left and right side slots each overlay or in-flow, an optional collapsing footer, and the glass tint as a property — previously impossible to expose, since the frost material hard-sets a transparent background. A window supplies its interior and padding while the surface owns every position, transition, and driver var; a FLIP measures from the surface's own root ref, replacing the `parentElement` walks that had climbed from an inner node. The refactor held at 15 of 15 states pixel-identical against a captured pre-refactor baseline, with fifteen behavioural checks covering what a settled frame cannot show.
+The Page Preview and the NavWindow had duplicated an entire chassis — the glass shell and its scale in and out, the close ×, the Escape contract, the side-pane geometry and resize strip, the `--io` openness driver, and the trailing-button swallow — with a third copy in `FloatingPane`. The NavWindow declared the preview's vars across namespaces, since the values had to match and nothing shared owned them. `PreviewPane` now owns the shell, geometry, dismissal, a toolbar in band or floating form, left and right side slots each overlay or in-flow, an optional collapsing footer, and the glass tint as a property — previously impossible to expose, since the frost material hard-sets a transparent background. A window supplies its interior and padding while the surface owns every position, transition, and driver var; a FLIP measures from the surface's own root ref, replacing the `parentElement` walks that had climbed from an inner node. 
 
 - **Commits:** `fb868095^..0d3246c2`
 - **Diff:** Net −8 | +974 / −982

@@ -38,10 +38,11 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; never allow two writers or definitions for the same thing; anything that does this and is found must be reported. 
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
-- **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they rarely restate exact code valuehe same discipline must be held true equally to code comments. **The one sanctioned exception is the token atlas** — `DesignSystemPM.md` and the `SOURCE:`-tagged tables it charters across the feature specs state literal values on purpose, and `node scripts/check-atlas.mjs` (from `Pommora/`) verifies them against their sources.
+- **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they rarely restate exact code values. The same discipline must be held true equally to code comments. **The one sanctioned exception is the token atlas** — `DesignSystemPM.md` and the `SOURCE:`-tagged tables it charters across the feature specs state literal values on purpose, and `node scripts/check-atlas.mjs` (from `Pommora/`) verifies them against their sources.
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves. Any in-flight decisions must be disclosed as they’re being made.
 - **Tokens must** be pulled from their sources in `design-system`— never hand-roll tokens without explicit direction; dual-option toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
 - **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
+-  **Fix-On-Sight:** The following don't require any confirmation, and violations must be fixed if you locate them. All creation-affordances must use `cursor: pointer`; Nathan's name must be *nowhere* in codebase comments.
 
 ### Locked Decisions
 
