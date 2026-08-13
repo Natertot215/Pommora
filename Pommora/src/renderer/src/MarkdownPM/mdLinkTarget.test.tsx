@@ -306,10 +306,31 @@ describe('an alias reveals what it hides', () => {
     expect(view.dom.querySelector('.md-conn-glyph')).toBeNull()
   })
 
-  it('a link wearing no pipe has no target to show', async () => {
+  // Standing on its own the title IS the link's words, so it keeps their colour — but it still earns
+  // the glyph, which is the confirmation that a page answers to it.
+  it('a link wearing no pipe keeps its title tinted, and still wears the glyph', async () => {
     const view = await openAt('see [[Work Notes]] end', 10)
     expect(view.dom.querySelector('.md-conn-target')).toBeNull()
+    expect(view.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
+    expect(view.dom.querySelector('.md-connection-resolved')?.textContent).toBe('Work Notes')
+  })
+
+  it('and one that names nothing gets neither', async () => {
+    const view = await openAt('see [[No Such Page]] end', 10)
     expect(view.dom.querySelector('.md-conn-glyph')).toBeNull()
+  })
+
+  // A markdown link splits the same way: a website reads as a URL, a page as a destination.
+  it('an internal markdown link’s target wears the glyph, an external one the URL treatment', async () => {
+    const internal = await openAt(`see [x](${encodeLinkTarget('Work Notes')}) end`, 12)
+    expect(internal.dom.querySelector('.md-conn-glyph-resolved')).not.toBeNull()
+    expect(internal.dom.querySelector('.md-conn-target')).not.toBeNull()
+    expect(internal.dom.querySelector('.md-link-url')).toBeNull()
+    await cleanupEditor()
+
+    const external = await openAt('see [x](https://example.com) end', 12)
+    expect(external.dom.querySelector('.md-link-url')).not.toBeNull()
+    expect(external.dom.querySelector('.md-conn-glyph')).toBeNull()
   })
 
   it('but a pipe opened and not yet written already shows both', async () => {
