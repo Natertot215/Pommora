@@ -164,7 +164,7 @@ export function formatBucketLabel(
   }
 }
 
-/** The picker's condensed range-date form (Nathan's rule — picker-only, never in cells): worded
+/** The picker's condensed range-date form (a standing rule — picker-only, never in cells): worded
  *  formats collapse to the short "July 7th"; numeric formats drop to MM/DD (or DD/MM), expanding
  *  back to the full numeric form only when the range spans multiple years. */
 export function condensedDate(iso: string, dateFormat: DateFormat, withYear: boolean): string {

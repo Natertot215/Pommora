@@ -86,7 +86,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       { duration: Number.parseInt(duration.base, 10), easing: easing.standard },
     )
   }, [])
-  // The inspector is PAGE TABS ONLY (Nathan's call) — it dies on the map return.
+  // The inspector is PAGE TABS ONLY (deliberate) — it dies on the map return.
   const [inspectorOpen, setInspectorOpen] = useState(false)
 
   const results = useMemo(() => (query.trim() ? splitSearch(search(query)) : null), [query, search])

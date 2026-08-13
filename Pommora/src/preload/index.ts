@@ -122,7 +122,7 @@ const api = {
     convertToView: ask('blocks:convertToView'),
     // Raw-entry copy under a fresh id; markdown copies its file, a view tile re-mints its config ids.
     duplicateTile: ask('blocks:duplicateTile'),
-    // Delete keeps the native confirm (Nathan's call).
+    // Delete keeps the native confirm (deliberate).
     confirmRemove: ask('blocks:confirmRemove'),
   },
   // Subfield (footer) config — React-owned `subfield` key in `.nexus/settings.json`.

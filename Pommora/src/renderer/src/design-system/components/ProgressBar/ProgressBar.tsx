@@ -1,6 +1,6 @@
 import * as s from './progressBar.css'
 
-/** No numeric label, no stroke — the strokeless look is Nathan's to confirm. */
+/** No numeric label, no stroke — the strokeless look is unconfirmed. */
 export function ProgressBar({ fill }: { fill: number }): React.JSX.Element {
   const pct = Math.max(0, Math.min(1, Number.isFinite(fill) ? fill : 0)) * 100
   return (

@@ -4,7 +4,7 @@ import type { LucideIcon, LucideProps } from 'lucide-react'
 import { IconProgressCheck } from '@tabler/icons-react'
 
 // Tabler glyphs read slightly smaller than Lucide at the same box; this bump sits them at the same
-// visual size (Nathan-tunable). Numeric sizes scale directly; the `1em` seam path scales via calc.
+// visual size (tunable). Numeric sizes scale directly; the `1em` seam path scales via calc.
 const TABLER_SCALE = 1.1
 const scaleTabler = (size: LucideProps['size']): LucideProps['size'] =>
   typeof size === 'number' ? size * TABLER_SCALE : `calc(${size ?? '1em'} * ${TABLER_SCALE})`
@@ -53,7 +53,7 @@ export const ProgressCheck = forwardRef<SVGSVGElement, LucideProps>(
   ),
 ) as unknown as LucideIcon
 
-// The lock (Nathan-supplied glyph) — solid rounded body + thick shackle, drawn to his
+// The lock (a supplied glyph) — solid rounded body + thick shackle, drawn to the
 // reference image's proportions (body ~15/24 wide, shackle stroke ~2.6). Fill-based.
 export const LockSolid = forwardRef<SVGSVGElement, LucideProps>(
   ({ size = 24, color, ...rest }, ref) => (

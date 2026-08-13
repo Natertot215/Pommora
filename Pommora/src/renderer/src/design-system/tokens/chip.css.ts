@@ -17,7 +17,7 @@ const chipBase = style([
   {
     // THE chip-size knob — scales every chip shape (pill/label/context/capsule/box)
     // everywhere; set --chip-zoom on any scope (or :root) to retune.
-    zoom: 'var(--chip-zoom, 0.9)',
+    zoom: 'var(--chip-zoom, 1.0)',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -133,9 +133,8 @@ export const chipLabelWrap = style([
   },
 ])
 
-// Hovering a REMOVABLE chip BLURS the label's tail under the × — a true blur, not a fade-out
-// (Nathan: a mask alone "is a cutoff, not blur"), touching only the TEXT (a backdrop strip washes
-// the fill — rejected live). Two perfectly-stacked copies of the same text crossfade over one ramp
+// Hovering a REMOVABLE chip BLURS the label's tail under the × — a true blur, not a fade-out.
+// Two perfectly-stacked copies of the same text crossfade over one ramp
 // ending at the ×'s left edge (10px inside the text run's end): the crisp copy masks OUT across it
 // while its blurred twin masks IN, so the letters visibly smear into the clear zone the × floats in.
 const crispRamp =

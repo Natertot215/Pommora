@@ -62,7 +62,7 @@ export function PropertyPicker({
    *  fixed centre (the card value gesture). Omitted → the default right-anchored dropdown. */
   anchorX?: number
   /** The column's resolved look — a status column on a glyph look (checkbox/capsule) renders
-   *  its OPTIONS as capsule chips too (Nathan); pill columns keep labeled pills. */
+   *  its OPTIONS as capsule chips too (deliberate); pill columns keep labeled pills. */
   look?: ColumnLook
   /** Context columns (the registry Contexts + user context props) pick from the NEXUS's contexts,
    *  not the def — the caller supplies the column's list. Toggles like multi; commits `context`. */

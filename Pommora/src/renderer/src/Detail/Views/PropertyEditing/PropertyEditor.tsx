@@ -3,7 +3,7 @@ import { cx } from '@renderer/design-system/cx'
 
 /**
  * Table-agnostic: raw text in/out — the caller owns the value typing, parsing, and write.
- * `numeric` filters keystrokes so an invalid number can never be typed (Nathan, at pickup).
+ * `numeric` filters keystrokes so an invalid number can never be typed (ruled at pickup).
  * The done-guard keeps Enter's commit from double-firing through the blur that follows it.
  */
 export function PropertyEditor({
