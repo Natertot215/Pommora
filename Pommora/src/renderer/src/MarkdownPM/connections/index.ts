@@ -1,4 +1,5 @@
 import { normalizeTitle, type ConnEditAction, type LinkStatus } from '@shared/connections'
+import { isValidLink, targetTitle } from '@shared/links'
 
 /** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free
  *  function, so acting on the result needs a way back into the editor instance that was clicked —
@@ -36,6 +37,25 @@ export interface ConnectionsApi extends PageIndex {
   /** Fired after the hover-intent delay on a resolved connection, with the link's live element —
    *  the consumer measures it (and detects detachment) itself. */
   hover?: (page: ConnPage, el: Element) => void
+}
+
+/** What a markdown link's target turns out to name. One resolver behind the click path and both
+ *  renderers, so a link can never be coloured as one thing and act as another. */
+export type MdTarget =
+  | { kind: 'page'; page: ConnPage }
+  | { kind: 'external' }
+  | { kind: 'invalid' }
+
+/** Resolve a markdown link's `( )`. Page resolution is tried FIRST and deliberately: `isValidLink`
+ *  accepts any dotted host, so `Notes.md` and `Node.js` would otherwise be read as websites and the
+ *  pages they name would be unreachable through this syntax entirely. */
+export function resolveMdTarget(index: PageIndex | undefined, rawTarget: string): MdTarget {
+  const title = targetTitle(rawTarget)
+  if (index && title) {
+    const res = index.resolve(title)
+    if (res.status === 'resolved' && res.page) return { kind: 'page', page: res.page }
+  }
+  return isValidLink(rawTarget) ? { kind: 'external' } : { kind: 'invalid' }
 }
 
 export function buildPageIndex(pages: ConnPage[]): PageIndex {

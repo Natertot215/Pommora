@@ -1,8 +1,7 @@
 import { memo } from 'react'
 import { tokenize } from '../tokens'
 import { CONTENT_CLASS } from '../decorations/intent'
-import { isValidLink } from '@shared/links'
-import type { ConnectionsApi } from '../connections'
+import { resolveMdTarget, type ConnectionsApi } from '../connections'
 
 // A cell's resting render WITHOUT a CodeMirror instance: inline marks styled + markers hidden +
 // connections coloured by status, matching the nested editor's look. Only the focused cell mounts a
@@ -41,10 +40,20 @@ export function renderCellContent(
         )
     } else if (tk.kind === 'link') {
       const url = text.slice(tk.contentRange[1] + 2, e - 1)
+      // A target naming a page wears the connection's colour here as it does in the editor. Without
+      // the shared resolver a cell would call an encoded internal target broken — `isValidLink` is
+      // false for `Work%20Notes` — and colour the same link two different ways on two surfaces.
+      const target = resolveMdTarget(conn, url)
       out.push(
-        <span key={key++} className={isValidLink(url) ? 'md-link' : 'md-link-invalid'}>
-          {content}
-        </span>,
+        target.kind === 'page' ? (
+          <span key={key++} className="md-connection-resolved" data-conn-title={target.page.title}>
+            {content}
+          </span>
+        ) : (
+          <span key={key++} className={target.kind === 'external' ? 'md-link' : 'md-link-invalid'}>
+            {content}
+          </span>
+        ),
       )
     } else {
       const cls = CONTENT_CLASS[tk.kind]

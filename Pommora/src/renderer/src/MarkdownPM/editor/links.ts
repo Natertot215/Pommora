@@ -1,10 +1,14 @@
 import { EditorView } from '@codemirror/view'
-import { isValidLink } from '@shared/links'
 import { tokenize } from '../tokens'
+import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connections'
 import { seatAtNearerEdge } from './input'
+
+type GetApi = () => ConnectionsApi | undefined
 
 interface LinkHit {
   url: string
+  /** What the target names — a page to navigate to, a URL to hand the system, or neither. */
+  target: MdTarget
   /** The whole token, markers included. */
   range: [number, number]
   /** Whether the gesture landed on the label — at rest, the only part of a link that has width. */
@@ -22,7 +26,7 @@ interface LinkHit {
 // replaced to zero width, so a click in the space past a short label resolves back onto the label's
 // last character. Following that would launch the system browser for a link the pointer never
 // touched. An invalid link draws its whole syntax, so there's nothing beside it to clamp from.
-function linkUnder(view: EditorView, event: MouseEvent): LinkHit | null {
+function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit | null {
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
   const line = view.state.doc.lineAt(pos)
@@ -34,26 +38,31 @@ function linkUnder(view: EditorView, event: MouseEvent): LinkHit | null {
   const closer = line.text.slice(tk.markerRanges[1][0], tk.markerRanges[1][1])
   const url = closer.slice(2, -1)
   if (!url) return null
-  const el = (event.target as HTMLElement).closest?.('.md-link, .md-link-invalid')
+  const target = resolveMdTarget(getApi(), url)
+  // An internal target is drawn as a connection, so it answers to that class too.
+  const el = (event.target as HTMLElement).closest?.(
+    '.md-link, .md-link-invalid, .md-connection-resolved',
+  )
   return {
     url,
+    target,
     range: [line.from + tk.range[0], line.from + tk.range[1]],
     onText: el != null && rel >= tk.contentRange[0] && rel <= tk.contentRange[1],
-    hidesSyntax: isValidLink(url),
+    hidesSyntax: target.kind !== 'invalid',
     pos,
   }
 }
 
-// Navigate an external link on a plain single-click (mirrors connectionClicks). Opening is
-// host-owned — main's shell.openExternal via the IPC bridge; the renderer never opens it directly.
-export function externalLinkClicks(): ReturnType<typeof EditorView.domEventHandlers> {
+// Follow a markdown link on a plain single-click (mirrors connectionClicks). Where it leads is the
+// shared resolver's answer, so a link can't be coloured as a page and then opened as a website.
+export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView.domEventHandlers> {
   // The same mousedown record connections keeps, and for the same reason: CM seats the caret before
   // `click` runs, so reading it live can never tell "I was editing this" from "I just clicked it" —
   // it reads true for every press and no link opens at all.
   let editingOnPress = false
   return EditorView.domEventHandlers({
     mousedown(event, view) {
-      const hit = linkUnder(view, event)
+      const hit = linkUnder(view, getApi, event)
       const head = view.state.selection.main.head
       editingOnPress = !!hit && view.hasFocus && head >= hit.range[0] && head <= hit.range[1]
       if (!hit) return false
@@ -72,10 +81,13 @@ export function externalLinkClicks(): ReturnType<typeof EditorView.domEventHandl
     click(event, view) {
       if (event.button !== 0 || event.detail !== 1 || !view.state.selection.main.empty) return false
       if (editingOnPress) return false
-      const hit = linkUnder(view, event)
+      const hit = linkUnder(view, getApi, event)
       if (!hit?.onText) return false
       event.preventDefault()
-      void window.nexus.openExternal(hit.url)
+      // A target that names a page navigates there. Opening is host-owned either way — main's
+      // shell.openExternal through the bridge, or the connections host's own router.
+      if (hit.target.kind === 'page') getApi()?.open(hit.target.page)
+      else void window.nexus.openExternal(hit.url)
       return true
     },
   })

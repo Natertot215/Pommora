@@ -20,6 +20,35 @@ export function unescapeAlias(alias: string): string {
   return alias.replace(/\\(.)/g, '$1')
 }
 
+/** Encode a page's title for a markdown link's `( )`. `encodeURI` rather than `encodeURIComponent`
+ *  so a separator survives being written by hand, with the parens escaped on top of it: neither
+ *  built-in touches them, and the grammar's target group ends at the first `)` — so a page titled
+ *  `Atomic Habits (Book)` would otherwise be written as a target truncated mid-title, followed by a
+ *  stray `)` sitting raw in the line. */
+export function encodeLinkTarget(target: string): string {
+  return encodeURI(target).replace(/\(/g, '%28').replace(/\)/g, '%29')
+}
+
+/** The inverse, and it never throws. `decodeURIComponent` raises `URIError` on a lone `%`, which is
+ *  an ordinary character to type — and CodeMirror deactivates a ViewPlugin that throws for the rest
+ *  of the session, so one keystroke would cost every decoration on the page. */
+export function decodeLinkTarget(target: string): string {
+  try {
+    return decodeURIComponent(target)
+  } catch {
+    return target
+  }
+}
+
+/** The title a markdown link's target names, or null when it can't name one. A target carrying a
+ *  scheme or a separator is addressing something outside the nexus, and is left to the external gate
+ *  — otherwise `https://example.com/Notes` would reach a page called Notes by its last segment. */
+export function targetTitle(rawTarget: string): string | null {
+  const decoded = decodeLinkTarget(rawTarget).trim()
+  if (!decoded || decoded.includes('/') || /^[a-z][a-z0-9+.-]*:/i.test(decoded)) return null
+  return decoded.replace(/\.md$/i, '')
+}
+
 /** Schemeless URLs get `https://`; anything with a scheme is left as-is. */
 export function normalizeLinkUrl(url: string): string {
   const u = url.trim()
