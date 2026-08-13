@@ -4,7 +4,7 @@
 // which is why one predicate answers for both syntaxes. No I/O.
 
 import { normalizeTitle, pageEmbedPattern, pageLinkPattern } from '@shared/connections'
-import { markdownLinkRegex, targetTitle } from '@shared/links'
+import { markdownLinkRegex, targetNamesTitle } from '@shared/links'
 import { codeMask } from '@shared/markdownCode'
 
 /** The cascade's prefilter: does this body name `title` in any of the three syntaxes?
@@ -26,12 +26,9 @@ export function mentionsTitle(body: string, normalizedKey: string): boolean {
     if (m.index !== undefined && inCode(m.index)) continue
     if (normalizeTitle(m[1]) === normalizedKey) return true
   }
-  // The third syntax, gated exactly as the rewriter gates it — a prefilter that misses what the
-  // rewriter would change means the body is never opened and the link silently rots.
   for (const m of body.matchAll(markdownLinkRegex())) {
     if (m.index !== undefined && inCode(m.index)) continue
-    const named = targetTitle(m[2])
-    if (named !== null && normalizeTitle(named) === normalizedKey) return true
+    if (targetNamesTitle(m[2], normalizedKey)) return true
   }
   return false
 }

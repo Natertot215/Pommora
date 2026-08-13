@@ -1,5 +1,5 @@
 import { EditorView } from '@codemirror/view'
-import { tokenize } from '../tokens'
+import { linkTarget, tokenize } from '../tokens'
 import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connections'
 import { seatAtNearerEdge } from './input'
 
@@ -35,8 +35,7 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
     (t) => t.kind === 'link' && rel >= t.range[0] && rel <= t.range[1],
   )
   if (!tk) return null
-  const closer = line.text.slice(tk.markerRanges[1][0], tk.markerRanges[1][1])
-  const url = closer.slice(2, -1)
+  const url = linkTarget(line.text, tk)
   if (!url) return null
   const target = resolveMdTarget(getApi(), url)
   // An internal target is drawn as a connection, so it answers to that class too.

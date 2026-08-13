@@ -2,6 +2,13 @@
 // renderer (the decoration that styles valid vs invalid), so a link's appearance can never disagree
 // with whether it actually opens.
 
+import { normalizeTitle } from './connections'
+
+/** The URI-scheme prefix. One expression, because two callers make opposite decisions from it — a
+ *  target carrying a scheme is left exactly as written, and is refused as a page title — and a
+ *  second copy widened on its own would disagree with the first about what a URL even is. */
+const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i
+
 /** The `[alias](url)` markdown-link shape — a URL property's Renamed (aliased) form. The codec stores
  *  it as a plain string (the declared-type coercion re-tags it as a url at read time); this regex backs
  *  the renderer's link parse + the Edit/Rename writes.
@@ -61,14 +68,22 @@ export function decodeLinkTarget(target: string): string {
  *  — otherwise `https://example.com/Notes` would reach a page called Notes by its last segment. */
 export function targetTitle(rawTarget: string): string | null {
   const decoded = decodeLinkTarget(rawTarget).trim()
-  if (!decoded || decoded.includes('/') || /^[a-z][a-z0-9+.-]*:/i.test(decoded)) return null
+  if (!decoded || decoded.includes('/') || HAS_SCHEME.test(decoded)) return null
   return decoded.replace(/\.md$/i, '')
+}
+
+/** Whether a target names the page holding this normalized key. The rename cascade's prefilter and
+ *  its rewriter both ask it, and they must never answer differently: a prefilter that missed what
+ *  the rewriter would change leaves the body unopened and the link silently rotting. */
+export function targetNamesTitle(rawTarget: string, normalizedKey: string): boolean {
+  const named = targetTitle(rawTarget)
+  return named !== null && normalizeTitle(named) === normalizedKey
 }
 
 /** Schemeless URLs get `https://`; anything with a scheme is left as-is. */
 export function normalizeLinkUrl(url: string): string {
   const u = url.trim()
-  return /^[a-z][a-z0-9+.-]*:/i.test(u) ? u : `https://${u}`
+  return HAS_SCHEME.test(u) ? u : `https://${u}`
 }
 
 /** The bare display domain for a URL — its host with a leading `www.` dropped (`https://www.github.com/x`

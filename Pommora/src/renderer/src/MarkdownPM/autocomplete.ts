@@ -1,5 +1,5 @@
 import { linkAt, normalizeTitle } from '@shared/connections'
-import { decodeLinkTarget, encodeLinkTarget, isValidLink, targetTitle } from '@shared/links'
+import { decodeLinkTarget, encodeLinkTarget } from '@shared/links'
 import { lineStartAt, lineEndAt } from './input'
 import type { ConnPage, PageIndex } from './connections'
 import { useSession } from '../store'
@@ -181,16 +181,15 @@ export function commitEdit(
     // Naming the target finishes only half the link: a markdown link's display text is free, where a
     // connection's IS its target. An empty label is filled with the page's own title and selected,
     // so one press leaves you typing what the link should say rather than hunting for the slot. A
-    // label already written — ⌘K over a selection — is the author's, and is left alone.
+    // label already written — ⌘K over a selection — is the author's, and is left alone, the caret
+    // stepping past the closer instead.
+    const retarget = { from: ac.from, to: ac.to, insert }
     const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
+    if (!fill) return { changes: [retarget], anchor: caret + 1 }
     return {
-      changes: [
-        ...(fill ? [{ from: fill.from, to: fill.to, insert: row.value }] : []),
-        { from: ac.from, to: ac.to, insert },
-      ],
-      ...(fill
-        ? { anchor: fill.from, head: fill.from + row.value.length }
-        : { anchor: caret + 1 }),
+      changes: [{ from: fill.from, to: fill.to, insert: row.value }, retarget],
+      anchor: fill.from,
+      head: fill.from + row.value.length,
     }
   }
   // A caret resting on a connection's closer keeps its token active, so the link just picked would

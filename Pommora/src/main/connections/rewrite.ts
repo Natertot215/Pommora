@@ -2,7 +2,7 @@
 // syntaxes that can name a page — with `newTitle`. The rename-cascade primitive.
 
 import { normalizeTitle, pageEmbedPattern, pageLinkPattern } from '@shared/connections'
-import { encodeLinkTarget, markdownLinkRegex, targetTitle } from '@shared/links'
+import { encodeLinkTarget, markdownLinkRegex, targetNamesTitle } from '@shared/links'
 import { codeMask } from '@shared/markdownCode'
 
 /** Rewrite every connection, embed AND markdown link naming `oldTitle` (normalized) to `newTitle` —
@@ -31,16 +31,13 @@ export function rewriteConnections(body: string, oldTitle: string, newTitle: str
       !inCodeAfter(offset) && normalizeTitle(title) === oldKey ? `![[${newTitle}]]` : match,
   )
   // The markdown form last, over a mask rebuilt for the same reason. Only a target that NAMES a page
-  // moves: `targetTitle` refuses anything with a scheme or a separator, so a URL whose last segment
-  // happens to match the renamed title is left exactly as written.
+  // moves, so a URL whose last segment happens to match the renamed title is left exactly as written.
   const inCodeFinal = codeMask(afterEmbeds)
   return afterEmbeds.replace(
     markdownLinkRegex(),
-    (match, label: string, target: string, offset: number) => {
-      const named = targetTitle(target)
-      return !inCodeFinal(offset) && named !== null && normalizeTitle(named) === oldKey
+    (match, label: string, target: string, offset: number) =>
+      !inCodeFinal(offset) && targetNamesTitle(target, oldKey)
         ? `[${label}](${encodeLinkTarget(newTitle)})`
-        : match
-    },
+        : match,
   )
 }
