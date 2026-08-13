@@ -869,6 +869,7 @@ export function FilterPane({
             <button
               type="button"
               className={fp.addRow}
+              data-create
               aria-label="Add filter rule"
               // Seeds only a NEW draft — re-seeding an open one would discard a toggled Or.
               onClick={() =>

@@ -327,6 +327,30 @@ export const optionRow = style({
   justifyContent: 'space-between',
 })
 
+/** The New Option ghost — a chip for an option that doesn't exist yet. It arms and discloses on the
+ *  shared ghost mechanism (`useGhostAnchor` + `Reveal`, the same dwell and beat the table's New Page
+ *  row rides) and wears the shared ghost effect (`ghost.css`), so nothing about how it appears or
+ *  moves is decided here. A bare button: the chip inside it is the whole affordance. */
+export const ghostOptionRow = style([
+  optionRow,
+  {
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    font: 'inherit',
+    textAlign: 'left',
+  },
+])
+
+/** Outline only — the chip's border and label with its fill dropped, so a slot reads as a shape
+ *  waiting to be filled rather than as a value that already has one. `--chip-fill` follows the
+ *  background it no longer has, keeping the melt twins off a colour the chip isn't wearing. */
+export const ghostChip = style({
+  selectors: {
+    '&&': { background: 'transparent', vars: { '--chip-fill': 'transparent' } },
+  },
+})
+
 /** The inline add/rename caret — bare input inside the chip, which owns the font, padding, and fill. */
 export const optionInput = style({
   background: 'transparent',

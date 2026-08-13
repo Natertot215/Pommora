@@ -377,7 +377,7 @@ function GhostLeaf({ depth }: { depth: number }): React.JSX.Element {
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a hover-born affordance wearing the row's own chrome — keyboard creation lives in the menus */}
       <div
         data-ghost-root
-        className="ghost-leaf"
+        className="ghost-leaf ghost-worn"
         onPointerEnter={api?.onGhostEnter}
         onPointerLeave={api?.onGhostLeave}
         onClick={api?.create}

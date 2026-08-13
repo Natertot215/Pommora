@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { Fragment, useMemo, useRef, useState } from 'react'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { Icon } from '@renderer/design-system/symbols'
@@ -14,7 +14,12 @@ import {
 import type { StatusGroup } from '@shared/properties'
 import { cx } from '@renderer/design-system/cx'
 import { Chip, chipShapeForType } from '../Chip'
-import { EditableInput } from '../EditableInput'
+import {
+  GhostOptionChip,
+  OptionNameCaret,
+  ghostAnchorProps,
+  useGhostOptionAnchor,
+} from './GhostOptionChip'
 import { ColorPicker } from './ColorPicker'
 import { useStatusReorder } from './useStatusReorder'
 import * as s from './settingsPane.css'
@@ -37,7 +42,9 @@ export function StatusEditor({
   onRemoveOption: (value: string) => void
   onClearOption: (value: string) => void
 }): React.JSX.Element {
-  const [adding, setAdding] = useState<string | null>(null) // the group id being added to
+  // The seat a new option is being named in: which group, and the index it will occupy — so it lands
+  // where the ghost that opened it stood rather than at the group's end.
+  const [adding, setAdding] = useState<{ groupId: string; index: number } | null>(null)
   const [renamingGroup, setRenamingGroup] = useState<string | null>(null) // the group id being relabeled
   const [renaming, setRenaming] = useState<string | null>(null) // the option value being renamed
   const [coloring, setColoring] = useState<string | null>(null) // the option value being recolored
@@ -50,11 +57,18 @@ export function StatusEditor({
   const reorder = useStatusReorder(statusOrder, (value, toGroupId, toIndex) =>
     onSetGroups(moveStatusOption(groups, value, toGroupId, toIndex)),
   )
+  // One anchor per group — the shared mechanism holds a single ghost, so crossing into another
+  // group's list moves the slot rather than standing two of them up.
+  const ghostApi = useGhostOptionAnchor(
+    adding !== null || renaming !== null || renamingGroup !== null || coloring !== null,
+  )
 
-  const commitAdd = (groupId: string, raw: string): void => {
+  const commitAdd = (groupId: string, raw: string, at: number): void => {
     setAdding(null)
     const g = groups.find((x) => x.id === groupId)
-    onSetGroups(addStatusOption(groups, groupId, raw.trim() || fallbackTitle('status', g?.label)))
+    onSetGroups(
+      addStatusOption(groups, groupId, raw.trim() || fallbackTitle('status', g?.label), at),
+    )
   }
   const commitGroupRename = (groupId: string, raw: string): void => {
     setRenamingGroup(null)
@@ -77,6 +91,26 @@ export function StatusEditor({
     onSetGroups(recolorStatusOption(groups, value, color))
   }
 
+  /** The naming chip in its seat, or the ghost standing in that seat. A status option names itself in
+   *  its group's colour, the way it will wear it once it exists. */
+  const slotAt = (g: StatusGroup, index: number, anchorId: string): React.JSX.Element | null =>
+    adding?.groupId === g.id && adding.index === index ? (
+      <div className={s.optionRow}>
+        <OptionNameCaret
+          className={cx(chipPill, chipColor[chipColorFor(g.color)])}
+          onCommit={(raw) => commitAdd(g.id, raw, index)}
+          onCancel={() => setAdding(null)}
+        />
+      </div>
+    ) : (
+      <GhostOptionChip
+        api={ghostApi}
+        anchorId={anchorId}
+        shape="pill"
+        onCreate={() => setAdding({ groupId: g.id, index })}
+      />
+    )
+
   const draggedLabel = (): string | null => {
     if (!reorder.dragging) return null
     for (const g of groups) {
@@ -92,15 +126,12 @@ export function StatusEditor({
         <div key={g.id} className={s.statusGroup}>
           <div className={s.optionsRow}>
             {renamingGroup === g.id ? (
-              <span className={s.optionsLabel}>
-                <EditableInput
-                  value={g.label}
-                  autoSize
-                  className={s.optionInput}
-                  onCommit={(raw) => commitGroupRename(g.id, raw)}
-                  onCancel={() => setRenamingGroup(null)}
-                />
-              </span>
+              <OptionNameCaret
+                className={s.optionsLabel}
+                value={g.label}
+                onCommit={(raw) => commitGroupRename(g.id, raw)}
+                onCancel={() => setRenamingGroup(null)}
+              />
             ) : (
               // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
               <span className={s.optionsLabel} onDoubleClick={() => setRenamingGroup(g.id)}>
@@ -110,8 +141,9 @@ export function StatusEditor({
             <button
               type="button"
               className={s.groupAdd}
+              data-create
               aria-label={`Add to ${g.label}`}
-              onClick={() => setAdding(g.id)}
+              onClick={() => setAdding({ groupId: g.id, index: g.options.length })}
             >
               <Icon name="plus" size={s.ICON.optionsAdd} />
             </button>
@@ -119,75 +151,64 @@ export function StatusEditor({
           <div
             className={cx('drop-line-host', s.optionList)}
             ref={(el) => reorder.registerGroup(g.id, el)}
+            {...(g.options.length === 0 ? ghostAnchorProps(ghostApi, g.id) : {})}
           >
-            {g.options.map((o) => {
+            {g.options.map((o, i) => {
               const isColoring = coloring === o.value
               return (
-                // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
-                <div
-                  key={o.value}
-                  ref={(el) => reorder.registerRow(o.value, el)}
-                  className={cx(s.optionRow, reorder.dragging === o.value && s.rowDragging)}
-                  onPointerDown={(e) => reorder.onRowPointerDown(o.value, e)}
-                  onContextMenu={(e) => {
-                    e.preventDefault()
-                    void openMenu(o.value, o.label)
-                  }}
-                >
-                  {renaming === o.value ? (
-                    <span className={cx(chipPill, chipColor[chipColorFor(o.color ?? g.color)])}>
-                      <EditableInput
+                <Fragment key={o.value}>
+                  {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented */}
+                  <div
+                    ref={(el) => reorder.registerRow(o.value, el)}
+                    {...ghostAnchorProps(ghostApi, o.value)}
+                    className={cx(s.optionRow, reorder.dragging === o.value && s.rowDragging)}
+                    onPointerDown={(e) => reorder.onRowPointerDown(o.value, e)}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      void openMenu(o.value, o.label)
+                    }}
+                  >
+                    {renaming === o.value ? (
+                      <OptionNameCaret
+                        className={cx(chipPill, chipColor[chipColorFor(o.color ?? g.color)])}
                         value={o.label}
-                        autoSize
-                        className={s.optionInput}
                         onCommit={(raw) => commitRename(o.value, raw, g.label)}
                         onCancel={() => setRenaming(null)}
                       />
-                    </span>
-                  ) : (
-                    <>
-                      <Chip
-                        shape={chipShapeForType('status')}
-                        color={chipColorFor(o.color ?? g.color)}
-                        label={o.label}
-                      />
-                      <span className={s.paletteAnchor}>
-                        <button
-                          ref={isColoring ? paletteBtnRef : undefined}
-                          type="button"
-                          className={s.paletteButton}
-                          style={isColoring ? { opacity: 1 } : undefined}
-                          aria-label="Recolor"
-                          onClick={() => setColoring((v) => (v === o.value ? null : o.value))}
-                        >
-                          <Icon name="palette" size={s.ICON.palette} />
-                        </button>
-                        <ColorPicker
-                          open={isColoring}
-                          selected={chipColorFor(o.color ?? g.color)}
-                          onPick={(color) => pickColor(o.value, color)}
-                          onDismiss={() => setColoring(null)}
-                          triggerRef={paletteBtnRef}
+                    ) : (
+                      <>
+                        <Chip
+                          shape={chipShapeForType('status')}
+                          color={chipColorFor(o.color ?? g.color)}
+                          label={o.label}
                         />
-                      </span>
-                    </>
-                  )}
-                </div>
+                        <span className={s.paletteAnchor}>
+                          <button
+                            ref={isColoring ? paletteBtnRef : undefined}
+                            type="button"
+                            className={s.paletteButton}
+                            style={isColoring ? { opacity: 1 } : undefined}
+                            aria-label="Recolor"
+                            onClick={() => setColoring((v) => (v === o.value ? null : o.value))}
+                          >
+                            <Icon name="palette" size={s.ICON.palette} />
+                          </button>
+                          <ColorPicker
+                            open={isColoring}
+                            selected={chipColorFor(o.color ?? g.color)}
+                            onPick={(color) => pickColor(o.value, color)}
+                            onDismiss={() => setColoring(null)}
+                            triggerRef={paletteBtnRef}
+                          />
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {slotAt(g, i + 1, o.value)}
+                </Fragment>
               )
             })}
-            {adding === g.id ? (
-              <div className={s.optionRow}>
-                <span className={cx(chipPill, chipColor[chipColorFor(g.color)])}>
-                  <EditableInput
-                    value=""
-                    autoSize
-                    className={s.optionInput}
-                    onCommit={(raw) => commitAdd(g.id, raw)}
-                    onCancel={() => setAdding(null)}
-                  />
-                </span>
-              </div>
-            ) : null}
+            {g.options.length === 0 ? slotAt(g, 0, g.id) : null}
             {reorder.drop?.groupId === g.id ? <DropLine style={{ top: reorder.drop.top }} /> : null}
           </div>
         </div>

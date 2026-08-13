@@ -139,6 +139,7 @@ function ListGroups({
                     <button
                       type="button"
                       className={s.rowPlus}
+                      data-create
                       aria-label={`Assign ${d.name}`}
                       onClick={(e) => {
                         e.stopPropagation()
@@ -490,6 +491,7 @@ export function PropertiesPane({
               icon="plus"
               size={12}
               box={20}
+              create
               ariaLabel="New Property"
               onClick={() => openDetail({ kind: 'type' })}
             />

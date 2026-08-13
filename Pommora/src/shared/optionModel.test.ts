@@ -19,6 +19,18 @@ describe('optionModel', () => {
   it('addOption appends an uncolored option (renders default) with value=label=title', () => {
     expect(addOption([opt('A')], 'B')).toEqual([opt('A'), { value: 'B', label: 'B' }])
   })
+  it('addOption seats the option at a given index — the ghost creates in place, not at the end', () => {
+    expect(addOption([opt('A'), opt('C')], 'B', undefined, 1)).toEqual([
+      opt('A'),
+      { value: 'B', label: 'B' },
+      opt('C'),
+    ])
+    expect(addOption([opt('A'), opt('B')], 'Z', undefined, 0).map((o) => o.value)).toEqual([
+      'Z',
+      'A',
+      'B',
+    ])
+  })
 
   it('fallbackTitle yields Label for select and the group name for status', () => {
     expect(fallbackTitle('select')).toBe('Label')
@@ -62,6 +74,9 @@ describe('optionModel', () => {
         options: [{ value: 'Done', label: 'Done', group_id: 'done' }],
       },
     ]
+    expect(addStatusOption(groups, 'upcoming', 'Triage', 0)[0].options.map((o) => o.value)).toEqual(
+      ['Triage', 'Open'],
+    )
     const next = addStatusOption(groups, 'upcoming', 'Backlog')
     expect(next[0].options).toEqual([
       { value: 'Open', label: 'Open', group_id: 'upcoming' },

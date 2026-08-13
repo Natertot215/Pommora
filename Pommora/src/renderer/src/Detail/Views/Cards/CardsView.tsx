@@ -856,7 +856,7 @@ function GhostCard({
       onPointerLeave={onLeave}
       onClick={onCreate}
     >
-      <div className="page-card-body">
+      <div className="page-card-body ghost-worn">
         {banner !== 'none' && (
           <div className="page-card-thumb">
             <span className="page-card-ph">
