@@ -1783,7 +1783,7 @@ function GhostRow({
         {columns.map((c, i) => (
           <div
             key={c.id}
-            className={cx('data-cell', i === 0 && 'cell-lead')}
+            className={cx('data-cell', 'ghost-worn', i === 0 && 'cell-lead')}
             style={i === 0 ? { paddingLeft: padLeft } : undefined}
           >
             {c.kind === 'title' && (

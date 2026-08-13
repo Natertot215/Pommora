@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { Fragment, useMemo, useRef, useState } from 'react'
 import { Icon } from '@renderer/design-system/symbols'
 import { chipLabel, chipColor } from '@renderer/design-system/tokens'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
@@ -12,12 +12,20 @@ import {
 import type { PropertyType } from '@shared/properties'
 import { cx } from '@renderer/design-system/cx'
 import { Chip, chipShapeForType } from '../Chip'
-import { EditableInput } from '../EditableInput'
+import {
+  GhostOptionChip,
+  OptionNameCaret,
+  ghostAnchorProps,
+  useGhostOptionAnchor,
+} from './GhostOptionChip'
 import { ColorPicker } from './ColorPicker'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from './settingsPane.css'
+
+/** A flat property owns one list, so its anchor needs no identity beyond being the only one. */
+const LIST_ANCHOR = 'options'
 
 /** The caller owns persistence: each callback maps to a `property.*Option` write (+ error
  *  surface + reload). Status layers grouping on top. */
@@ -36,7 +44,9 @@ export function OptionEditor({
   onRemoveOption: (value: string) => void
   onClearOption: (value: string) => void
 }): React.JSX.Element {
-  const [adding, setAdding] = useState(false)
+  // The seat a new option is being named in — the index it will occupy, so it lands where the ghost
+  // that opened it stood rather than at the end.
+  const [adding, setAdding] = useState<number | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [coloring, setColoring] = useState<string | null>(null)
   // The open row's recolor button — the ColorPicker measures + dismiss-exempts it (only one is open).
@@ -46,11 +56,32 @@ export function OptionEditor({
   const reorder = useOptionReorder(optionOrder, (value, toIndex) =>
     onSetOptions(reorderOption(options, value, toIndex)),
   )
+  // Each option is its own anchor, so the slot opens under whichever chip the pointer rests on; an
+  // empty list has no chip to anchor to, so the list itself stands in for the first one.
+  const ghostApi = useGhostOptionAnchor(adding !== null || renaming !== null || coloring !== null)
 
-  const commitAdd = (raw: string): void => {
-    setAdding(false)
-    onSetOptions(addOption(options, raw.trim() || fallbackTitle(type)))
+  const commitAdd = (raw: string, at: number): void => {
+    setAdding(null)
+    onSetOptions(addOption(options, raw.trim() || fallbackTitle(type), undefined, at))
   }
+  /** The naming chip in its seat, or the ghost standing in that seat, or nothing. */
+  const slotAt = (index: number, anchorId: string): React.JSX.Element | null =>
+    adding === index ? (
+      <div className={s.optionRow}>
+        <OptionNameCaret
+          className={cx(chipLabel, chipColor.default)}
+          onCommit={(raw) => commitAdd(raw, index)}
+          onCancel={() => setAdding(null)}
+        />
+      </div>
+    ) : (
+      <GhostOptionChip
+        api={ghostApi}
+        anchorId={anchorId}
+        shape={chipShapeForType(type)}
+        onCreate={() => setAdding(index)}
+      />
+    )
   const commitRename = (oldValue: string, raw: string): void => {
     setRenaming(null)
     const title = raw.trim() || fallbackTitle(type)
@@ -74,13 +105,18 @@ export function OptionEditor({
         <button
           type="button"
           className={s.optionsAdd}
+          data-create
           aria-label="Add Option"
-          onClick={() => setAdding(true)}
+          onClick={() => setAdding(options.length)}
         >
           <Icon name="plus" size={s.ICON.optionsAdd} />
         </button>
       </div>
-      <div className={cx('drop-line-host', s.optionList)} ref={reorder.containerRef}>
+      <div
+        className={cx('drop-line-host', s.optionList)}
+        ref={reorder.containerRef}
+        {...(options.length === 0 ? ghostAnchorProps(ghostApi, LIST_ANCHOR) : {})}
+      >
         <DragGhost
           x={reorder.ghost?.x ?? null}
           y={reorder.ghost?.y ?? null}
@@ -90,74 +126,62 @@ export function OptionEditor({
               : null
           }
         />
-        {options.map((o) => {
+        {options.map((o, i) => {
           const isColoring = coloring === o.value
           return (
-            // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
-            <div
-              key={o.value}
-              ref={(el) => reorder.registerRow(o.value, el)}
-              className={cx(s.optionRow, reorder.dragging === o.value && s.rowDragging)}
-              onPointerDown={(e) => reorder.onRowPointerDown(o.value, e)}
-              onContextMenu={(e) => {
-                e.preventDefault()
-                void openMenu(o)
-              }}
-            >
-              {renaming === o.value ? (
-                <span className={cx(chipLabel, chipColor[chipColorFor(o.color)])}>
-                  <EditableInput
+            <Fragment key={o.value}>
+              {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented */}
+              <div
+                ref={(el) => reorder.registerRow(o.value, el)}
+                {...ghostAnchorProps(ghostApi, o.value)}
+                className={cx(s.optionRow, reorder.dragging === o.value && s.rowDragging)}
+                onPointerDown={(e) => reorder.onRowPointerDown(o.value, e)}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  void openMenu(o)
+                }}
+              >
+                {renaming === o.value ? (
+                  <OptionNameCaret
+                    className={cx(chipLabel, chipColor[chipColorFor(o.color)])}
                     value={o.label}
-                    autoSize
-                    className={s.optionInput}
                     onCommit={(raw) => commitRename(o.value, raw)}
                     onCancel={() => setRenaming(null)}
                   />
-                </span>
-              ) : (
-                <>
-                  <Chip
-                    shape={chipShapeForType(type)}
-                    color={chipColorFor(o.color)}
-                    label={o.label}
-                  />
-                  <span className={s.paletteAnchor}>
-                    <button
-                      ref={isColoring ? paletteBtnRef : undefined}
-                      type="button"
-                      className={s.paletteButton}
-                      style={isColoring ? { opacity: 1 } : undefined}
-                      aria-label="Recolor"
-                      onClick={() => setColoring((v) => (v === o.value ? null : o.value))}
-                    >
-                      <Icon name="palette" size={s.ICON.palette} />
-                    </button>
-                    <ColorPicker
-                      open={isColoring}
-                      selected={chipColorFor(o.color)}
-                      onPick={(color) => pickColor(o, color)}
-                      onDismiss={() => setColoring(null)}
-                      triggerRef={paletteBtnRef}
+                ) : (
+                  <>
+                    <Chip
+                      shape={chipShapeForType(type)}
+                      color={chipColorFor(o.color)}
+                      label={o.label}
                     />
-                  </span>
-                </>
-              )}
-            </div>
+                    <span className={s.paletteAnchor}>
+                      <button
+                        ref={isColoring ? paletteBtnRef : undefined}
+                        type="button"
+                        className={s.paletteButton}
+                        style={isColoring ? { opacity: 1 } : undefined}
+                        aria-label="Recolor"
+                        onClick={() => setColoring((v) => (v === o.value ? null : o.value))}
+                      >
+                        <Icon name="palette" size={s.ICON.palette} />
+                      </button>
+                      <ColorPicker
+                        open={isColoring}
+                        selected={chipColorFor(o.color)}
+                        onPick={(color) => pickColor(o, color)}
+                        onDismiss={() => setColoring(null)}
+                        triggerRef={paletteBtnRef}
+                      />
+                    </span>
+                  </>
+                )}
+              </div>
+              {slotAt(i + 1, o.value)}
+            </Fragment>
           )
         })}
-        {adding ? (
-          <div className={s.optionRow}>
-            <span className={cx(chipLabel, chipColor.default)}>
-              <EditableInput
-                value=""
-                autoSize
-                className={s.optionInput}
-                onCommit={commitAdd}
-                onCancel={() => setAdding(false)}
-              />
-            </span>
-          </div>
-        ) : null}
+        {options.length === 0 ? slotAt(0, LIST_ANCHOR) : null}
         {reorder.lineTop !== null ? <DropLine style={{ top: reorder.lineTop }} /> : null}
       </div>
     </div>

@@ -265,6 +265,7 @@ export function GroupBand({
                 tabIndex={-1}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onAdd}
+                data-create
                 aria-label="New page in group"
               >
                 <Icon name="plus" size={13} />

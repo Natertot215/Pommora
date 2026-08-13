@@ -132,6 +132,7 @@ export function ViewPane({
               icon="plus"
               size={12}
               box={20}
+              create
               ariaLabel="New View"
               onClick={() => void createView()}
             />

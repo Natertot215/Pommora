@@ -7,6 +7,7 @@ export function AddBannerButton({ onClick }: { onClick: () => void }): React.JSX
         type="button"
         className="add-banner-btn"
         onClick={onClick}
+        data-create
         aria-label="Add banner"
         title="Add a banner"
       >
