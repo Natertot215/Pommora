@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { cx } from '@renderer/design-system/cx'
 import { text } from '@renderer/design-system/tokens'
+import { SearchField } from '@renderer/design-system/components/SearchField'
 import type { NavRef } from '@shared/types'
 import { useSession } from '../store'
 import { assetUrl } from '../assetUrl'
@@ -47,12 +48,11 @@ export function NavView(): React.JSX.Element {
   }
 
   const searchInput = (
-    <input
+    <SearchField
       className={cx('nav-view-search', text.body.standard)}
       value={query}
-      onChange={(e) => setQuery(e.target.value)}
+      onValueChange={setQuery}
       placeholder="Search…"
-      spellCheck={false}
     />
   )
 

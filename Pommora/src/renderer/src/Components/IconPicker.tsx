@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { PickerMenu } from '@renderer/design-system/components/PickerMenu/PickerMenu'
+import { SearchField } from '@renderer/design-system/components/SearchField'
 import { Icon } from '@renderer/design-system/symbols'
 import {
   lucideGlyph,
@@ -133,12 +134,11 @@ export function IconPicker({
       bareSurface
       contentClassName={cx(s.content, beak)}
     >
-      <input
+      <SearchField
         className={s.search}
         placeholder="Search"
         value={query}
-        spellCheck={false}
-        onChange={(e) => setQuery(e.target.value)}
+        onValueChange={setQuery}
       />
       {favs.length === 0 && <div className={s.separator} />}
 
