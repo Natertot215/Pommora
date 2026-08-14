@@ -14,6 +14,8 @@ import { containerTargets, contextTargets } from '../destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../store'
 import '../Navigation/navList.css'
+import '../Detail/Views/Table/table-tokens.css'
+import '../Detail/Views/Table/Table.css'
 import './trashLeaf.css'
 
 /** A deleted entity carries no column configuration to read a format from, so the surface names the
@@ -93,23 +95,10 @@ export function TrashLeaf(): React.JSX.Element {
   }, [refresh])
 
   const shown = useMemo(() => filterRows(rows ?? [], query), [rows, query])
-  const allChecked = shown.length > 0 && shown.every((r) => checked.has(r.bundlePath))
-  const someChecked = shown.some((r) => checked.has(r.bundlePath))
-
   const toggle = (bundlePath: string): void =>
     setChecked((prev) => {
       const next = new Set(prev)
       if (!next.delete(bundlePath)) next.add(bundlePath)
-      return next
-    })
-
-  const toggleAll = (on: boolean): void =>
-    setChecked((prev) => {
-      const next = new Set(prev)
-      for (const r of shown) {
-        if (on) next.add(r.bundlePath)
-        else next.delete(r.bundlePath)
-      }
       return next
     })
 
@@ -207,8 +196,8 @@ export function TrashLeaf(): React.JSX.Element {
   }
 
   return (
-    <div className="trash-leaf">
-      <div className="trash-search">
+    <div className={cx('trash-leaf', checked.size > 0 && 'has-checked')}>
+      <div className="nav-search-row">
         <Icon name="search" size={14} />
         <SearchField
           className={text.body.standard}
@@ -226,21 +215,16 @@ export function TrashLeaf(): React.JSX.Element {
         />
       </div>
 
-      <div className={cx('trash-head', text.caption.standard)}>
-        <span className="trash-head-name">
-          <span className="trash-head-check">
-            <Checkbox
-              state={allChecked ? true : someChecked ? 'mixed' : false}
-              onChange={toggleAll}
-              ariaLabel="Select all"
-            />
-          </span>
+      {/* The table's heading, borrowed whole — its fill, its seam and the segment bars that bound
+          the strip — over the two lanes this list actually has. */}
+      <div className={cx('trash-head', 'table-head', text.callout.semibold)}>
+        <span className={cx('trash-head-name', 'col-header')}>
           <span className="trash-head-glyph">
             <PropertyTypeIcon type="title" size={13} />
           </span>
           File Name
         </span>
-        <span className="trash-head-date">
+        <span className={cx('trash-head-date', 'col-header')}>
           <Icon name="clock-fading" size={13} />
           Time Deleted
         </span>
@@ -311,6 +295,7 @@ function TrashRowView({
     >
       <Checkbox
         className="trash-check"
+        small
         state={checked}
         onChange={onToggle}
         ariaLabel={`Select ${row.title}`}
