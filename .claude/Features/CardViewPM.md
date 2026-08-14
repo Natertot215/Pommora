@@ -61,6 +61,8 @@ A **Set Cards** switch adds a leading row of larger cards, one per Set (or per d
 
 Cards reorder within their band by displacement (the nav gallery's drag), writing the per-machine manual order the pipeline reads as its lowest-priority sort tiebreaker. Two effective sort criteria retire that reorder, as does Sort By: Location on its computed Location order (→ [[ViewsPM]]). A card dropped **across location bands** moves the page into that band's Set carrying its landing slot — the destination's full-membership order writes with the drop spliced before the card it landed on (a rolled-up descendant as the landing resolves to the next true sibling, the closest slot that order can express), and the live orders splice in the same act so the landing paints immediately.
 
+**Band drag** reorders the bands themselves, on the same insertion-line gesture the table's group headers use: the glyph is the drag surface, the chevron and the hover "+" isolate on pointerdown so neither arms it, and a collapsed band springs open when a drag dwells over it. Where the table offers a middle zone that nests one Set inside another, Cards does not — one flat level leaves no depth for a nest to land in, so every band splits into a before/after slot and every drop is a reorder. A structural reorder writes the view's band order, except under Sort By: Location, where the filesystem *is* the order and the container's Set order takes the write instead; a property band's reorder writes its bucket order and moves the grouping to a manual one, the drag being the choice. The new order paints on the drop and persists behind it.
+
 A card's **right-click** opens a native menu: the **Add Property ▸** submenu over the page-meta block — Open · Rename · Change Icon · **New Page** · the send block of **Move To ▸** the Collection/Set tree, Copy Link and Copy Path · Delete. New Page creates flow-after (a grid has no above); Rename opens the same inline naming field creation uses, in the title's own seat. Change Icon mounts the icon picker. A value's own right-click menu takes precedence over the card menu, and every card-level native menu stands the hover ghost down until it closes.
 
 ### Creating in the Grid
@@ -101,4 +103,4 @@ The card grid's design vocabulary. The geometry the two card families agreed on 
 - **Set-Card view previews** — a Set Card opening a preview of the Set's view; v1 navigates.
 - **File-property covers** — any File property declaring itself the card's image; the Card Banner mode set is extensible for a fourth "Property" mode.
 - **Fit Image / Reposition** — contain-vs-fill and hover-reposition on covers; v1 is fill-crop.
-- **Fuller band chrome** — band drag, a native band-header menu, and inline band rename (table territory).
+- **Fuller band chrome** — a native band-header menu and inline band rename, both of which the shared band adapter already carries for the table.

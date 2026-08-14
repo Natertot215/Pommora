@@ -28,7 +28,6 @@
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Subfield reorder.** The store action and persistence are fully built (`setSubfieldOrder` has zero callers) — the entire feature is a missing drag UI, a three-item horizontal `SortableZone` in the Ribbon's shape. 
 - [ ] **Pinning by drag.** Both places a thing gets pinned are context-menu-only: the tab strip and its pinned zone are two independent SortableZones, and Recents → pins is a commented refusal in `NavList` (`canReassign={false}`). The board engine's cross-zone shape serves both — a flag on the nav side, and on the tab side one commit decision, since pins key on `res.key` and tabs on `tab.id`.
-- [ ] **Cards group-band drag.** The table's bands reorder and reparent; Cards renders the same `GroupBand` with no `dragHandle`. The band engine is view-agnostic, and the prop seam exists.
 - [ ] **Outline section drag.** The Outline dropdown is click-to-reveal only while the editor already drags whole sections by heading grip — dragging a heading *in the outline* to move its section is a write-coupling design call on ready mechanisms.
 
 #### II. Open Questions
