@@ -4,8 +4,12 @@
    token wherever one exists. Scoped to the table surface so the vars stay
    table-owned (no global leak).
    ============================================================================ */
+/* `.trash-leaf` borrows the heading half — the fill, the seam, the control tone and the segment
+   bars — so a column strip reads the same wherever one is drawn. It takes the tokens by joining
+   this scope rather than restating their values. */
 .table-view,
-.table-empty {
+.table-empty,
+.trash-leaf {
   /* — Density — */
   --zoom: 1; /* One knob scales text + chips + padding + widths together. */
 
