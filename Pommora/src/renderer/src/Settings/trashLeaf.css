@@ -25,8 +25,12 @@
 /* The heading is the table's, borrowed: `.table-head` brings the control tone, the bottom seam and
    the segment bars that bound the strip, and `.col-header` brings each lane its inset. What the
    leaf drops is the fill — a small strip inside a floating window reads as labels over data, not as
-   a band — and the full-bleed margins, which exist to reach a full-page view's glass edges. */
-.trash-head {
+   a band — and the full-bleed margins, which exist to reach a full-page view's glass edges.
+
+   Every override here is scoped under the leaf so it outranks the borrowed rule on SPECIFICITY.
+   At equal weight the winner would be whichever stylesheet loaded last, and a heading that breaks
+   when an import moves breaks silently. */
+.trash-leaf .trash-head {
   display: flex;
   align-items: center;
   flex-shrink: 0;
@@ -39,7 +43,7 @@
 .trash-head .col-header:first-child::before {
   content: none;
 }
-.trash-head-name {
+.trash-leaf .trash-head-name {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -49,7 +53,7 @@
   display: flex;
   margin-right: 7px; /* the row's own glyph-to-title gap */
 }
-.trash-head-date {
+.trash-leaf .trash-head-date {
   flex: 0 0 var(--trash-date-lane);
   display: flex;
   align-items: center;
