@@ -30,10 +30,11 @@
   padding-top: 30px;
 }
 
-/* The heading is the table's, borrowed: `.table-head` brings the control tone, the bottom seam and
-   the segment bars that bound the strip, and `.col-header` brings each lane its inset. What the
-   leaf drops is the fill — a small strip inside a floating window reads as labels over data, not as
-   a band — and the full-bleed margins, which exist to reach a full-page view's glass edges.
+/* The heading is the table's, borrowed: `.table-head` brings the control tone, `.col-header` the
+   truncation and the trailing inset each lane needs. What the leaf drops is the fill — a small
+   strip inside a floating window reads as labels over data, not as a band — the full-bleed margins,
+   which exist to reach a full-page view's glass edges, and the seam, redrawn below at the search
+   divider's weight.
 
    Every override here is scoped under the leaf so it outranks the borrowed rule on SPECIFICITY.
    At equal weight the winner would be whichever stylesheet loaded last, and a heading that breaks
@@ -100,6 +101,11 @@
 .trash-head-glyph {
   display: flex;
   margin-right: 7px; /* the row's own glyph-to-title gap */
+}
+/* A column's glyph sits a step under its label, which is the relationship the table's own header
+   icon already keeps against the same heading tone. */
+.trash-leaf .trash-head svg {
+  color: var(--label-secondary);
 }
 .trash-leaf .trash-head-date {
   flex: 0 0 var(--trash-date-lane);
