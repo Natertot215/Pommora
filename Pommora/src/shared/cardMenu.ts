@@ -7,9 +7,12 @@ import { type PageMetaAction, pageMetaMenuItems } from './pageMenu'
 
 export type CardMenuAction = PageMetaAction | `add:${string}` | `move:${string}`
 
-/** One node of the Move To ▸ tree — a container the page can move into. `children` are its sub-sets
- *  (a nested submenu). `path` is the destination container path (movePage's newParentPath). */
+/** One destination an entity may be sent to. `children` are its sub-sets (a nested submenu).
+ *  Both addresses ride along because the two consumers address differently: `path` is the move's
+ *  `newParentPath`, and `id` is what a restore resolves its parent by — deriving one from the
+ *  other main-side would put name-addressing back at the seam built to avoid it. */
 export interface MoveTarget {
+  id: string
   label: string
   path: string
   children?: MoveTarget[]

@@ -83,7 +83,7 @@ import {
   orderAddableEntries,
   shownColumnsFor,
 } from './cardValueInput'
-import type { MoveTarget } from '@shared/cardMenu'
+import { containerTargets } from '@renderer/destinationTree'
 import { hideShown, unhide } from '@renderer/Components/Detail/hiddenPaneModel'
 import { IconPicker } from '@renderer/Components/IconPicker'
 import { RenamableTitle } from '@renderer/Components/RenamableTitle'
@@ -886,14 +886,6 @@ function GhostCard({
   )
 }
 
-// The Move To ▸ tree: every Collection and its nested Sets as relocation targets (movePage's
-// newParentPath is a container path).
-function buildMoveTargets(collections: CollectionNode[]): MoveTarget[] {
-  const walkSets = (sets: SetNode[] | undefined): MoveTarget[] =>
-    (sets ?? []).map((set) => ({ label: set.title, path: set.path, children: walkSets(set.sets) }))
-  return collections.map((c) => ({ label: c.title, path: c.path, children: walkSets(c.sets) }))
-}
-
 function flattenGroups(groups: ResolvedGroup[]): ViewRow[] {
   const out: ViewRow[] = []
   const walk = (gs: ResolvedGroup[]): void => {
@@ -1292,7 +1284,7 @@ const PageCard = memo(function PageCard({
     const addable = addableNow()
     const menuAddable = orderAddableEntries(addable).map((e) => ({ id: e.id, name: e.name }))
     const currentParentPath = row.path.slice(0, row.path.lastIndexOf('/'))
-    const moveTargets = tree ? buildMoveTargets(tree.collections) : []
+    const moveTargets = tree ? containerTargets(tree.collections) : []
     const action = await holdGhost(() =>
       window.nexus.cardMenu({
         addable: menuAddable,
