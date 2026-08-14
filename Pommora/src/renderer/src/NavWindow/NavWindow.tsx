@@ -6,6 +6,7 @@ import {
   PREVIEW_PANE_INSPECTOR,
   PreviewPane,
 } from '@renderer/design-system/components/PreviewPane/PreviewPane'
+import { SearchField } from '@renderer/design-system/components/SearchField'
 import type { NavRef } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { PageEmbed } from '../Embeds/PageEmbed'
@@ -217,13 +218,12 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
         ) : (
           <div className="navwindow-main">
             <div className="navwindow-search">
-              <input
-                ref={searchRef}
+              <SearchField
+                inputRef={searchRef}
                 className={text.body.standard}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onValueChange={setQuery}
                 placeholder="Search…"
-                spellCheck={false}
               />
             </div>
             <div className="navwindow-main-scroll edge-fade">
