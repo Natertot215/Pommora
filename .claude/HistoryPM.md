@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-14-2026              | PM-101 | PommoraDND Dragging Fixtures                         |
 | 08-13-2026 → 08-14      | PM-100 | Trash Surface V1                                     |
 | 08-13-2026              | PM-099 | Ghost Creation, Page Icons & One Page Menu           |
 | 08-12-2026              | PM-098 | Page Alias' V1                                       |
@@ -103,6 +104,17 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-101 || PommoraDND Dragging Fixtures
+**DATE:** 08-14-2026
+
+Two drag surfaces that had been living outside the shared layer moved onto it. The gesture skeleton had no answer for a press that can mean two things: dropping a sub-threshold release on the floor — which is exactly what MarkdownPM's drags need, since the glyph that doesn't drag toggles a checkbox or seats a caret and the grip that doesn't drag folds its section. `onTap` now fires on that release and on no other ending, so a cancel, an Escape, a window blur, and a lost release all stay aborts and the click can never fire on a gesture that was called off; `listDrag` and `blockDrag` hand their lifecycles over and keep only their geometry, `listDrag` gaining the blur abort it never had, both gaining click suppression and the one-gesture-at-a-time refusal, and `EditorGesture`'s `ViewPlugin` giving a CodeMirror extension the unmount abort a React component gets for free.
+
+**The bands:** the band-drag engine was never a table thing — its pure model was already shared with the grouping pane — so it moved up beside `GroupBand,` and one `ViewGroupBand` now serves both renderers. Cards renders a single flat level, where a nest has nowhere to land: `nestable` off turns every band into a before/after slot and every drop into a reorder. 
+**Connections:** the link menu's Open Preview row had been hand-built alongside the shared page-menu model that already held it; both open rows now draw from that model, so Open New Tab now follows the same label rule that every other surface uses, and the row order can't drift.
+
+- **Commits:** `82f8d8db^..HEAD`
+- **Diff:** Net +331 | +640 / -309
 
 #### PM-100 || Trash Surface V1
 **DATE:** 08-13-2026 → 08-14
