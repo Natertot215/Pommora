@@ -69,7 +69,7 @@ import { resolveBandHead } from '../GroupBand'
 import { ViewGroupBand } from '../ViewGroupBand'
 import { BandDnd, type BandDrop } from '../BandDnd'
 import { flattenBands } from '../bandDndModel'
-import { bandReorderPatch, useBandOrdering } from '../useBandOrdering'
+import { bandReorderPatch, groupingKeyOf, useBandOrdering } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { buildResolveContext, type ResolveContext } from '../Table/resolveContext'
 import { NavCrumbs } from '../../../Navigation/NavList'
@@ -132,7 +132,10 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
   const { view } = useActiveView(source, schema)
   // The band drop's optimistic order, on the layer both views share.
-  const { bandPatch, commitBand, resetBand } = useBandOrdering((patch) => persistView(patch))
+  const { bandPatch, commitBand, resetBand } = useBandOrdering(
+    (patch) => persistView(patch),
+    groupingKeyOf(view),
+  )
   const liveView = useMemo(() => (bandPatch ? { ...view, ...bandPatch } : view), [view, bandPatch])
   const saveView = useSaveView(source, load)
   const mutate = useSession((s) => s.mutate)
@@ -589,13 +592,15 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     const g = groups.find((x) => x.key === id)
     return g && ctx ? resolveBandHead(g, liveView, ctx, setNames, setIcons, source).label : id
   }
-  // A band drop on one flat level is always a reorder. Under Location order the filesystem IS the
-  // order, so that one writes set_order on the container rather than the view.
+  // A band drop on one flat level is always a reorder. What it writes turns on the GROUPING's own
+  // order mode, never the sort's — the table's law: under Location the filesystem is the order, so
+  // the container's set_order takes the write; anywhere else the view's band order does, and a
+  // write to the wrong one of the two is discarded by the resolver that ignores it.
   const onBandDrop = (draggedId: string, drop: BandDrop): void => {
     if (drop.kind !== 'reorder') return
     const dragged = bands.find((b) => b.id === draggedId)
     if (!dragged) return
-    if (dragged.kind === 'set' && locationFsOrder) {
+    if (dragged.kind === 'set' && structural && liveView.structural_order_mode === 'location') {
       void mutate({
         op: 'reorderChildren',
         parentPath: source.path,

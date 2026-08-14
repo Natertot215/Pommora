@@ -39,7 +39,7 @@ import { writeContextValue } from '../contextCellWrite'
 import { buildSetIcons, buildSetNames, buildSetPaths } from './cellResolve'
 import { BandDnd, type BandDrop } from '../BandDnd'
 import { flattenBands, propertyOrderAfterDrop, reparentFsOrder } from '../bandDndModel'
-import { bandReorderPatch, useBandOrdering } from '../useBandOrdering'
+import { bandReorderPatch, groupingKeyOf, useBandOrdering } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { Cell } from './Cell'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
@@ -173,7 +173,10 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const [alignOverride, setAlignOverride] = useState<Record<string, ColumnAlign>>({})
   const [styleOverride, setStyleOverride] = useState<Record<string, ColumnStyle>>({})
   const [hiddenOverride, setHiddenOverride] = useState<string[] | null>(null)
-  const { bandPatch, commitBand, resetBand } = useBandOrdering((patch) => persistView(patch))
+  const { bandPatch, commitBand, resetBand } = useBandOrdering(
+    (patch) => persistView(patch),
+    groupingKeyOf(view),
+  )
   const [manualOverride, setManualOverride] = useState<string[] | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(
     () => new Set(view.collapsed_groups ?? []),
@@ -375,6 +378,30 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     return null
   }
+  // Global sub-order — dragging one set's bucket reorders that bucket across EVERY set. A cross-set
+  // drag arrives as kind 'reparent' (bandDnd routes by impliedParentId) and is STILL a global
+  // reorder: only the beforeId's bucket value matters, targetParentId is ignored. The key→bucket map
+  // builds once per drop, never a walk per lookup.
+  const subGroupOrderPatch = (
+    sub: NonNullable<SavedView['sub_group']>,
+    draggedId: string,
+    beforeId: string | null,
+  ): Partial<SavedView> | null => {
+    const bucketByKey = new Map(
+      groups.flatMap((g) =>
+        (g.children ?? []).flatMap((c) =>
+          c.bucket !== undefined ? [[c.key, c.bucket] as const] : [],
+        ),
+      ),
+    )
+    const draggedBucket = bucketByKey.get(draggedId)
+    if (draggedBucket === undefined) return null
+    const beforeBucket = beforeId === null ? null : (bucketByKey.get(beforeId) ?? null)
+    const present = [...new Set(bucketByKey.values())]
+    return {
+      sub_group: { ...sub, order: propertyOrderAfterDrop(present, draggedBucket, beforeBucket) },
+    }
+  }
   // The band drop router (already classified by BandDnd). The two orders every view writes go
   // through the shared patch; the table adds the two only it can render — a sub-group bucket's
   // global order, and a reparent as moveSet with the destination's CURRENT fs children plus the
@@ -396,27 +423,8 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         return
       }
       if (!subGrouped || !liveView.sub_group || liveView.sub_group.order_mode !== 'manual') return
-      // Global sub-order — dragging one set's bucket reorders that bucket across EVERY set. A
-      // cross-set drag arrives as kind 'reparent' (bandDnd routes by impliedParentId) and is STILL a
-      // global reorder: only the beforeId's bucket value matters, targetParentId is ignored. The
-      // key→bucket map builds once per drop, never a walk per lookup.
-      const bucketByKey = new Map(
-        groups.flatMap((g) =>
-          (g.children ?? []).flatMap((c) =>
-            c.bucket !== undefined ? [[c.key, c.bucket] as const] : [],
-          ),
-        ),
-      )
-      const draggedBucket = bucketByKey.get(draggedId)
-      const beforeBucket = drop.beforeId === null ? null : (bucketByKey.get(drop.beforeId) ?? null)
-      if (draggedBucket === undefined) return
-      const present = [...new Set(bucketByKey.values())]
-      commitBand({
-        sub_group: {
-          ...liveView.sub_group,
-          order: propertyOrderAfterDrop(present, draggedBucket, beforeBucket),
-        },
-      })
+      const sub = subGroupOrderPatch(liveView.sub_group, draggedId, drop.beforeId)
+      if (sub) commitBand(sub)
       return
     }
     // The id universe is the SET TREE, never the rendered groups: a filter prunes emptied bands out

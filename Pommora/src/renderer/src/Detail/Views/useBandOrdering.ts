@@ -2,9 +2,17 @@
 // classified by BandDnd; this turns a reorder into the view patch that expresses it, and holds
 // that patch optimistically until the write comes back.
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SavedView } from '@shared/views'
 import { type Band, propertyOrderAfterDrop, structuralOrderAfterDrop } from './bandDndModel'
+
+/** Which bands a view is showing — its grouping kind, and the property a property grouping keys on.
+ *  Deliberately blind to the ORDER within that grouping, since a reorder must not retire its own
+ *  optimistic patch. */
+export function groupingKeyOf(view: SavedView): string {
+  const g = view.group
+  return g?.kind === 'property' ? `property:${g.property_id}` : (g?.kind ?? 'structural')
+}
 
 /** The patch a reorder drop writes, for the two band kinds every view renders. Null when the drop
  *  asks for something the current grouping can't express. A structural reorder under Location order
@@ -45,13 +53,27 @@ export function bandReorderPatch(input: {
  *  the caller's live view so a sibling persist can't fold the stale on-disk order back over a fresh
  *  drag, and it deliberately survives a source-identity swap — a reparent's refetch changes that
  *  identity mid-flight, where a real container switch remounts the view outright. */
-export function useBandOrdering(persist: (patch: Partial<SavedView>) => void): {
+export function useBandOrdering(
+  persist: (patch: Partial<SavedView>) => void,
+  /** What the current bands ARE — the grouping's kind and the property it keys on. The patch says
+   *  how one grouping's bands are ordered, so it cannot outlive that grouping: the Grouping pane is
+   *  an independent writer, and a patch held past its change would mask the new grouping with the
+   *  old one until the next view switch. */
+  groupingKey: string,
+): {
   bandPatch: Partial<SavedView> | null
   commitBand: (patch: Partial<SavedView>) => void
   /** Reseed on a view switch — the new view carries its own stored order. */
   resetBand: () => void
 } {
   const [bandPatch, setBandPatch] = useState<Partial<SavedView> | null>(null)
+  const firstKey = useRef(groupingKey)
+  useEffect(() => {
+    // Skip the mount pass — only a CHANGE retires the patch, or a drop's own re-render would.
+    if (firstKey.current === groupingKey) return
+    firstKey.current = groupingKey
+    setBandPatch(null)
+  }, [groupingKey])
   // A commit can fire after a filesystem round-trip, so the persist goes through a ref and merges
   // the FIRE-TIME view state: a collapse or resize persist landing mid-flight must not be clobbered
   // by the drop-render's stale closure.

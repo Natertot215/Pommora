@@ -24,7 +24,7 @@ import { type Band, type BandIndex, type BandSlot, bandSlot, buildBandIndex } fr
 
 // Band drag — group headers reorder/reparent via the sidebar's insertion-line gesture.
 // The GLYPH is the drag surface; this file owns only the gesture + the frozen snapshot +
-// the line/ghost/nest chrome. The drop hands TableView a CLASSIFIED commit (reorder vs reparent,
+// the line/ghost/nest chrome. The drop hands the view a CLASSIFIED commit (reorder vs reparent,
 // routed by the slot's implied parent vs the dragged band's current parent) — the caller never
 // re-derives it.
 

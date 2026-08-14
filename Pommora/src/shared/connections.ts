@@ -46,7 +46,6 @@ export function pageLinkPattern(): RegExp {
   return /(?<!!)\[\[((?:[^\]\r\n|]|\](?!\])){1,255})(?:\|([^\]\r\n]{0,255}))?\]\]/g
 }
 
-
 /** Resolution outcome for a scanned title against the nexus link index. */
 export type LinkStatus = 'resolved' | 'phantom' | 'ambiguous'
 
