@@ -8,14 +8,18 @@ import { PreviewPane } from '@renderer/design-system/components/PreviewPane/Prev
 import { HOVER_LINGER_MAX, type Personalization } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
-import './settingsWindow.css'
+import './nexusSettings.css'
 
-const WIN = { minW: 460, minH: 340, defW: 720, defH: 520 }
+// KNOB — the window's opening size and its resize floor. The floor is what a leaf carrying a
+// surface has to fit in: a title, a breadcrumb and the date lane, side by side.
+const WIN = { minW: 620, minH: 420, defW: 850, defH: 600 }
 const RAIL = { min: 130, def: 170, max: 240 }
 
 const DRAG_SURFACES = '.settings-body, .settings-rail-list, .settings-section, .settings-heading'
 
-/** New panels register here, with their toggle list keyed alongside. */
+/** New panels register here. A leaf is either a list of personalization toggles or a surface of
+ *  its own — a component rather than a render call, so its hooks belong to the leaf and not to
+ *  this host, which is what lets one hold fetched rows and a selection. */
 const CATEGORIES = [
   { key: 'general', label: 'General', icon: 'sliders-horizontal' },
   { key: 'pages', label: 'Pages', icon: 'file-text' },
@@ -30,8 +34,14 @@ interface Toggle {
   defaultOn?: boolean
 }
 
-const TOGGLES: Record<CategoryKey, Toggle[]> = {
-  general: [
+/** What a leaf puts in the body. Most are a list of toggles; a leaf may instead bring a surface,
+ *  which owns its own layout, its own scroller and whatever state it fetches. */
+type LeafBody =
+  | { kind: 'toggles'; toggles: Toggle[] }
+  | { kind: 'surface'; Body: () => React.JSX.Element }
+
+const LEAVES: Record<CategoryKey, LeafBody> = {
+  general: { kind: 'toggles', toggles: [
     {
       key: 'hideChevrons',
       label: 'Hide Disclosure Chevrons',
@@ -58,8 +68,8 @@ const TOGGLES: Record<CategoryKey, Toggle[]> = {
       label: 'Reveal Tab Bar On Hover',
       hint: 'Keep the tab bar hidden until the pointer nears it.',
     },
-  ],
-  pages: [
+  ] },
+  pages: { kind: 'toggles', toggles: [
     {
       key: 'codeblockLineCount',
       label: 'Show Line Count In Code Blocks',
@@ -75,17 +85,17 @@ const TOGGLES: Record<CategoryKey, Toggle[]> = {
     // because the language used to describe the toggle on the settings surface hasn't been decided
     // yet — do this sooner rather than later. It reads and writes like any other personalization key
     // in the meantime, so a hand-edited settings file turns it off.
-  ],
+  ] },
 }
 
-export function SettingsWindow(): React.JSX.Element | null {
+export function NexusSettings(): React.JSX.Element | null {
   const open = useSession((s) => s.settingsOpen)
   const { mounted, closing } = useExitPresence(open)
   if (!mounted) return null
-  return <SettingsWindowBody closing={closing} />
+  return <NexusSettingsBody closing={closing} />
 }
 
-function SettingsWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
+function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element {
   const closeSettings = useSession((s) => s.closeSettings)
   const [category, setCategory] = useState<CategoryKey>('general')
 
@@ -132,18 +142,28 @@ function SettingsWindowBody({ closing }: { closing: boolean }): React.JSX.Elemen
         ),
       }}
     >
-      <div className="settings-body edge-fade">
-        <h2 className={cx('settings-heading', text.title3.emphasized)}>
-          {CATEGORIES.find((c) => c.key === category)?.label}
-        </h2>
-        <div className="settings-section">
-          {TOGGLES[category].map((t) => (
-            <ToggleRow key={t.key} toggle={t} />
-          ))}
-          {category === 'pages' && <LingerRow />}
-        </div>
-      </div>
+      <LeafBodyView category={category} />
     </PreviewPane>
+  )
+}
+
+/** A toggle leaf brings the panel's own heading and rhythm; a surface leaf brings everything,
+ *  because the pane hands its children no wrapper, no padding and no scroller. */
+function LeafBodyView({ category }: { category: CategoryKey }): React.JSX.Element {
+  const leaf = LEAVES[category]
+  if (leaf.kind === 'surface') return <leaf.Body />
+  return (
+    <div className="settings-body edge-fade">
+      <h2 className={cx('settings-heading', text.title3.emphasized)}>
+        {CATEGORIES.find((c) => c.key === category)?.label}
+      </h2>
+      <div className="settings-section">
+        {leaf.toggles.map((t) => (
+          <ToggleRow key={t.key} toggle={t} />
+        ))}
+        {category === 'pages' && <LingerRow />}
+      </div>
+    </div>
   )
 }
 

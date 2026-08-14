@@ -14,7 +14,7 @@ import { Toolbar } from './Toolbar/Toolbar'
 import { InspectorPanel } from './Detail/InspectorPanel/InspectorPanel'
 import { NavWindow } from './NavWindow/NavWindow'
 import { PreviewWindow } from './PagePreview/PreviewWindow'
-import { SettingsWindow } from './Settings/SettingsWindow'
+import { NexusSettings } from './Settings/NexusSettings'
 import { ConnectionHoverCard } from './Embeds/ConnectionHoverCard'
 import { contextTargetToSelect } from './Tabs/tabsModel'
 import { useNavThumbnails } from './Navigation/useNavThumbnails'
@@ -281,7 +281,7 @@ export function App(): React.JSX.Element {
       {status === 'ready' && <InspectorPanel open={inspectorOpen} />}
       {status === 'ready' && <NavWindow />}
       {status === 'ready' && <PreviewWindow />}
-      {status === 'ready' && <SettingsWindow />}
+      {status === 'ready' && <NexusSettings />}
       {status === 'ready' && <ConnectionHoverCard />}
       {status === 'ready' && inspectorOpen && (
         <div

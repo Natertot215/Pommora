@@ -16,8 +16,6 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  /* Clear the window's × so the first row never sits under it. */
-  padding-top: 26px;
 }
 .settings-cat {
   display: flex;
