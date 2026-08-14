@@ -48,14 +48,14 @@ describe('spacesByIdOf', () => {
     expect(m.get('a1')).toEqual({
       title: 'Personal',
       color: 'blue',
-      icon: 'layout-grid',
+      icon: 'layout-dashboard',
       contextId: 'ctx_areas',
     })
     expect(m.get('a2')?.icon).toBe('anchor')
     expect(m.get('t1')).toEqual({
       title: 'Reading',
       color: undefined,
-      icon: 'layout-grid',
+      icon: 'layout-dashboard',
       contextId: 'ctx_topics',
     })
   })
@@ -99,7 +99,7 @@ describe('context accessors', () => {
   })
 })
 
-// A personalized Space glyph must reach every surface that resolves through the seam, not just the
+// A personalized glyph must reach every surface that resolves through the seam, not just the
 // sidebar — a nexus that sets its own default otherwise wears two different icons for one Space.
 // The override must name a CURATED glyph; `entityIcon` rejects anything else and keeps the seed.
 it('an icon-less Space takes the USER default glyph, not the curated seed', () => {
@@ -108,7 +108,24 @@ it('an icon-less Space takes the USER default glyph, not the curated seed', () =
     personalization: { defaultIcons: { space: 'folder-open' } },
   } as NexusTree
   expect(spaceIdentityOf(personalized, 'a1')?.icon).toBe('folder-open')
-  expect(contextIdentityOf(personalized, 'ctx_topics')?.icon).toBe('folder-open')
   // A Space carrying its OWN icon still wins over the default.
-  expect(spaceIdentityOf(mkTree(), 'a1')?.icon).toBe('layout-grid')
+  expect(spaceIdentityOf(personalized, 'a2')?.icon).toBe('anchor')
+})
+
+// The two kinds resolve independently: a Context is not a Space, so neither default moves the other.
+it('a Space default leaves a Context on its own glyph, and the Context default moves it', () => {
+  const spaceDefault = {
+    ...mkTree(),
+    personalization: { defaultIcons: { space: 'folder-open' } },
+  } as NexusTree
+  expect(contextIdentityOf(spaceDefault, 'ctx_topics')?.icon).toBe('layout-grid')
+
+  const contextDefault = {
+    ...mkTree(),
+    personalization: { defaultIcons: { context: 'folder-open' } },
+  } as NexusTree
+  expect(contextIdentityOf(contextDefault, 'ctx_topics')?.icon).toBe('folder-open')
+  expect(spaceIdentityOf(contextDefault, 'a1')?.icon).toBe('layout-dashboard')
+  // A Context carrying its OWN icon still wins over the default.
+  expect(contextIdentityOf(contextDefault, 'ctx_areas')?.icon).toBe('briefcase')
 })

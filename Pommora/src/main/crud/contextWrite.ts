@@ -220,8 +220,9 @@ export async function createContextGroup(
   const id = newId()
   const written = await mutateRegistryFile(root, (cur) => {
     if (cur.contexts.some((c) => c.title === title)) return cur
-    // Minted with the contexts default glyph so a fresh group renders an icon everywhere at once.
-    return { contexts: [...cur.contexts, { id, title, icon: 'layout-grid' }] }
+    // No icon: a fresh group has made no choice, so it resolves to the kind's glyph and follows a
+    // nexus default. Stamping one would outrank that override forever.
+    return { contexts: [...cur.contexts, { id, title }] }
   })
   if (!written.ok) return written
   if (!written.value.contexts.some((c) => c.id === id))

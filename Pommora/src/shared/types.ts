@@ -33,7 +33,7 @@ export type TimeFormatSetting = 'twelveHour' | 'twentyFourHour'
 export const DEFAULT_TIME_FORMAT: TimeFormatSetting = 'twelveHour'
 
 /** Entity kinds that carry a nexus-wide default icon; an entity's own `icon` still overrides it. */
-export const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page'] as const
+export const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page', 'context'] as const
 export type EntityIconKind = (typeof ENTITY_ICON_KINDS)[number]
 
 /** Where a container's child folders sit relative to its loose pages in the sidebar. `top` (default)

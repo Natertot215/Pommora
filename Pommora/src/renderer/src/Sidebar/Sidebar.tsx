@@ -581,7 +581,7 @@ function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.E
   const path = `.nexus/contexts/${group.def.title}`
   return (
     <Disclosure
-      icon={entityIcon('space', group.def.icon, defaultIcons)}
+      icon={entityIcon('context', group.def.icon, defaultIcons)}
       title={group.def.title}
       depth={0}
       defaultOpen

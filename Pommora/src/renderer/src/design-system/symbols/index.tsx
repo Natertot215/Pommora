@@ -169,8 +169,9 @@ export const iconNameOr = (value: unknown, fallback: IconName): string =>
 export const DEFAULT_ENTITY_ICONS: Record<EntityIconKind, IconName> = {
   collection: 'gallery-vertical-end',
   set: 'folder-closed',
-  space: 'layout-grid',
+  space: 'layout-dashboard',
   page: 'file-text',
+  context: 'layout-grid',
 }
 
 /** An entity's glyph, resolved from its two facts: the user-assigned `own` icon when it's

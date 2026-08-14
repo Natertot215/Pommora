@@ -215,7 +215,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     revealed.has(def.id) || (fm as Record<string, unknown>)[propertyKey(def)] !== undefined
   const hiddenProps = schema.filter((d) => !isShown(d))
   const hiddenContexts = contextRows.filter((t) => setAside.has(t.id))
-  const contextIcon = (own: unknown): string => entityIcon('space', own, defaultIcons)
+  const contextIcon = (own: unknown): string => entityIcon('context', own, defaultIcons)
 
   const groups: [string, Field[]][] = [
     [

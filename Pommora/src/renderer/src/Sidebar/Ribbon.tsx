@@ -45,7 +45,7 @@ export function Ribbon(): React.JSX.Element {
     k === 'collections'
       ? entityIcon('collection', undefined, defaultIcons)
       : k === 'contexts'
-        ? entityIcon('space', undefined, defaultIcons)
+        ? entityIcon('context', undefined, defaultIcons)
         : STATIC_ICON[k]
 
   const onIcon = (k: RibbonKey): void => {

@@ -428,6 +428,14 @@ describe('readNexus — personalization', () => {
     expect(t.personalization.outlinerLines).toBeUndefined()
     expect(t.personalization.defaultIcons).toEqual({ collection: 'gallery-vertical-end' })
   })
+  // The coercer gates the KIND key, never the glyph name — an override naming a glyph this build
+  // won't draw survives the disk round trip intact, and the renderer decides what to do with it
+  // (`entityIcon.test.ts` holds the resolving half). Validating names here would put the curated
+  // roster, which is a renderer fact, on the other side of the process boundary.
+  it('keeps an override verbatim, whatever glyph it names', async () => {
+    const t = await readNexus(mk({ personalization: { defaultIcons: { context: 'anchor' } } }))
+    expect(t.personalization.defaultIcons).toEqual({ context: 'anchor' })
+  })
   // Every boolean knob at once: a key the writer persists but the reader never parses is silently
   // dropped, so the toggle appears to work and reverts on relaunch. Adding a knob adds it here.
   it('every boolean knob survives the round-trip', async () => {
