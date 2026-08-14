@@ -28,6 +28,7 @@ import { PropertyPicker, syntheticContextDef } from '../PropertyEditing/Property
 import { DatetimeValuePicker } from '../PropertyEditing/DatetimeValuePicker'
 import { sharedValueClickAction } from '../PropertyEditing/valueClick'
 import { useSession } from '../../../store'
+import { pageMoveContext, runPageSendAction } from '../../../pageMenuActions'
 import { findCollectionForSet } from '../../Scope'
 import { isOpenInTabs } from '../../../Tabs/tabsModel'
 import { useActiveView } from '../useActiveView'
@@ -973,11 +974,15 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const ctx = cellMenuContextFor(col, dt, colStyle(col.id), filled, false, barCapable)
     if (!ctx) return
     if (ctx.kind === 'title') {
-      const { tabs, pinned } = useSession.getState()
+      const { tabs, pinned, tree } = useSession.getState()
       ctx.alreadyOpen = isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path })
+      const move = pageMoveContext(tree, row.path)
+      ctx.moveTargets = move.moveTargets
+      ctx.currentParentPath = move.currentParentPath
     }
     const action = await holdGhost(() => window.nexus.cellMenu(ctx))
     if (!action) return
+    if (runPageSendAction(action, row.path)) return
     if (action === 'title:newtab')
       void useSession
         .getState()
@@ -1443,13 +1448,15 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     e.preventDefault()
     e.stopPropagation()
     const cellEl = (e.currentTarget as HTMLElement).closest<HTMLElement>('.data-cell')
-    const { tabs, pinned } = useSession.getState()
+    const { tabs, pinned, tree } = useSession.getState()
     const action = await holdGhost(() =>
       window.nexus.rowGripMenu({
         alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path }),
+        ...pageMoveContext(tree, row.path),
       }),
     )
     if (!action) return
+    if (runPageSendAction(action, row.path)) return
     if (action === 'title:preview')
       useSession.getState().openPreview({ id: row.id, path: row.path })
     else if (action === 'title:newtab')

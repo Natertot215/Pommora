@@ -4,12 +4,16 @@ import {
   type RowGripMenuContext,
   rowGripMenuModel,
 } from '@shared/rowGripMenu'
-import { popModelMenu } from './returningMenu'
+import { pageMenuTemplate } from './pageMenu'
+import { popReturningMenu } from './returningMenu'
 
 // The table row grip's right-click menu, popped over the shared model.
 export function popRowGripMenu(
   win: BrowserWindow,
   ctx: RowGripMenuContext,
 ): Promise<RowGripMenuAction | null> {
-  return popModelMenu(win, rowGripMenuModel(ctx).items)
+  const model = rowGripMenuModel(ctx)
+  return popReturningMenu<RowGripMenuAction>(win, (pick) =>
+    pageMenuTemplate(model.items, pick, ctx),
+  )
 }

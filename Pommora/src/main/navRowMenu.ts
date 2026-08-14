@@ -1,19 +1,16 @@
-import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { NavRowMenuAction, NavRowMenuContext } from '@shared/navRowMenu'
+import { pageMetaMenuSubset, pageSendActions } from '@shared/pageMenu'
+import { pageMenuTemplate } from './pageMenu'
+import { popReturningMenu } from './returningMenu'
 
-// The NavWindow row/card menu: Open · Open Preview · Pin/Unpin · Favorite/Unfavorite ·
-// Remove, gated by the row's live state. resolve(null) covers a dismissed menu so the renderer no-ops.
+// The NavWindow row/card menu: Open · Open Preview · the send block a page carries · Pin/Unpin ·
+// Favorite/Unfavorite · Remove, gated by the row's live state.
 export function popNavRowMenu(
   win: BrowserWindow,
   ctx: NavRowMenuContext,
 ): Promise<NavRowMenuAction | null> {
-  return new Promise<NavRowMenuAction | null>((resolve) => {
-    let acted = false
-    const pick = (a: NavRowMenuAction) => (): void => {
-      acted = true
-      resolve(a)
-    }
+  return popReturningMenu<NavRowMenuAction>(win, (pick) => {
     const items: MenuItemConstructorOptions[] = []
     if (ctx.canOpenNewTab)
       items.push({
@@ -22,6 +19,17 @@ export function popNavRowMenu(
       })
     if (ctx.isPage) items.push({ label: 'Open Preview', click: pick('open-preview') })
     if (items.length > 0) items.push({ type: 'separator' })
+    // A recent is a stored ref, so its page is addressable only once the renderer has minted a live
+    // path against the tree — without one, none of the three actions has anything to act on.
+    if (ctx.isPage && ctx.currentParentPath !== undefined)
+      items.push(
+        ...pageMenuTemplate(
+          pageMetaMenuSubset(pageSendActions(ctx)),
+          pick,
+          ctx,
+        ),
+        { type: 'separator' },
+      )
     items.push({
       label: ctx.isPinned ? 'Unpin' : 'Pin',
       click: pick(ctx.isPinned ? 'unpin' : 'pin'),
@@ -32,12 +40,6 @@ export function popNavRowMenu(
     })
     items.push({ type: 'separator' })
     items.push({ label: 'Remove', click: pick('remove') })
-
-    Menu.buildFromTemplate(items).popup({
-      window: win,
-      callback: () => {
-        if (!acted) resolve(null)
-      },
-    })
+    return items
   })
 }
