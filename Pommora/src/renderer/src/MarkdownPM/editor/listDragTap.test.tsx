@@ -62,3 +62,30 @@ describe('a list glyph press is a click or a drag, never both', () => {
     expect(document.body.style.cursor).toBe('')
   })
 })
+
+// A page runs several editors at once — an embed tile, a hover card, a preview window — and every
+// one of them mounts the cleanup plugin. The abort is the OWNER's alone: a sibling unmounting
+// mid-drag (a hover card timing out, a tile scrolling out of CM's viewport) must leave the drag
+// you are in the middle of alone.
+describe('a sibling editor tearing down leaves a live drag alone', () => {
+  it('only the view that started the gesture can abort it', async () => {
+    const dragged = await mountEditor({ initialBody: '- [ ] task' })
+    const bystander = await mountEditor({ initialBody: 'unrelated' })
+    await act(async () => {
+      firePointer(glyphOf(dragged), 'pointerdown', { x: 0, y: 0 })
+      firePointer(window, 'pointermove', { x: 40, y: 0 })
+      await Promise.resolve()
+    })
+    expect(document.body.style.cursor).toBe('grabbing')
+    await act(async () => {
+      bystander.destroy()
+      await Promise.resolve()
+    })
+    expect(document.body.style.cursor).toBe('grabbing')
+    await act(async () => {
+      firePointer(window, 'pointerup', { x: 40, y: 0 })
+      await Promise.resolve()
+    })
+    expect(document.body.style.cursor).toBe('')
+  })
+})

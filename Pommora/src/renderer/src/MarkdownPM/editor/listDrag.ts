@@ -3,12 +3,11 @@
 // descendants) in one transaction, renumbering any ordered run it touched.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { resolveScroller, startAutoScroll } from '../../design-system/interactions/autoscroll'
 import { parseListMarkerPrefixed as parseListMarker } from '../detect'
 import { docString } from './docCache'
 import { docMathRanges } from './mathRanges'
-import { Overlay, forEachLine, setShade, shadeField } from './dragChrome'
-import { beginEditorGesture, editorGestureCleanup } from './EditorGesture'
+import { forEachLine, shadeField } from './dragChrome'
+import { beginRelocateDrag, editorGestureCleanup } from './EditorGesture'
 import { focusAt } from './input'
 import { lineElementAt } from './lineDom'
 import {
@@ -118,7 +117,7 @@ function slotFrom(
     at: best.at,
     lineLeft: best.c.left,
     lineTop: best.y,
-    lineWidth: Math.max(best.c.right - best.c.left, 40),
+    lineWidth: best.c.right - best.c.left,
     indent: best.c.indent,
   }
 }
@@ -157,67 +156,12 @@ export const listDragExtension: Extension = [
 
       e.preventDefault() // suppress text-selection / caret on the glyph press (numbers are source text)
 
-      const host = view.scrollDOM
-      const overlay = new Overlay()
-      let activated = false
-      let cands: Cand[] = []
-      let slot: ResolvedSlot | null = null
-      let lastY = e.clientY
-      let stopScroll: (() => void) | null = null
-
-      const repick = (): void => {
-        slot = slotFrom(cands, lastY, block, view.state.doc.length)
-        if (slot) overlay.show(slot.lineLeft, slot.lineTop, slot.lineWidth)
-        else overlay.hide()
-      }
-      // Candidate coords are viewport-relative, so any scroll (wheel or the auto-scroll loop)
-      // invalidates them — re-measure against the new layout, then re-aim.
-      const remeasure = (): void => {
-        cands = collectCands(view, block)
-        repick()
-      }
-
-      beginEditorGesture({
-        el: host,
-        event: e,
-        onActivate: (ev) => {
-          activated = true
-          document.body.style.cursor = 'grabbing'
-          view.dispatch({ effects: setShade.of({ from: block.from, to: block.to }) })
-          lastY = ev.clientY
-          remeasure()
-          // The shared loop scrolls CM's viewport (explicit scroller — findScroller can't derive
-          // scrollDOM); its scrollBy fires the native `scroll`, which the skeleton's capture-phase
-          // window listener carries to onWindowScroll, so far candidates become targetable as they
-          // scroll in.
-          stopScroll = startAutoScroll({
-            getPoint: () => ({ x: 0, y: lastY }),
-            scroller: resolveScroller(host, 'y'),
-            dragEl: host,
-            axis: 'y',
-          })
-          return true
-        },
-        onDragMove: (ev) => {
-          lastY = ev.clientY
-          repick()
-        },
-        scrollTarget: () => host,
-        onWindowScroll: remeasure,
-        onDrop: () => {
-          if (!slot) return
-          const changes = dropChanges(view.state.doc.toString(), block, slot)
-          if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
-        },
+      beginRelocateDrag(view, e, block, {
+        measure: () => collectCands(view, block),
+        pick: (cands, clientY) => slotFrom(cands, clientY, block, view.state.doc.length),
+        lineFor: (slot) => ({ left: slot.lineLeft, top: slot.lineTop, width: slot.lineWidth }),
+        commit: (slot) => dropChanges(view.state.doc.toString(), block, slot),
         onTap: () => clickAction(view, pos),
-        teardown: () => {
-          stopScroll?.()
-          stopScroll = null
-          if (!activated) return
-          document.body.style.cursor = ''
-          overlay.hide()
-          view.dispatch({ effects: setShade.of(null) })
-        },
       })
       return true
     },

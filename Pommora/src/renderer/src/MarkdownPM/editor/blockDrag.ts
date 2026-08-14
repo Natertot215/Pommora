@@ -1,15 +1,14 @@
-// Block drag: press a block's gutter handle → drag the whole block → drop it at the nearest block boundary,
-// relocating its source lines via `blockMoveChanges`. `createBlockDragGesture` parameterizes the lifecycle
-// (pointerdown → ACTIVATION threshold → in-place shade → fixed insertion-line → drop) by the hit-test class,
-// so the rail grips and the heading chevron share ONE gesture.
+// Block drag: press a block's gutter handle → drag the whole block → drop it at the nearest block boundary.
+// This file owns where a block may land and what the move writes; `beginRelocateDrag` runs the gesture around
+// it. `createBlockDragGesture` parameterizes only the hit-test class, so the rail grips, the heading chevron,
+// the callout head, and the quote grip all share ONE gesture.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { blockAt, blockStarts } from './blockModel'
-import { Overlay, setShade, shadeField } from './dragChrome'
-import { beginEditorGesture, editorGestureCleanup } from './EditorGesture'
+import { shadeField } from './dragChrome'
+import { beginRelocateDrag, editorGestureCleanup } from './EditorGesture'
 import { lineElementAt } from './lineDom'
 import { blockMoveChanges } from './listDragModel'
-import { resolveScroller, startAutoScroll } from '../../design-system/interactions/autoscroll'
 
 // The OUTER bottom of the content block above a gap (skipping blank lines), so the insertion line reads "the
 // dragged block goes BELOW this" and sits OUTSIDE a box (below a callout's border, not inside it).
@@ -66,9 +65,8 @@ function nearest(cands: Cand[], clientY: number): Cand | null {
   return best
 }
 
-// The gesture core, callable directly so a non-CM-line handle (the table widget's action grip) can start a
-// block drag too. From a starting pointer event + the resolved block: ACTIVATION threshold → in-place shade →
-// fixed accent line → drop via `blockMoveChanges`, with auto-scroll, scroll re-measure, and Escape/blur abort.
+// Exported so a non-CM-line handle — the table widget's action grip — can start a block drag from a block it
+// resolved itself, without a gutter to hit-test.
 export function startBlockDrag(
   view: EditorView,
   e: PointerEvent,
@@ -82,69 +80,14 @@ export function startBlockDrag(
   const { onClick, onDragStart, line } = opts
   if (e.button !== 0) return // only the left button drags; a right-press falls through to the context menu (e.g. the table grip's Delete Table)
   e.preventDefault()
-  const host = view.scrollDOM
-  const overlay = new Overlay()
-  let activated = false
-  let cands: Cand[] = []
-  let slot: Cand | null = null
-  let lastY = e.clientY
-  let stopScroll: (() => void) | null = null
-
-  // Re-aim the insertion line at the candidate nearest the last pointer Y — no re-measure.
-  const repick = (): void => {
-    slot = nearest(cands, lastY)
-    if (slot && !slot.noop) overlay.show(slot.left, slot.y, Math.max(slot.right - slot.left, 40))
-    else overlay.hide()
-  }
-  // Candidate coords are viewport-relative, so any scroll (wheel or the auto-scroll below) invalidates them —
-  // re-measure against the new layout, then re-aim. The doc is static, so this is pure geometry.
-  const remeasure = (): void => {
-    cands = collectCands(view, block)
-    repick()
-  }
-
-  beginEditorGesture({
-    el: host,
-    event: e,
-    onActivate: (ev) => {
-      activated = true
-      document.body.style.cursor = 'grabbing'
-      onDragStart?.(view, block) // e.g. unfold a heading section before it moves — folds can't survive the move
-      view.dispatch({ effects: setShade.of({ from: block.from, to: block.to }) })
-      lastY = ev.clientY
-      remeasure()
-      // The shared loop scrolls CM's viewport (explicit scroller — findScroller can't derive scrollDOM).
-      // Its `scrollBy` fires CM's native `scroll`, which the skeleton's capture-phase window listener
-      // carries to onWindowScroll, so far candidates (CM only renders ~viewport) become targetable as
-      // they scroll in.
-      stopScroll = startAutoScroll({
-        getPoint: () => ({ x: 0, y: lastY }),
-        scroller: resolveScroller(host, 'y'),
-        dragEl: host,
-        axis: 'y',
-      })
-      return true
-    },
-    onDragMove: (ev) => {
-      lastY = ev.clientY
-      repick()
-    },
-    scrollTarget: () => host,
-    onWindowScroll: remeasure,
-    onDrop: () => {
-      if (!slot) return
-      const changes = blockMoveChanges(view.state.doc.toString(), block, { at: slot.at })
-      if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
-    },
+  beginRelocateDrag(view, e, block, {
+    measure: () => collectCands(view, block),
+    pick: nearest,
+    lineFor: (slot) =>
+      slot.noop ? null : { left: slot.left, top: slot.y, width: slot.right - slot.left },
+    commit: (slot) => blockMoveChanges(view.state.doc.toString(), block, { at: slot.at }),
+    onDragStart: () => onDragStart?.(view, block),
     onTap: line ? () => onClick?.(view, line) : undefined,
-    teardown: () => {
-      stopScroll?.()
-      stopScroll = null
-      if (!activated) return
-      document.body.style.cursor = ''
-      overlay.hide()
-      view.dispatch({ effects: setShade.of(null) })
-    },
   })
 }
 
