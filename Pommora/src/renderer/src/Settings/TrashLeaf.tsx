@@ -5,9 +5,12 @@ import { OverflowScroll } from '@renderer/design-system/components/OverflowScrol
 import { cx } from '@renderer/design-system/cx'
 import { entityIcon, Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
+import type { MutateRequest } from '@shared/mutate'
+import type { CollectionNode } from '@shared/types'
 import { DEFAULT_TIME_FORMAT, type Personalization, type TrashRow } from '@shared/types'
 import { PropertyTypeIcon } from '../Components/Detail/PropertyTypes'
 import { formatDate } from '../Detail/Views/PropertyEditing/formatValue'
+import { containerTargets, contextTargets } from '../destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../store'
 import '../Navigation/navList.css'
@@ -16,6 +19,9 @@ import './trashLeaf.css'
 /** A deleted entity carries no column configuration to read a format from, so the surface names the
  *  one it wants: the date a person would say out loud, and the clock the nexus is set to. */
 const DATE_FORMAT = 'short' as const
+
+/** Identity-stable, so a tree push with no collections can't re-run the destination walk. */
+const EMPTY_COLLECTIONS: CollectionNode[] = []
 
 /** The kinds a row can be, as plurals, for a report that can say what it acted on. */
 const PLURALS: Record<TrashRow['kind'], string> = {
@@ -61,6 +67,10 @@ export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
 export function TrashLeaf(): React.JSX.Element {
   const timeFormat = useSession((s) => s.tree?.timeFormat ?? DEFAULT_TIME_FORMAT)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const tree = useSession((s) => s.tree)
+  const collections = useSession((s) => s.tree?.collections ?? EMPTY_COLLECTIONS)
+  const mutate = useSession((s) => s.mutate)
+  const load = useSession((s) => s.load)
   const [rows, setRows] = useState<TrashRow[] | null>(null)
   const [failed, setFailed] = useState(false)
   const [query, setQuery] = useState('')
@@ -108,6 +118,99 @@ export function TrashLeaf(): React.JSX.Element {
       }
       return next
     })
+
+  /** A single action rides the store's mutate: its refetch is what makes a restored entity
+   *  reachable without reloading the nexus, and its failure already reaches the user natively. */
+  const one = async (req: MutateRequest): Promise<void> => {
+    if (await mutate(req)) await refresh()
+  }
+
+  /** A batch calls the channel directly. `store.mutate` re-walks the whole nexus after every op,
+   *  so five restores would pay five whole-tree reads; this pays one at the end. What it gives up
+   *  is that action's free error dialog, so the report carries both halves itself. */
+  const many = async (
+    targets: TrashRow[],
+    req: (row: TrashRow) => MutateRequest,
+  ): Promise<{ done: TrashRow[]; failed: TrashRow[] }> => {
+    const done: TrashRow[] = []
+    const failed: TrashRow[] = []
+    for (const row of targets) {
+      const res = await window.nexus.mutate(req(row))
+      ;(res.ok ? done : failed).push(row)
+    }
+    await load()
+    await refresh()
+    return { done, failed }
+  }
+
+  const restoreBatch = async (targets: TrashRow[]): Promise<void> => {
+    // A homeless member keeps its row and is named in the count; each is then answered through the
+    // picker it already has. A batch is a convenience over the single action, never a second one.
+    const addressable = targets.filter((r) => r.homeResolves)
+    const { done, failed } = await many(addressable, (row) => ({
+      op: 'restore',
+      bundlePath: row.bundlePath,
+    }))
+    const stuck = [...targets.filter((r) => !r.homeResolves), ...failed]
+    void window.nexus.reportTrash(
+      `Restored ${countPhrase(done)}.`,
+      stuck.length === 0
+        ? 'Everything went back where it came from.'
+        : `${countPhrase(stuck)} could not be resolved — restore those one at a time to choose where they go.`,
+    )
+  }
+
+  const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
+    if (!(await window.nexus.confirmEmptyTrash(targets.length))) return
+    const { done, failed } = await many(targets, (row) => ({
+      op: 'emptyBundle',
+      bundlePath: row.bundlePath,
+    }))
+    if (failed.length > 0)
+      void window.nexus.reportTrash(
+        `Deleted ${countPhrase(done)}.`,
+        `${countPhrase(failed)} could not be deleted.`,
+      )
+  }
+
+  const openMenu = async (row: TrashRow): Promise<void> => {
+    // Right-clicking an unchecked row acts on that row alone, whatever else is checked — a checked
+    // set is a deliberate construction, and a menu that silently retargeted it would spend it on a
+    // click that never named it.
+    const batch = checked.has(row.bundlePath) && checked.size > 1
+    const targets = batch ? shown.filter((r) => checked.has(r.bundlePath)) : [row]
+    const homeless = !batch && !row.homeResolves
+    const destinationKind = row.kind === 'space' ? ('context' as const) : ('container' as const)
+    const action = await window.nexus.trashMenu({
+      batch,
+      ...(homeless
+        ? {
+            destinationKind,
+            destinations:
+              destinationKind === 'context' ? contextTargets(tree) : containerTargets(collections),
+          }
+        : {}),
+    })
+    if (!action) return
+    switch (action.kind) {
+      case 'restore':
+        await one({ op: 'restore', bundlePath: row.bundlePath })
+        break
+      case 'restoreTo':
+        await one({ op: 'restore', bundlePath: row.bundlePath, destination: action.destination })
+        break
+      case 'delete':
+        if (await window.nexus.confirmEmptyTrash(1))
+          await one({ op: 'emptyBundle', bundlePath: row.bundlePath })
+        break
+      case 'restoreAll':
+        await restoreBatch(targets)
+        break
+      case 'deleteAll':
+        await emptyBatch(targets)
+        break
+    }
+  }
 
   return (
     <div className="trash-leaf">
@@ -162,6 +265,7 @@ export function TrashLeaf(): React.JSX.Element {
                 row={row}
                 checked={checked.has(row.bundlePath)}
                 onToggle={() => toggle(row.bundlePath)}
+                onMenu={() => void openMenu(row)}
                 icon={entityIcon(row.kind, undefined, defaultIcons)}
                 defaultIcons={defaultIcons}
                 when={
@@ -184,6 +288,7 @@ function TrashRowView({
   row,
   checked,
   onToggle,
+  onMenu,
   icon,
   when,
   defaultIcons,
@@ -191,13 +296,21 @@ function TrashRowView({
   row: TrashRow
   checked: boolean
   onToggle: () => void
+  onMenu: () => void
   icon: string
   when: string
   defaultIcons: Personalization['defaultIcons']
 }): React.JSX.Element {
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a pointer convenience over the checkbox inside it, which already carries the role, the tab stop and the keyboard — a second stop per row would say there were two things to reach
-    <div className={cx('nav-item', row.historical && 'is-historical')} onClick={onToggle}>
+    <div
+      className={cx('nav-item', row.historical && 'is-historical')}
+      onClick={onToggle}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        onMenu()
+      }}
+    >
       <Checkbox
         className="trash-check"
         state={checked}
