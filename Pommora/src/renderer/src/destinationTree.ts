@@ -8,19 +8,14 @@ import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 /** Every Collection and the Sets nested under it, in tree order. The matrix is the write path's:
  *  a page or Set lands in a container and nowhere else. */
 export function containerTargets(collections: CollectionNode[]): MoveTarget[] {
-  const walkSets = (sets: SetNode[] | undefined): MoveTarget[] =>
-    (sets ?? []).map((set) => ({
-      id: set.id,
-      label: set.title,
-      path: set.path,
-      children: walkSets(set.sets),
+  const walk = (nodes: (CollectionNode | SetNode)[] | undefined): MoveTarget[] =>
+    (nodes ?? []).map((n) => ({
+      id: n.id,
+      label: n.title,
+      path: n.path,
+      children: walk(n.sets),
     }))
-  return collections.map((c) => ({
-    id: c.id,
-    label: c.title,
-    path: c.path,
-    children: walkSets(c.sets),
-  }))
+  return walk(collections)
 }
 
 /** Flat by construction: no Context parents another, so a Space's destinations are the registry

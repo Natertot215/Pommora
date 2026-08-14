@@ -4,8 +4,9 @@
 // place it came from still exists.
 
 import { basename, dirname } from 'node:path'
-import type { CollectionNode, NexusTree, SetNode, TrashCrumb, TrashRow } from '@shared/types'
-import { type ListedBundle, type RecordFile, resolveRecord } from '../provenance'
+import type { NexusTree, TrashCrumb, TrashRow } from '@shared/types'
+import { CONTEXTS_DIR_REL } from '../paths'
+import { type ArtifactRecord, containerChain, type ListedBundle, resolveRecord } from '../provenance'
 
 /** `trashStamp` writes an ISO instant with `:` and `.` flattened to `-`, so reading it back is a
  *  fixed unreplace rather than a guess. The optional counter that follows de-collides same-instant
@@ -19,43 +20,25 @@ function deletedAtOf(bundlePath: string): number | null {
   return Number.isNaN(t) ? null : t
 }
 
-type Container = CollectionNode | SetNode
-
-/** The container's ancestry, outermost first — the tree walked structurally rather than a path
- *  split, because a crumb chain built from names is the one thing the record model refuses. */
-function containerChain(tree: NexusTree, id: string): Container[] | null {
-  const inSets = (sets: SetNode[] | undefined, trail: Container[]): Container[] | null => {
-    for (const s of sets ?? []) {
-      const next = [...trail, s]
-      if (s.id === id) return next
-      const hit = inSets(s.sets, next)
-      if (hit) return hit
-    }
-    return null
-  }
-  for (const c of tree.collections) {
-    if (c.id === id) return [c]
-    const hit = inSets(c.sets, [c])
-    if (hit) return hit
-  }
-  return null
-}
-
 /** The frozen `.trash` chain the bundle sits in — the only surviving evidence of where something
- *  lived once its recorded parent is gone. Folder names, so the crumbs carry no kind. */
+ *  lived once its recorded parent is gone. Folder names, so the crumbs carry no kind.
+ *
+ *  `.trash` mirrors the nexus faithfully, Contexts included, so a Space's chain arrives wearing the
+ *  internal folders the live breadcrumb never shows. Both prefixes come back off: a location the
+ *  user is shown reads the way it read before the delete. */
 function frozenCrumbs(bundlePath: string): TrashCrumb[] {
-  const dir = dirname(bundlePath)
-  return dir
+  const segments = dirname(bundlePath)
     .split('/')
     .filter((seg) => seg && seg !== '.' && seg !== '.trash')
-    .map((title) => ({ title }))
+  const contexts = CONTEXTS_DIR_REL.split('/')
+  const inContexts = contexts.every((seg, i) => segments[i] === seg)
+  return (inContexts ? segments.slice(contexts.length) : segments).map((title) => ({ title }))
 }
 
 /** Live crumbs, or null when the recorded parent resolves to nothing. A Collection and a Context
  *  both sit at a root that cannot go missing, so both resolve to an empty chain rather than to
  *  nothing. */
-function liveCrumbs(record: RecordFile, tree: NexusTree): TrashCrumb[] | null {
-  if (record.entity === 'property') return null
+function liveCrumbs(record: ArtifactRecord, tree: NexusTree): TrashCrumb[] | null {
   if (record.entity === 'context') return []
   if (record.entity === 'space') {
     const parent = record.parent
@@ -71,8 +54,7 @@ function liveCrumbs(record: RecordFile, tree: NexusTree): TrashCrumb[] | null {
 
 /** A restore would land this where it came from. `id-live` is deliberately not a homeless verdict —
  *  the home is there and a destination cannot fix a duplicate identity. */
-function homeResolvesFor(record: RecordFile, artifactName: string, tree: NexusTree): boolean {
-  if (record.entity === 'property') return false
+function homeResolvesFor(record: ArtifactRecord, artifactName: string, tree: NexusTree): boolean {
   const resolution = resolveRecord(record, artifactName, tree)
   return !('refuse' in resolution) || resolution.refuse === 'id-live'
 }
@@ -99,10 +81,8 @@ export function trashRowOf(bundle: ListedBundle, tree: NexusTree): TrashRow | nu
 /** Newest first: `listBundles` returns filesystem order, and what was just lost belongs at the top.
  *  A row whose stamp wouldn't parse still lists — it sorts last rather than disappearing. */
 export function trashRows(bundles: ListedBundle[], tree: NexusTree): TrashRow[] {
-  const rows: TrashRow[] = []
-  for (const b of bundles) {
-    const row = trashRowOf(b, tree)
-    if (row) rows.push(row)
-  }
-  return rows.sort((a, b) => (b.deletedAt ?? -1) - (a.deletedAt ?? -1))
+  return bundles
+    .map((b) => trashRowOf(b, tree))
+    .filter((row) => row !== null)
+    .sort((a, b) => (b.deletedAt ?? -1) - (a.deletedAt ?? -1))
 }
