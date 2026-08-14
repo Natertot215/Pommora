@@ -21,9 +21,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
 }
-/* Set and mixed share the fill — a partial selection is a selection, and only the mark differs. */
-.pm-checkbox-checked,
-.pm-checkbox-mixed {
+.pm-checkbox-checked {
   background: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
   border-color: color-mix(in srgb, var(--accent) var(--tint-tertiary), transparent);
 }

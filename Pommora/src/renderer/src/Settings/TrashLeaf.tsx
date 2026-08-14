@@ -108,7 +108,7 @@ export function TrashLeaf(): React.JSX.Element {
     if (await mutate(req)) await refresh()
   }
 
-  /** A batch calls the channel directly. `store.mutate` re-walks the whole nexus after every op,
+  /** A batch calls the channel directly. `store.mutate` re-walks the whole nexus after a restore,
    *  so five restores would pay five whole-tree reads; this pays one at the end. What it gives up
    *  is that action's free error dialog, so the report carries both halves itself. */
   const many = async (
@@ -225,16 +225,14 @@ export function TrashLeaf(): React.JSX.Element {
         />
       </div>
 
-      {/* The table's heading, borrowed whole — its fill, its seam and the segment bars that bound
-          the strip — over the two lanes this list actually has. */}
       <div className={cx('trash-head', 'table-head', text.callout.semibold)}>
-        <span className={cx('trash-head-name', 'col-header')}>
+        <span className="trash-head-name col-header">
           <span className="trash-head-glyph">
             <PropertyTypeIcon type="title" size={13} />
           </span>
           File Name
         </span>
-        <span className={cx('trash-head-date', 'col-header')}>
+        <span className="trash-head-date col-header">
           <Icon name="clock-fading" size={13} />
           Time Deleted
         </span>
