@@ -1,6 +1,7 @@
-import { Menu, dialog } from 'electron'
+import { dialog } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { optionMenuModel, type OptionMenuAction, type OptionMenuContext } from '@shared/optionMenu'
+import { popReturningMenu } from './returningMenu'
 
 /** Confirm copy per destructive action. */
 const CONFIRM: Record<
@@ -26,8 +27,7 @@ export function popOptionMenu(
   win: BrowserWindow,
   ctx: OptionMenuContext,
 ): Promise<OptionMenuAction | null> {
-  return new Promise<OptionMenuAction | null>((resolve) => {
-    let acted = false
+  return popReturningMenu<OptionMenuAction>(win, (pick, pickAfter) => {
     let separated = false
     const items: MenuItemConstructorOptions[] = []
     for (const it of optionMenuModel()) {
@@ -37,31 +37,22 @@ export function popOptionMenu(
       }
       items.push({
         label: it.label,
-        click: async () => {
-          acted = true
-          if (!it.confirm) {
-            resolve(it.action)
-            return
-          }
-          const copy = CONFIRM[it.action as 'option:remove' | 'option:clear']
-          const { response } = await dialog.showMessageBox(win, {
-            type: 'warning',
-            buttons: [copy.button, 'Cancel'],
-            defaultId: 0,
-            cancelId: 1,
-            message: copy.message(ctx.name),
-            detail: copy.detail,
-          })
-          resolve(response === 0 ? it.action : null)
-        },
+        click: it.confirm
+          ? pickAfter(async () => {
+              const copy = CONFIRM[it.action as 'option:remove' | 'option:clear']
+              const { response } = await dialog.showMessageBox(win, {
+                type: 'warning',
+                buttons: [copy.button, 'Cancel'],
+                defaultId: 0,
+                cancelId: 1,
+                message: copy.message(ctx.name),
+                detail: copy.detail,
+              })
+              return response === 0 ? it.action : null
+            })
+          : pick(it.action),
       })
     }
-    const menu = Menu.buildFromTemplate(items)
-    menu.popup({
-      window: win,
-      callback: () => {
-        if (!acted) resolve(null)
-      },
-    })
+    return items
   })
 }

@@ -6,6 +6,7 @@ import type { BrowserWindow } from 'electron'
 import type { ViewStyle } from '@shared/types'
 import type { EmbedAreaMenuAction, EmbedTitleMenuAction } from '@shared/viewMenus'
 import { popReturningMenu } from './returningMenu'
+import { viewStyleSubmenu } from './styleMenu'
 
 const TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const
 
@@ -40,22 +41,6 @@ export function popEmbedAreaMenu(
     ...(current.titleShown ? [] : [{ label: 'Show Title', click: pick('show-title') }]),
     { label: 'New View', click: pick('new-view') },
     { type: 'separator' as const },
-    {
-      label: 'Style',
-      submenu: [
-        {
-          label: 'Dropdown',
-          type: 'checkbox' as const,
-          checked: current.viewStyle === 'dropdown',
-          click: pick('style-dropdown'),
-        },
-        {
-          label: 'Toolbar',
-          type: 'checkbox' as const,
-          checked: current.viewStyle === 'toolbar',
-          click: pick('style-toolbar'),
-        },
-      ],
-    },
+    { label: 'Style', submenu: viewStyleSubmenu(current.viewStyle, pick) },
   ])
 }

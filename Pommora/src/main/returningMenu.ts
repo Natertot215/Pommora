@@ -4,10 +4,16 @@
 import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 
-/** `buildItems` receives `pick`, a factory turning an action into a click handler that resolves it. */
+/** `buildItems` receives `pick`, a factory turning an action into a click handler that resolves it,
+ *  and `pickAfter`, the same for a row that must ask something first — a confirm dialog — and
+ *  resolves what that answers with. Both mark the menu acted at click, before any await, so a
+ *  dialog opening over the closing menu can't be read as a dismissal. */
 export function popReturningMenu<A>(
   win: BrowserWindow,
-  buildItems: (pick: (action: A) => () => void) => MenuItemConstructorOptions[],
+  buildItems: (
+    pick: (action: A) => () => void,
+    pickAfter: (ask: () => Promise<A | null>) => () => void,
+  ) => MenuItemConstructorOptions[],
 ): Promise<A | null> {
   return new Promise((resolve) => {
     let acted = false
@@ -15,7 +21,11 @@ export function popReturningMenu<A>(
       acted = true
       resolve(action)
     }
-    const template = buildItems(pick)
+    const pickAfter = (ask: () => Promise<A | null>) => () => {
+      acted = true
+      void ask().then(resolve)
+    }
+    const template = buildItems(pick, pickAfter)
     // A model that gated every one of its items away has nothing to show; popping it would leave an
     // empty frame under the cursor.
     if (template.length === 0) {

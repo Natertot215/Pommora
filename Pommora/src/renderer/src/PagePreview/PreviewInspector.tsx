@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PropertyDefinition } from '@shared/properties'
 import type { PropertyValue } from '@shared/propertyValue'
-import { applyValueAtRoot, propertyKey } from '@shared/propertyValue'
+import { applyValueAtRoot, isBlankValue, propertyKey } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { cx } from '@renderer/design-system/cx'
 import { asRenderableIcon, Icon } from '@renderer/design-system/symbols'
 import { propertyTypeIconName } from '../Components/Detail/PropertyTypes'
 import { text } from '@renderer/design-system/tokens'
-import { PickerMenu, PickerOption, PointMenu } from '@renderer/design-system/components/PickerMenu'
-import { MenuItem } from '@renderer/design-system/components/menu'
+import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
 import { iconOption } from '@renderer/design-system/components/PickerMenu/pickerMenu.css'
 import { Cell } from '../Detail/Views/Table/Cell'
 import { buildResolveContext, type ResolveContext } from '../Detail/Views/Table/resolveContext'
@@ -59,7 +58,6 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
   const [addOpen, setAddOpen] = useState(false)
   const addRef = useRef<HTMLButtonElement | null>(null)
-  const [rowMenu, setRowMenu] = useState<{ id: string; x: number; y: number } | null>(null)
 
   useEffect(() => {
     setEditing(null)
@@ -197,6 +195,17 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
   if (!ctx || !row || !fm) return <div className="pgpreview-insp" />
 
   const isContextRow = (id: string): boolean => contextRows.some((c) => c.id === id)
+
+  // The same native menu the page's own properties pane pops: Clear empties the value and leaves
+  // the row to be refilled, Remove empties it and takes the row away, back into Add Property.
+  const rowMenu = async (id: string, name: string, filled: boolean): Promise<void> => {
+    const action = await window.nexus.propertyMenu({ kind: 'page-value', name, filled })
+    if (action !== 'value:clear' && action !== 'value:remove') return
+    if (isContextRow(id)) commitContext(id, [])
+    else commitValue(id, null)
+    if (action === 'value:clear') setRevealed((prev) => new Set([...prev, id]))
+    else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
+  }
   const editingDef =
     editing &&
     (schema.find((d) => d.id === editing.id) ??
@@ -224,7 +233,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                     data-insp-id={id}
                     onContextMenu={(e) => {
                       e.preventDefault()
-                      setRowMenu({ id, x: e.clientX, y: e.clientY })
+                      void rowMenu(id, label, !isBlankValue(resolveFieldValue(row, id, schema)))
                     }}
                   >
                     <span className={cx('pgpreview-insp-label', text.caption.standard)}>
@@ -294,23 +303,6 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
           </button>
         )}
       </div>
-      {rowMenu && (
-        <PointMenu at={rowMenu} onDismiss={() => setRowMenu(null)}>
-          <div className="nav-row-menu">
-            <MenuItem
-              leading={<Icon name="x" size={13} />}
-              onClick={() => {
-                if (isContextRow(rowMenu.id)) commitContext(rowMenu.id, [])
-                else commitValue(rowMenu.id, null)
-                setRevealed((prev) => new Set([...prev].filter((r) => r !== rowMenu.id)))
-                setRowMenu(null)
-              }}
-            >
-              Remove
-            </MenuItem>
-          </div>
-        </PointMenu>
-      )}
       {addOpen && (
         <PickerMenu
           solid

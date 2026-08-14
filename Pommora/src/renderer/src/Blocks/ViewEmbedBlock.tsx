@@ -14,14 +14,14 @@ import { vars as colorVars } from '@renderer/design-system/tokens/color.css'
 import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
 import { TINT_STEPS, tintAt } from '@renderer/design-system/tokens/tint'
 import { ColorPicker } from '@renderer/Components/Detail/ColorPicker'
-import { PickerMenu, PointMenu } from '@renderer/design-system/components/PickerMenu'
+import { ViewRowMenu } from '@renderer/Components/ViewRowMenu'
+import { PickerMenu } from '@renderer/design-system/components/PickerMenu'
 import {
   AccessoryButton,
   Menu,
   MenuBottomRow,
   MenuItem,
   MenuScrollFrame,
-  MenuSeparator,
 } from '@renderer/design-system/components/menu'
 import {
   titleInput as rowInput,
@@ -597,39 +597,16 @@ export function ViewEmbedBlock({
           </div>
         </PickerMenu>
         {rowMenuAt && (
-          <PointMenu at={rowMenuAt} onDismiss={() => setRowMenuAt(null)}>
-            {(
-              [
-                ['pencil', 'Rename', () => setRenaming(rowMenuAt.i)],
-                ['smile', 'Edit Icon', () => setIconFor(rowMenuAt.i)],
-                ['palette', 'Edit Color', () => setColorFor(rowMenuAt.i)],
-                ['type', labeled ? 'Hide Titles' : 'Show Titles', toggleTitles],
-              ] as const
-            ).map(([glyph, label, run]) => (
-              <MenuItem
-                key={label}
-                leading={<Icon name={glyph} size={13} />}
-                onClick={() => {
-                  setRowMenuAt(null)
-                  run()
-                }}
-              >
-                {label}
-              </MenuItem>
-            ))}
-            <MenuSeparator />
-            {/* The write path refuses a container's last view; the row mirrors that rule. */}
-            <MenuItem
-              disabled={entry.views.length < 2}
-              leading={<Icon name="trash" size={13} />}
-              onClick={() => {
-                setRowMenuAt(null)
-                ;(rowMenuAt.animate ? beginDeleteView : deleteViewAt)(rowMenuAt.i)
-              }}
-            >
-              Delete
-            </MenuItem>
-          </PointMenu>
+          <ViewRowMenu
+            at={rowMenuAt}
+            onDismiss={() => setRowMenuAt(null)}
+            onRename={() => setRenaming(rowMenuAt.i)}
+            onIcon={() => setIconFor(rowMenuAt.i)}
+            onColor={() => setColorFor(rowMenuAt.i)}
+            titles={{ shown: labeled, onToggle: toggleTitles }}
+            onDelete={() => (rowMenuAt.animate ? beginDeleteView : deleteViewAt)(rowMenuAt.i)}
+            deletable={entry.views.length > 1}
+          />
         )}
         <IconPicker
           open={iconFor !== null}
