@@ -31,6 +31,7 @@ import {
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import {
   buildContextRecord,
+  emptyBundle,
   gatherContentRecord,
   gatherContextEvidence,
   gatherSpaceRecord,
@@ -72,8 +73,12 @@ import { readRegistry } from './io/propertiesRegistry'
 /** What the orchestration needs from the Electron layer (injected to keep this testable). */
 export interface MutateDeps {
   trashMode: TrashMode
-  /** Move a path to the OS trash (shell.trashItem). Only the 'system' trashMode uses it. */
+  /** Move a path to the OS trash (shell.trashItem). The 'system' trashMode and the emptying op
+   *  with the switch off both use it. */
   trashToSystem: (absPath: string) => Promise<void>
+  /** `personalization.permanentDelete` — what emptying a bundle means. Read main-side per
+   *  operation: the renderer never carries the flag that chooses between recoverable and gone. */
+  permanentDelete?: boolean
 }
 
 const relJoin = (parent: string, child: string): string => (parent ? `${parent}/${child}` : child)
@@ -348,7 +353,14 @@ async function dispatch(req: MutateRequest, deps: MutateDeps, root: string): Pro
     case 'restore': {
       const resolved = await resolveUnderRoot(root, req.bundlePath)
       if (!resolved.ok) return resolved
-      const r = await restoreArtifact(root, resolved.value)
+      const r = await restoreArtifact(root, resolved.value, req.destination)
+      return r.ok ? ok({}) : r
+    }
+
+    case 'emptyBundle': {
+      const resolved = await resolveUnderRoot(root, req.bundlePath)
+      if (!resolved.ok) return resolved
+      const r = await emptyBundle(root, resolved.value, deps)
       return r.ok ? ok({}) : r
     }
 

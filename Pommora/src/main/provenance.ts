@@ -503,22 +503,91 @@ async function restoredSpaceTitles(absContextDir: string): Promise<Map<string, s
   return titles
 }
 
+/** The assertion both spend paths make for themselves. Path, root and suffix are not sufficient:
+ *  `.trash` mirrors the nexus, so a user's own folder wearing the bundle suffix passes all three
+ *  while holding real bundles inside it. A bundle is a folder holding a record.
+ *
+ *  Both sides are already canonical — the session root is realpath'd when it opens, and the op's
+ *  path resolver realpaths both ends again before this is reached. */
+async function openBundle(root: string, bundleAbs: string): Promise<Result<RecordFile>> {
+  const trashPrefix = join(root, '.trash') + sep
+  if (!bundleAbs.startsWith(trashPrefix) || !bundleAbs.endsWith(BUNDLE_SUFFIX))
+    return fail('operation-failed', 'Only a trash record can be spent.')
+  const record = await readRecord(bundleAbs)
+  return record ? ok(record) : fail('operation-failed', 'That deletion record is unreadable.')
+}
+
+/** Give a bundle up for good: the artifact leaves for the operating system's trash, or is erased
+ *  outright when the switch is on, and the spent bundle is removed behind it. The record has no
+ *  value past the moment its entity is given up, and a user who later opens the system's trash
+ *  should find the file rather than a stamped folder wrapping it.
+ *
+ *  Artifact first is deliberate. If the bundle's removal then fails, what is left is a record with
+ *  no artifact — litter the listing already skips. The reverse order risks the opposite orphan
+ *  while the artifact is still live. */
+export async function emptyBundle(
+  root: string,
+  bundleAbs: string,
+  deps: { permanentDelete?: boolean; trashToSystem: (absPath: string) => Promise<void> },
+): Promise<Result<null>> {
+  const opened = await openBundle(root, bundleAbs)
+  if (!opened.ok) return opened
+  const artifactAbs = opened.value.entity === 'property' ? null : await bundleArtifact(bundleAbs)
+  if (artifactAbs) {
+    if (deps.permanentDelete === true) await rm(artifactAbs, { recursive: true, force: true })
+    else await deps.trashToSystem(artifactAbs)
+  }
+  await rm(bundleAbs, { recursive: true, force: true })
+  return ok(null)
+}
+
+/** Substitute a chosen parent for the recorded one, so every placement guarantee still comes from
+ *  the one function that owns them. Only three kinds can be homeless and so only three admit a
+ *  destination: a Context re-enters the registry and a Collection returns to the nexus root, and
+ *  neither of those parents can go missing. The pick arrives by the same untrusted route as the
+ *  bundle path, so it is resolved against the live tree rather than believed — and the matrix it
+ *  is held to is the write path's own: a page or Set lands in a container, a Space in a Context. */
+function withDestination(
+  record: ArtifactRecord,
+  destination: { kind: 'container' | 'context'; id: string },
+  tree: NexusTree,
+): Result<ArtifactRecord> {
+  switch (record.entity) {
+    case 'space':
+      if (destination.kind !== 'context')
+        return fail('invalid-path', 'A Space lives in a Context.')
+      if (!tree.contexts?.some((g) => g.def.id === destination.id))
+        return fail('not-found', 'That Context no longer exists.')
+      return ok({ ...record, parent: { kind: 'context', id: destination.id } })
+    case 'page':
+    case 'set':
+      if (destination.kind !== 'container')
+        return fail('invalid-path', 'Pages and Sets live in Collections and Sets.')
+      if (!findContainer(tree, destination.id))
+        return fail('not-found', 'That place no longer exists.')
+      return ok({ ...record, parent: { kind: 'container', id: destination.id } })
+    default:
+      return fail('operation-failed', 'That kind cannot be given a destination.')
+  }
+}
+
 /** The mover: resolve against the CURRENT tree inside the op (the world may have changed since
  *  listing), place the artifact under the resolver's final names, remove the spent bundle, and
  *  per kind re-enter the registry and re-apply membership through the shared reconcile loop.
- *  Branches on nothing — every decision is the resolver's. */
-export async function restoreArtifact(root: string, bundleAbs: string): Promise<Result<null>> {
-  // Both sides are already canonical — the session root is realpath'd when it opens, and the
-  // op's path resolver realpaths both ends again before this is reached.
-  const trashPrefix = join(root, '.trash') + sep
-  if (!bundleAbs.startsWith(trashPrefix) || !bundleAbs.endsWith(BUNDLE_SUFFIX))
-    return fail('operation-failed', 'Only a trash record can be restored.')
-  const record = await readRecord(bundleAbs)
-  if (!record) return fail('operation-failed', 'That restore record is unreadable.')
+ *  Branches on nothing — every decision is the resolver's. A `destination` substitutes the
+ *  recorded parent before the resolver runs, so the placement guarantees stay the resolver's too. */
+export async function restoreArtifact(
+  root: string,
+  bundleAbs: string,
+  destination?: { kind: 'container' | 'context'; id: string },
+): Promise<Result<null>> {
+  const opened = await openBundle(root, bundleAbs)
+  if (!opened.ok) return opened
   // A property has no artifact to place — its whole restore is a rebuild from the record, and it
   // spends the same bundle on the same terms.
-  if (record.entity === 'property') {
-    const rebuilt = await restoreProperty(root, record)
+  if (opened.value.entity === 'property') {
+    if (destination) return fail('operation-failed', 'That kind cannot be given a destination.')
+    const rebuilt = await restoreProperty(root, opened.value)
     if (!rebuilt.ok) return rebuilt
     await rm(bundleAbs, { recursive: true, force: true })
     return ok(null)
@@ -528,6 +597,12 @@ export async function restoreArtifact(root: string, bundleAbs: string): Promise<
     return fail('not-found', 'That deletion never finished; there is nothing to restore.')
 
   const tree = await readNexus(root)
+  // The substitution happens once, here, and everything downstream reads the rehomed record — the
+  // resolver's placement, the reconcile's owning Collection, and a Space's membership reapply,
+  // which must write the key of the Context it is landing in rather than the one it left.
+  const rehomed = destination ? withDestination(opened.value, destination, tree) : ok(opened.value)
+  if (!rehomed.ok) return rehomed
+  const record = rehomed.value
   const resolution = resolveRecord(record, basename(artifactAbs), tree)
   if ('refuse' in resolution) return fail('operation-failed', REFUSAL_TEXT[resolution.refuse])
   const { dir, finalName, finalTitle } = resolution.place

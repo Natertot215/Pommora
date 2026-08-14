@@ -56,6 +56,7 @@ import { ensureContextsRegistry } from './contextsRegistry'
 import {
   readDefaultViewScale,
   readNavViewModes,
+  readPermanentDelete,
   readSubfield,
   writeNavViewModes,
   writePersonalization,
@@ -471,9 +472,11 @@ const blockHostAnd = (
 // system-trash injected. Shared by the mutate IPC + the native context menu.
 async function mutateDeps(): Promise<MutateDeps> {
   const config = await readAppConfig(app.getPath('userData'))
+  const root = sessionRoot()
   return {
     trashMode: config.trashMode ?? DEFAULT_TRASH_MODE,
     trashToSystem: (p) => shell.trashItem(p),
+    permanentDelete: root === null ? false : await readPermanentDelete(root),
   }
 }
 

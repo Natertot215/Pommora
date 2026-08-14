@@ -67,10 +67,16 @@ export type MutateRequest =
   | { op: 'delete'; path: string; kind: MutableKind }
   // Spend a deletion bundle: resolve against the CURRENT tree and put the artifact back — into
   // its parent's renamed home if it moved. `bundlePath` is nexus-relative, from the listing.
-  // Parked, NOT dead code: the whole restore path is built and tested main-side and has no
-  // renderer caller by design, because the trash browser that would supply a bundlePath hasn't
-  // been built. It waits on that surface — see `listBundles`, which has no bridge channel yet.
-  | { op: 'restore'; bundlePath: string }
+  // `destination` overrides the recorded parent, for the kinds whose home can go missing.
+  | {
+      op: 'restore'
+      bundlePath: string
+      destination?: { kind: 'container' | 'context'; id: string }
+    }
+  // Spend a deletion bundle the other way: the artifact leaves for the operating system's trash,
+  // or is erased outright when `personalization.permanentDelete` is on, and the record goes with
+  // it. Destructive and unrecoverable from inside Pommora either way.
+  | { op: 'emptyBundle'; bundlePath: string }
   // dataUrl set ⇒ decode + copy into `.nexus/assets/<nexusID>/profile-<token>.<ext>` + record
   // the rel path in `settings.profile_image`; null ⇒ clear the field + delete the file.
   | { op: 'setProfileImage'; dataUrl: string | null }
