@@ -24,17 +24,27 @@ export async function updateSettings(
   if (!written.ok) throw new Error(written.error.message)
 }
 
-/** The nexus's default window zoom from `personalization.defaultViewScale` — the factor the window
- *  opens at and ⌘0 resets to. A direct settings.json read (never a full readNexus walk), clamped to a
- *  usable range; absent/malformed → 1.0. */
-export async function readDefaultViewScale(root: string): Promise<number> {
+/** One personalization key straight off disk — a direct settings.json read, never a full readNexus
+ *  walk, for the handful of main-side consumers that need one value and nothing else. */
+async function readPersonalizationKey(root: string, key: string): Promise<unknown> {
   const existing = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.settings))
   const p = existing?.personalization
-  const raw =
-    p && typeof p === 'object' && !Array.isArray(p)
-      ? (p as Record<string, unknown>).defaultViewScale
-      : undefined
-  return coerceViewScale(raw)
+  return p && typeof p === 'object' && !Array.isArray(p)
+    ? (p as Record<string, unknown>)[key]
+    : undefined
+}
+
+/** The nexus's default window zoom from `personalization.defaultViewScale` — the factor the window
+ *  opens at and ⌘0 resets to, clamped to a usable range; absent/malformed → 1.0. */
+export async function readDefaultViewScale(root: string): Promise<number> {
+  return coerceViewScale(await readPersonalizationKey(root, 'defaultViewScale'))
+}
+
+/** Whether emptying the trash erases outright rather than handing the artifact to the operating
+ *  system. Anything that is not literally `true` reads as off: the destructive direction is never
+ *  reached by a truthy coercion. */
+export async function readPermanentDelete(root: string): Promise<boolean> {
+  return (await readPersonalizationKey(root, 'permanentDelete')) === true
 }
 
 /** Read the React-owned `subfield` foreign key from settings.json (null when absent/malformed). */

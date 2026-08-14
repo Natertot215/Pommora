@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { readDefaultViewScale, updateSettings } from './settings'
+import { readDefaultViewScale, readPermanentDelete, updateSettings, writePersonalization } from './settings'
 import { nexusDir, nexusConfig, NEXUS_CONFIG_FILES } from './paths'
 
 let root: string
@@ -76,5 +76,26 @@ describe('an unreadable settings.json is never replaced', () => {
       updateSettings(root, (cur) => ({ ...cur, profile_subtitle: 'x' })),
     ).rejects.toThrow()
     expect(await readFile(path(), 'utf8')).toBe('{ corrupt')
+  })
+})
+
+describe('readPermanentDelete — what emptying the trash means', () => {
+  it('an absent file, an absent key, and a non-boolean all read as off', async () => {
+    expect(await readPermanentDelete(root)).toBe(false)
+    await write({})
+    expect(await readPermanentDelete(root)).toBe(false)
+    await write({ personalization: {} })
+    expect(await readPermanentDelete(root)).toBe(false)
+    // Never truthy-coerced: the unsafe direction is not reached by accident.
+    for (const v of ['true', 1, ['true'], {}])
+      await write({ personalization: { permanentDelete: v } })
+    expect(await readPermanentDelete(root)).toBe(false)
+  })
+
+  it('reads the switch on, and sees a write without a reopen', async () => {
+    await write({ personalization: { permanentDelete: true } })
+    expect(await readPermanentDelete(root)).toBe(true)
+    await writePersonalization(root, 'permanentDelete', undefined)
+    expect(await readPermanentDelete(root)).toBe(false)
   })
 })

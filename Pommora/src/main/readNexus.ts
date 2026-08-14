@@ -124,6 +124,7 @@ export function readPersonalization(raw: unknown): Personalization {
     ribbonOrder: ribbonOrder.length ? ribbonOrder : undefined,
     defaultViewScale: coerceViewScale(p.defaultViewScale),
     hoverPreviewLinger: coerceHoverLinger(p.hoverPreviewLinger),
+    permanentDelete: bool(p.permanentDelete),
   }
 }
 

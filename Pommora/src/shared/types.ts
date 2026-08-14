@@ -113,6 +113,9 @@ export interface Personalization {
   /** How long the connection hover card lingers after hover-off, in whole seconds (1–30).
    *  Absent = None: only the short pointer-travel grace. */
   hoverPreviewLinger?: number
+  /** What emptying an item from the trash means. Absent = the artifact goes to the operating
+   *  system's trash and the OS owns the last undo; true erases it from the machine outright. */
+  permanentDelete?: boolean
 }
 
 /** The per-nexus default window zoom (`personalization.defaultViewScale`). Clamped so a hand-typed

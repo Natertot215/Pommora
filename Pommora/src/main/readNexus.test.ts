@@ -446,6 +446,7 @@ describe('readNexus — personalization', () => {
       'navCloseOnSelect',
       'revealTabBarOnHover',
       'connectionsOpenInPreview',
+      'permanentDelete',
     ] as const
     const t = await readNexus(
       mk({ personalization: Object.fromEntries(keys.map((k) => [k, true])) }),
