@@ -20,7 +20,11 @@ Surfaces import only from the interaction layer's own modules, never from a drag
 
 **`design-system/interactions/gesture.ts`** is the raw-pointer primitive under the insertion-line surfaces. `beginPointerGesture` owns the pending→active activation gate, the window listener set, pointer capture, Esc cancel (optionally swallowed so a parent pane doesn't also dismiss), teardown, and a per-gesture abort handle; one gesture is live at a time, and a begin while one is live is refused. Surfaces wire it through **`usePointerGesture()`**, which holds each consumer's live handle and unmount abort. A callback that throws aborts its own gesture, a lost release — window blur, a zero-buttons move — cancels, a foreign pointer's events are ignored, and every activated release swallows its own click. `onWindowScroll` rides the spec for scroll-sensitive geometry.
 
+**A press can carry two meanings.** `onTap` fires on a release that never crossed the activation threshold — the press was a click, not a drag. Only a release means it: a cancel, an Escape, a window blur and a lost release all still route to `onAbort`, so the click can never fire on a gesture that was called off. This is what lets a click-or-drag surface live on the skeleton rather than hand-rolling a lifecycle to tell the two apart — MarkdownPM's list glyph toggles a checkbox or seats a caret on the release it doesn't drag from, and a heading grip folds its section.
+
 The layer holds two lifecycle families. Window-listener **drags** — threshold-gated, Escape-abortable, teardown-owning — belong on the skeleton. Element-capture **scrub controls** — the shell's pane-edge resizes, the Slider, the photo pan, and the window chrome in `SidePane`, `FloatingWindow`, and `TabBar` — respond on the press itself and stay element-bound, self-cleaning through their own `pointercancel`/`lostpointercapture` handlers. The two engines and SurfacePM's sensor keep their own lifecycles for abort conditions the skeleton has no concept of.
+
+A CodeMirror extension has no React component to hang the unmount abort on, so MarkdownPM's drags begin through **`EditorGesture`** — a thin bracket holding the live handle behind a `ViewPlugin` whose `destroy` aborts it, keeping a view torn down mid-drag from leaving a gesture running against a dead editor.
 
 **`design-system/interactions/drag.tsx`** is the sort-engine seam:
 
@@ -74,5 +78,5 @@ A termination backstop stops the loop — each surface still aborts its own gest
 
 ### Pending
 
-- **The click-or-drag surfaces** — MarkdownPM's `listDrag`/`blockDrag` and the CalendarPicker's range drag stay on their own lifecycles: a sub-threshold release must place a caret or pick a date, which the skeleton's teardown can't distinguish from a cancel. An `onTap` fired on a release-before-activation is the unblocking piece; it lands with the migration that consumes it.
+- **The CalendarPicker's range drag** stays on its own lifecycle. It belongs to the scrub family rather than the drag one — a press on a selected endpoint re-places it live with no activation threshold at all — so `onTap` is not what it is waiting on.
 - **Mobile readiness** — a spec a future touch pass holds to. The sensor and collision layers keep it viable: draggables opt out of native panning with `touch-action: none`, `pointercancel` tears a gesture down cleanly, the keyboard sensor stays separable, and collision math never bakes in hit-target sizes. The pass adds a press-delay alongside the travel-distance activation and a non-passive `touchmove` hedge.

@@ -8,7 +8,9 @@ import { ACTIVATION, suppressNextClick } from './shared'
 
 export type PointerGestureSpec = {
   el: HTMLElement
-  event: ReactPointerEvent
+  /** React's synthetic press or a native one — a CodeMirror extension has no synthetic event to
+   *  hand over, and the skeleton reads only the fields both carry. */
+  event: ReactPointerEvent | PointerEvent
   /** Travel (px) before the press becomes a drag. */
   activation?: number
   /** Off for window-listener-only surfaces — otherwise capture defers to activation. */
@@ -19,6 +21,11 @@ export type PointerGestureSpec = {
   onDragMove: (e: PointerEvent) => void
   /** Release after activation — commit here. The skeleton has already swallowed the click. */
   onDrop: () => void
+  /** Release BEFORE activation — the press was a click, not a drag. A cancel is not a tap, so
+   *  pointercancel, Escape, blur and a lost release all still route to `onAbort`. This is what
+   *  lets a click-or-drag surface — a list glyph that toggles a checkbox, a heading grip that
+   *  folds — live on the skeleton rather than hand-rolling the lifecycle to tell the two apart. */
+  onTap?: () => void
   /** The gesture ended without a drop: pointercancel, Escape, blur, a lost release, an
    *  activation abort, or a throwing callback. */
   onAbort?: () => void
@@ -150,7 +157,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
         if (wasActive) {
           suppressNextClick()
           spec.onDrop()
-        }
+        } else spec.onTap?.()
       },
       cancel: (ev?: PointerEvent) => {
         if (ev && ev.pointerId !== e.pointerId) return

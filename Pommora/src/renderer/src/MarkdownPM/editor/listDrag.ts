@@ -3,12 +3,12 @@
 // descendants) in one transaction, renumbering any ordered run it touched.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { ACTIVATION } from '../../design-system/interactions/shared'
 import { resolveScroller, startAutoScroll } from '../../design-system/interactions/autoscroll'
 import { parseListMarkerPrefixed as parseListMarker } from '../detect'
 import { docString } from './docCache'
 import { docMathRanges } from './mathRanges'
 import { Overlay, forEachLine, setShade, shadeField } from './dragChrome'
+import { beginEditorGesture, editorGestureCleanup } from './EditorGesture'
 import { focusAt } from './input'
 import { lineElementAt } from './lineDom'
 import {
@@ -18,18 +18,6 @@ import {
   type SubBlock,
   type Slot,
 } from './listDragModel'
-
-interface Gesture {
-  pid: number
-  startX: number
-  startY: number
-  lastY: number
-  active: boolean
-  done: boolean
-  overlay: Overlay
-  cands: Cand[]
-  slot: ResolvedSlot | null
-}
 
 interface ResolvedSlot extends Slot {
   lineLeft: number // viewport x of the insertion line's left edge
@@ -147,6 +135,7 @@ function clickAction(view: EditorView, pos: number): void {
 
 export const listDragExtension: Extension = [
   shadeField,
+  editorGestureCleanup,
   EditorView.domEventHandlers({
     // CM starts its text-selection drag on mousedown, and preventDefault on pointerdown doesn't cancel the
     // compatibility mousedown — so without this, pressing a glyph to drag would also select text under it.
@@ -169,104 +158,67 @@ export const listDragExtension: Extension = [
       e.preventDefault() // suppress text-selection / caret on the glyph press (numbers are source text)
 
       const host = view.scrollDOM
-      const gesture: Gesture = {
-        pid: e.pointerId,
-        startX: e.clientX,
-        startY: e.clientY,
-        lastY: e.clientY,
-        active: false,
-        done: false,
-        overlay: new Overlay(),
-        cands: [],
-        slot: null,
-      }
+      const overlay = new Overlay()
+      let activated = false
+      let cands: Cand[] = []
+      let slot: ResolvedSlot | null = null
+      let lastY = e.clientY
       let stopScroll: (() => void) | null = null
 
       const repick = (): void => {
-        const slot = slotFrom(gesture.cands, gesture.lastY, block, view.state.doc.length)
-        gesture.slot = slot
-        if (slot) gesture.overlay.show(slot.lineLeft, slot.lineTop, slot.lineWidth)
-        else gesture.overlay.hide()
+        slot = slotFrom(cands, lastY, block, view.state.doc.length)
+        if (slot) overlay.show(slot.lineLeft, slot.lineTop, slot.lineWidth)
+        else overlay.hide()
       }
       // Candidate coords are viewport-relative, so any scroll (wheel or the auto-scroll loop)
       // invalidates them — re-measure against the new layout, then re-aim.
       const remeasure = (): void => {
-        gesture.cands = collectCands(view, block)
+        cands = collectCands(view, block)
         repick()
       }
 
-      const onMove = (ev: PointerEvent): void => {
-        if (!gesture.active) {
-          if (Math.hypot(ev.clientX - gesture.startX, ev.clientY - gesture.startY) < ACTIVATION)
-            return
-          gesture.active = true
+      beginEditorGesture({
+        el: host,
+        event: e,
+        onActivate: (ev) => {
+          activated = true
           document.body.style.cursor = 'grabbing'
-          try {
-            host.setPointerCapture(gesture.pid)
-          } catch {
-            // capture unavailable
-          }
           view.dispatch({ effects: setShade.of({ from: block.from, to: block.to }) })
-          gesture.cands = collectCands(view, block)
+          lastY = ev.clientY
+          remeasure()
           // The shared loop scrolls CM's viewport (explicit scroller — findScroller can't derive
-          // scrollDOM); its scrollBy fires the native `scroll` → onScroll → remeasure, so far
-          // candidates become targetable as they scroll in.
+          // scrollDOM); its scrollBy fires the native `scroll`, which the skeleton's capture-phase
+          // window listener carries to onWindowScroll, so far candidates become targetable as they
+          // scroll in.
           stopScroll = startAutoScroll({
-            getPoint: () => ({ x: 0, y: gesture.lastY }),
+            getPoint: () => ({ x: 0, y: lastY }),
             scroller: resolveScroller(host, 'y'),
             dragEl: host,
             axis: 'y',
           })
-        }
-        gesture.lastY = ev.clientY
-        repick()
-      }
-
-      const onScroll = (): void => {
-        if (gesture.active) remeasure()
-      }
-      const onKey = (ev: KeyboardEvent): void => {
-        if (ev.key === 'Escape') finish(false)
-      }
-
-      const finish = (commit: boolean): void => {
-        if (gesture.done) return // a drag ends once — the Escape path must not re-enter a finished one
-        gesture.done = true
-        document.body.style.cursor = ''
-        stopScroll?.()
-        stopScroll = null
-        host.removeEventListener('pointermove', onMove)
-        host.removeEventListener('pointerup', onUp)
-        host.removeEventListener('pointercancel', onCancel)
-        host.removeEventListener('scroll', onScroll)
-        window.removeEventListener('keydown', onKey)
-        try {
-          host.releasePointerCapture(gesture.pid)
-        } catch {
-          // already released
-        }
-        gesture.overlay.hide()
-        if (gesture.active) view.dispatch({ effects: setShade.of(null) })
-
-        if (!gesture.active) {
-          if (commit) clickAction(view, pos) // a click, never a drag
-          return
-        }
-        if (commit && gesture.slot) {
-          const changes = dropChanges(view.state.doc.toString(), block, gesture.slot)
-          if (changes?.length) {
-            view.dispatch({ changes, userEvent: 'input' })
-          }
-        }
-      }
-
-      const onUp = (): void => finish(true)
-      const onCancel = (): void => finish(false)
-      host.addEventListener('pointermove', onMove)
-      host.addEventListener('pointerup', onUp)
-      host.addEventListener('pointercancel', onCancel)
-      host.addEventListener('scroll', onScroll, { passive: true })
-      window.addEventListener('keydown', onKey)
+          return true
+        },
+        onDragMove: (ev) => {
+          lastY = ev.clientY
+          repick()
+        },
+        scrollTarget: () => host,
+        onWindowScroll: remeasure,
+        onDrop: () => {
+          if (!slot) return
+          const changes = dropChanges(view.state.doc.toString(), block, slot)
+          if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
+        },
+        onTap: () => clickAction(view, pos),
+        teardown: () => {
+          stopScroll?.()
+          stopScroll = null
+          if (!activated) return
+          document.body.style.cursor = ''
+          overlay.hide()
+          view.dispatch({ effects: setShade.of(null) })
+        },
+      })
       return true
     },
   }),
