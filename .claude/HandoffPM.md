@@ -14,8 +14,6 @@ That raised the real question, which Nathan asked directly: what else in the men
 
 **What is verified:** every gate green on the final state — typecheck 0, 2598 tests across 227 files, lint at zero diagnostics, the atlas's 20 tables, and `biome format` reporting no drift across `src`. Each duplication was read at both sites before being called one. The audit's findings were opened and confirmed rather than folded on report, and one reviewer claim was checked and found wrong: the preview inspector is not missing its twin's set-aside path, because its single `revealed` set does what the pane needs two sets for. **What is assumed:** nothing about the native menus as rendered — no automation can click one, so the destination submenu, the Style ▸ checkboxes and the create menu's dismissal are the paths only a person can drive.
 
-**The re-walk is acknowledged and queued.** The codebase survey's strongest finding is that every change the tree can see re-reads the whole nexus, that a rename additionally opens and parses every markdown file to find what links the old title, and that the write-side sweeps ignore the exclusion rules the read side honors — so a folder excluded from Pommora is still read on every rename and still rewritten if it holds real pages. One content index answers all three. Nathan queued it for when his Fable 5 limit resets; it stands as one arc in Context §The Boring Work rather than three tasks.
-
 #### Completion Criteria
 
 - [x] **Every page right-click surface carries the same send block** — Move To ▸ · Copy Link · Copy Path, built from one model, on all six surfaces.
@@ -28,15 +26,13 @@ That raised the real question, which Nathan asked directly: what else in the men
 
 #### Next Session
 
-- **Open on a new focus.** The natural next is the main pane's Inspector, which Context §Immediate Work carries — its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty, with the Page Preview's frontmatter inspector already doing that job for another host.
-- **Two menu paths want a person's eye**, neither blocking: the section-header "+" create menu, whose retired wrapper had deferred its dismissal by a tick, and the toolbar view list's new Edit Color row.
 - **A nexus-wide date-format setting**, if wanted. The nexus has a `time_format` and no date equivalent; the trash column defaults to `defaultStyleFor('datetime')` for want of one.
 - **The one unverified trash path**, carried through three reviews: whether Electron renders a disabled `Restore ▸` with an empty submenu as a grayed row rather than swallowing it.
 
 #### Feedback
 
 - "I want you to scope out the menu changes surgically and without adding abstractions, or any useless things you don't need."
-- "consolidate the menues where they differ" — the standard is that two surfaces doing one job can't drift, not that the code got shorter.
+- "consolidate the menus where they differ" — the standard is that two surfaces doing one job can't drift, not that the code got shorter.
 - "Explain it simply and tell me the files it would touch and net-code it would mean." — a proposal is sized before it's offered: the files, the net lines, and what the work is actually insurance against.
 - "Any report-backs to Nathan should be simple and explained briefly." — standing.
 
