@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-13-2026 → 08-14      | PM-100 | Trash Surface V1                                     |
 | 08-13-2026              | PM-099 | Ghost Creation, Page Icons & One Page Menu           |
 | 08-12-2026              | PM-098 | Page Alias' V1                                       |
 | 08-11-2026 → 08-12      | PM-097 | CardView Creation Affordance                         |
@@ -102,6 +103,20 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-100 || Trash Surface V1
+**DATE:** 08-13-2026 → 08-14
+
+`.trash` gained the surface that reads it. `main/provenance.ts`'s `listBundles` was complete, tested and callable by nothing; it now keeps the artifact basename it already computed and reaches the renderer through `trash:list` as rows shaped by `main/crud/trashRows.ts` — kind, title, a breadcrumb resolved from the recorded parent id against the live tree, the deletion instant unreplaced from the bundle's own folder stamp, and whether that parent still resolves. `Settings/TrashLeaf.tsx` renders them on `navList.css`'s row with a fixed date lane under the table's own `.table-head`, filtered by `fuzzyScore` over title and breadcrumb. `restoreArtifact` gained an optional destination that `withDestination` substitutes into the record before `resolveRecord` runs, so placement, the schema a returning page is reconciled against, and a Space's membership reapply all follow the chosen home; `emptyBundle` spends a bundle the other way, behind a guard that requires a readable record because `.trash` mirrors the nexus and a chain folder can wear the bundle suffix. `personalization.permanentDelete` decides whether the artifact reaches the operating system's trash, read main-side per operation so the renderer never carries the flag.
+
+**Glyphs:** `EntityIconKind` had no `context` member, so seven surfaces asked `entityIcon` for a Space when they meant a Context and drew the right mark only because the two kinds shared a seed. Context joined the union with `layout-grid` and Space moved to `layout-dashboard`; `contextWrite.ts` and `treeMove.ts` stopped stamping the literal onto a minted Context, which had been outranking the nexus default the new key introduced. `PagePropertiesPane` and `PreviewInspector` stopped re-resolving a glyph `contextIdentity.ts` had already resolved — the second pass was a no-op, which is why one of them naming the wrong kind had gone unseen — and `PropertyTypes.tsx`'s Context row took `DEFAULT_ENTITY_ICONS.context` rather than restating it.
+
+**Shared surfaces:** the bare search input inlined in `NavView`, `NavWindow` and `IconPicker` became `design-system/components/SearchField.tsx`, carrying the controlled value, the spellcheck and the chrome reset while size, colour and ring stayed with each caller; the search row's own rule left `navWindow.css` for `navList.css` as `.nav-search-row`. `buildMoveTargets` left `CardsView.tsx` as `destinationTree.ts` and `MoveTarget` gained the id a restore addresses by, and `cardMenu.ts` dropped its hand-rolled popper for `popReturningMenu` plus the shared `destinationNodes`. `SettingsWindow` became `NexusSettings`, its leaf bodies a union of toggle list or surface, its rail's phantom top padding removed.
+
+**Defects closed:** `emptyBundle` read a bundle holding anything beside its artifact as holding none and removed the folder wholesale, destroying the file with the switch off; it now refuses as restore does. `resolveRecord` opened with a full-nexus projection per call, so a listing rebuilt it once per row — `projectBaseline` memoizes per tree. A trashed Space's fallback breadcrumb wore the `.nexus/contexts` chain the live one hides. The trash menu's voice came from the whole checked set while its action came from the visible part, and `emptyBundle` paid a whole-tree reload for a write the walk skips by construction.
+
+- **Commits:** `fbb45c93^..68bc815d`
+- **Diff:** Net +791 | +999 / -208
 
 #### PM-099 || Ghost Creation, Page Icons & One Page Menu
 **DATE:** 08-13-2026
