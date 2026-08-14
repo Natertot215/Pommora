@@ -8,88 +8,75 @@
 **Dates:** 08-13-2026 → 08-14-2026
 **Model:** Opus 5 (1M context)
 
-**Trash Surface V1 — executed end to end, and finished.** The ratified plan's fifteen tasks ran phase by phase with a gate between each, and the record is PM-100. `.trash` had held three complete, tested, unreachable mechanisms; the Settings rail now carries a Trash leaf that lists every bundle and puts any of it back, including into a home the user picks when the recorded one is gone.
+**The menu system, closed out.** The session opened on a feature — a page's right-click menu should say where the page can go — and ended by making that the only way any native menu is built. Move To ▸ joined the send block above Copy Link and Copy Path, and every surface that right-clicks a page now carries the whole block: the table's title cell and row grip, a card, a sidebar row, a tab, and a NavWindow row. Before this they disagreed six ways — cards had Move To under Open and no clipboard items, tabs and the sidebar had the clipboard items and no Move To, and the table's two menus had neither.
 
-The plan's shape held, with two departures. Tasks 4 and 5 shipped as one commit because `bridge.ts` is pure shared types — a main-side record shape can never be a reply, so `TrashRow` had to exist the moment the channel did. And the spec's ruling that the heading read as bare column labels was superseded live: Nathan ruled the columns should take the table's own CSS, borders and segment included, which is what shipped. Both are recorded in the plan's Deviations and Rulings rather than left to be rediscovered.
+That raised the real question, which Nathan asked directly: what else in the menus never joined the shared structure? Three scouts answered it — one auditing menu divergence, one mining the docs for pending work, one surveying the codebase for what the docs don't say. The menu audit found no structural gap (every right-click surface routes to a native channel, and the native-vs-renderer split held up) but five genuine duplications, all now closed. Eight menus hand-rolled the popup promise `popReturningMenu` exists to hold; they route through it, and the two whose rows ask a confirm first use the `pickAfter` it gained. The Align radios and the view Style pair each existed twice and are `styleMenu.ts` builders now. The saved-view row menu was built twice and **disagreed** — Edit Color was unreachable from the toolbar purely because that list was written separately — and is one component. The preview inspector's hand-rolled Remove gave way to the native property menu its twin already used, which is where its missing Clear came from. Finally `menuTemplate` had become a strict subset of the page template, so it and `popModelMenu` moved behind the one builder.
 
-Four review passes ran — one per phase, then one across the whole arc looking only for seam defects a phase-scoped read structurally cannot reach. Between them they found and closed: `emptyBundle` reading a bundle holding anything beside its artifact as holding none and removing the folder wholesale, which destroyed the file with the switch off; `resolveRecord` rebuilding a full-nexus projection once per listed row; a Space's fallback breadcrumb wearing the internal `.nexus/contexts` chain; a batch whose menu voice came from the whole checked set while its action came from the visible part; and a batch reporting the homeless remedy for rows that had been attempted and refused, discarding the reason main had already computed. The last of those only a whole-arc read could see — main's refusal taxonomy and the renderer's report wording were each correct alone.
+**What is verified:** every gate green on the final state — typecheck 0, 2598 tests across 227 files, lint at zero diagnostics, the atlas's 20 tables, and `biome format` reporting no drift across `src`. Each duplication was read at both sites before being called one. The audit's findings were opened and confirmed rather than folded on report, and one reviewer claim was checked and found wrong: the preview inspector is not missing its twin's set-aside path, because its single `revealed` set does what the pane needs two sets for. **What is assumed:** nothing about the native menus as rendered — no automation can click one, so the destination submenu, the Style ▸ checkboxes and the create menu's dismissal are the paths only a person can drive.
 
-The visual pass was Nathan's, driven against the running app across a dozen corrections. Its one durable finding sits outside the trash: `FloatingWindow`'s move armed on any pointer button, and arming calls `preventDefault`, so **every drag surface in every floating window had been silently swallowing the context menu of whatever was drawn on it**. Nothing had noticed because nothing on those surfaces had a menu to lose.
-
-What is verified: every gate green on the final state (typecheck 0, 2595 tests across 227 files, lint at zero diagnostics of any severity, the atlas's 20 tables, a clean build), seven end-to-end scenarios against a real nexus on disk, and every visual decision measured on the running window rather than read from source. What is assumed: nothing about the native menus as rendered — CDP can pop them and read the model, but cannot click one, so the destination submenu and the Format ▸ pick are the only paths no automation has driven.
+**The re-walk is acknowledged and queued.** The codebase survey's strongest finding is that every change the tree can see re-reads the whole nexus, that a rename additionally opens and parses every markdown file to find what links the old title, and that the write-side sweeps ignore the exclusion rules the read side honors — so a folder excluded from Pommora is still read on every rename and still rewritten if it holds real pages. One content index answers all three. Nathan queued it for when his Fable 5 limit resets; it stands as one arc in Context §The Boring Work rather than three tasks.
 
 #### Completion Criteria
 
-- [x] **Phase 1 · Clearing the ground** — the stray lint diagnostic gone, four search inputs folded into one component with all three existing surfaces pixel-identical, and Context and Space carrying distinct kind glyphs across every borrowing site.
-- [x] **Phase 2 · Main** — `listBundles` widened and on the bridge, a bundle shaped into a row that knows its kind and whether its home resolves, the delete switch read main-side per operation, the empty op guarded to bundles alone, restore accepting a chosen destination, and the destination tree hoisted out of the cards view.
-- [x] **Phase 3 · The surface** — `NexusSettings` renamed and resized with its phantom padding gone, the Trash leaf listing rows under their headings, selection and the native menu, restore single and batch, and emptying with its switch and confirms.
-- [x] **Phase 4 · Reconciliation** — every document the work made false rewritten in the commit that falsified it, including NexusRecord's **Trash & Deletion** section.
-- [x] **Every gate passed on its own commit range** — typecheck, test, lint at zero diagnostics of any severity, plus simplification and review dispatched per phase with every concern fixed rather than deferred.
-- [x] **End-to-end proven against a real nexus** — an entity deleted, restored, and restored again with its parent gone; the property-strip behavior observed; the restoration matrix walked. Kept as `crud/trashRecovery.test.ts`.
-- [x] **The screenshot read and acted on** — the trash browser with a checked row and one of every kind seeded, inspected for real and its defects fixed.
-- [x] **The closeout run whole** and the History entry committed under the arc name **Trash Surface V1**.
+- [x] **Every page right-click surface carries the same send block** — Move To ▸ · Copy Link · Copy Path, built from one model, on all six surfaces.
+- [x] **No menu file builds its own popup promise** — `Menu.buildFromTemplate` survives only in the helper, the app menu bar, and the two owning menus that run their actions in place rather than returning them.
+- [x] **Every duplication the audit found is closed or adjudicated** — five closed; the two confirm-dialog bodies and the six `showMessageBox` call sites are reported rather than built, since a wrapper was scoped out.
+- [x] **One model becomes a native menu through one path** — `menuTemplate` and `popModelMenu` retired into `pageMenuTemplate`.
+- [x] **Gates green on the final state**, with formatting verified rather than assumed.
+- [x] **Every document the work made false corrected in the commit that falsified it** — SidebarPM, CardViewPM, NavigationPM, ViewsPM, PagePreviewPM.
+- [x] **The re-walk recorded once**, as a queued arc rather than a scatter of tasks.
 
 #### Next Session
 
-- **Open on a new focus.** This one is finished; the natural next is the main pane's Inspector, which Context §Immediate Work already carries — its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty, with the Page Preview's frontmatter inspector already doing that job for another host.
-- **Two calls Nathan holds** on the trash, neither blocking: whether the date column should show a year by default (`.trash` is never pruned, so two bundles a year apart read identically), and whether select-all should return somewhere other than the heading he removed it from.
-- **A nexus-wide date-format setting**, if wanted. The nexus has a `time_format` and no date equivalent; the trash column defaults to `defaultStyleFor('datetime')` for want of one. A `date_format` key beside `time_format` plus its coercer line would give every unconfigured date column one owner.
-- **The one unverified path**, carried through three reviews: whether Electron renders a disabled `Restore ▸` with an empty submenu as a grayed row rather than swallowing it. Right-click a homeless row in a nexus with no Collections and look.
+- **Open on a new focus.** The natural next is the main pane's Inspector, which Context §Immediate Work carries — its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty, with the Page Preview's frontmatter inspector already doing that job for another host.
+- **Two menu paths want a person's eye**, neither blocking: the section-header "+" create menu, whose retired wrapper had deferred its dismissal by a tick, and the toolbar view list's new Edit Color row.
+- **A nexus-wide date-format setting**, if wanted. The nexus has a `time_format` and no date equivalent; the trash column defaults to `defaultStyleFor('datetime')` for want of one.
+- **The one unverified trash path**, carried through three reviews: whether Electron renders a disabled `Restore ▸` with an empty submenu as a grayed row rather than swallowing it.
 
 #### Feedback
 
-
+- "I want you to scope out the menu changes surgically and without adding abstractions, or any useless things you don't need."
+- "consolidate the menues where they differ" — the standard is that two surfaces doing one job can't drift, not that the code got shorter.
+- "Explain it simply and tell me the files it would touch and net-code it would mean." — a proposal is sized before it's offered: the files, the net lines, and what the work is actually insurance against.
 - "Any report-backs to Nathan should be simple and explained briefly." — standing.
 
 #### Session Pointers
 
-- `Pommora/src/main/crud/trashRows.ts` — a bundle becomes a row. The stamp parser, the live-vs-frozen breadcrumb, and the `property` filter that keys on the record's own discriminator rather than a missing artifact.
-- `Pommora/src/main/provenance.ts` — `openBundle` is the assertion both spend paths make; `withDestination` substitutes a chosen parent before `resolveRecord` runs; `emptyBundle` sits beside `restoreArtifact`.
-- `Pommora/src/renderer/src/Settings/TrashLeaf.tsx` — the surface. `many()` carries each refusal's reason; `openColumnMenu` writes the date column's two personalization keys.
-- `Pommora/src/renderer/src/Settings/trashLeaf.css` — every knob is at the top: `--navwindow-inset`, `--trash-date-lane`, `--trash-date-inset`, `--trash-gutter`, `--heading-padding-y`. The doubled `.trash-leaf.trash-leaf` selector is deliberate.
-- `Pommora/src/renderer/src/design-system/interactions/FloatingWindow.tsx` — `startDrag`'s primary-button guard is what stops a drag surface eating a right-click.
-- `Pommora/src/main/crud/trashRecovery.test.ts` — the seven end-to-end scenarios, driven through `handleMutate` with the shapes the leaf actually sends.
-- `.claude/Planning/Trash Recovery — Implementation Plan.md` — Deviations and Rulings carry why the plan and the shipped work differ.
+- `Pommora/src/main/returningMenu.ts` — `popReturningMenu` is the only popup wrapper; `pickAfter` is the seam for a row that asks a confirm before it resolves. `destinationNodes` builds a destination tree.
+- `Pommora/src/main/pageMenu.ts` — every model becomes a native template here, including the Move To ▸ expansion. `popModelMenu` is the rows-only case.
+- `Pommora/src/shared/pageMenu.ts` — the page menu's items, the send block, `MoveTarget`, and `pageSendActions` for a surface that only points at a page.
+- `Pommora/src/main/styleMenu.ts` — the three shared native submenus: Style radios, Align, and the view Style pair.
+- `Pommora/src/renderer/src/pageMenuActions.ts` — the renderer half: where a page may be sent, and the three actions every surface answers identically.
+- `Pommora/src/renderer/src/Components/ViewRowMenu.tsx` — the saved-view row menu both the toolbar pane and the view embed pop.
+- `.claude/ContextPM.md` §The Boring Work — the queued re-walk arc and the deferred cascade journal, each carrying the decision it waits on.
 
 #### Working Notes
 
-- **A silent no-op replace is the failure mode of scripted editing.** Twice this session an edit anchored on comment text a simplification pass had rewritten minutes earlier; the replace found nothing, reported success, and the change never landed. Both were caught only by measuring the rendered result. Anchor on code, not prose, or read back what landed.
-- **`.col-header` clips its overflow**, so a pseudo-element pushed past a lane's edge disappears rather than overhanging. Both the heading's segment and the rows' column line draw on their own lane's trailing edge for that reason.
-- **`rg -r` is `--replace`, not recursive** — `rg -rn "x" src` silently rewrites every match to `n`. Several exploratory searches this session returned confident nonsense before it was caught.
-- **A fixed-string search for a call plus its first argument misses every wrapped call.** The Context glyph sweep reported 13 sites and there were 14; the missed one was long enough that the formatter had broken the line.
-- **Resolving an already-resolved value hides a wrong argument** — a second `entityIcon` pass over a renderable glyph returns it unchanged, which is why one site could name the wrong kind indefinitely.
+- **A shell-scripted file edit bypasses the formatter.** The PostToolUse hook fires on Write/Edit, not on `python3`/`perl` rewrites, and `npm run lint` is `biome lint` — it never checks formatting. Files edited through the shell drift silently past all three gates; `npx biome format <path>` is the only thing that sees it.
+- **Electron fires a menu item's click before the popup's close callback.** The create menu had deferred its dismissal by a tick against the opposite possibility; had that been right, every menu on the shared helper would resolve `null` and drop its pick.
+- **`Icon` takes `name: string`, not `IconName`** — it resolves the curated registry first, then any full-set Lucide id, so typing a glyph parameter as `IconName` rejects names that render fine.
+- **A `const x = 'literal'` widens to `string` inside a mutable object property.** The Move To row's action needed `as const` on its own declaration before the item literal would keep the union.
+- **`PageMoveContext` is an all-optional weak type**, so passing a context with no overlapping properties fails the weak-type check — which is what the `kind === 'title' ? ctx : undefined` at the cell menu's call site is buying.
 
 **FILES ADDED**
 
-- `Pommora/src/shared/trashMenu.ts`
-- `Pommora/src/main/trashMenu.ts`
-- `Pommora/src/main/crud/trashRows.ts` · `crud/trashRows.test.ts` · `crud/trashRecovery.test.ts`
-- `Pommora/src/renderer/src/Settings/TrashLeaf.tsx` · `trashLeaf.css` · `trashLeaf.test.ts`
-- `Pommora/src/renderer/src/destinationTree.ts` · `destinationTree.test.ts`
-- `Pommora/src/renderer/src/design-system/components/SearchField.tsx` · `searchField.css.ts` · `SearchField.test.tsx`
-- `Pommora/src/renderer/src/design-system/components/Checkbox.tsx` · `checkbox.css`
+- `Pommora/src/main/pageMenu.ts`
+- `Pommora/src/renderer/src/pageMenuActions.ts`
+- `Pommora/src/renderer/src/Components/ViewRowMenu.tsx`
 
 **FILES MODIFIED**
 
-- `Pommora/src/shared/` — `types.ts` · `bridge.ts` · `mutate.ts` · `cardMenu.ts`
-- `Pommora/src/preload/index.ts`
-- `Pommora/src/main/` — `index.ts` · `mutate.ts` · `provenance.ts` · `readNexus.ts` · `record.ts` · `settings.ts` · `paths.ts` · `returningMenu.ts` · `cardMenu.ts` · `crud/contextWrite.ts` · and their tests
-- `Pommora/src/renderer/src/` — `App.tsx` · `store.ts` · `treeIndex.ts` · `treeMove.ts` · `Navigation/navList.css` · `Navigation/navSearch.ts` · `NavWindow/NavWindow.tsx` · `NavWindow/navWindow.css` · `Tabs/NavView.tsx` · `Sidebar/Ribbon.tsx` · `Sidebar/Sidebar.tsx`
-- `Pommora/src/renderer/src/Components/Detail/` — `PagePropertiesPane.tsx` · `PropertyTypes.tsx` · `IconPicker.tsx`
-- `Pommora/src/renderer/src/Detail/Views/` — `Cards/CardsView.tsx` · `Table/table-tokens.css` · `pipeline/contextIdentity.ts`
-- `Pommora/src/renderer/src/design-system/` — `symbols/index.tsx` · `tokens/chip.css.ts` · `interactions/FloatingWindow.tsx`
-- `Pommora/src/renderer/src/MarkdownPM/` — `Styles.css` · `editor/decorations.ts` · `mdLinkTarget.test.tsx`
-- `Pommora/src/renderer/src/PagePreview/PreviewInspector.tsx` · `Embeds/embeds.css`
-- `.claude/` — `ContextPM.md` · `HistoryPM.md` · `PommoraPRD.md` · 25 `Features/*.md` · `Guidelines/Build-Gotchas.md` · `Guidelines/Lint-And-Accessibility.md` · `Mobile/NexusSync.md` · `Planning/Trash Recovery — Implementation Plan.md`
-
-**FILES RENAMED**
-
-- `Settings/SettingsWindow.tsx` → `Settings/NexusSettings.tsx`
-- `Settings/settingsWindow.css` → `Settings/nexusSettings.css`
+- `Pommora/src/main/` — `returningMenu.ts` · `styleMenu.ts` · `cardMenu.ts` · `cellMenu.ts` · `columnMenu.ts` · `tableMenu.ts` · `gripMenu.ts` · `iconFavoriteMenu.ts` · `optionMenu.ts` · `propertyMenu.ts` · `connMenu.ts` · `pageActionsMenu.ts` · `navRowMenu.ts` · `rowGripMenu.ts` · `tabMenu.ts` · `viewButtonMenu.ts` · `viewEmbedMenu.ts` · `contextMenu.ts` · `index.ts`
+- `Pommora/src/shared/` — `pageMenu.ts` · `cardMenu.ts` · `cellMenu.ts` · `rowGripMenu.ts` · `tabMenu.ts` · `navRowMenu.ts` · `tableMenu.ts` · `trashMenu.ts` · `viewMenus.ts` · `views.ts` · `mutate.ts` · and their tests
+- `Pommora/src/renderer/src/` — `Detail/Views/Table/TableView.tsx` · `Detail/Views/Cards/CardsView.tsx` · `Tabs/TabBar.tsx` · `Navigation/NavList.tsx` · `Navigation/navList.css` · `Sidebar/Sidebar.tsx` · `Toolbar/ViewPane.tsx` · `Blocks/ViewEmbedBlock.tsx` · `PagePreview/PreviewInspector.tsx` · `destinationTree.ts`
+- `.claude/` — `ContextPM.md` · `HistoryPM.md` · `FrameworkPM.md` · `Features/SidebarPM.md` · `CardViewPM.md` · `NavigationPM.md` · `ViewsPM.md` · `ContextsPM.md` · `PagePreviewPM.md`
 
 **COMMITS**
 
-- `fbb45c93^..4d71553c` — 29 commits. The arc's own range for PM-100 is `fbb45c93^..97f2a406`; `0700a863` carried the Copy Link / Copy Path ride-along that preceded it.
+- `22730f40` — the page menu says where a page can go
+- `38f60723` — one popper, one Align, one Style, one view row menu
+- `11da4b7b` — the folder-is-membership trade, stated where it lives
+- `4af00045` — one template builder, and the journal deferred
 
 #### Handoff Guidelines
 
