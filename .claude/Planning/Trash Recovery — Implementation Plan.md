@@ -1,6 +1,6 @@
 ## Trash Recovery — Implementation Plan
 
-> **Status:** written, pending review · Spec: `Trash Recovery — Decision Log.md` · Execute tasks in order.
+> **Status:** ratified — in execution · Spec: `Trash Recovery — Decision Log.md` · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -129,9 +129,9 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 **Files:** `src/renderer/src/MarkdownPM/mdLinkTarget.test.tsx`
 
 **Steps:**
-- [ ] Remove the redundant fragment.
-- [ ] `npm run lint` — expect zero diagnostics of any severity.
-- [ ] Commit: `chore(lint): the last diagnostic`
+- [x] Remove the redundant fragment.
+- [x] `npm run lint` — expect zero diagnostics of any severity.
+- [x] Commit: `chore(lint): the last diagnostic`
 
 #### Task 2: Fold four search inputs into one component
 
@@ -536,8 +536,8 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — Clearing the ground · base `<commit>`
-  - [ ] Task 1 — The stray lint diagnostic · `<commit>`
+- [ ] **Phase 1** — Clearing the ground · base `0700a863`
+  - [x] Task 1 — The stray lint diagnostic · `<commit>`
   - [ ] Task 2 — Four search inputs become one · `<commit>`
   - [ ] Task 3 — Context and Space glyphs · `<commit>`
 - [ ] **Phase 2** — Main: enumerate, empty, relocate · base `<commit>`
