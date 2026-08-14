@@ -1728,10 +1728,11 @@ export const useSession = create<SessionState>((set, get) => {
           createdShown = true
         }
       }
-      // Value-only writes never change the tree (the caller's optimistic patch already shows the
-      // change) — skip the full-nexus re-walk for them, the "reload the entire Y" hot path this
-      // codebase forbids.
-      if (req.op !== 'setProperty' && req.op !== 'setContext') await get().load()
+      // Writes the tree cannot see never pay a re-walk — the "reload the entire Y" hot path this
+      // codebase forbids. A value-only write is already shown by the caller's optimistic patch, and
+      // emptying a bundle happens wholly inside `.trash`, which the walk skips by construction.
+      const invisible = req.op === 'setProperty' || req.op === 'setContext' || req.op === 'emptyBundle'
+      if (!invisible) await get().load()
       if (!createdShown && res.value.created && onCreated) await onCreated(res.value.created)
       return true
     },
