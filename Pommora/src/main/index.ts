@@ -1558,7 +1558,6 @@ serveBridge(
     // A card's right-click menu (page meta + Add Property ▸).
     'card-menu': { kind: 'menu', fn: popCardMenu },
 
-    // A tab's right-click menu (Pin/Unpin · Close · Close to the Right).
     // The ordinary delete's confirm cannot be reused: it hardcodes one title, runs the delete
     // itself, and promises a destination from the old trash mode — wrong in both of the switch's
     // positions. This one names what will actually happen, read at the moment of asking.
@@ -1596,6 +1595,7 @@ serveBridge(
         isPlainObject(ctx) ? popTrashMenu(win, ctx) : null,
     },
 
+    // A tab's right-click menu (Pin/Unpin · Close · Close to the Right).
     'tab-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, ctx: TabMenuContext) => {
