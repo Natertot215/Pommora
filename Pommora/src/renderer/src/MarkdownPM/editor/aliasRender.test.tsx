@@ -35,7 +35,12 @@ describe('an aliased connection reads as its alias', () => {
       view.focus()
       view.dispatch({ selection: { anchor: 12 } })
     })
-    const revealed = [...view.dom.querySelectorAll('.md-bracket')].map((e) => e.textContent)
+    // The link glyph rides inside the revealed lead carrying a no-break space — that space is what
+    // lets a selection paint across the glyph instead of stepping around it — so the syntax is read
+    // without it. CodeMirror builds a copy from the document, so it never reaches the clipboard.
+    const revealed = [...view.dom.querySelectorAll('.md-bracket')].map((e) =>
+      (e.textContent ?? '').replace(/\u00a0/g, ''),
+    )
     expect(revealed).toEqual(['[[Alpha|', ']]'])
   })
 

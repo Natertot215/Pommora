@@ -32,13 +32,15 @@ export function PageView(): React.JSX.Element {
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   // Whether this page's header draws its glyph. The glyph itself is on-page in frontmatter; only
   // whether it shows is chrome, so it rides the keyed local store beside folds and heading columns.
-  const [iconHidden, setIconHidden] = useState(false)
+  const [iconHidden, setIconHidden] = useState(true)
   const pageId = pageDetail?.id
   useEffect(() => {
     if (!pageId) return
     let live = true
+    // Hidden unless this page says otherwise: a page's glyph is a thing you opt a page into showing,
+    // where a Collection or a Space wears one by default.
     void window.nexus.headingIcon.get().then((all) => {
-      if (live) setIconHidden(all[pageId] ?? false)
+      if (live) setIconHidden(all[pageId] ?? true)
     })
     return () => {
       live = false

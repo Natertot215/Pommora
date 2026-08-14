@@ -38,6 +38,10 @@ class ConnGlyphWidget extends WidgetType {
   toDOM(): HTMLElement {
     const el = document.createElement('span')
     el.className = `md-conn-glyph md-conn-glyph-${this.status}`
+    // A no-break space, invisible and the glyph's whole content. The browser paints a selection
+    // across text, never across an empty decorative box — so without something here the highlight
+    // runs up to the glyph, skips it, and resumes, leaving a hole in the middle of a selected link.
+    el.textContent = '\u00a0'
     return el
   }
   ignoreEvent(): boolean {

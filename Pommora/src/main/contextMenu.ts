@@ -13,7 +13,13 @@ import { handleMutate, type MutateDeps } from './mutate'
 import { readRegistryStrict } from './contextsRegistry'
 import { createSpaceLabel } from '@shared/contexts'
 import { containerCreators } from '@shared/mutate'
-import { pageLinkText, pageMetaMenuItems, pagePathText, type PageMetaAction } from '@shared/pageMenu'
+import {
+  pageLinkText,
+  pageMetaMenuItems,
+  pagePathText,
+  type PageMetaAction,
+} from '@shared/pageMenu'
+import { menuTemplate } from './returningMenu'
 import type { ContextTarget, Creator, MutableKind, MutateRequest } from '@shared/mutate'
 import { readNexusLabels } from './readNexus'
 
@@ -21,7 +27,11 @@ import { readNexusLabels } from './readNexus'
  *  kinds offer none. Collections and Sets route through the shared rule, so this menu and the
  *  subfield's add button can't come to offer different things inside the same container. A Context
  *  group offers "New <Singular>" — resolved from the registry by the folder's title. */
-async function creatorsFor(root: string, kind: MutableKind, parentPath: string): Promise<Creator[]> {
+async function creatorsFor(
+  root: string,
+  kind: MutableKind,
+  parentPath: string,
+): Promise<Creator[]> {
   switch (kind) {
     case 'collection':
     case 'set':
@@ -68,6 +78,27 @@ export async function showContextMenu(
 
   const items: MenuItemConstructorOptions[] = []
 
+  const confirmDelete = async (): Promise<void> => {
+    const { response } = await dialog.showMessageBox(win, {
+      type: 'warning',
+      buttons: ['Delete', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1,
+      message: `Delete “${target.title}”?`,
+      detail:
+        deps.trashMode === 'system'
+          ? 'It will be moved to the system Trash.'
+          : 'It will be moved to the nexus’s .trash folder (recoverable).',
+    })
+    if (response === 0) await run({ op: 'delete', path: target.path, kind: target.kind })
+  }
+  // target.path is renderer-supplied, so it resolves through the root guard — an unguarded join
+  // would let `..` reveal a file outside the nexus.
+  const reveal = async (): Promise<void> => {
+    const r = await resolveUnderRoot(root, target.path)
+    if (r.ok) shell.showItemInFolder(r.value)
+  }
+
   /** One page action → what it does. Renderer-side work (a tab, a naming field, a picker, a
    *  sibling's position) travels as a push, because only the renderer holds the tab set and the
    *  sibling order; the rest lands here. */
@@ -104,41 +135,22 @@ export async function showContextMenu(
     }
   }
 
-  const confirmDelete = async (): Promise<void> => {
-    const { response } = await dialog.showMessageBox(win, {
-      type: 'warning',
-      buttons: ['Delete', 'Cancel'],
-      defaultId: 0,
-      cancelId: 1,
-      message: `Delete “${target.title}”?`,
-      detail:
-        deps.trashMode === 'system'
-          ? 'It will be moved to the system Trash.'
-          : 'It will be moved to the nexus’s .trash folder (recoverable).',
-    })
-    if (response === 0) await run({ op: 'delete', path: target.path, kind: target.kind })
-  }
-  // target.path is renderer-supplied, so it resolves through the root guard — an unguarded join
-  // would let `..` reveal a file outside the nexus.
-  const reveal = async (): Promise<void> => {
-    const r = await resolveUnderRoot(root, target.path)
-    if (r.ok) shell.showItemInFolder(r.value)
-  }
-
   // A page's menu is the shared one, whole: `pageMetaMenuItems` is where the page actions and their
   // order live, so this menu and the ones the table, the cards and the row grips pop can't drift.
   // Every other kind builds below — containers offer creators and no page meta, which is a different
   // menu rather than a subset of this one.
   if (target.kind === 'page') {
-    for (const item of pageMetaMenuItems(target.alreadyOpen, {
-      preview: true,
-      newPages: 'pair',
-      clipboard: true,
-      reveal: true,
-    })) {
-      if (item.separatorBefore) items.push({ type: 'separator' })
-      items.push({ label: item.label, click: () => void runPageAction(item.action) })
-    }
+    items.push(
+      ...menuTemplate(
+        pageMetaMenuItems(target.alreadyOpen, {
+          preview: true,
+          newPages: 'pair',
+          clipboard: true,
+          reveal: true,
+        }),
+        (action) => () => void runPageAction(action),
+      ),
+    )
     await new Promise<void>((resolve) => {
       Menu.buildFromTemplate(items).popup({ window: win, callback: resolve })
     })

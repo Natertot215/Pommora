@@ -2,8 +2,11 @@ import { useRef, useState } from 'react'
 import { Server } from 'lucide-react'
 import { entityIcon, Icon } from '@renderer/design-system/symbols'
 import { useSession } from '../../store'
-import { flushTrailing } from '../../design-system/components/menu/menu.css'
-import { footerLockAction, lockIcon } from '@renderer/design-system/components/menu/menu.css'
+import {
+  flushTrailing,
+  footerLockAction,
+  lockIcon,
+} from '../../design-system/components/menu/menu.css'
 import {
   MenuBottomRow,
   MenuItem,
@@ -35,15 +38,15 @@ export function PageMenu(): React.JSX.Element | null {
   const [renaming, setRenaming] = useState(false)
 
   if (!pageDetail) return null
-  const page = pageDetail
 
   const runFooterAction = async (): Promise<void> => {
     const action = await window.nexus.pageActionsMenu({ actions: [...FOOTER_ACTIONS] })
     if (action === 'title:rename') setRenaming(true)
-    else if (action === 'title:copylink') await window.nexus.writeClipboard(pageLinkText(page.title))
-    else if (action === 'title:reveal') await window.nexus.revealPath(page.path)
+    else if (action === 'title:copylink')
+      await window.nexus.writeClipboard(pageLinkText(pageDetail.title))
+    else if (action === 'title:reveal') await window.nexus.revealPath(pageDetail.path)
     else if (action === 'title:delete')
-      await mutate({ op: 'delete', path: page.path, kind: 'page' })
+      await mutate({ op: 'delete', path: pageDetail.path, kind: 'page' })
   }
   const ownIcon =
     typeof pageDetail.frontmatter.icon === 'string' ? pageDetail.frontmatter.icon : undefined
