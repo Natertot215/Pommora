@@ -208,7 +208,6 @@ export function TrashLeaf(): React.JSX.Element {
   return (
     <div className={cx('trash-leaf', checked.size > 0 && 'has-checked')}>
       <div className="nav-search-row">
-        <Icon name="search" size={14} />
         <SearchField
           className={text.body.standard}
           value={query}
@@ -225,7 +224,7 @@ export function TrashLeaf(): React.JSX.Element {
         />
       </div>
 
-      <div className={cx('trash-head', 'table-head', text.callout.semibold)}>
+      <div className={cx('trash-head', 'table-head', text.caption.semibold)}>
         <span className="trash-head-name col-header">
           <span className="trash-head-glyph">
             <PropertyTypeIcon type="title" size={13} />
