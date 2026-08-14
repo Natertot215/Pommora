@@ -36,15 +36,9 @@ const PLURALS: Record<TrashRow['kind'], string> = {
  *  meaning either way. */
 export function countPhrase(rows: TrashRow[]): string {
   const kinds = new Set(rows.map((r) => r.kind))
-  const noun =
-    kinds.size === 1
-      ? rows.length === 1
-        ? [...kinds][0]
-        : PLURALS[[...kinds][0]]
-      : rows.length === 1
-        ? 'item'
-        : 'items'
-  return `${rows.length} ${noun}`
+  const kind = kinds.size === 1 ? [...kinds][0] : null
+  if (rows.length === 1) return `1 ${kind ?? 'item'}`
+  return `${rows.length} ${kind === null ? 'items' : PLURALS[kind]}`
 }
 
 /** Rows whose title or location answers the query, best first. Empty query keeps the list whole and

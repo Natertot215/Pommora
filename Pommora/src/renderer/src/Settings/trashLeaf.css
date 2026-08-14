@@ -56,6 +56,8 @@
 .trash-head-name {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
   padding-left: var(--navwindow-inset);
 }
 .trash-head-check {
@@ -69,13 +71,10 @@
 }
 .trash-head-date {
   flex: 0 0 var(--trash-date-lane);
-  padding-right: var(--navwindow-inset);
-  gap: 6px;
-}
-.trash-head-name,
-.trash-head-date {
   display: flex;
   align-items: center;
+  gap: 6px;
+  padding-right: var(--navwindow-inset);
 }
 
 .trash-scroll {
@@ -97,7 +96,6 @@
   transform: translate(-50%, -50%);
   z-index: 1;
 }
-/* A checked row wears no fill of its own — the box alone carries the state. */
 .trash-date {
   flex: 0 0 var(--trash-date-lane);
   padding-right: var(--navwindow-inset);
