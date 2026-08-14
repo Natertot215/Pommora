@@ -43,6 +43,12 @@ export function countPhrase(rows: TrashRow[]): string {
   return `${rows.length} ${kind === null ? 'items' : PLURALS[kind]}`
 }
 
+/** A row an op refused, carrying the reason main gave for it. */
+interface Refusal {
+  row: TrashRow
+  why: string
+}
+
 /** Rows whose title or location answers the query, best first. Empty query keeps the list whole and
  *  in the order main sent it, which is newest first. */
 export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
@@ -115,50 +121,55 @@ export function TrashLeaf(): React.JSX.Element {
     targets: TrashRow[],
     req: (row: TrashRow) => MutateRequest,
     reloads: boolean,
-  ): Promise<{ done: TrashRow[]; failed: TrashRow[] }> => {
+  ): Promise<{ done: TrashRow[]; refused: Refusal[] }> => {
     const done: TrashRow[] = []
-    const failed: TrashRow[] = []
+    const refused: Refusal[] = []
     for (const row of targets) {
       const res = await window.nexus.mutate(req(row))
-      ;(res.ok ? done : failed).push(row)
+      if (res.ok) done.push(row)
+      // Main already worked out why, and it is the only thing that can say so — a batch gave up
+      // that action's error dialog, so it carries the reason itself rather than guessing one.
+      else refused.push({ row, why: res.error.message })
     }
     // One refresh for the whole batch, and none at all when nothing landed.
     if (done.length > 0 && reloads) await load()
     await refresh()
-    return { done, failed }
+    return { done, refused }
   }
 
   const restoreBatch = async (targets: TrashRow[]): Promise<void> => {
     // A homeless member keeps its row and is named in the count; each is then answered through the
     // picker it already has. A batch is a convenience over the single action, never a second one.
     const addressable = targets.filter((r) => r.homeResolves)
-    const { done, failed } = await many(
+    const { done, refused } = await many(
       addressable,
       (row) => ({ op: 'restore', bundlePath: row.bundlePath }),
       true,
     )
-    const stuck = [...targets.filter((r) => !r.homeResolves), ...failed]
-    void window.nexus.reportTrash(
-      `Restored ${countPhrase(done)}.`,
-      stuck.length === 0
-        ? 'Everything went back where it came from.'
-        : `${countPhrase(stuck)} could not be resolved — restore those one at a time to choose where they go.`,
-    )
+    // Two different populations, and only one of them is answered by choosing a destination: a
+    // homeless row was never attempted and its picker is waiting, where a refused one was attempted
+    // and main said why. Reporting them as one would send a user to a menu that cannot help.
+    const homeless = targets.filter((r) => !r.homeResolves)
+    void window.nexus.reportTrash(`Restored ${countPhrase(done)}.`, [
+      homeless.length > 0 &&
+        `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
+      ...refused.map((r) => `${r.row.title}: ${r.why}`),
+    ].filter(Boolean).join('\n') || 'Everything went back where it came from.')
   }
 
   const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
     if (!(await window.nexus.confirmEmptyTrash(targets.length))) return
     // Emptying happens wholly inside `.trash`, which the tree does not see.
-    const { done, failed } = await many(
+    const { done, refused } = await many(
       targets,
       (row) => ({ op: 'emptyBundle', bundlePath: row.bundlePath }),
       false,
     )
     void window.nexus.reportTrash(
       `Deleted ${countPhrase(done)}.`,
-      failed.length === 0
+      refused.length === 0
         ? 'They have left the trash for good.'
-        : `${countPhrase(failed)} could not be deleted.`,
+        : refused.map((r) => `${r.row.title}: ${r.why}`).join('\n'),
     )
   }
 
