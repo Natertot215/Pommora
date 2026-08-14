@@ -118,8 +118,8 @@ import { popCardMenu } from './cardMenu'
 import { popConnMenu } from './connMenu'
 import { popTabMenu } from './tabMenu'
 import type { TabMenuContext } from '@shared/tabMenu'
-import { popTrashMenu } from './trashMenu'
-import type { TrashMenuContext } from '@shared/trashMenu'
+import { popTrashColumnMenu, popTrashMenu } from './trashMenu'
+import type { TrashColumnContext, TrashMenuContext } from '@shared/trashMenu'
 import { popNavRowMenu } from './navRowMenu'
 import type { NavRowMenuContext } from '@shared/navRowMenu'
 import { popPropertyMenu } from './propertyMenu'
@@ -1593,6 +1593,12 @@ serveBridge(
       kind: 'menu',
       fn: async (win: BrowserWindow, ctx: TrashMenuContext) =>
         isPlainObject(ctx) ? popTrashMenu(win, ctx) : null,
+    },
+
+    'trash:columnMenu': {
+      kind: 'menu',
+      fn: async (win: BrowserWindow, ctx: TrashColumnContext) =>
+        isPlainObject(ctx) ? popTrashColumnMenu(win, ctx) : null,
     },
 
     // A tab's right-click menu (Pin/Unpin · Close · Close to the Right).

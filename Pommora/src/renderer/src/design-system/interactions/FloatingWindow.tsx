@@ -67,6 +67,10 @@ export function useFloatingWindow(
   // Capture the pointer on the pressed element (house pattern) so a drag that releases OUTSIDE the
   // window still gets its pointerup/pointercancel — listeners die with the element on unmount.
   const startDrag = (mode: FloatingDragMode, e: ReactPointerEvent<HTMLElement>): void => {
+    // Moving and resizing are primary-button gestures. Arming on any button would be harmless in
+    // itself, but the `preventDefault` below suppresses the `contextmenu` that follows a right
+    // press — so a drag surface would silently swallow the menu of anything drawn on it.
+    if (e.button !== 0) return
     e.preventDefault()
     const el = e.currentTarget
     const pid = e.pointerId

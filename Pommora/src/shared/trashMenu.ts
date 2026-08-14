@@ -2,6 +2,7 @@
 // the leaf performs the write and can then refresh the list it is looking at.
 
 import type { MoveTarget } from './cardMenu'
+import type { DateFormat } from './columnStyles'
 import type { RestoreDestination } from './mutate'
 
 export type TrashMenuAction =
@@ -29,4 +30,23 @@ export function trashMenuLabels(batch: boolean): { restore: string; delete: stri
   return batch
     ? { restore: 'Restore All', delete: 'Delete All' }
     : { restore: 'Restore', delete: 'Delete' }
+}
+
+/** The date column's own menu. The two formats offered are the worded one and the numeric one —
+ *  the same pair the property editor names, under the same labels, so a date reads the same word
+ *  wherever it is configured. A hand-edited settings file may still name any of the others. */
+export const TRASH_DATE_FORMATS: { value: DateFormat; label: string }[] = [
+  { value: 'short', label: 'Short Date' },
+  { value: 'monthDayYear', label: 'MM/DD/YYYY' },
+]
+
+export type TrashColumnAction =
+  | { kind: 'format'; format: DateFormat }
+  | { kind: 'toggleTime' }
+
+export interface TrashColumnContext {
+  /** The format in force, so its row can read as chosen. */
+  format: DateFormat
+  /** Whether the clock currently shows — the action names the state it moves to. */
+  timeShown: boolean
 }

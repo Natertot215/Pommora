@@ -5,6 +5,7 @@ import { SPECTRUM } from './theme'
 import type { ContextDef } from './contexts'
 import type { PropertyDefinition } from './properties'
 import type { PageFrontmatter } from './schemas'
+import type { DateFormat } from './columnStyles'
 import type { SavedView } from './views'
 
 export type NodeKind = 'space' | 'collection' | 'set' | 'page'
@@ -116,6 +117,10 @@ export interface Personalization {
   /** What emptying an item from the trash means. Absent = the artifact goes to the operating
    *  system's trash and the OS owns the last undo; true erases it from the machine outright. */
   permanentDelete?: boolean
+  /** How the trash browser writes a deletion's date. Absent = `short`, the worded form. */
+  trashDateFormat?: DateFormat
+  /** Whether that date drops its clock. Absent = the nexus's own time format is shown. */
+  trashHideTime?: boolean
 }
 
 /** The per-nexus default window zoom (`personalization.defaultViewScale`). Clamped so a hand-typed
