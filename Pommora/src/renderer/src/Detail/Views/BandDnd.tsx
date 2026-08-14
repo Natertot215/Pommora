@@ -53,12 +53,15 @@ export function BandDnd({
   bands,
   labelFor,
   onDrop,
+  nestable = true,
   children,
 }: {
   /** The visible band list (flattenBands over the live collapsed set) — snapshot state during a drag. */
   bands: Band[]
   labelFor: (id: string) => string
   onDrop: (draggedId: string, drop: BandDrop) => void
+  /** Off for a surface that renders one flat level — every drop then resolves to a reorder. */
+  nestable?: boolean
   children: ReactNode
 }): React.JSX.Element {
   const bandsRef = useRef(bands)
@@ -70,6 +73,8 @@ export function BandDnd({
   onDropRef.current = onDrop
   const labelForRef = useRef(labelFor)
   labelForRef.current = labelFor
+  const nestableRef = useRef(nestable)
+  nestableRef.current = nestable
   // Resolved ONCE at activation — labelFor walks the group tree, and the ghost re-renders per move.
   const ghostLabel = useRef('')
   const els = useRef(new Map<string, HTMLElement>())
@@ -126,7 +131,7 @@ export function BandDnd({
     if (!id) return
     const s = snap.get()
     if (!s) return
-    const slot = bandSlot(s.index, lastPoint.current.y, id, s.boxBottom)
+    const slot = bandSlot(s.index, lastPoint.current.y, id, s.boxBottom, nestableRef.current)
     live.current = slot
     setDrag({
       id,

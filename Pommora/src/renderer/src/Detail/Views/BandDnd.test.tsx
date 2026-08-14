@@ -12,8 +12,8 @@ import {
   stubRect,
 } from '@renderer/testing/pointerHarness'
 import type { Band } from './bandDndModel'
-import { BandDnd, useBandDrag, type BandDrop } from './bandDnd'
-import { TableGroupBand } from './TableGroupBand'
+import { BandDnd, useBandDrag, type BandDrop } from './BandDnd'
+import { ViewGroupBand } from './ViewGroupBand'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
@@ -146,7 +146,7 @@ describe('band drag gesture', () => {
     await act(async () => {
       root.render(
         <BandDnd bands={BANDS} labelFor={(id) => id} onDrop={dropSpy}>
-          <TableGroupBand
+          <ViewGroupBand
             group={group}
             view={view}
             ctx={{ schema: [] } as never}
@@ -158,7 +158,7 @@ describe('band drag gesture', () => {
             indent="0px"
           >
             {null}
-          </TableGroupBand>
+          </ViewGroupBand>
         </BandDnd>,
       )
     })

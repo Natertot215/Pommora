@@ -11,8 +11,8 @@ import {
   beginDragDisclose,
   endDragDisclose,
 } from '@renderer/design-system/interactions/dragDisclose'
-import type { Band, BandIndex, BandSlot } from '../../Detail/Views/Table/bandDndModel'
-import { bandSlot, buildBandIndex, canNest } from '../../Detail/Views/Table/bandDndModel'
+import type { Band, BandIndex, BandSlot } from '../../Detail/Views/bandDndModel'
+import { bandSlot, buildBandIndex, canNest } from '../../Detail/Views/bandDndModel'
 
 export interface GroupingDrop {
   kind: 'reorder' | 'reparent'

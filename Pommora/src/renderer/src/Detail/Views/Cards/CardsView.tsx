@@ -43,7 +43,7 @@ import {
   contextOptionsFor as contextOptionsForSpaces,
   type ContextOption,
 } from '../pipeline/contextOptions'
-import { flattenContainer, groupsStructurally } from '../pipeline/group'
+import { flattenContainer, groupsStructurally, subtreeIds } from '../pipeline/group'
 import { resolvedSortCount, resolveManualOrder } from '../pipeline/sort'
 import {
   GHOST_DWELL_MS,
@@ -65,7 +65,12 @@ import { styleFor } from '../Table/columnStyles'
 import { writeContextValue } from '../contextCellWrite'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES } from '../Table/reassign'
 import { buildSetIcons, buildSetNames, buildSetPaths } from '../Table/cellResolve'
-import { GroupBand, resolveBandHead } from '../GroupBand'
+import { resolveBandHead } from '../GroupBand'
+import { ViewGroupBand } from '../ViewGroupBand'
+import { BandDnd, type BandDrop } from '../BandDnd'
+import { flattenBands } from '../bandDndModel'
+import { bandReorderPatch, useBandOrdering } from '../useBandOrdering'
+import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { buildResolveContext, type ResolveContext } from '../Table/resolveContext'
 import { NavCrumbs } from '../../../Navigation/NavList'
 import type { PathCrumb } from '../../../Navigation/navResolve'
@@ -74,7 +79,6 @@ import type { PathCrumb } from '../../../Navigation/navResolve'
 const NO_CRUMBS: PathCrumb[] = []
 import { type AddPickerRequest, CardPickerHost, type ValuePickerRequest } from './CardPickerHost'
 import { CardValue } from './CardValue'
-import { bandShowsAdd } from './cardsBand'
 import { reorderIds } from './cardsOrder'
 import {
   type AddEntry,
@@ -127,6 +131,9 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
 
   const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
   const { view } = useActiveView(source, schema)
+  // The band drop's optimistic order, on the layer both views share.
+  const { bandPatch, commitBand, resetBand } = useBandOrdering((patch) => persistView(patch))
+  const liveView = useMemo(() => (bandPatch ? { ...view, ...bandPatch } : view), [view, bandPatch])
   const saveView = useSaveView(source, load)
   const mutate = useSession((s) => s.mutate)
 
@@ -169,11 +176,18 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (column.kind !== 'context' || !tree) return null
     return contextOptionsForSpaces(column.id, tree)
   }
+  // Every view write goes out over the LIVE view, so one persist can't fold a band drop's unsaved
+  // order back to what disk still says (the table's law).
+  const persistView = (
+    patch: Partial<SavedView>,
+    opts?: { skipRefetch?: boolean; viewState?: boolean },
+  ): void => {
+    void saveView({ ...liveView, ...patch }, opts)
+  }
   // One card-value Style key — persists per-key into the view's column_styles (the table's writer
   // minus its live override, so a style change flashes through a load() round-trip: v1-acceptable).
   const setColumnStyle = (colId: string, key: keyof ColumnStyle & string, value: string): void => {
-    void saveView({
-      ...view,
+    persistView({
       column_styles: {
         ...view.column_styles,
         [colId]: { ...view.column_styles?.[colId], [key]: value },
@@ -188,13 +202,15 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     if (revealingRef.current.has(id)) return
     if (view.property_order.includes(id) && !view.hidden_properties.includes(id)) return
     revealingRef.current.add(id)
-    void saveView({ ...view, ...unhide(view, id) }).finally(() => revealingRef.current.delete(id))
+    void saveView({ ...liveView, ...unhide(view, id) }).finally(() =>
+      revealingRef.current.delete(id),
+    )
   }
   // Right-click ▸ Remove on a card value — drop the property from this view (its property_order slot
   // stays as a remembered spot, so a later reveal restores it in place). The inverse of revealProperty.
   const hideProperty = (id: string): void => {
     if (view.hidden_properties.includes(id)) return
-    void saveView({ ...view, ...hideShown(view, id) })
+    persistView(hideShown(view, id))
   }
 
   // Manual card order — the per-machine viewOrders tiebreaker the table's sorter reads; the
@@ -227,18 +243,21 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     : resolveManualOrder(sortedOrGrouped, manualOverride, viewOrders[view.id])
 
   const contextIds = contextIdsOf(tree)
-  const groups = useMemo(() => {
+  const { groups, setTree } = useMemo(() => {
     const { rows, setTree } = flattenContainer(source, effectiveValues)
-    return resolveView({
-      rows,
+    return {
+      groups: resolveView({
+        rows,
+        setTree,
+        view: liveView,
+        schema,
+        manualOrder,
+        flattenStructural: true,
+        contextIds,
+      }).groups,
       setTree,
-      view,
-      schema,
-      manualOrder,
-      flattenStructural: true,
-      contextIds,
-    }).groups
-  }, [source, effectiveValues, view, schema, manualOrder, contextIds])
+    }
+  }, [source, effectiveValues, liveView, schema, manualOrder, contextIds])
 
   // Set-Card reorder — writes the container's set_order via moveSet (the sidebar's mechanism); the
   // dragged set stays under the same parent (a pure reorder, not a reparent), and the store's
@@ -304,14 +323,15 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
     // reset above never fires on a cards→cards switch — drop the drag override here too, or view B
     // renders in view A's manual order (the table resets manualOverride on its own [view.id] effect).
     setManualOverride(null)
-  }, [view.id])
+    resetBand()
+  }, [view.id, resetBand])
   const toggleCollapse = (key: string): void => {
     const next = new Set(collapsed)
     if (next.has(key)) next.delete(key)
     else next.add(key)
     setCollapsed(next)
     // The local `collapsed` state already shows the toggle — skip the refetch's redundant full walk.
-    void saveView({ ...view, collapsed_groups: [...next] }, { skipRefetch: true, viewState: true })
+    persistView({ collapsed_groups: [...next] }, { skipRefetch: true, viewState: true })
   }
 
   const banner: CardBanner = view.card_banner ?? 'cover'
@@ -558,6 +578,45 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
   const canRelocate = structural
   const setPaths = useMemo(() => buildSetPaths(source), [source])
   const canReorderWithin = sortKeys < 2 && !locationFsOrder
+
+  // The band list Cards hit-tests: one flat level, since a top set's whole subtree rolls into a
+  // single band here. Flat mode's one headless band has no header to grab, so it offers none.
+  const bands = useMemo(
+    () => (flatMode ? [] : flattenBands(groups, collapsed)),
+    [flatMode, groups, collapsed],
+  )
+  const bandLabel = (id: string): string => {
+    const g = groups.find((x) => x.key === id)
+    return g && ctx ? resolveBandHead(g, liveView, ctx, setNames, setIcons, source).label : id
+  }
+  // A band drop on one flat level is always a reorder. Under Location order the filesystem IS the
+  // order, so that one writes set_order on the container rather than the view.
+  const onBandDrop = (draggedId: string, drop: BandDrop): void => {
+    if (drop.kind !== 'reorder') return
+    const dragged = bands.find((b) => b.id === draggedId)
+    if (!dragged) return
+    if (dragged.kind === 'set' && locationFsOrder) {
+      void mutate({
+        op: 'reorderChildren',
+        parentPath: source.path,
+        key: 'set_order',
+        order: nextOrder(
+          setTree.map((n) => n.id),
+          draggedId,
+          drop.beforeId,
+        ),
+      })
+      return
+    }
+    const patch = bandReorderPatch({
+      dragged,
+      beforeId: drop.beforeId,
+      view: liveView,
+      structuralIds: setTree.flatMap(subtreeIds),
+      propertyKeys: groups.filter((g) => g.kind === 'property').map((g) => g.key),
+    })
+    if (patch) commitBand(patch)
+  }
   const cardDragEnabled = canReorderWithin || canReassign || canRelocate
   // Move the dragged card to `toIndex` within its band — the group engine reports a landing index,
   // not an over-id. Writes the full flattened order so the manual order stays one coherent global list.
@@ -729,23 +788,29 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
           )
         }}
       >
-        {groups.map((g) => {
-          const rows = flattenGroups([g])
-          // Group By: None is one headerless, force-open band — a stale collapse from another grouping
-          // would otherwise hide every card with no head to toggle.
-          const isCollapsed = !flatMode && collapsed.has(g.key)
-          const head = ctx ? resolveBandHead(g, view, ctx, setNames, setIcons, source) : null
-          return (
-            <GroupBand
-              key={g.key}
-              glyph={head?.glyph}
-              collapsed={isCollapsed}
-              onToggle={() => toggleCollapse(g.key)}
-              showAdd={bandShowsAdd(g.kind)}
-              onAdd={setPaths.has(g.key) ? () => bandAdd(g.key) : undefined}
-              headless={flatMode}
-              fill
-            >
+        {/* One flat level of bands, so a drop is always a reorder — a top set's whole subtree
+            already rolls into its own band here, leaving no depth for a nest to land in. */}
+        <BandDnd bands={bands} labelFor={bandLabel} onDrop={onBandDrop} nestable={false}>
+          {groups.map((g) => {
+            const rows = flattenGroups([g])
+            // Group By: None is one headerless, force-open band — a stale collapse from another grouping
+            // would otherwise hide every card with no head to toggle.
+            const isCollapsed = !flatMode && collapsed.has(g.key)
+            return (
+              <ViewGroupBand
+                key={g.key}
+                group={g}
+                view={liveView}
+                ctx={ctx}
+                setNames={setNames}
+                setIcons={setIcons}
+                source={source}
+                collapsed={isCollapsed}
+                onToggle={() => toggleCollapse(g.key)}
+                onAdd={setPaths.has(g.key) ? () => bandAdd(g.key) : undefined}
+                headless={flatMode}
+                fill
+              >
               <SortableZone
                 group="cards"
                 id={g.key}
@@ -794,11 +859,12 @@ export function CardsView({ source }: { source: CollectionNode | SetNode }): Rea
                       onCreate={ghostCreate}
                     />,
                   ]
-                })}
-              </SortableZone>
-            </GroupBand>
-          )
-        })}
+                  })}
+                </SortableZone>
+              </ViewGroupBand>
+            )
+          })}
+        </BandDnd>
       </DragGroup>
       {ctx && (
         <CardPickerHost

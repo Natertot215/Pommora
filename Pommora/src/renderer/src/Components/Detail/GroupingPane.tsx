@@ -40,8 +40,8 @@ import {
   subHiddenKey,
 } from '../../Detail/Views/pipeline/group'
 import { formatBucketLabel, NUMERIC_FORMATS } from '../../Detail/Views/PropertyEditing/formatValue'
-import type { Band } from '../../Detail/Views/Table/bandDndModel'
-import { reparentFsOrder, structuralOrderAfterDrop } from '../../Detail/Views/Table/bandDndModel'
+import type { Band } from '../../Detail/Views/bandDndModel'
+import { reparentFsOrder, structuralOrderAfterDrop } from '../../Detail/Views/bandDndModel'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { Chip, chipShapeForType } from '../Chip'
