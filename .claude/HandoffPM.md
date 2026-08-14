@@ -12,17 +12,26 @@
 
 **Two things were built and taken back out.** The callout architecture — a collapsed tag line with the caret skipping it — was reverted on request after three rounds; a fence on a callout's head line is now a recorded limitation rather than a half-built feature. The link-glyph selection fix was reverted for the same reason: giving the glyph an invisible space to carry the highlight worked in an isolated page and never in the editor, and leaving it would have meant a DOM space and a test workaround bought for nothing.
 
-**The Fix-On-Sight rule arrived mid-session and was applied.** Every creation affordance now takes the pointer cursor, marked with `data-create` rather than blanket-applied, since the app's chrome keeps the arrow deliberately. Twenty comments carrying a personal name were reworded; the decision markers they carried survived.
-
 #### Completion Criteria
 
-- [ ] The trash browser: `listBundles` reaches the bridge, and a surface enumerates what `.trash` holds.
-- [ ] The ghost-create family holds in use — the slot seats where the pointer rests, and creating lands it there.
-- [ ] The page menu reads identically wherever a page is right-clicked.
+**Trash Surface V1** — `Planning/Trash Recovery — Implementation Plan.md`, 15 tasks over 4 phases, executed in order with a gate between each.
+
+- [ ] **Phase 1 · Clearing the ground** — the stray lint diagnostic gone, four search inputs folded into one component with all three existing surfaces pixel-identical, and Context and Space carrying distinct kind glyphs across all six borrowing sites.
+- [ ] **Phase 2 · Main** — `listBundles` widened and on the bridge, a bundle shaped into a row that knows its kind and whether its home resolves, the delete switch read main-side per operation, the empty op guarded to bundles alone, restore accepting a chosen destination, and the destination tree hoisted out of the cards view.
+- [ ] **Phase 3 · The surface** — `NexusSettings` renamed and resized with its phantom padding gone, the Trash leaf listing rows under their headings, selection and the native menu, restore single and batch, and emptying with its switch and confirms.
+- [ ] **Phase 4 · Reconciliation** — every document the work made false rewritten in the commit that falsified it, including NexusRecord's new **Trash & Deletion** section.
+- [ ] **Every gate passed on its own commit range** — typecheck, test, lint at zero diagnostics of any severity, plus simplification and review dispatched per phase with every concern fixed rather than deferred.
+- [ ] **End-to-end proven against a real nexus** — an entity deleted, restored, and restored again with its parent gone; the property-strip behavior observed; the restoration matrix walked.
+- [ ] **The screenshot read and acted on** — the trash browser with a checked row and one of every kind seeded, inspected for real and its defects fixed.
+- [ ] **The closeout run whole** and the History entry committed under the arc name **Trash Surface V1**.
+
+**Done means nothing is left that could have been done now.** The only work that may follow is stylistic tweaks Nathan finds on his own screen.
+
+**Unattributed documentation changes appearing mid-execution are Nathan's own.** Fold them into the commit at hand, never revert them, and never leave them hanging in the working tree.
 
 #### Next Session
 
-- **The trash browser.** The restore path ships and is tested end to end; enumeration is the missing half. One channel and a UI on a finished engine.
+- **The trash browser.** The restore path ships and is tested end-to-end; enumeration is the missing half. One channel and a UI on a finished engine.
 - Anything the ghost slot or the unified menu turns up in use.
 
 #### Feedback
@@ -43,9 +52,9 @@
 
 #### Working Notes
 
-- **A selection paints across text and steps around a decorative box that holds none.** This is why the link glyph notches a highlight. Giving it an invisible space worked in a plain contenteditable and not inside the editor; the reason wasn't established.
 - **`useGhostAnchor` is more general than its consumers suggested** — dwell, grace, travel-hold, suppression and an exit watchdog. A new hover-born creator gets all of it for two lines.
 - **A callout's head line was the first typable line**, which is why a fence typed after `||` never became one: the fence grammar admits only whitespace and `>` levels before its marker run.
+- Every creation affordance now takes the pointer cursor, marked with `data-create` rather than blanket-applied, since the app's chrome keeps the arrow deliberately.
 
 **FILES ADDED**
 
