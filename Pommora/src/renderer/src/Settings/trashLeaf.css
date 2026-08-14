@@ -6,7 +6,10 @@
    this window is in neither scope, so the leaf declares it. An unset custom property with no
    fallback resolves to its initial value in silence, which is how a borrowed surface ships wrong
    while reading right in the file. */
-.trash-leaf {
+/* The class is doubled deliberately: `table-tokens.css` declares two of the tokens below on
+   `.trash-leaf` as well, at the same weight, and this is what makes the leaf's values win on
+   specificity rather than on which stylesheet the bundler happened to emit last. */
+.trash-leaf.trash-leaf {
   --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' and the heading's alike */
   --trash-date-lane: 160px; /* KNOB — fixed, so the dates line up down the list */
   --trash-date-inset: 10px; /* KNOB — clears the column divider, heading and rows alike */
@@ -155,7 +158,10 @@
   transition: opacity var(--duration-base) var(--ease-standard);
 }
 .nav-item:hover .trash-check,
-.trash-leaf.has-checked .trash-check {
+.trash-leaf.has-checked .trash-check,
+/* Keyboard parity: without this, tabbing into an unchecked list lands on a control at zero
+   opacity — a focus ring on an invisible element is invisible too. */
+.trash-check:focus-visible {
   opacity: 1;
 }
 .trash-date {
