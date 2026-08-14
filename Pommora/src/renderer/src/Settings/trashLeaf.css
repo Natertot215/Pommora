@@ -10,6 +10,11 @@
   --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' and the heading's alike */
   --trash-date-lane: 160px; /* KNOB — fixed, so the dates line up down the list */
   --trash-date-inset: 10px; /* KNOB — clears the column divider, heading and rows alike */
+  /* Where content starts, derived from the search row above it: the field's own leading glyph sits
+     at the inset and its text follows a gap later, so a row's glyph and a column's label land on
+     that same line and the checkbox gets the leading glyph's slot to itself. */
+  --trash-lead-glyph: 14px;
+  --trash-lead: calc(var(--navwindow-inset) + var(--trash-lead-glyph) + 6px);
   /* The table's own cell inset, pointed at this surface's, so a borrowed column label lands over
      the column it names rather than 2px off it. */
   --cell-padding-x: var(--navwindow-inset);
@@ -33,10 +38,22 @@
 .trash-leaf .trash-head {
   display: flex;
   align-items: center;
+  position: relative;
   flex-shrink: 0;
   background: none;
   margin: 0;
   padding: 0;
+  /* The lanes stay full-bleed so the column divider lands on the rows' own boundary; the seam is
+     drawn separately, inset to exactly the width the search row's divider spans. */
+  border-bottom: none;
+}
+.trash-leaf .trash-head::after {
+  content: "";
+  position: absolute;
+  left: var(--navwindow-inset);
+  right: var(--navwindow-inset);
+  bottom: 0;
+  border-bottom: var(--heading-divider);
 }
 /* The table's leading bar marks its gutter↔Title junction; this strip has no gutter column, so the
    bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays. */
@@ -48,6 +65,7 @@
   min-width: 0;
   display: flex;
   align-items: center;
+  padding-left: var(--trash-lead);
 }
 .trash-head-glyph {
   display: flex;
@@ -71,13 +89,30 @@
   padding-bottom: 6px;
 }
 
+/* The table's row treatment: a line between rows rather than under each one, so a list has none
+   above its first nor below its last, and the column boundary carried down as a hairline that meets
+   the heading's segment bar. The line is drawn rather than bordered so it spans the same width the
+   search row's divider and the heading's seam do — every horizontal rule on this surface agrees,
+   while the row's own highlight still runs edge to edge beneath it. */
+.trash-leaf .nav-item + .nav-item::before {
+  content: "";
+  position: absolute;
+  left: var(--navwindow-inset);
+  right: var(--navwindow-inset);
+  top: 0;
+  border-top: var(--table-border);
+}
+.trash-leaf .nav-item-main {
+  padding-left: var(--trash-lead);
+}
+
 /* The pin's affordance exactly: a glyph in the row's left inset, absolute so it never shifts the
    row's content, hidden until the row is hovered, and holding the accent once set. Once anything is
    checked the whole column shows — a selection is being built, and the boxes it is being built from
    should not have to be hunted for. */
 .trash-check {
   position: absolute;
-  left: calc(var(--navwindow-inset) / 2);
+  left: calc(var(--navwindow-inset) + var(--trash-lead-glyph) / 2);
   top: 50%;
   transform: translate(-50%, -50%);
   opacity: 0;
@@ -89,6 +124,7 @@
 }
 .trash-date {
   flex: 0 0 var(--trash-date-lane);
+  border-left: var(--table-border);
   padding-left: var(--trash-date-inset);
   padding-right: var(--cell-padding-x);
   color: var(--label-secondary);
