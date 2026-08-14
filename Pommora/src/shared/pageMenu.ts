@@ -29,6 +29,15 @@ export type PageMetaAction =
   | 'title:reveal'
   | 'title:delete'
 
+/** The two actions a surface can offer for a page it only points at — a tab, a connection — since
+ *  neither asks anything of the page but its name and where it sits. */
+export type PageClipboardAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath'>
+
+export const PAGE_CLIPBOARD_ACTIONS = [
+  'title:copylink',
+  'title:copypath',
+] as const satisfies readonly PageClipboardAction[]
+
 export function pageMetaMenuItems(
   alreadyOpen?: boolean,
   // `newPages`: 'pair' offers Above/Below (row surfaces); 'single' offers one "New Page" whose
@@ -78,15 +87,17 @@ export function pageMetaMenuItems(
 /** A narrower menu drawn from the same list — the actions stay in the order the full menu gives
  *  them, so a surface offering four of them can't come to disagree with one offering ten. A
  *  separator that would lead the result is dropped, since it separates nothing. */
-export function pageMetaMenuSubset(
-  actions: readonly PageMetaAction[],
+export function pageMetaMenuSubset<A extends PageMetaAction>(
+  actions: readonly A[],
   alreadyOpen?: boolean,
-): Array<{ label: string; action: PageMetaAction; separatorBefore?: boolean }> {
+): Array<{ label: string; action: A; separatorBefore?: boolean }> {
   const kept = pageMetaMenuItems(alreadyOpen, {
     preview: true,
     newPages: 'pair',
     clipboard: true,
     reveal: true,
-  }).filter((i) => actions.includes(i.action))
+  }).filter((i): i is { label: string; action: A; separatorBefore?: boolean } =>
+    (actions as readonly PageMetaAction[]).includes(i.action),
+  )
   return kept.map((item, i) => (i === 0 ? { ...item, separatorBefore: undefined } : item))
 }

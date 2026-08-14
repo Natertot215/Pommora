@@ -4,12 +4,19 @@ import { isValidLink, targetTitle } from '@shared/links'
 /** What was right-clicked, and how to act on it. The menu is popped asynchronously by a free
  *  function, so acting on the result needs a way back into the editor instance that was clicked —
  *  `apply` is that way, and its absence is what marks a display-only surface. It closes over the
- *  span it was built for, so no caller can aim an action at a link the menu wasn't popped on. */
-export interface ConnMenuTarget {
-  editable: boolean
-  hasAlias: boolean
-  apply?: (action: ConnEditAction) => void
-}
+ *  span it was built for, so no caller can aim an action at a link the menu wasn't popped on.
+ *
+ *  A link reaching a page and a link reaching a web address are different menus, not one menu with
+ *  absences: the address has no page to preview, to name, or to give a location. */
+export type ConnMenuTarget =
+  | {
+      kind: 'page'
+      page: ConnPage
+      editable: boolean
+      hasAlias: boolean
+      apply?: (action: ConnEditAction) => void
+    }
+  | { kind: 'url'; url: string }
 
 export interface ConnPage {
   id: string
@@ -31,7 +38,7 @@ export interface PageIndex {
 export interface ConnectionsApi extends PageIndex {
   open: (page: ConnPage) => void
   /** Optional right-click hook — the host pops the native context menu for the link. */
-  menu?: (page: ConnPage, target: ConnMenuTarget) => void
+  menu?: (target: ConnMenuTarget) => void
   /** ⌘-click takes the OTHER route from `open` (preview ⇄ new tab); absent = ⌘ ignored. */
   bypass?: (page: ConnPage) => void
   /** Fired after the hover-intent delay on a resolved connection, with the link's live element —
