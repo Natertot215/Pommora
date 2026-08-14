@@ -38,7 +38,7 @@ async function renderCell(text: string): Promise<HTMLDivElement> {
   cellHost = document.createElement('div')
   document.body.appendChild(cellHost)
   cellRoot = createRoot(cellHost)
-  await act(async () => cellRoot?.render(<>{renderCellContent(text, () => conn)}</>))
+  await act(async () => cellRoot?.render(renderCellContent(text, () => conn)))
   return cellHost
 }
 
