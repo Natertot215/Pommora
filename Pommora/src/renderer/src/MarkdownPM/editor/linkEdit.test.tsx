@@ -6,6 +6,7 @@ import type { ConnMenuAction } from '@shared/connections'
 import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
 import { showConnectionMenu } from '@renderer/Embeds/connectionMenu'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
+import { useSession } from '@renderer/store'
 import { commitAliasOnEnter } from './linkEdit'
 
 class ResizeObserverStub {
@@ -46,20 +47,20 @@ describe('the connection menu knows its span and its surface', () => {
   it('offers the authoring pair on an editable surface', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await rightClick(view, 6)
-    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false })
+    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false, alreadyOpen: false })
   })
 
   // The item names the act: on a bare link there is no title yet to rename.
   it('reports an existing alias, so the item can name renaming instead of adding', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|the one]] b', connections: conn })
     await rightClick(view, 12)
-    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: true })
+    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: true, alreadyOpen: false })
   })
 
   it('an opened-but-empty alias still reports none — there is nothing to rename', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha|]] b', connections: conn })
     await rightClick(view, 6)
-    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false })
+    expect(connMenu).toHaveBeenCalledWith({ editable: true, hasAlias: false, alreadyOpen: false })
   })
 
   // PreviewWindow starts read-only and silently drops doc changes, so Rename there would seat a
@@ -83,7 +84,7 @@ describe('the connection menu knows its span and its surface', () => {
       readOnly: true,
     })
     await rightClick(view, 6)
-    expect(connMenu).toHaveBeenCalledWith({ editable: false, hasAlias: false })
+    expect(connMenu).toHaveBeenCalledWith({ editable: false, hasAlias: false, alreadyOpen: false })
   })
 })
 
@@ -159,6 +160,31 @@ describe('Enter finishes an alias without writing anything', () => {
       view.dispatch({ selection: { anchor: 6 } })
     })
     expect(commitAliasOnEnter(view)).toBe(false)
+  })
+})
+
+// The two open items are the shared page menu's, so a link reaches its page exactly as every other
+// surface pointing at one does.
+describe('a connection opens its page the two ways every page menu offers', () => {
+  it('Open New Tab selects the page a link names into a tab of its own', async () => {
+    const select = vi.fn(async () => {})
+    useSession.setState({ select })
+    connMenu.mockResolvedValue('title:newtab')
+    const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
+    await rightClick(view, 6)
+    expect(select).toHaveBeenCalledWith(
+      { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' },
+      { newTab: true },
+    )
+  })
+
+  it('Open Preview floats it instead', async () => {
+    const openPreview = vi.fn()
+    useSession.setState({ openPreview })
+    connMenu.mockResolvedValue('title:preview')
+    const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
+    await rightClick(view, 6)
+    expect(openPreview).toHaveBeenCalledWith({ id: 'p1', path: 'Notes/Alpha.md' })
   })
 })
 
