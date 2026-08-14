@@ -35,6 +35,14 @@ const library = (pages: PageNode[], sets: SetNode[] = []): CollectionNode => ({
 })
 
 describe('projectBaseline', () => {
+  // The trash's listing resolves every bundle against one tree, and every resolution opens with a
+  // projection — so without this the walk runs once per row.
+  it('projects one tree once, and a second tree separately', () => {
+    const tree = treeWith([], [])
+    expect(projectBaseline(tree)).toBe(projectBaseline(tree))
+    expect(projectBaseline(treeWith([], []))).not.toBe(projectBaseline(tree))
+  })
+
   it('projects contexts, spaces, collections, sets and pages with present state', () => {
     const contexts: ContextGroup[] = [
       {

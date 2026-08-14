@@ -25,9 +25,22 @@ export interface Projection {
   duplicates: Record<string, EntityRecord[]>
 }
 
+/** One projection per tree, kept as long as the tree is. A read replaces the whole tree object, so
+ *  identity is the whole cache key — and the trash's listing resolves every bundle against one
+ *  tree, which without this is a full walk per row. */
+const byTree = new WeakMap<NexusTree, Projection>()
+
 /** Projects the walked tree — never a second walk. Adopted ids are addresses, not identities,
  *  so they never enter; Contexts join from the registry-backed groups. */
 export function projectBaseline(tree: NexusTree): Projection {
+  const memo = byTree.get(tree)
+  if (memo) return memo
+  const projection = buildBaseline(tree)
+  byTree.set(tree, projection)
+  return projection
+}
+
+function buildBaseline(tree: NexusTree): Projection {
   const entries: Record<string, EntityRecord> = {}
   const claimants: Record<string, EntityRecord[]> = {}
   const add = (e: EntityRecord): void => {

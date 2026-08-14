@@ -744,6 +744,22 @@ describe('emptyBundle — giving a bundle up for good', () => {
     expect((await handleMutate({ op: 'emptyBundle', bundlePath: listed.bundlePath }, nexusDeps)).ok).toBe(false)
   })
 
+  it('refuses when the bundle holds more than the artifact, rather than erasing it', async () => {
+    // `bundleArtifact` answers only for exactly one visible entry, so a sync client's conflict copy
+    // reads as no artifact at all. Removing the folder anyway would destroy the file with the
+    // switch OFF — the setting that promises the operating system keeps the last undo.
+    const handed: string[] = []
+    const deps: MutateDeps = { ...nexusDeps, trashToSystem: async (p) => void handed.push(p) }
+    await handleMutate({ op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
+    const [listed] = await listBundles(root)
+    const bundlePath = listed.bundlePath
+    await writeFile(join(root, bundlePath, 'Alpha 2.md'), 'conflict copy')
+    const r = await handleMutate({ op: 'emptyBundle', bundlePath }, deps)
+    expect(r.ok).toBe(false)
+    expect(handed).toEqual([])
+    expect(await pathExists(join(root, bundlePath, 'Alpha.md'))).toBe(true)
+  })
+
   it('a system-trash handoff that rejects leaves the bundle whole', async () => {
     const deps: MutateDeps = {
       ...nexusDeps,

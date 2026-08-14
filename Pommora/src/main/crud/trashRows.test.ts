@@ -117,6 +117,14 @@ describe('trashRows — a bundle as the browser reads it', () => {
     expect(page?.crumbs.every((c) => c.kind === undefined)).toBe(true)
   })
 
+  it('a Space whose Context is gone reads its location, not the folders it was kept in', async () => {
+    await del('.nexus/contexts/Projects/Pommora', 'space')
+    await del('.nexus/contexts/Projects', 'context')
+    const space = (await rows()).find((r) => r.kind === 'space')
+    // `.trash` mirrors the nexus faithfully — the internal chain is not a location a user has.
+    expect(space).toMatchObject({ historical: true, crumbs: [{ title: 'Projects' }] })
+  })
+
   it('a property record becomes no row at all', async () => {
     await writePropertyBundle(root, {
       entity: 'property',

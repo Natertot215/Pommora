@@ -35,6 +35,14 @@ export type BannerOwnerKind = 'collection' | 'set' | 'space' | 'homepage' | 'nav
  *  SidecarKind names exactly, so main passes them straight to createFolderEntity. */
 export type MutableContainerKind = 'collection' | 'set'
 
+/** Where a restore is asked to put something, in place of the parent its record names. `kind` is the
+ *  sender's claim about what the id names, held against the write path's own matrix: a claim that
+ *  contradicts its own id is a malformed message rather than a placement, and is refused. */
+export interface RestoreDestination {
+  kind: 'container' | 'context'
+  id: string
+}
+
 /** Top-level order persisted in `.nexus/state.json`. Contexts carry their own order in the
  *  registry and reorder through `reorderContexts`, so only the Collections belong here. */
 export type StateOrderKey = 'collection_order'
@@ -68,11 +76,7 @@ export type MutateRequest =
   // Spend a deletion bundle: resolve against the CURRENT tree and put the artifact back — into
   // its parent's renamed home if it moved. `bundlePath` is nexus-relative, from the listing.
   // `destination` overrides the recorded parent, for the kinds whose home can go missing.
-  | {
-      op: 'restore'
-      bundlePath: string
-      destination?: { kind: 'container' | 'context'; id: string }
-    }
+  | { op: 'restore'; bundlePath: string; destination?: RestoreDestination }
   // Spend a deletion bundle the other way: the artifact leaves for the operating system's trash,
   // or is erased outright when `personalization.permanentDelete` is on, and the record goes with
   // it. Destructive and unrecoverable from inside Pommora either way.
