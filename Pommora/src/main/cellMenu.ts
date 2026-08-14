@@ -1,6 +1,7 @@
 import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { cellMenuModel, type CellMenuAction, type CellMenuContext } from '@shared/cellMenu'
+import { pageMenuTemplate } from './pageMenu'
 import { styleSubmenu } from './styleMenu'
 
 // The table-cell right-click menu — popColumnMenu's shape over the shared cellMenuModel:
@@ -22,10 +23,7 @@ export function popCellMenu(
       items.push({ label: 'Style', submenu: styleSubmenu(model.style, pick) })
     }
     if (items.length > 0 && model.items.length > 0) items.push({ type: 'separator' })
-    for (const it of model.items) {
-      if (it.separatorBefore) items.push({ type: 'separator' })
-      items.push({ label: it.label, click: pick(it.action) })
-    }
+    items.push(...pageMenuTemplate(model.items, pick, ctx.kind === 'title' ? ctx : undefined))
     if (items.length === 0) {
       resolve(null)
       return

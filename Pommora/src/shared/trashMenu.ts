@@ -1,7 +1,7 @@
 // The trash row's right-click menu. A returning menu — main pops it and hands the action back, so
 // the leaf performs the write and can then refresh the list it is looking at.
 
-import type { MoveTarget } from './cardMenu'
+import type { MoveTarget } from './pageMenu'
 import type { DateFormat } from './columnStyles'
 import type { RestoreDestination } from './mutate'
 

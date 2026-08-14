@@ -14,12 +14,14 @@ import { readRegistryStrict } from './contextsRegistry'
 import { createSpaceLabel } from '@shared/contexts'
 import { containerCreators } from '@shared/mutate'
 import {
+  offersMove,
   pageLinkText,
   pageMetaMenuItems,
   pagePathText,
   type PageMetaAction,
+  type PageMoveAction,
 } from '@shared/pageMenu'
-import { menuTemplate } from './returningMenu'
+import { pageMenuTemplate } from './pageMenu'
 import type { ContextTarget, Creator, MutableKind, MutateRequest } from '@shared/mutate'
 import { readNexusLabels } from './readNexus'
 
@@ -102,8 +104,10 @@ export async function showContextMenu(
   /** One page action → what it does. Renderer-side work (a tab, a naming field, a picker, a
    *  sibling's position) travels as a push, because only the renderer holds the tab set and the
    *  sibling order; the rest lands here. */
-  const runPageAction = async (action: PageMetaAction): Promise<void> => {
-    switch (action) {
+  const runPageAction = async (action: PageMetaAction | PageMoveAction): Promise<void> => {
+    if (action.startsWith('move:'))
+      return run({ op: 'movePage', path: target.path, newParentPath: action.slice(5) })
+    switch (action as PageMetaAction) {
       case 'title:preview':
         return push(win, 'open-in-preview', target)
       case 'title:newtab':
@@ -124,6 +128,8 @@ export async function showContextMenu(
           where: 'below',
           host: target.host,
         })
+      case 'title:moveto':
+        return
       case 'title:copylink':
         return clipboard.writeText(pageLinkText(target.title))
       case 'title:copypath':
@@ -141,14 +147,16 @@ export async function showContextMenu(
   // menu rather than a subset of this one.
   if (target.kind === 'page') {
     items.push(
-      ...menuTemplate(
+      ...pageMenuTemplate(
         pageMetaMenuItems(target.alreadyOpen, {
           preview: true,
           newPages: 'pair',
+          move: offersMove(target),
           clipboard: true,
           reveal: true,
         }),
         (action) => () => void runPageAction(action),
+        target,
       ),
     )
     await new Promise<void>((resolve) => {

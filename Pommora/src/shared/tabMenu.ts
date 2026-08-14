@@ -2,9 +2,9 @@
 // in-renderer surface. The renderer sends the tab's context; main pops the menu and returns the chosen
 // action (or null on dismiss); the renderer runs it against the tab id it held.
 
-import type { PageClipboardAction } from './pageMenu'
+import type { PageMoveAction, PageSendAction, PageMoveContext } from './pageMenu'
 
-export interface TabMenuContext {
+export interface TabMenuContext extends PageMoveContext {
   /** A pinned tab offers Unpin only (no Close; unpin reveals the ×). */
   pinned: boolean
   /** The NavView tab can't be pinned. */
@@ -13,4 +13,10 @@ export interface TabMenuContext {
   isPage?: boolean
 }
 
-export type TabMenuAction = 'pin' | 'unpin' | 'close' | 'preview' | PageClipboardAction
+export type TabMenuAction =
+  | 'pin'
+  | 'unpin'
+  | 'close'
+  | 'preview'
+  | PageSendAction
+  | PageMoveAction

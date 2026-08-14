@@ -7,6 +7,7 @@ import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { TableRowDnd, useTableRowDrag } from '../Detail/Views/Table/tableDnd'
 import type { NavRef, SelectTarget } from '@shared/types'
 import { useSession } from '../store'
+import { pageMoveContext, runPageSendAction } from '../pageMenuActions'
 import { isOpenInTabs, liveTarget } from '../Tabs/tabsModel'
 import { reconcileIndexOf } from '../treeIndex'
 import { navKey } from './navRecents'
@@ -57,6 +58,11 @@ export function NavRowMenu({
     const target = item.target
     const isPinned = s.pinned.some((p) => navKey(p) === item.key)
     const isFavorite = s.favorites.some((f) => navKey(f) === item.key)
+    // A stored ref carries no path, so the send block's actions address the page through the live
+    // tree — the same mint the preview item makes.
+    const livePage =
+      target.kind === 'page' && s.tree ? liveTarget(reconcileIndexOf(s.tree), target) : null
+    const livePath = livePage?.kind === 'page' ? livePage.path : undefined
     void window.nexus
       .navRowMenu({
         canOpenNewTab: onOpenNewTab !== undefined,
@@ -64,11 +70,13 @@ export function NavRowMenu({
         isPage: target.kind === 'page',
         isPinned,
         isFavorite,
+        ...(livePath ? pageMoveContext(s.tree, livePath) : {}),
       })
       .then((action) => {
         if (!live) return
         onClose()
         const st = useSession.getState()
+        if (action && livePath && runPageSendAction(action, livePath)) return
         switch (action) {
           case 'open-new-tab':
             onOpenNewTab?.(target)

@@ -83,7 +83,7 @@ import {
   orderAddableEntries,
   shownColumnsFor,
 } from './cardValueInput'
-import { containerTargets } from '@renderer/destinationTree'
+import { pageMoveContext, runPageSendAction } from '@renderer/pageMenuActions'
 import { hideShown, unhide } from '@renderer/Components/Detail/hiddenPaneModel'
 import { IconPicker } from '@renderer/Components/IconPicker'
 import { RenamableTitle } from '@renderer/Components/RenamableTitle'
@@ -1283,24 +1283,20 @@ const PageCard = memo(function PageCard({
     const alreadyOpen = isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path })
     const addable = addableNow()
     const menuAddable = orderAddableEntries(addable).map((e) => ({ id: e.id, name: e.name }))
-    const currentParentPath = row.path.slice(0, row.path.lastIndexOf('/'))
-    const moveTargets = tree ? containerTargets(tree.collections) : []
     const action = await holdGhost(() =>
       window.nexus.cardMenu({
         addable: menuAddable,
         alreadyOpen,
-        moveTargets,
-        currentParentPath,
+        ...pageMoveContext(tree, row.path),
       }),
     )
     if (!action) return
+    if (runPageSendAction(action, row.path)) return
     if (action === 'title:newtab') onOpen(row, true)
     else if (action === 'title:rename') useSession.getState().beginRename(row.path, false, 'detail')
     else if (action === 'title:icon') setIconOpen(true)
     else if (action === 'title:newbelow') onNewBelow(row)
     else if (action === 'title:delete') void mutate({ op: 'delete', path: row.path, kind: 'page' })
-    else if (action.startsWith('move:'))
-      void mutate({ op: 'movePage', path: row.path, newParentPath: action.slice(5) })
     else if (action.startsWith('add:')) {
       const entry = addable.find((e) => e.id === action.slice(4))
       if (!entry) return

@@ -28,6 +28,7 @@ import { registerDiscloseTarget } from '@renderer/design-system/interactions/dra
 import { AgendaMode } from './AgendaMode'
 import { loadOpen, saveOpen } from './disclosureState'
 import { useSession } from '../store'
+import { pageMoveContext } from '../pageMenuActions'
 import { contextTargetToSelect, isOpenInTabs } from '../Tabs/tabsModel'
 import { RenamableTitle } from '../Components/RenamableTitle'
 import { IconPicker } from '../Components/IconPicker'
@@ -41,7 +42,7 @@ function showContextFor(node: {
   path: string
   title: string
 }): Promise<void> {
-  const { tabs, pinned } = useSession.getState()
+  const { tabs, pinned, tree } = useSession.getState()
   const alreadyOpen = isOpenInTabs(tabs, pinned, contextTargetToSelect(node))
   // Resolves on the menu's dismissal — callers holding the ghost down ride the promise.
   return window.nexus.contextMenu({
@@ -51,6 +52,7 @@ function showContextFor(node: {
     title: node.title,
     alreadyOpen,
     host: 'sidebar',
+    ...(node.kind === 'page' ? pageMoveContext(tree, node.path) : {}),
   })
 }
 
