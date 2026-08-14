@@ -1,3 +1,22 @@
+/* The search row every list-bearing surface wears. Everything aligns to --navwindow-inset: the
+   divider (via margin, not full-bleed), the magnifier, and the rows' icon + path edges — rows carry
+   the inset on nav-item-main, so the scroll box adds none. Border and outline are SearchField's. */
+.nav-search-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 var(--navwindow-inset);
+  padding: 9px 0;
+  color: var(--label-tertiary);
+  border-bottom: 1px solid var(--separator-segment);
+  flex-shrink: 0;
+}
+.nav-search-row input {
+  flex: 1;
+  background: transparent;
+  color: var(--label-primary);
+}
+
 .nav-list {
   list-style: none;
   margin: 0;

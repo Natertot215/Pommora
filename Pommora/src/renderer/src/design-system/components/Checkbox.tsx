@@ -13,13 +13,17 @@ export function Checkbox({
   onChange,
   ariaLabel,
   className,
+  small,
 }: {
   state: CheckboxState
   onChange: (next: boolean) => void
   ariaLabel: string
   className?: string
+  /** Seat it in a row's narrow inset, beside where a pin or a grip would ride. */
+  small?: boolean
 }): React.JSX.Element {
   const set = state === true
+  const mark = small ? 9 : 12
   return (
     // biome-ignore lint/a11y/useSemanticElements: the rule's element is a void one — it cannot hold the centred mark this look is drawn from, and its indeterminate state is a DOM property no attribute sets; role="checkbox" on a focusable element is the pattern
     <button
@@ -30,6 +34,7 @@ export function Checkbox({
       className={cx(
         chipBoxGeometry,
         'pm-checkbox',
+        small && 'pm-checkbox-small',
         set && 'pm-checkbox-checked',
         state === 'mixed' && 'pm-checkbox-mixed',
         className,
@@ -42,18 +47,18 @@ export function Checkbox({
         onChange(!set)
       }}
     >
-      {state === 'mixed' ? <MixedMark /> : set ? <CheckMark /> : null}
+      {state === 'mixed' ? <MixedMark size={mark} /> : set ? <CheckMark size={mark} /> : null}
     </button>
   )
 }
 
 // Drawn rather than drawn from the registry: these ride inside a 17px box at a stroke the icon
 // components don't offer, and the editor's widget emits the identical markup as a raw string.
-const CheckMark = (): React.JSX.Element => (
+const CheckMark = ({ size }: { size: number }): React.JSX.Element => (
   <svg
     viewBox="0 0 24 24"
-    width="12"
-    height="12"
+    width={size}
+    height={size}
     fill="none"
     stroke="currentColor"
     strokeWidth="3"
@@ -65,11 +70,11 @@ const CheckMark = (): React.JSX.Element => (
   </svg>
 )
 
-const MixedMark = (): React.JSX.Element => (
+const MixedMark = ({ size }: { size: number }): React.JSX.Element => (
   <svg
     viewBox="0 0 24 24"
-    width="12"
-    height="12"
+    width={size}
+    height={size}
     fill="none"
     stroke="currentColor"
     strokeWidth="3"

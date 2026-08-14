@@ -7,9 +7,12 @@
    fallback resolves to its initial value in silence, which is how a borrowed surface ships wrong
    while reading right in the file. */
 .trash-leaf {
-  --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' included */
-  --trash-date-lane: 128px; /* KNOB — fixed, so the dates line up down the list */
-  --trash-gutter: 22px; /* KNOB — the checkbox strip left of the rows' content */
+  --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' and the heading's alike */
+  --trash-date-lane: 160px; /* KNOB — fixed, so the dates line up down the list */
+  --trash-date-inset: 10px; /* KNOB — clears the column divider, heading and rows alike */
+  /* The table's own cell inset, pointed at this surface's, so a borrowed column label lands over
+     the column it names rather than 2px off it. */
+  --cell-padding-x: var(--navwindow-inset);
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -19,51 +22,28 @@
   padding-top: 30px;
 }
 
-/* Mirrors the NavWindow's search row — magnifier, field, and a divider inset to the same edge. */
-.trash-search {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 var(--navwindow-inset);
-  padding: 9px 0;
-  color: var(--label-tertiary);
-  border-bottom: 1px solid var(--separator-segment);
-  flex-shrink: 0;
-}
-.trash-search input {
-  flex: 1;
-  color: var(--label-primary);
-  background: transparent;
-}
-.trash-search input::placeholder {
-  color: var(--label-tertiary);
-}
-
-/* Bare column labels over the data — no fill and no seam, which is the embedded table's reading of
-   a heading rather than the full-page band's. The lanes are the rows' own: this row carries the
-   same gutter, the same inset and the same date width, so nothing has to be measured twice. */
+/* The heading is the table's, borrowed: `.table-head` brings the control tone, the bottom seam and
+   the segment bars that bound the strip, and `.col-header` brings each lane its inset. What the
+   leaf drops is the fill — a small strip inside a floating window reads as labels over data, not as
+   a band — and the full-bleed margins, which exist to reach a full-page view's glass edges. */
 .trash-head {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  padding: 8px 0 4px;
-  color: var(--label-control);
-  user-select: none;
+  background: none;
+  margin: 0;
+  padding: 0;
 }
-/* The heading's lane is built from the row's own measures rather than beside them: the select-all
-   sits centred in the same gutter strip each row's checkbox is centred in, and the column glyph
-   lands exactly where a row's kind glyph lands. */
+/* The table's leading bar marks its gutter↔Title junction; this strip has no gutter column, so the
+   bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays. */
+.trash-head .col-header:first-child::before {
+  content: none;
+}
 .trash-head-name {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  padding-left: var(--navwindow-inset);
-}
-.trash-head-check {
-  flex: 0 0 var(--trash-gutter);
-  display: flex;
-  justify-content: center;
 }
 .trash-head-glyph {
   display: flex;
@@ -74,7 +54,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding-right: var(--navwindow-inset);
+  /* One inset for both, so the label sits over its dates and neither crowds the column divider
+     that lands on the lane's edge. */
+  padding-left: var(--trash-date-inset);
 }
 
 .trash-scroll {
@@ -85,20 +67,26 @@
   padding-bottom: 6px;
 }
 
-/* The rows' content clears the checkbox strip; the highlight still spans full-width. */
-.trash-leaf .nav-item-main {
-  padding-left: calc(var(--navwindow-inset) + var(--trash-gutter));
-}
+/* The pin's affordance exactly: a glyph in the row's left inset, absolute so it never shifts the
+   row's content, hidden until the row is hovered, and holding the accent once set. Once anything is
+   checked the whole column shows — a selection is being built, and the boxes it is being built from
+   should not have to be hunted for. */
 .trash-check {
   position: absolute;
-  left: calc(var(--navwindow-inset) + var(--trash-gutter) / 2);
+  left: calc(var(--navwindow-inset) / 2);
   top: 50%;
   transform: translate(-50%, -50%);
-  z-index: 1;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+.nav-item:hover .trash-check,
+.trash-leaf.has-checked .trash-check {
+  opacity: 1;
 }
 .trash-date {
   flex: 0 0 var(--trash-date-lane);
-  padding-right: var(--navwindow-inset);
+  padding-left: var(--trash-date-inset);
+  padding-right: var(--cell-padding-x);
   color: var(--label-secondary);
   white-space: nowrap;
   overflow: hidden;

@@ -217,7 +217,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
           </div>
         ) : (
           <div className="navwindow-main">
-            <div className="navwindow-search">
+            <div className="nav-search-row navwindow-search">
               <SearchField
                 inputRef={searchRef}
                 className={text.body.standard}

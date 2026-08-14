@@ -27,3 +27,13 @@
   background: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
   border-color: color-mix(in srgb, var(--accent) var(--tint-tertiary), transparent);
 }
+
+/* The gutter variant — for a row that seats its control in the same narrow inset a pin or a grip
+   rides, where the full box would overhang the row's edge. Overrides chipBoxGeometry rather than
+   forking it, so the two stay one shape at two sizes. */
+.pm-checkbox-small {
+  width: 13px; /* KNOB */
+  height: 13px;
+  border-radius: 4px;
+  border-width: 1.25px;
+}

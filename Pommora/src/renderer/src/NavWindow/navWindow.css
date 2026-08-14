@@ -124,25 +124,6 @@
   left: calc(var(--nav-list-lead) / 2);
 }
 
-/* Everything aligns to --navwindow-inset: the divider (via margin, not full-bleed), the magnifier, and
-   the rows' icon + path edges (rows carry the inset on nav-item-main, so the scroll box adds none). */
-.navwindow-search {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 var(--navwindow-inset);
-  padding: 9px 0;
-  color: var(--label-tertiary);
-  border-bottom: 1px solid var(--separator-segment);
-  flex-shrink: 0;
-}
-.navwindow-search input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  color: var(--label-primary);
-}
 .navwindow-main-scroll {
   flex: 1;
   min-height: 0;
