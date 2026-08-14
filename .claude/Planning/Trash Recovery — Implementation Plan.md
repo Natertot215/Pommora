@@ -111,7 +111,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 **Dead Vocabulary**
 
 - `rg -F "SettingsWindow" Pommora/src` → expect 0, down from 5. Legitimate hits: none.
-- `rg -F "entityIcon('space'" Pommora/src` → expect **7** after conversion, down from 13. Legitimate hits: the `treeIndex.ts` and `contextIdentity.ts` space branches, `Sidebar.tsx:567`, `SpaceDropdown.tsx`, `SpaceSettings.tsx`, and two lines in `entityIcon.test.ts` that test the space kind on purpose. Any Context-drawing site remaining is a defect.
+- `rg -U --multiline-dotall -o "entityIcon\(\s*'space'" Pommora/src` → expect **8**, down from 14. Legitimate hits: the `treeIndex.ts` and `contextIdentity.ts` space branches, `Sidebar.tsx:567`, `SpaceDropdown.tsx`, `SpaceSettings.tsx`, and three lines in `entityIcon.test.ts` that test the space kind on purpose. Any Context-drawing site remaining is a defect.
 - Control: `rg -F "entityIcon(" Pommora/src` → **43** at planning time. Zero here means the search never ran.
 
 **Hazard Window:** Task 4 widens `ENTITY_ICON_KINDS` and converts the six Context sites in the same commit; the window opens and closes inside that task, and **Gate 1 is its closer**. Nothing later is constrained — Task 13 must add a new `entityIcon` call site to draw its rows, and does so against a union that is already correct.
@@ -168,7 +168,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - Test: `src/renderer/src/Detail/Views/pipeline/contextIdentity.test.ts` — asserts the old Space seed.
 
 **Derivation**
-- `rg -F "entityIcon('space'" Pommora/src` → **13** at planning time across renderer + tests. Of these, the **six Context-drawing** ones convert: `treeIndex.ts:79`, `Sidebar/Ribbon.tsx:48`, `Sidebar/Sidebar.tsx:584`, `Components/Detail/PagePropertiesPane.tsx:218`, `Detail/Views/pipeline/contextIdentity.ts:51`, `PagePreview/PreviewInspector.tsx:336`. The seven genuine Space sites stay.
+- `rg -U --multiline-dotall -o "entityIcon\(\s*'[a-z]+'" Pommora/src` → **14** `'space'` calls at execution time. The single-line form finds only 13: `PreviewInspector`'s second Context site wraps its argument onto the next line, so a fixed-string search cannot see it. Of the 14, the **seven Context-drawing** ones convert: `treeIndex.ts:79`, `Sidebar/Ribbon.tsx:48`, `Sidebar/Sidebar.tsx:584`, `Components/Detail/PagePropertiesPane.tsx:218`, `Detail/Views/pipeline/contextIdentity.ts:51`, and **both** `PagePreview/PreviewInspector.tsx` sites. The seven genuine Space sites stay.
 - Control: `rg -F "DEFAULT_ENTITY_ICONS" Pommora/src` → **8**. Zero means the search never ran.
 
 **Interfaces**
@@ -568,11 +568,15 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 ### Deviations
 
+- **Task 3's Derivation was one site short, and the search shape is why.** `PreviewInspector` draws a Context in two places, and the second wraps `entityIcon(` across lines — invisible to the fixed-string search the Derivation named. Both panes now read the glyph the identity seam already resolved rather than resolving it a second time, so the count of direct `entityIcon('context', …)` call sites is five rather than six; the pipeline resolves for both. The Derivation and the Dead Vocabulary sweep are rewritten to the multiline form.
+
 ### Lessons
 
 - A comment naming what a reservation clears can be wrong about which side of the window it clears.
 - "It already exists" and "it is reachable" are different findings — three mechanisms here were complete, tested, and callable by nothing.
 - A token scope is invisible when it fails: an unset custom property with no fallback resolves to its initial value with no error and no lint.
+- A fixed-string search for a call and its first argument misses every call the formatter wrapped. A sweep over call sites needs a multiline pattern, or it under-reports by exactly the sites that were long enough to wrap.
+- Resolving an already-resolved value is a no-op that hides a wrong argument: a second `entityIcon` pass over a renderable glyph returns it unchanged, so the kind it names can be wrong for as long as nobody reads it.
 
 ### Sequenced After
 

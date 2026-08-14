@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes, Ref } from 'react'
+import { cx } from '../cx'
 import * as s from './searchField.css'
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> & {
@@ -19,7 +20,7 @@ export function SearchField({
     <input
       {...rest}
       ref={inputRef}
-      className={className ? `${s.field} ${className}` : s.field}
+      className={cx(s.field, className)}
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
       spellCheck={false}

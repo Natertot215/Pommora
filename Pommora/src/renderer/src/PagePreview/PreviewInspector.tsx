@@ -5,7 +5,7 @@ import { applyValueAtRoot, propertyKey } from '@shared/propertyValue'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { cx } from '@renderer/design-system/cx'
-import { asRenderableIcon, entityIcon, Icon } from '@renderer/design-system/symbols'
+import { asRenderableIcon, Icon } from '@renderer/design-system/symbols'
 import { propertyTypeIconName } from '../Components/Detail/PropertyTypes'
 import { text } from '@renderer/design-system/tokens'
 import { PickerMenu, PickerOption, PointMenu } from '@renderer/design-system/components/PickerMenu'
@@ -43,12 +43,14 @@ const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition
   return all.find((c) => path.startsWith(`${c.path}/`))?.properties ?? []
 }
 
+const propertyIcon = (def: PropertyDefinition): string =>
+  asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type) ?? 'tag'
+
 type Editing = { id: string; mode: 'picker' | 'editor' | 'date' } | null
 
 export function PreviewInspector({ target }: { target: PreviewTarget }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const [fm, setFm] = useState<PageFrontmatter | null>(null)
   const [title, setTitle] = useState('')
   const [editing, setEditing] = useState<Editing>(null)
@@ -206,11 +208,13 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
         {/* Nothing pre-shows — on an empty page the Add affordance alone sits at the top. */}
         {[
           contextRows.filter((t) => isAssigned(t.id)).map((t) => ({ def: null, ...t })),
-          schema.filter((d) => isAssigned(d.id)).map((d) => ({ def: d, id: d.id, label: d.name })),
+          schema
+            .filter((d) => isAssigned(d.id))
+            .map((d) => ({ def: d, id: d.id, label: d.name, icon: propertyIcon(d) })),
         ].map((group, gi) =>
           group.length === 0 ? null : (
             <div key={gi === 0 ? 'contexts' : 'properties'} className="pgpreview-insp-group">
-              {group.map(({ def, id, label }) => {
+              {group.map(({ def, id, label, icon }) => {
                 const col: ResolvedColumn = { id, kind: def ? 'property' : 'context' }
                 return (
                   // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
@@ -224,20 +228,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
                     }}
                   >
                     <span className={cx('pgpreview-insp-label', text.caption.standard)}>
-                      <Icon
-                        name={
-                          def
-                            ? (asRenderableIcon(def.icon) ??
-                              propertyTypeIconName(def.type) ??
-                              'tag')
-                            : entityIcon(
-                                'space',
-                                contextRows.find((c) => c.id === id)?.icon,
-                                defaultIcons,
-                              )
-                        }
-                        size={12}
-                      />
+                      <Icon name={icon} size={12} />
                       {label}
                     </span>
                     {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix */}
@@ -333,7 +324,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             .map((t) => (
               <PickerOption key={t.id} onClick={() => revealAndEdit(t.id)}>
                 <span className={iconOption}>
-                  <Icon name={entityIcon('context', t.icon, defaultIcons)} size={13} />
+                  <Icon name={t.icon} size={13} />
                   {t.label}
                 </span>
               </PickerOption>
@@ -343,10 +334,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             .map((d) => (
               <PickerOption key={d.id} onClick={() => revealAndEdit(d.id, d)}>
                 <span className={iconOption}>
-                  <Icon
-                    name={asRenderableIcon(d.icon) ?? propertyTypeIconName(d.type) ?? 'tag'}
-                    size={13}
-                  />
+                  <Icon name={propertyIcon(d)} size={13} />
                   {d.name}
                 </span>
               </PickerOption>

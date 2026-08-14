@@ -38,7 +38,7 @@ The in-process write lock the desktop uses to serialize overlapping edits within
 
 ### Cascades and Eventual Consistency
 
-Some operations touch many files at once — renaming a page rewrites every inbound link across the nexus; deleting a Context strips its id from every page that referenced it. Each file is written independently, and over iCloud those writes propagate one at a time and out of order. During propagation the receiving device can briefly see a half-applied state, and because connections resolve by title, some links are momentarily unresolved. This is invisible to a single user who isn't watching the other device mid-sync, and it self-heals once the last file lands. Eventual consistency is the accepted behavior; no special settle step is added.
+Some operations touch many files at once — renaming a page rewrites every inbound link across the nexus; deleting a Context strips its id from every page that referenced it. Each file is written independently, and over iCloud those writes propagate one at a time and out of order. During propagation, the receiving device can briefly see a half-applied state, and because connections resolve by title, some links are momentarily unresolved. This is invisible to a single user who isn't watching the other device mid-sync, and it self-heals once the last file lands. Eventual consistency is the accepted behavior; no special settle step is added.
 
 ### The Index Stays Local
 
