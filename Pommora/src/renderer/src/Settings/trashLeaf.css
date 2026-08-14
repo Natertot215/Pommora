@@ -10,14 +10,17 @@
   --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' and the heading's alike */
   --trash-date-lane: 160px; /* KNOB — fixed, so the dates line up down the list */
   --trash-date-inset: 10px; /* KNOB — clears the column divider, heading and rows alike */
-  /* Where content starts, derived from the search row above it: the field's own leading glyph sits
-     at the inset and its text follows a gap later, so a row's glyph and a column's label land on
-     that same line and the checkbox gets the leading glyph's slot to itself. */
-  --trash-lead-glyph: 14px;
-  --trash-lead: calc(var(--navwindow-inset) + var(--trash-lead-glyph) + 6px);
-  /* The table's own cell inset, pointed at this surface's, so a borrowed column label lands over
-     the column it names rather than 2px off it. */
+  /* The strip the checkbox rides, left of where content starts — the row's equivalent of the
+     gutter a pin or a grip sits in. Content clears it, so a row's glyph and a column's label land
+     on one line and the box has room of its own. */
+  --trash-gutter: 20px; /* KNOB */
+  --trash-lead: calc(var(--navwindow-inset) + var(--trash-gutter));
+  /* The table's own cell inset, pointed at this surface's, so a lane's trailing text ends exactly
+     where every rule here does rather than 2px past it. */
   --cell-padding-x: var(--navwindow-inset);
+  /* The heading row's height, cut with its type: this strip's labels sit a step under the table's,
+     so the band they sit in comes down with them. */
+  --heading-padding-y: 6px; /* KNOB */
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -44,7 +47,9 @@
   margin: 0;
   padding: 0;
   /* The lanes stay full-bleed so the column divider lands on the rows' own boundary; the seam is
-     drawn separately, inset to exactly the width the search row's divider spans. */
+     drawn separately, inset to exactly the width the search row's divider spans — and drawn at that
+     divider's weight rather than the table heading's heavier one, so the two rules bounding this
+     strip read as a pair. */
   border-bottom: none;
 }
 .trash-leaf .trash-head::after {
@@ -53,7 +58,7 @@
   left: var(--navwindow-inset);
   right: var(--navwindow-inset);
   bottom: 0;
-  border-bottom: var(--heading-divider);
+  border-bottom: 1px solid var(--separator-segment);
 }
 /* The table's leading bar marks its gutter↔Title junction; this strip has no gutter column, so the
    bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays.
@@ -115,10 +120,9 @@
 }
 
 /* The table's row treatment: a line between rows rather than under each one, so a list has none
-   above its first nor below its last, and the column boundary carried down as a hairline that meets
-   the heading's segment bar. The line is drawn rather than bordered so it spans the same width the
-   search row's divider and the heading's seam do — every horizontal rule on this surface agrees,
-   while the row's own highlight still runs edge to edge beneath it. */
+   above its first nor below its last. The line is drawn rather than bordered so it spans the same
+   width the search row's divider and the heading's seam do — every horizontal rule on this surface
+   agrees, while the row's own highlight still runs edge to edge beneath it. */
 .trash-leaf .nav-item + .nav-item::before {
   content: "";
   position: absolute;
@@ -138,7 +142,7 @@
    should not have to be hunted for. */
 .trash-check {
   position: absolute;
-  left: calc(var(--navwindow-inset) + var(--trash-lead-glyph) / 2);
+  left: calc(var(--navwindow-inset) + var(--trash-gutter) / 2);
   top: 50%;
   transform: translate(-50%, -50%);
   opacity: 0;
