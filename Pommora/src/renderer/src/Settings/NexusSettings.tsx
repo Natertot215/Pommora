@@ -71,6 +71,11 @@ const LEAVES: Record<CategoryKey, LeafBody> = {
       label: 'Reveal Tab Bar On Hover',
       hint: 'Keep the tab bar hidden until the pointer nears it.',
     },
+    {
+      key: 'permanentDelete',
+      label: 'Permanently Delete Files',
+      hint: 'Permanently deleted files will be deleted from this computer, keeping this off will move them to system trash.',
+    },
   ] },
   pages: { kind: 'toggles', toggles: [
     {

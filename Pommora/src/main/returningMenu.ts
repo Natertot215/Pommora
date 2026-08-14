@@ -53,6 +53,30 @@ export function menuTemplate<A>(
   return template
 }
 
+/** A destination tree as native submenus. A parent item cannot itself be clicked, so a container
+ *  repeats its own name as its submenu's first row above a separator — the convention both the
+ *  card's Move To ▸ and the trash's Restore ▸ need, stated once. `disabled` grays a destination
+ *  that would be a no-op rather than hiding it, so the tree reads the same either way. */
+export function destinationNodes<T extends { label: string; children?: T[] }>(
+  targets: readonly T[],
+  pick: (target: T) => () => void,
+  disabled?: (target: T) => boolean,
+): MenuItemConstructorOptions[] {
+  const node = (t: T): MenuItemConstructorOptions => {
+    const self: MenuItemConstructorOptions = {
+      label: t.label,
+      enabled: !disabled?.(t),
+      click: pick(t),
+    }
+    if (!t.children?.length) return self
+    return {
+      label: t.label,
+      submenu: [self, { type: 'separator' }, ...t.children.map(node)],
+    }
+  }
+  return targets.map(node)
+}
+
 /** A menu that is nothing but its model's rows: pop them, resolve the pick. */
 export function popModelMenu<A>(
   win: BrowserWindow,
