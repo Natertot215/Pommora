@@ -20,6 +20,7 @@ import type {
   SubfieldConfig,
   StoredTabSet,
   ThumbRect,
+  TrashRow,
   ViewButton,
   ViewStyle,
 } from './types'
@@ -242,6 +243,10 @@ export interface Asks {
     reply: Result<{ url: string }>
   }
   'nav:evictThumbs': { args: [liveKeys: string[]]; reply: Result<null> }
+
+  // The trash's read side. `.trash` is excluded from the watcher, so nothing is ever pushed —
+  // the browser asks, and asks again after every action it takes.
+  'trash:list': { args: []; reply: Result<TrashRow[]> }
 
   // The write path + dialogs + external
   mutate: { args: [req: MutateRequest]; reply: MutateReply }

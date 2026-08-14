@@ -568,6 +568,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 ### Deviations
 
+- **Tasks 4 and 5 land as one commit.** The plan had Task 4 put the channel up and Task 5 shape its payload, which assumed the channel could carry `ListedBundle` in the meantime. It cannot: `bridge.ts` is pure shared types consumed from both tsconfig projects, so a main-side shape carrying a zod-inferred record can never be a reply. `TrashRow` has to exist the moment the channel does, and the shaper with it.
 - **Task 3's Derivation was one site short, and the search shape is why.** `PreviewInspector` draws a Context in two places, and the second wraps `entityIcon(` across lines — invisible to the fixed-string search the Derivation named. Both panes now read the glyph the identity seam already resolved rather than resolving it a second time, so the count of direct `entityIcon('context', …)` call sites is five rather than six; the pipeline resolves for both. The Derivation and the Dead Vocabulary sweep are rewritten to the multiline form.
 
 ### Lessons

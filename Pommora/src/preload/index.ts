@@ -149,6 +149,8 @@ const api = {
       value: Personalization[K],
     ): Promise<Result<null>> => ipcRenderer.invoke('personalization:set', key, value),
   },
+  // What `.trash` holds, already shaped into rows.
+  listTrash: ask('trash:list'),
   // Renderer-initiated write (relative paths only); main resolves under the session root.
   mutate: ask('mutate'),
   // Right-click an entity → main pops a native context menu + acts on it.
