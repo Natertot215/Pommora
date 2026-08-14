@@ -36,6 +36,31 @@ export const DEFAULT_TIME_FORMAT: TimeFormatSetting = 'twelveHour'
 export const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page', 'context'] as const
 export type EntityIconKind = (typeof ENTITY_ICON_KINDS)[number]
 
+/** One step of a trashed entity's location. `kind` is absent on a historical crumb, which is a
+ *  frozen folder name rather than a live entity. */
+export interface TrashCrumb {
+  kind?: EntityIconKind
+  title: string
+}
+
+/** A `.trash` bundle as the trash browser reads it. Main owns the parse: the renderer never sees a
+ *  `.deleted` suffix, a folder stamp, or the record union. The artifact-less `property` record
+ *  carries none of these facts and becomes no row at all. */
+export interface TrashRow {
+  /** Nexus-relative bundle path — the reference both trash actions take. */
+  bundlePath: string
+  kind: EntityIconKind
+  title: string
+  /** Resolved live from the recorded parent id, so a renamed ancestor reads true. */
+  crumbs: TrashCrumb[]
+  /** Set when the recorded parent resolves to nothing and `crumbs` fell back to the frozen chain. */
+  historical?: boolean
+  /** Epoch milliseconds from the bundle's own stamp; null when it won't parse. */
+  deletedAt: number | null
+  /** False when restoring would refuse for want of a home — the signal to ask where instead. */
+  homeResolves: boolean
+}
+
 /** Where a container's child folders sit relative to its loose pages in the sidebar. `top` (default)
  *  keeps folders above pages; `bottom` drops them below. A full folder↔page interleave is the eventual
  *  model — this flag is the interim: folders stay one contiguous block, just relocatable. */

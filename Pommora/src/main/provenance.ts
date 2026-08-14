@@ -388,6 +388,9 @@ export interface ListedBundle {
   /** Nexus-relative bundle path — the reference the restore op takes. */
   bundlePath: string
   record: RecordFile
+  /** The artifact's own basename, as it was when it left. Absent only for the artifact-less
+   *  `property` bundle. It is the sole source of a row's title, and the walk already had it. */
+  artifactName?: string
 }
 
 /** Every spendable bundle under `.trash`. A bundle is a `.deleted` folder HOLDING A RECORD — the
@@ -396,10 +399,7 @@ export interface ListedBundle {
  *  structure, so the walk stops at one and never reads a deletion out of what it holds.
  *
  *  A content bundle with no artifact is a deletion that never finished: skipped, and never
- *  removed — the record is the only evidence that destruction happened.
- *
- *  Parked, NOT dead code: no bridge channel exposes this, so its only callers are tests. It is
- *  the trash browser's read side, waiting on that surface rather than on any work here. */
+ *  removed — the record is the only evidence that destruction happened. */
 export async function listBundles(root: string): Promise<ListedBundle[]> {
   const out: ListedBundle[] = []
   const walk = async (dir: string): Promise<void> => {
@@ -411,8 +411,13 @@ export async function listBundles(root: string): Promise<ListedBundle[]> {
         await walk(abs)
         continue
       }
-      if (record.entity !== 'property' && !(await bundleArtifact(abs))) continue
-      out.push({ bundlePath: relative(root, abs), record })
+      const artifact = record.entity === 'property' ? null : await bundleArtifact(abs)
+      if (record.entity !== 'property' && !artifact) continue
+      out.push({
+        bundlePath: relative(root, abs),
+        record,
+        ...(artifact ? { artifactName: basename(artifact) } : {}),
+      })
     }
   }
   await walk(join(root, '.trash'))
