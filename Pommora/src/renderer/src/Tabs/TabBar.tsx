@@ -7,6 +7,8 @@ import { SortableZone, useDragItem, type DragItem } from '@renderer/design-syste
 import { onActivateKey } from '@renderer/design-system/interactions/activate'
 import { suppressNextClick } from '@renderer/design-system/interactions/shared'
 import type { Tab, TabTarget } from '@shared/types'
+import { titleFromPath } from '@shared/connections'
+import { pageLinkText, pagePathText } from '@shared/pageMenu'
 import { useSession } from '../store'
 import { resolveWith, type ResolvedNav } from '../Navigation/navResolve'
 import { resolveIndexOf } from '../treeIndex'
@@ -151,7 +153,12 @@ function TabBarBody({
       if (action === 'pin') pinTab(tabId)
       else if (action === 'unpin') unpinTab(tabId)
       else if (action === 'close') requestClose(tabId)
-      else if (action === 'preview' && isPage) openPreview({ id: target.id, path: target.path })
+      else if (!isPage) return
+      else if (action === 'preview') openPreview({ id: target.id, path: target.path })
+      else if (action === 'title:copylink')
+        await window.nexus.writeClipboard(pageLinkText(titleFromPath(target.path)))
+      else if (action === 'title:copypath')
+        await window.nexus.writeClipboard(pagePathText(target.path))
     }
 
   // A native CSS app-region can't do this — it never delivers hover, killing the + button's

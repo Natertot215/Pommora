@@ -60,9 +60,9 @@ function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
 
 /** Whether the caret currently sits inside the token — a link being edited. Read at mousedown for a
  *  click, since CM seats the caret before `click` fires and it would otherwise always read true. */
-function caretInside(view: EditorView, hit: WikiHit): boolean {
+export function caretInside(view: EditorView, range: [number, number]): boolean {
   const head = view.state.selection.main.head
-  return view.hasFocus && head >= hit.range[0] && head <= hit.range[1]
+  return view.hasFocus && head >= range[0] && head <= range[1]
 }
 
 interface PointerLink {
@@ -119,7 +119,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
     mousedown(event, view) {
       const api = getApi()
       const found = api ? pointerLink(view, api, event) : null
-      editingOnPress = found ? caretInside(view, found.hit) : false
+      editingOnPress = found ? caretInside(view, found.hit.range) : false
       if (!found) return false
       // A right press hands the caret to whichever menu action is chosen, and Rename and Edit Link
       // exist to place it themselves — seating one here would land it somewhere first and make both
@@ -162,7 +162,7 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       // A dwell reads the live caret safely — unlike a click, hovering never moves it. A link the
       // caret is already inside is open for editing, and no dwell should carry you away from what
       // you're typing.
-      if (!found?.page || caretInside(view, found.hit)) return false
+      if (!found?.page || caretInside(view, found.hit.range)) return false
       const page = found.page
       intent.arm(() => api.hover?.(page, el))
       return false
@@ -201,12 +201,14 @@ export function connectionClicks(getApi: GetApi): ReturnType<typeof EditorView.d
       if (!found?.page) return false
       // Inside its syntax you're editing prose, and prose has its own menu — spelling, autocorrect,
       // substitutions. Claiming the event there would replace all of it with two link actions.
-      if (caretInside(view, found.hit)) return false
+      if (caretInside(view, found.hit.range)) return false
       event.preventDefault()
       // Editability is read HERE rather than threaded through the host: `readOnly` is live inside
       // the editor and PreviewWindow flips it at runtime through a Compartment, so a value captured
       // in a memoized seam goes stale.
-      api.menu(found.page, {
+      api.menu({
+        kind: 'page',
+        page: found.page,
         editable: !view.state.readOnly,
         hasAlias: found.hit.aliased,
         apply: (action) => applyLinkAction(view, action, found.hit.range),

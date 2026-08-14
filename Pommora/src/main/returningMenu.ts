@@ -15,7 +15,14 @@ export function popReturningMenu<A>(
       acted = true
       resolve(action)
     }
-    Menu.buildFromTemplate(buildItems(pick)).popup({
+    const template = buildItems(pick)
+    // A model that gated every one of its items away has nothing to show; popping it would leave an
+    // empty frame under the cursor.
+    if (template.length === 0) {
+      resolve(null)
+      return
+    }
+    Menu.buildFromTemplate(template).popup({
       window: win,
       callback: () => {
         if (!acted) resolve(null)
