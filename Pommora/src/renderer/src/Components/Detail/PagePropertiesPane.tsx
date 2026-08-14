@@ -7,7 +7,7 @@ import type { NexusTree, ResolvedColumn, ViewRow } from '@shared/types'
 import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
 import { isValidLink } from '@shared/links'
-import { asRenderableIcon, entityIcon, Icon } from '@renderer/design-system/symbols'
+import { asRenderableIcon, Icon } from '@renderer/design-system/symbols'
 import { PickerMenu, PickerOption } from '@renderer/design-system/components/PickerMenu'
 import { MenuPaneTopRow, MenuScrollFrame } from '../../design-system/components/menu'
 import { Cell } from '../../Detail/Views/Table/Cell'
@@ -55,7 +55,6 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
   const pageDetail = useSession((st) => st.pageDetail)
   const tree = useSession((st) => st.tree)
   const mutate = useSession((st) => st.mutate)
-  const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const [editing, setEditing] = useState<Editing>(null)
   const [addOpen, setAddOpen] = useState(false)
   const triggerRef = useRef<HTMLElement | null>(null)
@@ -215,15 +214,9 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
     revealed.has(def.id) || (fm as Record<string, unknown>)[propertyKey(def)] !== undefined
   const hiddenProps = schema.filter((d) => !isShown(d))
   const hiddenContexts = contextRows.filter((t) => setAside.has(t.id))
-  const contextIcon = (own: unknown): string => entityIcon('context', own, defaultIcons)
 
   const groups: [string, Field[]][] = [
-    [
-      'contexts',
-      contextRows
-        .filter((t) => !setAside.has(t.id))
-        .map((t) => ({ ...t, icon: contextIcon(t.icon), def: null })),
-    ],
+    ['contexts', contextRows.filter((t) => !setAside.has(t.id)).map((t) => ({ ...t, def: null }))],
     [
       'properties',
       schema
@@ -334,7 +327,7 @@ export function PagePropertiesPane({ onBack }: { onBack: () => void }): React.JS
               }}
             >
               <span className={iconOption}>
-                <Icon name={contextIcon(t.icon)} size={13} />
+                <Icon name={t.icon} size={13} />
                 {t.label}
               </span>
             </PickerOption>

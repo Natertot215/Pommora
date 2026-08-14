@@ -12,13 +12,13 @@ export interface ContextIdentity {
   /** Seeded Contexts only (Areas/Topics/Projects) — any other Context has none; its Spaces
    *  read "New Space". */
   singular?: string
-  /** Always renderable — the entry's own icon, else the contexts default. */
+  /** Always renderable — the entry's own icon, else the Contexts default. */
   icon: string
 }
 
 export interface SpaceIdentity {
   title: string
-  /** Always renderable — the entry's own icon, else the contexts default. */
+  /** Always renderable — the entry's own icon, else the Spaces default. */
   icon: string
   /** Chip-solid key (open string; chipColorFor normalizes at render). */
   color?: string
