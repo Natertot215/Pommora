@@ -114,6 +114,7 @@ export function TrashLeaf(): React.JSX.Element {
   const many = async (
     targets: TrashRow[],
     req: (row: TrashRow) => MutateRequest,
+    reloads: boolean,
   ): Promise<{ done: TrashRow[]; failed: TrashRow[] }> => {
     const done: TrashRow[] = []
     const failed: TrashRow[] = []
@@ -121,7 +122,8 @@ export function TrashLeaf(): React.JSX.Element {
       const res = await window.nexus.mutate(req(row))
       ;(res.ok ? done : failed).push(row)
     }
-    await load()
+    // One refresh for the whole batch, and none at all when nothing landed.
+    if (done.length > 0 && reloads) await load()
     await refresh()
     return { done, failed }
   }
@@ -130,10 +132,11 @@ export function TrashLeaf(): React.JSX.Element {
     // A homeless member keeps its row and is named in the count; each is then answered through the
     // picker it already has. A batch is a convenience over the single action, never a second one.
     const addressable = targets.filter((r) => r.homeResolves)
-    const { done, failed } = await many(addressable, (row) => ({
-      op: 'restore',
-      bundlePath: row.bundlePath,
-    }))
+    const { done, failed } = await many(
+      addressable,
+      (row) => ({ op: 'restore', bundlePath: row.bundlePath }),
+      true,
+    )
     const stuck = [...targets.filter((r) => !r.homeResolves), ...failed]
     void window.nexus.reportTrash(
       `Restored ${countPhrase(done)}.`,
@@ -145,23 +148,30 @@ export function TrashLeaf(): React.JSX.Element {
 
   const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
     if (!(await window.nexus.confirmEmptyTrash(targets.length))) return
-    const { done, failed } = await many(targets, (row) => ({
-      op: 'emptyBundle',
-      bundlePath: row.bundlePath,
-    }))
-    if (failed.length > 0)
-      void window.nexus.reportTrash(
-        `Deleted ${countPhrase(done)}.`,
-        `${countPhrase(failed)} could not be deleted.`,
-      )
+    // Emptying happens wholly inside `.trash`, which the tree does not see.
+    const { done, failed } = await many(
+      targets,
+      (row) => ({ op: 'emptyBundle', bundlePath: row.bundlePath }),
+      false,
+    )
+    void window.nexus.reportTrash(
+      `Deleted ${countPhrase(done)}.`,
+      failed.length === 0
+        ? 'They have left the trash for good.'
+        : `${countPhrase(failed)} could not be deleted.`,
+    )
   }
 
   const openMenu = async (row: TrashRow): Promise<void> => {
     // Right-clicking an unchecked row acts on that row alone, whatever else is checked — a checked
     // set is a deliberate construction, and a menu that silently retargeted it would spend it on a
     // click that never named it.
-    const batch = checked.has(row.bundlePath) && checked.size > 1
-    const targets = batch ? shown.filter((r) => checked.has(r.bundlePath)) : [row]
+    // The batch is what the menu will actually act on — the CHECKED rows still in view. Deriving
+    // its voice from the unfiltered selection would let a filtered right-click read "Restore All",
+    // act on one row, and withhold the destination picker that row was owed.
+    const inSet = checked.has(row.bundlePath) ? shown.filter((r) => checked.has(r.bundlePath)) : []
+    const batch = inSet.length > 1
+    const targets = batch ? inSet : [row]
     const homeless = !batch && !row.homeResolves
     const destinationKind = row.kind === 'space' ? ('context' as const) : ('container' as const)
     const action = await window.nexus.trashMenu({
