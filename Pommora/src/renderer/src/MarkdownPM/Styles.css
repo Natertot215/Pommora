@@ -336,30 +336,16 @@
    syntax that says whether that target actually resolves, which is why it carries the colour rather
    than the title does: connection colour means a page answers to it, muted means none does yet. */
 .md-conn-glyph {
-  /* An INLINE box holding one invisible space, sized by its padding, with the artwork drawn over it.
-     The shape matters: a selection paints across text, so the glyph earns its highlight by being a
-     text run rather than a decorative box the highlight steps around.
-     KNOB: --conn-glyph-pad (half the glyph's width) / --conn-glyph-y (its ride against the line). */
-  --conn-glyph-pad: 0.32em;
-  --conn-glyph-y: 0.1em;
-  display: inline;
-  position: relative;
-  padding: 0 var(--conn-glyph-pad);
-  margin-right: 0.15em;
-  color: transparent;
-}
-.md-conn-glyph::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: var(--conn-glyph-y);
+  display: inline-block;
+  width: 1em;
   height: 1em;
+  vertical-align: -0.15em;
+  margin-right: 0.15em;
   background-color: var(--label-tertiary);
   -webkit-mask: var(--conn-link-mask) center / contain no-repeat;
   mask: var(--conn-link-mask) center / contain no-repeat;
 }
-.md-conn-glyph-resolved::before {
+.md-conn-glyph-resolved {
   background-color: var(--connection);
 }
 /* The target a revealed alias hides. It reads as the link's destination rather than as prose, and

@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-13-2026              | PM-099 | Ghost Creation, Page Icons & One Page Menu           |
 | 08-12-2026              | PM-098 | Page Alias' V1                                       |
 | 08-11-2026 → 08-12      | PM-097 | CardView Creation Affordance                         |
 | 08-11-2026              | PM-096 | TableView Creation Affordance                        |
@@ -101,6 +102,18 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-099 || Ghost Creation, Page Icons & One Page Menu
+**DATE:** 08-13-2026
+
+`TableWidget` began reporting its laid-out height, ending a per-keystroke collapse of the table block that threw the page's scroll position, and the nested code block's horizontal measures collapsed onto one variable pair. The hover-ghost effect moved out of its three consumers into `design-system/interactions/ghost.css`, and the property editors joined the family with a New Option slot that seats where the pointer rests. `main/contextMenu.ts` stopped hand-rolling a page's items beside the model `shared/pageMenu.ts` already served, and that model grew Copy Link, Copy Path and Reveal Location. A page's own header began drawing the `icon` it has carried since the settings pane got its picker, hidden by default and toggled through the title menu the banner already used, with the flag keyed by `PageID` in the local store rather than written into frontmatter.
+
+**MarkdownPM:** CodeMirror rebuilds a block widget's height-map entry on any edit inside its range and asks the widget what height to assume until the next measure; `TableWidget` answered -1, so a 400px table reported one line's height on every character typed. It now answers from a box a `ResizeObserver` keeps, carried across every rebuild path and disconnected with its node. `TableView.tsx`'s settle effect fires when the active cell changes rather than only when it clears, so a cell demoted by a click into a sibling redraws what was typed. `--cb-inset` and `--cb-pad` now drive a code block's fill edges, text padding and `.md-cb-lang` chrome together, and the callout-bottom pull-up keys on the box's last line being code rather than on the fence having closed.
+
+**Menus:** `pageMetaMenuItems` became the only definition of a page's actions and their order; the sidebar's native menu builds from it whole, while containers keep their own creator menu. The three new actions are gated per surface, so the card and cell menus stand unchanged, and `pageMetaMenuSubset` draws the settings pane's ellipsis from the same list. `main/returningMenu.ts` gained `menuTemplate` and `popModelMenu`, collapsing `rowGripMenu` and the new `pageActionsMenu` onto the shell they had each been re-implementing.
+
+- **Commits:** `8826de7c^..a9e38efa`
+- **Diff:** Net +469 | +789 / -320
 
 #### PM-098 || Page Alias' V1
 **DATE:** 08-12-2026
