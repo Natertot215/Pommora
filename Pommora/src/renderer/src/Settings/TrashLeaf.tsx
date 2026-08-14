@@ -5,6 +5,7 @@ import { OverflowScroll } from '@renderer/design-system/components/OverflowScrol
 import { cx } from '@renderer/design-system/cx'
 import { entityIcon, Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
+import type { DateFormat } from '@shared/columnStyles'
 import type { MutateRequest } from '@shared/mutate'
 import type { CollectionNode } from '@shared/types'
 import { DEFAULT_TIME_FORMAT, type Personalization, type TrashRow } from '@shared/types'
@@ -18,9 +19,10 @@ import '../Detail/Views/Table/table-tokens.css'
 import '../Detail/Views/Table/Table.css'
 import './trashLeaf.css'
 
-/** A deleted entity carries no column configuration to read a format from, so the surface names the
- *  one it wants: the date a person would say out loud, and the clock the nexus is set to. */
-const DATE_FORMAT = 'short' as const
+/** A deleted entity carries no column configuration to read a format from, so this column carries
+ *  its own — chosen from its heading's menu, kept in personalization, and defaulting to the date a
+ *  person would say out loud under the clock the nexus is already set to. */
+const DEFAULT_DATE_FORMAT: DateFormat = 'short'
 
 /** Identity-stable, so a tree push with no collections can't re-run the destination walk. */
 const EMPTY_COLLECTIONS: CollectionNode[] = []
@@ -67,7 +69,10 @@ export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
 }
 
 export function TrashLeaf(): React.JSX.Element {
-  const timeFormat = useSession((s) => s.tree?.timeFormat ?? DEFAULT_TIME_FORMAT)
+  const nexusClock = useSession((s) => s.tree?.timeFormat ?? DEFAULT_TIME_FORMAT)
+  const dateFormat = useSession((s) => s.personalization.trashDateFormat ?? DEFAULT_DATE_FORMAT)
+  const timeShown = useSession((s) => s.personalization.trashHideTime !== true)
+  const setPersonalization = useSession((s) => s.setPersonalization)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const tree = useSession((s) => s.tree)
   const collections = useSession((s) => s.tree?.collections ?? EMPTY_COLLECTIONS)
@@ -173,6 +178,21 @@ export function TrashLeaf(): React.JSX.Element {
     )
   }
 
+  /** The date column configures itself from its own heading — there is no view here to hold a
+   *  column style, so the two choices live in personalization beside the rest of the nexus's. */
+  const openColumnMenu = async (): Promise<void> => {
+    const action = await window.nexus.trashColumnMenu({ format: dateFormat, timeShown })
+    if (!action) return
+    if (action.kind === 'toggleTime')
+      // The default stores no key, which is the clean-file rule every other knob follows.
+      setPersonalization('trashHideTime', timeShown ? true : undefined)
+    else
+      setPersonalization(
+        'trashDateFormat',
+        action.format === DEFAULT_DATE_FORMAT ? undefined : action.format,
+      )
+  }
+
   const openMenu = async (row: TrashRow): Promise<void> => {
     // Right-clicking an unchecked row acts on that row alone, whatever else is checked — a checked
     // set is a deliberate construction, and a menu that silently retargeted it would spend it on a
@@ -242,7 +262,14 @@ export function TrashLeaf(): React.JSX.Element {
           </span>
           File Name
         </span>
-        <span className="trash-head-date col-header">
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label — it carries no click and no keyboard gesture of its own, exactly as the banner's and the cards' right-click surfaces do */}
+        <span
+          className="trash-head-date col-header"
+          onContextMenu={(e) => {
+            e.preventDefault()
+            void openColumnMenu()
+          }}
+        >
           <Icon name="clock-fading" size={13} />
           Time Deleted
         </span>
@@ -271,7 +298,11 @@ export function TrashLeaf(): React.JSX.Element {
                 when={
                   row.deletedAt === null
                     ? ''
-                    : formatDate(new Date(row.deletedAt).toISOString(), DATE_FORMAT, timeFormat)
+                    : formatDate(
+                        new Date(row.deletedAt).toISOString(),
+                        dateFormat,
+                        timeShown ? nexusClock : 'none',
+                      )
                 }
               />
             ))}

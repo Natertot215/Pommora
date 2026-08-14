@@ -31,6 +31,7 @@ import {
   type ContextsRegistry,
 } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
+import { DATE_FORMATS, type DateFormat } from '@shared/columnStyles'
 import {
   SOLID_COLORS,
   DEFAULT_ACCENT,
@@ -125,6 +126,10 @@ export function readPersonalization(raw: unknown): Personalization {
     defaultViewScale: coerceViewScale(p.defaultViewScale),
     hoverPreviewLinger: coerceHoverLinger(p.hoverPreviewLinger),
     permanentDelete: bool(p.permanentDelete),
+    trashDateFormat: DATE_FORMATS.includes(p.trashDateFormat as DateFormat)
+      ? (p.trashDateFormat as DateFormat)
+      : undefined,
+    trashHideTime: bool(p.trashHideTime),
   }
 }
 
