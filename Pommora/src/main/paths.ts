@@ -41,8 +41,12 @@ export function contextsRegistryFile(root: string): string {
   return join(root, CONTEXTS_REGISTRY_REL)
 }
 
+/** Where Contexts live, nexus-relative. `.trash` mirrors the nexus, so a trashed Space's frozen
+ *  chain wears this prefix and the trash browser strips it back off. */
+export const CONTEXTS_DIR_REL = '.nexus/contexts'
+
 export function contextsDir(root: string): string {
-  return join(nexusDir(root), 'contexts')
+  return join(root, CONTEXTS_DIR_REL)
 }
 
 /** A Space folder's sidecar filename (membership comes from the parent folder). */

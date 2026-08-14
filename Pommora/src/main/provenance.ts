@@ -15,6 +15,7 @@ import { basename, dirname, isAbsolute, join, relative, sep } from 'node:path'
 import { z } from 'zod'
 import { contextKey, type ContextsRegistry } from '@shared/contexts'
 import { contentId } from '@shared/identity'
+import type { RestoreDestination } from '@shared/mutate'
 import { errText, fail, ok, type Result } from '@shared/result'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import { ensureFolderId } from './adopt'
@@ -302,22 +303,30 @@ const disambiguate = (base: string, taken: string[]): string => {
   return `${base} ${n}`
 }
 
-function findContainer(tree: NexusTree, id: string): CollectionNode | SetNode | null {
-  const inSets = (sets: SetNode[] | undefined): SetNode | null => {
+type Container = CollectionNode | SetNode
+
+/** The container's ancestry, outermost first — the tree walked structurally rather than a path
+ *  split, because a crumb chain built from names is the one thing the record model refuses. */
+export function containerChain(tree: NexusTree, id: string): Container[] | null {
+  const inSets = (sets: SetNode[] | undefined, trail: Container[]): Container[] | null => {
     for (const s of sets ?? []) {
-      if (s.id === id) return s
-      const hit = inSets(s.sets)
+      const next = [...trail, s]
+      if (s.id === id) return next
+      const hit = inSets(s.sets, next)
       if (hit) return hit
     }
     return null
   }
   for (const c of tree.collections) {
-    if (c.id === id) return c
-    const hit = inSets(c.sets)
+    if (c.id === id) return [c]
+    const hit = inSets(c.sets, [c])
     if (hit) return hit
   }
   return null
 }
+
+const findContainer = (tree: NexusTree, id: string): Container | null =>
+  containerChain(tree, id)?.at(-1) ?? null
 
 /** THE decision. A placement with final names against the CURRENT tree — a renamed parent
  *  resolves to its renamed path — or a typed refusal. The acting code branches on nothing:
@@ -532,14 +541,26 @@ export async function emptyBundle(
 ): Promise<Result<null>> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
-  const artifactAbs = opened.value.entity === 'property' ? null : await bundleArtifact(bundleAbs)
-  if (artifactAbs) {
-    if (deps.permanentDelete === true) await rm(artifactAbs, { recursive: true, force: true })
-    else await deps.trashToSystem(artifactAbs)
+  if (opened.value.entity === 'property') {
+    await rm(bundleAbs, { recursive: true, force: true })
+    return ok(null)
   }
+  // The same refusal restore makes, for the same reason and one stronger: `bundleArtifact` answers
+  // only when the bundle holds exactly one visible entry, so a conflict copy dropped beside the
+  // artifact by a sync client reads as no artifact at all. Removing the folder anyway would erase
+  // the file the switch promised to hand to the operating system.
+  const artifactAbs = await bundleArtifact(bundleAbs)
+  if (!artifactAbs)
+    return fail('not-found', "That deletion didn't finish, or something else is in with it.")
+  if (deps.permanentDelete === true) await rm(artifactAbs, { recursive: true, force: true })
+  else await deps.trashToSystem(artifactAbs)
   await rm(bundleAbs, { recursive: true, force: true })
   return ok(null)
 }
+
+/** The refusal a Collection, a Context and a property share: their parent cannot go missing, so
+ *  there is nothing a pick could fix. */
+const NO_DESTINATION = 'That kind cannot be given a destination.'
 
 /** Substitute a chosen parent for the recorded one, so every placement guarantee still comes from
  *  the one function that owns them. Only three kinds can be homeless and so only three admit a
@@ -549,7 +570,7 @@ export async function emptyBundle(
  *  is held to is the write path's own: a page or Set lands in a container, a Space in a Context. */
 function withDestination(
   record: ArtifactRecord,
-  destination: { kind: 'container' | 'context'; id: string },
+  destination: RestoreDestination,
   tree: NexusTree,
 ): Result<ArtifactRecord> {
   switch (record.entity) {
@@ -567,7 +588,7 @@ function withDestination(
         return fail('not-found', 'That place no longer exists.')
       return ok({ ...record, parent: { kind: 'container', id: destination.id } })
     default:
-      return fail('operation-failed', 'That kind cannot be given a destination.')
+      return fail('operation-failed', NO_DESTINATION)
   }
 }
 
@@ -579,14 +600,14 @@ function withDestination(
 export async function restoreArtifact(
   root: string,
   bundleAbs: string,
-  destination?: { kind: 'container' | 'context'; id: string },
+  destination?: RestoreDestination,
 ): Promise<Result<null>> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
   // A property has no artifact to place — its whole restore is a rebuild from the record, and it
   // spends the same bundle on the same terms.
   if (opened.value.entity === 'property') {
-    if (destination) return fail('operation-failed', 'That kind cannot be given a destination.')
+    if (destination) return fail('operation-failed', NO_DESTINATION)
     const rebuilt = await restoreProperty(root, opened.value)
     if (!rebuilt.ok) return rebuilt
     await rm(bundleAbs, { recursive: true, force: true })
