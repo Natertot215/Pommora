@@ -48,7 +48,7 @@ function mapsFor(tree: NexusTree): IdentityMaps {
       contexts.set(g.def.id, {
         title: g.def.title,
         singular: g.def.singular,
-        icon: entityIcon('space', g.def.icon, di),
+        icon: entityIcon('context', g.def.icon, di),
       })
       for (const s of g.spaces) {
         spaces.set(s.id, {

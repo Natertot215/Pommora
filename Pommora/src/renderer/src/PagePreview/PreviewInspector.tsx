@@ -333,7 +333,7 @@ export function PreviewInspector({ target }: { target: PreviewTarget }): React.J
             .map((t) => (
               <PickerOption key={t.id} onClick={() => revealAndEdit(t.id)}>
                 <span className={iconOption}>
-                  <Icon name={entityIcon('space', t.icon, defaultIcons)} size={13} />
+                  <Icon name={entityIcon('context', t.icon, defaultIcons)} size={13} />
                   {t.label}
                 </span>
               </PickerOption>

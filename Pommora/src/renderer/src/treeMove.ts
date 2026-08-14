@@ -123,7 +123,7 @@ export function insertCreatedInTree(
   if (req.op === 'createContextGroup') {
     const title = basename(created.path)
     const group: ContextGroup = {
-      def: { id: created.id, title, icon: 'layout-grid' },
+      def: { id: created.id, title },
       spaces: [],
     }
     return { ...tree, contexts: [...(tree.contexts ?? []), group] }
