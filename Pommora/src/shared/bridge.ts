@@ -39,7 +39,12 @@ import type { PageMetaAction } from './pageMenu'
 import type { CardMenuAction, CardMenuContext } from './cardMenu'
 import type { ConnMenuAction, ConnMenuContext } from './connections'
 import type { TabMenuAction, TabMenuContext } from './tabMenu'
-import type { TrashMenuAction, TrashMenuContext } from './trashMenu'
+import type {
+  TrashColumnAction,
+  TrashColumnContext,
+  TrashMenuAction,
+  TrashMenuContext,
+} from './trashMenu'
 import type { NavRowMenuAction, NavRowMenuContext } from './navRowMenu'
 import type { PropertyMenuAction, PropertyMenuContext } from './propertyMenu'
 import type { OptionMenuAction, OptionMenuContext } from './optionMenu'
@@ -249,6 +254,7 @@ export interface Asks {
   // the browser asks, and asks again after every action it takes.
   'trash:list': { args: []; reply: Result<TrashRow[]> }
   'trash:menu': { args: [ctx: TrashMenuContext]; reply: TrashMenuAction | null }
+  'trash:columnMenu': { args: [ctx: TrashColumnContext]; reply: TrashColumnAction | null }
   // Main owns the confirm's wording because main owns the switch that decides what Delete means —
   // the renderer supplies only how many rows are going.
   'trash:confirmEmpty': { args: [count: number]; reply: boolean }

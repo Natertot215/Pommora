@@ -152,6 +152,7 @@ const api = {
   // What `.trash` holds, already shaped into rows, and the menu a row's right-click pops.
   listTrash: ask('trash:list'),
   trashMenu: ask('trash:menu'),
+  trashColumnMenu: ask('trash:columnMenu'),
   confirmEmptyTrash: ask('trash:confirmEmpty'),
   reportTrash: ask('trash:report'),
   // Renderer-initiated write (relative paths only); main resolves under the session root.
