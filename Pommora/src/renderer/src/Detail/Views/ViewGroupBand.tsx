@@ -1,16 +1,17 @@
 import type { ReactNode } from 'react'
 import type { CollectionNode, ResolvedGroup, SetNode } from '@shared/types'
 import type { SavedView } from '@shared/views'
-import { GroupBand, resolveBandHead } from '../GroupBand'
-import { bandShowsAdd } from '../Cards/cardsBand'
-import { useBandDrag } from './bandDnd'
-import type { ResolveContext } from './resolveContext'
+import { GroupBand, resolveBandHead } from './GroupBand'
+import { bandShowsAdd } from './Cards/cardsBand'
+import { useBandDrag } from './BandDnd'
+import type { ResolveContext } from './Table/resolveContext'
 
-/** The table's band adapter: it holds the `useBandDrag` hook (which throws outside `<BandDnd>`, so it
- *  can't live in the shared presentational GroupBand) and the native Set context menu, then hands the
- *  resolved glyph + drag wiring to GroupBand. The disclosure body (rows + nested child bands) arrives
- *  as children. */
-export function TableGroupBand({
+/** The band adapter every view renders: it holds the `useBandDrag` hook (which throws outside
+ *  `<BandDnd>`, so it can't live in the shared presentational GroupBand) and the native Set context
+ *  menu, then hands the resolved glyph + drag wiring to GroupBand. The disclosure body — rows, cards,
+ *  nested child bands — arrives as children, so what a band CONTAINS stays the renderer's business
+ *  and what a band IS stays here. */
+export function ViewGroupBand({
   group,
   view,
   ctx,
@@ -23,11 +24,14 @@ export function TableGroupBand({
   collapsed,
   onToggle,
   indent,
+  headless,
+  fill,
   children,
 }: {
   group: ResolvedGroup
   view: SavedView
-  ctx: ResolveContext
+  /** Null before the schema resolves — the band still renders, wearing no glyph yet. */
+  ctx: ResolveContext | null
   setNames: Map<string, string>
   setIcons: Map<string, string | undefined>
   source: CollectionNode | SetNode
@@ -40,11 +44,16 @@ export function TableGroupBand({
   onAdd?: () => void
   collapsed: boolean
   onToggle: () => void
-  indent: string
+  indent?: string
+  /** Group By: None renders one headerless, force-open band (cards). */
+  headless?: boolean
+  fill?: boolean
   children: ReactNode
 }): React.JSX.Element {
   const dragHandle = useBandDrag(group.key)
-  const { glyph } = resolveBandHead(group, view, ctx, setNames, setIcons, source, setPath)
+  const glyph = ctx
+    ? resolveBandHead(group, view, ctx, setNames, setIcons, source, setPath).glyph
+    : undefined
   const onContextMenu = setPath
     ? (e: React.MouseEvent): void => {
         e.preventDefault()
@@ -66,6 +75,8 @@ export function TableGroupBand({
       onAdd={onAdd}
       subBand={group.bucket !== undefined}
       indent={indent}
+      headless={headless}
+      fill={fill}
       dragHandle={dragHandle}
       onOpen={onOpen}
       onContextMenu={onContextMenu}

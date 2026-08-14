@@ -37,18 +37,14 @@ import type { SetTreeNode } from '../pipeline/group'
 import { buildResolveContext, type ResolveContext } from './resolveContext'
 import { writeContextValue } from '../contextCellWrite'
 import { buildSetIcons, buildSetNames, buildSetPaths } from './cellResolve'
-import { BandDnd, type BandDrop } from './bandDnd'
-import {
-  flattenBands,
-  propertyOrderAfterDrop,
-  reparentFsOrder,
-  structuralOrderAfterDrop,
-} from './bandDndModel'
+import { BandDnd, type BandDrop } from '../BandDnd'
+import { flattenBands, propertyOrderAfterDrop, reparentFsOrder } from '../bandDndModel'
+import { bandReorderPatch, useBandOrdering } from '../useBandOrdering'
 import { nextOrder } from '@renderer/Sidebar/sidebarDndModel'
 import { Cell } from './Cell'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { PropertyTypeIcon } from '@renderer/Components/Detail/PropertyTypes'
-import { TableGroupBand } from './TableGroupBand'
+import { ViewGroupBand } from '../ViewGroupBand'
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { resolveBandHead } from '../GroupBand'
 import { columnLabel } from './columnLabel'
@@ -177,11 +173,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
   const [alignOverride, setAlignOverride] = useState<Record<string, ColumnAlign>>({})
   const [styleOverride, setStyleOverride] = useState<Record<string, ColumnStyle>>({})
   const [hiddenOverride, setHiddenOverride] = useState<string[] | null>(null)
-  // The optimistic band-order patch from a band drop — { group_order } (structural) or { group }
-  // (property). Rides liveView so a sibling persist can't fold the stale on-disk order back over a
-  // fresh drag, and deliberately does NOT reset on [source]: the reparent-triggered load()
-  // swaps source identity mid-flight; key={source.id} already remounts real switches.
-  const [bandOverride, setBandOverride] = useState<Partial<SavedView> | null>(null)
+  const { bandPatch, commitBand, resetBand } = useBandOrdering((patch) => persistView(patch))
   const [manualOverride, setManualOverride] = useState<string[] | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(
     () => new Set(view.collapsed_groups ?? []),
@@ -249,7 +241,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     setAlignOverride({})
     setStyleOverride({})
     setHiddenOverride(null)
-    setBandOverride(null)
+    resetBand()
     setManualOverride(null)
     setCollapsing(null)
     setColDrag(null)
@@ -272,14 +264,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     if (hiddenOverride && sameIds(hiddenOverride, view.hidden_properties)) setHiddenOverride(null)
   }, [view, orderOverride, hiddenOverride])
   const liveView = useMemo(() => {
-    if (!orderOverride && !hiddenOverride && !bandOverride) return view
+    if (!orderOverride && !hiddenOverride && !bandPatch) return view
     return {
       ...view,
       property_order: orderOverride ?? view.property_order,
       hidden_properties: hiddenOverride ?? view.hidden_properties,
-      ...bandOverride,
+      ...bandPatch,
     }
-  }, [view, orderOverride, hiddenOverride, bandOverride])
+  }, [view, orderOverride, hiddenOverride, bandPatch])
   // Manual row order (viewOrders cache) is the sort tiebreaker — passed to the pipeline when
   // the view is sorted or grouped (an unsorted, ungrouped view otherwise reads canonical page_order). A
   // live `manualOverride` also feeds it so an unsorted-flat reorder shows instantly (before its page_order
@@ -375,19 +367,6 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const g = find(groups)
     return g && ctx ? resolveBandHead(g, liveView, ctx, setNames, setIcons, source).label : id
   }
-  // The band drop router (already classified by BandDnd): structural reorder → the view-level
-  // group_order (merged over the FULL tree so collapsed siblings survive) · property reorder →
-  // group.order + manual (its first UI writer) · reparent → moveSet with the destination's CURRENT
-  // fs children + the moved id appended (the visual slot persists only in group_order).
-  const commitBand = (patch: Partial<SavedView>): void => {
-    setBandOverride((prev) => ({ ...prev, ...patch }))
-    persistView(patch)
-  }
-  // The reparent's commit fires AFTER a real fs round-trip — route it through a ref so it merges
-  // the FIRE-TIME view state: a collapse/resize persist landing mid-flight must not be clobbered
-  // by this drop-render's stale closure.
-  const commitBandRef = useRef(commitBand)
-  commitBandRef.current = commitBand
   const childIdsOf = (nodes: SetTreeNode[], id: string): string[] | null => {
     for (const n of nodes) {
       if (n.id === id) return n.children.map((c) => c.id)
@@ -396,19 +375,24 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     return null
   }
+  // The band drop router (already classified by BandDnd). The two orders every view writes go
+  // through the shared patch; the table adds the two only it can render — a sub-group bucket's
+  // global order, and a reparent as moveSet with the destination's CURRENT fs children plus the
+  // moved id appended (the visual slot persists only in group_order).
   const onBandDrop = (draggedId: string, drop: BandDrop): void => {
     const dragged = bands.find((b) => b.id === draggedId)
     if (!dragged) return
     if (dragged.kind === 'property') {
       if (liveView.group?.kind === 'property') {
         if (drop.kind !== 'reorder') return
-        const present = groups.filter((g) => g.kind === 'property').map((g) => g.key)
-        const group = {
-          ...liveView.group,
-          order_mode: 'manual' as const,
-          order: propertyOrderAfterDrop(present, draggedId, drop.beforeId),
-        }
-        commitBand({ group })
+        const patch = bandReorderPatch({
+          dragged,
+          beforeId: drop.beforeId,
+          view: liveView,
+          structuralIds: [],
+          propertyKeys: groups.filter((g) => g.kind === 'property').map((g) => g.key),
+        })
+        if (patch) commitBand(patch)
         return
       }
       if (!subGrouped || !liveView.sub_group || liveView.sub_group.order_mode !== 'manual') return
@@ -437,12 +421,14 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     }
     // The id universe is the SET TREE, never the rendered groups: a filter prunes emptied bands out
     // of `groups`, and merging against that would drop their stored order along with them.
-    const group_order = structuralOrderAfterDrop(
-      liveView.group_order ?? [],
-      setTree.flatMap(subtreeIds),
-      draggedId,
-      drop.beforeId,
-    )
+    const structural = bandReorderPatch({
+      dragged,
+      beforeId: drop.beforeId,
+      view: liveView,
+      structuralIds: setTree.flatMap(subtreeIds),
+      propertyKeys: [],
+    })
+    if (!structural) return
     if (drop.kind === 'reorder') {
       if (structuralGrouping && liveView.structural_order_mode === 'location') {
         // Location mode — the same-parent reorder IS the filesystem write; group_order stays
@@ -462,7 +448,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         })
         return
       }
-      commitBand({ group_order })
+      commitBand(structural)
       return
     }
     const path = setPaths.get(draggedId)
@@ -485,7 +471,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         }))
       )
         return
-      commitBandRef.current({ group_order })
+      commitBand(structural)
     })()
   }
 
@@ -1553,7 +1539,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     // the DOM. Each row keeps its own grid reading the inherited --cols, so wrapping never breaks the
     // column alignment.
     return [
-      <TableGroupBand
+      <ViewGroupBand
         key={`gb-${g.key}`}
         group={g}
         view={liveView}
@@ -1580,7 +1566,7 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
         indent={groupIndent(depth)}
       >
         {members}
-      </TableGroupBand>,
+      </ViewGroupBand>,
     ]
   }
 

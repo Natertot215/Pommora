@@ -99,12 +99,17 @@ export function buildBandIndex(bands: Band[], measured: MeasuredRow[]): BandInde
  *  Property bands and illegal nests split at the header midline into before/after slots,
  *  skipping the dragged subtree so a slot can never land inside it. Below `endY` is the root
  *  append — the drag-to-end escape hatch (mid-drag scrolling re-measures, so tall content stays
- *  reachable). Null = no legal slot. */
+ *  reachable). Null = no legal slot.
+ *
+ *  `nestable` is off for a surface that renders one flat level: Cards roll each top set's whole
+ *  subtree into a single band, so there is nowhere for a nest to show and offering the highlight
+ *  would promise a depth the view can't draw. Every band then splits into before/after alone. */
 export function bandSlot(
   index: BandIndex,
   y: number,
   draggedId: string,
   endY: number,
+  nestable = true,
 ): BandSlot | null {
   const { byId, rows } = index
   if (rows.length === 0) return null
@@ -137,7 +142,7 @@ export function bandSlot(
 
   if (y < row.top + inset) return slotBefore(idx, row.top)
   const regionEnd = idx < rows.length - 1 ? rows[idx + 1].top : Math.max(endY, row.bottom)
-  if (band.kind === 'set' && y < regionEnd && !inDraggedSubtree(band.id)) {
+  if (nestable && band.kind === 'set' && y < regionEnd && !inDraggedSubtree(band.id)) {
     return { beforeId: null, impliedParentId: band.id, nestInto: band.id, lineY: row.mid }
   }
   if (idx === rows.length - 1 && y >= regionEnd) {
