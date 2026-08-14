@@ -1,6 +1,12 @@
 import { styleMenuItems, type StyleMenuItem } from './columnMenu'
 import type { ColumnStyle } from './columnStyles'
-import { type PageMetaAction, pageMetaMenuItems } from './pageMenu'
+import {
+  type PageMetaAction,
+  type PageMoveAction,
+  type PageMoveContext,
+  offersMove,
+  pageMetaMenuItems,
+} from './pageMenu'
 import type { PropertyType } from './properties'
 import type { ResolvedColumn } from './types'
 
@@ -12,7 +18,7 @@ import type { ResolvedColumn } from './types'
  *  only) appends a trailing "Remove" that drops the property from the view — `remove-only` is the
  *  bare case for a cell that would otherwise have no menu (an empty picker, a file). */
 type CellMenuKind =
-  | { kind: 'title'; alreadyOpen?: boolean }
+  | ({ kind: 'title'; alreadyOpen?: boolean } & PageMoveContext)
   | {
       kind: 'style-only'
       type: PropertyType
@@ -28,6 +34,7 @@ export type CellMenuContext = CellMenuKind & { hideable?: boolean }
 
 export type CellMenuAction =
   | PageMetaAction
+  | PageMoveAction
   | 'cell:edit'
   | 'cell:rename'
   | 'cell:clear'
@@ -112,7 +119,13 @@ export function cellMenuModel(ctx: CellMenuContext): CellMenuModel {
 function baseCellMenuModel(ctx: CellMenuContext): CellMenuModel {
   switch (ctx.kind) {
     case 'title':
-      return { items: pageMetaMenuItems(ctx.alreadyOpen, { newPages: 'pair' }) }
+      return {
+        items: pageMetaMenuItems(ctx.alreadyOpen, {
+          newPages: 'pair',
+          move: offersMove(ctx),
+          clipboard: true,
+        }),
+      }
     case 'style-only':
       return {
         items: ctx.clearable ? [{ label: 'Clear', action: 'cell:clear' }] : [],

@@ -1,11 +1,12 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { TabMenuAction, TabMenuContext } from '@shared/tabMenu'
-import { PAGE_CLIPBOARD_ACTIONS, pageMetaMenuSubset } from '@shared/pageMenu'
-import { menuTemplate, popReturningMenu } from './returningMenu'
+import { pageMetaMenuSubset, pageSendActions } from '@shared/pageMenu'
+import { pageMenuTemplate } from './pageMenu'
+import { popReturningMenu } from './returningMenu'
 
-// The tab right-click menu: Open Preview · Copy Link/Copy Path · Pin/Unpin · Close, gated by the
-// tab's state. The two clipboard items come from the shared page-menu model, so a tab holding a page
-// names them exactly as every other surface that reaches one does.
+// The tab right-click menu: Open Preview · the send block · Pin/Unpin · Close, gated by the tab's
+// state. The send items come from the shared page-menu model, so a tab holding a page names them
+// exactly as every other surface that reaches one does.
 export function popTabMenu(win: BrowserWindow, ctx: TabMenuContext): Promise<TabMenuAction | null> {
   return popReturningMenu<TabMenuAction>(win, (pick) => {
     const items: MenuItemConstructorOptions[] = []
@@ -15,7 +16,11 @@ export function popTabMenu(win: BrowserWindow, ctx: TabMenuContext): Promise<Tab
       items.push(
         { label: 'Open Preview', click: pick('preview') },
         { type: 'separator' },
-        ...menuTemplate(pageMetaMenuSubset(PAGE_CLIPBOARD_ACTIONS), pick),
+        ...pageMenuTemplate(
+          pageMetaMenuSubset(pageSendActions(ctx)),
+          pick,
+          ctx,
+        ),
         { type: 'separator' },
       )
     if (!ctx.isNewTab)

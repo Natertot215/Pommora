@@ -3,7 +3,7 @@ import { type CellMenuContext, cellMenuContextFor, cellMenuModel } from './cellM
 import type { ResolvedColumn } from './types'
 
 describe('cellMenuModel', () => {
-  it('title: stateful Open lead + Rename + Change Icon + New Page pair + separator-gated Delete', () => {
+  it('title: stateful Open lead + Rename + Change Icon + New Page pair + the send block + separator-gated Delete', () => {
     const m = cellMenuModel({ kind: 'title' })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([
       ['Open New Tab', 'title:newtab'],
@@ -11,6 +11,8 @@ describe('cellMenuModel', () => {
       ['Change Icon', 'title:icon'],
       ['New Page Above', 'title:newabove'],
       ['New Page Below', 'title:newbelow'],
+      ['Copy Link', 'title:copylink'],
+      ['Copy Path', 'title:copypath'],
       ['Delete', 'title:delete'],
     ])
     // An already-open page reads "Open" (focus, I-1) — same action either way.
@@ -18,6 +20,23 @@ describe('cellMenuModel', () => {
     expect(m.items.find((i) => i.action === 'title:rename')?.separatorBefore).toBe(true)
     expect(m.items.find((i) => i.action === 'title:delete')?.separatorBefore).toBe(true)
     expect(m.style).toBeUndefined()
+  })
+
+  it('title: Move To leads the send block only where the cell was given somewhere to send to', () => {
+    const withTargets = cellMenuModel({
+      kind: 'title',
+      moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
+    })
+    expect(withTargets.items.slice(-4, -1).map((i) => i.action)).toEqual([
+      'title:moveto',
+      'title:copylink',
+      'title:copypath',
+    ])
+    expect(withTargets.items.find((i) => i.action === 'title:moveto')?.separatorBefore).toBe(true)
+    expect(withTargets.items.find((i) => i.action === 'title:copylink')?.separatorBefore).toBe(false)
+    expect(cellMenuModel({ kind: 'title', moveTargets: [] }).items).not.toContainEqual(
+      expect.objectContaining({ action: 'title:moveto' }),
+    )
   })
 
   it('style-only: the per-type Style radios, no plain items', () => {

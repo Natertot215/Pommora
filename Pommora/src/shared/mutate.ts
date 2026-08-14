@@ -4,6 +4,7 @@
 // types.ts) so it can import the data-layer Result/error shape.
 
 import type { Result } from './result'
+import type { PageMoveContext } from './pageMenu'
 import type { PropertyValue } from './propertyValue'
 import { subSetLabel, type NexusLabels } from './types'
 
@@ -135,7 +136,7 @@ export type MutateRequest =
 export type RenameHost = 'detail' | 'sidebar'
 
 /** What the renderer hands main to pop a native context menu for one sidebar entity. */
-export interface ContextTarget {
+export interface ContextTarget extends PageMoveContext {
   kind: MutableKind
   /** Nexus-relative POSIX path (PathNode.path). */
   path: string
