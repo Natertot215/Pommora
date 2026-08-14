@@ -18,6 +18,9 @@
   /* The table's own cell inset, pointed at this surface's, so a borrowed column label lands over
      the column it names rather than 2px off it. */
   --cell-padding-x: var(--navwindow-inset);
+  /* The heading's segment keeps its shape — short, rounded, centred — but takes the hairline's
+     thickness, so the bar and the column line it heads sit on one axis rather than two. */
+  --heading-segment-width: var(--table-border-width);
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -56,7 +59,11 @@
   border-bottom: var(--heading-divider);
 }
 /* The table's leading bar marks its gutter↔Title junction; this strip has no gutter column, so the
-   bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays. */
+   bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays.
+
+   That divider hangs inside the lane it ends and cannot leave it — `.col-header` clips its overflow
+   so a long label truncates. So the rows' line meets it from the same side: drawn on the name lane's
+   trailing edge rather than the date lane's leading one, both end on the boundary. */
 .trash-head .col-header:first-child::before {
   content: none;
 }
@@ -104,6 +111,7 @@
 }
 .trash-leaf .nav-item-main {
   padding-left: var(--trash-lead);
+  border-right: var(--table-border);
 }
 
 /* The pin's affordance exactly: a glyph in the row's left inset, absolute so it never shifts the
@@ -124,7 +132,6 @@
 }
 .trash-date {
   flex: 0 0 var(--trash-date-lane);
-  border-left: var(--table-border);
   padding-left: var(--trash-date-inset);
   padding-right: var(--cell-padding-x);
   color: var(--label-secondary);
