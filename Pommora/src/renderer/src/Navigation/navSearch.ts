@@ -15,8 +15,9 @@ export interface SearchEntry {
 
 /** Fuzzy subsequence score of an already-lowercased `t` against an already-lowercased `q`, or null
  *  when `q` isn't a subsequence. Rewards contiguous runs + word-start hits so substring/prefix
- *  matches rank highest. */
-function fuzzyScore(t: string, q: string): number | null {
+ *  matches rank highest. Exported for surfaces outside navigation whose subjects carry no `NavRef`
+ *  to put in a `SearchEntry` — one scorer, however the caller holds its rows. */
+export function fuzzyScore(t: string, q: string): number | null {
   let ti = 0
   let score = 0
   let streak = 0

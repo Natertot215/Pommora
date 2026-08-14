@@ -88,7 +88,7 @@ export const chipCapsule = style([
 ])
 
 /** The box shape's bare frame — geometry only, no chip base. Exported for non-chip
- *  consumers that style themselves (the editor's task checkbox rides it under md-checkbox). */
+ *  consumers that style themselves (the editor's task checkbox rides it under pm-checkbox). */
 export const chipBoxGeometry = style({
   width: '17px',
   height: '17px',

@@ -561,10 +561,12 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - **Property loss on relocation is intended, not a defect.** A relocated entity is reconciled against the schema it lands in; values travel and whatever the destination cannot hold is dropped. Nathan, this session. This departs from an ordinary move, which preserves values — a move relocates a live entity, a restore reconciles a frozen one.
 - **`trashMode` stays stubbed and unsurfaced**, waiting on a NexusSettings session where it and the new switch can be shown as the pair they are. Nathan, this session.
 - **The `layout-dashboard` overlap with the Gallery view type is accepted.** Nathan, this session.
+- **E-16 dissolves rather than resolving either way.** The choice was between making the view embed's two shed heading declarations a modifier and restating them on the leaf — both of which assume the leaf wears `.table-head`. It does not: that band is a full-bleed strip bound to the table's own column-track grid and its resize strips, none of which a two-lane list has. The leaf writes its own heading row, sets no fill and no seam, and reads `--label-control` and the type ramp straight from the design system rather than through the table's `--heading-*` indirection. Nothing is shed, and nothing is stated twice.
+- **The borrowed token scope is one property, not a family.** Every colour, motion and tint token the navigation row's selectors read is declared on `:root` in `tokens/theme-vars.css.ts`, so it resolves wherever the row renders. The single surface-scoped one is `--navwindow-inset`, declared only by the two nav windows; the leaf declares it on its own root. `--edge-fade` and `--scroll-fade` are set by the row's own rules, and the embed's `--glyph-scale` is behind a selector this surface never matches.
 
 ### Open Against Later Tasks
 
-- **E-16's two shed heading rules** — whether they become a modifier both consumers wear or the leaf restates them is decided at Task 11 and recorded there. Restating means the app carries one rule twice, which the constraints forbid; the modifier touches the view embed.
+*(none outstanding)*
 
 ### Deviations
 

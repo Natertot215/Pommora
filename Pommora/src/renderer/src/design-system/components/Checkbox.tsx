@@ -1,0 +1,81 @@
+import { chipBoxGeometry } from '@renderer/design-system/tokens/chip.css'
+import { cx } from '../cx'
+import './checkbox.css'
+
+/** Three states, because a select-all over a partial selection is neither on nor off. */
+export type CheckboxState = boolean | 'mixed'
+
+/** The editor's task marker as a real control. The look is shared with it down to the class; what
+ *  this adds is the semantics the widget deliberately has none of — a role, a label, keyboard
+ *  activation — and the mixed mark, which is a glyph swap on the same centred slot. */
+export function Checkbox({
+  state,
+  onChange,
+  ariaLabel,
+  className,
+}: {
+  state: CheckboxState
+  onChange: (next: boolean) => void
+  ariaLabel: string
+  className?: string
+}): React.JSX.Element {
+  const set = state === true
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: the rule's element is a void one — it cannot hold the centred mark this look is drawn from, and its indeterminate state is a DOM property no attribute sets; role="checkbox" on a focusable element is the pattern
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={state === 'mixed' ? 'mixed' : set}
+      aria-label={ariaLabel}
+      className={cx(
+        chipBoxGeometry,
+        'pm-checkbox',
+        set && 'pm-checkbox-checked',
+        state === 'mixed' && 'pm-checkbox-mixed',
+        className,
+      )}
+      // The row underneath is the checkbox's own larger target, so the press must not reach it
+      // twice — and a press on a control never arms whatever gesture the row carries.
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation()
+        onChange(!set)
+      }}
+    >
+      {state === 'mixed' ? <MixedMark /> : set ? <CheckMark /> : null}
+    </button>
+  )
+}
+
+// Drawn rather than drawn from the registry: these ride inside a 17px box at a stroke the icon
+// components don't offer, and the editor's widget emits the identical markup as a raw string.
+const CheckMark = (): React.JSX.Element => (
+  <svg
+    viewBox="0 0 24 24"
+    width="12"
+    height="12"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="3"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M20 6 9 17l-5-5" />
+  </svg>
+)
+
+const MixedMark = (): React.JSX.Element => (
+  <svg
+    viewBox="0 0 24 24"
+    width="12"
+    height="12"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="3"
+    strokeLinecap="round"
+    aria-hidden="true"
+  >
+    <path d="M6 12h12" />
+  </svg>
+)

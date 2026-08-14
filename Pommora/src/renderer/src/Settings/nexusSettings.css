@@ -17,6 +17,18 @@
   flex-direction: column;
   gap: 1px;
 }
+/* The rail's foot. The list above takes the height, so this sits at the bottom for free; the
+   z-index keeps its corner clickable over the window's resize handles. */
+.settings-rail-foot {
+  position: relative;
+  z-index: 3;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding-top: 6px;
+  margin-top: 6px;
+  border-top: 1px solid var(--separator-segment);
+}
 .settings-cat {
   display: flex;
   align-items: center;

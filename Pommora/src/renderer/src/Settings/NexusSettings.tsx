@@ -8,6 +8,7 @@ import { PreviewPane } from '@renderer/design-system/components/PreviewPane/Prev
 import { HOVER_LINGER_MAX, type Personalization } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
+import { TrashLeaf } from './TrashLeaf'
 import './nexusSettings.css'
 
 // KNOB — the window's opening size and its resize floor. The floor is what a leaf carrying a
@@ -23,6 +24,8 @@ const DRAG_SURFACES = '.settings-body, .settings-rail-list, .settings-section, .
 const CATEGORIES = [
   { key: 'general', label: 'General', icon: 'sliders-horizontal' },
   { key: 'pages', label: 'Pages', icon: 'file-text' },
+  // Anchored: the rail's list takes the height, so a sibling appended after it sinks to the foot.
+  { key: 'trash', label: 'Trash', icon: 'trash', anchored: true },
 ] as const
 type CategoryKey = (typeof CATEGORIES)[number]['key']
 
@@ -86,6 +89,7 @@ const LEAVES: Record<CategoryKey, LeafBody> = {
     // yet — do this sooner rather than later. It reads and writes like any other personalization key
     // in the meantime, so a hand-edited settings file turns it off.
   ] },
+  trash: { kind: 'surface', Body: TrashLeaf },
 }
 
 export function NexusSettings(): React.JSX.Element | null {
@@ -116,34 +120,50 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
         mode: 'inflow',
         className: 'settings-rail',
         children: (
-          <div
-            className="settings-rail-list edge-fade"
-            role="tablist"
-            aria-label="Settings categories"
-          >
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                role="tab"
-                aria-selected={category === c.key}
-                className={cx(
-                  'settings-cat',
-                  text.body.standard,
-                  category === c.key && 'is-active',
-                )}
-                onClick={() => setCategory(c.key)}
-              >
-                <Icon name={c.icon} size={14} />
-                <span>{c.label}</span>
-              </button>
+          <>
+            <div
+              className="settings-rail-list edge-fade"
+              role="tablist"
+              aria-label="Settings categories"
+            >
+              {CATEGORIES.filter((c) => !('anchored' in c)).map((c) => (
+                <RailTab key={c.key} cat={c} active={category} onPick={setCategory} />
+              ))}
+            </div>
+            {CATEGORIES.filter((c) => 'anchored' in c).map((c) => (
+              <div key={c.key} className="settings-rail-foot">
+                <RailTab cat={c} active={category} onPick={setCategory} />
+              </div>
             ))}
-          </div>
+          </>
         ),
       }}
     >
       <LeafBodyView category={category} />
     </PreviewPane>
+  )
+}
+
+function RailTab({
+  cat,
+  active,
+  onPick,
+}: {
+  cat: (typeof CATEGORIES)[number]
+  active: CategoryKey
+  onPick: (key: CategoryKey) => void
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active === cat.key}
+      className={cx('settings-cat', text.body.standard, active === cat.key && 'is-active')}
+      onClick={() => onPick(cat.key)}
+    >
+      <Icon name={cat.icon} size={14} />
+      <span>{cat.label}</span>
+    </button>
   )
 }
 
