@@ -2,7 +2,7 @@ import { EditorView } from '@codemirror/view'
 import { linkTarget, tokenize } from '../tokens'
 import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connections'
 import { seatAtNearerEdge } from './input'
-import { hoverIntent } from './connections'
+import { caretInside, hoverIntent } from './connections'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -75,10 +75,9 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
       if (!el) return false
       const hit = linkUnder(view, getApi, event)
       if (!hit?.onText || hit.target.kind !== 'page') return false
-      const head = view.state.selection.main.head
       // A link the caret is already inside is open for editing, and no dwell should carry you away
       // from what you're typing.
-      if (view.hasFocus && head >= hit.range[0] && head <= hit.range[1]) return false
+      if (caretInside(view, hit.range)) return false
       const page = hit.target.page
       intent.arm(() => api.hover?.(page, el))
       return false
@@ -89,9 +88,13 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
     },
     mousedown(event, view) {
       const hit = linkUnder(view, getApi, event)
-      const head = view.state.selection.main.head
-      editingOnPress = !!hit && view.hasFocus && head >= hit.range[0] && head <= hit.range[1]
+      editingOnPress = !!hit && caretInside(view, hit.range)
       if (!hit) return false
+      // A right press must not seat a caret in the link: `contextmenu` reads the live caret to decide
+      // it's inside the syntax and should stand down, so a seated caret would suppress the menu
+      // everywhere. Claiming the press preventDefaults it, which Chromium generates `contextmenu`
+      // independently of.
+      if (event.button === 2) return hit.onText && hit.target.kind !== 'invalid'
       // Extending a selection, double- and triple-click, and the other buttons keep CM's own
       // semantics over a link like anywhere else.
       if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
@@ -115,6 +118,25 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
       // shell.openExternal through the bridge, or the connections host's own router.
       if (hit.target.kind === 'page') getApi()?.open(hit.target.page)
       else void window.nexus.openExternal(hit.url)
+      return true
+    },
+    // Right-click hands off to the host's menu hook, told what the target turned out to be — the same
+    // resolver the click path reads. The authoring pair belongs to `[[ ]]` syntax and isn't offered
+    // here; an invalid target names nothing to act on at all.
+    contextmenu(event, view) {
+      const api = getApi()
+      if (!api?.menu) return false
+      const hit = linkUnder(view, getApi, event)
+      if (!hit?.onText || hit.target.kind === 'invalid') return false
+      // Inside its syntax you're editing prose, and prose has its own menu.
+      if (caretInside(view, hit.range)) return false
+      event.preventDefault()
+      intent.cancel()
+      api.menu(
+        hit.target.kind === 'page'
+          ? { kind: 'page', page: hit.target.page, editable: false, hasAlias: false }
+          : { kind: 'url', url: hit.url },
+      )
       return true
     },
   })

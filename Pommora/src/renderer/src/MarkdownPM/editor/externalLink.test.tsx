@@ -2,6 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
+import type { ConnMenuAction } from '@shared/connections'
+import { buildPageIndex, type ConnectionsApi } from '@renderer/MarkdownPM/connections'
+import { showConnectionMenu } from '@renderer/Embeds/connectionMenu'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '@renderer/testing/editorHarness'
 
 class ResizeObserverStub {
@@ -12,9 +15,16 @@ class ResizeObserverStub {
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
 const openExternal = vi.fn()
-stubEditorBridge({ openExternal })
+const connMenu = vi.fn<(ctx: unknown) => Promise<ConnMenuAction | null>>()
+const writeClipboard = vi.fn()
+stubEditorBridge({ openExternal, connMenu, writeClipboard })
 
-beforeEach(() => openExternal.mockReset())
+beforeEach(() => {
+  openExternal.mockReset()
+  writeClipboard.mockReset()
+  connMenu.mockReset()
+  connMenu.mockResolvedValue(null)
+})
 afterEach(async () => {
   await cleanupEditor()
 })
@@ -62,5 +72,40 @@ describe('an external link opens from its label and nowhere else', () => {
     view.dispatch({ selection: { anchor: 5 } })
     press(view, 5, label(view))
     expect(openExternal).not.toHaveBeenCalled()
+  })
+})
+
+// What a `( )` target turns out to name is the resolver's answer, not the syntax's: `[Alpha](Alpha)`
+// reaches a page and carries everything a connection does, while a web address has only itself.
+describe('a markdown link’s menu follows what its target names', () => {
+  const conn: ConnectionsApi = {
+    ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+    open: () => {},
+    menu: showConnectionMenu,
+  }
+
+  const rightClick = async (view: EditorView, pos: number, selector: string): Promise<void> => {
+    vi.spyOn(view, 'posAtCoords').mockReturnValue(pos)
+    const el = view.dom.querySelector(selector) as HTMLElement
+    await act(async () => {
+      el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+      await Promise.resolve()
+    })
+  }
+
+  it('a web address is offered its address and nothing that needs a page', async () => {
+    connMenu.mockResolvedValue('title:copylink')
+    const view = await mountEditor({ initialBody: BODY, connections: conn })
+    await rightClick(view, 5, '.md-link')
+    expect(connMenu).toHaveBeenCalledWith({ editable: false, hasAlias: false, external: true })
+    expect(writeClipboard).toHaveBeenCalledWith('https://x.test')
+  })
+
+  it('a target naming a page is offered the page menu, path included', async () => {
+    connMenu.mockResolvedValue('title:copypath')
+    const view = await mountEditor({ initialBody: 'a [Alpha](Alpha) b', connections: conn })
+    await rightClick(view, 5, '.md-connection-resolved')
+    expect(connMenu).toHaveBeenCalledWith({ editable: false, hasAlias: false })
+    expect(writeClipboard).toHaveBeenCalledWith('Notes/Alpha')
   })
 })

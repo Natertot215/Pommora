@@ -11,6 +11,8 @@
 // fs, no React. normalizeTitle is the SINGLE normalization the scanner, the phantom key,
 // resolution, and uniqueness all share, so they can never disagree.
 
+import type { PageClipboardAction } from './pageMenu'
+
 /** A page's display title from its Nexus-relative path — the basename, extension dropped. */
 export const titleFromPath = (path: string): string =>
   (path.split('/').pop() ?? path).replace(/\.md$/i, '')
@@ -112,16 +114,19 @@ export function emptyAliasPipeAt(line: string, rel: number): number | null {
   return s?.alias && s.alias[0] === s.alias[1] ? s.title[1] : null
 }
 
-/** What the wikilink menu needs in order to render itself. The two authoring actions are built into
+/** What the link menu needs in order to render itself. The two authoring actions are built into
  *  the menu rather than filtered after it, so a surface that can't take an edit never offers them. */
 export interface ConnMenuContext {
   editable: boolean
   /** Whether the link already wears an alias — the authoring item names creating one or changing it. */
   hasAlias: boolean
+  /** A link whose target is a web address rather than a page: it has an address to copy, and none of
+   *  the actions that need a page behind them. */
+  external?: boolean
 }
 
-/** The wikilink native context menu's actions (conn-menu IPC). */
-export type ConnMenuAction = 'preview' | 'rename' | 'editLink'
-
 /** The two that edit the link rather than open it. */
-export type ConnEditAction = Exclude<ConnMenuAction, 'preview'>
+export type ConnEditAction = 'rename' | 'editLink'
+
+/** The link native context menu's actions (conn-menu IPC). */
+export type ConnMenuAction = 'preview' | ConnEditAction | PageClipboardAction
