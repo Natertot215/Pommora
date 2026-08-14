@@ -154,12 +154,9 @@ describe('insertCreatedInTree', () => {
       { op: 'createContextGroup', name: 'Realms' },
       { id: 'g1', path: '.nexus/contexts/Realms' },
     )
-    // Mirrors createContextGroup exactly — no singular, so its create entry reads "New Space".
-    expect(withGroup?.contexts?.at(-1)?.def).toEqual({
-      id: 'g1',
-      title: 'Realms',
-      icon: 'layout-grid',
-    })
+    // Mirrors createContextGroup exactly — no singular, so its create entry reads "New Space"; no
+    // icon, so it resolves to the kind's glyph and still follows a nexus default.
+    expect(withGroup?.contexts?.at(-1)?.def).toEqual({ id: 'g1', title: 'Realms' })
     const withSpace = insertCreatedInTree(
       withGroup as NexusTree,
       { op: 'createSpace', contextId: 'g1', name: 'Astral' },

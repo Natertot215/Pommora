@@ -21,4 +21,20 @@ describe('entityIcon — the one glyph resolution', () => {
       DEFAULT_ENTITY_ICONS.space,
     )
   })
+
+  // The two gates disagree on purpose, and the same name shows it: an override must be CURATED,
+  // where an entity's own icon may be any Lucide id. `readNexus` keeps whatever was stored
+  // (`readNexus.test.ts` holds that half), so the rejection can only happen here.
+  it('one uncurated-but-real glyph: rejected as an override, kept as an own icon', () => {
+    expect(entityIcon('context', undefined, { context: 'anchor' })).toBe(
+      DEFAULT_ENTITY_ICONS.context,
+    )
+    expect(entityIcon('context', 'anchor', { context: 'anchor' })).toBe('anchor')
+  })
+
+  it('a Context and a Space no longer share a mark, and neither default moves the other', () => {
+    expect(DEFAULT_ENTITY_ICONS.context).not.toBe(DEFAULT_ENTITY_ICONS.space)
+    expect(entityIcon('context', undefined, { space: 'server' })).toBe(DEFAULT_ENTITY_ICONS.context)
+    expect(entityIcon('space', undefined, { context: 'server' })).toBe(DEFAULT_ENTITY_ICONS.space)
+  })
 })
