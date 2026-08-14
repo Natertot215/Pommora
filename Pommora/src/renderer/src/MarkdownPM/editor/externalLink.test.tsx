@@ -105,7 +105,11 @@ describe('a markdown link’s menu follows what its target names', () => {
     connMenu.mockResolvedValue('title:copypath')
     const view = await mountEditor({ initialBody: 'a [Alpha](Alpha) b', connections: conn })
     await rightClick(view, 5, '.md-connection-resolved')
-    expect(connMenu).toHaveBeenCalledWith({ editable: false, hasAlias: false })
+    expect(connMenu).toHaveBeenCalledWith({
+      editable: false,
+      hasAlias: false,
+      alreadyOpen: false,
+    })
     expect(writeClipboard).toHaveBeenCalledWith('Notes/Alpha')
   })
 })
