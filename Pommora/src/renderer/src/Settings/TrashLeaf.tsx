@@ -5,7 +5,7 @@ import { OverflowScroll } from '@renderer/design-system/components/OverflowScrol
 import { cx } from '@renderer/design-system/cx'
 import { entityIcon, Icon } from '@renderer/design-system/symbols'
 import { text } from '@renderer/design-system/tokens'
-import type { DateFormat } from '@shared/columnStyles'
+import { type DateFormat, defaultStyleFor } from '@shared/columnStyles'
 import type { MutateRequest } from '@shared/mutate'
 import type { CollectionNode } from '@shared/types'
 import { DEFAULT_TIME_FORMAT, type Personalization, type TrashRow } from '@shared/types'
@@ -20,9 +20,9 @@ import '../Detail/Views/Table/Table.css'
 import './trashLeaf.css'
 
 /** A deleted entity carries no column configuration to read a format from, so this column carries
- *  its own — chosen from its heading's menu, kept in personalization, and defaulting to the date a
- *  person would say out loud under the clock the nexus is already set to. */
-const DEFAULT_DATE_FORMAT: DateFormat = 'short'
+ *  its own — chosen from its heading's menu and kept in personalization. Unchosen, it takes the same
+ *  default a date column takes when nothing configures it, so the two never disagree by accident. */
+const DEFAULT_DATE_FORMAT: DateFormat = defaultStyleFor('datetime').date_format ?? 'full'
 
 /** Identity-stable, so a tree push with no collections can't re-run the destination walk. */
 const EMPTY_COLLECTIONS: CollectionNode[] = []
