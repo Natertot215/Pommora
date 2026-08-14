@@ -63,7 +63,7 @@ An allowlist, never an auto-append: a schema property or a Context column render
 
 #### II. The ViewPane
 
-A navigation dropdown opened by the ViewDropdown — a row per saved view (click switches the active view and leaves the pane open; the row's chevron opens that view's ViewSettings; right-click opens its Rename · Edit Icon · Delete menu, where a view's glyph is picked) over a footer carrying New View. Right-clicking the ViewDropdown itself opens a native menu for its two presentation settings (Show/Hide Title · Style).
+A navigation dropdown opened by the ViewDropdown — a row per saved view (click switches the active view and leaves the pane open; the row's chevron opens that view's ViewSettings; right-click opens its Rename · Edit Icon · Edit Color · Delete menu, where a view's glyph and its color are picked — the same menu the view embed's own switcher pops, which adds only the titles toggle belonging to that tile's chrome) over a footer carrying New View. Right-clicking the ViewDropdown itself opens a native menu for its two presentation settings (Show/Hide Title · Style).
 
 #### II. ViewSettings
 
