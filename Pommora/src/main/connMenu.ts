@@ -1,5 +1,5 @@
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
-import type { ConnMenuAction, ConnMenuContext } from '@shared/connections'
+import { CONN_OPEN_ACTIONS, type ConnMenuAction, type ConnMenuContext } from '@shared/connections'
 import { PAGE_CLIPBOARD_ACTIONS, pageMetaMenuSubset } from '@shared/pageMenu'
 import { pageMenuTemplate } from './pageMenu'
 import { popReturningMenu } from './returningMenu'
@@ -14,7 +14,10 @@ export function popConnMenu(
 ): Promise<ConnMenuAction | null> {
   return popReturningMenu<ConnMenuAction>(win, (pick) => {
     if (ctx.external) return pageMenuTemplate(pageMetaMenuSubset(['title:copylink']), pick)
-    const items: MenuItemConstructorOptions[] = [{ label: 'Open Preview', click: pick('preview') }]
+    const items: MenuItemConstructorOptions[] = pageMenuTemplate(
+      pageMetaMenuSubset(CONN_OPEN_ACTIONS, ctx.alreadyOpen),
+      pick,
+    )
     if (ctx.editable)
       items.push(
         { type: 'separator' },

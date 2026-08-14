@@ -11,7 +11,7 @@
 // fs, no React. normalizeTitle is the SINGLE normalization the scanner, the phantom key,
 // resolution, and uniqueness all share, so they can never disagree.
 
-import type { PageClipboardAction } from './pageMenu'
+import type { PageClipboardAction, PageMetaAction } from './pageMenu'
 
 /** A page's display title from its Nexus-relative path — the basename, extension dropped. */
 export const titleFromPath = (path: string): string =>
@@ -123,10 +123,21 @@ export interface ConnMenuContext {
   /** A link whose target is a web address rather than a page: it has an address to copy, and none of
    *  the actions that need a page behind them. */
   external?: boolean
+  /** Whether the page this link reaches already holds a tab — the open item names focusing it. */
+  alreadyOpen?: boolean
 }
 
 /** The two that edit the link rather than open it. */
 export type ConnEditAction = 'rename' | 'editLink'
 
+/** The two ways a link reaches its page — the same pair, in the same order, every other page menu
+ *  opens with. */
+export type ConnOpenAction = Extract<PageMetaAction, 'title:preview' | 'title:newtab'>
+
+export const CONN_OPEN_ACTIONS = [
+  'title:preview',
+  'title:newtab',
+] as const satisfies readonly ConnOpenAction[]
+
 /** The link native context menu's actions (conn-menu IPC). */
-export type ConnMenuAction = 'preview' | ConnEditAction | PageClipboardAction
+export type ConnMenuAction = ConnOpenAction | ConnEditAction | PageClipboardAction
