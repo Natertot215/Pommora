@@ -18,9 +18,6 @@
   /* The table's own cell inset, pointed at this surface's, so a borrowed column label lands over
      the column it names rather than 2px off it. */
   --cell-padding-x: var(--navwindow-inset);
-  /* The heading's segment keeps its shape — short, rounded, centred — but takes the hairline's
-     thickness, so the bar and the column line it heads sit on one axis rather than two. */
-  --heading-segment-width: var(--table-border-width);
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -61,11 +58,32 @@
 /* The table's leading bar marks its gutter↔Title junction; this strip has no gutter column, so the
    bar would sit alone at the edge bounding nothing. The divider BETWEEN the columns stays.
 
-   That divider hangs inside the lane it ends and cannot leave it — `.col-header` clips its overflow
-   so a long label truncates. So the rows' line meets it from the same side: drawn on the name lane's
-   trailing edge rather than the date lane's leading one, both end on the boundary. */
+   The divider itself is drawn once here for the heading and every row alike, rather than left as
+   the table's heading bar over the table's full-height row hairline: a column strip this short
+   reads better as one segmented axis. It hangs inside the lane it ends — `.col-header` clips its
+   overflow so a long label truncates — so every lane draws it on its own trailing edge. */
 .trash-head .col-header:first-child::before {
   content: none;
+}
+.trash-leaf .trash-head .trash-head-name::after,
+.trash-leaf .nav-item .nav-item-main::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: var(--heading-segment-width);
+  height: var(--heading-segment-height);
+  border-radius: var(--heading-segment-width);
+  pointer-events: none;
+}
+/* The heading's reads as heading chrome; a row's reads as a separator, exactly as the table's two
+   do — one shape and one axis, two tones. */
+.trash-leaf .trash-head .trash-head-name::after {
+  background: var(--heading-segment);
+}
+.trash-leaf .nav-item .nav-item-main::after {
+  background: var(--separator-border);
 }
 .trash-leaf .trash-head-name {
   flex: 1;
@@ -110,8 +128,8 @@
   border-top: var(--table-border);
 }
 .trash-leaf .nav-item-main {
+  position: relative;
   padding-left: var(--trash-lead);
-  border-right: var(--table-border);
 }
 
 /* The pin's affordance exactly: a glyph in the row's left inset, absolute so it never shifts the
