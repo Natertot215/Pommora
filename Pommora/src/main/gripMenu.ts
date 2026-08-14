@@ -1,7 +1,8 @@
 // The block grip's native menu: Delete on every kind, with that kind's own arm above it — "Page
 // Source ▸" on an embed tile, "Type ▸" on a list. The pick tree crosses IPC in the ctx.
-import { type BrowserWindow, Menu, type MenuItemConstructorOptions } from 'electron'
+import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { GripMenuAction, GripMenuContext, ListKind, PickNode } from '@shared/gripMenu'
+import { popReturningMenu } from './returningMenu'
 
 const LIST_TYPES: [ListKind, string][] = [
   ['ordered', 'Numbered'],
@@ -14,12 +15,7 @@ export function popGripMenu(
   win: BrowserWindow,
   ctx: GripMenuContext,
 ): Promise<GripMenuAction | null> {
-  return new Promise((resolve) => {
-    let acted = false
-    const pick = (a: GripMenuAction) => () => {
-      acted = true
-      resolve(a)
-    }
+  return popReturningMenu<GripMenuAction>(win, (pick) => {
     const source = (n: PickNode): MenuItemConstructorOptions =>
       n.children
         ? { label: n.label, submenu: n.children.map(source) }
@@ -49,16 +45,10 @@ export function popGripMenu(
     }
 
     const above = own()
-    const menu = Menu.buildFromTemplate([
+    return [
       ...above,
       ...(above.length > 0 ? [{ type: 'separator' as const }] : []),
       { label: 'Delete', click: pick({ action: 'delete' }) },
-    ])
-    menu.popup({
-      window: win,
-      callback: () => {
-        if (!acted) resolve(null)
-      },
-    })
+    ]
   })
 }

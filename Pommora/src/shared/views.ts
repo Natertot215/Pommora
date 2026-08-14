@@ -22,7 +22,7 @@ export const isCompact = (view: { format?: ViewFormat }): boolean =>
 const CARD_BANNERS = ['cover', 'preview', 'none'] as const
 export type CardBanner = (typeof CARD_BANNERS)[number]
 
-const COLUMN_ALIGNS = ['left', 'center', 'right'] as const
+export const COLUMN_ALIGNS = ['left', 'center', 'right'] as const
 export type ColumnAlign = (typeof COLUMN_ALIGNS)[number]
 
 const SORT_DIRECTIONS = ['ascending', 'descending'] as const

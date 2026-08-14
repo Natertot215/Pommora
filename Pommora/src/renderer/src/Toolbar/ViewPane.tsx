@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@shared/types'
 import type { PropertyDefinition } from '@shared/properties'
 import { mintDefaultView, mintNewView, type SavedView } from '@shared/views'
@@ -8,16 +8,17 @@ import {
   MenuItem,
   MenuBottomRow,
   MenuScrollFrame,
-  MenuSeparator,
   AccessoryButton,
 } from '../design-system/components/menu'
 import { titleInput } from '../design-system/components/menu/menu.css'
-import { PointMenu } from '../design-system/components/PickerMenu'
 import { PaneSlider } from '../Components/Detail/PaneSlider'
 import { ViewSettings } from '../Components/Detail/ViewSettings'
 import { PaneDnd, RowShell, usePaneRegions } from '../Components/Detail/paneDnd'
 import type { PaneDrop, PaneRow, paneSlot } from '../Components/Detail/paneDndModel'
 import { useSaveView, useViewEmbedScope } from '@renderer/Embeds/ViewEmbedScope'
+import { ColorPicker } from '../Components/Detail/ColorPicker'
+import { chipColorFor } from '@renderer/design-system/tokens/colorMap'
+import { ViewRowMenu } from '../Components/ViewRowMenu'
 import { RenamableLabel } from '../Components/RenamableLabel'
 import { IconPicker } from '../Components/IconPicker'
 import { useSession } from '../store'
@@ -74,7 +75,9 @@ export function ViewPane({
   // Holds the view whose glyph is being picked, not a bare flag: the picker opens from a ROW's menu,
   // and the pane's `editing` is the drill target — null whenever that list is on screen.
   const [iconFor, setIconFor] = useState<SavedView | null>(null)
+  const [colorFor, setColorFor] = useState<SavedView | null>(null)
   const [rowMenuAt, setRowMenuAt] = useState<{ view: SavedView; x: number; y: number } | null>(null)
+  const menuAnchorRef = useRef<HTMLElement | null>(null)
   const scope = useViewEmbedScope()
   // Never mounts inside a view embed until the payload switcher lands — CRUD here would bypass the scope.
   if (scope) return null
@@ -115,6 +118,8 @@ export function ViewPane({
   }
   const rowMenu = (v: SavedView, e: React.MouseEvent): void => {
     e.preventDefault()
+    // The row the menu opened from is what its color picker anchors against.
+    menuAnchorRef.current = e.currentTarget as HTMLElement
     setRowMenuAt({ view: v, x: e.clientX, y: e.clientY })
   }
   const deleteRow = async (v: SavedView): Promise<void> => {
@@ -214,38 +219,15 @@ export function ViewPane({
         minHeight={PANE_SQUARE}
       />
       {rowMenuAt && (
-        <PointMenu at={rowMenuAt} onDismiss={() => setRowMenuAt(null)}>
-          <MenuItem
-            leading={<Icon name="pencil" size={13} />}
-            onClick={() => {
-              setRowMenuAt(null)
-              setRenamingId(rowMenuAt.view.id)
-            }}
-          >
-            Rename
-          </MenuItem>
-          <MenuItem
-            leading={<Icon name="smile" size={13} />}
-            onClick={() => {
-              setRowMenuAt(null)
-              setIconFor(rowMenuAt.view)
-            }}
-          >
-            Edit Icon
-          </MenuItem>
-          <MenuSeparator />
-          {/* The write path refuses a container's last view; the row mirrors that rule. */}
-          <MenuItem
-            disabled={views.length < 2}
-            leading={<Icon name="trash" size={13} />}
-            onClick={() => {
-              setRowMenuAt(null)
-              void deleteRow(rowMenuAt.view)
-            }}
-          >
-            Delete
-          </MenuItem>
-        </PointMenu>
+        <ViewRowMenu
+          at={rowMenuAt}
+          onDismiss={() => setRowMenuAt(null)}
+          onRename={() => setRenamingId(rowMenuAt.view.id)}
+          onIcon={() => setIconFor(rowMenuAt.view)}
+          onColor={() => setColorFor(rowMenuAt.view)}
+          onDelete={() => void deleteRow(rowMenuAt.view)}
+          deletable={views.length > 1}
+        />
       )}
       <IconPicker
         open={!!iconFor}
@@ -254,6 +236,16 @@ export function ViewPane({
         onSelect={(icon) => {
           if (iconFor) void saveView({ ...iconFor, icon })
         }}
+      />
+      <ColorPicker
+        open={colorFor !== null}
+        selected={chipColorFor(colorFor?.color)}
+        onPick={(picked) => {
+          if (colorFor) void saveView({ ...colorFor, color: picked })
+          setColorFor(null)
+        }}
+        onDismiss={() => setColorFor(null)}
+        triggerRef={menuAnchorRef}
       />
     </>
   )
