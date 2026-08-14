@@ -2,6 +2,8 @@
 // landed; main pops the native menu and resolves the chosen action (null if dismissed); the renderer
 // applies it. No fs, no React — both sides import this.
 
+import type { ColumnAlign } from './views'
+
 export type TableMenuKind = 'column' | 'row' | 'header'
 
 // `index` is the column index (kind 'column') or the visual row index (kind 'row'; 0 = header → kind
@@ -11,7 +13,7 @@ export type TableMenuKind = 'column' | 'row' | 'header'
 export interface TableMenuContext {
   kind: TableMenuKind
   index: number
-  align?: 'left' | 'center' | 'right' | null
+  align?: ColumnAlign | null
   headingColumn?: boolean
 }
 

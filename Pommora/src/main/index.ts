@@ -3,7 +3,6 @@ import {
   BrowserWindow,
   clipboard,
   dialog,
-  Menu,
   nativeTheme,
   protocol,
   shell,
@@ -1341,21 +1340,9 @@ serveBridge(
         win: BrowserWindow,
         items: { label: string; req: MutateRequest }[],
       ): Promise<MutateRequest | null> => {
-        return new Promise((resolve) => {
-          // Settle-once, click first: a pick resolves immediately, and the close callback defers a
-          // tick before resolving null — so no assumption about Electron's click-vs-close ordering
-          // can hang the promise or drop a pick.
-          let settled = false
-          const done = (req: MutateRequest | null): void => {
-            if (settled) return
-            settled = true
-            resolve(req)
-          }
-          const menu = Menu.buildFromTemplate(
-            items.map((it) => ({ label: it.label, click: () => done(it.req) })),
-          )
-          menu.popup({ window: win, callback: () => setTimeout(() => done(null), 0) })
-        })
+        return popReturningMenu<MutateRequest>(win, (pick) =>
+          items.map((it) => ({ label: it.label, click: pick(it.req) })),
+        )
       },
     },
 

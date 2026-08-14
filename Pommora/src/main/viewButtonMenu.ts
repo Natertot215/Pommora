@@ -5,6 +5,7 @@ import type { BrowserWindow } from 'electron'
 import type { ViewButton, ViewStyle } from '@shared/types'
 import type { ViewButtonMenuAction } from '@shared/viewMenus'
 import { popReturningMenu } from './returningMenu'
+import { viewStyleSubmenu } from './styleMenu'
 
 export function popViewButtonMenu(
   win: BrowserWindow,
@@ -16,22 +17,6 @@ export function popViewButtonMenu(
       click: pick('toggle-title'),
     },
     { type: 'separator' },
-    {
-      label: 'Style',
-      submenu: [
-        {
-          label: 'Dropdown',
-          type: 'checkbox',
-          checked: current.viewStyle === 'dropdown',
-          click: pick('style-dropdown'),
-        },
-        {
-          label: 'Toolbar',
-          type: 'checkbox',
-          checked: current.viewStyle === 'toolbar',
-          click: pick('style-toolbar'),
-        },
-      ],
-    },
+    { label: 'Style', submenu: viewStyleSubmenu(current.viewStyle, pick) },
   ])
 }

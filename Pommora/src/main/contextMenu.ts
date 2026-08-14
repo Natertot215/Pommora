@@ -188,7 +188,7 @@ export async function showContextMenu(
 
   items.push({ label: 'Delete', click: () => void confirmDelete() })
   items.push({ type: 'separator' })
-  items.push({ label: 'Reveal in Finder', click: () => void reveal() })
+  items.push({ label: 'Reveal Location', click: () => void reveal() })
 
   // Resolve on dismissal, not at pop — a fire-and-forget caller ignores it, but a surface
   // holding a hover affordance down (the ghost's suppress) needs the close to release it.

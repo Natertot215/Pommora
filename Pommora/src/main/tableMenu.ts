@@ -1,6 +1,7 @@
-import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { TableMenuAction, TableMenuContext } from '@shared/tableMenu'
+import { popReturningMenu } from './returningMenu'
+import { alignSubmenu } from './styleMenu'
 
 function itemsFor(
   ctx: TableMenuContext,
@@ -18,12 +19,6 @@ function itemsFor(
       { label: 'Delete', click: pick('row:delete') },
     ]
   }
-  const align = (label: string, a: 'left' | 'center' | 'right'): MenuItemConstructorOptions => ({
-    label,
-    type: 'radio',
-    checked: ctx.align === a,
-    click: pick(`align:${a}`),
-  })
   // The first column can read like the header row (a Pommora-only visual; the .md stays a plain table).
   // Checkbox carries the on/off state; the label reads "Heading Column" (✓) when on, "Make …" when off.
   const heading: MenuItemConstructorOptions[] =
@@ -38,10 +33,7 @@ function itemsFor(
         ]
       : []
   return [
-    {
-      label: 'Align',
-      submenu: [align('Left', 'left'), align('Center', 'center'), align('Right', 'right')],
-    },
+    { label: 'Align', submenu: alignSubmenu(ctx.align, pick) },
     { type: 'separator' },
     ...heading,
     { label: 'Insert Column Left', click: pick('col:insert-left') },
@@ -56,18 +48,5 @@ export function popTableMenu(
   win: BrowserWindow,
   ctx: TableMenuContext,
 ): Promise<TableMenuAction | null> {
-  return new Promise<TableMenuAction | null>((resolve) => {
-    let acted = false
-    const pick = (a: TableMenuAction) => (): void => {
-      acted = true
-      resolve(a)
-    }
-    const menu = Menu.buildFromTemplate(itemsFor(ctx, pick))
-    menu.popup({
-      window: win,
-      callback: () => {
-        if (!acted) resolve(null)
-      },
-    })
-  })
+  return popReturningMenu<TableMenuAction>(win, (pick) => itemsFor(ctx, pick))
 }
