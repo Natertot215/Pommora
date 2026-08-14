@@ -74,7 +74,7 @@ export const PAGE_CLIPBOARD_ACTIONS = [
  *  reaches a page offers all three together, so the group reads the same wherever it's popped. */
 export type PageSendAction = PageClipboardAction | typeof PAGE_MOVE_ROW
 
-export const PAGE_SEND_ACTIONS = [
+const PAGE_SEND_ACTIONS = [
   PAGE_MOVE_ROW,
   ...PAGE_CLIPBOARD_ACTIONS,
 ] as const satisfies readonly PageSendAction[]
@@ -113,9 +113,7 @@ export function pageMetaMenuItems(
     ...(opts.newPages === 'single'
       ? [{ label: 'New Page', action: 'title:newbelow' as const, separatorBefore: true }]
       : []),
-    ...(opts.move
-      ? [{ label: 'Move To', action: PAGE_MOVE_ROW, separatorBefore: true }]
-      : []),
+    ...(opts.move ? [{ label: 'Move To', action: PAGE_MOVE_ROW, separatorBefore: true }] : []),
     ...(opts.clipboard
       ? [
           { label: 'Copy Link', action: 'title:copylink' as const, separatorBefore: !opts.move },

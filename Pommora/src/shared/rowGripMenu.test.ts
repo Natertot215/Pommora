@@ -3,8 +3,9 @@ import { rowGripMenuModel } from './rowGripMenu'
 
 describe('rowGripMenuModel', () => {
   it('carries the ratified order with separators between its blocks', () => {
-    const items = rowGripMenuModel({ moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }] })
-      .items
+    const items = rowGripMenuModel({
+      moveTargets: [{ id: 'c1', label: 'Notes', path: 'Notes' }],
+    }).items
     expect(items.map((i) => [i.label, i.action])).toEqual([
       ['Open Preview', 'title:preview'],
       ['Open New Tab', 'title:newtab'],

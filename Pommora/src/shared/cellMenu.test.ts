@@ -33,7 +33,9 @@ describe('cellMenuModel', () => {
       'title:copypath',
     ])
     expect(withTargets.items.find((i) => i.action === 'title:moveto')?.separatorBefore).toBe(true)
-    expect(withTargets.items.find((i) => i.action === 'title:copylink')?.separatorBefore).toBe(false)
+    expect(withTargets.items.find((i) => i.action === 'title:copylink')?.separatorBefore).toBe(
+      false,
+    )
     expect(cellMenuModel({ kind: 'title', moveTargets: [] }).items).not.toContainEqual(
       expect.objectContaining({ action: 'title:moveto' }),
     )

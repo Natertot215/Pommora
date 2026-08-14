@@ -11,7 +11,7 @@ import type {
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
 import type { PageFrontmatter } from '@shared/schemas'
 import type { ColumnStyle } from '@shared/columnStyles'
-import { cellMenuContextFor } from '@shared/cellMenu'
+import { type CellMenuContext, cellMenuContextFor } from '@shared/cellMenu'
 import { parseStyleAction } from '@shared/columnMenu'
 import { type ColumnAlign, type SavedView, mintDefaultView } from '@shared/views'
 import { applyValueAtRoot, isBlankValue, type PropertyValue } from '@shared/propertyValue'
@@ -971,15 +971,17 @@ export function TableView({ source }: { source: CollectionNode | SetNode }): Rea
     const filled = !isBlankValue(resolveFieldValue(row, col.id, schema))
     const dt = declaredType(col.id, schema)
     const barCapable = numberBarCapable(col.id, dt)
-    const ctx = cellMenuContextFor(col, dt, colStyle(col.id), filled, false, barCapable)
-    if (!ctx) return
-    if (ctx.kind === 'title') {
-      const { tabs, pinned, tree } = useSession.getState()
-      ctx.alreadyOpen = isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path })
-      const move = pageMoveContext(tree, row.path)
-      ctx.moveTargets = move.moveTargets
-      ctx.currentParentPath = move.currentParentPath
-    }
+    const base = cellMenuContextFor(col, dt, colStyle(col.id), filled, false, barCapable)
+    if (!base) return
+    const { tabs, pinned, tree } = useSession.getState()
+    const ctx: CellMenuContext =
+      base.kind === 'title'
+        ? {
+            ...base,
+            alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path }),
+            ...pageMoveContext(tree, row.path),
+          }
+        : base
     const action = await holdGhost(() => window.nexus.cellMenu(ctx))
     if (!action) return
     if (runPageSendAction(action, row.path)) return
