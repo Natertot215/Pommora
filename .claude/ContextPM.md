@@ -48,6 +48,7 @@
 - **A whole-surface drag handle steals its own children's clicks.** The drag engine captures the pointer on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags.
 - **A caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.** The browser's own caret is hidden app-wide and the drawn replacement is positioned by JS, so a working I-beam cursor beside a missing caret points at the overlay rather than at focus.
 - **A lock key is a fact, and two spellings of one file are two locks.** Any file more than one surface rewrites whole needs its key built in the path module rather than assembled per call site, the read has to sit inside the lock beside the write, and a relocate holds the lock of the path it is leaving.
+- **CodeMirror asks a block widget how tall to assume it is, on every edit inside its range.** Answering "unknown" means one line, so the document's height lies until the next measure — the cause of a block widget's surface jerking the scroll while it is typed in. It hands `destroy(dom)` the node so per-node resources can be released, and calls it only when the node is truly dropped; a widget replaced over a reused DOM is never destroyed.
 - **A parse given a fragment answers about the fragment.** The editor tokenizes a slice, so anything whose meaning depends on the lines above it — fence parity, list indentation — comes out wrong unless the slice opens somewhere unambiguous.
 - **Two rules any future in-app window must respect**, both learned on PreviewPane: openness drivers stay declared per-window, and a FLIP measures from the surface root via a real ref rather than by walking `parentElement`.
 
@@ -72,7 +73,6 @@
 
 ### Known Issues
 
-- [ ] Typing into a table cell — or clearing one — jerks the page's scroll position; a fix deferring the table widget's rebuild to the moment the cell demotes has landed but is not yet confirmed in use.
 - [ ] On menu rows where property values are expected to be positioned horizontally rather than stacked vertically, there isn't currently a constraint on how far indented relative to its properties label itself; this makes multi-value property rows have its values land its left-side padding tight against the property label; its right-side overflow scroll is properly done, however the lack of left-side padding against the value itself makes the menus cramped. Multiple CSS tries have been applied and reverted; a pane-width-relative max-width that these values can take on the left side of its field needs to be determined.
 - [ ] The "File" property icon gets clipped by its vertical row padding on the PropertiesPane.
 - [ ] The link-rename field shows a leading empty space — the shared field recipe's horizontal padding surviving the TextPicker input override, with the pane gutter adding to it. A visual inset rather than a stored character (deprioritized).
@@ -83,9 +83,13 @@
 
 ### Recent Work
 
+#### PM-099 || Ghost Creation, Page Icons & One Page Menu
+
+Typing in a table stopped throwing the page's scroll: the block was reporting one line's height on every keystroke because the widget never answered CodeMirror's height question. The hover-born creators — the New Page row, card and sidebar leaf — became one shared effect, which a New Option slot in the property editors now rides, seating where the pointer rests rather than at the list's end. A page's actions gained one definition wherever it is right-clicked, with Copy Link, Copy Path and Reveal Location joining them, and a page's own header began drawing the icon it has always stored.
+
 #### PM-098 || Page Alias' V1
 
-A connection's visible words became the author's to choose: `[[Title|Alias]]` renders as its alias while resolving on title, the connection menu authors and repoints one, a page remembers every name it has been given and offers them back with a × that forgets for good, and `[Title](Page)` reaches a page beside the wikilink form — one grammar, one resolver, one rename sweep. A link now says what it is as it is written, wearing a `link-2` glyph in front of its target when revealed. Typing in a table cell also stopped re-measuring the table block on every keystroke.
+A connection's visible words became the author's to choose: `[[Title|Alias]]` renders as its alias while resolving on title, the connection menu authors and repoints one, a page remembers every name it has been given and offers them back with a × that forgets for good, and `[Title](Page)` reaches a page beside the wikilink form — one grammar, one resolver, one rename sweep. A link now says what it is as it is written, wearing a `link-2` glyph in front of its target when revealed.
 
 #### PM-097 || CardView Creation Affordance
 **DATE:** 08-11-2026 → 08-12-2026
