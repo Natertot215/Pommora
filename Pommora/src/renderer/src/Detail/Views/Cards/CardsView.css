@@ -66,8 +66,10 @@
 
 /* ── Disclosure bands (shared GroupBand chrome): the heading over the band's card grid. The chrome,
    glyph, and seam law resolve identically to the table's (GroupBand); cards scopes only the sibling
-   seam — lead-side, one rule for whatever precedes a band. ── */
-.cards-view :is(.set-cards-row, .group-band) + .group-band {
+   seam — lead-side, one rule for whatever precedes a band. The bands sit inside the band drag's
+   line host, so the Set Cards row above them is that host's sibling rather than theirs. ── */
+.cards-view .group-band + .group-band,
+.cards-view .set-cards-row + .drop-line-host > .group-band:first-child {
   margin-top: var(--band-gap);
 }
 

@@ -87,6 +87,13 @@ describe('bandSlot', () => {
     expect(slot).toMatchObject({ beforeId: null, impliedParentId: 'B', nestInto: 'B' })
   })
 
+  // Cards render one flat level, so a nest has nowhere to land: the same middle zone splits into a
+  // before/after slot instead of promising a depth the view can't draw.
+  it('a non-nestable surface turns every set band into a before/after slot', () => {
+    const slot = bandSlot(buildBandIndex(bands, rows), 84, 'A1', 120, false)
+    expect(slot).toMatchObject({ nestInto: null, beforeId: 'B1' })
+  })
+
   it('never nests into the dragged band or its descendants — middle falls back to the half split', () => {
     // Middle of A1 while dragging A: nest is illegal (descendant); bottom half → the next slot
     // outside A's subtree (before B at root).
