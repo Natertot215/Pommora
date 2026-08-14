@@ -16,7 +16,11 @@ import './nexusSettings.css'
 const WIN = { minW: 620, minH: 420, defW: 850, defH: 600 }
 const RAIL = { min: 130, def: 170, max: 240 }
 
-const DRAG_SURFACES = '.settings-body, .settings-rail-list, .settings-section, .settings-heading'
+// Matched against the press target itself, so a row, a control or a list never arms a window move.
+// A leaf carrying a surface brings its own chrome, and that chrome drags the window as a toggle
+// panel's body does — its list and its empty state deliberately do not.
+const DRAG_SURFACES =
+  '.settings-body, .settings-rail-list, .settings-section, .settings-heading, .trash-leaf, .trash-head, .trash-head-name, .trash-head-date'
 
 /** New panels register here. A leaf is either a list of personalization toggles or a surface of
  *  its own — a component rather than a render call, so its hooks belong to the leaf and not to
