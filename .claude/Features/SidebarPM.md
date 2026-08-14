@@ -1,4 +1,5 @@
 ## Sidebar
+
 ```
 Sidebar
 ├── Ribbon
@@ -17,7 +18,7 @@ Pommora's leading navigation pane in the three-pane shell: a **ribbon** of icons
 A **surface launcher** — each icon points at a surface, and surfaces live in different panes:
 
 - **Homepage** — pinned at the top, drawn as the Nexus's identity icon. Selecting it opens the Homepage in the main pane without changing what the content column shows.
-- **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage in that default order, drag-to-reorder. **Collections · Contexts · Agenda** switch the content column's mode; **Navigation** toggles the NavWindow (→ [[NavigationPM]]) and **Settings** the floating Settings window (→ [[ConfigurationPM]]) — the icon that summoned a window dismisses it, the same toggle its keyboard command drives. The Collections and Contexts tabs draw an entity default, so a personalization override moves them; the rest carry fixed glyphs.
+- **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage in that default order, drag-to-reorder. **Collections · Contexts · Agenda** switch the content column's mode; **[[NavigationPM|Navigation]]** toggles the NavWindow and **[[ConfigurationPM|set]]** the floating Nexus Settings window — the icon that summoned a window dismisses it, the same toggle its keyboard command drives. The Collections and Contexts tabs draw an entity default, so a personalization override moves them; the rest carry fixed glyphs.
 
 The ribbon collapses and expands with the sidebar, and toggles on its own inside the open sidebar: the `toggle-ribbon` command (⌘E by default → [[ConfigurationPM]]) slides the strip off the panel's left edge on the sidebar's collapse motion while the content column reclaims the width. Ribbon visibility is transient window state, like the sidebar's collapse; the active mode and ribbon order persist per-Nexus.
 
@@ -33,7 +34,7 @@ The content column renders one mode at a time. A ribbon switch plays the **overt
 
 Creation is right-click-first: a mode's empty area pops its native "New" menu — a lone **New Collection** or **New Context** by mode; right-clicking inside a Context group creates a Space there, labeled from that Context's singular. Right-clicking a row pops its own menu instead, offering what that row can contain — a Collection and a Set both take a Page and a nested container, differing only in whether the nested one reads as a Set or a Sub-Set; the subfield's add button offers the same pair, and both name the container from the nexus labels. A page row's menu is the shared page menu whole — Open Preview · Open New Tab, Rename · Change Icon, **New Page Above** · **New Page Below** creating a sibling at that slot in the manual order, Copy Link · Copy Path · Reveal Location, and Delete — so the actions a page offers and the order they come in are the same here as on a card, a table row, or a row grip. Change Icon opens the picker against the row itself. Copy Link puts the page's `[[Title]]` on the clipboard and Copy Path its location read from the nexus root. The menu picks and the store executes with an **optimistic tree insert** — the new row lands instantly with its naming input focused and empty (the page itself is already Untitled on disk) while the confirming re-walk follows behind.
 
-**The ghost row** — dwelling on a page row extends a ghost "New Page" row beneath it on the row's own chrome at the inactive dim, entering and leaving on the disclosure motion; clicking it creates below, the field opening in the sidebar. It rides the shared hover-ghost mechanism with the sidebar's own pacing — a longer dwell than the views', since the sidebar is a surface the pointer crosses in transit — and any pointer press outside it stands it down before a drag can measure. Native menus hold it down until they close.
+**The ghost row** — dwelling on a page row extends a ghost "New Page" row beneath it on the row's own chrome at the inactive dim, entering and leaving on the disclosure motion; clicking it creates below, the field opening in the sidebar. It rides the shared hover-ghost mechanism with the sidebar's own pacing — a longer dwell than the views', since the sidebar is a surface the pointer crosses in transit — and any pointer press outside it stands it down before a drag can measure. 
 
 **One naming field, ever.** An entity visible on two surfaces — a Set's sidebar row and its table band — resolves its rename to a single field through the store's owner fence: the gesture's surface wins where the menu declared it, the detail surface outranks the sidebar otherwise, and a rename whose surface disappears is abandoned rather than teleported into another one.
 

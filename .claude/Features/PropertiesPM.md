@@ -1,4 +1,5 @@
 ## Properties
+
 ```
 Properties
 ├── The Type Catalog

@@ -54,7 +54,7 @@ Cross-session, machine-local state in `pommora.json` under the app's userData di
 
 A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal contract, and opening smaller than a content window through that surface's bounds override. A category rail runs the window's full height as an in-flow side pane; the rail is the roster new panels register in.
 
-Its rows are per-Nexus knobs — boolean switches plus the hover-preview linger's slider — written through the shared personalization setter and applied live. A knob resting at its default stores no key (a default-ON switch stores only its OFF state, the slider's None stores nothing), so an untouched nexus keeps a clean settings file.
+Its rows are per-Nexus knobs — boolean switches plus the hover-preview linger's slider — written through the shared personalization setter and applied live. A leaf may instead carry a surface of its own: the rail's foot holds **Trash**, whose body is the deletion record's browser (→ [[NexusRecordPM]] §Trash & Deletion) rather than a list of toggles. The switch that browser obeys, **Permanently Delete Files**, is an ordinary General row — off, an emptied item goes to the operating system's trash; on, it is erased from the machine. A knob resting at its default stores no key (a default-ON switch stores only its OFF state, the slider's None stores nothing), so an untouched nexus keeps a clean settings file.
 
 ### Pending
 

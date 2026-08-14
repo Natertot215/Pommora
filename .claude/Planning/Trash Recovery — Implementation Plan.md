@@ -1,6 +1,6 @@
 ## Trash Recovery — Implementation Plan
 
-> **Status:** ratified — in execution · Spec: `Trash Recovery — Decision Log.md` · Execute tasks in order.
+> **Status:** executed · Spec: `Trash Recovery — Decision Log.md` · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -17,8 +17,8 @@ Bounded to what the engine already does. This does not prune the trash, preview 
 2. A new main-side op empties a bundle — artifact to the system trash or erased outright per the switch, spent bundle removed behind it — guarded to `.trash` and to bundles alone.
 3. Restore accepts a chosen destination for the kinds that can be homeless, resolved through the existing resolver with its parent substituted.
 4. The Settings rail hosts a leaf whose body is a surface rather than a toggle list, bottom-anchored under a divider.
-5. The leaf lists rows in the navigation row's styling with a fixed deleted-date lane, under heading rows naming both columns, filtered live by a search field that yields Escape back to the window once empty.
-6. Rows carry always-visible checkboxes, local multi-select, and a select-all.
+5. The leaf lists rows in the navigation row's styling with a fixed deleted-date lane, under the table's own heading naming both columns, filtered live by a search field that yields Escape back to the window once empty.
+6. Rows carry hover-revealed checkboxes in the row's gutter and local multi-select; the whole column shows once anything is checked.
 7. A right-click menu offers Restore and Delete for one row and Restore All and Delete All for a checked set, with Restore opening a nested destination submenu where the home is gone.
 8. Restore returns an entity to the tree, reachable immediately, without opening it, and drops its row.
 9. A **Permanently Delete Files** switch governs what emptying means, defaulting off.
@@ -536,32 +536,33 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — Clearing the ground · base `0700a863`
-  - [x] Task 1 — The stray lint diagnostic · `<commit>`
-  - [ ] Task 2 — Four search inputs become one · `<commit>`
-  - [ ] Task 3 — Context and Space glyphs · `<commit>`
-- [ ] **Phase 2** — Main: enumerate, empty, relocate · base `<commit>`
-  - [ ] Task 4 — Widen `listBundles`, expose the channel · `<commit>`
-  - [ ] Task 5 — Shape a bundle into a row · `<commit>`
-  - [ ] Task 6 — Read the delete switch main-side · `<commit>`
-  - [ ] Task 7 — The empty op · `<commit>`
-  - [ ] Task 8 — Restore into a chosen destination · `<commit>`
-  - [ ] Task 9 — Hoist the destination tree · `<commit>`
-- [ ] **Phase 3** — The surface · base `<commit>`
-  - [ ] Task 10 — Rename, chrome, leaf registry · `<commit>`
-  - [ ] Task 11 — The Trash leaf and its list · `<commit>`
-  - [ ] Task 12 — Selection and the menu · `<commit>`
-  - [ ] Task 13 — Restore, single and batch · `<commit>`
-  - [ ] Task 14 — Emptying and its switch · `<commit>`
-- [ ] **Phase 4** — Reconciliation · base `<commit>`
-  - [ ] Task 15 — Rewrite what this made false · `<commit>`
+- [x] **Phase 1** — Clearing the ground · base `0700a863`
+  - [x] Task 1 — The stray lint diagnostic · `fbb45c93`
+  - [x] Task 2 — Four search inputs become one · `0a80e657`
+  - [x] Task 3 — Context and Space glyphs · `2e60e0f1` · gate `f61139ae`, `9c6e4a96`
+- [x] **Phase 2** — Main: enumerate, empty, relocate · base `9c6e4a96`
+  - [x] Task 4 — Widen `listBundles`, expose the channel · `d13b429f`
+  - [x] Task 5 — Shape a bundle into a row · `d13b429f` (merged; see Deviations)
+  - [x] Task 6 — Read the delete switch main-side · `3f40f797`
+  - [x] Task 7 — The empty op · `3f40f797` · gate `94a2497d`
+  - [x] Task 8 — Restore into a chosen destination · `3f40f797`
+  - [x] Task 9 — Hoist the destination tree · `977e70c1`
+- [x] **Phase 3** — The surface · base `94a2497d`
+  - [x] Task 10 — Rename, chrome, leaf registry · `5b240179`
+  - [x] Task 11 — The Trash leaf and its list · `b0c72a5e` · `bfa9864b` · `6e65b27f`
+  - [x] Task 12 — Selection and the menu · `3b49bec4`
+  - [x] Task 13 — Restore, single and batch · `3b49bec4` · `39cdaf4b`
+  - [x] Task 14 — Emptying and its switch · `3b49bec4` · gate `0aca908a`, `39cdaf4b`
+- [x] **Phase 4** — Reconciliation · base `39cdaf4b`
+  - [x] Task 15 — Rewrite what this made false
 
 ### Rulings
 
 - **Property loss on relocation is intended, not a defect.** A relocated entity is reconciled against the schema it lands in; values travel and whatever the destination cannot hold is dropped. Nathan, this session. This departs from an ordinary move, which preserves values — a move relocates a live entity, a restore reconciles a frozen one.
 - **`trashMode` stays stubbed and unsurfaced**, waiting on a NexusSettings session where it and the new switch can be shown as the pair they are. Nathan, this session.
 - **The `layout-dashboard` overlap with the Gallery view type is accepted.** Nathan, this session.
-- **E-16 dissolves rather than resolving either way.** The choice was between making the view embed's two shed heading declarations a modifier and restating them on the leaf — both of which assume the leaf wears `.table-head`. It does not: that band is a full-bleed strip bound to the table's own column-track grid and its resize strips, none of which a two-lane list has. The leaf writes its own heading row, sets no fill and no seam, and reads `--label-control` and the type ramp straight from the design system rather than through the table's `--heading-*` indirection. Nothing is shed, and nothing is stated twice.
+- **E-16 is superseded: the heading IS the table's, borrowed.** The spec read the heading as bare column labels, and a first pass built it that way. Seen running, Nathan ruled the other direction — the columns want their borders and their segment divider, and the strip should take the table's own CSS rather than a parallel of it. `.trash-head` now wears `.table-head` and each lane `.col-header`, joining `table-tokens.css`'s scope for the vars they read; what the leaf overrides is the fill, which a small strip inside a floating window has no use for, and the full-bleed margins, which exist to reach a full-page view's glass edges. Alignment was measured on the running window rather than argued.
+- **The selection's controls are the row's gutter, not a column of their own.** A first pass added a checkbox gutter that pushed every row's content right and seated a select-all in the heading. Nathan ruled it back: content — the search field's, the column labels', the rows' — all sits on one content inset, and only the boxes ride the inset left of it, on the pin's geometry and the pin's reveal. The heading carries no checkbox, so select-all goes with it.
 - **The borrowed token scope is one property, not a family.** Every colour, motion and tint token the navigation row's selectors read is declared on `:root` in `tokens/theme-vars.css.ts`, so it resolves wherever the row renders. The single surface-scoped one is `--navwindow-inset`, declared only by the two nav windows; the leaf declares it on its own root. `--edge-fade` and `--scroll-fade` are set by the row's own rules, and the embed's `--glyph-scale` is behind a selector this surface never matches.
 
 ### Open Against Later Tasks

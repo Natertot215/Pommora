@@ -1,4 +1,5 @@
 ## Page Collections
+
 ```
 Page Collections
 ├── Sidecar + Schema

@@ -90,7 +90,7 @@ The main process is the sole filesystem owner; the renderer never touches Node. 
 
 **Foreign data is preserved.** Frontmatter and sidecar keys Pommora doesn't recognize are carried through untouched on every write — and the page writer preserves YAML comments too, so opening a folder that's also an Obsidian vault leaves notes byte-identical until the user edits them.
 
-**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present — not a hard-locked decision, and open to reconsideration. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from, so the layout itself records where an item lived; no surface browses or restores it yet, which makes putting one back a manual move.
+**The database is off the read path and holds no content.** Reads are a single filesystem walk; nothing user-created depends on a database being present — not a hard-locked decision, and open to reconsideration. A device-local database carries per-machine chrome — folds, view selection, tabs — so losing it costs a machine its arrangement and never a Nexus its contents. Deletions move to a recoverable in-Nexus trash that mirrors the folder chain the item came from, so the layout itself records where an item lived, and a browser in the settings window lists what it holds and puts any of it back.
 
 #### Pages
 
