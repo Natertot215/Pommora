@@ -38,12 +38,7 @@ What is verified: every gate green on the final state (typecheck 0, 2595 tests a
 
 #### Feedback
 
-- "still wrong; no fill + the removal of the inset entirely wasn't the right call. The heading row should not have a checkbox. The checkboxes need to be literally glyphs JUST LIKE the pins and grips are, inside the gutter; outside the row"
-- "checkboxes i told you to keep as is. not glyphs" — said after I had converted them on the previous instruction; "keep as is" meant stop iterating on them, not adopt the newest state.
-- "it should follow to content inset; rows under the search bar, like navlist. only the boxes should be in the inset"
-- "the two lines need to be aligned — not the bottom being wider than the search"
-- "keep the smaller segments just make them aligned with the heading row one"
-- "just do 'Short Date' for numbers, 'Full Date' for words; and make it default to whatever the users setting default is — it probably exists already, if it doesn't, lmk"
+
 - "Any report-backs to Nathan should be simple and explained briefly." — standing.
 
 #### Session Pointers
