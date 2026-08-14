@@ -61,7 +61,7 @@ Pommora's standard semantic icons — the canonical glyph for each pane, propert
 
 ### Additional Assignments
 
-`list-tree` is the page outline's glyph — the toolbar button that opens a page's heading tree (→ [[PagesPM]]). It reads as nested structure rather than a flat list, distinct from `list-rounded`'s view type and `list-filter`'s predicate. The Context property type wears `layout-grid`, matching the sidebar Contexts.
+`list-tree` is the page outline's glyph — the toolbar button that opens a page's heading tree (→ [[PagesPM]]). It reads as nested structure rather than a flat list, distinct from `list-rounded`'s view type and `list-filter`'s predicate. The Context property type draws the Context entity kind's own glyph rather than naming one, so a column and the Context it points at can never wear different marks.
 
 ### The Picker
 
