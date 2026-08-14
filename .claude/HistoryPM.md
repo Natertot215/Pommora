@@ -116,7 +116,7 @@ Two drag surfaces that had been living outside the shared layer moved onto it. T
 **What the review earned:** the editor gesture's cleanup plugin mounts in every editor and aborted on any view's teardown, so an embed tile scrolling out of CodeMirror's viewport or a hover card timing out killed the drag in progress — the fix for a stranded drag reaching for module state and taking siblings with it; the handle now carries its owner. Cards routed a band drop on the sort's location predicate where the table uses the grouping's, so Group By: Location under Location order wrote a band order the resolver discards and picking Sort By: Location under Custom sent a per-view gesture to the filesystem. And the optimistic band patch outlived a Group By change, masking the new grouping with the old one's order until the next view switch, since the Grouping pane writes the view independently; it now retires with the grouping it describes.
 
 - **Commits:** `82f8d8db^..HEAD`
-- **Diff:** Net +406 | +909 / -503
+- **Diff:** Net +413 | +802 / -389
 
 #### PM-100 || Trash Surface V1
 **DATE:** 08-13-2026 → 08-14
