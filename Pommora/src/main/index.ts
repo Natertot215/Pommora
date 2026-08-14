@@ -118,6 +118,8 @@ import { popCardMenu } from './cardMenu'
 import { popConnMenu } from './connMenu'
 import { popTabMenu } from './tabMenu'
 import type { TabMenuContext } from '@shared/tabMenu'
+import { popTrashMenu } from './trashMenu'
+import type { TrashMenuContext } from '@shared/trashMenu'
 import { popNavRowMenu } from './navRowMenu'
 import type { NavRowMenuContext } from '@shared/navRowMenu'
 import { popPropertyMenu } from './propertyMenu'
@@ -1557,6 +1559,43 @@ serveBridge(
     'card-menu': { kind: 'menu', fn: popCardMenu },
 
     // A tab's right-click menu (Pin/Unpin · Close · Close to the Right).
+    // The ordinary delete's confirm cannot be reused: it hardcodes one title, runs the delete
+    // itself, and promises a destination from the old trash mode — wrong in both of the switch's
+    // positions. This one names what will actually happen, read at the moment of asking.
+    'trash:confirmEmpty': {
+      kind: 'window',
+      fn: async (win: BrowserWindow | null, count: unknown): Promise<boolean> => {
+        const root = sessionRoot()
+        if (!win || root === null || typeof count !== 'number' || count < 1) return false
+        const permanent = await readPermanentDelete(root)
+        const { response } = await dialog.showMessageBox(win, {
+          type: 'warning',
+          buttons: ['Delete', 'Cancel'],
+          defaultId: 1,
+          cancelId: 1,
+          message: count === 1 ? 'Delete this item?' : `Delete these ${count} items?`,
+          detail: permanent
+            ? 'It will be erased from this computer. This cannot be undone.'
+            : 'It will move to your system trash, which is where you would get it back from.',
+        })
+        return response === 0
+      },
+    },
+
+    'trash:report': {
+      kind: 'window',
+      fn: async (win: BrowserWindow | null, message: unknown, detail: unknown): Promise<void> => {
+        if (win && typeof message === 'string' && typeof detail === 'string')
+          await dialog.showMessageBox(win, { type: 'info', message, detail })
+      },
+    },
+
+    'trash:menu': {
+      kind: 'menu',
+      fn: async (win: BrowserWindow, ctx: TrashMenuContext) =>
+        isPlainObject(ctx) ? popTrashMenu(win, ctx) : null,
+    },
+
     'tab-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, ctx: TabMenuContext) => {
