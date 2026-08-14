@@ -4,17 +4,17 @@ Pommora is a personal management app based on Nathan's frustration with modern p
 
 ### The Model
 
-**Contexts:** The organization layer — user-defined **Context** groups (the registry seeds Areas, Topics, and Projects as defaults) holding **Spaces**, the individual members Content relates *to*. No Context contains or parents another; an entity tags whichever Spaces fit, resolved through the registry via parenthesized title keys in front-matter.
+**Contexts:** The organization layer — user-defined **Context** groups (the registry seeds Areas, Topics, and Projects as defaults) hold **Spaces**, the individual members Content relates *to*. No Context contains or parents another; an entity tags whichever Spaces fit, resolved through the registry via parenthesized `(Title):` keys in frontmatter.
 
 **Content:** The operational layer — what you actually make, linked to each other through **Connections** for content ↔ content relations, and front-matter for content ↔ Space relations.
 
 - **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views; it contains **Sets** as organizational subfolders that inherit that schema.
 - **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection's properties, identified via its `PageID` key. Pages use MarkdownPM for its editor surface, which includes in-line connections to other pages.
 - **Agenda:** the calendar layer — **Tasks** (reminder-shaped; keyed with `TaskID`; located within `/Tasks`) and **Events** (calendar-shaped; keyed with `EventID`; located within `/Events`) — each as Markdown files distinguished via their key and validated against their folder placement.
-- **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use.
+- **Properties:** the nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use; assigned as frontmatter via `[Property]:` syntax.
 - **Connections:** inline `[[Title]]` colored-text links inside MarkdownPM surfaces and resolve against an in-memory title map built from the page tree — connecting to another Page as the Content ↔ Content matrix. They **aren't** displayed in any container views *(tables, galleries, lists…)*, and content-to-content relational properties **don't** exist.
 
-**Files are canonical for content.** Pages, Tasks, and Events are all markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — a file whose key contradicts what its folder expects is Unknown: invisible, untouched, never stamped over. Foreign keys are preserved on every write. Agent-legibility of a user's Nexus, and future cloud-sync capability are core constructs for all development — but legibility concerns *context*, not every byte the app stores: per-machine operational info, helpers and accelerators, or derived caches belong in `nexus.db`, not in hand-editable and exposed JSON.
+**Files are canonical for content.** Pages, Tasks, and Events are all markdown distinguishable via `PageID` / `TaskID` / `EventID`. Contexts and container sidecars are JSON. An entity's kind comes from an agreement between its folder's sidecar file and the file itself — a file whose key contradicts what its folder expects is Unknown: invisible, untouched, never stamped over. Foreign keys are preserved on every write.  
 
 ### Codebase Information
 
@@ -38,23 +38,24 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
 - **Condensed control flow / DRY / simplicity-first** — model finite states as unions + switch; hoist shared logic; never allow two writers or definitions for the same thing; anything that does this and is found must be reported. 
 - **Never do expensive work "on every X," never "reload the entire Y."** No O(N) / allocating / layout-reading work on a high-frequency trigger, and no full-nexus rebuild / re-walk when an incremental or cached update works — it’s *the* lag source.
-- **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they rarely restate exact code values. The same discipline must be held true equally to code comments. **The one sanctioned exception is the token atlas** — `DesignSystemPM.md` and the `SOURCE:`-tagged tables it charters across the feature specs state literal values on purpose, and `node scripts/check-atlas.mjs` (from `Pommora/`) verifies them against their sources.
+- **Docs name; code holds exacts.** These docs describe the *system* and reference the product specifications — they rarely restate exact code values. The same discipline must apply equally to code comments. **The one sanctioned exception is the token atlas** — `DesignSystemPM.md` and the `SOURCE:`-tagged tables it charters across the feature specs state literal values on purpose, and `node scripts/check-atlas.mjs` (from `Pommora/`) verifies them against their sources.
+- **Placeholders** must never display build-status or meta text — no placeholders, no commentary; it’s just blank. 
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves. Any in-flight decisions must be disclosed as they’re being made.
-- **Tokens must** be pulled from their sources in `design-system`— never hand-roll tokens without explicit direction; dual-option toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
+- **Tokens must** be pulled from their sources in `/design-system`— never hand-roll tokens without explicit direction; dual-option toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
 - **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
 
 ### Locked Decisions
 
 **Nothing is set in stone but these:** Every other decision — model, structure, vocabulary, interaction — is open to challenge and rework whenever an idea earns it; Pommora is Nathan's first project, and precedent is context, not constraint. Locked Decisions keep their sign-off protocol; everything else needs only a good argument.
 
-- **Reasonable Legibility:** The user's Nexus, its filesystem structure, and the general context of the content that's within it must be able to be understood through the filesystem structure itself, be *reasonably* app-agnostic, and understood clearly through a single user guide. 
+- **Reasonable Legibility:** The user's Nexus, its filesystem structure, and the general context of the content within it must be understandable through the filesystem structure itself, be reasonably app-agnostic, or clearly understood through a single user guide. 
+- **Reasonable Translation:** The general structure of the file tree and on-disk data must be translatable between other filesystem-based applications. CommonMark specification is the standard convention; app-unique syntax is an acceptable per-case decision — but legibility concerns *context*, not every byte the app stores: per-machine operational info, accelerators, or similar information may be more appropriate to store in the `nexus.db` rather than hand-editable and exposed data.
 - **Single-window now, multi-window-ready seams** — data is main-owned + Query/store-cached per renderer; the live-refresh bus is a swappable transport; windows identified by serializable refs. No global singleton holding shared mutable client state.
 
 #### Important Information
 
-- **Swift Origins:** Pommora was originally built in Swift for around a month before switching to an Electron + TypeScript + React architecture due to better long-term architecture. The Swift source is archived at `// The Studio // Archive // Pommora`; its commits sit in this repository's own ancestry rather than on a separate branch, so `git log` reaches them directly.
-- **Why This Matters:** The initial rebuild introduced now-obsolete Swift-based code; Swift compatibility is not a constraint — any code that may appear functional but is solely an artifact of its Swift origin must be flagged for removal.
-- **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime: it brings Pommora-style capabilities to Obsidian natively and keeps NexusOS Pommora-compatible, so Nathan's daily vault stays aligned as Pommora matures — at a light weekly cadence, subordinate to the daily Pommora grind.
+- **Swift Origins:** Pommora was originally built in Swift for about a month before switching to an Electron + TypeScript + React architecture for better long-term maintainability. The Swift source is archived at `// The Studio // Archive // Pommora`; its commits sit in this repository's own ancestry rather than on a separate branch, so `git log` reaches them directly.
+- **Project Sapphire:** Sapphire is an Obsidian plugin and parallel sub-project that functions as the interim bridge between what Pommora will bring and what Nathan's current main system (Obsidian) actually offers in the meantime — at a light weekly cadence, subordinate to the daily Pommora grind — it brings Pommora-style capabilities to Obsidian and keeps NexusOS Pommora-compatible on a per-case basis.
 - **NexusOS** is both an Obsidian vault *and* a Pommora nexus — frontmatter appearing not to conform to Pommora's standards (e.g., bare `Areas:`, `Topics:`, `Projects:`, `Status:` etc.) isn't Pommora's concern; folders like `/Agenda`, even though Pommora pre-seeds `/Tasks` + `/Events`, aren't duplicates; they're temporary Obsidian-functionality fixtures until Pommora is actually completed.
 
 ### Codebase Map
@@ -91,8 +92,7 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 │   ├── // Guidelines                    | • Behavioral rules and hard-won traps, grouped by domain
 │   │   ├── [Build-Gotchas.md]           | • Environment and toolchain traps — read before launching the GUI
 │   │   ├── [Editor-Internals.md]        | • MarkdownPM's internal invariants — read before editing the editor
-│   │   ├── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
-│   │   └── [UI-Copy.md]                 | • The running app never displays build-status or meta text
+│   │   └── [Lint-And-Accessibility.md]  | • The lint floor and the three rules disabled on purpose
 │   ├── // Mobile                        | • The companion iPhone build — specs, architecture, sync
 │   ├── // Resources                     | • Reference of external resources; both in-use and future prospectives.
 │   ├── // Planning                      | • Plans and temporary specifications; contents are transient
