@@ -50,20 +50,32 @@
   color: var(--label-control);
   user-select: none;
 }
+/* The heading's lane is built from the row's own measures rather than beside them: the select-all
+   sits centred in the same gutter strip each row's checkbox is centred in, and the column glyph
+   lands exactly where a row's kind glyph lands. */
 .trash-head-name {
   flex: 1;
   min-width: 0;
-  padding-left: calc(var(--navwindow-inset) + var(--trash-gutter));
+  padding-left: var(--navwindow-inset);
+}
+.trash-head-check {
+  flex: 0 0 var(--trash-gutter);
+  display: flex;
+  justify-content: center;
+}
+.trash-head-glyph {
+  display: flex;
+  margin-right: 7px; /* the row's own glyph-to-title gap */
 }
 .trash-head-date {
   flex: 0 0 var(--trash-date-lane);
   padding-right: var(--navwindow-inset);
+  gap: 6px;
 }
 .trash-head-name,
 .trash-head-date {
   display: flex;
   align-items: center;
-  gap: 6px;
 }
 
 .trash-scroll {

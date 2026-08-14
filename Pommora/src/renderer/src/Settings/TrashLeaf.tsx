@@ -234,12 +234,16 @@ export function TrashLeaf(): React.JSX.Element {
 
       <div className={cx('trash-head', text.caption.standard)}>
         <span className="trash-head-name">
-          <Checkbox
-            state={allChecked ? true : someChecked ? 'mixed' : false}
-            onChange={toggleAll}
-            ariaLabel="Select all"
-          />
-          <PropertyTypeIcon type="title" size={13} />
+          <span className="trash-head-check">
+            <Checkbox
+              state={allChecked ? true : someChecked ? 'mixed' : false}
+              onChange={toggleAll}
+              ariaLabel="Select all"
+            />
+          </span>
+          <span className="trash-head-glyph">
+            <PropertyTypeIcon type="title" size={13} />
+          </span>
           File Name
         </span>
         <span className="trash-head-date">
