@@ -64,6 +64,8 @@ import {
 import { startWatcher, stopWatcher } from './watcher'
 import { resolveUnderRoot } from './pathSafety'
 import { updatePageBody } from './crud/page'
+import { listBundles } from './provenance'
+import { trashRows } from './crud/trashRows'
 import { replayPendingRename } from './crud/contextCascade'
 import {
   flushNavigation,
@@ -1294,6 +1296,15 @@ serveBridge(
           return fail('operation-failed', 'Invalid personalization key.')
         await writePersonalization(root, key, value)
         return ok(null)
+      },
+    },
+
+    'trash:list': {
+      kind: 'envelope',
+      fn: async () => {
+        const root = sessionRoot()
+        if (root === null) return NO_NEXUS
+        return ok(trashRows(await listBundles(root), await readNexus(root)))
       },
     },
 
