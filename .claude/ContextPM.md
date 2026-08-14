@@ -54,9 +54,6 @@
 
 #### II. Debt & Ride-Alongs
 
-- [ ] **A move does not drop what its destination cannot hold.** The rule that a moved page's conflicting property values are dropped to suit its target's schema is honored by the restore path, which reconciles a returning entity against the world it lands in, and not by the move path, which relocates the file and rewrites the destination's order without touching frontmatter. Surfaced by the trash work and named here rather than left for someone to rediscover.
-
-
 - [ ] The gesture spec wants an `onTap(e)` fired on a release-before-activation — the additive piece that unblocks migrating MarkdownPM's `listDrag`/`blockDrag` and the CalendarPicker's range drag; it lands with the migration that consumes it.
 - [ ] Two more spec folds the drag work exposed, each a four-site bracket today: an `onDisclose` hook owning the `beginDragDisclose`/`endDragDisclose` pair the way `onWindowScroll` owns its listener, and an autoscroll resolve-and-start helper that skips cleanly when no scroller resolves.
 - [ ] A mid-drag column hide/show or watcher view-push is silently reverted by a column drop's persist (`reorderColumn` reads grab-time state) — reachable only by mutating columns while holding a drag; a ref-read at commit fixes it if it's ever felt.
@@ -85,11 +82,9 @@
 
 ### Recent Work
 
-#### PM-100 || The Trash Browser
+#### PM-100 || Trash Surface V1
 
-The deletion record gained its reading half. `.trash` had been complete and unreachable — bundles written, records gathered, placement resolved and restore tested end to end, with no surface able to call any of it. A leaf at the foot of the Nexus Settings rail now lists every bundle as a row carrying its kind's glyph, its title, a breadcrumb resolved live from the recorded parent id so a renamed ancestor reads true, and the time read back out of the bundle's own folder stamp. Restore returns an entity to the tree and to reach at once; where its recorded home is gone, Restore opens instead into the places that kind may legally land and the pick becomes the destination. Delete spends the bundle the other way, handing the artifact to the operating system's trash or erasing it outright per a new **Permanently Delete Files** switch that main reads for itself at each operation. Checked rows act together, and a batch names what it could not resolve.
-
-Two things the work surfaced rather than needed. Contexts and Spaces had been sharing a glyph because a Context was never a kind the icon resolver knew — six surfaces asked for a Space and got the right mark by accident — so Context joined the kind union with its own seed and Space moved to the dashboard. And the same bare search input, inlined in three places, became one component with the trash as its fourth consumer.
+The deletion record gained its reading half: `.trash` had been complete and unreachable, and a leaf at the foot of the Nexus Settings rail now lists every bundle as a row carrying its kind's glyph, its title, a breadcrumb resolved live from the recorded parent id, and the time read back out of the bundle's own folder stamp. Restore returns an entity to the tree and to reach at once, and where its recorded home is gone it opens instead into the places that kind may legally land. Delete spends the bundle the other way, handing the artifact to the operating system's trash or erasing it per a new **Permanently Delete Files** switch that main reads for itself at each operation. Two changes rode along: Context became an icon kind of its own so it and Space stopped sharing a glyph across seven surfaces, and the bare search input inlined in three places became one component.
 
 #### PM-099 || Ghost Creation, Page Icons & One Page Menu
 
@@ -108,21 +103,6 @@ Creation reached Cards and the sidebar on two extracted hooks the table refit on
 **DATE:** 08-11-2026
 
 In-TableView page creation shipped whole: `createPage` carries seeds and a full-membership order slot in one write, a just-created page's first naming disambiguates like a create and skips the link cascade, and every trigger — the band "+", the grip menu's New Page Above/Below, the sidebar pair, and the hover ghost row on the shared disclosure motion — opens an empty naming field over a page already real on disk. `--state-inactive` joined the opacity ramp and `--state-disabled` died into it, and the in-drop label renames landed everywhere: Open New Tab · Open Preview.
-
-#### PM-095 || Documentation Normalization
-**DATE:** 08-10-2026
-
-Every Feature doc, Framework, and the PRD were rewritten according to one documentation standard — product register, one owner per fact with pointers elsewhere, canonical tails, and codemap tables of contents — ratified in `Planning/Documentation Normalization.md` and closed by a two-agent residue review. MarkdownPM's Non-Obvious traps now live in `Guidelines/Editor-Internals.md`, and the atlas stayed checker-green throughout.
-
-#### PM-094 || One Owner Per Repeated Value
-**DATE:** 08-10-2026
-
-The reconnaissance's fix list worked through. Three tokens replaced literals — `--radius-full` over nine hand-spelled pill radii, opening the radius scale; `--state-drag` for the dim a card wears while its lifted clone floats; `--state-disabled` rebased so its four sites adopt it unchanged. The two card families merged into one shared geometry, which forced a knob whose value had never reached the screen to settle at what had always rendered. The auto-scroll defaults, written twice and free to drift, came onto one map the`:root` block generates from; `separator.line` died into the bridged name it duplicated. The notch's raw shadow, the mixes outside the tint ladder, and the comments that had drifted from their values were all restated against the code.
-
-#### PM-093 || The Token Atlas
-**DATE:** 08-10-2026
-
-The design docs now state token literals under SOURCE-tagged tables — the one sanctioned exception to docs-name-exacts, chartered in `DesignSystemPM.md` (renamed from DesignPM) and enforced by `scripts/check-atlas.mjs`. Families landed with their owners: the editor's scoped pockets in MarkdownPM, the type ramp in TypographyPM, motion + caret/edge-fade/autoscroll in InteractionPM, chips in PropertiesPM, cards in CardViewPM, the table sheet in TableViewPM, the `--ppane-*` contract described in PagePreviewPM. Design-Sources retired into the atlas charter and Build-Gotchas; the recon's fix list routed to `Planning/CSS Duplication Report.md`.
 
 ### Guidelines
 
