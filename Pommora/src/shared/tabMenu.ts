@@ -13,10 +13,4 @@ export interface TabMenuContext extends PageMoveContext {
   isPage?: boolean
 }
 
-export type TabMenuAction =
-  | 'pin'
-  | 'unpin'
-  | 'close'
-  | 'preview'
-  | PageSendAction
-  | PageMoveAction
+export type TabMenuAction = 'pin' | 'unpin' | 'close' | 'preview' | PageSendAction | PageMoveAction

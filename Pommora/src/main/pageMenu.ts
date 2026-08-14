@@ -1,10 +1,11 @@
-import type { MenuItemConstructorOptions } from 'electron'
+import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { PAGE_MOVE_ROW, type PageMoveContext } from '@shared/pageMenu'
-import { type ActionItem, destinationNodes } from './returningMenu'
+import { type ActionItem, destinationNodes, popReturningMenu } from './returningMenu'
 
-// The page menu as a native template — `menuTemplate` plus the one row that isn't an act: Move To ▸
-// opens the destination tree, and the leaf a person lands on is what resolves back as the move.
-// Every surface that pops a page menu builds through here, so the send block can't drift between them.
+// A menu model's rows as a native template: `separatorBefore` expands into real separator rows, and
+// the one row that isn't an act — Move To ▸ — opens the destination tree, where the leaf a person
+// lands on is what resolves back as the move. Every native menu built from a model comes through
+// here, so the send block can't drift between the surfaces that carry it.
 export function pageMenuTemplate<A extends string>(
   items: readonly ActionItem<A>[],
   click: (action: A) => () => void,
@@ -25,4 +26,12 @@ export function pageMenuTemplate<A extends string>(
     else template.push({ label: item.label, click: click(item.action) })
   }
   return template
+}
+
+/** A menu that is nothing but its model's rows: pop them, resolve the pick. */
+export function popModelMenu<A extends string>(
+  win: BrowserWindow,
+  items: readonly ActionItem<A>[],
+): Promise<A | null> {
+  return popReturningMenu<A>(win, (pick) => pageMenuTemplate(items, pick))
 }
