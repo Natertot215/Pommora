@@ -4,56 +4,49 @@
 
 #### Current Focus
 
-**Session ID:** b45012c4-669d-4a39-a8de-49177ae474c5
-**Dates:** 08-12-2026
+**Session ID:** 1ac0afda-02f0-4fec-9e6e-71bec15c2cb0
+**Dates:** 08-13-2026
 **Model:** Opus 5 (1M context)
 
-**Page Alias' V1 shipped whole; the focus now is the table-cell scroll fix and whatever the arc left behind.** All five phases landed with their gates green — the alias renders and resolves on title, the connection menu authors and repoints one, a page's remembered names come back through the picker with a × that forgets for good, and `[Title](Page)` reaches a page beside the wikilink form. The record is PM-098; the plan's Progress block carries every task's commit.
+**The table scroll fix landed, and four more surfaces came with it; the next thing is the trash.** The table block was collapsing to one line's height on every keystroke because `TableWidget` never answered CodeMirror's height question — measured directly, a 400px table reported 18px. Alongside it: the nested code block's horizontal measures collapsed onto `--cb-inset`/`--cb-pad`, the hover-ghost effect became one shared primitive with a New Option slot riding it, `shared/pageMenu.ts` became the only definition of a page's actions, and a page's header began drawing the icon it has always stored. The record is PM-099.
 
-**The arc's defining pattern was one correction Nathan made three times: the picker should follow the gesture, not the caret's position.** I keyed the revealed-syntax rule on where the caret sat, and clicking beside a link hid its syntax; I keyed the typing colour on the caret being inside a token, and clicking into an unresolved link lit it up; I keyed the alias slot's picker on an invitation, and it needed to be simpler still. Each time the fix was to let a transaction report what the user just did rather than inferring it from an offset, and `linkGestures.ts` now holds the two facts that survived — where a link was finished, and which link is being typed. The third was solved by deleting the machinery outright: a pipe with nothing between it and the closer is an alias waiting to be written, and that shape alone opens the list.
+**Two things were built and taken back out.** The callout architecture — a collapsed tag line with the caret skipping it — was reverted on request after three rounds; a fence on a callout's head line is now a recorded limitation rather than a half-built feature. The link-glyph selection fix was reverted for the same reason: giving the glyph an invisible space to carry the highlight worked in an isolated page and never in the editor, and leaving it would have meant a DOM space and a test workaround bought for nothing.
 
-**Four review rounds and an attack pass found what the suite could not.** The forget × had no working path at all — its guard sits on `pointerdown` and the row it lives in accepts on `mousedown`, so pressing it wrote the suggestion it was meant to delete, and the test missed it because `btn.click()` issues no mousedown. A GFM table cell escapes the pipe that delimits an alias, so a connection given its own words inside a table reached the rename cascade as a title ending in a backslash and rotted silently; the acceptance body had every syntax in it and every case in bare prose, which is what let that through. `Meeting: Notes` encoded to a target the module's own reader refused. And Task 12c's reclassification of `[[Title]](target)` was built, reviewed, and taken back out — it created a shape the cascade's grammar cannot match, and Obsidian, the tool this arc exists to interoperate with, renders it the way Pommora already did.
-
-**The table fix is landed but unconfirmed.** Typing in a cell was replacing the table's block decoration on every keystroke, and CodeMirror answers a changed block by re-measuring it — against React content `root.render` had not yet painted, so the height landed wrong and the page jumped. The rebuild only ever served the resting cells, so the edit now maps the widget forward and a `refreshTableEffect` fires when the cell demotes. That deferral is exactly the half a suite cannot observe, and it stays a Known Issue until it holds in use.
+**The Fix-On-Sight rule arrived mid-session and was applied.** Every creation affordance now takes the pointer cursor, marked with `data-create` rather than blanket-applied, since the app's chrome keeps the arrow deliberately. Twenty comments carrying a personal name were reworded; the decision markers they carried survived.
 
 #### Completion Criteria
 
-- [ ] Typing into a table cell, and clearing one, leave the page's scroll position where it was.
-- [ ] A cell that demotes draws what was typed into it — the deferred rebuild's other half, and the one a suite cannot watch.
-- [ ] The alias arc's remaining interaction passes hold in use: the hover × forgets and stays forgotten, ⌘K lands the caret past a filled label, and the glyph reads correctly at both resolution states.
-- [ ] Whatever those passes turn up is fixed or routed, not filed.
-- [ ] `aliasPickerOnCommit` either earns its wording and a switch on the settings surface, or a recorded decision to leave it invisible.
+- [ ] The trash browser: `listBundles` reaches the bridge, and a surface enumerates what `.trash` holds.
+- [ ] The ghost-create family holds in use — the slot seats where the pointer rests, and creating lands it there.
+- [ ] The page menu reads identically wherever a page is right-clicked.
 
 #### Next Session
 
-- **The table-cell scroll fix.** Landed and unconfirmed; confirm it in use, and confirm a demoted cell draws its new text. This is the focus, not a leftover.
-- **Then the arc's own leftovers** — the interaction passes above, and anything they surface.
-- After those, it is new work rather than more of this: the standing backlog in Context is where to look.
+- **The trash browser.** The restore path ships and is tested end to end; enumeration is the missing half. One channel and a UI on a finished engine.
+- Anything the ghost slot or the unified menu turns up in use.
 
 #### Feedback
 
-- "I actually think re-designing it where the auto-complete shows when there's no space between | and ]] would be the better move and require less inbetweens." — the simpler rule beat the gesture machinery I had built for it; when a behaviour needs a field to track how you got somewhere, the rule is usually wrong.
-- "I meant ONLY when you press enter inside a link does the syntax show even though the caret is right beside the bracket; clicking right next to the link otherwise should still show the raw syntax." — the correction that named the pattern: position is not gesture, and I made that mistake three separate times.
-- "this seems like I've been going all over the place -- does that make sense?" — it did, and it was worth saying so; the thread through every correction was consistent even where the individual asks looked scattered.
-- "Please handle this before we close out Focus: Page Alias' V1" — a defect found during closeout belongs to the arc, not to the next one.
+- "stop fucking around. I can verify if the fix works. Just fix it" — driving a live instance to verify my own work cost real time twice this session. Build it, hand it over, let it be verified.
+- "it must use the same hover-timing as tables, and disclose the pane rather than adding it dedicated space" — the correction that found `useGhostAnchor`; a surface joining an existing family inherits its timing rather than choosing its own.
+- "the new option should come from the hovered chip itself, so that its placed in order rather than just the last one" — a creation affordance shows where the thing will land, not merely that it can be made.
+- "Please look at if this is currently how it works or not" — asked instead of assumed, and it was the right instinct: the callout's head line WAS the first typable line.
 - "Any report-backs to Nathan should be simple and explained briefly." — standing.
 
 #### Session Pointers
 
-- `Pommora/src/renderer/src/MarkdownPM/editor/linkGestures.ts` — the two gesture facts a decoration cannot read from an offset: where a link was finished, and which link is being typed.
-- `Pommora/src/shared/connections.ts` — `linkSpans` and `linkAt` are the only places the wikilink grammar's offsets and containment are computed; `titleOf` strips the escape a table cell adds.
-- `Pommora/src/renderer/src/MarkdownPM/Tables/widget.tsx` — `refreshTableEffect` and `swapTableWidget` are the deferred rebuild; `TableView`'s `onSettled` effect is what fires it.
-- `Pommora/src/renderer/src/design-system/tokens/theme-vars.css.ts` — `--conn-link-mask` holds the `link-2` glyph, beside the fold chevron's; the glyph takes its colour from whatever paints it.
-- `Planning/Alias-V1 — Plan.md` — Deviations carries twenty entries; they are the arc's real lessons, including the reclassification that was built and reverted.
-- `Pommora/src/main/crud/aliasAcceptance.test.ts` — the end-to-end pass against real files, table row included.
+- `Pommora/src/renderer/src/MarkdownPM/Tables/widget.tsx` — `HeightBox` and `estimatedHeight` are what stop the block collapsing; the observer is disconnected in `destroy(dom)`, which only fires when a node is genuinely dropped.
+- `Pommora/src/renderer/src/design-system/interactions/ghost.css` — the ghost effect and the creation-affordance cursor rule. `data-ghost-root` holds the state, `ghost-worn` marks what wears the dim, `data-create` marks a creator that isn't a ghost.
+- `Pommora/src/renderer/src/Components/Detail/GhostOptionChip.tsx` — the New Option seat and the name caret both property editors share.
+- `Pommora/src/shared/pageMenu.ts` — the one definition of a page's actions and their order; `pageMetaMenuSubset` draws a named slice without letting it drift.
+- `Pommora/src/main/returningMenu.ts` — `menuTemplate` and `popModelMenu`, the shell every model-driven native menu pops through.
 
 #### Working Notes
 
-- **A green test proved nothing at least eight times this arc, always the same shape:** the test did not reproduce the real ordering or the real target. `btn.click()` issues no mousedown; jsdom seats no caret from synthetic coordinates; `defaultPrevented` reads true everywhere over CM content. Where a behaviour genuinely cannot be observed here, say so in the code rather than shipping a test that would pass without it.
-- **jsdom cannot open the autocomplete panel** — it needs `coordsAtPos` and measures nothing — so the picker's own commit path is live-verified only. `commitEdit` returns its edit as data precisely so the caret rules can be tested without it.
-- **CodeMirror seats the caret during its own mousedown**, and a table's static cell activates on mousedown too. Any rule that reads the live caret in `click`, or claims a press in `click`, arrives after the thing it meant to prevent.
-- **`aliasPickerOnCommit` is a personalization key with no switch behind it**, deliberately — the wording hasn't been decided. It reads and writes like any other key, so a hand-edited settings file turns it off.
-- **The `[[Title]](target)` reclassification is ruled out, not forgotten.** Rebuilding it needs a fourth cascade pattern; the reasoning is in the plan's Deviations.
+- **CodeMirror asks a block widget for `estimatedHeight` on every edit inside its range.** Answering -1 means one line, and the document's height lies until the next measure. It hands `destroy(dom)` the node so per-node resources can be torn down, and only calls it when the node is really going — a widget replaced over a reused DOM is never destroyed.
+- **A selection paints across text and steps around a decorative box that holds none.** This is why the link glyph notches a highlight. Giving it an invisible space worked in a plain contenteditable and not inside the editor; the reason wasn't established.
+- **`useGhostAnchor` is more general than its consumers suggested** — dwell, grace, travel-hold, suppression and an exit watchdog. A new hover-born creator gets all of it for two lines.
+- **A callout's head line was the first typable line**, which is why a fence typed after `||` never became one: the fence grammar admits only whitespace and `>` levels before its marker run.
 
 #### Handoff Guidelines
 

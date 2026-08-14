@@ -42,7 +42,6 @@ Pommora is an **Electron** desktop app — a **React + TypeScript** renderer ove
 - **Ask before designing.** Stop to disclose assumptions and clarify direction before any design or interaction-based decision — don't guess at how something looks or behaves. Any in-flight decisions must be disclosed as they’re being made.
 - **Tokens must** be pulled from their sources in `design-system`— never hand-roll tokens without explicit direction; dual-option toggles must always use either switches or toggleable double-chevron; never dropdown pickers.
 - **Most recent wins** is the primary philosophy around handling concurrency, cross-device, and external editing conflicts.
--  **Fix-On-Sight:** The following don't require any confirmation, and violations must be fixed if you locate them. All creation-affordances must use `cursor: pointer`; Nathan's name must be *nowhere* in codebase comments.
 
 ### Locked Decisions
 

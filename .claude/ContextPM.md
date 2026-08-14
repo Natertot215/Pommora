@@ -2,12 +2,11 @@
 
 ### Current Focus
 
-**The table-cell scroll fix, and whatever the alias arc left behind.** Page Alias' V1 shipped whole (→ PM-098); what follows it is confirming the deferred table-widget rebuild holds — a cell that demotes must draw what was typed — and clearing any cleanup the arc's own plan left open. After that the focus is new work rather than more of this one.
+**The trash browser.** The table scroll fix, the ghost-creation family, page icons and the unified page menu all shipped (→ PM-099). What follows is the deletion record's missing half: enumeration, and a surface to read it from.
 
 ### Immediate Work
 
-- [ ] **Confirm the table-cell rebuild.** Typing in a cell no longer rebuilds the table's block widget; the rebuild fires when the cell demotes. The deferral is what needs watching — a demoted cell must show what was typed, and the timing is the half a suite cannot observe.
-- [ ] **The alias arc's leftovers.** Whatever the plan left open once the running-thing passes are done: the hover ×, ⌘K landing past a filled label, and the interaction half of the acceptance run.
+- [ ] **The trash browser.** `listBundles` has no bridge entry and no non-test caller, so nothing can enumerate what the `.trash` holds. The restore path underneath it ships and is tested end to end — this is one channel and a UI on a finished engine.
 
 ### Pending Focuses
 
@@ -24,7 +23,6 @@
 
 #### II. Next-Feature Candidates
 
-- [ ] **The trash browser.** The deletion record's restore path ships and is tested end to end; what's missing is enumeration, since `listBundles` has no bridge entry and no non-test caller. A UI build plus one channel on a finished engine.
 - [ ] **The main pane's Inspector.** Its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty. The Page Preview's frontmatter inspector is a portable body already doing that job for another host.
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **A custom alias glyph.** The alias picker borrows `square-split-horizontal` from Lucide; an alias deserves a drawn symbol of its own in `design-system/symbols/customGlyphs`.
@@ -121,4 +119,3 @@ The design docs now state token literals under SOURCE-tagged tables — the one 
 - Sections that aren't described in `Context-Format.md` shouldn't be removed — they're intentional and will resolve themselves when appropriate. 
 - Nathan also writes into §Pending Focuses, §Important Information, and §Known Issues directly; leave what's clearly written by him and consider his own writing style as something to lean towards rather than fight against. 
 - A section with nothing to say stays empty.
-> [!callout]

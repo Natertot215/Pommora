@@ -1,6 +1,6 @@
 ## Pommora Project Framework
 
->Pommora's`major.minor.patch` framework. **Minor** is a completed feature cluster; **patches** are touch-up or additive extensions on shipped features; **majors** are reserved for `v1.0.0` (stabilization) and onward. 
+> Pommora's`major.minor.patch` framework. **Minor** is a completed feature cluster; **patches** are touch-up or additive extensions on shipped features; **majors** are reserved for `v1.0.0` (stabilization) and onward. 
 
 ### EXISTING IMPLEMENTATIONS
 
@@ -46,7 +46,6 @@ No phase commitments — Sub-pages, independent UI titles, a graph view, sync, m
 
 ### Prospects
 
-- [ ] Page Aliases for Connections (Prioritize Obsidian-Compatible Method)
 - [ ] Assigning Contexts To Storages
 - [ ] Page Notes / Description
 - [ ] Property Automations
@@ -54,7 +53,6 @@ No phase commitments — Sub-pages, independent UI titles, a graph view, sync, m
 
 ### Ideas
 
-- [x] [[Pommora – Properties V3 + SQL-V2]]
 - [x] MarkdownPM View Embedding
 - [ ] MarkdownPM Checkbox Toggles
 - [ ] MarkdownPM Independent Editor
