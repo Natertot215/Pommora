@@ -4,9 +4,9 @@
 // so the rail grips and the heading chevron share ONE gesture.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { ACTIVATION } from '../../design-system/interactions/shared'
 import { blockAt, blockStarts } from './blockModel'
 import { Overlay, setShade, shadeField } from './dragChrome'
+import { beginEditorGesture, editorGestureCleanup } from './EditorGesture'
 import { lineElementAt } from './lineDom'
 import { blockMoveChanges } from './listDragModel'
 import { resolveScroller, startAutoScroll } from '../../design-system/interactions/autoscroll'
@@ -83,99 +83,69 @@ export function startBlockDrag(
   if (e.button !== 0) return // only the left button drags; a right-press falls through to the context menu (e.g. the table grip's Delete Table)
   e.preventDefault()
   const host = view.scrollDOM
-  const g = {
-    active: false,
-    done: false,
-    overlay: new Overlay(),
-    cands: [] as Cand[],
-    slot: null as Cand | null,
-    lastY: e.clientY,
-  }
+  const overlay = new Overlay()
+  let activated = false
+  let cands: Cand[] = []
+  let slot: Cand | null = null
+  let lastY = e.clientY
   let stopScroll: (() => void) | null = null
 
   // Re-aim the insertion line at the candidate nearest the last pointer Y — no re-measure.
   const repick = (): void => {
-    g.slot = nearest(g.cands, g.lastY)
-    if (g.slot && !g.slot.noop)
-      g.overlay.show(g.slot.left, g.slot.y, Math.max(g.slot.right - g.slot.left, 40))
-    else g.overlay.hide()
+    slot = nearest(cands, lastY)
+    if (slot && !slot.noop) overlay.show(slot.left, slot.y, Math.max(slot.right - slot.left, 40))
+    else overlay.hide()
   }
   // Candidate coords are viewport-relative, so any scroll (wheel or the auto-scroll below) invalidates them —
   // re-measure against the new layout, then re-aim. The doc is static, so this is pure geometry.
   const remeasure = (): void => {
-    g.cands = collectCands(view, block)
+    cands = collectCands(view, block)
     repick()
   }
-  const onMove = (ev: PointerEvent): void => {
-    if (!g.active) {
-      if (Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) < ACTIVATION) return
-      g.active = true
+
+  beginEditorGesture({
+    el: host,
+    event: e,
+    onActivate: (ev) => {
+      activated = true
       document.body.style.cursor = 'grabbing'
-      try {
-        host.setPointerCapture(e.pointerId)
-      } catch {
-        // capture unavailable
-      }
       onDragStart?.(view, block) // e.g. unfold a heading section before it moves — folds can't survive the move
       view.dispatch({ effects: setShade.of({ from: block.from, to: block.to }) })
-      g.cands = collectCands(view, block)
+      lastY = ev.clientY
+      remeasure()
       // The shared loop scrolls CM's viewport (explicit scroller — findScroller can't derive scrollDOM).
-      // No `onScrolled` needed: the loop's `scrollBy` fires CM's native `scroll` → the existing `onScroll`
-      // → `remeasure`, so far candidates (CM only renders ~viewport) become targetable as they scroll in.
+      // Its `scrollBy` fires CM's native `scroll`, which the skeleton's capture-phase window listener
+      // carries to onWindowScroll, so far candidates (CM only renders ~viewport) become targetable as
+      // they scroll in.
       stopScroll = startAutoScroll({
-        getPoint: () => ({ x: 0, y: g.lastY }),
+        getPoint: () => ({ x: 0, y: lastY }),
         scroller: resolveScroller(host, 'y'),
         dragEl: host,
         axis: 'y',
       })
-    }
-    g.lastY = ev.clientY
-    repick()
-  }
-
-  const onScroll = (): void => {
-    if (g.active) remeasure()
-  }
-  const onKey = (ev: KeyboardEvent): void => {
-    if (ev.key === 'Escape') finish(false)
-  }
-
-  const finish = (commit: boolean): void => {
-    if (g.done) return // a drag ends once — guard the window blur/Escape paths from re-entering
-    g.done = true
-    document.body.style.cursor = ''
-    stopScroll?.()
-    host.removeEventListener('pointermove', onMove)
-    host.removeEventListener('pointerup', onUp)
-    host.removeEventListener('pointercancel', onCancel)
-    host.removeEventListener('scroll', onScroll)
-    window.removeEventListener('keydown', onKey)
-    window.removeEventListener('blur', onCancel)
-    try {
-      host.releasePointerCapture(e.pointerId)
-    } catch {
-      // already released
-    }
-    g.overlay.hide()
-    if (g.active) {
+      return true
+    },
+    onDragMove: (ev) => {
+      lastY = ev.clientY
+      repick()
+    },
+    scrollTarget: () => host,
+    onWindowScroll: remeasure,
+    onDrop: () => {
+      if (!slot) return
+      const changes = blockMoveChanges(view.state.doc.toString(), block, { at: slot.at })
+      if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
+    },
+    onTap: line ? () => onClick?.(view, line) : undefined,
+    teardown: () => {
+      stopScroll?.()
+      stopScroll = null
+      if (!activated) return
+      document.body.style.cursor = ''
+      overlay.hide()
       view.dispatch({ effects: setShade.of(null) })
-      if (commit && g.slot) {
-        const changes = blockMoveChanges(view.state.doc.toString(), block, { at: g.slot.at })
-        if (changes?.length) view.dispatch({ changes, userEvent: 'input' })
-      }
-    } else if (commit && line) {
-      onClick?.(view, line) // a click (sub-threshold release) — e.g. toggle the heading fold
-    }
-  }
-
-  const onUp = (): void => finish(true)
-  const onCancel = (): void => finish(false)
-  host.addEventListener('pointermove', onMove)
-  host.addEventListener('pointerup', onUp)
-  host.addEventListener('pointercancel', onCancel)
-  host.addEventListener('scroll', onScroll, { passive: true })
-  window.addEventListener('keydown', onKey)
-  window.addEventListener('blur', onCancel)
+    },
+  })
 }
 
 interface DragConfig {
@@ -190,6 +160,7 @@ export function createBlockDragGesture({ gate, onClick, onDragStart }: DragConfi
   const sel = `.cm-line.${gate}`
   return [
     shadeField,
+    editorGestureCleanup,
     EditorView.domEventHandlers({
       // Suppress CM's text-selection drag when the press starts on a gutter handle.
       mousedown(e) {

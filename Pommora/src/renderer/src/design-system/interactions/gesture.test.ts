@@ -170,3 +170,46 @@ describe('gesture skeleton hardening', () => {
     expect(calls).toEqual(['teardown', 'abort'])
   })
 })
+
+// A click-or-drag surface — a list glyph that toggles a checkbox, a heading grip that folds — needs
+// the release before activation to mean something. Only a release means it: every other way a
+// gesture ends is a cancel, and a cancel must never fire the click.
+describe('a release before activation is a tap, and only a release', () => {
+  it('a sub-threshold release taps, without dropping or aborting', () => {
+    const calls: string[] = []
+    gesture.beginPointerGesture(
+      spec({
+        onTap: () => calls.push('tap'),
+        onDrop: () => calls.push('drop'),
+        onAbort: () => calls.push('abort'),
+        teardown: () => calls.push('teardown'),
+      }),
+    )
+    move(2, 2)
+    firePointer(window, 'pointerup')
+    expect(calls).toEqual(['teardown', 'tap'])
+  })
+
+  it('an activated release drops rather than taps', () => {
+    const calls: string[] = []
+    gesture.beginPointerGesture(
+      spec({ onTap: () => calls.push('tap'), onDrop: () => calls.push('drop') }),
+    )
+    move(20, 20)
+    firePointer(window, 'pointerup')
+    expect(calls).toEqual(['drop'])
+  })
+
+  it.each([
+    ['pointercancel', () => firePointer(window, 'pointercancel')],
+    ['Escape', () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))],
+    ['blur', () => window.dispatchEvent(new Event('blur'))],
+    ['a lost release', () => move(2, 2, { buttons: 0 })],
+  ])('%s ends a pending press without tapping', (_label, end) => {
+    const onTap = vi.fn()
+    gesture.beginPointerGesture(spec({ onTap }))
+    end()
+    firePointer(window, 'pointerup')
+    expect(onTap).not.toHaveBeenCalled()
+  })
+})
