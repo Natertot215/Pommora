@@ -1,4 +1,5 @@
 ## Page Preview
+
 ```
 Page Preview
 ├── The Window
@@ -45,9 +46,9 @@ Warmth is session-only and per-tab: serialized editor state, undo included, plus
 
 Resting on a resolved connection past a short intent delay raises the hover preview card — a compact, read-only view of the target page rendered through the shared embed framework without its banner or inline title, on the PickerMenu chassis rather than a PreviewPane, mounted once at app level so one card exists app-wide. The card resolves its content before it opens (a page that can't load opens nothing), everything inside it renders inert, and it centers on the live link with the beak sliding along its edge to keep pointing at it.
 
-Content scrolls within the card, headings fold on click, and the caret never enters. It anchors to the link through scroll and closes on hover-off, Escape, navigation, or the link leaving view; the Settings ▸ Pages linger slider extends the stay (→ [[ConfigurationPM]]). It resizes from its right and bottom edges to one per-machine remembered size. Resting table cells raise the same card.
+Content scrolls within the card, headings fold on click, and the caret never enters. It anchors to the link through scroll and closes on hover-off, Escape, navigation, or the link leaving view; the Settings ▸ Pages linger slider extends the stay (→ [[ConfigurationPM]]). It resizes from its right and bottom edges to one per-machine remembered size. 
 
-### The NavWindow Flavor
+### The NavWindow Model
 
 The NavWindow is tab 1 of its own flavor: a perma-pinned, icon-only, non-orderable map tab whose content is the window's whole body. "Open Preview" from its rows adds page tabs beside it when the window's routing override is on; off routes to the floating window. An active page tab swaps the body for the editable embed and slides the rail closed; the map tab is the return, refocusing the search. The strip lives in the content column beside the full-height rail, so tabs start right of the sidebar exactly like the app's tab bar, and the row exists only past one tab, its height nudging the search down. A page tab whose own icon is the map glyph renders its type icon instead. Opening the window over a live page preview morphs it — a FLIP from the preview's rect, the outgoing preview hiding instantly — one window changing shape rather than a dismiss and a fresh open. The two windows carry different tint opacities, the NavWindow the more opaque, so the morph steps. The window's tab set is durable multi-session, restored on every open.
 
@@ -57,7 +58,7 @@ The right-hand pane is a PreviewPane **side slot** in its overlay mode — it ri
 
 Its body is the front-matter inspector, properties only — no title or banner rows. Two group fields, contexts then properties, sit in rounded quaternary fills below the toolbar strip, each rendering only once something is assigned into it; on an empty page the Add affordance sits alone. Each row is an icon-leading label with its value hugging the right edge, and pickers anchor to that right-side value field. Properties are assigned: a row shows once its key exists in front-matter or was revealed this session, assigned-but-empty is valid, "+ Add Property" reveals one, and right-click offers Remove. Editing runs through the table views' own primitives on the optimistic-patch write path.
 
-**The window has a real Subfield footer.** It fills PreviewPane's footer slot — the surface owns the bar's collapse, its squeeze away from an open side pane, and the chevron's reveal; the preview supplies the content, mounting the shared Subfield scoped to its active tab (→ [[SubfieldPM]]). The footer content aligns to the embed's text column.
+**The window has a real Subfield footer.** It fills PreviewPane's footer slot — the surface owns the bar's collapse, its squeeze away from an open side pane, and the chevron's reveal; the preview supplies the content, mounting the shared Subfield scoped to its active tab. The footer content aligns to the embed's text column.
 
 ### The Token Contract
 

@@ -2,11 +2,12 @@
 
 ### Current Focus
 
-**The trash browser.** The table scroll fix, the ghost-creation family, page icons and the unified page menu all shipped (→ PM-099). What follows is the deletion record's missing half: enumeration, and a surface to read it from.
+**Verifying the trash browser.** The deletion record's reading half shipped (→ PM-100): the Settings rail's Trash leaf lists what `.trash` holds and puts any of it back, including into a home the user picks when the recorded one is gone. It is proven end to end against a real nexus and read off a screenshot; what it has not had is a week of ordinary use.
 
 ### Immediate Work
 
-- [ ] **The trash browser.** `listBundles` has no bridge entry and no non-test caller, so nothing can enumerate what the `.trash` holds. The restore path underneath it ships and is tested end to end — this is one channel and a UI on a finished engine.
+- [ ] **Live-use verification of the trash browser.** Every path is covered by tests and the surface was read off a screenshot, but nothing has been recovered in anger yet. What wants confirming in ordinary use: the destination submenu as a native menu renders and picks, a batch's report reads right, and the reveal-on-hover checkboxes are findable without being told they are there.
+- [ ] **The main pane's Inspector.** Its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty. The Page Preview's frontmatter inspector is a portable body already doing that job for another host.
 
 ### Pending Focuses
 
@@ -23,7 +24,6 @@
 
 #### II. Next-Feature Candidates
 
-- [ ] **The main pane's Inspector.** Its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty. The Page Preview's frontmatter inspector is a portable body already doing that job for another host.
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **A custom alias glyph.** The alias picker borrows `square-split-horizontal` from Lucide; an alias deserves a drawn symbol of its own in `design-system/symbols/customGlyphs`.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
@@ -54,6 +54,9 @@
 
 #### II. Debt & Ride-Alongs
 
+- [ ] **A move does not drop what its destination cannot hold.** The rule that a moved page's conflicting property values are dropped to suit its target's schema is honored by the restore path, which reconciles a returning entity against the world it lands in, and not by the move path, which relocates the file and rewrites the destination's order without touching frontmatter. Surfaced by the trash work and named here rather than left for someone to rediscover.
+
+
 - [ ] The gesture spec wants an `onTap(e)` fired on a release-before-activation — the additive piece that unblocks migrating MarkdownPM's `listDrag`/`blockDrag` and the CalendarPicker's range drag; it lands with the migration that consumes it.
 - [ ] Two more spec folds the drag work exposed, each a four-site bracket today: an `onDisclose` hook owning the `beginDragDisclose`/`endDragDisclose` pair the way `onWindowScroll` owns its listener, and an autoscroll resolve-and-start helper that skips cleanly when no scroller resolves.
 - [ ] A mid-drag column hide/show or watcher view-push is silently reverted by a column drop's persist (`reorderColumn` reads grab-time state) — reachable only by mutating columns while holding a drag; a ref-read at commit fixes it if it's ever felt.
@@ -81,6 +84,12 @@
 - [ ] There's no right-click 'Add/Change Icon' option for SurfacePM embedded views' inline titles.
 
 ### Recent Work
+
+#### PM-100 || The Trash Browser
+
+The deletion record gained its reading half. `.trash` had been complete and unreachable — bundles written, records gathered, placement resolved and restore tested end to end, with no surface able to call any of it. A leaf at the foot of the Nexus Settings rail now lists every bundle as a row carrying its kind's glyph, its title, a breadcrumb resolved live from the recorded parent id so a renamed ancestor reads true, and the time read back out of the bundle's own folder stamp. Restore returns an entity to the tree and to reach at once; where its recorded home is gone, Restore opens instead into the places that kind may legally land and the pick becomes the destination. Delete spends the bundle the other way, handing the artifact to the operating system's trash or erasing it outright per a new **Permanently Delete Files** switch that main reads for itself at each operation. Checked rows act together, and a batch names what it could not resolve.
+
+Two things the work surfaced rather than needed. Contexts and Spaces had been sharing a glyph because a Context was never a kind the icon resolver knew — six surfaces asked for a Space and got the right mark by accident — so Context joined the kind union with its own seed and Space moved to the dashboard. And the same bare search input, inlined in three places, became one component with the trash as its fourth consumer.
 
 #### PM-099 || Ghost Creation, Page Icons & One Page Menu
 

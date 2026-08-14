@@ -1,4 +1,5 @@
 ## Architecture
+
 ```
 Architecture
 ├── Principles
@@ -171,6 +172,5 @@ The database side is covered above — a version mismatch deletes the file and s
 
 ### Pending
 
-- **Trash restore surface** — the restore action is IPC-reachable; no surface browses the trash or invokes it.
 - **Folder-exclusion editing UI** — `excluded_folders` is hand-edited; its Settings surface is deferred.
 - **The content index** — Linked-From, backlinks, ContextView, and full-text search all need a content index, and none exists. Its replacement gets written alongside the query layer that reads it, updating a row at a time; the database, the driver seam, and the version handshake are already in place for it.

@@ -1,4 +1,5 @@
 ## Structure
+
 ```
 Structure
 ├── The Organization Layer
@@ -21,7 +22,7 @@ Pommora is organized as **two layers** with PARA-aligned naming. The organizatio
 
 ### The Organization Layer
 
-A **Context** is a user-defined, free-standing group of **Spaces**, owned by a registry at `.nexus/contexts.json`, with Areas, Topics, and Projects seeded as ordinary entries. No Context contains, parents, or is restricted to another; operational entities tag whichever Spaces fit, independently. Contexts carry no pages and no schema — Spaces are the categorical anchors things point at, each with its own block surface (→ [[ContextsPM]]).
+A **[[ContextPM|Context]]** is a user-defined, free-standing group of **Spaces**, owned by a registry at `.nexus/contexts.json`, with Areas, Topics, and Projects seeded as ordinary entries. No Context contains, parents, or is restricted to another; operational entities tag whichever Spaces fit, independently. Contexts carry no pages and no schema — Spaces are the categorical anchors things point at, each with its own block surface.
 
 ### The Operational Layer
 
@@ -33,7 +34,7 @@ A **Context** is a user-defined, free-standing group of **Spaces**, owned by a r
 | **Task**            | Reminder-shaped `.md`, keyed `TaskID`                         | "Task"            |
 | **Event**           | Calendar-shaped `.md`, keyed `EventID`                        | "Event"           |
 
-A Collection assigns which registry properties its Pages validate, and that schema applies at any depth (→ [[CollectionsPM]], [[PageSetsPM]], [[PagesPM]]). Tasks and Events are Agenda's two peer kinds, each in its own singleton folder (→ [[AgendaPM]]); the property catalog spans all kinds (→ [[PropertiesPM]]).
+A [[CollectionsPM|Collection]] assigns which registry properties its [[PagesPM|Pages]] validate, and that schema applies at any depth. Tasks and Events are [[AgendaPM|Agenda’s]] two peer kinds, each in its own singleton folder; the [[PropertiesPM|properties]] catalog spans all kinds.
 
 ### Singletons
 
@@ -42,7 +43,7 @@ A Collection assigns which registry properties its Pages validate, and that sche
 
 ### Identity & Linking
 
-Every entity carries a stable **`id`** — a ULID assigned at creation, stored under the key naming its kind for content files and in the sidecar for containers — and a **title**, the filename or folder name, freely renameable (→ [[PagesPM]] for the collision and uniqueness rules).
+Every entity carries a stable **`id`** — a ULID assigned at creation, stored under the key naming its kind for content files and in the sidecar for containers — and a **title**, the filename or folder name, freely renameable 
 
 | Link                       | Stored As                                                           | Purpose                |
 | -------------------------- | ------------------------------------------------------------------- | ---------------------- |
@@ -51,7 +52,7 @@ Every entity carries a stable **`id`** — a ULID assigned at creation, stored u
 | Space → Space              | The same parenthesized keys in the Space's own `_space.json`        | Cross-Context links    |
 | Page → Collection / Set    | Implicit by file location                                           | Membership             |
 
-Every link form is stored as a title and resolved at read time, and property values follow the same discipline — a value writes under its property's name. Context links are the only relation-type connection (→ [[ContextsPM]]); body connections are [[ConnectionsPM]]'s.
+Every link form is stored as a title and resolved at read time, and property values follow the same discipline — a value writes under its property's name. Context links are the only relation-type connection; markdown links are [[ConnectionsPM|’Connections’]].
 
 ### Pending
 

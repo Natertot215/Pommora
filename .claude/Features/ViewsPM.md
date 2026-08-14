@@ -1,4 +1,5 @@
 ## Views
+
 ```
 Views
 ├── The Saved-View Model
@@ -19,7 +20,7 @@ Views
 └── Prospects
 ```
 
-A view is a saved presentation of a [[CollectionsPM|Collection's]] (or a depth-1 Set's) Pages. It never modifies its source — filtering, grouping, and sorting are presentation only. A container carries an ordered list of saved views, and one pure pipeline drives every renderer. Six view types are modeled — **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — in an extensible registry.
+A view is a saved presentation of a [[CollectionsPM|Collection's]] (or a depth-1 Set's) [[PagesPM|Pages]]. It never modifies its source — filtering, grouping, and sorting are presentation only. A container carries an ordered list of saved views, and one pure pipeline drives every renderer. Six view types are modeled — **Table**, **Cards**, **List**, **Gallery**, **Calendar**, and **Timeline** — in an extensible registry.
 
 ### The Saved-View Model
 
@@ -31,8 +32,7 @@ The **active view is tracked per-machine** in `nexus.db`, kept out of the synced
 
 One pure pipeline feeds the renderer — **columns → filter → group → sort** — reading each Page's frontmatter, loaded lazily per container over a batch IPC.
 
-In-view creation is likewise one engine worn per-renderer: a shared creation act (the page exists on disk as Untitled the moment a gesture fires, born with what its context implies, its order settled in the same act) and a shared hover-ghost mechanism (dwell, grace, suppression, travel-hold) that each surface dresses in its own chrome (→ [[TableViewPM]], [[CardViewPM]], [[SidebarPM]]).
-
+In-view creation is likewise one engine worn per-renderer: a shared creation act (the page exists on disk as Untitled the moment a gesture fires, born with what its context implies, its order settled in the same act) and a shared hover-ghost mechanism (dwell, grace, suppression, travel-hold) that each surface dresses in its own chrome.
 #### II. Filter
 
 A recursive group of rules under a match mode, evaluated at every depth: All (AND), Any (OR), and None (NOR — no rule may match). The pane authors All and Any; NOR is hand-authoring only, and a `none` group decodes as locked behind an explicit Reset rather than shown as an All it would silently become on the next edit. The evaluator honors all three. Whether the filter runs at all is a separate axis, `filter_enabled`, so parking a filter costs it neither its rules nor its mode.
@@ -67,11 +67,11 @@ A navigation dropdown opened by the ViewDropdown — a row per saved view (click
 
 #### II. ViewSettings
 
-The shared per-view editor, reachable two ways — the ViewPane row's chevron (the full door, carrying the ⋮ Duplicate/Delete and the leaf rows) or the SettingsPane's Layout entry (the flat door, for the active view, minus the ⋮ and leafs). It holds the view's click-to-rename name, a 3×2 type-picker grid (the four unbuilt types render at full weight but don't switch), and the type's options — four leaf rows, Layout · Group · Filter · Sort. For Table the Layout leaf is the visibility list over the table's layout switches. For Cards it carries the cards options (Card Banner · Hide Location · Wrap Titles · Hide Icons · Set Cards) with Style + Scale pinned in the footing (→ [[CardViewPM]]).
+The shared per-view editor, reachable two ways — the ViewPane row's chevron (the full door, carrying the ⋮ Duplicate/Delete and the leaf rows) or the SettingsPane's Layout entry (the flat door, for the active view, minus the ⋮ and leafs). It holds the view's click-to-rename name, a 3×2 type-picker grid (the four unbuilt types render at full weight but don't switch), and the type's options — four leaf rows, Layout · Group · Filter · Sort. For [[TableViewPM|Tables]], the Layout leaf is the visibility list over the table's layout switches. For [[CardViewPM|Cards]] it carries the cards options (Card Banner · Hide Location · Wrap Titles · Hide Icons · Set Cards) with Style + Scale pinned in the footing.
 
 #### II. The SettingsPane
 
-The toolbar sliders button, carrying the container's identity and config: **Configuration** (the collection's Open In — full-page vs page-preview, Collection-owned), **Properties** (the schema editor → [[PropertiesPM]]), **Visibility**, and the Layout / Group / Filter / Sort leafs.
+The toolbar sliders button, carrying the container's identity and config: **Configuration** (the collection's Open In — full-page vs page-preview, Collection-owned), **Properties**Visibility**, and the Layout / Group / Filter / Sort leafs.
 
 #### II. The Grouping Pane
 
@@ -83,7 +83,7 @@ The middle region shows the set hierarchy (each set disclosing its sub-group —
 
 The Sort leaf, both doors, on the Grouping pane's chassis: **Sort By** as the in-pane vertical disclosure (None + Title + Modified + the schema's sortable properties — only types the sorter genuinely ranks, so Context and File are absent), a per-type **Order** picker (Select/Status: Default / Reversed / Custom — Custom snapshots the current sequence onto the criterion and turns the middle into the draggable Options list; dates, numbers, checkbox: Ascending / Descending; text: A → Z / Z → A), a **Sub-Sort** picker with its own Order, and the read-only example order — the primary property's chips in effective order, shown for finite-ordered types.
 
-On a cards view the Sort By list adds a **Location** entry — a reserved sort, ordered at the resolve level — whose Order picker is Location / Custom. It keeps its own `location_order_mode`, independent of the Grouping pane's structural Order, so a cards view can group structurally and sort by Location without either control retargeting the other. Paired with Group By: None it renders one headerless, filesystem-ordered list (→ [[CardViewPM]]).
+On a cards view the Sort By list adds a **Location** entry — a reserved sort, ordered at the resolve level — whose Order picker is Location / Custom. It keeps its own `location_order_mode`, independent of the Grouping pane's structural Order, so a cards view can group structurally and sort by Location without either control retargeting the other. Paired with Group By: None it renders one headerless, filesystem-ordered list.
 
 #### II. The Filtering Pane
 
@@ -103,7 +103,7 @@ Drags carry the shared drag language. A drop into the shown zone is positional �
 
 - **List, Gallery, Calendar, and Timeline renderers** — modeled in the type registry and present as picker tiles, with no renderer behind them; a view of any other type falls through to the table.
 - **Table Flatten + Location Subtitle** — the table's no-grouping mode: bands flatten away and a page's location renders as a subtitle in its title cell, governed by its own Flatten and Hide Location toggles. Cards already carry both halves.
-- **The property-bucket "+"** — both renderers' structural bands create (→ [[TableViewPM]], [[CardViewPM]]); property and ungrouped bands offer no affordance, since a bucket can't infer a create location. One waits on a location ruling.
+- **The property-bucket "+"** — the renderers' structural bands create; property and ungrouped bands offer no affordance, since a bucket can't infer a create location. One waits on a location ruling.
 - **Grouping for the other view types** — calendar, gallery, timeline, and list group mechanically differently; each gets its own surface with its renderer.
 - **ViewBar** — the `view_style` Toolbar option, an inline view-switcher bar as an alternative to the dropdown. The setting persists; Toolbar mode reuses the dropdown button until the surface builds. View embeds mirror the same duality in their header switcher (→ [[SurfacePM]]).
 

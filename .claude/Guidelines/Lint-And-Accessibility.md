@@ -44,3 +44,7 @@ The bar is real, not decorative. An element that behaves like a control **is** a
 The cross-zone drag engine's `handle` is not just a pointer binding: it ships `onKeyDown` (Space or Enter lifts the item), a role, a tab stop, `aria-roledescription="sortable"`, and an `aria-describedby` that announces how to use it. **A surface that spreads `{...handle}` and then declares its own `role`, `tabIndex`, or `onKeyDown` afterwards silently replaces that contract** — JSX takes the last one — and keyboard reordering dies with no error and no failing test.
 
 Where a surface needs its own role, pass `itemRole` to `SortableZone` rather than overriding after the spread; where it needs its own activation, supply it only on the branch that has no drag handle. Biome cannot see a handler arriving through a spread, so these sites carry a suppression saying so — which is also the standing reminder that the handler is really there.
+
+#### II. A Suppression Is One Line
+
+`biome-ignore` reads its directive from the line the comment *starts* on, and attaches to whatever follows the comment. Wrapping a long reason across two `//` lines therefore attaches the directive to the second comment line rather than to the element, and both show up as `suppressions/unused` while the original rule still fires. Keep the whole reason on one line, however long, and put several rules in one directive separated by spaces rather than stacking directives.

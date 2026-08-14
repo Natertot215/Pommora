@@ -1,4 +1,5 @@
 ## Contexts & Spaces
+
 ```
 Contexts & Spaces
 ├── The Registry Model

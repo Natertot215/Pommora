@@ -1,4 +1,5 @@
 ## Typography
+
 ```
 Typography
 ├── The Ramp
@@ -15,19 +16,19 @@ Pommora's type system. The token file is the source of truth for what ships, and
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/typography.css.ts`
 
-| Style | Token | Size / Line | Character |
-| --- | --- | --- | --- |
-| Large Title | `text.largeTitle` | `26px` / `32px` | display step |
-| Title 1 | `text.title1` | `22px` / `26px` | display step |
-| Title 2 | `text.title2` | `17px` / `22px` | display step |
-| Title 3 | `text.title3` | `15px` / `20px` | the smallest display step |
-| Headline | `text.headline` | `13px` / `16px` | body-size heading — distinct by weight, not scale |
-| Body | `text.body` | `13px` / `16px` | the standard content size; carries the row primitive |
-| Callout | `text.callout` | `12px` / `15px` | a step under body — headers and ancillary labels |
-| Control | `text.control` | `12px` / `15px` | chips and control chrome |
-| Caption | `text.caption` | `11px` / `14px` | the secondary line under a title |
-| Footnote | `text.footnote` | `10px` / `13px` | small detail |
-| Subline | `text.subline` | `10px` / `12px` | footnote's size on a tighter line box |
+| Style       | Token             | Size / Line     | Character                                            |
+| ----------- | ----------------- | --------------- | ---------------------------------------------------- |
+| Large Title | `text.largeTitle` | `26px` / `32px` | display step                                         |
+| Title 1     | `text.title1`     | `22px` / `26px` | display step                                         |
+| Title 2     | `text.title2`     | `17px` / `22px` | display step                                         |
+| Title 3     | `text.title3`     | `15px` / `20px` | the smallest display step                            |
+| Headline    | `text.headline`   | `13px` / `16px` | body-size heading — distinct by weight, not scale    |
+| Body        | `text.body`       | `13px` / `16px` | the standard content size; carries the row primitive |
+| Callout     | `text.callout`    | `12px` / `15px` | a step under body — headers and ancillary labels     |
+| Control     | `text.control`    | `12px` / `15px` | chips and control chrome                             |
+| Caption     | `text.caption`    | `11px` / `14px` | the secondary line under a title                     |
+| Footnote    | `text.footnote`   | `10px` / `13px` | small detail                                         |
+| Subline     | `text.subline`    | `10px` / `12px` | footnote's size on a tighter line box                |
 
 The weight ladder is `font.weight`: Standard `400` · Emphasized `500` · Semibold `600` · Bold `700`; tracking is pinned to `0` on every composed style. Family: `'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif`. The sizes are the macOS AppKit text scale drawn in Inter, with a few edits — **Control** and **Subline** are renamed for what they drive here, control chrome and the Subfield.
 
@@ -44,7 +45,7 @@ The weight ladder is `font.weight`: Standard `400` · Emphasized `500` · Semibo
 - **Card titles** → Body / Semibold; **group-band labels** → Body / Emphasized; **card property labels** → Caption / Emphasized.
 - **Subfield (footer)** → Subline / Emphasized.
 
-The Markdown editor scales from its own zoom root rather than the ramp — every element sizes in `em` multiples off it, drawing weight from the shared ladder (→ [[MarkdownPM]]).
+The [[MarkdownPM|Markdown editor]] scales from its own zoom root rather than the ramp — every element sizes in `em` multiples off it, drawing weight from the shared ladder.
 
 ### In Code
 

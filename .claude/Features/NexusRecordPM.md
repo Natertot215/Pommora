@@ -6,7 +6,8 @@ NexusRecord
 │   ├── The Bundle
 │   ├── Write-Ahead
 │   ├── The Sweep
-│   └── Resolution & Restore
+│   ├── Resolution & Restore
+│   └── Trash & Deletion
 ├── Baseline
 │   ├── The Open Walk & the Diff
 │   └── The Re-Mint
@@ -43,7 +44,7 @@ A bundle is a folder holding a record; the name alone decides nothing, since `.t
 
 #### The Sweep
 
-The delete's unlink sweep holds the record's dependencies. It never strips a passenger — a root under the delete target is leaving with its owner, and its keys stay true in the trash. It returns what it removed — touched, skipped, admission-refused, and the captured values per root, discriminated by which id key the root carries. One page can never fail the fan-out around it: a page that fails admission or cannot round-trip its frontmatter is left byte-identical and named as refused, which is how the record admits the sweep was thin. The fan-out mechanics themselves are the write layer's (→ [[ArchitecturePM]] §The Atomic-Write Contract, [[PropertiesPM]] §Schema Mutations).
+The delete's unlink sweep holds the record's dependencies. It never strips a passenger — a root under the delete target is leaving with its owner, and its keys stay true in the trash. It returns what it removed — touched, skipped, admission-refused, and the captured values per root, discriminated by which id key the root carries. One page can never fail the fan-out around it: a page that fails admission or cannot round-trip its frontmatter is left byte-identical and named as refused, which is how the record admits the sweep was thin. 
 
 #### Resolution & Restore
 
@@ -57,7 +58,11 @@ The record decides; the acting code moves. The resolver takes a record and the c
 
 **A property restores by rebuilding.** With no artifact to place, its record is spent rather than moved — the definition re-enters the registry, every Collection that carried it gets it back, and each recorded value is written home. A name another property has since taken refuses the whole restore. Below that, each value is decoded strictly against the definition and dropped unless it survives — an option that no longer exists, a value the type cannot hold, a page that has since died. What didn't land is named rather than silently claimed.
 
-The restore op takes a bundle, reads its record, re-resolves inside the op, and refuses a target it cannot contain or an occupied target. A **Context re-enters the registry before anything moves** — the append is the reversible half, so a refused write leaves the bundle intact and the restore retryable, while a failed move rolls the append back; the entry appends at the end, since recorded positions rot. Membership re-applies through the shared reconciliation loop, joined by id against the as-restored folder names — an entry is spent only on a landed write, kept on refusal, skipped when its root has since died. The same spend-per-landed-write loop serves the Remove cache's restore (→ [[PropertiesPM]] §Schema Mutations).
+The restore op takes a bundle, reads its record, re-resolves inside the op, and refuses a target it cannot contain or an occupied target. A **Context re-enters the registry before anything moves** — the append is the reversible half, so a refused write leaves the bundle intact and the restore retryable, while a failed move rolls the append back; the entry appends at the end, since recorded positions rot. Membership re-applies through the shared reconciliation loop, joined by id against the as-restored folder names — an entry is spent only on a landed write, kept on refusal, skipped when its root has since died.
+
+#### Trash & Deletion
+
+The trash browser is the record's reading half — a leaf at the foot of the Nexus Settings rail listing every bundle `.trash` holds, one row per deleted entity across all five artifact-bearing kinds. Main shapes each row before it crosses the bridge: the kind and title from the bundle's own artifact, the deletion time parsed from the stamp the bundle's folder name carries, a breadcrumb resolved live from the recorded parent id so a renamed ancestor reads true, and whether that parent still resolves at all — the last of which the menu needs before any restore is attempted and could not learn by trying. `.trash` is excluded from the watcher, so the list is fetched when the leaf opens and again after each action it takes. A row's right-click restores it or gives it up: **Restore** returns the entity to the tree and to reach immediately without opening it, and where its recorded home no longer resolves the action opens instead into the live places that kind may legally land, the pick becoming the destination the resolver runs against. **Delete** spends the bundle the other way, handing the artifact to the operating system's trash — or erasing it outright when the per-Nexus **Permanently Delete Files** switch is on, which main reads for itself at each operation — and removing the spent bundle behind it. Checked rows act together, a batch restoring everything that knows where it belongs and naming what it could not resolve.
 
 ### Baseline
 
@@ -84,7 +89,7 @@ The copy takes duplicates of the device-local rows; the original is untouched. F
 
 ### Pending
 
-- **Every surface** — the restore trigger, the trash browser, any compare view. The actions they invoke exist; the surfaces read and call them.
+- **A compare view** — reading a bundle's frozen content against what stands in its place now. The record holds what it would need; nothing renders it.
 - **Crash-safe cascades beyond the delete** — the write→act→settle shape applied to the rename and move cascades.
 - **Property and frontmatter change capture** as event payloads — the record shape widens additively.
 - **Git as opt-in content history** — complementary, never the record; Pommora must never auto-commit.
