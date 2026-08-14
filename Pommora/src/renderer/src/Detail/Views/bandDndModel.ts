@@ -1,8 +1,8 @@
-// Pure model behind the table's band drag (group headers) — no React, no DOM. Hit-testing runs
-// over the VISIBLE band list; order math runs over the FULL structural id set so collapsed
-// subtrees survive every write. A drop slot resolves its IMPLIED PARENT from the band below the
-// line — the router compares it against the dragged band's current parent to pick reorder vs
-// reparent (a flat array alone can never lift a child past its parent).
+// Pure model behind band drag (group headers), shared by every surface that renders bands — no
+// React, no DOM. Hit-testing runs over the VISIBLE band list; order math runs over the FULL
+// structural id set so collapsed subtrees survive every write. A drop slot resolves its IMPLIED
+// PARENT from the band below the line — the router compares it against the dragged band's current
+// parent to pick reorder vs reparent (a flat array alone can never lift a child past its parent).
 
 import type { ResolvedGroup } from '@shared/types'
 import { type MeasuredRow, nextOrder } from '@renderer/Sidebar/sidebarDndModel'

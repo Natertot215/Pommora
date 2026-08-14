@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SavedView } from '@shared/views'
 import type { Band } from './bandDndModel'
-import { bandReorderPatch } from './useBandOrdering'
+import { bandReorderPatch, groupingKeyOf } from './useBandOrdering'
 
 const band = (id: string, kind: Band['kind']): Band => ({ id, kind, depth: 0, parentId: null })
 
@@ -67,5 +67,31 @@ describe('bandReorderPatch', () => {
       propertyKeys: [],
     })
     expect(patch).toEqual({ group_order: ['B', 'A'] })
+  })
+})
+
+// The patch says how ONE grouping's bands are ordered, so it must not outlive that grouping — the
+// Grouping pane writes the view independently, and a patch held past its change would mask the new
+// grouping with the old one's order until the next view switch.
+describe('groupingKeyOf', () => {
+  const g = (over: Partial<SavedView>): SavedView => view(over)
+
+  it('separates two property groupings, so switching between them retires the patch', () => {
+    expect(groupingKeyOf(g({ group: propertyGroup }))).not.toBe(
+      groupingKeyOf(g({ group: { ...propertyGroup, property_id: 'p2' } })),
+    )
+  })
+
+  it('separates the grouping kinds', () => {
+    expect(groupingKeyOf(g({ group: { kind: 'flat' } }))).not.toBe(
+      groupingKeyOf(g({ group: { kind: 'structural' } })),
+    )
+  })
+
+  it('is blind to the order within a grouping — a reorder must not retire its own patch', () => {
+    expect(groupingKeyOf(g({ group: { ...propertyGroup, order: ['a', 'b'] } }))).toBe(
+      groupingKeyOf(g({ group: { ...propertyGroup, order_mode: 'manual', order: ['b', 'a'] } })),
+    )
+    expect(groupingKeyOf(g({ group_order: ['a'] }))).toBe(groupingKeyOf(g({ group_order: ['b'] })))
   })
 })
