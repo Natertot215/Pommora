@@ -6,8 +6,6 @@
 
 ### Immediate Work
 
-- [ ] **Live-use verification of the trash browser.** Every path is covered by tests and the surface was read off a screenshot, but nothing has been recovered in anger yet. What wants confirming in ordinary use: the destination submenu as a native menu renders and picks, a batch's report reads right, and the reveal-on-hover checkboxes are findable without being told they are there.
-- [ ] **The main pane's Inspector.** Its toggle, slide, resizable edge, persisted width and glass shell are built and its body is empty. The Page Preview's frontmatter inspector is a portable body already doing that job for another host.
 
 ### Pending Focuses
 
