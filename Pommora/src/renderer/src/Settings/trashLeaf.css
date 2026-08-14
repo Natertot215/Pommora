@@ -1,0 +1,110 @@
+/* The Trash leaf. The rows are the navigation list's, borrowed whole, with one lane added for the
+   deletion time — so this file styles the frame the rows sit in and the lane, and nothing about a
+   row itself.
+
+   The nav row's horizontal rhythm rides `--navwindow-inset`, which only the two nav windows declare;
+   this window is in neither scope, so the leaf declares it. An unset custom property with no
+   fallback resolves to its initial value in silence, which is how a borrowed surface ships wrong
+   while reading right in the file. */
+.trash-leaf {
+  --navwindow-inset: 14px; /* KNOB — the leaf's content inset, the rows' included */
+  --trash-date-lane: 128px; /* KNOB — fixed, so the dates line up down the list */
+  --trash-gutter: 22px; /* KNOB — the checkbox strip left of the rows' content */
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Clears the window's floating ×, exactly as the toggle panel's body does. */
+  padding-top: 30px;
+}
+
+/* Mirrors the NavWindow's search row — magnifier, field, and a divider inset to the same edge. */
+.trash-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 var(--navwindow-inset);
+  padding: 9px 0;
+  color: var(--label-tertiary);
+  border-bottom: 1px solid var(--separator-segment);
+  flex-shrink: 0;
+}
+.trash-search input {
+  flex: 1;
+  color: var(--label-primary);
+  background: transparent;
+}
+.trash-search input::placeholder {
+  color: var(--label-tertiary);
+}
+
+/* Bare column labels over the data — no fill and no seam, which is the embedded table's reading of
+   a heading rather than the full-page band's. The lanes are the rows' own: this row carries the
+   same gutter, the same inset and the same date width, so nothing has to be measured twice. */
+.trash-head {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 8px 0 4px;
+  color: var(--label-control);
+  user-select: none;
+}
+.trash-head-name {
+  flex: 1;
+  min-width: 0;
+  padding-left: calc(var(--navwindow-inset) + var(--trash-gutter));
+}
+.trash-head-date {
+  flex: 0 0 var(--trash-date-lane);
+  padding-right: var(--navwindow-inset);
+}
+.trash-head-name,
+.trash-head-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trash-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-bottom: 6px;
+}
+
+/* The rows' content clears the checkbox strip; the highlight still spans full-width. */
+.trash-leaf .nav-item-main {
+  padding-left: calc(var(--navwindow-inset) + var(--trash-gutter));
+}
+.trash-check {
+  position: absolute;
+  left: calc(var(--navwindow-inset) + var(--trash-gutter) / 2);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+/* A checked row wears no fill of its own — the box alone carries the state. */
+.trash-date {
+  flex: 0 0 var(--trash-date-lane);
+  padding-right: var(--navwindow-inset);
+  color: var(--label-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A location that no longer exists reads as a record of one. */
+.trash-leaf .is-historical .nav-item-path {
+  font-style: italic;
+  color: var(--label-tertiary);
+}
+
+.trash-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--label-tertiary);
+}

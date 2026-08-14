@@ -1,0 +1,29 @@
+/* The app's one checkbox look. Two consumers wear it: the editor's task marker, which is a
+   CodeMirror widget building raw DOM, and the React `Checkbox`. Plain CSS rather than a `.css.ts`
+   so the widget can name the class without importing a build artifact.
+
+   inline-block (content-independent baseline) so toggling doesn't shift the box; the mark is
+   absolutely centered. Geometry is chipBoxGeometry's, worn alongside. */
+.pm-checkbox {
+  box-sizing: border-box;
+  display: inline-block;
+  position: relative;
+  vertical-align: -0.18em;
+  border-style: solid;
+  border-color: var(--label-tertiary);
+  background: transparent;
+  color: color-mix(in srgb, var(--accent) var(--tint-quaternary), var(--label-primary));
+  cursor: pointer;
+}
+.pm-checkbox svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+/* Set and mixed share the fill — a partial selection is a selection, and only the mark differs. */
+.pm-checkbox-checked,
+.pm-checkbox-mixed {
+  background: color-mix(in srgb, var(--accent) var(--tint-primary), transparent);
+  border-color: color-mix(in srgb, var(--accent) var(--tint-tertiary), transparent);
+}

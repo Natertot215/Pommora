@@ -119,7 +119,7 @@
    lockstep with the glyphs. Scoped to the two block contexts: the chipBoxGeometry token and every chip
    using it stay untouched in the full-page editor (an atomic widget, so zoom doesn't disturb caret
    mapping). Absent scale ⇒ zoom:1, a no-op. */
-:is(.pgembed, .blk-md) .md-checkbox {
+:is(.pgembed, .blk-md) .pm-checkbox {
   zoom: var(--glyph-scale);
 }
 
