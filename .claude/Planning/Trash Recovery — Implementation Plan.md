@@ -17,7 +17,7 @@ Bounded to what the engine already does. This does not prune the trash, preview 
 2. A new main-side op empties a bundle — artifact to the system trash or erased outright per the switch, spent bundle removed behind it — guarded to `.trash` and to bundles alone.
 3. Restore accepts a chosen destination for the kinds that can be homeless, resolved through the existing resolver with its parent substituted.
 4. The Settings rail hosts a leaf whose body is a surface rather than a toggle list, bottom-anchored under a divider.
-5. The leaf lists rows in the navigation row's styling with a fixed deleted-date lane, under heading rows naming both columns.
+5. The leaf lists rows in the navigation row's styling with a fixed deleted-date lane, under heading rows naming both columns, filtered live by a search field that yields Escape back to the window once empty.
 6. Rows carry always-visible checkboxes, local multi-select, and a select-all.
 7. A right-click menu offers Restore and Delete for one row and Restore All and Delete All for a checked set, with Restore opening a nested destination submenu where the home is gone.
 8. Restore returns an entity to the tree, reachable immediately, without opening it, and drops its row.
@@ -28,7 +28,7 @@ Bounded to what the engine already does. This does not prune the trash, preview 
 
 **Acceptance — the whole thing working**
 
-Delete a page, a Set holding pages, and a Space from a Context. Open Settings → Trash: all three appear with correct kind glyphs, titles, breadcrumbs and times, newest first. Rename the page's parent Collection, then restore the page — it lands in the renamed parent, is reachable in the sidebar and openable in a tab without reloading the nexus, and does not open by itself. Delete the Set's parent Collection, then restore the Set — its Restore opens a destination submenu, and the pick places it there. Check the remaining rows, Delete All, confirm — they leave the list and appear in the system trash as bare files. Turn the switch on, delete one more, and it does not reach the system trash at all.
+Delete a page, a Set holding pages, and a Space from a Context. Open Settings → Trash: all three appear with correct kind glyphs, titles, breadcrumbs and times, newest first. Rename the page's parent Collection, then restore the page — it lands in the renamed parent, is reachable in the sidebar and openable in a tab without reloading the nexus, and does not open by itself. Delete the Set's parent Collection, then restore the Set — its Restore opens a destination submenu, and the pick places it there. Check the remaining rows, Delete All, confirm — they leave the list and appear in the system trash as bare files. Type into the search field — the list narrows on title and breadcrumb; press Escape once and the query clears, again and the window closes. Turn the switch on, delete one more, and it does not reach the system trash at all.
 
 **Forced By**
 
@@ -99,14 +99,14 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 | Doc | The specific claim | What makes it false | Task |
 | --- | --- | --- | --- |
-| NexusRecordPM | "Every surface — the restore trigger, the trash browser, any compare view. The actions they invoke exist; the surfaces read and call them." | Two of the three arrive | 14 |
-| ArchitecturePM | "the restore action is IPC-reachable; no surface browses the trash or invokes it" | Both halves | 14 |
-| PommoraPRD | "no surface browses or restores it yet, which makes putting one back a manual move" | Inverts | 14 |
-| ConfigurationPM | "Its rows are per-Nexus knobs" | A leaf carries a surface; the window renames and resizes | 14 |
-| `provenance.ts` | "Parked, NOT dead code: no bridge channel exposes this" | Task 2 wires it | 2 |
-| `shared/mutate.ts` | "the whole restore path is built and tested main-side and has no renderer caller by design" | Task 11 calls it | 11 |
-| SidebarPM | names the surface the Settings glyph summons | The rename | 14 |
-| ContextPM | carries the trash browser as Current Focus and Immediate Work | It ships | 14 |
+| NexusRecordPM | "Every surface — the restore trigger, the trash browser, any compare view. The actions they invoke exist; the surfaces read and call them." | Two of the three arrive | 15 |
+| ArchitecturePM | "the restore action is IPC-reachable; no surface browses the trash or invokes it" | Both halves | 15 |
+| PommoraPRD | "no surface browses or restores it yet, which makes putting one back a manual move" | Inverts | 15 |
+| ConfigurationPM | "Its rows are per-Nexus knobs" | A leaf carries a surface; the window renames and resizes | 15 |
+| `provenance.ts` | "Parked, NOT dead code: no bridge channel exposes this" | Task 4 wires it | 4 |
+| `shared/mutate.ts` | "the whole restore path is built and tested main-side and has no renderer caller by design" | Task 13 calls it | 13 |
+| SidebarPM | names the surface the Settings glyph summons | The rename | 15 |
+| ContextPM | carries the trash browser as Current Focus and Immediate Work | It ships | 15 |
 
 **Dead Vocabulary**
 
@@ -114,13 +114,47 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - `rg -F "entityIcon('space'" Pommora/src` → expect **7** after conversion, down from 13. Legitimate hits: the `treeIndex.ts` and `contextIdentity.ts` space branches, `Sidebar.tsx:567`, `SpaceDropdown.tsx`, `SpaceSettings.tsx`, and two lines in `entityIcon.test.ts` that test the space kind on purpose. Any Context-drawing site remaining is a defect.
 - Control: `rg -F "entityIcon(" Pommora/src` → **43** at planning time. Zero here means the search never ran.
 
-**Hazard Window:** Task 1 widens `ENTITY_ICON_KINDS`; until Task 13 re-runs the full gate, any surface drawing a Context glyph may be mid-migration. No task between them may add a new `entityIcon` call site.
+**Hazard Window:** Task 4 widens `ENTITY_ICON_KINDS` and converts the six Context sites in the same commit; the window opens and closes inside that task, and **Gate 1 is its closer**. Nothing later is constrained — Task 13 must add a new `entityIcon` call site to draw its rows, and does so against a union that is already correct.
 
 ---
 
-### Phase 1 — The glyph prerequisite
+### Phase 1 — Clearing the ground
 
-#### Task 1: Give Context its own kind glyph and move Space to the dashboard
+#### Task 1: The stray lint diagnostic
+
+**Requirements:** —
+
+**Why:** The project's rules state lint runs clean, and one redundant fragment in a test file contradicts it. It predates this work and sits outside its diff; a rule contradicted by one character is repaired rather than documented around. → M-6.
+
+**Files:** `src/renderer/src/MarkdownPM/mdLinkTarget.test.tsx`
+
+**Steps:**
+- [ ] Remove the redundant fragment.
+- [ ] `npm run lint` — expect zero diagnostics of any severity.
+- [ ] Commit: `chore(lint): the last diagnostic`
+
+#### Task 2: Fold four search inputs into one component
+
+**Requirement:** 12
+
+**Why:** The same bare input is inlined three times and the trash would be the fourth. It has no dependency on anything else here and its spec says outright that it does not belong in the feature's own commits — so it lands on its own, where a red gate means the refactor and nothing else. → E-8, E-11.
+
+**Files:**
+- Create: the shared field, in `src/renderer/src/design-system/components/`.
+- Modify: `src/renderer/src/Tabs/NavView.tsx` · `NavWindow/NavWindow.tsx` · `Components/IconPicker.tsx`.
+
+**Survivors:** all three surfaces look **exactly** as they do now. They agree on almost nothing — two are transparent and one is a filled field with a radius and a focus ring, one overrides the type ramp, one autofocuses through a ref, and the wrappers are three unrelated objects. **NavWindow's placeholder has no colour rule and falls to the browser default** where the other two are tertiary; a component that styles placeholders uniformly changes it, which is the one thing this refactor promised not to do. The shared part is the controlled value, the spellcheck, and the chrome reset — nothing a caller disagrees on.
+
+**Failure half:** a caller passing no placeholder → renders none rather than a default; the autofocusing consumer keeping its ref through the seam.
+
+**Steps:**
+- [ ] Screenshot all three surfaces at rest and focused.
+- [ ] Extract the field; convert the three consumers.
+- [ ] Re-screenshot and diff — expect no visible difference, NavWindow's placeholder included.
+- [ ] Gate — expect green.
+- [ ] Commit: `refactor(design-system): one search field, four consumers`
+
+#### Task 3: Give Context its own kind glyph and move Space to the dashboard
 
 **Requirement:** 10
 
@@ -131,7 +165,6 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - Modify: `src/renderer/src/design-system/symbols/index.tsx` — `DEFAULT_ENTITY_ICONS` gains `context: 'layout-grid'`; `space` becomes `'layout-dashboard'`.
 - Modify: the six Context-drawing call sites in Derivation.
 - Modify: `src/main/crud/contextWrite.ts` and `src/renderer/src/treeMove.ts` — stop stamping the literal icon on a minted Context.
-- Modify: `src/main/readNexus.ts` — `readPersonalization`'s `defaultIcons` must admit the new key.
 - Test: `src/renderer/src/Detail/Views/pipeline/contextIdentity.test.ts` — asserts the old Space seed.
 
 **Derivation**
@@ -140,11 +173,11 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 **Interfaces**
 - Produces: `EntityIconKind` widened to include `'context'`; `DEFAULT_ENTITY_ICONS.context`.
-- Assumed by: Task 8 (row glyphs resolve by kind).
+- Assumed by: Task 11 (row glyphs resolve by kind).
 
 **Survivors:** the seven genuine `entityIcon('space', …)` sites keep asking for a Space, because they draw Spaces. An entity's own stored icon and a nexus's `defaultIcons` override both still outrank the seed — this moves a floor, never a choice anyone made (L-6).
 
-**Must agree:** `entityIcon` and `readPersonalization` must reach the same answer about which kinds exist. A `defaultIcons.context` written to disk and dropped on read would make the new key silently inert — one test writes the key, reads it back through the coercer, and asserts it reaches `entityIcon`.
+**Must agree:** the two gates on an icon name must agree about what is renderable. `readPersonalization` loops `ENTITY_ICON_KINDS`, so widening the union *is* the coercer change and no separate edit exists — but the override and an entity's own icon are gated differently: a nexus default naming an uncurated glyph is rejected and falls to the seed, while an entity's own icon is not gated the same way. One test pins that asymmetry through the real write-and-read round trip, since a test between two consumers of one constant would pass by construction.
 
 **Failure half:** `defaultIcons` absent entirely → seeds; `defaultIcons.context` naming a glyph the registry doesn't hold → seeds rather than rendering a blank; a Context minted before this change, carrying the stored literal → keeps it, since an own icon outranks a seed and that is the ruled behavior.
 
@@ -154,12 +187,12 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - [ ] Add the `context` seed; change `space` to `layout-dashboard`. Re-run typecheck — expect clean.
 - [ ] Convert the six Context sites to `entityIcon('context', …)`.
 - [ ] Stop the two mint sites stamping the literal.
-- [ ] Add `context` to `readPersonalization`'s `defaultIcons` handling; write the round-trip test.
+- [ ] Write the override round-trip test (see Must agree).
 - [ ] Update `contextIdentity.test.ts` to the new seed.
 - [ ] Full gate — expect green.
 - [ ] Commit: `feat(symbols): a Context wears its own mark, and a Space takes the dashboard`
 
-#### Gate 1 — the kinds are distinct
+#### Gate 1 — the ground is clear and the kinds are distinct
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Derivation re-run against its control; counts matched or the divergence rewrote the plan.
 - [ ] Simplification and review dispatched against `<base>..HEAD` scoped to the touched paths.
@@ -171,7 +204,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 ### Phase 2 — Main: enumerate, empty, relocate
 
-#### Task 2: Widen `listBundles` and expose it on a new enveloped channel
+#### Task 4: Widen `listBundles` and expose it on a new enveloped channel
 
 **Requirements:** 1
 
@@ -186,7 +219,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 **Interfaces**
 - Produces: `ListedBundle { bundlePath, record, artifactName }`; a channel returning `Result<TrashRow[]>`.
-- Assumed by: Task 3 (shapes rows), Task 8 (renders them).
+- Assumed by: Task 5 (shapes rows), Task 11 (renders them).
 
 **Failure half:** `.trash` absent entirely → empty array, not a throw; a bundle whose record won't validate → skipped, already the behavior; a bundle with a record and no artifact → skipped, already the behavior; no nexus open → the session refusal.
 
@@ -198,11 +231,11 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - [ ] Gate — expect green.
 - [ ] Commit: `feat(trash): the trash's contents reach the renderer`
 
-#### Task 3: Shape a bundle into a row
+#### Task 5: Shape a bundle into a row
 
 **Requirements:** 1
 
-**Why:** The renderer must never reason about `.deleted` suffixes, stamp encoding, or the six-way record union — so main owns the parse. The row carries its kind and whether its home still resolves because the menu is built *before* any restore is attempted and cannot learn either by trying; this is the one place both answers are free, since the record and the tree are already in hand. Breadcrumbs resolve from the recorded parent id against the live tree, never from the frozen `.trash` chain, so a renamed ancestor reads true. → C-2, C-3, C-5, H-21, I-1, I-2, I-3, E-6.
+**Why:** The renderer must never reason about `.deleted` suffixes, stamp encoding, or the six-way record union — so main owns the parse. **The shaper is also where the property kind is excluded.** `listBundles` admits a property bundle deliberately, waiving the artifact requirement that filters every other incomplete deletion, because that bundle is complete — it holds a record and nothing else by design. Left unfiltered it becomes a row with no title, no breadcrumb and no date, which Delete All would then destroy unread. The filter is the record's own discriminator, never the absence of an artifact. The row carries its kind and whether its home still resolves because the menu is built *before* any restore is attempted and cannot learn either by trying; this is the one place both answers are free, since the record and the tree are already in hand. Breadcrumbs resolve from the recorded parent id against the live tree, never from the frozen `.trash` chain, so a renamed ancestor reads true. → C-2, C-3, C-5, H-21, I-1, I-2, I-3, E-6.
 
 **Files:**
 - Create: `src/main/crud/trashRows.ts` — the shaper.
@@ -211,19 +244,19 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 **Interfaces**
 - Produces: `TrashRow { bundlePath, kind, title, crumbs, deletedAt, homeResolves }` in `src/shared/types.ts`.
-- Assumed by: Tasks 8, 9, 10, 11, 12.
+- Assumed by: Tasks 11, 12, 13, 14.
 
 **Must agree:** `homeResolves` and `resolveRecord` must reach the same verdict. The row says a home resolves exactly when the resolver would not refuse with `parent-gone`, `unaddressable` or `cannot-hold` — one test restores a row the shaper called resolvable and asserts it lands without a picker, and one asserts the converse.
 
-**Failure half:** a record with no id → row still shapes, breadcrumb falls back to the frozen chain; a parent id resolving to nothing → `homeResolves` false, historical breadcrumb; a `context` record, which carries no parent at all → always resolvable; a stamp that won't parse → the row still lists, with no date rather than no row.
+**Failure half:** **a `property` record → no row at all**; a record with no id → row still shapes, breadcrumb falls back to the frozen chain; a parent id resolving to nothing → `homeResolves` false, historical breadcrumb; a `context` record, which carries no parent at all → always resolvable; a stamp that won't parse → the row still lists, with no date rather than no row.
 
 **Steps:**
-- [ ] Write the shaper's tests: each of the five kinds, a renamed ancestor, a missing parent, an id-less record, an unparseable stamp — expect red.
+- [ ] Write the shaper's tests: each of the five artifact-bearing kinds, **a property record that must not become a row**, a renamed ancestor, a missing parent, an id-less record, an unparseable stamp — expect red.
 - [ ] Implement; sort newest-first. Re-run — expect green.
 - [ ] Wire the handler to it; gate — expect green.
 - [ ] Commit: `feat(trash): a bundle becomes a row that knows where it came from`
 
-#### Task 4: Read the delete switch main-side
+#### Task 6: Read the delete switch main-side
 
 **Requirements:** 9
 
@@ -239,7 +272,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 **Interfaces**
 - Produces: `MutateDeps.permanentDelete: boolean`.
-- Assumed by: Task 5.
+- Assumed by: Task 7.
 
 **Failure half:** `settings.json` absent → false; the key absent → false; a non-boolean value → false, never truthy-coerced, since the unsafe direction must never be reached by accident.
 
@@ -251,7 +284,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - [ ] Gate — expect green.
 - [ ] Commit: `feat(settings): the delete switch main-side, read per operation`
 
-#### Task 5: The empty op
+#### Task 7: The empty op
 
 **Requirements:** 2
 
@@ -264,7 +297,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 **Interfaces**
 - Produces: `{ op: 'emptyBundle'; bundlePath: string }`.
-- Assumed by: Tasks 10, 12.
+- Assumed by: Tasks 12, 14.
 
 **Negative control:** both halves. A test proves the op *runs* on a genuine bundle, and a second points it at a chain directory wearing the suffix but holding no record and asserts refusal. Disable the record check and the second must go red.
 
@@ -277,7 +310,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - [ ] Gate — expect green.
 - [ ] Commit: `feat(trash): emptying a bundle, guarded to bundles alone`
 
-#### Task 6: Restore into a chosen destination
+#### Task 8: Restore into a chosen destination
 
 **Requirements:** 3
 
@@ -291,7 +324,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 **Interfaces**
 - Produces: `{ op: 'restore'; bundlePath: string; destination?: { kind: 'container' | 'context'; id: string } }`.
-- Assumed by: Tasks 10, 11, 12.
+- Assumed by: Tasks 12, 13, 14.
 
 **Must agree:** the destination matrix and the write path's existing move admission must reach the same answer about what may hold what. A page or Set lands only in a Collection or a Set; a Space only in a Context. One test crosses both: a destination the move check would refuse must be refused here too.
 
@@ -306,7 +339,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - [ ] Gate — expect green.
 - [ ] Commit: `feat(trash): a homeless entity restores where you choose`
 
-#### Task 7: Hoist the destination tree and widen its node
+#### Task 9: Hoist the destination tree and widen its node
 
 **Requirements:** 3, 7
 
@@ -320,7 +353,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 **Interfaces**
 - Produces: the container walk and the flat Context roster, both as the widened node.
-- Assumed by: Task 10.
+- Assumed by: Task 12.
 
 **Survivors:** the card's `Move To ▸` behaves exactly as it does today. The id is an addition and the hoist is a relocation, not a rewrite — if the card menu changes, the change is wrong.
 
@@ -342,7 +375,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 ### Phase 3 — The surface
 
-#### Task 8: Rename the window, fix its chrome, and open the leaf registry
+#### Task 10: Rename the window, fix its chrome, and open the leaf registry
 
 **Requirements:** 4, 11
 
@@ -353,15 +386,15 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - Modify: the component, its inner body, the CSS import, and both the import and the mount in `App.tsx`.
 - Modify: `WIN` — default 850 × 600, floor raised to fit the surface.
 - Modify: `nexusSettings.css` — the rail's phantom `padding-top` removed; the body's kept.
-- Modify: the category registry — a discriminated entry, toggle list or component.
+- Modify: the leaf registry's value type — the entry becomes a discriminated union, a toggle list or a component. The category list itself is untouched here.
 
 **Derivation**
-- `rg -F "SettingsWindow" Pommora/src` → **5** matching lines at planning time, across three files; with the two filenames that is seven locations. Legitimate hits: none; all convert.
+- `rg -F "SettingsWindow" Pommora/src` → **5** matching lines at planning time, across two files; with the two filenames that is seven locations. Legitimate hits: none; all convert.
 - Control: `rg -F "settingsOpen" Pommora/src` → **6**. Zero means the search never ran.
 
 **Interfaces**
 - Produces: the widened category entry.
-- Assumed by: Task 9.
+- Assumed by: Task 11.
 
 **Survivors:** the CSS class namespace, the geometry-stash id and the rail's `windowId` stay — internal strings with no user-facing effect, whose churn would exceed the ambiguity being fixed (A-5). The existing General and Pages leaves keep rendering exactly as they do.
 
@@ -373,38 +406,34 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - [ ] Gate — expect green.
 - [ ] Commit: `refactor(settings): NexusSettings, and a rail that can hold a surface`
 
-#### Task 9: The Trash leaf and its list
+#### Task 11: The Trash leaf and its list
 
-**Requirements:** 4, 5, 12
+**Requirements:** 4, 5
 
 **Why:** The list borrows the navigation row whole — kind glyph, title, breadcrumb — with a fixed date lane after it, because that row already solves truncation, overflow and hover in the house's idiom. The heading names both columns and implies nothing it can't do: the house heading has never sorted. **The single most likely way this ships broken is token scope** — the table's tunables are scoped to the table's own surface and the nav row's inset to the two nav windows, and an unset custom property with no fallback resolves to its initial value in silence. → A-1, A-4, B-5, B-6, E-1, E-2, E-3, E-4, E-5, E-6, E-7, E-8, E-9, E-10, E-11, E-12, E-13, E-14, E-15, E-16, E-17, E-18, E-19, E-20, J-6, J-7, J-9, C-4, C-6.
 
 **Files:**
 - Create: the leaf component and its stylesheet.
-- Create: the shared search input component; convert NavView, NavWindow and IconPicker to it.
-- Modify: the category registry — the Trash entry, bottom-anchored under a divider.
+- Modify: the category list — the Trash entry; and the rail's render, which today is a flat map with no divider and no anchoring concept and gains both.
 - Modify: `src/renderer/src/design-system/symbols/index.tsx` — `clock-fading` joins the roster.
 - Modify: the view-embed's two shed heading rules become a modifier both consumers wear, or the leaf restates them (E-16 — decide at implementation and record which).
 
 **Interfaces**
-- Consumes: the row channel from Task 2, the row shape from Task 3.
-- Assumed by: Tasks 10, 11, 12.
+- Consumes: the row channel from Task 4, the row shape from Task 5.
+- Assumed by: Tasks 12, 13, 14.
 
-**Failure half:** an empty trash → "Trash is empty."; a row whose breadcrumb resolves to nothing → the historical chain; a fetch that fails → the leaf says so rather than rendering an empty list that reads as an empty trash.
-
-**Survivors:** NavView, NavWindow and IconPicker must look **exactly** as they do now. NavWindow's placeholder has no colour rule and falls to the browser default where the other two are tertiary — a shared component that styles placeholders uniformly changes it, which is the one thing this refactor promised not to do.
+**Failure half:** an empty trash → "Trash is empty."; a row whose breadcrumb resolves to nothing → the historical chain; a fetch that fails → the leaf says so rather than rendering an empty list that reads as an empty trash; **a deletion performed elsewhere while the leaf is open** → the list does not update, since nothing pushes and the leaf only refetches after its own actions. Reopening the leaf recovers it, and that is the accepted behavior rather than an oversight.
 
 **Steps:**
-- [ ] Extract the search input; convert the three consumers. Screenshot each before and after — expect no visible difference.
 - [ ] Add `clock-fading` to the roster.
 - [ ] Build the leaf: fetch on open, rows, headings, the date lane, the empty state.
-- [ ] Declare every borrowed token scope on the leaf's root. Verify each computed value is non-zero rather than assuming it inherits.
+- [ ] Declare every borrowed token scope on the leaf's root. **Enumerate every custom property the borrowed selectors read and assert each resolves to its intended value — not merely to a value.** A non-zero check passes on the exact damage predicted: an inherited black label is non-zero, and one of the nav inset's two existing declarations is legitimately `0`. The headless-CSS harness that found this renders the same subtree inside and outside the scoping class and diffs them.
 - [ ] Keep the leaf's class out of the window's drag surfaces.
 - [ ] Claim Escape for the search field when it holds a query.
 - [ ] Gate — expect green.
-- [ ] Commit: `feat(trash): the Trash leaf, and one search field for four surfaces`
+- [ ] Commit: `feat(trash): the Trash leaf and the list it holds`
 
-#### Task 10: Selection, the menu, and the destination submenu
+#### Task 12: Selection, the menu, and the destination submenu
 
 **Requirements:** 6, 7
 
@@ -417,7 +446,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 **Interfaces**
 - Produces: the menu's action union, including a destination pick.
-- Assumed by: Tasks 11, 12.
+- Assumed by: Tasks 13, 14.
 
 **Failure half:** a right-click on an unchecked row with others checked → acts on that row alone; a destination submenu with no admissible destinations → the row renders disabled rather than vanishing; a select-all over an empty list → inert.
 
@@ -425,15 +454,15 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - [ ] Add the indeterminate state to the checkbox; test all three states.
 - [ ] Build the model, popper, channel, dialer, registration.
 - [ ] Wire selection, select-all, row-click-toggles, and the right-click.
-- [ ] Build the destination submenu from Task 7's tree, gated on the row's `homeResolves`.
+- [ ] Build the destination submenu from Task 9's tree, gated on the row's `homeResolves`.
 - [ ] Gate — expect green.
 - [ ] Commit: `feat(trash): choosing rows, and the menu that acts on them`
 
-#### Task 11: Restore, single and batch
+#### Task 13: Restore, single and batch
 
 **Requirements:** 3, 8
 
-**Why:** A single restore rides the store's mutate so its refetch makes the entity reachable without a nexus reload and its failure already reaches the user. A batch cannot: that action re-walks the whole nexus per op, so five restores would pay five full-tree reads — the exact thing the rules forbid. The batch calls the channel directly and refreshes once, restoring everything that knows where it belongs and leaving the rest to be asked individually. → D-1, D-2, D-7, H-12, H-13, H-14, H-15, H-16, H-17, H-18, H-20.
+**Why:** A single restore rides the store's mutate so its refetch makes the entity reachable without a nexus reload and its failure already reaches the user. A batch cannot: that action refetches the whole tree into the renderer after every op, so five restores would pay five whole-tree refreshes. The batch calls the channel directly and refreshes once. **What this does not save is the main-side walk** — the resolver's contract is a placement against the *current* tree, so `restoreArtifact` reads it per call by necessity; collapsing those into one read would be a batch op resolving N records against one tree, which is a successor rather than this task. → D-1, D-2, D-7, H-12, H-13, H-14, H-15, H-16, H-17, H-18, H-20.
 
 **Files:**
 - Modify: the leaf — the restore handlers and the result report.
@@ -449,7 +478,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - [ ] Gate — expect green.
 - [ ] Commit: `feat(trash): putting things back, one at a time or many`
 
-#### Task 12: Emptying, its switch, and its confirms
+#### Task 14: Emptying, its switch, and its confirms
 
 **Requirements:** 2, 9
 
@@ -468,26 +497,13 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 - [ ] Gate — expect green.
 - [ ] Commit: `feat(trash): letting go, and the switch that says what that means`
 
-#### Task 13: The stray lint diagnostic
-
-**Requirements:** —
-
-**Why:** The project's rules state lint runs clean, and one redundant fragment in a test file contradicts it. It predates this work and sits outside its diff; a rule contradicted by one character is repaired rather than documented around. → M-6.
-
-**Files:** `src/renderer/src/MarkdownPM/mdLinkTarget.test.tsx`
-
-**Steps:**
-- [ ] Remove the redundant fragment.
-- [ ] `npm run lint` — expect zero diagnostics of any severity.
-- [ ] Commit: `chore(lint): the last diagnostic`
-
 #### Gate 3 — the surface works
-- [ ] Gate commands green; lint at zero diagnostics of any severity.
+- [ ] Gate commands green, lint at zero diagnostics of any severity.
 - [ ] Derivations re-run against their controls.
 - [ ] Every task that diverged had its dependents re-derived and rewritten.
 - [ ] Simplification and review dispatched against `<base>..HEAD`; `comment-killer-agent` on the diff.
 - [ ] Every concern fixed or carrying an explicit ruling in the Log.
-- [ ] The hazard window opened at Task 1 is closed.
+- [ ] The hazard window opened at Task 3 is closed.
 - [ ] **Seen running:** the acceptance scenario, end to end, against a real nexus. Plus the three converted search fields, side by side with their previous appearance.
 - [ ] Progress hashes filled in.
 
@@ -495,7 +511,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 ### Phase 4 — Reconciliation
 
-#### Task 14: Rewrite what this made false
+#### Task 15: Rewrite what this made false
 
 **Requirements:** all
 
@@ -520,24 +536,25 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — The glyph prerequisite · base `<commit>`
-  - [ ] Task 1 — Context and Space glyphs · `<commit>`
+- [ ] **Phase 1** — Clearing the ground · base `<commit>`
+  - [ ] Task 1 — The stray lint diagnostic · `<commit>`
+  - [ ] Task 2 — Four search inputs become one · `<commit>`
+  - [ ] Task 3 — Context and Space glyphs · `<commit>`
 - [ ] **Phase 2** — Main: enumerate, empty, relocate · base `<commit>`
-  - [ ] Task 2 — Widen `listBundles`, expose the channel · `<commit>`
-  - [ ] Task 3 — Shape a bundle into a row · `<commit>`
-  - [ ] Task 4 — Read the delete switch main-side · `<commit>`
-  - [ ] Task 5 — The empty op · `<commit>`
-  - [ ] Task 6 — Restore into a chosen destination · `<commit>`
-  - [ ] Task 7 — Hoist the destination tree · `<commit>`
+  - [ ] Task 4 — Widen `listBundles`, expose the channel · `<commit>`
+  - [ ] Task 5 — Shape a bundle into a row · `<commit>`
+  - [ ] Task 6 — Read the delete switch main-side · `<commit>`
+  - [ ] Task 7 — The empty op · `<commit>`
+  - [ ] Task 8 — Restore into a chosen destination · `<commit>`
+  - [ ] Task 9 — Hoist the destination tree · `<commit>`
 - [ ] **Phase 3** — The surface · base `<commit>`
-  - [ ] Task 8 — Rename, chrome, leaf registry · `<commit>`
-  - [ ] Task 9 — The Trash leaf and its list · `<commit>`
-  - [ ] Task 10 — Selection and the menu · `<commit>`
-  - [ ] Task 11 — Restore, single and batch · `<commit>`
-  - [ ] Task 12 — Emptying and its switch · `<commit>`
-  - [ ] Task 13 — The stray lint diagnostic · `<commit>`
+  - [ ] Task 10 — Rename, chrome, leaf registry · `<commit>`
+  - [ ] Task 11 — The Trash leaf and its list · `<commit>`
+  - [ ] Task 12 — Selection and the menu · `<commit>`
+  - [ ] Task 13 — Restore, single and batch · `<commit>`
+  - [ ] Task 14 — Emptying and its switch · `<commit>`
 - [ ] **Phase 4** — Reconciliation · base `<commit>`
-  - [ ] Task 14 — Rewrite what this made false · `<commit>`
+  - [ ] Task 15 — Rewrite what this made false · `<commit>`
 
 ### Rulings
 
@@ -547,7 +564,7 @@ Delete a page, a Set holding pages, and a Space from a Context. Open Settings �
 
 ### Open Against Later Tasks
 
-- **E-16's two shed heading rules** — whether they become a modifier both consumers wear or the leaf restates them is decided at Task 9 and recorded there. Restating means the app carries one rule twice, which the constraints forbid; the modifier touches the view embed.
+- **E-16's two shed heading rules** — whether they become a modifier both consumers wear or the leaf restates them is decided at Task 11 and recorded there. Restating means the app carries one rule twice, which the constraints forbid; the modifier touches the view embed.
 
 ### Deviations
 
