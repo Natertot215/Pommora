@@ -1,6 +1,11 @@
 import type { PropertyDefinition, PropertyType } from '@shared/properties'
 import { RESERVED_PROPERTY_ID } from '@shared/properties'
-import { asRenderableIcon, Icon, type IconName } from '@renderer/design-system/symbols'
+import {
+  asRenderableIcon,
+  DEFAULT_ENTITY_ICONS,
+  Icon,
+  type IconName,
+} from '@renderer/design-system/symbols'
 import { DashIcon } from './DashIcon'
 
 /**
@@ -23,7 +28,9 @@ const PROPERTY_TYPES: Record<PropertyType, TypeMeta> = {
   status: { label: 'Status', icon: 'progress-check', creatable: true },
   url: { label: 'Link', icon: 'link', creatable: true },
   file: { label: 'File', icon: 'import', creatable: true },
-  context: { label: 'Context', icon: 'layout-grid' },
+  // The one type naming an entity kind rather than a value shape, so it draws the kind's glyph
+  // from where that is decided instead of restating it.
+  context: { label: 'Context', icon: DEFAULT_ENTITY_ICONS.context },
   last_edited_time: { label: 'Last edited', icon: 'history' },
 }
 
