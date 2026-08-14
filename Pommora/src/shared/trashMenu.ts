@@ -32,12 +32,11 @@ export function trashMenuLabels(batch: boolean): { restore: string; delete: stri
     : { restore: 'Restore', delete: 'Delete' }
 }
 
-/** The date column's own menu. The two formats offered are the worded one and the numeric one —
- *  the same pair the property editor names, under the same labels, so a date reads the same word
- *  wherever it is configured. A hand-edited settings file may still name any of the others. */
+/** The two ways this column writes a date: short is the numeric one, full is the worded one. A
+ *  hand-edited settings file may still name any other `DateFormat` and the column will honour it. */
 export const TRASH_DATE_FORMATS: { value: DateFormat; label: string }[] = [
-  { value: 'short', label: 'Short Date' },
-  { value: 'monthDayYear', label: 'MM/DD/YYYY' },
+  { value: 'monthDayYear', label: 'Short Date' },
+  { value: 'full', label: 'Full Date' },
 ]
 
 export type TrashColumnAction =
