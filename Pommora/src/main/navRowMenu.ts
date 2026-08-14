@@ -21,15 +21,10 @@ export function popNavRowMenu(
     if (items.length > 0) items.push({ type: 'separator' })
     // A recent is a stored ref, so its page is addressable only once the renderer has minted a live
     // path against the tree — without one, none of the three actions has anything to act on.
-    if (ctx.isPage && ctx.currentParentPath !== undefined)
-      items.push(
-        ...pageMenuTemplate(
-          pageMetaMenuSubset(pageSendActions(ctx)),
-          pick,
-          ctx,
-        ),
-        { type: 'separator' },
-      )
+    if (ctx.isPage && ctx.currentParentPath !== undefined) {
+      items.push(...pageMenuTemplate(pageMetaMenuSubset(pageSendActions(ctx)), pick, ctx))
+      items.push({ type: 'separator' })
+    }
     items.push({
       label: ctx.isPinned ? 'Unpin' : 'Pin',
       click: pick(ctx.isPinned ? 'unpin' : 'pin'),

@@ -48,21 +48,6 @@ export interface ActionItem<A> {
   separatorBefore?: boolean
 }
 
-/** A model's rows as a native template, with `separatorBefore` expanded into real separator rows.
- *  `click` is left to the caller because a returning menu resolves the action back to the renderer
- *  while an owning menu runs it in place. */
-export function menuTemplate<A>(
-  items: readonly ActionItem<A>[],
-  click: (action: A) => () => void,
-): MenuItemConstructorOptions[] {
-  const template: MenuItemConstructorOptions[] = []
-  for (const item of items) {
-    if (item.separatorBefore) template.push({ type: 'separator' })
-    template.push({ label: item.label, click: click(item.action) })
-  }
-  return template
-}
-
 /** A destination tree as native submenus. A parent item cannot itself be clicked, so a container
  *  repeats its own name as its submenu's first row above a separator — the convention both the
  *  card's Move To ▸ and the trash's Restore ▸ need, stated once. `disabled` grays a destination
@@ -87,10 +72,3 @@ export function destinationNodes<T extends { label: string; children?: T[] }>(
   return targets.map(node)
 }
 
-/** A menu that is nothing but its model's rows: pop them, resolve the pick. */
-export function popModelMenu<A>(
-  win: BrowserWindow,
-  items: readonly ActionItem<A>[],
-): Promise<A | null> {
-  return popReturningMenu<A>(win, (pick) => menuTemplate(items, pick))
-}

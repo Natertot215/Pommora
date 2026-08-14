@@ -16,11 +16,7 @@ export function popTabMenu(win: BrowserWindow, ctx: TabMenuContext): Promise<Tab
       items.push(
         { label: 'Open Preview', click: pick('preview') },
         { type: 'separator' },
-        ...pageMenuTemplate(
-          pageMetaMenuSubset(pageSendActions(ctx)),
-          pick,
-          ctx,
-        ),
+        ...pageMenuTemplate(pageMetaMenuSubset(pageSendActions(ctx)), pick, ctx),
         { type: 'separator' },
       )
     if (!ctx.isNewTab)
