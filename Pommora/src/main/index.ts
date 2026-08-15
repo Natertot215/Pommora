@@ -99,10 +99,10 @@ import {
   removeStatusOption,
   clearStatusOption,
 } from './crud/optionOps'
-import type { StatusGroup } from '@shared/properties'
+import type { LinkDisplay, StatusGroup } from '@shared/properties'
 import type { Option } from '@shared/optionModel'
 import { savedView } from '@shared/views'
-import { propertyDefinition, propertyType } from '@shared/properties'
+import { LINK_DISPLAYS, propertyDefinition, propertyType } from '@shared/properties'
 import type { PageFrontmatter } from '@shared/schemas'
 import { handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
@@ -980,12 +980,12 @@ serveBridge(
         const p = patch as Record<string, unknown>
         const changes: {
           link_underline?: boolean
-          link_display?: 'link-url' | 'link-title'
+          link_display?: LinkDisplay
           link_color?: string
         } = {}
         if (typeof p.link_underline === 'boolean') changes.link_underline = p.link_underline
-        if (p.link_display === 'link-url' || p.link_display === 'link-title')
-          changes.link_display = p.link_display
+        if (LINK_DISPLAYS.includes(p.link_display as LinkDisplay))
+          changes.link_display = p.link_display as LinkDisplay
         if ('link_color' in p)
           changes.link_color = typeof p.link_color === 'string' ? p.link_color : undefined
         const r = await editProperty(root, propertyId, changes)

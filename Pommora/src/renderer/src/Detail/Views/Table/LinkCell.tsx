@@ -4,13 +4,14 @@ import { isHttpLink } from '@shared/links'
 import { useSession } from '../../../store'
 import { cx } from '@renderer/design-system/cx'
 import { OverflowScroll } from '@renderer/design-system/components/OverflowScroll'
-import { parseLink, linkDisplayText } from './linkValue'
+import { parseLink, linkDisplayText } from '@shared/linkValue'
 import { solidColorCss } from './solidColor'
 
-/** The url-cell body, split out so ONLY url cells pay for the link-title store subscription + the
+/** The url-cell body, split out so ONLY url cells pay for the page-title store subscription + the
  *  on-demand fetch — Cell's other branches stay pure renders under the row memo. The alias always wins;
- *  a `link-title` cell with no alias resolves the fetched page title (subscribed narrowly to just this
- *  URL, so a title landing re-renders this one cell, never its siblings) and shows the domain until then.
+ *  a Page Title cell with no alias resolves the fetched title (subscribed narrowly to just this URL, so
+ *  a title landing re-renders this one cell, never its siblings) and shows the domain until then. Only
+ *  that one format fetches; the other two are derived from the URL itself.
  *  Opens through the sanctioned IPC — a raw <a> nav is denied by main's will-navigate hardening. */
 export function LinkCell({
   raw,

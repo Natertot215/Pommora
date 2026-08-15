@@ -21,7 +21,7 @@ import {
 import { PropertyEditor } from '../Detail/Views/PropertyEditing/PropertyEditor'
 import { sharedValueClickAction } from '../Detail/Views/PropertyEditing/valueClick'
 import { parseEditorValue } from '../Detail/Views/Cards/cardValueInput'
-import { parseLink, urlValueFromEdit } from '../Detail/Views/Table/linkValue'
+import { parseLink, urlValueFromEdit } from '@shared/linkValue'
 import { PropertyPicker, syntheticContextDef } from '../Detail/Views/PropertyEditing/PropertyPicker'
 import { DatetimeValuePicker } from '../Detail/Views/PropertyEditing/DatetimeValuePicker'
 import { resolveFieldValue } from '../Detail/Views/pipeline/value'

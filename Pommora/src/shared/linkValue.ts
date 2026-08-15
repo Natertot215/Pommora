@@ -3,15 +3,9 @@
 // alias ALWAYS wins at render — it overrides the property's Full URL / Title look. This is the one
 // seam that parses/serializes that shape; Cell render + the cell Edit/Rename writes both go through it.
 
-import {
-  MD_LINK,
-  escapeAlias,
-  isValidLink,
-  linkDomain,
-  normalizeLinkUrl,
-  unescapeAlias,
-} from '@shared/links'
-import type { PropertyValue } from '@shared/propertyValue'
+import { MD_LINK, escapeAlias, isValidLink, linkDomain, normalizeLinkUrl, unescapeAlias } from './links'
+import type { LinkDisplay } from './properties'
+import type { PropertyValue } from './propertyValue'
 
 export type LinkValue = { url: string; alias?: string }
 
@@ -60,17 +54,23 @@ export function urlValueFromRename(alias: string, current: string): PropertyValu
   }
 }
 
-/** The text to render for a URL value. An alias always wins. Otherwise the look is the property's:
- *  `link-title` shows the fetched page `title` (the caller resolves it out-of-band + hands it in),
- *  falling back to the bare domain while it's loading or if the fetch failed; `link-url` (the default)
- *  shows the full URL. Titles are display-only — sort/filter pass no title, so ordering stays stable. */
-export function linkDisplayText(
-  raw: string,
-  display?: 'link-url' | 'link-title',
-  title?: string,
-): string {
+/** The one place a URL becomes the text shown for it, whether that is a property cell or a link the
+ *  editor is writing. An alias always wins; otherwise the display decides — `link-title` shows the
+ *  fetched page title (the caller resolves it out-of-band and hands it in), falling back to the bare
+ *  domain while it loads or if it never arrives, `link-short` shows that domain outright, and
+ *  `link-full` the whole address.
+ *
+ *  Passing no display is how sort and filter ask for the raw URL: ordering must not move when a
+ *  property's look changes, so the absent case can never resolve to one of the shortened forms. */
+export function linkDisplayText(raw: string, display?: LinkDisplay, title?: string): string {
   const { url, alias } = parseLink(raw)
   if (alias) return alias
-  if (display === 'link-title') return title ?? linkDomain(url)
-  return url
+  switch (display) {
+    case 'link-title':
+      return title ?? linkDomain(url)
+    case 'link-short':
+      return linkDomain(url)
+    default:
+      return url
+  }
 }

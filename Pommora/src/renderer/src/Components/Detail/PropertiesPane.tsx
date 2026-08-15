@@ -442,7 +442,7 @@ export function PropertiesPane({
         ) : def.type === 'url' ? (
           <URLEditor
             underline={def.link_underline ?? false}
-            display={def.link_display ?? 'link-url'}
+            display={def.link_display ?? 'link-full'}
             color={def.link_color}
             onSetConfig={(patch) => void saveLinkConfig(def.id, patch)}
           />

@@ -106,8 +106,9 @@ export function normalizeLinkUrl(url: string): string {
 }
 
 /** The bare display domain for a URL — its host with a leading `www.` dropped (`https://www.github.com/x`
- *  → `github.com`). The `link-title` look shows this as its placeholder + its offline/404 fallback, so a
- *  title-mode cell still reads cleanly before (or without) a fetched title. Unparseable input → itself. */
+ *  → `github.com`). This is what Short Link shows, and it doubles as Page Title's placeholder and its
+ *  offline/404 fallback, so a title-mode link still reads cleanly before (or without) a fetched title.
+ *  Unparseable input → itself. */
 export function linkDomain(url: string): string {
   try {
     return new URL(normalizeLinkUrl(url)).hostname.replace(/^www\./i, '') || url.trim()
