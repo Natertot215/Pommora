@@ -58,7 +58,7 @@ The new-tab page — a full-window Recents **gallery or list** over a search bar
 
 ### Breadcrumb
 
-The footer carries a breadcrumb of the active tab's container path, plus a dimmed forward ghost crumb for the last-visited Page within the open container (→ [[SubfieldPM]]).
+The footer carries a breadcrumb of the active tab's path, extended with a dimmed tail down to the deepest node visited on it — the segments last backed out of, clickable to re-descend — so walking back up the path keeps the deeper trail in view rather than collapsing it (→ [[SubfieldPM]]).
 
 ### Pending
 
