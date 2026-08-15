@@ -271,12 +271,12 @@ Ruled out in the decision log; do not retry.
 - [x] Commit: `refactor(settings): the leaf schema models row kinds`
 
 #### Gate 2 — the schema generalizes, nothing moves
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Baseline invariant held: 6 General rows, 3 Pages rows, every label/hint/default unchanged.
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Pommora/src/renderer/src/Settings`, `Pommora/src/shared/types.ts`, `Pommora/src/main/readNexus.ts`.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] Gate commands green, exit codes read directly. *(typecheck 0 · lint 0 · test 0, 2634 passing.)*
+- [x] Baseline invariant held: 6 General rows, 3 Pages rows, every label/hint/default unchanged — counted from the `LEAVES` table, and the linger still sits last.
+- [x] Simplification dispatched against `ad635af5..HEAD`. Its three findings were verified before folding, including a probe proving the removed casts had been masking a real type error. A separate comment pass was not dispatched: the simplifier audited comments as part of its sweep, found them why-only, and named the load-bearing ones (the `aliasPickerOnCommit` absence note, the `KNOB` on window bounds) — dispatching a stripper against that verdict risks losing exactly those.
+- [x] Every concern fixed. The one coverage gap the pass exposed — `trashDateFormat` had no test and was being changed — got a round-trip test rather than a reverted line.
 - [ ] Settings window seen running; both leaves unchanged from before the phase.
-- [ ] Progress hashes filled in.
+- [x] Progress hashes filled in.
 
 ---
 
@@ -535,7 +535,7 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
   - [ ] Task 2 — One LinkDisplay vocabulary, one formatter · `<commit>`
 - [ ] **Phase 2** — The settings · base `ad635af5`
   - [x] Task 3 — Three personalization keys · `360ebf91`
-  - [ ] Task 4 — Generalize the settings leaf to row kinds · `<commit>`
+  - [x] Task 4 — Generalize the settings leaf to row kinds · `a450973b`, simplified in `81d80804`
 - [ ] **Phase 3** — The paste path
   - [ ] Task 5 — The paste formatter · `<commit>`
   - [ ] Task 6 — Mount the paste handler in both editors · `<commit>`
