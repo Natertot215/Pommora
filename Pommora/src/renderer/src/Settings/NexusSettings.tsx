@@ -264,7 +264,7 @@ function LeafRow({ row }: { row: Row }): React.JSX.Element {
 function ToggleRow({ row }: { row: Extract<Row, { kind: 'toggle' }> }): React.JSX.Element {
   const value = useSession((s) => s.personalization[row.key])
   const setPersonalization = useSession((s) => s.setPersonalization)
-  const on = value === undefined ? row.defaultOn === true : value === true
+  const on = value ?? row.defaultOn ?? false
 
   return (
     <SettingsRow label={row.label} hint={row.hint}>
@@ -272,14 +272,7 @@ function ToggleRow({ row }: { row: Extract<Row, { kind: 'toggle' }> }): React.JS
         checked={on}
         ariaLabel={row.label}
         // Stores only the OFF state — an untouched nexus keeps a clean file (no-empties discipline).
-        // The cast is what a union of keys costs: each one's value type is `boolean | undefined`,
-        // but the setter's key and value are correlated per-key and TypeScript can't pair them here.
-        onChange={(next) =>
-          setPersonalization(
-            row.key,
-            (row.defaultOn && next ? undefined : next) as Personalization[typeof row.key],
-          )
-        }
+        onChange={(next) => setPersonalization(row.key, row.defaultOn && next ? undefined : next)}
       />
     </SettingsRow>
   )
@@ -298,12 +291,7 @@ function SliderRow({ row }: { row: Extract<Row, { kind: 'slider' }> }): React.JS
         ariaLabel={row.label}
         format={row.format}
         // Zero stores no key — the clean-file discipline every default-valued row follows.
-        onCommit={(v) =>
-          setPersonalization(
-            row.key,
-            (v > 0 ? Math.round(v) : undefined) as Personalization[typeof row.key],
-          )
-        }
+        onCommit={(v) => setPersonalization(row.key, v > 0 ? Math.round(v) : undefined)}
       />
     </SettingsRow>
   )
