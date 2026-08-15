@@ -1,6 +1,6 @@
 ## Link Formatting — Implementation Plan
 
-> **Status:** written, pending review · Spec: [[Link Formatting — Decision Log]] · Execute tasks in order.
+> **Status:** reviewed, pending approval · Spec: [[Link Formatting — Decision Log]] · Execute tasks in order.
 > Citations name files and symbols; re-derive before editing.
 
 **Goal**
@@ -17,14 +17,14 @@ Bounded to the link feature. The `PopupMenu` design-system split is a separate c
 2. `markdownLinkRegex` reads CommonMark's balanced-parens destination, so a parenthesized URL survives wherever it is authored.
 3. Three per-Nexus settings under Pages: *Automatically Format Pasted Links*, *Paste Link Into Text*, and *Default Format* (disclosed only while the first is on), all clean-file.
 4. A paste path honouring the inverse rule: ⌘V does what the settings say, the inverse chord does the other thing, selected by whether a selection exists.
-5. Page Title writes Short Link immediately and rewrites the label in place when the fetch lands — anchored to the inserted range, undo-transparent, dropped if the editor is gone or the text has changed.
+5. Page Title writes Short Link immediately and rewrites the label in place when the fetch lands — anchored to the inserted range, an ordinary history entry, dropped if the editor is gone or the text has changed.
 6. `Format >` on a markdown link's right-click menu, rewriting the label only.
 7. `Paste As >` on the prose right-click menu, offering what the clipboard's target can become.
 8. All of it applies in every MarkdownPM surface, including table cells.
 
 **Acceptance — the whole thing working**
 
-In a running nexus with *Automatically Format Pasted Links* on and Default Format set to Page Title: copy `https://en.wikipedia.org/wiki/Foo_(bar)` from a browser, paste into a page body, and the line shows the site's domain immediately, becomes the page's real title within a second or two, and a single ⌘Z removes the whole paste. Right-click that link → `Format > Short Link` and it reads as the domain again. Right-click empty prose → `Paste As > Full Link` and the whole address appears as its own label. Repeat the paste inside a table cell and the cell behaves the same. Open the `.md` in a plain text editor: the target reads `https://en.wikipedia.org/wiki/Foo_(bar)` with no percent-encoding, and the link renders correctly in any CommonMark reader.
+In a running nexus with *Automatically Format Pasted Links* on and Default Format set to Page Title: copy `https://en.wikipedia.org/wiki/Foo_(bar)` from a browser, paste into a page body, and the line shows the site's domain immediately and becomes the page's real title within a second or two. ⌘Z restores the domain; a second ⌘Z removes the paste. Right-click that link → `Format > Short Link` and it reads as the domain again. Right-click empty prose → `Paste As > Full Link` and the whole address appears as its own label. Repeat the paste inside a table cell and the cell behaves the same. Open the `.md` in a plain text editor: the target reads `https://en.wikipedia.org/wiki/Foo_(bar)` with no percent-encoding, and the link renders correctly in any CommonMark reader.
 
 **Forced By**
 
@@ -378,18 +378,18 @@ Default Format never applies to a wrap — the selection is the label. A clipboa
 - [ ] Write the failing pure-state tests: the anchor survives its own transaction's changes and selection (as `linkGestures.test.ts` pins for `restedOnLink`); it maps forward through an edit above it; it is pruned when its range is deleted; the text check declines after the label is edited; two anchors for the same URL stay distinct.
 - [ ] Run — expect red.
 - [ ] Implement the field, following `folding.ts`'s `mapPos`-with-per-end-assoc plus validity prune, and `linkGestures.ts`'s announce-by-effect. Guard the stale span the way `linkEdit.ts` does — `lineAt` throws past the document's end rather than clamping.
-- [ ] Dispatch the rewrite with `addToHistory: false`, so one ⌘Z removes the paste rather than only the swap. Nothing in MarkdownPM uses this today; it is the first, and it warrants a why-only comment.
-- [ ] Guard against a destroyed view before dispatching. `linkEdit.ts`'s doc block on blur-versus-listener names this race directly.
+- [ ] Dispatch the rewrite as an **ordinary history entry** — two ⌘Z presses remove a paste whose title arrived, and that is the ruled behavior. Do not reach for `Transaction.addToHistory`: undo-transparency leaves the fetched title behind as prose the second press cannot reach, which is worse than the extra press.
+- [ ] Guard against a destroyed view before dispatching. `linkEdit.ts`'s doc block on blur-versus-listener names this race directly. In a table cell the view dies when the cell deactivates, so a paste-then-tab-away keeps its Short Link permanently — a disclosed consequence, reachable later through `Format > Page Title` against the cache. Say so in a why-only comment; do not build machinery against it.
 - [ ] Re-run — expect green.
 - [ ] Update `linkTitles.ts`'s header comment and the `MarkdownPM.md` sections.
-- [ ] Run the app: paste in Page Title mode against a live site and a dead host; paste the same URL twice; edit one label before its fetch lands; ⌘Z after a swap.
+- [ ] Run the app: paste in Page Title mode against a live site and a dead host; paste the same URL twice; edit one label before its fetch lands; ⌘Z twice after a swap; paste into a cell and tab away before the fetch lands.
 - [ ] Full gate — expect green.
 - [ ] Commit: `feat(links): a pasted link takes its page title when the fetch lands`
 
 #### Gate 3 — pasting works, everywhere, reversibly
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Every matrix cell exercised by hand in a page body **and** a table cell.
-- [ ] One ⌘Z removes a paste whose title swapped.
+- [ ] Two ⌘Z presses remove a paste whose title swapped — the first restoring the Short Link.
 - [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Pommora/src/renderer/src/MarkdownPM`, `Pommora/src/renderer/src/Settings`, `Pommora/src/shared/PasteLink.ts`.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] Hazard window closed at Task 6 — confirmed in the Log.
@@ -541,15 +541,16 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
   - [ ] Task 10 — `Paste As >` on the prose menu · `<commit>`
 
 ### Rulings
+- **R1 — two ⌘Z presses are accepted** (Nathan). The title swap stays an ordinary history entry rather than growing a custom undo command; the cost lands only on the first paste of a URL, since the title is cached afterwards.
 - **E-7 — ⌘⇧V is taken from Paste and Match Style** (Nathan). The role is expanded and the item dropped from both menus.
 - **R2 — Paste As is built on the menu `editorMenu` already pops** (Nathan: "just use the same one that editorMenu does"), rather than a renderer menu of its own. Reach into blocks and embeds comes from wiring those two surfaces' `menu` prop, which repairs the existing `Format ▸` there at the same time.
 - **R3 — two levels of parenthesis nesting, and the unmatched-opening-paren case reads the CommonMark way** (Nathan: "whatever's best"; the options were gathered and the recommendation stated before the call).
 
 ### Open Against Later Tasks
 
-One ruling blocks execution. All four were raised by the attack review and verified by hand against the code; three are settled.
+All four rulings are settled. Each was raised by the attack review and verified by hand against the code.
 
-- **R1 — the undo mechanism (blocks Task 7). OPEN.** One ⌘Z cannot remove a paste whose title swapped. `addToHistory` is not a `TransactionSpec` key at all — the real API is the `Transaction.addToHistory` annotation (`@codemirror/state` d.ts:1013), so the plan's original wording is a type error; and once corrected, CodeMirror maps the paste's inverted change through the non-history swap, leaving the swapped-in text behind as orphan prose that a second ⌘Z cannot reach. Options: accept two presses · a custom ⌘Z that pops the swap-annotated pair · drop the swap. The table-cell case rides on this: `CellEditor` mounts no `history()` and relays edits as ordinary history-recorded page transactions, and the cell view is destroyed the moment the cell stops being active — so a user who pastes and Tabs away loses the rewrite silently. Whatever R1 settles must say what happens in a cell.
+- **R1 — the undo mechanism. RULED:** the swap is an ordinary history entry, so two ⌘Z presses remove a paste whose title arrived. Undo-transparency is unavailable — `addToHistory` is not a `TransactionSpec` key (the real API is the `Transaction.addToHistory` annotation, `@codemirror/state` d.ts:1013), and once corrected, CodeMirror maps the paste's inversion through the non-history swap and leaves the fetched title behind as prose a second press cannot reach. In a table cell the editor dies when the cell deactivates, so a paste-then-tab-away keeps its Short Link permanently and reaches its title later through `Format > Page Title` — disclosed, not guarded. → C-5, C-5a, Task 7.
 - **R2 — Paste As menu ownership. RULED:** build it on the menu `editorMenu` already pops. → E-1a, Task 10 rewritten.
 - **R3 — regex nesting depth. RULED:** two levels, and the unmatched-opening-paren case goes the way CommonMark reads it. → C-8, Task 1.
 - **E-7 — the ⌘⇧V chord. RULED:** taken from Paste and Match Style, which is dropped from the app menu and the editor context menu. → Task 9 unblocked.
