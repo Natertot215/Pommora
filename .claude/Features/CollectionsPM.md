@@ -22,15 +22,15 @@ Property definitions live in the nexus-wide registry (`.nexus/properties.json`);
 
 ### Sidecar + Schema
 
-`_pagecollection.json` holds the Collection's identity, its `properties` assignment, its children's order — the parent owns the order of both its child Sets and its root Pages — its saved views, its open-in mode, and its presentation keys. The title is the folder name, not a field, and foreign keys ride through on every write. Creating a Collection mints a ULID and seeds one default view, with no properties. The full property catalog and schema mechanics → [[PropertiesPM]].
+`_pagecollection.json` holds the Collection's identity, its [[PropertiesPM|properties]] assignment, its children's order — the parent owns the order of both its child Sets and its root Pages — its saved views, its open-in mode, and its presentation keys. The title is the folder name, not a field, and foreign keys ride through on every write. Creating a Collection mints a ULID and seeds one default view, with no properties.
 
 ### Collection Settings
 
-The schema editor — create properties, rename, reorder, change a type, and seed per-type options; renames, type changes, and option edits change the global definition for every assigning Collection. Removing a property lifts each member's value into a restore cache on the Collection's sidecar, then clears the key from every member's frontmatter, and re-assigning replays the cached values that still validate; the nexus-wide delete is a separate, `.trash`-backed operation (→ [[PropertiesPM]] §Schema Mutations). The pane is the Properties leaf of the toolbar's Settings dropdown.
+The schema editor — create properties, rename, reorder, change a type, and seed per-type options; renames, type changes, and option edits change the global definition for every assigned Collection. Removing a property lifts each member's value into a restore cache on the Collection's sidecar, then clears the key from every member's frontmatter, and re-assigning replays the cached values that still validate; the nexus-wide delete is a separate, `.trash`-backed operation (→ [[PropertiesPM]] §Schema Mutations). The pane is the Properties leaf of the toolbar's Settings dropdown.
 
 ### Open-In Mode
 
-Each Collection carries an `open_in` field deciding where its Pages open — the main detail pane or the floating Page Preview window, defaulting to full-page when absent. Container-view title clicks and sidebar rows both honor it; ⌘-click is always the explicit full-page bypass to a new tab. The field is set from the SettingsPane's Configuration leaf. The window → [[PagePreviewPM]].
+Each Collection carries an `open_in` field that determines where its Pages open — the main detail pane or the floating [[PagePreviewPM|Page Preview]] window — defaulting to full-page when absent. Container-view title clicks and sidebar rows both honor it; ⌘-click is always the explicit full-page bypass to a new tab. The field is set from the SettingsPane's Configuration leaf. 
 
 ### Move Semantics
 
