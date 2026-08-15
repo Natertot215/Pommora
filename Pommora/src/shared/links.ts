@@ -22,15 +22,21 @@ export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
  *
  *  The label reads escapes (`\]`, `\\`) exactly as `MD_LINK` does, so a page titled `Notes [WIP]`
  *  can be named in this form at all; unescaped, its `]` ends the label early and the whole link
- *  tokenizes as nothing. The target group ends at the first `)`, which is why a target carrying one
- *  must arrive percent-encoded.
+ *  tokenizes as nothing.
+ *
+ *  The target admits balanced parentheses, as CommonMark's link destination does, so an address that
+ *  carries them survives however it was authored — by hand, by another app, or by this one. Nesting
+ *  goes two levels, which is what cmark renders; a third is read as prose, as is any target holding
+ *  an unmatched `(`.
  *
  *  Both groups are length-capped, and the label's cap is load-bearing rather than cosmetic: reading
  *  escapes makes it an alternation under a quantifier, which on a long run of unclosed `[` backtracks
  *  quadratically at every start position — the same ReDoS `pageLinkPattern` caps itself against, and
- *  it freezes the cascade and the live tokenizer alike on one pathological body. */
+ *  it freezes the cascade and the live tokenizer alike on one pathological body. The target's nested
+ *  alternations avoid adding a second such run because each level's branches are disjoint on their
+ *  first character (`(` against not-`(`), leaving nothing for the quantifiers to backtrack between. */
 export const markdownLinkRegex = (): RegExp =>
-  /\[((?:[^\]\\\r\n]|\\.){1,255})\]\(([^)\r\n]{1,2048})\)/dg
+  /\[((?:[^\]\\\r\n]|\\.){1,255})\]\(((?:[^()\r\n]|\((?:[^()\r\n]|\([^()\r\n]*\))*\)){1,2048})\)/dg
 
 /** Escape a user-typed alias for the `[alias](url)` form: `\` and `]` (the only chars that can break
  *  the shape) become `\\` and `\]`, standard-markdown style. Inverse of unescapeAlias. */
@@ -45,13 +51,13 @@ export function unescapeAlias(alias: string): string {
 
 /** Encode a page's title for a markdown link's `( )`. `encodeURI` rather than `encodeURIComponent`
  *  so a separator survives being written by hand, with the parens escaped on top of it: neither
- *  built-in touches them, and the grammar's target group ends at the first `)` — so a page titled
- *  `Atomic Habits (Book)` would otherwise be written as a target truncated mid-title, followed by a
- *  stray `)` sitting raw in the line. */
+ *  built-in touches them, and a title's parens answer to nobody's grammar — `Notes (draft` is a
+ *  legal page name whose lone `(` would leave the whole link untokenizable. Escaping every one keeps
+ *  a written target independent of how deeply the reader is willing to nest. */
 export function encodeLinkTarget(target: string): string {
   try {
-    // Parens and the colon on top of encodeURI: neither is touched by it, the grammar's target ends
-    // at the first `)`, and a raw colon is how a target declares itself a URL — so a page titled
+    // Parens and the colon on top of encodeURI: neither is touched by it, an unbalanced paren breaks
+    // the target's grammar, and a raw colon is how a target declares itself a URL — so a page titled
     // `Meeting: Notes` would encode to something this module's own reader then refuses.
     return encodeURI(target).replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/:/g, '%3A')
   } catch {

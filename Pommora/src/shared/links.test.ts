@@ -3,11 +3,77 @@ import {
   decodeLinkTarget,
   encodeLinkTarget,
   linkDomain,
+  markdownLinkRegex,
+  MD_LINK,
   normalizeLinkUrl,
   isValidLink,
   isHttpLink,
   targetTitle,
 } from './links'
+
+// CommonMark's link destination admits balanced parentheses, and a great many real addresses use
+// them. One grammar serves the editor tokenizer, `detect`, the rename scanner and the rename
+// rewriter, so what this pins is what all four agree a link is.
+describe('markdownLinkRegex — the balanced-parens destination', () => {
+  const target = (s: string): string | undefined => markdownLinkRegex().exec(s)?.[2]
+
+  it('reads a target carrying one balanced pair', () => {
+    expect(target('[t](https://en.wikipedia.org/wiki/Foo_(bar))')).toBe(
+      'https://en.wikipedia.org/wiki/Foo_(bar)',
+    )
+  })
+
+  it('reads two sequential pairs', () => {
+    expect(target('[t](https://a.com/(x)_(y))')).toBe('https://a.com/(x)_(y)')
+  })
+
+  it('reads a pair nested two deep', () => {
+    expect(target('[t](https://a.com/a_(b_(c)_d))')).toBe('https://a.com/a_(b_(c)_d)')
+  })
+
+  it('reads a link surrounded by prose without swallowing it', () => {
+    expect(target('see [t](https://a.com/Foo_(bar)) here')).toBe('https://a.com/Foo_(bar)')
+  })
+
+  it('leaves every paren-free shape exactly as it was', () => {
+    expect(target('[t](https://a.com/x)')).toBe('https://a.com/x')
+    expect(target('[t](my page)')).toBe('my page')
+    expect(target('[Notes \\[WIP\\]](https://a.com)')).toBe('https://a.com')
+    expect(target('[t]()')).toBeUndefined()
+  })
+
+  it('ends the destination before an unbalanced trailing paren, as it always has', () => {
+    expect(target('[t](https://a.com/x))')).toBe('https://a.com/x')
+  })
+
+  // Deliberate change: this tokenizes today and stops after. An unmatched `(` in a bare destination
+  // is invalid CommonMark, so the whole thing is prose — a correction, not a regression.
+  it('refuses a target holding an unmatched opening paren', () => {
+    expect(target('[t](https://a.com/a_(b)')).toBeUndefined()
+  })
+
+  // The ruled depth. A third level is prose rather than a truncated address, which is the same
+  // trade the unmatched-open case makes.
+  it('stops at two levels of nesting', () => {
+    expect(target('[t](https://a.com/a_(b_(c_(d)_e)_f))')).toBeUndefined()
+  })
+
+  // Two forms of one grammar: this scans a body, MD_LINK reads a whole stored value. A cell and the
+  // editor disagreeing about where a link ends is how one renders a link the other cannot follow.
+  it('agrees with MD_LINK about where a parenthesized target ends', () => {
+    const s = '[x](https://a.com/a_(b))'
+    expect(target(s)).toBe(MD_LINK.exec(s)?.[2])
+  })
+
+  // The label's cap exists against quadratic backtracking on a long unclosed run; the destination's
+  // alternatives are disjoint on their first character, which is what keeps the nesting from adding
+  // a second such run. These assert a result — a hang fails them by timeout, not by a threshold.
+  it('returns immediately on the shapes that could backtrack', () => {
+    expect(markdownLinkRegex().exec(`[x](${'('.repeat(2000)}`)).toBeNull()
+    expect(markdownLinkRegex().exec('['.repeat(5000))).toBeNull()
+    expect(markdownLinkRegex().exec(`[x](${'a_(b)'.repeat(400)}`)).toBeNull()
+  })
+})
 
 describe('linkDomain', () => {
   it('returns the bare host', () => {
@@ -76,8 +142,8 @@ describe('the page-target codec', () => {
     }
   })
 
-  // The grammar's target group ends at the first `)`, so an unescaped paren truncates the link and
-  // leaves the rest of the title sitting raw in the line.
+  // A title's parens need not balance, and a lone one leaves the link untokenizable — so they are
+  // escaped rather than trusted to the destination grammar's nesting.
   it('escapes parens, which neither built-in encoder touches', () => {
     expect(encodeLinkTarget('Atomic Habits (Book)')).toBe('Atomic%20Habits%20%28Book%29')
     expect(encodeLinkTarget('Atomic Habits (Book)')).not.toContain('(')

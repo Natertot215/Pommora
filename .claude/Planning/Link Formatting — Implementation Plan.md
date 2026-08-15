@@ -131,7 +131,7 @@ Ruled out in the decision log; do not retry.
 - Test: `Pommora/src/shared/links.test.ts`
 
 **Derivation**
-- `rg -F "markdownLinkRegex" Pommora/src` → **6** at planning time (declaration, `MarkdownPM/detect/index.ts` re-export, `MarkdownPM/tokens/index.ts`, `main/connections/scan.ts`, `main/connections/rewrite.ts`, and the import line in `rewrite.ts`). All are consumers of the widened grammar; none needs its own edit.
+- `rg -F "markdownLinkRegex" Pommora/src` → **10**, across six files: the declaration, `MarkdownPM/detect/index.ts`'s re-export, `MarkdownPM/tokens/index.ts`, `main/connections/scan.ts`, `main/connections/rewrite.ts`, and `MarkdownPM/detect/detect.test.ts`, which asserts on the regex directly. All are consumers of the widened grammar; none needs its own edit.
 - Control: `rg -F "shared/links" Pommora/src` → expect **>0**. Zero means the search never ran.
 
 **Interfaces**
@@ -145,13 +145,13 @@ Ruled out in the decision log; do not retry.
 **Must agree:** `MD_LINK` (the anchored, whole-string form used by `linkValue.ts`) reads a greedy `(.*)` and already handles balanced parens correctly. One test must assert both forms extract the same target from `[x](https://a.com/a_(b))`, or the tokenizer and the property cell disagree about where a link ends.
 
 **Steps:**
-- [ ] Write the failing tests: single nested pair, two sequential pairs, a **two-deep** nested pair, plain URL unchanged, target-with-space unchanged, unbalanced trailing `)` unchanged, the unmatched-open case asserted as *no match*, and the `MD_LINK`-agreement case.
-- [ ] Run `npm run test -- links` — expect the nested cases red, the rest green.
-- [ ] Widen the target group to two levels: `(?:[^()\r\n]|\((?:[^()\r\n]|\([^()\r\n]*\))*\)){1,2048}`. Rewrite the doc block: the ReDoS note now rests on the alternatives at each level being disjoint on their first character (`(` versus not-`(`), which is what keeps the quantifiers from backtracking ambiguously.
-- [ ] Re-run — expect all green.
-- [ ] Add the three pathological inputs (unbalanced-open run, unclosed-label run, long nested run) as timing-free regression cases; they assert a result, not a duration.
-- [ ] Full gate: `npm run typecheck && npm run test && npm run lint` — expect green.
-- [ ] Commit: `fix(links): the markdown-link target reads balanced parentheses`
+- [x] Write the failing tests: single nested pair, two sequential pairs, a **two-deep** nested pair, plain URL unchanged, target-with-space unchanged, unbalanced trailing `)` unchanged, the unmatched-open case asserted as *no match*, and the `MD_LINK`-agreement case.
+- [x] Run `npm run test -- links` — expect the nested cases red, the rest green. *(8 red, 30 green.)*
+- [x] Widen the target group to two levels: `(?:[^()\r\n]|\((?:[^()\r\n]|\([^()\r\n]*\))*\)){1,2048}`. Rewrite the doc block: the ReDoS note now rests on the alternatives at each level being disjoint on their first character (`(` versus not-`(`), which is what keeps the quantifiers from backtracking ambiguously.
+- [x] Re-run — expect all green.
+- [x] Add the three pathological inputs (unbalanced-open run, unclosed-label run, long nested run) as timing-free regression cases; they assert a result, not a duration.
+- [x] Full gate: `npm run typecheck && npm run test && npm run lint` — expect green.
+- [x] Commit: `fix(links): the markdown-link target reads balanced parentheses`
 
 #### Task 2: One LinkDisplay vocabulary, one formatter
 
@@ -525,8 +525,8 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
 ## Implementation Log
 
 ### Progress
-- [ ] **Phase 1** — One grammar, one vocabulary · base `<commit>`
-  - [ ] Task 1 — Widen the markdown-link grammar · `<commit>`
+- [ ] **Phase 1** — One grammar, one vocabulary · base `bdf38cc7`
+  - [x] Task 1 — Widen the markdown-link grammar · `<commit>`
   - [ ] Task 2 — One LinkDisplay vocabulary, one formatter · `<commit>`
 - [ ] **Phase 2** — The settings
   - [ ] Task 3 — Three personalization keys · `<commit>`
@@ -572,6 +572,9 @@ Not blocking, still open:
 - **Two ten-second observations** the review could not settle statically, both already steps in the plan: whether a renderer `preventDefault()` suppresses main's `context-menu` event, and whether a markdown link inside a table cell gets any right-click menu today (`markdownLinkClicks` is mounted only in `index.tsx`, not in `CellEditor`) — which decides whether Task 8 needs a cell mount for Requirement 8.
 
 ### Deviations
+
+- **Task 1 — two comments the Made False table missed.** `encodeLinkTarget`'s doc block and its inline note both justified escaping a page title's parens by "the grammar's target group ends at the first `)`", and `links.test.ts` carried the same sentence over the escaping test. Widening the grammar falsifies all three. The escaping itself stays load-bearing for a changed reason — a page title's parens need not balance, and a lone `(` now leaves the link untokenizable rather than merely truncated — so the comments were restated rather than dropped, in Task 1's commit.
+- **Task 1 — the derivation count in the task body was stale.** It read 6 with an enumeration omitting `detect/detect.test.ts`; the correction to 10 had been recorded under Open Against Later Tasks but never folded into the task. Re-derived at 10 across six files and the body rewritten to match.
 
 ### Lessons
 
