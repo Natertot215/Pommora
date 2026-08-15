@@ -31,7 +31,7 @@ import {
   type ContextsRegistry,
 } from '@shared/contexts'
 import { resolveContextKeys } from '@shared/contextResolve'
-import { DATE_FORMATS, type DateFormat } from '@shared/columnStyles'
+import { DATE_FORMATS } from '@shared/columnStyles'
 import {
   SOLID_COLORS,
   DEFAULT_ACCENT,
@@ -44,7 +44,7 @@ import {
 } from '@shared/types'
 import { savedView, type SavedView } from '@shared/views'
 import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
-import { LINK_DISPLAYS, type LinkDisplay, type PropertyDefinition } from '@shared/properties'
+import { LINK_DISPLAYS, type PropertyDefinition } from '@shared/properties'
 import { adoptedId } from './ids'
 import { pathExists, readJsonObject, readJsonStrict } from './io/atomicWrite'
 import { isContentFile, listEntries } from './io/walk'
@@ -126,15 +126,11 @@ export function readPersonalization(raw: unknown): Personalization {
     defaultViewScale: coerceViewScale(p.defaultViewScale),
     hoverPreviewLinger: coerceHoverLinger(p.hoverPreviewLinger),
     permanentDelete: bool(p.permanentDelete),
-    trashDateFormat: DATE_FORMATS.includes(p.trashDateFormat as DateFormat)
-      ? (p.trashDateFormat as DateFormat)
-      : undefined,
+    trashDateFormat: DATE_FORMATS.find((f) => f === p.trashDateFormat),
     trashHideTime: bool(p.trashHideTime),
     autoFormatPastedLinks: bool(p.autoFormatPastedLinks),
     pasteLinkIntoText: bool(p.pasteLinkIntoText),
-    defaultLinkFormat: LINK_DISPLAYS.includes(p.defaultLinkFormat as LinkDisplay)
-      ? (p.defaultLinkFormat as LinkDisplay)
-      : undefined,
+    defaultLinkFormat: LINK_DISPLAYS.find((d) => d === p.defaultLinkFormat),
   }
 }
 
