@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { LINK_DISPLAYS } from './properties'
 import { parseLink, serializeLink, linkDisplayText } from './linkValue'
 
 describe('parseLink', () => {
@@ -65,8 +66,9 @@ describe('alias with markdown-breaking chars — escaped, never corrupts', () =>
 
 describe('linkDisplayText — the alias always wins', () => {
   it('shows the alias regardless of the show-as look, or of a passed title', () => {
-    expect(linkDisplayText('[Home](https://example.com)', 'link-url')).toBe('Home')
-    expect(linkDisplayText('[Home](https://example.com)', 'link-title')).toBe('Home')
+    for (const look of LINK_DISPLAYS) {
+      expect(linkDisplayText('[Home](https://example.com)', look)).toBe('Home')
+    }
     expect(linkDisplayText('[Home](https://example.com)', 'link-title', 'Example Domain')).toBe(
       'Home',
     )
@@ -74,24 +76,42 @@ describe('linkDisplayText — the alias always wins', () => {
 })
 
 describe('linkDisplayText — no alias, the look decides', () => {
-  it('link-url (and the unset default) shows the full URL, never a title', () => {
-    expect(linkDisplayText('https://www.example.com/x', 'link-url')).toBe(
+  it('link-full shows the whole address, never a title', () => {
+    expect(linkDisplayText('https://www.example.com/x', 'link-full')).toBe(
       'https://www.example.com/x',
     )
-    expect(linkDisplayText('https://www.example.com/x')).toBe('https://www.example.com/x')
-    expect(linkDisplayText('https://www.example.com/x', 'link-url', 'Example Domain')).toBe(
+    expect(linkDisplayText('https://www.example.com/x', 'link-full', 'Example Domain')).toBe(
       'https://www.example.com/x',
     )
   })
+
+  it('link-short shows the bare domain, with or without a resolved title', () => {
+    expect(linkDisplayText('https://www.example.com/deep/path', 'link-short')).toBe('example.com')
+    expect(linkDisplayText('https://www.example.com/x', 'link-short', 'Example Domain')).toBe(
+      'example.com',
+    )
+  })
+
   it('link-title shows the fetched title when one is resolved', () => {
     expect(linkDisplayText('https://example.com', 'link-title', 'Example Domain')).toBe(
       'Example Domain',
     )
   })
+
   it('link-title falls back to the bare domain while loading or when the fetch failed', () => {
     expect(linkDisplayText('https://www.example.com/deep/path', 'link-title')).toBe('example.com')
     expect(linkDisplayText('https://www.example.com/deep/path', 'link-title', undefined)).toBe(
       'example.com',
+    )
+  })
+
+  // Sort and filter call this with no look on purpose, so ordering is the same under every URL
+  // column whatever its property is configured to show. If the default branch ever became
+  // link-short, every URL column would silently re-order with no other symptom.
+  it('the no-look call returns the raw URL — the pin sort and filter stand on', () => {
+    expect(linkDisplayText('https://www.example.com/x')).toBe('https://www.example.com/x')
+    expect(linkDisplayText('https://www.example.com/x', undefined, 'Example Domain')).toBe(
+      'https://www.example.com/x',
     )
   })
 })

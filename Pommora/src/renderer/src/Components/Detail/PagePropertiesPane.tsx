@@ -12,7 +12,7 @@ import { PickerMenu, PickerOption } from '@renderer/design-system/components/Pic
 import { MenuPaneTopRow, MenuScrollFrame } from '../../design-system/components/menu'
 import { Cell } from '../../Detail/Views/Table/Cell'
 import { buildResolveContext, type ResolveContext } from '../../Detail/Views/Table/resolveContext'
-import { parseLink, urlValueFromEdit } from '../../Detail/Views/Table/linkValue'
+import { parseLink, urlValueFromEdit } from '@shared/linkValue'
 import { contextOptionsFor } from '../../Detail/Views/pipeline/contextOptions'
 import {
   contextIdentityOf,

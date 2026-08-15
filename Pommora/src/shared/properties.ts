@@ -22,6 +22,14 @@ export const propertyType = z.enum([
 ])
 export type PropertyType = z.infer<typeof propertyType>
 
+/** How a link reads: Full Link the whole address, Short Link its bare domain, Page Title the site's
+ *  fetched `<title>`. One vocabulary for every link in the app — a URL property's configured look and
+ *  the form a pasted link is written in are the same three choices, named the same way, so nothing
+ *  downstream can disagree about what any of them means. The order is the order they are offered in,
+ *  and the first is the default. */
+export const LINK_DISPLAYS = ['link-full', 'link-short', 'link-title'] as const
+export type LinkDisplay = (typeof LINK_DISPLAYS)[number]
+
 /** Number format families. `number` = plain, `percent` = literal + `%` (NOT ×100), `currency` = an ISO code. */
 export const NUMBER_FAMILIES = ['number', 'percent', 'currency'] as const
 export type NumberFamily = (typeof NUMBER_FAMILIES)[number]
@@ -79,9 +87,10 @@ export const propertyDefinition = z.looseObject({
   // `link_color` is a solid-palette key; absent =
   // Default = the system accent. Lenient .catch so an unknown value degrades to the default look.
   link_underline: z.boolean().optional().catch(undefined),
-  // A toggle: link-url (default) shows the URL, link-title the fetched page title. A per-value alias
-  // (a `[alias](url)` markdown value, set via Rename) overrides EITHER — the alias always wins.
-  link_display: z.enum(['link-url', 'link-title']).optional().catch(undefined),
+  // Which of the three link displays this property's values render as; absent = the default. A
+  // per-value alias (a `[alias](url)` markdown value, set via Rename) overrides all of them — the
+  // alias always wins.
+  link_display: z.enum(LINK_DISPLAYS).optional().catch(undefined),
   link_color: z.string().optional().catch(undefined),
   // A checkbox property's def-level color (property-wide, mirroring link_color): a solid-palette key
   // tinting both looks — the box fill (checkbox look) and the on-track (switch look). Absent = Default

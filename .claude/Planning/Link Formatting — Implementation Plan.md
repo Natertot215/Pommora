@@ -111,7 +111,7 @@ Ruled out in the decision log; do not retry.
 
 **Dead Vocabulary** *(the closing sweep)*
 
-- `rg -F "'link-url'" Pommora/src` → expect **0**. Legitimate hits: none. (`md-link-url` is an unrelated CSS class — search with the quotes.)
+- `rg -F "'link-url'" Pommora/src` → expect **1**, and only one: the `properties.test.ts` case that feeds the old value on purpose to prove it falls back to the default. Anything else is a missed rename. (`md-link-url` is an unrelated CSS class — search with the quotes.)
 - Control: `rg -F "'link-title'" Pommora/src` → expect **>0**. Zero here means the sweep never ran.
 
 **Hazard Window:** Task 2 renames the `link_display` enum; until Task 6 ships the picker, `URLEditor` is the only writer of the new values and the Settings surface has no way to set Default Format. Nothing may hand-edit a `link_display` value in a test nexus while the window is open. Opened by Task 2, closed by Task 6.
@@ -163,13 +163,14 @@ Ruled out in the decision log; do not retry.
 - Modify: `Pommora/src/shared/properties.ts` — the `link_display` enum and its doc comment; export `LINK_DISPLAYS` as `as const satisfies readonly LinkDisplay[]` and the `LinkDisplay` type.
 - Modify: `Pommora/src/shared/bridge.ts` — the `link_display` literal union in the `property:setLinkConfig` args, to the shared type.
 - Modify: `Pommora/src/main/index.ts` — the `property:setLinkConfig` guard; replace the hand-written `||` chain with `LINK_DISPLAYS.includes(...)`.
-- Modify: `Pommora/src/renderer/src/Detail/Views/Table/linkValue.ts` — `linkDisplayText` gains the `link-short` branch; its doc block is rewritten.
+- Move: `Pommora/src/renderer/src/Detail/Views/Table/linkValue.ts` → `Pommora/src/shared/linkValue.ts` (and its test), repointing its nine importers to `@shared/linkValue`. The whole module moves, not just `linkDisplayText`: the formatter calls `parseLink`, and splitting them would mean either a second parser or a shared module importing the renderer, neither of which is available. The file is already pure — its only imports are `@shared/links` and `@shared/propertyValue`.
+- Modify: `Pommora/src/shared/linkValue.ts` — `linkDisplayText` gains the `link-short` branch and takes the shared `LinkDisplay`; its doc block is rewritten.
 - Modify: `Pommora/src/renderer/src/Detail/Views/Table/LinkCell.tsx` — the fetch gate stays `=== 'link-title'`; its doc comment updates.
 - Modify: `Pommora/src/renderer/src/Components/Detail/URLEditor.tsx` — the "Full URL" `Switch` becomes a three-option `PickerControl`; delete the local `LinkDisplay` alias in favour of the shared one.
 - Modify: `Pommora/src/renderer/src/Components/Detail/PropertiesPane.tsx` — the call-site default `?? 'link-url'` → `?? 'link-full'`.
 - Modify: `Pommora/src/shared/links.ts` — `linkDomain`'s doc block (Short Link promotes it from fallback to mode).
 - Modify: `.claude/Features/PropertiesPM.md` — the Display section, to three ways.
-- Test: `Pommora/src/renderer/src/Detail/Views/Table/linkValue.test.ts` · `Pommora/src/shared/properties.test.ts`
+- Test: `Pommora/src/shared/linkValue.test.ts` (moved with its module) · `Pommora/src/shared/properties.test.ts`
 
 **Derivation**
 - `rg -F "link_display" Pommora/src` → **11** at planning time. Legitimate hits after this task: all 11 remain, none spelling `'link-url'`.
@@ -178,8 +179,8 @@ Ruled out in the decision log; do not retry.
 
 **Interfaces**
 - Produces: `type LinkDisplay = 'link-full' | 'link-short' | 'link-title'` and `LINK_DISPLAYS` from `shared/properties.ts`.
-- Produces: `linkDisplayText(raw, display?, title?) => string` — `link-full`/absent returns the raw URL, `link-short` returns `linkDomain(url)`, `link-title` returns `title ?? linkDomain(url)`. An alias still wins over all three.
-- Assumed by: Tasks 5, 6, 7, 8, 10.
+- Produces: `linkDisplayText(raw, display?, title?) => string`, now at `@shared/linkValue` — `link-full`/absent returns the raw URL, `link-short` returns `linkDomain(url)`, `link-title` returns `title ?? linkDomain(url)`. An alias still wins over all three.
+- Assumed by: Tasks 5, 6, 7, 8, 10 — all of which import the formatter from `@shared/linkValue`, not from the Table folder.
 
 **Failure half:** a stored `'link-url'` from an older file → `.catch(undefined)` drops it → the call-site default resolves to `link-full`, which is where it already was · an unknown string → identical path · `link-title` with no fetched title → `linkDomain`, as today · `linkDomain` on an unparseable target → returns the input trimmed, as today.
 
@@ -188,22 +189,23 @@ Ruled out in the decision log; do not retry.
 **Survivors:** `md-link-url` (CSS class, `MarkdownPM/editor/decorations.ts` + `Styles.css` + `mdLinkTarget.test.tsx`) is unrelated to the enum and stays. Search with quotes to keep it out of the sweep.
 
 **Steps:**
-- [ ] Invert the existing `linkValue.test.ts` cases from `'link-url'` to `'link-full'`, and add the `link-short` and no-argument-default cases. Run — expect red.
-- [ ] Widen the enum in `properties.ts`, export `LinkDisplay` + `LINK_DISPLAYS`, rewrite the doc comment.
-- [ ] Add the `link-short` branch to `linkDisplayText`; rewrite its doc block. Re-run — expect green.
-- [ ] Widen the main-side guard to `LINK_DISPLAYS.includes(...)`; widen the bridge arg type to the shared type.
-- [ ] Add a `properties.test.ts` case: a three-value round-trip, and an unrecognized value falling back through `.catch` (mirroring the existing `checkbox_color` case).
-- [ ] Replace `URLEditor`'s "Full URL" Switch with a `PickerControl` labelled **Format**, options ordered Full Link · Short Link · Page Title (default first, so `labelOf`'s fallback reads as the default). Reuse `configRow`/`configLabel` from `settingsPane.css.ts`.
-- [ ] Update the `PropertiesPane` call-site default, `LinkCell`'s doc comment, and `linkDomain`'s doc block.
-- [ ] Rewrite the Display section of `PropertiesPM.md`.
-- [ ] Re-derive the two sweeps above — expect `'link-url'` at 0 and the control above 0.
-- [ ] Full gate — expect green.
-- [ ] Commit: `refactor(links): one three-way display vocabulary across properties and the editor`
+- [x] Invert the existing `linkValue.test.ts` cases from `'link-url'` to `'link-full'`, and add the `link-short` and no-argument-default cases. Run — expect red. *(4 red.)*
+- [x] Widen the enum in `properties.ts`, export `LinkDisplay` + `LINK_DISPLAYS`, rewrite the doc comment.
+- [x] Move `linkValue.ts` and its test into `src/shared/`, repointing the nine importers.
+- [x] Add the `link-short` branch to `linkDisplayText`; rewrite its doc block. Re-run — expect green.
+- [x] Widen the main-side guard to `LINK_DISPLAYS.includes(...)`; widen the bridge arg type to the shared type.
+- [x] Add a `properties.test.ts` case: a three-value round-trip, and an unrecognized value falling back through `.catch` (mirroring the existing `checkbox_color` case).
+- [x] Replace `URLEditor`'s "Full URL" Switch with a `PickerControl` labelled **Format**, options ordered Full Link · Short Link · Page Title (default first, so `labelOf`'s fallback reads as the default). Reuse `configRow`/`configLabel` from `settingsPane.css.ts`.
+- [x] Update the `PropertiesPane` call-site default, `LinkCell`'s doc comment, and `linkDomain`'s doc block.
+- [x] Rewrite the Display section of `PropertiesPM.md`.
+- [x] Re-derive the two sweeps above — `'link-url'` at 1 (the deliberate migration case) and the control above 0.
+- [x] Full gate — expect green.
+- [x] Commit: `refactor(links): one three-way display vocabulary across properties and the editor`
 
 #### Gate 1 — one grammar, one vocabulary, behavior unmoved
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
-- [ ] `rg -F "'link-url'" Pommora/src` → 0, with the control above 0.
+- [x] `rg -F "'link-url'" Pommora/src` → 1, the deliberate migration case only, with the control above 0.
 - [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Pommora/src/shared`, `Pommora/src/main/index.ts`, `Pommora/src/renderer/src/Detail/Views/Table`, `Pommora/src/renderer/src/Components/Detail`.
 - [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
 - [ ] The URL property's Format picker seen running: all three modes, and a Wikipedia link rendering un-truncated in a page.
@@ -526,7 +528,7 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
 
 ### Progress
 - [ ] **Phase 1** — One grammar, one vocabulary · base `bdf38cc7`
-  - [x] Task 1 — Widen the markdown-link grammar · `<commit>`
+  - [x] Task 1 — Widen the markdown-link grammar · `ee3ee22e`
   - [ ] Task 2 — One LinkDisplay vocabulary, one formatter · `<commit>`
 - [ ] **Phase 2** — The settings
   - [ ] Task 3 — Three personalization keys · `<commit>`
@@ -574,6 +576,8 @@ Not blocking, still open:
 ### Deviations
 
 - **Task 1 — two comments the Made False table missed.** `encodeLinkTarget`'s doc block and its inline note both justified escaping a page title's parens by "the grammar's target group ends at the first `)`", and `links.test.ts` carried the same sentence over the escaping test. Widening the grammar falsifies all three. The escaping itself stays load-bearing for a changed reason — a page title's parens need not balance, and a lone `(` now leaves the link untokenizable rather than merely truncated — so the comments were restated rather than dropped, in Task 1's commit.
+- **Task 2 — the whole `linkValue` module moved, not just the formatter.** The correction recorded moving `linkDisplayText` into `src/shared/`; in practice it calls `parseLink` from the same file, so moving one without the other would need either a second parser or a shared module importing the renderer. The module is already pure, so it moved whole to `src/shared/linkValue.ts` beside `propertyValue.ts`, with its nine importers repointed to `@shared/linkValue`. It kept its camelCase name to match every other file in `shared/`. Later tasks import the formatter from there.
+- **Task 2 — the `'link-url'` sweep floor is 1, not 0.** The migration test feeds the old value deliberately to prove `.catch(undefined)` drops it and the call-site default catches it. That is the evidence the rename is free, so it stays; the Dead Vocabulary entry now names it as the one legitimate hit.
 - **Task 1 — the derivation count in the task body was stale.** It read 6 with an enumeration omitting `detect/detect.test.ts`; the correction to 10 had been recorded under Open Against Later Tasks but never folded into the task. Re-derived at 10 across six files and the body rewritten to match.
 
 ### Lessons

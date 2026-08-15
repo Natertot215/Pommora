@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  LINK_DISPLAYS,
   propertyDefinition,
   propertyType,
   isReservedPropertyId,
@@ -58,6 +59,26 @@ describe('propertyDefinition', () => {
       checkbox_color: 42,
     })
     expect(parsed.checkbox_color).toBeUndefined()
+  })
+
+  it('round-trips a url def in each of the three link displays', () => {
+    for (const link_display of LINK_DISPLAYS) {
+      const def = { id: 'prop_u', name: 'Site', type: 'url', link_display }
+      expect(propertyDefinition.parse(def)).toEqual(def)
+    }
+  })
+
+  // The rename from `link-url` rides on this: an unrecognized stored value drops to undefined, and
+  // the call site's default is the mode `link-url` already meant, so a def written by an older build
+  // lands exactly where it was.
+  it('drops an unrecognized link_display to undefined rather than failing the def', () => {
+    const parsed = propertyDefinition.parse({
+      id: 'p',
+      name: 'x',
+      type: 'url',
+      link_display: 'link-url',
+    })
+    expect(parsed.link_display).toBeUndefined()
   })
 
   it('round-trips a number def with its property-wide format config', () => {
