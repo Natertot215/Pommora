@@ -44,7 +44,7 @@ import {
 } from '@shared/types'
 import { savedView, type SavedView } from '@shared/views'
 import { coerceOpenIn, coerceViewButton, coerceViewStyle } from '@shared/schemas'
-import type { PropertyDefinition } from '@shared/properties'
+import { LINK_DISPLAYS, type LinkDisplay, type PropertyDefinition } from '@shared/properties'
 import { adoptedId } from './ids'
 import { pathExists, readJsonObject, readJsonStrict } from './io/atomicWrite'
 import { isContentFile, listEntries } from './io/walk'
@@ -130,6 +130,11 @@ export function readPersonalization(raw: unknown): Personalization {
       ? (p.trashDateFormat as DateFormat)
       : undefined,
     trashHideTime: bool(p.trashHideTime),
+    autoFormatPastedLinks: bool(p.autoFormatPastedLinks),
+    pasteLinkIntoText: bool(p.pasteLinkIntoText),
+    defaultLinkFormat: LINK_DISPLAYS.includes(p.defaultLinkFormat as LinkDisplay)
+      ? (p.defaultLinkFormat as LinkDisplay)
+      : undefined,
   }
 }
 

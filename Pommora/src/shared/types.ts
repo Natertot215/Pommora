@@ -3,7 +3,7 @@
 
 import { SPECTRUM } from './theme'
 import type { ContextDef } from './contexts'
-import type { PropertyDefinition } from './properties'
+import type { LinkDisplay, PropertyDefinition } from './properties'
 import type { PageFrontmatter } from './schemas'
 import type { DateFormat } from './columnStyles'
 import type { SavedView } from './views'
@@ -121,6 +121,14 @@ export interface Personalization {
   trashDateFormat?: DateFormat
   /** Whether that date drops its clock. Absent = the nexus's own time format is shown. */
   trashHideTime?: boolean
+  /** Whether a pasted URL is written as a markdown link rather than as literal text. Absent = literal.
+   *  The inverse paste chord always does the opposite of whatever this says. */
+  autoFormatPastedLinks?: boolean
+  /** Whether pasting a URL over selected text wraps that text as the link's label rather than
+   *  replacing it. Absent = replaces. The inverse chord likewise flips this one. */
+  pasteLinkIntoText?: boolean
+  /** Which form `autoFormatPastedLinks` writes. Absent = the whole address as its own label. */
+  defaultLinkFormat?: LinkDisplay
 }
 
 /** The per-nexus default window zoom (`personalization.defaultViewScale`). Clamped so a hand-typed
