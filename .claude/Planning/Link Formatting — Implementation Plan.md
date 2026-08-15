@@ -236,11 +236,12 @@ Ruled out in the decision log; do not retry.
 **Negative control:** the enum narrowing helper must be proven to *admit* a valid value and *reject* an invalid one in the same test — a helper that returned undefined unconditionally would pass a round-trip test that only ever checked the default.
 
 **Steps:**
-- [ ] Add the three cases to `readNexus.test.ts`: both booleans in the existing round-trip list, a valid enum value surviving, and an invalid enum value falling to undefined. Run — expect red.
-- [ ] Add the three fields to `Personalization` with why-only comments.
-- [ ] Add the coercers and return rows in `readPersonalization`. Re-run — expect green.
-- [ ] Full gate — expect green.
-- [ ] Commit: `feat(settings): personalization keys for pasted-link formatting`
+- [x] Add the three cases to `readNexus.test.ts`: both booleans in the existing round-trip list, a valid enum value surviving, and an invalid enum value falling to undefined. Run — expect red. *(2 red.)*
+- [x] Add the three fields to `Personalization` with why-only comments.
+- [x] Add the coercers and return rows in `readPersonalization`. Re-run — expect green.
+- [x] Confirm the write path needs nothing: `personalization:set` is key-agnostic (`keyof Personalization` at the type level, any string key through `writePersonalization`), so there is no whitelist to widen — the read path really was the only hazard.
+- [x] Full gate — expect green.
+- [x] Commit: `feat(settings): personalization keys for pasted-link formatting`
 
 #### Task 4: Generalize the settings leaf to row kinds
 
@@ -531,8 +532,8 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
 - [ ] **Phase 1** — One grammar, one vocabulary · base `bdf38cc7`
   - [x] Task 1 — Widen the markdown-link grammar · `ee3ee22e`
   - [ ] Task 2 — One LinkDisplay vocabulary, one formatter · `<commit>`
-- [ ] **Phase 2** — The settings
-  - [ ] Task 3 — Three personalization keys · `<commit>`
+- [ ] **Phase 2** — The settings · base `ad635af5`
+  - [x] Task 3 — Three personalization keys · `360ebf91`
   - [ ] Task 4 — Generalize the settings leaf to row kinds · `<commit>`
 - [ ] **Phase 3** — The paste path
   - [ ] Task 5 — The paste formatter · `<commit>`
@@ -582,6 +583,7 @@ Folded without needing a ruling:
 
 Not blocking, still open:
 
+- ~~**`bridge.ts`'s `setNumberFormat` duplicates its patch shape.**~~ **Resolved in `ac997c11`** (Nathan: fix it to match). The channel names `NumberConfig`, main validates the family against `NUMBER_FAMILIES`, and the whitelist object is typed rather than a hand-maintained string map. The question underneath it is answered: a bridge entry may name shared types, and the link and number entries now read alike. Original finding:
 - **`bridge.ts`'s `setNumberFormat` duplicates its patch shape.** Raised at Gate 1 and verified: the channel spells its patch inline *and* re-states `'number' | 'percent' | 'currency'` as a literal union rather than deriving from `NUMBER_FAMILIES`, even though `NumberConfig` already exists in `shared/properties.ts` — the same duplication the link config just resolved. Genuinely two definitions of one thing, and outside this cycle's diff. The question underneath it is whether a bridge entry is meant to be self-describing (the channel map read as a standalone contract) or may name shared types; the link change answered that one way, and the number entry deserves the same answer deliberately rather than as a drive-by. Awaiting a ruling.
 
 - **`aliasPickerOnCommit`.** `NexusSettings.tsx` carries a deliberately unlisted Pages key, pending wording nobody has settled. Task 6 touches that leaf and must decide rather than silently inherit.
