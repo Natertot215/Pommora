@@ -40,7 +40,7 @@ The two dropdown motions are the same animation at two speeds — one `dropdown-
 
 #### Bloom
 
-Pommora's canonical pane and menu open — a zoom-from-the-trigger (`scale → 1` + fade on the Bloom curve, no blur). The `dropdownMenu` / `dropdownMenuClosing` classes run the shared keyframes on the **`slow`** token, symmetric, so a click-off retracts the pane instead of cutting it; the parent keeps it mounted through the exit via the shared **`useExitPresence`** hook. The origin point is the consumer's: the class reads `--dropdown-origin` so the pane blooms from its own trigger, and the shared beaked shell (`NotchedPane`) computes that origin as its own beak tip and writes it on the pane, so a beaked surface always blooms from the beak. This is the menus' motion, carried by `MenuSurface`, the shell every large toolbar dropdown mounts. A menu row's hover is an instant state swap with no transition — the pane animates, its contents don't.
+Pommora's canonical pane and menu open — a zoom-from-the-trigger (`scale → 1` + fade on the Bloom curve, no blur). The `dropdownMenu` / `dropdownMenuClosing` classes run the shared keyframes on the **`slow`** token, symmetric, so a click-off retracts the pane instead of cutting it; the parent keeps it mounted through the exit via the shared **`useExitPresence`** hook. The origin point is the consumer's: the class reads `--dropdown-origin` so the pane blooms from its own trigger, and the shared beaked shell (`NotchedPane`) computes that origin as its own beak tip and writes it on the pane, so a beaked surface always blooms from the beak. This is the menu's motion, carried by `MenuSurface`, the shell every large toolbar dropdown mounts.
 
 #### Dropdown
 
@@ -91,7 +91,7 @@ Every in-app window mounts the shared `PreviewPane` surface and opens and closes
 
 ### Timing Sources
 
-Motion timing has one canonical home — the duration scale and easings in the motion tokens, read through their `--duration-*` / `--ease-*` vars; the shared dropdown keyframes and the Bloom curve live in the animations layer and take their durations from those same tokens. The tables state the literal values under the atlas convention ([[DesignSystemPM]]).
+Motion timing has one canonical home — the duration scale and easings in the motion tokens, read through their `--duration-*` / `--ease-*` vars; the shared dropdown keyframes and the Bloom curve live in the animations layer and take their durations from those same tokens. 
 
 **SOURCE:** `Pommora/src/renderer/src/design-system/tokens/motion.ts` · `Pommora/src/renderer/src/design-system/animations.css.ts`
 
