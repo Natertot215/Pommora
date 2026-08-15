@@ -20,7 +20,6 @@
 #### II. Next-Feature Candidates
 
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
-- [ ] **A custom alias glyph.** The alias picker borrows `square-split-horizontal` from Lucide; an alias deserves a drawn symbol of its own in `design-system/symbols/customGlyphs`.
 - [ ] **MarkdownPM Links:** First, being able to link to a specific heading within a page across the nexus, with auto-complete for in-page headings and a 'Copy Link' menu option on the drag-chevron. Second, paste-aware auto-link syntax for URLs pasted into the editor, with an optional auto-title fetch feature based on its to-be-determined complexity. Full-on MarkdownPM block linking is a near-term consideration. 
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Per-tab Subfield `crumbDepth`**, if cross-tab tail memory is ever wanted. It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.

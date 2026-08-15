@@ -1,0 +1,577 @@
+## Link Formatting — Implementation Plan
+
+> **Status:** written, pending review · Spec: [[Link Formatting — Decision Log]] · Execute tasks in order.
+> Citations name files and symbols; re-derive before editing.
+
+**Goal**
+
+A URL pasted into MarkdownPM becomes a markdown link in a form the reader recognizes, chosen nexus-wide and changeable per link. At the end there are three named link forms — Full Link, Short Link, Page Title — that mean the same thing everywhere in the app; a paste that writes one of them; a right-click that changes an existing link to another; and a Paste As menu that offers whichever forms the clipboard's contents can actually take. None of that exists today: pasting a URL writes inert text, and the only place the app has an opinion about how a link reads is a two-value switch buried in a URL property's config.
+
+The shape follows from one finding: almost all of this is already built and unwired. `linkDomain` is Short Link. The `linkTitles` fetcher, its main-side cache and its renderer resolver are Page Title, shipped for URL property cells. `PickerControl` is the three-option double-chevron. `linkDisplayText` is the formatter. So the plan wires existing mechanisms onto one vocabulary rather than building a link subsystem — which is why the vocabulary lands first and everything else consumes it. Per-link Format was weighed against a stored per-link display mode and rejected: markdown stores the label, so rewriting the label *is* the override, with nothing to persist, nothing to sync, and nothing that can disagree with the file.
+
+Bounded to the link feature. The `PopupMenu` design-system split is a separate cycle — Default Format ships on `PickerControl` as it exists today and inherits the beak-less surface when that cycle lands, which is a swap at one call site. Bare-URL autolinking is not solved here.
+
+**Requirements**
+
+1. One `LinkDisplay` vocabulary — `link-full` / `link-short` / `link-title` — with a single formatter, adopted by URL properties.
+2. `markdownLinkRegex` reads CommonMark's balanced-parens destination, so a parenthesized URL survives wherever it is authored.
+3. Three per-Nexus settings under Pages: *Automatically Format Pasted Links*, *Paste Link Into Text*, and *Default Format* (disclosed only while the first is on), all clean-file.
+4. A paste path honouring the inverse rule: ⌘V does what the settings say, the inverse chord does the other thing, selected by whether a selection exists.
+5. Page Title writes Short Link immediately and rewrites the label in place when the fetch lands — anchored to the inserted range, undo-transparent, dropped if the editor is gone or the text has changed.
+6. `Format >` on a markdown link's right-click menu, rewriting the label only.
+7. `Paste As >` on the prose right-click menu, offering what the clipboard's target can become.
+8. All of it applies in every MarkdownPM surface, including table cells.
+
+**Acceptance — the whole thing working**
+
+In a running nexus with *Automatically Format Pasted Links* on and Default Format set to Page Title: copy `https://en.wikipedia.org/wiki/Foo_(bar)` from a browser, paste into a page body, and the line shows the site's domain immediately, becomes the page's real title within a second or two, and a single ⌘Z removes the whole paste. Right-click that link → `Format > Short Link` and it reads as the domain again. Right-click empty prose → `Paste As > Full Link` and the whole address appears as its own label. Repeat the paste inside a table cell and the cell behaves the same. Open the `.md` in a plain text editor: the target reads `https://en.wikipedia.org/wiki/Foo_(bar)` with no percent-encoding, and the link renders correctly in any CommonMark reader.
+
+**Forced By**
+
+- `linkDisplayText` is already the one formatter, and `pipeline/filter.ts` + `pipeline/sort.ts` call it with **no** display argument → the `link-full`/default branch must keep returning the raw URL, or table sorting and filtering silently change.
+- `link_display` is validated `.catch(undefined)` and `link-url` **is** the default → renaming it to `link-full` needs no migration and can't lose a configured value. `link-title` must keep its spelling, or every page configured to Title mode reverts.
+- `main/index.ts:987` guards the link-config write with a hand-written `=== 'link-url' || === 'link-title'` chain → widening the enum without widening that guard silently drops the write. Replace the chain with a shared const array.
+- `readNexus.ts:81-134` hand-coerces personalization with no zod → a key the writer persists but the reader never parses is silently dropped, works for a session, and reverts on relaunch.
+- `MarkdownPM/index.tsx:378` builds the extension array once with dep array `[]` → a new setting must be read at dispatch time via `useSession.getState()`, never captured into the array.
+- `Tables/CellEditor.tsx:94` builds a **second** `EditorView` with its own extension array → the paste handler mounts twice or Requirement 8 is half-true.
+- CodeMirror runs plugin `domEventHandlers` before its own `handlers.paste` → array position doesn't affect preemption, but the read-only change filter at `index.tsx:182` would silently drop the handler's transaction, so it must check `state.readOnly` itself.
+- `Tables/guard.ts`'s `tableMergeGuard` is a `transactionFilter` that cancels multi-line/replacing inserts near a table → a paste transaction can be swallowed there with no trace.
+- The prose menu's `menu:action` push channel is wired **only** at `PageView.tsx:134` → Paste As must use the returning-ask pattern (`popReturningMenu`) or it is dead in blocks and embeds, exactly as the existing `Format ▸` already is.
+- `main/menu.ts:81` is `{ role: 'editMenu' }`, which registers ⌘⇧V for `pasteAndMatchStyle` **main-side** → the keypress never reaches the renderer, so no renderer binding fires until that role is expanded. **This is the open fork — see Task 9.**
+- jsdom has no `ClipboardEvent` or `DataTransfer`, and there is no precedent in the repo → paste tests fabricate the event, and the handler must tolerate a null `clipboardData` (CodeMirror's own `brokenClipboardAPI` path).
+
+**Inherited Reasoning**
+
+Ruled out in the decision log; do not retry.
+
+- **Percent-encoding parens as the paste path writes the target** — symptom handling. Leaves every hand-authored and externally-written link broken, puts `%28` on disk where a person would read a `(`, and makes the encoder a second authority on the grammar.
+- **Awaiting the title fetch before writing** — a slow host makes ⌘V appear to do nothing.
+- **Never rewriting; Page Title only via right-click once cached** — makes the setting's own default mode do nothing on first paste.
+- **A timer gating the late rewrite** — a text-identity gate self-cancels on any edit and needs no threshold anyone has to justify.
+- **A per-link stored display mode** — Format is a text rewrite; a sidecar would add a store, a sync surface, and a way for the file and the app to disagree.
+- **Keeping `link-url` on disk** — unnecessary, per Forced By.
+- **Flipping `pasteURLAsLink: true`** — it only fires on a non-empty selection, hardcodes `[sel](url)`, and carries no vocabulary, no settings gate and no inverse. It stays `false`.
+
+**Grounding** *(re-open these; don't cite them)*
+
+- `.claude/Planning/Link Formatting — Decision Log.md` — the spec. Every decision is `[confirmed]` except E-7.
+- `Pommora/src/shared/links.ts` — `markdownLinkRegex`, `MD_LINK`, `linkDomain`, `isHttpLink`, `isValidLink`, `escapeAlias`/`unescapeAlias`.
+- `Pommora/src/renderer/src/Detail/Views/Table/linkValue.ts` — `linkDisplayText`, the one formatter.
+- `Pommora/src/shared/properties.ts` · `Pommora/src/main/index.ts` (the `property:setLinkConfig` guard) · `Pommora/src/renderer/src/Components/Detail/URLEditor.tsx`.
+- `Pommora/src/shared/types.ts` (`Personalization`) · `Pommora/src/main/readNexus.ts` (`readPersonalization`) · `Pommora/src/main/settings.ts`.
+- `Pommora/src/renderer/src/Settings/NexusSettings.tsx` · `Pommora/src/renderer/src/Components/Detail/NumberEditor.tsx` (picker rows + `Reveal` disclosure) · `Pommora/src/renderer/src/Settings/TrashLeaf.tsx` (an enum knob storing no key at its default).
+- `Pommora/src/renderer/src/MarkdownPM/index.tsx` (the extension array) · `Pommora/src/renderer/src/MarkdownPM/Tables/CellEditor.tsx` (the second one).
+- `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` (`mapPos` with per-end assoc + a validity prune) · `editor/linkGestures.ts` (the announce-by-effect shape) · `editor/linkEdit.ts` (the late-call text check, the stale-span guard, the teardown-race note).
+- `Pommora/src/main/connMenu.ts` · `main/returningMenu.ts` · `main/pageMenu.ts` · `main/gripMenu.ts` (submenu shapes) · `main/editorMenu.ts` (the prose menu) · `main/menu.ts` (the `editMenu` role).
+- `Pommora/src/shared/connections.ts` (`ConnMenuAction`, `CONN_OPEN_ACTIONS`) · `Pommora/src/renderer/src/Embeds/connectionMenu.ts` (the router).
+- `Pommora/src/shared/bridge.ts` · `Pommora/src/preload/index.ts` · `Pommora/src/main/ipc.ts` — the three-site channel pattern.
+- `Pommora/src/renderer/src/testing/editorHarness.ts` — `stubEditorBridge`, `mountEditor`.
+- `.claude/Guidelines/Editor-Internals.md` — in-domain rules. Two bind here: **hot-path reads share one per-doc-version derivation** (no per-caret whole-doc read; use `docString`), and **a grip's right-press is defaulted away** with the hover flag and hit-test reading one line-class list.
+- `.claude/Guidelines/Build-Gotchas.md` · `.claude/Guidelines/Lint-And-Accessibility.md`.
+
+**Environment**
+
+- **Plan directory:** `.claude/Planning/`
+- **Spec input:** the decision log above.
+- **Explorer agent:** `Explore` (project has no designated explorer; three were dispatched at Phase C and their load-bearing findings verified by hand).
+- **Research agent:** not needed — nothing here turns on external prior art.
+- **Code reviewer:** `feature-dev:code-reviewer`.
+- **Attack reviewer:** `build-breaking-agent` (the project's designated one).
+- **Neutral verifier:** `general-purpose`, handed the decision log, the plan, and the commit range.
+- **Simplification pass:** `code-simplifier`, plus `comment-killer-agent` per the project's simplification convention.
+- **Gate commands:** from `Pommora/package.json`, run from `Pommora/` — `npm run typecheck` · `npm run test` · `npm run lint`.
+- **Rules directory:** `.claude/Guidelines/`.
+
+**Shapes:** additive · refactor (the vocabulary rename and the settings row-kind union carry baseline invariants) · fix (Requirement 2 repairs a live defect) · user-visible.
+
+**Global Constraints (every task inherits these)**
+
+- Gates, from `Pommora/`: `npm run typecheck` · `npm run test` · `npm run lint`. Read exit codes directly — **never** through a pipe (`vitest | tail` returns tail's zero and has masked a red suite before).
+- Biome owns formatting via a PostToolUse hook. Never hand-align, never run Biome yourself; an Edit failing on whitespace means Biome reformatted — re-read and retry.
+- Main owns the filesystem. The renderer never touches Node. Every IPC channel is declared once in `shared/bridge.ts`; both sides derive from it.
+- Comments are minimum and why-only. Never restate a value a declaration already holds. `KNOB` and `(Nathan's call)` markers are functional — do not strip them.
+- New source files are PascalCase.
+- Tokens come from `design-system/tokens`. No hand-rolled tokens.
+- Clean-file discipline: a knob resting at its default stores **no key**.
+- Docs land in the commit that falsifies them — never a trailing docs task.
+- Out of scope everywhere: the `PopupMenu` split · bare-URL autolinking · a general prose context menu beyond the one new submenu · any keyboard binding other than the one in Task 9.
+
+**Made False**
+
+| Doc | The specific claim | What makes it false | Task |
+| --- | --- | --- | --- |
+| `ConfigurationPM.md` | the Personalization roster (it already omits several shipped keys) | three new keys | 5 |
+| `ConfigurationPM.md` | "Its rows are per-Nexus knobs — boolean switches plus the hover-preview linger's slider" | a picker row and a disclosed row | 6 |
+| `PropertiesPM.md` | "each link as its full URL, or its fetched page title" | a three-way vocabulary | 2 |
+| `MarkdownPM.md` | §Inline marks / §Markdown links — the link description | paste formatting, `Format >`, balanced-parens targets | 3, 8, 10 |
+| `MarkdownPM.md` | §Pending — anything the paste path resolves | the paste path shipping | 7 |
+| `shared/links.ts` | `linkDomain`'s doc: "The `link-title` look shows this as its placeholder + its offline/404 fallback" | Short Link promotes it to a mode | 2 |
+| `MarkdownPM/index.tsx:195-199` | the comment describing `pasteURLAsLink` as "against the paste-preserves-literal-text rule" | that rule is now a setting | 7 |
+| `main/linkTitles.ts:1` | "Page-title resolution for URL properties in the `link-title` look" | the editor consumes it too | 8 |
+
+**Dead Vocabulary** *(the closing sweep)*
+
+- `rg -F "'link-url'" Pommora/src` → expect **0**. Legitimate hits: none. (`md-link-url` is an unrelated CSS class — search with the quotes.)
+- Control: `rg -F "'link-title'" Pommora/src` → expect **>0**. Zero here means the sweep never ran.
+
+**Hazard Window:** Task 2 renames the `link_display` enum; until Task 6 ships the picker, `URLEditor` is the only writer of the new values and the Settings surface has no way to set Default Format. Nothing may hand-edit a `link_display` value in a test nexus while the window is open. Opened by Task 2, closed by Task 6.
+
+---
+
+### Phase 1 — One grammar, one vocabulary
+
+#### Task 1: Widen the markdown-link grammar to CommonMark's balanced-parens destination
+
+**Requirement:** 2
+
+**Why:** `markdownLinkRegex`'s target group is `[^)\r\n]`, so it ends at the first `)` — `…/wiki/Foo_(bar)` truncates mid-address and drops a stray `)` into the prose, today, however the link was authored. Every other requirement writes links, so this is the floor they stand on. Fixed at the grammar rather than at the paste path because the grammar has four consumers and only one of them is ours; encoding at the writer would leave hand-authored and externally-written links broken while putting `%28` on disk where a person expects a `(`.
+
+**Files:**
+- Modify: `Pommora/src/shared/links.ts` — `markdownLinkRegex`, and its doc block (the target-group rationale changes).
+- Test: `Pommora/src/shared/links.test.ts`
+
+**Derivation**
+- `rg -F "markdownLinkRegex" Pommora/src` → **6** at planning time (declaration, `MarkdownPM/detect/index.ts` re-export, `MarkdownPM/tokens/index.ts`, `main/connections/scan.ts`, `main/connections/rewrite.ts`, and the import line in `rewrite.ts`). All are consumers of the widened grammar; none needs its own edit.
+- Control: `rg -F "shared/links" Pommora/src` → expect **>0**. Zero means the search never ran.
+
+**Interfaces**
+- Produces: `markdownLinkRegex(): RegExp` — unchanged signature, group 2 now admits balanced parens.
+- Assumed by: Tasks 7, 8, 10 (every path that writes or rewrites a link target).
+
+**Failure half:** unbalanced open (`[x](((((`) → no match, returns immediately · unbalanced trailing `)` → destination ends before it, per CommonMark · a target containing a space → still matches, as today · empty target → no match, as today (the `{1,…}` floor).
+
+**Must agree:** `MD_LINK` (the anchored, whole-string form used by `linkValue.ts`) reads a greedy `(.*)` and already handles balanced parens correctly. One test must assert both forms extract the same target from `[x](https://a.com/a_(b))`, or the tokenizer and the property cell disagree about where a link ends.
+
+**Steps:**
+- [ ] Write the failing tests: single nested pair, two nested pairs, plain URL unchanged, target-with-space unchanged, unbalanced trailing `)` unchanged, and the `MD_LINK`-agreement case.
+- [ ] Run `npm run test -- links` — expect the nested-pair cases red, the rest green.
+- [ ] Widen the target group to `(?:[^()\r\n]|\([^()\r\n]*\)){1,2048}`. Rewrite the doc block: the ReDoS note now rests on the two alternatives being disjoint on their first character, which is what keeps the quantifier from backtracking ambiguously.
+- [ ] Re-run — expect all green.
+- [ ] Add the three pathological inputs (unbalanced-open run, unclosed-label run, long nested run) as timing-free regression cases; they assert a result, not a duration.
+- [ ] Full gate: `npm run typecheck && npm run test && npm run lint` — expect green.
+- [ ] Commit: `fix(links): the markdown-link target reads balanced parentheses`
+
+#### Task 2: One LinkDisplay vocabulary, one formatter
+
+**Requirement:** 1
+
+**Why:** URL properties already carry `link_display: 'link-url' | 'link-title'` — the same concept as Full/Short/Page Title, two-valued, with the domain as a fallback inside title mode rather than a mode of its own. Shipping a second three-value vocabulary for the editor would be two definitions of one thing, which the DRY hard rule forbids outright. Consolidating first means every later task consumes one enum and one formatter. Nothing downstream can then disagree about what "Short Link" means.
+
+**Files:**
+- Modify: `Pommora/src/shared/properties.ts` — the `link_display` enum and its doc comment; export `LINK_DISPLAYS` as `as const satisfies readonly LinkDisplay[]` and the `LinkDisplay` type.
+- Modify: `Pommora/src/shared/bridge.ts` — the `link_display` literal union in the `property:setLinkConfig` args, to the shared type.
+- Modify: `Pommora/src/main/index.ts` — the `property:setLinkConfig` guard; replace the hand-written `||` chain with `LINK_DISPLAYS.includes(...)`.
+- Modify: `Pommora/src/renderer/src/Detail/Views/Table/linkValue.ts` — `linkDisplayText` gains the `link-short` branch; its doc block is rewritten.
+- Modify: `Pommora/src/renderer/src/Detail/Views/Table/LinkCell.tsx` — the fetch gate stays `=== 'link-title'`; its doc comment updates.
+- Modify: `Pommora/src/renderer/src/Components/Detail/URLEditor.tsx` — the "Full URL" `Switch` becomes a three-option `PickerControl`; delete the local `LinkDisplay` alias in favour of the shared one.
+- Modify: `Pommora/src/renderer/src/Components/Detail/PropertiesPane.tsx` — the call-site default `?? 'link-url'` → `?? 'link-full'`.
+- Modify: `Pommora/src/shared/links.ts` — `linkDomain`'s doc block (Short Link promotes it from fallback to mode).
+- Modify: `.claude/Features/PropertiesPM.md` — the Display section, to three ways.
+- Test: `Pommora/src/renderer/src/Detail/Views/Table/linkValue.test.ts` · `Pommora/src/shared/properties.test.ts`
+
+**Derivation**
+- `rg -F "link_display" Pommora/src` → **11** at planning time. Legitimate hits after this task: all 11 remain, none spelling `'link-url'`.
+- `rg -F "'link-url'" Pommora/src` → **9** at planning time → expect **0** after.
+- Control: `rg -F "'link-title'" Pommora/src` → expect **>0** before and after.
+
+**Interfaces**
+- Produces: `type LinkDisplay = 'link-full' | 'link-short' | 'link-title'` and `LINK_DISPLAYS` from `shared/properties.ts`.
+- Produces: `linkDisplayText(raw, display?, title?) => string` — `link-full`/absent returns the raw URL, `link-short` returns `linkDomain(url)`, `link-title` returns `title ?? linkDomain(url)`. An alias still wins over all three.
+- Assumed by: Tasks 5, 6, 7, 8, 10.
+
+**Failure half:** a stored `'link-url'` from an older file → `.catch(undefined)` drops it → the call-site default resolves to `link-full`, which is where it already was · an unknown string → identical path · `link-title` with no fetched title → `linkDomain`, as today · `linkDomain` on an unparseable target → returns the input trimmed, as today.
+
+**Must agree:** `pipeline/filter.ts:254` and `pipeline/sort.ts:86` call `linkDisplayText(v.value)` with **no** display argument, deliberately, so ordering is stable regardless of a property's look. One test must pin that the no-argument call returns the raw URL — if the default branch ever becomes `link-short`, sorting and filtering change under every URL column with no other symptom.
+
+**Survivors:** `md-link-url` (CSS class, `MarkdownPM/editor/decorations.ts` + `Styles.css` + `mdLinkTarget.test.tsx`) is unrelated to the enum and stays. Search with quotes to keep it out of the sweep.
+
+**Steps:**
+- [ ] Invert the existing `linkValue.test.ts` cases from `'link-url'` to `'link-full'`, and add the `link-short` and no-argument-default cases. Run — expect red.
+- [ ] Widen the enum in `properties.ts`, export `LinkDisplay` + `LINK_DISPLAYS`, rewrite the doc comment.
+- [ ] Add the `link-short` branch to `linkDisplayText`; rewrite its doc block. Re-run — expect green.
+- [ ] Widen the main-side guard to `LINK_DISPLAYS.includes(...)`; widen the bridge arg type to the shared type.
+- [ ] Add a `properties.test.ts` case: a three-value round-trip, and an unrecognized value falling back through `.catch` (mirroring the existing `checkbox_color` case).
+- [ ] Replace `URLEditor`'s "Full URL" Switch with a `PickerControl` labelled **Format**, options ordered Full Link · Short Link · Page Title (default first, so `labelOf`'s fallback reads as the default). Reuse `configRow`/`configLabel` from `settingsPane.css.ts`.
+- [ ] Update the `PropertiesPane` call-site default, `LinkCell`'s doc comment, and `linkDomain`'s doc block.
+- [ ] Rewrite the Display section of `PropertiesPM.md`.
+- [ ] Re-derive the two sweeps above — expect `'link-url'` at 0 and the control above 0.
+- [ ] Full gate — expect green.
+- [ ] Commit: `refactor(links): one three-way display vocabulary across properties and the editor`
+
+#### Gate 1 — one grammar, one vocabulary, behavior unmoved
+- [ ] Gate commands green, exit codes read directly.
+- [ ] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
+- [ ] `rg -F "'link-url'" Pommora/src` → 0, with the control above 0.
+- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Pommora/src/shared`, `Pommora/src/main/index.ts`, `Pommora/src/renderer/src/Detail/Views/Table`, `Pommora/src/renderer/src/Components/Detail`.
+- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [ ] The URL property's Format picker seen running: all three modes, and a Wikipedia link rendering un-truncated in a page.
+- [ ] Hazard window open — noted in the Log, closes at Task 6.
+- [ ] Progress hashes filled in.
+
+---
+
+### Phase 2 — The settings
+
+#### Task 3: Three personalization keys
+
+**Requirement:** 3
+
+**Why:** The paste path can't be written before the knobs it reads exist, and the read path is where a new key silently dies. `readNexus.ts` hand-coerces personalization with no zod, so a key the writer persists and the reader never parses works for a session and reverts on relaunch — `readNexus.test.ts` pins exactly that class, which is why the test edit is part of this task rather than a follow-up.
+
+**Files:**
+- Modify: `Pommora/src/shared/types.ts` — three optional fields on `Personalization`, beside the existing link cluster.
+- Modify: `Pommora/src/main/readNexus.ts` — `readPersonalization`: two `bool()` rows and one enum narrowing helper modelled on the existing `mode` coercer, plus three return rows.
+- Test: `Pommora/src/main/readNexus.test.ts` — the boolean round-trip list, plus an enum round-trip beside the linger's.
+
+**Interfaces**
+- Produces: `autoFormatPastedLinks?: boolean` (default OFF) · `pasteLinkIntoText?: boolean` (default OFF) · `defaultLinkFormat?: LinkDisplay` (default `link-full`).
+- Assumed by: Tasks 4, 6, 7.
+
+**Failure half:** absent block → all three undefined → defaults · a hand-typed junk enum value → the narrowing helper returns undefined → default · a hand-typed non-boolean → `bool()` returns undefined, never a truthy coercion (the `readPermanentDelete` precedent) · an unknown key alongside them → preserved on write by `settings.ts`, untouched here.
+
+**Negative control:** the enum narrowing helper must be proven to *admit* a valid value and *reject* an invalid one in the same test — a helper that returned undefined unconditionally would pass a round-trip test that only ever checked the default.
+
+**Steps:**
+- [ ] Add the three cases to `readNexus.test.ts`: both booleans in the existing round-trip list, a valid enum value surviving, and an invalid enum value falling to undefined. Run — expect red.
+- [ ] Add the three fields to `Personalization` with why-only comments.
+- [ ] Add the coercers and return rows in `readPersonalization`. Re-run — expect green.
+- [ ] Full gate — expect green.
+- [ ] Commit: `feat(settings): personalization keys for pasted-link formatting`
+
+#### Task 4: Generalize the settings leaf to row kinds
+
+**Requirement:** 3
+
+**Why:** `NexusSettings`'s leaf schema models toggles only, with `LingerRow` hardcoded after the map as a bespoke last row — and its own comment says the schema generalizes when a second non-toggle row exists to shape it. Three new rows, one of them a picker and one disclosed by another, is that moment. Done as its own task because it is behavior-preserving over the existing eight rows and a reviewer should be able to approve it on that basis alone, separately from the rows Task 6 adds. Left ungeneralized, the picker would be a second hardcoded special-case and the disclosure a third.
+
+**Files:**
+- Modify: `Pommora/src/renderer/src/Settings/NexusSettings.tsx` — `Toggle` → a discriminated `Row` union (`toggle` · `picker` · `slider`); `LeafBody.toggles` → `rows`; fold `LingerRow` into the union and delete the `category === 'pages'` special-case; extract the duplicated row chrome into one `SettingsRow({ label, hint, children })`.
+- Modify: `Pommora/src/renderer/src/Settings/nexusSettings.css` — only if the `:last-child` hairline rule needs the `[data-reveal]` hop; see Task 6.
+
+**Interfaces**
+- Produces: `type Row = { kind: 'toggle'; … } | { kind: 'picker'; … } | { kind: 'slider'; … }`, and `SettingsRow`.
+- Assumed by: Task 6.
+
+**Refactor baseline invariant:** the General leaf renders **6** rows and the Pages leaf renders **3** (2 toggles + the linger slider), before and after. Every existing row keeps its label, hint, order, default, and clean-file write behavior. This phase may not move those numbers.
+
+**Failure half:** a picker row whose stored value is absent → the row shows the default, never blank · a picker row whose stored value is unrecognized → `labelOf` falls back to `options[0]`, which is why the default is ordered first.
+
+**Steps:**
+- [ ] Introduce the `Row` union and `SettingsRow`; convert the eight existing rows, keeping every label, hint and default verbatim.
+- [ ] Fold `LingerRow` in as `kind: 'slider'` and delete the `category === 'pages'` conditional at the render site.
+- [ ] Note the `key: keyof Personalization` looseness: the toggle variant reads `value === true`, so a non-boolean key in a toggle row compiles and renders wrong. Narrow each variant's key type, or carry the same documented cast the existing write already uses.
+- [ ] Run the app: General shows 6 rows, Pages shows 3, the linger slider still sits last and still writes `undefined` at None.
+- [ ] Full gate — expect green.
+- [ ] Commit: `refactor(settings): the leaf schema models row kinds`
+
+#### Gate 2 — the schema generalizes, nothing moves
+- [ ] Gate commands green, exit codes read directly.
+- [ ] Baseline invariant held: 6 General rows, 3 Pages rows, every label/hint/default unchanged.
+- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Pommora/src/renderer/src/Settings`, `Pommora/src/shared/types.ts`, `Pommora/src/main/readNexus.ts`.
+- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [ ] Settings window seen running; both leaves unchanged from before the phase.
+- [ ] Progress hashes filled in.
+
+---
+
+### Phase 3 — The paste path
+
+#### Task 5: The paste formatter
+
+**Requirement:** 1, 4
+
+**Why:** Deciding what a paste writes is pure logic — a clipboard string, a mode, a selection, and the two settings in, a document edit out. Split from the DOM handler so the whole decision matrix is testable in the cheap node environment rather than through fabricated clipboard events in jsdom, and so the two editor mounts in Task 6 share one answer instead of each deciding.
+
+**Files:**
+- Create: `Pommora/src/shared/PasteLink.ts` — the decision function and the label writer.
+- Test: `Pommora/src/shared/PasteLink.test.ts`
+
+**Interfaces**
+- Produces: a pure function taking `{ clipboard: string; hasSelection: boolean; selectionText: string; autoFormat: boolean; pasteIntoText: boolean; inverse: boolean; format: LinkDisplay; title?: string }` and returning either the literal text to insert or a `{ label, target }` pair, plus a flag saying whether a deferred title fetch is wanted.
+- Assumed by: Tasks 6, 7, 10.
+
+**The matrix this encodes** (⌘⇧V is the inverse of ⌘V on whichever axis a selection selects):
+
+| | ⌘V | inverse |
+| --- | --- | --- |
+| No selection, auto-format on | formatted link in Default Format | plain URL |
+| No selection, auto-format off | plain URL | formatted link |
+| Selection, paste-into-text on | `[selection](url)` | selection replaced → falls through to the no-selection row |
+| Selection, paste-into-text off | selection replaced → falls through to the no-selection row | `[selection](url)` |
+
+Default Format never applies to a wrap — the selection is the label. A clipboard holding no URL takes no special path under either chord.
+
+**Failure half:** clipboard is empty or whitespace → plain paste · clipboard holds multi-line text, or a URL with prose around it → plain paste (a pasted document, not a pasted address) · clipboard holds a schemeless dotted host (`example.com`) → `normalizeLinkUrl` applies `https://`, as `isValidLink` already does · `mailto:` → `isValidLink` accepts it, `isHttpLink` refuses it, so Page Title mode must not request a fetch for one · the selection text contains `]` or `\` → escaped via `escapeAlias` · the selection spans a line break → treated as no wrap.
+
+**Must agree:** the label this writes for `link-short` and `link-title` must be the same string `linkDisplayText` produces for the same URL and mode. One test crosses both — if the paste path grows its own domain-stripping, a pasted link and the same URL in a property cell read differently.
+
+**Steps:**
+- [ ] Write the failing tests: all eight matrix cells, plus every failure-half case and the `linkDisplayText`-agreement case.
+- [ ] Run — expect red, module not found.
+- [ ] Implement, composing `isValidLink`, `normalizeLinkUrl`, `isHttpLink`, `linkDisplayText`, and `escapeAlias` from the existing modules. Write no second URL parser.
+- [ ] Re-run — expect green.
+- [ ] Full gate — expect green.
+- [ ] Commit: `feat(links): the pasted-link decision, as pure logic`
+
+#### Task 6: Mount the paste handler in both editors
+
+**Requirement:** 4, 8 · **closes the hazard window**
+
+**Why:** This is where the feature becomes real, and it mounts twice because there are two editors: `MarkdownPM/index.tsx` builds one extension array and `Tables/CellEditor.tsx` builds a second. One mount satisfies Requirement 4 and leaves Requirement 8 half-true. The settings rows land here too, in the same commit, so the knobs and the behavior they govern ship together and `ConfigurationPM` is falsified exactly once.
+
+**Files:**
+- Create: `Pommora/src/renderer/src/MarkdownPM/editor/PasteLink.ts` — the `paste` DOM handler.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` — mount it beside the other link-gesture extensions; rewrite the `pasteURLAsLink` comment (it now describes a setting, not a rule).
+- Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/CellEditor.tsx` — mount it in the cell's array.
+- Modify: `Pommora/src/renderer/src/Settings/NexusSettings.tsx` — the three Pages rows, with Default Format wrapped in `Reveal`.
+- Modify: `Pommora/src/renderer/src/Settings/nexusSettings.css` — the `.settings-row:last-child` hairline rule needs the `[data-reveal]` hop, or the last visible row keeps a stray rule while the disclosure is collapsed.
+- Modify: `.claude/Features/ConfigurationPM.md` — the roster and the Settings Window row description.
+- Test: `Pommora/src/renderer/src/MarkdownPM/editor/pasteLink.test.tsx`
+
+**Interfaces**
+- Produces: the paste extension, and the settings rows that drive it.
+- Assumed by: Tasks 7, 10.
+
+**Failure half:** `event.clipboardData` is null (CodeMirror's `brokenClipboardAPI` path, and jsdom) → decline, let the default paste run · `state.readOnly` → decline before dispatching, since the read-only change filter would drop the transaction silently · a paste landing next to a table → `tableMergeGuard` may cancel the transaction outright; the handler must not assume its dispatch landed · a cell is single-line GFM → the written label carries no newline and escapes `|`.
+
+**Negative control:** with the auto-format setting off and no inverse chord, a pasted URL must land as literal text — and the test must go red if the settings gate is removed. A test that passes with the gate disabled proves only that the handler runs.
+
+**Steps:**
+- [ ] Write the failing jsdom tests, fabricating the paste event (`new Event('paste', …)` with a defined `clipboardData`; jsdom has neither `ClipboardEvent` nor `DataTransfer`, and there is no precedent in the repo to copy). Cover: settings off → literal; settings on → formatted; selection + wrap on → `[selection](url)`; read-only → untouched; null `clipboardData` → declined. Stub personalization with `useSession.setState({ personalization: { … } })`, as `connectionCommit.test.tsx` does.
+- [ ] Run — expect red.
+- [ ] Implement the handler. Read settings at dispatch time via `useSession.getState()` — the extension array is built once with dep array `[]`, so a captured value would freeze at mount. Dispatch with `userEvent: 'input.paste'`, matching every other write in this editor.
+- [ ] Mount in `index.tsx` beside `markdownLinkClicks` / `aliasOnLeave`, and in `CellEditor.tsx`. Rewrite the `pasteURLAsLink` comment.
+- [ ] Re-run — expect green.
+- [ ] Add the three Pages rows. Default Format writes `undefined` at its default, following `TrashLeaf`'s enum precedent; both toggles are default-OFF so they store `true`/`undefined`. Wrap Default Format in `Reveal` with `fill`, keyed on the auto-format toggle.
+- [ ] Fix the `:last-child` hairline against the collapsed `[data-reveal]` sibling.
+- [ ] Decide the `aliasPickerOnCommit` question the leaf's own comment raises: it is a Pages key deliberately unlisted pending wording. Either surface it now with wording, or leave the comment intact — do not silently drop it.
+- [ ] Rewrite `ConfigurationPM.md`'s roster and Settings Window description.
+- [ ] Run the app: every matrix cell by hand in a page body **and** in a table cell; confirm Default Format discloses and hides with its toggle, and that a default-valued knob writes no key.
+- [ ] Full gate — expect green.
+- [ ] Commit: `feat(links): pasted URLs format to the chosen link form`
+
+#### Task 7: The deferred Page Title rewrite
+
+**Requirement:** 5
+
+**Why:** The title fetch is asynchronous and often slow, so Page Title writes Short Link at once and swaps the label when the answer lands. Split from Task 6 because it is the one piece with a lifetime beyond its own transaction, and every hazard it carries is a lifetime hazard: the same URL pasted twice, an edit landing in between, the page closing first, ⌘Z. A text match alone can't anchor it — two identical pastes match in both places — so it tracks the inserted range, mapped forward, and verifies the text before touching anything.
+
+**Files:**
+- Create: `Pommora/src/renderer/src/MarkdownPM/editor/PendingTitle.ts` — the `StateEffect` + `StateField` anchor and the rewrite dispatch.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/PasteLink.ts` — announce the inserted range when the paste wants a title.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` and `Tables/CellEditor.tsx` — mount the field in both.
+- Modify: `Pommora/src/main/linkTitles.ts` — its header comment ("for URL properties") is falsified by the editor consuming it.
+- Modify: `.claude/Features/MarkdownPM.md` — the links description and any Pending entry this resolves.
+- Test: `Pommora/src/renderer/src/MarkdownPM/editor/pendingTitle.test.ts` (pure `EditorState` drive, no jsdom) and a jsdom case for the store round-trip.
+
+**Interfaces**
+- Consumes: `useSession.getState().resolveLinkTitle(url)` and the `linkTitles` map — both shipped.
+- Produces: the anchor field. Nothing later consumes it.
+
+**Failure half:** the fetch fails or the host is offline → `failedTitles` absorbs it and the label stays Short Link, permanently and silently · the same URL pasted twice → each paste holds its own anchor, so one fetch rewrites only the link it was pasted for · the user edits the label before the title lands → the text check fails, the rewrite declines · the user deletes the link → `mapPos` plus the validity prune drops the anchor · the editor unmounts first → the rewrite is dropped rather than dispatched into a dead view · the fetch resolves after a nexus switch → harmless, a URL's title is the same in any nexus, and main won't persist it cross-nexus.
+
+**Must agree:** the rewritten label must equal what `linkDisplayText(url, 'link-title', fetchedTitle)` returns. One test crosses both, or a link pasted in Page Title mode and a property cell in Page Title mode show different text for the same URL and the same fetch.
+
+**Steps:**
+- [ ] Write the failing pure-state tests: the anchor survives its own transaction's changes and selection (as `linkGestures.test.ts` pins for `restedOnLink`); it maps forward through an edit above it; it is pruned when its range is deleted; the text check declines after the label is edited; two anchors for the same URL stay distinct.
+- [ ] Run — expect red.
+- [ ] Implement the field, following `folding.ts`'s `mapPos`-with-per-end-assoc plus validity prune, and `linkGestures.ts`'s announce-by-effect. Guard the stale span the way `linkEdit.ts` does — `lineAt` throws past the document's end rather than clamping.
+- [ ] Dispatch the rewrite with `addToHistory: false`, so one ⌘Z removes the paste rather than only the swap. Nothing in MarkdownPM uses this today; it is the first, and it warrants a why-only comment.
+- [ ] Guard against a destroyed view before dispatching. `linkEdit.ts`'s doc block on blur-versus-listener names this race directly.
+- [ ] Re-run — expect green.
+- [ ] Update `linkTitles.ts`'s header comment and the `MarkdownPM.md` sections.
+- [ ] Run the app: paste in Page Title mode against a live site and a dead host; paste the same URL twice; edit one label before its fetch lands; ⌘Z after a swap.
+- [ ] Full gate — expect green.
+- [ ] Commit: `feat(links): a pasted link takes its page title when the fetch lands`
+
+#### Gate 3 — pasting works, everywhere, reversibly
+- [ ] Gate commands green, exit codes read directly.
+- [ ] Every matrix cell exercised by hand in a page body **and** a table cell.
+- [ ] One ⌘Z removes a paste whose title swapped.
+- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Pommora/src/renderer/src/MarkdownPM`, `Pommora/src/renderer/src/Settings`, `Pommora/src/shared/PasteLink.ts`.
+- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [ ] Hazard window closed at Task 6 — confirmed in the Log.
+- [ ] Progress hashes filled in.
+
+---
+
+### Phase 4 — The menus
+
+#### Task 8: `Format >` on the link menu
+
+**Requirement:** 6
+
+**Why:** The nexus-wide default applies at paste time; Format is how one link departs from it. It rewrites the `[…]` label and stores nothing — no sidecar, no per-link state, so nothing can disagree with the file and there is no override layer for the default to defer to. It lands before Paste As because it is the smaller of the two menu changes and it establishes the action-id shape Paste As reuses.
+
+**Files:**
+- Modify: `Pommora/src/shared/connections.ts` — a `ConnFormatAction` added to `ConnMenuAction`, with an `as const satisfies` array for item order.
+- Modify: `Pommora/src/shared/connections.ts` — `ConnMenuContext` gains a field distinguishing a `[label](target)` link from a `[[wikilink]]`; main cannot otherwise tell them apart, since both arrive today as the same non-external context.
+- Modify: `Pommora/src/main/connMenu.ts` — build the submenu, following `gripMenu.ts`'s radio-submenu-with-parameterized-action shape.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/links.ts` — the `contextmenu` handler passes the new context field and an `apply` closure over the hit's span. It currently passes `editable: false` and **no** `apply`, so a markdown link's menu can carry no edit action at all.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/connections/index.ts` — widen `ConnMenuTarget.apply`'s parameter beyond `ConnEditAction`.
+- Modify: `Pommora/src/renderer/src/Embeds/connectionMenu.ts` — route the new ids.
+- Create: the label rewrite. `applyLinkAction` only matches `t.kind === 'wikiLink'` and returns silently otherwise, so a markdown link's label needs its own function over the `link` token's `contentRange`.
+- Modify: `.claude/Features/MarkdownPM.md` · `.claude/Features/ConnectionsPM.md` if it describes the link menu.
+- Test: `Pommora/src/renderer/src/MarkdownPM/editor/linkFormat.test.tsx`
+
+**Interfaces**
+- Produces: the format action ids and the label rewriter.
+- Assumed by: Task 10 (Paste As reuses the id shape and the same formatter).
+
+**Failure half:** the menu is held open while the document changes beneath it → the stale-span guard (`range[0] > doc.length`, as `linkEdit.ts:21` does) declines · the link is deleted while the menu is open → same · Page Title chosen with no cached title → writes Short Link and requests the fetch, reusing Task 7's anchor rather than a second mechanism · a label containing `]` → `escapeAlias`.
+
+**Must agree:** the label Format writes must equal what the paste path writes for the same URL and mode. Both call `linkDisplayText`; one test crosses them.
+
+**Steps:**
+- [ ] Write the failing tests, modelled on `externalLink.test.tsx`: stub `connMenu`, right-click a rendered link, assert the context offered and the resulting document for each of the three modes.
+- [ ] Run — expect red.
+- [ ] Add the action ids and the context field in `shared/connections.ts`.
+- [ ] Build the submenu in `connMenu.ts`. Note `main/editorMenu.ts` already ships a `Format ▸` on the *prose* menu — a different menu, but the label is taken elsewhere in the same surface; confirm the two never appear together.
+- [ ] Widen `apply`, add the renderer routes, write the label rewriter over the `link` token's spans.
+- [ ] Re-run — expect green. `connectionMenu.ts`'s `default: target.apply?.(action)` will fail to typecheck until every new id has a case — that compile error is the intended enforcement, not an obstacle.
+- [ ] Update the feature docs.
+- [ ] Run the app: all three Format modes on a real link; a link whose page resolves (drawn as a connection) must still get the connection menu, not this one.
+- [ ] Full gate — expect green.
+- [ ] Commit: `feat(links): Format on a link's menu rewrites how it reads`
+
+#### Task 9: The inverse-paste chord
+
+**Requirement:** 4
+
+> **BLOCKED — open question E-7.** ⌘⇧V is registered main-side by `{ role: 'editMenu' }` (`main/menu.ts:81`) for `pasteAndMatchStyle`, so the keypress never reaches the renderer and no renderer-side binding can fire. It also sits in the editor's context menu at `editorMenu.ts:57`. **Do not execute this task until the user rules.**
+>
+> **Branch A — take the chord.** Expand `{ role: 'editMenu' }` into an explicit submenu and drop Paste and Match Style from both places. Costs a standard macOS edit item; in exchange ⌘⇧V means what the spec says. The item is close to dead weight here — MarkdownPM is CodeMirror, so a paste is stripped to plain text regardless, and the app's other inputs are plain too.
+> **Branch B — keep it, pick another chord.** No main-process change, but the chord is new and needs its own sign-off.
+
+**Why:** The settings decide what ⌘V does; the inverse chord always does the other thing. One rule rather than two, and it means the less-used behavior is always one modifier away instead of buried in a menu — which is what let the Paste Link menu item be dropped entirely.
+
+**Files:**
+- Modify: `Pommora/src/shared/types.ts` — one row in `DEFAULT_COMMANDS`, so the binding is data like every other rebindable shortcut.
+- Modify: `Pommora/src/main/menu.ts` — **Branch A only**: expand the `editMenu` role.
+- Modify: `Pommora/src/main/editorMenu.ts` — **Branch A only**: drop `pasteAndMatchStyle` from `systemItems`.
+- Modify: the paste handler from Task 6 — read the chord and pass `inverse` through.
+- Modify: `.claude/Features/ConfigurationPM.md` — the Commands roster.
+
+**Failure half:** the chord fires with an empty clipboard → ordinary paste · with a non-URL clipboard → ordinary paste · in a read-only surface → declined · outside any editor → not handled.
+
+**Steps:**
+- [ ] Confirm the branch with the user before touching anything.
+- [ ] Add the `DEFAULT_COMMANDS` row.
+- [ ] Branch A: expand the role, drop the item from both menus, and verify by hand that the chord now reaches the renderer — this is the whole risk of the branch and it is observable in one keypress.
+- [ ] Wire `inverse` through the paste handler; extend Task 5's matrix tests to cover it if the chord's plumbing changed their inputs.
+- [ ] Update the Commands roster in `ConfigurationPM.md`.
+- [ ] Run the app: every inverse cell of the matrix.
+- [ ] Full gate — expect green.
+- [ ] Commit: `feat(links): the inverse paste chord`
+
+#### Task 10: `Paste As >` on the prose menu
+
+**Requirement:** 7
+
+**Why:** Auto-format decides what a paste does by default; Paste As is how you choose per paste without changing the setting. It offers only forms the clipboard's contents can actually take, resolved through `resolveMdTarget` — the resolver the click path and both renderers already share — so the menu can never offer a form the writer can't produce.
+
+**Files:**
+- Modify: `Pommora/src/shared/bridge.ts` — `'clipboard:read'` and a `'paste-as-menu'` channel.
+- Modify: `Pommora/src/preload/index.ts` — one line each.
+- Modify: `Pommora/src/main/index.ts` — the two handlers; `clipboard` is already imported.
+- Create: `Pommora/src/main/PasteAsMenu.ts` — the returning-ask builder, following `popConnMenu`.
+- Create: `Pommora/src/shared/PasteAsMenu.ts` — the action ids and the menu model, so it is testable (there are no tests for `src/main` menu builders anywhere in the repo; the house pattern is a shared model plus template assembly in main).
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/PasteLink.ts` or a sibling — the prose `contextmenu` handler.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` and `Tables/CellEditor.tsx` — mount it in both.
+- Modify: `.claude/Features/MarkdownPM.md`.
+- Test: `Pommora/src/shared/pasteAsMenu.test.ts` (the model) and a jsdom case for the handler.
+
+**Derivation**
+- The three editor `contextmenu` handlers this must not collide with: `rg -n "contextmenu" Pommora/src/renderer/src/MarkdownPM` → **6** at planning time across `editor/links.ts`, `editor/connections.ts`, `editor/gripMenu.ts` (declarations plus comments).
+- Control: `rg -n "domEventHandlers" Pommora/src/renderer/src/MarkdownPM` → expect **>0**.
+
+**Interfaces**
+- Consumes: `resolveMdTarget`, `linkDisplayText`, and Task 5's decision function.
+- Produces: nothing later consumes it.
+
+**The option set:** a clipboard target that resolves to a **page** offers Connection and Markdown Link; one that names a **URL** offers Full Link, Short Link, Page Title, and Plain Text. Page resolution wins outright where both could apply — the existing resolver already rules that way on purpose, so `Node.js` and `Notes.md` reach the pages they name. A clipboard holding neither offers nothing, and the submenu is omitted rather than shown empty (`cardMenu.ts`'s precedent).
+
+**Failure half:** an empty clipboard → no submenu · clipboard holds a `[[Title]]` naming no page → the page branch is unavailable, the raw text is all there is · the menu is held open while the document changes → the stale-span guard · a cell target → single-line GFM, so the written label carries no newline and escapes `|`.
+
+**Negative control:** with a non-link clipboard, the Paste As submenu must be **absent** — and the test must go red if the resolution gate is removed, or it proves only that the menu builds.
+
+**Steps:**
+- [ ] **First, observe the running app:** right-click a rendered markdown link and a `[[connection]]`. Grips are excluded from the prose menu by the `gripHot` flag main checks first, but links and connections only `preventDefault()` in the renderer, which does not stop main's `context-menu` event. If both menus appear, links and connections need the same hot-flag treatment grips have — and that becomes a step here, in this task. Record what was observed in the Log either way.
+- [ ] Write the failing model tests: each clipboard shape → the exact option set, in order; a non-link clipboard → no submenu.
+- [ ] Run — expect red.
+- [ ] Add `clipboard:read` (`kind: 'raw'`, `reply: string` — an un-enveloped scalar, matching `theme:systemAccent` and `linkTitles:get`; `clipboard.readText()` cannot fail) and the menu channel. A channel added to `Asks` with no handler is a compile error, so all three sites land together.
+- [ ] Implement the shared model and the main builder; re-run — expect green.
+- [ ] Implement the renderer handler using the **returning-ask** pattern, not the `menu:action` push channel — that channel is wired only at `PageView.tsx:134`, which is why the existing prose `Format ▸` is already inert in blocks and embeds.
+- [ ] Mount in both editor arrays; stub the channel in tests via `stubEditorBridge({ … })`.
+- [ ] Update `MarkdownPM.md`.
+- [ ] Run the app: each clipboard shape, in a page body and a table cell, in a block and an embed.
+- [ ] Full gate — expect green.
+- [ ] Commit: `feat(links): Paste As offers the forms the clipboard can take`
+
+#### Gate 4 — both menus, in every surface
+- [ ] Gate commands green, exit codes read directly.
+- [ ] Derivations re-run against their controls.
+- [ ] The link-versus-prose menu collision observed and resolved, with the observation recorded in the Log.
+- [ ] Paste As exercised in a page body, a table cell, a block, and an embed — the surfaces where the existing `Format ▸` is already inert.
+- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Pommora/src/main`, `Pommora/src/shared`, `Pommora/src/preload`, `Pommora/src/renderer/src/MarkdownPM`, `Pommora/src/renderer/src/Embeds`.
+- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [ ] Progress hashes filled in.
+
+---
+
+## Implementation Log
+
+### Progress
+- [ ] **Phase 1** — One grammar, one vocabulary · base `<commit>`
+  - [ ] Task 1 — Widen the markdown-link grammar · `<commit>`
+  - [ ] Task 2 — One LinkDisplay vocabulary, one formatter · `<commit>`
+- [ ] **Phase 2** — The settings
+  - [ ] Task 3 — Three personalization keys · `<commit>`
+  - [ ] Task 4 — Generalize the settings leaf to row kinds · `<commit>`
+- [ ] **Phase 3** — The paste path
+  - [ ] Task 5 — The paste formatter · `<commit>`
+  - [ ] Task 6 — Mount the paste handler in both editors · `<commit>`
+  - [ ] Task 7 — The deferred Page Title rewrite · `<commit>`
+- [ ] **Phase 4** — The menus
+  - [ ] Task 8 — `Format >` on the link menu · `<commit>`
+  - [ ] Task 9 — The inverse-paste chord · `<commit>` · **blocked on E-7**
+  - [ ] Task 10 — `Paste As >` on the prose menu · `<commit>`
+
+### Rulings
+
+### Open Against Later Tasks
+
+Four rulings block execution. Each was raised by the attack review and verified by hand against the code.
+
+- **R1 — the undo mechanism (blocks Task 7).** One ⌘Z cannot remove a paste whose title swapped. `addToHistory` is not a `TransactionSpec` key at all — the real API is the `Transaction.addToHistory` annotation (`@codemirror/state` d.ts:1013), so the plan's literal wording is a type error; and once corrected, CodeMirror maps the paste's inverted change through the non-history swap, leaving the swapped-in text behind as orphan prose that a second ⌘Z cannot reach. Options: accept two presses · write the paste itself undo-transparently and record only the final state · a custom ⌘Z that pops the swap-annotated pair.
+- **R2 — Paste As menu ownership (blocks Task 10).** `main/editorMenu.ts:190` pops the prose menu for every editable target, suppressed only by the renderer-set `gripHot` flag. A renderer-side returning-ask menu therefore either duplicates it or replaces it, losing undo/cut/copy/paste, spelling, `Format ▸`, `Heading ▸`, `Lists ▸`, `Insert ▸`, Speech and Share. E-1a chose returning-ask for reach and gave up the one-menu property without noticing. Options: build `Paste As ▸` main-side and push the resolved option set the way `setFormatState` already pushes state main can't see (keeps one menu, works everywhere) · add a second `gripHot`-style suppression flag.
+- **R3 — regex nesting depth (blocks Task 1).** The one-level pattern refuses a two-deep balanced target that cmark renders as a link. Two levels costs one alternative and shows no backtracking. Separately, a target with an *unmatched opening* paren matches today and stops matching after the widening — CommonMark agrees with the new reading, but it is a behavior change and C-8's "preserved on every existing shape" was false.
+- **E-7 — the ⌘⇧V fork (blocks Task 9).** Unchanged: take the chord from `pasteAndMatchStyle`, or pick another.
+
+Folded without needing a ruling:
+
+- **Auto-format fired on any dotted token.** `isValidLink` is a validity check, not an intent check: verified that `App.tsx`, `readme.md`, `package.json`, `Node.js` and `3.14` all pass it (`3.14` resolving to host `3.0.0.14`). Gating auto-format on an explicit `http(s)://` scheme; `isValidLink` still governs Paste As, where the user asked explicitly. → Task 5.
+- **`src/shared/PasteLink.ts` could not compile.** `tsconfig.node.json` maps only `@shared/*` and includes only main/preload/shared, so it cannot import `linkDisplayText` from the renderer. Moving `linkDisplayText` into `src/shared/` as part of Task 2 — it has no DOM or React dependency, and Task 2 is already the consolidation task. → Tasks 2, 5.
+- **Task 8's three premises were wrong.** `apply` sits only on `ConnMenuTarget`'s `page` variant, so it must be *added* to the `url` variant rather than widened; `ConnMenuContext.external` already distinguishes the two cases, so the proposed new field buys nothing; and the `default: target.apply?.(action)` claimed as the compile-time safety net lives in the page branch, which Format never reaches. An explicit exhaustive switch in the url branch replaces the imagined enforcement. → Task 8.
+- **Every derivation count was wrong** (`link_display` 10 not 11 · `'link-url'` 12 not 9 · `markdownLinkRegex` 10 not 6 · `contextmenu` 14 not 6), and the `markdownLinkRegex` enumeration omitted `detect/detect.test.ts`, which asserts on the regex directly. Counts corrected; the method is `rg -c` summed across files. → Tasks 1, 2, 10.
+- **The hazard window was incoherent.** Task 2's own step ships `URLEditor`'s picker, so `link_display` has a full writer the moment Task 2 lands; and Default Format is `defaultLinkFormat` in `Personalization`, a different key entirely. Deleted — there is no real window here.
+- **Page Title in a table cell.** `CellEditor` mounts no `history()` and relays edits as ordinary history-recorded page transactions, and the cell view is destroyed the moment the cell stops being active — so a user who pastes and Tabs away loses the rewrite silently. Task 7 must either scope the deferred rewrite to the page editor and say so, or carry the annotation through `widget.tsx`'s relay. Rolled into R1.
+- **Gate 3 could not be passed as written.** The inverse half of the paste matrix has no chord until Task 9, which sits in Phase 4 and is blocked. Gate 3 now checks the four ⌘V cells; the inverse cells move to Task 9. `clipboard:read` moves forward into Task 6, since a keydown-matched chord carries no `clipboardData` and must read the clipboard itself.
+- **`tableMergeGuard` over-warned.** It cancels only when the fused-table count increases, which a single-line `[label](url)` insert cannot do. The Failure-half note is dropped.
+
+Not blocking, still open:
+
+- **`aliasPickerOnCommit`.** `NexusSettings.tsx` carries a deliberately unlisted Pages key, pending wording nobody has settled. Task 6 touches that leaf and must decide rather than silently inherit.
+- **Two ten-second observations** the review could not settle statically, both already steps in the plan: whether a renderer `preventDefault()` suppresses main's `context-menu` event, and whether a markdown link inside a table cell gets any right-click menu today (`markdownLinkClicks` is mounted only in `index.tsx`, not in `CellEditor`) — which decides whether Task 8 needs a cell mount for Requirement 8.
+
+### Deviations
+
+### Lessons
+
+### Sequenced After
+- **The `PopupMenu` split** — formalize the beak-less pane the autocomplete panel uses (`NotchedPane` with `notchHeight={0}`, body-portalled, no backdrop, Bloom motion) as a component, and move fixed-option pickers onto it. Default Format is one of its call sites. PropertyPickers and variable-input pickers keep `PickerMenu`.
+- **Bare-URL autolinking** — a GFM-style token so an unwrapped address is clickable, styled, and Format-able. Needs a tokenizer rule, a decoration, a click path, and a CommonMark-versus-GFM call. Nothing here forecloses it: the formatter and the Format menu both read from the token, so an autolink token slots in as a second producer.
+- **A general prose context menu** — Paste As is deliberately the only addition. What else belongs on the editor's right-click is its own decision.
+- **Fetched metadata beyond `<title>`** — favicon, OpenGraph, description. The fetcher is already main-side and cached.
+
+### Closeout
