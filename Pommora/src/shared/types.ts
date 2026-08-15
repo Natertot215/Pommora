@@ -143,10 +143,10 @@ export function coerceHoverLinger(v: unknown): number | undefined {
 }
 
 /** Nexus-wide keyboard commands — the `commands` object in `.nexus/settings.json`. Keys are
- *  command ids, values are shortcut specs ("cmd+e"); an absent id falls back to its default here.
+ *  command ids, values are shortcut specs ("cmd+t"); an absent id falls back to its default here.
  *  Every future rebindable shortcut registers as a row in this map. */
 export const DEFAULT_COMMANDS: Record<string, string> = {
-  'toggle-ribbon': 'cmd+e',
+  'toggle-ribbon': 'cmd+t',
   'toggle-nav': 'cmd+o',
 }
 
