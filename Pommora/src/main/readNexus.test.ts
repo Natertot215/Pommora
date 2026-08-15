@@ -447,6 +447,8 @@ describe('readNexus — personalization', () => {
       'revealTabBarOnHover',
       'connectionsOpenInPreview',
       'permanentDelete',
+      'autoFormatPastedLinks',
+      'pasteLinkIntoText',
     ] as const
     const t = await readNexus(
       mk({ personalization: Object.fromEntries(keys.map((k) => [k, true])) }),
@@ -461,6 +463,19 @@ describe('readNexus — personalization', () => {
     expect(await at(900)).toBe(30)
     expect(await at(0)).toBeUndefined()
     expect(await at('abc')).toBeUndefined()
+  })
+  // Both halves in one test on purpose: a coercer that returned undefined unconditionally would
+  // satisfy a round-trip that only ever checked the default, so it has to be caught admitting a real
+  // value as well as refusing a junk one.
+  it('the default link format survives the round-trip, and an unrecognized one reads as absent', async () => {
+    const at = async (v: unknown): Promise<string | undefined> =>
+      (await readNexus(mk({ personalization: { defaultLinkFormat: v } }))).personalization
+        .defaultLinkFormat
+    expect(await at('link-short')).toBe('link-short')
+    expect(await at('link-title')).toBe('link-title')
+    expect(await at('link-url')).toBeUndefined()
+    expect(await at('nonsense')).toBeUndefined()
+    expect(await at(42)).toBeUndefined()
   })
   it('absent personalization → empty block', async () => {
     const t = await readNexus(mk({}))
