@@ -1,80 +1,53 @@
 ## Handoff — Pommora
 
-> **User Prompt:** *"You do NOT guess — you LOOK, and you ASK. Open the file and read the code before you assert anything; ask me when you're unsure. A plan built on an unverified claim is a liability, not progress — treat every doc, every, every 'it works like X' as a hypothesis until you've read the code that proves it. Honesty over confidence; confidence is earned through evidence."*
+> **User Prompt:** *"Find what already exists first before scoping out or trying to make any change."*
 
 #### Current Focus
 
-**Session ID:** 7b787ee9-ba96-4f37-a817-09c49647943a
-**Dates:** 08-13-2026 → 08-14-2026
-**Model:** Opus 5 (1M context)
+**Session ID:** e019edf8-752e-43c2-a5a8-d2c34ad3f36a
+**Dates:** 08-14-2026
+**Model:** Opus 4.8 (1M context)
 
-**The menu system, closed out.** The session opened on a feature — a page's right-click menu should say where the page can go — and ended by making that the only way any native menu is built. Move To ▸ joined the send block above Copy Link and Copy Path, and every surface that right-clicks a page now carries the whole block: the table's title cell and row grip, a card, a sidebar row, a tab, and a NavWindow row. Before this they disagreed six ways — cards had Move To under Open and no clipboard items, tabs and the sidebar had the clipboard items and no Move To, and the table's two menus had neither.
+**Interaction polish, then the outline earned its drag.** The session opened on a batch of small interaction asks and closed with the Page Outline becoming a real working surface. The Subfield breadcrumb was the largest piece: it collapsed the moment you backed up a path, and it now keeps the deeper segments dimmed and re-navigable. The first attempt keyed the tail off the tab's forward `navStack` — wrong, because walking *up* a breadcrumb never puts the deeper nodes ahead in history — so it was rebuilt around `crumbDepth`, the deepest node visited on the current path, held while walking its own spine and reset on a branch. A breadcrumb click was then made to switch to a tab already showing its target while still holding the tail. The smaller asks landed alongside: ViewEmbed's title row gained **Change Icon** anchored to the glyph, and MarkdownPM's Insert and Format submenus reordered by inserted-character count.
 
-That raised the real question, which Nathan asked directly: what else in the menus never joined the shared structure? Three scouts answered it — one auditing menu divergence, one mining the docs for pending work, one surveying the codebase for what the docs don't say. The menu audit found no structural gap (every right-click surface routes to a native channel, and the native-vs-renderer split held up) but five genuine duplications, all now closed. Eight menus hand-rolled the popup promise `popReturningMenu` exists to hold; they route through it, and the two whose rows ask a confirm first use the `pickAfter` it gained. The Align radios and the view Style pair each existed twice and are `styleMenu.ts` builders now. The saved-view row menu was built twice and **disagreed** — Edit Color was unreachable from the toolbar purely because that list was written separately — and is one component. The preview inspector's hand-rolled Remove gave way to the native property menu its twin already used, which is where its missing Clear came from. Finally `menuTemplate` had become a strict subset of the page template, so it and `popModelMenu` moved behind the one builder.
+**Then the outline.** It closes only on Escape or a re-press now (so it survives a click into the page), its rail centres on the chevron at the shared disclosure step, a right-click renames a heading inline, and a heading row drags to reorder its whole section — reusing the editor's `blockMoveChanges`, with the range trimmed to the last non-blank line so the single-blank fencing never compounds on repeated reorders. The editor's fold chevron gained its own menu (Rename / Size / Delete-line-only) on the one shared hot-line list the grip menu already reads. Closed out with a simplification pass (the tripled section-span walk consolidated into `folding.sectionEnd`) and an adversarial review.
 
-**What is verified:** every gate green on the final state — typecheck 0, 2598 tests across 227 files, lint at zero diagnostics, the atlas's 20 tables, and `biome format` reporting no drift across `src`. Each duplication was read at both sites before being called one. The audit's findings were opened and confirmed rather than folded on report, and one reviewer claim was checked and found wrong: the preview inspector is not missing its twin's set-aside path, because its single `revealed` set does what the pane needs two sets for. **What is assumed:** nothing about the native menus as rendered — no automation can click one, so the destination submenu, the Style ▸ checkboxes and the create menu's dismissal are the paths only a person can drive.
+**What is verified:** every gate green on the final state — typecheck 0, lint 0, 2618 tests across 229 files. The breadcrumb and the outline drag were driven live by Nathan and confirmed. The build-breaking review surfaced one real Medium — the global `crumbDepth` leaking a wrong tail across tabs — which was fixed by resetting it in `syncActiveDetail` (the tab-focus choke point), not the navigation path. **What is assumed:** the heading chevron menu (Rename / Size / Delete) is unrun — it touches the main process, so it needs a dev restart, and no automation clicks a native menu.
 
 #### Completion Criteria
 
-- [x] **Every page right-click surface carries the same send block** — Move To ▸ · Copy Link · Copy Path, built from one model, on all six surfaces.
-- [x] **No menu file builds its own popup promise** — `Menu.buildFromTemplate` survives only in the helper, the app menu bar, and the two owning menus that run their actions in place rather than returning them.
-- [x] **Every duplication the audit found is closed or adjudicated** — five closed; the two confirm-dialog bodies and the six `showMessageBox` call sites are reported rather than built, since a wrapper was scoped out.
-- [x] **One model becomes a native menu through one path** — `menuTemplate` and `popModelMenu` retired into `pageMenuTemplate`.
-- [x] **Gates green on the final state**, with formatting verified rather than assumed.
-- [x] **Every document the work made false corrected in the commit that falsified it** — SidebarPM, CardViewPM, NavigationPM, ViewsPM, PagePreviewPM.
-- [x] **The re-walk recorded once**, as a queued arc rather than a scatter of tasks.
+- [x] **Breadcrumb keeps the full path dimmed on nav-back**, re-navigable, driven by per-path `crumbDepth`; the old single-ghost `trail` removed.
+- [x] **Breadcrumb clicks switch to an open tab yet hold the tail**; a tab-focus change resets it (the cross-tab leak the review found, fixed).
+- [x] **ViewEmbed title menu offers Change Icon**, anchored to the title glyph.
+- [x] **Insert + Format submenus ordered by inserted-character count.**
+- [x] **Outline closes on Esc/re-press only, rail on the chevron, inline rename, drag-to-reorder sections** — fenced to one blank, no compounding.
+- [x] **Editor fold-chevron menu — Rename / Size / Delete (heading line only)** — on the shared hot-line list, generic menu stands down over the chevron.
+- [x] **Gates green; the review's one finding fixed and re-verified; section-walk consolidated.**
 
 #### Next Session
 
-- **A nexus-wide date-format setting**, if wanted. The nexus has a `time_format` and no date equivalent; the trash column defaults to `defaultStyleFor('datetime')` for want of one.
-- **The one unverified trash path**, carried through three reviews: whether Electron renders a disabled `Restore ▸` with an empty submenu as a grayed row rather than swallowing it.
+- **The Page Outline dropdown has no feature doc.** Its close behaviour, inline rename, and section drag now warrant one — MarkdownPM covers only the editor-side chevron menu.
+- **Per-tab `crumbDepth`, if cross-tab tail memory is ever wanted.** It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
+- **The editor's own heading grip-drag likely compounds a trailing blank** the same way the outline did before the range-trim — only the outline path was fixed. `blockMoveChanges` passes a heading section range that includes the trailing blank.
+- **ContextPM §Debt line on the drag spec-folds** is stale by one: `OutlineDnd` added a fifth `startAutoScroll` site.
 
 #### Feedback
 
-- "I want you to scope out the menu changes surgically and without adding abstractions, or any useless things you don't need."
-- "consolidate the menus where they differ" — the standard is that two surfaces doing one job can't drift, not that the code got shorter.
-- "Explain it simply and tell me the files it would touch and net-code it would mean." — a proposal is sized before it's offered: the files, the net lines, and what the work is actually insurance against.
-- "Any report-backs to Nathan should be simple and explained briefly." — standing.
+- "Find what already exists first before scoping out or trying to make any change." — standing; every fixture opened with a read of what was reusable.
+- "Make it so that the breadcrumb NAVIGATES to the opened tab rather than creating it in place, but still preserves the path." — the tail is a property of the path, not the tab, so a switch can hold it.
+- "it should not auto-add a space, all it should do is ensure one exists" — idempotent fencing; a reorder must not accrete blanks.
+- "change icon needs to use the icons placement as the geometrical binding" — a picker anchors to the thing it edits, not the row around it.
+- "keep both" — the Insert *and* Format reorders, not one instead of the other.
 
 #### Session Pointers
 
-- `Pommora/src/main/returningMenu.ts` — `popReturningMenu` is the only popup wrapper; `pickAfter` is the seam for a row that asks a confirm before it resolves. `destinationNodes` builds a destination tree.
-- `Pommora/src/main/pageMenu.ts` — every model becomes a native template here, including the Move To ▸ expansion. `popModelMenu` is the rows-only case.
-- `Pommora/src/shared/pageMenu.ts` — the page menu's items, the send block, `MoveTarget`, and `pageSendActions` for a surface that only points at a page.
-- `Pommora/src/main/styleMenu.ts` — the three shared native submenus: Style radios, Align, and the view Style pair.
-- `Pommora/src/renderer/src/pageMenuActions.ts` — the renderer half: where a page may be sent, and the three actions every surface answers identically.
-- `Pommora/src/renderer/src/Components/ViewRowMenu.tsx` — the saved-view row menu both the toolbar pane and the view embed pop.
-- `.claude/ContextPM.md` §The Boring Work — the queued re-walk arc and the deferred cascade journal, each carrying the decision it waits on.
+- `Pommora/src/renderer/src/Detail/Subfield/crumbs.ts` — `subfieldCrumbs` builds the spine from `crumbDepth` and dims past the current node; `crumbDepthFor` is the hold-while-ancestor rule.
+- `Pommora/src/renderer/src/store.ts` — `crumbDepth` updates at the top of `select`; `navigateCrumb` delegates to `select` and flips the slide; `syncActiveDetail` resets the depth on a tab-focus change.
+- `Pommora/src/renderer/src/Toolbar/OutlineDnd.tsx` — the trimmed drag engine (snapshot, autoscroll, DropLine); `pageEditor.moveHeadingSection` is the document mutation it commits.
+- `Pommora/src/renderer/src/MarkdownPM/editor/gripMenu.ts` + `src/main/gripMenu.ts` — the chevron menu rides the grip-menu IPC; `HOT_MENU_LINES` is the one list the hit-tests and the hover flag share.
+- `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — `sectionEnd` is the single section-span walk (was tripled across the outline and the mover).
 
 #### Working Notes
-
-- **A shell-scripted file edit bypasses the formatter.** The PostToolUse hook fires on Write/Edit, not on `python3`/`perl` rewrites, and `npm run lint` is `biome lint` — it never checks formatting. Files edited through the shell drift silently past all three gates; `npx biome format <path>` is the only thing that sees it.
-- **Electron fires a menu item's click before the popup's close callback.** The create menu had deferred its dismissal by a tick against the opposite possibility; had that been right, every menu on the shared helper would resolve `null` and drop its pick.
-- **`Icon` takes `name: string`, not `IconName`** — it resolves the curated registry first, then any full-set Lucide id, so typing a glyph parameter as `IconName` rejects names that render fine.
-- **A `const x = 'literal'` widens to `string` inside a mutable object property.** The Move To row's action needed `as const` on its own declaration before the item literal would keep the union.
-- **`PageMoveContext` is an all-optional weak type**, so passing a context with no overlapping properties fails the weak-type check — which is what the `kind === 'title' ? ctx : undefined` at the cell menu's call site is buying.
-
-**FILES ADDED**
-
-- `Pommora/src/main/pageMenu.ts`
-- `Pommora/src/renderer/src/pageMenuActions.ts`
-- `Pommora/src/renderer/src/Components/ViewRowMenu.tsx`
-
-**FILES MODIFIED**
-
-- `Pommora/src/main/` — `returningMenu.ts` · `styleMenu.ts` · `cardMenu.ts` · `cellMenu.ts` · `columnMenu.ts` · `tableMenu.ts` · `gripMenu.ts` · `iconFavoriteMenu.ts` · `optionMenu.ts` · `propertyMenu.ts` · `connMenu.ts` · `pageActionsMenu.ts` · `navRowMenu.ts` · `rowGripMenu.ts` · `tabMenu.ts` · `viewButtonMenu.ts` · `viewEmbedMenu.ts` · `contextMenu.ts` · `index.ts`
-- `Pommora/src/shared/` — `pageMenu.ts` · `cardMenu.ts` · `cellMenu.ts` · `rowGripMenu.ts` · `tabMenu.ts` · `navRowMenu.ts` · `tableMenu.ts` · `trashMenu.ts` · `viewMenus.ts` · `views.ts` · `mutate.ts` · and their tests
-- `Pommora/src/renderer/src/` — `Detail/Views/Table/TableView.tsx` · `Detail/Views/Cards/CardsView.tsx` · `Tabs/TabBar.tsx` · `Navigation/NavList.tsx` · `Navigation/navList.css` · `Sidebar/Sidebar.tsx` · `Toolbar/ViewPane.tsx` · `Blocks/ViewEmbedBlock.tsx` · `PagePreview/PreviewInspector.tsx` · `destinationTree.ts`
-- `.claude/` — `ContextPM.md` · `HistoryPM.md` · `FrameworkPM.md` · `Features/SidebarPM.md` · `CardViewPM.md` · `NavigationPM.md` · `ViewsPM.md` · `ContextsPM.md` · `PagePreviewPM.md`
-
-**COMMITS**
-
-- `22730f40` — the page menu says where a page can go
-- `38f60723` — one popper, one Align, one Style, one view row menu
-- `11da4b7b` — the folder-is-membership trade, stated where it lives
-- `4af00045` — one template builder, and the journal deferred
-
-#### Handoff Guidelines
 
 - §Current Focus and §Next Session restate to current truth on every run; multi-compact sessions may advance ideas or reconcile information while preserving the document's cohesion.
 - Resolve = delete + route — a handled item leaves the document for its real home (Context, History, Features) with no tombstone left behind.

@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 08-14-2026              | PM-102 | Interaction & Outline Work                           |
 | 08-14-2026              | PM-101 | PommoraDND Dragging Fixtures                         |
 | 08-13-2026 → 08-14      | PM-100 | Trash Surface V1                                     |
 | 08-13-2026              | PM-099 | Ghost Creation, Page Icons & One Page Menu           |
@@ -104,6 +105,16 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-102 || Interaction & Outline Work
+**DATE:** 08-14-2026
+
+The Subfield breadcrumb stopped collapsing on the way back up. Where it had shown a single dimmed ghost of the last page left behind, it now traces the whole path down to the deepest node visited on it — held while walking up the same spine, reset only on a branch or a tab-focus change — so backing out of a page to its set to its collection keeps the deeper segments dimmed and clickable rather than dropping them; the single-entry trail it replaced came out, and a breadcrumb click switches to a tab already showing its target instead of opening in place while still holding the tail across the hop. Alongside it, the ViewEmbed title row gained Change Icon beside its Hide/Show, anchored to the glyph itself, and MarkdownPM's Insert and Format context submenus reordered by how many characters each construct writes — lightest at the top, the full table at the bottom.
+
+**Headings & Outline:** The Page Outline dropdown became a working surface rather than a viewer — it holds open until Escape or a re-press so it can sit beside the page while you edit, its rail centres on the chevron at the shared disclosure step, a right-click renames a heading inline, and a heading row drags to move its whole section, reusing the editor's own section mover and re-fenced to a single blank so reorders never compound one. The editor's fold chevron picked up its own menu — Rename, Size, and a Delete that drops the heading line alone and leaves its body — riding the one shared hot-line list the grip menu already reads, so the generic menu stands down over exactly the chevron. The section-span walk the two surfaces shared collapsed into a single `sectionEnd` helper.
+
+- **Commits:** `b7bf13aa^..b7bf13aa`
+- **Diff:** Net +474 | +687 / -213
 
 #### PM-101 || PommoraDND Dragging Fixtures
 **DATE:** 08-14-2026
