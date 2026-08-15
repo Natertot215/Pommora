@@ -11,10 +11,6 @@ import {
 import { DISCLOSURE_INDENT } from '@renderer/design-system/tokens/size.css'
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
-import {
-  beginDragDisclose,
-  endDragDisclose,
-} from '@renderer/design-system/interactions/dragDisclose'
 import { EDITABLE_TARGETS } from '@renderer/design-system/interactions/shared'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
@@ -301,7 +297,7 @@ export function SidebarDnd({
     const el = rows.current.get(id)
     if (!el) return
     const grabX = e.clientX - el.getBoundingClientRect().left
-    const started = beginGesture({
+    beginGesture({
       el,
       event: e,
       onActivate: (ev) => {
@@ -341,22 +337,17 @@ export function SidebarDnd({
       },
       onAbort: reset,
       teardown: () => {
-        endDragDisclose()
         stopScroll.current?.()
         stopScroll.current = null
       },
-    })
-    // Collapsed containers register through DragRow — the bracket makes a dwelling drag open them,
-    // and the disclose remeasure re-aims against the rows the spring just moved.
-    if (started) {
-      beginDragDisclose(() => {
+      // A dwelling drag springs a collapsed container open — DragRow registers each — so its rows
+      // shift; re-aim the drop geometry against them, staying dirty through the reveal animation.
+      onDisclose: () => {
         snap.markDirty()
         resolveSlot()
-        // The reveal is still animating — stay dirty so the drop (and every later move)
-        // re-measures at its own moment instead of trusting this mid-animation pass.
         snap.markDirty()
-      })
-    }
+      },
+    })
   }
 
   const value = useMemo<Value>(() => ({ draggingId: drag.id, registerRow, begin }), [drag.id])
