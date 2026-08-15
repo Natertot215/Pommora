@@ -29,7 +29,13 @@ import type { Result } from './result'
 import type { FormatState } from './editorMenu'
 import type { SavedView } from './views'
 import type { BlockDoc, BlockDocPatch, BlockHostRef, EmbeddedView } from './blocks'
-import type { LinkConfig, PropertyDefinition, PropertyType, StatusGroup } from './properties'
+import type {
+  LinkConfig,
+  NumberConfig,
+  PropertyDefinition,
+  PropertyType,
+  StatusGroup,
+} from './properties'
 import type { PageFrontmatter } from './schemas'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import type { GripMenuAction, GripMenuContext } from './gripMenu'
@@ -163,17 +169,7 @@ export interface Asks {
   }
   'property:setIcon': { args: [propertyId: string, icon: string | undefined]; reply: Result<null> }
   'property:setNumberFormat': {
-    args: [
-      propertyId: string,
-      patch: {
-        number_family?: 'number' | 'percent' | 'currency'
-        number_currency?: string
-        number_separators?: boolean
-        number_decimals?: 'hidden' | number
-        number_fraction?: boolean
-        number_denominator?: number
-      },
-    ]
+    args: [propertyId: string, patch: NumberConfig]
     reply: Result<null>
   }
   'property:renameOption': {
