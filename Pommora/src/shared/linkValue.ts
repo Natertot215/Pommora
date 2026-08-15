@@ -1,9 +1,16 @@
 // A URL property value is a bare URL string, or a markdown link `[alias](url)` once the user Renames
 // it (gives it a custom title). Markdown-native + agent-legible, exactly like Obsidian's `[]()`. The
-// alias ALWAYS wins at render — it overrides the property's Full URL / Title look. This is the one
+// alias ALWAYS wins at render — it overrides whichever format the property is set to. This is the one
 // seam that parses/serializes that shape; Cell render + the cell Edit/Rename writes both go through it.
 
-import { MD_LINK, escapeAlias, isValidLink, linkDomain, normalizeLinkUrl, unescapeAlias } from './links'
+import {
+  MD_LINK,
+  escapeAlias,
+  isValidLink,
+  linkDomain,
+  normalizeLinkUrl,
+  unescapeAlias,
+} from './links'
 import type { LinkDisplay } from './properties'
 import type { PropertyValue } from './propertyValue'
 

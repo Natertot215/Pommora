@@ -112,6 +112,10 @@ export const propertyDefinition = z.looseObject({
 })
 export type PropertyDefinition = z.infer<typeof propertyDefinition>
 
+/** The def-level link display config, narrowed for the editor, the bridge's patch argument, and the
+ *  whitelist main writes through — one shape, so a new link field is declared once. */
+export type LinkConfig = Pick<PropertyDefinition, 'link_underline' | 'link_display' | 'link_color'>
+
 /** The def-level number format config, narrowed for the pure formatter + the editor. */
 export type NumberConfig = Pick<
   PropertyDefinition,

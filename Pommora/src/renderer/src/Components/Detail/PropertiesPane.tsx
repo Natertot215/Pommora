@@ -3,6 +3,7 @@ import { Icon, type IconName } from '@renderer/design-system/symbols'
 import { useSession } from '../../store'
 import {
   isReservedPropertyId,
+  type LinkConfig,
   type NumberConfig,
   type PropertyDefinition,
   type PropertyType,
@@ -35,7 +36,7 @@ import { RenamableLabel } from '../RenamableLabel'
 import { InlineEditHeader } from './InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
 import { StatusEditor } from './StatusEditor'
-import { URLEditor, type LinkConfig } from './URLEditor'
+import { URLEditor } from './URLEditor'
 import { PaneSlider } from './PaneSlider'
 import { PaneDnd, RowShell, usePaneRegions } from './paneDnd'
 import { nexusReorderIndex, type PaneDrop, type PaneRow } from './paneDndModel'

@@ -3,17 +3,11 @@ import { chipColorFor, colorLabel } from '@renderer/design-system/tokens/colorMa
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
 import { Switch } from '@renderer/design-system/components/Switches/Switch'
-import type { LinkDisplay } from '@shared/properties'
+import type { LinkConfig, LinkDisplay } from '@shared/properties'
 import { Chip } from '../Chip'
 import { ColorPicker } from './ColorPicker'
 import { PickerControl, type PickerChoice } from './PickerControl'
 import * as s from './settingsPane.css'
-
-export type LinkConfig = {
-  link_underline?: boolean
-  link_display?: LinkDisplay
-  link_color?: string | undefined
-}
 
 /** Default first, so `labelOf`'s fallback reads as the default for a value it doesn't recognize. */
 const DISPLAY_OPTIONS: PickerChoice<LinkDisplay>[] = [

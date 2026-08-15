@@ -203,14 +203,14 @@ Ruled out in the decision log; do not retry.
 - [x] Commit: `refactor(links): one three-way display vocabulary across properties and the editor`
 
 #### Gate 1 — one grammar, one vocabulary, behavior unmoved
-- [ ] Gate commands green, exit codes read directly.
-- [ ] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
+- [x] Gate commands green, exit codes read directly. *(typecheck 0 · test 0, 229 files / 2632 tests · lint 0.)*
+- [x] Derivations re-run against their controls; counts matched, or the divergence rewrote the plan.
 - [x] `rg -F "'link-url'" Pommora/src` → 1, the deliberate migration case only, with the control above 0.
-- [ ] Simplification and review dispatched against `<base>..HEAD` scoped to `Pommora/src/shared`, `Pommora/src/main/index.ts`, `Pommora/src/renderer/src/Detail/Views/Table`, `Pommora/src/renderer/src/Components/Detail`.
-- [ ] Every concern fixed, or carrying an explicit user ruling recorded in the Log.
+- [x] Simplification and review dispatched against `bdf38cc7..HEAD` scoped to `Pommora/src/shared`, `Pommora/src/main/index.ts`, `Pommora/src/renderer/src/Detail/Views/Table`, `Pommora/src/renderer/src/Components/Detail`.
+- [x] Every concern fixed, or carrying an explicit user ruling recorded in the Log. *(One consolidation folded; one out-of-scope DRY hit raised for a ruling — see Open Against Later Tasks.)*
 - [ ] The URL property's Format picker seen running: all three modes, and a Wikipedia link rendering un-truncated in a page.
-- [ ] Hazard window open — noted in the Log, closes at Task 6.
-- [ ] Progress hashes filled in.
+- [x] Hazard window — none. It was deleted at review as incoherent; nothing to hold open.
+- [x] Progress hashes filled in.
 
 ---
 
@@ -569,6 +569,8 @@ Folded without needing a ruling:
 - **`tableMergeGuard` over-warned.** It cancels only when the fused-table count increases, which a single-line `[label](url)` insert cannot do. The Failure-half note is dropped.
 
 Not blocking, still open:
+
+- **`bridge.ts`'s `setNumberFormat` duplicates its patch shape.** Raised at Gate 1 and verified: the channel spells its patch inline *and* re-states `'number' | 'percent' | 'currency'` as a literal union rather than deriving from `NUMBER_FAMILIES`, even though `NumberConfig` already exists in `shared/properties.ts` — the same duplication the link config just resolved. Genuinely two definitions of one thing, and outside this cycle's diff. The question underneath it is whether a bridge entry is meant to be self-describing (the channel map read as a standalone contract) or may name shared types; the link change answered that one way, and the number entry deserves the same answer deliberately rather than as a drive-by. Awaiting a ruling.
 
 - **`aliasPickerOnCommit`.** `NexusSettings.tsx` carries a deliberately unlisted Pages key, pending wording nobody has settled. Task 6 touches that leaf and must decide rather than silently inherit.
 - **Two ten-second observations** the review could not settle statically, both already steps in the plan: whether a renderer `preventDefault()` suppresses main's `context-menu` event, and whether a markdown link inside a table cell gets any right-click menu today (`markdownLinkClicks` is mounted only in `index.tsx`, not in `CellEditor`) — which decides whether Task 8 needs a cell mount for Requirement 8.

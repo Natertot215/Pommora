@@ -29,7 +29,7 @@ import type { Result } from './result'
 import type { FormatState } from './editorMenu'
 import type { SavedView } from './views'
 import type { BlockDoc, BlockDocPatch, BlockHostRef, EmbeddedView } from './blocks'
-import type { LinkDisplay, PropertyDefinition, PropertyType, StatusGroup } from './properties'
+import type { LinkConfig, PropertyDefinition, PropertyType, StatusGroup } from './properties'
 import type { PageFrontmatter } from './schemas'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import type { GripMenuAction, GripMenuContext } from './gripMenu'
@@ -154,14 +154,7 @@ export interface Asks {
     reply: Result<null>
   }
   'property:setLinkConfig': {
-    args: [
-      propertyId: string,
-      patch: {
-        link_underline?: boolean
-        link_display?: LinkDisplay
-        link_color?: string
-      },
-    ]
+    args: [propertyId: string, patch: LinkConfig]
     reply: Result<null>
   }
   'property:setCheckboxColor': {
