@@ -33,71 +33,111 @@ const CATEGORIES = [
 ] as const
 type CategoryKey = (typeof CATEGORIES)[number]['key']
 
-interface Toggle {
-  key: keyof Personalization
+/** The personalization keys a given control can actually write. Without this a toggle row could name
+ *  the linger, compile, and then render a number as an unchecked switch. */
+type KeyOf<V> = {
+  [K in keyof Personalization]-?: NonNullable<Personalization[K]> extends V ? K : never
+}[keyof Personalization]
+
+interface RowText {
   label: string
   hint: string
-  /** Absent reads as ON for a few keys. */
-  defaultOn?: boolean
 }
 
-/** What a leaf puts in the body. Most are a list of toggles; a leaf may instead bring a surface,
+/** A row in a leaf's section: the words, and the control that writes one key. */
+type Row =
+  | (RowText & {
+      kind: 'toggle'
+      key: KeyOf<boolean>
+      /** Absent reads as ON for a few keys. */
+      defaultOn?: boolean
+    })
+  | (RowText & {
+      kind: 'slider'
+      key: KeyOf<number>
+      max: number
+      format: (v: number) => string
+    })
+
+/** What a leaf puts in the body. Most are a list of rows; a leaf may instead bring a surface,
  *  which owns its own layout, its own scroller and whatever state it fetches. */
 type LeafBody =
-  | { kind: 'toggles'; toggles: Toggle[] }
+  | { kind: 'rows'; rows: Row[] }
   | { kind: 'surface'; Body: () => React.JSX.Element }
 
 const LEAVES: Record<CategoryKey, LeafBody> = {
-  general: { kind: 'toggles', toggles: [
-    {
-      key: 'hideChevrons',
-      label: 'Hide Disclosure Chevrons',
-      hint: "Collapse the sidebar's chevron gutter.",
-    },
-    {
-      key: 'outlinerLines',
-      label: 'Outliner Lines',
-      hint: 'Show indent rails on nested lists in the editor.',
-    },
-    {
-      key: 'navCloseOnSelect',
-      label: 'Close Navigation On Select',
-      hint: 'Picking an entity dismisses the Navigation window.',
-      defaultOn: true,
-    },
-    {
-      key: 'connectionsOpenInPreview',
-      label: 'Open Connections In Preview',
-      hint: 'A [[Connection]] click opens the preview window instead of navigating.',
-    },
-    {
-      key: 'revealTabBarOnHover',
-      label: 'Reveal Tab Bar On Hover',
-      hint: 'Keep the tab bar hidden until the pointer nears it.',
-    },
-    {
-      key: 'permanentDelete',
-      label: 'Permanently Delete Files',
-      hint: 'Permanently deleted files will be deleted from this computer, keeping this off will move them to system trash.',
-    },
-  ] },
-  pages: { kind: 'toggles', toggles: [
-    {
-      key: 'codeblockLineCount',
-      label: 'Show Line Count In Code Blocks',
-      hint: "Number a codeblock's lines — display chrome, never editable text.",
-    },
-    {
-      key: 'removeTitleOnLinkChange',
-      label: 'Remove Title On Link Change',
-      hint: 'Pointing a connection at another page drops the alias it was wearing.',
-      defaultOn: true,
-    },
-    // `aliasPickerOnCommit` belongs here and is deliberately absent: this is intentionally invisible
-    // because the language used to describe the toggle on the settings surface hasn't been decided
-    // yet — do this sooner rather than later. It reads and writes like any other personalization key
-    // in the meantime, so a hand-edited settings file turns it off.
-  ] },
+  general: {
+    kind: 'rows',
+    rows: [
+      {
+        kind: 'toggle',
+        key: 'hideChevrons',
+        label: 'Hide Disclosure Chevrons',
+        hint: "Collapse the sidebar's chevron gutter.",
+      },
+      {
+        kind: 'toggle',
+        key: 'outlinerLines',
+        label: 'Outliner Lines',
+        hint: 'Show indent rails on nested lists in the editor.',
+      },
+      {
+        kind: 'toggle',
+        key: 'navCloseOnSelect',
+        label: 'Close Navigation On Select',
+        hint: 'Picking an entity dismisses the Navigation window.',
+        defaultOn: true,
+      },
+      {
+        kind: 'toggle',
+        key: 'connectionsOpenInPreview',
+        label: 'Open Connections In Preview',
+        hint: 'A [[Connection]] click opens the preview window instead of navigating.',
+      },
+      {
+        kind: 'toggle',
+        key: 'revealTabBarOnHover',
+        label: 'Reveal Tab Bar On Hover',
+        hint: 'Keep the tab bar hidden until the pointer nears it.',
+      },
+      {
+        kind: 'toggle',
+        key: 'permanentDelete',
+        label: 'Permanently Delete Files',
+        hint: 'Permanently deleted files will be deleted from this computer, keeping this off will move them to system trash.',
+      },
+    ],
+  },
+  pages: {
+    kind: 'rows',
+    rows: [
+      {
+        kind: 'toggle',
+        key: 'codeblockLineCount',
+        label: 'Show Line Count In Code Blocks',
+        hint: "Number a codeblock's lines — display chrome, never editable text.",
+      },
+      {
+        kind: 'toggle',
+        key: 'removeTitleOnLinkChange',
+        label: 'Remove Title On Link Change',
+        hint: 'Pointing a connection at another page drops the alias it was wearing.',
+        defaultOn: true,
+      },
+      // `aliasPickerOnCommit` belongs here and is deliberately absent: this is intentionally invisible
+      // because the language used to describe the toggle on the settings surface hasn't been decided
+      // yet — do this sooner rather than later. It reads and writes like any other personalization key
+      // in the meantime, so a hand-edited settings file turns it off.
+      {
+        kind: 'slider',
+        key: 'hoverPreviewLinger',
+        label: 'Hover Preview Linger',
+        hint: "How long a connection's hover preview stays open after hovering off.",
+        max: HOVER_LINGER_MAX,
+        format: (v) => (v === 0 ? 'None' : `${v}s`),
+      },
+    ],
+  },
   trash: { kind: 'surface', Body: TrashLeaf },
 }
 
@@ -176,7 +216,7 @@ function RailTab({
   )
 }
 
-/** A toggle leaf brings the panel's own heading and rhythm; a surface leaf brings everything,
+/** A row leaf brings the panel's own heading and rhythm; a surface leaf brings everything,
  *  because the pane hands its children no wrapper, no padding and no scroller. */
 function LeafBodyView({ category }: { category: CategoryKey }): React.JSX.Element {
   const leaf = LEAVES[category]
@@ -187,64 +227,84 @@ function LeafBodyView({ category }: { category: CategoryKey }): React.JSX.Elemen
         {CATEGORIES.find((c) => c.key === category)?.label}
       </h2>
       <div className="settings-section">
-        {leaf.toggles.map((t) => (
-          <ToggleRow key={t.key} toggle={t} />
+        {leaf.rows.map((row) => (
+          <LeafRow key={row.key} row={row} />
         ))}
-        {category === 'pages' && <LingerRow />}
       </div>
     </div>
   )
 }
 
-// A bespoke row rather than a row-kind union: the schema generalizes when a second non-toggle
-// row exists to shape it.
-function LingerRow(): React.JSX.Element {
-  const value = useSession((s) => s.personalization.hoverPreviewLinger ?? 0)
-  const setPersonalization = useSession((s) => s.setPersonalization)
+/** The words every row wears, whatever writes beside them. */
+function SettingsRow({
+  label,
+  hint,
+  children,
+}: RowText & { children: React.ReactNode }): React.JSX.Element {
   return (
     <div className="settings-row">
       <div className="settings-row-text">
-        <span className={cx('settings-row-label', text.body.standard)}>Hover Preview Linger</span>
-        <span className={cx('settings-row-hint', text.footnote.standard)}>
-          How long a connection's hover preview stays open after hovering off.
-        </span>
+        <span className={cx('settings-row-label', text.body.standard)}>{label}</span>
+        <span className={cx('settings-row-hint', text.footnote.standard)}>{hint}</span>
       </div>
-      <Slider
-        value={value}
-        min={0}
-        max={HOVER_LINGER_MAX}
-        step={1}
-        ariaLabel="Hover Preview Linger"
-        format={(v) => (v === 0 ? 'None' : `${v}s`)}
-        // None stores no key — the clean-file discipline every default-valued row follows.
-        onCommit={(v) => setPersonalization('hoverPreviewLinger', v > 0 ? Math.round(v) : undefined)}
-      />
+      {children}
     </div>
   )
 }
 
-function ToggleRow({ toggle }: { toggle: Toggle }): React.JSX.Element {
-  const value = useSession((s) => s.personalization[toggle.key])
+function LeafRow({ row }: { row: Row }): React.JSX.Element {
+  switch (row.kind) {
+    case 'toggle':
+      return <ToggleRow row={row} />
+    case 'slider':
+      return <SliderRow row={row} />
+  }
+}
+
+function ToggleRow({ row }: { row: Extract<Row, { kind: 'toggle' }> }): React.JSX.Element {
+  const value = useSession((s) => s.personalization[row.key])
   const setPersonalization = useSession((s) => s.setPersonalization)
-  const on = value === undefined ? toggle.defaultOn === true : value === true
+  const on = value === undefined ? row.defaultOn === true : value === true
 
   return (
-    <div className="settings-row">
-      <div className="settings-row-text">
-        <span className={cx('settings-row-label', text.body.standard)}>{toggle.label}</span>
-        <span className={cx('settings-row-hint', text.footnote.standard)}>{toggle.hint}</span>
-      </div>
+    <SettingsRow label={row.label} hint={row.hint}>
       <Switch
         checked={on}
-        ariaLabel={toggle.label}
+        ariaLabel={row.label}
         // Stores only the OFF state — an untouched nexus keeps a clean file (no-empties discipline).
+        // The cast is what a union of keys costs: each one's value type is `boolean | undefined`,
+        // but the setter's key and value are correlated per-key and TypeScript can't pair them here.
         onChange={(next) =>
           setPersonalization(
-            toggle.key,
-            (toggle.defaultOn && next ? undefined : next) as Personalization[typeof toggle.key],
+            row.key,
+            (row.defaultOn && next ? undefined : next) as Personalization[typeof row.key],
           )
         }
       />
-    </div>
+    </SettingsRow>
+  )
+}
+
+function SliderRow({ row }: { row: Extract<Row, { kind: 'slider' }> }): React.JSX.Element {
+  const value = useSession((s) => s.personalization[row.key] ?? 0)
+  const setPersonalization = useSession((s) => s.setPersonalization)
+  return (
+    <SettingsRow label={row.label} hint={row.hint}>
+      <Slider
+        value={value}
+        min={0}
+        max={row.max}
+        step={1}
+        ariaLabel={row.label}
+        format={row.format}
+        // Zero stores no key — the clean-file discipline every default-valued row follows.
+        onCommit={(v) =>
+          setPersonalization(
+            row.key,
+            (v > 0 ? Math.round(v) : undefined) as Personalization[typeof row.key],
+          )
+        }
+      />
+    </SettingsRow>
   )
 }

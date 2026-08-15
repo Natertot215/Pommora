@@ -262,12 +262,13 @@ Ruled out in the decision log; do not retry.
 **Failure half:** a picker row whose stored value is absent → the row shows the default, never blank · a picker row whose stored value is unrecognized → `labelOf` falls back to `options[0]`, which is why the default is ordered first.
 
 **Steps:**
-- [ ] Introduce the `Row` union and `SettingsRow`; convert the eight existing rows, keeping every label, hint and default verbatim.
-- [ ] Fold `LingerRow` in as `kind: 'slider'` and delete the `category === 'pages'` conditional at the render site.
-- [ ] Note the `key: keyof Personalization` looseness: the toggle variant reads `value === true`, so a non-boolean key in a toggle row compiles and renders wrong. Narrow each variant's key type, or carry the same documented cast the existing write already uses.
+- [x] Introduce the `Row` union and `SettingsRow`; convert the eight existing rows, keeping every label, hint and default verbatim.
+- [x] Fold `LingerRow` in as `kind: 'slider'` and delete the `category === 'pages'` conditional at the render site.
+- [x] Narrow each variant's key with a `KeyOf<V>` mapped type, so a toggle row cannot name the linger's number and render it as an unchecked switch. The per-key value cast survives in the *write*, where it is irreducible — a union of keys can't correlate key to value in the setter's signature — and now carries a comment saying so.
+- [x] **Deviation:** the `picker` variant is not introduced here. It has no consumer until Task 6, and a union member with no row exercising it is a type written against a guess. Task 6 adds it alongside its first row.
 - [ ] Run the app: General shows 6 rows, Pages shows 3, the linger slider still sits last and still writes `undefined` at None.
-- [ ] Full gate — expect green.
-- [ ] Commit: `refactor(settings): the leaf schema models row kinds`
+- [x] Full gate — expect green.
+- [x] Commit: `refactor(settings): the leaf schema models row kinds`
 
 #### Gate 2 — the schema generalizes, nothing moves
 - [ ] Gate commands green, exit codes read directly.
@@ -594,6 +595,7 @@ Not blocking, still open:
 - **Task 1 — two comments the Made False table missed.** `encodeLinkTarget`'s doc block and its inline note both justified escaping a page title's parens by "the grammar's target group ends at the first `)`", and `links.test.ts` carried the same sentence over the escaping test. Widening the grammar falsifies all three. The escaping itself stays load-bearing for a changed reason — a page title's parens need not balance, and a lone `(` now leaves the link untokenizable rather than merely truncated — so the comments were restated rather than dropped, in Task 1's commit.
 - **Task 2 — the whole `linkValue` module moved, not just the formatter.** The correction recorded moving `linkDisplayText` into `src/shared/`; in practice it calls `parseLink` from the same file, so moving one without the other would need either a second parser or a shared module importing the renderer. The module is already pure, so it moved whole to `src/shared/linkValue.ts` beside `propertyValue.ts`, with its nine importers repointed to `@shared/linkValue`. It kept its camelCase name to match every other file in `shared/`. Later tasks import the formatter from there.
 - **Task 2 — the `'link-url'` sweep floor is 1, not 0.** The migration test feeds the old value deliberately to prove `.catch(undefined)` drops it and the call-site default catches it. That is the evidence the rename is free, so it stays; the Dead Vocabulary entry now names it as the one legitimate hit.
+- **Task 4 — the `picker` row variant deferred to Task 6.** The plan had Task 4 introduce all three variants (`toggle` · `picker` · `slider`), but only `toggle` and `slider` have rows to exercise them at this point. A `picker` member with no consumer is a type written against a guess at what Task 6 needs, and nothing verifies it until then. Task 6 adds the variant with its first row, which is a small edit to a union that has already proven it generalizes by absorbing `LingerRow`. Task 4's baseline invariant is unaffected.
 - **Task 1 — the derivation count in the task body was stale.** It read 6 with an enumeration omitting `detect/detect.test.ts`; the correction to 10 had been recorded under Open Against Later Tasks but never folded into the task. Re-derived at 10 across six files and the body rewritten to match.
 
 ### Lessons
