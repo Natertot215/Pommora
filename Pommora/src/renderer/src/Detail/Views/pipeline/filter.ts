@@ -19,7 +19,7 @@ import {
 import { isBlankValue, type PropertyValue } from '@shared/propertyValue'
 import { declaredType, modifiedStampString, resolveFieldValue } from './value'
 import { type SetTreeNode, subtreeIds } from './group'
-import { linkDisplayText } from '../Table/linkValue'
+import { linkDisplayText } from '@shared/linkValue'
 
 /** Operator raw strings — snake_case = the on-disk `op` values. */
 export const FILTER_OPS = {

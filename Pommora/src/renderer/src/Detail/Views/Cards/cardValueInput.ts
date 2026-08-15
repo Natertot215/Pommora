@@ -8,7 +8,7 @@ import { contextIdsOf, contextsByIdOf } from '../pipeline/contextIdentity'
 import { resolveFieldValue } from '../pipeline/value'
 import { columnLabel } from '../Table/columnLabel'
 import type { ResolveContext } from '../Table/resolveContext'
-import { serializeLink } from '../Table/linkValue'
+import { serializeLink } from '@shared/linkValue'
 
 /** The kinds whose BLANK entries drill into a value pane. Checkbox is deliberately excluded from the
  *  pane split (its box on the card is the toggle — an add-list pick just reveals it); Context columns

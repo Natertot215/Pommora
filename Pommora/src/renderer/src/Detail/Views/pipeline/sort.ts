@@ -7,7 +7,7 @@ import type { SortCriterion } from '@shared/views'
 import type { ViewRow } from '@shared/types'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '@shared/properties'
 import { declaredType, modifiedStampString, resolveFieldValue } from './value'
-import { linkDisplayText } from '../Table/linkValue'
+import { linkDisplayText } from '@shared/linkValue'
 
 type SortKey = number | string
 type Less = (a: SortKey, b: SortKey) => boolean

@@ -68,7 +68,7 @@ import { GHOST_DWELL_MS, useClearStrandedGhost, useGhostAnchor } from '../useGho
 import { useViewCreation } from '../useViewCreation'
 import { TableRowDnd, useTableRowDrag } from './tableDnd'
 import { solidColorCss } from './solidColor'
-import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from './linkValue'
+import { parseLink, urlClickTarget, urlValueFromEdit, urlValueFromRename } from '@shared/linkValue'
 
 // ── TUNABLE ── how far past a column's edge the dragged column's centre must travel before the slot
 // flips (the sticky zone around the current slot). Larger = more deliberate / harder to leave a slot;

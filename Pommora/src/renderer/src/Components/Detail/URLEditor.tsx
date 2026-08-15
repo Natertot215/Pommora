@@ -3,16 +3,24 @@ import { chipColorFor, colorLabel } from '@renderer/design-system/tokens/colorMa
 import { solidColorCss } from '@renderer/Detail/Views/Table/solidColor'
 import type { ChipColorName } from '@renderer/design-system/tokens/chip.css'
 import { Switch } from '@renderer/design-system/components/Switches/Switch'
+import type { LinkDisplay } from '@shared/properties'
 import { Chip } from '../Chip'
 import { ColorPicker } from './ColorPicker'
+import { PickerControl, type PickerChoice } from './PickerControl'
 import * as s from './settingsPane.css'
 
-type LinkDisplay = 'link-url' | 'link-title'
 export type LinkConfig = {
   link_underline?: boolean
   link_display?: LinkDisplay
   link_color?: string | undefined
 }
+
+/** Default first, so `labelOf`'s fallback reads as the default for a value it doesn't recognize. */
+const DISPLAY_OPTIONS: PickerChoice<LinkDisplay>[] = [
+  { value: 'link-full', label: 'Full Link' },
+  { value: 'link-short', label: 'Short Link' },
+  { value: 'link-title', label: 'Page Title' },
+]
 
 /** Shared with the URL cell's own render via solidColorCss, so the two stay in sync. */
 function resolveLinkColor(color: string | undefined): {
@@ -27,7 +35,7 @@ function resolveLinkColor(color: string | undefined): {
 
 /**
  * The chosen colour themes the pane's own Switches via a scoped `--accent`. The alias (a per-value
- * Rename) overrides the Full URL / Title look at render time — it's not configured here.
+ * Rename) overrides the chosen format at render time — it's not configured here.
  */
 export function URLEditor({
   underline,
@@ -57,14 +65,13 @@ export function URLEditor({
         </span>
       </div>
       <div className={s.configRow}>
-        <span className={s.configLabel}>Full URL</span>
-        <span className={s.switchScale}>
-          <Switch
-            checked={display === 'link-url'}
-            onChange={(v) => onSetConfig({ link_display: v ? 'link-url' : 'link-title' })}
-            ariaLabel="Show the full URL"
-          />
-        </span>
+        <span className={s.configLabel}>Format</span>
+        <PickerControl
+          ariaLabel="Link format"
+          value={display}
+          options={DISPLAY_OPTIONS}
+          onPick={(v) => onSetConfig({ link_display: v })}
+        />
       </div>
       <div className={s.configRow}>
         <span className={s.configLabel}>Color</span>

@@ -29,7 +29,7 @@ import type { Result } from './result'
 import type { FormatState } from './editorMenu'
 import type { SavedView } from './views'
 import type { BlockDoc, BlockDocPatch, BlockHostRef, EmbeddedView } from './blocks'
-import type { PropertyDefinition, PropertyType, StatusGroup } from './properties'
+import type { LinkDisplay, PropertyDefinition, PropertyType, StatusGroup } from './properties'
 import type { PageFrontmatter } from './schemas'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import type { GripMenuAction, GripMenuContext } from './gripMenu'
@@ -158,7 +158,7 @@ export interface Asks {
       propertyId: string,
       patch: {
         link_underline?: boolean
-        link_display?: 'link-url' | 'link-title'
+        link_display?: LinkDisplay
         link_color?: string
       },
     ]
