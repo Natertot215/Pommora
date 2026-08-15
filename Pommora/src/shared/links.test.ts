@@ -46,8 +46,7 @@ describe('markdownLinkRegex — the balanced-parens destination', () => {
     expect(target('[t](https://a.com/x))')).toBe('https://a.com/x')
   })
 
-  // Deliberate change: this tokenizes today and stops after. An unmatched `(` in a bare destination
-  // is invalid CommonMark, so the whole thing is prose — a correction, not a regression.
+  // An unmatched `(` in a bare destination is invalid CommonMark, so the whole thing is prose.
   it('refuses a target holding an unmatched opening paren', () => {
     expect(target('[t](https://a.com/a_(b)')).toBeUndefined()
   })

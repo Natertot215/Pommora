@@ -99,7 +99,7 @@ import {
   removeStatusOption,
   clearStatusOption,
 } from './crud/optionOps'
-import type { LinkDisplay, StatusGroup } from '@shared/properties'
+import type { LinkConfig, StatusGroup } from '@shared/properties'
 import type { Option } from '@shared/optionModel'
 import { savedView } from '@shared/views'
 import { LINK_DISPLAYS, propertyDefinition, propertyType } from '@shared/properties'
@@ -978,14 +978,10 @@ serveBridge(
         // Whitelist only the link display fields — a config write must not patch arbitrary def fields
         // (type, options, id) through here. Registry-only: display config doesn't touch page values.
         const p = patch as Record<string, unknown>
-        const changes: {
-          link_underline?: boolean
-          link_display?: LinkDisplay
-          link_color?: string
-        } = {}
+        const changes: LinkConfig = {}
         if (typeof p.link_underline === 'boolean') changes.link_underline = p.link_underline
-        if (LINK_DISPLAYS.includes(p.link_display as LinkDisplay))
-          changes.link_display = p.link_display as LinkDisplay
+        const display = LINK_DISPLAYS.find((d) => d === p.link_display)
+        if (display) changes.link_display = display
         if ('link_color' in p)
           changes.link_color = typeof p.link_color === 'string' ? p.link_color : undefined
         const r = await editProperty(root, propertyId, changes)
