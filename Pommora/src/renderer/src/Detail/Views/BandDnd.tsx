@@ -11,10 +11,6 @@ import {
 import { usePointerGesture } from '@renderer/design-system/interactions/gesture'
 import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { announce } from '@renderer/design-system/interactions/a11y'
-import {
-  beginDragDisclose,
-  endDragDisclose,
-} from '@renderer/design-system/interactions/dragDisclose'
 import { EDITABLE_TARGETS, GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
 import { DragGhost } from '@renderer/design-system/interactions/DragGhost'
 import { DropLine } from '@renderer/design-system/interactions/DropLine'
@@ -148,7 +144,7 @@ export function BandDnd({
     if (!el) return
     // The shared gesture: window listeners drive it (the glyph is small, the first move usually
     // leaves it); capture defers to activation so a sub-threshold press stays inert.
-    const started = beginGesture({
+    beginGesture({
       el,
       event: e,
       onActivate: (ev) => {
@@ -201,21 +197,17 @@ export function BandDnd({
       },
       onAbort: reset,
       teardown: () => {
-        endDragDisclose()
         stopScroll.current?.()
         stopScroll.current = null
       },
-    })
-    // Collapsed sibling bands are already registered by GroupBand — the bracket is the missing
-    // half, so a band drag springs them open the way a row drag always has.
-    if (started) {
-      beginDragDisclose(() => {
+      // Collapsed sibling bands (GroupBand registers each) spring open on a dwelling drag; their
+      // rows shift, so re-aim the drop geometry, staying dirty through the reveal animation.
+      onDisclose: () => {
         snap.markDirty()
         resolveSlot()
-        // The reveal is still animating — stay dirty so the drop re-measures at its own moment.
         snap.markDirty()
-      })
-    }
+      },
+    })
   }
 
   const value = useMemo<Value>(

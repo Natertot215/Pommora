@@ -5,6 +5,7 @@
 
 import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from 'react'
 import { ACTIVATION, suppressNextClick } from './shared'
+import { beginDragDisclose, endDragDisclose } from './dragDisclose'
 
 export type PointerGestureSpec = {
   el: HTMLElement
@@ -38,6 +39,12 @@ export type PointerGestureSpec = {
    *  scroller costs nothing. */
   onWindowScroll?: (e: Event) => void
   scrollTarget?: () => Element | null
+  /** A collapsed disclosure group springs open on dwell while the gesture lives — the
+   *  `beginDragDisclose`/`endDragDisclose` pair is bound at press and ended in teardown here, the
+   *  same way `onWindowScroll` owns its listener, so a surface hands over the re-resolve instead of
+   *  bracketing it itself. The callback re-snapshots the surface's drop geometry once the opened
+   *  group's rows have shifted. */
+  onDisclose?: () => void
   /** Bind Escape in the capture phase and swallow it while ACTIVE — for surfaces living inside a
    *  dismissable host (a dropdown) whose own Escape must not fire mid-drag. A sub-threshold press
    *  still leaves Escape to the host. */
@@ -80,6 +87,7 @@ function detach(g: LiveGesture): void {
   } catch {
     // never captured / already released
   }
+  if (g.spec.onDisclose) endDragDisclose()
   // The lock clears even when a teardown throws — a stranded `live` refuses every future drag.
   try {
     g.spec.teardown?.()
@@ -195,6 +203,9 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
   window.addEventListener('keydown', g.handlers.key, {
     capture: spec.swallowActiveEscape ?? false,
   })
+  // Bound at press like the listeners above, torn down in `detach` — a dwelling drag springs a
+  // collapsed group open and the surface's `onDisclose` re-aims against its shifted rows.
+  if (spec.onDisclose) beginDragDisclose(spec.onDisclose)
   return {
     abort: () => {
       if (live === g) g.handlers.cancel()
