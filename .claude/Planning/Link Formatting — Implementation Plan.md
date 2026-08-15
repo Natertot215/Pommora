@@ -140,12 +140,14 @@ Ruled out in the decision log; do not retry.
 
 **Failure half:** unbalanced open (`[x](((((`) → no match, returns immediately · unbalanced trailing `)` → destination ends before it, per CommonMark · a target containing a space → still matches, as today · empty target → no match, as today (the `{1,…}` floor).
 
+**Deliberate behavior change:** a target carrying an *unmatched opening* paren — `[t](https://a.com/a_(b)` — tokenizes today and will not after, at any nesting depth. CommonMark reads it the new way, so this is a correction; the link becomes plain text and the test names it as intended rather than as a regression.
+
 **Must agree:** `MD_LINK` (the anchored, whole-string form used by `linkValue.ts`) reads a greedy `(.*)` and already handles balanced parens correctly. One test must assert both forms extract the same target from `[x](https://a.com/a_(b))`, or the tokenizer and the property cell disagree about where a link ends.
 
 **Steps:**
-- [ ] Write the failing tests: single nested pair, two nested pairs, plain URL unchanged, target-with-space unchanged, unbalanced trailing `)` unchanged, and the `MD_LINK`-agreement case.
-- [ ] Run `npm run test -- links` — expect the nested-pair cases red, the rest green.
-- [ ] Widen the target group to `(?:[^()\r\n]|\([^()\r\n]*\)){1,2048}`. Rewrite the doc block: the ReDoS note now rests on the two alternatives being disjoint on their first character, which is what keeps the quantifier from backtracking ambiguously.
+- [ ] Write the failing tests: single nested pair, two sequential pairs, a **two-deep** nested pair, plain URL unchanged, target-with-space unchanged, unbalanced trailing `)` unchanged, the unmatched-open case asserted as *no match*, and the `MD_LINK`-agreement case.
+- [ ] Run `npm run test -- links` — expect the nested cases red, the rest green.
+- [ ] Widen the target group to two levels: `(?:[^()\r\n]|\((?:[^()\r\n]|\([^()\r\n]*\))*\)){1,2048}`. Rewrite the doc block: the ReDoS note now rests on the alternatives at each level being disjoint on their first character (`(` versus not-`(`), which is what keeps the quantifiers from backtracking ambiguously.
 - [ ] Re-run — expect all green.
 - [ ] Add the three pathological inputs (unbalanced-open run, unclosed-label run, long nested run) as timing-free regression cases; they assert a result, not a duration.
 - [ ] Full gate: `npm run typecheck && npm run test && npm run lint` — expect green.
@@ -438,18 +440,15 @@ Default Format never applies to a wrap — the selection is the label. A clipboa
 
 **Requirement:** 4
 
-> **BLOCKED — open question E-7.** ⌘⇧V is registered main-side by `{ role: 'editMenu' }` (`main/menu.ts:81`) for `pasteAndMatchStyle`, so the keypress never reaches the renderer and no renderer-side binding can fire. It also sits in the editor's context menu at `editorMenu.ts:57`. **Do not execute this task until the user rules.**
->
-> **Branch A — take the chord.** Expand `{ role: 'editMenu' }` into an explicit submenu and drop Paste and Match Style from both places. Costs a standard macOS edit item; in exchange ⌘⇧V means what the spec says. The item is close to dead weight here — MarkdownPM is CodeMirror, so a paste is stripped to plain text regardless, and the app's other inputs are plain too.
-> **Branch B — keep it, pick another chord.** No main-process change, but the chord is new and needs its own sign-off.
+> **E-7 ruled: the chord is taken from Paste and Match Style.** ⌘⇧V is registered main-side by `{ role: 'editMenu' }` (`main/menu.ts:81`), so the keypress never reaches the renderer until that role is expanded into an explicit submenu and the item dropped — from the app menu and from the editor's context menu (`editorMenu.ts:57`). The item costs little here: MarkdownPM is CodeMirror, so a paste is stripped to plain text regardless, and the app's other inputs are plain too.
 
 **Why:** The settings decide what ⌘V does; the inverse chord always does the other thing. One rule rather than two, and it means the less-used behavior is always one modifier away instead of buried in a menu — which is what let the Paste Link menu item be dropped entirely.
 
 **Files:**
 - Modify: `Pommora/src/shared/types.ts` — one row in `DEFAULT_COMMANDS`, so the binding is data like every other rebindable shortcut.
-- Modify: `Pommora/src/main/menu.ts` — **Branch A only**: expand the `editMenu` role.
-- Modify: `Pommora/src/main/editorMenu.ts` — **Branch A only**: drop `pasteAndMatchStyle` from `systemItems`.
-- Modify: the paste handler from Task 6 — read the chord and pass `inverse` through.
+- Modify: `Pommora/src/main/menu.ts` — expand the `editMenu` role into an explicit submenu, dropping Paste and Match Style.
+- Modify: `Pommora/src/main/editorMenu.ts` — drop `pasteAndMatchStyle` from `systemItems`.
+- Modify: the paste handler from Task 6 — read the chord and pass `inverse` through. The chord is matched renderer-side on keydown (`App.tsx:176-186`), where no `clipboardData` exists, so it reads the clipboard through the `clipboard:read` channel Task 6 brings forward.
 - Modify: `.claude/Features/ConfigurationPM.md` — the Commands roster.
 
 **Failure half:** the chord fires with an empty clipboard → ordinary paste · with a non-URL clipboard → ordinary paste · in a read-only surface → declined · outside any editor → not handled.
@@ -470,16 +469,19 @@ Default Format never applies to a wrap — the selection is the label. A clipboa
 
 **Why:** Auto-format decides what a paste does by default; Paste As is how you choose per paste without changing the setting. It offers only forms the clipboard's contents can actually take, resolved through `resolveMdTarget` — the resolver the click path and both renderers already share — so the menu can never offer a form the writer can't produce.
 
+It is built **on the menu `installEditorContextMenu` already pops**, not as a renderer menu of its own. Main pops for every editable target and only the renderer-set `gripHot` flag suppresses it, so a competing renderer menu would either appear alongside it or replace it — and replacing it costs the system edit items, spelling, `Format ▸`, `Heading ▸`, `Lists ▸`, `Insert ▸`, Speech and Share. One menu is the requirement; reach into blocks and embeds is bought by wiring those two surfaces, which is a smaller change than owning a second menu.
+
 **Files:**
-- Modify: `Pommora/src/shared/bridge.ts` — `'clipboard:read'` and a `'paste-as-menu'` channel.
-- Modify: `Pommora/src/preload/index.ts` — one line each.
-- Modify: `Pommora/src/main/index.ts` — the two handlers; `clipboard` is already imported.
-- Create: `Pommora/src/main/PasteAsMenu.ts` — the returning-ask builder, following `popConnMenu`.
-- Create: `Pommora/src/shared/PasteAsMenu.ts` — the action ids and the menu model, so it is testable (there are no tests for `src/main` menu builders anywhere in the repo; the house pattern is a shared model plus template assembly in main).
-- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/PasteLink.ts` or a sibling — the prose `contextmenu` handler.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/index.tsx` and `Tables/CellEditor.tsx` — mount it in both.
+- Modify: `Pommora/src/shared/bridge.ts` — a channel carrying the resolved paste-as option set from the renderer to main, following `setEditorFormatState`'s precedent (main cannot resolve a page title against the renderer's index, so the renderer pushes what main can't see).
+- Modify: `Pommora/src/preload/index.ts` — one line.
+- Modify: `Pommora/src/main/index.ts` — the handler; `clipboard` is already imported. (`clipboard:read` itself landed in Task 6.)
+- Create: `Pommora/src/shared/PasteAsMenu.ts` — the action ids and the menu model, so it is testable. There are no tests for `src/main` menu builders anywhere in the repo; the house pattern is a shared model plus template assembly in main.
+- Modify: `Pommora/src/main/editorMenu.ts` — append the `Paste As ▸` submenu in `pommoraItems`, omitted entirely when the option set is empty (`cardMenu.ts`'s precedent), and route its action ids through the existing `menu:action` dispatch.
+- Modify: `Pommora/src/renderer/src/Detail/PageView.tsx` — unchanged, it already wires `menu`.
+- Modify: `Pommora/src/renderer/src/Blocks/MarkdownBlock.tsx` and `Pommora/src/renderer/src/Embeds/PageEmbed.tsx` — wire `menu={{ pushState, onAction }}`, which they don't today. This is what makes Paste As reach every surface, and it repairs the existing `Format ▸` in the same stroke.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/editor/menu.ts` — handle the new ids in `applyEditorAction`.
 - Modify: `.claude/Features/MarkdownPM.md`.
-- Test: `Pommora/src/shared/pasteAsMenu.test.ts` (the model) and a jsdom case for the handler.
+- Test: `Pommora/src/shared/pasteAsMenu.test.ts` (the model) and a jsdom case for the apply path.
 
 **Derivation**
 - The three editor `contextmenu` handlers this must not collide with: `rg -n "contextmenu" Pommora/src/renderer/src/MarkdownPM` → **6** at planning time across `editor/links.ts`, `editor/connections.ts`, `editor/gripMenu.ts` (declarations plus comments).
@@ -497,12 +499,13 @@ Default Format never applies to a wrap — the selection is the label. A clipboa
 
 **Steps:**
 - [ ] **First, observe the running app:** right-click a rendered markdown link and a `[[connection]]`. Grips are excluded from the prose menu by the `gripHot` flag main checks first, but links and connections only `preventDefault()` in the renderer, which does not stop main's `context-menu` event. If both menus appear, links and connections need the same hot-flag treatment grips have — and that becomes a step here, in this task. Record what was observed in the Log either way.
-- [ ] Write the failing model tests: each clipboard shape → the exact option set, in order; a non-link clipboard → no submenu.
+- [ ] **Also observe:** right-click `[Example](https://example.com)` inside a table cell. `markdownLinkClicks` is mounted only in `index.tsx`, not in `CellEditor.tsx`. If no link menu appears, Task 8's `Format >` is absent in cells and needs a mount there for Requirement 8 — record it and fold the mount in.
+- [ ] Write the failing model tests: each clipboard shape → the exact option set, in order; a non-link clipboard → no submenu at all.
 - [ ] Run — expect red.
-- [ ] Add `clipboard:read` (`kind: 'raw'`, `reply: string` — an un-enveloped scalar, matching `theme:systemAccent` and `linkTitles:get`; `clipboard.readText()` cannot fail) and the menu channel. A channel added to `Asks` with no handler is a compile error, so all three sites land together.
-- [ ] Implement the shared model and the main builder; re-run — expect green.
-- [ ] Implement the renderer handler using the **returning-ask** pattern, not the `menu:action` push channel — that channel is wired only at `PageView.tsx:134`, which is why the existing prose `Format ▸` is already inert in blocks and embeds.
-- [ ] Mount in both editor arrays; stub the channel in tests via `stubEditorBridge({ … })`.
+- [ ] Add the option-set push channel. A channel added to `Asks` with no handler is a compile error, so all three sites land together.
+- [ ] Implement the shared model; re-run — expect green.
+- [ ] Append the submenu in `editorMenu.ts`'s `pommoraItems`, and handle its ids in `applyEditorAction`.
+- [ ] Wire `menu={{ pushState, onAction }}` in `MarkdownBlock.tsx` and `PageEmbed.tsx`. Verify the existing `Format ▸` starts working in those surfaces — that is the observable proof the wiring landed.
 - [ ] Update `MarkdownPM.md`.
 - [ ] Run the app: each clipboard shape, in a page body and a table cell, in a block and an embed.
 - [ ] Full gate — expect green.
@@ -534,19 +537,22 @@ Default Format never applies to a wrap — the selection is the label. A clipboa
   - [ ] Task 7 — The deferred Page Title rewrite · `<commit>`
 - [ ] **Phase 4** — The menus
   - [ ] Task 8 — `Format >` on the link menu · `<commit>`
-  - [ ] Task 9 — The inverse-paste chord · `<commit>` · **blocked on E-7**
+  - [ ] Task 9 — The inverse-paste chord · `<commit>`
   - [ ] Task 10 — `Paste As >` on the prose menu · `<commit>`
 
 ### Rulings
+- **E-7 — ⌘⇧V is taken from Paste and Match Style** (Nathan). The role is expanded and the item dropped from both menus.
+- **R2 — Paste As is built on the menu `editorMenu` already pops** (Nathan: "just use the same one that editorMenu does"), rather than a renderer menu of its own. Reach into blocks and embeds comes from wiring those two surfaces' `menu` prop, which repairs the existing `Format ▸` there at the same time.
+- **R3 — two levels of parenthesis nesting, and the unmatched-opening-paren case reads the CommonMark way** (Nathan: "whatever's best"; the options were gathered and the recommendation stated before the call).
 
 ### Open Against Later Tasks
 
-Four rulings block execution. Each was raised by the attack review and verified by hand against the code.
+One ruling blocks execution. All four were raised by the attack review and verified by hand against the code; three are settled.
 
-- **R1 — the undo mechanism (blocks Task 7).** One ⌘Z cannot remove a paste whose title swapped. `addToHistory` is not a `TransactionSpec` key at all — the real API is the `Transaction.addToHistory` annotation (`@codemirror/state` d.ts:1013), so the plan's literal wording is a type error; and once corrected, CodeMirror maps the paste's inverted change through the non-history swap, leaving the swapped-in text behind as orphan prose that a second ⌘Z cannot reach. Options: accept two presses · write the paste itself undo-transparently and record only the final state · a custom ⌘Z that pops the swap-annotated pair.
-- **R2 — Paste As menu ownership (blocks Task 10).** `main/editorMenu.ts:190` pops the prose menu for every editable target, suppressed only by the renderer-set `gripHot` flag. A renderer-side returning-ask menu therefore either duplicates it or replaces it, losing undo/cut/copy/paste, spelling, `Format ▸`, `Heading ▸`, `Lists ▸`, `Insert ▸`, Speech and Share. E-1a chose returning-ask for reach and gave up the one-menu property without noticing. Options: build `Paste As ▸` main-side and push the resolved option set the way `setFormatState` already pushes state main can't see (keeps one menu, works everywhere) · add a second `gripHot`-style suppression flag.
-- **R3 — regex nesting depth (blocks Task 1).** The one-level pattern refuses a two-deep balanced target that cmark renders as a link. Two levels costs one alternative and shows no backtracking. Separately, a target with an *unmatched opening* paren matches today and stops matching after the widening — CommonMark agrees with the new reading, but it is a behavior change and C-8's "preserved on every existing shape" was false.
-- **E-7 — the ⌘⇧V fork (blocks Task 9).** Unchanged: take the chord from `pasteAndMatchStyle`, or pick another.
+- **R1 — the undo mechanism (blocks Task 7). OPEN.** One ⌘Z cannot remove a paste whose title swapped. `addToHistory` is not a `TransactionSpec` key at all — the real API is the `Transaction.addToHistory` annotation (`@codemirror/state` d.ts:1013), so the plan's original wording is a type error; and once corrected, CodeMirror maps the paste's inverted change through the non-history swap, leaving the swapped-in text behind as orphan prose that a second ⌘Z cannot reach. Options: accept two presses · a custom ⌘Z that pops the swap-annotated pair · drop the swap. The table-cell case rides on this: `CellEditor` mounts no `history()` and relays edits as ordinary history-recorded page transactions, and the cell view is destroyed the moment the cell stops being active — so a user who pastes and Tabs away loses the rewrite silently. Whatever R1 settles must say what happens in a cell.
+- **R2 — Paste As menu ownership. RULED:** build it on the menu `editorMenu` already pops. → E-1a, Task 10 rewritten.
+- **R3 — regex nesting depth. RULED:** two levels, and the unmatched-opening-paren case goes the way CommonMark reads it. → C-8, Task 1.
+- **E-7 — the ⌘⇧V chord. RULED:** taken from Paste and Match Style, which is dropped from the app menu and the editor context menu. → Task 9 unblocked.
 
 Folded without needing a ruling:
 
