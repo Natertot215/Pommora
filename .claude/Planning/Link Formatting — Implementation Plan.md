@@ -20,7 +20,7 @@ Bounded to the link feature. The `PopupMenu` design-system split is a separate c
 5. Page Title writes Short Link immediately and rewrites the label in place when the fetch lands — anchored to the inserted range, an ordinary history entry, dropped if the editor is gone or the text has changed.
 6. `Format >` on a markdown link's right-click menu, rewriting the label only.
 7. `Paste As >` on the prose right-click menu, offering what the clipboard's target can become.
-8. All of it applies in every MarkdownPM surface, including table cells.
+8. All of it applies in every MarkdownPM surface, including table cells — with one ruled exception: `Paste As` is absent inside a markdown table, because main's prose menu does not pop over a non-editable widget (O-3, R4). Paste behavior and `Format >` still reach cells.
 
 **Acceptance — the whole thing working**
 
@@ -412,7 +412,7 @@ Default Format never applies to a wrap — the selection is the label. A clipboa
 - Modify: `Pommora/src/shared/connections.ts` — `ConnMenuContext` gains a field distinguishing a `[label](target)` link from a `[[wikilink]]`; main cannot otherwise tell them apart, since both arrive today as the same non-external context.
 - Modify: `Pommora/src/main/connMenu.ts` — build the submenu, following `gripMenu.ts`'s radio-submenu-with-parameterized-action shape.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/editor/links.ts` — the `contextmenu` handler passes the new context field and an `apply` closure over the hit's span. It currently passes `editable: false` and **no** `apply`, so a markdown link's menu can carry no edit action at all.
-- Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/CellEditor.tsx` — mount `markdownLinkClicks` in the cell's extension array. Per O-2 it is absent there, so a link in a cell has no menu to put `Format >` on; without this, Requirement 8 is false for cells.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/CellEditor.tsx` — mount `markdownLinkClicks` in the cell's extension array. Per O-2 it is absent there, so a link in a cell has no menu to put `Format >` on; without this, `Format >` is missing in cells. This is the renderer's own menu, so it is unaffected by O-3.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/connections/index.ts` — widen `ConnMenuTarget.apply`'s parameter beyond `ConnEditAction`.
 - Modify: `Pommora/src/renderer/src/Embeds/connectionMenu.ts` — route the new ids.
 - Create: the label rewrite. `applyLinkAction` only matches `t.kind === 'wikiLink'` and returns silently otherwise, so a markdown link's label needs its own function over the `link` token's `contentRange`.
@@ -502,7 +502,7 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
 
 **Steps:**
 - [x] **Observed (O-1):** one menu, not two — links need no hot-flag treatment. The contingent step this task carried is dropped.
-- [x] **Observed (O-2):** a cell gets no menu at all. The link half is Task 8's mount; the prose half only pops in an active cell, which is the only state a paste can happen in anyway.
+- [x] **Observed (O-2, O-3):** a cell gets no menu at all, active or resting. The link half is Task 8's mount; the prose half never pops over the non-editable table widget, and R4 accepts Paste As as absent in cells — so this task builds nothing for them.
 - [ ] Write the failing model tests: each clipboard shape → the exact option set, in order; a non-link clipboard → no submenu at all.
 - [ ] Run — expect red.
 - [ ] Add the option-set push channel. A channel added to `Asks` with no handler is a compile error, so all three sites land together.
@@ -551,9 +551,10 @@ The two the review could not settle statically, taken on the running app before 
 - **O-2 — a link inside a table cell gets no menu at all**, and two separate causes stack to produce it. `markdownLinkClicks` — which carries the `contextmenu` handler — is mounted only at `MarkdownPM/index.tsx:252` and is absent from `Tables/CellEditor.tsx`'s extension array, so there is no link menu in a cell under any condition. Beneath that, a resting cell is not an editor at all: it renders `Tables/cellStatic.tsx` as plain spans inside the widget's `contentEditable=false` host, so `installEditorContextMenu` bails at its `!params.isEditable` guard and the prose menu does not pop either. A cell mounts a real `EditorView` only while it is the active cell.
   - **Consequence for Task 8:** `Format >` needs `markdownLinkClicks` mounted in `CellEditor.tsx`, or Requirement 8 is false for cells. Folded into that task.
 - **O-3 — the prose menu does not appear inside a table cell at all**, active or resting (observed with the caret in the cell). `editorMenu.ts:20-22` already names the cause in passing: the table widget is non-editable content, so main's `context-menu` handler bails at `!params.isEditable` over the whole widget. This is existing behavior, not something this cycle introduces — the `Format ▸`, `Heading ▸`, `Lists ▸` and `Insert ▸` submenus are all absent in cells today for the same reason.
-  - **Consequence for Task 10 — R2 cannot reach table cells.** Paste As is ruled to ride the menu `editorMenu` already pops, and that menu never pops in a cell. Requirement 8 is therefore unsatisfiable for Paste As under R2 as written. It is *not* affected for the rest of the feature: ⌘V and the inverse chord are DOM/keyboard paths that work in a cell once Task 6 mounts them, and Task 8's `Format >` rides the renderer's own link menu, which the cell mount restores. **This needs a ruling before Task 10** — the options are to accept Paste As as absent in cells, to give cells a renderer-side menu of their own (which R2 rejected for the page body), or to make the widget report as editable so the whole prose menu returns to cells, which is a change well beyond this feature's blast radius.
+  - **Consequence for Task 10 — R2 cannot reach table cells,** and **R4 accepts that.** Paste As rides the menu `editorMenu` already pops, and that menu never pops in a cell, so Paste As is absent there. Nothing else in the feature is affected: ⌘V and the inverse chord are DOM and keyboard paths that work in a cell once Task 6 mounts them, and Task 8's `Format >` rides the renderer's own link menu, which the cell mount restores.
 
 ### Rulings
+- **R4 — Paste As is accepted as absent inside table cells** (Nathan: "Accept it"). The prose menu never pops over the non-editable table widget (O-3), and reversing that would mean making the widget report as editable — a change well outside this feature's blast radius. Requirement 8 now states the exception rather than being quietly false. Nothing else about cells changes: pasting still formats there, and `Format >` still reaches links there once Task 8 mounts the link handler.
 - **R1 — two ⌘Z presses are accepted** (Nathan). The title swap stays an ordinary history entry rather than growing a custom undo command; the cost lands only on the first paste of a URL, since the title is cached afterwards.
 - **E-7 — ⌘⇧V is taken from Paste and Match Style** (Nathan). The role is expanded and the item dropped from both menus.
 - **R2 — Paste As is built on the menu `editorMenu` already pops** (Nathan: "just use the same one that editorMenu does"), rather than a renderer menu of its own. Reach into blocks and embeds comes from wiring those two surfaces' `menu` prop, which repairs the existing `Format ▸` there at the same time.
