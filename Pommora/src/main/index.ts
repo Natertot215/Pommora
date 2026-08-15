@@ -99,10 +99,15 @@ import {
   removeStatusOption,
   clearStatusOption,
 } from './crud/optionOps'
-import type { LinkConfig, StatusGroup } from '@shared/properties'
+import type { LinkConfig, NumberConfig, StatusGroup } from '@shared/properties'
 import type { Option } from '@shared/optionModel'
 import { savedView } from '@shared/views'
-import { LINK_DISPLAYS, propertyDefinition, propertyType } from '@shared/properties'
+import {
+  LINK_DISPLAYS,
+  NUMBER_FAMILIES,
+  propertyDefinition,
+  propertyType,
+} from '@shared/properties'
 import type { PageFrontmatter } from '@shared/schemas'
 import { handleMutate, type MutateDeps } from './mutate'
 import { showContextMenu } from './contextMenu'
@@ -1029,9 +1034,9 @@ serveBridge(
         // (type, options, id). Registry-only: display config never touches page values. An `in p` check
         // lets a caller clear a field by passing undefined.
         const p = patch as Record<string, unknown>
-        const changes: Record<string, unknown> = {}
+        const changes: NumberConfig = {}
         if ('number_family' in p)
-          changes.number_family = typeof p.number_family === 'string' ? p.number_family : undefined
+          changes.number_family = NUMBER_FAMILIES.find((f) => f === p.number_family)
         if ('number_currency' in p)
           changes.number_currency =
             typeof p.number_currency === 'string' ? p.number_currency : undefined
