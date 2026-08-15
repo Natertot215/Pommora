@@ -24,6 +24,10 @@ const TWISTY_W = 12
  *  own `--menu-rail-x` accordingly. */
 export const TITLE_X_TWISTY_ONLY = ROW_PAD_X + TWISTY_W + ROW_GAP
 
+/** The x of the twisty's centre. An icon-less disclosing surface points its `--menu-rail-x` here so
+ *  the rail runs straight through the parent chevron rather than beside it. */
+export const TWISTY_CENTER_X = ROW_PAD_X + TWISTY_W / 2
+
 export const item = style([
   text.body.standard,
   {

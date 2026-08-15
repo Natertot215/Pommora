@@ -7,6 +7,6 @@ export type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
 
 export type ViewButtonMenuAction = 'toggle-title' | ViewStyleAction
 
-export type EmbedTitleMenuAction = 'toggle-icon' | 'hide-title' | `size-${number}`
+export type EmbedTitleMenuAction = 'toggle-icon' | 'change-icon' | 'hide-title' | `size-${number}`
 
 export type EmbedAreaMenuAction = 'show-title' | 'new-view' | ViewStyleAction

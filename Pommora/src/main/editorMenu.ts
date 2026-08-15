@@ -85,20 +85,26 @@ function pommoraItems(wc: WebContents, s: FormatState): MenuItemConstructorOptio
       submenu: [
         // Accelerators are display-only (registerAccelerator: false); the keys are bound in formatKeymap.ts.
         {
-          label: 'Bold',
-          type: 'checkbox',
-          checked: s.bold,
-          accelerator: 'CmdOrCtrl+B',
-          registerAccelerator: false,
-          click: act('format:bold'),
-        },
-        {
           label: 'Italic',
           type: 'checkbox',
           checked: s.italic,
           accelerator: 'CmdOrCtrl+I',
           registerAccelerator: false,
           click: act('format:italic'),
+        },
+        {
+          label: 'Inline Code',
+          type: 'checkbox',
+          checked: s.inlineCode,
+          click: act('format:inlineCode'),
+        },
+        {
+          label: 'Bold',
+          type: 'checkbox',
+          checked: s.bold,
+          accelerator: 'CmdOrCtrl+B',
+          registerAccelerator: false,
+          click: act('format:bold'),
         },
         {
           label: 'Strikethrough',
@@ -109,10 +115,12 @@ function pommoraItems(wc: WebContents, s: FormatState): MenuItemConstructorOptio
           click: act('format:strikethrough'),
         },
         {
-          label: 'Inline Code',
+          label: 'Connection',
           type: 'checkbox',
-          checked: s.inlineCode,
-          click: act('format:inlineCode'),
+          checked: s.connection,
+          accelerator: 'CmdOrCtrl+Shift+K',
+          registerAccelerator: false,
+          click: act('format:connection'),
         },
         {
           label: 'Link',
@@ -121,14 +129,6 @@ function pommoraItems(wc: WebContents, s: FormatState): MenuItemConstructorOptio
           accelerator: 'CmdOrCtrl+K',
           registerAccelerator: false,
           click: act('format:link'),
-        },
-        {
-          label: 'Connection',
-          type: 'checkbox',
-          checked: s.connection,
-          accelerator: 'CmdOrCtrl+Shift+K',
-          registerAccelerator: false,
-          click: act('format:connection'),
         },
       ],
     },
@@ -169,17 +169,17 @@ function pommoraItems(wc: WebContents, s: FormatState): MenuItemConstructorOptio
     {
       label: 'Insert',
       submenu: [
-        { label: 'Page', click: act('block:page') },
-        { label: 'Table', click: act('block:table') },
         {
           label: 'Blockquote',
           type: 'checkbox',
           checked: s.block === 'quote',
           click: act('block:quote'),
         },
-        { label: 'Code Block', click: act('block:code') },
+        { label: 'Page', click: act('block:page') },
         { label: 'Horizontal Rule', click: act('block:hr') },
+        { label: 'Code Block', click: act('block:code') },
         { label: 'Callout', click: act('block:callout') },
+        { label: 'Table', click: act('block:table') },
       ],
     },
   ]

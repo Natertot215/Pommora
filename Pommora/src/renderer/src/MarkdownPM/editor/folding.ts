@@ -84,6 +84,15 @@ export function headingOutline(doc: string): OutlineHeading[] {
   }))
 }
 
+/** Exclusive end index of the section heading `start` owns — the first later heading of
+ *  equal-or-higher level, or the array end. Levels alone decide the span, so any level-bearing
+ *  heading list works. */
+export function sectionEnd(headings: readonly { level: number }[], start: number): number {
+  for (let n = start + 1; n < headings.length; n++)
+    if (headings[n].level <= headings[start].level) return n
+  return headings.length
+}
+
 /** Every heading's foldable section. A section reaching no body lines is dropped (nothing to fold),
  *  but still consumes its ordinal so duplicate-text keys stay stable. */
 export function headingSections(doc: string): HeadingSection[] {
