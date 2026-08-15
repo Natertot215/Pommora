@@ -96,6 +96,8 @@ function pommoraItems(wc: WebContents, s: FormatState): MenuItemConstructorOptio
           label: 'Inline Code',
           type: 'checkbox',
           checked: s.inlineCode,
+          accelerator: 'CmdOrCtrl+E',
+          registerAccelerator: false,
           click: act('format:inlineCode'),
         },
         {

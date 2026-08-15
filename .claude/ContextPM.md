@@ -2,7 +2,8 @@
 
 ### Current Focus
 
-**Verifying the trash browser.** The deletion record's reading half shipped (→ PM-100): the Settings rail's Trash leaf lists what `.trash` holds and puts any of it back, including into a home the user picks when the recorded one is gone. It is proven end to end against a real nexus and read off a screenshot; what it has not had is a week of ordinary use.
+- [ ] None yet
+
 ### Immediate Work
 
 - [ ] None yet
@@ -22,7 +23,7 @@
 - [ ] **A custom alias glyph.** The alias picker borrows `square-split-horizontal` from Lucide; an alias deserves a drawn symbol of its own in `design-system/symbols/customGlyphs`.
 - [ ] **MarkdownPM Links:** First, being able to link to a specific heading within a page across the nexus, with auto-complete for in-page headings and a 'Copy Link' menu option on the drag-chevron. Second, paste-aware auto-link syntax for URLs pasted into the editor, with an optional auto-title fetch feature based on its to-be-determined complexity. Full-on MarkdownPM block linking is a near-term consideration. 
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
-- [ ] **Subfield reorder.** The store action and persistence are fully built (`setSubfieldOrder` has zero callers) — the entire feature is a missing drag UI, a three-item horizontal `SortableZone` in the Ribbon's shape. 
+- [ ] **Per-tab Subfield `crumbDepth`**, if cross-tab tail memory is ever wanted. It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
 
 #### II. The Identity Arc
 

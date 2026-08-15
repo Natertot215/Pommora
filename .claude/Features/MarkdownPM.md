@@ -98,7 +98,7 @@ Input-time only; each fires as one atomic transaction with a re-entry guard, all
 
 ### Context Menu + Shortcuts
 
-Right-click pops the OS-native menu, built in the main process off the `context-menu` event so the system edit roles, spelling, Speech, and Share come native, with Pommora submenus (Format / Heading / Lists / Insert) whose active state reads the live `EditorState`. Shortcuts: ⌘B / I / K, ⌘⇧X (strike), ⌘⇧K (connection); Inline Code carries no keybinding (⌘E belongs to the ribbon toggle).
+Right-click pops the OS-native menu, built in the main process off the `context-menu` event so the system edit roles, spelling, Speech, and Share come native, with Pommora submenus (Format / Heading / Lists / Insert) whose active state reads the live `EditorState`. Shortcuts: ⌘B / I / E / K, ⌘⇧X (strike), ⌘⇧K (connection).
 
 ### Module Shape
 

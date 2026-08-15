@@ -18,9 +18,9 @@ Pommora's leading navigation pane in the three-pane shell: a **ribbon** of icons
 A **surface launcher** — each icon points at a surface, and surfaces live in different panes:
 
 - **Homepage** — pinned at the top, drawn as the Nexus's identity icon. Selecting it opens the Homepage in the main pane without changing what the content column shows.
-- **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage in that default order, drag-to-reorder. **Collections · Contexts · Agenda** switch the content column's mode; **[[NavigationPM|Navigation]]** toggles the NavWindow and **[[ConfigurationPM|set]]** the floating Nexus Settings window — the icon that summoned a window dismisses it, the same toggle its keyboard command drives. The Collections and Contexts tabs draw an entity default, so a personalization override moves them; the rest carry fixed glyphs.
+- **Navigation · Agenda · Contexts · Collections · Settings** — below Homepage in that default order, drag-to-reorder. **Collections · Contexts · Agenda** switch the content column's mode; **[[NavigationPM|Navigation]]** toggles the NavWindow and **[[ConfigurationPM|Settings]]** the floating Nexus Settings window — the icon that summoned a window dismisses it, the same toggle its keyboard command drives. The Collections and Contexts tabs draw an entity default, so a personalization override moves them; the rest carry fixed glyphs.
 
-The ribbon collapses and expands with the sidebar, and toggles on its own inside the open sidebar: the `toggle-ribbon` command (⌘E by default → [[ConfigurationPM]]) slides the strip off the panel's left edge on the sidebar's collapse motion while the content column reclaims the width. Ribbon visibility is transient window state, like the sidebar's collapse; the active mode and ribbon order persist per-Nexus.
+The ribbon collapses and expands with the sidebar, and toggles on its own inside the open sidebar: the `toggle-ribbon` command (⌘T by default → [[ConfigurationPM]]) slides the strip off the panel's left edge on the sidebar's collapse motion while the content column reclaims the width. Ribbon visibility is transient window state, like the sidebar's collapse; the active mode and ribbon order persist per-Nexus.
 
 ### Content Modes
 
