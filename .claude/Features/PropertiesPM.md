@@ -106,11 +106,11 @@ Select stores a bare string and renders one colored chip; Multi-Select stores a 
 
 A URL property renders each value as a clickable link, opened through the sanctioned IPC. Its look is set on the property and applies everywhere:
 
-- **Display** — each link as its full URL, or its fetched page title.
+- **Format** — one of the three link formats: **Full Link** the whole address, **Short Link** its bare domain, **Page Title** the site's fetched title. These are the same three the editor writes a pasted link in, named the same way.
 - **Underline** — on or off.
 - **Color** — the link color, a palette key chosen from the chip beside it (Default = the app accent), which also themes the editor pane's own controls.
 
-A per-value **alias** (right-click → Rename, stored markdown-native as `[alias](url)`) overrides the display for a single link. In the title look, the page `<title>` is fetched once per URL and cached per-machine in `nexus.db`, falling back to the bare domain while loading or on failure.
+A per-value **alias** (right-click → Rename, stored markdown-native as `[alias](url)`) overrides the format for a single link. Page Title is the only format that reaches the network: the page `<title>` is fetched once per URL and cached per-machine in `nexus.db`, showing the bare domain while it loads or if it never arrives. Sorting and filtering read the raw address regardless of the chosen format, so a column's order never moves when its look does.
 
 #### II. Context Links
 
