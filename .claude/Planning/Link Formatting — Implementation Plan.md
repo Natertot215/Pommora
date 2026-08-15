@@ -412,6 +412,7 @@ Default Format never applies to a wrap — the selection is the label. A clipboa
 - Modify: `Pommora/src/shared/connections.ts` — `ConnMenuContext` gains a field distinguishing a `[label](target)` link from a `[[wikilink]]`; main cannot otherwise tell them apart, since both arrive today as the same non-external context.
 - Modify: `Pommora/src/main/connMenu.ts` — build the submenu, following `gripMenu.ts`'s radio-submenu-with-parameterized-action shape.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/editor/links.ts` — the `contextmenu` handler passes the new context field and an `apply` closure over the hit's span. It currently passes `editable: false` and **no** `apply`, so a markdown link's menu can carry no edit action at all.
+- Modify: `Pommora/src/renderer/src/MarkdownPM/Tables/CellEditor.tsx` — mount `markdownLinkClicks` in the cell's extension array. Per O-2 it is absent there, so a link in a cell has no menu to put `Format >` on; without this, Requirement 8 is false for cells.
 - Modify: `Pommora/src/renderer/src/MarkdownPM/connections/index.ts` — widen `ConnMenuTarget.apply`'s parameter beyond `ConnEditAction`.
 - Modify: `Pommora/src/renderer/src/Embeds/connectionMenu.ts` — route the new ids.
 - Create: the label rewrite. `applyLinkAction` only matches `t.kind === 'wikiLink'` and returns silently otherwise, so a markdown link's label needs its own function over the `link` token's `contentRange`.
@@ -500,8 +501,8 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
 **Negative control:** with a non-link clipboard, the Paste As submenu must be **absent** — and the test must go red if the resolution gate is removed, or it proves only that the menu builds.
 
 **Steps:**
-- [ ] **First, observe the running app:** right-click a rendered markdown link and a `[[connection]]`. Grips are excluded from the prose menu by the `gripHot` flag main checks first, but links and connections only `preventDefault()` in the renderer, which does not stop main's `context-menu` event. If both menus appear, links and connections need the same hot-flag treatment grips have — and that becomes a step here, in this task. Record what was observed in the Log either way.
-- [ ] **Also observe:** right-click `[Example](https://example.com)` inside a table cell. `markdownLinkClicks` is mounted only in `index.tsx`, not in `CellEditor.tsx`. If no link menu appears, Task 8's `Format >` is absent in cells and needs a mount there for Requirement 8 — record it and fold the mount in.
+- [x] **Observed (O-1):** one menu, not two — links need no hot-flag treatment. The contingent step this task carried is dropped.
+- [x] **Observed (O-2):** a cell gets no menu at all. The link half is Task 8's mount; the prose half only pops in an active cell, which is the only state a paste can happen in anyway.
 - [ ] Write the failing model tests: each clipboard shape → the exact option set, in order; a non-link clipboard → no submenu at all.
 - [ ] Run — expect red.
 - [ ] Add the option-set push channel. A channel added to `Asks` with no handler is a compile error, so all three sites land together.
@@ -541,6 +542,15 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
   - [ ] Task 8 — `Format >` on the link menu · `<commit>`
   - [ ] Task 9 — The inverse-paste chord · `<commit>`
   - [ ] Task 10 — `Paste As >` on the prose menu · `<commit>`
+
+### Observations
+
+The two the review could not settle statically, taken on the running app before Phase 1.
+
+- **O-1 — a link's menu and the prose menu do not collide.** Right-clicking a rendered link in a page body pops exactly one menu: the link's own (Open Preview · Open New Tab · Copy Link · Copy Path). The prose menu does not appear behind or beside it, so links and connections need none of the hot-flag treatment grips have, and E-6's open question closes. Task 10 loses that contingent step.
+- **O-2 — a link inside a table cell gets no menu at all**, and two separate causes stack to produce it. `markdownLinkClicks` — which carries the `contextmenu` handler — is mounted only at `MarkdownPM/index.tsx:252` and is absent from `Tables/CellEditor.tsx`'s extension array, so there is no link menu in a cell under any condition. Beneath that, a resting cell is not an editor at all: it renders `Tables/cellStatic.tsx` as plain spans inside the widget's `contentEditable=false` host, so `installEditorContextMenu` bails at its `!params.isEditable` guard and the prose menu does not pop either. A cell mounts a real `EditorView` only while it is the active cell.
+  - **Consequence for Task 8:** `Format >` needs `markdownLinkClicks` mounted in `CellEditor.tsx`, or Requirement 8 is false for cells. Folded into that task.
+  - **Consequence for Task 10:** Paste As rides main's prose menu, which needs `isEditable` — true in an active cell, false in a resting one. Since a paste needs a caret anyway, the active-cell case is the only one that matters; confirm the prose menu pops there before building the cell half.
 
 ### Rulings
 - **R1 — two ⌘Z presses are accepted** (Nathan). The title swap stays an ordinary history entry rather than growing a custom undo command; the cost lands only on the first paste of a URL, since the title is cached afterwards.
