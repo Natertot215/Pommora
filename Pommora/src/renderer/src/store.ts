@@ -81,6 +81,7 @@ import { stabilize } from './treeStabilize'
 import { applyAccent, applySystemAccent } from './design-system/accent'
 import { applyPersonalization, applyPersonalizationKey } from './design-system/personalization'
 import { findCollection, findSet, findCollectionForSet, isDepth1Set } from './Detail/Scope'
+import { crumbDepthFor } from './Detail/Subfield/crumbs'
 import { ensureContainerView } from './Detail/Views/viewMint'
 import { normalizePropertyName, wrapKey } from '@shared/governedKeys'
 
@@ -166,12 +167,6 @@ export function openPageBody(
   return liveBody?.path === pageDetail.path ? liveBody.body : pageDetail.body
 }
 
-export interface TrailEntry {
-  id: string
-  path: string
-  title: string
-}
-
 /** Page paths are POSIX, so a page's container is its path minus the last segment. */
 const parentPathOf = (path: string): string => path.split('/').slice(0, -1).join('/')
 
@@ -224,8 +219,6 @@ interface SessionState {
   setNavViewMode: (mode: NavViewMode) => void
   personalization: Personalization
   setPersonalization: <K extends keyof Personalization>(key: K, value: Personalization[K]) => void
-  trail: Record<string, TrailEntry>
-  recordTrail: (containerId: string, entry: TrailEntry) => void
   linkTitles: Record<string, string>
   resolveLinkTitle: (url: string) => void
   activeViews: Record<string, string>
@@ -268,6 +261,13 @@ interface SessionState {
   unpinTab: (pinId: string) => void
   goBack: () => void
   goForward: () => void
+  /** The deepest node visited on the active breadcrumb path — what the footer dims its tail down to.
+   *  Held while walking up the same spine, reset on a branch (→ [[SubfieldPM]]). */
+  crumbDepth: SelectTarget | null
+  /** Navigate a breadcrumb segment — a normal move (switches to a tab already showing the target, or
+   *  replaces the current tab when it's open nowhere), but the dimmed tail survives the hop because
+   *  `crumbDepth` is held across it. `dir` sets the slide (up the path is 'back', re-descending 'forward'). */
+  navigateCrumb: (target: SelectTarget, dir: 'back' | 'forward') => void
   navSlide: {
     tabId: string
     dir: 'back' | 'forward'
@@ -555,6 +555,11 @@ export const useSession = create<SessionState>((set, get) => {
   }
 
   const syncActiveDetail = (): void => {
+    // A tab-focus change (activate, new tab, a close refocusing) is not navigation — the breadcrumb
+    // tail belongs to the tab you were walking, so it resets rather than leaking onto the new one.
+    // In-tab moves and the breadcrumb-click dedup switch load detail through `select` directly, never
+    // here, so their held depth is untouched.
+    set({ crumbDepth: null })
     const active = findActiveTab()
     if (!active || active.target.kind === 'newtab') {
       pageFetchSeq++
@@ -660,6 +665,31 @@ export const useSession = create<SessionState>((set, get) => {
     captureWarm(s.activeTabId, navKey(s.selection), { pageDetail: detail })
   }
 
+  // Move the active tab's history pointer to an absolute stack index, showing what sits there without
+  // re-recording — the one mover behind Back/Forward and breadcrumb re-navigation alike.
+  const jumpActiveHistory = (i: number): void => {
+    const s = get()
+    const active = activeUnpinnedTab(s.tabs, s.activeTabId)
+    if (!active || active.target.kind === 'newtab') return
+    if (i < 0 || i >= active.navStack.length || i === active.navIndex) return
+    const resolved = s.tree ? reconcileSelection(s.tree, active.navStack[i]) : active.navStack[i]
+    if (resolved.kind === 'none') return
+    captureOutgoingDetail()
+    // target must move in lockstep with navIndex — openTab's dedup keys off target, so a stale
+    // one would mis-dedup the very next click on the shown entity, destroying the Forward stack.
+    set({
+      tabs: get().tabs.map((t) => (t.id === active.id ? { ...t, navIndex: i, target: resolved } : t)),
+      navSlide: {
+        tabId: active.id,
+        dir: i < active.navIndex ? 'back' : 'forward',
+        seq: (s.navSlide?.seq ?? 0) + 1,
+        source: 'history',
+      },
+    })
+    void get().select(resolved, { record: false })
+    persistTabs()
+  }
+
   const stepActiveHistory = (delta: number): void => {
     const s = get()
     const active = activeUnpinnedTab(s.tabs, s.activeTabId)
@@ -667,22 +697,7 @@ export const useSession = create<SessionState>((set, get) => {
     for (let i = active.navIndex + delta; i >= 0 && i < active.navStack.length; i += delta) {
       const resolved = s.tree ? reconcileSelection(s.tree, active.navStack[i]) : active.navStack[i]
       if (resolved.kind === 'none') continue
-      captureOutgoingDetail()
-      // target must move in lockstep with navIndex — openTab's dedup keys off target, so a stale
-      // one would mis-dedup the very next click on the shown entity, destroying the Forward stack.
-      set({
-        tabs: get().tabs.map((t) =>
-          t.id === active.id ? { ...t, navIndex: i, target: resolved } : t,
-        ),
-        navSlide: {
-          tabId: active.id,
-          dir: delta < 0 ? 'back' : 'forward',
-          seq: (s.navSlide?.seq ?? 0) + 1,
-          source: 'history',
-        },
-      })
-      void get().select(resolved, { record: false })
-      persistTabs()
+      jumpActiveHistory(i)
       return
     }
   }
@@ -974,9 +989,6 @@ export const useSession = create<SessionState>((set, get) => {
       applyPersonalizationKey(key, value)
       void window.nexus.personalization.set(key, value)
     },
-    trail: {},
-    recordTrail: (containerId, entry) =>
-      set((s) => ({ trail: { ...s.trail, [containerId]: entry } })),
 
     linkTitles: {},
     resolveLinkTitle: (url) => {
@@ -1032,6 +1044,17 @@ export const useSession = create<SessionState>((set, get) => {
     tabMru: [],
     goBack: () => stepActiveHistory(-1),
     goForward: () => stepActiveHistory(1),
+    crumbDepth: null,
+    navigateCrumb: (target, dir) => {
+      // A normal navigation: openTab switches to a tab already showing the target, or replaces the
+      // current one. crumbDepth (kept current inside select) holds the deeper path across the move.
+      void get().select(target)
+      // select always slides 'forward'; a move up the path reads as 'back'.
+      if (dir === 'back') {
+        const ns = get().navSlide
+        if (ns) set({ navSlide: { ...ns, dir: 'back' } })
+      }
+    },
     navSlide: null,
     activateTab: (id) => {
       const s = get()
@@ -1314,6 +1337,12 @@ export const useSession = create<SessionState>((set, get) => {
     },
     select: async (target, opts) => {
       pageFetchSeq++
+      // The breadcrumb's deepest node follows every navigation — held while walking up its spine, so
+      // the tail stays dimmed; reset on a branch. Runs for record:false too (Back/Forward, breadcrumb).
+      {
+        const depth = crumbDepthFor(get().tree, get().crumbDepth, target)
+        if (depth !== get().crumbDepth) set({ crumbDepth: depth })
+      }
       if (get().pageFrozen) {
         const s = get()
         set(

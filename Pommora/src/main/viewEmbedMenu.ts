@@ -17,6 +17,7 @@ export function popEmbedTitleMenu(
 ): Promise<EmbedTitleMenuAction | null> {
   return popReturningMenu<EmbedTitleMenuAction>(win, (pick) => [
     { label: iconShown ? 'Hide Icon' : 'Show Icon', click: pick('toggle-icon') },
+    ...(iconShown ? [{ label: 'Change Icon', click: pick('change-icon') }] : []),
     {
       label: 'Title Size',
       submenu: TITLE_SIZES.map((n) => ({

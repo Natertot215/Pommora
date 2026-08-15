@@ -29,7 +29,7 @@ export function ColorPicker({
   selected: ChipColorName
   onPick: (color: string | undefined) => void
   onDismiss: () => void
-  triggerRef: RefObject<HTMLElement | null>
+  triggerRef: RefObject<Element | null>
 }): React.JSX.Element | null {
   return (
     <PickerMenu

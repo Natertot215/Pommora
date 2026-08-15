@@ -61,6 +61,7 @@ export function DisclosureRow({
   open,
   onToggle,
   onClick,
+  onContextMenu,
   selected = false,
   className,
   trailing,
@@ -74,6 +75,7 @@ export function DisclosureRow({
   onToggle: () => void
   /** Omitted leaves the row inert (MenuItem's contract) — no button role, no hover-click. */
   onClick?: () => void
+  onContextMenu?: (e: React.MouseEvent) => void
   selected?: boolean
   className?: string
   /** Right-edge accessory, passed through to the MenuItem slot. */
@@ -94,6 +96,7 @@ export function DisclosureRow({
       }
       trailing={trailing}
       onClick={onClick}
+      onContextMenu={onContextMenu}
     >
       {title}
     </MenuItem>

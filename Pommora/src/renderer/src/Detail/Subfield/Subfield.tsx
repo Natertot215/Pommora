@@ -1,9 +1,7 @@
-import { useEffect } from 'react'
-import { titleFromPath } from '@shared/connections'
 import type { SelectionState } from '@shared/types'
 import { text } from '@renderer/design-system/tokens'
 import { useSession } from '../../store'
-import { subfieldCrumbs, pageContainerId } from './crumbs'
+import { subfieldCrumbs } from './crumbs'
 import { SubfieldBreadcrumb } from './SubfieldBreadcrumb'
 import { DEFAULT_ITEMS, SubfieldItem, type SubfieldScope, isSubfieldItemId } from './subfieldItems'
 import './subfield.css'
@@ -11,30 +9,18 @@ import './subfield.css'
 export function Subfield({ scope }: { scope?: SubfieldScope }): React.JSX.Element {
   const selection = useSession((s) => s.selection)
   const tree = useSession((s) => s.tree)
-  const trail = useSession((s) => s.trail)
-  const select = useSession((s) => s.select)
-  const recordTrail = useSession((s) => s.recordTrail)
-  const pageDetail = useSession((s) => s.pageDetail)
-
-  // While viewing a page, remember it as its container's forward-trail (for the ghost crumb).
-  // A scoped (preview) Subfield is tab-neutral — it must not write the trail.
-  useEffect(() => {
-    if (scope || selection.kind !== 'page' || !tree) return
-    const containerId = pageContainerId(tree, selection.id)
-    if (!containerId) return
-    recordTrail(containerId, {
-      id: selection.id,
-      path: selection.path,
-      title: pageDetail?.title ?? titleFromPath(selection.path),
-    })
-  }, [scope, selection, tree, pageDetail, recordTrail])
+  const navigateCrumb = useSession((s) => s.navigateCrumb)
+  const crumbDepth = useSession((s) => s.crumbDepth)
 
   const order = useSession((s) => s.subfieldOrder)
   const crumbSelection: SelectionState = scope
     ? { kind: 'page', id: scope.target.id, path: scope.target.path }
     : selection
-  const rawCrumbs = subfieldCrumbs(tree, crumbSelection, trail, (t) => void select(t))
-  // The preview is tab-neutral — its crumbs describe location but don't navigate the main pane.
+  // The preview is tab-neutral — no dimmed tail, and its crumbs describe location without driving the
+  // main pane. Elsewhere the depth extends the path to the deepest node visited on it.
+  const rawCrumbs = subfieldCrumbs(tree, crumbSelection, scope ? null : crumbDepth, (t, dir) =>
+    navigateCrumb(t, dir),
+  )
   const crumbs = scope ? rawCrumbs.map((c) => ({ ...c, onClick: undefined })) : rawCrumbs
   const kind = crumbSelection.kind
   const items = (order[kind] ?? DEFAULT_ITEMS[kind] ?? []).filter(isSubfieldItemId)

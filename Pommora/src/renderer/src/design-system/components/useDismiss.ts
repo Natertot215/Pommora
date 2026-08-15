@@ -1,11 +1,14 @@
 import { useEffect, type RefObject } from 'react'
 
 /** Scope `ref` to include the trigger itself — otherwise a click that re-toggles it also reads
- *  as an outside click and double-fires the close. */
+ *  as an outside click and double-fires the close. Pass `outsideClick: false` for a host that
+ *  should persist through a click elsewhere (e.g. the outline, left open for live reference) —
+ *  Escape and the trigger's own toggle stay its only dismissals. */
 export function useDismiss(
   ref: RefObject<HTMLElement | null>,
   onClose: () => void,
   active: boolean,
+  outsideClick = true,
 ): void {
   useEffect(() => {
     if (!active) return
@@ -24,11 +27,11 @@ export function useDismiss(
       // stays put (Escape peels one popover at a time, never the pane out from under the picker in it).
       if (e.key === 'Escape' && !document.querySelector('[data-picker-portal]')) onClose()
     }
-    document.addEventListener('pointerdown', onDown, true)
+    if (outsideClick) document.addEventListener('pointerdown', onDown, true)
     document.addEventListener('keydown', onKey)
     return () => {
-      document.removeEventListener('pointerdown', onDown, true)
+      if (outsideClick) document.removeEventListener('pointerdown', onDown, true)
       document.removeEventListener('keydown', onKey)
     }
-  }, [ref, onClose, active])
+  }, [ref, onClose, active, outsideClick])
 }
