@@ -1,19 +1,24 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   DisclosureRow,
   MenuCaption,
   MenuDropdown,
   MenuScrollFrame,
   itemEmphasized,
+  titleInput,
   useDisclosureSet,
 } from '@renderer/design-system/components/menu'
+import { RenamableLabel } from '@renderer/Components/RenamableLabel'
 import { openPageBody, useSession } from '../store'
 import { viewSettingsScope } from '../Detail/ViewSettingsScope'
-import { revealPageOffset } from '../Detail/pageEditor'
+import { renameHeadingAtOffset, revealPageOffset } from '../Detail/pageEditor'
 import { headingOutline } from '../MarkdownPM/editor/folding'
 import { outlineTree, type OutlineNode } from './outlineTree'
+import { OutlineDnd, useOutlineDrag } from './OutlineDnd'
 import * as s from './toolbarDropdown.css'
 import * as o from './outlineDropdown.css'
+
+type Disclosure = ReturnType<typeof useDisclosureSet>
 
 // KNOB — the gap the pane keeps from the window's right edge at full width.
 const EDGE_INSET = 10
@@ -30,6 +35,7 @@ export function OutlineDropdown(): React.JSX.Element | null {
       icon="list-tree"
       title="Outline"
       edgeInset={EDGE_INSET}
+      dismissOnOutside={false}
       classNames={{ ...s.chrome, pane: o.pane }}
     >
       {() => <OutlinePane />}
@@ -43,34 +49,93 @@ function OutlinePane(): React.JSX.Element {
   const pageDetail = useSession((st) => st.pageDetail)
   const liveBody = useSession((st) => st.liveBody)
   const body = openPageBody(pageDetail, liveBody)
-  const tree = useMemo(() => outlineTree(headingOutline(body)), [body])
+  const flat = useMemo(() => headingOutline(body), [body])
+  const tree = useMemo(() => outlineTree(flat), [flat])
   // Headings disclose open — an outline's job is to show the shape, not to be unpacked first.
   const disclosure = useDisclosureSet(true)
+  // A right-clicked row swaps its title for an inline field; committing rewrites the heading in the
+  // live editor. Keyed by node.key, which the derivation re-mints on the new text, ending the edit.
+  const [renaming, setRenaming] = useState<string | null>(null)
 
   const rows = (nodes: OutlineNode[]): React.JSX.Element[] =>
-    nodes.map((node) => {
-      // A childless heading passes no children at all: an empty array still reads as content to
-      // DisclosureRow, which would hang an empty rail off a leaf.
-      const nested = node.children.length > 0
-      return (
-        <DisclosureRow
-          key={node.key}
-          title={node.text}
-          icon={null}
-          className={itemEmphasized}
-          twisty={nested ? 'chevron' : 'spacer'}
-          open={disclosure.has(node.key)}
-          onToggle={() => disclosure.toggle(node.key)}
-          onClick={() => revealPageOffset(node.from)}
-        >
-          {nested ? rows(node.children) : undefined}
-        </DisclosureRow>
-      )
-    })
+    nodes.map((node) => (
+      <OutlineRow
+        key={node.key}
+        node={node}
+        disclosure={disclosure}
+        renaming={renaming}
+        setRenaming={setRenaming}
+      >
+        {node.children.length > 0 ? rows(node.children) : undefined}
+      </OutlineRow>
+    ))
 
   return (
     <MenuScrollFrame>
-      {tree.length > 0 ? rows(tree) : <MenuCaption>No headings</MenuCaption>}
+      {tree.length > 0 ? (
+        <OutlineDnd flat={flat}>{rows(tree)}</OutlineDnd>
+      ) : (
+        <MenuCaption>No headings</MenuCaption>
+      )}
     </MenuScrollFrame>
+  )
+}
+
+/** One outline row: a jump-on-click / rename-on-right-click disclosure row that a press drags to
+ *  reorder its section. Its own component so the drag hook runs once per row, order-stable. */
+function OutlineRow({
+  node,
+  disclosure,
+  renaming,
+  setRenaming,
+  children,
+}: {
+  node: OutlineNode
+  disclosure: Disclosure
+  renaming: string | null
+  setRenaming: (key: string | null) => void
+  children?: React.ReactNode
+}): React.JSX.Element {
+  const drag = useOutlineDrag(node.key)
+  const nested = node.children.length > 0
+  const editing = renaming === node.key
+  return (
+    <DisclosureRow
+      title={
+        editing ? (
+          <RenamableLabel
+            renames="row"
+            editing
+            value={node.text}
+            className={titleInput}
+            autoSize
+            onCommit={(next) => {
+              setRenaming(null)
+              renameHeadingAtOffset(node.from, next)
+            }}
+            onCancel={() => setRenaming(null)}
+          />
+        ) : (
+          node.text
+        )
+      }
+      icon={null}
+      className={itemEmphasized}
+      twisty={nested ? 'chevron' : 'spacer'}
+      open={disclosure.has(node.key)}
+      onToggle={() => disclosure.toggle(node.key)}
+      onClick={editing ? undefined : () => revealPageOffset(node.from)}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        setRenaming(node.key)
+      }}
+      wrap={(row) => (
+        <div ref={drag.ref} {...drag.handle} className={drag.isDragging ? o.rowDragging : undefined}>
+          {row}
+        </div>
+      )}
+    >
+      {children}
+    </DisclosureRow>
   )
 }

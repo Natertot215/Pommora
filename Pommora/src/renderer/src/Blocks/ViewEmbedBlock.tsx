@@ -244,8 +244,11 @@ export function ViewEmbedBlock({
     y: number
   } | null>(null)
   // The right-clicked segment/row — captured at menu time so every follow-up picker
-  // (icon, color) drops from the chip itself, never the embed.
-  const menuAnchorRef = useRef<HTMLElement | null>(null)
+  // (icon, color) drops from the chip itself, never the embed. Element, not HTMLElement: the title
+  // row's anchor is the SVG icon glyph.
+  const menuAnchorRef = useRef<Element | null>(null)
+  // The title row's leading glyph — the Change Icon picker hangs off it, not the whole row.
+  const titleIconRef = useRef<SVGSVGElement>(null)
   const [exitingId, setExitingId] = useState<string | null>(null)
   const [enteringIds, setEnteringIds] = useState<Set<string>>(() => new Set())
   const prevIdsRef = useRef<Set<string> | null>(null)
@@ -396,7 +399,10 @@ export function ViewEmbedBlock({
     if (locked) return
     const action = await window.nexus.viewEmbedTitleMenu({ iconShown, level: titleLevel })
     if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : undefined })
-    else if (action === 'hide-title') patchEntry({ title: false })
+    else if (action === 'change-icon') {
+      menuAnchorRef.current = titleIconRef.current
+      setIconFor(index)
+    } else if (action === 'hide-title') patchEntry({ title: false })
     else if (action?.startsWith('size-')) {
       const n = Number(action.slice(5))
       patchEntry({ title_level: n === 4 ? undefined : n }) // default level stores absent
@@ -531,6 +537,7 @@ export function ViewEmbedBlock({
                 {/* size omitted → Icon defaults to 1em; the .md-hN class sets the em base, so the
                     icon scales with the title level in lockstep with the text. */}
                 <Icon
+                  ref={titleIconRef}
                   name={viewIcon(view)}
                   className={cx(
                     `md-h${titleLevel}`,

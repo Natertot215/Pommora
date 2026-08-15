@@ -11,11 +11,37 @@ const LIST_TYPES: [ListKind, string][] = [
   ['arrow', 'Arrowed'],
 ]
 
+// Paragraph plus H1–H5, matching the editor's Format › Heading menu (H6 exists but stays off the picker).
+const HEADING_SIZES: [number, string][] = [
+  [0, 'Paragraph'],
+  [1, 'Heading 1'],
+  [2, 'Heading 2'],
+  [3, 'Heading 3'],
+  [4, 'Heading 4'],
+  [5, 'Heading 5'],
+]
+
 export function popGripMenu(
   win: BrowserWindow,
   ctx: GripMenuContext,
 ): Promise<GripMenuAction | null> {
   return popReturningMenu<GripMenuAction>(win, (pick) => {
+    if (ctx.kind === 'heading')
+      return [
+        { label: 'Rename', click: pick({ action: 'rename' }) },
+        {
+          label: 'Size',
+          submenu: HEADING_SIZES.map(([level, label]) => ({
+            label,
+            type: 'radio' as const,
+            checked: ctx.level === level,
+            click: pick({ action: 'size', level }),
+          })),
+        },
+        { type: 'separator' as const },
+        { label: 'Delete', click: pick({ action: 'delete' }) },
+      ]
+
     const source = (n: PickNode): MenuItemConstructorOptions =>
       n.children
         ? { label: n.label, submenu: n.children.map(source) }

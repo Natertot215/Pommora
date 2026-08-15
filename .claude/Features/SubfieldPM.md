@@ -13,8 +13,8 @@ The bottom bar of every content view — a breadcrumb on the left, per-view item
 
 ### What It Shows
 
-- **Breadcrumb** — the ancestor chain for the open view. Collection and depth-1 Set segments navigate; deeper Sub-Sets are plain; the current segment is inert. A container view also shows the **ghost crumb** — the last page backed out of, rendered dimmed but still clickable to jump forward. The trail records the last-visited page per container while a page is open.
-- **Per-view items** — a registry keyed by view kind. **Pages** show `lines · words · characters` — lines counting raw source, words and characters counting Markdown-stripped prose — tracking the editor's live body, so the count settles just behind the keystroke. **Collections and Sets** show a **+** add-menu; **NavView** shows a **List / Gallery** toggle; a **Space** takes the bar with its crumb alone. **Homepage and Contexts show no Subfield** — the Homepage has nothing to surface, and a Context is a disclosure with no detail view. The footer shows for the empty state only with a nexus open.
+- **Breadcrumb** — the path for the open view, running from the Collection down to the current node. Collection and depth-1 Set segments navigate; deeper Sub-Sets are plain; the current segment is inert. Segments past the current one trace the path down to the **deepest node visited on it** — the segments last backed out of, rendered dimmed and still clickable to re-descend — navigating back up the path preserves the directory chain only while it continues the current path; a branch onto a different path ends it.
+- **Per-view items** — a registry keyed by view kind. **Pages** show `lines · words · characters` — lines counting raw source, words and characters counting Markdown-stripped prose — tracking the editor's live body, so the count settles just behind the keystroke. **Collections and Sets** show a **+** add-menu; **NavView** shows a **List / Gallery** toggle; a **Space** takes the bar with its crumb alone. 
 
 ### Scoped Mounts
 

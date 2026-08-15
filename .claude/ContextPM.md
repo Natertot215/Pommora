@@ -6,6 +6,7 @@
 
 ### Immediate Work
 
+- [ ] None yet
 
 ### Pending Focuses
 
@@ -16,22 +17,17 @@
 - [ ] **A journal behind the property cascades.** A property rename commits the registry then sweeps the new key across every page, and a delete scrubs values off every page; neither records that the sweep is owed, so a crash partway leaves the registry saying one thing and half the pages another. The rename's outcome is recoverable — the values go invisible and renaming back returns them — where the delete's is not, which is the half that earns the work. The Context rename's journal and its open-time replay are the pattern to reuse, and the one decision to make first is whether that single-record journal becomes a list or the cascades get their own: nothing today stops a Context rename and a schema write being in flight at once, so folding both into one record invents a collision that doesn't exist.
 - [ ] **`mutate.ts` organization.** Every change funnels through one dispatcher in the file-owning process, which is deliberate: one entry point means one place for safety policy. Early operations used tidy crud// modules, where later ones were written inline, and each arm moves when its file is next touched.
 
-#### II. The Identity Arc
-
-- [ ] **The seed slot's second writer.** Seeding runs only at nexus creation and rejects a folder name that already exists on disk, which correctly protects a user's own Tasks/notes. Filling that slot afterward requires adding a second writer to the registration record, plus a product call on whether to adopt the user's folder or disambiguate. Belongs to the Agenda work.
-- [ ] **The NexusRecord's three rulings.** The plan's Log holds three judgment calls made without Nathan, each carrying its reasoning: when an ambiguous mark is spent, how the drop-evidence rule approximates a gone path more widely than the spec's letter, and the birth-time duplicate pick that filesystems without birth time can't honor. None blocks anything; each wants a read and a ruling.
-
 #### II. Next-Feature Candidates
 
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **A custom alias glyph.** The alias picker borrows `square-split-horizontal` from Lucide; an alias deserves a drawn symbol of its own in `design-system/symbols/customGlyphs`.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Subfield reorder.** The store action and persistence are fully built (`setSubfieldOrder` has zero callers) — the entire feature is a missing drag UI, a three-item horizontal `SortableZone` in the Ribbon's shape. 
-- [ ] **Pinning by drag.** Both places a thing gets pinned are context-menu-only: the tab strip and its pinned zone are two independent SortableZones, and Recents → pins is a commented refusal in `NavList` (`canReassign={false}`). The board engine's cross-zone shape serves both — a flag on the nav side, and on the tab side one commit decision, since pins key on `res.key` and tabs on `tab.id`.
-- [ ] **Outline section drag.** The Outline dropdown is click-to-reveal only while the editor already drags whole sections by heading grip — dragging a heading *in the outline* to move its section is a write-coupling design call on ready mechanisms.
 
-#### II. Open Questions
+#### II. The Identity Arc
 
+- [ ] **The seed slot's second writer.** Seeding runs only at nexus creation and rejects a folder name that already exists on disk, which correctly protects a user's own Tasks/notes. Filling that slot afterward requires adding a second writer to the registration record, plus a product call on whether to adopt the user's folder or disambiguate. Belongs to the Agenda work.
+- [ ] **The NexusRecord's three rulings.** The plan's Log holds three judgment calls made without Nathan, each carrying its reasoning: when an ambiguous mark is spent, how the drop-evidence rule approximates a gone path more widely than the spec's letter, and the birth-time duplicate pick that filesystems without birth time can't honor. None blocks anything; each wants a read and a ruling.
 
 ### Important Information
 
@@ -46,14 +42,10 @@
 
 #### II. Debt & Ride-Alongs
 
-- [ ] The gesture spec wants an `onTap(e)` fired on a release-before-activation — the additive piece that unblocks migrating MarkdownPM's `listDrag`/`blockDrag` and the CalendarPicker's range drag; it lands with the migration that consumes it.
 - [ ] Two more spec folds the drag work exposed, each a four-site bracket today: an `onDisclose` hook owning the `beginDragDisclose`/`endDragDisclose` pair the way `onWindowScroll` owns its listener, and an autoscroll resolve-and-start helper that skips cleanly when no scroller resolves.
-- [ ] A mid-drag column hide/show or watcher view-push is silently reverted by a column drop's persist (`reorderColumn` reads grab-time state) — reachable only by mutating columns while holding a drag; a ref-read at commit fixes it if it's ever felt.
 - [ ] `feel.tsx`'s animation context is not provided anywhere outside the showcase, so both engines always read the default, while SurfacePM delivers the same value as a prop — wrap the shell in a provider or delete the context; a product call.
 - [ ] NOR filters are hand-authored only — the mode lives on disk and in the evaluator while the pane offers All and Any.
-- [ ] The flattened-mode bundle is half-built: `flat` grouping and Hide Location are live for Cards only. The pipeline is view-type-agnostic, so what remains is the table half plus a separate Flatten control.
 - [ ] Perf debt: no row virtualization, and an external value edit doesn't live-refresh an open table.
-- [ ] Two prospects from the property-syntax arc: an inline field-error surface, and what a duplicate property name should do.
 - [ ] `SessionState.error` and `pageError` hold strings while the wire carries `PommoraError` whole — widening them is near-zero churn.
 - [ ] `pageEditor` and `ConnectionHoverCard` reach the editor by CSS selector; the registered-handle pattern that replaces it is already established in `sidebarDnd`, `paneDnd`, and `useOptionReorder`.
 - [ ] `revealPageOffset` sleeps on a duration to wait out a fold animation while `folding.ts` owns the real completion signal.
@@ -68,9 +60,7 @@
 - [ ] The "File" property icon gets clipped by its vertical row padding on the PropertiesPane.
 - [ ] The link-rename field shows a leading empty space — the shared field recipe's horizontal padding surviving the TextPicker input override, with the pane gutter adding to it. A visual inset rather than a stored character (deprioritized).
 - [ ] How MarkdownPMs headings are given their top-bottom padding is still unclear; what's standard paragraph → heading spacing on Obsidian collapses on Pommora where the block above the heading doesn't seem to have any additional padding, or it's at least extremely minimal compared to the padding that headings have below them. 
-- [ ] The PageOutline's list-indent is noticeably different from other disclosure spacings (Sidebar, GroupPane, Tables), and likely needs a second pass to confirm whether it was actually consolidated around the shared primitive; reconcile with the heading-drag idea from the pane itself when this is focused on.
 - [ ] The CardView banner-type toggle should likely be within the SettingPane rather than the LayoutPane; it makes more sense to group the two toggles together, though non-blocking.
-- [ ] There's no right-click 'Add/Change Icon' option for SurfacePM embedded views' inline titles.
 
 ### Recent Work
 

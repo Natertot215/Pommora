@@ -17,6 +17,7 @@ export function MenuDropdown({
   label,
   labelCollapsed = true,
   edgeInset,
+  dismissOnOutside = true,
   classNames,
   onContextMenu,
   children,
@@ -25,6 +26,9 @@ export function MenuDropdown({
   title: string
   label?: string
   labelCollapsed?: boolean
+  /** A click outside closes the pane by default. Set false to keep it open until Escape or a second
+   *  press of the trigger — for a pane meant to stay up while you work elsewhere. */
+  dismissOnOutside?: boolean
   /** Bounds the pane's growth so its right edge keeps this gap from the window, published to the
    *  anchor as `--menu-dropdown-max` for the pane's own `max-width`. Omit where content sizes itself. */
   edgeInset?: number
@@ -43,7 +47,7 @@ export function MenuDropdown({
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
-  useDismiss(wrapRef, () => setOpen(false), open)
+  useDismiss(wrapRef, () => setOpen(false), open, dismissOnOutside)
   const pane = useExitPresence(open)
 
   // The pane is centred on the button, so the room to that button's right counts twice. Measured from

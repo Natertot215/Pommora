@@ -9,7 +9,8 @@ import { EditorView } from '@codemirror/view'
 import type { CollectionNode, NexusTree, SetNode } from '@shared/types'
 import type { GripMenuContext, PickNode } from '@shared/gripMenu'
 import { useSession } from '../../store'
-import { listKindOf, setListKind } from '../input/format'
+import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../input/format'
+import { headingParts } from '../detect'
 import { type Block, blockAt } from './blockModel'
 import { docString } from './docCache'
 import { embeddable } from './embedRanges'
@@ -20,12 +21,24 @@ import { embedExclusions } from './embedWidget'
 export const GRIP_MENU_LINES = ['md-block-handle', 'md-callout-first', 'md-bq-first']
 const GRIP_SELECTOR = GRIP_MENU_LINES.map((c) => `.cm-line.${c}`).join(', ')
 
-/** The grip-bearing line a press landed on, or null anywhere else — the gutter strip only, so a press
- *  on the line's own text is never a grip press. */
-function gripLineAt(e: MouseEvent): HTMLElement | null {
-  const line = (e.target as HTMLElement).closest?.(GRIP_SELECTOR) as HTMLElement | null
+/** A foldable heading carries its own gutter menu on its chevron. */
+const HEADING_LINE = 'md-foldable'
+
+/** Every gutter line whose right-press pops a custom menu — grips plus the heading chevron. The host's
+ *  hot flag reads this so the generic editor menu stands down over exactly the lines the two hit-tests
+ *  below claim, never one more or fewer. */
+export const HOT_MENU_LINES = [...GRIP_MENU_LINES, HEADING_LINE]
+
+/** The gutter-strip line a right-press landed on for a given class, or null on the line's own text — a
+ *  press past the content column's left edge is never a gutter press. */
+function gutterLineAt(e: MouseEvent, selector: string): HTMLElement | null {
+  const line = (e.target as HTMLElement).closest?.(selector) as HTMLElement | null
   return line && e.clientX < line.getBoundingClientRect().left ? line : null
 }
+
+const gripLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, GRIP_SELECTOR)
+const headingLineAt = (e: MouseEvent): HTMLElement | null =>
+  gutterLineAt(e, `.cm-line.${HEADING_LINE}`)
 
 /** The Collections → Sets → Pages pick tree, minus everything `embeddable` rules out; a container with
  *  nothing pickable beneath it drops out entirely. */
@@ -71,17 +84,59 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
   }
 }
 
+/** Rename / Size / Delete for the heading whose chevron was pressed. Delete drops the heading LINE
+ *  only (its body survives), unlike a grip's whole-block Delete. */
+function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
+  const doc = docString(view.state.doc)
+  const line = view.state.doc.lineAt(view.posAtDOM(headingEl))
+  const parts = headingParts(line.text)
+  if (!parts) return
+  const contentStart = line.from + parts.indent.length + parts.hashes.length + parts.space.length
+  void window.nexus?.gripMenu?.({ kind: 'heading', level: parts.hashes.length }).then((action) => {
+    switch (action?.action) {
+      case 'rename':
+        // Select the heading's text so a keystroke replaces it — the editor's own inline rename.
+        view.dispatch({ selection: { anchor: contentStart, head: line.to } })
+        view.focus()
+        break
+      case 'size': {
+        const edit = setHeading(doc, line.from, action.level as HeadingLevel)
+        view.dispatch({
+          changes: edit.changes,
+          selection: edit.selection !== undefined ? { anchor: edit.selection } : undefined,
+          userEvent: 'input',
+        })
+        view.focus()
+        break
+      }
+      case 'delete': {
+        // The heading LINE alone — its body stays, folding up under the previous heading.
+        const span = blockDeleteSpan(doc, { from: line.from, to: line.to })
+        view.dispatch({ changes: { from: span.from, to: span.to, insert: '' }, userEvent: 'delete' })
+        window.nexus?.setGripHot?.(false) // the chevron is gone and no mousemove fires under a modal
+        break
+      }
+    }
+  })
+}
+
 export const gripMenu = EditorView.domEventHandlers({
   // A grip acts on its block, never on the caret. The drag gestures already suppress the browser's
   // caret placement on a left-press; a right-press needs the same, since preventing the contextmenu
   // that follows comes far too late to stop the seat.
   mousedown(e) {
-    if (e.button !== 2 || !gripLineAt(e)) return false
+    if (e.button !== 2 || (!gripLineAt(e) && !headingLineAt(e))) return false
     e.preventDefault()
     return true
   },
   contextmenu(e, view) {
     if (view.state.readOnly) return false // a resting tile's inner grips offer nothing actionable
+    const headingEl = headingLineAt(e)
+    if (headingEl) {
+      e.preventDefault()
+      popHeadingMenu(view, headingEl)
+      return true
+    }
     const line = gripLineAt(e)
     if (!line) return false
     const doc = docString(view.state.doc)

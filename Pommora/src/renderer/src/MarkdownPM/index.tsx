@@ -14,7 +14,7 @@ import {
   blockquoteDragExtension,
   calloutDragExtension,
 } from './editor/blockDrag'
-import { GRIP_MENU_LINES, gripMenu } from './editor/gripMenu'
+import { HOT_MENU_LINES, gripMenu } from './editor/gripMenu'
 import {
   type EmbedHeightsApi,
   embedExclusions,
@@ -227,10 +227,10 @@ export function MarkdownEditor({
       // Block-drag rail handles: a hover grip on each draggable block's first line (paragraph/code/quote/list).
       blockHandles,
       // Reveal each grip only while the pointer is in its gutter strip (not over the line's text); the hot-line
-      // callback flags any grip hover to main so the generic editor menu stands down there.
+      // callback flags any grip or heading-chevron hover to main so the generic editor menu stands down there.
       blockGripHover((line) =>
         window.nexus?.setGripHot?.(
-          !!line && GRIP_MENU_LINES.some((c) => line.classList.contains(c)),
+          !!line && HOT_MENU_LINES.some((c) => line.classList.contains(c)),
         ),
       ),
       // Press a block grip → drag the whole block → drop it at the nearest block boundary.
