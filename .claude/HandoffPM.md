@@ -10,7 +10,7 @@
 
 **Interaction polish, then the outline earned its drag.** The session opened on a batch of small interaction asks and closed with the Page Outline becoming a real working surface. The Subfield breadcrumb was the largest piece: it collapsed the moment you backed up a path, and it now keeps the deeper segments dimmed and re-navigable. The first attempt keyed the tail off the tab's forward `navStack` — wrong, because walking *up* a breadcrumb never puts the deeper nodes ahead in history — so it was rebuilt around `crumbDepth`, the deepest node visited on the current path, held while walking its own spine and reset on a branch. A breadcrumb click was then made to switch to a tab already showing its target while still holding the tail. The smaller asks landed alongside: ViewEmbed's title row gained **Change Icon** anchored to the glyph, and MarkdownPM's Insert and Format submenus reordered by inserted-character count.
 
-**Then the outline.** It closes only on Escape or a re-press now (so it survives a click into the page), its rail centres on the chevron at the shared disclosure step, a right-click renames a heading inline, and a heading row drags to reorder its whole section — reusing the editor's `blockMoveChanges`, with the range trimmed to the last non-blank line so the single-blank fencing never compounds on repeated reorders. The editor's fold chevron gained its own menu (Rename / Size / Delete-line-only) on the one shared hot-line list the grip menu already reads. Closed out with a simplification pass (the tripled section-span walk consolidated into `folding.sectionEnd`) and an adversarial review.
+**Then the outline.** It closes only on Escape or a re-press now (so it survives a click into the page), its rail centres on the chevron at the shared disclosure step, a right-click renames a heading inline, and a heading row drags to reorder its whole section — reusing the editor's `blockMoveChanges`, with the range trimmed to the last non-blank line so the single-blank fencing never compounds on repeated reorders. The editor's fold chevron gained its own menu (Rename / Size / Delete-line-only) on the one shared hot-line list the grip menu already reads. Closed out with a simplification pass (the tripled section-span walk consolidated into `folding.sectionEnd`) and an adversarial review. A follow-on ride-along folded a standing drag debt: the collapsed-group spring-open bracket that four DnD surfaces hand-wrote — begin at press, end in teardown, split apart — now belongs to the gesture skeleton as an `onDisclose` hook, the way `onWindowScroll` already is (behavior-identical, correctness-reviewed, −18 lines).
 
 **What is verified:** every gate green on the final state — typecheck 0, lint 0, 2618 tests across 229 files. The breadcrumb and the outline drag were driven live by Nathan and confirmed. The build-breaking review surfaced one real Medium — the global `crumbDepth` leaking a wrong tail across tabs — which was fixed by resetting it in `syncActiveDetail` (the tab-focus choke point), not the navigation path. **What is assumed:** the heading chevron menu (Rename / Size / Delete) is unrun — it touches the main process, so it needs a dev restart, and no automation clicks a native menu.
 
@@ -23,13 +23,13 @@
 - [x] **Outline closes on Esc/re-press only, rail on the chevron, inline rename, drag-to-reorder sections** — fenced to one blank, no compounding.
 - [x] **Editor fold-chevron menu — Rename / Size / Delete (heading line only)** — on the shared hot-line list, generic menu stands down over the chevron.
 - [x] **Gates green; the review's one finding fixed and re-verified; section-walk consolidated.**
+- [x] **Drag-disclose bracket folded onto the gesture skeleton** (`onDisclose`) — four surfaces stop hand-wiring begin/end; behavior-identical, correctness-review verified.
 
 #### Next Session
 
 - **The Page Outline dropdown has no feature doc.** Its close behaviour, inline rename, and section drag now warrant one — MarkdownPM covers only the editor-side chevron menu.
 - **Per-tab `crumbDepth`, if cross-tab tail memory is ever wanted.** It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
 - **The editor's own heading grip-drag likely compounds a trailing blank** the same way the outline did before the range-trim — only the outline path was fixed. `blockMoveChanges` passes a heading section range that includes the trailing blank.
-- **ContextPM §Debt line on the drag spec-folds** is stale by one: `OutlineDnd` added a fifth `startAutoScroll` site.
 
 #### Feedback
 
@@ -46,6 +46,7 @@
 - `Pommora/src/renderer/src/Toolbar/OutlineDnd.tsx` — the trimmed drag engine (snapshot, autoscroll, DropLine); `pageEditor.moveHeadingSection` is the document mutation it commits.
 - `Pommora/src/renderer/src/MarkdownPM/editor/gripMenu.ts` + `src/main/gripMenu.ts` — the chevron menu rides the grip-menu IPC; `HOT_MENU_LINES` is the one list the hit-tests and the hover flag share.
 - `Pommora/src/renderer/src/MarkdownPM/editor/folding.ts` — `sectionEnd` is the single section-span walk (was tripled across the outline and the mover).
+- `Pommora/src/renderer/src/design-system/interactions/gesture.ts` — the gesture skeleton owns `onDisclose` (the drag-disclose bracket) beside `onWindowScroll`; `group.tsx` is the one hand-rolled engine that stays manual.
 
 #### Working Notes
 

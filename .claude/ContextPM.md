@@ -3,7 +3,6 @@
 ### Current Focus
 
 **Verifying the trash browser.** The deletion record's reading half shipped (→ PM-100): the Settings rail's Trash leaf lists what `.trash` holds and puts any of it back, including into a home the user picks when the recorded one is gone. It is proven end to end against a real nexus and read off a screenshot; what it has not had is a week of ordinary use.
-
 ### Immediate Work
 
 - [ ] None yet
@@ -15,12 +14,13 @@
 - [ ] **The store split.** Renderer state — active tab, selection, pins, the open preview, the page being edited — composes into domain slice files that build the same single store. The shared room is what lets features react to each other and what killed a whole class of two-copies bugs, so the shape stays and only the file boundary moves. Best taken immediately before the next store-heavy feature rather than as its own ceremony.
 - [ ] **The re-walk — acknowledged and queued, to be taken once the Fable 5 limit resets.** Every change the tree can see re-reads the nexus from disk, with `stabilize` keeping unchanged parts identical, which is correctness by brute force and fast enough at current sizes. It is also the future ceiling — at several thousand pages, every mutation paying a full re-read becomes the felt lag. Two costs ride the same absence: the rename cascade opens and parses every markdown file in the tree to find what links the old title, and the write-side sweeps state their own skip rule rather than the walk's, so a folder excluded from Pommora is still read on every rename and still rewritten if it holds real pages.
 - [ ] **A journal behind the property cascades.** A property rename commits the registry then sweeps the new key across every page, and a delete scrubs values off every page; neither records that the sweep is owed, so a crash partway leaves the registry saying one thing and half the pages another. The rename's outcome is recoverable — the values go invisible and renaming back returns them — where the delete's is not, which is the half that earns the work. The Context rename's journal and its open-time replay are the pattern to reuse, and the one decision to make first is whether that single-record journal becomes a list or the cascades get their own: nothing today stops a Context rename and a schema write being in flight at once, so folding both into one record invents a collision that doesn't exist.
-- [ ] **`mutate.ts` organization.** Every change funnels through one dispatcher in the file-owning process, which is deliberate: one entry point means one place for safety policy. Early operations used tidy crud// modules, where later ones were written inline, and each arm moves when its file is next touched.
+- [ ] **`mutate.ts` organization.** Every change funnels through a single dispatcher in the file-owning process, which is deliberate: a single entry point means a single place for safety policy. Early operations used tidy crud// modules, where later ones were written inline, and each arm moves when its file is next touched.
 
 #### II. Next-Feature Candidates
 
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the recently added ActionBand would be its natural placement for SurfacePM embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **A custom alias glyph.** The alias picker borrows `square-split-horizontal` from Lucide; an alias deserves a drawn symbol of its own in `design-system/symbols/customGlyphs`.
+- [ ] **MarkdownPM Links:** First, being able to link to a specific heading within a page across the nexus, with auto-complete for in-page headings and a 'Copy Link' menu option on the drag-chevron. Second, paste-aware auto-link syntax for URLs pasted into the editor, with an optional auto-title fetch feature based on its to-be-determined complexity. Full-on MarkdownPM block linking is a near-term consideration. 
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
 - [ ] **Subfield reorder.** The store action and persistence are fully built (`setSubfieldOrder` has zero callers) — the entire feature is a missing drag UI, a three-item horizontal `SortableZone` in the Ribbon's shape. 
 
@@ -42,7 +42,6 @@
 
 #### II. Debt & Ride-Alongs
 
-- [ ] Two more spec folds the drag work exposed, each a four-site bracket today: an `onDisclose` hook owning the `beginDragDisclose`/`endDragDisclose` pair the way `onWindowScroll` owns its listener, and an autoscroll resolve-and-start helper that skips cleanly when no scroller resolves.
 - [ ] `feel.tsx`'s animation context is not provided anywhere outside the showcase, so both engines always read the default, while SurfacePM delivers the same value as a prop — wrap the shell in a provider or delete the context; a product call.
 - [ ] NOR filters are hand-authored only — the mode lives on disk and in the evaluator while the pane offers All and Any.
 - [ ] Perf debt: no row virtualization, and an external value edit doesn't live-refresh an open table.

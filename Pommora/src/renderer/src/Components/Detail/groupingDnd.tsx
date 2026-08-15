@@ -7,10 +7,6 @@ import { useDragSnapshot } from '@renderer/design-system/interactions/snapshot'
 import { GHOST_OFFSET } from '@renderer/design-system/interactions/shared'
 import { announce } from '@renderer/design-system/interactions/a11y'
 import { findScroller, startAutoScroll } from '@renderer/design-system/interactions/autoscroll'
-import {
-  beginDragDisclose,
-  endDragDisclose,
-} from '@renderer/design-system/interactions/dragDisclose'
 import type { Band, BandIndex, BandSlot } from '../../Detail/Views/bandDndModel'
 import { bandSlot, buildBandIndex, canNest } from '../../Detail/Views/bandDndModel'
 
@@ -116,7 +112,7 @@ export function useGroupingListDrag({
           setLine(slot && !slot.nestInto ? { y: slot.lineY - s.boxTop } : null)
           setNestTarget(slot?.nestInto ?? null)
         }
-        const started = beginGesture({
+        beginGesture({
           el: anchor,
           event: e,
           capture: false,
@@ -168,19 +164,17 @@ export function useGroupingListDrag({
           },
           onAbort: reset,
           teardown: () => {
-            endDragDisclose()
             stopScroll.current?.()
             stopScroll.current = null
           },
-        })
-        if (started) {
-          beginDragDisclose(() => {
+          // A dwelling drag springs a collapsed group open; its rows shift, so re-aim the drop
+          // geometry against them, staying dirty through the reveal animation.
+          onDisclose: () => {
             snap.markDirty()
             resolveAt(lastPoint.current.y)
-            // The reveal is still animating — stay dirty so the drop re-measures at its own moment.
             snap.markDirty()
-          })
-        }
+          },
+        })
       },
     }),
     draggingId,
