@@ -27,8 +27,7 @@
 
 #### Next Session
 
-- **The Page Outline dropdown has no feature doc.** Its close behaviour, inline rename, and section drag now warrant one — MarkdownPM covers only the editor-side chevron menu.
-- **Per-tab `crumbDepth`, if cross-tab tail memory is ever wanted.** It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
+- **The Page Outline dropdown has no feature doc.** Its close behavior, inline rename, and section drag now warrant one — MarkdownPM covers only the editor-side chevron menu. Wait for Nathan's call.
 - **The editor's own heading grip-drag likely compounds a trailing blank** the same way the outline did before the range-trim — only the outline path was fixed. `blockMoveChanges` passes a heading section range that includes the trailing blank.
 
 #### Feedback
