@@ -53,15 +53,6 @@ export function URLEditor({
         </span>
       </div>
       <div className={s.configRow}>
-        <span className={s.configLabel}>Format</span>
-        <PickerControl
-          ariaLabel="Link format"
-          value={display}
-          options={LINK_FORMAT_OPTIONS}
-          onPick={(v) => onSetConfig({ link_display: v })}
-        />
-      </div>
-      <div className={s.configRow}>
         <span className={s.configLabel}>Color</span>
         <span className={s.colorCluster}>
           <button
@@ -83,6 +74,15 @@ export function URLEditor({
             triggerRef={chipRef}
           />
         </span>
+      </div>
+      <div className={s.configRow}>
+        <span className={s.configLabel}>Format</span>
+        <PickerControl
+          ariaLabel="Link format"
+          value={display}
+          options={LINK_FORMAT_OPTIONS}
+          onPick={(v) => onSetConfig({ link_display: v })}
+        />
       </div>
     </div>
   )
