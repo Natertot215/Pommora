@@ -7,6 +7,7 @@
 ### Immediate Work
 
 - [ ] Rework the `PickerMenu` for double-chevron consumers to an edited version of the autocomplete's existing surface; the new component replaces it with a Popout menu that inherits the PickerMenu glass and surface but removes the notch in favor of the autocomplete's native-like, faster-revealing motion and rectangular shape. Additionally, PickerMenu's styling and functionality being closer to native OS menus opens the door for a "Use Native Menus" configuration option in settings. 
+- [ ] **One row shape for every menu model.** `{ label, action, separatorBefore? }` is hand-restated in seven shared modules, because the type it should be — `ActionItem<A>` — lives in `main/returningMenu.ts` where `src/shared` can't reach it; it is Electron-free and belongs in `shared/pageMenu.ts` with main importing it back. The same move settles a second vocabulary: `separatorBefore` and the property menu's `destructive` both mean "a divider goes above this row", each with its own expander in main, and one word should say it. Rides the picker work, which has those files open anyway.
 
 ### Pending Focuses
 
@@ -30,10 +31,8 @@
 - **A whole-surface drag handle steals its own children's clicks.** The drag engine captures the pointer on pointerdown, so any interactive descendant has to stop pointerdown — a container only on its own empty space, so the title still drags.
 - **A caret that doesn't appear belongs to `nativeCaret.ts`, never to the field.** The browser's own caret is hidden app-wide, and the drawn replacement is positioned by JS, so a working I-beam cursor beside a missing caret points at the overlay rather than at focus.
 - **A lock key is a fact, and two spellings of one file are two locks.** Any file more than one surface rewrites whole needs its key built in the path module rather than assembled per call site, the read has to sit inside the lock beside the write, and a relocate holds the lock of the path it is leaving.
-- **CodeMirror asks a block widget how tall to assume it is, on every edit inside its range.** Answering "unknown" means one line, so the document's height lies until the next measure — the cause of a block widget's surface jerking the scroll while it is typed in. It hands `the node to destroy(dom), so per-node resources can be released, and calls it only when the node is truly dropped; a widget replaced over a reused DOM is never destroyed.
-- **A parse given a fragment answers about the fragment.** The editor tokenizes a slice, so anything whose meaning depends on the lines above it — fence parity, list indentation — comes out wrong unless the slice opens somewhere unambiguous.
+- **Every menu opens on what reaches a thing and ends on what destroys it**, with the destructive row behind a separator; what sits between is that menu's own call.
 - **A renderer `preventDefault` cannot suppress main's `context-menu` event.** Any editable target pops main's own editor menu regardless, so a surface that wants its own menu there has to be the only claimant — which is why the table widget reports non-editable and why two menus over one field is the recurring symptom.
-- **A table cell settles when its editor demotes, and a resting cell has no editor to demote.** Anything that writes to a cell without entering it must settle the table itself, or the edit lands in the document and the widget keeps drawing what was there before.
 - **Two rules any future in-app window must respect**, both learned on PreviewPane: openness drivers stay declared per-window, and a FLIP measures from the surface root via a real ref rather than by walking `parentElement`.
 
 #### II. Debt & Ride-Alongs
@@ -47,7 +46,6 @@
 - [ ] The `Creator` shape is stated three times — the named type in `shared/mutate.ts`, and inline in `shared/bridge.ts` and `store.ts`.
 - [ ] `useDismiss` coordinates with picker portals via per-event DOM queries; a shared open-picker counter removes the handshake.
 - [ ] The preview window's two halves share a path-keyed detail cache but neither dedupes an in-flight fetch, so navigating with the inspector already open still calls `openPage` twice.
-- [ ] `ActionItem<A>` is defined in `main/returningMenu.ts` while three shared menu models re-type its shape by hand; it is Electron-free and belongs in `shared/pageMenu.ts`, which `src/shared` can import and `src/main` can read back.
 - [ ] View format, grouping, and banner saves still trigger a full vault walk, as does `submitPropertyRename`; both want an optimistic targeted patch.
 
 ### Known Issues
