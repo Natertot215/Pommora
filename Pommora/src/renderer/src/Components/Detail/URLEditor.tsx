@@ -6,15 +6,9 @@ import { Switch } from '@renderer/design-system/components/Switches/Switch'
 import type { LinkConfig, LinkDisplay } from '@shared/properties'
 import { Chip } from '../Chip'
 import { ColorPicker } from './ColorPicker'
-import { PickerControl, type PickerChoice } from './PickerControl'
+import { PickerControl } from './PickerControl'
+import { LINK_FORMAT_OPTIONS } from './LinkFormat'
 import * as s from './settingsPane.css'
-
-/** Default first, so `labelOf`'s fallback reads as the default for a value it doesn't recognize. */
-const DISPLAY_OPTIONS: PickerChoice<LinkDisplay>[] = [
-  { value: 'link-full', label: 'Full Link' },
-  { value: 'link-short', label: 'Short Link' },
-  { value: 'link-title', label: 'Page Title' },
-]
 
 /** Shared with the URL cell's own render via solidColorCss, so the two stay in sync. */
 function resolveLinkColor(color: string | undefined): {
@@ -63,7 +57,7 @@ export function URLEditor({
         <PickerControl
           ariaLabel="Link format"
           value={display}
-          options={DISPLAY_OPTIONS}
+          options={LINK_FORMAT_OPTIONS}
           onPick={(v) => onSetConfig({ link_display: v })}
         />
       </div>

@@ -1,0 +1,44 @@
+import { EditorView } from '@codemirror/view'
+import { decidePaste, pastedUrl } from '@shared/PasteLink'
+import { useSession } from '../../store'
+
+// Turns a pasted address into a markdown link, in the form the nexus is set to. Mounted in BOTH
+// editors: the page body and a table cell each build their own EditorView, and a URL pasted into a
+// cell has the same problem as one pasted into the body.
+//
+// The settings are read here rather than closed over, because the extension array is built once at
+// mount — a captured value would freeze at whatever the knobs said then.
+export const pasteLink = EditorView.domEventHandlers({
+  paste(event, view) {
+    // Null on CodeMirror's brokenClipboardAPI path, and in jsdom, which has no DataTransfer.
+    const text = event.clipboardData?.getData('text/plain')
+    if (!text) return false
+    // The read-only change filter drops a doc-changing transaction without a trace, so decline
+    // before dispatching into it rather than after.
+    if (view.state.readOnly) return false
+    // One caret, one link. A multi-range paste is CodeMirror's own business.
+    if (view.state.selection.ranges.length !== 1) return false
+
+    const { personalization, linkTitles } = useSession.getState()
+    const url = pastedUrl(text)
+    const sel = view.state.selection.main
+    const decision = decidePaste({
+      clipboard: text,
+      selectionText: view.state.sliceDoc(sel.from, sel.to),
+      autoFormat: personalization.autoFormatPastedLinks === true,
+      pasteIntoText: personalization.pasteLinkIntoText === true,
+      inverse: false,
+      format: personalization.defaultLinkFormat ?? 'link-full',
+      title: url ? linkTitles[url] : undefined,
+    })
+    if (decision.kind === 'literal') return false
+
+    event.preventDefault()
+    view.dispatch({
+      changes: { from: sel.from, to: sel.to, insert: decision.text },
+      selection: { anchor: sel.from + decision.text.length },
+      userEvent: 'input.paste',
+    })
+    return true
+  },
+})

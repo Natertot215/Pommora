@@ -5,6 +5,10 @@ import { text } from '@renderer/design-system/tokens'
 import { Switch } from '@renderer/design-system/components/Switches/Switch'
 import { Slider } from '@renderer/design-system/components/Slider/Slider'
 import { PreviewPane } from '@renderer/design-system/components/PreviewPane/PreviewPane'
+import { Reveal } from '@renderer/design-system/components/Reveal'
+import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
+import { LINK_FORMAT_OPTIONS } from '@renderer/Components/Detail/LinkFormat'
+import type { LinkDisplay } from '@shared/properties'
 import { HOVER_LINGER_MAX, type Personalization } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
@@ -42,6 +46,19 @@ type KeyOf<V> = {
 interface RowText {
   label: string
   hint: string
+  /** Disclosed only while this boolean key is on. Every gating key so far is default-off, so the
+   *  stored value is the whole answer; a default-on gate would have to say so. */
+  when?: KeyOf<boolean>
+}
+
+/** A picker row, parameterized by the vocabulary it writes — a second one naming a different enum
+ *  joins the union rather than widening this. */
+type PickerRow<T extends string> = RowText & {
+  kind: 'picker'
+  key: KeyOf<T>
+  options: PickerChoice<T>[]
+  /** The value the picker shows when the key is absent, and the one that writes no key back. */
+  fallback: T
 }
 
 /** A row in a leaf's section: the words, and the control that writes one key. */
@@ -58,6 +75,7 @@ type Row =
       max: number
       format: (v: number) => string
     })
+  | PickerRow<LinkDisplay>
 
 /** What a leaf puts in the body. Most are a list of rows; a leaf may instead bring a surface,
  *  which owns its own layout, its own scroller and whatever state it fetches. */
@@ -128,6 +146,27 @@ const LEAVES: Record<CategoryKey, LeafBody> = {
       // because the language used to describe the toggle on the settings surface hasn't been decided
       // yet — do this sooner rather than later. It reads and writes like any other personalization key
       // in the meantime, so a hand-edited settings file turns it off.
+      {
+        kind: 'toggle',
+        key: 'autoFormatPastedLinks',
+        label: 'Automatically Format Pasted Links',
+        hint: 'Write a pasted address as a link instead of plain text.',
+      },
+      {
+        kind: 'picker',
+        key: 'defaultLinkFormat',
+        label: 'Default Format',
+        hint: 'How a pasted link reads.',
+        when: 'autoFormatPastedLinks',
+        fallback: 'link-full',
+        options: LINK_FORMAT_OPTIONS,
+      },
+      {
+        kind: 'toggle',
+        key: 'pasteLinkIntoText',
+        label: 'Paste Link Into Text',
+        hint: 'Pasting an address over selected text turns that text into the link, instead of replacing it.',
+      },
       {
         kind: 'slider',
         key: 'hoverPreviewLinger',
@@ -253,11 +292,28 @@ function SettingsRow({
 }
 
 function LeafRow({ row }: { row: Row }): React.JSX.Element {
+  const gate = row.when
+  const disclosed = useSession((s) => (gate ? s.personalization[gate] === true : true))
+  const body = <RowControl row={row} />
+  // A dependent row folds rather than vanishing, and Reveal keeps its subtree out of the DOM while
+  // collapsed — so a hidden picker holds no store subscription.
+  return gate ? (
+    <Reveal open={disclosed} fill>
+      {body}
+    </Reveal>
+  ) : (
+    body
+  )
+}
+
+function RowControl({ row }: { row: Row }): React.JSX.Element {
   switch (row.kind) {
     case 'toggle':
       return <ToggleRow row={row} />
     case 'slider':
       return <SliderRow row={row} />
+    case 'picker':
+      return <PickerRow row={row} />
   }
 }
 
@@ -273,6 +329,22 @@ function ToggleRow({ row }: { row: Extract<Row, { kind: 'toggle' }> }): React.JS
         ariaLabel={row.label}
         // Stores only the OFF state — an untouched nexus keeps a clean file (no-empties discipline).
         onChange={(next) => setPersonalization(row.key, row.defaultOn && next ? undefined : next)}
+      />
+    </SettingsRow>
+  )
+}
+
+function PickerRow({ row }: { row: Extract<Row, { kind: 'picker' }> }): React.JSX.Element {
+  const stored = useSession((s) => s.personalization[row.key])
+  const setPersonalization = useSession((s) => s.setPersonalization)
+  return (
+    <SettingsRow label={row.label} hint={row.hint}>
+      <PickerControl
+        ariaLabel={row.label}
+        value={stored ?? row.fallback}
+        options={row.options}
+        // The default stores no key — the clean-file discipline every row follows.
+        onPick={(v) => setPersonalization(row.key, v === row.fallback ? undefined : v)}
       />
     </SettingsRow>
   )
