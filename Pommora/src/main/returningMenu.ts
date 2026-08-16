@@ -46,6 +46,9 @@ export interface ActionItem<A> {
   label: string
   action: A
   separatorBefore?: boolean
+  /** Shown and refused rather than absent — for a row whose reason for being unavailable is worth
+   *  stating. Absent reads as available. */
+  disabled?: boolean
 }
 
 /** A destination tree as native submenus. A parent item cannot itself be clicked, so a container

@@ -56,6 +56,7 @@ import type { PropertyMenuAction, PropertyMenuContext } from './propertyMenu'
 import type { OptionMenuAction, OptionMenuContext } from './optionMenu'
 import type { ColumnMenuAction, ColumnMenuContext } from './columnMenu'
 import type { EmbedAreaMenuAction, EmbedTitleMenuAction, ViewButtonMenuAction } from './viewMenus'
+import type { ViewRowAction, ViewRowMenuContext } from './viewRowMenu'
 import type {
   BannerMenuAction,
   IconFavoriteMenuAction,
@@ -274,6 +275,7 @@ export interface Asks {
     args: [current: { viewButton: ViewButton; viewStyle: ViewStyle }]
     reply: ViewButtonMenuAction | null
   }
+  'view-row-menu': { args: [ctx: ViewRowMenuContext]; reply: ViewRowAction | null }
   'view-embed-title-menu': {
     args: [arg: { iconShown: boolean; level: number }]
     reply: EmbedTitleMenuAction | null

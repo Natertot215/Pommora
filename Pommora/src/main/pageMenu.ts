@@ -23,7 +23,12 @@ export function pageMenuTemplate<A extends string>(
           (t) => t.path === move?.currentParentPath,
         ),
       })
-    else template.push({ label: item.label, click: click(item.action) })
+    else
+      template.push({
+        label: item.label,
+        enabled: !item.disabled,
+        click: click(item.action),
+      })
   }
   return template
 }
