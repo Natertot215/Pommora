@@ -104,7 +104,7 @@ Select stores a bare string and renders one colored chip; Multi-Select stores a 
 
 #### II. Links & URL
 
-A URL property renders each value as a clickable link, opened through the sanctioned IPC. Its look is set on the property and applies everywhere:
+A URL property renders each value as a clickable link, opened through the sanctioned IPC. Its look is set on the property and applies everywhere, though a view's column may read its links differently — the column style carries the same three forms, and a column that names none takes the property's:
 
 - **Format** — one of the three link formats: **Full Link** the whole address, **Short Link** its bare domain, **Page Title** the site's fetched title. These are the same three the editor writes a pasted link in, named the same way.
 - **Underline** — on or off.
@@ -201,8 +201,8 @@ The remove-× melt (the hover-revealed remove zone, the crisp and blurred label 
 
 ### Known Issues
 
-- **A checkbox's "Accent" reads neutral in the pane under a `system` accent.** The cell box and switch tint the true accent through `var(--accent)`; the editor's color chip resolves through a palette key, and `system` (follow-the-OS) has no palette key, falling back to the neutral default chip. Only the settings chip shows the mismatch.
-- **A stray bare-string Multi-Select value reads as Select.** The read-side coercion covering shape-vs-column mismatches handles the single-string kinds (URL / Select / Date) only, so a Multi-Select value stored as a lone string stays classified as Select and drops out of grouping and filtering. Unreachable while nothing writes that shape; it goes live when the Lossy Change-Type Strip performs a Select→Multi-Select change — fix it there as a value migration (bare string → single-element array).
+- **A checkbox's "Accent" reads neutral in the pane under a `system` accent.** The cell box and switch tint the true accent via var(--accent); the editor's color chip is resolved through a palette key, and `system` (follow-the-OS) has no palette key, falling back to the neutral default chip. Only the settings chip shows the mismatch.
+- **A stray bare-string Multi-Select value reads as Select.** The read-side coercion for shape-vs-column mismatches handles only the single-string types (URL / Select / Date), so a Multi-Select value stored as a lone string remains classified as Select and drops out of grouping and filtering. Unreachable while nothing writes that shape; it goes live when the Lossy Change-Type Strip performs a Select→Multi-Select change — fix it there as a value migration (bare string → single-element array).
 ### Pending
 
 - **Page Property Panel** — the surface for setting property values on a Page in the main pane, and on a Task or Event anywhere. The Page Preview's front-matter inspector covers a Page inside the preview only; the main pane renders no property rows, and Agenda items have no value surface at all.
