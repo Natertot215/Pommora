@@ -154,6 +154,7 @@ export function Cell({
         <LinkCell
           raw={v.value}
           def={ctx.schema.find((d) => d.id === column.id)}
+          look={style.look}
           showFullLink={showFullLink}
         />
       )

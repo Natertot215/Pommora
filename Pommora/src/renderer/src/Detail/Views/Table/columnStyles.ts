@@ -13,5 +13,6 @@ export function styleFor(
   const saved = Object.entries(view.column_styles?.[columnId] ?? {}).filter(
     ([, v]) => v !== undefined,
   )
-  return { ...defaultStyleFor(declaredType(columnId, schema)), ...Object.fromEntries(saved) }
+  const def = schema.find((d) => d.id === columnId)
+  return { ...defaultStyleFor(declaredType(columnId, schema), def), ...Object.fromEntries(saved) }
 }

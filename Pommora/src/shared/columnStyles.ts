@@ -1,14 +1,19 @@
 // Per-view column display styles — the `column_styles` record on a SavedView.
 
 import { z } from 'zod'
+import { LINK_DISPLAYS, type PropertyDefinition } from './properties'
 
+/** A url column's looks ARE the link forms — one vocabulary for how a link reads, whether it is read
+ *  from a property's own Format, a view's column, or a link in a page body. The two it used to carry
+ *  (`title`, `full`) named the same idea in words nothing else used, and offered two of three. They
+ *  are simply gone: the schema drops a value it no longer knows, so a column saved with one falls
+ *  back to its property's Format, which is what it was showing anyway. */
 export const COLUMN_LOOKS = [
   'pill',
   'capsule',
   'checkbox',
   'switch',
-  'title',
-  'full',
+  ...LINK_DISPLAYS,
   'filename',
   'path',
   'number',
@@ -38,14 +43,20 @@ export type ColumnStyle = z.infer<typeof columnStyle>
 
 /** The type-default style — string-keyed so `shared/` needs nothing from the renderer's
  *  `declaredType`. Select/multi aren't style-addressable: their chips always render pill. */
-export function defaultStyleFor(declaredType: string | undefined): ColumnStyle {
+export function defaultStyleFor(
+  declaredType: string | undefined,
+  /** The column's property, for the one type whose default look is a setting rather than a constant. */
+  def?: Pick<PropertyDefinition, 'link_display'>,
+): ColumnStyle {
   switch (declaredType) {
     case 'status':
       return { look: 'pill' }
     case 'checkbox':
       return { look: 'checkbox' }
+    // A url column reads the way its property says to unless this view says otherwise — so the
+    // property's Format is the default here rather than a constant that would silently override it.
     case 'url':
-      return { look: 'full' }
+      return { look: def?.link_display ?? 'link-full' }
     case 'file':
       return { look: 'filename' }
     case 'datetime':

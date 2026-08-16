@@ -5,7 +5,7 @@ import {
   WEEKDAY_FORMATS,
   type ColumnStyle,
 } from './columnStyles'
-import type { PropertyType } from './properties'
+import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type PropertyType } from './properties'
 import type { ColumnAlign } from './views'
 
 /** The table-view column-header right-click menu: hide the column, set its text alignment,
@@ -71,7 +71,7 @@ export function styleMenuItems(ctx: StyleMenuContext): StyleMenuItem[] {
     case 'checkbox':
       return [look('Checkbox', 'checkbox'), look('Switch', 'switch')]
     case 'url':
-      return [look('Title', 'title'), look('Full Link', 'full')]
+      return LINK_DISPLAYS.map((d) => look(LINK_DISPLAY_LABELS[d], d))
     case 'file':
       return [look('Filename', 'filename'), look('Full Path', 'path')]
     case 'number':
