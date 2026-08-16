@@ -30,6 +30,9 @@ Nexus-wide interface config, stored as the `personalization` object in `.nexus/s
 - **favoriteIcons** — the icons favorited in the Icon Picker, in display order. Written by the picker itself.
 - **defaultViewScale** — the window zoom a nexus opens at, and what ⌘0 resets to. Clamped on read and applied main-side, so a hand-typed value can't push the renderer somewhere unusable.
 - **hoverPreviewLinger** — how long a connection's hover preview stays open after hovering off, in whole seconds. Absent is **None** — only the short pointer-travel grace. Written by the Settings window's Pages slider; clamped on read, with zero or junk reading as None.
+- **autoFormatPastedLinks** — whether an address pasted into MarkdownPM is written as a markdown link rather than as literal text. Absent is literal.
+- **defaultLinkFormat** — which form that link takes: the whole address, its bare domain, or the site's page title (→ [[MarkdownPM]] §Pasted links). Absent is the whole address. Disclosed in Settings only while the knob above it is on.
+- **pasteLinkIntoText** — whether pasting an address over selected text turns that text into the link instead of replacing it. Absent replaces.
 
 ### Commands
 
@@ -54,7 +57,7 @@ Cross-session, machine-local state in `pommora.json` under the app's userData di
 
 A floating window summoned from the sidebar ribbon's settings glyph, mounted on the shared **PreviewPane** surface — inheriting its glass shell, geometry, and dismissal contract, and opening smaller than a content window through that surface's bounds override. A category rail runs the window's full height as an in-flow side pane; the rail is the roster new panels register in.
 
-Its rows are per-Nexus knobs — boolean switches plus the hover-preview linger's slider — written through the shared personalization setter and applied live. A leaf may instead carry a surface of its own: the rail's foot holds **Trash**, whose body is the deletion record's browser (→ [[NexusRecordPM]] §Trash & Deletion) rather than a list of toggles. The switch that browser obeys, **Permanently Delete Files**, is an ordinary General row — off, an emptied item goes to the operating system's trash; on, it is erased from the machine. A knob resting at its default stores no key (a default-ON switch stores only its OFF state, the slider's None stores nothing), so an untouched nexus keeps a clean settings file.
+Its rows are per-Nexus knobs — boolean switches, pickers, and the hover-preview linger's slider — written through the shared personalization setter and applied live. A row may be disclosed by another row's value rather than always shown, folding into place when the knob above it turns on. A leaf may instead carry a surface of its own: the rail's foot holds **Trash**, whose body is the deletion record's browser (→ [[NexusRecordPM]] §Trash & Deletion) rather than a list of toggles. The switch that browser obeys, **Permanently Delete Files**, is an ordinary General row — off, an emptied item goes to the operating system's trash; on, it is erased from the machine. A knob resting at its default stores no key (a default-ON switch stores only its OFF state, the slider's None stores nothing), so an untouched nexus keeps a clean settings file.
 
 ### Pending
 
