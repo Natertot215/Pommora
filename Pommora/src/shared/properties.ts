@@ -30,6 +30,9 @@ export type PropertyType = z.infer<typeof propertyType>
 export const LINK_DISPLAYS = ['link-full', 'link-short', 'link-title'] as const
 export type LinkDisplay = (typeof LINK_DISPLAYS)[number]
 
+export const isLinkDisplay = (v: string | undefined): v is LinkDisplay =>
+  (LINK_DISPLAYS as readonly (string | undefined)[]).includes(v)
+
 /** What each form is called wherever one is picked — a URL property's Format control, the nexus-wide
  *  default in Settings, and a link's own Format menu, which main builds and so cannot read a
  *  renderer's list. */
