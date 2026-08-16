@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { autocompleteQuery, commitEdit, connectionInsert } from './autocomplete'
+import { acPanelLeft, autocompleteQuery, commitEdit, connectionInsert } from './autocomplete'
 import { tokenize } from './tokens'
 
 const tokenizeHasLink = (text: string): boolean => tokenize(text).some((t) => t.kind === 'link')
@@ -237,5 +237,30 @@ describe('an empty alias asks for the picker by its shape alone', () => {
   it('and a space between them is a written alias, not an empty one', () => {
     const doc = 'a [[Alpha| ]] b'
     expect(autocompleteQuery(doc, doc.indexOf('|') + 1)?.query).toBe(' ')
+  })
+})
+
+// The surface, not the viewport: a panel that stops at the window edge has already crossed a
+// neighbouring pane. 200 wide inside a 200→1000 surface, so the honest centre range is 308→892.
+describe('acPanelLeft', () => {
+  const W = 200
+  const at = (caretX: number): number => acPanelLeft(caretX, W, 200, 1000)
+
+  it('centres on the caret with room either side', () => {
+    expect(at(600)).toBe(500)
+  })
+
+  it('slides only as far as the surface requires, never to the viewport', () => {
+    expect(at(220)).toBe(208) // would centre at 120, well left of the surface
+    expect(at(980)).toBe(792) // would centre at 880, past the surface's right
+  })
+
+  it('still centres at the point where centring exactly fits', () => {
+    expect(at(308)).toBe(208)
+    expect(at(892)).toBe(792)
+  })
+
+  it('pins to the leading edge when the surface is narrower than the panel', () => {
+    expect(acPanelLeft(300, W, 250, 350)).toBe(258)
   })
 })

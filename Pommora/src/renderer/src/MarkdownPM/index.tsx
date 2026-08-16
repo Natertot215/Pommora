@@ -435,7 +435,8 @@ export function MarkdownEditor({
         open={ac !== null}
         candidates={candidates}
         index={acIndex}
-        left={ac?.left ?? 0}
+        caretX={ac?.caretX ?? 0}
+        bounds={{ left: ac?.boundsLeft ?? 0, right: ac?.boundsRight ?? 0 }}
         top={acTop}
         query={ac?.query ?? ''}
         onPick={commit}

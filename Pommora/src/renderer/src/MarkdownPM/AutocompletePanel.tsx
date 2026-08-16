@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { EntityIcon } from '@renderer/Components/EntityIcon'
 import { Icon } from '@renderer/design-system/symbols'
@@ -7,14 +7,16 @@ import { cx } from '@renderer/design-system/cx'
 import { dropdownOpen, dropdownClose } from '@renderer/design-system/animations.css'
 import { useExitPresence } from '@renderer/design-system/useExitPresence'
 import { ChipRemoveButton } from '@renderer/Components/Chip'
-import type { AcRow } from './autocomplete'
+import { acPanelLeft, type AcRow } from './autocomplete'
 
 interface Props {
   /** Whether the autocomplete is active; false plays the retract before unmounting. */
   open: boolean
   candidates: AcRow[]
   index: number
-  left: number
+  /** The caret's x — the panel centres on it and slides only as far as `bounds` requires. */
+  caretX: number
+  bounds: { left: number; right: number }
   top: number
   query: string
   onPick: (row: AcRow) => void
@@ -24,7 +26,8 @@ export function AutocompletePanel({
   open,
   candidates,
   index,
-  left,
+  caretX,
+  bounds,
   top,
   query,
   onPick,
@@ -32,12 +35,26 @@ export function AutocompletePanel({
   const live = open && candidates.length > 0
   const { mounted, closing } = useExitPresence(live)
   // Retain the last open state so the panel can retract in place after `ac` clears (position + rows gone).
-  const last = useRef({ candidates, index, left, top, query })
-  if (live) last.current = { candidates, index, left, top, query }
+  const last = useRef({ candidates, index, caretX, bounds, top, query })
+  if (live) last.current = { candidates, index, caretX, bounds, top, query }
+  // The panel sizes to its widest row between a floor and a cap, so where it lands is only knowable
+  // once it has one. Held as state because the placement renders from it.
+  const paneRef = useRef<HTMLDivElement>(null)
+  const [paneW, setPaneW] = useState(0)
+  useLayoutEffect(() => {
+    const el = paneRef.current
+    if (!el) return
+    const measure = (): void => setPaneW((w) => (w === el.offsetWidth ? w : el.offsetWidth))
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [mounted])
   if (!mounted) return null
 
   const v = last.current
   const matchLen = v.query.length
+  const left = acPanelLeft(v.caretX, paneW, v.bounds.left, v.bounds.right)
   // Body-level portal: the panel is position:fixed on viewport coords, and a
   // transformed ancestor (a SurfacePM tile rides translate()) re-anchors fixed
   // to ITSELF — misplacing and clipping the panel. Popups never render inside a
@@ -46,14 +63,19 @@ export function AutocompletePanel({
     // The house pane material, mounted directly: the panel stays caret-anchored fixed with no
     // backdrop, so it needs the glass and nothing else a menu shell would bring.
     <GlassPane
+      ref={paneRef}
       className={cx('mdpm-ac', closing ? dropdownClose : dropdownOpen)}
       style={
         {
           position: 'fixed',
-          left: v.left,
+          left,
           top: v.top,
           zIndex: 'var(--z-lifted)',
-          '--dropdown-origin': 'top left',
+          // The Bloom starts at the caret wherever the slide put the panel, so the reveal still
+          // points at what opened it rather than at whichever edge it stopped against.
+          '--dropdown-origin': `${v.caretX - left}px 0px`,
+          // Hidden until measured: a first frame at width 0 would place it half a panel too far right.
+          ...(paneW === 0 ? { visibility: 'hidden' as const } : null),
           ...(closing ? { pointerEvents: 'none' } : null),
         } as React.CSSProperties
       }
