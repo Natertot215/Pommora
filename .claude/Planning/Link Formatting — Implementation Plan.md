@@ -608,7 +608,7 @@ Folded without needing a ruling:
 
 Not blocking, still open:
 
-- **`matchesCommand` allocates on every keydown.** `renderer/src/Commands.ts` splits its binding string and builds a `Set` per press. Pre-existing — `App.tsx`'s window listener already paid it — but this cycle added a second caller inside the editor's own `domEventHandlers`, so a typed character now pays it twice. The no-allocating-work-on-a-high-frequency-trigger rule, small in absolute terms; the fix is memoizing the parse per spec string, outside this cycle's range.
+- ~~**`matchesCommand` allocates on every keydown.**~~ **Fixed** (Nathan: "that violates the on-every-x rule and should be simplified"). It split its binding string and built a `Set` per press; pre-existing, but this cycle's editor-side caller made a typed character pay it twice. A spec is now parsed once into a chord and kept, so a press costs four boolean compares and one key fold. Original finding:
 - **`ActionItem<A>` is stranded in `main/returningMenu.ts`** while three shared menu models re-type its shape by hand — `pageMetaMenuItems`, `pageMetaMenuSubset`, and now `CONN_UNLINK_ROWS`. `src/shared` cannot import `src/main`; the type is Electron-free and belongs in `shared/pageMenu.ts`. Raised twice, still outside the range.
 
 - ~~**`bridge.ts`'s `setNumberFormat` duplicates its patch shape.**~~ **Resolved in `ac997c11`** (Nathan: fix it to match). The channel names `NumberConfig`, main validates the family against `NUMBER_FAMILIES`, and the whitelist object is typed rather than a hand-maintained string map. The question underneath it is answered: a bridge entry may name shared types, and the link and number entries now read alike. Original finding:
