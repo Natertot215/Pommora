@@ -31,6 +31,7 @@ import { calloutAtomic } from './editor/calloutAtomic'
 import { calloutGuard } from './editor/calloutGuard'
 import { connectionClicks } from './editor/connections'
 import { markdownLinkClicks } from './editor/links'
+import { pasteLink } from './editor/PasteLink'
 import { aliasOnLeave } from './editor/linkEdit'
 import { linkRest, linkTyping } from './editor/linkGestures'
 import { markdownFolding, applySavedFolds, type FoldsApi } from './editor/folding'
@@ -194,8 +195,9 @@ export function MarkdownEditor({
       keymap.of([...defaultKeymap, ...historyKeymap]),
       // Language/parse support ONLY — its default keymap and paste rewriting are Lezer-convention ghosts
       // this editor replaces: the keymap auto-continues constructs MarkdownPM renders as plain prose
-      // (e.g. `1)` lists) whenever the custom handlers decline, and pasteURLAsLink rewrites a URL pasted
-      // over a selection into [selection](url) against the paste-preserves-literal-text rule.
+      // (e.g. `1)` lists) whenever the custom handlers decline, and pasteURLAsLink fires only on a
+      // non-empty selection, hardcodes [selection](url), and answers to none of the settings the
+      // nexus-wide paste path reads — so that behavior is `pasteLink`'s, on its own terms.
       markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false, codeLanguages }),
       codeHighlight,
       EditorView.lineWrapping,
@@ -250,6 +252,7 @@ export function MarkdownEditor({
       calloutGuard,
       connectionClicks(() => connectionsRef.current),
       markdownLinkClicks(() => connectionsRef.current),
+      pasteLink,
       aliasOnLeave(() => connectionsRef.current),
       linkRest,
       linkTyping,
