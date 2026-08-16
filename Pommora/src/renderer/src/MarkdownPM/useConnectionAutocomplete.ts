@@ -14,9 +14,13 @@ import { useSession } from '../store'
 import { restedOnLink } from './editor/linkGestures'
 
 export interface AcState extends AutocompleteQuery {
-  left: number
+  /** The caret's x — what the panel centres on, not where its edge lands. */
+  caretX: number
   caretTop: number
   caretBottom: number
+  /** The surface the panel may slide within, in viewport coords. */
+  boundsLeft: number
+  boundsRight: number
 }
 
 export interface AcCtl {
@@ -139,6 +143,31 @@ export function useConnectionAutocomplete(
   return { ac, setAc, candidates, acIndex: selected, acTop, commit, acCtl }
 }
 
+/**
+ * The surface the panel is bounded by — the editor's nearest SCROLLING ancestor, which is the detail
+ * pane in the main window, a floating window's body inside one, and a tile's own box on a dashboard.
+ * The editor itself never scrolls (its chain grows to its content), so its own box is the text column
+ * rather than the room available, and `scrollDOM` is the wrong answer here.
+ *
+ * Cached per editor: this runs on the keystroke path while the panel is open, and walking ancestors
+ * for computed styles on every one of those is exactly the work that rule forbids. The rect is still
+ * re-read each pass, so a resized pane or a scrolled surface stays honest.
+ */
+const surfaces = new WeakMap<HTMLElement, HTMLElement>()
+function surfaceOf(view: EditorView): HTMLElement {
+  const cached = surfaces.get(view.dom)
+  if (cached?.isConnected) return cached
+  let el = view.dom.parentElement
+  while (el && el !== document.body) {
+    const oy = getComputedStyle(el).overflowY
+    if (oy === 'auto' || oy === 'scroll') break
+    el = el.parentElement
+  }
+  const found = el ?? document.body
+  surfaces.set(view.dom, found)
+  return found
+}
+
 // setAc (a useState setter) is stable, so capturing it once at mount is safe; this is a free
 // function rather than a closure so both editors share one detection path.
 export function detectConnectionQuery(
@@ -153,13 +182,17 @@ export function detectConnectionQuery(
     // every keystroke/caret-move for a read that only touches the caret's line.
     const q = autocompleteQuery(docString(view.state.doc), sel.head, allowEmbeds)
     const c = q && view.coordsAtPos(sel.head)
-    if (q && c)
+    if (q && c) {
+      const b = surfaceOf(view).getBoundingClientRect()
       next = {
         ...q,
-        left: Math.round(c.left),
+        caretX: Math.round(c.left),
         caretTop: Math.round(c.top),
         caretBottom: Math.round(c.bottom),
+        boundsLeft: Math.round(b.left),
+        boundsRight: Math.round(b.right),
       }
+    }
   }
   setAc(next)
 }
