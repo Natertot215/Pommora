@@ -246,3 +246,25 @@ export function acPanelTop(caretTop: number, caretBottom: number, count: number)
     ? caretTop - h - AC_GAP
     : caretBottom + AC_GAP
 }
+
+/** KNOB — how close the panel may sit to the edge of the surface it's bounded by. */
+const AC_EDGE = 8
+
+/**
+ * Centre the panel on the caret, sliding it sideways only as far as the surface requires. The bound
+ * is the editor's own scrolling surface rather than the viewport: a panel that stops at the window
+ * edge has already crossed the sidebar or the inspector, which is a different pane's space.
+ *
+ * A surface narrower than the panel has no honest answer, so it pins to the leading edge rather than
+ * centring on a negative gap.
+ */
+export function acPanelLeft(
+  caretX: number,
+  panelW: number,
+  boundsLeft: number,
+  boundsRight: number,
+): number {
+  const min = boundsLeft + AC_EDGE
+  const max = boundsRight - AC_EDGE - panelW
+  return max < min ? min : Math.min(Math.max(caretX - panelW / 2, min), max)
+}

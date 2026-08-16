@@ -91,7 +91,8 @@ describe('the forget × is inert until it is revealed', () => {
           open
           candidates={[{ value: 'the plan', label: 'the plan', isPage: false, forget }]}
           index={0}
-          left={0}
+          caretX={0}
+        bounds={{ left: 0, right: 1024 }}
           top={0}
           query=""
           onPick={onPick}
