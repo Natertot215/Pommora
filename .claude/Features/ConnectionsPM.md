@@ -11,7 +11,7 @@ Connections
 └── Prospects
 ```
 
-A **Connection** is an inline link in a Markdown body pointing to another Page. Two syntaxes reach one, because Pommora reads what other Markdown tools write: the wikilink `[[Title]]`, and the markdown link `[Title](Page)` whose target names a page rather than a website. The text is canonical and Obsidian-readable, with no frontmatter mirror, and resolution is computed at read time. `[[…]]` appears only in a body, never as a frontmatter key sigil, so the wikilink form carries one meaning in Markdown. Only a Page's body and a markdown block tile author connections, and Pages are the only targets — Spaces come through Context links, and Tasks and Events are never targets.
+A **Connection** is an inline link in a Markdown body pointing to another Page, using two compatible syntaxes — the wikilink `[[Title]]`, and the markdown link `[Title](Page)` whose target names a page rather than a website. The text is canonical and Obsidian-readable, with no frontmatter mirror, and resolution is computed at read time. `[[…]]` appears only in a body, so the wikilink form carries one meaning in Markdown. Only a Page's body and a markdown block tile author connections, and Pages are the only targets — Spaces come through Context links, and Tasks and Events are never targets.
 
 ### Syntax + Scope
 
@@ -50,7 +50,7 @@ Inside a markdown link's `( )` the panel offers Pages, and accepting one encodes
 
 ### The Alias Memory
 
-A Page remembers the aliases it has been given. The list is written when an alias is authored — on leaving it, which is also when an alias opened and abandoned drops its pipe — rather than derived from a scan of every body, because a derived list cannot honour a real deletion and the next scan would resurrect what the × removed. It is keyed by PageID, so it survives a rename, and it lives in `nexus.db` beside the other per-machine records rather than on disk in the Nexus: the alias itself is written on-page in universal syntax, and what the database holds is an autocomplete accelerator whose loss costs a suggestion and never a link. A duplicated Page carries its memory with it, and deleting a Page does not clear it; it matches every sibling record and leaves the restore path intact.
+A Page remembers the aliases it has been given. The list is written when an alias is authored — on leaving it, which is also when an alias opened and abandoned drops its pipe — rather than derived from a scan of every body, because a derived list cannot honor a real deletion and the next scan would resurrect what the × removed. It is keyed by PageID, so it survives a rename, and it lives in `nexus.db` beside the other per-machine records rather than on disk in the Nexus: the alias itself is written on-page in universal syntax, and what the database holds is an autocomplete accelerator whose loss costs a suggestion and never a link. A duplicated Page carries its memory with it, and deleting a Page does not clear it; it matches every sibling record and leaves the restore path intact.
 
 ### Known Issues
 
