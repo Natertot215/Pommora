@@ -1,5 +1,5 @@
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
-import { EditorView, ViewPlugin } from '@codemirror/view'
+import { type EditorView, ViewPlugin } from '@codemirror/view'
 import { linkMarkdown } from '@shared/PasteLink'
 import { useSession } from '../../store'
 

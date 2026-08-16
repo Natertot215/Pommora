@@ -449,16 +449,16 @@ The last two sit **below a separator**, apart from the three that edit a link yo
 **Must agree:** the label Format writes must equal what the paste path writes for the same URL and mode. Both call `linkDisplayText`; one test crosses them.
 
 **Steps:**
-- [ ] Write the failing tests, modelled on `externalLink.test.tsx`: stub `connMenu`, right-click a rendered link, assert the context offered and the resulting document for each of the three modes.
-- [ ] Run — expect red.
-- [ ] Add the action ids and the context field in `shared/connections.ts`.
-- [ ] Build the submenu in `connMenu.ts`. Note `main/editorMenu.ts` already ships a `Format ▸` on the *prose* menu — a different menu, but the label is taken elsewhere in the same surface; confirm the two never appear together.
-- [ ] Widen `apply`, add the renderer routes, write the label rewriter over the `link` token's spans.
-- [ ] Re-run — expect green. `connectionMenu.ts`'s `default: target.apply?.(action)` will fail to typecheck until every new id has a case — that compile error is the intended enforcement, not an obstacle.
-- [ ] Update the feature docs.
-- [ ] Run the app: all three Format modes on a real link; a link whose page resolves (drawn as a connection) must still get the connection menu, not this one.
-- [ ] Full gate — expect green.
-- [ ] Commit: `feat(links): Format on a link's menu rewrites how it reads`
+- [x] Write the failing tests, modelled on `externalLink.test.tsx`: stub `connMenu`, right-click a rendered link, assert the context offered and the resulting document for each of the three modes.
+- [x] Run — expect red. Ten of thirteen red; the three that passed are the ones asserting today's behaviour (read-only, Copy Link) and the stale-span decline, which cannot go red before the action exists.
+- [x] Add the action ids in `shared/connections.ts`. No context field: `ConnMenuContext.external` already tells the two cases apart, and `editable` already carries whether the surface can take an edit.
+- [x] Build the submenu in `connMenu.ts`. `main/editorMenu.ts`'s prose `Format ▸` never appears alongside it — O-1 observed the link menu popping alone.
+- [x] Add `apply` to the url target, add the renderer routes, write the applier over the `link` token's spans.
+- [x] Re-run — expect green. The predicted compile error landed, in the page branch rather than the url one: widening `ConnMenuAction` made `default: target.apply?.(action)` unassignable to `ConnEditAction`, and the two authoring ids are now named rather than caught.
+- [x] Update the feature docs.
+- [ ] Run the app: all three Format modes on a real link; a link whose page resolves (drawn as a connection) must still get the connection menu, not this one. → Gate 4.
+- [x] Full gate — expect green.
+- [x] Commit: `feat(links): a link's menu edits the link`
 
 #### Task 9: The inverse-paste chord
 
@@ -560,7 +560,7 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
   - [x] Task 6 — Mount the paste handler in both editors · `6ceaa384`
   - [x] Task 7 — The deferred Page Title rewrite · `44c47449`, simplified in `3db60832`
 - [ ] **Phase 4** — The menus
-  - [ ] Task 8 — `Format >` on the link menu · `<commit>`
+  - [x] Task 8 — The link menu, and links in cells · `<commit>`
   - [ ] Task 9 — The inverse-paste chord · `<commit>`
   - [ ] Task 10 — `Paste As >` on the prose menu · `<commit>`
 
@@ -612,6 +612,10 @@ Not blocking, still open:
 
 ### Deviations
 
+- **Task 8 — no new `ConnMenuContext` field, and the compile error landed in the other branch.** The plan had the context gain a field distinguishing a markdown link from a wikilink; `external` already draws that line, and `editable` already says whether the surface can take an edit, so the url branch reads both from what was there. The predicted enforcement arrived from the opposite direction: widening `ConnMenuAction` broke the *page* branch's `default: target.apply?.(action)`, whose parameter is `ConnEditAction` — so the two authoring ids are now named explicitly there, and the url branch routes through an `isConnUrlAction` guard.
+- **Task 8 — the three form labels moved into `shared/`.** Main builds the Format submenu and cannot read a renderer module, so `LINK_DISPLAY_LABELS` sits beside `LINK_DISPLAYS` in `shared/properties.ts` and `LINK_FORMAT_OPTIONS` now derives its rows from it. Otherwise the menu and the two pickers would each spell "Full Link · Short Link · Page Title" separately.
+- **Task 8 — mounting the link handler in a cell restores more than the menu.** `markdownLinkClicks` carries following, the hover preview and the right-click menu in one extension, so a markdown link in a focused cell now behaves as one in the body does rather than only gaining its menu. `MarkdownPM.md`'s claim that the focused cell editor carries no link behaviour is rewritten. A `[[ ]]` connection in a focused cell is unaffected — `connectionClicks` is still not mounted there.
+- **Task 7 — a lint warning shipped unseen.** `PendingTitle.ts` imported `EditorView` as a value where it is only used as a type, which Biome reports as a warning rather than an error — so `npm run lint` exited 0 with the diagnostic printed, and reading the exit code alone called it clean. The house floor is zero diagnostics, not exit 0. Fixed in Task 8's commit; the lint gate is now read by diagnostic count.
 - **Task 1 — two comments the Made False table missed.** `encodeLinkTarget`'s doc block and its inline note both justified escaping a page title's parens by "the grammar's target group ends at the first `)`", and `links.test.ts` carried the same sentence over the escaping test. Widening the grammar falsifies all three. The escaping itself stays load-bearing for a changed reason — a page title's parens need not balance, and a lone `(` now leaves the link untokenizable rather than merely truncated — so the comments were restated rather than dropped, in Task 1's commit.
 - **Task 2 — the whole `linkValue` module moved, not just the formatter.** The correction recorded moving `linkDisplayText` into `src/shared/`; in practice it calls `parseLink` from the same file, so moving one without the other would need either a second parser or a shared module importing the renderer. The module is already pure, so it moved whole to `src/shared/linkValue.ts` beside `propertyValue.ts`, with its nine importers repointed to `@shared/linkValue`. It kept its camelCase name to match every other file in `shared/`. Later tasks import the formatter from there.
 - **Task 2 — the `'link-url'` sweep floor is 1, not 0.** The migration test feeds the old value deliberately to prove `.catch(undefined)` drops it and the call-site default catches it. That is the evidence the rename is free, so it stays; the Dead Vocabulary entry now names it as the one legitimate hit.

@@ -3,6 +3,7 @@ import { linkTarget, tokenize } from '../tokens'
 import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../connections'
 import { seatAtNearerEdge } from './input'
 import { caretInside, hoverIntent } from './connections'
+import { applyUrlLinkAction } from './linkFormat'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -121,8 +122,8 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
       return true
     },
     // Right-click hands off to the host's menu hook, told what the target turned out to be — the same
-    // resolver the click path reads. The authoring pair belongs to `[[ ]]` syntax and isn't offered
-    // here; an invalid target names nothing to act on at all.
+    // resolver the click path reads. A link naming a page is menued as the connection it is drawn as;
+    // an invalid target names nothing to act on at all.
     contextmenu(event, view) {
       const api = getApi()
       if (!api?.menu) return false
@@ -135,7 +136,15 @@ export function markdownLinkClicks(getApi: GetApi): ReturnType<typeof EditorView
       api.menu(
         hit.target.kind === 'page'
           ? { kind: 'page', page: hit.target.page, editable: false, hasAlias: false }
-          : { kind: 'url', url: hit.url },
+          : {
+              kind: 'url',
+              url: hit.url,
+              // The way back into this editor, closed over the span the menu was popped on. Its
+              // absence is what a read-only surface offers instead of a refusal.
+              apply: view.state.readOnly
+                ? undefined
+                : (action) => applyUrlLinkAction(view, action, hit.range),
+            },
       )
       return true
     },
