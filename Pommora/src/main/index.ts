@@ -1419,19 +1419,19 @@ serveBridge(
       },
     },
 
-    // The view embed's title-row right-click menu (Hide/Show Icon · Title Size · Hide Title).
     // A saved view row's right-click menu, shared by the view pane and the embed's segments.
     'view-row-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, ctx: unknown): Promise<ViewRowAction | null> => {
-        const c = ctx as { colorable?: unknown; titlesShown?: unknown; deletable?: unknown } | null
+        const c = ctx as { titlesShown?: unknown; deletable?: unknown } | null
         return popViewRowMenu(win, {
-          colorable: c?.colorable === true,
           ...(typeof c?.titlesShown === 'boolean' ? { titlesShown: c.titlesShown } : {}),
           deletable: c?.deletable === true,
         })
       },
     },
+
+    // The view embed's title-row right-click menu (Hide/Show Icon · Title Size · Hide Title).
     'view-embed-title-menu': {
       kind: 'menu',
       fn: async (win: BrowserWindow, arg: unknown): Promise<EmbedTitleMenuAction | null> => {

@@ -49,7 +49,7 @@ describe('cellMenuModel', () => {
       barCapable: true,
     })
     expect(m.items).toEqual([])
-    expect(m.style?.map((r) => r.label)).toEqual(['Number', 'Bar'])
+    expect(m.style?.rows.map((r) => r.label)).toEqual(['Number', 'Bar'])
   })
 
   it('a clearable style-only (status) adds Clear under the Style radios', () => {
@@ -60,8 +60,8 @@ describe('cellMenuModel', () => {
       clearable: true,
     })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([['Clear', 'cell:clear']])
-    expect(m.style?.map((r) => r.label)).toEqual(['Pill', 'Capsule', 'Checkbox'])
-    expect(m.style?.find((r) => r.value === 'pill')?.checked).toBe(true)
+    expect(m.style?.rows.map((r) => r.label)).toEqual(['Pill', 'Capsule', 'Checkbox'])
+    expect(m.style?.rows.find((r) => r.value === 'pill')?.checked).toBe(true)
   })
 
   it('clear-only (select/multi/context): just Clear', () => {
@@ -73,7 +73,7 @@ describe('cellMenuModel', () => {
   it('style-edit: Style radios plus the Edit entry', () => {
     const m = cellMenuModel({ kind: 'style-edit', type: 'file', current: { look: 'filename' } })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([['Edit', 'cell:edit']])
-    expect(m.style?.map((r) => r.label)).toEqual(['Filename', 'Full Path'])
+    expect(m.style?.rows.map((r) => r.label)).toEqual(['Filename', 'Full Path'])
   })
 
   it('link (a filled url cell): Edit + Rename + Clear, no Style (its look is per-property)', () => {
