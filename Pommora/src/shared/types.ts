@@ -156,6 +156,8 @@ export function coerceHoverLinger(v: unknown): number | undefined {
 export const DEFAULT_COMMANDS: Record<string, string> = {
   'toggle-ribbon': 'cmd+t',
   'toggle-nav': 'cmd+o',
+  // The paste that does the opposite of what the Pages settings say a plain paste does.
+  'paste-inverse': 'cmd+shift+v',
 }
 
 export interface BaseNode {

@@ -23,12 +23,35 @@ function paste(view: EditorView, text: string | null): void {
   view.contentDOM.dispatchEvent(event)
 }
 
+// The chord carries no clipboard of its own — a keypress has no `clipboardData` — so it reads the
+// system clipboard back over the bridge, which is what this stands in for.
+let clipboard = ''
+
+/** ⌘⇧V, as the default binding spells it. */
+function chord(view: EditorView): void {
+  view.contentDOM.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key: 'v',
+      metaKey: true,
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    }),
+  )
+}
+
 const settings = (p: Partial<Personalization>): void => {
   useSession.setState({ personalization: p })
 }
 
 beforeEach(() => {
-  stubEditorBridge()
+  clipboard = URL
+  // The title never arrives over the bridge: every test that needs one writes it into the shared
+  // cache, which is the only thing the swap watches.
+  stubEditorBridge({
+    readClipboard: async () => clipboard,
+    linkTitles: { fetch: async () => ({ ok: false, error: { code: 'offline' } }) },
+  })
   // The title cache is store state and outlives a test — one left populated makes the next paste
   // resolve instantly and shifts every offset a hand-written edit depends on.
   useSession.setState({ personalization: {}, linkTitles: {} })
@@ -145,5 +168,51 @@ describe('pasting an address into the editor', () => {
     const view = await mountEditor({ initialBody: '' })
     await act(async () => paste(view, URL))
     expect(view.state.selection.main.head).toBe(view.state.doc.length)
+  })
+})
+
+// ⌘⇧V does the opposite of whatever ⌘V is set to do, on whichever axis a selection selects: with
+// text selected the toggle in question is whether a paste wraps it, and without one it is whether an
+// address is formatted at all.
+describe('the inverse chord', () => {
+  it('writes a link where a plain paste would have left the address', async () => {
+    const view = await mountEditor({ initialBody: '' })
+    await act(async () => chord(view))
+    expect(view.state.doc.toString()).toBe(`[${URL}](${URL})`)
+  })
+
+  it('leaves the address where a plain paste would have written a link', async () => {
+    settings({ autoFormatPastedLinks: true })
+    const view = await mountEditor({ initialBody: '' })
+    await act(async () => chord(view))
+    expect(view.state.doc.toString()).toBe(URL)
+  })
+
+  it('wraps a selection where a plain paste would have replaced it', async () => {
+    const view = await mountEditor({ initialBody: 'read the docs now' })
+    view.dispatch({ selection: { anchor: 9, head: 13 } })
+    await act(async () => chord(view))
+    expect(view.state.doc.toString()).toBe(`read the [docs](${URL}) now`)
+  })
+
+  it('replaces a selection where a plain paste would have wrapped it', async () => {
+    settings({ pasteLinkIntoText: true })
+    const view = await mountEditor({ initialBody: 'read the docs now' })
+    view.dispatch({ selection: { anchor: 9, head: 13 } })
+    await act(async () => chord(view))
+    expect(view.state.doc.toString()).toBe('read the https://www.example.com/a/b now')
+  })
+
+  it('writes a non-address as the text it is', async () => {
+    clipboard = 'App.tsx'
+    const view = await mountEditor({ initialBody: '' })
+    await act(async () => chord(view))
+    expect(view.state.doc.toString()).toBe('App.tsx')
+  })
+
+  it('leaves a read-only surface untouched', async () => {
+    const view = await mountEditor({ initialBody: 'body', readOnly: true })
+    await act(async () => chord(view))
+    expect(view.state.doc.toString()).toBe('body')
   })
 })
