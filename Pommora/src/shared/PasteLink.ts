@@ -49,14 +49,22 @@ export function pastedUrl(clipboard: string): string | null {
   return isValidLink(s) ? s : null
 }
 
-const link = (label: string, target: string, wantsTitle = false): PasteDecision => ({
+const link = (text: string, target: string, wantsTitle = false): PasteDecision => ({
   kind: 'link',
-  // The property codec's serializer, so a label carrying `]` or `\` is escaped exactly once and in
-  // exactly one place.
-  text: serializeLink({ url: target, alias: label }),
+  text,
   target,
   wantsTitle,
 })
+
+/** The markdown a link takes in a given form. The editor's deferred title rewrite composes the same
+ *  two steps against the same link once its fetch lands, and reads them here rather than spelling
+ *  the shape out again — a paste and its swap-in can never disagree about the form.
+ *
+ *  The property codec's serializer does the writing, so a label carrying `]` or `\` is escaped
+ *  exactly once and in exactly one place. */
+export function linkMarkdown(url: string, display: LinkDisplay, title?: string): string {
+  return serializeLink({ url, alias: linkDisplayText(url, display, title) })
+}
 
 export function decidePaste(input: PasteInput): PasteDecision {
   const target = pastedUrl(input.clipboard)
@@ -66,7 +74,7 @@ export function decidePaste(input: PasteInput): PasteDecision {
   // whichever one is in play, and only that one.
   const wrappable = input.selectionText !== '' && !/[\r\n]/.test(input.selectionText)
   if (wrappable && (input.inverse ? !input.pasteIntoText : input.pasteIntoText))
-    return link(input.selectionText, target)
+    return link(serializeLink({ url: target, alias: input.selectionText }), target)
 
   // Not wrapping means the selection is simply replaced, which is an ordinary paste at a caret —
   // so it falls through here. The chord is already spent in that case and does not flip again.
@@ -74,7 +82,7 @@ export function decidePaste(input: PasteInput): PasteDecision {
   if (!format) return LITERAL
 
   return link(
-    linkDisplayText(target, input.format, input.title),
+    linkMarkdown(target, input.format, input.title),
     target,
     input.format === 'link-title' && input.title === undefined,
   )

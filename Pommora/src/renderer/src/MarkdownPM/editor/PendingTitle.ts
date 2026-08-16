@@ -1,6 +1,6 @@
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { EditorView, ViewPlugin } from '@codemirror/view'
-import { linkDisplayText, serializeLink } from '@shared/linkValue'
+import { linkMarkdown } from '@shared/PasteLink'
 import { useSession } from '../../store'
 
 // Page Title writes the Short Link first and swaps the label in when the fetch lands, because a
@@ -67,10 +67,7 @@ const sweepOnTitles = ViewPlugin.fromClass(
           const title = linkTitles[p.url]
           if (title === undefined) continue
           settled.push(p)
-          const text = serializeLink({
-            url: p.url,
-            alias: linkDisplayText(p.url, 'link-title', title),
-          })
+          const text = linkMarkdown(p.url, 'link-title', title)
           if (text !== p.text) changes.push({ from: p.from, to: p.to, insert: text })
         }
         if (settled.length === 0) return

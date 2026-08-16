@@ -9,6 +9,7 @@ import {
   mountEditor,
   cleanupEditor,
 } from '@renderer/testing/editorHarness'
+import { pendingTitles } from './PendingTitle'
 
 const URL = 'https://www.example.com/a/b'
 
@@ -112,6 +113,23 @@ describe('pasting an address into the editor', () => {
       useSession.setState({ linkTitles: { [URL]: 'Example Domain' } })
     })
     expect(view.state.doc.toString()).toBe(`[My Words](${URL})`)
+  })
+
+  // A site whose <title> IS its domain resolves to the text already on the page, so the swap writes
+  // nothing and the document never changes — meaning the validity prune, which only runs on a doc
+  // change, never fires. Without an explicit withdrawal the anchor would sit pending forever and
+  // re-dispatch on every store write thereafter.
+  it('stops waiting even when the fetched title reads exactly as the domain did', async () => {
+    settings({ autoFormatPastedLinks: true, defaultLinkFormat: 'link-title' })
+    const view = await mountEditor({ initialBody: '' })
+    await act(async () => paste(view, URL))
+    expect(view.state.field(pendingTitles)).toHaveLength(1)
+
+    await act(async () => {
+      useSession.setState({ linkTitles: { [URL]: 'example.com' } })
+    })
+    expect(view.state.doc.toString()).toBe(`[example.com](${URL})`)
+    expect(view.state.field(pendingTitles)).toHaveLength(0)
   })
 
   it('asks for no title when the cache already holds one', async () => {

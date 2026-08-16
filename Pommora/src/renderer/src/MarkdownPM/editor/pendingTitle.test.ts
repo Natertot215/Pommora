@@ -13,6 +13,23 @@ function armed(doc: string, at: number): EditorState {
   }).state
 }
 
+/** Both copies of `LINK` in a two-line document, each announced against its own range in one
+ *  transaction — the shape the same address pasted twice leaves behind. */
+function armedTwice(): EditorState {
+  const state = EditorState.create({ doc: `${LINK}\n${LINK}`, extensions: [pendingTitles] })
+  return state.update({
+    effects: [
+      awaitTitle.of({ from: 0, to: LINK.length, url: URL, text: LINK }),
+      awaitTitle.of({
+        from: LINK.length + 1,
+        to: LINK.length + 1 + LINK.length,
+        url: URL,
+        text: LINK,
+      }),
+    ],
+  }).state
+}
+
 const anchors = (s: EditorState): readonly PendingTitle[] => s.field(pendingTitles)
 
 describe('the pending-title anchor', () => {
@@ -58,19 +75,7 @@ describe('the pending-title anchor', () => {
   // Text alone cannot anchor this: the same address pasted twice reads identically in both places,
   // so a match-by-text rewrite would fire on whichever it found first, twice.
   it('keeps two anchors for the same address distinct', () => {
-    const doc = `${LINK}\n${LINK}`
-    let s = EditorState.create({ doc, extensions: [pendingTitles] })
-    s = s.update({
-      effects: [
-        awaitTitle.of({ from: 0, to: LINK.length, url: URL, text: LINK }),
-        awaitTitle.of({
-          from: LINK.length + 1,
-          to: LINK.length + 1 + LINK.length,
-          url: URL,
-          text: LINK,
-        }),
-      ],
-    }).state
+    const s = armedTwice()
     const [first, second] = anchors(s)
     expect(anchors(s)).toHaveLength(2)
     expect(first.from).not.toBe(second.from)
@@ -79,20 +84,7 @@ describe('the pending-title anchor', () => {
   })
 
   it('drops only the edited one when two are armed', () => {
-    const doc = `${LINK}\n${LINK}`
-    let s = EditorState.create({ doc, extensions: [pendingTitles] })
-    s = s.update({
-      effects: [
-        awaitTitle.of({ from: 0, to: LINK.length, url: URL, text: LINK }),
-        awaitTitle.of({
-          from: LINK.length + 1,
-          to: LINK.length + 1 + LINK.length,
-          url: URL,
-          text: LINK,
-        }),
-      ],
-    }).state
-    const after = s.update({ changes: { from: 1, to: 12, insert: 'Mine' } }).state
+    const after = armedTwice().update({ changes: { from: 1, to: 12, insert: 'Mine' } }).state
     expect(anchors(after)).toHaveLength(1)
     expect(after.sliceDoc(anchors(after)[0].from, anchors(after)[0].to)).toBe(LINK)
   })
