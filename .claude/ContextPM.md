@@ -6,7 +6,7 @@
 
 ### Immediate Work
 
-- [ ] None yet
+- [ ] None yet [Run agents in parallel - Claude Code Docs](https://code.claude.com/docs/en/agents) https://code.claude.com/docs/en/agents
 
 ### Pending Focuses
 
