@@ -4,7 +4,9 @@ import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { TableView } from './TableView'
 import type { TableModel } from './model'
-import { buildPageIndex, type ConnectionsApi, type ConnPage } from '../connections'
+import { EditorView } from '@codemirror/view'
+import type { ConnUrlAction } from '@shared/connections'
+import { buildPageIndex, type ConnectionsApi, type ConnMenuTarget, type ConnPage } from '../connections'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
@@ -138,5 +140,131 @@ describe('the picker survives being clicked', () => {
       )
     })
     expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
+  })
+})
+
+// A link carries its own menu wherever it is drawn, and a resting cell draws links — so the four
+// actions that only rewrite text must reach it without the cell first becoming an editor.
+describe('a link’s menu in a resting cell', () => {
+  const URL = 'https://www.example.com/a/b'
+  const committed = vi.fn()
+
+  /** Mount a table holding one external link, with the menu already resolving to `action`. */
+  async function mountLink(action: ConnUrlAction): Promise<void> {
+    committed.mockReset()
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    const linked: ConnectionsApi = {
+      ...conn,
+      menu: (t) => {
+        if (t.kind === 'url') t.apply?.(action)
+      },
+    }
+    await act(async () =>
+      root.render(
+        createElement(TableView, {
+          ...props,
+          model: { ...model, rows: [[`a [Home](${URL}) b`]] },
+          connections: () => linked,
+          onCellCommit: (_r: number, _c: number, text: string) => committed(text),
+        }),
+      ),
+    )
+  }
+
+  const rightClick = async (): Promise<void> => {
+    const link = container.querySelector('.md-link') as HTMLElement
+    await act(async () => {
+      link.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 }))
+      link.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    })
+  }
+
+  it('rewrites the cell in place, without entering it', async () => {
+    await mountLink('format:link-short')
+    await rightClick()
+    expect(committed).toHaveBeenCalledWith(`a [example.com](${URL}) b`)
+    expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
+  })
+
+  it('leaves the label as prose on Remove Link', async () => {
+    await mountLink('link:remove')
+    await rightClick()
+    expect(committed).toHaveBeenCalledWith('a Home b')
+  })
+
+  it('takes the whole link on Delete', async () => {
+    await mountLink('link:delete')
+    await rightClick()
+    expect(committed).toHaveBeenCalledWith('a  b')
+  })
+
+  // The two that put you in position to retype are the two that have to enter the cell.
+  it('enters the cell with the label selected on Rename', async () => {
+    await mountLink('rename')
+    await rightClick()
+    expect(committed).not.toHaveBeenCalled()
+    const view = EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement)
+    const sel = view?.state.selection.main
+    expect(view && sel && view.state.sliceDoc(sel.from, sel.to)).toBe('Home')
+  })
+
+  it('enters the cell with the address selected on Edit Link', async () => {
+    await mountLink('editLink')
+    await rightClick()
+    const view = EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement)
+    const sel = view?.state.selection.main
+    expect(view && sel && view.state.sliceDoc(sel.from, sel.to)).toBe(URL)
+  })
+})
+
+// One decision about what a right-clicked link is offered, whichever syntax wrote it: the connection
+// gets the page menu it gets in the body, and its authoring pair enters the cell the same way.
+describe('a connection’s menu in a resting cell', () => {
+  let target: ConnMenuTarget | null = null
+
+  async function mountConn(body: string): Promise<void> {
+    target = null
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    const linked: ConnectionsApi = {
+      ...conn,
+      menu: (t) => {
+        target = t
+      },
+    }
+    await act(async () =>
+      root.render(
+        createElement(TableView, { ...props, model: { ...model, rows: [[body]] }, connections: () => linked }),
+      ),
+    )
+    const link = container.querySelector('.md-connection-resolved') as HTMLElement
+    await act(async () => {
+      link.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 }))
+      link.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    })
+  }
+
+  it('offers the page menu, knowing it already wears a title', async () => {
+    await mountConn('[[Quarterly Plan|the plan]]')
+    expect(target).toMatchObject({ kind: 'page', editable: true, hasAlias: true })
+  })
+
+  it('Rename enters the cell with the alias selected', async () => {
+    await mountConn('[[Quarterly Plan|the plan]]')
+    const popped = target as ConnMenuTarget | null
+    if (popped?.kind === 'page') await act(async () => popped.apply?.('rename'))
+    const view = EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement)
+    const sel = view?.state.selection.main
+    expect(view && sel && view.state.sliceDoc(sel.from, sel.to)).toBe('the plan')
+  })
+
+  // A markdown link naming a page is menued as the connection it is drawn as, minus the authoring
+  // pair that belongs to `[[ ]]` — the same subset the body offers it.
+  it('a markdown link naming a page gets the page menu without the authoring pair', async () => {
+    await mountConn('[the plan](Quarterly%20Plan)')
+    expect(target).toMatchObject({ kind: 'page', editable: false, hasAlias: false })
   })
 })

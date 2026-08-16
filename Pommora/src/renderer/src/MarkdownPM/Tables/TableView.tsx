@@ -105,7 +105,7 @@ export function TableView({
 
   // Resting cells raise the hover card — the same intent delay as the editor's own links, armed
   // by delegation off the wrap (the class gate first, per the every-mouseover hard rule). Only
-  // static cells: the live cell editor carries no link behavior.
+  // static cells, which have no editor to carry them.
   const intent = useMemo(hoverIntent, [])
   useEffect(() => intent.cancel, [intent])
   const onLinkOver = (e: React.MouseEvent): void => {
@@ -167,6 +167,9 @@ export function TableView({
   // `caretCoords` carries a click point to the editor so it lands the caret where you clicked (null → caret at end).
   const [active, setActive] = useState<{ row: number; col: number } | null>(null)
   const caretCoords = useRef<{ x: number; y: number } | null>(null)
+  // The other way a cell can be entered with a position already in mind: a link menu's Rename or
+  // Edit Link, which enter it only to put the caret over what you came to replace.
+  const initialSelect = useRef<[number, number] | null>(null)
 
   // The measure sweep reads a rect per column and per row, so it runs on the table's SHAPE, never on the
   // model's identity: a cell keystroke rebuilds the model every character, and re-measuring there is an
@@ -365,6 +368,7 @@ export function TableView({
       return
     }
     caretCoords.current = null // keyboard nav lands the caret at the end of the target cell
+    initialSelect.current = null
     setActive({ row: target.row, col: target.col })
   }
 
@@ -376,6 +380,7 @@ export function TableView({
           initial={display}
           connections={connections}
           caretCoords={caretCoords.current}
+          initialSelect={initialSelect.current}
           onCommit={(t) => onCellCommit(row, col, t)}
           onNavigate={(dir) => navigate(row, col, dir)}
           onUndo={onUndo}
@@ -393,6 +398,15 @@ export function TableView({
           intent.cancel()
           closeActiveHoverCard()
           caretCoords.current = coords
+          initialSelect.current = null
+          setActive({ row, col })
+        }}
+        onCommit={(t) => onCellCommit(row, col, t)}
+        onSelect={(range) => {
+          intent.cancel()
+          closeActiveHoverCard()
+          caretCoords.current = null
+          initialSelect.current = range
           setActive({ row, col })
         }}
       />
