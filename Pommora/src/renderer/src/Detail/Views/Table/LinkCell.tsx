@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { isLinkDisplay, type PropertyDefinition } from '@shared/properties'
+import { DEFAULT_LINK_DISPLAY, isLinkDisplay, type PropertyDefinition } from '@shared/properties'
 import type { ColumnLook } from '@shared/columnStyles'
 import { isHttpLink } from '@shared/links'
 import { useSession } from '../../../store'
@@ -29,7 +29,7 @@ export function LinkCell({
   showFullLink?: boolean
 }): React.JSX.Element | null {
   const { url, alias } = parseLink(raw)
-  const display = isLinkDisplay(look) ? look : (def?.link_display ?? 'link-full')
+  const display = isLinkDisplay(look) ? look : (def?.link_display ?? DEFAULT_LINK_DISPLAY)
   const wantsTitle = display === 'link-title' && !alias && isHttpLink(url)
   const title = useSession((s) => (wantsTitle ? s.linkTitles[url] : undefined))
   const resolveLinkTitle = useSession((s) => s.resolveLinkTitle)

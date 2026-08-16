@@ -1,7 +1,7 @@
 // Per-view column display styles — the `column_styles` record on a SavedView.
 
 import { z } from 'zod'
-import { LINK_DISPLAYS, type PropertyDefinition } from './properties'
+import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS, type PropertyDefinition } from './properties'
 
 /** A url column's looks ARE the link forms — one vocabulary for how a link reads, whether it is read
  *  from a property's own Format, a view's column, or a link in a page body. The two it used to carry
@@ -56,7 +56,7 @@ export function defaultStyleFor(
     // A url column reads the way its property says to unless this view says otherwise — so the
     // property's Format is the default here rather than a constant that would silently override it.
     case 'url':
-      return { look: def?.link_display ?? 'link-full' }
+      return { look: def?.link_display ?? DEFAULT_LINK_DISPLAY }
     case 'file':
       return { look: 'filename' }
     case 'datetime':

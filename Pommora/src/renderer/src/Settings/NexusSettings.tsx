@@ -8,7 +8,7 @@ import { PreviewPane } from '@renderer/design-system/components/PreviewPane/Prev
 import { Reveal } from '@renderer/design-system/components/Reveal'
 import { PickerControl, type PickerChoice } from '@renderer/Components/Detail/PickerControl'
 import { LINK_FORMAT_OPTIONS } from '@renderer/Components/Detail/LinkFormat'
-import type { LinkDisplay } from '@shared/properties'
+import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@shared/properties'
 import { HOVER_LINGER_MAX, type Personalization } from '@shared/types'
 import { useExitPresence } from '../design-system/useExitPresence'
 import { useSession } from '../store'
@@ -158,7 +158,7 @@ const LEAVES: Record<CategoryKey, LeafBody> = {
         label: 'Default Format',
         hint: 'How a pasted link reads.',
         when: 'autoFormatPastedLinks',
-        fallback: 'link-full',
+        fallback: DEFAULT_LINK_DISPLAY,
         options: LINK_FORMAT_OPTIONS,
       },
       {

@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@renderer/design-system/symbols'
 import { useSession } from '../../store'
 import {
+  DEFAULT_LINK_DISPLAY,
   isReservedPropertyId,
   type LinkConfig,
   type NumberConfig,
@@ -443,7 +444,7 @@ export function PropertiesPane({
         ) : def.type === 'url' ? (
           <URLEditor
             underline={def.link_underline ?? false}
-            display={def.link_display ?? 'link-full'}
+            display={def.link_display ?? DEFAULT_LINK_DISPLAY}
             color={def.link_color}
             onSetConfig={(patch) => void saveLinkConfig(def.id, patch)}
           />
