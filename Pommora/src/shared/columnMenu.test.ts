@@ -19,12 +19,18 @@ describe('styleMenuItems', () => {
     expect(rows.every((r) => r.key === 'look')).toBe(true)
   })
 
-  it('checkbox offers Checkbox/Switch; url Title/Full Link; file Filename/Full Path', () => {
+  it('checkbox offers Checkbox/Switch; url the three link forms; file Filename/Full Path', () => {
     expect(items('checkbox', { look: 'checkbox' }).map((r) => r.label)).toEqual([
       'Checkbox',
       'Switch',
     ])
-    expect(items('url', { look: 'full' }).map((r) => r.label)).toEqual(['Title', 'Full Link'])
+    // The same three names a link wears everywhere else — the property's own Format control, the
+    // nexus-wide default, and a link's own menu in a page body.
+    expect(items('url', { look: 'link-full' }).map((r) => r.label)).toEqual([
+      'Full Link',
+      'Short Link',
+      'Page Title',
+    ])
     expect(items('file', { look: 'filename' }).map((r) => r.label)).toEqual([
       'Filename',
       'Full Path',

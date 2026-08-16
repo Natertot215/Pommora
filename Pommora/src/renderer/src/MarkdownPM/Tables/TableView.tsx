@@ -401,7 +401,14 @@ export function TableView({
           initialSelect.current = null
           setActive({ row, col })
         }}
-        onCommit={(t) => onCellCommit(row, col, t)}
+        onCommit={(t) => {
+          onCellCommit(row, col, t)
+          // Settling is what a demoting cell editor does, and a resting cell never had one to demote
+          // — without this the widget keeps drawing the pre-edit text until something else enters and
+          // leaves a cell. A menu action is one discrete edit, so it costs none of the per-keystroke
+          // re-measure the deferral exists to avoid.
+          onSettled?.()
+        }}
         onSelect={(range) => {
           intent.cancel()
           closeActiveHoverCard()

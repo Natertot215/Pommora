@@ -71,9 +71,9 @@ describe('cellMenuModel', () => {
   })
 
   it('style-edit: Style radios plus the Edit entry', () => {
-    const m = cellMenuModel({ kind: 'style-edit', type: 'url', current: { look: 'full' } })
+    const m = cellMenuModel({ kind: 'style-edit', type: 'url', current: { look: 'link-full' } })
     expect(m.items.map((i) => [i.label, i.action])).toEqual([['Edit', 'cell:edit']])
-    expect(m.style?.map((r) => r.label)).toEqual(['Title', 'Full Link'])
+    expect(m.style?.map((r) => r.label)).toEqual(['Full Link', 'Short Link', 'Page Title'])
   })
 
   it('link (a filled url cell): Edit + Rename + Clear, no Style (its look is per-property)', () => {

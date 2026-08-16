@@ -148,10 +148,12 @@ describe('the picker survives being clicked', () => {
 describe('a link’s menu in a resting cell', () => {
   const URL = 'https://www.example.com/a/b'
   const committed = vi.fn()
+  const settled = vi.fn()
 
   /** Mount a table holding one external link, with the menu already resolving to `action`. */
   async function mountLink(action: ConnUrlAction): Promise<void> {
     committed.mockReset()
+    settled.mockReset()
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
@@ -168,6 +170,7 @@ describe('a link’s menu in a resting cell', () => {
           model: { ...model, rows: [[`a [Home](${URL}) b`]] },
           connections: () => linked,
           onCellCommit: (_r: number, _c: number, text: string) => committed(text),
+          onSettled: settled,
         }),
       ),
     )
@@ -186,6 +189,14 @@ describe('a link’s menu in a resting cell', () => {
     await rightClick()
     expect(committed).toHaveBeenCalledWith(`a [example.com](${URL}) b`)
     expect(container.querySelectorAll('.cm-editor')).toHaveLength(0)
+  })
+
+  // Settling is what a demoting cell editor does, and a resting cell never had one to demote —
+  // without it the widget keeps drawing the pre-edit text until something else enters and leaves.
+  it('settles the table, so the edit is drawn rather than waiting on a visit', async () => {
+    await mountLink('link:delete')
+    await rightClick()
+    expect(settled).toHaveBeenCalled()
   })
 
   it('leaves the label as prose on Remove Link', async () => {

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import type { PropertyDefinition } from '@shared/properties'
+import { isLinkDisplay, type PropertyDefinition } from '@shared/properties'
+import type { ColumnLook } from '@shared/columnStyles'
 import { isHttpLink } from '@shared/links'
 import { useSession } from '../../../store'
 import { cx } from '@renderer/design-system/cx'
@@ -16,15 +17,20 @@ import { solidColorCss } from './solidColor'
 export function LinkCell({
   raw,
   def,
+  look,
   showFullLink,
 }: {
   raw: string
   def: PropertyDefinition | undefined
+  /** The column's resolved look — this view's override of how the link reads, already defaulted to
+   *  the property's own Format. */
+  look?: ColumnLook
   /** While this cell's Rename popover is open, show the full URL instead of the alias/title (see Cell). */
   showFullLink?: boolean
 }): React.JSX.Element | null {
   const { url, alias } = parseLink(raw)
-  const wantsTitle = def?.link_display === 'link-title' && !alias && isHttpLink(url)
+  const display = isLinkDisplay(look) ? look : (def?.link_display ?? 'link-full')
+  const wantsTitle = display === 'link-title' && !alias && isHttpLink(url)
   const title = useSession((s) => (wantsTitle ? s.linkTitles[url] : undefined))
   const resolveLinkTitle = useSession((s) => s.resolveLinkTitle)
   useEffect(() => {
@@ -48,7 +54,7 @@ export function LinkCell({
           void window.nexus.openExternal(url)
         }}
       >
-        {showFullLink ? url : linkDisplayText(raw, def?.link_display, title)}
+        {showFullLink ? url : linkDisplayText(raw, display, title)}
       </a>
     </OverflowScroll>
   )
