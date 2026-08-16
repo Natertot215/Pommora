@@ -42,7 +42,7 @@ A Page's values are wrapped title keys at its frontmatter root; a Task's or Even
 
 | Type                  | On-Disk Value                                                           | Notes                                                                                |
 | --------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| **Number**            | `<Count>: 42`                                                           | Bare number.                                                                         |
+| **Number**            | `<Count>: 42`                                                           | Bare number. |
 | **Checkbox**          | `<Done>: true`                                                          | Bare boolean.                                                                        |
 | **Date**              | `"2026-06-15"` (date-only, UTC) or `"2026-06-15T14:30:00Z"` (with time) | A bare date-only value folds into Date on read.                                      |
 | **Select**            | `<Stage>: Active`                                                       | Bare string; one colored chip.                                                       |
@@ -79,7 +79,7 @@ Here's an example of how the frontmatter page with both Pommora-managed and exte
   - Docs
 Areas:
  - Work
- - Personal
+ - "[[Personal]]"
 tags
   - Obsidian
   - Task
@@ -135,16 +135,22 @@ Context links are the only relation-type connection. They store as **parenthesiz
 ```yaml
 (Projects):
   - Pommora
+  - Website
 ```
 
 In a Task, an Event, or a `_space.json` the same key rides the JSON root, quoted there because JSON quotes every key. They're never schema definitions — each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it, and every entry carries an ordinary minted ULID. 
 
 ### Auto-Managed Properties
 
-Every Page, Task, and Event carries its kind's id key (`PageID` / `TaskID` / `EventID`, holding a ULID assigned at creation), `created_at`, and `modified_at` — maintained by Pommora, not user-creatable. It surfaces as **Last Edited Time**, whose column shows the stored `modified_at` stamp; sorting and filtering fall back to `created_at` for a never-modified page.
+Every Page, Task, and Event carries its kind's id key (`PageID` / `TaskID` / `EventID`, holding a ULID assigned at creation), `created_at`, and `modified_at` — maintained by Pommora, not user-creatable. It surfaces as **Last Edited Time**, whose column shows the stored `modified_at` stamp; sorting and filtering fall back to `created_at` for a never-modified page. Additionally, pages may carry a `cover` property used for storing their banners. 
 
-**A schema edit is not a page edit.** Renaming a property definition, changing its type, or reordering an assignment leaves every member page's `modified_at` untouched. Only a property's value changing counts, alongside a text edit, a move, and a rename.
-
+**A schema edit is not a page edit.** Renaming a property definition, changing its type, or reordering an assignment leaves every member page's `modified_at` untouched. Only a property's value change counts, along with a text edit, a move, and a rename.
+```yaml
+PageID:
+created_at:
+modified_at:
+cover:
+```
 ### Where Properties Live
 
 Three layers hold the system: a **definition** (the nexus-wide registry, `.nexus/properties.json`, alongside a nexus-wide cosmetic display order) says what a property is; an **assignment** (a Collection's sidecar) says which definitions that Collection carries; a **value** (a Page's frontmatter) says what one entity holds. The read walk joins definition to assignment so every surface receives a resolved schema, and the tree carries the full ordered registry. Of the three, the definition is the only layer the storage line permits moving into the database.
