@@ -19,6 +19,11 @@ The organization layer. A **Context** is a user-defined group — a fresh nexus 
 - **Validation is registry membership at read** — keys exact-match a registry title, and values match through one normalizer, so case, whitespace, composition, and scalar drift all still resolve. A drifted-but-resolvable value displays fine and repairs on that file's next context write; an unknown value sits inert.
 - **The parenthesized key is the only membership shape.** A file carrying another form keeps it as foreign keys, preserved by value and read by nothing.
 
+```yaml
+(Projects):
+  - Pommora
+```
+
 ### Writes
 
 - **Membership** — one membership write per entity kind (content file / Space), under per-file locks, reconciling the whole root it rewrites. Space-to-Space links use the same shape: a Space tags Spaces through its own sidecar keys, in its own Context or another.
