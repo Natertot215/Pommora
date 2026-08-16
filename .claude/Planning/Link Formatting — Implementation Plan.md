@@ -535,8 +535,9 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
 - [x] Full gate — expect green.
 - [x] Commit: `feat(links): Paste As offers the forms the clipboard can take`
 
-#### Gate 4 — both menus, in every surface
-- [ ] Gate commands green, exit codes read directly.
+#### Gate 4 — both menus, in every surface · base `f9ce588c`
+- [x] Gate commands green, exit codes read directly. Typecheck 0 · 2706 tests across 234 files, no `Errors` line · lint 0 **diagnostics**, not merely exit 0.
+- [x] Simplification dispatched against `f9ce588c..HEAD` scoped to the phase's paths; every finding checked against the code before folding, two rejected.
 - [ ] Derivations re-run against their controls.
 - [ ] The link-versus-prose menu collision observed and resolved, with the observation recorded in the Log.
 - [ ] Paste As exercised in a page body, a table cell, a block, and an embed — the surfaces where the existing `Format ▸` is already inert.
@@ -560,9 +561,9 @@ It is built **on the menu `installEditorContextMenu` already pops**, not as a re
   - [x] Task 6 — Mount the paste handler in both editors · `6ceaa384`
   - [x] Task 7 — The deferred Page Title rewrite · `44c47449`, simplified in `3db60832`
 - [x] **Phase 4** — The menus
-  - [x] Task 8 — The link menu, and links in cells · `<commit>`
-  - [x] Task 9 — The inverse-paste chord · `<commit>`
-  - [x] Task 10 — `Paste As >` on the prose menu · `<commit>`
+  - [x] Task 8 — The link menu, and links in cells · `df38b829`
+  - [x] Task 9 — The inverse-paste chord · `49597a96`
+  - [x] Task 10 — `Paste As >` on the prose menu · `bfd9e21a`, simplified in `8f72086a`
 
 ### Observations
 
