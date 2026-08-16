@@ -1,83 +1,101 @@
 ## Link Formatting — Session Prompt
 
-Paste this into a fresh session to pick the work up cold.
+Paste this into a fresh session to finish the feature and close it out.
 
 ---
 
-You're implementing pasted-link formatting in Pommora. The design is settled and the plan is written, reviewed, and ratified — your job is to execute it, not to redesign it.
+You're finishing pasted-link formatting in Pommora. **Phases 1–3 are built, tested and live in the app.** What remains is Phase 4 — two right-click menus and one keyboard chord — and then closeout.
 
 ### Read these before touching anything
 
-1. `.claude/Planning/Link Formatting — Implementation Plan.md` — the plan. Read it whole, including the Implementation Log at the bottom, which is where the current state actually lives.
-2. `.claude/Planning/Link Formatting — Decision Log.md` — the spec behind it. Every decision is tagged `[confirmed]`; the Considered & Rejected section lists approaches already ruled out, and retrying one of them is a defect, not an idea.
-3. `.claude/Guidelines/Editor-Internals.md` and `.claude/Guidelines/Build-Gotchas.md` — in-domain traps.
+1. `.claude/Planning/Link Formatting — Implementation Plan.md` — the plan. Read it whole, **starting with the Implementation Log at the bottom**, which is where the real state lives: Progress, Rulings, Observations, Deviations.
+2. `.claude/Planning/Link Formatting — Decision Log.md` — the spec. Every decision is `[confirmed]`; **Considered & Rejected lists approaches already ruled out, and retrying one is a defect, not an idea.**
+3. `.claude/Guidelines/Editor-Internals.md` and `.claude/Guidelines/Build-Gotchas.md`.
 
-The plan's **Grounding** section lists the files to re-open. Open them; don't trust the plan's citations, and don't trust this prompt's either. Four of the plan's derivation counts were wrong on the first pass, so re-run every `rg` before editing the files it points at.
+Don't trust the plan's citations or this prompt's. Re-derive every `rg` count before editing the file it points at — several counts in the original plan were wrong, and one was still stale when Task 1 ran.
 
-### What the feature is
+### Where things stand
 
-Pasting a URL into MarkdownPM turns it into a markdown link in one of three forms — **Full Link** (`[url](url)`), **Short Link** (the bare domain), **Page Title** (the fetched `<title>`) — chosen by a per-Nexus setting and changeable per link by right-click. Plus a `Paste As >` menu for choosing per paste.
+Shipped and live: the link grammar reads balanced parentheses two levels deep; one `link-full`/`link-short`/`link-title` vocabulary spans URL properties and the editor; three per-Nexus settings under Pages; the paste path in both editors; and the deferred Page Title swap. Gates 1, 2 and 3 all passed Nathan's live tests.
 
-The load-bearing insight, and the reason the plan is shaped the way it is: **almost none of this is new machinery.** `linkDomain` is Short Link. The `linkTitles` fetcher, its main-side cache and its renderer resolver are Page Title, already shipped for URL property cells. `PickerControl` is the three-option double-chevron. `linkDisplayText` is the formatter. You are wiring existing mechanisms onto one vocabulary. If you find yourself writing a second URL parser, a second domain-stripper, or a second menu surface, stop — the thing already exists and you missed it.
+**Left to build — Phase 4, Tasks 8, 9, 10.** All three touch `src/main`, so none of them appear on a ⌘R; they need a full dev restart to see.
+
+### Task 8 — the link menu (blocked, see below)
+
+A markdown link pointing at a website is offered **Copy Link and nothing else** today (`main/connMenu.ts`, the `ctx.external` branch). It gains four items: **Rename · Format ▸ · Copy Link · Delete** (Requirement 9, ruling R5).
+
+- **Rename** edits the `[…]` label. `applyLinkAction` matches `t.kind === 'wikiLink'` and returns silently otherwise, so the markdown form needs its own applier over the `link` token's `contentRange`.
+- **Format ▸** is Full Link · Short Link · Page Title, rewriting the label only. Page Title with nothing cached writes Short Link and registers a `PendingTitle` anchor — reuse Task 7's machinery, never a second mechanism.
+- **Delete** — **BLOCKED on R5.** Whether it removes the whole `[label](target)` token or unwraps it to the bare label text is Nathan's call and is not yet made. Ask before building it; everything else in Task 8 can proceed.
+- Task 8 also **mounts `markdownLinkClicks` in `Tables/CellEditor.tsx`** — per observation O-2 it is absent there, so a link in a table cell has no menu at all.
+
+Three of Task 8's original premises were wrong and the task body has been rewritten; read it rather than the summary. In particular: `apply` sits only on `ConnMenuTarget`'s `page` variant and must be *added* to the `url` variant, `ConnMenuContext.external` already distinguishes the two cases, and the `default: target.apply?.(action)` that was supposed to catch a missed id lives in the page branch, which Format never reaches — so add an explicit exhaustive switch in the url branch.
+
+### Task 9 — the inverse-paste chord
+
+⌘⇧V does the opposite of whatever ⌘V is set to do. It is currently registered main-side by `{ role: 'editMenu' }` for Paste and Match Style, so **the keypress never reaches the renderer** until that role is expanded into an explicit submenu and the item dropped from both the app menu and the editor context menu. Nathan ruled that trade acceptable (E-7).
+
+The chord is matched renderer-side on keydown, where there is no `clipboardData` — so it reads the clipboard through a `clipboard:read` channel that **does not exist yet** and lands with this task. The paste handler currently passes `inverse: false`; that is the one line to change.
+
+Until this ships, ⌘⇧V behaves like ⌘V, because macOS's Paste and Match Style fires an ordinary paste event into the same handler. That is expected, not a bug.
+
+### Task 10 — `Paste As ▸`
+
+Built **on the menu `installEditorContextMenu` already pops**, never a renderer menu of its own (ruling R2). Offers what the clipboard's target can become, resolved through the existing `resolveMdTarget`: a page target offers Connection and Markdown Link; a URL target offers Full Link, Short Link, Page Title and Plain Text. A clipboard holding neither shows no submenu at all.
+
+Reach into blocks and embeds comes from wiring `menu={{ pushState, onAction }}` in `Blocks/MarkdownBlock.tsx` and `Embeds/PageEmbed.tsx`, which don't pass it today — that also repairs the existing `Format ▸`, `Heading ▸`, `Lists ▸` and `Insert ▸`, all currently inert in those surfaces.
+
+**Not in table cells.** The prose menu never pops over the non-editable table widget, and Nathan accepted its absence there (R4). Requirement 8 states the exception; don't quietly "fix" it.
 
 ### Environment, non-negotiable
 
-- Gates, run from `Pommora/`: `npm run typecheck` · `npm run test` · `npm run lint`. **Read exit codes directly.** Never pipe a gate into `tail` or `head` — you get the pipe's status, and that has masked a red suite for a whole session before.
-- Launch the GUI with `env -u ELECTRON_RUN_AS_NODE npm run dev`. This environment sets that variable, and with it set Electron runs as plain Node and the app crashes on startup.
-- Biome owns formatting through a PostToolUse hook. Never hand-align, never run Biome yourself. An Edit failing on whitespace means Biome reformatted the file — re-read and retry.
-- Keep the app in dev mode with HMR so Nathan sees changes immediately. Don't ⌘Q his session.
+- Gates, from `Pommora/`: `npm run typecheck` · `npm run test` · `npm run lint`. **Read exit codes directly.** Never pipe a gate into `tail` — you get the pipe's status. A vitest run can also exit non-zero with every test green when a jsdom suite throws in a `requestAnimationFrame`; check for an `Errors` line.
+- Launch with `env -u ELECTRON_RUN_AS_NODE npm run dev`. This environment sets that variable, and with it set Electron runs as plain Node and the app crashes.
+- Biome owns formatting via a PostToolUse hook. Never hand-align, never run Biome. An Edit failing on whitespace means Biome reformatted — re-read and retry.
+- Baseline at handoff: **2675 tests, 232 files, all green.**
 
 ### Per task
 
-1. **Re-derive** every count and citation the task names. A diverging count rewrites the plan; it does not get quietly fixed.
-2. **Read the task's Why**, the Global Constraints, and the Inherited Reasoning. If the Why doesn't justify what you're about to write, the task is wrong — say so rather than building it.
-3. **Write the failing test first**, run it, watch it fail for the right reason.
-4. **Implement.** One writer on the tree at a time.
-5. **If the real shape departed from the written one** — a changed signature, a moved file, a renamed export — find every later task that assumed it, rewrite them, and record it under Deviations *before* committing.
-6. **Run the full gate.** Never claim a result you didn't just watch happen.
-7. **Commit the work and tick the task's boxes in the same commit.** Stage explicit paths — never `git add -A`, never a directory.
+1. **Re-derive** every count and citation the task names.
+2. Read the task's **Why**, the Global Constraints, and Inherited Reasoning. If the Why doesn't justify what you're about to write, say so instead of building it.
+3. **Failing test first**, run it, watch it fail for the right reason.
+4. Implement. One writer on the tree at a time — if you dispatch an agent, give it a disjoint file set and **forbid every git command**; you stage and commit.
+5. If the real shape departed from the written one, rewrite the later tasks that assumed it and record it under **Deviations** *before* committing.
+6. Full gate. Never claim a result you didn't watch happen.
+7. **Commit the work and tick the task's boxes in the same commit.** Stage explicit paths — never `git add -A`.
 
 ### Per phase, at its gate
 
-- Dispatch `code-simplifier` and `comment-killer-agent` against the phase's commit range, scoped to its paths. A reviewer given no range reads an empty working tree and the gate ticks green having looked at nothing.
-- **Every concern is fixed or carries Nathan's explicit ruling.** A flagged concern is unfinished work; don't launder it into a note.
-- Fill in the commit hashes in Progress. Re-assess the later tasks against what actually landed.
-- **Then stop and hand it to Nathan to test.** See below.
+- Dispatch `code-simplifier` against the phase's commit range, scoped to its paths. A reviewer given no range reads an empty tree and the gate ticks green having looked at nothing.
+- **Verify every finding against the code before folding it.** Two agent findings this cycle were right, one corrected the brief, and one defended a mechanism with an argument that turned out to be worth pinning as a test. Fold none on an agent's word.
+- Every concern fixed, or carrying Nathan's explicit ruling in the Log.
+- Fill in the commit hashes. Then **stop and hand it to Nathan to test.**
 
-### Live testing — when to stop and ask
+### Gate 4 — what Nathan tests
 
-The rule: **nothing is called working until Nathan has seen it work.** Gates green is where verification starts.
+**Full dev restart**; Phase 4 is nearly all main-process.
 
-At each checkpoint, tell him plainly what to try, what he should see, and whether the app needs a restart or just a reload. Then wait. Don't proceed to the next phase on your own verdict.
+- **Format ▸** on a real link, cycling all three forms, and the label changing in the document each time.
+- **Rename** retitling a link; **Delete** doing whatever R5 settles on.
+- All four items present on an external link, and a page-resolving link still getting the connection menu instead.
+- `Format ▸` reaching a link **inside a table cell** — it has no menu at all today.
+- **Paste As ▸** on prose, offering the right set for a URL, a `[[Connection]]`, and a non-link clipboard; present in a page, a block and an embed; absent in a table cell.
+- **⌘⇧V** doing the inverse of ⌘V in every matrix cell, and Paste and Match Style gone from the Edit menu.
 
-| Checkpoint | What he tests | Reload needed |
-| --- | --- | --- |
-| **Before Phase 1** | Two read-only observations on the app as it stands today: right-click a rendered markdown link in a page body — does the prose menu also appear behind it? And right-click `[Example](https://example.com)` inside a table cell — does any link menu appear at all? Both answers change Tasks 8 and 10. | none |
-| **After Phase 1** | A URL property's new Format picker in all three modes; a Wikipedia link with parens in a page rendering un-truncated and clicking through correctly. | ⌘R |
-| **After Phase 2** | The Settings window, unchanged. This phase is a refactor — General shows 6 rows, Pages shows 3, every label and default exactly as before. Nothing new should be visible. | ⌘R |
-| **After Phase 3** | **The big one.** Every cell of the paste matrix, in a page body *and* a table cell: settings off → literal URL; on → the chosen form; selection + wrap on → the selection becomes the label. Page Title showing the domain then swapping to the real title. Two ⌘Z presses removing a swapped paste. The Default Format row appearing and hiding with its toggle. | ⌘R (extension changes don't HMR) |
-| **After Phase 4** | `Format >` on a link cycling all three forms. `Paste As >` on prose offering the right options for a URL, a `[[Connection]]`, and a non-link clipboard. ⌘⇧V doing the inverse of ⌘V. All of it in a page, a cell, a block, and an embed. | **full dev restart** — `src/main` and `src/preload` don't HMR and aren't picked up by ⌘R |
+### Closeout, once Gate 4 passes
 
-### What "confirmed operational" means
+1. **Write the Delivery Claim** in the plan's Log: every requirement traces to a landed task; the end-to-end acceptance criterion and how it was observed; no new dependency; no mechanism duplicated; nothing left with nothing to vary.
+2. **Dispatch a neutral verifier** — "is this true?" — handed the Decision Log, the plan, and the full commit range. Adjudication, not attack. It must read the *spec*, or the one gate positioned to catch "you built less than was agreed" can't see what was agreed.
+3. **Then** dispatch `build-breaking-agent` to attack. Two dispatches, never one brief — an agent asked to do both does neither.
+4. Run the **Dead Vocabulary sweep**: `rg -F "'link-url'" Pommora/src` → expect 0, with `rg -F "'link-title'" Pommora/src` above 0 as the control. A bare zero from a sweep that never ran looks identical to a clean one.
+5. Reconcile the **Made False** table — every doc rewritten in the commit that falsified it. `MarkdownPM.md`, `ConfigurationPM.md`, `PropertiesPM.md` and `ConnectionsPM.md` have all been touched; check what Phase 4 adds.
+6. Route **Lessons** to `.claude/Guidelines/`, and write the Log's **Closeout**, including anything that contradicts what the plan asserted.
 
-Not "the test passes." Not "it should work." For every action this feature adds:
+### Standing rules that bit this cycle
 
-- **The settings actually govern the paste.** Flip each toggle and confirm the paste behavior changes with it — including the off state, which must leave a pasted URL as literal text. A test that passes with the settings gate deleted proves nothing; the negative control is part of the task.
-- **The Format menu actually changes the link.** All three forms, on a real link, with the document text changing to match.
-- **Every action has its inverse.** Undo works and is reversible. A form you switched to can be switched back.
-- **It works in every surface**, not just the page body. Table cells have their own editor with its own extension array — a change mounted once is half-done.
-
-### Simply, cleanly, no bloat
-
-The project's rules that bite hardest here:
-
-- **DRY is hard.** Never two definitions or two writers for the same thing. If you find one, report it.
-- **Fix causes, not symptoms.** The parenthesized-URL fix is the model: the grammar was wrong, so the grammar got fixed once for all four of its consumers rather than encoded around at the writer.
-- **Comments are minimum and why-only.** Never restate a value the declaration already holds. Never label state or status — those rot. `KNOB` and `(Nathan's call)` markers are functional; leave them.
-- **Simplification comes before build-breaking review**, not after.
-- **Docs land in the commit that falsifies them.** The plan's Made False table says which, and when.
-- **Ask before designing.** Anything visual or interactive that the plan doesn't already specify — stop and ask. Don't guess at how it looks or behaves.
-
-### The one thing to escalate
-
-If a task is wrong as specified, **stop and say so.** Never satisfy a criterion by weakening it, narrowing an assertion, or editing the test until it passes. Reporting a task impossible is a success; a green gate reached by moving the gate is a failure that hides itself.
+- **Fix causes, not symptoms.** The parenthesized-URL fix is the model: the grammar was wrong, so the grammar was fixed once for all four of its consumers rather than encoded around at the writer.
+- **Don't build a thing before it has a consumer.** The picker row variant and `clipboard:read` were both deferred to the task that actually needed them, and both deferrals are logged as Deviations.
+- **DRY is hard.** Two writers for one shape is a defect even when both are correct — the paste and its title swap-in had to compose the same markdown, and the byte-for-byte agreement between them is load-bearing.
+- **Comments are minimum and why-only.** Never restate a value its declaration holds. `KNOB` and `(Nathan's call)` markers are functional — leave them.
+- **Ask before designing.** Anything visual or interactive the plan doesn't already specify — stop and ask.
+- **If a task is wrong as specified, stop and say so.** Never satisfy a criterion by weakening it. Reporting a task impossible is a success; a green gate reached by moving the gate is a failure that hides itself.

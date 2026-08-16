@@ -21,6 +21,7 @@ Bounded to the link feature. The `PopupMenu` design-system split is a separate c
 6. `Format >` on a markdown link's right-click menu, rewriting the label only.
 7. `Paste As >` on the prose right-click menu, offering what the clipboard's target can become.
 8. All of it applies in every MarkdownPM surface, including table cells — with one ruled exception: `Paste As` is absent inside a markdown table, because main's prose menu does not pop over a non-editable widget (O-3, R4). Paste behavior and `Format >` still reach cells.
+9. A markdown link's right-click menu carries **Rename · Format ▸ · Copy Link · Delete**. Today an external-URL link is offered Copy Link alone, which is thinner than what a link needs to be editable at all. Added late, at Nathan's direction (R5).
 
 **Acceptance — the whole thing working**
 
@@ -390,6 +391,8 @@ Default Format never applies to a wrap — the selection is the label. A clipboa
 - [ ] Full gate — expect green.
 - [ ] Commit: `feat(links): a pasted link takes its page title when the fetch lands`
 
+> **Gate 3 passed** (Nathan, live). The one reported failure — a Wikipedia address never resolving its Page Title — was a bad test URL in the walkthrough, not a defect: `…/wiki/Foo_(bar)` is not a real article and returns **404**, which the fetcher correctly turns into no title, leaving the Short Link standing. Verified against the live host, where a real parenthesized article (`…/wiki/Mercury_(planet)`) returns **200** and resolves.
+
 #### Gate 3 — pasting works, everywhere, reversibly
 - [ ] Gate commands green, exit codes read directly.
 - [ ] Every matrix cell exercised by hand in a page body **and** a table cell.
@@ -403,9 +406,18 @@ Default Format never applies to a wrap — the selection is the label. A clipboa
 
 ### Phase 4 — The menus
 
-#### Task 8: `Format >` on the link menu
+#### Task 8: The link menu — Rename · Format ▸ · Copy Link · Delete
 
-**Requirement:** 6
+**Requirement:** 6, 9
+
+**The whole menu, not just Format.** `popConnMenu`'s external branch offers Copy Link and nothing else (`main/connMenu.ts:16`), so a markdown link pointing at a website cannot currently be retitled, reformatted or removed from its own menu. The four items land together:
+
+- **Rename** — edit the `[…]` label. The wikilink menu's `rename` already means exactly this for an alias; the markdown form needs its own applier because `applyLinkAction` matches `t.kind === 'wikiLink'` and returns silently otherwise.
+- **Format ▸** — Full Link · Short Link · Page Title, rewriting the label only (Requirement 6). Page Title with no cached title writes Short Link and registers a `PendingTitle` anchor, reusing Task 7's machinery rather than a second mechanism.
+- **Copy Link** — already there; keep it.
+- **Delete** — **[open] see R5.** Removes the link. Whether that means the whole `[label](target)` token or an unwrap to the bare label text is Nathan's call and is not yet made.
+
+**Scope note:** these are for the *external-URL* branch. A markdown link whose target resolves to a page is drawn and menued as a connection, and Format has nothing to offer it. Whether that branch also gains Delete is part of R5.
 
 **Why:** The nexus-wide default applies at paste time; Format is how one link departs from it. It rewrites the `[…]` label and stores nothing — no sidecar, no per-link state, so nothing can disagree with the file and there is no override layer for the default to defer to. It lands before Paste As because it is the smaller of the two menu changes and it establishes the action-id shape Paste As reuses.
 
@@ -556,6 +568,7 @@ The two the review could not settle statically, taken on the running app before 
   - **Consequence for Task 10 — R2 cannot reach table cells,** and **R4 accepts that.** Paste As rides the menu `editorMenu` already pops, and that menu never pops in a cell, so Paste As is absent there. Nothing else in the feature is affected: ⌘V and the inverse chord are DOM and keyboard paths that work in a cell once Task 6 mounts them, and Task 8's `Format >` rides the renderer's own link menu, which the cell mount restores.
 
 ### Rulings
+- **R5 — the link menu carries Rename · Format ▸ · Copy Link · Delete** (Nathan, added during Gate 3). Requirement 9. An external-URL link is offered Copy Link alone today, which is not enough to edit a link at all. **One piece is still open: what Delete removes** — the whole `[label](target)` token, or just the link syntax, leaving the label behind as prose. Task 8 is not executable until that is settled.
 - **R4 — Paste As is accepted as absent inside table cells** (Nathan: "Accept it"). The prose menu never pops over the non-editable table widget (O-3), and reversing that would mean making the widget report as editable — a change well outside this feature's blast radius. Requirement 8 now states the exception rather than being quietly false. Nothing else about cells changes: pasting still formats there, and `Format >` still reaches links there once Task 8 mounts the link handler.
 - **R1 — two ⌘Z presses are accepted** (Nathan). The title swap stays an ordinary history entry rather than growing a custom undo command; the cost lands only on the first paste of a URL, since the title is cached afterwards.
 - **E-7 — ⌘⇧V is taken from Paste and Match Style** (Nathan). The role is expanded and the item dropped from both menus.
