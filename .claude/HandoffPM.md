@@ -4,56 +4,140 @@
 
 #### Current Focus
 
-**Session ID:** 7ff23352-9a5e-4972-be78-cf28011a0315
-**Dates:** 08-15-2026
+**Session ID:** 6e36b069-0658-4a96-b4ef-7474821cfd46
+**Dates:** 08-16-2026
 **Model:** Opus 5
 
-**Pasted links, then the table cells nobody had reached.** The session ran a ten-task plan to its end and then kept going through four rounds of live feedback. The plan's own arc was the paste path: the markdown-link grammar widened to CommonMark's balanced-parenthesis destination (one edit at the grammar, not an encoding around it at four consumers), one `link-full` / `link-short` / `link-title` vocabulary replaced two disagreeing sets, three settings landed under Pages, and Page Title learned to write the domain immediately and swap the fetched title in against a range anchored through every edit since. Phase 4 added the menus — a link's own right-click menu, the ⌘⇧V inverse chord taken from Paste and Match Style, and `Paste As ▸` on the prose menu.
+**PM-104 — Menu & Surface Consolidation.** The session opened on the first of PM-104's two bullets: rework `PickerMenu` for double-chevron consumers onto the autocomplete's beak-less surface. `PopoutMenu — Scope.md` had scoped that as a second component beside `PickerMenu`, and every count in it re-derived correctly against the code — but the scoping answered the wrong question. Once Nathan ruled that all menus move and nothing keeps a notch, the answer stopped being "add a component" and became "`PickerMenu` stops having a beak," at which point `PopoutMenu` folded back in after one commit of existence.
 
-**Then the feedback.** Gate 4 sent back four corrections that mattered more than they looked: `Edit Link` had only ever been offered to a link naming a *page*, so the one form whose target can't be renamed through anything else had no way to be edited; the paste block wanted Paste → Paste As → Paste Without Formatting; and a resting table cell — which is not an editor and draws its links as plain spans — had no link menu at all, so Task 8's `CellEditor` mount only ever reached a cell already entered. That last one became its own piece of work: the actions that only rewrite text commit against the cell without entering it, while Rename and Edit Link enter it with their half already selected, with the span arithmetic hoisted out of both editor appliers so the two paths cannot diverge. A url column's Style menu then turned out to be offering two of three link forms in words nothing else used, writing a `look` no renderer read.
+**The beak was load-bearing for more than its shape.** A beak is not a silhouette a CSS border can trace, so `NotchedPane` cut the frost to a hand-drawn curve and stroked the same curve as an SVG outline — which meant switching off `GlassPane`'s own border first. CSS bundles the border, the top specular, the inner ring and the lower rim into one `box-shadow` property, so switching off the border switched off the lighting too. Menus had been three lighting layers thinner than every other pane in the app for as long as they had beaks. Dropping the middleman restored them, cut `NotchedPane` from 204 lines to 109 (its sideways path, flip, three inset props and resize publication were all unreachable once `MenuSurface` was its only consumer), and made `PickerMenu` and `PreviewPane` genuinely the same surface rather than nominally.
 
-**What is verified:** every gate green on the final state — typecheck 0, lint 0 **diagnostics**, 2732 tests across 235 files. Gates 1–4 were driven live by Nathan and confirmed. Three simplification passes ran, and every finding was checked against the code before folding: one found a real second writer (the "is a title still owed" verdict had drifted into three copies while the link text stayed consolidated) and one found a real defect (Paste As composed its label unescaped, so a page titled `Notes [WIP] final` produced a link the grammar reads back as nothing). **What is assumed:** nothing outstanding — the last live pass came back clean.
+**That exposed the glass vocabulary as wrong rather than merely imprecise.** `GlassWindow` and `GlassSurface` were byte-identical, each carrying a comment promising divergence "later," so three named tiers were really two and the one real distinction — 95% versus 90% brightness — was invisible in the names. Nathan's call: merge them under `GlassSurface` for the app's fixed chrome, keep `GlassPane` for floating transients, and rebuild `GlassWindow` as the pane's chrome carrying a body. Four spellings of "darken this" (a boolean at 100%, a `tintOpacity` number at 85/90, a `fill` at 78, a hand-written `--state-muted`) collapsed onto one `SOLID_FILL`, which ended a live mismatch: `NavWindow` passed 90 while its own comment insisted it matched `PreviewWindow`, which passed 85.
+
+**What is verified:** every gate green on the final state — typecheck clean both projects, Biome clean across 800 files, 2733 tests across 235 files, 21 atlas tables agreeing with source. The auto-centring branch is pinned by two tests that were mutation-checked (reverting the default makes one fail). The restored border's layout effect was measured rather than reasoned about — it does grow a shrink-to-fit pane by 2px, which `box-sizing: border-box` does not prevent, and `IconPicker`'s column count survives because it derives from a live `clientWidth` rather than its width constant.
+
+**What is assumed:** three visual outcomes nobody has looked at in the running app — the eleven solid pickers at 90% instead of opaque, `PhotoCropModal` on the window tier, and the `PaneSlider` panes now growing both directions under auto-centring. All three are seconds of use to judge and invisible in a screenshot.
 
 #### Completion Criteria
 
-- [x] **The grammar reads balanced parentheses two levels deep**, so a parenthesized address survives however it was authored.
-- [x] **One `LinkDisplay` vocabulary** across URL properties, view columns, the editor and the nexus-wide default; the old `link-url` gone but for two migration tests that prove it falls back.
-- [x] **Three per-Nexus settings under Pages**, clean-file, with Default Format disclosed only while auto-format is on.
-- [x] **The paste path in both editors** — the page body and a table cell — honoring the inverse rule.
-- [x] **Page Title defers to the fetch** against an anchored range, declining once those words have changed hands.
-- [x] **A link's menu: Rename · Edit Link · Copy Link · Format ▸**, then Remove Link · Delete below a separator.
-- [x] **⌘⇧V does the inverse of ⌘V**; Paste and Match Style keeps its act as **Paste Without Formatting**, without the accelerator.
-- [x] **`Paste As ▸` on the prose menu**, and **`Insert Link`** over a selected address.
-- [x] **Links in table cells, resting and active, both syntaxes** — menu, follow, hover preview.
-- [x] **A url column's looks are the link forms**, defaulting to the property's own Format.
-- [x] **A saved view row pops the OS menu its siblings pop** — the view pane's rows and the embed's segments, off one shared model.
-- [x] **Gates green; three simplification passes folded after verification; the PopoutMenu scope written.**
+- [x] **One beak-less rectangular shell** carrying every menu, picker, grid, calendar and hover card; `MenuSurface` alone keeps the beak, for the toolbar dropdown that hangs off a named button.
+- [x] **`PickerControl` migrated**, moving its fourteen consumers together.
+- [x] **`PopoutMenu` folded into `PickerMenu`**, with `PointMenu` and the fixed-option row re-homed.
+- [x] **The pass-through removed** — `PickerMenu` and the autocomplete mount `GlassPane` directly, restoring the material's border, lighting and shadow.
+- [x] **Rows split by what they hold**, not which shell they sit in; `rowShell` states hover and focus once.
+- [x] **The chosen-row mark is accent from one definition**, replacing four across three surfaces and seven rows carrying none.
+- [x] **Auto-centring** — straddle the trigger where the whole pane fits, edge-anchor where it would be clamped, decided once per open.
+- [x] **Three honestly-named glass tiers** and one `SOLID_FILL` behind every darkened surface.
+- [x] **Documentation reconciled**, with a `SOURCE:`-tagged Glass & Menus table in the atlas.
+- [ ] **The autocomplete anchored flush at the caret.** It mounts the shared pane but still places itself, because `origin="left"` insets by `ANCHOR_RESERVE` — right against an element, wrong against a text caret.
+- [ ] **The three open calls routed** — the hover card's lost beak, `PhotoCropModal`'s tier change, the `PaneSlider` panes under centring.
+- [ ] **PM-104's second bullet: one row shape for every menu model.** `ActionItem<A>` moves from `main/returningMenu.ts` into `shared/pageMenu.ts`, and `separatorBefore` / `destructive` collapse into one word. Untouched this session.
 
 #### Next Session
 
-- **The pickers.** `PopoutMenu — Scope.md` is written and two of its four decisions are ruled: every double-chevron picker moves, the block Scale picker stays. The migration unit is `PickerControl` itself — repointing its one menu moves all twenty-five consumers together — and two decisions remain open: whether PopoutMenu subsumes `PointMenu`, and whether `PickerControl` keeps its `solid` prop.
-- **The autocomplete panel is the piece that makes the component real** rather than a rename. It needs point anchoring, no focus management, a left origin, its own exit presence, and a stacking rung of its own — each of those is why it isn't already a `PickerMenu`.
-- **The Page Outline dropdown still has no feature doc** — carried from the previous session, still awaiting Nathan's call.
+- **Look at the three assumed outcomes in the running app** — solid pickers, the crop modal, the `PaneSlider` panes. Each is a one-word fix if it reads wrong.
+- **The autocomplete's caret anchoring** — a flush-left placement branch in `PickerMenu`, not a wrapper tweak.
+- **The Page Outline dropdown still has no feature doc** — carried across three sessions now, still awaiting Nathan's call.
 
 #### Feedback
 
-- "Every action must be confirmed operational." — standing; each gate was handed over for a live pass rather than claimed.
-- "a url cell on a markdown table does; TableView doesn't" — the two surfaces hold different things: a markdown cell holds a *link*, a view cell holds a property *value* whose form is its column's.
-- "only number + link should use Format for their headers on the View styling, the rest keep Style" — a status's Pill and a checkbox's Switch are looks, not formats.
-- "that violates the on-every-x rule and should be simplified" — a keydown path may not allocate; a shortcut spec is parsed once and kept.
-- "Do the menu reversal without listing it here as its what was always supposed to be done in the first place" — a correction to obvious is written as though the right way was always intended.
+- "dont use browser shit, I can verify things myself." — headless-Chrome verification is unwanted; hand over what to look at instead.
+- "checkmarks must still be accent on the menues like I told you to" — an instruction applied to one row type is not applied; the sweep is the deliverable, not the first site.
+- "Give me a no bullshit and no filler approach design" — a design is the files, the values and what breaks; the preamble is not part of it.
+- "Try moving PhotoCropModal to Window just for the hell of it." — experiments are welcome when they're cheap and reversible.
 
 #### Session Pointers
 
-- `Pommora/src/shared/PasteLink.ts` — `decidePaste` is the pure decision; `linkPaste` answers both halves of what a formatted link is (its markdown, and whether a title is still owed) so no writer can answer either differently.
-- `Pommora/src/renderer/src/MarkdownPM/editor/PasteLink.ts` — deciding is separate from writing so the paste event is claimed on the decision alone; `pasteAs` and the ⌘⇧V chord share `writeLink`.
-- `Pommora/src/renderer/src/MarkdownPM/editor/PendingTitle.ts` — the anchored range Page Title swaps into, mapped with inward assoc and pruned the moment the text there stops reading as what was written.
-- `Pommora/src/renderer/src/MarkdownPM/editor/linkFormat.ts` — `linkActionText` and `linkHalves` are the pure span math the editor and a resting table cell both perform.
-- `Pommora/src/renderer/src/MarkdownPM/Tables/cellStatic.tsx` — a resting cell's own link menu; `still()` re-reads the cell when an action is chosen, since a native menu stands open as long as it likes.
-- `Pommora/src/shared/columnStyles.ts` — a url column's default look is its property's Format, which is why `defaultStyleFor` takes the definition.
-- `.claude/Planning/Link Formatting — Implementation Plan.md` — the Implementation Log at the bottom holds the rulings, observations and deviations; several things that look like defects are decisions.
+- `design-system/materials/index.ts` — the tier ladder is documented at the barrel; read it before touching any glass.
+- `design-system/materials/glass-pane.tsx` — `SOLID_FILL`, `WINDOW_FROST` (which is `PANE_FROST` plus the fill and nothing else), and `GlassPane`'s `solid`.
+- `design-system/components/PickerMenu/PickerMenu.tsx` — `ANCHOR_RESERVE` places the pane, `CORNER_CLEAR` keeps the Bloom off the arc, `decidedCentre` freezes the centring choice per open.
+- `design-system/components/PickerMenu/pickerMenu.css.ts` — `PANE_RADIUS`, `chosenMark`, and the `pane` / `surface` split (shape versus gutter).
+- `design-system/components/menu/menu.css.ts` — `rowShell` is the one hover-and-focus recipe both row types compose.
+- `design-system/components/NotchedPane.tsx` — the beaked shell, now top-beak-only, with `MenuSurface` as its sole consumer.
+- `design-system/components/PickerMenu/PickerMenu.test.tsx` — the auto-centring tests, and the `offsetWidth` / `getBoundingClientRect` stubbing pattern for testing placement in jsdom.
+- `.claude/Planning/PopoutMenu — Tasks.md` — the arc's tracker: done, open with what each is waiting on, and deferred by ruling.
+- `DesignSystemPM.md` §Glass & Menus — which tier each surface wears; `node scripts/check-atlas.mjs` verifies it.
 
 #### Working Notes
+
+- **`box-sizing: border-box` does not protect a shrink-to-fit box.** It applies only where a width is stated; an auto-width pane still grows by its border. Harmless here because panes anchor by an edge, but it will matter the moment something sets an explicit width and does arithmetic on it.
+- **The atlas checker validates column 2's backticked tokens and column 3+'s literals**, skipping bare numbers under 8 and any prose derivation. A new table needs its `SOURCE:` files to actually contain both, or it fails.
+- **`MenuOption` lays out its mark slot on every row and only paints the chosen one** — deliberate, so the pane can't resize as the selection moves between labels of unequal length.
+- **A comment asserting two values match is worse than no comment.** `NavWindow`'s said it matched `PreviewWindow`'s tint; it made the mismatch harder to find, because reading it told you not to check.
+
+#### Changes
+
+**FILES ADDED**
+
+- `.claude/Planning/PopoutMenu — Tasks.md`
+
+**FILES MODIFIED**
+
+- `.claude/CLAUDE.md`
+- `.claude/ContextPM.md`
+- `.claude/Features/DesignSystemPM.md`
+- `.claude/Features/InteractionPM.md`
+- `.claude/Features/PagePreviewPM.md`
+- `Pommora/src/renderer/src/Blocks/BlockHandleMenu.tsx`
+- `Pommora/src/renderer/src/Blocks/handleMenu.css.ts`
+- `Pommora/src/renderer/src/Components/Detail/ColorPicker.tsx`
+- `Pommora/src/renderer/src/Components/Detail/FilterPane.tsx`
+- `Pommora/src/renderer/src/Components/Detail/GroupingPane.tsx`
+- `Pommora/src/renderer/src/Components/Detail/InlineEditHeader.tsx`
+- `Pommora/src/renderer/src/Components/Detail/PagePropertiesPane.tsx`
+- `Pommora/src/renderer/src/Components/Detail/PickerControl.tsx`
+- `Pommora/src/renderer/src/Components/Detail/SortingPane.tsx`
+- `Pommora/src/renderer/src/Components/Detail/SortingPane.test.tsx`
+- `Pommora/src/renderer/src/Components/Detail/dateTimeEditor.test.tsx`
+- `Pommora/src/renderer/src/Components/Detail/propertiesPane.datetime.test.tsx`
+- `Pommora/src/renderer/src/Components/IconPicker.tsx`
+- `Pommora/src/renderer/src/Components/iconPicker.css.ts`
+- `Pommora/src/renderer/src/Components/PhotoCropModal.tsx`
+- `Pommora/src/renderer/src/Components/photoCropModal.css.ts`
+- `Pommora/src/renderer/src/Components/Surface.tsx`
+- `Pommora/src/renderer/src/Detail/InspectorPanel/InspectorPanel.tsx`
+- `Pommora/src/renderer/src/Detail/InspectorPanel/inspector-panel.css`
+- `Pommora/src/renderer/src/Detail/Views/PropertyEditing/PropertyPicker.tsx`
+- `Pommora/src/renderer/src/Detail/Views/Table/TableView.tsx`
+- `Pommora/src/renderer/src/MarkdownPM/AutocompletePanel.tsx`
+- `Pommora/src/renderer/src/MarkdownPM/Styles.css`
+- `Pommora/src/renderer/src/NavWindow/NavWindow.tsx`
+- `Pommora/src/renderer/src/PagePreview/PreviewInspector.tsx`
+- `Pommora/src/renderer/src/PagePreview/PreviewWindow.tsx`
+- `Pommora/src/renderer/src/Settings/NexusSettings.tsx`
+- `Pommora/src/renderer/src/Sidebar/Sidebar.css`
+- `Pommora/src/renderer/src/design-system/components/CalendarPicker/CalendarPicker.tsx`
+- `Pommora/src/renderer/src/design-system/components/CalendarPicker/calendarPicker.css.ts`
+- `Pommora/src/renderer/src/design-system/components/NotchedPane.tsx`
+- `Pommora/src/renderer/src/design-system/components/notchedPane.css.ts`
+- `Pommora/src/renderer/src/design-system/components/PickerMenu/PickerMenu.tsx`
+- `Pommora/src/renderer/src/design-system/components/PickerMenu/PickerMenu.test.tsx`
+- `Pommora/src/renderer/src/design-system/components/PickerMenu/pickerMenu.css.ts`
+- `Pommora/src/renderer/src/design-system/components/PickerMenu/index.ts`
+- `Pommora/src/renderer/src/design-system/components/PreviewPane/PreviewPane.tsx`
+- `Pommora/src/renderer/src/design-system/components/PreviewPane/previewPane.css`
+- `Pommora/src/renderer/src/design-system/components/SidePane/SidePane.tsx`
+- `Pommora/src/renderer/src/design-system/components/TextPicker/TextPicker.tsx`
+- `Pommora/src/renderer/src/design-system/components/TextPicker/textPicker.css.ts`
+- `Pommora/src/renderer/src/design-system/components/menu/MenuSurface.tsx`
+- `Pommora/src/renderer/src/design-system/components/menu/menu.css.ts`
+- `Pommora/src/renderer/src/design-system/components/menu/menuSurface.css.ts`
+- `Pommora/src/renderer/src/design-system/materials/glass-pane.tsx`
+- `Pommora/src/renderer/src/design-system/materials/glass-surface.tsx`
+- `Pommora/src/renderer/src/design-system/materials/glass-window.tsx`
+- `Pommora/src/renderer/src/design-system/materials/index.ts`
+- `Pommora/src/renderer/src/design-system/showcase/leaves/ComponentsLeaf.tsx`
+- `Pommora/src/renderer/src/design-system/showcase/leaves/GlassLeaf.tsx`
+
+**FILES REMOVED**
+
+- None. `design-system/components/PopoutMenu/` was created and folded back in within the session, never committed.
+
+**COMMITS**
+
+- None. The whole arc sits uncommitted against `c84cdb43`.
+
+#### Handoff Guidelines
 
 - §Current Focus and §Next Session restate to current truth on every run; multi-compact sessions may advance ideas or reconcile information while preserving the document's cohesion.
 - Resolve = delete + route — a handled item leaves the document for its real home (Context, History, Features) with no tombstone left behind.
