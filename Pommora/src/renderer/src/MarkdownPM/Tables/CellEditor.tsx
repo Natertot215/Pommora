@@ -9,6 +9,7 @@ import { autoPair, autoDelete, type Edit } from '../input'
 import { AC_MAX, aliasRows, pageRow } from '../autocomplete'
 import { aliasOnLeave } from '../editor/linkEdit'
 import { linkRest, linkTyping } from '../editor/linkGestures'
+import { pasteLink } from '../editor/PasteLink'
 import {
   useConnectionAutocomplete,
   detectConnectionQuery,
@@ -97,6 +98,7 @@ export function CellEditor({
           // A cell authors aliases like the body does, so it owes the memory the same writes — without
           // this the mode it offers is one it can never contribute to, and an abandoned pipe reaches disk.
           aliasOnLeave(() => connections?.()),
+          pasteLink,
           linkRest,
           linkTyping,
           customCaret,

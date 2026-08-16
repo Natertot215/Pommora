@@ -76,7 +76,9 @@
   padding: 10px 0;
   border-bottom: 1px solid var(--separator-segment);
 }
-.settings-row:last-child {
+/* Direct children only: a disclosed row sits inside Reveal's wrapper, where it would match
+   :last-child and lose the separator it still needs from the rows below it. */
+.settings-section > .settings-row:last-child {
   border-bottom: none;
 }
 .settings-row-text {
