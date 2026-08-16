@@ -3,7 +3,7 @@
 // from the renderer's last-pushed FormatState (Electron's static params can't see CM6 state).
 // Sidebar right-clicks (non-editable) fall through to their own React→IPC menu untouched.
 
-import { Menu } from 'electron'
+import { Menu, clipboard } from 'electron'
 import type {
   BrowserWindow,
   ContextMenuParams,
@@ -11,6 +11,7 @@ import type {
   WebContents,
 } from 'electron'
 import { EDITOR_ACTION_PREFIX, type FormatState } from '@shared/editorMenu'
+import { PASTE_AS_PREFIX, pasteAsRows } from '@shared/PasteAsMenu'
 
 let lastState: FormatState | null = null
 export function setFormatState(s: FormatState): void {
@@ -182,6 +183,25 @@ function pommoraItems(wc: WebContents, s: FormatState): MenuItemConstructorOptio
         { label: 'Callout', click: act('block:callout') },
         { label: 'Table', click: act('block:table') },
       ],
+    },
+    ...pasteAsItems(wc),
+  ]
+}
+
+// What the clipboard could be pasted as, where it holds anything that can become more than itself.
+// The clipboard is read here rather than pushed from the renderer: the offer is decided from its
+// text alone, and the renderer cannot read it in time — main's `context-menu` event fires in the same
+// turn as the right-click that triggers it.
+function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
+  const rows = pasteAsRows(clipboard.readText())
+  if (rows.length === 0) return []
+  return [
+    {
+      label: 'Paste As',
+      submenu: rows.map((r) => ({
+        label: r.label,
+        click: dispatch(wc, PASTE_AS_PREFIX + r.form),
+      })),
     },
   ]
 }

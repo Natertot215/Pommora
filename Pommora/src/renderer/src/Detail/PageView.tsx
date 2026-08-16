@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSession } from '../store'
 import { MarkdownEditor } from '../MarkdownPM'
 import type { ConnectionsApi } from '../MarkdownPM/connections'
+import { nativeEditorMenu } from '../MarkdownPM/editor/menu'
 import { pageIndexOf } from '../treeIndex'
 import { showConnectionMenu } from '../Embeds/connectionMenu'
 import { hoverConnection } from '../Embeds/ConnectionHoverCard'
@@ -131,10 +132,7 @@ export function PageView(): React.JSX.Element {
               load: async () => (await window.nexus.tableHeadingColumns.get())[pageDetail.id] ?? [],
               save: (indices) => void window.nexus.tableHeadingColumns.set(pageDetail.id, indices),
             }}
-            menu={{
-              pushState: (s) => window.nexus.setEditorFormatState(s),
-              onAction: (cb) => window.nexus.onMenuAction(cb),
-            }}
+            menu={nativeEditorMenu}
             // The editor freezes this at mount, so the capture lands under the tab that OWNED this
             // page even though activeTabId moves before the unmount (select switches synchronously).
             // restore carries the store's rename fence: a warm entry whose captured path diverges from
